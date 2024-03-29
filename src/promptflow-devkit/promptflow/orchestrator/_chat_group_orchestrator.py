@@ -1,14 +1,13 @@
 from typing import Optional, List, Mapping, Dict, Any
 from promptflow.contracts.flow import Flow
-from promptflow.contracts.chat_group import ChatGroupRole
-from promptflow._constants import LANGUAGE_KEY, FlowLanguage
-from promptflow._utils.yaml_utils import load_yaml
+from promptflow.orchestrator._chat_group import ChatGroupRole
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.executor._result import LineResult
 from promptflow.storage import AbstractRunStorage
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow._utils.execution_utils import apply_default_value_for_input
 from promptflow._proxy._proxy_factory import ProxyFactory
+from promptflow._utils.logger_utils import bulk_logger
 
 
 class ChatGroupOrchestrator:
@@ -20,6 +19,17 @@ class ChatGroupOrchestrator:
         max_lines_count: Optional[int] = None,
         **kwargs
     ):
+        """Chat group orchestrator schedule runs for each line in batch inputs.
+
+        :param chat_group_roles: chat group roles
+        :type chat_group_roles: List[ChatGroupRole]
+        :param max_turn: max turn of chat, defaults to None
+        :type max_turn: Optional[int], optional
+        :param storage: storage, defaults to None
+        :type storage: Optional[AbstractRunStorage], optional
+        :param max_lines_count: max lines from inputs, defaults to None
+        :type max_lines_count: Optional[int], optional
+        """
         self._storage = storage
         self._max_turn = max_turn
         self._chat_group_roles = chat_group_roles
@@ -43,6 +53,11 @@ class ChatGroupOrchestrator:
         return ChatGroupOrchestrator(chat_group_roles, max_turn, storage, max_lines_count)
 
     def _create_executor_proxy(self, **kwargs) -> List[AbstractExecutorProxy]:
+        """create executor proxy for each chat role according to language
+
+        :return: proxy list
+        :rtype: List[AbstractExecutorProxy]
+        """
         executor_proxy_list = []
         executor_proxy_factory = ProxyFactory()
         for chat_role in self._chat_group_roles:
@@ -51,9 +66,10 @@ class ChatGroupOrchestrator:
                 working_dir=chat_role.working_dir,
                 connections=chat_role.connections,
                 storage=self._storage,
-                language=self._check_language_from_yaml(chat_role),
+                language=chat_role.check_language_from_yaml(),
                 **kwargs
             )
+            bulk_logger.info(f"Created executor proxy for role:{chat_role.role}. name: {chat_role.name}")
             executor_proxy_list.append(executor_proxy)
         return executor_proxy_list
 
@@ -61,17 +77,24 @@ class ChatGroupOrchestrator:
         for executor_proxy in self._executor_proxies:
             await executor_proxy.destroy()
 
-    async def _schedule_runs(
+    async def _schedule_line_runs(
             self,
             line_index: int,
             inputs: Mapping[str, Any] = None,
             run_id: str = None,
             ) -> LineResult:
+        """schedule runs for each line in batch inputs.
+        It also resolve flow inputs and flow outputs for each turn.
 
-        """schedule runs for a line, submit roleA and format its output as roleB's input.
-        Then submit roleB until the max_turn.
+        :param line_index: line index in batch inputs
+        :type line_index: int
+        :param inputs: raw input line of line_index, defaults to None
+        :type inputs: Mapping[str, Any], optional
+        :param run_id: run id, defaults to None
+        :type run_id: str, optional
+        :return: line result
+        :rtype: LineResult
         """
-
         outputs: dict = {}
         aggregation_inputs: dict = {}
         current_line_result: LineResult = None
@@ -79,12 +102,21 @@ class ChatGroupOrchestrator:
         total_roles = len(self._chat_group_roles)
         conversation_history: List[Mapping[str, Any]] = []
         batch_inputs = self._process_batch_inputs(inputs)
+        bulk_logger.info(f"Finish process batch inputs and applying inputs mapping for line number:{line_index}")
+
+        bulk_logger.info(f"Start to schedule runs for run id: {run_id}, line number: {line_index}")
+
         for turn in range(self._max_turn):
             role_index = turn % total_roles
             executor_proxy = self._executor_proxies[role_index]
             chat_role = self._chat_group_roles[role_index]
             chat_role_input = batch_inputs[role_index]
             chat_role_input["conversation_history"] = conversation_history
+
+            bulk_logger.info(
+                f"Start to execute turn {turn}. role: {chat_role.role}. name: {chat_role.name}"
+            )
+
             current_line_result = await executor_proxy.exec_line_async(chat_role_input, line_index, run_id)
             self._process_flow_outputs(
                 turn,
@@ -93,8 +125,19 @@ class ChatGroupOrchestrator:
                 conversation_history,
                 outputs,
                 aggregation_inputs)
+            bulk_logger.info(
+                f"Finish process line result for "
+                f"line number: {line_index}, turn:{turn}. role:{chat_role.role}, name: {chat_role.name}"
+            )
+
             if any(value == chat_role.stop_signal for value in current_line_result.output.values()):
+                bulk_logger.info(
+                    f"Stop chat since current turn align with stop signal. "
+                    f"line number: {line_index}, turn:{turn}. role:{chat_role.role}, name: {chat_role.name}"
+                )
                 break
+
+        bulk_logger.info(f"Finish schedule runs for run id: {run_id}, line number: {line_index}")
 
         return LineResult(
             output=outputs,
@@ -102,15 +145,6 @@ class ChatGroupOrchestrator:
             node_run_infos=current_line_result.node_run_infos,
             run_info=current_line_result.run_info
         )
-
-    def _check_language_from_yaml(self, flow: ChatGroupRole):
-        flow_file = flow.working_dir / flow.flow_file if flow.working_dir else flow.flow_file
-        if flow_file.suffix.lower() == ".dll":
-            return FlowLanguage.CSharp
-        with open(flow_file, "r", encoding="utf-8") as fin:
-            flow_dag = load_yaml(fin)
-        language = flow_dag.get(LANGUAGE_KEY, FlowLanguage.Python)
-        return language
 
     def _process_flow_outputs(
             self,

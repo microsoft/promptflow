@@ -44,10 +44,24 @@ class AbstractExecutorProxy:
 
     @property
     def should_apply_inputs_mapping(self):
+        """should apply inputs mapping when process batch inputs.
+        For normal batch runs, proxy should apply column mapping right after process batch inputs
+        For chat group batch runs, proxy only resolve inputs to a list
+        and inputs mapping will be applied in orchestrator
+
+        :return: _description_
+        :rtype: _type_
+        """
         return self._should_apply_inputs_mapping
 
     @property
     def allow_aggregation(self):
+        """whether allow to run aggregation.
+        Chat group batch runs do not support aggregation
+
+        :return: _description_
+        :rtype: _type_
+        """
         return self._allow_aggregation
 
     @classmethod

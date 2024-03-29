@@ -2,6 +2,8 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 from dataclasses import dataclass
 from promptflow.contracts.flow import Flow
+from promptflow._constants import LANGUAGE_KEY, FlowLanguage
+from promptflow._utils.yaml_utils import load_yaml
 
 
 @dataclass
@@ -28,3 +30,12 @@ class ChatGroupRole:
     connections: Optional[Dict[str, Any]] = None
     inputs_mapping: Optional[Dict[str, str]] = None
     flow: Optional[Flow] = None
+
+    def check_language_from_yaml(self):
+        flow_file = self.working_dir / self.flow_file if self.working_dir else self.flow_file
+        if flow_file.suffix.lower() == ".dll":
+            return FlowLanguage.CSharp
+        with open(flow_file, "r", encoding="utf-8") as fin:
+            flow_dag = load_yaml(fin)
+        language = flow_dag.get(LANGUAGE_KEY, FlowLanguage.Python)
+        return language

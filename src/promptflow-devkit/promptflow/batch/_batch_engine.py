@@ -179,7 +179,7 @@ class BatchEngine:
         """
         try:
             self._start_time = datetime.utcnow()
-            with (_change_working_dir(self._working_dir)):
+            with _change_working_dir(self._working_dir):
                 # create executor proxy instance according to the flow program language
                 # TODO: pass creating proxy related parameters in this run function to void using class properties
                 self._executor_proxy = executor_proxy or ProxyFactory().create_executor_proxy(

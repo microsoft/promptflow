@@ -10,6 +10,14 @@ from promptflow.storage._run_storage import AbstractRunStorage
 
 class SingleLinePythonExecutorProxy(AbstractExecutorProxy):
     def __init__(self, flow_executor: FlowExecutor, line_execution_process_pool: LineExecutionProcessPool):
+        """This is a temporary solution of PythonExecutorProxy to support exec batch run line by line for test purpose.
+        A formal version of PythonExecutorProxy will replace this one.
+
+        :param flow_executor: flow executor
+        :type flow_executor: FlowExecutor
+        :param line_execution_process_pool: line execution process pool
+        :type line_execution_process_pool: LineExecutionProcessPool
+        """
         self._flow_executor = flow_executor
         self._line_execution_process_pool = line_execution_process_pool
 
