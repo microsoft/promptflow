@@ -103,7 +103,7 @@ jobs:
         pip uninstall -y promptflow-core promptflow-devkit promptflow-tracing
         pip install ${{ github.workspace }}/src/promptflow-tracing
         pip install ${{ github.workspace }}/src/promptflow-core
-        pip install ${{ github.workspace }}/src/promptflow-devkit
+        pip install ${{ github.workspace }}/src/promptflow-devkit[pyarrow]
         pip install ${{ github.workspace }}/src/promptflow-azure
         gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)"}}
         gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)"}}
@@ -191,7 +191,7 @@ jobs:
         pip uninstall -y promptflow-core promptflow-devkit promptflow-azure promptflow-tracing
         pip install ${{ github.workspace }}/src/promptflow-tracing
         pip install ${{ github.workspace }}/src/promptflow-core
-        pip install ${{ github.workspace }}/src/promptflow-devkit
+        pip install ${{ github.workspace }}/src/promptflow-devkit[pyarrow]
         pip install ${{ github.workspace }}/src/promptflow-azure
         gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[azure]"}}
         gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)"}}
@@ -258,7 +258,7 @@ jobs:
         pip uninstall -y promptflow-core promptflow-devkit promptflow-tracing
         pip install ${{ github.workspace }}/src/promptflow-tracing
         pip install ${{ github.workspace }}/src/promptflow-core
-        pip install ${{ github.workspace }}/src/promptflow-devkit
+        pip install ${{ github.workspace }}/src/promptflow-devkit[pyarrow]
         pip install ${{ github.workspace }}/src/promptflow-azure
         gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[azure,executor-service]"}}
         gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)"}}
