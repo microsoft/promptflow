@@ -91,7 +91,6 @@ def print_progress(log_file_path: str, process):
     from tqdm import tqdm
 
     logger = get_logger("data.gen")
-    logger.info(f"Click '{log_file_path}' to see detailed batch run log. Showing the progress here...")
     finished_log_pattern = re.compile(r".*execution.bulk\s+INFO\s+Finished (\d+) / (\d+) lines\.")
     progress_log_pattern = re.compile(
         r".*execution.bulk\s+INFO.*\[Finished: (\d+)\] \[Processing: (\d+)\] \[Pending: (\d+)\]"
@@ -103,7 +102,8 @@ def print_progress(log_file_path: str, process):
         # if the log file is not created within 5 minutes, raise an error
         if time.time() - start_time > 300:
             raise Exception(f"Log file '{log_file_path}' is not created within 5 minutes.")
-
+    
+    logger.info(f"Click '{log_file_path}' to see detailed batch run log. Showing the progress here...")
     progress_bar = None
     try:
         last_data_time = time.time()

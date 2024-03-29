@@ -17,15 +17,12 @@ This guide will help you learn how to generate test data on Azure AI, so that yo
 4. Prepare Azure AI resources in cloud.
     - An Azure AI ML workspace - [Create workspace resources you need to get started with Azure AI](https://learn.microsoft.com/en-us/azure/machine-learning/quickstart-create-resources?view=azureml-api-2).
     - A compute target - [Learn more about compute cluster](https://learn.microsoft.com/en-us/azure/machine-learning/concept-compute-target?view=azureml-api-2).
-5. [Create cloud connection](https://microsoft.github.io/promptflow/cloud/azureai/quick-start/index.html#create-necessary-connections)
+5. [Create cloud AzureOpenAI or OpenAI connection](https://microsoft.github.io/promptflow/cloud/azureai/quick-start/index.html#create-necessary-connections)
 
-6. Prepare config.ini
+6. Prepare test data generation setting.
     - Navigate to [example_gen_test_data](https://github.com/microsoft/promptflow/blob/53a685dbff920e891ef61cacb5f2f19e761ee809/examples/gen_test_data) folder.
-    - Run command to copy [`config.yml.example`](https://github.com/microsoft/promptflow/blob/53a685dbff920e891ef61cacb5f2f19e761ee809/examples/gen_test_data/config.yml.example).
-        ```
-        cp config.yml.example config.yml
-        ```
-    - Update the configurations in the `configs.yml`. Fill in the values in `Common` and `Cloud` section following inline comment instruction.
+    - Prepare `config.yml` by copying [`config.yml.example`](https://github.com/microsoft/promptflow/blob/53a685dbff920e891ef61cacb5f2f19e761ee809/examples/gen_test_data/config.yml.example).
+    - Fill in configurations in the `config.yml` by following inline comment instructions.
 
 
 ## Generate test data at cloud

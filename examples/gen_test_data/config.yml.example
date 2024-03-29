@@ -7,11 +7,11 @@ document_chunk_overlap: 100 # The token overlap of each chunk when splitting.
 # However, if you wish to bypass the document split process, simply provide the 'document_nodes_file', which is a JSONL file.
 # When both 'documents_folder' and 'document_nodes_file' are configured, will use 'document_nodes_file' and ignore 'documents_folder'.
 # For cloud mode, both local files and data assets can be used.
-# document_nodes_file: "<your-node-file-path>"
+# document_nodes_file: <your-node-file-path>
 
 # Test data gen flow configs
 # You can utilize our provided example test data generation flow directly. Alternatively, you can create your own flow and set up corresponding node inputs override.
-# The example flow folder path is <promptflow github repo>\examples\gen_test_data\gen_test_data\generate_test_data_flow.
+# The example flow folder path is <promptflow github repo>\examples\gen_test_data\example_flow
 flow_folder: <your-test-data-gen-flow-folder-path>
 node_inputs_override: # Override some node inputs, if not fill in 'node_inputs_override', will use the values in flow.dag.yaml
   validate_text_chunk: # node name in flow.dag.yaml

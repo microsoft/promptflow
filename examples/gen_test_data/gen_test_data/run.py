@@ -29,7 +29,7 @@ logger = get_logger("data.gen")
 
 
 def batch_run_flow(flow_folder: str, flow_input_data: str, flow_batch_run_size: int, node_inputs_override: dict):
-    logger.info("Step 2: Start to batch run 'generate_test_data_flow'...")
+    logger.info(f"Step 2: Start to batch run '{flow_folder}'...")
     import subprocess
 
     run_name = f"test_data_gen_{datetime.now().strftime('%b-%d-%Y-%H-%M-%S')}"
@@ -37,11 +37,13 @@ def batch_run_flow(flow_folder: str, flow_input_data: str, flow_batch_run_size: 
     connections_str = ""
     for node_name, node_val in node_inputs_override.items():
         for k, v in node_val.items():
-            connections_str += f"{node_name}.{k}={v} "
+            # need to double quote the value to make sure the value can be passed correctly
+            # when the value contains special characters like "<".
+            connections_str += f"{node_name}.{k}=\"{v}\" "
     connections_str = connections_str.rstrip()
 
     cmd = (
-        f"pf run create --flow {flow_folder} --data {flow_input_data} --name {run_name} "
+        f"pf run create --flow \"{flow_folder}\" --data \"{flow_input_data}\" --name {run_name} "
         f"--environment-variables PF_WORKER_COUNT='{flow_batch_run_size}' PF_BATCH_METHOD='spawn' "
         f"--column-mapping {TEXT_CHUNK}='${{data.text_chunk}}' --connections {connections_str} --debug"
     )
@@ -271,6 +273,9 @@ if __name__ == "__main__":
             "Neither 'documents_folder' nor 'document_nodes_file' is valid.\n"
             f"documents_folder: '{documents_folder}'\ndocument_nodes_file: '{document_nodes_file}'"
         )
+
+    if not validate_path_func(flow_folder):
+        raise Exception(f"Invalid flow folder: '{flow_folder}'")
 
     if args.cloud:
         logger.info("Start to generate test data at cloud...")
