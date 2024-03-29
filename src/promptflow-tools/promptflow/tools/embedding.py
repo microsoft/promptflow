@@ -18,8 +18,12 @@ class EmbeddingModel(str, Enum):
 
 @tool
 @handle_openai_error()
-def embedding(connection: Union[AzureOpenAIConnection, OpenAIConnection, ServerlessConnection], input: str, deployment_name: str = "",
-              model: EmbeddingModel = EmbeddingModel.TEXT_EMBEDDING_ADA_002):
+def embedding(
+    connection: Union[AzureOpenAIConnection, OpenAIConnection, ServerlessConnection],
+    input: str,
+    deployment_name: str = "",
+    model: EmbeddingModel = EmbeddingModel.TEXT_EMBEDDING_ADA_002
+):
     if isinstance(connection, AzureOpenAIConnection):
         client = init_azure_openai_client(connection)
         return client.embeddings.create(
