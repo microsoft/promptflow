@@ -209,28 +209,13 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         self._active_generator_count -= 1
 
     async def _all_generators_exhausted(self):
-        """For streaming output, we will return a generator for the output, and the execution service
-        should keep alive until the generator is exhausted.
+        """For streaming output in api-based executor proxy, we will return a generator for the output,
+        and the execution service should keep alive until the generator is exhausted.
 
         This method is to check if all generators are exhausted.
         """
         # the count should never be negative, but still check it here for safety
         return self._active_generator_count <= 0
-
-    async def destroy_if_all_generators_exhausted(self):
-        """
-        client.stream api in exec_line function won't pass all response one time.
-        For API-based streaming chat flow, if executor proxy is destroyed, it will kill service process
-        and connection will close. this will result in subsequent getting generator content failed.
-
-        Besides, external caller usually wait for the destruction of executor proxy before it can continue and iterate
-        the generator content, so we can't keep waiting here.
-
-        On the other hand, the subprocess for execution service is not started in detach mode;
-        it wll exit when parent process exit. So we simply skip the destruction here.
-        """
-        if await self._all_generators_exhausted():
-            await self.destroy()
 
     # endregion
 
@@ -320,8 +305,6 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         :type index: Optional[int]
         :param run_id: The id of the run.
         :type run_id: Optional[str]
-        :param enable_stream_output: Whether to enable the stream output.
-        :type enable_stream_output: bool
         :return: The line result.
         :rtype: LineResult
         """
