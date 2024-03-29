@@ -13,7 +13,8 @@ def calculate(llm_result: str) -> str:
             print(result)
             if result:
                 response = [
-                    # Also handle 'attribited' here since llm tool will return 'attribited' instead of 'attributed' in its' response
+                    # Also handle 'attribited' here since llm tool will return 'attribited'
+                    # instead of 'attributed' in its' response
                     int(item.get("attributed", "").lower() == "yes" or item.get("attribited", "").lower() == "yes")
                     if item.get("attributed") or item.get("attribited")
                     else np.nan
