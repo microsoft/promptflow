@@ -129,7 +129,6 @@ class ExperimentSkipTest(Resource):
         skip_flow_run_id = args.skip_flow_run_id
         context = {"node": skip_flow, "outputs": skip_flow_output, "run_id": skip_flow_run_id}
 
-        remove_dir = False
         if output_path is None:
             filename = str(uuid.uuid4())
             if os.path.isdir(experiment_template):
@@ -137,19 +136,14 @@ class ExperimentSkipTest(Resource):
             else:
                 output_path = Path(os.path.dirname(experiment_template)) / filename
             os.makedirs(output_path, exist_ok=True)
-            remove_dir = True
         output_path = Path(output_path).resolve()
 
-        try:
-            result = client._experiments._test_with_ui(
-                experiment=experiment_template,
-                output_path=output_path,
-                environment_variables=environment_variables,
-                session=session,
-                context=context,
-            )
-        finally:
-            pass
-            if remove_dir:
-                shutil.rmtree(output_path)
+        result = client._experiments._test_with_ui(
+            experiment=experiment_template,
+            output_path=output_path,
+            environment_variables=environment_variables,
+            session=session,
+            context=context,
+        )
+        # Todo : remove output_path when exit executor which is registered in pfs
         return result

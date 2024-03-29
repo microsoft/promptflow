@@ -2,7 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import os
-import shutil
 import uuid
 from pathlib import Path
 
@@ -59,29 +58,24 @@ class FlowTest(Resource):
         experiment = args.experiment
         output_path = args.output_path
         session = args.session
-        remove_dir = False
 
         if output_path is None:
             filename = str(uuid.uuid4())
             output_path = flow / PROMPT_FLOW_DIR_NAME / filename
             os.makedirs(output_path, exist_ok=True)
-            remove_dir = True
         output_path = Path(output_path).resolve()
-        try:
-            result = get_client_from_request().flows._test_with_ui(
-                flow=flow,
-                output_path=output_path,
-                inputs=inputs,
-                environment_variables=environment_variables,
-                variant=variant,
-                node=node,
-                experiment=experiment,
-                session=session,
-                allow_generator_output=False,
-                stream_output=False,
-                dump_test_result=True,
-            )
-        finally:
-            if remove_dir:
-                shutil.rmtree(output_path)
+        result = get_client_from_request().flows._test_with_ui(
+            flow=flow,
+            output_path=output_path,
+            inputs=inputs,
+            environment_variables=environment_variables,
+            variant=variant,
+            node=node,
+            experiment=experiment,
+            session=session,
+            allow_generator_output=False,
+            stream_output=False,
+            dump_test_result=True,
+        )
+        # Todo : remove output_path when exit executor which is registered in pfs
         return result

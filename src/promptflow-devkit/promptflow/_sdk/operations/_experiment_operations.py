@@ -196,7 +196,11 @@ class ExperimentOperations(TelemetryMixin):
             detail_content = json_load(detail_path)
             with open(log_path, "r") as file:
                 log_content = file.read()
-            return_output[key] = {"detail": detail_content, "log": log_content}
+            return_output[key] = {
+                "detail": detail_content,
+                "log": log_content,
+                "output_path": (output_path / key).as_posix(),
+            }
         return return_output
 
     def _test(
