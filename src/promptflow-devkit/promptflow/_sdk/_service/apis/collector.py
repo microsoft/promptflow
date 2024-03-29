@@ -67,9 +67,11 @@ def trace_collector(
                 for span in scope_span.spans:
                     # TODO: persist with batch
                     span = Span._from_protobuf_object(span, resource=resource, logger=logger)
-                    all_spans.append(copy.deepcopy(span))
                     if not cloud_trace_only:
+                        all_spans.append(copy.deepcopy(span))
                         span._persist()
+                    else:
+                        all_spans.append(span)
 
         if cloud_trace_only:
             # If we only trace to cloud, we should make sure the data writing is success before return.
