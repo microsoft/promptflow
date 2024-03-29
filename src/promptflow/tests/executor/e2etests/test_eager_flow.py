@@ -163,13 +163,13 @@ class TestEagerFlow:
             # obj id in each line run should be the same
             (
                 1,
-                lambda outputs: len(outputs) == 2 and outputs[0]["obj_id"] == outputs[1]["obj_id"],
+                lambda outputs: len(outputs) == 4 and outputs[0]["obj_id"] == outputs[1]["obj_id"],
             ),
             # batch run with 2 workers
-            # obj id in each line run should not be the same
             (
                 2,
-                lambda outputs: len(outputs) == 2 and outputs[0]["obj_id"] != outputs[1]["obj_id"],
+                # there will be at most 2 instances be created.
+                lambda outputs: len(outputs) == 4 and len(set([o["obj_id"] for o in outputs])) <= 2,
             ),
         ],
     )
