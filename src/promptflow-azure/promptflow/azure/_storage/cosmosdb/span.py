@@ -70,9 +70,6 @@ class Span:
         return {k: v for k, v in self.__dict__.items() if v}
 
     def _persist_events(self, blob_container_client: ContainerClient, blob_base_uri: str):
-        if not blob_base_uri.endswith("/"):
-            blob_base_uri += "/"
-
         for idx, event in enumerate(self.events):
             event_data = json.dumps(event)
             blob_client = blob_container_client.get_blob_client(self._event_path(idx))

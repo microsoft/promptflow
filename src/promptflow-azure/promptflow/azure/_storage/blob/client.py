@@ -15,7 +15,7 @@ from promptflow.exceptions import UserErrorException
 
 _datastore_cache = {}
 _thread_lock = threading.Lock()
-_cache_timeout = 60 * 5  # Will try to refresh default datastore if exceed 5 minutes
+_cache_timeout = 60 * 4  # Align the cache ttl with cosmosdb client.
 
 
 def get_datastore_container_client(
@@ -48,6 +48,10 @@ def get_datastore_container_client(
         blob_base_uri = LONG_URI_FORMAT.format(
             subscription_id, resource_group_name, workspace_name, default_datastore.name, ""
         )
+        if not blob_base_uri.endswith("/"):
+            blob_base_uri += "/"
+
+        logger.info(f"Get blob base url for {blob_base_uri}")
 
         return container_client, blob_base_uri
 
