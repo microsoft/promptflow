@@ -1,4 +1,8 @@
-promptflow[azure]
+promptflow-tracing @ git+https://github.com/microsoft/promptflow/#subdirectory=/src/promptflow-tracing
+promptflow-core @ git+https://github.com/microsoft/promptflow/#subdirectory=/src/promptflow-core
+promptflow-devkit @ git+https://github.com/microsoft/promptflow/#subdirectory=/src/promptflow-devkit
+promptflow-azure @ git+https://github.com/microsoft/promptflow/#subdirectory=/src/promptflow-azure
+promptflow @ git+https://github.com/microsoft/promptflow/#subdirectory=/src/promptflow
 promptflow-tools
 python-dotenv
 bs4
