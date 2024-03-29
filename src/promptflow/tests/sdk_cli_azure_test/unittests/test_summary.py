@@ -32,11 +32,7 @@ class TestSummary:
             end_time=datetime.datetime.fromisoformat("2022-01-01T00:00:00"),
             status={"status_code": OK_LINE_RUN_STATUS},
             attributes={"key1": "value1", "key2": "value2"},
-            resource={
-                "type": "resource_type",
-                "name": "resource_name",
-                "attributes": {"collection": "test_session_id"},
-            },
+            resource={"type": "resource_type", "name": "resource_name"},
             parent_id="9876543210",
             events=[{"name": "event1", "time": "2022-01-01T00:00:30"}],
             links=[{"trace_id": "0987654321", "span_id": "1234567890"}],
