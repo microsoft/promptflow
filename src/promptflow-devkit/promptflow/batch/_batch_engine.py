@@ -84,6 +84,7 @@ class BatchEngine:
         batch_timeout_sec: Optional[int] = None,
         line_timeout_sec: Optional[int] = None,
         worker_count: Optional[int] = None,
+        init_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs,
     ):
         """Create a new batch engine instance
@@ -102,6 +103,8 @@ class BatchEngine:
         :type line_timeout: Optional[int]
         :param worker_count: The concurrency limit of batch run
         :type worker_count: Optional[int]
+        :param init_kwargs: Class init arguments for callable class, only supported for flex flow.
+        :type init_kwargs: Optional[Dict[str, Any]]
         :param kwargs: The keyword arguments related to creating the executor proxy class
         :type kwargs: Any
         """
@@ -136,6 +139,7 @@ class BatchEngine:
 
         # set it to True when the batch run is canceled
         self._is_canceled = False
+        self._init_kwargs = init_kwargs
 
     def run(
         self,
@@ -181,6 +185,7 @@ class BatchEngine:
                     connections=self._connections,
                     storage=self._storage,
                     language=self._program_language,
+                    init_kwargs=self._init_kwargs,
                     **self._kwargs,
                 )
                 try:
@@ -466,19 +471,22 @@ class BatchEngine:
 
         total_lines = len(batch_inputs)
         completed_line = 0
+        last_log_count = 0
         while completed_line < total_lines:
+            # wait for any task to complete
             done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
             completed_line_results = [task.result() for task in done]
+            # persist node run infos and flow run info in line result to storage
             self._persist_run_info(completed_line_results)
             line_results.extend(completed_line_results)
-            log_progress(
-                self._start_time,
-                bulk_logger,
-                len(line_results),
-                total_lines,
-                last_log_count=completed_line,
-            )
+            # update the progress log
             completed_line = len(line_results)
+            last_log_count = log_progress(
+                run_start_time=self._start_time,
+                total_count=total_lines,
+                current_count=completed_line,
+                last_log_count=last_log_count,
+            )
 
     async def _exec_line_under_semaphore(
         self,
