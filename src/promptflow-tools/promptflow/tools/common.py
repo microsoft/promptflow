@@ -566,8 +566,11 @@ def normalize_connection_config(connection):
             "base_url": connection.base_url
         }
     elif isinstance(connection, ServerlessConnection):
-        # append "/v1" to ServerlessConnection api_base so that it can directly use the OpenAI SDK.
-        base_url = connection.api_base + "/v1"
+        suffix = "/v1"
+        base_url = connection.api_base
+        if not base_url.endswith(suffix):
+            # append "/v1" to ServerlessConnection api_base so that it can directly use the OpenAI SDK.
+            base_url += suffix
         return {
             "max_retries": 0,
             "api_key": connection.api_key,
