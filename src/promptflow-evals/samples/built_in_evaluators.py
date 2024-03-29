@@ -139,10 +139,12 @@ def run_chat_evaluator():
 
 if __name__ == "__main__":
 
-    # run_quality_evaluators()
+    # Individual evaluators
+    run_quality_evaluators()
 
-    # run_safety_evaluators()
+    run_safety_evaluators()
 
-    # run_qa_evaluator()
+    # Composite evaluators
+    run_qa_evaluator()
 
     run_chat_evaluator()
