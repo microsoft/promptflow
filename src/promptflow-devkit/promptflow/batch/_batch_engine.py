@@ -10,7 +10,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Type
 
-from promptflow._constants import LANGUAGE_KEY, LINE_NUMBER_KEY, LINE_TIMEOUT_SEC, OUTPUT_FILE_NAME, FlowLanguage
+from promptflow._constants import (
+    LANGUAGE_KEY,
+    LINE_NUMBER_KEY,
+    LINE_TIMEOUT_SEC,
+    OUTPUT_FILE_NAME,
+    FlowLanguage,
+    MessageFormatType,
+)
 from promptflow._core._errors import ResumeCopyError, UnexpectedError
 from promptflow._proxy import ProxyFactory
 from promptflow._utils.async_utils import async_run_allowing_running_loop
@@ -25,7 +32,7 @@ from promptflow._utils.execution_utils import (
 )
 from promptflow._utils.flow_utils import is_flex_flow
 from promptflow._utils.logger_utils import bulk_logger
-from promptflow._utils.multimedia_utils import persist_multimedia_data
+from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow._utils.utils import (
     dump_list_to_jsonl,
     get_int_env_var,
@@ -46,6 +53,7 @@ from promptflow.executor._line_execution_process_pool import signal_handler
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage import AbstractBatchRunStorage, AbstractRunStorage
+from promptflow.storage._run_storage import DefaultRunStorage
 
 DEFAULT_CONCURRENCY = 10
 
@@ -110,8 +118,12 @@ class BatchEngine:
             self._flow = Flow.from_yaml(flow_file, working_dir=self._working_dir)
             FlowValidator.ensure_flow_valid_in_batch_mode(self._flow)
 
+        # eager flow does not support multimedia contract currently, just use basic format type.
+        self._message_format = self._flow.message_format if not self._is_eager_flow else MessageFormatType.BASIC
+        self._multimedia_processor = MultimediaProcessor.create(self._message_format)
+
         self._connections = connections
-        self._storage = storage
+        self._storage = storage if storage else DefaultRunStorage(base_dir=self._working_dir)
         self._kwargs = kwargs
 
         self._batch_timeout_sec = batch_timeout_sec or get_int_env_var("PF_BATCH_TIMEOUT_SEC")
@@ -193,14 +205,16 @@ class BatchEngine:
                     set_batch_input_source_from_inputs_mapping(inputs_mapping)
                     # if using eager flow, the self._flow is none, so we need to get inputs definition from executor
                     inputs = self._executor_proxy.get_inputs_definition() if self._is_eager_flow else self._flow.inputs
+
                     # resolve input data from input dirs and apply inputs mapping
-                    batch_input_processor = BatchInputsProcessor(self._working_dir, inputs, max_lines_count)
+                    batch_input_processor = BatchInputsProcessor(
+                        self._working_dir, inputs, max_lines_count, message_format=self._message_format
+                    )
                     batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
                     # resolve output dir
                     output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
 
                     run_id = run_id or str(uuid.uuid4())
-
                     previous_run_results = None
                     if resume_from_run_storage:
                         previous_run_results = self._copy_previous_run_result(
@@ -265,7 +279,9 @@ class BatchEngine:
 
                     # Deepcopy to avoid modifying the original object when serializing image
                     previous_run_output = deepcopy(previous_run_info.output)
-                    previous_run_output_in_line_result = persist_multimedia_data(previous_run_output, output_dir)
+                    previous_run_output_in_line_result = self._multimedia_processor.persist_multimedia_data(
+                        previous_run_output, output_dir
+                    )
 
                     # Persist previous run info and node run info
                     self._storage.persist_flow_run(previous_run_info)
