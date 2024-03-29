@@ -4,10 +4,10 @@ import multiprocessing
 import traceback
 from multiprocessing import Queue, get_context
 
-from executor.record_utils import setup_recording
-
 from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
+
+from .record_utils import setup_recording
 
 
 def _run_in_subprocess(error_queue: Queue, func, args, kwargs):
