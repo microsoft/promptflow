@@ -18,6 +18,7 @@ env:
   IS_IN_CI_PIPELINE: "true"
   RECORD_DIRECTORY: ${{ github.workspace }}/src/promptflow-recording
   TRACING_PATH: ${{ github.workspace }}/src/promptflow-tracing
+  PROMPT_FLOW_WORKSPACE_NAME: "promptflow-eastus"
 jobs:
   id:
     runs-on: ubuntu-latest
