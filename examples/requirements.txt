@@ -3,6 +3,6 @@ promptflow-core @ git+https://github.com/microsoft/promptflow/@yigao/check_cli#s
 promptflow-devkit @ git+https://github.com/microsoft/promptflow/@yigao/check_cli#subdirectory=src/promptflow-devkit
 promptflow-azure @ git+https://github.com/microsoft/promptflow/@yigao/check_cli#subdirectory=src/promptflow-azure
 promptflow @ git+https://github.com/microsoft/promptflow/@yigao/check_cli#subdirectory=src/promptflow
-promptflow-tools
+promptflow-tools @ git+https://github.com/microsoft/promptflow/@yigao/check_cli#subdirectory=src/promptflow-tools
 python-dotenv
 bs4
