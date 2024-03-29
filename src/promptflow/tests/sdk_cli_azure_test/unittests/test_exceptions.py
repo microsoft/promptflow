@@ -2,11 +2,13 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import re
+from pathlib import Path
 
 import pytest
 from azure.core.exceptions import HttpResponseError
+
 from promptflow._sdk._orm import RunInfo
-from promptflow.exceptions import _ErrorInfo, ErrorCategory, ErrorTarget, UserErrorException
+from promptflow.exceptions import ErrorCategory, ErrorTarget, UserErrorException, _ErrorInfo
 from promptflow.executor import FlowValidator
 from promptflow.executor._errors import InvalidNodeReference
 
@@ -238,3 +240,77 @@ class TestExceptions:
         for module_name in module_target_map.keys():
             module = importlib.import_module(module_name)
             assert module.__name__ == module_name
+
+    def test_message_with_empty_privacy_info(self):
+        from promptflow._cli._utils import get_secret_input
+
+        ex = None
+        try:
+            get_secret_input(111)
+        except Exception as e:
+            ex = e
+        _, _, _, error_message, _ = _ErrorInfo.get_error_info(ex)
+        assert error_message == "prompt must be a str, not $int"
+
+        try:
+            get_secret_input("str", mask=11)
+        except Exception as e:
+            ex = e
+        _, _, _, error_message, _ = _ErrorInfo.get_error_info(ex)
+        assert error_message == "mask argument must be a one-character str, not $int"
+
+    def test_message_with_privacy_info_filter(self):
+        from promptflow._sdk._load_functions import _load_env_to_connection
+
+        ex = None
+        try:
+            _load_env_to_connection(source="./test/test", params_override=[])
+        except Exception as e:
+            ex = e
+        _, _, _, error_message, _ = _ErrorInfo.get_error_info(ex)
+        assert error_message == "Please specify --name when creating connection from .env."
+
+        try:
+            _load_env_to_connection(source="./test/test", params_override=[{"name": "test"}])
+        except Exception as e:
+            ex = e
+        _, _, _, error_message, _ = _ErrorInfo.get_error_info(ex)
+        assert error_message == "File '{privacy_info}' not found."
+
+    def test_message_with_privacy_info_filter2(self):
+        source = Path(__file__)
+        e = ValueError(
+            f"Load nothing from dotenv file {source.absolute().as_posix()!r}, "
+            f"or not find file {source.absolute().as_posix()}, "
+            "please make sure the file is not empty and readable."
+        )
+        ex = UserErrorException(str(e), error=e, privacy_info=[source.absolute().as_posix()])
+        _, _, _, error_message, _ = _ErrorInfo.get_error_info(ex)
+        assert error_message == (
+            "Load nothing from dotenv file '{privacy_info}', "
+            "or not find file {privacy_info}, "
+            "please make sure the file is not empty and readable."
+        )
+
+        ex = UserErrorException(f"Load entity error: {ex}", privacy_info=[str(ex)])
+        _, _, _, error_message, _ = _ErrorInfo.get_error_info(ex)
+        assert error_message == "Load entity error: {privacy_info}"
+
+        func = self.test_message_with_privacy_info_filter2
+        request_id = "0000-0000-0000-0000"
+        ex.status_code = 404
+        ex.reason = "params error"
+        ex = UserErrorException(
+            f"Calling {func.__name__} failed with request id: {request_id}"
+            f"Status code: {ex.status_code}"
+            f"Reason: {ex.reason}"
+            f"Error message: {ex.message}",
+            privacy_info=[ex.reason, ex.message],
+        )
+        _, _, _, error_message, _ = _ErrorInfo.get_error_info(ex)
+        assert error_message == (
+            "Calling test_message_with_privacy_info_filter2 failed with request id: 0000-0000-0000-0000"
+            "Status code: 404"
+            "Reason: {privacy_info}"
+            "Error message: {privacy_info}"
+        )

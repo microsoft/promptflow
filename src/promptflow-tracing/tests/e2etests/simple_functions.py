@@ -4,7 +4,7 @@ from typing import Union
 
 from openai import AsyncAzureOpenAI, AzureOpenAI
 
-from promptflow.tracing import trace
+from promptflow.tracing._trace import trace
 
 
 @trace
@@ -38,7 +38,7 @@ def greetings(user_id):
 
 @trace
 async def dummy_llm(prompt: str, model: str):
-    asyncio.sleep(0.5)
+    await asyncio.sleep(0.5)
     return "dummy_output"
 
 
@@ -57,13 +57,27 @@ def openai_chat(connection: dict, prompt: str, stream: bool = False):
 
     messages = [{"role": "system", "content": "You are a helpful assistant."}, {"role": "user", "content": prompt}]
     response = client.chat.completions.create(model="gpt-35-turbo", messages=messages, stream=stream)
+
+    if stream:
+        def generator():
+            for chunk in response:
+                if chunk.choices:
+                    yield chunk.choices[0].delta.content or ""
+        return "".join(generator())
     return response.choices[0].message.content or ""
 
 
 @trace
-def openai_completion(connection: dict, prompt: str):
+def openai_completion(connection: dict, prompt: str, stream: bool = False):
     client = AzureOpenAI(**connection)
-    response = client.completions.create(model="text-ada-001", prompt=prompt)
+    response = client.completions.create(model="text-ada-001", prompt=prompt, stream=stream)
+
+    if stream:
+        def generator():
+            for chunk in response:
+                if chunk.choices:
+                    yield chunk.choices[0].text or ""
+        return "".join(generator())
     return response.choices[0].text or ""
 
 

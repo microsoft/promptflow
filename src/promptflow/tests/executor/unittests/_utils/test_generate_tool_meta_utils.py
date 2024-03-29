@@ -39,7 +39,8 @@ def cd_and_run(working_dir, source_path, tool_type):
 def cd_and_run_generate_flow_meta(working_dir, entry, source=None, path=None):
     with _change_working_dir(working_dir), inject_sys_path(working_dir):
         try:
-            return generate_flow_meta_dict_by_file(entry, source, path)
+            data = {"entry": entry}
+            return generate_flow_meta_dict_by_file(data, source, path)
         except Exception as e:
             return f"({e.__class__.__name__}) {e}"
 
@@ -103,7 +104,7 @@ class TestToolMetaUtils:
             ("dummy_flow_with_trace", "flow_with_trace:my_flow", "flow_with_trace.py"),
             ("dummy_flow_with_trace", "flow_with_trace:my_flow", None),
             ("flow_with_dataclass_output", "flow_with_dataclass:my_flow", "flow_with_dataclass.py"),
-        ]
+        ],
     )
     def test_generate_flow_meta(self, flow_dir, entry, path):
         wd = str((EAGER_FLOW_ROOT / flow_dir).resolve())

@@ -1,6 +1,6 @@
 import importlib
 from pathlib import Path
-from promptflow import tool
+from promptflow.core import tool
 from promptflow.contracts.types import FilePath
 
 

@@ -9,7 +9,7 @@ The flow examples in this guide come from [examples/flows/standard](https://gith
 
 In general:
 - For `CLI`, you can run `pfazure flow --help` in the terminal to see help messages.
-- For `SDK`, you can refer to [Promptflow Python Library Reference](../../reference/python-library-reference/promptflow.md) and check `promptflow.azure.PFClient.flows` for more flow operations.
+- For `SDK`, you can refer to [Promptflow Python Library Reference](../../reference/python-library-reference/promptflow-azure/promptflow.rst) and check `promptflow.azure.PFClient.flows` for more flow operations.
 
 :::{admonition} Prerequisites
 - Refer to the prerequisites in [Quick start](./quick-start/index.md#prerequisites).

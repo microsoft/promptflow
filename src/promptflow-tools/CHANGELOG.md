@@ -1,10 +1,16 @@
 # Release History
 
-## 1.4.0 (Upcoming)
+## 1.4.0 (2024.03.26)
 
 ### Features Added
 - Enable token based auth in azure openai connection for tools.
 - Add "seed" to LLM and GPT-Vision tool inputs.
+
+### Improvements
+- Improve error message when LLM tool meets gpt-4-vision-preview model.
+
+### Bugs Fixed
+- Set default values to workspace triad parameters of dynamic list function to avoid misleading errors when clicking tool input.
 
 ## 1.3.0 (2024.03.01)
 

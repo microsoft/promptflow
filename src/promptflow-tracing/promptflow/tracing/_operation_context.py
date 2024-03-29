@@ -26,8 +26,7 @@ class OperationContext(Dict):
     _TRACKING_KEYS = "_tracking_keys"
 
     def copy(self):
-        ctx = OperationContext()
-        ctx.update(self)
+        ctx = OperationContext(self)
         ctx[OperationContext._OTEL_ATTRIBUTES] = copy.copy(self._get_otel_attributes())
         return ctx
 
