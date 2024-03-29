@@ -14,8 +14,6 @@ from promptflow._sdk._errors import LineRunNotFoundError
 from .retry import sqlite_retry
 from .session import trace_mgmt_db_session
 
-Base = declarative_base()
-
 
 class EventIndexName:
     TRACE_ID_SPAN_ID = "idx_events_trace_id_span_id"
@@ -36,6 +34,14 @@ class LineRunIndexName:
     SESSION_ID = "idx_line_runs_session_id"
 
 
+class Base(declarative_base()):
+    @sqlite_retry
+    def persist(self) -> None:
+        with trace_mgmt_db_session() as session:
+            session.add(self)
+            session.commit()
+
+
 class Event(Base):
     __tablename__ = EVENT_TABLENAME
 
@@ -45,12 +51,6 @@ class Event(Base):
     data: Mapped[str] = mapped_column(TEXT)
 
     __table_args__ = (Index(EventIndexName.TRACE_ID_SPAN_ID, "trace_id", "span_id"),)
-
-    @sqlite_retry
-    def persist(self) -> None:
-        with trace_mgmt_db_session() as session:
-            session.add(self)
-            session.commit()
 
     @staticmethod
     @sqlite_retry
@@ -89,12 +89,6 @@ class Span(Base):
         Index(SpanIndexName.TRACE_ID, "trace_id"),
         Index(SpanIndexName.TRACE_ID_SPAN_ID, "trace_id", "span_id"),
     )
-
-    @sqlite_retry
-    def persist(self) -> None:
-        with trace_mgmt_db_session() as session:
-            session.add(self)
-            session.commit()
 
     @staticmethod
     @sqlite_retry
@@ -150,12 +144,6 @@ class LineRun(Base):
         Index(LineRunIndexName.TRACE_ID, "trace_id"),
         Index(LineRunIndexName.SESSION_ID, "session_id"),
     )
-
-    @sqlite_retry
-    def persist(self) -> None:
-        with trace_mgmt_db_session() as session:
-            session.add(self)
-            session.commit()
 
     @staticmethod
     @sqlite_retry
