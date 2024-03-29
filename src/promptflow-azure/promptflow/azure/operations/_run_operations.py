@@ -46,12 +46,7 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import InvalidRunStatusError, RunNotFoundError, RunOperationParameterError
 from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, monitor_operation
-from promptflow._sdk._utils import (
-    incremental_print,
-    is_multi_container_enabled,
-    is_remote_uri,
-    print_red_error,
-)
+from promptflow._sdk._utils import incremental_print, is_multi_container_enabled, is_remote_uri, print_red_error
 from promptflow._sdk.entities import Run
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.logger_utils import get_cli_sdk_logger
@@ -1024,7 +1019,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
     @monitor_operation(activity_name="pfazure.runs.resume", activity_type=ActivityType.PUBLICAPI)
     def _create_by_resume_from(self, resume_from: str, **kwargs):
         """Create a run by specify resume_from to an existing run."""
-        stream = kwargs.get("stream", False)
+        stream = kwargs.pop("stream", False)
         run_name = self._service_caller.resume_bulk_run(
             subscription_id=self._operation_scope.subscription_id,
             resource_group_name=self._operation_scope.resource_group_name,
