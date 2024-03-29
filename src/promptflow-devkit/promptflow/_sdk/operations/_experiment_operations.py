@@ -57,7 +57,7 @@ class ExperimentOperations(TelemetryMixin):
         :return: experiment object retrieved from the database.
         :rtype: ~promptflow.entities.Experiment
         """
-        from promptflow._sdk._submitter.experiment_orchestrator import ExperimentOrchestrator
+        from promptflow._sdk._orchestrator.experiment_orchestrator import ExperimentOrchestrator
 
         ExperimentOrchestrator.get_status(name)
         return Experiment._from_orm_object(ORMExperiment.get(name))
@@ -103,7 +103,7 @@ class ExperimentOperations(TelemetryMixin):
         :return: Experiment object started.
         :rtype: ~promptflow.entities.Experiment
         """
-        from promptflow._sdk._submitter.experiment_orchestrator import ExperimentOrchestrator
+        from promptflow._sdk._orchestrator.experiment_orchestrator import ExperimentOrchestrator
 
         if experiment._source_path:
             # Update snapshot for anonymous experiment
@@ -146,7 +146,7 @@ class ExperimentOperations(TelemetryMixin):
         :return: Experiment object started.
         :rtype: ~promptflow.entities.Experiment
         """
-        from promptflow._sdk._submitter.experiment_orchestrator import ExperimentOrchestrator
+        from promptflow._sdk._orchestrator.experiment_orchestrator import ExperimentOrchestrator
 
         ExperimentOrchestrator(self._client, experiment).stop()
         return self.get(experiment.name)
@@ -166,7 +166,7 @@ class ExperimentOperations(TelemetryMixin):
         :type environment_variables: dict
         """
         from .._load_functions import _load_experiment_template
-        from .._submitter.experiment_orchestrator import ExperimentOrchestrator
+        from .._orchestrator.experiment_orchestrator import ExperimentOrchestrator
 
         experiment_template = _load_experiment_template(experiment)
         output_path = kwargs.get("output_path", None)

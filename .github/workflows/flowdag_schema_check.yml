@@ -30,6 +30,6 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}/src/promptflow
         run: |
           cd ${{ github.workspace }}/src
-          pip install -e promptflow[azure]
-          pip install -e promptflow-tools
+          pip install ./promptflow[azure]
+          pip install ./promptflow-tools
           python ${{ github.workspace }}/scripts/readme/schema_checker.py
