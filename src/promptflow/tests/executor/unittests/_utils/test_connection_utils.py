@@ -108,7 +108,7 @@ class TestConnectionUtils:
         ],
     )
     def test_get_used_connection_names_from_flow_meta(self, input_value: str, expected_connection_names: list):
-        from promptflow._sdk._submitter.utils import SubmitterHelper
+        from promptflow._sdk._orchestrator.utils import SubmitterHelper
 
         connection_names = SubmitterHelper.get_used_connection_names(
             {

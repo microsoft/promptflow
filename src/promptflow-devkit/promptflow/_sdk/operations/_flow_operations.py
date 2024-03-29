@@ -22,8 +22,8 @@ from promptflow._sdk._constants import (
     LOCAL_MGMT_DB_PATH,
 )
 from promptflow._sdk._load_functions import load_flow
+from promptflow._sdk._orchestrator.utils import SubmitterHelper
 from promptflow._sdk._submitter import TestSubmitter
-from promptflow._sdk._submitter.utils import SubmitterHelper
 from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_operation
 from promptflow._sdk._utils import (
     _get_additional_includes,

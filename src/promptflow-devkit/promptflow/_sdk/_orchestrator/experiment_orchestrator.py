@@ -40,12 +40,7 @@ from promptflow._sdk._errors import (
     ExperimentNotFoundError,
     ExperimentValueError,
 )
-from promptflow._sdk._orm.experiment import Experiment as ORMExperiment
-from promptflow._sdk._orm.experiment_node_run import ExperimentNodeRun as ORMExperimentNodeRun
-from promptflow._sdk._orm.orchestrator import Orchestrator as ORMOrchestrator
-from promptflow._sdk._orm.run_info import RunInfo as ORMRunInfo
-from promptflow._sdk._submitter import RunSubmitter
-from promptflow._sdk._submitter.utils import (
+from promptflow._sdk._orchestrator.utils import (
     SubmitterHelper,
     _calculate_snapshot,
     _set_up_experiment_log_handler,
@@ -53,6 +48,11 @@ from promptflow._sdk._submitter.utils import (
     _stop_orchestrator_process,
     _windows_stop_handler,
 )
+from promptflow._sdk._orm.experiment import Experiment as ORMExperiment
+from promptflow._sdk._orm.experiment_node_run import ExperimentNodeRun as ORMExperimentNodeRun
+from promptflow._sdk._orm.orchestrator import Orchestrator as ORMOrchestrator
+from promptflow._sdk._orm.run_info import RunInfo as ORMRunInfo
+from promptflow._sdk._submitter import RunSubmitter
 from promptflow._sdk._utils import overwrite_null_std_logger
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._experiment import Experiment, ExperimentTemplate
@@ -270,7 +270,7 @@ class ExperimentOrchestrator:
         Determine node execution order through topological sorting.
 
         :param context: Experiment context.
-        :type context: ~promptflow._sdk._submitter.ExperimentTemplateContext
+        :type context: ~promptflow._sdk._orchestrator.ExperimentTemplateContext
         :param nodes: Nodes to be executed.
         :type nodes: list
         :param from_nodes: The branches in experiment to be executed.
