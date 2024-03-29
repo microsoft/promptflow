@@ -1,6 +1,6 @@
 from typing import List
 
-from promptflow import tool
+from promptflow.core import tool
 
 
 @tool
@@ -18,7 +18,7 @@ def aggregate(processed_results: List[str]):
     print(processed_results)
 
     # Log metric for each variant
-    from promptflow import log_metric
+    from promptflow.core import log_metric
     log_metric(key="results_num", value=results_num)
 
     return results_num

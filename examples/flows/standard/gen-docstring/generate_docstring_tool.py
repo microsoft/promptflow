@@ -4,7 +4,7 @@ import logging
 import os
 import sys
 from typing import Union, List
-from promptflow import tool
+from promptflow.core import tool
 from azure_open_ai import ChatLLM
 from divider import Divider
 from prompt import docstring_prompt, PromptLimitException

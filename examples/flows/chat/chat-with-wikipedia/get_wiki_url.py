@@ -3,7 +3,7 @@ import re
 import bs4
 import requests
 
-from promptflow import tool
+from promptflow.core import tool
 
 
 def decode_str(string):
