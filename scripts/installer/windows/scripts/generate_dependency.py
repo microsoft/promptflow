@@ -32,13 +32,6 @@ def extract_requirements(file_path):
                     extras_requires = ast.literal_eval(keyword.value)
     return install_requires, extras_requires
 
-def extract_requirements_b(file_path):
-    with open(file_path, 'r') as file:
-        tree = toml.load(file)
-    install_requires = tree['tool']['poetry']['dependencies']
-    extras_requires = {}
-    return install_requires, extras_requires
-
 def extract_package_names(packages):
     package_names = []
     for package in packages:
