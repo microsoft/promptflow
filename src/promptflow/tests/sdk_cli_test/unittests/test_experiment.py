@@ -5,7 +5,7 @@ from ruamel.yaml import YAML
 
 from promptflow._sdk._errors import MultipleExperimentTemplateError, NoExperimentTemplateError
 from promptflow._sdk._load_functions import _load_experiment_template
-from promptflow._sdk._submitter.experiment_orchestrator import ExperimentTemplateTestContext
+from promptflow._sdk._orchestrator.experiment_orchestrator import ExperimentTemplateTestContext
 from promptflow._sdk.entities._experiment import Experiment, ExperimentData, ExperimentInput, FlowNode
 
 TEST_ROOT = Path(__file__).parent.parent.parent
