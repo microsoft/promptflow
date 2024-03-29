@@ -24,7 +24,7 @@ If you want to use the streaming mode, you need to create a flow that has a node
   ```
 - Python tools node: This node allows you to write custom Python code that can yield string outputs. You can use this node to call external APIs or libraries that support streaming. For example, you can use this code to echo the input word by word:
   ```python
-  from promptflow import tool
+  from promptflow.core import tool
 
   # Sample code echo input by yield in Python tool node
 

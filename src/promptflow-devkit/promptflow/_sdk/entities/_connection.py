@@ -167,7 +167,7 @@ class _Connection(_CoreConnection, YAMLTranslatableMixin):
         params_override: list = None,
         **kwargs,
     ) -> "_Connection":
-        """Load a job object from a yaml file.
+        """Load a connection object from a yaml file.
 
         :param cls: Indicates that this is a class method.
         :type cls: class
@@ -181,8 +181,8 @@ class _Connection(_CoreConnection, YAMLTranslatableMixin):
         :param kwargs: A dictionary of additional configuration parameters.
         :type kwargs: dict
         :raises Exception: An exception
-        :return: Loaded job object.
-        :rtype: Job
+        :return: Loaded a connection object.
+        :rtype: ~promptflow._sdk.entities._connection._Connection
         """
         data = data or {}
         params_override = params_override or []
