@@ -9,7 +9,7 @@ class DocstringParser:
         doctree = publish_doctree(docstring)
         # Initialize variables
         description_lines = []
-        params = {}
+        param_descriptions = {}
 
         # Use flags to help determine the correct processing logic
         found_param_or_type = False
@@ -24,7 +24,7 @@ class DocstringParser:
                 # Handle ":param" and ":type" annotations
                 if field_name.startswith("param"):
                     param_name = field_name.split("param")[1].strip()
-                    params.setdefault(param_name, {})["description"] = field_body
+                    param_descriptions.setdefault(param_name, {})["description"] = field_body
 
             # Process the first paragraph only if we haven't found any parameter or type fields yet
             elif isinstance(node, docutils.nodes.paragraph) and not found_param_or_type:
@@ -33,4 +33,4 @@ class DocstringParser:
         # Join collected description lines with a space
         description = " ".join(description_lines).strip()
 
-        return description, params
+        return description, param_descriptions

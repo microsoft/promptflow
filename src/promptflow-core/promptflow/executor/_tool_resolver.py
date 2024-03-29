@@ -19,7 +19,7 @@ from promptflow._utils.multimedia_utils import create_image, load_multimedia_dat
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
-from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType, to_json_type_mapping_
+from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType, to_json_type_mapping
 from promptflow.contracts.types import AssistantDefinition, PromptTemplate
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
 from promptflow.executor._assistant_tool_invoker import (
@@ -229,13 +229,13 @@ class ToolResolver:
             parameters = sig.parameters
             # Attempt to extract the description, handling exceptions
             try:
-                description, params = DocstringParser.parse_description(func.__doc__)
+                description, param_descriptions = DocstringParser.parse_description(func.__doc__)
             except Exception as e:
                 # Log the exception if necessary
                 logging.warning(f"Failed to parse docstring for function {func.__name__}: {e}")
                 # Set description to None or an empty string
                 description = None  # or description = ""
-                params = {}
+                param_descriptions = {}
 
             func_definition = {
                 "name": func.__name__,
@@ -257,12 +257,12 @@ class ToolResolver:
 
                 # Get parameter type and convert to JSON type
                 param_type = tool.inputs.get(name).type[0]
-                json_type = to_json_type_mapping_.get(param_type, "object")
+                json_type = to_json_type_mapping.get(param_type, "object")
 
                 # Construct parameter definition
                 func_definition["parameters"]["properties"][name] = {
                     "type": json_type,
-                    "description": params.get(name, {}).get("description", ""),
+                    "description": param_descriptions.get(name, {}).get("description", ""),
                 }
 
                 # Handle enums separately to include possible values
