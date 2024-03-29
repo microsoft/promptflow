@@ -6,7 +6,7 @@ promptflow.tools.embedding.embedding:
   function: embedding
   inputs:
     connection:
-      type: [AzureOpenAIConnection, OpenAIConnection, ServerlessConnection]
+      type: [AzureOpenAIConnection, OpenAIConnection]
     deployment_name:
       type:
       - string
