@@ -8,8 +8,6 @@ from promptflow.entities import AzureOpenAIConnection
 from promptflow.evals.evaluators import GroundednessEvaluator, RelevanceEvaluator, CoherenceEvaluator, FluencyEvaluator, SimilarityEvaluator, F1ScoreEvaluator
 
 
-
-
 class QAEvaluator:
     def __init__(self, model_config: AzureOpenAIConnection, deployment_name: str):
         """
@@ -26,7 +24,7 @@ class QAEvaluator:
 
         .. code-block:: python
 
-            eval_fn = qa.init(model_config, deployment_name="gpt-4")
+            eval_fn = QAEvaluator(model_config, deployment_name="gpt-4")
             result = qa_eval(
                 question="Tokyo is the capital of which country?",
                 answer="Japan",
@@ -44,7 +42,7 @@ class QAEvaluator:
         ]
 
     def __call__(self, *, question: str, answer: str, context: str, ground_truth: str, **kwargs):
-        """Evaluate similarity.
+        """Evaluates question-answering scenario.
 
         :param question: The question to be evaluated.
         :type question: str

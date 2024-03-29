@@ -12,6 +12,7 @@ from .groundedness import GroundednessEvaluator
 from .relevance import RelevanceEvaluator
 from .similarity import SimilarityEvaluator
 from .qa import QAEvaluator
+from .chat import ChatEvaluator
 
 
 __all__ = [
@@ -22,4 +23,5 @@ __all__ = [
     "RelevanceEvaluator",
     "SimilarityEvaluator",
     "QAEvaluator",
+    "ChatEvaluator",
 ]

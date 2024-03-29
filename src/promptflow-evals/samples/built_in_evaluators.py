@@ -1,8 +1,8 @@
 import os
 from promptflow.entities import AzureOpenAIConnection
 from promptflow.evals.evaluators import GroundednessEvaluator, RelevanceEvaluator, CoherenceEvaluator, FluencyEvaluator, SimilarityEvaluator, F1ScoreEvaluator
-from promptflow.evals.evaluators import QAEvaluator
 from promptflow.evals.evaluators.content_safety import ViolenceEvaluator, SexualEvaluator, SelfHarmEvaluator, HateUnfairnessEvaluator
+from promptflow.evals.evaluators import QAEvaluator, ChatEvaluator
 from azure.identity import DefaultAzureCredential
 
 
@@ -123,10 +123,26 @@ def run_qa_evaluator():
     # {'gpt_groundedness': 1.0, 'gpt_relevance': 5.0, 'gpt_coherence': 5.0, 'gpt_fluency': 5.0, 'gpt_similarity': 5.0, 'f1_score': 1.0}
 
 
+def run_chat_evaluator():
+    chat_eval = ChatEvaluator(model_config=model_config, deployment_name="gpt-4")
+
+    conversation = [
+        {"role": "user", "content": "What is the value of 2 + 2?"},
+        {"role": "assistant", "content": "2 + 2 = 4", "context":{"citations": [{"id": "doc.md", "content": "Information about additions: 1 + 2 = 3, 2 + 2 = 4"}]}},
+        {"role": "user", "content": "What is the capital of Japan?"},
+        {"role": "assistant", "content": "The capital of Japan is Tokyo.", "context":{"citations": [{"id": "doc.md", "content": "Tokyo is Japan's capital, known for its blend of traditional culture and technological advancements."}]}},
+    ]
+    score = chat_eval(conversation=conversation)
+    print(score)
+    # {'gpt_coherence': 5.0, 'gpt_coherence_per_turn': [5.0, 5.0], 'gpt_fluency': 5.0, 'gpt_fluency_per_turn': [5.0, 5.0], 'gpt_groundedness': 5.0, 'gpt_groundedness_per_turn': [5.0, 5.0], 'gpt_relevance': 5.0, 'gpt_relevance_per_turn': [5.0, 5.0]}
+
+
 if __name__ == "__main__":
 
-    run_quality_evaluators()
+    # run_quality_evaluators()
 
-    run_safety_evaluators()
+    # run_safety_evaluators()
 
-    run_qa_evaluator()
+    # run_qa_evaluator()
+
+    run_chat_evaluator()
