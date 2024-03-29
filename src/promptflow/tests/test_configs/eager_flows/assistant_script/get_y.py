@@ -1,7 +1,9 @@
 import random
-from promptflow import tool
 
-@tool
+from promptflow.tracing import trace
+
+
+@trace
 def get_y(x: float) -> float:
     """
     Return Y value based on input x value.
