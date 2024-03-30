@@ -4,6 +4,7 @@
 
 import json
 import os
+import subprocess
 import typing
 import urllib.parse
 
@@ -14,7 +15,6 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-from promptflow._cli._pf.entry import entry
 from promptflow._constants import (
     OTEL_RESOURCE_SERVICE_NAME,
     SpanAttributeFieldName,
@@ -61,7 +61,7 @@ def _inject_attrs_to_op_ctx(attrs: typing.Dict[str, str]) -> None:
 def _invoke_pf_svc() -> str:
     port = get_port_from_config(create_if_not_exists=True)
     port = str(port)
-    cmd_args = ["service", "start", "--port", port]
+    cmd_args = ["pf", "service", "start", "--port", port]
     hint_stop_message = (
         f"You can stop the Prompt flow Tracing Server with the following command:'\033[1m pf service stop\033[0m'.\n"
         f"Alternatively, if no requests are made within {PF_SERVICE_HOUR_TIMEOUT} "
@@ -75,7 +75,9 @@ def _invoke_pf_svc() -> str:
             print(hint_stop_message)
             return port
     print("Starting Prompt flow Tracing Server...")
-    entry(cmd_args)
+    start_pfs = subprocess.Popen(cmd_args, shell=True)
+    # Wait for service to be started
+    start_pfs.wait()
     logger.debug("Prompt flow service is serving on port %s", port)
     print(hint_stop_message)
     return port
