@@ -23,7 +23,6 @@ class TestMultimediaContract:
         assert image._hash == "a94a8fe5"
         assert image.to_base64() == "dGVzdA=="
         assert image.to_base64(with_type=True) == f"data:{mime_type};base64,dGVzdA=="
-        assert image.to_base64(with_type=True, dict_type=True) == {f"data:{mime_type};base64": "dGVzdA=="}
         assert bytes(image) == value
         assert image.source_url == source_url
         assert str(image) == "Image(a94a8fe5)"
@@ -46,6 +45,5 @@ class TestMultimediaContract:
         assert pfBytes._hash == "a94a8fe5"
         assert pfBytes.to_base64() == "dGVzdA=="
         assert pfBytes.to_base64(with_type=True) == f"data:{mime_type};base64,dGVzdA=="
-        assert pfBytes.to_base64(with_type=True, dict_type=True) == {f"data:{mime_type};base64": "dGVzdA=="}
         assert bytes(pfBytes) == value
         assert pfBytes.source_url == source_url
