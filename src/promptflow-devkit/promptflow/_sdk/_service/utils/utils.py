@@ -278,7 +278,10 @@ def is_run_from_built_binary():
 
     Allow customer to use environment variable to control the triggering.
     """
-    return sys.executable.endswith("pfcli.exe") or os.environ.get(PF_RUN_AS_BUILT_BINARY, "").lower() == "true"
+    print(sys.executable)
+    return (not sys.executable.endswith("python.exe") and not sys.executable.endswith("python")) or os.environ.get(
+        PF_RUN_AS_BUILT_BINARY, ""
+    ).lower() == "true"
 
 
 def encrypt_flow_path(flow_path):

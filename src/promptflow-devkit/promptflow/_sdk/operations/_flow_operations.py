@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import contextlib
+import copy
 import glob
 import json
 import os
@@ -12,6 +13,8 @@ from importlib.metadata import version
 from os import PathLike
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple, Union
+
+import toml
 
 from promptflow._constants import FlowLanguage
 from promptflow._sdk._configuration import Configuration
@@ -612,15 +615,58 @@ class FlowOperations(TelemetryMixin):
         with open(output_dir / "config.json", "w") as file:
             json.dump(config_content, file, indent=4)
 
+        generate_hidden_imports, all_packages, meta_packages = self._generate_executable_dependency()
+        hidden_imports.extend(generate_hidden_imports)
         copy_tree_respect_template_and_ignore_file(
             source=Path(__file__).parent.parent / "data" / "executable",
             target=output_dir,
             render_context={
                 "hidden_imports": hidden_imports,
                 "runtime_interpreter_path": runtime_interpreter_path,
+                "all_packages": all_packages,
+                "meta_packages": meta_packages,
             },
         )
         self._run_pyinstaller(output_dir)
+
+    def _generate_executable_dependency(self):
+        def get_git_base_dir():
+            return Path(
+                subprocess.run(["git", "rev-parse", "--show-toplevel"], stdout=subprocess.PIPE)
+                .stdout.decode("utf-8")
+                .strip()
+            )
+
+        dependencies = ["promptflow-devkit", "promptflow-core", "promptflow-tracing"]
+        # get promptflow-** required and extra packages
+        extra_packages = []
+        required_packages = []
+        for package in dependencies:
+            if package.startswith("promptflow"):
+                data = toml.load(get_git_base_dir() / "src" / package / "pyproject.toml")
+                extras = data.get("tool", {}).get("poetry", {}).get("extras", {})
+                for _, package in extras.items():
+                    extra_packages.extend(package)
+                requires = data.get("tool", {}).get("poetry", {}).get("dependencies", [])
+                for package, _ in requires.items():
+                    required_packages.append(package)
+
+        all_packages = list(set(dependencies) | set(required_packages) | set(extra_packages))
+        # remove all packages starting with promptflow
+        all_packages.remove("python")
+        all_packages = [package for package in all_packages if not package.startswith("promptflow")]
+
+        hidden_imports = copy.deepcopy(all_packages)
+        meta_packages = copy.deepcopy(all_packages)
+        special_packages = ["streamlit-quill", "flask-cors", "flask-restx"]
+        for i in range(len(hidden_imports)):
+            # need special handeling because it use _ to import
+            if hidden_imports[i] in special_packages:
+                hidden_imports[i] = hidden_imports[i].replace("-", "_").lower()
+            else:
+                hidden_imports[i] = hidden_imports[i].replace("-", ".").lower()
+
+        return hidden_imports, all_packages, meta_packages
 
     def _run_pyinstaller(self, output_dir):
         with _change_working_dir(output_dir, mkdir=False):
