@@ -99,6 +99,7 @@ OTEL_RESOURCE_SERVICE_NAME = "promptflow"
 DEFAULT_SPAN_TYPE = "default"
 RUNNING_LINE_RUN_STATUS = "Running"
 OK_LINE_RUN_STATUS = "Ok"
+SPAN_EVENTS_ATTRIBUTES_EVENT_ID = "event.id"
 
 
 class TraceEnvironmentVariableName:
@@ -128,6 +129,7 @@ class SpanFieldName:
     EVENTS = "events"
     LINKS = "links"
     RESOURCE = "resource"
+    EXTERNAL_EVENT_DATA_URIS = "external_event_data_uris"
 
 
 class SpanContextFieldName:
@@ -164,11 +166,14 @@ class SpanAttributeFieldName:
     PROMPT_TOKEN_COUNT = "__computed__.cumulative_token_count.prompt"
     TOTAL_TOKEN_COUNT = "__computed__.cumulative_token_count.total"
 
+    SESSION_ID = "session_id"
+
 
 class SpanResourceAttributesFieldName:
     SERVICE_NAME = "service.name"
     SESSION_ID = "session.id"
-    COLLECTION_ID = "collection.id"
+    COLLECTION = "collection"  # local
+    COLLECTION_ID = "collection.id"  # cloud & local to cloud
     EXPERIMENT_NAME = "experiment.name"
     # local to cloud
     SUBSCRIPTION_ID = "subscription.id"
@@ -198,7 +203,7 @@ class SpanLinkFieldName:
 
 class MessageFormatType:
     BASIC = "basic"
-    OPENAI_VISION = "openai_vision"
+    OPENAI_VISION = "openai-vision"
 
 
 DEFAULT_OUTPUT_NAME = "output"

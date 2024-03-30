@@ -10,9 +10,10 @@ from promptflow._constants import (
     OK_LINE_RUN_STATUS,
     RUNNING_LINE_RUN_STATUS,
     SpanAttributeFieldName,
-    SpanFieldName,
+    SpanResourceAttributesFieldName,
     SpanStatusFieldName,
 )
+from promptflow._sdk._constants import TRACE_DEFAULT_COLLECTION
 from promptflow._sdk._utils import json_loads_parse_const_as_str
 from promptflow._sdk.entities._trace import Span
 from promptflow.azure._storage.cosmosdb.cosmosdb_utils import safe_create_cosmosdb_item
@@ -74,14 +75,15 @@ class Summary:
         self.span = span
         self.created_by = created_by
         self.logger = logger
+        self.session_id = self.span.resource.get(SpanResourceAttributesFieldName.COLLECTION, TRACE_DEFAULT_COLLECTION)
         self.collection_id = collection_id
 
     def persist(self, client: ContainerProxy):
-        if self.span.parent_span_id:
+        if self.span.parent_id:
             # For non root span, write a placeholder item to LineSummary table.
             self._persist_running_item(client)
             return
-        attributes = self.span._content[SpanFieldName.ATTRIBUTES]
+        attributes = self.span.attributes
 
         # Persist root span as a line run.
         self._persist_line_run(client)
@@ -105,19 +107,19 @@ class Summary:
     # When there is the first span for line run, write placeholder item to LineSummary table.
     def _persist_running_item(self, client: ContainerProxy):
         trace_id = self.span.trace_id
-        session_id = self.span.session_id
+        session_id = self.session_id
 
         item = SummaryLine(
             id=trace_id,
-            partition_key=session_id,
+            partition_key=self.collection_id,
             session_id=session_id,
             trace_id=trace_id,
             status=RUNNING_LINE_RUN_STATUS,
             collection_id=self.collection_id,
             created_by=self.created_by,
-            start_time=self.span._content[SpanFieldName.START_TIME],
+            start_time=self.span.start_time.isoformat(),
         )
-        attributes: dict = self.span._content[SpanFieldName.ATTRIBUTES]
+        attributes: dict = self.span.attributes
         if SpanAttributeFieldName.LINE_RUN_ID in attributes:
             item.line_run_id = attributes[SpanAttributeFieldName.LINE_RUN_ID]
         elif SpanAttributeFieldName.BATCH_RUN_ID in attributes and SpanAttributeFieldName.LINE_NUMBER in attributes:
@@ -126,11 +128,11 @@ class Summary:
         safe_create_cosmosdb_item(client, item)
 
     def _persist_line_run(self, client: ContainerProxy):
-        attributes: dict = self.span._content[SpanFieldName.ATTRIBUTES]
+        attributes: dict = self.span.attributes
 
-        session_id = self.span.session_id
-        start_time = self.span._content[SpanFieldName.START_TIME]
-        end_time = self.span._content[SpanFieldName.END_TIME]
+        session_id = self.session_id
+        start_time = self.span.start_time.isoformat()
+        end_time = self.span.end_time.isoformat()
 
         # Span's original format don't include latency, so we need to calculate it.
         # Convert ISO 8601 formatted strings to datetime objects
@@ -152,7 +154,7 @@ class Summary:
             cumulative_token_count = None
         item = SummaryLine(
             id=self.span.trace_id,  # trace id is unique for LineSummary container
-            partition_key=session_id,
+            partition_key=self.collection_id,
             session_id=session_id,
             trace_id=self.span.trace_id,
             collection_id=self.collection_id,
@@ -161,7 +163,7 @@ class Summary:
             outputs=json_loads_parse_const_as_str(attributes.get(SpanAttributeFieldName.OUTPUT, "{}")),
             start_time=start_time,
             end_time=end_time,
-            status=self.span._content[SpanFieldName.STATUS][SpanStatusFieldName.STATUS_CODE],
+            status=self.span.status[SpanStatusFieldName.STATUS_CODE],
             latency=latency,
             name=self.span.name,
             kind=attributes[SpanAttributeFieldName.SPAN_TYPE],
@@ -193,8 +195,8 @@ class Summary:
                 time.sleep(1)
 
     def _insert_evaluation(self, client: ContainerProxy):
-        attributes: dict = self.span._content[SpanFieldName.ATTRIBUTES]
-        partition_key = self.span.session_id
+        attributes: dict = self.span.attributes
+        partition_key = self.collection_id
         name = self.span.name
         item = LineEvaluation(
             trace_id=self.span.trace_id,
