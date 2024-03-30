@@ -102,7 +102,6 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 pf = "promptflow._cli.pf:main"
-pfs = "promptflow._sdk._service.entry:main"
 
 [tool.pytest.ini_options]
 markers = [
