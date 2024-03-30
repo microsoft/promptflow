@@ -513,6 +513,7 @@ def _create_executor_fork(*, flow_executor: FlowExecutor, storage: AbstractRunSt
             connections=flow_executor._connections,
             working_dir=flow_executor._working_dir,
             storage=storage,
+            init_kwargs=flow_executor._init_kwargs,
         )
     else:
         run_tracker = RunTracker(run_storage=storage)

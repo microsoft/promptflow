@@ -1,5 +1,5 @@
 from typing import List
-from promptflow import tool
+from promptflow.core import tool
 
 
 @tool
@@ -23,7 +23,7 @@ def aggregate(groundedness_scores: List[float]):
     aggregated_results["groundedness"] /= aggregated_results["count"]
 
     # Log metric for each variant
-    from promptflow import log_metric
+    from promptflow.core import log_metric
 
     log_metric(key="groundedness", value=aggregated_results["groundedness"])
 

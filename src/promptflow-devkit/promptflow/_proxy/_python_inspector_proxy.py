@@ -1,6 +1,8 @@
+import re
 from pathlib import Path
 from typing import Dict, List
 
+from .._constants import FlowEntryRegex
 from ._base_inspector_proxy import AbstractInspectorProxy
 
 
@@ -17,3 +19,8 @@ class PythonInspectorProxy(AbstractInspectorProxy):
         with _change_working_dir(working_dir):
             executable = ExecutableFlow.from_yaml(flow_file=flow_file, working_dir=working_dir)
         return executable.get_connection_names(environment_variables_overrides=environment_variables_overrides)
+
+    @classmethod
+    def is_flex_flow_entry(self, entry: str) -> bool:
+        """Check if the flow is a flex flow entry."""
+        return isinstance(entry, str) and re.match(FlowEntryRegex.Python, entry)

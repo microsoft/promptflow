@@ -1,4 +1,4 @@
-from promptflow import tool
+from promptflow.core import tool
 from divider import Divider
 from typing import List
 

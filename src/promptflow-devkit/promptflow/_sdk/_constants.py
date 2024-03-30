@@ -9,10 +9,11 @@ from pathlib import Path
 
 from promptflow._constants import (
     CONNECTION_SCRUBBED_VALUE,
+    CONNECTION_SCRUBBED_VALUE_NO_CHANGE,
     PROMPT_FLOW_DIR_NAME,
     ConnectionAuthMode,
     ConnectionType,
-    CustomStrongTypeConnectionConfigs, CONNECTION_SCRUBBED_VALUE_NO_CHANGE,
+    CustomStrongTypeConnectionConfigs,
 )
 
 LOGGER_NAME = "promptflow"
@@ -144,10 +145,16 @@ FLOW_DIRECTORY_MACRO_IN_CONFIG = "${flow_directory}"
 
 # trace
 TRACE_DEFAULT_SESSION_ID = "default"
+TRACE_DEFAULT_COLLECTION = "default"
 TRACE_MGMT_DB_PATH = (HOME_PROMPT_FLOW_DIR / "trace.sqlite").resolve()
 TRACE_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "trace.sqlite.lock").resolve()
-SPAN_TABLENAME = "span"
+EVENT_TABLENAME = "events"
+SPAN_TABLENAME = "spans"
+LINE_RUN_TABLENAME = "line_runs"
 PFS_MODEL_DATETIME_FORMAT = "iso8601"
+SPAN_EVENTS_NAME_PF_INPUTS = "promptflow.function.inputs"
+SPAN_EVENTS_NAME_PF_OUTPUT = "promptflow.function.output"
+SPAN_EVENTS_ATTRIBUTE_PAYLOAD = "payload"
 
 UX_INPUTS_JSON = "ux.inputs.json"
 AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])
@@ -476,6 +483,11 @@ class IdentityKeys(str, Enum):
     USER_IDENTITY = "user_identity"
     RESOURCE_ID = "resource_id"
     CLIENT_ID = "client_id"
+
+
+class OSType:
+    WINDOWS = "Windows"
+    LINUX = "Linux"
 
 
 # Note: Keep these for backward compatibility

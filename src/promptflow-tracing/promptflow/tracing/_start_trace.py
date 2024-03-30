@@ -6,6 +6,7 @@ import os
 import typing
 
 from opentelemetry import trace
+from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_ENDPOINT
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 
@@ -32,6 +33,12 @@ def start_trace(
     :param session: Specify the session id for current tracing session.
     :type session: typing.Optional[str]
     """
+
+    # When PF_TRACING_SKIP_LOCAL_SETUP_ENVIRON is set to true, the start_trace should be skipped.
+    # An example is that user call start_trace at cloud mode. Nothing should happen.
+    if _skip_tracing_local_setup():
+        return
+
     # prepare resource.attributes and set tracer provider
     res_attrs = {ResourceAttributesFieldName.SERVICE_NAME: RESOURCE_ATTRIBUTES_SERVICE_NAME}
     if session is not None:
@@ -40,9 +47,6 @@ def start_trace(
         for attr_key, attr_value in resource_attributes.items():
             res_attrs[attr_key] = attr_value
     _set_tracer_provider(res_attrs)
-
-    if _skip_tracing_local_setup():
-        return
 
     if _is_devkit_installed():
         from promptflow._sdk._tracing import start_trace_with_devkit
@@ -55,8 +59,14 @@ def start_trace(
 
 
 def setup_exporter_from_environ() -> None:
+
     # openai instrumentation
     inject_openai_api()
+
+    # Ignore all the setup if the endpoint is not set
+    endpoint = os.getenv(OTEL_EXPORTER_OTLP_ENDPOINT)
+    if not endpoint:
+        return
 
     if _is_devkit_installed():
         from promptflow._sdk._tracing import setup_exporter_to_pfs

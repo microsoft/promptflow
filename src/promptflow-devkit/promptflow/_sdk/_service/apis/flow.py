@@ -89,6 +89,8 @@ class FlowTest(Resource):
                 node=node,
                 experiment=experiment,
                 output_path=output_path,
+                allow_generator_output=False,
+                stream_output=False,
             )
         finally:
             if remove_dir:

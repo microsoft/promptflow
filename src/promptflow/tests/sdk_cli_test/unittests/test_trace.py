@@ -4,6 +4,7 @@
 
 import base64
 import json
+import logging
 import os
 import uuid
 from typing import Dict
@@ -96,6 +97,7 @@ class TestStartTrace:
                 TraceEnvironmentVariableName.SUBSCRIPTION_ID: "test_subscription_id",
                 TraceEnvironmentVariableName.RESOURCE_GROUP_NAME: "test_resource_group_name",
                 TraceEnvironmentVariableName.WORKSPACE_NAME: "test_workspace_name",
+                OTEL_EXPORTER_OTLP_ENDPOINT: "https://dummy-endpoint",
             },
             clear=True,
         ):
@@ -118,11 +120,10 @@ class TestStartTrace:
         pb_span.parent_span_id = base64.b64decode("C+++WS+OuxI=")
         pb_span.kind = PBSpan.SpanKind.SPAN_KIND_INTERNAL
         # below line should execute successfully
-        span = Span._from_protobuf_object(pb_span, resource=mock_resource)
+        span = Span._from_protobuf_object(pb_span, resource=mock_resource, logger=logging.getLogger(__name__))
         # as the above span do not have any attributes, so the parsed span should not have any attributes
-        attributes = span._content["attributes"]
-        assert isinstance(attributes, dict)
-        assert len(attributes) == 0
+        assert isinstance(span.attributes, dict)
+        assert len(span.attributes) == 0
 
     def test_experiment_test_lineage(self, monkeypatch: pytest.MonkeyPatch, mock_promptflow_service_invocation) -> None:
         # experiment orchestrator will help set this context in environment
@@ -152,9 +153,11 @@ class TestStartTrace:
     def test_setup_exporter_in_executor(self, monkeypatch: pytest.MonkeyPatch):
         with monkeypatch.context() as m:
             m.delenv(OTEL_EXPORTER_OTLP_ENDPOINT, raising=False)
+            original_proivder = trace.get_tracer_provider()
             setup_exporter_from_environ()
-            tracer_provider: TracerProvider = trace.get_tracer_provider()
-            assert len(tracer_provider._active_span_processor._span_processors) == 0
+            new_provider: TracerProvider = trace.get_tracer_provider()
+            # Assert the provider without exporter is not the one with exporter
+            assert original_proivder == new_provider
 
     def test_setup_exporter_in_executor_with_preview_flag(self, mock_promptflow_service_invocation):
         with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
