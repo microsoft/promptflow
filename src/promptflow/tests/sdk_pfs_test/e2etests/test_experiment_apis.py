@@ -18,7 +18,6 @@ class TestExperimentAPIs:
     def test_experiment_test(self, pfs_op: PFSOperations) -> None:
         with check_activity_end_telemetry(
             expected_activities=[
-                {"activity_name": "pf.connections.get", "first_call": False},
                 {"activity_name": "pf.flows.test", "first_call": False},
                 {"activity_name": "pf.flows.test", "first_call": False},
                 {"activity_name": "pf.experiment.test"},
@@ -39,7 +38,6 @@ class TestExperimentAPIs:
     def test_experiment_test_with_override_input(self, pfs_op: PFSOperations) -> None:
         with check_activity_end_telemetry(
             expected_activities=[
-                {"activity_name": "pf.connections.get", "first_call": False},
                 {"activity_name": "pf.flows.test", "first_call": False},
                 {"activity_name": "pf.flows.test", "first_call": False},
                 {"activity_name": "pf.experiment.test"},
@@ -63,7 +61,6 @@ class TestExperimentAPIs:
 
         with check_activity_end_telemetry(
             expected_activities=[
-                {"activity_name": "pf.connections.get", "first_call": False},
                 {"activity_name": "pf.flows.test", "first_call": False},
                 {"activity_name": "pf.flows.test", "first_call": False},
                 {"activity_name": "pf.experiment.test"},
@@ -87,7 +84,6 @@ class TestExperimentAPIs:
 
         with check_activity_end_telemetry(
             expected_activities=[
-                {"activity_name": "pf.connections.get", "first_call": False},
                 {"activity_name": "pf.flows.test", "first_call": False},
                 {"activity_name": "pf.flows.test", "first_call": False},
                 {"activity_name": "pf.experiment.test"},
@@ -112,7 +108,6 @@ class TestExperimentAPIs:
     def test_experiment_test_with_binding_flow_input(self, pfs_op: PFSOperations) -> None:
         with check_activity_end_telemetry(
             expected_activities=[
-                {"activity_name": "pf.connections.get", "first_call": False},
                 {"activity_name": "pf.flows.test", "first_call": False},
                 {"activity_name": "pf.flows.test", "first_call": False},
                 {"activity_name": "pf.experiment.test"},
