@@ -14,6 +14,7 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
+from promptflow._cli._pf.entry import entry
 from promptflow._constants import (
     OTEL_RESOURCE_SERVICE_NAME,
     SpanAttributeFieldName,
@@ -28,7 +29,6 @@ from promptflow._sdk._constants import (
     AzureMLWorkspaceTriad,
     ContextAttributeKey,
 )
-from promptflow._sdk._service.entry import entry
 from promptflow._sdk._service.utils.utils import get_port_from_config, is_pfs_service_healthy, is_port_in_use
 from promptflow._sdk._utils import extract_workspace_triad_from_trace_provider
 from promptflow._utils.logger_utils import get_cli_sdk_logger
@@ -61,7 +61,7 @@ def _inject_attrs_to_op_ctx(attrs: typing.Dict[str, str]) -> None:
 def _invoke_pf_svc() -> str:
     port = get_port_from_config(create_if_not_exists=True)
     port = str(port)
-    cmd_args = ["start", "--port", port]
+    cmd_args = ["service", "start", "--port", port]
     hint_stop_message = (
         f"You can stop the Prompt flow Tracing Server with the following command:'\033[1m pf service stop\033[0m'.\n"
         f"Alternatively, if no requests are made within {PF_SERVICE_HOUR_TIMEOUT} "
