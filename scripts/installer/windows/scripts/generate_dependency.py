@@ -1,4 +1,5 @@
 import ast
+import toml
 import re
 import subprocess
 import copy
@@ -80,6 +81,17 @@ if __name__ == '__main__':
     dependencies = list(set(dependencies))
     direct_package_dependencies = get_package_dependencies(dependencies)
     all_packages = list(set(dependencies) | set(direct_package_dependencies))
+
+    # get promptflow-** extra packages
+    extra_packages = []
+    for package in all_packages:
+        if package.startswith('promptflow'):
+            data = toml.load(get_git_base_dir() / "src" / package / "pyproject.toml")
+            extras = data.get("tool", {}).get("poetry", {}).get("extras", {})
+            for _, values in extras.items():
+                extra_packages.extend(values)
+    extra_packages_names = extract_package_names(extra_packages)
+    all_packages.extend(extra_packages_names)
 
     # remove all packages starting with promptflow
     all_packages = [package for package in all_packages if not package.startswith('promptflow')]
