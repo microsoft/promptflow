@@ -48,13 +48,14 @@ class ChatRole:
 
         # Below properties are used for cloud chat group. It may have some duplicate with above ones
         # Will evaluate and refine in the second step.
-        self._name = name
-        self._stop_signal = stop_signal
-        self._flow_file = flow_file
-        self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
-        self._connections = connections
-        self._inputs_mapping = inputs_mapping
-        self._flow_definition = Flow.from_yaml(flow_file, working_dir=self._working_dir)
+        if flow_file is not None:
+            self._name = name
+            self._stop_signal = stop_signal
+            self._flow_file = flow_file
+            self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
+            self._connections = connections
+            self._inputs_mapping = inputs_mapping
+            self._flow_definition = Flow.from_yaml(flow_file, working_dir=self._working_dir)
         logger.info(f"Created chat role {self.role!r} with flow {self._flow.as_posix()!r}")
 
     @property
