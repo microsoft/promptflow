@@ -188,7 +188,10 @@
     "pywin",
     "STARTF",
     "mltable",
-    "setenv"
+    "setenv",
+    "cscript",
+    "nologo",
+    "wscript"
   ],
   "flagWords": [
     "Prompt Flow"

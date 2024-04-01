@@ -5,7 +5,8 @@ from PyInstaller.utils.hooks import collect_data_files, collect_all, copy_metada
 sys.setrecursionlimit(sys.getrecursionlimit() * 5)
 
 datas = [('connections', 'connections'), ('flow', 'flow'), ('settings.json', '.'), ('main.py', '.'), ('utils.py', '.'),
-('logo.png', '.'), ('config.json', '.'), ('{{runtime_interpreter_path}}', './streamlit/runtime'), ('pf.bat', '.'), ('pf', '.')]
+('logo.png', '.'), ('config.json', '.'), ('{{runtime_interpreter_path}}', './streamlit/runtime'), ('pf.bat', '.'),
+('pf', '.'), ('./start_pfs.vbs', '.')]
 
 
 all_packages = {{all_packages}}
