@@ -1,8 +1,8 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+
 import argparse
-import json
 import logging
 import os
 import platform
@@ -11,20 +11,27 @@ import sys
 
 import waitress
 
-from promptflow._cli._utils import _get_cli_activity_name, cli_exception_and_telemetry_handler
+from promptflow._cli._params import base_params
+from promptflow._cli._utils import activate_action
 from promptflow._constants import PF_NO_INTERACTIVE_LOGIN
-from promptflow._sdk._constants import PF_SERVICE_DEBUG, PF_SERVICE_WORKER_NUM
+from promptflow._sdk._constants import (
+    HOME_PROMPT_FLOW_DIR,
+    PF_SERVICE_DEBUG,
+    PF_SERVICE_LOG_FILE,
+    PF_SERVICE_WORKER_NUM,
+)
 from promptflow._sdk._service.app import create_app
 from promptflow._sdk._service.utils.utils import (
     check_pfs_service_status,
     dump_port_to_config,
+    get_current_env_pfs_file,
     get_port_from_config,
     get_started_service_info,
     is_port_in_use,
     is_run_from_built_binary,
     kill_exist_service,
 )
-from promptflow._sdk._utils import get_promptflow_sdk_version, print_pf_version
+from promptflow._sdk._utils import get_promptflow_sdk_version
 from promptflow._utils.logger_utils import get_cli_sdk_logger  # noqa: E402
 from promptflow.exceptions import UserErrorException
 
@@ -45,52 +52,100 @@ def get_app(environ, start_response):
     return app.wsgi_app(environ, start_response)
 
 
-def add_start_service_action(subparsers):
-    """Add action to start pfs."""
-    start_pfs_parser = subparsers.add_parser(
-        "start",
-        description="Start promptflow service.",
-        help="pfs start",
+def add_service_parser(subparsers):
+    """Add service parser to the pf subparsers."""
+    service_parser = subparsers.add_parser(
+        "service",
+        description="Manage the PromptFlow service, which offers chat and trace UI functionalities.",
+        help="pf service",
     )
-    start_pfs_parser.add_argument("-p", "--port", type=int, help="port of the promptflow service")
-    start_pfs_parser.add_argument(
+    service_subparsers = service_parser.add_subparsers()
+    add_parser_start_service(service_subparsers)
+    add_parser_stop_service(service_subparsers)
+    add_parser_show_service(service_subparsers)
+    service_parser.set_defaults(action="service")
+
+
+def dispatch_service_commands(args: argparse.Namespace):
+    if args.sub_action == "start":
+        start_service(args)
+    elif args.sub_action == "stop":
+        stop_service()
+    elif args.sub_action == "show-status":
+        show_service()
+
+
+def add_parser_start_service(subparsers):
+    """Add service start parser to the pf service subparsers."""
+    epilog = """
+    Examples:
+
+    # Start promptflow service:
+    pf service start
+    # Force restart promptflow service:
+    pf service start --force
+    # Start promptflow service with specific port:
+    pf service start --port 65553
+    """  # noqa: E501
+    add_param_port = lambda parser: parser.add_argument(  # noqa: E731
+        "-p", "--port", type=int, help="port of the promptflow service"
+    )
+    add_param_force = lambda parser: parser.add_argument(  # noqa: E731
         "--force",
         action="store_true",
         help="If the port is used, the existing service will be terminated and restart a new service.",
     )
-    start_pfs_parser.add_argument(
-        "-d",
-        "--debug",
-        action="store_true",
-        help="The flag to turn on debug mode for pfs.",
+    activate_action(
+        name="start",
+        description="Start promptflow service.",
+        epilog=epilog,
+        add_params=[
+            add_param_port,
+            add_param_force,
+        ]
+        + base_params,
+        subparsers=subparsers,
+        help_message="pf service start",
+        action_param_name="sub_action",
     )
-    start_pfs_parser.set_defaults(action="start")
 
 
-def add_stop_service_action(subparsers):
-    """Add action to stop pfs."""
-    stop_pfs_parser = subparsers.add_parser(
-        "stop",
+def add_parser_stop_service(subparsers):
+    """Add service stop parser to the pf service subparsers."""
+    epilog = """
+    Examples:
+
+    # Stop promptflow service:
+    pf service stop
+    """  # noqa: E501
+    activate_action(
+        name="stop",
         description="Stop promptflow service.",
-        help="pfs stop",
+        epilog=epilog,
+        add_params=base_params,
+        subparsers=subparsers,
+        help_message="pf service stop",
+        action_param_name="sub_action",
     )
-    stop_pfs_parser.add_argument(
-        "-d",
-        "--debug",
-        action="store_true",
-        help="The flag to turn on debug mode for pfs.",
-    )
-    stop_pfs_parser.set_defaults(action="stop")
 
 
-def add_show_status_action(subparsers):
-    """Add action to show pfs status."""
-    show_status_parser = subparsers.add_parser(
-        "show-status",
+def add_parser_show_service(subparsers):
+    """Add service show parser to the pf service subparsers."""
+    epilog = """
+    Examples:
+
+    # Display the started promptflow service info.:
+    pf service show-status
+    """  # noqa: E501
+    activate_action(
+        name="show-status",
         description="Display the started promptflow service info.",
-        help="pfs show-status",
+        epilog=epilog,
+        add_params=base_params,
+        subparsers=subparsers,
+        help_message="pf service show-status",
+        action_param_name="sub_action",
     )
-    show_status_parser.set_defaults(action="show-status")
 
 
 def start_service(args):
@@ -161,7 +216,7 @@ def start_service(args):
                 )
             command = (
                 f"waitress-serve --listen=127.0.0.1:{port} --threads={PF_SERVICE_WORKER_NUM} "
-                "promptflow._sdk._service.entry:get_app"
+                "promptflow._cli._pf._service:get_app"
             )
             startupinfo = win32process.STARTUPINFO()
             startupinfo.dwFlags |= win32process.STARTF_USESHOWWINDOW
@@ -192,7 +247,7 @@ def start_service(args):
                 "waitress-serve",
                 f"--listen=127.0.0.1:{port}",
                 f"--threads={PF_SERVICE_WORKER_NUM}",
-                "promptflow._sdk._service.entry:get_app",
+                "promptflow._cli._pf._service:get_app",
             ]
             subprocess.Popen(cmd, stdout=subprocess.DEVNULL, start_new_session=True)
         is_healthy = check_pfs_service_status(port)
@@ -215,59 +270,17 @@ def stop_service():
     print(message)
 
 
-def main():
-    command_args = sys.argv[1:]
-    if len(command_args) == 1 and command_args[0] == "version":
-        version_dict = {"promptflow": get_promptflow_sdk_version()}
-        return json.dumps(version_dict, ensure_ascii=False, indent=2, sort_keys=True, separators=(",", ": ")) + "\n"
-    if len(command_args) == 0:
-        command_args.append("-h")
-    entry(command_args)
-
-
-def entry(command_args):
-    parser = argparse.ArgumentParser(
-        prog="pfs",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        description="Prompt Flow Service",
-    )
-
-    parser.add_argument(
-        "-v", "--version", dest="version", action="store_true", help="show current PromptflowService version and exit"
-    )
-    subparsers = parser.add_subparsers()
-    add_start_service_action(subparsers)
-    add_show_status_action(subparsers)
-    add_stop_service_action(subparsers)
-
-    args = parser.parse_args(command_args)
-
-    activity_name = _get_cli_activity_name(cli=parser.prog, args=args)
-    cli_exception_and_telemetry_handler(run_command, activity_name)(args)
-
-
-def run_command(args):
-    # --debug, enable debug logging
-    if hasattr(args, "debug") and args.debug:
-        for handler in logger.handlers:
-            handler.setLevel(logging.DEBUG)
-    if args.version:
-        print_pf_version()
+def show_service():
+    port = get_port_from_config()
+    status = get_started_service_info(port)
+    if is_run_from_built_binary():
+        log_file = HOME_PROMPT_FLOW_DIR / PF_SERVICE_LOG_FILE
+    else:
+        log_file = get_current_env_pfs_file(PF_SERVICE_LOG_FILE)
+    if status:
+        status.update({"log_file": log_file.as_posix()})
+        print(status)
         return
-    elif args.action == "show-status":
-        port = get_port_from_config()
-        status = get_started_service_info(port)
-        if status:
-            print(status)
-            return
-        else:
-            logger.warning("Promptflow service is not started.")
-            sys.exit(1)
-    elif args.action == "start":
-        start_service(args)
-    elif args.action == "stop":
-        stop_service()
-
-
-if __name__ == "__main__":
-    main()
+    else:
+        logger.warning(f"Promptflow service is not started. log_file: {log_file.as_posix()}")
+        sys.exit(1)

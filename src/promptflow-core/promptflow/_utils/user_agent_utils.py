@@ -2,6 +2,7 @@ import os
 from typing import Optional
 
 from promptflow._constants import PF_USER_AGENT, USER_AGENT
+from promptflow.core._version import __version__
 from promptflow.tracing._operation_context import OperationContext
 
 
@@ -56,3 +57,13 @@ def setup_user_agent_to_operation_context(user_agent):
     ClientUserAgentUtil.update_user_agent_from_env_var()
     ClientUserAgentUtil.update_user_agent_from_config()
     return ClientUserAgentUtil.get_user_agent()
+
+
+def append_promptflow_package_ua(operation_context: OperationContext):
+    try:
+        from promptflow._version import VERSION as PF_VERSION
+
+        operation_context.append_user_agent(f"promptflow/{PF_VERSION}")
+    except ImportError:
+        pass
+    operation_context.append_user_agent(f"promptflow-core/{__version__}")

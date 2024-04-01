@@ -31,6 +31,7 @@ from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.tracing._operation_context import OperationContext
 
 FLOWS_DIR = "./tests/test_configs/flows"
+EAGER_FLOWS_DIR = "./tests/test_configs/eager_flows"
 EXPERIMENT_DIR = "./tests/test_configs/experiments"
 RUNS_DIR = "./tests/test_configs/runs"
 CONNECTIONS_DIR = "./tests/test_configs/connections"
@@ -2212,3 +2213,40 @@ class TestCli:
         assert output_path.exists()
         detail_path = Path(flow_dir) / ".promptflow" / "chat.detail.json"
         assert detail_path.exists()
+
+    def test_pf_run_with_init(self, pf):
+
+        run_id = str(uuid.uuid4())
+        run_pf_command(
+            "run",
+            "create",
+            "--flow",
+            f"{EAGER_FLOWS_DIR}/basic_callable_class",
+            "--data",
+            f"{EAGER_FLOWS_DIR}/basic_callable_class/inputs.jsonl",
+            "--name",
+            run_id,
+            "--init",
+            "obj_input=val",
+        )
+
+        def assert_func(details_dict):
+            return details_dict["outputs.func_input"] == [
+                "func_input",
+                "func_input",
+                "func_input",
+                "func_input",
+            ] and details_dict["outputs.obj_input"] == ["val", "val", "val", "val"]
+
+        # check run results
+        run = pf.runs.get(run_id)
+        assert_batch_run_result(run, pf, assert_func)
+
+
+def assert_batch_run_result(run, pf, assert_func):
+    assert run.status == "Completed"
+    assert "error" not in run._to_dict(), run._to_dict()["error"]
+    details = pf.get_details(run.name)
+    # convert DataFrame to dict
+    details_dict = details.to_dict(orient="list")
+    assert assert_func(details_dict), details_dict
