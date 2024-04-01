@@ -35,11 +35,7 @@ from promptflow._utils.execution_utils import (
 )
 from promptflow._utils.flow_utils import is_flex_flow
 from promptflow._utils.logger_utils import flow_logger, logger
-from promptflow._utils.multimedia_utils import (
-    load_multimedia_data,
-    load_multimedia_data_recursively,
-    persist_multimedia_data,
-)
+from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow._utils.utils import get_int_env_var, transpose
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow._version import VERSION
@@ -62,6 +58,7 @@ from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DefaultRunStorage
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
 from promptflow.tracing._operation_context import OperationContext
+from promptflow.tracing._start_trace import setup_exporter_from_environ
 from promptflow.tracing._trace import (
     enrich_span_with_context,
     enrich_span_with_input,
@@ -164,6 +161,8 @@ class FlowExecutor:
         self._completed_idx = None
         # TODO: Improve the experience about configuring node concurrency.
         self._node_concurrency = DEFAULT_CONCURRENCY_BULK
+        self._message_format = flow.message_format
+        self._multimedia_processor = MultimediaProcessor.create(flow.message_format)
 
     @classmethod
     def create(
@@ -177,6 +176,7 @@ class FlowExecutor:
         raise_ex: bool = True,
         node_override: Optional[Dict[str, Dict[str, Any]]] = None,
         line_timeout_sec: Optional[int] = None,
+        init_kwargs: Optional[Dict[str, Any]] = None,
     ) -> "FlowExecutor":
         """Create a new instance of FlowExecutor.
 
@@ -196,18 +196,21 @@ class FlowExecutor:
         :type node_override: Optional[Dict[str, Dict[str, Any]]]
         :param line_timeout_sec: The line timeout in seconds to be used for the flow. Default is LINE_TIMEOUT_SEC.
         :type line_timeout_sec: Optional[int]
+        :param init_kwargs: Class init arguments for callable class, only supported for flex flow.
+        :type init_kwargs: Optional[Dict[str, Any]]
         :return: A new instance of FlowExecutor.
         :rtype: ~promptflow.executor.flow_executor.FlowExecutor
         """
+        setup_exporter_from_environ()
         if is_flex_flow(file_path=flow_file, working_dir=working_dir):
             from ._script_executor import ScriptExecutor
 
             return ScriptExecutor(
-                flow_file=Path(flow_file),
-                working_dir=working_dir,
-                storage=storage,
+                flow_file=Path(flow_file), working_dir=working_dir, storage=storage, init_kwargs=init_kwargs
             )
         else:
+            if init_kwargs:
+                logger.warning(f"Got unexpected init args {init_kwargs} for non-script flow. Ignoring them.")
             flow = Flow.from_yaml(flow_file, working_dir=working_dir)
             return cls._create_from_flow(
                 flow_file=flow_file,
@@ -238,8 +241,9 @@ class FlowExecutor:
         if node_override:
             flow = flow._apply_node_overrides(node_override)
         flow = flow._apply_default_node_variants()
+
         package_tool_keys = [node.source.tool for node in flow.nodes if node.source and node.source.tool]
-        tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
+        tool_resolver = ToolResolver(working_dir, connections, package_tool_keys, message_format=flow.message_format)
 
         with _change_working_dir(working_dir):
             resolved_tools = [tool_resolver.resolve_tool_by_node(node) for node in flow.nodes]
@@ -250,6 +254,7 @@ class FlowExecutor:
             inputs=flow.inputs,
             outputs=flow.outputs,
             tools=[],
+            message_format=flow.message_format,
         )
         # ensure_flow_valid including validation + resolve
         # Todo: 1) split pure validation + resolve from below method 2) provide completed validation()
@@ -364,10 +369,12 @@ class FlowExecutor:
         converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(
             flow, node, inputs_with_default_value
         )
-        inputs = load_multimedia_data(node_referenced_flow_inputs, converted_flow_inputs_for_node)
-        dependency_nodes_outputs = load_multimedia_data_recursively(dependency_nodes_outputs)
+
+        multimedia_processor = MultimediaProcessor.create(flow.message_format)
+        inputs = multimedia_processor.load_multimedia_data(node_referenced_flow_inputs, converted_flow_inputs_for_node)
+        dependency_nodes_outputs = multimedia_processor.load_multimedia_data_recursively(dependency_nodes_outputs)
         package_tool_keys = [node.source.tool] if node.source and node.source.tool else []
-        tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
+        tool_resolver = ToolResolver(working_dir, connections, package_tool_keys, message_format=flow.message_format)
         resolved_node = tool_resolver.resolve_tool_by_node(node)
 
         # Prepare callable and real inputs here
@@ -392,6 +399,7 @@ class FlowExecutor:
         if storage is None:
             sub_dir = "." if output_sub_dir is None else output_sub_dir
             storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path(sub_dir))
+
         run_tracker = RunTracker(storage)
         with run_tracker.node_log_manager, update_operation_context():
             # Will generate node run in context
@@ -399,6 +407,7 @@ class FlowExecutor:
                 name=flow.name,
                 run_tracker=run_tracker,
                 cache_manager=AbstractCacheManager.init_from_env(),
+                message_format=flow.message_format,
             )
 
             try:
@@ -608,14 +617,14 @@ class FlowExecutor:
         run_id = run_id or str(uuid.uuid4())
         nodes = [copy.deepcopy(node) for node in self._flow.nodes if node.aggregation]
         # Load multimedia data from aggregation_inputs
-        aggregation_inputs = load_multimedia_data_recursively(aggregation_inputs)
+        aggregation_inputs = self._multimedia_processor.load_multimedia_data_recursively(aggregation_inputs)
         # Update the inputs of the aggregation nodes with the aggregation inputs.
         for node in nodes:
             node.inputs = {
                 k: FlowExecutor._try_get_aggregation_input(v, aggregation_inputs) for k, v in node.inputs.items()
             }
         # Load multimedia data for the flow inputs of aggregation nodes.
-        inputs = load_multimedia_data(self._flow.inputs, inputs)
+        inputs = self._multimedia_processor.load_multimedia_data(self._flow.inputs, inputs)
 
         # TODO: Use a new run tracker to avoid memory increase infinitely.
         run_tracker = self._run_tracker
@@ -625,6 +634,7 @@ class FlowExecutor:
             cache_manager=self._cache_manager,
             run_id=run_id,
             flow_id=self._flow_id,
+            message_format=self._message_format,
         )
         metrics = {}
 
@@ -868,7 +878,7 @@ class FlowExecutor:
     ):
         if validate_inputs:
             inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=run_info.index)
-        inputs = load_multimedia_data(self._flow.inputs, inputs)
+        inputs = self._multimedia_processor.load_multimedia_data(self._flow.inputs, inputs)
         # Inputs are assigned after validation and multimedia data loading, instead of at the start of the flow run.
         # This way, if validation or multimedia data loading fails, we avoid persisting invalid inputs.
         run_info.inputs = inputs
@@ -921,6 +931,7 @@ class FlowExecutor:
             run_id=line_run_id,
             parent_run_id=run_id,
             index=line_number,
+            message_format=self._message_format,
         )
         context = FlowExecutionContext(
             name=self._flow.name,
@@ -929,6 +940,7 @@ class FlowExecutor:
             run_id=run_id,
             flow_id=self._flow_id,
             line_number=line_number,
+            message_format=self._message_format,
         )
         output = {}
         aggregation_inputs = {}
@@ -1002,6 +1014,7 @@ class FlowExecutor:
             parent_run_id=run_id,
             inputs={k: inputs[k] for k in self._flow.inputs if k in inputs},
             index=line_number,
+            message_format=self._message_format,
         )
         context = FlowExecutionContext(
             name=self._flow.name,
@@ -1010,6 +1023,7 @@ class FlowExecutor:
             run_id=run_id,
             flow_id=self._flow_id,
             line_number=line_number,
+            message_format=self._message_format,
         )
         output = {}
         aggregation_inputs = {}
@@ -1017,7 +1031,7 @@ class FlowExecutor:
             if validate_inputs:
                 inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=line_number)
             # TODO: Consider async implementation for load_multimedia_data
-            inputs = load_multimedia_data(self._flow.inputs, inputs)
+            inputs = self._multimedia_processor.load_multimedia_data(self._flow.inputs, inputs)
             # Make sure the run_info with converted inputs results rather than original inputs
             run_info.inputs = inputs
             output, nodes_outputs = await self._traverse_nodes_async(inputs, context)
@@ -1326,8 +1340,10 @@ def execute_flow(
         line_result = flow_executor.exec_line(
             inputs, index=0, allow_generator_output=allow_generator_output, run_id=run_id
         )
-        # Persist the output to the output directory
-        line_result.output = persist_multimedia_data(line_result.output, base_dir=working_dir, sub_dir=output_dir)
+        # persist the output to the output directory
+        line_result.output = flow_executor._multimedia_processor.persist_multimedia_data(
+            line_result.output, base_dir=working_dir, sub_dir=output_dir
+        )
         if run_aggregation and line_result.aggregation_inputs:
             # Convert inputs of aggregation to list type
             flow_inputs = {k: [v] for k, v in inputs.items()}

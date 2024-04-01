@@ -1,10 +1,11 @@
 [tool.poetry]
 name = "promptflow-core"
-version = "0.1.0b1"
+version = "1.0.0.dev0"
 description = "Prompt flow core"
 include = [
   "promptflow/core/_serving/static/*",
   "promptflow/core/_serving/resources/*",
+  "promptflow/_core/data/tool.schema.json",
 ]
 
 license = "MIT"
@@ -46,7 +47,19 @@ docutils = "*"  # used to generate description for tools
 jsonschema = ">=4.0.0,<5.0.0"  # used to validate tool
 filetype = ">=1.2.0"  # used to detect the mime type for multi-media input
 flask = ">=2.2.3,<4.0.0"  # Serving endpoint requirements
-fastapi = {extras = ["executor-service"], version = ">=0.109.0,<1.0.0"}
+python-dateutil = ">=2.1.0,<3.0.0"  # Contracts RunInfo
+# ========executor-service dependencies========
+fastapi = ">=0.109.0,<1.0.0" # used to build web executor server
+# ========azureml-serving dependencies========
+# AzureML connection dependencies
+azure-identity = ">=1.12.0,<2.0.0"
+azure-ai-ml = ">=1.14.0,<2.0.0"
+# MDC dependencies for monitoring
+azureml-ai-monitoring = ">=0.1.0b3,<1.0.0"
+
+[tool.poetry.extras]
+executor-service = ["fastapi"]
+azureml-serving = ["azure-identity", "azure-ai-ml", "azureml-ai-monitoring"]
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "*"
@@ -71,11 +84,6 @@ markers = [
 # durations - list the slowest test durations
 addopts = """
 --junit-xml=test-results.xml \
---cov=promptflow \
---cov-config=pyproject.toml \
---cov-report=term \
---cov-report=html \
---cov-report=xml \
 --dist loadfile \
 --log-level=info \
 --log-format="%(asctime)s %(levelname)s %(message)s" \
@@ -101,5 +109,23 @@ include_external_packages = "True"
 [[tool.importlinter.contracts]]
 name = "Contract forbidden modules"
 type = "forbidden"
-source_modules = ["promptflow.core"]
-forbidden_modules = ["promptflow.devkit", "promptflow.azure"]
+source_modules = [
+  "promptflow.core",
+  "promptflow._core",
+  "promptflow._utils",
+  "promptflow.connections",
+  "promptflow.contracts",
+  "promptflow.executor",
+  "promptflow.integrations",
+  "promptflow.storage"]
+forbidden_modules = [
+  "promptflow._cli",
+  "promptflow._internal",
+  "promptflow._proxy",
+  "promptflow._sdk",
+  "promptflow.batch",
+  "promptflow.client",
+  "promptflow.entities",
+  "promptflow.operations",
+  "promptflow.azure"
+]

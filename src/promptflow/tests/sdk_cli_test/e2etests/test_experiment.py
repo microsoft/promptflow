@@ -15,8 +15,8 @@ from ruamel.yaml import YAML
 from promptflow._sdk._constants import PF_TRACE_CONTEXT, ExperimentStatus, RunStatus, RunTypes
 from promptflow._sdk._errors import ExperimentValueError, RunOperationError
 from promptflow._sdk._load_functions import _load_experiment, load_common
+from promptflow._sdk._orchestrator.experiment_orchestrator import ExperimentOrchestrator, ExperimentTemplateTestContext
 from promptflow._sdk._pf_client import PFClient
-from promptflow._sdk._submitter.experiment_orchestrator import ExperimentOrchestrator, ExperimentTemplateTestContext
 from promptflow._sdk.entities._experiment import CommandNode, Experiment, ExperimentTemplate, FlowNode
 
 TEST_ROOT = Path(__file__).parent.parent.parent
@@ -116,7 +116,7 @@ class TestExperiment:
         metrics = client.runs.get_metrics(name=eval_run.name)
         assert "accuracy" in metrics
         # Assert Trace
-        line_runs = client._traces.list_line_runs(session_id=session)
+        line_runs = client._traces.list_line_runs(collection=session)
         if len(line_runs) > 0:
             assert len(line_runs) == 3
             line_run = line_runs[0]
@@ -248,7 +248,7 @@ class TestExperiment:
             # Assert session exists
             # TODO: Task 2942400, avoid sleep/if and assert traces
             time.sleep(10)  # TODO fix this
-            line_runs = client._traces.list_line_runs(session_id=session)
+            line_runs = client._traces.list_line_runs(collection=session)
             if len(line_runs) > 0:
                 assert len(line_runs) == 1
                 line_run = line_runs[0]

@@ -29,8 +29,8 @@ from promptflow._sdk._errors import (
     RunNotFoundError,
 )
 from promptflow._sdk._load_functions import load_flow, load_run
+from promptflow._sdk._orchestrator.utils import SubmitterHelper
 from promptflow._sdk._run_functions import create_yaml_run
-from promptflow._sdk._submitter.utils import SubmitterHelper
 from promptflow._sdk._utils import _get_additional_includes, is_python_flex_flow_entry
 from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
