@@ -85,13 +85,13 @@ class TestTraceEntitiesAndOperations:
         span._persist()
         # trace operations - get span
         # eager load
-        eager_load_span = pf._traces.get_span(trace_id=trace_id, span_id=span_id, lazy_load=False)
+        eager_load_span = pf.traces.get_span(trace_id=trace_id, span_id=span_id, lazy_load=False)
         expected_span_dict = load_and_override_span_example(
             trace_id=trace_id, span_id=span_id, parent_id=parent_id, line_run_id=line_run_id
         )
         assert_span_equals(eager_load_span, expected_span_dict)
         # lazy load (default)
-        lazy_load_span = pf._traces.get_span(trace_id=trace_id, span_id=span_id)
+        lazy_load_span = pf.traces.get_span(trace_id=trace_id, span_id=span_id)
         # events.attributes should be empty in lazy load mode
         for i in range(len(expected_span_dict["events"])):
             expected_span_dict["events"][i]["attributes"] = dict()
@@ -110,7 +110,7 @@ class TestTraceEntitiesAndOperations:
             line_run_id=line_run_id,
         )
         span._persist()
-        running_line_run = pf._traces.get_line_run(line_run_id=line_run_id)
+        running_line_run = pf.traces.get_line_run(line_run_id=line_run_id)
         expected_running_line_run_dict = {
             "line_run_id": line_run_id,
             "trace_id": trace_id,
@@ -141,7 +141,7 @@ class TestTraceEntitiesAndOperations:
             line_run_id=line_run_id,
         )
         span._persist()
-        terminated_line_run = pf._traces.get_line_run(line_run_id=line_run_id)
+        terminated_line_run = pf.traces.get_line_run(line_run_id=line_run_id)
         expected_terminated_line_run_dict = {
             "line_run_id": line_run_id,
             "trace_id": trace_id,
