@@ -57,7 +57,7 @@ checks = {
         "scripts/building/**",
         ".github/workflows/promptflow-sdk-cli-azure-test-pull-request.yml",
     ],
-    "promptflow-core-test [Pure]": [
+    "promptflow-core-test": [
         "src/promptflow-core/**",
         "scripts/building/**",
         ".github/workflows/promptflow-core-test.yml",
