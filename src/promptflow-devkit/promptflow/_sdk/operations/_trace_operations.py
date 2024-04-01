@@ -7,6 +7,7 @@ import typing
 
 from promptflow._sdk._constants import TRACE_DEFAULT_COLLECTION
 from promptflow._sdk._orm.session import trace_mgmt_db_session
+from promptflow._sdk._orm.trace import Event as ORMEvent
 from promptflow._sdk._orm.trace import LineRun as ORMLineRun
 from promptflow._sdk._orm.trace import Span as ORMSpan
 from promptflow._sdk._telemetry import ActivityType, monitor_operation
@@ -173,18 +174,18 @@ class TraceOperations:
 
         with trace_mgmt_db_session() as session:
             # query line run first to get all trace ids
-            query: Query = session.query(LineRun)
+            query: Query = session.query(ORMLineRun)
             if run is not None:
-                query = query.filter(LineRun.run == run)
+                query = query.filter(ORMLineRun.run == run)
             if collection is not None:
-                query = query.filter(LineRun.collection == collection)
+                query = query.filter(ORMLineRun.collection == collection)
             if started_before is not None:
-                query = query.filter(LineRun.start_time < started_before)
+                query = query.filter(ORMLineRun.start_time < started_before)
             trace_ids = [line_run.trace_id for line_run in query.all()]
             self._logger.debug("try to delete traces for trace_ids: %s", trace_ids)
             # deletes happen
-            event_cnt = session.query(Event).filter(Event.trace_id.in_(trace_ids)).delete()
-            span_cnt = session.query(Span).filter(Span.trace_id.in_(trace_ids)).delete()
+            event_cnt = session.query(ORMEvent).filter(ORMEvent.trace_id.in_(trace_ids)).delete()
+            span_cnt = session.query(ORMSpan).filter(ORMSpan.trace_id.in_(trace_ids)).delete()
             line_run_cnt = query.delete()
             session.commit()
 
