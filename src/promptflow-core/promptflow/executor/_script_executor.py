@@ -66,9 +66,8 @@ class ScriptExecutor(FlowExecutor):
         log_manager = NodeLogManager()
         # No need to clear node context, log_manger will be cleared after the with block.
         log_manager.set_node_context(run_id, "Flex", index)
-        with log_manager:
-            with self._update_operation_context(run_id, index):
-                return self._exec_line(inputs, index, run_id, allow_generator_output=allow_generator_output)
+        with log_manager, self._update_operation_context(run_id, index):
+            return self._exec_line(inputs, index, run_id, allow_generator_output=allow_generator_output)
 
     def _exec_line(
         self,
