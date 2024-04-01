@@ -544,7 +544,11 @@ class TestBatch:
             stop_signal="[STOP]",
             working_dir=get_flow_folder(simulation_flow),
             connections=dev_connections,
-            inputs_mapping={"topic": "${data.topic}", "ground_truth": "${data.ground_truth}"}
+            inputs_mapping={
+                "topic": "${data.topic}",
+                "ground_truth": "${data.ground_truth}",
+                "history": "${parent.conversation_history}"
+            }
         )
         copilot_role = ChatRole(
             flow=get_yaml_file(copilot_flow),
@@ -554,7 +558,10 @@ class TestBatch:
             stop_signal="[STOP]",
             working_dir=get_flow_folder(copilot_flow),
             connections=dev_connections,
-            inputs_mapping={"question": "${data.question}"}
+            inputs_mapping={
+                "question": "${data.question}",
+                "conversation_history": "${parent.conversation_history}"
+            }
         )
         input_dirs = {"data": get_flow_inputs_file("chat_group/cloud_batch_runs", file_name=input_file_name)}
         output_dir = Path(mkdtemp())
@@ -583,9 +590,10 @@ class TestBatch:
         for i, output in enumerate(outputs):
             assert isinstance(output, dict)
             assert "line_number" in output, f"line_number is not in {i}th output {output}"
+            assert "conversation_history" in output, f"conversation_history is not in {i}th output {output}"
             assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
-            # "line_number is the first pair in the dict"
-            assert len(output) == max_turn + 1
+            # "line_number is the first pair in the dict, conversation_history is the last pair in the dict"
+            assert len(output) == max_turn + 2
             for j, line in enumerate(output):
                 if "line_number" not in output:
                     assert "role" in line, f"role is not in {i}th output {j}th line {line}"

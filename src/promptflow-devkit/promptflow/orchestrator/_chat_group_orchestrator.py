@@ -7,6 +7,12 @@ from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow._utils.execution_utils import apply_default_value_for_input
 from promptflow._proxy._proxy_factory import ProxyFactory
 from promptflow._utils.logger_utils import bulk_logger
+from promptflow._constants import CONVERSATION_HISTORY_EXPRESSION, CONVERSATION_HISTORY_OUTPUT_KEY
+from promptflow.orchestrator._errors import (
+    InvalidChatRoleCount,
+    MissingConversationHistoryExpression,
+    MultipleConversationHistoryInputsMapping
+)
 
 
 class ChatGroupOrchestrator:
@@ -33,6 +39,14 @@ class ChatGroupOrchestrator:
         self._max_turn = max_turn
         self._chat_group_roles = chat_group_roles
         self._max_lines_count = max_lines_count
+
+        if len(self._chat_group_roles) < 2:
+            bulk_logger.error(f"Invalid chat group role count: {len(self._chat_group_roles)}")
+            message = (
+                f"Invalid chat group role count: {len(self._chat_group_roles)}. "
+                "Please define 2 chat group roles at least."
+            )
+            raise InvalidChatRoleCount(message=message)
 
         self._executor_proxies: List[AbstractExecutorProxy] = self._create_executor_proxy(**kwargs)
 
@@ -106,8 +120,22 @@ class ChatGroupOrchestrator:
             executor_proxy = self._executor_proxies[role_index]
             chat_role = self._chat_group_roles[role_index]
             chat_role_input = batch_inputs[role_index]
-            chat_role_input["conversation_history"] = conversation_history
-
+            conversation_history_key = next(
+                (key for key, value in chat_role.inputs_mapping.items()
+                 if value == CONVERSATION_HISTORY_EXPRESSION), None
+            )
+            if conversation_history_key is None:
+                bulk_logger.error(
+                    f"Cannot find conversation expression mapping for "
+                    f"chat role: {chat_role.role}. name: {chat_role.name}"
+                )
+                message = (
+                    f"Cannot find conversation expression mapping for "
+                    f"chat role: {chat_role.role}. name: {chat_role.name} "
+                    f"Please use define {CONVERSATION_HISTORY_EXPRESSION} for a flow input."
+                )
+                raise MissingConversationHistoryExpression(message=message)
+            chat_role_input[conversation_history_key] = conversation_history
             bulk_logger.info(
                 f"Start to execute turn {turn}. role: {chat_role.role}. name: {chat_role.name}"
             )
@@ -132,7 +160,11 @@ class ChatGroupOrchestrator:
                 )
                 break
 
-        bulk_logger.info(f"Finish schedule runs for run id: {run_id}, line number: {line_index}")
+        bulk_logger.info(
+            f"Finish schedule runs for run id: {run_id}, "
+            f"line number: {line_index}, add conversation history to output"
+        )
+        outputs.update({CONVERSATION_HISTORY_OUTPUT_KEY: conversation_history})
 
         return LineResult(
             output=outputs,
@@ -160,12 +192,34 @@ class ChatGroupOrchestrator:
     def _process_batch_inputs(self, inputs: Dict[str, Any]):
         batch_inputs: List = []
         for chat_role in self._chat_group_roles:
+            if CONVERSATION_HISTORY_EXPRESSION not in chat_role.inputs_mapping.values():
+                bulk_logger.error(
+                    f"Cannot find conversation expression mapping for "
+                    f"chat role: {chat_role.role}. name: {chat_role.name}"
+                )
+                message = (
+                    f"Cannot find conversation expression mapping for "
+                    f"chat role: {chat_role.role}. name: {chat_role.name} "
+                    f"Please mapping {CONVERSATION_HISTORY_EXPRESSION} for a flow input."
+                )
+                raise MissingConversationHistoryExpression(message=message)
+
+            conversation_mapping_count = list(chat_role.inputs_mapping.values()).count(CONVERSATION_HISTORY_EXPRESSION)
+            if conversation_mapping_count > 1:
+                bulk_logger.error(f"Multiple inputs mapping of {CONVERSATION_HISTORY_EXPRESSION}")
+                message = (
+                    f"chat role: {chat_role.role}. name: {chat_role.name} "
+                    f"only accepts 1 inputs mapping for {CONVERSATION_HISTORY_EXPRESSION}"
+                )
+                raise MultipleConversationHistoryInputsMapping(message=message)
+
             batch_input_processor = BatchInputsProcessor(
                 chat_role.working_dir,
                 chat_role.flow.inputs,
                 self._max_lines_count)
             batch_input = batch_input_processor._process_batch_inputs_line(inputs, chat_role.inputs_mapping)
             resolved_batch_input = apply_default_value_for_input(chat_role.flow.inputs, batch_input)
+
             batch_inputs.append(resolved_batch_input)
 
         return batch_inputs

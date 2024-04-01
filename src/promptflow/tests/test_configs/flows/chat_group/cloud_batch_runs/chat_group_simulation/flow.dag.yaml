@@ -4,7 +4,7 @@ inputs:
     type: string
   ground_truth:
     type: string
-  conversation_history:
+  history:
     type: list
 outputs:
   output:
@@ -19,4 +19,4 @@ nodes:
   inputs:
     question: ${inputs.topic}
     ground_truth: ${inputs.ground_truth}
-    conversation_history: ${inputs.conversation_history}
+    conversation_history: ${inputs.history}
