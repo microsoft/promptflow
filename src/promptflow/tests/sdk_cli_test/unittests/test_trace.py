@@ -70,13 +70,13 @@ class TestStartTrace:
 
         # set some required environment variables
         endpoint = "http://localhost:23333/v1/traces"
-        session_id = str(uuid.uuid4())
+        collection = str(uuid.uuid4())
         experiment = "test_experiment"
         with patch.dict(
             os.environ,
             {
                 OTEL_EXPORTER_OTLP_ENDPOINT: endpoint,
-                TraceEnvironmentVariableName.SESSION_ID: session_id,
+                TraceEnvironmentVariableName.COLLECTION: collection,
                 TraceEnvironmentVariableName.EXPERIMENT: experiment,
             },
             clear=True,
@@ -85,7 +85,7 @@ class TestStartTrace:
 
         assert _is_tracer_provider_set()
         tracer_provider: TracerProvider = trace.get_tracer_provider()
-        assert session_id == tracer_provider._resource.attributes[SpanResourceAttributesFieldName.SESSION_ID]
+        assert collection == tracer_provider._resource.attributes[SpanResourceAttributesFieldName.COLLECTION]
         assert experiment == tracer_provider._resource.attributes[SpanResourceAttributesFieldName.EXPERIMENT_NAME]
 
     @pytest.mark.usefixtures("reset_tracer_provider")
@@ -93,7 +93,7 @@ class TestStartTrace:
         with patch.dict(
             os.environ,
             {
-                TraceEnvironmentVariableName.SESSION_ID: str(uuid.uuid4()),
+                TraceEnvironmentVariableName.COLLECTION: str(uuid.uuid4()),
                 TraceEnvironmentVariableName.SUBSCRIPTION_ID: "test_subscription_id",
                 TraceEnvironmentVariableName.RESOURCE_GROUP_NAME: "test_resource_group_name",
                 TraceEnvironmentVariableName.WORKSPACE_NAME: "test_workspace_name",
@@ -131,7 +131,7 @@ class TestStartTrace:
         ctx = {PF_TRACE_CONTEXT_ATTR: {ContextAttributeKey.REFERENCED_LINE_RUN_ID: referenced_line_run_id}}
         with monkeypatch.context() as m:
             m.setenv(PF_TRACE_CONTEXT, json.dumps(ctx))
-            start_trace_with_devkit(session_id=None)
+            start_trace_with_devkit(collection=None)
             # lineage is stored in context
             op_ctx = OperationContext.get_instance()
             otel_attrs = op_ctx._get_otel_attributes()
@@ -145,7 +145,7 @@ class TestStartTrace:
         op_ctx._add_otel_attributes(SpanAttributeFieldName.REFERENCED_LINE_RUN_ID, str(uuid.uuid4()))
         with monkeypatch.context() as m:
             m.setenv(PF_TRACE_CONTEXT, json.dumps({PF_TRACE_CONTEXT_ATTR: dict()}))
-            start_trace_with_devkit(session_id=None)
+            start_trace_with_devkit(collection=None)
             # lineage will be reset
             otel_attrs = op_ctx._get_otel_attributes()
             assert SpanAttributeFieldName.REFERENCED_LINE_RUN_ID not in otel_attrs

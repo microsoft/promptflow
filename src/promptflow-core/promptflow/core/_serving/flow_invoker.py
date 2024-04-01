@@ -44,6 +44,8 @@ class FlowInvoker:
     :type connections_name_overrides: dict, optional
     :param raise_ex: Whether to raise exception when executing flow, defaults to True
     :type raise_ex: bool, optional
+    :param init_kwargs: Class init arguments for callable class, only supported for flex flow.
+    :type init_kwargs: dict, optional
     """
 
     def __init__(
@@ -54,9 +56,12 @@ class FlowInvoker:
         connections: dict = None,
         connections_name_overrides: dict = None,
         raise_ex: bool = True,
+        init_kwargs: dict = None,
         **kwargs,
     ):
         self.logger = kwargs.get("logger", LoggerFactory.get_logger("flowinvoker"))
+        self._init_kwargs = init_kwargs or {}
+        self.logger.debug(f"Init flow invoker with init kwargs: {self._init_kwargs}")
         # TODO: avoid to use private attribute after we finalize the inheritance
         self.flow = init_executable(working_dir=flow._code, flow_path=flow._path)
         self.connections = connections or {}
@@ -166,6 +171,7 @@ class FlowInvoker:
             connections=self.connections,
             raise_ex=self.raise_ex,
             storage=storage,
+            init_kwargs=self._init_kwargs,
         )
         self.executor.enable_streaming_for_llm_flow(self.streaming)
         self.logger.info("Promptflow executor initiated successfully.")
