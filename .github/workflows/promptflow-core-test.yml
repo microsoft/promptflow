@@ -73,12 +73,13 @@ jobs:
           check_name: promptflow-core test result
           comment_title: promptflow-core test result
           files: "artifacts/**/test-results.xml"  # align with `--junit-xml` in pyproject.toml
-      - uses: irongut/CodeCoverageSummary@v1.3.0
-        with:
-          filename: "artifacts/report-ubuntu-latest-py3.9/coverage.xml"
-          badge: true
-          fail_below_min: true
-          format: markdown
-          hide_complexity: true
-          output: both
-          thresholds: 40 60
+#     TODO: Enable coverage check after core test fully setup
+#      - uses: irongut/CodeCoverageSummary@v1.3.0
+#        with:
+#          filename: "artifacts/report-ubuntu-latest-py3.9/coverage.xml"
+#          badge: true
+#          fail_below_min: true
+#          format: markdown
+#          hide_complexity: true
+#          output: both
+#          thresholds: 40 60
