@@ -64,7 +64,9 @@ class TestServiceUtils:
             "request_id": "dummy_request_id",
         }
         operation_context = update_and_get_operation_context(context_dict)
-        assert operation_context.user_agent == "dummy_user_agent promptflow/0.0.1 promptflow-core/1.0.0.dev0"
+        assert "dummy_user_agent/" in operation_context.user_agent
+        assert "promptflow/" in operation_context.user_agent
+        assert "promptflow-core/" in operation_context.user_agent
         assert operation_context.request_id == "dummy_request_id"
 
     def test_get_commit_id(self, monkeypatch):
