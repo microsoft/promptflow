@@ -25,8 +25,6 @@ For more information about AzureML and component:
 - [What is a component](https://learn.microsoft.com/en-us/azure/machine-learning/concept-component)
 - [How to use parallel job in pipeline (V2)](https://learn.microsoft.com/en-us/azure/machine-learning/how-to-use-parallel-job-in-pipeline)
 
-To explore an executable end-to-end example of running sample flow within Azure ML workspace, you can refer to this tutorial notebook: [run flow with pipeline](../../../examples/tutorials/run-flow-with-pipeline/pipeline.ipynb)
-
 ## Register a flow as a component
 
 Suppose there has been a flow and its `flow.dag.yaml` is as below:
