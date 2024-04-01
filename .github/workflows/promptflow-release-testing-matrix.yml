@@ -14,7 +14,6 @@ on:
         type: string
 env:
   testWorkingDirectory: src/promptflow
-  PYTHONPATH: ${{ github.workspace }}/src/promptflow
   IS_IN_CI_PIPELINE: "true"
   RECORD_DIRECTORY: ${{ github.workspace }}/src/promptflow-recording
   TRACING_PATH: ${{ github.workspace }}/src/promptflow-tracing
