@@ -6,7 +6,8 @@ from promptflow.tools.exception import InvalidConnectionType
 
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
 # since the code here is in promptflow namespace as well
-from promptflow._internal import tool
+# from promptflow._internal import tool
+from promptflow._core.tool import tool
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 
 

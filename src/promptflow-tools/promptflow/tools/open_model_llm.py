@@ -13,7 +13,7 @@ from enum import Enum
 from typing import Any, Dict, List, Tuple, Optional, Union
 
 from promptflow._core.tool import ToolProvider, tool
-from promptflow._sdk._constants import ConnectionType
+from promptflow._constants import ConnectionType
 from promptflow.connections import CustomConnection
 from promptflow.contracts.types import PromptTemplate
 from promptflow.tools.common import render_jinja_template, validate_role

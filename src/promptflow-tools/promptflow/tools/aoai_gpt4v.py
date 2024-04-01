@@ -4,9 +4,11 @@ from promptflow.tools.common import render_jinja_template, handle_openai_error, 
     preprocess_template_string, find_referenced_image_set, convert_to_chat_list, init_azure_openai_client, \
     post_process_chat_api_response, list_deployment_connections, build_deployment_dict, GPT4V_VERSION
 
-from promptflow._internal import ToolProvider, tool
+# from promptflow._internal import ToolProvider, tool
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.contracts.types import PromptTemplate
+
+from promptflow._core.tool import ToolProvider, tool
 
 
 def list_deployment_names(

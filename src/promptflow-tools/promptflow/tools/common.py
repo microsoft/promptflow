@@ -12,7 +12,8 @@ from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, L
     ExceedMaxRetryTimes, ChatAPIInvalidFunctions, FunctionCallNotSupportedInStreamMode, \
     ChatAPIFunctionRoleInvalidFormat, InvalidConnectionType, ListDeploymentsError, ParseConnectionError
 
-from promptflow._cli._utils import get_workspace_triad_from_local
+# from promptflow._cli._utils import get_workspace_triad_from_local  depends on promptflow/src/promptflow-devkit/promptflow/_cli/_utils.py
+
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection, ServerlessConnection
 from promptflow.exceptions import SystemErrorException, UserErrorException
 
@@ -248,8 +249,9 @@ def get_workspace_triad():
     else:
         # If flow is submitted from local, it will get workspace triad from your azure cloud config file
         # If this config file isn't set up, it will return None.
-        workspace_triad = get_workspace_triad_from_local()
-        return workspace_triad.subscription_id, workspace_triad.resource_group_name, workspace_triad.workspace_name
+        # workspace_triad = get_workspace_triad_from_local()
+        # return workspace_triad.subscription_id, workspace_triad.resource_group_name, workspace_triad.workspace_name
+        return "", "", ""
 
 
 def list_deployment_connections(
@@ -261,8 +263,12 @@ def list_deployment_connections(
     try:
         # Do not support dynamic list if azure packages are not installed.
         from azure.mgmt.cognitiveservices import CognitiveServicesManagementClient
+        # from promptflow.azure.operations._arm_connection_operations import \
+        #     ArmConnectionOperations, OpenURLFailedUserError
+
         from promptflow.azure.operations._arm_connection_operations import \
-            ArmConnectionOperations, OpenURLFailedUserError
+            ArmConnectionOperations
+        from promptflow.core._errors import OpenURLFailedUserError
     except ImportError:
         return None
 

@@ -6,7 +6,8 @@ from promptflow.tools.common import render_jinja_template, handle_openai_error, 
 
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
 # since the code here is in promptflow namespace as well
-from promptflow._internal import ToolProvider, tool, register_apis
+from promptflow._core.tool import ToolProvider, tool
+from promptflow._core.tools_manager import register_apis
 from promptflow.connections import OpenAIConnection, ServerlessConnection
 from promptflow.contracts.types import PromptTemplate
 

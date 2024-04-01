@@ -1,6 +1,6 @@
 from promptflow.connections import OpenAIConnection
 from promptflow.contracts.types import PromptTemplate
-from promptflow._internal import ToolProvider, tool
+from promptflow._core.tool import ToolProvider, tool
 from promptflow.tools.common import render_jinja_template, handle_openai_error, \
     parse_chat, post_process_chat_api_response, preprocess_template_string, \
     find_referenced_image_set, convert_to_chat_list, init_openai_client

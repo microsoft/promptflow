@@ -19,7 +19,7 @@ DEFAULT_CONNECTION = "conn"
 
 
 def mock_build_connection_dict_func1(**kwargs):
-    from promptflow.azure.operations._arm_connection_operations import OpenURLFailedUserError
+    from promptflow.core._errors import OpenURLFailedUserError
     raise OpenURLFailedUserError
 
 
