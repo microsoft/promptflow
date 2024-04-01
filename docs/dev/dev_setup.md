@@ -85,7 +85,7 @@ For example, you write code in `promptflow-core`, then put the tests in `promptf
 Principal #2: Setup separate workflow for tests with extra-requires.
 
 For example, you want to test `promptflow-core[azureml-serving]`, then add a new test folder `promptflow-core/tests/azureml-serving` to test the azure related code,
-and set up a new workflow for that folder. DO NOT update the environment of promptflow-core test directly.
+and add new test steps and environment setup step into `promptflow-core-test.yml` for that folder. DO NOT update the environment of `promptflow-core` basic test directly.
 
 ### Record and replay tests
 
