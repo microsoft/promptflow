@@ -15,6 +15,7 @@
 /src/promptflow-core/promptflow/core/ @microsoft/promptflow-sdk
 /src/promptflow-devkit/promptflow/_cli/ @microsoft/promptflow-sdk
 /src/promptflow-devkit/promptflow/_sdk/ @microsoft/promptflow-sdk
+/src/promptflow-devkit/promptflow/_proxy/ @microsoft/promptflow-sdk
 /src/promptflow-devkit/promptflow/entities/ @microsoft/promptflow-sdk
 /src/promptflow-devkit/promptflow/operations/ @microsoft/promptflow-sdk
 /src/promptflow-azure/promptflow/azure/ @microsoft/promptflow-sdk
