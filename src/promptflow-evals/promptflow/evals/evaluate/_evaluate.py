@@ -1,15 +1,8 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-import json
-from json import JSONDecodeError
-from pathlib import Path
-from typing import Optional, Dict, Union, Callable
-
-import numpy as np
+from typing import Optional, Dict, Callable
 import pandas as pd
-
-from ._utils import load_jsonl
 from ._flow_run_wrapper import FlowRunWrapper
 from promptflow import PFClient
 

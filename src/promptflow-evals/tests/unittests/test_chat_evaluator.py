@@ -1,8 +1,6 @@
 import pytest
-from unittest.mock import patch, Mock
 from promptflow.evals.evaluators import ChatEvaluator
 from promptflow.entities import AzureOpenAIConnection
-
 
 
 class TestChatEvaluator:
@@ -15,9 +13,13 @@ class TestChatEvaluator:
 
         conversation = [
             {"role": "user", "content": "What is the value of 2 + 2?"},
-            {"role": "assistant", "content": "2 + 2 = 4", "context":{"citations": [{"id": "doc.md", "content": "Information about additions: 1 + 2 = 3, 2 + 2 = 4"}]}},
+            {"role": "assistant", "content": "2 + 2 = 4", "context": {
+                "citations": [{"id": "doc.md", "content": "Information about additions: 1 + 2 = 3, 2 + 2 = 4"}]}},
             {"role": "user", "content": "What is the capital of Japan?"},
-            {"role": "assistant", "content": "The capital of Japan is Tokyo.", "context":{"citations": [{"id": "doc.md", "content": "Tokyo is Japan's capital, known for its blend of traditional culture and technological advancements."}]}},
+            {"role": "assistant", "content": "The capital of Japan is Tokyo.", "context": {"citations": [
+                {"id": "doc.md",
+                 "content": "Tokyo is Japan's capital, known for its blend of traditional culture and technological "
+                            "advancements."}]}},
         ]
 
         chat_eval = ChatEvaluator(model_config=model_config, deployment_name="gpt-4")

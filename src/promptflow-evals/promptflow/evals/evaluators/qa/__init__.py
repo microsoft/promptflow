@@ -5,7 +5,8 @@
 __path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
 
 from promptflow.entities import AzureOpenAIConnection
-from promptflow.evals.evaluators import GroundednessEvaluator, RelevanceEvaluator, CoherenceEvaluator, FluencyEvaluator, SimilarityEvaluator, F1ScoreEvaluator
+from promptflow.evals.evaluators import GroundednessEvaluator, RelevanceEvaluator, \
+    CoherenceEvaluator, FluencyEvaluator, SimilarityEvaluator, F1ScoreEvaluator
 
 
 class QAEvaluator:
@@ -32,7 +33,7 @@ class QAEvaluator:
                 ground_truth="Japan",
         )
         """
-        self._evaluators  = [
+        self._evaluators = [
             GroundednessEvaluator(model_config, deployment_name=deployment_name),
             RelevanceEvaluator(model_config, deployment_name=deployment_name),
             CoherenceEvaluator(model_config, deployment_name=deployment_name),
@@ -60,6 +61,6 @@ class QAEvaluator:
         return {
             k: v for d in
             [evaluator(answer=answer, context=context, ground_truth=ground_truth, question=question) for evaluator in
-                self._evaluators]
+             self._evaluators]
             for k, v in d.items()
         }

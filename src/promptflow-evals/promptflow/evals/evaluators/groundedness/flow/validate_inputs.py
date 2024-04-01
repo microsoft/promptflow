@@ -1,5 +1,6 @@
 from promptflow import tool
 
+
 @tool
 def validate_inputs(answer: str, context: str):
     # Validate input parameters

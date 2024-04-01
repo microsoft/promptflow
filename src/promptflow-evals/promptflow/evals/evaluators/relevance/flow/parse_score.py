@@ -10,5 +10,5 @@ def parse_score(llm_output: str = None):
         match = re.search(r'\d', llm_output)
         if match:
             score = float(match.group())
-    
+
     return score

@@ -9,11 +9,13 @@ from azure.core.credentials import TokenCredential
 from azure.identity import DefaultAzureCredential
 import requests
 
+
 def ensure_service_availability(rai_svc_url: str):
     svc_liveness_url = rai_svc_url.split("/subscriptions")[0] + "/meta/version"
     response = requests.get(svc_liveness_url)
     if response.status_code != 200:
         raise Exception("RAI service is not available in this region")
+
 
 def submit_request(question: str, answer: str, metric: str, rai_svc_url: str, credential: TokenCredential):
     user_text = f"<Human>{question}</><System>{answer}</>"
@@ -33,12 +35,13 @@ def submit_request(question: str, answer: str, metric: str, rai_svc_url: str, cr
 
     response = requests.post(url, json=payload, headers=headers)
     if response.status_code != 202:
-        print("Fail evaluating '%s' with error message: %s" %(payload["UserTextList"], response.text))
+        print("Fail evaluating '%s' with error message: %s" % (payload["UserTextList"], response.text))
         response.raise_for_status()
 
     result = response.json()
     operation_id = result["location"].split("/")[-1]
     return operation_id
+
 
 def fetch_result(operation_id: str, rai_svc_url: str, credential: TokenCredential):
     start = time.time()
@@ -63,6 +66,7 @@ def fetch_result(operation_id: str, rai_svc_url: str, credential: TokenCredentia
         request_count += 1
         sleep_time = RAIService.SLEEP_TIME ** request_count
         time.sleep(sleep_time)
+
 
 def parse_response(batch_response: List[dict], metric_name: str) -> List[List[dict]]:
     # Fix the metric name if it's "hate_fairness"
@@ -92,11 +96,11 @@ def parse_response(batch_response: List[dict], metric_name: str) -> List[List[di
             harm_response = eval(response[metric_name])
         else:
             harm_response = ""
-    except:
+    except Exception:
         harm_response = response[metric_name]
 
     if harm_response != "" and isinstance(harm_response, dict):
-        ### check if "output" is one key in harm_response
+        # check if "output" is one key in harm_response
         if "output" in harm_response:
             harm_response = harm_response["output"]
 
@@ -139,6 +143,7 @@ def parse_response(batch_response: List[dict], metric_name: str) -> List[List[di
 
     return result
 
+
 def get_rai_svc_url(project_scope: dict, credential: TokenCredential):
     from azure.ai.ml import MLClient
     ml_client = MLClient(
@@ -162,14 +167,14 @@ def get_rai_svc_url(project_scope: dict, credential: TokenCredential):
 
     return rai_url
 
+
 @tool
 def evaluate_with_rai_service(
-    question: str,
-    answer: str,
-    metric_name: str,
-    project_scope: dict,
-    credential: TokenCredential):
-
+        question: str,
+        answer: str,
+        metric_name: str,
+        project_scope: dict,
+        credential: TokenCredential):
     # Use DefaultAzureCredential if no credential is provided
     # This is for the for batch run scenario as the credential cannot be serialized by promoptflow
     if credential is None or credential == {}:

@@ -10,7 +10,8 @@ class SelfHarmEvaluator:
         """
         Initialize an evaluator for self harm score.
 
-        :param project_scope: The scope of the Azure AI project. It contains subscription id, resource group, and project name.
+        :param project_scope: The scope of the Azure AI project.
+            It contains subscription id, resource group, and project name.
         :type project_scope: dict
         :param credential: The credential for connecting to Azure AI project.
         :type credential: TokenCredential

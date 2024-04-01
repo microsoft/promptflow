@@ -34,7 +34,7 @@ def compute_f1_score(answer: str, ground_truth: str) -> str:
             return text.lower()
 
         return white_space_fix(remove_articles(remove_punctuation(lower(text))))
-    
+
     prediction_tokens = normalize_text(answer)
     reference_tokens = normalize_text(ground_truth)
     tokenizer = QASplitTokenizer()

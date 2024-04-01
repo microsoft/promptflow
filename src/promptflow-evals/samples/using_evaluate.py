@@ -1,6 +1,7 @@
 from promptflow.evals import evaluate
 from pprint import pprint
 
+
 def answer_length(answer, **kwargs):
     return {
         "value": len(answer)
@@ -9,7 +10,7 @@ def answer_length(answer, **kwargs):
 
 def answer_length_percentage(answer, **kwargs):
     return {
-        "value": len(answer)/100
+        "value": len(answer) / 100
     }
 
 

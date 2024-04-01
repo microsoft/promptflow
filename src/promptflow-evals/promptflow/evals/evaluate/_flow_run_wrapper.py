@@ -19,7 +19,10 @@ class FlowRunWrapper(object):
             result_df = result_df.drop(
                 columns=[col for col in result_df.columns if col.startswith("inputs.")]
             )
-        result_df.rename(columns={col: col.replace("outputs", self.prefix) for col in [col for col in result_df.columns if col.startswith("outputs.")]}, inplace=True)
+        result_df.rename(
+            columns={col: col.replace("outputs", self.prefix)
+                     for col in [col for col in result_df.columns if col.startswith("outputs.")]},
+            inplace=True)
         return result_df
 
     def _wait_for_completion(self):
