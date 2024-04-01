@@ -175,6 +175,10 @@ class BatchEngine:
         :return: The result of this batch run
         :rtype: ~promptflow.batch._result.BatchResult
         """
+        from promptflow.contracts.run_mode import RunMode
+        from promptflow.tracing._operation_context import OperationContext
+
+        OperationContext.get_instance().run_mode = RunMode.Batch
         try:
             self._start_time = datetime.utcnow()
             with _change_working_dir(self._working_dir):
