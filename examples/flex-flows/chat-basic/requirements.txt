@@ -1,1 +1,2 @@
-promptflow[azure]
+promptflow-core
+promptflow-tools
