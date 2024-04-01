@@ -57,7 +57,7 @@ def get_toml_dependencies(packages):
                 data = toml.load(file)
             extra_package_names = data.get('tool', {}).get('poetry', {}).get('dependencies', {})
             dependencies.extend(extra_package_names.keys())
-    dependencies = [dependency for dependency in dependencies if not dependency.startswith('promptflow')]
+    dependencies = [dependency for dependency in dependencies if not dependency.startswith('promptflow') and not dependency == 'python']
     return dependencies
 
 
