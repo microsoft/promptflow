@@ -86,6 +86,3 @@ class TestChatEvaluator:
         with pytest.raises(ValueError) as e:
             chat_eval(conversation=conversation)
         assert str(e.value) == "'citations' in context must be a list. Turn number: 2"
-
-
-
