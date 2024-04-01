@@ -62,7 +62,7 @@ class ChatRole:
     def _build_role_io(self, flow: Union[str, PathLike], inputs_value: Dict = None):
         """Build role io"""
         logger.debug(f"Building io for chat role {self.role!r}.")
-        flow_path, flow_file = resolve_flow_path(flow)
+        flow_path, flow_file = resolve_flow_path(flow, check_flow_exist=False)
         flow_dict = load_yaml(flow_path / flow_file)
         inputs = flow_dict.get("inputs", {})
         for key in inputs:

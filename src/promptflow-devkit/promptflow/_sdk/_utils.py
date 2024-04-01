@@ -286,7 +286,7 @@ def _merge_local_code_and_additional_includes(code_path: Path):
             for name in src.glob("*"):
                 additional_includes_copy(name, Path(relative_path) / name.name, target_dir)
 
-    code_path, yaml_file = resolve_flow_path(code_path)
+    code_path, yaml_file = resolve_flow_path(code_path, check_flow_exist=False)
     yaml_path = code_path / yaml_file
 
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -584,7 +584,7 @@ def generate_flow_tools_json(
     :param used_packages_only: whether to only include used packages, default value is False.
     :param source_path_mapping: if specified, record yaml paths for each source.
     """
-    flow_directory, flow_file = resolve_flow_path(flow_directory)
+    flow_directory, flow_file = resolve_flow_path(flow_directory, check_flow_exist=False)
     # parse flow DAG
     data = load_yaml(flow_directory / flow_file)
 

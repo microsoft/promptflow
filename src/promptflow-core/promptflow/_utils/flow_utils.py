@@ -78,8 +78,10 @@ def resolve_flow_path(
 
     if flow_path.is_dir():
         target_folder = flow_path
-        target_file = FLOW_FLEX_YAML if (target_folder / FLOW_FLEX_YAML).is_file() else FLOW_DAG_YAML
-        if (target_folder / FLOW_DAG_YAML).is_file() and (target_folder / FLOW_FLEX_YAML).is_file():
+        dag_file_exist = (target_folder / FLOW_DAG_YAML).exists()
+        flex_file_exist = (target_folder / FLOW_FLEX_YAML).exists()
+        target_file = FLOW_FLEX_YAML if flex_file_exist else FLOW_DAG_YAML
+        if dag_file_exist and flex_file_exist:
             raise ValidationException(
                 f"Both exist {FLOW_DAG_YAML} and {FLOW_FLEX_YAML} in the {flow_path}. "
                 f"Please specify the file instead of the folder, "
