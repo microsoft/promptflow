@@ -239,13 +239,13 @@ class PFSOperations:
     def list_line_runs(
         self,
         *,
-        session_id: Optional[str] = None,
+        collection: Optional[str] = None,
         runs: Optional[List[str]] = None,
         trace_ids: Optional[List[str]] = None,
     ):
         query_string = {}
-        if session_id is not None:
-            query_string["session"] = session_id
+        if collection is not None:
+            query_string["collection"] = collection
         if runs is not None:
             query_string["run"] = ",".join(runs)
         if trace_ids is not None:

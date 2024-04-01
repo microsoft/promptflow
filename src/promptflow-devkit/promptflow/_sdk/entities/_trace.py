@@ -121,7 +121,7 @@ class Span:
         #   1. first span: create, as we cannot identify the first span, so will use a try-catch
         #   2. root span: update
         if self.parent_id is None:
-            LineRun._from_root_span(self)._update()
+            LineRun._from_root_span(self)._try_update()
         else:
             LineRun._from_non_root_span(self)._try_create()
 
@@ -386,8 +386,13 @@ class LineRun:
         except LineRunNotFoundError:
             self._to_orm_object().persist()
 
-    def _update(self) -> None:
-        self._to_orm_object()._update()
+    def _try_update(self) -> None:
+        # try to get first; need to create, instead of update, for trace with only one root span
+        try:
+            ORMLineRun.get(line_run_id=self.line_run_id)
+            self._to_orm_object()._update()
+        except LineRunNotFoundError:
+            self._to_orm_object().persist()
 
     @staticmethod
     def _get_inputs_from_span(span: Span) -> typing.Optional[typing.Dict]:

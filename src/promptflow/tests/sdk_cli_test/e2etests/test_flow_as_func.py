@@ -125,7 +125,7 @@ class TestFlowAsFunc:
         f.context.connections = {"hello_node": {"connection": CustomConnection(secrets={"k": "v"})}}
 
         result = f(text="hello")
-        assert result["output"]["secrets"] == {"k": "v"}
+        assert result["output"] == {"k": "v"}
 
     def test_overrides(self):
         f = load_flow(f"{FLOWS_DIR}/print_env_var")

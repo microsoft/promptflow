@@ -17,7 +17,7 @@ def check_required_packages():
         import azure.identity  # noqa: F401
     except ImportError as e:
         raise MissingRequiredPackage(
-            message="Please install 'azure-identity>=1.12.0,<2.0.0' and 'azure-ai-ml' to use workspace connection."
+            message="Please install 'promptflow-core[azureml-serving]' to use workspace connection."
         ) from e
 
 
