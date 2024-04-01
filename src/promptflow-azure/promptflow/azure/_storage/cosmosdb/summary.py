@@ -196,13 +196,12 @@ class Summary:
 
     def _insert_evaluation(self, client: ContainerProxy):
         attributes: dict = self.span.attributes
-        name = self.span.name
         item = LineEvaluation(
             trace_id=self.span.trace_id,
             root_span_id=self.span.span_id,
             collection_id=self.collection_id,
             outputs=json_loads_parse_const_as_str(attributes.get(SpanAttributeFieldName.OUTPUT, "{}")),
-            name=name,
+            name=self.span.name,
             created_by=self.created_by,
         )
 
@@ -236,16 +235,17 @@ class Summary:
 
         if SpanAttributeFieldName.LINE_RUN_ID in attributes:
             item.line_run_id = attributes[SpanAttributeFieldName.LINE_RUN_ID]
+            key = self.span.name
         else:
             batch_run_id = attributes[SpanAttributeFieldName.BATCH_RUN_ID]
             item.batch_run_id = batch_run_id
             item.line_number = line_number
-            # Use batch run id instead of name as key in evaluations dict.
-            # Customer may run the same evaluation flow multiple times target a batch run, we should be able to
-            # save all evaluations.
-            name = batch_run_id
+            # Use the batch run id, instead of the name, as the key in the evaluations dictionary.
+            # Customers may execute the same evaluation flow multiple times for a batch run.
+            # We should be able to save all evaluations, as customers use batch runs in a critical manner.
+            key = batch_run_id
 
-        patch_operations = [{"op": "add", "path": f"/evaluations/{name}", "value": asdict(item)}]
+        patch_operations = [{"op": "add", "path": f"/evaluations/{key}", "value": asdict(item)}]
         self.logger.info(f"Insert evaluation for LineSummary main_id: {main_id}")
         return client.patch_item(item=main_id, partition_key=main_partition_key, patch_operations=patch_operations)
 
