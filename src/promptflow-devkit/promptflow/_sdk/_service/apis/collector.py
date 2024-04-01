@@ -166,6 +166,9 @@ def _try_write_trace_to_cosmosdb(
 
         collection_db = CollectionCosmosDB(first_span, is_cloud_trace, created_by)
         collection_db.create_collection_if_not_exist(collection_client)
+        # For runtime, collection id is flow id for test, batch run id for batch run.
+        # For local, collection id is collection name + user id for non batch run, batch run id for batch run.
+        # We assign it to LineSummary and Span and use it as partition key.
         collection_id = collection_db.collection_id
 
         for span in all_spans:
