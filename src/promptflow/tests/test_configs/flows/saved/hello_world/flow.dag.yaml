@@ -2,4 +2,11 @@ entry: hello:hello_world
 environment:
   python_requirements_txt: requirements
   image: python:3.8-slim
-language: python
+inputs:
+  text:
+    type: str
+    description: The text to be printed
+outputs:
+  answer:
+    type: str
+    description: The answer

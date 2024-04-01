@@ -1,10 +1,10 @@
 import os
+import shutil
 import sys
 from pathlib import Path
 
 import pytest
 
-import promptflow
 from promptflow._sdk._pf_client import PFClient
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
@@ -33,20 +33,22 @@ def clear_module_cache(module_name):
 @pytest.mark.e2etest
 class TestFlowSave:
     def test_pf_save_simple(self):
+        target_path = f"{FLOWS_DIR}/saved/hello_world"
+        if os.path.exists(target_path):
+            shutil.rmtree(target_path)
+
         pf = PFClient()
-        # or follow spec: import promptflow as pf? seems that we don't have such interface now.
-        pf.save(
+        pf.flows._save(
             # should we support save to a yaml file and do not copy code?
-            path=f"{FLOWS_DIR}/saved/hello_world",
+            path=target_path,
             # this should be entry instead of flow as we don't have a flow now in concept level before saving
             entry="hello:hello_world",
-            # question: should the requirements be related to code?
-            # or should we copy it based on current working directory?
-            requirements=f"{TEST_ROOT}/test_configs/functions/requirements",
-            image="python:3.8-slim",
+            # code should be required, or we can't locate entry along with code; we can check if it's possible to infer
+            # code from entry
             # all content in code will be copied
             code=f"{TEST_ROOT}/test_configs/functions/hello_world",
-            # what if the signature doesn't match the code? should we do any validation?
+            python_requirements=f"{TEST_ROOT}/test_configs/functions/requirements",
+            image="python:3.8-slim",
             signature={
                 "inputs": {
                     "text": {
@@ -61,15 +63,14 @@ class TestFlowSave:
                     }
                 },
             },
-            # this field looks a little unnecessary. If we want it for pf flow test, seems that we should use it to
-            # set default values for flow inputs; if we want it for run create, we should create a jsonl.
             input_sample={"text": "promptflow"},
-            # or we should infer it from entry?
-            language="python",
-            force=True,
         )
 
-        _ = promptflow.load_flow(f"{FLOWS_DIR}/saved/hello_world")
+        from promptflow._sdk.entities._flow import Flow
+
+        flow = Flow.load(f"{FLOWS_DIR}/saved/hello_world")
+        validation_result = flow._validate()
+        assert validation_result.passed
         # will we support flow as function for flex flow?
         # TODO: invoke is also not supported for flex flow for now
         # assert hello.invoke(inputs={"text": "promptflow"}) == "Hello World promptflow!"
@@ -77,7 +78,7 @@ class TestFlowSave:
     def test_pf_save_class_constructor(self):
         pf = PFClient()
         # or follow spec: import promptflow as pf? seems that we don't have such interface now.
-        pf.save(
+        pf.flows._save(
             path=f"{FLOWS_DIR}/saved/hello_world",
             entry="hello:hello_world",
             code=f"{TEST_ROOT}/test_configs/functions/hello_world",

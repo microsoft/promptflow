@@ -65,6 +65,9 @@ class EagerFlowSchema(BaseFlowSchema):
 
     # entry point for eager flow
     entry = fields.Str(required=True)
+    inputs = fields.Dict(keys=fields.Str(), values=NestedField(FlowInputSchema), required=False)
+    outputs = fields.Dict(keys=fields.Str(), values=NestedField(FlowOutputSchema), required=False)
+    inits = fields.Dict(keys=fields.Str(), values=NestedField(FlowInputSchema), required=False)
 
     @validates_schema(skip_on_field_errors=False)
     def validate_entry(self, data, **kwargs):

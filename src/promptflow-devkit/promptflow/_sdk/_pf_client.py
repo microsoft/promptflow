@@ -344,7 +344,3 @@ class PFClient:
     def traces(self) -> TraceOperations:
         """Operations on the trace that can manage traces."""
         return self._traces
-
-    def save(self, **kwargs) -> None:
-        # TODO: add docstring
-        self.flows.save(**kwargs)
