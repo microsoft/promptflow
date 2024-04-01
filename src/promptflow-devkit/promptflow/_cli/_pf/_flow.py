@@ -20,6 +20,7 @@ from promptflow._cli._params import (
     add_param_environment_variables,
     add_param_flow_display_name,
     add_param_function,
+    add_param_init,
     add_param_inputs,
     add_param_prompt_template,
     add_param_source,
@@ -163,6 +164,7 @@ pf flow serve --source <path_to_flow> --skip-open-browser
             add_param_environment_variables,
             add_param_config,
             add_param_skip_browser,
+            add_param_init,
         ]
         + base_params,
         subparsers=subparsers,
@@ -437,7 +439,8 @@ def _test_flow_multi_modal(args):
     flow_dir = os.path.abspath(flow.code)
     chat_page_url = generate_url(flow_dir, pfs_port)
     print(f"You can begin chat flow on {chat_page_url}")
-    webbrowser.open(chat_page_url)
+    if not args.skip_open_browser:
+        webbrowser.open(chat_page_url)
 
 
 def _test_flow_interactive(args, pf_client, inputs, environment_variables):
@@ -510,7 +513,7 @@ def serve_flow(args):
 
 
 def serve_flow_csharp(args, source):
-    from promptflow.batch._csharp_executor_proxy import EXECUTOR_SERVICE_DLL
+    from promptflow._proxy._csharp_executor_proxy import EXECUTOR_SERVICE_DLL
 
     try:
         # Change working directory to model dir
@@ -572,6 +575,7 @@ def serve_flow_python(args, source):
         static_folder=static_folder,
         environment_variables=list_of_dict_to_dict(args.environment_variables),
         connection_provider=connection_provider,
+        inits=list_of_dict_to_dict(args.inits),
     )
     if not args.skip_open_browser:
         target = f"http://{args.host}:{args.port}"

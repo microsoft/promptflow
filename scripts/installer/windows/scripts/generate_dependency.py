@@ -2,8 +2,24 @@ import ast
 import re
 import subprocess
 import copy
+from pip._vendor import tomli as toml
 from pathlib import Path
 from promptflow._sdk._utils import render_jinja_template
+
+
+def get_git_base_dir():
+    return Path(
+        subprocess.run(['git', 'rev-parse', '--show-toplevel'], stdout=subprocess.PIPE)
+        .stdout.decode('utf-8').strip())
+
+
+def is_tool(name):
+    """Check whether `name` is on PATH and marked as executable."""
+
+    # from whichcraft import which
+    from shutil import which
+
+    return which(name) is not None
 
 
 def extract_requirements(file_path):
@@ -31,10 +47,31 @@ def extract_package_names(packages):
     return package_names
 
 
+def get_toml_dependencies(packages):
+    file_list = ["promptflow-tracing", "promptflow-core", "promptflow-devkit", "promptflow-azure"]
+    dependencies = []
+
+    for package in packages:
+        if package in file_list:
+            with open(get_git_base_dir() / "src" / package / "pyproject.toml", 'rb') as file:
+                data = toml.load(file)
+            extra_package_names = data.get('tool', {}).get('poetry', {}).get('dependencies', {})
+            dependencies.extend(extra_package_names.keys())
+    dependencies = [dependency for dependency in dependencies
+                    if not dependency.startswith('promptflow') and not dependency == 'python']
+    return dependencies
+
+
 def get_package_dependencies(package_name_list):
     dependencies = []
     for package_name in package_name_list:
-        result = subprocess.run(['pip', 'show', package_name], stdout=subprocess.PIPE)
+        if (is_tool('conda')):
+            result = subprocess.run('conda activate root | pip show {}'.format(package_name),
+                                    shell=True, stdout=subprocess.PIPE)
+        else:
+            result = subprocess.run(['pip', 'show', package_name], stdout=subprocess.PIPE)
+        print("---" + package_name)
+        print(result.stdout)
         lines = result.stdout.decode('utf-8', errors="ignore").splitlines()
         for line in lines:
             if line.startswith('Requires'):
@@ -42,20 +79,34 @@ def get_package_dependencies(package_name_list):
                 if dependency != ['']:
                     dependencies.extend(dependency)
                 break
+
+    dependencies = [dependency for dependency in dependencies if not dependency.startswith('promptflow')]
     return dependencies
 
 
 if __name__ == '__main__':
     dependencies = []
-    install_requires, extras_requires = extract_requirements('../../../../src/promptflow/setup.py')
+    install_requires, extras_requires = extract_requirements(get_git_base_dir() / 'src/promptflow/setup.py')
     install_requires_names = extract_package_names(install_requires)
     dependencies.extend(install_requires_names)
 
     for key in extras_requires:
         extras_require_names = extract_package_names(extras_requires[key])
         dependencies.extend(extras_require_names)
+    # get toml dependencies
+    dependencies = list(set(dependencies))
+    direct_package_dependencies = get_toml_dependencies(dependencies)
+
+    # get one step furture for dependencies
+    dependencies = list(set(direct_package_dependencies))
     direct_package_dependencies = get_package_dependencies(dependencies)
+
+    # get all dependencies
     all_packages = list(set(dependencies) | set(direct_package_dependencies))
+
+    # remove all packages starting with promptflow
+    all_packages = [package for package in all_packages if not package.startswith('promptflow')]
+
     hidden_imports = copy.deepcopy(all_packages)
     meta_packages = copy.deepcopy(all_packages)
 
@@ -79,6 +130,7 @@ if __name__ == '__main__':
     }
     # always use unix line ending
     Path("./promptflow.spec").write_bytes(
-        render_jinja_template("./promptflow.spec.jinja2", **render_context)
+        render_jinja_template(
+            get_git_base_dir() / "scripts/installer/windows/scripts/promptflow.spec.jinja2", **render_context)
         .encode("utf-8")
         .replace(b"\r\n", b"\n"),)
