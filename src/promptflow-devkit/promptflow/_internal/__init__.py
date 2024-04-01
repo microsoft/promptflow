@@ -40,6 +40,7 @@ from promptflow._core.tools_manager import (
     register_connections,
     retrieve_tool_func_result,
 )
+from promptflow._proxy._csharp_executor_proxy import CSharpBaseExecutorProxy
 from promptflow._sdk._constants import LOCAL_MGMT_DB_PATH, CreatedByFieldName
 from promptflow._sdk._service.apis.collector import trace_collector
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
@@ -91,7 +92,6 @@ from promptflow._utils.utils import (
     transpose,
 )
 from promptflow._version import VERSION
-from promptflow.batch._csharp_base_executor_proxy import CSharpBaseExecutorProxy
 from promptflow.core._serving.response_creator import ResponseCreator
 from promptflow.core._serving.swagger import generate_swagger
 from promptflow.core._serving.utils import (
