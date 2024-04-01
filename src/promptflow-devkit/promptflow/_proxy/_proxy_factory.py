@@ -35,7 +35,7 @@ class ProxyFactory:
         :param language: The flow program language of the executor proxy,
         :type language: str
         :param executor_proxy_cls: The executor proxy class to be registered.
-        :type executor_proxy_cls:  ~promptflow.batch.AbstractExecutorProxy
+        :type executor_proxy_cls:  ~promptflow._proxy.AbstractExecutorProxy
         """
         cls.executor_proxy_classes[language] = executor_proxy_cls
 

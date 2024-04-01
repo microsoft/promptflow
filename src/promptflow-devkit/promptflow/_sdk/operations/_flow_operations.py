@@ -16,6 +16,7 @@ from typing import Dict, Iterable, List, NoReturn, Tuple, Union
 import pydash
 
 from promptflow._constants import FlowLanguage
+from promptflow._proxy import ProxyFactory
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
     DAG_FILE_NAME,
@@ -881,7 +882,8 @@ class FlowOperations(TelemetryMixin):
                 )
             )
 
-    def _resolve_requirements_txt(self, python_requirements, code):
+    @staticmethod
+    def _resolve_requirements_txt(python_requirements, code):
         if python_requirements:
             requirements_filename = Path(python_requirements).name
             if (Path(code) / requirements_filename).exists():
@@ -893,6 +895,31 @@ class FlowOperations(TelemetryMixin):
             # use %code%/requirements.txt if not specified and existed
             return DEFAULT_REQUIREMENTS_FILE_NAME
         return None
+
+    @staticmethod
+    def _resolve_signature(original_signature, entry, working_dir, language):
+        if not original_signature:
+            original_signature = {}
+
+        inspector_proxy = ProxyFactory().create_inspector_proxy(language=language)
+        if not inspector_proxy.is_flex_flow_entry(entry):
+            raise UserErrorException(f"Entry {entry} is not a valid entry for flow.")
+
+        # TODO: extract inits, and description?
+        entry_meta = inspector_proxy.get_entry_meta(entry=entry, working_dir=working_dir)
+        for key in ["inputs", "outputs", "inits"]:
+            if key not in original_signature and key in entry_meta:
+                original_signature[key] = entry_meta[key]
+
+            if key in original_signature and key in entry_meta:
+                if set(original_signature[key].keys()) != set(entry_meta[key].keys()):
+                    raise UserErrorException(
+                        f"Provided signature of {key} for entry {entry} does not match the actual signature.\n"
+                        f"Provided: {', '.join(original_signature[key].keys())}\n"
+                        f"Actual: {', '.join(entry_meta[key].keys())}\n"
+                    )
+
+        return original_signature
 
     @monitor_operation(activity_name="pf.flows._save", activity_type=ActivityType.INTERNALCALL)
     def _save(
@@ -948,14 +975,19 @@ class FlowOperations(TelemetryMixin):
         if image:
             pydash.set_(data, "environment.image", image)
 
-        if signature:
-            # TODO: generate/validate signature
-            data.update(signature)
-
         # hide the language field before csharp support go public
         language = kwargs.pop("language", None)
         if language:
             data["language"] = language
+
+        data.update(
+            self._resolve_signature(
+                original_signature=signature,
+                entry=entry,
+                working_dir=code,
+                language=language or FlowLanguage.Python,
+            )
+        )
 
         target_flow_file = target_flow_directory / DAG_FILE_NAME
         target_flow_directory.parent.mkdir(parents=True, exist_ok=True)

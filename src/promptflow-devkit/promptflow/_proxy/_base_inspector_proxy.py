@@ -2,7 +2,9 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Dict, List
+
+from promptflow._sdk._constants import FLOW_META_JSON_GEN_TIMEOUT
 
 
 class AbstractInspectorProxy:
@@ -29,6 +31,17 @@ class AbstractInspectorProxy:
         raise NotImplementedError()
 
     @classmethod
-    def is_flex_flow_entry(self, entry: str) -> bool:
+    def is_flex_flow_entry(cls, entry: str) -> bool:
         """Check if the flow is a flex flow entry."""
+        raise NotImplementedError()
+
+    @classmethod
+    def get_entry_meta(
+        cls,
+        entry: str,
+        working_dir: Path,
+        timeout: int = FLOW_META_JSON_GEN_TIMEOUT,
+        load_in_subprocess: bool = True,
+    ) -> Dict[str, Any]:
+        """Generate meta data for a flow entry."""
         raise NotImplementedError()

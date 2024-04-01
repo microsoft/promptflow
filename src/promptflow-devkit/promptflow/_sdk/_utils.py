@@ -33,6 +33,7 @@ from keyring.errors import NoKeyringError
 from marshmallow import ValidationError
 
 import promptflow
+from promptflow._core.entry_meta_generator import generate_flow_meta as _generate_flow_meta
 from promptflow._constants import ENABLE_MULTI_CONTAINER_KEY, EXTENSION_UA, FlowLanguage
 from promptflow._sdk._constants import (
     AZURE_WORKSPACE_REGEX_FORMAT,
@@ -63,12 +64,10 @@ from promptflow._sdk._errors import (
     UnsecureConnectionError,
 )
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
-from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
 from promptflow.contracts.tool import ToolType
-from promptflow.core._utils import generate_flow_meta as _generate_flow_meta
 from promptflow.core._utils import get_used_connection_names_from_dict, update_dict_value_with_connections
 from promptflow.exceptions import ErrorTarget, UserErrorException, ValidationException
 
@@ -877,20 +876,6 @@ def parse_otel_span_status_code(value: int) -> str:
         return "Ok"
     else:
         return "Error"
-
-
-def _generate_meta_from_file(working_dir, source_path, entry, meta_dict, exception_list):
-    from promptflow._core.tool_meta_generator import generate_flow_meta_dict_by_file
-
-    with _change_working_dir(working_dir), inject_sys_path(working_dir):
-        try:
-            result = generate_flow_meta_dict_by_file(
-                path=source_path,
-                entry=entry,
-            )
-            meta_dict.update(result)
-        except Exception as e:
-            exception_list.append(str(e))
 
 
 def extract_workspace_triad_from_trace_provider(trace_provider: str) -> AzureMLWorkspaceTriad:

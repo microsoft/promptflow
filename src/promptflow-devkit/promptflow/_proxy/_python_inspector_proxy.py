@@ -1,8 +1,12 @@
 import re
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Dict, List
 
-from .._constants import FlowEntryRegex
+from promptflow._constants import FlowEntryRegex
+from promptflow._core.entry_meta_generator import _generate_flow_meta
+from promptflow._sdk._constants import FLOW_META_JSON_GEN_TIMEOUT
+from promptflow._utils.flow_utils import resolve_entry_file
+
 from ._base_inspector_proxy import AbstractInspectorProxy
 
 
@@ -21,6 +25,26 @@ class PythonInspectorProxy(AbstractInspectorProxy):
         return executable.get_connection_names(environment_variables_overrides=environment_variables_overrides)
 
     @classmethod
-    def is_flex_flow_entry(self, entry: str) -> bool:
+    def is_flex_flow_entry(cls, entry: str) -> bool:
         """Check if the flow is a flex flow entry."""
         return isinstance(entry, str) and re.match(FlowEntryRegex.Python, entry)
+
+    @classmethod
+    def get_entry_meta(
+        cls,
+        entry: str,
+        working_dir: Path,
+        timeout: int = FLOW_META_JSON_GEN_TIMEOUT,
+        load_in_subprocess: bool = True,
+    ) -> Dict[str, Any]:
+        # TODO: switch current usage of ExecutorProxy.generate_flow_meta to InspectorProxy.get_entry_meta
+
+        flow_dag = {"entry": entry}
+        # generate flow.json only for eager flow for now
+        return _generate_flow_meta(
+            flow_directory=working_dir,
+            source_path=resolve_entry_file(entry=flow_dag.get("entry"), working_dir=working_dir),
+            data=flow_dag,
+            timeout=timeout,
+            load_in_subprocess=load_in_subprocess,
+        )
