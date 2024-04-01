@@ -6,6 +6,7 @@ import copy
 import glob
 import json
 import os
+import shutil
 import subprocess
 import sys
 import uuid
@@ -673,8 +674,18 @@ class FlowOperations(TelemetryMixin):
             try:
                 subprocess.run(["pyinstaller", "app.spec"], check=True)
                 print("PyInstaller command executed successfully.")
+
+                exe_dir = os.path.join(output_dir, "dist", "app")
+                for file_name in ["pf.bat", "pf", "start_pfs.vbs"]:
+                    src_file = os.path.join(output_dir, file_name)
+                    dst_file = os.path.join(exe_dir, file_name)
+                    shutil.copy(src_file, dst_file)
             except FileNotFoundError as e:
-                raise UserErrorException(message_format="app.spec not found when run pyinstaller") from e
+                raise UserErrorException(
+                    message_format="The pyinstaller command was not found. Please ensure that the "
+                    "executable directory of the current python environment has "
+                    "been added to the PATH environment variable."
+                ) from e
 
     @monitor_operation(activity_name="pf.flows.build", activity_type=ActivityType.PUBLICAPI)
     def build(
