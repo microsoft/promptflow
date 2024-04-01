@@ -57,6 +57,11 @@ checks = {
         "scripts/building/**",
         ".github/workflows/promptflow-sdk-cli-azure-test-pull-request.yml",
     ],
+    "promptflow-core-test [Pure]": [
+        "src/promptflow-core/**",
+        "scripts/building/**",
+        ".github/workflows/promptflow-core-test.yml",
+    ],
 }
 
 reverse_checks = {}

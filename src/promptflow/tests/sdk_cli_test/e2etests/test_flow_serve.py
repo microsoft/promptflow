@@ -193,7 +193,7 @@ def test_user_agent(flow_serving_client):
 @pytest.mark.e2etest
 def test_serving_api(flow_serving_client):
     response = flow_serving_client.get("/health")
-    assert b'{"status":"Healthy","version":"0.0.1"}' in response.data
+    assert b'{"status":"Healthy","version":"1.0.0.dev0"}' in response.data
     response = flow_serving_client.get("/")
     print(response.data)
     assert response.status_code == 200
