@@ -15,8 +15,7 @@ from promptflow._core.tool import tool as _tool
 # control plane sdk functions
 from promptflow._sdk._load_functions import load_flow as _load_flow
 from promptflow._sdk._load_functions import load_run as _load_run
-
-from ._sdk._pf_client import PFClient as _PFClient
+from promptflow._sdk._pf_client import PFClient as _PFClient
 
 # flake8: noqa
 from ._version import VERSION
