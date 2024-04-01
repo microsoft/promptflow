@@ -222,23 +222,29 @@ def setup_exporter_to_pfs() -> None:
             resource_group_name=resource_group_name,
             workspace_name=workspace_name,
         )
-    # tracer provider
-    # create resource & tracer provider, or merge resource
-    res = _create_res(collection=collection, collection_id=collection_id, exp=exp, ws_triad=workspace_triad)
-    cur_tracer_provider = trace.get_tracer_provider()
-    if isinstance(cur_tracer_provider, TracerProvider):
-        # merge resource to existing resource
-        cur_res = cur_tracer_provider.resource
-        new_res = cur_res.merge(res)
-        cur_tracer_provider._resource = new_res
-    else:
-        tracer_provider = TracerProvider(resource=res)
-        trace.set_tracer_provider(tracer_provider)
     # exporter
+    otlp_span_exporter: typing.Optional[OTLPSpanExporter] = None
     # get OTLP endpoint from environment
     endpoint = os.getenv(OTEL_EXPORTER_OTLP_ENDPOINT)
     if endpoint is not None:
         # create OTLP span exporter if endpoint is set
         otlp_span_exporter = OTLPSpanExporter(endpoint=endpoint)
-        tracer_provider: TracerProvider = trace.get_tracer_provider()
-        tracer_provider.add_span_processor(BatchSpanProcessor(otlp_span_exporter))
+
+    # tracer provider
+    # create resource & tracer provider, or merge resource
+    res = _create_res(collection=collection, collection_id=collection_id, exp=exp, ws_triad=workspace_triad)
+    cur_tracer_provider = trace.get_tracer_provider()
+    if isinstance(cur_tracer_provider, TracerProvider):
+        cur_res: Resource = cur_tracer_provider.resource
+        # no "service.name=promptflow" in resource.attributes
+        # need to merge resource to existing resource and add exporter (if OTLP endpoint is set)
+        if cur_res.attributes.get(SpanResourceAttributesFieldName.SERVICE_NAME) != OTEL_RESOURCE_SERVICE_NAME:
+            new_res = cur_res.merge(res)
+            cur_tracer_provider._resource = new_res
+            if otlp_span_exporter is not None:
+                cur_tracer_provider.add_span_processor(BatchSpanProcessor(otlp_span_exporter))
+    else:
+        tracer_provider = TracerProvider(resource=res)
+        if otlp_span_exporter is not None:
+            tracer_provider.add_span_processor(BatchSpanProcessor(otlp_span_exporter))
+        trace.set_tracer_provider(tracer_provider)
