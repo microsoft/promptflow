@@ -5,8 +5,8 @@
 import datetime
 import typing
 
-from sqlalchemy import INTEGER, JSON, REAL, TEXT, TIMESTAMP, Index
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy import INTEGER, JSON, REAL, TEXT, TIMESTAMP, Column, Index
+from sqlalchemy.orm import Mapped, declarative_base
 
 from promptflow._sdk._constants import EVENT_TABLENAME, LINE_RUN_TABLENAME, SPAN_TABLENAME, TRACE_LIST_DEFAULT_LIMIT
 from promptflow._sdk._errors import LineRunNotFoundError
@@ -34,23 +34,24 @@ class LineRunIndexName:
     SESSION_ID = "idx_line_runs_session_id"
 
 
-class Base(DeclarativeBase):
-    @sqlite_retry
-    def persist(self) -> None:
-        with trace_mgmt_db_session() as session:
-            session.add(self)
-            session.commit()
+Base = declarative_base()
 
 
 class Event(Base):
     __tablename__ = EVENT_TABLENAME
 
-    event_id: Mapped[str] = mapped_column(TEXT, primary_key=True)
-    trace_id: Mapped[str] = mapped_column(TEXT)
-    span_id: Mapped[str] = mapped_column(TEXT)
-    data: Mapped[str] = mapped_column(TEXT)
+    event_id: Mapped[str] = Column(TEXT, primary_key=True)
+    trace_id: Mapped[str] = Column(TEXT)
+    span_id: Mapped[str] = Column(TEXT)
+    data: Mapped[str] = Column(TEXT)
 
     __table_args__ = (Index(EventIndexName.TRACE_ID_SPAN_ID, "trace_id", "span_id"),)
+
+    @sqlite_retry
+    def persist(self) -> None:
+        with trace_mgmt_db_session() as session:
+            session.add(self)
+            session.commit()
 
     @staticmethod
     @sqlite_retry
@@ -71,24 +72,30 @@ class Event(Base):
 class Span(Base):
     __tablename__ = SPAN_TABLENAME
 
-    trace_id: Mapped[str] = mapped_column(TEXT)
-    span_id: Mapped[str] = mapped_column(TEXT, primary_key=True)
-    name: Mapped[str] = mapped_column(TEXT)
-    context: Mapped[typing.Dict] = mapped_column(JSON)
-    kind: Mapped[str] = mapped_column(TEXT)
-    parent_id: Mapped[typing.Optional[str]] = mapped_column(TEXT, nullable=True)
-    start_time: Mapped[datetime.datetime] = mapped_column(TIMESTAMP)
-    end_time: Mapped[datetime.datetime] = mapped_column(TIMESTAMP)
-    status: Mapped[typing.Dict] = mapped_column(JSON)
-    attributes: Mapped[typing.Optional[typing.Dict]] = mapped_column(JSON, nullable=True)
-    links: Mapped[typing.Optional[typing.List]] = mapped_column(JSON, nullable=True)
-    events: Mapped[typing.Optional[typing.List]] = mapped_column(JSON, nullable=True)
-    resource: Mapped[typing.Dict] = mapped_column(JSON)
+    trace_id: Mapped[str] = Column(TEXT)
+    span_id: Mapped[str] = Column(TEXT, primary_key=True)
+    name: Mapped[str] = Column(TEXT)
+    context: Mapped[typing.Dict] = Column(JSON)
+    kind: Mapped[str] = Column(TEXT)
+    parent_id: Mapped[typing.Optional[str]] = Column(TEXT, nullable=True)
+    start_time: Mapped[datetime.datetime] = Column(TIMESTAMP)
+    end_time: Mapped[datetime.datetime] = Column(TIMESTAMP)
+    status: Mapped[typing.Dict] = Column(JSON)
+    attributes: Mapped[typing.Optional[typing.Dict]] = Column(JSON, nullable=True)
+    links: Mapped[typing.Optional[typing.List]] = Column(JSON, nullable=True)
+    events: Mapped[typing.Optional[typing.List]] = Column(JSON, nullable=True)
+    resource: Mapped[typing.Dict] = Column(JSON)
 
     __table_args__ = (
         Index(SpanIndexName.TRACE_ID, "trace_id"),
         Index(SpanIndexName.TRACE_ID_SPAN_ID, "trace_id", "span_id"),
     )
+
+    @sqlite_retry
+    def persist(self) -> None:
+        with trace_mgmt_db_session() as session:
+            session.add(self)
+            session.commit()
 
     @staticmethod
     @sqlite_retry
@@ -116,24 +123,24 @@ class Span(Base):
 class LineRun(Base):
     __tablename__ = LINE_RUN_TABLENAME
 
-    line_run_id: Mapped[str] = mapped_column(TEXT, primary_key=True)
-    trace_id: Mapped[str] = mapped_column(TEXT)
-    root_span_id: Mapped[typing.Optional[str]] = mapped_column(TEXT, nullable=True)
-    inputs: Mapped[typing.Optional[typing.Dict]] = mapped_column(JSON, nullable=True)
-    outputs: Mapped[typing.Optional[typing.Dict]] = mapped_column(JSON, nullable=True)
-    start_time: Mapped[datetime.datetime] = mapped_column(TIMESTAMP)
-    end_time: Mapped[typing.Optional[datetime.datetime]] = mapped_column(TIMESTAMP, nullable=True)
-    status: Mapped[typing.Optional[str]] = mapped_column(TEXT, nullable=True)
-    duration: Mapped[typing.Optional[float]] = mapped_column(REAL, nullable=True)
-    name: Mapped[typing.Optional[str]] = mapped_column(TEXT, nullable=True)
-    kind: Mapped[typing.Optional[str]] = mapped_column(TEXT, nullable=True)
-    cumulative_token_count: Mapped[typing.Optional[typing.Dict]] = mapped_column(JSON, nullable=True)
-    parent_id: Mapped[typing.Optional[str]] = mapped_column(TEXT, nullable=True)
-    run: Mapped[typing.Optional[str]] = mapped_column(TEXT, nullable=True)
-    line_number: Mapped[typing.Optional[int]] = mapped_column(INTEGER, nullable=True)
-    experiment: Mapped[typing.Optional[str]] = mapped_column(TEXT, nullable=True)
-    session_id: Mapped[typing.Optional[str]] = mapped_column(TEXT, nullable=True)
-    collection: Mapped[str] = mapped_column(TEXT)
+    line_run_id: Mapped[str] = Column(TEXT, primary_key=True)
+    trace_id: Mapped[str] = Column(TEXT)
+    root_span_id: Mapped[typing.Optional[str]] = Column(TEXT, nullable=True)
+    inputs: Mapped[typing.Optional[typing.Dict]] = Column(JSON, nullable=True)
+    outputs: Mapped[typing.Optional[typing.Dict]] = Column(JSON, nullable=True)
+    start_time: Mapped[datetime.datetime] = Column(TIMESTAMP)
+    end_time: Mapped[typing.Optional[datetime.datetime]] = Column(TIMESTAMP, nullable=True)
+    status: Mapped[typing.Optional[str]] = Column(TEXT, nullable=True)
+    duration: Mapped[typing.Optional[float]] = Column(REAL, nullable=True)
+    name: Mapped[typing.Optional[str]] = Column(TEXT, nullable=True)
+    kind: Mapped[typing.Optional[str]] = Column(TEXT, nullable=True)
+    cumulative_token_count: Mapped[typing.Optional[typing.Dict]] = Column(JSON, nullable=True)
+    parent_id: Mapped[typing.Optional[str]] = Column(TEXT, nullable=True)
+    run: Mapped[typing.Optional[str]] = Column(TEXT, nullable=True)
+    line_number: Mapped[typing.Optional[int]] = Column(INTEGER, nullable=True)
+    experiment: Mapped[typing.Optional[str]] = Column(TEXT, nullable=True)
+    session_id: Mapped[typing.Optional[str]] = Column(TEXT, nullable=True)
+    collection: Mapped[str] = Column(TEXT)
 
     __table_args__ = (
         Index(LineRunIndexName.RUN_LINE_NUMBER, "run", "line_number"),
@@ -144,6 +151,12 @@ class LineRun(Base):
         Index(LineRunIndexName.TRACE_ID, "trace_id"),
         Index(LineRunIndexName.SESSION_ID, "session_id"),
     )
+
+    @sqlite_retry
+    def persist(self) -> None:
+        with trace_mgmt_db_session() as session:
+            session.add(self)
+            session.commit()
 
     @staticmethod
     @sqlite_retry

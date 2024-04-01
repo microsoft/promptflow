@@ -18,6 +18,7 @@ api = Namespace("LineRuns", description="Line runs management")
 # parsers for query parameters
 list_line_run_parser = api.parser()
 list_line_run_parser.add_argument("session", type=str, required=False)
+list_line_run_parser.add_argument("collection", type=str, required=False)
 list_line_run_parser.add_argument("run", type=str, required=False)
 list_line_run_parser.add_argument("experiment", type=str, required=False)
 list_line_run_parser.add_argument("trace_ids", type=str, required=False)
@@ -26,7 +27,7 @@ list_line_run_parser.add_argument("trace_ids", type=str, required=False)
 # use @dataclass for strong type
 @dataclass
 class ListLineRunParser:
-    session_id: typing.Optional[str] = None
+    collection: typing.Optional[str] = None
     runs: typing.Optional[typing.List[str]] = None
     experiments: typing.Optional[typing.List[str]] = None
     trace_ids: typing.Optional[typing.List[str]] = None
@@ -41,7 +42,7 @@ class ListLineRunParser:
     def from_request() -> "ListLineRunParser":
         args = list_line_run_parser.parse_args()
         return ListLineRunParser(
-            session_id=args.session,
+            collection=args.collection or args.session,
             runs=ListLineRunParser._parse_string_list(args.run),
             experiments=ListLineRunParser._parse_string_list(args.experiment),
             trace_ids=ListLineRunParser._parse_string_list(args.trace_ids),
@@ -86,7 +87,7 @@ class LineRuns(Resource):
         client: PFClient = get_client_from_request()
         args = ListLineRunParser.from_request()
         line_runs: typing.List[LineRunEntity] = client._traces.list_line_runs(
-            collection=args.session_id,
+            collection=args.collection,
             runs=args.runs,
             experiments=args.experiments,
             trace_ids=args.trace_ids,
