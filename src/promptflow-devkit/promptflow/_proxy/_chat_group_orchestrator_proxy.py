@@ -1,6 +1,6 @@
 from typing import Optional, List, Mapping, Any
 from pathlib import Path
-from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
+from promptflow._proxy._base_executor_proxy import AbstractExecutorProxy
 from promptflow.executor._result import LineResult
 from promptflow._sdk.entities._chat_group._chat_role import ChatRole
 from promptflow.orchestrator._chat_group_orchestrator import ChatGroupOrchestrator

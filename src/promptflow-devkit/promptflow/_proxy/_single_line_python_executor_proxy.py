@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
-from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
+from promptflow._proxy._base_executor_proxy import AbstractExecutorProxy
 from promptflow.executor import FlowExecutor
 from promptflow.executor._line_execution_process_pool import LineExecutionProcessPool
 from promptflow.executor._result import LineResult

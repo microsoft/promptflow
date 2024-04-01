@@ -17,8 +17,8 @@ from promptflow._utils.utils import dump_list_to_jsonl
 from promptflow.batch._batch_engine import BatchEngine
 from promptflow.batch._errors import EmptyInputsData
 from promptflow.batch._result import BatchResult
-from promptflow.batch._single_line_python_executor_proxy import SingleLinePythonExecutorProxy
-from promptflow.batch._chat_group_orchestrator_proxy import ChatGroupOrchestratorProxy
+from promptflow._proxy._single_line_python_executor_proxy import SingleLinePythonExecutorProxy
+from promptflow._proxy._chat_group_orchestrator_proxy import ChatGroupOrchestratorProxy
 from promptflow._sdk.entities._chat_group._chat_role import ChatRole
 from promptflow.contracts.run_info import Status
 from promptflow.executor._errors import InputNotFound
