@@ -6,7 +6,7 @@ import datetime
 import typing
 
 from sqlalchemy import INTEGER, JSON, REAL, TEXT, TIMESTAMP, Column, Index
-from sqlalchemy.orm import Mapped, declarative_base
+from sqlalchemy.orm import Mapped, Query, declarative_base
 
 from promptflow._sdk._constants import EVENT_TABLENAME, LINE_RUN_TABLENAME, SPAN_TABLENAME, TRACE_LIST_DEFAULT_LIMIT
 from promptflow._sdk._errors import LineRunNotFoundError
@@ -68,6 +68,16 @@ class Event(Base):
             events = session.query(Event).filter(Event.trace_id == trace_id, Event.span_id == span_id).all()
             return events
 
+    @staticmethod
+    @sqlite_retry
+    def delete(trace_ids: typing.List[str]) -> int:
+        with trace_mgmt_db_session() as session:
+            query: Query = session.query(Event).filter(Event.trace_id._in(trace_ids))
+            # retrieves the primary key identity of affected rows
+            row_cnt = query.delete()
+            session.commit()
+            return row_cnt
+
 
 class Span(Base):
     __tablename__ = SPAN_TABLENAME
@@ -118,6 +128,16 @@ class Span(Base):
         with trace_mgmt_db_session() as session:
             spans = session.query(Span).filter(Span.trace_id.in_(trace_ids)).all()
             return spans
+
+    @staticmethod
+    @sqlite_retry
+    def delete(trace_ids: typing.List[str]) -> int:
+        with trace_mgmt_db_session() as session:
+            query: Query = session.query(Span).filter(Span.trace_id.in_(trace_ids))
+            # retrieves the primary key identity of affected rows
+            row_cnt = query.delete()
+            session.commit()
+            return row_cnt
 
 
 class LineRun(Base):
@@ -228,3 +248,12 @@ class LineRun(Base):
         with trace_mgmt_db_session() as session:
             line_runs = session.query(LineRun).filter(LineRun.parent_id == line_run_id).all()
             return line_runs
+
+    @staticmethod
+    @sqlite_retry
+    def delete(
+        run: typing.Optional[str] = None,
+        collection: typing.Optional[str] = None,
+        started_before: typing.Optional[datetime.datetime] = None,
+    ) -> typing.List[str]:
+        ...
