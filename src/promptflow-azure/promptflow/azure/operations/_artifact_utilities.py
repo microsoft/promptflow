@@ -43,7 +43,8 @@ from azure.ai.ml.operations._datastore_operations import DatastoreOperations
 from azure.storage.blob import BlobSasPermissions, generate_blob_sas
 from azure.storage.filedatalake import FileSasPermissions, generate_file_sas
 
-from ..._utils.logger_utils import LoggerFactory
+from promptflow._utils.logger_utils import LoggerFactory
+
 from ._fileshare_storeage_helper import FlowFileStorageClient
 
 module_logger = LoggerFactory.get_logger(__name__)
