@@ -108,13 +108,13 @@ jobs:
           setupType: promptflow_with_extra
           scriptPath: ${{ env.testWorkingDirectory }}
 
-      - name: Install wheel
+      - name: Setup and Install dev promptflow
         shell: pwsh
         run: |
           Set-PSDebug -Trace 1
           pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
           pip install ${{ github.workspace }}/src/promptflow-tracing
-          pip install ${{ github.workspace }}/src/promptflow-core
+          pip install ${{ github.workspace }}/src/promptflow-core[executor-service,azureml-serving]
           pip install ${{ github.workspace }}/src/promptflow-devkit[pyarrow,executable]
           pip install ${{ github.workspace }}/src/promptflow-azure
           echo "Should fix this after pf-core could install this dependency"

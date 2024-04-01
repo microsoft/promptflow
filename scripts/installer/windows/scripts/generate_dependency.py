@@ -2,6 +2,7 @@ import ast
 import re
 import subprocess
 import copy
+from pip._vendor import tomli as toml
 from pathlib import Path
 from promptflow._sdk._utils import render_jinja_template
 
@@ -46,6 +47,19 @@ def extract_package_names(packages):
     return package_names
 
 
+def get_toml_dependencies(packages):
+    file_list = ["promptflow-tracing", "promptflow-core", "promptflow-devkit", "promptflow-azure"]
+    dependencies = []
+
+    for package in packages:
+        if package in file_list:
+            with open(get_git_base_dir() / "src" / package / "pyproject.toml", 'rb') as file:
+                data = toml.load(file)
+            extra_package_names = data.get('tool', {}).get('poetry', {}).get('dependencies', {})
+            dependencies.extend(extra_package_names.keys())
+    dependencies = [dependency for dependency in dependencies if not dependency.startswith('promptflow')]
+    return dependencies
+
 def get_package_dependencies(package_name_list):
     dependencies = []
     for package_name in package_name_list:
@@ -77,8 +91,15 @@ if __name__ == '__main__':
     for key in extras_requires:
         extras_require_names = extract_package_names(extras_requires[key])
         dependencies.extend(extras_require_names)
+    # get toml dependencies
     dependencies = list(set(dependencies))
+    direct_package_dependencies = get_toml_dependencies(dependencies)
+
+    # get one step furture for dependencies
+    dependencies = list(set(direct_package_dependencies))
     direct_package_dependencies = get_package_dependencies(dependencies)
+
+    # get all dependencies
     all_packages = list(set(dependencies) | set(direct_package_dependencies))
 
     # remove all packages starting with promptflow
