@@ -1,8 +1,8 @@
 ## Installation
 * Install promptflow private wheel:
 ```cmd
-pip install promptflow-tracing==0.1.0b2
-pip install "promptflow==1.7.0rc8" --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
+pip install promptflow-tracing
+pip install "promptflow>=1.7.0"
 ```
 * Enable internal features in your conda env
 ```cmd

@@ -68,7 +68,7 @@ def code_gen(client: AzureOpenAI, question: str) -> str:
             {"role": "user", "content": question},
         ],
     )
-    raw_code = completion.choices[0].message.content    
+    raw_code = completion.choices[0].message.content
     result = code_refine(raw_code)
     return result
 
