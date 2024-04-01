@@ -72,7 +72,7 @@ class Event(Base):
     @sqlite_retry
     def delete(trace_ids: typing.List[str]) -> int:
         with trace_mgmt_db_session() as session:
-            query: Query = session.query(Event).filter(Event.trace_id._in(trace_ids))
+            query: Query = session.query(Event).filter(Event.trace_id.in_(trace_ids))
             # retrieves the primary key identity of affected rows
             row_cnt = query.delete()
             session.commit()
