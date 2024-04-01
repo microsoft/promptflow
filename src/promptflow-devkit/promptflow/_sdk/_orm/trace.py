@@ -255,5 +255,17 @@ class LineRun(Base):
         run: typing.Optional[str] = None,
         collection: typing.Optional[str] = None,
         started_before: typing.Optional[datetime.datetime] = None,
-    ) -> typing.List[str]:
-        ...
+    ) -> typing.Union[int, typing.List[str]]:
+        with trace_mgmt_db_session() as session:
+            query: Query = session.query(LineRun)
+            if run is not None:
+                query = query.filter(LineRun.run == run)
+            if collection is not None:
+                query = query.filter(LineRun.collection == collection)
+            if started_before is not None:
+                query = query.filter(LineRun.start_time < started_before)
+            trace_ids = [line_run.trace_id for line_run in query.all()]
+            # retrieves the primary key identity of affected rows
+            row_cnt = query.delete()
+            session.commit()
+            return row_cnt, trace_ids
