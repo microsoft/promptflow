@@ -3,20 +3,20 @@
 # Any manual changes to this file may cause incorrect behavior.
 # Any manual changes will be overwritten if the code is regenerated.
 
-name: samples_flowinpipeline_pipeline
+name: samples_runflowwithpipeline_pipeline
 on:
   schedule:
-    - cron: "28 19 * * *" # Every day starting at 3:28 BJT
+    - cron: "33 20 * * *" # Every day starting at 4:33 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/tutorials/flow-in-pipeline/**, examples/flows/standard/web-classification/**, .github/workflows/samples_flowinpipeline_pipeline.yml, examples/requirements.txt, examples/connections/azure_openai.yml ]
+    paths: [ examples/tutorials/run-flow-with-pipeline/**, examples/flows/standard/web-classification/**, .github/workflows/samples_runflowwithpipeline_pipeline.yml, examples/requirements.txt, examples/connections/azure_openai.yml ]
   workflow_dispatch:
 
 env:
   IS_IN_CI_PIPELINE: "true"
 
 jobs:
-  samples_flowinpipeline_pipeline:
+  samples_runflowwithpipeline_pipeline:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -43,7 +43,7 @@ jobs:
       - name: Create Aoai Connection
         run: pf connection create -f ${{ github.workspace }}/examples/connections/azure_openai.yml --set api_key="${{ secrets.AOAI_API_KEY_TEST }}" api_base="${{ secrets.AOAI_API_ENDPOINT_TEST }}"
       - name: Test Notebook
-        working-directory: examples/tutorials/flow-in-pipeline
+        working-directory: examples/tutorials/run-flow-with-pipeline
         run: |
           papermill -k python pipeline.ipynb pipeline.output.ipynb
       - name: Upload artifact
@@ -51,4 +51,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: artifact
-          path: examples/tutorials/flow-in-pipeline
+          path: examples/tutorials/run-flow-with-pipeline
