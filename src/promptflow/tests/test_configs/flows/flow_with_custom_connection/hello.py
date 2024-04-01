@@ -3,6 +3,6 @@ from promptflow.connections import CustomConnection
 
 
 @tool
-def my_python_tool(text: str, connection: CustomConnection) -> dict:
-    return connection._to_dict()
+def my_python_tool1(text: str, connection: CustomConnection) -> dict:
+    return dict(connection)
 
