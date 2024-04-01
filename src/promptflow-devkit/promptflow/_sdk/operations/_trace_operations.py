@@ -6,7 +6,7 @@ import datetime
 import typing
 
 from promptflow._sdk._constants import TRACE_DEFAULT_COLLECTION
-from promptflow._sdk._orm.trace import Event as ORMEvent
+from promptflow._sdk._orm.session import trace_mgmt_db_session
 from promptflow._sdk._orm.trace import LineRun as ORMLineRun
 from promptflow._sdk._orm.trace import Span as ORMSpan
 from promptflow._sdk._telemetry import ActivityType, monitor_operation
@@ -127,17 +127,7 @@ class TraceOperations:
         self._logger.debug("try to delete line run(s)...")
         if isinstance(started_before, str):
             started_before = datetime.datetime.fromisoformat(started_before)
-        line_run_cnt, trace_ids = ORMLineRun.delete(
-            run=run,
-            collection=collection,
-            started_before=started_before,
-        )
-        self._logger.debug("deleted %d line runs", line_run_cnt)
-        self._logger.debug("try to delete traces and events for trace_ids: %s", trace_ids)
-        span_cnt = ORMSpan.delete(trace_ids=trace_ids)
-        event_cnt = ORMEvent.delete(trace_ids=trace_ids)
-        self._logger.debug("deleted %d spans and %d events", span_cnt, event_cnt)
-        return
+        self._delete_within_transaction(run=run, collection=collection, started_before=started_before)
 
     def _validate_delete_query_params(
         self,
@@ -170,3 +160,32 @@ class TraceOperations:
             "3) specify `collection` and `started_before` (ISO 8601)."
         )
         raise UserErrorException(error_message)
+
+    def _delete_within_transaction(
+        self,
+        run: typing.Optional[str] = None,
+        collection: typing.Optional[str] = None,
+        started_before: typing.Optional[datetime.datetime] = None,
+    ) -> None:
+        # delete will occur across 3 tables: line_runs, spans and events
+        # which be done in a transaction
+        from sqlalchemy.orm import Query
+
+        with trace_mgmt_db_session() as session:
+            # query line run first to get all trace ids
+            query: Query = session.query(LineRun)
+            if run is not None:
+                query = query.filter(LineRun.run == run)
+            if collection is not None:
+                query = query.filter(LineRun.collection == collection)
+            if started_before is not None:
+                query = query.filter(LineRun.start_time < started_before)
+            trace_ids = [line_run.trace_id for line_run in query.all()]
+            self._logger.debug("try to delete traces for trace_ids: %s", trace_ids)
+            # deletes happen
+            event_cnt = session.query(Event).filter(Event.trace_id.in_(trace_ids)).delete()
+            span_cnt = session.query(Span).filter(Span.trace_id.in_(trace_ids)).delete()
+            line_run_cnt = query.delete()
+            session.commit()
+
+        self._logger.debug("deleted %d line runs, %d spans, and %d events", line_run_cnt, span_cnt, event_cnt)
