@@ -842,6 +842,8 @@ class FlowExecutor:
         allow_generator_output=False,
     ):
         with open_telemetry_tracer.start_as_current_span(self._flow.name) as span:
+            # Store otel trace id in context for correlation
+            OperationContext.get_instance()["otel_trace_id"] = f"{span.get_span_context().trace_id:032x}"
             # initialize span
             span.set_attributes(
                 {
