@@ -46,6 +46,41 @@ class TestBatchInputsProcessor:
         )
         assert expected_error_message in e.value.message
 
+    def test_process_batch_inputs_without_inputs_mapping(self):
+        questions = [
+            {"question": "What's promptflow?"},
+            {"question": "Do you like promptflow?"},
+        ]
+        topics = [
+            {"topic": "fruit"},
+            {"topic": "sport"},
+        ]
+        questions_data_file = Path(mkdtemp()) / "questions.jsonl"
+        topics_data_file = Path(mkdtemp()) / "topics.jsonl"
+        dump_list_to_jsonl(questions_data_file, questions)
+        dump_list_to_jsonl(topics_data_file, topics)
+        input_dirs = {"question": questions_data_file, "topic": topics_data_file}
+        batch_inputs = BatchInputsProcessor("", {}).process_batch_inputs_without_inputs_mapping(input_dirs)
+        assert batch_inputs == [
+            {"line_number": 0, "question": {"question": "What's promptflow?"}, "topic": {"topic": "fruit"}},
+            {"line_number": 1, "question": {"question": "Do you like promptflow?"}, "topic": {"topic": "sport"}},
+        ]
+
+    def test_process_batch_inputs_with_conversation_history_reserved_mapping(self):
+        data = [
+            {"question": "What's promptflow?"},
+            {"question": "Do you like promptflow?"},
+        ]
+        data_file = Path(mkdtemp()) / "data.jsonl"
+        dump_list_to_jsonl(data_file, data)
+        input_dirs = {"data": data_file}
+        inputs_mapping = {"question": "${data.question}", "conversation_history": "${parent.conversation_history}"}
+        batch_inputs = BatchInputsProcessor("", {}).process_batch_inputs(input_dirs, inputs_mapping)
+        assert batch_inputs == [
+            {"line_number": 0, "question": "What's promptflow?", "conversation_history": []},
+            {"line_number": 1, "question": "Do you like promptflow?", "conversation_history": []},
+        ]
+
     def test_resolve_data_from_input_path(self):
         inputs_dir = Path(mkdtemp())
         # data.jsonl

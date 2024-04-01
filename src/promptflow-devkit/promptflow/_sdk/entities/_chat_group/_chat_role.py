@@ -3,7 +3,7 @@
 # ---------------------------------------------------------
 from os import PathLike
 from pathlib import Path
-from typing import Dict, Optional, Union
+from typing import Dict, Optional, Union, Any
 
 from promptflow._sdk._errors import ChatRoleError
 from promptflow._sdk._load_functions import load_flow
@@ -11,6 +11,8 @@ from promptflow._sdk.entities._chat_group._chat_group_io import ChatRoleInputs, 
 from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import load_yaml
+from promptflow.contracts.flow import Flow
+from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 
 logger = get_cli_sdk_logger()
 
@@ -28,10 +30,33 @@ class ChatRole:
     :type inputs: Optional[Dict]
     """
 
-    def __init__(self, flow: Union[str, PathLike], role: str, inputs: Optional[Dict] = None, **kwargs):
+    def __init__(self,
+                 flow: Union[str, PathLike],
+                 role: str,
+                 inputs: Optional[Dict] = None,
+                 name: Optional[str] = None,
+                 stop_signal: Optional[str] = None,
+                 flow_file: Optional[Path] = None,
+                 working_dir: Optional[Path] = None,
+                 connections: Optional[Dict[str, Any]] = None,
+                 inputs_mapping: Optional[Dict[str, str]] = None,
+                 **kwargs):
         self._role = role
         self._flow, self._flow_object = self._validate_flow(flow)
-        self._inputs, self._outputs = self._build_role_io(flow, inputs)
+        if inputs is not None:
+            self._inputs, self._outputs = self._build_role_io(flow, inputs)
+
+        # Below properties are used for cloud chat group. It may have some duplicate with above ones
+        # Will evaluate and refine in the second step.
+        if flow_file is not None:
+            self._name = name
+            self._stop_signal = stop_signal
+            self._flow_file = flow_file
+            self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
+            self._connections = connections
+            self._inputs_mapping = inputs_mapping
+            self._flow_definition = Flow.from_yaml(flow_file, working_dir=self._working_dir)
+
         logger.info(f"Created chat role {self.role!r} with flow {self._flow.as_posix()!r}")
 
     @property
@@ -48,6 +73,40 @@ class ChatRole:
     def outputs(self):
         """Outputs of the chat role"""
         return self._outputs
+
+    @property
+    def name(self):
+        """Name of the chat role"""
+        return self._name
+
+    @property
+    def stop_signal(self):
+        """Stop signal of the role"""
+        return self._stop_signal
+
+    @property
+    def connections(self):
+        """Connections of the chat role"""
+        return self._connections
+
+    @property
+    def working_dir(self):
+        """Working directory of the chat role flow"""
+        return self._working_dir
+
+    @property
+    def inputs_mapping(self):
+        """Inputs mapping of the chat role"""
+        return self._inputs_mapping
+
+    @property
+    def flow_file(self):
+        return self._flow_file
+
+    @property
+    def flow(self):
+        """Flow definition of the chat role"""
+        return self._flow_definition
 
     def _validate_flow(self, flow: Union[str, PathLike]):
         """Validate flow"""
@@ -120,3 +179,12 @@ class ChatRole:
             raise ChatRoleError(f"Chat role invoke does not accept positional arguments, got {args!r} instead.")
         result = self._flow_object(**kwargs) or {}
         return result
+
+    def check_language_from_yaml(self):
+        flow_file = self.working_dir / self.flow_file if self.working_dir else self.flow_file
+        if flow_file.suffix.lower() == ".dll":
+            return FlowLanguage.CSharp
+        with open(flow_file, "r", encoding="utf-8") as fin:
+            flow_dag = load_yaml(fin)
+        language = flow_dag.get(LANGUAGE_KEY, FlowLanguage.Python)
+        return language

@@ -30,6 +30,11 @@ PROMPTY_EXTENSION = ".prompty"
 
 CHAT_HISTORY = "chat_history"
 
+# chat group reserved column mapping value
+CONVERSATION_HISTORY_EXPRESSION_KEY = "parent.conversation_history"
+CONVERSATION_HISTORY_EXPRESSION = f"${{{CONVERSATION_HISTORY_EXPRESSION_KEY}}}"
+CONVERSATION_HISTORY_OUTPUT_KEY = "conversation_history"
+
 # Tool meta info
 ICON_DARK = "icon_dark"
 ICON_LIGHT = "icon_light"
