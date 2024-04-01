@@ -93,7 +93,7 @@ from promptflow._utils.utils import (
     set_context,
     transpose,
 )
-from promptflow._version import VERSION
+from promptflow.client._version import VERSION
 from promptflow.core._serving.response_creator import ResponseCreator
 from promptflow.core._serving.swagger import generate_swagger
 from promptflow.core._serving.utils import (
