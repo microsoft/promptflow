@@ -6,6 +6,7 @@
 /src/promptflow-core/promptflow/_core/ @microsoft/promptflow-execution
 /src/promptflow-devkit/promptflow/_internal/ @microsoft/promptflow-execution
 /src/promptflow-devkit/promptflow/batch/ @microsoft/promptflow-execution
+/src/promptflow-devkit/promptflow/_proxy/ @microsoft/promptflow-execution
 /src/promptflow-core/promptflow/executor/ @microsoft/promptflow-execution
 /src/promptflow-core/promptflow/integrations/ @microsoft/promptflow-execution
 /src/promptflow-core/promptflow/storage/ @microsoft/promptflow-execution
