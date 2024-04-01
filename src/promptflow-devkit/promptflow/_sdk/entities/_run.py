@@ -190,7 +190,8 @@ class Run(YAMLTranslatableMixin):
         self._identity = kwargs.get("identity", {})
         self._outputs = kwargs.get("outputs", None)
         self._command = kwargs.get("command", None)
-        self._init = init or {}
+        if init:
+            self._properties[FlowRunProperties.INIT_KWARGS] = init
 
     @property
     def created_on(self) -> str:
@@ -235,7 +236,7 @@ class Run(YAMLTranslatableMixin):
 
     @property
     def init(self):
-        return self._init
+        return self._properties.get(FlowRunProperties.INIT_KWARGS, None)
 
     @classmethod
     def _from_orm_object(cls, obj: ORMRun) -> "Run":
@@ -274,7 +275,6 @@ class Run(YAMLTranslatableMixin):
             command=properties_json.get(FlowRunProperties.COMMAND, None),
             outputs=properties_json.get(FlowRunProperties.OUTPUTS, None),
             column_mapping=properties_json.get(FlowRunProperties.COLUMN_MAPPING, None),
-            init=properties_json.get(FlowRunProperties.INIT_KWARGS, None),
         )
 
     @classmethod
@@ -368,7 +368,6 @@ class Run(YAMLTranslatableMixin):
             properties=json.dumps(self.properties),
             data=Path(self.data).resolve().absolute().as_posix() if self.data else None,
             run_source=self._run_source,
-            init_kwargs=json.dumps(self.init),
         )
 
     def _dump(self) -> None:
