@@ -5,11 +5,11 @@
 from typing import Dict, Type
 
 from promptflow._constants import FlowLanguage
-from promptflow._proxy import AbstractInspectorProxy
+from promptflow._proxy._base_executor_proxy import AbstractExecutorProxy
+from promptflow._proxy._base_inspector_proxy import AbstractInspectorProxy
+from promptflow._proxy._csharp_executor_proxy import CSharpExecutorProxy
+from promptflow._proxy._python_executor_proxy import PythonExecutorProxy
 from promptflow._utils.async_utils import async_run_allowing_running_loop
-from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
-from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
-from promptflow.batch._python_executor_proxy import PythonExecutorProxy
 
 
 class ProxyFactory:
@@ -40,7 +40,7 @@ class ProxyFactory:
         cls.executor_proxy_classes[language] = executor_proxy_cls
 
     def create_executor_proxy(
-        self, flow_file, working_dir, connections, storage, language: str, **kwargs
+        self, flow_file, working_dir, connections, storage, language: str, init_kwargs: dict = None, **kwargs
     ) -> AbstractExecutorProxy:
         executor_proxy_cls = self.get_executor_proxy_cls(language)
         return async_run_allowing_running_loop(
@@ -49,6 +49,7 @@ class ProxyFactory:
             working_dir,
             connections=connections,
             storage=storage,
+            init_kwargs=init_kwargs,
             **kwargs,
         )
 

@@ -10,9 +10,17 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Type
 
-from promptflow._constants import LANGUAGE_KEY, LINE_NUMBER_KEY, LINE_TIMEOUT_SEC, OUTPUT_FILE_NAME, FlowLanguage
+from promptflow._constants import (
+    LANGUAGE_KEY,
+    LINE_NUMBER_KEY,
+    LINE_TIMEOUT_SEC,
+    OUTPUT_FILE_NAME,
+    FlowLanguage,
+    MessageFormatType,
+)
 from promptflow._core._errors import ResumeCopyError, UnexpectedError
-from promptflow._proxy import ProxyFactory
+from promptflow._proxy import AbstractExecutorProxy, ProxyFactory
+from promptflow._proxy._python_executor_proxy import PythonExecutorProxy
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
@@ -25,7 +33,7 @@ from promptflow._utils.execution_utils import (
 )
 from promptflow._utils.flow_utils import is_flex_flow
 from promptflow._utils.logger_utils import bulk_logger
-from promptflow._utils.multimedia_utils import persist_multimedia_data
+from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow._utils.utils import (
     dump_list_to_jsonl,
     get_int_env_var,
@@ -34,10 +42,8 @@ from promptflow._utils.utils import (
     transpose,
 )
 from promptflow._utils.yaml_utils import load_yaml
-from promptflow.batch import AbstractExecutorProxy
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow.batch._errors import BatchRunTimeoutError
-from promptflow.batch._python_executor_proxy import PythonExecutorProxy
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.run_info import FlowRunInfo, Status
@@ -46,6 +52,7 @@ from promptflow.executor._line_execution_process_pool import signal_handler
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage import AbstractBatchRunStorage, AbstractRunStorage
+from promptflow.storage._run_storage import DefaultRunStorage
 
 DEFAULT_CONCURRENCY = 10
 
@@ -76,6 +83,7 @@ class BatchEngine:
         batch_timeout_sec: Optional[int] = None,
         line_timeout_sec: Optional[int] = None,
         worker_count: Optional[int] = None,
+        init_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs,
     ):
         """Create a new batch engine instance
@@ -94,6 +102,8 @@ class BatchEngine:
         :type line_timeout: Optional[int]
         :param worker_count: The concurrency limit of batch run
         :type worker_count: Optional[int]
+        :param init_kwargs: Class init arguments for callable class, only supported for flex flow.
+        :type init_kwargs: Optional[Dict[str, Any]]
         :param kwargs: The keyword arguments related to creating the executor proxy class
         :type kwargs: Any
         """
@@ -107,8 +117,12 @@ class BatchEngine:
             self._flow = Flow.from_yaml(flow_file, working_dir=self._working_dir)
             FlowValidator.ensure_flow_valid_in_batch_mode(self._flow)
 
+        # eager flow does not support multimedia contract currently, just use basic format type.
+        self._message_format = self._flow.message_format if not self._is_eager_flow else MessageFormatType.BASIC
+        self._multimedia_processor = MultimediaProcessor.create(self._message_format)
+
         self._connections = connections
-        self._storage = storage
+        self._storage = storage if storage else DefaultRunStorage(base_dir=self._working_dir)
         self._kwargs = kwargs
 
         self._batch_timeout_sec = batch_timeout_sec or get_int_env_var("PF_BATCH_TIMEOUT_SEC")
@@ -124,6 +138,7 @@ class BatchEngine:
 
         # set it to True when the batch run is canceled
         self._is_canceled = False
+        self._init_kwargs = init_kwargs
 
     def run(
         self,
@@ -169,6 +184,7 @@ class BatchEngine:
                     connections=self._connections,
                     storage=self._storage,
                     language=self._program_language,
+                    init_kwargs=self._init_kwargs,
                     **self._kwargs,
                 )
                 try:
@@ -188,14 +204,16 @@ class BatchEngine:
                     set_batch_input_source_from_inputs_mapping(inputs_mapping)
                     # if using eager flow, the self._flow is none, so we need to get inputs definition from executor
                     inputs = self._executor_proxy.get_inputs_definition() if self._is_eager_flow else self._flow.inputs
+
                     # resolve input data from input dirs and apply inputs mapping
-                    batch_input_processor = BatchInputsProcessor(self._working_dir, inputs, max_lines_count)
+                    batch_input_processor = BatchInputsProcessor(
+                        self._working_dir, inputs, max_lines_count, message_format=self._message_format
+                    )
                     batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
                     # resolve output dir
                     output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
 
                     run_id = run_id or str(uuid.uuid4())
-
                     previous_run_results = None
                     if resume_from_run_storage:
                         previous_run_results = self._copy_previous_run_result(
@@ -240,6 +258,7 @@ class BatchEngine:
         """
         try:
             previous_run_results = []
+            aggregation_nodes = {node.name for node in self._flow.nodes if node.aggregation}
             for i in range(len(batch_inputs)):
                 previous_run_info: FlowRunInfo = resume_from_run_storage.load_flow_run_info(i)
 
@@ -248,8 +267,25 @@ class BatchEngine:
                     # Thus the root_run_id needs to be the current batch run id.
                     previous_run_info.root_run_id = run_id
                     previous_run_info.parent_run_id = run_id
+
                     # Load previous node run info
                     previous_node_run_infos = resume_from_run_storage.load_node_run_info_for_line(i)
+
+                    # In storage, aggregation nodes are persisted with filenames similar to regular nodes.
+                    # Currently we read regular node run records by filename in the node artifacts folder,
+                    # which may lead to load records of aggregation nodes at the same time, which is not intended.
+                    # E.g, aggregation-node/000000000.jsonl will be treated as the node_run_info of the first line:
+                    # node_artifacts/
+                    # ├─ non-aggregation-node/
+                    # │  ├─ 000000000.jsonl
+                    # │  ├─ 000000001.jsonl
+                    # │  ├─ 000000002.jsonl
+                    # ├─ aggregation-node/
+                    # │  ├─ 000000000.jsonl
+                    # So we filter out aggregation nodes since line records should not contain any info about them.
+                    previous_node_run_infos = [
+                        run_info for run_info in previous_node_run_infos if run_info.node not in aggregation_nodes
+                    ]
                     previous_node_run_infos_dict = {node_run.node: node_run for node_run in previous_node_run_infos}
                     previous_node_run_outputs = {
                         node_info.node: node_info.output for node_info in previous_node_run_infos
@@ -260,7 +296,9 @@ class BatchEngine:
 
                     # Deepcopy to avoid modifying the original object when serializing image
                     previous_run_output = deepcopy(previous_run_info.output)
-                    previous_run_output_in_line_result = persist_multimedia_data(previous_run_output, output_dir)
+                    previous_run_output_in_line_result = self._multimedia_processor.persist_multimedia_data(
+                        previous_run_output, output_dir
+                    )
 
                     # Persist previous run info and node run info
                     self._storage.persist_flow_run(previous_run_info)

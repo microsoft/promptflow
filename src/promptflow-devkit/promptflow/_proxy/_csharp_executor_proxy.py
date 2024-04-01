@@ -12,8 +12,9 @@ from typing import NoReturn, Optional
 from promptflow._core._errors import UnexpectedError
 from promptflow._sdk._constants import OSType
 from promptflow._utils.flow_utils import is_flex_flow
-from promptflow.batch._csharp_base_executor_proxy import CSharpBaseExecutorProxy
 from promptflow.storage._run_storage import AbstractRunStorage
+
+from ._csharp_base_executor_proxy import CSharpBaseExecutorProxy
 
 EXECUTOR_SERVICE_DOMAIN = "http://localhost:"
 EXECUTOR_SERVICE_DLL = "Promptflow.dll"
@@ -102,9 +103,11 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
         *,
         connections: Optional[dict] = None,
         storage: Optional[AbstractRunStorage] = None,
+        init_kwargs: Optional[dict] = None,
         **kwargs,
     ) -> "CSharpExecutorProxy":
         """Create a new executor"""
+        # TODO: support init_kwargs in csharp executor
         port = kwargs.get("port", None)
         log_path = kwargs.get("log_path", "")
         init_error_file = Path(working_dir) / f"init_error_{str(uuid.uuid4())}.json"

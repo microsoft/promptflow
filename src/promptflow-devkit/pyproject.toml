@@ -43,7 +43,6 @@ packages = [
 [tool.poetry.dependencies]
 python = ">=3.8,<3.9.7 || >3.9.7,<3.13"
 promptflow-core = "<2.0.0"
-psutil = "*"  # get process information when bulk run
 httpx = ">=0.25.1"  # used to send http requests asynchronously
 sqlalchemy = ">=1.4.48,<3.0.0"  # sqlite requirements
 pandas = ">=1.5.3,<3.0.0"  # load data requirements
@@ -101,8 +100,7 @@ requires = ["poetry-core>=1.5.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-pf = "promptflow._cli._pf.entry:main"
-pfs = "promptflow._sdk._service.entry:main"
+pf = "promptflow._cli.pf:main"
 
 [tool.pytest.ini_options]
 markers = [

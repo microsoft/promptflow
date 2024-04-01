@@ -40,6 +40,9 @@ from promptflow._core.tools_manager import (
     register_connections,
     retrieve_tool_func_result,
 )
+from promptflow._proxy import ProxyFactory
+from promptflow._proxy._base_executor_proxy import APIBasedExecutorProxy
+from promptflow._proxy._csharp_executor_proxy import CSharpBaseExecutorProxy
 from promptflow._sdk._constants import LOCAL_MGMT_DB_PATH, CreatedByFieldName
 from promptflow._sdk._service.apis.collector import trace_collector
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
@@ -75,9 +78,8 @@ from promptflow._utils.multimedia_data_converter import (
     ResourceType,
 )
 from promptflow._utils.multimedia_utils import (
-    _create_image_from_file,
-    convert_multimedia_data_to_base64,
-    is_multimedia_dict,
+    MultimediaProcessor,
+    load_multimedia_data_recursively,
     persist_multimedia_data,
     resolve_multimedia_data_recursively,
 )
@@ -92,7 +94,6 @@ from promptflow._utils.utils import (
     transpose,
 )
 from promptflow._version import VERSION
-from promptflow.batch._csharp_base_executor_proxy import CSharpBaseExecutorProxy
 from promptflow.core._serving.response_creator import ResponseCreator
 from promptflow.core._serving.swagger import generate_swagger
 from promptflow.core._serving.utils import (

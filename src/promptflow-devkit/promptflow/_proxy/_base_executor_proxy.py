@@ -28,6 +28,7 @@ from promptflow._utils.utils import load_json
 from promptflow.batch._errors import ExecutorServiceUnhealthy
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.exceptions import ErrorTarget, ValidationException
+from promptflow.executor._errors import AggregationNodeExecutionTimeoutError, LineExecutionTimeoutError
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.storage._run_storage import AbstractRunStorage
 
@@ -125,6 +126,7 @@ class AbstractExecutorProxy:
         *,
         connections: Optional[dict] = None,
         storage: Optional[AbstractRunStorage] = None,
+        init_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs,
     ) -> "AbstractExecutorProxy":
         """Create a new executor"""
@@ -155,6 +157,11 @@ class AbstractExecutorProxy:
     async def ensure_executor_health(self):
         """Ensure the executor service is healthy before execution"""
         pass
+
+    @classmethod
+    def is_flex_flow_entry(cls, entry: str):
+        """Returns True if entry is flex flow's entry."""
+        raise NotImplementedError()
 
 
 class APIBasedExecutorProxy(AbstractExecutorProxy):
@@ -326,7 +333,7 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
             with httpx.Client() as client:
                 with client.stream("POST", url, json=payload, timeout=LINE_TIMEOUT_SEC, headers=headers) as response:
                     if response.status_code != 200:
-                        result = self._process_http_response(response)
+                        result = self._process_error_response(response)
                         run_info = FlowRunInfo.create_with_error(start_time, inputs, index, run_id, result)
                         yield LineResult(output={}, aggregation_inputs={}, run_info=run_info, node_run_infos={})
                     for line in response.iter_lines():
@@ -361,22 +368,38 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         run_id: Optional[str] = None,
     ) -> LineResult:
         if self.enable_stream_output:
-            # Todo: update to async, will get no result in "async for" of final_generator function in async mode
+            # TODO: update to async, will get no result in "async for" of final_generator function in async mode
             raise NotSupported("Stream output is not supported in async mode for now")
 
+        response = None
         start_time = datetime.utcnow()
-        # call execution api to get line results
-        url = self.api_endpoint + "/execution"
-        payload = {"run_id": run_id, "line_number": index, "inputs": inputs}
-
-        async with httpx.AsyncClient() as client:
-            response = await client.post(url, json=payload, timeout=LINE_TIMEOUT_SEC)
-        # process the response
-        result = self._process_http_response(response)
-        if response.status_code != 200:
-            run_info = FlowRunInfo.create_with_error(start_time, inputs, index, run_id, result)
-            return LineResult(output={}, aggregation_inputs={}, run_info=run_info, node_run_infos={})
-        return LineResult.deserialize(result)
+        try:
+            # Call execution api to get line results
+            url = self.api_endpoint + "/execution"
+            payload = {"run_id": run_id, "line_number": index, "inputs": inputs}
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, json=payload, timeout=LINE_TIMEOUT_SEC)
+            # This will raise an HTTPError for 4xx/5xx responses
+            response.raise_for_status()
+            return LineResult.deserialize(response.json())
+        except httpx.ReadTimeout:
+            ex = LineExecutionTimeoutError(line_number=index, timeout=LINE_TIMEOUT_SEC)
+        except httpx.HTTPStatusError:
+            # For 4xx and 5xx status codes
+            ex = self._process_error_response(response)
+        except Exception as e:
+            ex = UnexpectedError(
+                target=ErrorTarget.BATCH,
+                message_format=(
+                    "Unexpected error occurred while executing one line in the batch run. "
+                    "Error: {error_type_and_message}."
+                ),
+                error_type_and_message=f"({e.__class__.__name__}) {e}",
+            )
+        # If any exception occurs, format and return a line result with error
+        error = ExceptionPresenter.create(ex).to_dict() if isinstance(ex, Exception) else ex
+        run_info = FlowRunInfo.create_with_error(start_time, inputs, index, run_id, error)
+        return LineResult(output={}, aggregation_inputs={}, run_info=run_info, node_run_infos={})
 
     async def exec_aggregation_async(
         self,
@@ -384,13 +407,30 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         aggregation_inputs: Mapping[str, Any],
         run_id: Optional[str] = None,
     ) -> AggregationResult:
-        # call aggregation api to get aggregation result
-        async with httpx.AsyncClient() as client:
+        response = None
+        try:
+            # Call aggregation api to get aggregation result
             url = self.api_endpoint + "/aggregation"
             payload = {"run_id": run_id, "batch_inputs": batch_inputs, "aggregation_inputs": aggregation_inputs}
-            response = await client.post(url, json=payload, timeout=LINE_TIMEOUT_SEC)
-        result = self._process_http_response(response)
-        return AggregationResult.deserialize(result)
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, json=payload, timeout=LINE_TIMEOUT_SEC)
+            # This will raise an HTTPError for 4xx/5xx responses
+            response.raise_for_status()
+            return AggregationResult.deserialize(response.json())
+        except httpx.ReadTimeout:
+            raise AggregationNodeExecutionTimeoutError(timeout=LINE_TIMEOUT_SEC)
+        except Exception as e:
+            ex_msg = f"({e.__class__.__name__}) {e}"
+            if isinstance(e, httpx.HTTPStatusError):
+                error_dict = self._process_error_response(e.response)
+                ex_msg = error_dict["message"]
+            raise UnexpectedError(
+                target=ErrorTarget.BATCH,
+                message_format=(
+                    "Unexpected error occurred while executing aggregation nodes in the batch run. Error: {ex_msg}"
+                ),
+                ex_msg=ex_msg,
+            )
 
     async def ensure_executor_startup(self, error_file):
         """Ensure the executor service is initialized before calling the API to get the results"""
@@ -453,23 +493,19 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
             return ValidationException(error_response.message, target=ErrorTarget.BATCH)
         return None
 
-    def _process_http_response(self, response: httpx.Response):
-        if response.status_code == 200:
-            # if the status code is 200, the response is the json dict of a line result
-            return response.json()
-        else:
-            # use this instead of response.text to handle streaming response
-            response_text = response.read().decode(DEFAULT_ENCODING)
-            # if the status code is not 200, log the error
-            message_format = "Unexpected error when executing a line, status code: {status_code}, error: {error}"
-            bulk_logger.error(message_format.format(status_code=response.status_code, error=response_text))
-            # if response can be parsed as json, return the error dict
-            # otherwise, wrap the error in an UnexpectedError and return the error dict
-            try:
-                error_dict = json.loads(response_text)
-                return error_dict["error"]
-            except (JSONDecodeError, KeyError):
-                unexpected_error = UnexpectedError(
-                    message_format=message_format, status_code=response.status_code, error=response_text
-                )
-                return ExceptionPresenter.create(unexpected_error).to_dict()
+    def _process_error_response(self, response: httpx.Response):
+        # use this instead of response.text to handle streaming response
+        response_text = response.read().decode(DEFAULT_ENCODING)
+        # if the status code is not 200, log the error
+        message_format = "Unexpected error when executing a line, status code: {status_code}, error: {error}"
+        bulk_logger.error(message_format.format(status_code=response.status_code, error=response_text))
+        # if response can be parsed as json, return the error dict
+        # otherwise, wrap the error in an UnexpectedError and return the error dict
+        try:
+            error_dict = json.loads(response_text)
+            return error_dict["error"]
+        except (JSONDecodeError, KeyError):
+            unexpected_error = UnexpectedError(
+                message_format=message_format, status_code=response.status_code, error=response_text
+            )
+            return ExceptionPresenter.create(unexpected_error).to_dict()

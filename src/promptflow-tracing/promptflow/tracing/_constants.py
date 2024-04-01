@@ -5,7 +5,7 @@
 
 class ResourceAttributesFieldName:
     SERVICE_NAME = "service.name"
-    SESSION_ID = "session.id"
+    COLLECTION = "collection"
 
 
 RESOURCE_ATTRIBUTES_SERVICE_NAME = "promptflow"
