@@ -1660,3 +1660,33 @@ class TestFlowRun:
             "inputs.line_number": [0],
             "outputs.output": [{"connection": "Custom", "key": "API_BASE"}],
         }
+
+    def test_run_with_init(self, pf):
+        def assert_func(details_dict):
+            return details_dict["outputs.func_input"] == [
+                "func_input",
+                "func_input",
+                "func_input",
+                "func_input",
+            ] and details_dict["outputs.obj_input"] == ["val", "val", "val", "val"]
+
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_callable_class")
+        run = pf.run(
+            flow=flow_path, data=f"{EAGER_FLOWS_DIR}/basic_callable_class/inputs.jsonl", init={"obj_input": "val"}
+        )
+        assert_batch_run_result(run, pf, assert_func)
+
+        run = load_run(
+            source=f"{EAGER_FLOWS_DIR}/basic_callable_class/run.yaml",
+        )
+        run = pf.runs.create_or_update(run=run)
+        assert_batch_run_result(run, pf, assert_func)
+
+
+def assert_batch_run_result(run: Run, pf: PFClient, assert_func):
+    assert run.status == "Completed"
+    assert "error" not in run._to_dict(), run._to_dict()["error"]
+    details = pf.get_details(run.name)
+    # convert DataFrame to dict
+    details_dict = details.to_dict(orient="list")
+    assert assert_func(details_dict), details_dict

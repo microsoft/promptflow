@@ -197,6 +197,7 @@ class PFClient:
         tags: Dict[str, str] = None,
         resume_from: Union[str, Run] = None,
         code: Union[str, PathLike] = None,
+        init: Optional[dict] = None,
         **kwargs,
     ) -> Run:
         """Run flow against provided data or run.
@@ -254,9 +255,14 @@ class PFClient:
         :type resume_from: str
         :param code: Path to the code directory to run.
         :type code: Union[str, PathLike]
+        :param init: Initialization parameters for flex flow, only supported when flow is callable class.
+        :type init: dict
         :return: flow run info.
         :rtype: ~promptflow.entities.Run
         """
+        # TODO(3047273): support cloud run init
+        if init:
+            raise NotImplementedError("init is not supported for pfazure.")
         if resume_from:
             unsupported = {
                 k: v

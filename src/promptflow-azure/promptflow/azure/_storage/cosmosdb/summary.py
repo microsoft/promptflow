@@ -196,7 +196,6 @@ class Summary:
 
     def _insert_evaluation(self, client: ContainerProxy):
         attributes: dict = self.span.attributes
-        partition_key = self.collection_id
         name = self.span.name
         item = LineEvaluation(
             trace_id=self.span.trace_id,
@@ -221,7 +220,8 @@ class Summary:
             {"name": "@batch_run_id", "value": referenced_batch_run_id},
             {"name": "@line_number", "value": line_number},
         ]
-        query_results = list(client.query_items(query=query, parameters=parameters, partition_key=partition_key))
+        # Don't use partition key for query, we can't know the partition key of main run in all scenarios.
+        query_results = list(client.query_items(query=query, parameters=parameters, enable_cross_partition_query=True))
 
         if query_results:
             current_status = query_results[0].get("status", "")
@@ -230,18 +230,20 @@ class Summary:
                     f"Main run status is {current_status}, cannot patch evaluation now."
                 )
             main_id = query_results[0]["id"]
+            main_partition_key = query_results[0]["partition_key"]
         else:
             raise InsertEvaluationsRetriableException(f"Cannot find main run by parameter {parameters}.")
 
         if SpanAttributeFieldName.LINE_RUN_ID in attributes:
             item.line_run_id = attributes[SpanAttributeFieldName.LINE_RUN_ID]
         else:
-            item.batch_run_id = attributes[SpanAttributeFieldName.BATCH_RUN_ID]
+            batch_run_id = attributes[SpanAttributeFieldName.BATCH_RUN_ID]
+            item.batch_run_id = batch_run_id
             item.line_number = line_number
 
         patch_operations = [{"op": "add", "path": f"/evaluations/{name}", "value": asdict(item)}]
         self.logger.info(f"Insert evaluation for LineSummary main_id: {main_id}")
-        return client.patch_item(item=main_id, partition_key=partition_key, patch_operations=patch_operations)
+        return client.patch_item(item=main_id, partition_key=main_partition_key, patch_operations=patch_operations)
 
 
 class InsertEvaluationsRetriableException(Exception):

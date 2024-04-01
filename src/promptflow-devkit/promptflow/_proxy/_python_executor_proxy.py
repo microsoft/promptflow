@@ -12,7 +12,6 @@ from promptflow._sdk._constants import FLOW_META_JSON_GEN_TIMEOUT, FLOW_TOOLS_JS
 from promptflow._utils.flow_utils import resolve_entry_file
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.yaml_utils import load_yaml
-from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.contracts.run_mode import RunMode
 from promptflow.core._utils import generate_flow_meta
 from promptflow.executor import FlowExecutor
@@ -21,6 +20,8 @@ from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.storage._run_storage import AbstractRunStorage
 from promptflow.tracing._operation_context import OperationContext
+
+from ._base_executor_proxy import AbstractExecutorProxy
 
 
 class PythonExecutorProxy(AbstractExecutorProxy):

@@ -5,6 +5,7 @@ from tempfile import mkdtemp
 import pytest
 
 from promptflow._constants import OUTPUT_FILE_NAME
+from promptflow._core.tool_meta_generator import PythonLoadError
 from promptflow.batch._batch_engine import BatchEngine
 from promptflow.batch._result import BatchResult, LineResult
 from promptflow.contracts.run_info import Status
@@ -191,9 +192,16 @@ class TestEagerFlow:
         outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
         assert ensure_output(outputs), outputs
 
-    def test_execute_init_func_with_user_error(self):
-        flow_folder = "callable_flow_with_init_exception"
+    @pytest.mark.parametrize(
+        "flow_folder, expected_exception, expected_error_msg",
+        [
+            ("callable_flow_with_init_exception", FlowEntryInitializationError, "Failed to initialize flow entry with"),
+            ("invalid_illegal_entry", PythonLoadError, "Failed to load python module for"),
+            ("incorrect_entry", PythonLoadError, "Failed to load python module for"),
+        ],
+    )
+    def test_execute_func_with_user_error(self, flow_folder, expected_exception, expected_error_msg):
         flow_file = get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT)
-        with pytest.raises(FlowEntryInitializationError) as e:
-            ScriptExecutor(flow_file=flow_file, init_kwargs={})
-        assert "Failed to initialize flow entry with" in str(e.value)
+        with pytest.raises(expected_exception) as e:
+            ScriptExecutor(flow_file=flow_file)
+        assert expected_error_msg in str(e.value)
