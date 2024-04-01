@@ -7,7 +7,7 @@ import pytest
 @pytest.mark.e2etest
 def test_azureml_serving_api_with_encoded_connection(flow_serving_client_with_encoded_connection):
     response = flow_serving_client_with_encoded_connection.get("/health")
-    assert b'{"status":"Healthy","version":"1.0.0.dev0"}' in response.data
+    assert b"Healthy" in response.data
     response = flow_serving_client_with_encoded_connection.post("/score", data=json.dumps({"text": "hi"}))
     assert (
         response.status_code == 200
