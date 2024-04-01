@@ -1579,9 +1579,12 @@ class TestFlowRun:
 
     def test_run_with_init(self, pf):
         def assert_func(details_dict):
-            return details_dict["outputs.func_input"] == ["func_input", "func_input"] and details_dict[
-                "outputs.obj_input"
-            ] == ["val", "val"]
+            return details_dict["outputs.func_input"] == [
+                "func_input",
+                "func_input",
+                "func_input",
+                "func_input",
+            ] and details_dict["outputs.obj_input"] == ["val", "val", "val", "val"]
 
         flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_callable_class")
         run = pf.run(

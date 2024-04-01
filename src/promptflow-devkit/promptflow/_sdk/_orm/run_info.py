@@ -49,11 +49,10 @@ class RunInfo(Base):
     end_time = Column(TEXT)  # ISO8601("YYYY-MM-DD HH:MM:SS.SSS"), string
     data = Column(TEXT)  # local path of original run data, string
     run_source = Column(TEXT)  # run source, string
-    init_kwargs = Column(TEXT)  # init kwargs for flex flow
 
     __table_args__ = (Index(RUN_INFO_CREATED_ON_INDEX_NAME, "created_on"),)
     # schema version, increase the version number when you change the schema
-    __pf_schema_version__ = "4"
+    __pf_schema_version__ = "3"
 
     @sqlite_retry
     def dump(self) -> None:

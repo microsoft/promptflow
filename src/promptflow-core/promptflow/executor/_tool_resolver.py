@@ -10,11 +10,12 @@ from functools import partial
 from pathlib import Path
 from typing import Callable, List, Optional
 
+from promptflow._constants import MessageFormatType
 from promptflow._core._errors import InvalidSource
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping
-from promptflow._utils.multimedia_utils import create_image, load_multimedia_data_recursively
+from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
@@ -55,6 +56,7 @@ class ToolResolver:
         working_dir: Path,
         connections: Optional[dict] = None,
         package_tool_keys: Optional[List[str]] = None,
+        message_format: str = MessageFormatType.BASIC,
     ):
         try:
             # Import openai and aoai for llm tool
@@ -64,6 +66,7 @@ class ToolResolver:
         self._tool_loader = ToolLoader(working_dir, package_tool_keys=package_tool_keys)
         self._working_dir = working_dir
         self._connection_manager = ConnectionManager(connections)
+        self._multimedia_processor = MultimediaProcessor.create(message_format)
 
     @classmethod
     def start_resolver(
@@ -275,7 +278,7 @@ class ToolResolver:
                     updated_inputs[k].value = self._convert_to_connection_value(k, v, node_name, tool_input.type)
             elif value_type == ValueType.IMAGE:
                 try:
-                    updated_inputs[k].value = create_image(v.value)
+                    updated_inputs[k].value = self._multimedia_processor.create_image(v.value)
                 except Exception as e:
                     error_type_and_message = f"({e.__class__.__name__}) {e}"
                     raise NodeInputValidationError(
@@ -310,7 +313,9 @@ class ToolResolver:
                         target=ErrorTarget.EXECUTOR,
                     ) from e
                 try:
-                    updated_inputs[k].value = load_multimedia_data_recursively(updated_inputs[k].value)
+                    updated_inputs[k].value = self._multimedia_processor.load_multimedia_data_recursively(
+                        updated_inputs[k].value
+                    )
                 except Exception as e:
                     error_type_and_message = f"({e.__class__.__name__}) {e}"
                     raise NodeInputValidationError(
@@ -407,7 +412,9 @@ class ToolResolver:
         for input_name, input in prompt_tpl_inputs_mapping.items():
             if ValueType.IMAGE in input.type and input_name in node_inputs:
                 if node_inputs[input_name].value_type == InputValueType.LITERAL:
-                    node_inputs[input_name].value = create_image(node_inputs[input_name].value)
+                    node_inputs[input_name].value = self._multimedia_processor.create_image(
+                        node_inputs[input_name].value
+                    )
         return node_inputs
 
     def _resolve_prompt_node(self, node: Node) -> ResolvedTool:

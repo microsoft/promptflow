@@ -3,7 +3,6 @@
 # ---------------------------------------------------------
 
 import datetime
-import json
 import typing
 import uuid
 
@@ -22,28 +21,34 @@ from ..utils import PFSOperations
 
 
 @pytest.fixture
-def mock_session_id() -> str:
-    """Generate a session id for test case."""
+def mock_collection() -> str:
+    """Generate a collection for test case."""
     return str(uuid.uuid4())
 
 
 def persist_a_span(
-    session_id: str,
+    collection: str,
     custom_attributes: typing.Optional[typing.Dict] = None,
-    parent_span_id: typing.Optional[str] = None,
+    custom_events: typing.List[typing.Dict] = None,
+    parent_id: typing.Optional[str] = None,
 ) -> Span:
     if custom_attributes is None:
         custom_attributes = {}
+    trace_id = str(uuid.uuid4())
+    span_id = str(uuid.uuid4())
     span = Span(
+        trace_id=trace_id,
+        span_id=span_id,
         name=str(uuid.uuid4()),
         context={
-            SpanContextFieldName.TRACE_ID: str(uuid.uuid4()),
-            SpanContextFieldName.SPAN_ID: str(uuid.uuid4()),
+            SpanContextFieldName.TRACE_ID: trace_id,
+            SpanContextFieldName.SPAN_ID: span_id,
             SpanContextFieldName.TRACE_STATE: "",
         },
         kind="1",
-        start_time=datetime.datetime.now().isoformat(),
-        end_time=datetime.datetime.now().isoformat(),
+        parent_id=parent_id,
+        start_time=datetime.datetime.now(),
+        end_time=datetime.datetime.now(),
         status={
             SpanStatusFieldName.STATUS_CODE: "Ok",
         },
@@ -55,15 +60,12 @@ def persist_a_span(
         resource={
             "attributes": {
                 "service.name": "promptflow",
-                "session.id": session_id,
+                "collection": collection,
             },
             "schema_url": "",
         },
-        span_type="Flow",
-        session_id=session_id,
+        events=custom_events,
     )
-    if parent_span_id is not None:
-        span.parent_span_id = parent_span_id
     span._persist()
     return span
 
@@ -71,15 +73,15 @@ def persist_a_span(
 # flask-restx uses marshmallow before response, so we do need this test class to execute end-to-end test
 @pytest.mark.e2etest
 class TestTrace:
-    def test_cumulative_token_count_type(self, pfs_op: PFSOperations, mock_session_id: str) -> None:
+    def test_cumulative_token_count_type(self, pfs_op: PFSOperations, mock_collection: str) -> None:
         completion_token_count, prompt_token_count, total_token_count = 1, 5620, 5621
         token_count_attributes = {
             SpanAttributeFieldName.CUMULATIVE_COMPLETION_TOKEN_COUNT: completion_token_count,
             SpanAttributeFieldName.CUMULATIVE_PROMPT_TOKEN_COUNT: prompt_token_count,
             SpanAttributeFieldName.CUMULATIVE_TOTAL_TOKEN_COUNT: total_token_count,
         }
-        persist_a_span(session_id=mock_session_id, custom_attributes=token_count_attributes)
-        response = pfs_op.list_line_runs(session_id=mock_session_id)
+        persist_a_span(collection=mock_collection, custom_attributes=token_count_attributes)
+        response = pfs_op.list_line_runs(collection=mock_collection)
         line_runs = response.json
         assert len(line_runs) == 1
         line_run = line_runs[0]
@@ -89,20 +91,14 @@ class TestTrace:
         assert cumulative_token_count[CumulativeTokenCountFieldName.PROMPT] == prompt_token_count
         assert cumulative_token_count[CumulativeTokenCountFieldName.TOTAL] == total_token_count
 
-    def test_evaluation_type(self, pfs_op: PFSOperations, mock_session_id: str) -> None:
-        persist_a_span(session_id=mock_session_id)
-        response = pfs_op.list_line_runs(session_id=mock_session_id)
-        line_run = response.json[0]
-        assert isinstance(line_run[LineRunFieldName.EVALUATIONS], dict)
-
-    def test_evaluation_name(self, pfs_op: PFSOperations, mock_session_id: str) -> None:
+    def test_evaluation_name(self, pfs_op: PFSOperations, mock_collection: str) -> None:
         # mock batch run line
         mock_batch_run_id = str(uuid.uuid4())
         batch_run_attrs = {
             SpanAttributeFieldName.BATCH_RUN_ID: mock_batch_run_id,
             SpanAttributeFieldName.LINE_NUMBER: "0",
         }
-        persist_a_span(session_id=mock_session_id, custom_attributes=batch_run_attrs)
+        persist_a_span(collection=mock_collection, custom_attributes=batch_run_attrs)
         # mock eval run line
         mock_eval_run_id = str(uuid.uuid4())
         eval_run_attrs = {
@@ -110,31 +106,14 @@ class TestTrace:
             SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID: mock_batch_run_id,
             SpanAttributeFieldName.LINE_NUMBER: "0",
         }
-        persist_a_span(session_id=mock_session_id, custom_attributes=eval_run_attrs)
+        persist_a_span(collection=mock_collection, custom_attributes=eval_run_attrs)
         line_run = pfs_op.list_line_runs(runs=[mock_batch_run_id]).json[0]
+        assert isinstance(line_run[LineRunFieldName.EVALUATIONS], dict)
         assert len(line_run[LineRunFieldName.EVALUATIONS]) == 1
         eval_line_run = list(line_run[LineRunFieldName.EVALUATIONS].values())[0]
         assert LineRunFieldName.NAME in eval_line_run
-        # remove below when we remove display name from line run data dataclass
-        assert "display_name" in eval_line_run
 
-    def test_illegal_json_values(self, pfs_op: PFSOperations, mock_session_id: str) -> None:
-        output_string = json.dumps(
-            {
-                "NaN": float("nan"),
-                "Inf": float("inf"),
-                "-Inf": float("-inf"),
-            }
-        )
-        custom_attributes = {SpanAttributeFieldName.OUTPUT: output_string}
-        persist_a_span(session_id=mock_session_id, custom_attributes=custom_attributes)
-        line_run = pfs_op.list_line_runs(session_id=mock_session_id).json[0]
-        output = line_run[LineRunFieldName.OUTPUTS]
-        assert isinstance(output["NaN"], str) and output["NaN"] == "NaN"
-        assert isinstance(output["Inf"], str) and output["Inf"] == "Infinity"
-        assert isinstance(output["-Inf"], str) and output["-Inf"] == "-Infinity"
-
-    def test_list_evaluation_line_runs(self, pfs_op: PFSOperations, mock_session_id: str) -> None:
+    def test_list_evaluation_line_runs(self, pfs_op: PFSOperations, mock_collection: str) -> None:
         mock_batch_run_id = str(uuid.uuid4())
         mock_referenced_batch_run_id = str(uuid.uuid4())
         batch_run_attributes = {
@@ -142,11 +121,11 @@ class TestTrace:
             SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID: mock_referenced_batch_run_id,
             SpanAttributeFieldName.LINE_NUMBER: "0",
         }
-        persist_a_span(session_id=mock_session_id, custom_attributes=batch_run_attributes)
+        persist_a_span(collection=mock_collection, custom_attributes=batch_run_attributes)
         line_runs = pfs_op.list_line_runs(runs=[mock_batch_run_id]).json
         assert len(line_runs) == 1
 
-    def test_list_eval_line_run_with_trace_id(self, pfs_op: PFSOperations, mock_session_id: str) -> None:
+    def test_list_eval_line_run_with_trace_id(self, pfs_op: PFSOperations, mock_collection: str) -> None:
         mock_batch_run = str(uuid.uuid4())
         mock_ref_batch_run = str(uuid.uuid4())
         batch_run_attrs = {
@@ -154,39 +133,39 @@ class TestTrace:
             SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID: mock_ref_batch_run,
             SpanAttributeFieldName.LINE_NUMBER: "0",
         }
-        span = persist_a_span(session_id=mock_session_id, custom_attributes=batch_run_attrs)
+        span = persist_a_span(collection=mock_collection, custom_attributes=batch_run_attrs)
         line_runs = pfs_op.list_line_runs(trace_ids=[span.trace_id]).json
         assert len(line_runs) == 1
 
-    def test_list_running_line_run(self, pfs_op: PFSOperations, mock_session_id: str) -> None:
+    def test_list_running_line_run(self, pfs_op: PFSOperations, mock_collection: str) -> None:
         mock_batch_run_id = str(uuid.uuid4())
-        mock_parent_span_id = str(uuid.uuid4())
+        mock_parent_id = str(uuid.uuid4())
         batch_run_attributes = {
             SpanAttributeFieldName.BATCH_RUN_ID: mock_batch_run_id,
             SpanAttributeFieldName.LINE_NUMBER: "0",
         }
         persist_a_span(
-            session_id=mock_session_id,
+            collection=mock_collection,
             custom_attributes=batch_run_attributes,
-            parent_span_id=mock_parent_span_id,
+            parent_id=mock_parent_id,
         )
         line_runs = pfs_op.list_line_runs(runs=[mock_batch_run_id]).json
         assert len(line_runs) == 1
         running_line_run = line_runs[0]
         assert running_line_run[LineRunFieldName.STATUS] == RUNNING_LINE_RUN_STATUS
 
-    def test_list_line_runs_with_both_status(self, pfs_op: PFSOperations, mock_session_id: str) -> None:
+    def test_list_line_runs_with_both_status(self, pfs_op: PFSOperations, mock_collection: str) -> None:
         mock_batch_run_id = str(uuid.uuid4())
         # running line run
-        mock_parent_span_id = str(uuid.uuid4())
+        mock_parent_id = str(uuid.uuid4())
         batch_run_attributes = {
             SpanAttributeFieldName.BATCH_RUN_ID: mock_batch_run_id,
             SpanAttributeFieldName.LINE_NUMBER: "0",
         }
         persist_a_span(
-            session_id=mock_session_id,
+            collection=mock_collection,
             custom_attributes=batch_run_attributes,
-            parent_span_id=mock_parent_span_id,
+            parent_id=mock_parent_id,
         )
         # completed line run
         batch_run_attributes = {
@@ -194,12 +173,12 @@ class TestTrace:
             SpanAttributeFieldName.LINE_NUMBER: "1",
         }
         persist_a_span(
-            session_id=mock_session_id,
+            collection=mock_collection,
             custom_attributes=batch_run_attributes,
         )
         # we have slightly different code path for query w/o runs and w/ runs
         for line_runs in [
-            pfs_op.list_line_runs(session_id=mock_session_id).json,
+            pfs_op.list_line_runs(collection=mock_collection).json,
             pfs_op.list_line_runs(runs=[mock_batch_run_id]).json,
         ]:
             assert len(line_runs) == 2

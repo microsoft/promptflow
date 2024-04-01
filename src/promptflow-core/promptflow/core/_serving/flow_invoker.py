@@ -9,7 +9,7 @@ from typing import Callable, Union
 from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
 from promptflow._utils.flow_utils import dump_flow_result, is_executable_chat_flow
 from promptflow._utils.logger_utils import LoggerFactory
-from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64, persist_multimedia_data
+from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow.core._connection import _Connection
 from promptflow.core._connection_provider._connection_provider import ConnectionProvider
 from promptflow.core._flow import AbstractFlowBase
@@ -79,6 +79,7 @@ class FlowInvoker:
         # TODO: avoid to use private attribute after we finalize the inheritance
         self._init_executor(flow._path, flow._code)
         self._dump_file_prefix = "chat" if self._is_chat_flow else "flow"
+        self._multimedia_processor = MultimediaProcessor.create(self.flow.message_format)
 
     def resolve_connections(
         self,
@@ -228,13 +229,13 @@ class FlowInvoker:
 
     def _convert_multimedia_data_to_base64(self, output_dict):
         resolved_outputs = {
-            k: convert_multimedia_data_to_base64(v, with_type=True, dict_type=True) for k, v in output_dict.items()
+            k: self._multimedia_processor.convert_multimedia_data_to_base64_dict(v) for k, v in output_dict.items()
         }
         return resolved_outputs
 
     def _dump_invoke_result(self, invoke_result):
         if self._dump_to:
-            invoke_result.output = persist_multimedia_data(
+            invoke_result.output = self._multimedia_processor.persist_multimedia_data(
                 invoke_result.output, base_dir=self._dump_to, sub_dir=Path(".promptflow/output")
             )
 
