@@ -11,6 +11,7 @@ on:
 
 env:
   IS_IN_CI_PIPELINE: "true"
+  TRACING_DIRECTORY: ${{ github.workspace }}/src/promptflow-tracing
   WORKING_DIRECTORY: ${{ github.workspace }}/src/promptflow-core
   RECORD_DIRECTORY: ${{ github.workspace }}/src/promptflow-recording
 
@@ -32,11 +33,11 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - uses: snok/install-poetry@v1
+      - name: install promptflow-tracing
+        run: poetry install
+        working-directory: ${{ env.TRACING_DIRECTORY }}
       - name: install promptflow-core
-        run: |
-          poetry run pip install ${{ github.workspace }}/src/promptflow-tracing
-          poetry run pip install ${{ github.workspace }}/src/promptflow-core/
-          pip freeze
+        run: poetry install
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: install test dependency group
         run: poetry install --only test
