@@ -14,7 +14,7 @@ from promptflow._utils.exception_utils import (
     last_frame_info,
     remove_suffix,
 )
-from promptflow.core._version import VERSION
+from promptflow._version import VERSION
 from promptflow.exceptions import (
     ErrorTarget,
     PromptflowException,

@@ -7,7 +7,7 @@ import pytest
 
 from promptflow._utils.exception_utils import ExceptionPresenter, JsonSerializedPromptflowException, ResponseCode
 from promptflow._utils.logger_utils import bulk_logger, flow_logger, logger, service_logger
-from promptflow.core._version import VERSION as PF_VERSION
+from promptflow._version import VERSION as PF_VERSION
 from promptflow.core._version import __version__ as PF_CORE_VERSION
 from promptflow.executor._service._errors import ExecutionTimeoutError
 from promptflow.executor._service.contracts.execution_request import BaseExecutionRequest, FlowExecutionRequest

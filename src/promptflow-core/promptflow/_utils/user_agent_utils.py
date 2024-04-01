@@ -61,7 +61,7 @@ def setup_user_agent_to_operation_context(user_agent):
 
 def append_promptflow_package_ua(operation_context: OperationContext):
     try:
-        from promptflow.core._version import VERSION as PF_VERSION
+        from promptflow._version import VERSION as PF_VERSION
 
         operation_context.append_user_agent(f"promptflow/{PF_VERSION}")
     except ImportError:
