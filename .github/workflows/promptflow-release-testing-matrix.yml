@@ -297,6 +297,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - uses: snok/install-poetry@v1
+      - name: uninstall promptflow
+        run: pip uninstall -y promptflow
       - name: install promptflow-tracing
         run: poetry install
         working-directory: ${{ github.workspace }}/src/promptflow-tracing
