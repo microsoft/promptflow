@@ -2160,6 +2160,52 @@ class TestCli:
             )
             run_id = new_run_id
 
+    def test_flow_run_resume_from_token(self, capfd, local_client) -> None:
+        run_id = str(uuid.uuid4())
+        # fetch std out
+        run_pf_command(
+            "run",
+            "create",
+            "--flow",
+            f"{FLOWS_DIR}/web_classification_random_fail",
+            "--data",
+            f"{FLOWS_DIR}/web_classification_random_fail/data.jsonl",
+            "--column-mapping",
+            "url='${data.url}'",
+            "--name",
+            run_id,
+        )
+        out, _ = capfd.readouterr()
+        assert "Completed" in out
+        original_run = local_client.runs.get(name=run_id)
+
+        new_run_id = str(uuid.uuid4())
+        display_name = "test"
+        description = "new description"
+        run_pf_command(
+            "run",
+            "create",
+            "--resume-from",
+            run_id,
+            "--name",
+            new_run_id,
+            "--set",
+            f"display_name={display_name}",
+            f"description={description}",
+            "tags.A=A",
+            "tags.B=B",
+        )
+        resume_run = local_client.runs.get(name=new_run_id)
+        assert resume_run.name == new_run_id
+        assert resume_run.display_name == display_name
+        assert resume_run.description == description
+        assert resume_run.tags == {"A": "A", "B": "B"}
+        assert resume_run._resume_from == run_id
+        assert (
+            original_run.properties["system_metrics"]["total_tokens"]
+            <= resume_run.properties["system_metrics"]["total_tokens"]
+        )
+
     def test_flow_run_exclusive_param(self, capfd) -> None:
         # fetch std out
         with pytest.raises(SystemExit):
