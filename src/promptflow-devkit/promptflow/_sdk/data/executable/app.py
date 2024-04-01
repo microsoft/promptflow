@@ -28,8 +28,6 @@ def create_connections(directory_path) -> None:
 if __name__ == "__main__":
     multiprocessing.freeze_support()
     command = sys.argv[1] if len(sys.argv) > 1 else None
-    print(f"Command: {command}")
-    print(sys.argv)
     if command == "pf":
         sys.argv = sys.argv[1:]
         from promptflow._cli._pf.entry import main as pf_main

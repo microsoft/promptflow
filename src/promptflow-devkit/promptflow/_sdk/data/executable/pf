@@ -1,6 +1,7 @@
 #!/bin/bash
 
-MAIN_EXE="./app"
+SCRIPT_DIR=$(dirname "$0")
+MAIN_EXE="$SCRIPT_DIR/app"
 
 # Check if the first argument is 'service'
 if [ "$1" == "service" ]; then

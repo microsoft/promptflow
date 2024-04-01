@@ -56,8 +56,10 @@ pfcli_pyz = PYZ(pfcli_a.pure, pfcli_a.zipped_data, cipher=block_cipher)
 pfcli_exe = EXE(
     pfcli_pyz,
     pfcli_a.scripts,
+    pfcli_a.binaries,
+    pfcli_a.zipfiles,
+    pfcli_a.datas,
     [],
-    exclude_binaries=True,
     name='app',
     debug=False,
     bootloader_ignore_signals=False,
@@ -70,15 +72,4 @@ pfcli_exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     contents_directory='.',
-)
-
-coll = COLLECT(
-    pfcli_exe,
-    pfcli_a.binaries,
-    pfcli_a.zipfiles,
-    pfcli_a.datas,
-    strip=False,
-    upx=True,
-    upx_exclude=[],
-    name='app',
 )
