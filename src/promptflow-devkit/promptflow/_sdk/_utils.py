@@ -847,11 +847,10 @@ def gen_uuid_by_compute_info() -> Union[str, None]:
     return str(uuid.uuid4())
 
 
-def convert_time_unix_nano_to_timestamp(time_unix_nano: str) -> str:
+def convert_time_unix_nano_to_timestamp(time_unix_nano: str) -> datetime.datetime:
     nanoseconds = int(time_unix_nano)
     seconds = nanoseconds / 1_000_000_000
-    timestamp = datetime.datetime.utcfromtimestamp(seconds)
-    return timestamp.isoformat()
+    return datetime.datetime.utcfromtimestamp(seconds)
 
 
 def parse_kv_from_pb_attribute(attribute: Dict) -> Tuple[str, str]:

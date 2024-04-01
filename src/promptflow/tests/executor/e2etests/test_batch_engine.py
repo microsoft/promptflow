@@ -463,6 +463,11 @@ class TestBatch:
             for content in contents:
                 assert content["run_info"]["root_run_id"] == resume_run_id
 
+        status_summary = {f"__pf__.nodes.{k}": v for k, v in resume_run_batch_results.node_status.items()}
+        assert status_summary["__pf__.nodes.grade.completed"] == 3
+        assert status_summary["__pf__.nodes.calculate_accuracy.completed"] == 1
+        assert status_summary["__pf__.nodes.aggregation_assert.completed"] == 1
+
     @pytest.mark.parametrize(
         "flow_folder, resume_from_run_name",
         [("eval_flow_with_image_resume", "eval_flow_with_image_resume_default_20240305_111258_103000")],
@@ -502,3 +507,7 @@ class TestBatch:
             contents = load_jsonl(file_path)
             for content in contents:
                 assert content["run_info"]["root_run_id"] == resume_run_id
+
+        status_summary = {f"__pf__.nodes.{k}": v for k, v in resume_run_batch_results.node_status.items()}
+        assert status_summary["__pf__.nodes.flip_image.completed"] == 3
+        assert status_summary["__pf__.nodes.count_image.completed"] == 1
