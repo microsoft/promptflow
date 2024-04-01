@@ -9,13 +9,13 @@ from os import PathLike
 from pathlib import Path
 from typing import Optional, Tuple, Union
 
-from promptflow._constants import CHAT_HISTORY, DEFAULT_ENCODING, DEFAULT_FLOW_YAML_FILE_NAME, PROMPT_FLOW_DIR_NAME
+from promptflow._constants import CHAT_HISTORY, DEFAULT_ENCODING, FLOW_DAG_YAML, FLOW_FLEX_YAML, PROMPT_FLOW_DIR_NAME
 from promptflow._core._errors import MetaFileNotFound, MetaFileReadError
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.utils import strip_quotation
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.contracts.flow import Flow as ExecutableFlow
-from promptflow.exceptions import ErrorTarget, UserErrorException
+from promptflow.exceptions import ErrorTarget, UserErrorException, ValidationException
 from promptflow.tracing._utils import serialize
 
 logger = LoggerFactory.get_logger(name=__name__)
@@ -75,15 +75,25 @@ def resolve_flow_path(
     else:
         flow_path = Path(flow_path)
 
-    if new:
-        if flow_path.is_dir():
-            return flow_path, DEFAULT_FLOW_YAML_FILE_NAME
-        return flow_path.parent, flow_path.name
+    if flow_path.is_dir():
+        target_folder = flow_path
+        target_filer = FLOW_FLEX_YAML if (target_folder / FLOW_FLEX_YAML).is_file() else FLOW_DAG_YAML
+        if (target_folder / FLOW_DAG_YAML).is_file() and (target_folder / FLOW_FLEX_YAML).is_file():
+            raise ValidationException(
+                f"Both exist {FLOW_DAG_YAML} and {FLOW_FLEX_YAML} in the {flow_path}. "
+                f"Please specify the file instead of the folder, "
+                f"or delete the excess yaml file.",
+                privacy_info=[str(flow_path)],
+            )
+    else:
+        target_folder = flow_path.parent
+        target_filer = flow_path.name
 
-    if flow_path.is_dir() and (flow_path / DEFAULT_FLOW_YAML_FILE_NAME).is_file():
-        return flow_path, DEFAULT_FLOW_YAML_FILE_NAME
-    elif flow_path.is_file():
-        return flow_path.parent, flow_path.name
+    if new:
+        return target_folder, target_filer
+
+    if (target_folder / target_filer).is_file():
+        return target_folder, target_filer
 
     raise FileNotFoundError(f"Can't find flow with path {flow_path.as_posix()}.")
 
