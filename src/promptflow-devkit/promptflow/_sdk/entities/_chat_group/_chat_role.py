@@ -56,6 +56,7 @@ class ChatRole:
             self._connections = connections
             self._inputs_mapping = inputs_mapping
             self._flow_definition = Flow.from_yaml(flow_file, working_dir=self._working_dir)
+
         logger.info(f"Created chat role {self.role!r} with flow {self._flow.as_posix()!r}")
 
     @property

@@ -115,12 +115,17 @@ class BatchEngine:
         self._flow = None
 
         # TODO: why self._flow is not initialized for eager flow?
+        # Chat group run does not pass flow_file
         if flow_file is not None and not self._is_eager_flow:
             self._flow = Flow.from_yaml(flow_file, working_dir=self._working_dir)
             FlowValidator.ensure_flow_valid_in_batch_mode(self._flow)
-            # eager flow does not support multimedia contract currently, just use basic format type.
-            self._message_format = self._flow.message_format if not self._is_eager_flow else MessageFormatType.BASIC
-            self._multimedia_processor = MultimediaProcessor.create(self._message_format)
+
+        # eager flow and chat group does not support multimedia contract currently, just use basic format type.
+        if not self._is_eager_flow and self._flow_file is not None:
+            self._message_format = self._flow.message_format
+        else:
+            self._message_format = MessageFormatType.BASIC
+        self._multimedia_processor = MultimediaProcessor.create(self._message_format)
 
         self._connections = connections
         self._storage = storage if storage else DefaultRunStorage(base_dir=self._working_dir)
