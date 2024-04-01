@@ -21,17 +21,17 @@ from ._integrations._openai_injector import inject_openai_api
 def start_trace(
     *,
     resource_attributes: typing.Optional[dict] = None,
-    session: typing.Optional[str] = None,
+    collection: typing.Optional[str] = None,
     **kwargs,
 ):
-    """Start a tracing session.
+    """Promptflow instrumentation.
 
-    Instrument `openai`, and set tracer provider for current tracing session.
+    Instrument `openai`, and set tracer provider for current process.
 
-    :param resource_attributes: Specify the resource attributes for current tracing session.
+    :param resource_attributes: Specify the resource attributes for current process.
     :type resource_attributes: typing.Optional[dict]
-    :param session: Specify the session id for current tracing session.
-    :type session: typing.Optional[str]
+    :param collection: Specify the collection for current tracing.
+    :type collection: typing.Optional[str]
     """
 
     # When PF_TRACING_SKIP_LOCAL_SETUP_ENVIRON is set to true, the start_trace should be skipped.
@@ -41,8 +41,8 @@ def start_trace(
 
     # prepare resource.attributes and set tracer provider
     res_attrs = {ResourceAttributesFieldName.SERVICE_NAME: RESOURCE_ATTRIBUTES_SERVICE_NAME}
-    if session is not None:
-        res_attrs[ResourceAttributesFieldName.SESSION_ID] = session
+    if collection is not None:
+        res_attrs[ResourceAttributesFieldName.COLLECTION] = collection
     if isinstance(resource_attributes, dict):
         for attr_key, attr_value in resource_attributes.items():
             res_attrs[attr_key] = attr_value
@@ -52,7 +52,7 @@ def start_trace(
         from promptflow._sdk._tracing import start_trace_with_devkit
 
         start_trace_with_devkit(
-            session_id=session,
+            collection=collection,
             attrs=kwargs.get("attributes", None),
             run=kwargs.get("run", None),
         )
