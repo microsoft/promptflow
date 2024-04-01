@@ -8,11 +8,12 @@ from pathlib import Path
 from types import GeneratorType
 from typing import Any, Callable, Dict, Mapping, Optional
 
-from promptflow._constants import LINE_NUMBER_KEY
+from promptflow._constants import LINE_NUMBER_KEY, MessageFormatType
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool_meta_generator import PythonLoadError
 from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
 from promptflow._utils.logger_utils import logger
+from promptflow._utils.multimedia_utils import BasicMultimediaProcessor
 from promptflow._utils.tool_utils import function_to_interface
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import Flow
@@ -48,6 +49,8 @@ class ScriptExecutor(FlowExecutor):
         self._flow_id = "default_flow_id"
         self._log_interval = 60
         self._line_timeout_sec = 600
+        self._message_format = MessageFormatType.BASIC
+        self._multimedia_processor = BasicMultimediaProcessor()
 
     def exec_line(
         self,
@@ -78,6 +81,7 @@ class ScriptExecutor(FlowExecutor):
             parent_run_id=run_id,
             inputs=inputs,
             index=index,
+            message_format=self._message_format,
         )
         # Executor will add line_number to batch inputs if there is no line_number in the original inputs,
         # which should be removed, so, we only preserve the inputs that are contained in self._inputs.
