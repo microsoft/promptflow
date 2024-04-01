@@ -76,6 +76,17 @@ Open `.vscode/settings.json`, write `"--ignore=src/promptflow/tests/sdk_cli_azur
 
 ![img2](../media/dev_setup/set_up_pycharm_2.png)
 
+### [IMPORTANT] Put tests at proper place
+
+Principal #1: Put the tests in the same folder as the code they are testing, to ensure code can work within minor environment requirements.
+
+For example, you write code in `promptflow-core`, then put the tests in `promptflow-core/tests/core`, DO NOT put it in the promptflow-devkit or promptflow-azure.
+
+Principal #2: Setup separate workflow for tests with extra-requires.
+
+For example, you want to test `promptflow-core[azureml-serving]`, then add a new test folder `promptflow-core/tests/azureml-serving` to test the azure related code,
+and set up a new workflow for that folder. DO NOT update the environment of promptflow-core test directly.
+
 ### Record and replay tests
 
 Please refer to [Replay End-to-End Tests](./replay-e2e-test.md) to learn how to record and replay tests.
