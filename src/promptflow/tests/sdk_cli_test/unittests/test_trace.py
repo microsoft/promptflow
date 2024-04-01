@@ -27,7 +27,7 @@ from promptflow._sdk._constants import PF_TRACE_CONTEXT, PF_TRACE_CONTEXT_ATTR, 
 from promptflow._sdk._tracing import start_trace_with_devkit
 from promptflow._sdk.entities._trace import Span
 from promptflow.tracing._operation_context import OperationContext
-from promptflow.tracing._start_trace import _is_tracer_provider_set, setup_exporter_from_environ, start_trace
+from promptflow.tracing._start_trace import setup_exporter_from_environ, start_trace
 
 MOCK_PROMPTFLOW_SERVICE_PORT = "23333"
 
@@ -66,7 +66,10 @@ def mock_promptflow_service_invocation():
 class TestStartTrace:
     @pytest.mark.usefixtures("reset_tracer_provider")
     def test_setup_exporter_from_environ(self) -> None:
-        assert not _is_tracer_provider_set()
+        def is_tracer_provider_set() -> bool:
+            return isinstance(trace.get_tracer_provider(), TracerProvider)
+
+        assert not is_tracer_provider_set()
 
         # set some required environment variables
         endpoint = "http://localhost:23333/v1/traces"
@@ -83,7 +86,7 @@ class TestStartTrace:
         ):
             setup_exporter_from_environ()
 
-        assert _is_tracer_provider_set()
+        assert is_tracer_provider_set()
         tracer_provider: TracerProvider = trace.get_tracer_provider()
         assert collection == tracer_provider._resource.attributes[SpanResourceAttributesFieldName.COLLECTION]
         assert experiment == tracer_provider._resource.attributes[SpanResourceAttributesFieldName.EXPERIMENT_NAME]
