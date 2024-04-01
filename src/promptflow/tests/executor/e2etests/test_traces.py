@@ -613,6 +613,9 @@ class TestOTelTracer:
                 for chunk in json_chunks:
                     spans.append(json.loads(chunk))
             assert len(spans) == 10
+            trace_ids = [run_info.otel_trace_id for run_info in mem_run_storage._flow_runs.values()]
+            for trace_id in trace_ids:
+                assert sum(int(span["context"]["trace_id"], 16) == int(trace_id, 16) for span in spans) == 5
 
     def submit_flow_run(self, flow_file, inputs, dev_connections):
         executor = FlowExecutor.create(get_yaml_file(flow_file), dev_connections)
