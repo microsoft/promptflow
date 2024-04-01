@@ -11,7 +11,7 @@ The `promptflow-core` package provides the essential features needed to execute 
 
 For those seeking a **minimal** dependency to execute a flow in serving or cloud run scenarios, installing this package alone will suffice.
 
-However, if you require the full capabilities of the `devkit` to simplify the usage of flow, connection, and run in local devlopment lifecycle, please install the complete package using `pip install promptflow`.
+However, if you require the full capabilities of the `devkit` to simplify the usage of flow, connection, and run in local development lifecycle, please install the complete package using `pip install promptflow`.
 
 # Release History
 
