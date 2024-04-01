@@ -19,7 +19,18 @@ from promptflow.tracing._constants import (
 )
 
 
+@pytest.fixture
+def reset_tracer_provider():
+    from opentelemetry.trace import _TRACER_PROVIDER_SET_ONCE
+
+    with _TRACER_PROVIDER_SET_ONCE._lock:
+        _TRACER_PROVIDER_SET_ONCE._done = False
+
+    yield
+
+
 @pytest.mark.unittest
+@pytest.mark.usefixtures("reset_tracer_provider")
 class TestStartTrace:
     def test_tracer_provider_after_start_trace(self) -> None:
         start_trace()
