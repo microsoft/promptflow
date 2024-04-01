@@ -18,6 +18,7 @@ env:
   IS_IN_CI_PIPELINE: "true"
   RECORD_DIRECTORY: ${{ github.workspace }}/src/promptflow-recording
   TRACING_PATH: ${{ github.workspace }}/src/promptflow-tracing
+  PROMPT_FLOW_WORKSPACE_NAME: "promptflow-eastus"
 jobs:
   id:
     runs-on: ubuntu-latest
@@ -100,8 +101,13 @@ jobs:
       working-directory: artifacts
       run: |
         pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
+        pip uninstall -y promptflow-core promptflow-devkit promptflow-tracing
+        pip install ${{ github.workspace }}/src/promptflow-tracing
+        pip install ${{ github.workspace }}/src/promptflow-core
+        pip install ${{ github.workspace }}/src/promptflow-devkit[pyarrow]
+        pip install ${{ github.workspace }}/src/promptflow-azure
         gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)"}}
-        gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
+        gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)"}}
         pip freeze
     - name: Run SDK CLI Test
       shell: pwsh
@@ -183,6 +189,11 @@ jobs:
       working-directory: artifacts
       run: |
         pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
+        pip uninstall -y promptflow-core promptflow-devkit promptflow-azure promptflow-tracing
+        pip install ${{ github.workspace }}/src/promptflow-tracing
+        pip install ${{ github.workspace }}/src/promptflow-core
+        pip install ${{ github.workspace }}/src/promptflow-devkit[pyarrow]
+        pip install ${{ github.workspace }}/src/promptflow-azure
         gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[azure]"}}
         gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)"}}
         pip freeze
@@ -245,8 +256,13 @@ jobs:
       working-directory: artifacts
       run: |
         pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
+        pip uninstall -y promptflow-core promptflow-devkit promptflow-tracing
+        pip install ${{ github.workspace }}/src/promptflow-tracing
+        pip install ${{ github.workspace }}/src/promptflow-core
+        pip install ${{ github.workspace }}/src/promptflow-devkit[pyarrow]
+        pip install ${{ github.workspace }}/src/promptflow-azure
         gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[azure,executor-service]"}}
-        gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
+        gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)"}}
         pip freeze
     - name: Run Executor Test
       shell: pwsh
