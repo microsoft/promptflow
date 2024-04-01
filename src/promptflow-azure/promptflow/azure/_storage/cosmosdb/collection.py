@@ -44,11 +44,15 @@ class CollectionCosmosDB:
         self.collection_name = resource_attributes.get(
             SpanResourceAttributesFieldName.COLLECTION, TRACE_DEFAULT_COLLECTION
         )
-        self.collection_id = (
-            resource_attributes[SpanResourceAttributesFieldName.COLLECTION_ID]
-            if is_cloud_trace
-            else generate_collection_id_by_name_and_created_by(self.collection_name, created_by)
-        )
+        span_attributes = self.span.attributes
+        if SpanAttributeFieldName.BATCH_RUN_ID in span_attributes:
+            self.collection_id = span_attributes[SpanAttributeFieldName.BATCH_RUN_ID]
+        else:
+            self.collection_id = (
+                resource_attributes[SpanResourceAttributesFieldName.COLLECTION_ID]
+                if is_cloud_trace
+                else generate_collection_id_by_name_and_created_by(self.collection_name, created_by)
+            )
 
     def create_collection_if_not_exist(self, client: ContainerProxy):
         span_attributes = self.span.attributes

@@ -513,7 +513,7 @@ def serve_flow(args):
 
 
 def serve_flow_csharp(args, source):
-    from promptflow.batch._csharp_executor_proxy import EXECUTOR_SERVICE_DLL
+    from promptflow._proxy._csharp_executor_proxy import EXECUTOR_SERVICE_DLL
 
     try:
         # Change working directory to model dir
