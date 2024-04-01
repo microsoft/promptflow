@@ -127,7 +127,8 @@ promptflow.tools.llm.llm:
       type:
       - object
       enabled_by: api
-      enabled_by_value: [chat]
+      enabled_by_value:
+      - chat
       advanced: false
       ui_hints:
         text_box_size: lg
@@ -155,7 +156,8 @@ promptflow.tools.llm.llm:
       type:
       - int
       enabled_by: api
-      enabled_by_value: [chat]
+      enabled_by_value:
+      - chat
       advanced: true
       ui_hints:
         text_box_size: xs
@@ -164,7 +166,8 @@ promptflow.tools.llm.llm:
       type:
       - string
       enabled_by: api
-      enabled_by_value: [completion]
+      enabled_by_value:
+      - completion
       advanced: true
       ui_hints:
         text_box_size: xs
@@ -173,7 +176,8 @@ promptflow.tools.llm.llm:
       type:
       - int
       enabled_by: api
-      enabled_by_value: [completion]
+      enabled_by_value:
+      - completion
       advanced: true
       ui_hints:
         text_box_size: xs
@@ -182,7 +186,8 @@ promptflow.tools.llm.llm:
       type:
       - bool
       enabled_by: api
-      enabled_by_value: [completion]
+      enabled_by_value:
+      - completion
       advanced: true
       ui_hints:
         text_box_size: xs
@@ -191,7 +196,8 @@ promptflow.tools.llm.llm:
       type:
       - int
       enabled_by: api
-      enabled_by_value: [completion]
+      enabled_by_value:
+      - completion
       advanced: true
       ui_hints:
         text_box_size: xs
@@ -199,6 +205,9 @@ promptflow.tools.llm.llm:
       type:
       - list
       default: []
+      enabled_by: api
+      enabled_by_value:
+      - chat
       ui_hints:
         display_style: reusable_tool
     tool_choice:
@@ -206,3 +215,6 @@ promptflow.tools.llm.llm:
       - string
       - object
       default: ""
+      enabled_by: api
+      enabled_by_value:
+      - chat
