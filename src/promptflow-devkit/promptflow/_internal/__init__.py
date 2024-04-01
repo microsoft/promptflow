@@ -40,6 +40,7 @@ from promptflow._core.tools_manager import (
     register_connections,
     retrieve_tool_func_result,
 )
+from promptflow._proxy import ProxyFactory
 from promptflow._proxy._base_executor_proxy import APIBasedExecutorProxy
 from promptflow._proxy._csharp_executor_proxy import CSharpBaseExecutorProxy
 from promptflow._sdk._constants import LOCAL_MGMT_DB_PATH, CreatedByFieldName
