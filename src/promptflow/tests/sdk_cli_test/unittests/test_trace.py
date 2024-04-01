@@ -131,7 +131,7 @@ class TestStartTrace:
         ctx = {PF_TRACE_CONTEXT_ATTR: {ContextAttributeKey.REFERENCED_LINE_RUN_ID: referenced_line_run_id}}
         with monkeypatch.context() as m:
             m.setenv(PF_TRACE_CONTEXT, json.dumps(ctx))
-            start_trace_with_devkit(session_id=None)
+            start_trace_with_devkit(collection=None)
             # lineage is stored in context
             op_ctx = OperationContext.get_instance()
             otel_attrs = op_ctx._get_otel_attributes()
@@ -145,7 +145,7 @@ class TestStartTrace:
         op_ctx._add_otel_attributes(SpanAttributeFieldName.REFERENCED_LINE_RUN_ID, str(uuid.uuid4()))
         with monkeypatch.context() as m:
             m.setenv(PF_TRACE_CONTEXT, json.dumps({PF_TRACE_CONTEXT_ATTR: dict()}))
-            start_trace_with_devkit(session_id=None)
+            start_trace_with_devkit(collection=None)
             # lineage will be reset
             otel_attrs = op_ctx._get_otel_attributes()
             assert SpanAttributeFieldName.REFERENCED_LINE_RUN_ID not in otel_attrs
