@@ -33,6 +33,7 @@
     "src/promptflow/tests/**",
     "src/promptflow-recording/**",
     "src/promptflow-tools/tests/**",
+    "src/promptflow-devkit/promptflow/_sdk/_service/static/index.html",
     "**/flow.dag.yaml",
     "**/pyproject.toml",
     "**/setup.py",
