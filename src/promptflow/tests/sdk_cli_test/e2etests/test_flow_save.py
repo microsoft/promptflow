@@ -1,4 +1,5 @@
 import os
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -32,39 +33,53 @@ def clear_module_cache(module_name):
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
 class TestFlowSave:
-    def test_pf_save_simple(self):
-        target_path = f"{FLOWS_DIR}/saved/hello_world"
+    @pytest.mark.parametrize(
+        "save_args_overrides",
+        [
+            pytest.param(
+                {
+                    "entry": "hello:hello_world",
+                    "python_requirements": f"{TEST_ROOT}/test_configs/functions/requirements",
+                    "image": "python:3.8-slim",
+                    "signature": {
+                        "inputs": {
+                            "text": {
+                                "type": "str",
+                                "description": "The text to be printed",
+                            }
+                        },
+                        "outputs": {
+                            "answer": {
+                                "type": "str",
+                                "description": "The answer",
+                            }
+                        },
+                    },
+                    "input_sample": {"text": "promptflow"},
+                },
+                id="hello_world_main",
+            )
+        ],
+    )
+    def test_pf_save_succeed(self, save_args_overrides, request):
+        target_path = f"{FLOWS_DIR}/saved/{request.node.callspec.id}"
         if os.path.exists(target_path):
             shutil.rmtree(target_path)
 
-        pf = PFClient()
-        pf.flows._save(
+        target_code_dir = request.node.callspec.id
+        target_code_dir = re.sub(r"_[a-z]+$", "", target_code_dir)
+        save_args = {
             # should we support save to a yaml file and do not copy code?
-            path=target_path,
-            # this should be entry instead of flow as we don't have a flow now in concept level before saving
-            entry="hello:hello_world",
+            "path": target_path,
             # code should be required, or we can't locate entry along with code; we can check if it's possible to infer
             # code from entry
             # all content in code will be copied
-            code=f"{TEST_ROOT}/test_configs/functions/hello_world",
-            python_requirements=f"{TEST_ROOT}/test_configs/functions/requirements",
-            image="python:3.8-slim",
-            signature={
-                "inputs": {
-                    "text": {
-                        "type": "str",
-                        "description": "The text to be printed",
-                    }
-                },
-                "outputs": {
-                    "answer": {
-                        "type": "str",
-                        "description": "The answer",
-                    }
-                },
-            },
-            input_sample={"text": "promptflow"},
-        )
+            "code": f"{TEST_ROOT}/test_configs/functions/{target_code_dir}",
+        }
+        save_args.update(save_args_overrides)
+
+        pf = PFClient()
+        pf.flows._save(**save_args)
 
         from promptflow._sdk.entities._flow import Flow
 
