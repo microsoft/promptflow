@@ -935,7 +935,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
 
         # always get run object from db, since the passed in run object may not have all latest info
         pf = PFClient()
-        run = pf.runs.get(run=run)
+        run = pf.runs.get(run)
 
         # check if the run is in terminated status
         terminated_statuses = RunStatus.get_terminated_statuses()

@@ -7,7 +7,7 @@ from azure.storage.blob.aio import BlobServiceClient
 
 from promptflow._cli._utils import merge_jsonl_files
 from promptflow._constants import OutputsFolderName
-from promptflow._sdk._constants import DEFAULT_ENCODING, AzureRunTypes, Local2Cloud
+from promptflow._sdk._constants import AzureRunTypes, Local2Cloud
 from promptflow._sdk._errors import UploadInternalError, UserAuthenticationError
 from promptflow._sdk.entities import Run
 from promptflow._utils.logger_utils import get_cli_sdk_logger
@@ -160,7 +160,7 @@ class AsyncRunUploader:
             UploadInternalError(f"Data path {data_path.resolve().as_posix()!r} does not exist or it's not a file.")
 
         async with blob_client:
-            with open(data_path, "rb", encoding=DEFAULT_ENCODING) as f:
+            with open(data_path, "rb") as f:
                 try:
                     await blob_client.upload_blob(f, overwrite=self.overwrite)
                 except ResourceExistsError as e:
