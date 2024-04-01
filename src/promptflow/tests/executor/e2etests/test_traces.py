@@ -1,6 +1,7 @@
 import json
 import multiprocessing
 import sys
+import threading
 import uuid
 from pathlib import Path
 from types import GeneratorType
@@ -75,16 +76,18 @@ SHOULD_INCLUDE_PROMPT_FUNCTION_NAMES = [
     "AzureOpenAI.chat",
 ]
 
-exporter_lock = multiprocessing.Lock()
+lock = multiprocessing.Lock()
 
 
 class JsonSpanExporter(SpanExporter):
+    _lock = threading.Lock()
+
     def __init__(self, file_path):
         self.file_path = file_path
 
     def export(self, spans):
         try:
-            with exporter_lock:
+            if self._lock:
                 with open(self.file_path, "a") as f:
                     for span in spans:
                         f.write(span.to_json() + "\n\n")
@@ -106,10 +109,11 @@ def mock_exporter_for_batch_tracing():
 
 
 def mock_setup_exporter_from_environ():
-    if (file := Path("batch_spans.jsonl")).is_file():
-        file.unlink()
+    with lock:
+        idx = len(list(Path("./.span").glob("*.jsonl")))
+        Path(f"./.span/line_span_{idx}.jsonl").touch()
     tracer_provider = TracerProvider()
-    json_exporter = JsonSpanExporter(file_path="batch_spans.jsonl")
+    json_exporter = JsonSpanExporter(file_path=f"./.span/line_span_{idx}.jsonl")
     tracer_provider.add_span_processor(SimpleSpanProcessor(json_exporter))
     otel_trace.set_tracer_provider(tracer_provider)
 
@@ -597,6 +601,13 @@ class TestOTelTracer:
         execute_function_in_subprocess(self.assert_otel_traces_with_batch, dev_connections, flow_file)
 
     def assert_otel_traces_with_batch(self, dev_connections, flow_file):
+        flow_folder = get_flow_folder(flow_file)
+        if (span_folder := flow_folder / ".span").exists():
+            for file in span_folder.glob("*.jsonl"):
+                file.unlink()
+        else:
+            span_folder.mkdir()
+
         with override_process_pool_targets(process_manager=mock_process_manager, process_wrapper=mock_process_wrapper):
             mem_run_storage = MemoryRunStorage()
             batch_result = submit_batch_run(
@@ -607,15 +618,44 @@ class TestOTelTracer:
                 storage=mem_run_storage,
             )
             assert isinstance(batch_result, BatchResult)
-            spans = []
-            with open(get_flow_folder(flow_file) / "batch_spans.jsonl", "r") as f:
-                json_chunks = f.read().strip().split("\n\n")
-                for chunk in json_chunks:
-                    spans.append(json.loads(chunk))
-            assert len(spans) == 10
-            trace_ids = [run_info.otel_trace_id for run_info in mem_run_storage._flow_runs.values()]
-            for trace_id in trace_ids:
-                assert sum(int(span["context"]["trace_id"], 16) == int(trace_id, 16) for span in spans) == 5
+
+            batch_run_id = list(mem_run_storage._flow_runs.values())[0].root_run_id
+            assert (flow_folder / ".span").exists()
+            trace_ids = []
+            for file in span_folder.glob("*.jsonl"):
+                spans = []
+                with open(file, "r") as f:
+                    json_chunks = f.read().strip().split("\n\n")
+                    for chunk in json_chunks:
+                        spans.append(json.loads(chunk))
+                trace_ids.append(spans[0]["context"]["trace_id"])
+                assert len(spans) == 5, f"Got {len(spans)} spans."
+                root_spans = [span for span in spans if span["parent_id"] is None]
+                assert len(root_spans) == 1
+                root_span = root_spans[0]
+                for span in spans:
+                    span["status"]["status_code"] = "OK"
+                    span["attributes"]["batch_run_id"] = batch_run_id
+                    span["attributes"]["framework"] = "promptflow"
+                    if span["parent_id"] is None:
+                        expected_span_type = "Flow"
+                    elif span["attributes"].get("function", "") in LLM_FUNCTION_NAMES:
+                        expected_span_type = "LLM"
+                    elif span["attributes"].get("function", "") in EMBEDDING_FUNCTION_NAMES:
+                        expected_span_type = "Embedding"
+                    else:
+                        expected_span_type = "Function"
+                    msg = f"span_type: {span['attributes']['span_type']}, expected: {expected_span_type}"
+                    assert span["attributes"]["span_type"] == expected_span_type, msg
+                    if span != root_span:  # Non-root spans should have a parent
+                        assert span["attributes"]["function"]
+                    inputs = json.loads(span["attributes"]["inputs"])
+                    output = json.loads(span["attributes"]["output"])
+                    assert isinstance(inputs, dict)
+                    assert output is not None
+
+            for run_info in mem_run_storage._flow_runs.values():
+                assert f"0x{int(run_info.otel_trace_id, 16):032x}" in trace_ids
 
     def submit_flow_run(self, flow_file, inputs, dev_connections):
         executor = FlowExecutor.create(get_yaml_file(flow_file), dev_connections)
