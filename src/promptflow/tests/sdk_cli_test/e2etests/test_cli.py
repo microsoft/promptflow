@@ -2201,7 +2201,6 @@ class TestCli:
         assert detail_path.exists()
 
     def test_pf_run_with_init(self, pf):
-        from tests.sdk_cli_test.e2etests.test_flow_run import assert_batch_run_result
 
         run_id = str(uuid.uuid4())
         run_pf_command(
@@ -2218,10 +2217,22 @@ class TestCli:
         )
 
         def assert_func(details_dict):
-            return details_dict["outputs.func_input"] == ["func_input", "func_input"] and details_dict[
-                "outputs.obj_input"
-            ] == ["val", "val"]
+            return details_dict["outputs.func_input"] == [
+                "func_input",
+                "func_input",
+                "func_input",
+                "func_input",
+            ] and details_dict["outputs.obj_input"] == ["val", "val", "val", "val"]
 
         # check run results
         run = pf.runs.get(run_id)
         assert_batch_run_result(run, pf, assert_func)
+
+
+def assert_batch_run_result(run, pf, assert_func):
+    assert run.status == "Completed"
+    assert "error" not in run._to_dict(), run._to_dict()["error"]
+    details = pf.get_details(run.name)
+    # convert DataFrame to dict
+    details_dict = details.to_dict(orient="list")
+    assert assert_func(details_dict), details_dict
