@@ -36,9 +36,15 @@ promptflow.tools.llm.llm:
       type:
       - string
       default: chat
-      enum:
-      - chat
-      - completion
+      # api needs dynamic list because we do not offer "completion" api for serverless connection.
+      dynamic_list:
+        func_path: promptflow.tools.llm.list_apis
+        func_kwargs:
+        - name: connection_name
+          type: 
+          - string
+          reference: ${inputs.connection}
+        allow_manual_entry: true
       ui_hints:
         text_box_size: sm
     deployment_name:
