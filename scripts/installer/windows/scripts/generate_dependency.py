@@ -60,6 +60,7 @@ def get_toml_dependencies(packages):
     dependencies = [dependency for dependency in dependencies if not dependency.startswith('promptflow')]
     return dependencies
 
+
 def get_package_dependencies(package_name_list):
     dependencies = []
     for package_name in package_name_list:
