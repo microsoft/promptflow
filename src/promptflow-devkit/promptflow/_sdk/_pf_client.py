@@ -4,9 +4,9 @@
 import os
 from os import PathLike
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
-from promptflow._constants import USER_AGENT_OVERRIDE_KEY, ConnectionProviderConfig
+from promptflow._constants import USER_AGENT_OVERRIDE_KEY, ConnectionProviderConfig, FlowLanguage
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil, setup_user_agent_to_operation_context
 from promptflow.exceptions import ErrorTarget, UserErrorException
@@ -15,7 +15,7 @@ from ._configuration import Configuration
 from ._constants import MAX_SHOW_DETAILS_RESULTS
 from ._load_functions import load_flow
 from ._user_agent import USER_AGENT
-from ._utils import generate_yaml_entry, is_python_flex_flow_entry
+from ._utils import generate_yaml_entry
 from .entities import Run
 from .entities._flow import FlexFlow
 from .operations import RunOperations
@@ -62,7 +62,7 @@ class PFClient:
 
     def run(
         self,
-        flow: Union[str, PathLike] = None,
+        flow: Union[str, PathLike, Callable] = None,
         *,
         data: Union[str, PathLike] = None,
         run: Union[str, Run] = None,
@@ -75,6 +75,7 @@ class PFClient:
         tags: Dict[str, str] = None,
         resume_from: Union[str, Run] = None,
         code: Union[str, PathLike] = None,
+        init: Optional[dict] = None,
         **kwargs,
     ) -> Run:
         """Run flow against provided data or run.
@@ -127,9 +128,13 @@ class PFClient:
         :type resume_from: str
         :param code: Path to the code directory to run.
         :type code: Union[str, PathLike]
+        :param init: Initialization parameters for flex flow, only supported when flow is callable class.
+        :type init: dict
         :return: Flow run info.
         :rtype: ~promptflow.entities.Run
         """
+        from promptflow._proxy import ProxyFactory
+
         if resume_from:
             unsupported = {
                 k: v
@@ -154,16 +159,18 @@ class PFClient:
             )
         if not flow:
             raise ValueError("'flow' is required to create a run.")
-        if not os.path.exists(flow) and not is_python_flex_flow_entry(entry=flow):
-            # check if it's eager flow's entry
+        if callable(flow):
+            logger.debug(f"flow entry {flow} is a callable.")
+        elif ProxyFactory().get_executor_proxy_cls(FlowLanguage.Python).is_flex_flow_entry(entry=flow):
+            logger.debug(f"flow entry {flow} is a python flex flow.")
+        elif os.path.exists(flow):
+            logger.debug(f"flow entry {flow} is a local path.")
+        else:
             raise UserErrorException(f"Flow path {flow} does not exist and it's not a valid entry point.")
         if data and not os.path.exists(data):
             raise FileNotFoundError(f"data path {data} does not exist")
         if not run and not data:
             raise ValueError("at least one of data or run must be provided")
-        if code and not os.path.exists(code):
-            raise FileNotFoundError(f"code path {code} does not exist")
-        code = Path(code) if code else Path(os.getcwd())
         with generate_yaml_entry(entry=flow, code=code) as flow:
             # load flow object for validation and early failure
             flow_obj = load_flow(source=flow)
@@ -184,6 +191,7 @@ class PFClient:
                 connections=connections,
                 environment_variables=environment_variables,
                 config=Configuration(overrides=self._config),
+                init=init,
             )
             return self.runs.create_or_update(run=run, **kwargs)
 
@@ -331,3 +339,8 @@ class PFClient:
         return self.flows.test(
             flow=flow, inputs=inputs, variant=variant, environment_variables=environment_variables, node=node
         )
+
+    @property
+    def traces(self) -> TraceOperations:
+        """Operations on the trace that can manage traces."""
+        return self._traces

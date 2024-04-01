@@ -159,6 +159,11 @@ class AbstractExecutorProxy:
         """Ensure the executor service is healthy before execution"""
         pass
 
+    @classmethod
+    def is_flex_flow_entry(cls, entry: str):
+        """Returns True if entry is flex flow's entry."""
+        raise NotImplementedError()
+
 
 class APIBasedExecutorProxy(AbstractExecutorProxy):
     def __init__(

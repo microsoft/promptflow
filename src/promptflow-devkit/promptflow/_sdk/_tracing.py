@@ -14,6 +14,7 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
+from promptflow._cli._pf.entry import entry
 from promptflow._constants import (
     OTEL_RESOURCE_SERVICE_NAME,
     SpanAttributeFieldName,
@@ -28,7 +29,6 @@ from promptflow._sdk._constants import (
     AzureMLWorkspaceTriad,
     ContextAttributeKey,
 )
-from promptflow._sdk._service.entry import entry
 from promptflow._sdk._service.utils.utils import get_port_from_config, is_pfs_service_healthy, is_port_in_use
 from promptflow._sdk._utils import extract_workspace_triad_from_trace_provider
 from promptflow._utils.logger_utils import get_cli_sdk_logger
@@ -61,7 +61,7 @@ def _inject_attrs_to_op_ctx(attrs: typing.Dict[str, str]) -> None:
 def _invoke_pf_svc() -> str:
     port = get_port_from_config(create_if_not_exists=True)
     port = str(port)
-    cmd_args = ["start", "--port", port]
+    cmd_args = ["service", "start", "--port", port]
     hint_stop_message = (
         f"You can stop the Prompt flow Tracing Server with the following command:'\033[1m pf service stop\033[0m'.\n"
         f"Alternatively, if no requests are made within {PF_SERVICE_HOUR_TIMEOUT} "
@@ -86,13 +86,12 @@ def _get_ws_triad_from_pf_config() -> typing.Optional[AzureMLWorkspaceTriad]:
     return extract_workspace_triad_from_trace_provider(ws_arm_id) if ws_arm_id is not None else None
 
 
-# priority: run > experiment > session id
+# priority: run > experiment > collection
 # for run(s) in experiment, we should print url with run(s) as it is more specific;
 # and url with experiment should be printed at the beginning of experiment start.
-# session id is the concept we expect to expose to users least, so it should have the lowest priority.
 def _print_tracing_url_from_local(
     pfs_port: str,
-    session_id: typing.Optional[str],
+    collection: typing.Optional[str],
     exp: typing.Optional[str] = None,
     run: typing.Optional[str] = None,
 ) -> None:
@@ -101,14 +100,14 @@ def _print_tracing_url_from_local(
         url += f"?#run={run}"
     elif exp is not None:
         url += f"?#experiment={exp}"
-    elif session_id is not None:
-        url += f"?#session={session_id}"
+    elif collection is not None:
+        url += f"?#session={collection}"
     print(f"You can view the traces from local: {url}")
 
 
 def _print_tracing_url_from_azure_portal(
     ws_triad: typing.Optional[AzureMLWorkspaceTriad],
-    session_id: typing.Optional[str],
+    collection: typing.Optional[str],
     exp: typing.Optional[str] = None,
     run: typing.Optional[str] = None,
 ) -> None:
@@ -121,8 +120,8 @@ def _print_tracing_url_from_azure_portal(
     elif exp is not None:
         # not consider experiment for now
         pass
-    elif session_id is not None:
-        query = '{"sessionId":"' + session_id + '"}'
+    elif collection is not None:
+        query = '{"sessionId":"' + collection + '"}'
     # urllib.parse.quote to encode the query parameter
     if query is not None:
         url += f"&searchText={urllib.parse.quote(query)}"
@@ -131,12 +130,12 @@ def _print_tracing_url_from_azure_portal(
 
 def _inject_res_attrs_to_environ(
     pfs_port: str,
-    session_id: typing.Optional[str],
+    collection: typing.Optional[str],
     exp: typing.Optional[str] = None,
     ws_triad: typing.Optional[AzureMLWorkspaceTriad] = None,
 ) -> None:
-    if session_id is not None:
-        os.environ[TraceEnvironmentVariableName.SESSION_ID] = session_id
+    if collection is not None:
+        os.environ[TraceEnvironmentVariableName.COLLECTION] = collection
     if exp is not None:
         os.environ[TraceEnvironmentVariableName.EXPERIMENT] = exp
     if ws_triad is not None:
@@ -149,14 +148,14 @@ def _inject_res_attrs_to_environ(
 
 
 def _create_or_merge_res(
-    session_id: typing.Optional[str],
+    collection: typing.Optional[str],
     collection_id: typing.Optional[str] = None,
     exp: typing.Optional[str] = None,
     ws_triad: typing.Optional[AzureMLWorkspaceTriad] = None,
 ) -> Resource:
     res_attrs = dict()
-    if session_id is not None:
-        res_attrs[SpanResourceAttributesFieldName.SESSION_ID] = session_id
+    if collection is not None:
+        res_attrs[SpanResourceAttributesFieldName.COLLECTION] = collection
     if collection_id is not None:
         res_attrs[SpanResourceAttributesFieldName.COLLECTION_ID] = collection_id
     if _is_tracer_provider_set():
@@ -174,7 +173,7 @@ def _create_or_merge_res(
 
 
 def start_trace_with_devkit(
-    session_id: typing.Optional[str],
+    collection: typing.Optional[str],
     attrs: typing.Optional[typing.Dict[str, str]] = None,
     run: typing.Optional[str] = None,
 ) -> None:
@@ -200,21 +199,20 @@ def start_trace_with_devkit(
     # invoke prompt flow service
     pfs_port = _invoke_pf_svc()
 
-    _inject_res_attrs_to_environ(pfs_port=pfs_port, session_id=session_id, exp=exp, ws_triad=ws_triad)
+    _inject_res_attrs_to_environ(pfs_port=pfs_port, collection=collection, exp=exp, ws_triad=ws_triad)
     # instrument openai and setup exporter to pfs here for flex mode
     inject_openai_api()
     setup_exporter_to_pfs()
     # print tracing url(s)
-    _print_tracing_url_from_local(pfs_port=pfs_port, session_id=session_id, exp=exp, run=run)
-    _print_tracing_url_from_azure_portal(ws_triad=ws_triad, session_id=session_id, exp=exp, run=run)
+    _print_tracing_url_from_local(pfs_port=pfs_port, collection=collection, exp=exp, run=run)
+    _print_tracing_url_from_azure_portal(ws_triad=ws_triad, collection=collection, exp=exp, run=run)
 
 
 def setup_exporter_to_pfs() -> None:
     # get resource attributes from environment
-    # TODO: Rename session_id, local trace should hide id and name.
     # For local trace, collection is the only identifier for name and id
-    # For cloud trace, we use collection as name and collection_id for id
-    session_id = os.getenv(TraceEnvironmentVariableName.SESSION_ID, None)
+    # For cloud trace, we use collection here as name and collection_id for id
+    collection = os.getenv(TraceEnvironmentVariableName.COLLECTION, None)
     # Only used for runtime
     collection_id = os.getenv(TraceEnvironmentVariableName.COLLECTION_ID, None)
     exp = os.getenv(TraceEnvironmentVariableName.EXPERIMENT, None)
@@ -230,7 +228,7 @@ def setup_exporter_to_pfs() -> None:
             workspace_name=workspace_name,
         )
     # create resource, or merge to existing resource
-    res = _create_or_merge_res(session_id=session_id, collection_id=collection_id, exp=exp, ws_triad=workspace_triad)
+    res = _create_or_merge_res(collection=collection, collection_id=collection_id, exp=exp, ws_triad=workspace_triad)
     tracer_provider = TracerProvider(resource=res)
     # get OTLP endpoint from environment
     endpoint = os.getenv(OTEL_EXPORTER_OTLP_ENDPOINT)

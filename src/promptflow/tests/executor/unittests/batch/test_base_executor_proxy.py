@@ -7,8 +7,8 @@ from unittest.mock import AsyncMock, patch
 import httpx
 import pytest
 
+from promptflow._proxy._base_executor_proxy import APIBasedExecutorProxy
 from promptflow._utils.exception_utils import ExceptionPresenter
-from promptflow.batch._base_executor_proxy import APIBasedExecutorProxy
 from promptflow.batch._errors import ExecutorServiceUnhealthy
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, ValidationException

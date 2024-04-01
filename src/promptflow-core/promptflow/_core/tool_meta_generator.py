@@ -118,6 +118,9 @@ def collect_flow_entry_in_module(m, entry):
     func = getattr(m, func_name, None)
     if isinstance(func, types.FunctionType):
         return func
+    elif inspect.isclass(func) and hasattr(func, "__call__"):
+        # check if the entry is a callable class
+        return func.__call__
     raise PythonLoadError(
         message_format="Failed to collect flow entry '{entry}' in module '{module}'.",
         entry=entry,

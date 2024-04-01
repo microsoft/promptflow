@@ -3,7 +3,6 @@
 # ---------------------------------------------------------
 import os
 from os import PathLike
-from pathlib import Path
 from typing import Dict, List, Optional, Union
 
 from azure.ai.ml import MLClient
@@ -199,6 +198,7 @@ class PFClient:
         tags: Dict[str, str] = None,
         resume_from: Union[str, Run] = None,
         code: Union[str, PathLike] = None,
+        init: Optional[dict] = None,
         **kwargs,
     ) -> Run:
         """Run flow against provided data or run.
@@ -256,9 +256,14 @@ class PFClient:
         :type resume_from: str
         :param code: Path to the code directory to run.
         :type code: Union[str, PathLike]
+        :param init: Initialization parameters for flex flow, only supported when flow is callable class.
+        :type init: dict
         :return: flow run info.
         :rtype: ~promptflow.entities.Run
         """
+        # TODO(3047273): support cloud run init
+        if init:
+            raise NotImplementedError("init is not supported for pfazure.")
         if resume_from:
             unsupported = {
                 k: v
@@ -281,10 +286,8 @@ class PFClient:
             return self.runs._create_by_resume_from(
                 resume_from=resume_from, name=name, display_name=display_name, tags=tags, **kwargs
             )
-
-        if code and not os.path.exists(code):
-            raise FileNotFoundError(f"code path {code} does not exist")
-        code = Path(code) if code else Path(os.getcwd())
+        if callable(flow):
+            raise UserErrorException(f"Providing callable {flow} as flow is not supported.")
         with generate_yaml_entry(entry=flow, code=code) as flow:
             run = Run(
                 name=name,
