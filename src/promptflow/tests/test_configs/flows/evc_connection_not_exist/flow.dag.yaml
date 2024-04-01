@@ -1,0 +1,17 @@
+inputs:
+  key:
+    type: string
+outputs:
+  output:
+    type: string
+    reference: ${print_env.output.value}
+environment_variables:
+  API_BASE: ${not_exist.val}
+nodes:
+- name: print_env
+  type: python
+  source:
+    type: code
+    path: print_env.py
+  inputs:
+    key: ${inputs.key}

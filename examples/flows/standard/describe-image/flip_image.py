@@ -1,5 +1,5 @@
 import io
-from promptflow import tool
+from promptflow.core import tool
 from promptflow.contracts.multimedia import Image
 from PIL import Image as PIL_Image
 

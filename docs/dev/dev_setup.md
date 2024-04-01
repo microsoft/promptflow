@@ -5,11 +5,7 @@
 - First create a new [conda](https://conda.io/projects/conda/en/latest/user-guide/getting-started.html) environment. Please specify python version as 3.9.
   `conda create -n <env_name> python=3.9`.
 - Activate the env you created.
-- Set environment variable `PYTHONPATH` in your new conda environment.
-  `conda env config vars set PYTHONPATH=<path-to-src>\promptflow`.
-  Once you have set the environment variable, you have to reactivate your environment.
-  `conda activate <env_name>`.
-- In root folder, run `python scripts/building/dev_setup.py --promptflow-extra-deps azure` to install the package and dependencies.
+- In root folder, run `python scripts/dev-setup/main.py` to install the packages and dependencies; if you are using Visual Studio Code, it is recommended to add `--vscode` (which is `python scripts/dev-setup/main.py --vscode`) to enable VS Code to recognize the packages.
 
 ## How to run tests
 

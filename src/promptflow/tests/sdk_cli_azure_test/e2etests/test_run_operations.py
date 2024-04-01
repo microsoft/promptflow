@@ -37,7 +37,6 @@ from promptflow.azure._load_functions import load_flow
 from promptflow.exceptions import UserErrorException
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
-from ..recording_utilities import is_live
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 
@@ -101,7 +100,8 @@ class TestFlowRun:
         run2 = pf.run(resume_from=run, name=name2)
         assert isinstance(run2, Run)
         # Enable name assert after PFS released
-        # assert run2.name == name2
+        assert run2.name == name2
+        assert run2._resume_from == run.name
 
     def test_run_bulk_from_yaml(self, pf, runtime: str, randstr: Callable[[str], str]):
         run_id = randstr("run_id")
@@ -388,7 +388,7 @@ class TestFlowRun:
         assert "debugInfo" in default["error"]["error"] and "debugInfo" not in exclude["error"]["error"]
 
     @pytest.mark.skipif(
-        condition=not is_live(),
+        condition=not pytest.is_live,
         reason="cannot differ the two requests to run history in replay mode.",
     )
     def test_archive_and_restore_run(self, pf: PFClient, created_batch_run_without_llm: Run):
@@ -459,7 +459,7 @@ class TestFlowRun:
         assert run.status in [RunStatus.CANCELED, RunStatus.CANCEL_REQUESTED]
 
     @pytest.mark.skipif(
-        condition=not is_live(), reason="request uri contains temp folder name, need some time to sanitize."
+        condition=not pytest.is_live, reason="request uri contains temp folder name, need some time to sanitize."
     )
     def test_run_with_additional_includes(self, pf, runtime: str, randstr: Callable[[str], str]):
         run = pf.run(

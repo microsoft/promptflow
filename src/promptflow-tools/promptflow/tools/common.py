@@ -566,10 +566,15 @@ def normalize_connection_config(connection):
             "base_url": connection.base_url
         }
     elif isinstance(connection, ServerlessConnection):
+        suffix = "/v1"
+        base_url = connection.api_base
+        if not base_url.endswith(suffix):
+            # append "/v1" to ServerlessConnection api_base so that it can directly use the OpenAI SDK.
+            base_url += suffix
         return {
             "max_retries": 0,
             "api_key": connection.api_key,
-            "base_url": connection.api_base
+            "base_url": base_url
         }
     else:
         error_message = f"Not Support connection type '{type(connection).__name__}'. " \

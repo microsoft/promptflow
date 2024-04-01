@@ -28,7 +28,7 @@ class TestFlowInvoker:
         with pytest.raises(UserErrorException):
             FlowInvoker(
                 flow=EXAMPLE_FLOW,
-                connection_provider="unsupported",
+                connection_provider="Unsupported connection provider",
             )
 
     def test_flow_invoker_custom_connection_provider(self):
