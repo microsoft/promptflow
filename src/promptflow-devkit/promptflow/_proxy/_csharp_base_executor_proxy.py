@@ -4,7 +4,7 @@
 from pathlib import Path
 from typing import Any, List, Mapping, Optional
 
-from promptflow.batch._base_executor_proxy import APIBasedExecutorProxy
+from promptflow._proxy._base_executor_proxy import APIBasedExecutorProxy
 from promptflow.executor._result import AggregationResult
 
 EXECUTOR_SERVICE_DLL = "Promptflow.dll"

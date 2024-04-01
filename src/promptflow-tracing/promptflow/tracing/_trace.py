@@ -337,6 +337,8 @@ def _traced_async(
         # For node span we set the span name to node name, otherwise we use the function name.
         span_name = get_node_name_from_context(used_for_span_name=True) or trace.name
         with open_telemetry_tracer.start_as_current_span(span_name) as span:
+            # Store otel trace id in context for correlation
+            OperationContext.get_instance()["otel_trace_id"] = f"{span.get_span_context().trace_id:032x}"
             enrich_span_with_trace(span, trace)
             enrich_span_with_prompt_info(span, func, kwargs)
 
@@ -399,6 +401,8 @@ def _traced_sync(
         # For node span we set the span name to node name, otherwise we use the function name.
         span_name = get_node_name_from_context(used_for_span_name=True) or trace.name
         with open_telemetry_tracer.start_as_current_span(span_name) as span:
+            # Store otel trace id in context for correlation
+            OperationContext.get_instance()["otel_trace_id"] = f"{span.get_span_context().trace_id:032x}"
             enrich_span_with_trace(span, trace)
             enrich_span_with_prompt_info(span, func, kwargs)
 

@@ -5,11 +5,11 @@
 from typing import Dict, Type
 
 from promptflow._constants import FlowLanguage
-from promptflow._proxy import AbstractInspectorProxy
+from promptflow._proxy._base_executor_proxy import AbstractExecutorProxy
+from promptflow._proxy._base_inspector_proxy import AbstractInspectorProxy
+from promptflow._proxy._csharp_executor_proxy import CSharpExecutorProxy
+from promptflow._proxy._python_executor_proxy import PythonExecutorProxy
 from promptflow._utils.async_utils import async_run_allowing_running_loop
-from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
-from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
-from promptflow.batch._python_executor_proxy import PythonExecutorProxy
 
 
 class ProxyFactory:

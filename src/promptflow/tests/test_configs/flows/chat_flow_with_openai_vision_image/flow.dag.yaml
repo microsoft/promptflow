@@ -1,0 +1,53 @@
+message_format: openai-vision
+inputs:
+  chat_history:
+    type: list
+    default:
+    - inputs:
+        question:
+        - the first question
+        - type: image_file
+          image_file:
+            path: logo.jpg
+      outputs:
+        answer:
+        - type: image_file
+          image_file:
+            path: logo.jpg
+    - inputs:
+        question:
+        - the second question
+        - type: image_file
+          image_file:
+            path: logo_2.png
+      outputs:
+        answer:
+        - type: image_file
+          image_file:
+            path: logo_2.png
+    is_chat_history: true
+  question:
+    type: list
+    default:
+    - the third question
+    - type: image_file
+      image_file:
+        path: logo.jpg
+    - type: image_file
+      image_file:
+        path: logo_2.png
+    is_chat_input: true
+outputs:
+  answer:
+    type: string
+    reference: ${mock_chat_node.output}
+    is_chat_output: true
+nodes:
+- name: mock_chat_node
+  type: python
+  source:
+    type: code
+    path: mock_chat.py
+  inputs:
+    chat_history: ${inputs.chat_history}
+    question: ${inputs.question}
