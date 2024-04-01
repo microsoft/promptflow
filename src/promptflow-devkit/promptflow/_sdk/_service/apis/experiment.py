@@ -62,7 +62,7 @@ class ExperimentList(Resource):
         return jsonify(experiments_dict)
 
 
-@api.route("/test")
+@api.route("/test_with_flow_override")
 class ExperimentTest(Resource):
     @api.doc(description="Test experiment")
     @api.response(code=200, description="Experiment execution details.")

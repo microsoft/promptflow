@@ -309,7 +309,7 @@ class PFSOperations:
     # Experiment APIs
     def experiment_test(self, body: dict):
         response = self._client.post(
-            f"{self.EXPERIMENT_PREFIX}/test",
+            f"{self.EXPERIMENT_PREFIX}/test_with_flow_override",
             json=body,
         )
         return response

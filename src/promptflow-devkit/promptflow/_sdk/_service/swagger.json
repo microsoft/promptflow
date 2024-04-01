@@ -59,7 +59,7 @@
                     "type": "string"
                 }
             ],
-            "post": {
+            "get": {
                 "responses": {
                     "200": {
                         "description": "Connection details",
@@ -71,16 +71,13 @@
                         "description": "This service is available for local user only, please specify X-Remote-User in headers."
                     }
                 },
-                "description": "Create connection",
-                "operationId": "post_connection",
+                "description": "Get connection",
+                "operationId": "get_connection",
                 "parameters": [
                     {
-                        "name": "payload",
-                        "required": true,
-                        "in": "body",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
+                        "name": "working_directory",
+                        "in": "query",
+                        "type": "string"
                     }
                 ],
                 "tags": [
@@ -115,7 +112,7 @@
                     "Connections"
                 ]
             },
-            "get": {
+            "post": {
                 "responses": {
                     "200": {
                         "description": "Connection details",
@@ -127,13 +124,16 @@
                         "description": "This service is available for local user only, please specify X-Remote-User in headers."
                     }
                 },
-                "description": "Get connection",
-                "operationId": "get_connection",
+                "description": "Create connection",
+                "operationId": "post_connection",
                 "parameters": [
                     {
-                        "name": "working_directory",
-                        "in": "query",
-                        "type": "string"
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
                     }
                 ],
                 "tags": [
@@ -262,7 +262,7 @@
                 ]
             }
         },
-        "/Experiments/test": {
+        "/Experiments/test_with_flow_override": {
             "post": {
                 "responses": {
                     "200": {
@@ -440,6 +440,21 @@
                     "type": "string"
                 }
             ],
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Get run info",
+                        "schema": {
+                            "$ref": "#/definitions/RunDict"
+                        }
+                    }
+                },
+                "description": "Get run",
+                "operationId": "get_run",
+                "tags": [
+                    "Runs"
+                ]
+            },
             "put": {
                 "responses": {
                     "200": {
@@ -472,21 +487,6 @@
                     "application/x-www-form-urlencoded",
                     "multipart/form-data"
                 ],
-                "tags": [
-                    "Runs"
-                ]
-            },
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "Get run info",
-                        "schema": {
-                            "$ref": "#/definitions/RunDict"
-                        }
-                    }
-                },
-                "description": "Get run",
-                "operationId": "get_run",
                 "tags": [
                     "Runs"
                 ]
@@ -713,6 +713,28 @@
                 ],
                 "tags": [
                     "Runs"
+                ]
+            }
+        },
+        "/Spans/Event/{event_id}": {
+            "parameters": [
+                {
+                    "name": "event_id",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ],
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Event"
+                    }
+                },
+                "description": "Get span event with event id",
+                "operationId": "get_event",
+                "tags": [
+                    "Spans"
                 ]
             }
         },
@@ -1208,6 +1230,12 @@
                 },
                 "resource": {
                     "$ref": "#/definitions/Resource"
+                },
+                "external_event_data_uris": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             },
             "type": "object"
