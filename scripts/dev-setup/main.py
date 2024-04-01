@@ -96,7 +96,7 @@ def install_pkg_editable(pkg: str, verbose: bool, is_vscode: bool = False) -> No
         elif os.path.exists("pyproject.toml"):
             collect_and_install_from_pyproject()
 
-            # touch __init__.py for the package for VS Code exclusivly
+            # touch __init__.py for the package for VS Code
             # NOTE that this is a workaround to enable VS Code to recognize the namespace package
             #      we should be able to remove this after we fully deprecate promptflow in local development
             if is_vscode:
