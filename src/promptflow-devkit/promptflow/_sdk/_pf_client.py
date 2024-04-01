@@ -4,7 +4,7 @@
 import os
 from os import PathLike
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 from promptflow._constants import USER_AGENT_OVERRIDE_KEY, ConnectionProviderConfig
 from promptflow._utils.logger_utils import get_cli_sdk_logger
@@ -75,6 +75,7 @@ class PFClient:
         tags: Dict[str, str] = None,
         resume_from: Union[str, Run] = None,
         code: Union[str, PathLike] = None,
+        init: Optional[dict] = None,
         **kwargs,
     ) -> Run:
         """Run flow against provided data or run.
@@ -127,6 +128,8 @@ class PFClient:
         :type resume_from: str
         :param code: Path to the code directory to run.
         :type code: Union[str, PathLike]
+        :param init: Initialization parameters for flex flow, only supported when flow is callable class.
+        :type init: dict
         :return: Flow run info.
         :rtype: ~promptflow.entities.Run
         """
@@ -184,6 +187,7 @@ class PFClient:
                 connections=connections,
                 environment_variables=environment_variables,
                 config=Configuration(overrides=self._config),
+                init=init,
             )
             return self.runs.create_or_update(run=run, **kwargs)
 
