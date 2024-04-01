@@ -224,9 +224,7 @@ class TestSummary:
             name=self.summary.span.name,
             created_by=self.FAKE_CREATED_BY,
         )
-        expected_patch_operations = [
-            {"op": "add", "path": f"/evaluations/{self.summary.span.name}", "value": asdict(expected_item)}
-        ]
+        expected_patch_operations = [{"op": "add", "path": "/evaluations/batch_run_id", "value": asdict(expected_item)}]
         client.patch_item.assert_called_once_with(
             item="main_id",
             partition_key="test_main_partition_key",

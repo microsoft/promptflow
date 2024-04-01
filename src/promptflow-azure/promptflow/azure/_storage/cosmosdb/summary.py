@@ -240,6 +240,10 @@ class Summary:
             batch_run_id = attributes[SpanAttributeFieldName.BATCH_RUN_ID]
             item.batch_run_id = batch_run_id
             item.line_number = line_number
+            # Use batch run id instead of name as key in evaluations dict.
+            # Customer may run the same evaluation flow multiple times target a batch run, we should be able to
+            # save all evaluations.
+            name = batch_run_id
 
         patch_operations = [{"op": "add", "path": f"/evaluations/{name}", "value": asdict(item)}]
         self.logger.info(f"Insert evaluation for LineSummary main_id: {main_id}")
