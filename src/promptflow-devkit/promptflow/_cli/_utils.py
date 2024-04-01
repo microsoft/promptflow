@@ -12,13 +12,18 @@ import traceback
 from configparser import ConfigParser
 from functools import wraps
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 import pydash
 from dotenv import load_dotenv
 from tabulate import tabulate
 
-from promptflow._sdk._constants import AzureMLWorkspaceTriad, CLIListOutputFormat, EnvironmentVariables
+from promptflow._sdk._constants import (
+    DEFAULT_ENCODING,
+    AzureMLWorkspaceTriad,
+    CLIListOutputFormat,
+    EnvironmentVariables,
+)
 from promptflow._sdk._telemetry import ActivityType, get_telemetry_logger, log_activity
 from promptflow._sdk._utils import print_red_error, print_yellow_warning
 from promptflow._utils.exception_utils import ExceptionPresenter
@@ -496,3 +501,48 @@ def _try_delete_existing_run_record(run_name: str):
 
 def _use_azure_cli_credential():
     return os.environ.get(EnvironmentVariables.PF_USE_AZURE_CLI_CREDENTIAL, "false").lower() == "true"
+
+
+def merge_jsonl_files(source_folder: Union[str, Path], output_folder: Union[str, Path], group_size: int = 25) -> None:
+    """
+    Merge .jsonl files from a source folder into groups and write the merged files to an output folder.
+
+    This function groups .jsonl files from the source folder into groups of a specified size (25 by default).
+    Each group of .jsonl files is merged into a single .jsonl file, where each line of the output file is a JSON object
+    from a line in one of the input files. The output files are named after the first and last files in each group,
+    and are written to the output folder.
+
+    The source folder is not modified by this function. If the output folder does not exist, it is created.
+
+    .. example::
+        000000000_000000000.jsonl
+        000000001_000000001.jsonl
+        000000002_000000002.jsonl
+
+        merged to: 000000000_000000002.jsonl
+
+    Args:
+        source_folder (str): The path to the source folder containing the .jsonl files to merge.
+        output_folder (str): The path to the output folder where the merged .jsonl files will be written.
+        group_size (int, optional): The size of the groups of .jsonl files to merge. Defaults to 25.
+
+    Returns:
+        None
+    """
+    source_folder_path = Path(source_folder)
+    output_folder_path = Path(output_folder)
+    output_folder_path.mkdir(parents=True, exist_ok=True)
+
+    jsonl_files = sorted(source_folder_path.glob("*.jsonl"))
+
+    for i in range(0, len(jsonl_files), group_size):
+        group = jsonl_files[i : i + group_size]
+        output_file_name = f"{group[0].stem.split('_')[0]}_{group[-1].stem.split('_')[0]}.jsonl"
+        output_file_path = output_folder_path / output_file_name
+
+        with output_file_path.open("w", encoding=DEFAULT_ENCODING) as output_file:
+            for jsonl_file in group:
+                with jsonl_file.open(encoding=DEFAULT_ENCODING) as input_file:
+                    json_line = json.load(input_file)
+                    json.dump(json_line, output_file, ensure_ascii=False)
+                    output_file.write("\n")

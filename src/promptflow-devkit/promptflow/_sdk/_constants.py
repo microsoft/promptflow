@@ -244,6 +244,11 @@ class RunStatus(object):
         """Return the list of running statuses."""
         return [cls.CANCEL_REQUESTED, cls.FINALIZING]
 
+    @classmethod
+    def get_terminated_statuses(cls):
+        """Return the list of terminated statuses."""
+        return [cls.COMPLETED, cls.FAILED, cls.CANCELED]
+
 
 class FlowRunProperties:
     FLOW_PATH = "flow_path"
@@ -454,6 +459,15 @@ class LineRunFieldName:
     KIND = "kind"
     CUMULATIVE_TOKEN_COUNT = "cumulative_token_count"
     EVALUATIONS = "evaluations"
+
+
+class Local2Cloud:
+    EXPERIMENT_NAME = "local_to_cloud"
+    PROPERTY_KEY = "azureml.promptflow.local_to_cloud"
+    BLOB_ROOT = "promptflow"
+    BLOB_ARTIFACTS = "PromptFlowArtifacts"
+    ASSET_NAME_DEBUG_INFO = "debug_info"
+    ASSET_NAME_FLOW_OUTPUTS = "flow_outputs"
 
 
 class CreatedByFieldName:

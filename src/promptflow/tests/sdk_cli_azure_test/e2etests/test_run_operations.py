@@ -845,6 +845,14 @@ class TestFlowRun:
             for file in expected_files:
                 assert Path(tmp_dir, created_batch_run_without_llm.name, file).exists()
 
+    @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
+    def test_upload_run(self, pf: PFClient):
+        from promptflow._sdk._pf_client import PFClient as LocalPFClient
+
+        pf_local = LocalPFClient()
+        run = pf_local.runs.get(name="simple_hello_world_variant_0_20240330_152442_732549")
+        pf.runs._upload(run=run)
+
     def test_request_id_when_making_http_requests(self, pf, runtime: str, randstr: Callable[[str], str]):
         from azure.core.exceptions import HttpResponseError
 

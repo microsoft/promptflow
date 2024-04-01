@@ -199,6 +199,30 @@ class DownloadInternalError(SDKInternalError):
     pass
 
 
+class UploadInternalError(SDKInternalError):
+    """Exception raised if upload internal error."""
+
+    pass
+
+
+class RunHistoryInternalError(SDKInternalError):
+    """Exception raised if run history system error."""
+
+    pass
+
+
+class AssetInternalError(SDKInternalError):
+    """Exception raised if asset system error."""
+
+    pass
+
+
+class UserAuthenticationError(SDKError):
+    """Exception raised when user authentication failed"""
+
+    pass
+
+
 class ExperimentNodeRunFailedError(SDKError):
     """Orchestrator raised if node run failed."""
 

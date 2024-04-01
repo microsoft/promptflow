@@ -5,7 +5,7 @@ from promptflow._cli._utils import get_client_for_cli
 from promptflow.azure import PFClient
 
 
-def _get_azure_pf_client(subscription_id, resource_group, workspace_name, debug=False):
+def _get_azure_pf_client(subscription_id=None, resource_group=None, workspace_name=None, debug=False):
     ml_client = get_client_for_cli(
         subscription_id=subscription_id, resource_group_name=resource_group, workspace_name=workspace_name
     )
