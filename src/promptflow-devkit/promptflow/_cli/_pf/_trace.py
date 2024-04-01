@@ -48,6 +48,8 @@ def _add_param_started_before(parser):
 
 
 def add_delete_trace_params(subparsers):
+    # we can provide more syntax sugar here, e.g., 1 day ago
+    # but with limited time, we only support ISO 8601 format for now, and look forward to feedback
     epilog = """
 Examples:
 
