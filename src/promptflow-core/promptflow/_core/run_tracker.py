@@ -23,6 +23,7 @@ from promptflow.exceptions import ErrorTarget
 from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DummyRunStorage
 from promptflow.tracing._openai_utils import OpenAIMetricsCalculator
+from promptflow.tracing._operation_context import OperationContext
 from promptflow.tracing._thread_local_singleton import ThreadLocalSingleton
 from promptflow.tracing._utils import serialize
 
@@ -166,6 +167,8 @@ class RunTracker(ThreadLocalSingleton):
         return run_info
 
     def _flow_run_postprocess(self, run_info: FlowRunInfo, output, ex: Optional[Exception]):
+        #  Try get otel trace id for correlation.
+        run_info.otel_trace_id = OperationContext.get_instance().get("otel_trace_id")
         if output:
             try:
                 self._assert_flow_output_serializable(output)
