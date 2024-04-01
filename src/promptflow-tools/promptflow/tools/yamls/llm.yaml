@@ -44,7 +44,7 @@ promptflow.tools.llm.llm:
           type: 
           - string
           reference: ${inputs.connection}
-        allow_manual_entry: true
+      allow_manual_entry: true
       ui_hints:
         text_box_size: sm
     deployment_name:

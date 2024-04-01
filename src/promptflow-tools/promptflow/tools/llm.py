@@ -40,7 +40,12 @@ def get_local_connection(connection_name):
 
 
 # api needs dynamic list because we do not offer "completion" api for serverless connection.
-def list_apis(subscription_id, resource_group_name, workspace_name, connection_name: str="") -> List[Dict[str, str]]:
+def list_apis(
+    subscription_id=None,
+    resource_group_name=None,
+    workspace_name=None,
+    connection_name=""
+) -> List[Dict[str, str]]:
     if not connection_name:
         return []
 
