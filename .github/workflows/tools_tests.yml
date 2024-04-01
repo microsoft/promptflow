@@ -1,6 +1,6 @@
-name: tools_tests
+name: tools_tests_2
 on:
-  pull_request_target:
+  pull_request:
     paths:
       - src/promptflow-tools/**
       - '**tools_tests.yml'
@@ -41,9 +41,9 @@ jobs:
           if [ "$DEPENDENCY_SOURCE_MODE" = "main" ]; then
             pip install ${{ github.workspace }}/src/promptflow-tracing
             pip install ${{ github.workspace }}/src/promptflow-core
-            pip install ${{ github.workspace }}/src/promptflow-devkit
-            pip install ${{ github.workspace }}/src/promptflow-azure
-            pip install ${{ github.workspace }}/src/promptflow
+#            pip install ${{ github.workspace }}/src/promptflow-devkit
+#            pip install ${{ github.workspace }}/src/promptflow-azure
+#            pip install ${{ github.workspace }}/src/promptflow
             pip install google-search-results==2.4.1
             pip install openai>=1.0.0
             pip install azure-mgmt-cognitiveservices==13.5.0
