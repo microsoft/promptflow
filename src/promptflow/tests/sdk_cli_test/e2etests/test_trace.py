@@ -8,7 +8,12 @@ from unittest.mock import patch
 import pytest
 from mock import mock
 
-from promptflow._constants import RUNNING_LINE_RUN_STATUS
+from promptflow._constants import (
+    RUNNING_LINE_RUN_STATUS,
+    SpanAttributeFieldName,
+    SpanResourceAttributesFieldName,
+    SpanResourceFieldName,
+)
 from promptflow._sdk._constants import TRACE_DEFAULT_COLLECTION
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk.entities._trace import Span
@@ -63,6 +68,26 @@ def mock_span(
         events=span_dict["events"],
         resource=span_dict["resource"],
     )
+
+
+def mock_span_for_delete_tests(
+    run: typing.Optional[str] = None,
+    collection: typing.Optional[str] = None,
+    start_time: typing.Optional[datetime.datetime] = None,
+) -> Span:
+    span = mock_span(
+        trace_id=str(uuid.uuid4()), span_id=str(uuid.uuid4()), parent_id=None, line_run_id=str(uuid.uuid4())
+    )
+    if run is not None:
+        span.attributes.pop(SpanAttributeFieldName.LINE_RUN_ID)
+        span.attributes[SpanAttributeFieldName.BATCH_RUN_ID] = run
+        span.attributes[SpanAttributeFieldName.LINE_NUMBER] = 0  # always line 0
+    if collection is not None:
+        span.resource[SpanResourceFieldName.ATTRIBUTES][SpanResourceAttributesFieldName.COLLECTION] = collection
+    if start_time is not None:
+        span.start_time = start_time
+    span._persist()
+    return span
 
 
 def assert_span_equals(span: Span, expected_span_dict: typing.Dict) -> None:
@@ -168,6 +193,59 @@ class TestTraceEntitiesAndOperations:
             "evaluations": None,
         }
         assert terminated_line_run._to_rest_object() == expected_terminated_line_run_dict
+
+    def test_delete_traces_three_tables(self, pf: PFClient) -> None:
+        # trace operation does not expose API for events and spans
+        # so directly use ORM class to list and assert events and spans existence and deletion
+        from promptflow._sdk._orm.trace import Event as ORMEvent
+        from promptflow._sdk._orm.trace import LineRun as ORMLineRun
+        from promptflow._sdk._orm.trace import Span as ORMSpan
+
+        mock_run = str(uuid.uuid4())
+        mock_span = mock_span_for_delete_tests(run=mock_run)
+        # assert events, span and line_run are persisted
+        assert len(ORMEvent.list(trace_id=mock_span.trace_id, span_id=mock_span.span_id)) == 2
+        assert len(ORMSpan.list(trace_ids=[mock_span.trace_id])) == 1
+        assert len(ORMLineRun.list(runs=[mock_run])) == 1
+        # delete traces and assert all traces are deleted
+        pf.traces.delete(run=mock_run)
+        assert len(ORMEvent.list(trace_id=mock_span.trace_id, span_id=mock_span.span_id)) == 0
+        assert len(ORMSpan.list(trace_ids=[mock_span.trace_id])) == 0
+        assert len(ORMLineRun.list(runs=[mock_run])) == 0
+
+    def test_delete_traces_with_run(self, pf: PFClient) -> None:
+        mock_run = str(uuid.uuid4())
+        mock_span_for_delete_tests(run=mock_run)
+        assert len(pf.traces.list_line_runs(runs=[mock_run])) == 1
+        pf.traces.delete(run=mock_run)
+        assert len(pf.traces.list_line_runs(runs=[mock_run])) == 0
+
+    def test_delete_traces_with_collection(self, pf: PFClient) -> None:
+        mock_collection = str(uuid.uuid4())
+        mock_span_for_delete_tests(collection=mock_collection)
+        assert len(pf.traces.list_line_runs(collection=mock_collection)) == 1
+        pf.traces.delete(collection=mock_collection)
+        assert len(pf.traces.list_line_runs(collection=mock_collection)) == 0
+
+    def test_delete_traces_with_collection_and_started_before(self, pf: PFClient) -> None:
+        # mock some traces that start 2 days before, and delete those start 1 days before
+        mock_start_time = datetime.datetime.now() - datetime.timedelta(days=2)
+        collection1, collection2 = str(uuid.uuid4()), str(uuid.uuid4())
+        mock_span_for_delete_tests(collection=collection1, start_time=mock_start_time)
+        mock_span_for_delete_tests(collection=collection2, start_time=mock_start_time)
+        assert (
+            len(pf.traces.list_line_runs(collection=collection1)) == 1
+            and len(pf.traces.list_line_runs(collection=collection2)) == 1
+        )
+        delete_query_time = datetime.datetime.now() - datetime.timedelta(days=1)
+        pf.traces.delete(collection=collection1, started_before=delete_query_time.isoformat())
+        # only collection1 traces are deleted
+        assert (
+            len(pf.traces.list_line_runs(collection=collection1)) == 0
+            and len(pf.traces.list_line_runs(collection=collection2)) == 1
+        )
+        pf.traces.delete(collection=collection2, started_before=delete_query_time.isoformat())
+        assert len(pf.traces.list_line_runs(collection=collection2)) == 0
 
 
 @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
