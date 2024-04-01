@@ -18,6 +18,7 @@ class SingleLinePythonExecutorProxy(AbstractExecutorProxy):
         :param line_execution_process_pool: line execution process pool
         :type line_execution_process_pool: LineExecutionProcessPool
         """
+        super().__init__()
         self._flow_executor = flow_executor
         self._line_execution_process_pool = line_execution_process_pool
 

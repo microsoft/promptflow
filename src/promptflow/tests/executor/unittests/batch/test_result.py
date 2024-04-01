@@ -8,7 +8,7 @@ from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.executor._result import AggregationResult, LineResult
-from promptflow.contracts.chat_group import ChatGroupRole
+from promptflow._sdk.entities._chat_group._chat_role import ChatRole
 from promptflow.orchestrator._chat_group_orchestrator import ChatGroupOrchestrator
 from ...utils import get_yaml_file
 

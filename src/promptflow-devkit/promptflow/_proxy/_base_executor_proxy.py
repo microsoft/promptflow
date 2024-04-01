@@ -200,6 +200,7 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
                 where we can find metadata under .promptflow. Will use current working directory if not provided.
         :type working_dir: Path
         """
+        super().__init__()
         self._working_dir = working_dir or Path.cwd()
         self._enable_stream_output = enable_stream_output
 
