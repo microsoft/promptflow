@@ -25,6 +25,7 @@ from ._base_executor_proxy import AbstractExecutorProxy
 
 class PythonExecutorProxy(AbstractExecutorProxy):
     def __init__(self, flow_executor: FlowExecutor):
+        super().__init__()
         self._flow_executor = flow_executor
 
     @classmethod
