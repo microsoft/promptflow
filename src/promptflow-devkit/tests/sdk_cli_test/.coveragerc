@@ -1,0 +1,12 @@
+[run]
+source =
+    */promptflow/_cli/*
+    */promptflow/_sdk/*
+    */promptflow/azure/*
+omit =
+    */promptflow/azure/_restclient/*
+    */promptflow/azure/_models/*
+    */promptflow/core/_connection_provider/_models*
+    */promptflow/executor/*
+    *__init__.py*
+    */promptflow/_sdk/_serving/*
