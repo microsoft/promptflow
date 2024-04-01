@@ -10,6 +10,8 @@ from pathlib import Path
 from promptflow._constants import (
     CONNECTION_SCRUBBED_VALUE,
     CONNECTION_SCRUBBED_VALUE_NO_CHANGE,
+    FLOW_DAG_YAML,
+    FLOW_FLEX_YAML,
     PROMPT_FLOW_DIR_NAME,
     ConnectionAuthMode,
     ConnectionType,
@@ -68,7 +70,8 @@ def _prepare_home_dir() -> Path:
 
 HOME_PROMPT_FLOW_DIR = _prepare_home_dir()
 
-DAG_FILE_NAME = "flow.dag.yaml"
+DAG_FILE_NAME = FLOW_DAG_YAML
+FLEX_FILE_NAME = FLOW_FLEX_YAML
 NODE_VARIANTS = "node_variants"
 VARIANTS = "variants"
 NODES = "nodes"
@@ -286,6 +289,7 @@ class CLIListOutputFormat:
 class LocalStorageFilenames:
     SNAPSHOT_FOLDER = "snapshot"
     DAG = DAG_FILE_NAME
+    FLEX = FLEX_FILE_NAME
     FLOW_TOOLS_JSON = FLOW_TOOLS_JSON
     INPUTS = "inputs.jsonl"
     OUTPUTS = "outputs.jsonl"

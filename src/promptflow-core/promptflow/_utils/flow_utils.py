@@ -54,7 +54,9 @@ def get_flow_lineage_id(flow_dir: Union[str, PathLike]):
 
 
 def resolve_flow_path(
-    flow_path: Union[str, Path, PathLike], base_path: Union[str, Path, PathLike, None] = None, new: bool = False
+    flow_path: Union[str, Path, PathLike],
+    base_path: Union[str, Path, PathLike, None] = None,
+    check_flow_exist: bool = True,
 ) -> Tuple[Path, str]:
     """Resolve flow path and return the flow directory path and the file name of the target yaml.
 
@@ -64,9 +66,8 @@ def resolve_flow_path(
     :param base_path: The base path to resolve the flow path. If not specified, the flow path will be
       resolved based on the current working directory.
     :type base_path: Union[str, Path, PathLike]
-    :param new: If True, the function will return the flow directory path and the file name of the
-        target yaml that should be created. If False, the function will try to find the existing
-        target yaml and raise FileNotFoundError if not found.
+    :param check_flow_exist: If True, the function will return the flow directory path and the file name of the
+        target yaml. If False, the function will try to check the target yaml and raise FileNotFoundError if not found.
     :return: The flow directory path and the file name of the target yaml.
     :rtype: Tuple[Path, str]
     """
@@ -77,7 +78,7 @@ def resolve_flow_path(
 
     if flow_path.is_dir():
         target_folder = flow_path
-        target_filer = FLOW_FLEX_YAML if (target_folder / FLOW_FLEX_YAML).is_file() else FLOW_DAG_YAML
+        target_file = FLOW_FLEX_YAML if (target_folder / FLOW_FLEX_YAML).is_file() else FLOW_DAG_YAML
         if (target_folder / FLOW_DAG_YAML).is_file() and (target_folder / FLOW_FLEX_YAML).is_file():
             raise ValidationException(
                 f"Both exist {FLOW_DAG_YAML} and {FLOW_FLEX_YAML} in the {flow_path}. "
@@ -87,15 +88,25 @@ def resolve_flow_path(
             )
     else:
         target_folder = flow_path.parent
-        target_filer = flow_path.name
+        target_file = flow_path.name
 
-    if new:
-        return target_folder, target_filer
+    if not check_flow_exist:
+        return target_folder.resolve().absolute(), target_file
 
-    if (target_folder / target_filer).is_file():
-        return target_folder, target_filer
+    if not target_folder.exists():
+        raise UserErrorException(
+            f"Flow path {flow_path.absolute().as_posix()} does not exist.",
+            privacy_info=[flow_path.absolute().as_posix()],
+        )
 
-    raise FileNotFoundError(f"Can't find flow with path {flow_path.as_posix()}.")
+    if not (target_folder / target_file).is_file():
+        error = FileNotFoundError(
+            f"Can't find file {FLOW_DAG_YAML} or {FLOW_FLEX_YAML} "
+            f"in the flow path {flow_path.absolute().as_posix()}."
+        )
+        raise UserErrorException(message=str(error), privacy_info=[flow_path.absolute().as_posix()]) from error
+
+    return target_folder.resolve().absolute(), target_file
 
 
 def load_flow_dag(flow_path: Path):
@@ -111,7 +122,7 @@ def load_flow_dag(flow_path: Path):
 
 def dump_flow_dag(flow_dag: dict, flow_path: Path):
     """Dump flow dag to given flow path."""
-    flow_dir, flow_filename = resolve_flow_path(flow_path, new=True)
+    flow_dir, flow_filename = resolve_flow_path(flow_path, check_flow_exist=False)
     flow_path = flow_dir / flow_filename
     with open(flow_path, "w", encoding=DEFAULT_ENCODING) as f:
         dump_yaml(flow_dag, f)

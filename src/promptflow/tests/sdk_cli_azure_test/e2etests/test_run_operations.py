@@ -19,7 +19,7 @@ import pytest
 from azure.ai.ml import ManagedIdentityConfiguration
 from azure.ai.ml.entities import IdentityConfiguration
 
-from promptflow._sdk._constants import DAG_FILE_NAME, DownloadedRun, RunStatus
+from promptflow._sdk._constants import FLEX_FILE_NAME, DownloadedRun, RunStatus
 from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, RunNotFoundError
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk.entities import Run
@@ -1241,7 +1241,7 @@ class TestFlowRun:
 
         # test YAML is generated
         expected_files = [
-            f"{DownloadedRun.SNAPSHOT_FOLDER}/{DAG_FILE_NAME}",
+            f"{DownloadedRun.SNAPSHOT_FOLDER}/{FLEX_FILE_NAME}",
         ]
         with TemporaryDirectory() as tmp_dir:
             pf.runs.download(run=run.name, output=tmp_dir)

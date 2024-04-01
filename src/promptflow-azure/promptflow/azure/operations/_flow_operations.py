@@ -28,7 +28,6 @@ from promptflow._constants import FLEX_FLOW_PUBLIC_NAME
 from promptflow._proxy import ProxyFactory
 from promptflow._sdk._constants import (
     CLIENT_FLOW_TYPE_2_SERVICE_FLOW_TYPE,
-    DAG_FILE_NAME,
     MAX_LIST_CLI_RESULTS,
     WORKSPACE_LINKED_DATASTORE_NAME,
     FlowType,
@@ -145,7 +144,8 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             raise FlowOperationError(f"File share path should not be empty, got {file_share_flow_path!r}.")
 
         # create flow to remote
-        flow_definition_file_path = f"{file_share_flow_path}/{DAG_FILE_NAME}"
+        flow_path, flow_file = resolve_flow_path(file_share_flow_path, check_flow_exist=False)
+        flow_definition_file_path = str(flow_path / flow_file)
         rest_flow = self._create_remote_flow_via_file_share_path(
             flow_display_name=flow_display_name,
             flow_type=flow_type,
@@ -213,29 +213,25 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
 
         # validate the source folder
         logger.info("Validating flow source.")
-        if not Path(source, DAG_FILE_NAME).exists():
-            raise UserErrorException(
-                f"Flow source must be a directory with flow definition yaml '{DAG_FILE_NAME}'. "
-                f"Got {Path(source).resolve().as_posix()!r}."
-            )
+        flow_path, flow_file = resolve_flow_path(source)
         # eager flow is not supported since eager flow don't have cloud authoring experience
-        flow_entity = load_local_flow(source)
+        flow_entity = load_local_flow(flow_path)
         if isinstance(flow_entity, FlexFlow):
             raise UserErrorException(
-                f"Flow source {Path(source).resolve().as_posix()!r}. is {FLEX_FLOW_PUBLIC_NAME} flow. "
+                f"Flow source {Path(flow_path).resolve().as_posix()!r}. is {FLEX_FLOW_PUBLIC_NAME} flow. "
                 "Creating it to cloud is not supported."
             )
 
         # validate flow source with flow schema
         logger.info("Validating flow schema.")
-        flow_dict = FlowOperations._validate_flow_schema(source, flow_display_name, flow_type, **kwargs)
+        flow_dict = FlowOperations._validate_flow_schema(flow_path, flow_display_name, flow_type, **kwargs)
 
         logger.info("Validating flow creation parameters.")
-        flow = load_flow(source)
+        flow = load_flow(flow_path)
         # if no flow name specified, use "flow name + timestamp"
         flow_display_name = flow_dict.get("display_name", None)
         if not flow_display_name:
-            flow_display_name = f"{Path(source).name}-{datetime.now().strftime('%m-%d-%Y-%H-%M-%S')}"
+            flow_display_name = f"{Path(flow_path).name}-{datetime.now().strftime('%m-%d-%Y-%H-%M-%S')}"
 
         # if no flow type specified, use default flow type "standard"
         flow_type = flow_dict.get("type", None)
