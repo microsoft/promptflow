@@ -289,6 +289,10 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         pythonVersion: ['3.8', '3.9', '3.10', '3.11']
+    # snok/install-poetry need this to support Windows
+    defaults:
+      run:
+        shell: bash
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -296,8 +300,6 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - uses: snok/install-poetry@v1
-      - name: uninstall promptflow
-        run: pip uninstall -y promptflow
       - name: install promptflow-tracing
         run: poetry install
         working-directory: ${{ github.workspace }}/src/promptflow-tracing
