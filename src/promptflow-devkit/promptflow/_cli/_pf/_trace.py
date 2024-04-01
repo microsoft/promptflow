@@ -74,7 +74,7 @@ pf trace delete --collection <collection> --started-before '2024-03-19T15:17:23.
 
 
 def delete_trace(args: argparse.Namespace) -> None:
-    _get_pf_client()._traces.delete(
+    _get_pf_client().traces.delete(
         run=args.run,
         collection=args.collection,
         started_before=args.started_before,
