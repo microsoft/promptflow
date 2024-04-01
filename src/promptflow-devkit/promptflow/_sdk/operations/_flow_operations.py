@@ -15,7 +15,7 @@ from os import PathLike
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple, Union
 
-import toml
+from pip._vendor import tomli as toml
 
 from promptflow._constants import FlowLanguage
 from promptflow._sdk._configuration import Configuration
@@ -643,14 +643,14 @@ class FlowOperations(TelemetryMixin):
         extra_packages = []
         required_packages = []
         for package in dependencies:
-            if package.startswith("promptflow"):
-                data = toml.load(get_git_base_dir() / "src" / package / "pyproject.toml")
-                extras = data.get("tool", {}).get("poetry", {}).get("extras", {})
-                for _, package in extras.items():
-                    extra_packages.extend(package)
-                requires = data.get("tool", {}).get("poetry", {}).get("dependencies", [])
-                for package, _ in requires.items():
-                    required_packages.append(package)
+            with open(get_git_base_dir() / "src" / package / "pyproject.toml", "rb") as file:
+                data = toml.load(file)
+            extras = data.get("tool", {}).get("poetry", {}).get("extras", {})
+            for _, package in extras.items():
+                extra_packages.extend(package)
+            requires = data.get("tool", {}).get("poetry", {}).get("dependencies", [])
+            for package, _ in requires.items():
+                required_packages.append(package)
 
         all_packages = list(set(dependencies) | set(required_packages) | set(extra_packages))
         # remove all packages starting with promptflow
