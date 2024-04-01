@@ -87,7 +87,7 @@ class RunSubmitter:
             from promptflow.tracing._start_trace import start_trace
 
             logger.debug("Starting trace for flow run...")
-            start_trace(session=kwargs.get("session", None), attributes=attributes, run=run.name)
+            start_trace(collection=kwargs.get("session", None), attributes=attributes, run=run.name)
         self._validate_inputs(run=run)
 
         local_storage = LocalStorageOperations(run, stream=stream, run_mode=RunMode.Batch)
