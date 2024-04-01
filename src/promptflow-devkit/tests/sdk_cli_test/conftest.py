@@ -10,6 +10,8 @@ from mock import mock
 from pytest_mock import MockerFixture
 from sqlalchemy import create_engine
 
+from _constants import PROMPTFLOW_ROOT, RUNTIME_TEST_CONFIGS_ROOT, CONNECTION_FILE, MODEL_ROOT
+
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import EXPERIMENT_CREATED_ON_INDEX_NAME, EXPERIMENT_TABLE_NAME, LOCAL_MGMT_DB_PATH
 from promptflow._sdk.entities import AzureOpenAIConnection as AzureOpenAIConnectionEntity
@@ -41,14 +43,9 @@ except ImportError:
         return False
 
 
-PROMOTFLOW_ROOT = Path(__file__) / "../../.."
-RUNTIME_TEST_CONFIGS_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/runtime")
-CONNECTION_FILE = (PROMOTFLOW_ROOT / "connections.json").resolve().absolute().as_posix()
-MODEL_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/flows")
-EAGER_FLOW_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/eager_flows")
+EAGER_FLOW_ROOT = Path(PROMPTFLOW_ROOT / "tests/test_configs/eager_flows")
 
-SRC_ROOT = PROMOTFLOW_ROOT / ".."
-RECORDINGS_TEST_CONFIGS_ROOT = Path(SRC_ROOT / "promptflow-recording/recordings/local").resolve()
+RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "src" / "promptflow-recording/recordings/local").resolve()
 
 
 def pytest_configure():

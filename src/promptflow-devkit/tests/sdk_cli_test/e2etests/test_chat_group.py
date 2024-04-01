@@ -4,11 +4,9 @@ import pytest
 
 from promptflow._sdk.entities._chat_group._chat_group import ChatGroup
 from promptflow._sdk.entities._chat_group._chat_role import ChatRole
+from _constants import PROMPTFLOW_ROOT
 
-PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
-
-TEST_ROOT = Path(__file__).parent.parent.parent
-FLOWS_DIR = TEST_ROOT / "test_configs/flows"
+FLOWS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/flows"
 
 
 @pytest.mark.sdk_test

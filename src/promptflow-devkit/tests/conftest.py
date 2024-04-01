@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-from _constants import CONNECTION_FILE, ENV_FILE
+from _constants import CONNECTION_FILE, ENV_FILE, PROMOTFLOW_ROOT
 from _pytest.monkeypatch import MonkeyPatch
 from dotenv import load_dotenv
 from filelock import FileLock
@@ -22,9 +22,9 @@ from promptflow._utils.context_utils import _change_working_dir
 load_dotenv()
 
 
-@pytest.fixture(scope="session", autouse=True)
-def modify_work_directory():
-    os.chdir(Path(__file__).parent.parent.absolute())
+#@pytest.fixture(scope="session", autouse=True)
+#def modify_work_directory():
+#    os.chdir(Path(__file__).parent.parent.absolute())
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -77,7 +77,7 @@ def temp_output_dir() -> str:
 
 @pytest.fixture
 def prepare_symbolic_flow() -> str:
-    flows_dir = Path(__file__).parent / "test_configs" / "flows"
+    flows_dir = PROMOTFLOW_ROOT / "tests" / "test_configs" / "flows"
     target_folder = flows_dir / "web_classification_with_symbolic"
     source_folder = flows_dir / "web_classification"
 
@@ -102,11 +102,6 @@ def install_custom_tool_pkg():
             import sys
 
             subprocess.check_call([sys.executable, "-m", "pip", "install", "test-custom-tools==0.0.2"])
-
-
-@pytest.fixture
-def mocked_ws_triple() -> AzureMLWorkspaceTriad:
-    return AzureMLWorkspaceTriad("mock_subscription_id", "mock_resource_group", "mock_workspace_name")
 
 
 @pytest.fixture(scope="session")
