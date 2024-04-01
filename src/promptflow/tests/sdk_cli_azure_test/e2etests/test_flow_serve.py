@@ -88,7 +88,7 @@ def test_azureml_serving_api_with_connection_name_override(serving_client_with_c
 @pytest.mark.e2etest
 def test_azureml_serving_api_with_connection_data_override(serving_client_with_connection_data_override):
     response = serving_client_with_connection_data_override.get("/health")
-    assert b'{"status":"Healthy","version":"0.0.1"}' in response.data
+    assert b'{"status":"Healthy","version":"1.0.0.dev0"}' in response.data
 
     response = serving_client_with_connection_data_override.post("/score", data=json.dumps({"text": "hi"}))
     assert (
