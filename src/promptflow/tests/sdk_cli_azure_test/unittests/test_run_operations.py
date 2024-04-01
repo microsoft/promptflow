@@ -6,8 +6,8 @@ from azure.ai.ml import ManagedIdentityConfiguration
 from azure.ai.ml.entities import IdentityConfiguration
 from pytest_mock import MockerFixture
 
-from promptflow._sdk._utils import is_python_flex_flow_entry
 from promptflow._sdk._errors import RunOperationParameterError
+from promptflow._sdk._utils import parse_otel_span_status_code
 from promptflow._sdk.entities import Run
 from promptflow.azure import PFClient
 from promptflow.exceptions import UserErrorException
@@ -87,11 +87,11 @@ class TestRunOperations:
         # TODO(3017093): won't support this for now
         with pytest.raises(UserErrorException) as e:
             pf.run(
-                flow=is_python_flex_flow_entry,
+                flow=parse_otel_span_status_code,
                 data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
                 # set code folder to avoid snapshot too big
                 code=f"{EAGER_FLOWS_DIR}/multiple_entries",
-                column_mapping={"entry": "${data.input_val}"},
+                column_mapping={"value": "${data.input_val}"},
             )
         assert "not supported" in str(e)
 

@@ -6,7 +6,7 @@ from os import PathLike
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Union
 
-from promptflow._constants import USER_AGENT_OVERRIDE_KEY, ConnectionProviderConfig
+from promptflow._constants import USER_AGENT_OVERRIDE_KEY, ConnectionProviderConfig, FlowLanguage
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil, setup_user_agent_to_operation_context
 from promptflow.exceptions import ErrorTarget, UserErrorException
@@ -15,7 +15,7 @@ from ._configuration import Configuration
 from ._constants import MAX_SHOW_DETAILS_RESULTS
 from ._load_functions import load_flow
 from ._user_agent import USER_AGENT
-from ._utils import generate_yaml_entry, is_python_flex_flow_entry
+from ._utils import generate_yaml_entry
 from .entities import Run
 from .entities._flow import FlexFlow
 from .operations import RunOperations
@@ -130,6 +130,8 @@ class PFClient:
         :return: Flow run info.
         :rtype: ~promptflow.entities.Run
         """
+        from promptflow._proxy import ProxyFactory
+
         if resume_from:
             unsupported = {
                 k: v
@@ -156,7 +158,7 @@ class PFClient:
             raise ValueError("'flow' is required to create a run.")
         if callable(flow):
             logger.debug(f"flow entry {flow} is a callable.")
-        elif is_python_flex_flow_entry(entry=flow):
+        elif ProxyFactory().get_executor_proxy_cls(FlowLanguage.Python).is_flex_flow_entry(entry=flow):
             logger.debug(f"flow entry {flow} is a python flex flow.")
         elif os.path.exists(flow):
             logger.debug(f"flow entry {flow} is a local path.")

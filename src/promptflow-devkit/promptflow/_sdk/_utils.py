@@ -33,7 +33,7 @@ from keyring.errors import NoKeyringError
 from marshmallow import ValidationError
 
 import promptflow
-from promptflow._constants import ENABLE_MULTI_CONTAINER_KEY, EXTENSION_UA, FlowEntryRegex
+from promptflow._constants import ENABLE_MULTI_CONTAINER_KEY, EXTENSION_UA, FlowLanguage
 from promptflow._sdk._constants import (
     AZURE_WORKSPACE_REGEX_FORMAT,
     DAG_FILE_NAME,
@@ -916,15 +916,13 @@ def overwrite_null_std_logger():
         sys.stderr = sys.stdout
 
 
-def is_python_flex_flow_entry(entry: str):
-    """Returns True if entry is flex flow's entry (in python)."""
-    return bool(isinstance(entry, str) and re.match(FlowEntryRegex.Python, entry))
-
-
 @contextmanager
 def generate_yaml_entry(entry: Union[str, PathLike, Callable], code: Path = None):
     """Generate yaml entry to run."""
-    if callable(entry) or is_python_flex_flow_entry(entry=entry):
+    from promptflow._proxy import ProxyFactory
+
+    executor_proxy = ProxyFactory().get_executor_proxy_cls(FlowLanguage.Python)
+    if callable(entry) or executor_proxy.is_flex_flow_entry(entry=entry):
         with create_temp_flex_flow_yaml(entry, code) as flow_yaml_path:
             yield flow_yaml_path
     else:

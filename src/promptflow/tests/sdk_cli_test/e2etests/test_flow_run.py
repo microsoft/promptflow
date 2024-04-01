@@ -31,7 +31,7 @@ from promptflow._sdk._errors import (
 from promptflow._sdk._load_functions import load_flow, load_run
 from promptflow._sdk._orchestrator.utils import SubmitterHelper
 from promptflow._sdk._run_functions import create_yaml_run
-from promptflow._sdk._utils import _get_additional_includes, is_python_flex_flow_entry
+from promptflow._sdk._utils import _get_additional_includes, parse_otel_span_status_code
 from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
@@ -1355,11 +1355,11 @@ class TestFlowRun:
     def test_flex_flow_with_imported_func(self, pf):
         # run eager flow against a function from module
         run = pf.run(
-            flow=is_python_flex_flow_entry,
+            flow=parse_otel_span_status_code,
             data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
             # set code folder to avoid snapshot too big
             code=f"{EAGER_FLOWS_DIR}/multiple_entries",
-            column_mapping={"entry": "${data.input_val}"},
+            column_mapping={"value": "${data.input_val}"},
         )
         assert run.status == "Completed"
         assert "error" not in run._to_dict()
@@ -1368,7 +1368,7 @@ class TestFlowRun:
         details = pf.get_details(run.name)
         # convert DataFrame to dict
         details_dict = details.to_dict(orient="list")
-        assert details_dict == {"inputs.entry": ["input1"], "inputs.line_number": [0], "outputs.output": [False]}
+        assert details_dict == {"inputs.line_number": [0], "inputs.value": ["input1"], "outputs.output": ["Error"]}
 
     def test_eager_flow_run_in_working_dir(self, pf):
         working_dir = f"{EAGER_FLOWS_DIR}/multiple_entries"
