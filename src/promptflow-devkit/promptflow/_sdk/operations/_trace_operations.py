@@ -6,6 +6,7 @@ import typing
 
 from promptflow._sdk._orm.trace import LineRun as ORMLineRun
 from promptflow._sdk._orm.trace import Span as ORMSpan
+from promptflow._sdk._telemetry import ActivityType, monitor_operation
 from promptflow._sdk.entities._trace import Event, LineRun, Span
 
 
@@ -81,3 +82,31 @@ class TraceOperations:
             line_run._append_evaluations(eval_line_runs)
             line_runs.append(line_run)
         return line_runs
+
+    @monitor_operation(activity_name="pf.traces.delete", activity_type=ActivityType.PUBLICAPI)
+    def delete(
+        self,
+        run: typing.Optional[str] = None,
+        collection: typing.Optional[str] = None,
+        started_before: typing.Optional[str] = None,
+    ) -> None:
+        """Delete traces permanently.
+
+        Support delete according to:
+          - run
+          - non default collection
+          - collection combined with time as started before
+
+        Examples:
+          - pf.traces.delete(run="name")
+          - pf.traces.delete(collection="collection")
+          - pf.traces.delete(collection="default", started_before="2024-03-19T15:17:23.807563")
+
+        :param run: Name of the run.
+        :type run: Optional[str]
+        :param session: Id of the session.
+        :type session: Optional[str]
+        :param started_before: ISO 8601 format time string (e.g., "2024-03-19T15:17:23.807563").
+        :type started_before: Optional[str]
+        """
+        ...
