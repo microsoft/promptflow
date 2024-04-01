@@ -208,12 +208,13 @@ class Prompty(FlowBase):
         ---
         name: Hello Prompty
         description: A basic prompt
-        api: chat
-        connection: connection_name
-        parameters:
-          deployment_name: gpt-35-turbo
-          max_tokens: 128
-          temperature: 0.2
+        model:
+            api: chat
+            connection: connection_name
+            parameters:
+              deployment_name: gpt-35-turbo
+              max_tokens: 128
+              temperature: 0.2
         inputs:
           text:
             type: string
@@ -233,33 +234,33 @@ class Prompty(FlowBase):
     def __init__(
         self,
         path: Union[str, PathLike],
-        api: str = None,
-        connection: Union[str, dict] = None,
-        parameters: dict = None,
+        model: dict = None,
         **kwargs,
     ):
         # prompty file path
         path = Path(path)
+        model = model or {}
         configs, self._template = self._parse_prompty(path)
-        configs["api"] = api or configs.get("api", "chat")
-        configs["connection"] = connection or configs.get("connection", None)
-        if parameters:
-            if configs.get("parameters", {}):
-                configs["parameters"].update(parameters)
+        prompty_model = configs.get("model", {})
+        prompty_model["api"] = model.get("api") or prompty_model.get("api", "chat")
+        prompty_model["connection"] = model.get("connection") or prompty_model.get("connection", None)
+        if model.get("parameters", None):
+            if prompty_model.get("parameters", {}):
+                prompty_model["parameters"].update(model["parameters"])
             else:
-                configs["parameters"] = parameters
+                prompty_model["parameters"] = model["parameters"]
         for k in list(kwargs.keys()):
-            if k in configs:
-                value = kwargs.pop(k)
-                if isinstance(value, dict):
-                    configs[k].update(value)
-                else:
-                    configs[k] = value
+            value = kwargs.pop(k)
+            if k in configs and isinstance(value, dict):
+                configs[k].update(value)
+            else:
+                configs[k] = value
         configs["inputs"] = self._resolve_inputs(configs.get("inputs", {}))
-        self._connection = configs["connection"]
-        self._parameters = configs["parameters"]
-        self._api = configs["api"]
+        self._connection = prompty_model["connection"]
+        self._parameters = prompty_model["parameters"]
+        self._api = prompty_model["api"]
         self._inputs = configs["inputs"]
+        configs["model"] = prompty_model
         super().__init__(code=path.parent, path=path, data=configs, content_hash=None, **kwargs)
 
     @classmethod
@@ -361,18 +362,25 @@ class Prompty(FlowBase):
 
         def llm_executor(parameters):
             if self._api == "completion":
-                result = api_client.completions.create(**parameters).choices[0].text
+                result = api_client.completions.create(**parameters)
             else:
-                completion = api_client.chat.completions.create(**parameters)
-                result = getattr(completion.choices[0].message, "content", "")
-            if parameters.get("response_format", None) == "json_object":
-                # response_format is one of text or json_object.
-                # https://platform.openai.com/docs/api-reference/chat/create#chat-create-response_format
-                result = json.loads(result)
+                result = api_client.chat.completions.create(**parameters)
             return result
 
         traced_llm_executor = _traced(llm_executor)
-        return traced_llm_executor(params)
+        result = traced_llm_executor(params)
+        if self._data.get("format", None) == "raw":
+            return result
+        else:
+            if self._api == "completion":
+                result = result.choices[0].text
+            else:
+                result = getattr(result.choices[0].message, "content", "")
+            if params.get("response_format", None) == "json_object":
+                # response_format is one of text or json_object.
+                # https://platform.openai.com/docs/api-reference/chat/create#chat-create-response_format
+                result = json.loads(result)
+        return result
 
 
 class AsyncPrompty(Prompty):
@@ -414,13 +422,25 @@ class AsyncPrompty(Prompty):
 
         # 4. send request to open ai
         api_client = get_open_ai_client_by_connection(connection=connection, is_async=True)
-        if self._api == "completion":
-            result = await api_client.completions.create(**params).choices[0].text
+
+        def llm_executor(parameters):
+            if self._api == "completion":
+                result = api_client.completions.create(**parameters)
+            else:
+                result = api_client.chat.completions.create(**parameters)
+            return result
+
+        traced_llm_executor = _traced(llm_executor)
+        result = await traced_llm_executor(params)
+        if self._data.get("format", None) == "raw":
+            return result
         else:
-            completion = await api_client.chat.completions.create(**params)
-            result = getattr(completion.choices[0].message, "content", "")
-        if params.get("response_format", None) == "json_object":
-            # response_format is one of text or json_object.
-            # https://platform.openai.com/docs/api-reference/chat/create#chat-create-response_format
-            result = json.loads(result)
+            if self._api == "completion":
+                result = result.choices[0].text
+            else:
+                result = getattr(result.choices[0].message, "content", "")
+            if params.get("response_format", None) == "json_object":
+                # response_format is one of text or json_object.
+                # https://platform.openai.com/docs/api-reference/chat/create#chat-create-response_format
+                result = json.loads(result)
         return result

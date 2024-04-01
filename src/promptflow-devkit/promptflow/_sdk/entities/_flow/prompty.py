@@ -5,6 +5,7 @@ from os import PathLike
 from pathlib import Path
 from typing import Dict, Union
 
+from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY
 from promptflow.core._flow import Prompty as CorePrompty
 from promptflow.exceptions import ErrorTarget, UserErrorException
@@ -27,6 +28,10 @@ class Prompty(FlowBase):
         # prompty folder path
         code = Path(code)
         super().__init__(code=code, path=path, data=data, content_hash=None, **kwargs)
+
+    @property
+    def language(self) -> str:
+        return self._data.get(LANGUAGE_KEY, FlowLanguage.Python)
 
     # region overrides
 

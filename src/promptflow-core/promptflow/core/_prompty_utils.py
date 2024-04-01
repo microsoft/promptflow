@@ -3,7 +3,7 @@ import os
 import re
 from typing import List, Mapping
 
-from promptflow.core._connection import AzureOpenAIConnection, OpenAIConnection
+from promptflow.core._connection import AzureOpenAIConnection, OpenAIConnection, _Connection
 from promptflow.core._errors import (
     ChatAPIFunctionRoleInvalidFormatError,
     ChatAPIInvalidRoleError,
@@ -22,11 +22,11 @@ def parse_environment_variable(value):
         env_name = result.groups()[0]
         return os.environ.get(env_name, value)
     else:
-        return result
+        return value
 
 
 def get_connection(connection):
-    if not isinstance(connection, (str, dict)):
+    if not isinstance(connection, (str, dict, _Connection)):
         error_message = (
             "Illegal definition of connection, only support connection name or dict of connection info. "
             "You can refer to https://microsoft.github.io/promptflow/how-to-guides/"
@@ -43,10 +43,12 @@ def get_connection(connection):
         connection_obj = client.connections.get(connection, with_secrets=True)
         connection = connection_obj._to_execution_connection_dict()["value"]
         connection_type = connection_obj.TYPE
-    else:
+    elif isinstance(connection, dict):
         connection_type = connection.pop("type", None)
         # Get value from environment
         connection = {k: parse_environment_variable(v) for k, v in connection.items()}
+    else:
+        return connection
     if connection_type == AzureOpenAIConnection.TYPE:
         return AzureOpenAIConnection(**connection)
     elif connection_type == OpenAIConnection.TYPE:

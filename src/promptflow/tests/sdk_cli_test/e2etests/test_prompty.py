@@ -1,9 +1,12 @@
 import asyncio
+import json
 from pathlib import Path
 
 import pytest
+from openai.types.chat import ChatCompletion
 
 from promptflow._sdk._pf_client import PFClient
+from promptflow.connections import AzureOpenAIConnection
 from promptflow.core import Flow
 from promptflow.core._errors import MissingRequiredInputError
 from promptflow.core._flow import AsyncPrompty, Prompty
@@ -20,9 +23,11 @@ class TestPrompty:
         expect_data = {
             "name": "Basic Prompt",
             "description": "A basic prompt that uses the GPT-3 chat API to answer questions",
-            "api": "chat",
-            "connection": "azure_open_ai_connection",
-            "parameters": {"deployment_name": "gpt-35-turbo", "max_tokens": 128, "temperature": 0.2},
+            "model": {
+                "api": "chat",
+                "connection": "azure_open_ai_connection",
+                "parameters": {"deployment_name": "gpt-35-turbo", "max_tokens": 128, "temperature": 0.2},
+            },
             "inputs": {
                 "firstName": {"type": "string", "default": "John"},
                 "lastName": {"type": "string", "default": "Doh"},
@@ -48,13 +53,15 @@ class TestPrompty:
         expect_data = {
             "name": "Basic Prompt",
             "description": "A basic prompt that uses the GPT-3 chat API to answer questions",
-            "api": "chat",
-            "connection": "mock_connection_name",
-            "parameters": {
-                "mock_key": "mock_value",
-                "deployment_name": "gpt-35-turbo",
-                "max_tokens": 64,
-                "temperature": 0.2,
+            "model": {
+                "api": "chat",
+                "connection": "mock_connection_name",
+                "parameters": {
+                    "mock_key": "mock_value",
+                    "deployment_name": "gpt-35-turbo",
+                    "max_tokens": 64,
+                    "temperature": 0.2,
+                },
             },
             "inputs": {
                 "firstName": {"type": "string", "default": "John"},
@@ -68,21 +75,21 @@ class TestPrompty:
             "parameters": {"mock_key": "mock_value", "max_tokens": 64},
         }
         # load prompty by flow
-        prompty = Flow.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", **params_override)
+        prompty = Flow.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", model=params_override)
         assert prompty._data == expect_data
         assert isinstance(prompty, Prompty)
 
         # load prompty by Prompty.load
-        prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", **params_override)
+        prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", model=params_override)
         assert prompty._data == expect_data
         assert isinstance(prompty, Prompty)
 
         # Direct init prompty
-        prompty = Prompty(path=f"{PROMPTY_DIR}/prompty_example.prompty", **params_override)
+        prompty = Prompty(path=f"{PROMPTY_DIR}/prompty_example.prompty", model=params_override)
         assert prompty._data == expect_data
         assert isinstance(prompty, Prompty)
 
-    def test_prompty_callable(self):
+    def test_prompty_callable(self, pf: PFClient):
         prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty")
         with pytest.raises(MissingRequiredInputError) as e:
             prompty(firstName="mock_name")
@@ -90,10 +97,30 @@ class TestPrompty:
         result = prompty(question="what is the result of 1+1?")
         assert "2" in result
 
-        # Test prompty with image input
-        image_prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_with_image_input.prompty")
-        result = image_prompty(image_input={"data:image/png;path": ""})
-        assert result
+        # Test connection with dict
+        connection = pf.connections.get(name=prompty._connection, with_secrets=True)
+        connection_dict = {
+            "type": connection.TYPE,
+            "api_key": connection.api_key,
+            "api_base": connection.api_base,
+        }
+        prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", model={"connection": connection_dict})
+        result = prompty(question="what is the result of 1+1?")
+        assert "2" in result
+
+        # Test using connection object
+        connection_obj = AzureOpenAIConnection(
+            api_base=connection.api_base,
+            api_key=connection.api_key,
+        )
+        prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", model={"connection": connection_obj})
+        result = prompty(question="what is the result of 1+1?")
+        assert "2" in result
+
+        # Test format is raw
+        prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", format="raw")
+        result = prompty(question="what is the result of 1+1?")
+        assert isinstance(result, ChatCompletion)
 
     def test_prompty_async_call(self):
         async_prompty = AsyncPrompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty")
@@ -103,17 +130,35 @@ class TestPrompty:
         result = asyncio.run(async_prompty(question="what is the result of 1+1?"))
         assert "2" in result
 
+        # Test format is raw
+        async_prompty = AsyncPrompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", format="raw")
+        result = asyncio.run(async_prompty(question="what is the result of 1+1?"))
+        assert isinstance(result, ChatCompletion)
+
     def test_prompty_batch_run(self, pf: PFClient):
         run = pf.run(flow=f"{PROMPTY_DIR}/prompty_example.prompty", data=f"{DATA_DIR}/prompty_inputs.jsonl")
         assert run.status == "Completed"
         assert "error" not in run._to_dict()
 
+        output_data = Path(run.properties["output_path"]) / "flow_outputs" / "output.jsonl"
+        with open(output_data, "r") as f:
+            output = json.loads(f.readline())
+            assert "2" in output["output"]
+
+            output = json.loads(f.readline())
+            assert "4" in output["output"]
+
+            output = json.loads(f.readline())
+            assert "6" in output["output"]
+
         # Test prompty run with image
         # TODO
 
     def test_prompty_test(self, pf: PFClient):
-        result = pf.test(flow=f"{PROMPTY_DIR}/prompty_example.prompty", inputs={"question": "what is gpt?"})
-        assert result
+        result = pf.test(
+            flow=f"{PROMPTY_DIR}/prompty_example.prompty", inputs={"question": "what is the result of 1+1?"}
+        )
+        assert "2" in result
 
         # Test prompty run with image
         # TODO
