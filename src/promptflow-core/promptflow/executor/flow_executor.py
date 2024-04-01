@@ -736,6 +736,10 @@ class FlowExecutor:
             line_result.output[LINE_NUMBER_KEY] = index
         return line_result
 
+    @property
+    def prefer_async(self) -> bool:
+        return False
+
     async def exec_line_async(
         self,
         inputs: Mapping[str, Any],

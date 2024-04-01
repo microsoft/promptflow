@@ -414,7 +414,8 @@ class BatchEngine:
 
         # execute lines
         is_timeout = False
-        if isinstance(self._executor_proxy, PythonExecutorProxy):
+        # When python is not using async functions, we use _exec_batch to run the batch with process pool.
+        if isinstance(self._executor_proxy, PythonExecutorProxy) and not self._executor_proxy.prefer_async:
             results, is_timeout = await self._executor_proxy._exec_batch(
                 inputs_to_run,
                 output_dir,

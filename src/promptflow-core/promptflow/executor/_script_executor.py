@@ -52,6 +52,70 @@ class ScriptExecutor(FlowExecutor):
         self._message_format = MessageFormatType.BASIC
         self._multimedia_processor = BasicMultimediaProcessor()
 
+    @property
+    def prefer_async(self):
+        return self._is_async
+
+    async def exec_line_async(
+        self,
+        inputs: Mapping[str, Any],
+        index: Optional[int] = None,
+        run_id: Optional[str] = None,
+        allow_generator_output: bool = False,
+        **kwargs,
+    ) -> LineResult:
+        run_id = run_id or str(uuid.uuid4())
+        with self._update_operation_context(run_id, index):
+            return await self._exec_line_async(inputs, index, run_id, allow_generator_output=allow_generator_output)
+
+    async def _exec_line_async(
+        self,
+        inputs: Mapping[str, Any],
+        index: Optional[int] = None,
+        run_id: Optional[str] = None,
+        allow_generator_output: bool = False,
+    ) -> LineResult:
+        line_run_id = run_id if index is None else f"{run_id}_{index}"
+        run_tracker = RunTracker(self._storage)
+        run_tracker.allow_generator_types = allow_generator_output
+        run_info = run_tracker.start_flow_run(
+            flow_id=self._flow_id,
+            root_run_id=run_id,
+            run_id=line_run_id,
+            parent_run_id=run_id,
+            inputs=inputs,
+            index=index,
+            message_format=self._message_format,
+        )
+        # Executor will add line_number to batch inputs if there is no line_number in the original inputs,
+        # which should be removed, so, we only preserve the inputs that are contained in self._inputs.
+        inputs = {k: inputs[k] for k in self._inputs if k in inputs}
+        output = None
+        traces = []
+        try:
+            Tracer.start_tracing(line_run_id)
+            if self._is_async:
+                output = await self._func(**inputs)
+            else:
+                output = await asyncio.get_event_loop().run_in_executor(None, self._func, **inputs)
+            output = self._stringify_generator_output(output) if not allow_generator_output else output
+            traces = Tracer.end_tracing(line_run_id)
+            # Should convert output to dict before storing it to run info, since we will add key 'line_number' to it,
+            # so it must be a dict.
+            output_dict = convert_eager_flow_output_to_dict(output)
+            run_tracker.end_run(line_run_id, result=output_dict, traces=traces)
+        except Exception as e:
+            if not traces:
+                traces = Tracer.end_tracing(line_run_id)
+            run_tracker.end_run(line_run_id, ex=e, traces=traces)
+        finally:
+            run_tracker.persist_flow_run(run_info)
+        line_result = LineResult(output, {}, run_info, {})
+        #  Return line result with index
+        if index is not None and isinstance(line_result.output, dict):
+            line_result.output[LINE_NUMBER_KEY] = index
+        return line_result
+
     def exec_line(
         self,
         inputs: Mapping[str, Any],

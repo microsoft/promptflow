@@ -71,6 +71,18 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         with self._flow_executor._run_tracker.node_log_manager:
             return self._flow_executor._exec_aggregation(batch_inputs, aggregation_inputs, run_id=run_id)
 
+    @property
+    def prefer_async(self) -> bool:
+        return self._flow_executor.prefer_async
+
+    async def exec_line_async(
+        self,
+        inputs: Mapping[str, Any],
+        index: Optional[int] = None,
+        run_id: Optional[str] = None,
+    ) -> LineResult:
+        return await self._flow_executor.exec_line_async(inputs, index=index, run_id=run_id)
+
     async def _exec_batch(
         self,
         batch_inputs: List[Mapping[str, Any]],
