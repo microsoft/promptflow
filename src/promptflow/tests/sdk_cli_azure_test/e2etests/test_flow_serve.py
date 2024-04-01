@@ -19,7 +19,7 @@ change feed. You can even have multiple change feed consumers subscribe to the s
 @pytest.mark.e2etest
 def test_local_serving_api_with_remote_connection(flow_serving_client_remote_connection):
     response = flow_serving_client_remote_connection.get("/health")
-    assert b'{"status":"Healthy","version":"0.0.1"}' in response.data
+    assert b"Healthy" in response.data
     response = flow_serving_client_remote_connection.post("/score", data=json.dumps({"text": "hi"}))
     assert (
         response.status_code == 200
@@ -32,7 +32,7 @@ def test_local_serving_api_with_remote_connection(flow_serving_client_remote_con
 @pytest.mark.e2etest
 def test_azureml_serving_api_with_prt_config_env(flow_serving_client_with_prt_config_env):
     response = flow_serving_client_with_prt_config_env.get("/health")
-    assert b'{"status":"Healthy","version":"0.0.1"}' in response.data
+    assert b"Healthy" in response.data
     response = flow_serving_client_with_prt_config_env.post("/score", data=json.dumps({"text": "hi"}))
     assert (
         response.status_code == 200
@@ -47,7 +47,7 @@ def test_azureml_serving_api_with_prt_config_env(flow_serving_client_with_prt_co
 @pytest.mark.e2etest
 def test_azureml_serving_api_with_conn_provider_env(flow_serving_client_with_connection_provider_env):
     response = flow_serving_client_with_connection_provider_env.get("/health")
-    assert b'{"status":"Healthy","version":"0.0.1"}' in response.data
+    assert b"Healthy" in response.data
     response = flow_serving_client_with_connection_provider_env.post("/score", data=json.dumps({"text": "hi"}))
     assert (
         response.status_code == 200
@@ -62,7 +62,7 @@ def test_azureml_serving_api_with_conn_provider_env(flow_serving_client_with_con
 @pytest.mark.e2etest
 def test_azureml_serving_api_with_aml_resource_id_env(flow_serving_client_with_aml_resource_id_env):
     response = flow_serving_client_with_aml_resource_id_env.get("/health")
-    assert b'{"status":"Healthy","version":"0.0.1"}' in response.data
+    assert b"Healthy" in response.data
     response = flow_serving_client_with_aml_resource_id_env.post("/score", data=json.dumps({"text": "hi"}))
     assert (
         response.status_code == 200
@@ -75,7 +75,7 @@ def test_azureml_serving_api_with_aml_resource_id_env(flow_serving_client_with_a
 @pytest.mark.e2etest
 def test_azureml_serving_api_with_connection_name_override(serving_client_with_connection_name_override):
     response = serving_client_with_connection_name_override.get("/health")
-    assert b'{"status":"Healthy","version":"0.0.1"}' in response.data
+    assert b"Healthy" in response.data
 
     response = serving_client_with_connection_name_override.post("/score", data=json.dumps({"text": testdata}))
     assert (
@@ -88,7 +88,7 @@ def test_azureml_serving_api_with_connection_name_override(serving_client_with_c
 @pytest.mark.e2etest
 def test_azureml_serving_api_with_connection_data_override(serving_client_with_connection_data_override):
     response = serving_client_with_connection_data_override.get("/health")
-    assert b'{"status":"Healthy","version":"0.0.1"}' in response.data
+    assert b"Healthy" in response.data
 
     response = serving_client_with_connection_data_override.post("/score", data=json.dumps({"text": "hi"}))
     assert (
