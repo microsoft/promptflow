@@ -351,7 +351,7 @@ def get_promptflow_core_version() -> Union[str, None]:
 
 def get_promptflow_devkit_version() -> Union[str, None]:
     try:
-        from promptflow.client._version import __version__
+        from promptflow._sdk._version import __version__
 
         return __version__
     except ImportError:
