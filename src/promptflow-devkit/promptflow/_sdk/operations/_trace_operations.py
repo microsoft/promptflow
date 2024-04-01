@@ -6,6 +6,7 @@ import datetime
 import typing
 
 from promptflow._sdk._constants import TRACE_DEFAULT_COLLECTION
+from promptflow._sdk._orm.retry import sqlite_retry
 from promptflow._sdk._orm.session import trace_mgmt_db_session
 from promptflow._sdk._orm.trace import Event as ORMEvent
 from promptflow._sdk._orm.trace import LineRun as ORMLineRun
@@ -162,6 +163,7 @@ class TraceOperations:
         )
         raise UserErrorException(error_message)
 
+    @sqlite_retry
     def _delete_within_transaction(
         self,
         run: typing.Optional[str] = None,
