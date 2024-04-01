@@ -1,6 +1,9 @@
 promptflow.tools.llm.llm:
   name: LLM
-  description: New LLM tool.
+  description:
+    default: Use OpenAI-like Large Language Model for text completion or chat.
+    aml: Use OpenAI-like Large Language Model for text completion or chat. For more details, refer to this [document](https://aka.ms/promptflow/llm-tool).
+    ai_studio: Use OpenAI-like Large Language Model for text completion or chat. For more details, refer to this [document](https://aka.ms/aistudio/pf/llm-tool).
   type: custom_llm
   module: promptflow.tools.llm
   function: llm
