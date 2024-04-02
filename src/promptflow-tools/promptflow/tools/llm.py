@@ -26,6 +26,7 @@ def get_cloud_connection(connection_name, subscription_id, resource_group_name, 
             credential=credential
         )
     except Exception as e:
+        print(f"Error getting cloud connection: {e}")
         return None
     
 def get_local_connection(connection_name):
@@ -36,6 +37,7 @@ def get_local_connection(connection_name):
         pf = PFClient()
         return pf.connections.get(connection_name)
     except Exception as e:
+        print(f"Error getting local connection: {e}")
         return None
 
 
