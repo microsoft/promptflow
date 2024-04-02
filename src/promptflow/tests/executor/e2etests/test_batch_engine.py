@@ -18,11 +18,11 @@ from promptflow.batch._batch_engine import BatchEngine
 from promptflow.batch._errors import EmptyInputsData
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.run_info import Status
-from promptflow._proxy._single_line_python_executor_proxy import SingleLinePythonExecutorProxy
 from promptflow._proxy._chat_group_orchestrator_proxy import ChatGroupOrchestratorProxy
 from promptflow._sdk.entities._chat_group._chat_role import ChatRole
 from promptflow.executor._errors import InputNotFound
 
+from ..single_line_python_executor_proxy import SingleLinePythonExecutorProxy
 from ..conftest import setup_recording
 from ..process_utils import MockForkServerProcess, MockSpawnProcess, override_process_class
 from ..utils import (

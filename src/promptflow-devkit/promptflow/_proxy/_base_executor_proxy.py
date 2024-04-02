@@ -152,6 +152,14 @@ class AbstractExecutorProxy:
         connections: Optional[dict] = None,
         storage: Optional[AbstractRunStorage] = None,
         init_kwargs: Optional[Dict[str, Any]] = None,
+        # below parameters are added for multi-container
+        # executor_client is provided by runtime PythonExecutorClient class
+        executor_client: Optional[Any] = None,
+        environment_variables: dict = None,
+        log_path: Optional[Path] = None,
+        output_dir: Optional[Path] = None,
+        worker_count: Optional[int] = None,
+        line_timeout_sec: Optional[int] = None,
         **kwargs,
     ) -> "AbstractExecutorProxy":
         """Create a new executor"""
