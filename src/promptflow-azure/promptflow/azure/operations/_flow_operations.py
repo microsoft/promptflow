@@ -208,7 +208,7 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
     @staticmethod
     def _validate_flow_creation_parameters(source, flow_display_name=None, flow_type=None, **kwargs):
         """Validate the parameters for flow creation operation."""
-        from promptflow._sdk.entities._flow import FlexFlow
+        from promptflow._sdk.entities._flows import FlexFlow
         from promptflow.client import load_flow as load_local_flow
 
         # validate the source folder
@@ -256,7 +256,7 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
     @staticmethod
     def _validate_flow_schema(source, display_name=None, type=None, **kwargs):
         """Validate the flow schema."""
-        from promptflow._sdk.entities._flow import Flow
+        from promptflow._sdk.entities._flows import Flow
 
         params_override = copy.deepcopy(kwargs)
         if display_name is not None:

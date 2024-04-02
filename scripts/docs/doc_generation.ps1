@@ -97,13 +97,13 @@ if($WithReferenceDoc){
     Remove-Item $RefDocPath -Recurse -Force
     Write-Host "===============Build Promptflow Reference Doc==============="
     $ApidocWarningsAndErrors = [System.Collections.ArrayList]::new()
-    $IgnoreList = @("promptflow-recording", "promptflow", "promptflow-tools")
+    $IncludeList = @("promptflow-tracing", "promptflow-core", "promptflow-devkit", "promptflow-azure")
     foreach($Item in Get-Childitem -path $PkgSrcPath){
         if(-not ($Item -is [System.IO.DirectoryInfo])){
             # Only looking for package directory
             continue
         }
-        if($IgnoreList -contains $Item.Name){
+        if(-not ($IncludeList -contains $Item.Name)){
             continue
         }
         $SubPkgPath = [System.IO.Path]::Combine($Item.FullName, "promptflow")

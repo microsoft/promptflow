@@ -190,6 +190,9 @@
     "STARTF",
     "mltable",
     "setenv",
+    "cscript",
+    "nologo",
+    "wscript",
     "raisvc",
     "evals"
   ],
