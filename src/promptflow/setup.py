@@ -21,9 +21,9 @@ with open("CHANGELOG.md", encoding="utf-8") as f:
     changelog = f.read()
 
 REQUIRES = [
-    "promptflow-tracing>=1.0.0",  # tracing capabilities
-    "promptflow-core",  # core capabilities
-    "promptflow-devkit",  # devkit capabilities
+    "promptflow-tracing==1.1.0rc1",  # tracing capabilities
+    "promptflow-core==1.1.0rc1",  # core capabilities
+    "promptflow-devkit==1.8.0rc1",  # devkit capabilities
 ]
 
 setup(
@@ -53,9 +53,9 @@ setup(
         "all": [
             "promptflow-core[executor-service]",
             "promptflow-devkit[all]",
-            "promptflow-azure",
+            "promptflow-azure==1.8.0rc1",
         ],
-        "azure": ["promptflow-azure"],
+        "azure": ["promptflow-azure==1.8.0rc1"],
         "executable": ["promptflow-devkit[executable]"],
         "azureml-serving": [
             "promptflow-core[azureml-serving]",
