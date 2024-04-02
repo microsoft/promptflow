@@ -4,6 +4,6 @@
 
 import importlib.metadata
 
-__version__ = importlib.metadata.version("promptflow-devkit")
+__version__ = importlib.metadata.version("promptflow-azure")
 
 VERSION: str = __version__
