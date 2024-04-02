@@ -1,2 +1,2 @@
-promptflow-core @ git+https://github.com/microsoft/promptflow#subdirectory=src/promptflow-core
+promptflow-core
 python-dotenv
