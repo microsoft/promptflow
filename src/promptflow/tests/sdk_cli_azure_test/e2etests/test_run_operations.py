@@ -1027,7 +1027,7 @@ class TestFlowRun:
             DownloadedRun.RUN_METADATA_FILE_NAME,
             DownloadedRun.LOGS_FILE_NAME,
             DownloadedRun.METRICS_FILE_NAME,
-            f"{DownloadedRun.SNAPSHOT_FOLDER}/flow.dag.yaml",
+            f"{DownloadedRun.SNAPSHOT_FOLDER}/flow.flex.yaml",
         ]
 
         # test download
@@ -1249,4 +1249,4 @@ class TestFlowRun:
                 assert Path(tmp_dir, run.name, file).exists()
 
         # the YAML file will not exist in user's folder
-        assert not Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/flow.dag.yaml").exists()
+        assert not Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/flow.flex.yaml").exists()
