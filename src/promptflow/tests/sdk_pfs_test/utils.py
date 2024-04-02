@@ -10,6 +10,8 @@ from unittest import mock
 import werkzeug
 from flask.testing import FlaskClient
 
+from promptflow._sdk._service.utils.utils import encrypt_flow_path
+
 
 @contextlib.contextmanager
 def check_activity_end_telemetry(
@@ -53,6 +55,9 @@ class PFSOperations:
     RUN_URL_PREFIX = "/v1.0/Runs"
     TELEMETRY_PREFIX = "/v1.0/Telemetries"
     LINE_RUNS_PREFIX = "/v1.0/LineRuns"
+    Flow_URL_PREFIX = "/v1.0/Flows"
+    UI_URL_PREFIX = "/v1.0/ui"
+    EXPERIMENT_PREFIX = "/v1.0/Experiments"
 
     def __init__(self, client: FlaskClient):
         self._client = client
@@ -235,13 +240,13 @@ class PFSOperations:
     def list_line_runs(
         self,
         *,
-        session_id: Optional[str] = None,
+        collection: Optional[str] = None,
         runs: Optional[List[str]] = None,
         trace_ids: Optional[List[str]] = None,
     ):
         query_string = {}
-        if session_id is not None:
-            query_string["session"] = session_id
+        if collection is not None:
+            query_string["collection"] = collection
         if runs is not None:
             query_string["run"] = ",".join(runs)
         if trace_ids is not None:
@@ -250,5 +255,68 @@ class PFSOperations:
             f"{self.LINE_RUNS_PREFIX}/list",
             query_string=query_string,
             headers=self.remote_user_header(),
+        )
+        return response
+
+    def get_flow_yaml(self, flow_path: str, status_code=None):
+        flow_path = encrypt_flow_path(flow_path)
+        query_string = {"flow": flow_path}
+        response = self._client.get(f"{self.UI_URL_PREFIX}/yaml", query_string=query_string)
+        if status_code:
+            assert status_code == response.status_code, response.text
+        return response
+
+    def get_experiment_yaml(self, flow_path: str, experiment_path: str, status_code=None):
+        flow_path = encrypt_flow_path(flow_path)
+        query_string = {"flow": flow_path, "experiment": experiment_path}
+        response = self._client.get(f"{self.UI_URL_PREFIX}/yaml", query_string=query_string)
+        if status_code:
+            assert status_code == response.status_code, response.text
+        return response
+
+    def test_flow(self, flow_path, request_body, status_code=None):
+        flow_path = encrypt_flow_path(flow_path)
+        query_string = {"flow": flow_path}
+        response = self._client.post(f"{self.Flow_URL_PREFIX}/test", json=request_body, query_string=query_string)
+        if status_code:
+            assert status_code == response.status_code, response.text
+        return response
+
+    def get_flow_ux_inputs(self, flow_path: str, status_code=None):
+        flow_path = encrypt_flow_path(flow_path)
+        query_string = {"flow": flow_path}
+        response = self._client.get(f"{self.UI_URL_PREFIX}/ux_inputs", query_string=query_string)
+        if status_code:
+            assert status_code == response.status_code, response.text
+        return response
+
+    def save_flow_image(self, flow_path: str, request_body, status_code=None):
+        flow_path = encrypt_flow_path(flow_path)
+        query_string = {"flow": flow_path}
+        response = self._client.post(f"{self.UI_URL_PREFIX}/media_save", json=request_body, query_string=query_string)
+        if status_code:
+            assert status_code == response.status_code, response.text
+        return response
+
+    def show_image(self, flow_path: str, image_path: str, status_code=None):
+        flow_path = encrypt_flow_path(flow_path)
+        query_string = {"flow": flow_path, "image_path": image_path}
+        response = self._client.get(f"{self.UI_URL_PREFIX}/media", query_string=query_string)
+        if status_code:
+            assert status_code == response.status_code, response.text
+        return response
+
+    # Experiment APIs
+    def experiment_test(self, body: dict):
+        response = self._client.post(
+            f"{self.EXPERIMENT_PREFIX}/test_with_flow_override",
+            json=body,
+        )
+        return response
+
+    def experiment_test_with_skip(self, body: dict):
+        response = self._client.post(
+            f"{self.EXPERIMENT_PREFIX}/skip_test",
+            json=body,
         )
         return response

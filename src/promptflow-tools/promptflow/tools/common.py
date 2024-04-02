@@ -4,7 +4,7 @@ import os
 import re
 import sys
 import time
-from typing import List, Mapping
+from typing import List, Mapping, Union
 
 from jinja2 import Template
 from openai import APIConnectionError, APIStatusError, OpenAIError, RateLimitError, APITimeoutError, BadRequestError
@@ -13,7 +13,7 @@ from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, L
     ChatAPIFunctionRoleInvalidFormat, InvalidConnectionType, ListDeploymentsError, ParseConnectionError
 
 from promptflow._cli._utils import get_workspace_triad_from_local
-from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
+from promptflow.connections import AzureOpenAIConnection, OpenAIConnection, ServerlessConnection
 from promptflow.exceptions import SystemErrorException, UserErrorException
 
 
@@ -567,13 +567,24 @@ def normalize_connection_config(connection):
             "organization": connection.organization,
             "base_url": connection.base_url
         }
+    elif isinstance(connection, ServerlessConnection):
+        suffix = "/v1"
+        base_url = connection.api_base
+        if not base_url.endswith(suffix):
+            # append "/v1" to ServerlessConnection api_base so that it can directly use the OpenAI SDK.
+            base_url += suffix
+        return {
+            "max_retries": 0,
+            "api_key": connection.api_key,
+            "base_url": base_url
+        }
     else:
         error_message = f"Not Support connection type '{type(connection).__name__}'. " \
                         f"Connection type should be in [AzureOpenAIConnection, OpenAIConnection]."
         raise InvalidConnectionType(message=error_message)
 
 
-def init_openai_client(connection: OpenAIConnection):
+def init_openai_client(connection: Union[OpenAIConnection, ServerlessConnection]):
     try:
         from openai import OpenAI as OpenAIClient
     except ImportError as e:

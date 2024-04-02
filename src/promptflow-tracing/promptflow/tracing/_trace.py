@@ -17,11 +17,12 @@ from opentelemetry.trace import Link
 from opentelemetry.trace.span import NonRecordingSpan
 from opentelemetry.trace.status import StatusCode
 
+from ._openai_utils import OpenAIMetricsCalculator, OpenAIResponseParser
 from ._operation_context import OperationContext
 from ._tracer import Tracer, _create_trace_from_function_call, get_node_name_from_context
 from ._utils import get_input_names_for_prompt_template, get_prompt_param_name_from_func, serialize
 from .contracts.generator_proxy import GeneratorProxy
-from .contracts.trace import TraceType
+from .contracts.trace import Trace, TraceType
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
 
@@ -41,6 +42,16 @@ class TokenCollector:
             if tokens:
                 with self._lock:
                     self._span_id_to_tokens[span_id] = tokens
+
+    def collect_openai_tokens_for_streaming(self, span, inputs, output, is_chat):
+        span_id = span.get_span_context().span_id
+        calculator = OpenAIMetricsCalculator()
+        if is_chat:
+            tokens = calculator.get_openai_metrics_for_chat_api(inputs, output)
+        else:
+            tokens = calculator.get_openai_metrics_for_completion_api(inputs, output)
+        with self._lock:
+            self._span_id_to_tokens[span_id] = tokens
 
     def collect_openai_tokens_for_parent_span(self, span):
         tokens = self.try_get_openai_tokens(span.get_span_context().span_id)
@@ -74,13 +85,13 @@ def enrich_span_with_context(span):
         logging.warning(f"Failed to enrich span with context: {e}")
 
 
-def enrich_span_with_trace(span, trace):
+def enrich_span_with_trace(span, trace: Trace):
     try:
         span.set_attributes(
             {
                 "framework": "promptflow",
                 "span_type": trace.type.value,
-                "function": trace.name,
+                "function": trace.function,
             }
         )
         node_name = get_node_name_from_context()
@@ -103,6 +114,7 @@ def enrich_span_with_prompt_info(span, func, kwargs):
             }
             prompt_info = {"prompt.template": prompt_tpl, "prompt.variables": serialize_attribute(prompt_vars)}
             span.set_attributes(prompt_info)
+            span.add_event("promptflow.prompt.template", {"payload": serialize_attribute(prompt_info)})
     except Exception as e:
         logging.warning(f"Failed to enrich span with prompt info: {e}")
 
@@ -111,6 +123,7 @@ def enrich_span_with_input(span, input):
     try:
         serialized_input = serialize_attribute(input)
         span.set_attribute("inputs", serialized_input)
+        span.add_event("promptflow.function.inputs", {"payload": serialized_input})
     except Exception as e:
         logging.warning(f"Failed to enrich span with input: {e}")
 
@@ -119,16 +132,21 @@ def enrich_span_with_input(span, input):
 
 def enrich_span_with_trace_type(span, inputs, output, trace_type):
     if trace_type == TraceType.LLM:
+        # Handle the non-streaming output of LLM, the streaming output will be handled in traced_generator.
         token_collector.collect_openai_tokens(span, output)
-        enrich_span_with_llm_model(span, output)
+        enrich_span_with_llm_output(span, output)
     elif trace_type == TraceType.EMBEDDING:
         token_collector.collect_openai_tokens(span, output)
         enrich_span_with_embedding(span, inputs, output)
     enrich_span_with_openai_tokens(span, trace_type)
-    return enrich_span_with_output(span, output)
+    enrich_span_with_output(span, output)
+    # If the output is a generator, while the span is a valid span, we will trace the generator.
+    if isinstance(output, Iterator) and not isinstance(span, NonRecordingSpan):
+        output = traced_generator(span, inputs, output)
+    return output
 
 
-def traced_generator(generator, original_span: ReadableSpan):
+def traced_generator(original_span: ReadableSpan, inputs, generator):
     context = original_span.get_span_context()
     link = Link(context)
     # If start_trace is not called, the name of the original_span will be empty.
@@ -136,43 +154,52 @@ def traced_generator(generator, original_span: ReadableSpan):
         f"Iterated({original_span.name})",
         links=[link],
     ) as span:
-        span.set_attributes(original_span.attributes)
+        enrich_span_with_original_attributes(span, original_span.attributes)
+        # Enrich the new span with input before generator iteration to prevent loss of input information.
+        # The input is as an event within this span.
+        enrich_span_with_input(span, inputs)
         generator_proxy = GeneratorProxy(generator)
         yield from generator_proxy
         generator_output = generator_proxy.items
 
-        # Enrich LLM span for openai steaming message
-        # TODO: Enrich LLM token count for streaming scenario
+        # Enrich LLM span for OpenAI streaming output
         if original_span.attributes["span_type"] == "LLM" and not IS_LEGACY_OPENAI:
             from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
+            from openai.types.completion import Completion
 
-            chunks = []
-            role = "assistant"
-            for item in generator_output:
-                if not isinstance(item, ChatCompletionChunk):
-                    continue
-                if item.choices and item.choices[0].delta.content:
-                    chunks.append(item.choices[0].delta.content)
-                    role = item.choices[0].delta.role or role
-            if chunks:
-                text = "".join(chunks)
-                message = {"content": text, "role": role}
-                span.set_attribute("llm.generated_message", serialize_attribute(message))
-        serialized_output = serialize_attribute(generator_output)
-        span.set_attribute("output", serialized_output)
+            if generator_output and isinstance(generator_output[0], (ChatCompletionChunk, Completion)):
+                parser = OpenAIResponseParser.init_parser(generator_output)
+                enrich_span_with_llm(span, parser.model, parser.get_generated_message())
+                token_collector.collect_openai_tokens_for_streaming(span, inputs, generator_output, parser.is_chat)
+        enrich_span_with_openai_tokens(span, TraceType(original_span.attributes["span_type"]))
+        enrich_span_with_output(span, serialize_attribute(generator_output))
+        span.set_status(StatusCode.OK)
+    token_collector.collect_openai_tokens_for_parent_span(span)
+
+
+def enrich_span_with_original_attributes(span, attributes):
+    try:
+        span.set_attributes(attributes)
+    except Exception as e:
+        logging.warning(f"Failed to enrich span with original attributes: {e}")
+
+
+def enrich_span_with_llm(span, model, generated_message):
+    try:
+        span.set_attribute("llm.response.model", model)
+        span.set_attribute("llm.generated_message", serialize_attribute(generated_message))
+        span.add_event("promptflow.llm.generated_message", {"payload": serialize_attribute(generated_message)})
+    except Exception as e:
+        logging.warning(f"Failed to enrich span with llm: {e}")
 
 
 def enrich_span_with_output(span, output):
     try:
         serialized_output = serialize_attribute(output)
         span.set_attribute("output", serialized_output)
-        # If the output is a generator, while the span is a valid span, we will trace the generator.
-        if isinstance(output, Iterator) and not isinstance(span, NonRecordingSpan):
-            output = traced_generator(output, span)
+        span.add_event("promptflow.function.output", {"payload": serialized_output})
     except Exception as e:
         logging.warning(f"Failed to enrich span with output: {e}")
-
-    return output
 
 
 def enrich_span_with_openai_tokens(span, trace_type):
@@ -205,6 +232,7 @@ def enrich_span_with_embedding(span, inputs, output):
                     }
                 )
             span.set_attribute("embedding.embeddings", serialize_attribute(embeddings))
+            span.add_event("promptflow.embedding.embeddings", {"payload": serialize_attribute(embeddings)})
     except Exception as e:
         logging.warning(f"Failed to enrich span with embedding: {e}")
 
@@ -221,16 +249,20 @@ def _is_single_input(embedding_inputs):
     return False
 
 
-def enrich_span_with_llm_model(span, output):
-    try:
-        if not IS_LEGACY_OPENAI:
-            from openai.types.chat.chat_completion import ChatCompletion
-            from openai.types.completion import Completion
+def enrich_span_with_llm_output(span, output):
+    if not IS_LEGACY_OPENAI:
+        from openai.types.chat.chat_completion import ChatCompletion
+        from openai.types.completion import Completion
 
-            if isinstance(output, (ChatCompletion, Completion)):
-                span.set_attribute("llm.response.model", output.model)
-    except Exception as e:
-        logging.warning(f"Failed to enrich span with llm model: {e}")
+        if isinstance(output, (ChatCompletion, Completion)):
+            model = output.model if isinstance(output, (ChatCompletion, Completion)) else None
+            if isinstance(output, ChatCompletion):
+                generated_message = output.choices[0].message
+            elif isinstance(output, Completion):
+                generated_message = output.choices[0].text
+            else:
+                generated_message = None
+            enrich_span_with_llm(span, model, generated_message)
 
 
 def serialize_attribute(value):
@@ -269,7 +301,11 @@ def _traced(
 
 
 def _traced_async(
-    func: Callable = None, *, args_to_ignore: Optional[List[str]] = None, trace_type=TraceType.FUNCTION
+    func: Callable = None,
+    *,
+    args_to_ignore: Optional[List[str]] = None,
+    trace_type=TraceType.FUNCTION,
+    name: Optional[str] = None,
 ) -> Callable:
     """
     Decorator that adds tracing to an asynchronous function.
@@ -279,6 +315,7 @@ def _traced_async(
         args_to_ignore (Optional[List[str]], optional): A list of argument names to be ignored in the trace.
                                                         Defaults to None.
         trace_type (TraceType, optional): The type of the trace. Defaults to TraceType.FUNCTION.
+        name (str, optional): The name of the trace, will set to func name if not provided.
 
     Returns:
         Callable: The traced function.
@@ -286,7 +323,12 @@ def _traced_async(
 
     def create_trace(func, args, kwargs):
         return _create_trace_from_function_call(
-            func, args=args, kwargs=kwargs, args_to_ignore=args_to_ignore, trace_type=trace_type
+            func,
+            args=args,
+            kwargs=kwargs,
+            args_to_ignore=args_to_ignore,
+            trace_type=trace_type,
+            name=name,
         )
 
     @functools.wraps(func)
@@ -295,6 +337,8 @@ def _traced_async(
         # For node span we set the span name to node name, otherwise we use the function name.
         span_name = get_node_name_from_context(used_for_span_name=True) or trace.name
         with open_telemetry_tracer.start_as_current_span(span_name) as span:
+            # Store otel trace id in context for correlation
+            OperationContext.get_instance()["otel_trace_id"] = f"{span.get_span_context().trace_id:032x}"
             enrich_span_with_trace(span, trace)
             enrich_span_with_prompt_info(span, func, kwargs)
 
@@ -319,7 +363,13 @@ def _traced_async(
     return wrapped
 
 
-def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=TraceType.FUNCTION) -> Callable:
+def _traced_sync(
+    func: Callable = None,
+    *,
+    args_to_ignore: Optional[List[str]] = None,
+    trace_type=TraceType.FUNCTION,
+    name: Optional[str] = None,
+) -> Callable:
     """
     Decorator that adds tracing to a synchronous function.
 
@@ -328,6 +378,8 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
         args_to_ignore (Optional[List[str]], optional): A list of argument names to be ignored in the trace.
                                                         Defaults to None.
         trace_type (TraceType, optional): The type of the trace. Defaults to TraceType.FUNCTION.
+        name (str, optional): The name of the trace, will set to func name if not provided.
+
 
     Returns:
         Callable: The traced function.
@@ -335,7 +387,12 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
 
     def create_trace(func, args, kwargs):
         return _create_trace_from_function_call(
-            func, args=args, kwargs=kwargs, args_to_ignore=args_to_ignore, trace_type=trace_type
+            func,
+            args=args,
+            kwargs=kwargs,
+            args_to_ignore=args_to_ignore,
+            trace_type=trace_type,
+            name=name,
         )
 
     @functools.wraps(func)
@@ -344,6 +401,8 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
         # For node span we set the span name to node name, otherwise we use the function name.
         span_name = get_node_name_from_context(used_for_span_name=True) or trace.name
         with open_telemetry_tracer.start_as_current_span(span_name) as span:
+            # Store otel trace id in context for correlation
+            OperationContext.get_instance()["otel_trace_id"] = f"{span.get_span_context().trace_id:032x}"
             enrich_span_with_trace(span, trace)
             enrich_span_with_prompt_info(span, func, kwargs)
 

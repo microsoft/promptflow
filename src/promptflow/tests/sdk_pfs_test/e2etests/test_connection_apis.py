@@ -8,10 +8,10 @@ from pathlib import Path
 
 import mock
 import pytest
-from sdk_cli_azure_test.recording_utilities import is_replay
 
 from promptflow import PFClient
 from promptflow._sdk.entities import CustomConnection
+from promptflow.recording.record_mode import is_replay
 
 from ..utils import PFSOperations, check_activity_end_telemetry
 

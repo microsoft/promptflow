@@ -38,4 +38,3 @@ nodes:
   inputs:
     chat_history: ${inputs.chat_history}
     question: ${inputs.question}
-message_format: basic

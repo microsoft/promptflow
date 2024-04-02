@@ -7,21 +7,24 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-from marshmallow import ValidationError
 
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY, NODES
 from promptflow._sdk._errors import InvalidFlowError
 from promptflow._sdk._load_functions import load_flow, load_run
+from promptflow._sdk._orchestrator import RunSubmitter, overwrite_variant, variant_overwrite_context
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._run_functions import create_yaml_run
-from promptflow._sdk._submitter import RunSubmitter, overwrite_variant, variant_overwrite_context
+from promptflow._sdk._utils import callable_to_entry_string
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
+from promptflow._utils.context_utils import inject_sys_path
 from promptflow._utils.yaml_utils import load_yaml
+from promptflow.exceptions import UserErrorException, ValidationException
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 FLOWS_DIR = Path("./tests/test_configs/flows")
+EAGER_FLOWS_DIR = Path("./tests/test_configs/eager_flows")
 RUNS_DIR = Path("./tests/test_configs/runs")
 DATAS_DIR = Path("./tests/test_configs/datas")
 
@@ -30,6 +33,10 @@ DATAS_DIR = Path("./tests/test_configs/datas")
 def test_flow() -> Flow:
     flow_path = f"{FLOWS_DIR}/web_classification"
     return load_flow(flow_path)
+
+
+async def my_async_func():
+    pass
 
 
 @pytest.mark.sdk_test
@@ -104,20 +111,20 @@ class TestRun:
     def test_run_invalid_flow_path(self):
         run_id = str(uuid.uuid4())
         source = f"{RUNS_DIR}/bulk_run_invalid_flow_path.yaml"
-        with pytest.raises(ValidationError) as e:
+        with pytest.raises(ValidationException) as e:
             load_run(source=source, params_override=[{"name": run_id}])
         assert "Can't find directory or file in resolved absolute path:" in str(e.value)
 
     def test_run_invalid_remote_flow(self):
         run_id = str(uuid.uuid4())
         source = f"{RUNS_DIR}/bulk_run_invalid_remote_flow_str.yaml"
-        with pytest.raises(ValidationError) as e:
+        with pytest.raises(ValidationException) as e:
             load_run(source=source, params_override=[{"name": run_id}])
         assert "Invalid remote flow path. Currently only azureml:<flow-name> is supported" in str(e.value)
 
     def test_data_not_exist_validation_error(self):
         source = f"{RUNS_DIR}/sample_bulk_run.yaml"
-        with pytest.raises(ValidationError) as e:
+        with pytest.raises(ValidationException) as e:
             load_run(source=source, params_override=[{"data": "not_exist"}])
 
         assert "Can't find directory or file" in str(e.value)
@@ -130,16 +137,16 @@ class TestRun:
         ],
     )
     def test_invalid_yaml(self, source, error_msg):
-        with pytest.raises(ValidationError) as e:
+        with pytest.raises(ValidationException) as e:
             create_yaml_run(source=source)
         assert error_msg in str(e.value)
 
     def test_run_bulk_invalid_params(self, pf):
         # Test if function raises FileNotFoundError
-        with pytest.raises(FileNotFoundError):
+        with pytest.raises(UserErrorException):
             pf.run(flow="invalid_path", data="fake_data")
 
-        with pytest.raises(FileNotFoundError):
+        with pytest.raises(UserErrorException):
             pf.run(flow="invalid_path", data="fake_data", batch_run="fake_run")
 
     def test_overwrite_variant(self):
@@ -229,3 +236,38 @@ class TestRun:
         run_yaml = Path(RUNS_DIR) / "sample_bulk_run.yaml"
         load_run(source=run_yaml, params_override=[{"unknown_field": "unknown_value"}])
         assert "Unknown fields found" in caplog.text
+
+    def test_callable_to_entry_string(self):
+
+        assert callable_to_entry_string(test_flow) == "sdk_cli_test.unittests.test_run:test_flow"
+
+        assert callable_to_entry_string(my_async_func) == "sdk_cli_test.unittests.test_run:my_async_func"
+
+        with inject_sys_path(f"{EAGER_FLOWS_DIR}/multiple_entries"):
+            from entry2 import my_flow2
+
+            assert callable_to_entry_string(my_flow2) == "entry2:my_flow2"
+
+    def test_callable_to_entry_string_not_supported(self):
+        non_callable = "not a callable"
+
+        def function():
+            pass
+
+        class MyClass:
+            def method(self):
+                pass
+
+            @classmethod
+            def class_method(cls):
+                pass
+
+            @staticmethod
+            def static_method():
+                pass
+
+        obj = MyClass()
+
+        for entry in [non_callable, function, obj.method, obj.class_method, obj.static_method, MyClass.class_method]:
+            with pytest.raises(UserErrorException):
+                callable_to_entry_string(entry)

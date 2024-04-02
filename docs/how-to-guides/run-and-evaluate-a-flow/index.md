@@ -58,7 +58,7 @@ More details can be found with `pf run --help`
 :sync: SDK
 
 ```python
-from promptflow import PFClient
+from promptflow.client import PFClient
 
 # Please protect the entry point by using `if __name__ == '__main__':`,
 # otherwise it would cause unintended side effect when promptflow spawn worker processes.
@@ -98,7 +98,7 @@ pf.visualize(base_run)
 
 ![q_0](../../media/how-to-guides/quick-start/flow-run-visualize-single-run.png)
 
-Feel free to check [Promptflow Python Library Reference](../../reference/python-library-reference/promptflow.md) for all SDK public interfaces.
+Feel free to check [Promptflow Python Library Reference](../../reference/python-library-reference/promptflow-devkit/promptflow.rst) for all SDK public interfaces.
 
 
 :::
@@ -180,7 +180,7 @@ After the run is finished, you can evaluate the run with below command, compared
 More details can be found in [Use column mapping](https://aka.ms/pf/column-mapping).
 
 ```python
-from promptflow import PFClient
+from promptflow.client import PFClient
 
 # PFClient can help manage your runs and connections.
 pf = PFClient()
@@ -239,7 +239,7 @@ Learn more about:
 - [Tune prompts with variants](../tune-prompts-with-variants.md)
 - [Deploy a flow](../deploy-a-flow/index.md)
 - [Manage runs](../manage-runs.md)
-- [Python library reference](../../reference/python-library-reference/promptflow.md)
+- [Python library reference](../../reference/python-library-reference/promptflow-core/promptflow.rst)
 
 ```{toctree}
 :maxdepth: 1

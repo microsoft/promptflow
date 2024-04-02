@@ -1,3 +1,23 @@
+# [build-system]
+# requires = ["poetry-core>=1.5.0"]
+# build-backend = "poetry.core.masonry.api"
+
+# # poetry
+# [tool.poetry]
+# name = "promptflow"
+# version = "1.7.0.dev0"
+# description = "Prompt flow Python SDK - build high-quality LLM apps"
+# authors = [
+#   "Microsoft Corporation <aml-pt-eng@microsoft.com>"
+# ]
+
+# [tool.poetry.dependencies]
+# python = "<4.0,>=3.8"
+# promptflow-tracing = { path = "../promptflow-tracing", develop = true }
+# promptflow-core = { path = "../promptflow-core", develop = true }
+# promptflow-devkit = { path = "../promptflow-devkit", develop = true }
+# promptflow-azure = { path = "../promptflow-azure", develop = true }
+
 [tool.black]
 line-length = 120
 
