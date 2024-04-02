@@ -26,6 +26,8 @@ def llm_vision(
     max_tokens: int = None,
     presence_penalty: float = 0,
     frequency_penalty: float = 0,
+    seed: int = None,
+    detail: str = 'auto',
     **kwargs,
 ):
     if isinstance(connection, AzureOpenAIConnection):
@@ -39,6 +41,8 @@ def llm_vision(
             max_tokens=max_tokens,
             presence_penalty=presence_penalty,
             frequency_penalty=frequency_penalty,
+            seed=seed,
+            detail=detail,
             **kwargs
         )
     elif isinstance(connection, OpenAIConnection):
@@ -52,6 +56,8 @@ def llm_vision(
             max_tokens=max_tokens,
             presence_penalty=presence_penalty,
             frequency_penalty=frequency_penalty,
+            seed=seed,
+            detail=detail,
             **kwargs
         )
     else:
