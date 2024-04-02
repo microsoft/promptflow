@@ -96,3 +96,4 @@ def delete_trace(args: argparse.Namespace) -> None:
         collection=args.collection,
         started_before=args.started_before,
     )
+    print("Delete traces successfully.")
