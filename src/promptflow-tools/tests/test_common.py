@@ -154,6 +154,30 @@ class TestCommon:
             process_function_call(function_call)
         assert error_message in exc_info.value.message
         assert exc_info.value.error_codes == error_codes.split("/")
+    
+    @pytest.mark.parametrize(
+        "tool_choice, error_message, success",
+        [
+            ({"type": "function", "function": {"name": "my_function"}}, "", True),
+            ({"type1": "function", "function": "123"},
+             'tool_choice parameter {"type1": "function", "function": "123"} must contain "type" field', False),
+            ({"type": "function", "function": "123"}, 'function parameter "123" in tool_choice must be a dict', False),
+            (
+                {"type": "function", "function": {"name1": "get_current_weather"}},
+                'function parameter "{"name1": "get_current_weather"}" in tool_choice must contain "name" field',
+                False,
+            ),
+        ],
+    )
+    def test_chat_api_tool_choice(self, tool_choice, error_message, success):
+        if success:
+            process_tool_choice(tool_choice)
+        else:
+            error_codes = "UserError/ToolValidationError/ChatAPIInvalidTools"
+            with pytest.raises(ChatAPIInvalidTools) as exc_info:
+                process_tool_choice(tool_choice)
+            assert error_message in exc_info.value.message
+            assert exc_info.value.error_codes == error_codes.split("/")
 
     @pytest.mark.parametrize(
         "chat_str, images, image_detail, expected_result",
