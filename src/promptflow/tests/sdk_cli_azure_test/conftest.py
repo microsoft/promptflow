@@ -180,7 +180,7 @@ def remote_client(subscription_id: str, resource_group_name: str, workspace_name
             resource_group_name=resource_group_name,
             workspace_name=workspace_name,
         )
-    assert "promptflow-azure-cli" in ClientUserAgentUtil.get_user_agent()
+    assert "promptflow-azure-sdk" in ClientUserAgentUtil.get_user_agent()
     assert "promptflow-test" not in ClientUserAgentUtil.get_user_agent()
     yield client
 
