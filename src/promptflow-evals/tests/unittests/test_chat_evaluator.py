@@ -116,6 +116,6 @@ class TestChatEvaluator:
             "gpt_fluency": 3.0,
             "evaluation_per_turn": {
                 "gpt_groundedness": {"score": [1.0, 3.0], "reason": ["reason1", "reason2"]},
-                "gpt_fluency": {"score": [2.0, 4.0] },
+                "gpt_fluency": {"score": [2.0, 4.0]},
             }
         }
