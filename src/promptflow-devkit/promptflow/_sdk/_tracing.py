@@ -81,7 +81,7 @@ def _invoke_pf_svc() -> str:
         else:
             cmd_args = f"pf service start --port {port}"
     hint_stop_message = (
-        f"You can stop the Prompt flow Tracing Server with the following command:'\033[1m pf service stop\033[0m'.\n"
+        f"You can stop the Prompt flow Tracing Server with the following command:'\033[1mpf service stop\033[0m'.\n"
         f"Alternatively, if no requests are made within {PF_SERVICE_HOUR_TIMEOUT} "
         f"hours, it will automatically stop."
     )
