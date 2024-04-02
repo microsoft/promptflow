@@ -4,6 +4,9 @@
 
 import json
 import os
+import platform
+import subprocess
+import sys
 import typing
 import urllib.parse
 
@@ -14,7 +17,6 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-from promptflow._cli._pf.entry import entry
 from promptflow._constants import (
     OTEL_RESOURCE_SERVICE_NAME,
     SpanAttributeFieldName,
@@ -29,7 +31,12 @@ from promptflow._sdk._constants import (
     AzureMLWorkspaceTriad,
     ContextAttributeKey,
 )
-from promptflow._sdk._service.utils.utils import get_port_from_config, is_pfs_service_healthy, is_port_in_use
+from promptflow._sdk._service.utils.utils import (
+    get_port_from_config,
+    is_pfs_service_healthy,
+    is_port_in_use,
+    is_run_from_built_binary,
+)
 from promptflow._sdk._utils import extract_workspace_triad_from_trace_provider
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
@@ -61,9 +68,20 @@ def _inject_attrs_to_op_ctx(attrs: typing.Dict[str, str]) -> None:
 def _invoke_pf_svc() -> str:
     port = get_port_from_config(create_if_not_exists=True)
     port = str(port)
-    cmd_args = ["service", "start", "--port", port]
+    if is_run_from_built_binary():
+        interpreter_path = os.path.abspath(sys.executable)
+        pf_path = os.path.join(os.path.dirname(interpreter_path), "pf")
+        if platform.system() == "Windows":
+            cmd_args = [pf_path, "service", "start", "--port", port]
+        else:
+            cmd_args = f"{pf_path} service start --port {port}"
+    else:
+        if platform.system() == "Windows":
+            cmd_args = ["pf", "service", "start", "--port", port]
+        else:
+            cmd_args = f"pf service start --port {port}"
     hint_stop_message = (
-        f"You can stop the Prompt flow Tracing Server with the following command:'\033[1m pf service stop\033[0m'.\n"
+        f"You can stop the Prompt flow Tracing Server with the following command:'\033[1mpf service stop\033[0m'.\n"
         f"Alternatively, if no requests are made within {PF_SERVICE_HOUR_TIMEOUT} "
         f"hours, it will automatically stop."
     )
@@ -75,7 +93,9 @@ def _invoke_pf_svc() -> str:
             print(hint_stop_message)
             return port
     print("Starting Prompt flow Tracing Server...")
-    entry(cmd_args)
+    start_pfs = subprocess.Popen(cmd_args, shell=True)
+    # Wait for service to be started
+    start_pfs.wait()
     logger.debug("Prompt flow service is serving on port %s", port)
     print(hint_stop_message)
     return port
@@ -101,7 +121,7 @@ def _print_tracing_url_from_local(
     elif exp is not None:
         url += f"?#experiment={exp}"
     elif collection is not None:
-        url += f"?#session={collection}"
+        url += f"?#collection={collection}"
     print(f"You can view the traces from local: {url}")
 
 
@@ -121,6 +141,7 @@ def _print_tracing_url_from_azure_portal(
         # not consider experiment for now
         pass
     elif collection is not None:
+        # will update this once portal finalize the url
         query = '{"sessionId":"' + collection + '"}'
     # urllib.parse.quote to encode the query parameter
     if query is not None:

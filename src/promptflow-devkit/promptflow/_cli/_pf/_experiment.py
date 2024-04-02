@@ -168,6 +168,24 @@ def add_experiment_stop(subparsers):
     )
 
 
+def add_experiment_test(subparsers):
+    epilog = """
+    Examples:
+
+    # Test an experiment by yaml file:
+    pf experiment test --template path/to/my_experiment.exp.yaml
+    """
+    activate_action(
+        name="test",
+        description="Test an experiment.",
+        epilog=epilog,
+        add_params=[add_param_template_required, add_param_input] + base_params,
+        subparsers=subparsers,
+        help_message="Test an experiment.",
+        action_param_name="sub_action",
+    )
+
+
 def add_experiment_parser(subparsers):
     experiment_parser = subparsers.add_parser(
         "experiment",
@@ -180,6 +198,7 @@ def add_experiment_parser(subparsers):
     add_experiment_show(subparsers)
     add_experiment_start(subparsers)
     add_experiment_stop(subparsers)
+    add_experiment_test(subparsers)
     experiment_parser.set_defaults(action="experiment")
 
 
@@ -201,7 +220,7 @@ def dispatch_experiment_commands(args: argparse.Namespace):
     elif args.sub_action == "stop":
         stop_experiment(args)
     elif args.sub_action == "test":
-        pass
+        test_experiment(args)
     elif args.sub_action == "clone":
         pass
 
@@ -231,8 +250,13 @@ def show_experiment(args: argparse.Namespace):
 
 
 def test_experiment(args: argparse.Namespace):
-    result = _get_pf_client()._experiments._test(args.name)
-    print(json.dumps(result._to_dict(), indent=4))
+    if args.template:
+        logger.debug(f"Testing an anonymous experiment {args.template}.")
+        inputs = list_of_dict_to_dict(args.inputs)
+        result = _get_pf_client()._experiments.test(experiment=args.template, inputs=inputs)
+    else:
+        raise UserErrorException("To test an experiment, template must be specified.")
+    print(json.dumps(result, indent=4))
 
 
 def start_experiment(args: argparse.Namespace):
