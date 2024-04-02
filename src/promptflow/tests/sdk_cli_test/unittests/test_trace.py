@@ -162,7 +162,9 @@ class TestStartTrace:
             # Assert the provider without exporter is not the one with exporter
             assert original_proivder == new_provider
 
-    def test_setup_exporter_in_executor_with_preview_flag(self, mock_promptflow_service_invocation):
+    def test_setup_exporter_in_executor_with_preview_flag(
+        self, reset_tracer_provider, mock_promptflow_service_invocation
+    ):
         with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
             mock_func.return_value = True
 
