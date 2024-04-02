@@ -1,12 +1,12 @@
 import json
 import os
 import tempfile
-import time
 import uuid
 from concurrent import futures
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from time import sleep
+from unittest.mock import patch
 
 import pytest
 from mock import mock
@@ -26,6 +26,16 @@ EAGER_FLOW_ROOT = TEST_ROOT / "test_configs/eager_flows"
 
 
 yaml = YAML(typ="safe")
+
+
+@pytest.fixture
+def reset_tracer_provider():
+    from opentelemetry.util._once import Once
+
+    with patch("opentelemetry.trace._TRACER_PROVIDER_SET_ONCE", Once()), patch(
+        "opentelemetry.trace._TRACER_PROVIDER", None
+    ):
+        yield
 
 
 @pytest.mark.e2etest
@@ -202,7 +212,12 @@ class TestExperiment:
         exp = client._experiments.get(exp.name)
         assert exp.status == ExperimentStatus.TERMINATED
 
-    @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
+    @pytest.mark.usefixtures(
+        "use_secrets_config_file",
+        "recording_injection",
+        "setup_local_connection",
+        "reset_tracer_provider",
+    )
     def test_flow_test_with_experiment(self, monkeypatch):
         # set queue size to 1 to make collection faster
         monkeypatch.setenv("OTEL_BSP_MAX_EXPORT_BATCH_SIZE", "1")
@@ -246,14 +261,11 @@ class TestExperiment:
             # Assert eval metric exists
             assert (expected_output_path / "eval" / "flow.metrics.json").exists()
             # Assert session exists
-            # TODO: Task 2942400, avoid sleep/if and assert traces
-            time.sleep(10)  # TODO fix this
             line_runs = client.traces.list_line_runs(collection=session)
-            if len(line_runs) > 0:
-                assert len(line_runs) == 1
-                line_run = line_runs[0]
-                assert len(line_run.evaluations) == 1, "line run evaluation not exists!"
-                assert "eval_classification_accuracy" == list(line_run.evaluations.values())[0].display_name
+            assert len(line_runs) == 1
+            line_run = line_runs[0]
+            assert len(line_run.evaluations) == 1, "line run evaluation not exists!"
+            assert "eval_classification_accuracy" == list(line_run.evaluations.values())[0].name
             # Test with default data and custom path
             expected_output_path = Path(tempfile.gettempdir()) / ".promptflow/my_custom"
             result = client.flows.test(target_flow_path, experiment=template_path, output_path=expected_output_path)
