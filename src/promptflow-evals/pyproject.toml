@@ -94,10 +94,8 @@ name = "Contract forbidden modules"
 type = "forbidden"
 source_modules = ["promptflow.evals"]
 forbidden_modules = [
-  "promptflow.core",
   "promptflow._core",
   "promptflow._utils",
-  "promptflow.connections",
   "promptflow.contracts",
   "promptflow.executor",
   "promptflow.integrations",
@@ -108,7 +106,6 @@ forbidden_modules = [
   "promptflow._sdk",
   "promptflow.batch",
   "promptflow.client",
-  "promptflow.entities",
   "promptflow.operations",
   "promptflow.azure"
 ]
