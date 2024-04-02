@@ -39,6 +39,13 @@ class ChatRole:
                  working_dir: Optional[Path] = None,
                  connections: Optional[Dict[str, Any]] = None,
                  inputs_mapping: Optional[Dict[str, str]] = None,
+                 executor_client: Optional[Any] = None,
+                 environment_variables: Optional[dict] = None,
+                 log_path: Optional[Path] = None,
+                 output_dir: Optional[Path] = None,
+                 worker_count: Optional[int] = None,
+                 line_timeout_sec: Optional[int] = None,
+                 init_kwargs: Optional[Dict[str, Any]] = None,
                  **kwargs):
         self._role = role
         self._flow, self._flow_object = self._validate_flow(flow)
@@ -55,6 +62,13 @@ class ChatRole:
             self._connections = connections
             self._inputs_mapping = inputs_mapping
             self._flow_definition = Flow.from_yaml(self._flow, working_dir=self._working_dir)
+            self._executor_client = executor_client
+            self._environment_variables = environment_variables
+            self._log_path = log_path
+            self._output_dir = output_dir
+            self._worker_count = worker_count
+            self._line_timeout_sec = line_timeout_sec
+            self._init_kwargs = init_kwargs
 
         logger.info(f"Created chat role {self.role!r} with flow {self._flow.as_posix()!r}")
 
@@ -106,6 +120,34 @@ class ChatRole:
     def flow(self):
         """Flow definition of the chat role"""
         return self._flow_definition
+
+    @property
+    def environment_variables(self):
+        return self._environment_variables
+
+    @property
+    def log_path(self):
+        return self._log_path
+
+    @property
+    def output_dir(self):
+        return self._output_dir
+
+    @property
+    def worker_count(self):
+        return self._worker_count
+
+    @property
+    def line_timeout_sec(self):
+        return self._line_timeout_sec
+
+    @property
+    def executor_client(self):
+        return self._executor_client
+
+    @property
+    def init_kwargs(self):
+        return self._init_kwargs
 
     def _validate_flow(self, flow: Union[str, PathLike]):
         """Validate flow"""

@@ -78,6 +78,13 @@ class ChatGroupOrchestrator:
                 connections=chat_role.connections,
                 storage=self._storage,
                 language=chat_role.check_language_from_yaml(),
+                executor_client=chat_role.executor_client,
+                environment_variables=chat_role.environment_variables,
+                log_path=chat_role.log_path,
+                output_dir=chat_role.output_dir,
+                worker_count=chat_role.worker_count,
+                line_timeout_sec=chat_role.line_timeout_sec,
+                init_kwargs=chat_role.init_kwargs,
                 **kwargs
             )
             bulk_logger.info(f"Created executor proxy for role:{chat_role.role}. name: {chat_role.name}")

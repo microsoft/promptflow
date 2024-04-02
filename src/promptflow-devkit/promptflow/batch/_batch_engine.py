@@ -486,12 +486,7 @@ class BatchEngine:
 
         # if the batch runs with errors, we should update the errors to ex
         ex = None
-        if not is_timeout and self._executor_proxy.allow_aggregation:
-            # execute aggregation nodes
-            aggr_exec_result = await self._exec_aggregation(batch_inputs, line_results, run_id)
-            # use the execution result to update aggr_result to make sure we can get the aggr_result in _exec_in_task
-            self._update_aggr_result(aggr_result, aggr_exec_result)
-        elif is_timeout:
+        if is_timeout:
             ex = BatchRunTimeoutError(
                 message_format=(
                     "The batch run failed due to timeout [{batch_timeout_sec}s]. "
@@ -500,6 +495,11 @@ class BatchEngine:
                 batch_timeout_sec=self._batch_timeout_sec,
                 target=ErrorTarget.BATCH,
             )
+        elif self._executor_proxy.allow_aggregation:
+            # execute aggregation nodes
+            aggr_exec_result = await self._exec_aggregation(batch_inputs, line_results, run_id)
+            # use the execution result to update aggr_result to make sure we can get the aggr_result in _exec_in_task
+            self._update_aggr_result(aggr_result, aggr_exec_result)
         # summary some infos from line results and aggr results to batch result
         return BatchResult.create(self._start_time, datetime.utcnow(), line_results, aggr_result, exception=ex)
 
