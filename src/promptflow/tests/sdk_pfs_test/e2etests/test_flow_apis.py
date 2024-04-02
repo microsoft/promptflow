@@ -26,3 +26,12 @@ class TestFlowAPIs:
                 status_code=200,
             ).json
         assert len(response) >= 1
+
+    def test_eager_flow_test_with_yaml(self, pfs_op: PFSOperations) -> None:
+        with check_activity_end_telemetry(activity_name="pf.flows.test"):
+            response = pfs_op.test_flow(
+                flow_path=Path(f"{EAGER_FLOW_ROOT}/simple_with_yaml/").absolute().as_posix(),
+                request_body={"inputs": {"input_val": "val1"}},
+                status_code=200,
+            ).json
+        assert len(response) >= 1

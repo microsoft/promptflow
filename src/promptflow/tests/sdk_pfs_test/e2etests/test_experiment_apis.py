@@ -10,6 +10,7 @@ from ..utils import PFSOperations, check_activity_end_telemetry
 TEST_ROOT = Path(__file__).parent.parent.parent
 EXPERIMENT_ROOT = TEST_ROOT / "test_configs/experiments"
 FLOW_ROOT = TEST_ROOT / "test_configs/flows"
+EAGER_FLOWS_DIR = TEST_ROOT / "test_configs/eager_flows"
 
 
 @pytest.mark.usefixtures("use_secrets_config_file")
@@ -34,6 +35,25 @@ class TestExperimentAPIs:
             "url": "https://www.youtube.com/watch?v=kYqRtjDBci8"
         }
         assert "eval" in experiment
+
+    def test_experiment_eager_flow_with_yaml(self, pfs_op: PFSOperations) -> None:
+        with check_activity_end_telemetry(
+            expected_activities=[
+                {"activity_name": "pf.flows.test", "first_call": False},
+                {"activity_name": "pf.flows.test", "first_call": False},
+                {"activity_name": "pf.flows.test", "first_call": False},
+                {"activity_name": "pf.experiment.test"},
+            ]
+        ):
+            experiment = pfs_op.experiment_test(
+                body={"experiment_template": (EXPERIMENT_ROOT / "eager-flow-exp-template/flow.exp.yaml").as_posix()}
+            ).json
+        assert "main" in experiment and experiment["main"]["detail"]["flow_runs"][0]["inputs"] == {
+            "models": ["model"],
+            "text": "text",
+        }
+        assert "main2" in experiment
+        assert "main3" in experiment
 
     def test_experiment_test_with_override_input(self, pfs_op: PFSOperations) -> None:
         with check_activity_end_telemetry(
@@ -105,6 +125,77 @@ class TestExperimentAPIs:
         }
         assert "eval" in experiment
 
+    def test_experiment_eager_flow_with_override_input(self, pfs_op: PFSOperations) -> None:
+        with check_activity_end_telemetry(
+            expected_activities=[
+                {"activity_name": "pf.flows.test", "first_call": False},
+                {"activity_name": "pf.flows.test", "first_call": False},
+                {"activity_name": "pf.flows.test", "first_call": False},
+                {"activity_name": "pf.experiment.test"},
+            ]
+        ):
+            experiment = pfs_op.experiment_test(
+                body={
+                    "experiment_template": (
+                        EXPERIMENT_ROOT / "eager-flow-exp-template/basic_without_binding/flow.exp.yaml"
+                    ).as_posix(),
+                    "override_flow_path": (EAGER_FLOWS_DIR / "flow_with_dataclass_output" / "flow.dag.yaml").as_posix(),
+                    "inputs": {"models": ["model1"], "text": "text1"},
+                }
+            ).json
+        assert "main" in experiment and experiment["main"]["detail"]["flow_runs"][0]["inputs"] == {
+            "models": ["model1"],
+            "text": "text1",
+        }
+        assert "main2" in experiment
+        assert "main3" in experiment
+
+        with check_activity_end_telemetry(
+            expected_activities=[
+                {"activity_name": "pf.flows.test", "first_call": False},
+                {"activity_name": "pf.flows.test", "first_call": False},
+                {"activity_name": "pf.flows.test", "first_call": False},
+                {"activity_name": "pf.experiment.test"},
+            ]
+        ):
+            experiment = pfs_op.experiment_test(
+                body={
+                    "experiment_template": (EXPERIMENT_ROOT / "eager-flow-exp-template/flow.exp.yaml").as_posix(),
+                    "override_flow_path": (EAGER_FLOWS_DIR / "flow_with_dataclass_output" / "flow.dag.yaml").as_posix(),
+                    "inputs": {"models": ["model1"], "text": "text1"},
+                }
+            ).json
+        assert "main" in experiment and experiment["main"]["detail"]["flow_runs"][0]["inputs"] == {
+            "models": ["model1"],
+            "text": "text1",
+        }
+        assert "main2" in experiment
+        assert "main3" in experiment
+
+        with check_activity_end_telemetry(
+            expected_activities=[
+                {"activity_name": "pf.flows.test", "first_call": False},
+                {"activity_name": "pf.flows.test", "first_call": False},
+                {"activity_name": "pf.flows.test", "first_call": False},
+                {"activity_name": "pf.experiment.test"},
+            ]
+        ):
+            experiment = pfs_op.experiment_test(
+                body={
+                    "experiment_template": (
+                        EXPERIMENT_ROOT / "eager-flow-exp-template/bind_to_flow_input/flow.exp.yaml"
+                    ).as_posix(),
+                    "override_flow_path": (EAGER_FLOWS_DIR / "flow_with_dataclass_output" / "flow.dag.yaml").as_posix(),
+                    "inputs": {"models": ["model1"], "text": "text1"},
+                }
+            ).json
+        assert "main" in experiment and experiment["main"]["detail"]["flow_runs"][0]["inputs"] == {
+            "models": ["model1"],
+            "text": "text1",
+        }
+        assert "main2" in experiment
+        assert "main3" in experiment
+
     def test_experiment_test_with_binding_flow_input(self, pfs_op: PFSOperations) -> None:
         with check_activity_end_telemetry(
             expected_activities=[
@@ -142,3 +233,23 @@ class TestExperimentAPIs:
             ).json
         assert "eval" in experiment
         assert len(experiment) == 1
+
+    def test_experiment_eager_flow_with_skip_node(self, pfs_op: PFSOperations):
+        with check_activity_end_telemetry(
+            expected_activities=[
+                {"activity_name": "pf.flows.test", "first_call": False},
+                {"activity_name": "pf.flows.test", "first_call": False},
+                {"activity_name": "pf.experiment.test"},
+            ]
+        ):
+            experiment = pfs_op.experiment_test_with_skip(
+                body={
+                    "experiment_template": (EXPERIMENT_ROOT / "eager-flow-exp-template/flow.exp.yaml").as_posix(),
+                    "skip_flow": (EAGER_FLOWS_DIR / "flow_with_dataclass_output" / "flow.dag.yaml").as_posix(),
+                    "skip_flow_output": {"models": ["model"], "text": "text"},
+                    "skip_flow_run_id": "123",
+                }
+            ).json
+        assert "main2" in experiment
+        assert "main3" in experiment
+        assert len(experiment) == 2
