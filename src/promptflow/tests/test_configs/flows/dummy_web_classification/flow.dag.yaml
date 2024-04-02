@@ -1,0 +1,26 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+inputs:
+  url:
+    type: string
+    default: https://www.microsoft.com/en-us/d/xbox-wireless-controller-stellar-shift-special-edition/94fbjc7h0h6h
+outputs:
+  category:
+    type: string
+    reference: ${convert_to_dict.output.category}
+  evidence:
+    type: string
+    reference: ${convert_to_dict.output.evidence}
+nodes:
+- name: prepare_examples
+  type: python
+  source:
+    type: code
+    path: prepare_examples.py
+  inputs: {}
+- name: convert_to_dict
+  type: python
+  source:
+    type: code
+    path: convert_to_dict.py
+  inputs:
+    input_list: ${prepare_examples.output}

@@ -57,6 +57,7 @@ class PFSOperations:
     LINE_RUNS_PREFIX = "/v1.0/LineRuns"
     Flow_URL_PREFIX = "/v1.0/Flows"
     UI_URL_PREFIX = "/v1.0/ui"
+    EXPERIMENT_PREFIX = "/v1.0/Experiments"
 
     def __init__(self, client: FlaskClient):
         self._client = client
@@ -257,10 +258,18 @@ class PFSOperations:
         )
         return response
 
-    def get_flow(self, flow_path: str, status_code=None):
+    def get_flow_yaml(self, flow_path: str, status_code=None):
         flow_path = encrypt_flow_path(flow_path)
         query_string = {"flow": flow_path}
-        response = self._client.get(f"{self.Flow_URL_PREFIX}/get", query_string=query_string)
+        response = self._client.get(f"{self.UI_URL_PREFIX}/yaml", query_string=query_string)
+        if status_code:
+            assert status_code == response.status_code, response.text
+        return response
+
+    def get_experiment_yaml(self, flow_path: str, experiment_path: str, status_code=None):
+        flow_path = encrypt_flow_path(flow_path)
+        query_string = {"flow": flow_path, "experiment": experiment_path}
+        response = self._client.get(f"{self.UI_URL_PREFIX}/yaml", query_string=query_string)
         if status_code:
             assert status_code == response.status_code, response.text
         return response
@@ -276,7 +285,7 @@ class PFSOperations:
     def get_flow_ux_inputs(self, flow_path: str, status_code=None):
         flow_path = encrypt_flow_path(flow_path)
         query_string = {"flow": flow_path}
-        response = self._client.get(f"{self.Flow_URL_PREFIX}/ux_inputs", query_string=query_string)
+        response = self._client.get(f"{self.UI_URL_PREFIX}/ux_inputs", query_string=query_string)
         if status_code:
             assert status_code == response.status_code, response.text
         return response
@@ -295,4 +304,19 @@ class PFSOperations:
         response = self._client.get(f"{self.UI_URL_PREFIX}/media", query_string=query_string)
         if status_code:
             assert status_code == response.status_code, response.text
+        return response
+
+    # Experiment APIs
+    def experiment_test(self, body: dict):
+        response = self._client.post(
+            f"{self.EXPERIMENT_PREFIX}/test_with_flow_override",
+            json=body,
+        )
+        return response
+
+    def experiment_test_with_skip(self, body: dict):
+        response = self._client.post(
+            f"{self.EXPERIMENT_PREFIX}/skip_test",
+            json=body,
+        )
         return response
