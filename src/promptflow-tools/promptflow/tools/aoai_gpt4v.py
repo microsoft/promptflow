@@ -53,6 +53,7 @@ class AzureOpenAI(ToolProvider):
         presence_penalty: float = 0,
         frequency_penalty: float = 0,
         seed: int = None,
+        detail: str = 'auto',
         **kwargs,
     ) -> str:
         # keep_trailing_newline=True is to keep the last \n in the prompt to avoid converting "user:\t\n" to "user:".
@@ -62,7 +63,10 @@ class AzureOpenAI(ToolProvider):
         # convert list type into ChatInputList type
         converted_kwargs = convert_to_chat_list(kwargs)
         chat_str = render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, **converted_kwargs)
-        messages = parse_chat(chat_str, list(referenced_images))
+        messages = parse_chat(
+            chat_str=chat_str,
+            images=list(referenced_images),
+            image_detail=detail)
 
         headers = {
             "Content-Type": "application/json",

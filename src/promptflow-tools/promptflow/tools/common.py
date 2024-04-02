@@ -123,7 +123,7 @@ def try_parse_name_and_content(role_prompt):
     return None
 
 
-def parse_chat(chat_str, images: List = None, valid_roles: List[str] = None):
+def parse_chat(chat_str, images: List = None, valid_roles: List[str] = None, image_detail: str = 'auto'):
     # TODO: support role "tool" and its_properties.
     if not valid_roles:
         valid_roles = ["system", "user", "assistant", "function"]
@@ -156,10 +156,10 @@ def parse_chat(chat_str, images: List = None, valid_roles: List[str] = None):
                                 "or view sample 'How to use functions with chat models' in our gallery.")
                 # "name" is optional for other role types.
                 else:
-                    last_message["content"] = to_content_str_or_list(chunk, hash2images)
+                    last_message["content"] = to_content_str_or_list(chunk, hash2images, image_detail)
             else:
                 last_message["name"] = parsed_result[0]
-                last_message["content"] = to_content_str_or_list(parsed_result[1], hash2images)
+                last_message["content"] = to_content_str_or_list(parsed_result[1], hash2images, image_detail)
         else:
             if chunk.strip() == "":
                 continue
@@ -172,7 +172,7 @@ def parse_chat(chat_str, images: List = None, valid_roles: List[str] = None):
     return chat_list
 
 
-def to_content_str_or_list(chat_str: str, hash2images: Mapping):
+def to_content_str_or_list(chat_str: str, hash2images: Mapping, image_detail: str):
     chat_str = chat_str.strip()
     chunks = chat_str.split("\n")
     include_image = False
@@ -186,8 +186,11 @@ def to_content_str_or_list(chat_str: str, hash2images: Mapping):
             if not image_url:
                 image_bs64 = hash2images[chunk.strip()].to_base64()
                 image_mine_type = hash2images[chunk.strip()]._mime_type
-                image_url = {"url": f"data:{image_mine_type};base64,{image_bs64}"}
-            image_message["image_url"] = image_url
+                image_url = f"data:{image_mine_type};base64,{image_bs64}"
+            image_message["image_url"] = {
+                "url": image_url,
+                "detail": image_detail
+            }
             result.append(image_message)
             include_image = True
         elif chunk.strip() == "":

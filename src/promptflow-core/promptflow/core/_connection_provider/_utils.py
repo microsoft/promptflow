@@ -5,7 +5,7 @@ import os
 import re
 
 from promptflow._constants import PF_NO_INTERACTIVE_LOGIN
-from promptflow._sdk._constants import AZURE_WORKSPACE_REGEX_FORMAT
+from promptflow._constants import AZURE_WORKSPACE_REGEX_FORMAT
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 from promptflow.core._errors import MalformedConnectionProviderConfig, MissingRequiredPackage
 from promptflow.exceptions import ValidationException
