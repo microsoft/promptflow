@@ -172,6 +172,7 @@ class TraceOperations:
             'Valid delete queries: 1) specify `run`; 2) specify `collection` (not "default"); '
             "3) specify `collection` and `started_before` (ISO 8601)."
         )
+        self._logger.error(error_message)
         raise UserErrorException(error_message)
 
     @sqlite_retry
