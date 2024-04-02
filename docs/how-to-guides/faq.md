@@ -40,7 +40,7 @@ Reason for 'pip install promptflow>=1.8.0' or 'pf upgrade' directly not working:
     - `promptflow-devkit`: Development kit for promptflow.
     - `promptflow-azure`: Azure extra requires(`promptflow[azure]`) for promptflow to integrate with Azure.
 
-When upgrading promptflow from an existing version to promptflow 1.8.0, pip will remove the promptflow 1.7.0 after installing promptflow subpackages, 
+When upgrading promptflow from an existing version to promptflow 1.8.0, pip will remove the old promptflow after installing promptflow subpackages, 
 which caused subpackage files got wrongly removed.
 
 ![upgrade-wrongly-remove](../media/how-to-guides/upgrade-error.png)
