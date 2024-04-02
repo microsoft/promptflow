@@ -120,7 +120,7 @@ def _get_aml_default_datastore(
 
 
 def _get_datastore_credential(datastore: Datastore, operations: DatastoreOperations):
-    # Reference the similar logic in azure.ai.ml._artifact._artifact_utilities
+    # Reference the logic in azure.ai.ml._artifact._artifact_utilities
     # https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/ml/azure-ai-ml/azure/ai/ml/_artifacts/_artifact_utilities.py#L103
     credential = datastore.credentials
     if isinstance(credential, AccountKeyConfiguration):
