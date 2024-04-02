@@ -101,7 +101,7 @@ def _print_tracing_url_from_local(
     elif exp is not None:
         url += f"?#experiment={exp}"
     elif collection is not None:
-        url += f"?#session={collection}"
+        url += f"?#collection={collection}"
     print(f"You can view the traces from local: {url}")
 
 
@@ -121,6 +121,7 @@ def _print_tracing_url_from_azure_portal(
         # not consider experiment for now
         pass
     elif collection is not None:
+        # will update this once portal finalize the url
         query = '{"sessionId":"' + collection + '"}'
     # urllib.parse.quote to encode the query parameter
     if query is not None:

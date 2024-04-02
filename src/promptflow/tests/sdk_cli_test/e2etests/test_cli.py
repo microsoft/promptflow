@@ -2022,6 +2022,20 @@ class TestCli:
                 path = Path(tmpdir) / node_name / filename
                 assert path.is_file()
 
+    @pytest.mark.usefixtures("setup_experiment_table", "recording_injection")
+    def test_experiment_direct_test(self, monkeypatch, capfd, local_client, tmpdir):
+        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+            mock_func.return_value = True
+            run_pf_command(
+                "experiment",
+                "test",
+                "--template",
+                f"{EXPERIMENT_DIR}/basic-no-script-template/basic.exp.yaml",
+            )
+            out, _ = capfd.readouterr()
+            assert "main" in out
+            assert "eval" in out
+
     def test_run_list(self, local_client):
         from promptflow._sdk.entities import Run
 
