@@ -461,7 +461,7 @@ class RetrieveToolFuncResultError(UserErrorException):
 
     def __init__(self, message):
         msg = (
-            f"Unable to retrieve tool func result due to '{message}'. \nPlease contact the tool author/support team "
+            f"Unable to retrieve result due to '{message}'. \nPlease contact the tool author/support team "
             f"for troubleshooting assistance."
         )
         super().__init__(msg, target=ErrorTarget.FUNCTION_PATH)
