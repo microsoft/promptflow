@@ -261,6 +261,12 @@ class TestExperiment:
             # Assert eval metric exists
             assert (expected_output_path / "eval" / "flow.metrics.json").exists()
             # Assert session exists
+            # traces need some time to be collected and persisted in the database
+            for _ in range(10):
+                line_runs = client.traces.list_line_runs(collection=session)
+                if len(line_runs) > 0:
+                    break
+                sleep(5)
             line_runs = client.traces.list_line_runs(collection=session)
             assert len(line_runs) == 1
             line_run = line_runs[0]
