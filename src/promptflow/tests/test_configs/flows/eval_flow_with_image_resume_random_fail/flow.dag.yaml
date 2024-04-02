@@ -1,0 +1,25 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+inputs:
+  input_image:
+    type: image
+    default: https://developer.microsoft.com/_devcom/images/logo-ms-social.png
+outputs:
+  output_image:
+    type: string
+    reference: ${flip_image.output}
+nodes:
+- name: flip_image
+  type: python
+  source:
+    type: code
+    path: flip_image.py
+  inputs:
+    input_image: ${inputs.input_image}
+- name: count_image
+  type: python
+  source:
+    type: code
+    path: count_image.py
+  inputs:
+    images: ${flip_image.output}
+  aggregation: true
