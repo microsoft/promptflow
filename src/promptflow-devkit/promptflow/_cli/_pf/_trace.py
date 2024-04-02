@@ -79,7 +79,7 @@ pf trace delete --collection <collection> --started-before '2024-03-19T15:17:23.
 def delete_trace(args: argparse.Namespace) -> None:
     skip_confirm = args.yes
     client = _get_pf_client()
-    if skip_confirm:
+    if not skip_confirm:
         num_traces = client.traces.delete(
             run=args.run,
             collection=args.collection,
@@ -87,7 +87,7 @@ def delete_trace(args: argparse.Namespace) -> None:
             dry_run=True,
         )
         prompt_msg = f"This delete operation will delete {num_traces} traces permanently, " "are you sure to continue?"
-        if not confirm(prompt_msg):
+        if not confirm(prompt_msg, skip_confirm=False):
             print("The delete operation is canceled.")
             return
 
