@@ -11,7 +11,9 @@ from flask import Response, current_app, make_response, render_template, send_fr
 from ruamel.yaml import YAMLError
 from werkzeug.utils import safe_join
 
+from promptflow._proxy import ProxyFactory
 from promptflow._sdk._constants import DEFAULT_ENCODING, PROMPT_FLOW_DIR_NAME, UX_INPUTS_JSON
+from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._service import Namespace, Resource, fields
 from promptflow._sdk._service.utils.utils import decrypt_flow_path
 from promptflow._sdk._utils import json_load, read_write_by_user
@@ -169,8 +171,10 @@ class YamlEdit(Resource):
         flow_path_dir, flow_path_file = resolve_flow_path(flow_path)
         flow_info = load_yaml(flow_path_dir / flow_path_file)
         if is_flex_flow(file_path=flow_path_dir / flow_path_file):
-            # call api provided by han to get flow input
-            flow_input = {}
+            flow = load_flow(flow)
+            inspector_proxy = ProxyFactory().create_inspector_proxy(language=flow.language)
+            entry_meta = inspector_proxy.get_entry_meta(entry=flow.entry, working_dir=flow.code)
+            flow_input = {"inputs": entry_meta.get("inputs", {})}
             flow_info.update(flow_input)
         flow_info = dump_yaml(flow_info)
         return Response(flow_info, mimetype="text/yaml")
