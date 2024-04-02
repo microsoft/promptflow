@@ -41,6 +41,7 @@ jobs:
           pip install -e ${{ github.workspace }}/src/promptflow-core
           pip install -e ${{ github.workspace }}/src/promptflow-devkit
           pip install -e ${{ github.workspace }}/src/promptflow-azure
+          pip install -e ${{ github.workspace }}/src/promptflow-evals
           pip freeze
 
       - name: Build doc with reference doc
@@ -72,6 +73,7 @@ jobs:
           pip install -e ${{ github.workspace }}/src/promptflow-core
           pip install -e ${{ github.workspace }}/src/promptflow-devkit
           pip install -e ${{ github.workspace }}/src/promptflow-azure
+          pip install -e ${{ github.workspace }}/src/promptflow-evals
           pip freeze
 
       - name: Build LinkCheck
