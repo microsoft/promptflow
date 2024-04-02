@@ -227,7 +227,7 @@ class TestTelemetry:
         def assert_ua(*args, **kwargs):
             ua = pydash.get(kwargs, "extra.custom_dimensions.user_agent", None)
             ua_dict = parse_ua_to_dict(ua)
-            assert ua_dict.keys() == {"promptflow-sdk"}
+            assert "promptflow-sdk" in ua_dict.keys()
 
         logger = MagicMock()
         logger.info = MagicMock()
@@ -259,7 +259,8 @@ class TestTelemetry:
             )
             user_agent = ClientUserAgentUtil.get_user_agent()
             ua_dict = parse_ua_to_dict(user_agent)
-            assert ua_dict.keys() == {"promptflow-azure-sdk"}
+            # multiple sdk agent since shared Operation Context
+            assert ua_dict.keys() == {"promptflow-azure-sdk", "promptflow-sdk"}
 
             # Call log_activity
             with log_activity(logger, "test_activity", activity_type=ActivityType.PUBLICAPI):
@@ -275,7 +276,8 @@ class TestTelemetry:
         )
         user_agent = ClientUserAgentUtil.get_user_agent()
         ua_dict = parse_ua_to_dict(user_agent)
-        assert ua_dict.keys() == {"promptflow-azure-sdk", "a"}
+        # multiple sdk agent since shared Operation Context
+        assert ua_dict.keys() == {"promptflow-sdk", "promptflow-azure-sdk", "a"}
 
         context = OperationContext().get_instance()
         context.user_agent = ""
