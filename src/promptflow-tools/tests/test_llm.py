@@ -14,7 +14,8 @@ class TestChat:
             deployment_name="gpt-35-turbo-instruct",
             input="The food was delicious and the waiter",
             user_input="Fill in more details about trend 2.",
-            chat_history=chat_history)
+            chat_history=chat_history,
+            max_tokens=256)
         print(f"debug before: {type(result)}\n {result}")
         result = result.lower()
         print(f"debug after: {type(result)}\n {result}")
