@@ -28,7 +28,7 @@ Before upgrading to promptflow version 1.8.0 or later, it's important to first u
 This ensures a clean installation of the new version without any conflicts. 
 ```bash
 pip uninstall -y promptflow promptflow-core promptflow-devkit promptflow-azure # uninstall promptflow and its sub-packages
-pip install promptflow>=1.8.0 # install promptflow version 1.8.0 or later
+pip install 'promptflow>=1.8.0' # install promptflow version 1.8.0 or later
 ```
 
 Reason for 'pip install promptflow>=1.8.0' or 'pf upgrade' directly not working:
