@@ -14,6 +14,7 @@ from promptflow._constants import (
     ConnectionAuthMode,
     ConnectionType,
     CustomStrongTypeConnectionConfigs,
+    AZURE_WORKSPACE_REGEX_FORMAT
 )
 
 LOGGER_NAME = "promptflow"
@@ -120,10 +121,7 @@ SCRUBBED_VALUE_USER_INPUT = "<user-input>"
 WORKSPACE_LINKED_DATASTORE_NAME = "workspaceblobstore"
 LINE_NUMBER = "line_number"
 AZUREML_PF_RUN_PROPERTIES_LINEAGE = "azureml.promptflow.input_run_id"
-AZURE_WORKSPACE_REGEX_FORMAT = (
-    "^azureml:[/]{1,2}subscriptions/([^/]+)/resource(groups|Groups)/([^/]+)"
-    "(/providers/Microsoft.MachineLearningServices)?/workspaces/([^/]+)$"
-)
+AZURE_WORKSPACE_REGEX_FORMAT = AZURE_WORKSPACE_REGEX_FORMAT
 DEFAULT_ENCODING = "utf-8"
 LOCAL_STORAGE_BATCH_SIZE = 1
 LOCAL_SERVICE_PORT = 5000

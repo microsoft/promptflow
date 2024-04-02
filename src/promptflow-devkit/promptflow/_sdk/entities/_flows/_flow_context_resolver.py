@@ -10,7 +10,7 @@ from typing import Dict, Union
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import NODES
 from promptflow._sdk.entities import FlowContext
-from promptflow._sdk.entities._flow import Flow
+from promptflow._sdk.entities._flows import Flow
 from promptflow._utils.flow_utils import load_flow_dag, parse_variant
 from promptflow._utils.yaml_utils import dump_yaml
 from promptflow.contracts.flow import Node
