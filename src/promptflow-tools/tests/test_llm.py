@@ -15,8 +15,10 @@ class TestChat:
             input="The food was delicious and the waiter",
             user_input="Fill in more details about trend 2.",
             chat_history=chat_history)
-        print(result)
-        assert "trend 2" in result.lower()
+        print(f"debug before: {type(result)}\n {result}")
+        result = result.lower()
+        print(f"debug after: {type(result)}\n {result}")
+        assert "trend 2" in result
 
     # def test_aoai_with_image(self, azure_open_ai_connection, example_prompt_template_with_image, example_image):
     #     result = llm(
