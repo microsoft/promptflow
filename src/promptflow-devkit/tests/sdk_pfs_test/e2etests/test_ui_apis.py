@@ -8,11 +8,12 @@ from io import BytesIO
 from pathlib import Path
 
 import pytest
+from _constants import PROMPTFLOW_ROOT
 from PIL import Image
 
 from ..utils import PFSOperations, check_activity_end_telemetry
 
-TEST_ROOT = Path(__file__).parent.parent.parent
+TEST_ROOT = PROMPTFLOW_ROOT / "tests"
 FLOW_PATH = "./tests/test_configs/flows/print_env_var"
 IMAGE_PATH = "./tests/test_configs/datas/logo.jpg"
 FLOW_WITH_IMAGE_PATH = "./tests/test_configs/flows/chat_flow_with_image"

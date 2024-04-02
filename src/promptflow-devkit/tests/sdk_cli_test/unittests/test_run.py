@@ -22,7 +22,6 @@ from promptflow._utils.context_utils import inject_sys_path
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.exceptions import UserErrorException, ValidationException
 
-PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 FLOWS_DIR = Path("./tests/test_configs/flows")
 EAGER_FLOWS_DIR = Path("./tests/test_configs/eager_flows")
 RUNS_DIR = Path("./tests/test_configs/runs")

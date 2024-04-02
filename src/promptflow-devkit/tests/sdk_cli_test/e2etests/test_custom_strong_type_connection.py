@@ -1,8 +1,8 @@
 import uuid
-from pathlib import Path
 
 import pydash
 import pytest
+from _constants import PROMPTFLOW_ROOT
 
 from promptflow._sdk._constants import SCRUBBED_VALUE, CustomStrongTypeConnectionConfigs
 from promptflow._sdk._pf_client import PFClient
@@ -17,7 +17,8 @@ class MyCustomConnection(CustomStrongTypeConnection):
 
 _client = PFClient()
 
-TEST_ROOT = Path(__file__).parent.parent.parent
+
+TEST_ROOT = PROMPTFLOW_ROOT / "tests"
 CONNECTION_ROOT = TEST_ROOT / "test_configs/connections"
 
 

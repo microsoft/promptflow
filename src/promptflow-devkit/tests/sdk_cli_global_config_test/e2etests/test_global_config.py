@@ -1,14 +1,13 @@
-from pathlib import Path
-
 import mock
 import pytest
+from _constants import PROMPTFLOW_ROOT
 
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk.entities._flows._flow_context_resolver import FlowContextResolver
 from promptflow.core._connection_provider._workspace_connection_provider import WorkspaceConnectionProvider
 
-FLOWS_DIR = Path(__file__).parent.parent.parent / "test_configs" / "flows"
-DATAS_DIR = Path(__file__).parent.parent.parent / "test_configs" / "datas"
+FLOWS_DIR = PROMPTFLOW_ROOT / "tests" / "test_configs" / "flows"
+DATAS_DIR = PROMPTFLOW_ROOT / "tests" / "test_configs" / "datas"
 
 
 @pytest.mark.usefixtures("global_config")

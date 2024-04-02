@@ -1,9 +1,9 @@
 import os
 import uuid
-from pathlib import Path
 
 import pydash
 import pytest
+from _constants import PROMPTFLOW_ROOT
 from mock import mock
 
 from promptflow._sdk._constants import SCRUBBED_VALUE
@@ -11,10 +11,9 @@ from promptflow._sdk._errors import ConnectionNameNotSetError
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk.entities import AzureOpenAIConnection, CustomConnection, OpenAIConnection
 
-_client = PFClient()
-
-TEST_ROOT = Path(__file__).parent.parent.parent
+TEST_ROOT = PROMPTFLOW_ROOT / "tests"
 CONNECTION_ROOT = TEST_ROOT / "test_configs/connections"
+_client = PFClient()
 
 
 @pytest.mark.cli_test

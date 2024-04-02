@@ -1,15 +1,12 @@
-from pathlib import Path
-
 import pytest
+from _constants import PROMPTFLOW_ROOT
 from pytest_mock import MockFixture
 
 from promptflow._sdk._errors import ChatGroupError, ChatRoleError
 from promptflow._sdk.entities._chat_group._chat_group import ChatGroup
 from promptflow._sdk.entities._chat_group._chat_role import ChatRole
 
-PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
-
-TEST_ROOT = Path(__file__).parent.parent.parent
+TEST_ROOT = PROMPTFLOW_ROOT / "tests"
 FLOWS_DIR = TEST_ROOT / "test_configs/flows"
 
 

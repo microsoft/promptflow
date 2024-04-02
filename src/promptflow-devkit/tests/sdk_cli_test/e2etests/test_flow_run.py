@@ -8,6 +8,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+from _constants import PROMPTFLOW_ROOT
 from marshmallow import ValidationError
 from pytest_mock import MockerFixture
 
@@ -39,11 +40,9 @@ from promptflow._utils.yaml_utils import load_yaml
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.exceptions import UserErrorException
 
-PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
-
-TEST_ROOT = Path(__file__).parent.parent.parent
+TEST_ROOT = PROMPTFLOW_ROOT / "tests"
 MODEL_ROOT = TEST_ROOT / "test_configs/e2e_samples"
-CONNECTION_FILE = (PROMOTFLOW_ROOT / "connections.json").resolve().absolute().as_posix()
+CONNECTION_FILE = (PROMPTFLOW_ROOT / "connections.json").resolve().absolute().as_posix()
 FLOWS_DIR = "./tests/test_configs/flows"
 EAGER_FLOWS_DIR = "./tests/test_configs/eager_flows"
 RUNS_DIR = "./tests/test_configs/runs"

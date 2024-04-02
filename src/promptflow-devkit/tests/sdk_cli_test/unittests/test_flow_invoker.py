@@ -1,17 +1,16 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from pathlib import Path
 
 import pytest
+from _constants import PROMPTFLOW_ROOT
 
 from promptflow._sdk._load_functions import load_flow
 from promptflow.core._serving._errors import UnexpectedConnectionProviderReturn, UnsupportedConnectionProvider
 from promptflow.core._serving.flow_invoker import FlowInvoker
 from promptflow.exceptions import UserErrorException
 
-PROMOTFLOW_ROOT = Path(__file__).parent.parent.parent.parent
-FLOWS_DIR = Path(PROMOTFLOW_ROOT / "tests/test_configs/flows")
+FLOWS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/flows"
 EXAMPLE_FLOW_DIR = FLOWS_DIR / "web_classification"
 EXAMPLE_FLOW_FILE = EXAMPLE_FLOW_DIR / "flow.dag.yaml"
 EXAMPLE_FLOW = load_flow(EXAMPLE_FLOW_FILE)

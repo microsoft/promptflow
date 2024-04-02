@@ -7,13 +7,12 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-from _constants import CONNECTION_FILE, ENV_FILE, PROMOTFLOW_ROOT
+from _constants import CONNECTION_FILE, ENV_FILE, PROMPTFLOW_ROOT
 from _pytest.monkeypatch import MonkeyPatch
 from dotenv import load_dotenv
 from filelock import FileLock
 from pytest_mock import MockerFixture
 
-from promptflow._cli._utils import AzureMLWorkspaceTriad
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow._sdk.entities._connection import AzureOpenAIConnection
@@ -22,9 +21,9 @@ from promptflow._utils.context_utils import _change_working_dir
 load_dotenv()
 
 
-#@pytest.fixture(scope="session", autouse=True)
-#def modify_work_directory():
-#    os.chdir(Path(__file__).parent.parent.absolute())
+@pytest.fixture(scope="session", autouse=True)
+def modify_work_directory():
+    os.chdir(PROMPTFLOW_ROOT)
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -77,7 +76,7 @@ def temp_output_dir() -> str:
 
 @pytest.fixture
 def prepare_symbolic_flow() -> str:
-    flows_dir = PROMOTFLOW_ROOT / "tests" / "test_configs" / "flows"
+    flows_dir = PROMPTFLOW_ROOT / "tests" / "test_configs" / "flows"
     target_folder = flows_dir / "web_classification_with_symbolic"
     source_folder = flows_dir / "web_classification"
 

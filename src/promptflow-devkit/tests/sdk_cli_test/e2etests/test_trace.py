@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+from _constants import PROMPTFLOW_ROOT
 from mock import mock
 
 from promptflow._constants import (
@@ -18,7 +19,7 @@ from promptflow._sdk._constants import TRACE_DEFAULT_COLLECTION
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk.entities._trace import Span
 
-TEST_ROOT = Path(__file__).parent.parent.parent
+TEST_ROOT = PROMPTFLOW_ROOT / "tests"
 FLOWS_DIR = (TEST_ROOT / "test_configs/flows").resolve().absolute().as_posix()
 
 

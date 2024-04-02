@@ -9,6 +9,7 @@ from pathlib import Path
 from time import sleep
 
 import pytest
+from _constants import PROMPTFLOW_ROOT
 from mock import mock
 from ruamel.yaml import YAML
 
@@ -19,7 +20,7 @@ from promptflow._sdk._orchestrator.experiment_orchestrator import ExperimentOrch
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk.entities._experiment import CommandNode, Experiment, ExperimentTemplate, FlowNode
 
-TEST_ROOT = Path(__file__).parent.parent.parent
+TEST_ROOT = PROMPTFLOW_ROOT / "tests"
 EXP_ROOT = TEST_ROOT / "test_configs/experiments"
 FLOW_ROOT = TEST_ROOT / "test_configs/flows"
 EAGER_FLOW_ROOT = TEST_ROOT / "test_configs/eager_flows"

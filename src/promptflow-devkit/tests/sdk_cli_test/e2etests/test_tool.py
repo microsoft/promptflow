@@ -5,6 +5,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+from _constants import PROMPTFLOW_ROOT
 
 from promptflow._core.tool import ToolProvider, tool
 from promptflow._core.tool_meta_generator import ToolValidationError, _serialize_tool
@@ -12,8 +13,7 @@ from promptflow._sdk._pf_client import PFClient
 from promptflow.entities import DynamicList, InputSetting
 from promptflow.exceptions import UserErrorException
 
-PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
-TEST_ROOT = Path(__file__).parent.parent.parent
+TEST_ROOT = PROMPTFLOW_ROOT / "tests"
 TOOL_ROOT = TEST_ROOT / "test_configs/tools"
 
 _client = PFClient()

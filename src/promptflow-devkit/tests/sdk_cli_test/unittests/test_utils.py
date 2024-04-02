@@ -20,6 +20,7 @@ from unittest.mock import patch
 import mock
 import pandas as pd
 import pytest
+from _constants import PROMPTFLOW_ROOT
 from requests import Response
 
 from promptflow._cli._params import AppendToDictAction
@@ -51,7 +52,7 @@ from promptflow.core._utils import (
     resolve_connections_environment_variable_reference,
 )
 
-TEST_ROOT = Path(__file__).parent.parent.parent
+TEST_ROOT = PROMPTFLOW_ROOT / "tests"
 CONNECTION_ROOT = TEST_ROOT / "test_configs/connections"
 
 

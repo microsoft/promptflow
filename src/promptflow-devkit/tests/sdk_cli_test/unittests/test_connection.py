@@ -2,11 +2,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import os
-from pathlib import Path
 from unittest.mock import patch
 
 import mock
 import pytest
+from _constants import PROMPTFLOW_ROOT
 
 from promptflow._cli._pf._connection import validate_and_interactive_get_secrets
 from promptflow._sdk._constants import SCRUBBED_VALUE, ConnectionAuthMode, CustomStrongTypeConnectionConfigs
@@ -30,7 +30,7 @@ from promptflow._utils.yaml_utils import load_yaml
 from promptflow.core._connection import RequiredEnvironmentVariablesNotSetError
 from promptflow.exceptions import UserErrorException
 
-TEST_ROOT = Path(__file__).parent.parent.parent
+TEST_ROOT = PROMPTFLOW_ROOT / "tests"
 CONNECTION_ROOT = TEST_ROOT / "test_configs/connections"
 
 

@@ -1,15 +1,15 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from pathlib import Path
 
 import pytest
+from _constants import PROMPTFLOW_ROOT
 
 from promptflow._sdk._configuration import Configuration, InvalidConfigValue
 from promptflow._sdk._constants import FLOW_DIRECTORY_MACRO_IN_CONFIG
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 
-CONFIG_DATA_ROOT = Path(__file__).parent.parent.parent / "test_configs" / "configs"
+CONFIG_DATA_ROOT = PROMPTFLOW_ROOT / "tests" / "test_configs" / "configs"
 
 
 @pytest.fixture

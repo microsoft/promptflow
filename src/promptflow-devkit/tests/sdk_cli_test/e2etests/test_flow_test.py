@@ -7,6 +7,7 @@ from types import GeneratorType
 
 import papermill
 import pytest
+from _constants import PROMPTFLOW_ROOT
 from marshmallow import ValidationError
 
 from promptflow._sdk._constants import LOGGER_NAME
@@ -14,11 +15,9 @@ from promptflow._sdk._pf_client import PFClient
 from promptflow.core._utils import init_executable
 from promptflow.exceptions import UserErrorException
 
-PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
-
-TEST_ROOT = Path(__file__).parent.parent.parent
+TEST_ROOT = PROMPTFLOW_ROOT / "tests"
 MODEL_ROOT = TEST_ROOT / "test_configs/e2e_samples"
-CONNECTION_FILE = (PROMOTFLOW_ROOT / "connections.json").resolve().absolute().as_posix()
+CONNECTION_FILE = (PROMPTFLOW_ROOT / "connections.json").resolve().absolute().as_posix()
 FLOWS_DIR = (TEST_ROOT / "test_configs/flows").resolve().absolute().as_posix()
 EAGER_FLOWS_DIR = (TEST_ROOT / "test_configs/eager_flows").resolve().absolute().as_posix()
 FLOW_RESULT_KEYS = ["category", "evidence"]
