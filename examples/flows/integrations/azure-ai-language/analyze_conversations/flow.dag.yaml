@@ -2,7 +2,7 @@ $schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 environment:
   python_requirements_txt: requirements.txt
 inputs:
-  meeting_path:
+  transcript_path:
     type: string
     default: ./transcript.txt
 outputs:
@@ -31,7 +31,7 @@ nodes:
     type: code
     path: read_file.py
   inputs:
-    file_path: ${inputs.meeting_path}
+    file_path: ${inputs.transcript_path}
 - name: Language_Detection
   type: python
   source:

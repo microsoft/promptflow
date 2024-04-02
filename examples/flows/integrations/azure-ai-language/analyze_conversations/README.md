@@ -1,6 +1,6 @@
-# Analyze Meetings
+# Analyze Conversations
 
-A flow that analyzes meetings with various language-based Machine Learning models. 
+A flow that analyzes conversations with various language-based Machine Learning models. 
 
 This sample flow utilizes Azure AI Language's pre-built and optimized language models to perform various analyses on conversations. It performs:
 - [Language Detection](https://learn.microsoft.com/en-us/azure/ai-services/language-service/language-detection/overview)
@@ -62,14 +62,14 @@ If using Azure AI Studio, you will need to add two additional custom keys to the
 # Test with default input values in flow.dag.yaml:
 pf flow test --flow .
 # Test with specific input:
-pf flow test --flow . --inputs meeting_path=<path_to_txt_file>
+pf flow test --flow . --inputs transcript_path=<path_to_txt_file>
 ```
 
 ### Azure AI/ML Studio:
 Run flow.
 
 ## Flow Description
-The flow first reads in a text file corresponding to a meeting transcript and detects its language. Key phrases are extracted from the transcript, and PII information is redacted. From the redacted transcript information, the flow generates various summaries. These summaries include a general narrative summary, a recap summary, a summary of follow-up tasks, and chapter titles.
+The flow first reads in a text file corresponding to a conversation transcript and detects its language. Key phrases are extracted from the transcript, and PII information is redacted. From the redacted transcript information, the flow generates various summaries. These summaries include a general narrative summary, a recap summary, a summary of follow-up tasks, and chapter titles.
 
 This flow showcases a variety of analyses to perform on conversations. Consider extending this flow to generate and extract valuable information from your own meetings/transcripts, such as creating meeting notes, identifying follow-up tasks, etc.
 
