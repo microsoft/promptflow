@@ -457,10 +457,7 @@ class LineRun:
         for evaluation in evaluations:
             if self.evaluations is None:
                 self.evaluations = dict()
-            # # TODO: 3050320 - make evaluation name equal to batch run name
-            # #       need to update this once UX update their logic
-            # eval_name = evaluation.run if evaluation.run is not None else evaluation.name
-            eval_name = evaluation.name
+            eval_name = evaluation.run if evaluation.run is not None else evaluation.name
             self.evaluations[eval_name] = evaluation
 
     def _to_rest_object(self) -> typing.Dict:

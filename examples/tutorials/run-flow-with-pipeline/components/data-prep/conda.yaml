@@ -1,0 +1,15 @@
+name: my-env
+channels:
+  - conda-forge
+dependencies:
+  - python=3.9
+  - pip
+  - pip:
+      - mlflow
+      - azureml-core
+      - azure-ai-ml>=1.12.0
+      - azureml-dataset-runtime[pandas,fuse]
+      - azureml-telemetry
+      - mltable>=1.2.0
+      - pandas
+      - pillow

@@ -22,7 +22,9 @@ from promptflow._cli._pf._config import add_config_parser, dispatch_config_comma
 from promptflow._cli._pf._connection import add_connection_parser, dispatch_connection_commands  # noqa: E402
 from promptflow._cli._pf._flow import add_flow_parser, dispatch_flow_commands  # noqa: E402
 from promptflow._cli._pf._run import add_run_parser, dispatch_run_commands  # noqa: E402
+from promptflow._cli._pf._service import add_service_parser, dispatch_service_commands  # noqa: E402
 from promptflow._cli._pf._tool import add_tool_parser, dispatch_tool_commands  # noqa: E402
+from promptflow._cli._pf._trace import add_trace_parser, dispatch_trace_cmds  # noqa: E402
 from promptflow._cli._pf._upgrade import add_upgrade_parser, upgrade_version  # noqa: E402
 from promptflow._cli._pf.help import show_privacy_statement, show_welcome_message  # noqa: E402
 from promptflow._cli._user_agent import USER_AGENT  # noqa: E402
@@ -63,6 +65,10 @@ def run_command(args):
             upgrade_version(args)
         elif args.action == "experiment":
             dispatch_experiment_commands(args)
+        elif args.action == "service":
+            dispatch_service_commands(args)
+        elif args.action == "trace":
+            dispatch_trace_cmds(args)
     except KeyboardInterrupt as ex:
         logger.debug("Keyboard interrupt is captured.")
         raise ex
@@ -100,6 +106,8 @@ def get_parser_args(argv):
     add_run_parser(subparsers)
     add_config_parser(subparsers)
     add_tool_parser(subparsers)
+    add_service_parser(subparsers)
+    add_trace_parser(subparsers)
 
     if Configuration.get_instance().is_internal_features_enabled():
         add_experiment_parser(subparsers)
