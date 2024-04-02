@@ -189,7 +189,9 @@
     "pywin",
     "STARTF",
     "mltable",
-    "setenv"
+    "setenv",
+    "raisvc",
+    "evals"
   ],
   "flagWords": [
     "Prompt Flow"

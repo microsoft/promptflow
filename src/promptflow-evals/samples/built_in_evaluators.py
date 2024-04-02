@@ -17,8 +17,8 @@ deployment_name = "gpt-4"
 
 project_scope = {
     "subscription_id": "2d385bf4-0756-4a76-aa95-28bf9ed3b625",
-    "resource_group_name": "rg-ninhuai",
-    "project_name": "ninhu-0410",
+    "resource_group_name": "rg-name",
+    "project_name": "project-name",
 }
 
 
