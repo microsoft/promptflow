@@ -79,7 +79,7 @@ def load_flow(
         An exception is raised if the file does not exist.
     :type source: Union[PathLike, str]
     :return: A Flow object
-    :rtype: ~promptflow._sdk.entities._flow.Flow
+    :rtype: ~promptflow._sdk.entities._flows.Flow
     """
     return Flow.load(source, **kwargs)
 
