@@ -15,3 +15,7 @@ class MissingConversationHistoryExpression(UserErrorException):
 
 class MultipleConversationHistoryInputsMapping(UserErrorException):
     pass
+
+
+class UsingReservedRoleKey(UserErrorException):
+    pass

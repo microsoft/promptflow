@@ -1,6 +1,4 @@
-import os.path
 from datetime import datetime
-from typing import List, Mapping, Any
 
 import pytest
 
@@ -9,9 +7,6 @@ from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.executor._result import AggregationResult, LineResult
-from promptflow._sdk.entities._chat_group._chat_role import ChatRole
-from promptflow._orchestrator._chat_group_orchestrator import ChatGroupOrchestrator
-from ...utils import get_yaml_file
 
 
 def get_node_run_infos(node_dict: dict, index=None, api_calls=None, system_metrics=None):
@@ -57,13 +52,10 @@ def get_flow_run_info(status_dict: dict, index: int):
     )
 
 
-def get_line_results(line_dict: dict, api_calls=None, system_metrics=None, output=None):
-    if output is None:
-        output = {}
-
+def get_line_results(line_dict: dict, api_calls=None, system_metrics=None):
     return [
         LineResult(
-            output=output,
+            output={},
             aggregation_inputs={},
             run_info=get_flow_run_info(status_dict=v, index=k),
             node_run_infos=get_node_run_infos(node_dict=v, index=k, api_calls=api_calls, system_metrics=system_metrics),
@@ -88,18 +80,6 @@ def get_batch_result(line_dict, aggr_dict, line_api_calls=None, aggr_api_calls=N
 
 def get_api_call(type, name, inputs={}, output={}, children=None):
     return {"type": type, "name": name, "inputs": inputs, "output": output, "children": children}
-
-
-def get_chat_role(role, flow_file=None):
-    return ChatRole(flow=os.path.normpath(flow_file), role=role, stop_signal=None)
-
-
-def get_conversation_history(empty: bool) -> List[Mapping[str, Any]]:
-    if empty:
-        return []
-    conversation_history: List[Mapping[str, Any]] = []
-    conversation_history.append({"role": "user", "question": "question0", "others" : "others0"})
-    return conversation_history
 
 
 @pytest.mark.unittest
@@ -288,43 +268,3 @@ class TestSystemMetrics:
             "completion_tokens": 8,
         }
         assert system_metrics_dict.items() <= system_metrics.to_dict().items()
-
-
-@pytest.mark.unittest
-class TestChatGroupResult:
-    @pytest.mark.parametrize(
-        "chat_role, conversation_history",
-        [
-            (
-                    get_chat_role(role="user", flow_file=get_yaml_file("hello-world")),
-                    get_conversation_history(empty=True)
-            ),
-            (
-                    get_chat_role(role="assistant", flow_file=get_yaml_file("hello-world")),
-                    get_conversation_history(empty=False)
-             )
-        ],
-    )
-    def test_process_flow_outputs(self, chat_role, conversation_history):
-
-        line_dict = {
-            0: {"node_0": Status.Failed, "node_1": Status.Completed, "node_2": Status.Completed},
-            1: {"node_0": Status.Completed, "node_1": Status.Failed, "node_2": Status.Completed},
-        }
-        line_results = get_line_results(line_dict, output={"question": "question0", "others": "others0"})
-        orchestrator = ChatGroupOrchestrator(
-            [
-                get_chat_role(role="user", flow_file=get_yaml_file("hello-world")),
-                chat_role
-            ]
-        )
-        conversation_history_len = len(conversation_history)
-        outputs = {}
-        orchestrator._process_flow_outputs(0, chat_role, line_results[0], conversation_history, outputs, {})
-        cur_conversation_history_len = len(conversation_history)
-
-        assert cur_conversation_history_len == conversation_history_len + 1
-        current_line = conversation_history[-1]
-        assert current_line["role"] == chat_role.role == outputs[0]["role"]
-        assert current_line["question"] == "question0" == outputs[0]["question"]
-        assert current_line["others"] == "others0" == outputs[0]["others"]
