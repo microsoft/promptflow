@@ -8,7 +8,9 @@ from promptflow._constants import FlowLanguage
 from promptflow._proxy._base_executor_proxy import AbstractExecutorProxy
 from promptflow._proxy._base_inspector_proxy import AbstractInspectorProxy
 from promptflow._proxy._csharp_executor_proxy import CSharpExecutorProxy
+from promptflow._proxy._csharp_inspector_proxy import CSharpInspectorProxy
 from promptflow._proxy._python_executor_proxy import PythonExecutorProxy
+from promptflow._proxy._python_inspector_proxy import PythonInspectorProxy
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 
 
@@ -16,6 +18,11 @@ class ProxyFactory:
     executor_proxy_classes: Dict[str, Type[AbstractExecutorProxy]] = {
         FlowLanguage.Python: PythonExecutorProxy,
         FlowLanguage.CSharp: CSharpExecutorProxy,
+    }
+
+    inspector_proxy_classes: Dict[str, Type[AbstractInspectorProxy]] = {
+        FlowLanguage.Python: PythonInspectorProxy,
+        FlowLanguage.CSharp: CSharpInspectorProxy,
     }
 
     def __init__(self):
@@ -54,12 +61,8 @@ class ProxyFactory:
         )
 
     def create_inspector_proxy(self, language: str, **kwargs) -> AbstractInspectorProxy:
-        if language == FlowLanguage.Python:
-            from promptflow._proxy._python_inspector_proxy import PythonInspectorProxy
+        if language not in self.inspector_proxy_classes:
+            raise ValueError(f"Unsupported language: {language}")
 
-            return PythonInspectorProxy()
-        elif language == FlowLanguage.CSharp:
-            from promptflow._proxy._csharp_inspector_proxy import CSharpInspectorProxy
-
-            return CSharpInspectorProxy()
-        raise ValueError(f"Unsupported language: {language}")
+        inspector_proxy_cls = self.inspector_proxy_classes[language]
+        return inspector_proxy_cls()

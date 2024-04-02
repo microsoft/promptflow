@@ -4,8 +4,6 @@
 from pathlib import Path
 from typing import Any, Dict, List
 
-from promptflow._sdk._constants import FLOW_META_JSON_GEN_TIMEOUT
-
 
 class AbstractInspectorProxy:
     """Inspector proxies may provide language specific ability to inspect definition of a Flow.
@@ -30,18 +28,15 @@ class AbstractInspectorProxy:
         """Check the type of each node input/attribute and return the connection names used in the flow."""
         raise NotImplementedError()
 
-    @classmethod
-    def is_flex_flow_entry(cls, entry: str) -> bool:
+    def is_flex_flow_entry(self, entry: str) -> bool:
         """Check if the flow is a flex flow entry."""
         raise NotImplementedError()
 
-    @classmethod
     def get_entry_meta(
-        cls,
+        self,
         entry: str,
         working_dir: Path,
-        timeout: int = FLOW_META_JSON_GEN_TIMEOUT,
-        load_in_subprocess: bool = True,
+        **kwargs,
     ) -> Dict[str, Any]:
         """Generate meta data for a flow entry."""
         raise NotImplementedError()

@@ -24,20 +24,18 @@ class PythonInspectorProxy(AbstractInspectorProxy):
             executable = ExecutableFlow.from_yaml(flow_file=flow_file, working_dir=working_dir)
         return executable.get_connection_names(environment_variables_overrides=environment_variables_overrides)
 
-    @classmethod
-    def is_flex_flow_entry(cls, entry: str) -> bool:
+    def is_flex_flow_entry(self, entry: str) -> bool:
         """Check if the flow is a flex flow entry."""
         return isinstance(entry, str) and re.match(FlowEntryRegex.Python, entry)
 
-    @classmethod
     def get_entry_meta(
-        cls,
+        self,
         entry: str,
         working_dir: Path,
-        timeout: int = FLOW_META_JSON_GEN_TIMEOUT,
-        load_in_subprocess: bool = True,
+        **kwargs,
     ) -> Dict[str, Any]:
-        # TODO: switch current usage of ExecutorProxy.generate_flow_meta to InspectorProxy.get_entry_meta
+        timeout = kwargs.get("timeout", FLOW_META_JSON_GEN_TIMEOUT)
+        load_in_subprocess = kwargs.get("load_in_subprocess", True)
 
         flow_dag = {"entry": entry}
         # generate flow.json only for eager flow for now
