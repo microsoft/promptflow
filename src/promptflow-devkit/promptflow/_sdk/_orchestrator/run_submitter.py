@@ -9,7 +9,7 @@ from typing import Union
 
 from promptflow._constants import FlowLanguage
 from promptflow._sdk._constants import ContextAttributeKey, FlowRunProperties
-from promptflow._sdk.entities._flow import Flow
+from promptflow._sdk.entities._flows import Flow
 from promptflow._sdk.entities._run import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.context_utils import _change_working_dir
@@ -23,7 +23,7 @@ from promptflow.tracing._operation_context import OperationContext
 
 from .._configuration import Configuration
 from .._load_functions import load_flow
-from ..entities._flow import FlexFlow
+from ..entities._flows import FlexFlow
 from .utils import SubmitterHelper, variant_overwrite_context
 
 logger = LoggerFactory.get_logger(name=__name__)

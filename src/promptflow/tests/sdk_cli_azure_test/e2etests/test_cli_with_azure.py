@@ -168,7 +168,7 @@ class TestCliWithAzure:
                 )
             user_agent = ClientUserAgentUtil.get_user_agent()
             ua_dict = parse_ua_to_dict(user_agent)
-            assert ua_dict.keys() == {"promptflow-sdk", "promptflow-cli"}
+            assert ua_dict.keys() == {"promptflow-azure-sdk", "promptflow-azure-cli"}
 
     def test_cli_telemetry(self, pf, runtime: str, randstr: Callable[[str], str]) -> None:
         name = randstr("name")

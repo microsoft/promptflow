@@ -2,8 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-import importlib.metadata
+from promptflow.azure._version import VERSION
 
-__version__ = importlib.metadata.version("promptflow-core")
-
-VERSION: str = __version__
+USER_AGENT = "{}/{}".format("promptflow-azure-cli", VERSION)

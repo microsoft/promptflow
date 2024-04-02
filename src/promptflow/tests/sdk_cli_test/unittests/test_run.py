@@ -16,7 +16,7 @@ from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._run_functions import create_yaml_run
 from promptflow._sdk._utils import callable_to_entry_string
 from promptflow._sdk.entities import Run
-from promptflow._sdk.entities._flow import Flow
+from promptflow._sdk.entities._flows import Flow
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.context_utils import inject_sys_path
 from promptflow._utils.yaml_utils import load_yaml
