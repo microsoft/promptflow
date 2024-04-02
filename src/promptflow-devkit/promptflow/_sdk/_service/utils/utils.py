@@ -4,9 +4,9 @@
 import base64
 import getpass
 import hashlib
+import json
 import os
 import platform
-import re
 import socket
 import subprocess
 import sys
@@ -28,10 +28,16 @@ from promptflow._sdk._constants import (
     PF_SERVICE_PORT_FILE,
 )
 from promptflow._sdk._errors import ConnectionNotFoundError, RunNotFoundError
-from promptflow._sdk._utils import get_promptflow_sdk_version, read_write_by_user
+from promptflow._sdk._utils import (
+    get_promptflow_core_version,
+    get_promptflow_devkit_version,
+    get_promptflow_sdk_version,
+    get_promptflow_tracing_version,
+    read_write_by_user,
+)
+from promptflow._sdk._version import VERSION
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
-from promptflow._sdk._version import VERSION
 from promptflow.exceptions import PromptflowException, UserErrorException
 
 logger = get_cli_sdk_logger()
@@ -155,24 +161,38 @@ def make_response_no_content():
     return make_response("", 204)
 
 
+def get_pfs_version():
+    version_promptflow = get_promptflow_sdk_version()
+    if version_promptflow:
+        response = {"promptflow": version_promptflow}
+    else:
+        version_devkit = get_promptflow_devkit_version()
+        version_core = get_promptflow_core_version()
+        version_tracing = get_promptflow_tracing_version()
+        response = {
+            "promptflow-devkit": version_devkit,
+            "promptflow-core": version_core,
+            "promptflow-tracing": version_tracing,
+        }
+    return response
+
+
 def is_pfs_service_healthy(pfs_port) -> bool:
     """Check if pfs service is running and pfs version matches pf version."""
     try:
         response = requests.get("http://localhost:{}/heartbeat".format(pfs_port))
         if response.status_code == 200:
             logger.debug(f"Promptflow service is already running on port {pfs_port}, {response.text}")
-            match = re.search(r'"promptflow":"(.*?)"', response.text)
-            if match:
-                version = match.group(1)
-                is_healthy = version == get_promptflow_sdk_version()
-                if not is_healthy:
-                    logger.warning(
-                        f"Promptflow service is running on port {pfs_port}, but the version is not the same as "
-                        f"promptflow sdk version {get_promptflow_sdk_version()}. The service version is {version}."
-                    )
+            response_data = json.loads(response.text)
+            local_version = get_pfs_version()
+            if response_data == local_version:
+                is_healthy = True
             else:
                 is_healthy = False
-                logger.warning("/heartbeat response doesn't contain current pfs version.")
+                logger.warning(
+                    f"Promptflow service is running on port {pfs_port}, but the version is not the same as "
+                    f"local sdk version {local_version}. The service version is {response_data}."
+                )
             return is_healthy
     except Exception:  # pylint: disable=broad-except
         pass

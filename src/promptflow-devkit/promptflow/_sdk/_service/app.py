@@ -33,18 +33,19 @@ from promptflow._sdk._service.apis.ui import serve_trace_ui
 from promptflow._sdk._service.utils.utils import (
     FormattedException,
     get_current_env_pfs_file,
+    get_pfs_version,
     get_port_from_config,
     is_run_from_built_binary,
     kill_exist_service,
 )
-from promptflow._sdk._utils import get_promptflow_sdk_version, overwrite_null_std_logger, read_write_by_user
+from promptflow._sdk._utils import overwrite_null_std_logger, read_write_by_user
 from promptflow._utils.thread_utils import ThreadWithContextVars
 
 overwrite_null_std_logger()
 
 
 def heartbeat():
-    response = {"promptflow": get_promptflow_sdk_version()}
+    response = get_pfs_version()
     return jsonify(response)
 
 

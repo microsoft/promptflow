@@ -329,7 +329,7 @@ def get_promptflow_sdk_version() -> str:
     try:
         return promptflow.__version__
     except ImportError:
-        # if promptflow is installed from source, it does not have __version__ attribute
+        # if promptflow is not installed from root, it does not have __version__ attribute
         return None
 
 

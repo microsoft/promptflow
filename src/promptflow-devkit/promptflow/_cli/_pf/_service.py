@@ -31,7 +31,7 @@ from promptflow._sdk._service.utils.utils import (
     is_run_from_built_binary,
     kill_exist_service,
 )
-from promptflow._sdk._utils import get_promptflow_sdk_version
+from promptflow._sdk._utils import get_pfs_version
 from promptflow._utils.logger_utils import get_cli_sdk_logger  # noqa: E402
 from promptflow.exceptions import UserErrorException
 
@@ -193,7 +193,7 @@ def start_service(args):
                 app.logger.setLevel(logging.DEBUG)
             else:
                 app.logger.setLevel(logging.INFO)
-            message = f"Start Prompt Flow Service on {port}, version: {get_promptflow_sdk_version()}."
+            message = f"Start Prompt Flow Service on {port}, version: {get_pfs_version()}."
             app.logger.info(message)
             print(message)
             sys.stdout.flush()
@@ -252,7 +252,7 @@ def start_service(args):
             subprocess.Popen(cmd, stdout=subprocess.DEVNULL, start_new_session=True)
         is_healthy = check_pfs_service_status(port)
         if is_healthy:
-            message = f"Start Prompt Flow Service on port {port}, version: {get_promptflow_sdk_version()}."
+            message = f"Start Prompt Flow Service on port {port}, version: {get_pfs_version()}."
             print(message)
             logger.info(message)
         else:
