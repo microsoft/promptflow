@@ -3,7 +3,6 @@
 # ---------------------------------------------------------
 
 import abc
-import json
 import re
 from os import PathLike
 from pathlib import Path
@@ -16,9 +15,11 @@ from promptflow.contracts.tool import ValueType
 from promptflow.core._errors import MissingRequiredInputError
 from promptflow.core._prompty_utils import (
     convert_prompt_template,
+    format_llm_response,
     get_connection,
     get_open_ai_client_by_connection,
     prepare_open_ai_request_params,
+    send_request_to_llm,
 )
 from promptflow.exceptions import UserErrorException
 from promptflow.tracing import trace
@@ -243,6 +244,7 @@ class Prompty(FlowBase):
         configs, self._template = self._parse_prompty(path)
         prompty_model = configs.get("model", {})
         prompty_model["api"] = model.get("api") or prompty_model.get("api", "chat")
+        # TODO wait for model spec
         prompty_model["connection"] = model.get("connection") or prompty_model.get("connection", None)
         if model.get("parameters", None):
             if prompty_model.get("parameters", {}):
@@ -257,9 +259,9 @@ class Prompty(FlowBase):
                 configs[k] = value
         configs["inputs"] = self._resolve_inputs(configs.get("inputs", {}))
         self._connection = prompty_model["connection"]
-        self._parameters = prompty_model["parameters"]
+        self._parameters = prompty_model.get("parameters", None)
         self._api = prompty_model["api"]
-        self._inputs = configs["inputs"]
+        self._inputs = configs.get("inputs", {})
         configs["model"] = prompty_model
         super().__init__(code=path.parent, path=path, data=configs, content_hash=None, **kwargs)
 
@@ -360,27 +362,14 @@ class Prompty(FlowBase):
         # 4. send request to open ai
         api_client = get_open_ai_client_by_connection(connection=connection)
 
-        def llm_executor(parameters):
-            if self._api == "completion":
-                result = api_client.completions.create(**parameters)
-            else:
-                result = api_client.chat.completions.create(**parameters)
-            return result
-
-        traced_llm_executor = _traced(llm_executor)
-        result = traced_llm_executor(params)
-        if self._data.get("format", None) == "raw":
-            return result
-        else:
-            if self._api == "completion":
-                result = result.choices[0].text
-            else:
-                result = getattr(result.choices[0].message, "content", "")
-            if params.get("response_format", None) == "json_object":
-                # response_format is one of text or json_object.
-                # https://platform.openai.com/docs/api-reference/chat/create#chat-create-response_format
-                result = json.loads(result)
-        return result
+        traced_llm_call = _traced(send_request_to_llm)
+        response = traced_llm_call(api_client, self._api, params)
+        return format_llm_response(
+            response=response,
+            api=self._api,
+            response_format=params.get("response_format", None),
+            raw=self._data.get("format", None) == "raw",
+        )
 
 
 class AsyncPrompty(Prompty):
@@ -423,24 +412,11 @@ class AsyncPrompty(Prompty):
         # 4. send request to open ai
         api_client = get_open_ai_client_by_connection(connection=connection, is_async=True)
 
-        def llm_executor(parameters):
-            if self._api == "completion":
-                result = api_client.completions.create(**parameters)
-            else:
-                result = api_client.chat.completions.create(**parameters)
-            return result
-
-        traced_llm_executor = _traced(llm_executor)
-        result = await traced_llm_executor(params)
-        if self._data.get("format", None) == "raw":
-            return result
-        else:
-            if self._api == "completion":
-                result = result.choices[0].text
-            else:
-                result = getattr(result.choices[0].message, "content", "")
-            if params.get("response_format", None) == "json_object":
-                # response_format is one of text or json_object.
-                # https://platform.openai.com/docs/api-reference/chat/create#chat-create-response_format
-                result = json.loads(result)
-        return result
+        traced_llm_call = _traced(send_request_to_llm)
+        response = await traced_llm_call(api_client, self._api, params)
+        return format_llm_response(
+            response=response,
+            api=self._api,
+            response_format=params.get("response_format", None),
+            raw=self._data.get("format", None) == "raw",
+        )

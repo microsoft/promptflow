@@ -1,4 +1,5 @@
 import copy
+import json
 import os
 import re
 from typing import List, Mapping
@@ -15,8 +16,8 @@ from promptflow.core._utils import render_jinja_template_content
 
 
 def parse_environment_variable(value):
-    """Get environment variable from ${ENV_NAME}. If not found, return original value."""
-    pattern = r"^\$\{(.*)\}$"
+    """Get environment variable from ${env:ENV_NAME}. If not found, return original value."""
+    pattern = r"^\$\{env:(.*)\}$"
     result = re.match(pattern, value)
     if result:
         env_name = result.groups()[0]
@@ -112,6 +113,31 @@ def get_open_ai_client_by_connection(connection, is_async=False):
         )
         raise UnknownConnectionType(message=error_message)
     return client
+
+
+def send_request_to_llm(client, api, parameters):
+    if api == "completion":
+        result = client.completions.create(**parameters)
+    else:
+        result = client.chat.completions.create(**parameters)
+    return result
+
+
+def format_llm_response(response, api, response_format=None, raw=False, streaming=False):
+    if raw or streaming:
+        return response
+
+    if api == "completion":
+        result = response.choices[0].text
+    else:
+        result = getattr(response.choices[0].message, "content", "")
+
+    # response_format is one of text or json_object.
+    # https://platform.openai.com/docs/api-reference/chat/create#chat-create-response_format
+    if response_format == "json_object":
+        return json.loads(result)
+    else:
+        return result
 
 
 # region: Copied from promptflow-tools

@@ -323,11 +323,14 @@ class Node:
             # used as the default value for the field in node
             from promptflow.core._flow import Prompty
 
-            prompty_data = copy.copy(Prompty(data.get("source").get("path"))._data)
-            prompty_data.update(data)
-            prompty_data.get("inputs", {}).update(prompty_data.pop("parameters", {}))
-            data = prompty_data
-            # TODO remove if when llm tool is added to promptflow-tools
+            prompty_obj = Prompty(data.get("source").get("path"))
+            prompty_data = copy.copy(prompty_obj._data)
+            prompty_data["inputs"].update(prompty_obj._parameters)
+            prompty_data["inputs"].update(data.get("inputs", {}))
+            data["inputs"] = prompty_data["inputs"]
+            data["connection"] = data.get("connection", None) or prompty_obj._connection
+            data["api"] = data.get("api", None) or prompty_obj._api
+            # TODO remove it when llm and llm-vision is added to promptflow-tools
             data["type"] = "llm"
             data["tool"] = None
 

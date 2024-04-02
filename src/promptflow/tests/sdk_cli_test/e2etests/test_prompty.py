@@ -151,17 +151,11 @@ class TestPrompty:
             output = json.loads(f.readline())
             assert "6" in output["output"]
 
-        # Test prompty run with image
-        # TODO
-
     def test_prompty_test(self, pf: PFClient):
         result = pf.test(
             flow=f"{PROMPTY_DIR}/prompty_example.prompty", inputs={"question": "what is the result of 1+1?"}
         )
         assert "2" in result
-
-        # Test prompty run with image
-        # TODO
 
     def test_prompty_as_llm_node(self, pf: PFClient):
         # prompty in dag flow

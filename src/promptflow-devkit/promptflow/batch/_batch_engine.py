@@ -15,7 +15,6 @@ from promptflow._constants import (
     LINE_NUMBER_KEY,
     LINE_TIMEOUT_SEC,
     OUTPUT_FILE_NAME,
-    PROMPTY_EXTENSION,
     FlowLanguage,
     MessageFormatType,
 )
@@ -32,7 +31,7 @@ from promptflow._utils.execution_utils import (
     handle_line_failures,
     set_batch_input_source_from_inputs_mapping,
 )
-from promptflow._utils.flow_utils import is_flex_flow
+from promptflow._utils.flow_utils import is_flex_flow, is_prompty_flow
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow._utils.utils import (
@@ -110,8 +109,12 @@ class BatchEngine:
         """
         self._flow_file = flow_file
         self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
-
-        self._is_eager_flow, self._program_language = self._check_eager_flow_and_language_from_yaml()
+        if is_prompty_flow(self._flow_file):
+            self._is_eager_flow = True
+            self._program_language = FlowLanguage.Python
+        else:
+            self._is_prompty_flow = False
+            self._is_eager_flow, self._program_language = self._check_eager_flow_and_language_from_yaml()
 
         # TODO: why self._flow is not initialized for eager flow?
         if not self._is_eager_flow:
@@ -592,8 +595,6 @@ class BatchEngine:
         # TODO: remove this after path is removed
         if flow_file.suffix.lower() == ".dll":
             return True, FlowLanguage.CSharp
-        elif flow_file.suffix.lower() == PROMPTY_EXTENSION:
-            return True, FlowLanguage.Python
         with open(flow_file, "r", encoding="utf-8") as fin:
             flow_dag = load_yaml(fin)
         language = flow_dag.get(LANGUAGE_KEY, FlowLanguage.Python)

@@ -1,7 +1,7 @@
 ---
 name: Hello Prompty
 description: A basic prompt
-init:
+model:
     api: chat
     connection: azure_open_ai_connection
     parameters:

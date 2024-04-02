@@ -8,7 +8,7 @@ from marshmallow import ValidationError, fields, validate, validates_schema
 from promptflow._constants import LANGUAGE_KEY, FlowEntryRegex, FlowLanguage
 from promptflow._sdk._constants import FlowType
 from promptflow._sdk.schemas._base import PatchedSchemaMeta, YamlFileSchema
-from promptflow._sdk.schemas._fields import NestedField, UnionField
+from promptflow._sdk.schemas._fields import NestedField
 
 
 class FlowInputSchema(metaclass=PatchedSchemaMeta):
@@ -83,7 +83,5 @@ class EagerFlowSchema(BaseFlowSchema):
 class PromptySchema(BaseFlowSchema):
     """Schema for prompty."""
 
-    api = fields.Str(default="chat")
-    connection = UnionField([fields.Dict(required=True), fields.Str(required=True)])
-    parameters = fields.Dict()
+    model = fields.Dict()
     inputs = fields.Dict()
