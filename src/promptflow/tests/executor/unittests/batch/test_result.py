@@ -1,3 +1,4 @@
+import os.path
 from datetime import datetime
 from typing import List, Mapping, Any
 
@@ -9,7 +10,7 @@ from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow._sdk.entities._chat_group._chat_role import ChatRole
-from promptflow.orchestrator._chat_group_orchestrator import ChatGroupOrchestrator
+from promptflow._orchestrator._chat_group_orchestrator import ChatGroupOrchestrator
 from ...utils import get_yaml_file
 
 
@@ -90,7 +91,7 @@ def get_api_call(type, name, inputs={}, output={}, children=None):
 
 
 def get_chat_role(role, flow_file=None):
-    return ChatRole(flow=flow_file, flow_file=flow_file, role=role, stop_signal=None)
+    return ChatRole(flow=os.path.normpath(flow_file), role=role, stop_signal=None)
 
 
 def get_conversation_history(empty: bool) -> List[Mapping[str, Any]]:

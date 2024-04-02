@@ -1,9 +1,13 @@
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
+
 from typing import Optional, List, Mapping, Any
 from pathlib import Path
 from promptflow._proxy._base_executor_proxy import AbstractExecutorProxy
 from promptflow.executor._result import LineResult
 from promptflow._sdk.entities._chat_group._chat_role import ChatRole
-from promptflow.orchestrator._chat_group_orchestrator import ChatGroupOrchestrator
+from promptflow._orchestrator._chat_group_orchestrator import ChatGroupOrchestrator
 from promptflow.storage._run_storage import AbstractRunStorage
 
 

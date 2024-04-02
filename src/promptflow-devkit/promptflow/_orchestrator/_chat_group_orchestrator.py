@@ -1,3 +1,7 @@
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
+
 from typing import Optional, List, Mapping, Dict, Any
 from promptflow._sdk.entities._chat_group._chat_role import ChatRole
 from promptflow._proxy._base_executor_proxy import AbstractExecutorProxy
@@ -8,7 +12,7 @@ from promptflow._utils.execution_utils import apply_default_value_for_input
 from promptflow._proxy._proxy_factory import ProxyFactory
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._constants import CONVERSATION_HISTORY_EXPRESSION, CONVERSATION_HISTORY_OUTPUT_KEY
-from promptflow.orchestrator._errors import (
+from promptflow._orchestrator._errors import (
     InvalidChatRoleCount,
     MissingConversationHistoryExpression,
     MultipleConversationHistoryInputsMapping
