@@ -37,6 +37,7 @@ from promptflow._constants import ENABLE_MULTI_CONTAINER_KEY, EXTENSION_UA, Flow
 from promptflow._sdk._constants import (
     AZURE_WORKSPACE_REGEX_FORMAT,
     DEFAULT_ENCODING,
+    FLEX_FILE_NAME,
     FLOW_TOOLS_JSON,
     FLOW_TOOLS_JSON_GEN_TIMEOUT,
     HOME_PROMPT_FLOW_DIR,
@@ -942,8 +943,7 @@ def create_temp_flex_flow_yaml(entry: Union[str, PathLike, Callable], code: Path
         if not code.exists():
             raise UserErrorException(f"Code path {code.as_posix()} does not exist.")
 
-    flow_path, flow_file = resolve_flow_path(code, check_flow_exist=False)
-    flow_yaml_path = flow_path / flow_file
+    flow_yaml_path = code / FLEX_FILE_NAME
     existing_content = None
 
     try:
