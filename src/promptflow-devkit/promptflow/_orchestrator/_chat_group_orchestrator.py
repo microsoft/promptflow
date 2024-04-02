@@ -74,18 +74,18 @@ class ChatGroupOrchestrator:
         executor_proxy_factory = ProxyFactory()
         for chat_role in self._chat_group_roles:
             executor_proxy = executor_proxy_factory.create_executor_proxy(
-                flow_file=chat_role.flow_file,
-                working_dir=chat_role.working_dir,
-                connections=chat_role.connections,
+                flow_file=chat_role._flow,
+                working_dir=chat_role._working_dir,
+                connections=chat_role._connections,
                 storage=self._storage,
                 language=chat_role.check_language_from_yaml(),
-                executor_client=chat_role.executor_client,
-                environment_variables=chat_role.environment_variables,
-                log_path=chat_role.log_path,
-                output_dir=chat_role.output_dir,
-                worker_count=chat_role.worker_count,
-                line_timeout_sec=chat_role.line_timeout_sec,
-                init_kwargs=chat_role.init_kwargs,
+                executor_client=chat_role._executor_client,
+                environment_variables=chat_role._environment_variables,
+                log_path=chat_role._log_path,
+                output_dir=chat_role._output_dir,
+                worker_count=chat_role._worker_count,
+                line_timeout_sec=chat_role._line_timeout_sec,
+                init_kwargs=chat_role._init_kwargs,
                 **kwargs
             )
             bulk_logger.info(f"Created executor proxy for role:{chat_role.role}. name: {chat_role.name}")
@@ -130,7 +130,7 @@ class ChatGroupOrchestrator:
             chat_role = self._chat_group_roles[role_index]
             chat_role_input = batch_inputs[role_index]
             conversation_history_key = next(
-                (key for key, value in chat_role.inputs_mapping.items()
+                (key for key, value in chat_role._inputs_mapping.items()
                  if value == CONVERSATION_HISTORY_EXPRESSION), None
             )
             if conversation_history_key is None:
@@ -206,7 +206,7 @@ class ChatGroupOrchestrator:
     def _process_batch_inputs(self, inputs: Dict[str, Any]):
         batch_inputs: List = []
         for chat_role in self._chat_group_roles:
-            if CONVERSATION_HISTORY_EXPRESSION not in chat_role.inputs_mapping.values():
+            if CONVERSATION_HISTORY_EXPRESSION not in chat_role._inputs_mapping.values():
                 bulk_logger.error(
                     f"Cannot find conversation expression mapping for "
                     f"chat role: {chat_role.role}. name: {chat_role.name}"
@@ -218,7 +218,7 @@ class ChatGroupOrchestrator:
                 )
                 raise MissingConversationHistoryExpression(message=message)
 
-            conversation_mapping_count = list(chat_role.inputs_mapping.values()).count(CONVERSATION_HISTORY_EXPRESSION)
+            conversation_mapping_count = list(chat_role._inputs_mapping.values()).count(CONVERSATION_HISTORY_EXPRESSION)
             if conversation_mapping_count > 1:
                 bulk_logger.error(f"Multiple inputs mapping of {CONVERSATION_HISTORY_EXPRESSION}")
                 message = (
@@ -228,11 +228,11 @@ class ChatGroupOrchestrator:
                 raise MultipleConversationHistoryInputsMapping(message=message)
 
             batch_input_processor = BatchInputsProcessor(
-                chat_role.working_dir,
-                chat_role.flow.inputs,
+                chat_role._working_dir,
+                chat_role._flow_definition.inputs,
                 self._max_lines_count)
-            batch_input = batch_input_processor._process_batch_inputs_line(inputs, chat_role.inputs_mapping)
-            resolved_batch_input = apply_default_value_for_input(chat_role.flow.inputs, batch_input)
+            batch_input = batch_input_processor._process_batch_inputs_line(inputs, chat_role._inputs_mapping)
+            resolved_batch_input = apply_default_value_for_input(chat_role._flow_definition.inputs, batch_input)
 
             batch_inputs.append(resolved_batch_input)
 

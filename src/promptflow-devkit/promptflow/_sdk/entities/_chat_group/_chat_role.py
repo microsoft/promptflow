@@ -98,56 +98,9 @@ class ChatRole:
         return self._stop_signal
 
     @property
-    def connections(self):
-        """Connections of the chat role"""
-        return self._connections
-
-    @property
-    def working_dir(self):
-        """Working directory of the chat role flow"""
-        return self._working_dir
-
-    @property
-    def inputs_mapping(self):
-        """Inputs mapping of the chat role"""
-        return self._inputs_mapping
-
-    @property
-    def flow_file(self):
-        return self._flow
-
-    @property
     def flow(self):
         """Flow definition of the chat role"""
         return self._flow_definition
-
-    @property
-    def environment_variables(self):
-        return self._environment_variables
-
-    @property
-    def log_path(self):
-        return self._log_path
-
-    @property
-    def output_dir(self):
-        return self._output_dir
-
-    @property
-    def worker_count(self):
-        return self._worker_count
-
-    @property
-    def line_timeout_sec(self):
-        return self._line_timeout_sec
-
-    @property
-    def executor_client(self):
-        return self._executor_client
-
-    @property
-    def init_kwargs(self):
-        return self._init_kwargs
 
     def _validate_flow(self, flow: Union[str, PathLike]):
         """Validate flow"""
@@ -223,7 +176,7 @@ class ChatRole:
         return result
 
     def check_language_from_yaml(self):
-        flow_file = self.working_dir / self.flow_file if self.working_dir else self.flow_file
+        flow_file = self._working_dir / self._flow if self._working_dir else self._flow
         if flow_file.suffix.lower() == ".dll":
             return FlowLanguage.CSharp
         with open(flow_file, "r", encoding="utf-8") as fin:
