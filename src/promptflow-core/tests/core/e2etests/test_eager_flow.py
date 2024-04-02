@@ -9,7 +9,7 @@ from promptflow.executor._result import LineResult
 from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import FlowExecutor
 
-from ...conftest import EAGER_FLOW_ROOT, get_yaml_file
+from ...utils import EAGER_FLOW_ROOT, get_yaml_file
 
 SAMPLE_FLOW = "web_classification_no_variants"
 SAMPLE_EVAL_FLOW = "classification_accuracy_evaluation"

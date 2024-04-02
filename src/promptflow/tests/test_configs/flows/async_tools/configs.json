@@ -1,0 +1,13 @@
+{
+    "run_configs": {
+    },
+    "assertions": {
+        "line_result": [
+            {"type": "output", "expections": {"expected_output": {"output1": "Hello", "output2": "Hello"}}},
+            {"type": "run_info"}
+        ],
+        "run_tracker": [
+            {"type": "run"}
+        ]
+    }
+}

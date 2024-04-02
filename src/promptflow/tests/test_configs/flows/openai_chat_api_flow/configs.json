@@ -1,0 +1,10 @@
+{
+    "run_configs": {
+    },
+    "assertions": {
+        "otel_trace": [
+            {"type": "basic", "expections": {"expected_span_length": 3, "expected_root_span_count": 1}},
+            {"type": "openai_tokens"}
+        ]
+    }
+}
