@@ -36,7 +36,7 @@ from promptflow._sdk._utils import (
     write_open,
 )
 from promptflow._sdk.entities import Run
-from promptflow._sdk.entities._flow import FlexFlow, Flow
+from promptflow._sdk.entities._flows import FlexFlow, Flow
 from promptflow._utils.exception_utils import PromptflowExceptionPresenter
 from promptflow._utils.flow_utils import is_prompty_flow
 from promptflow._utils.logger_utils import LogContext, get_cli_sdk_logger

@@ -133,8 +133,7 @@ class Flow(FlowBase):
     @classmethod
     def _dispatch_flow_creation(cls, flow_path, raise_error=True, **kwargs):
         """Dispatch flow load to eager flow, async flow or prompty flow."""
-        from promptflow._sdk.entities._flow.flex import FlexFlow
-        from promptflow._sdk.entities._flow.prompty import Prompty
+        from promptflow._sdk.entities._flows import FlexFlow, Prompty
 
         if is_prompty_flow(file_path=flow_path, raise_error=raise_error):
             return Prompty._load(path=flow_path, **kwargs)

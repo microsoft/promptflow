@@ -45,7 +45,7 @@ from promptflow._sdk._utils import (
     get_used_connection_names_from_dict,
     update_dict_value_with_connections,
 )
-from promptflow._sdk.entities._flow import FlexFlow, Flow, Prompty
+from promptflow._sdk.entities._flows import FlexFlow, Flow, Prompty
 from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag
 from promptflow._utils.logger_utils import FileHandler, get_cli_sdk_logger
 from promptflow.contracts.flow import Flow as ExecutableFlow

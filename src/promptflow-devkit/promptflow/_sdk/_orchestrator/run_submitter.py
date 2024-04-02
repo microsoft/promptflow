@@ -9,7 +9,7 @@ from typing import Union
 
 from promptflow._constants import FlowLanguage
 from promptflow._sdk._constants import ContextAttributeKey, FlowRunProperties
-from promptflow._sdk.entities._flow import Flow, Prompty
+from promptflow._sdk.entities._flows import Flow, Prompty
 from promptflow._sdk.entities._run import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.context_utils import _change_working_dir
@@ -23,7 +23,7 @@ from promptflow.tracing._operation_context import OperationContext
 
 from .._configuration import Configuration
 from .._load_functions import load_flow
-from ..entities._flow import FlexFlow
+from ..entities._flows import FlexFlow
 from .utils import SubmitterHelper, variant_overwrite_context
 
 logger = LoggerFactory.get_logger(name=__name__)
@@ -108,7 +108,7 @@ class RunSubmitter:
         logger.info(f"Submitting run {run.name}, log path: {local_storage.logger.file_path}")
         run_id = run.name
         # for python, we can get metadata in-memory, so no need to dump them first
-        if self.flow.language != FlowLanguage.Python:
+        if flow.language != FlowLanguage.Python:
             from promptflow._proxy import ProxyFactory
 
             # variants are resolved in the context, so we can't move this logic to Operations for now

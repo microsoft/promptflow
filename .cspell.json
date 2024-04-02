@@ -192,6 +192,9 @@
     "prompty",
     "Prompty",
     "setenv",
+    "cscript",
+    "nologo",
+    "wscript",
     "raisvc",
     "evals"
   ],
