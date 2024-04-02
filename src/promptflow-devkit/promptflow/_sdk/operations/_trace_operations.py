@@ -89,6 +89,7 @@ class TraceOperations:
         parent_id = span.parent_span_id.hex()
         # we have observed in some scenarios, there is not `attributes` field
         attributes = flatten_pb_attributes(span_dict.get(SpanFieldName.ATTRIBUTES, dict()))
+        logger.debug("Parsed attributes: %s", json.dumps(attributes))
         links = TraceOperations._parse_protobuf_links(span.links, logger)
         events = TraceOperations._parse_protobuf_events(span.events, logger)
 
