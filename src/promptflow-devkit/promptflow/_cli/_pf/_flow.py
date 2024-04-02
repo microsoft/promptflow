@@ -428,7 +428,7 @@ def _test_flow_multi_modal(args, pf_client):
     """Test flow with multi modality mode."""
     from promptflow._sdk._load_functions import load_flow
 
-    if Configuration.is_internal_features_enabled():
+    if Configuration.get_instance().is_internal_features_enabled():
         from promptflow._sdk._tracing import _invoke_pf_svc
 
         # Todo: use base64 encode for now, will consider whether need use encryption or use db to store flow path info
