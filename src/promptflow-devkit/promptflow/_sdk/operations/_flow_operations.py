@@ -6,6 +6,7 @@ import glob
 import json
 import os
 import subprocess
+import sys
 import uuid
 from importlib.metadata import version
 from os import PathLike
@@ -320,6 +321,28 @@ class FlowOperations(TelemetryMixin):
                 chat_history_name=chat_history_input_name,
                 show_step_output=kwargs.get("show_step_output", False),
             )
+
+    @monitor_operation(activity_name="pf.flows._chat_with_ui", activity_type=ActivityType.INTERNALCALL)
+    def _chat_with_ui(self, script, skip_open_browser: bool = False):
+        try:
+            import bs4  # noqa: F401
+            import streamlit_quill  # noqa: F401
+            from streamlit.web import cli as st_cli
+        except ImportError as ex:
+            raise UserErrorException(
+                f"Please try 'pip install promptflow[executable]' to install dependency, {ex.msg}."
+            )
+        sys.argv = [
+            "streamlit",
+            "run",
+            script,
+            "--global.developmentMode=false",
+            "--client.toolbarMode=viewer",
+            "--browser.gatherUsageStats=false",
+        ]
+        if skip_open_browser:
+            sys.argv += ["--server.headless=true"]
+        st_cli.main()
 
     def _build_environment_config(self, flow_dag_path: Path):
         flow_info = load_yaml(flow_dag_path)
