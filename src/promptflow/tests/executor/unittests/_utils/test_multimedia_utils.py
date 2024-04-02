@@ -163,22 +163,32 @@ class TestMultimediaProcessor:
         assert isinstance(processor, processor_class)
 
     def test_process_multimedia_dict_recursively(self):
-        def process_func(image_dict):
+        def process_func_image(image_dict):
             return "image_placeholder"
 
+        def process_func_text(text_dict):
+            return "text_placeholder"
+
         image_dict = {"data:image/jpg;path": "logo.jpg"}
+        text_dict = {"type": "text", "text": "Hello, World!"}
         value = {
             "image": image_dict,
+            "text": text_dict,
             "images": [image_dict, image_dict],
-            "object": {"image": image_dict, "other_data": "other_data"},
+            "object": {"image": image_dict, "text": text_dict, "other_data": "other_data"},
         }
         updated_value = MultimediaProcessor._process_multimedia_dict_recursively(
-            value, {BasicMultimediaProcessor.is_multimedia_dict: process_func}
+            value,
+            {
+                BasicMultimediaProcessor.is_multimedia_dict: process_func_image,
+                TextProcessor.is_text_dict: process_func_text,
+            },
         )
         assert updated_value == {
             "image": "image_placeholder",
+            "text": "text_placeholder",
             "images": ["image_placeholder", "image_placeholder"],
-            "object": {"image": "image_placeholder", "other_data": "other_data"},
+            "object": {"image": "image_placeholder", "text": "text_placeholder", "other_data": "other_data"},
         }
 
 

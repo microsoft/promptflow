@@ -76,11 +76,7 @@ Open `.vscode/settings.json`, write `"--ignore=src/promptflow/tests/sdk_cli_azur
 
 ![img2](../media/dev_setup/set_up_pycharm_2.png)
 
-### Record and replay tests
-
-Please refer to [Replay End-to-End Tests](./replay-e2e-test.md) to learn how to record and replay tests.
-
-## How to write docstring.
+## How to write docstring
 
 A clear and consistent API documentation is crucial for the usability and maintainability of our codebase. Please refer to [API Documentation Guidelines](./documentation_guidelines.md) to learn how to write docstring when developing the project.
 
@@ -98,16 +94,9 @@ A clear and consistent API documentation is crucial for the usability and mainta
 
 ### Test structure
 
-Currently all tests are under `src/promptflow/tests/` folder:
+In the future, tests will under corresponding source folder, and test_configs are shared among different test folders:
 
-- tests/
-  - promptflow/
-    - sdk_cli_test/
-      - e2etests/
-      - unittests/
-    - sdk_cli_azure_test/
-      - e2etests/
-      - unittests/
+- src/promptflow/
   - test_configs/
     - connections/
     - datas/
@@ -115,18 +104,34 @@ Currently all tests are under `src/promptflow/tests/` folder:
     - runs/
     - wrong_flows/
     - wrong_tools/
-
-When you want to add tests for a new feature, you can add new test file let's say a e2e test file `test_construction.py`
-under `tests/promptflow/**/e2etests/`.
-
-Once the project gets more complicated or anytime you find it necessary to add new test folder and test configs for
-a specific feature, feel free to split the `promptflow` to more folders, for example:
-
-- tests/
-  - (Test folder name)/
+- src/promptflow-core/
+  - tests/
+    - core/ # Basic test with promptflow-core installed.
+      - e2etests/
+      - unittests/
+    - azureml-serving/  # Test with promptflow-core[azureml-serving] installed.
+      - e2etests/
+      - unittests/
+    - executor-service/ # Test with promptflow-core[executor-service] installed.
+      - e2etests/
+      - unittests/
+- src/promptflow-devkit/
+  - tests/
+    - executable/ # Test with promptflow-devkit[executable] installed.
+- src/promptflow-azure/
+  - tests/  # promptflow-azure doesn't have extra-requires, so all tests are under the test folder.
     - e2etests/
-      - test_xxx.py
     - unittests/
-      - test_xxx.py
-  - test_configs/
-    - (Data or config folder name)/
+
+Principal #1: Put the tests in the same folder as the code they are testing, to ensure code can work within minor environment requirements.
+
+For example, you write code requires basic `promptflow-core` package, then put the tests in `promptflow-core/tests/core`, DO NOT put it in the promptflow-devkit or promptflow-azure.
+
+Principal #2: Setup separate workflow for tests with extra-requires.
+
+For example, you want to test `promptflow-core[azureml-serving]`, then add a new test folder `promptflow-core/tests/azureml-serving` to test the azure related code,
+and add new test steps and environment setup step into `promptflow-core-test.yml` for that folder. DO NOT update the environment of `promptflow-core` basic test directly.
+
+### Record and replay tests
+
+Please refer to [Replay End-to-End Tests](./replay-e2e-test.md) to learn how to record and replay tests.

@@ -116,7 +116,7 @@ class TestExperiment:
         metrics = client.runs.get_metrics(name=eval_run.name)
         assert "accuracy" in metrics
         # Assert Trace
-        line_runs = client._traces.list_line_runs(collection=session)
+        line_runs = client.traces.list_line_runs(collection=session)
         if len(line_runs) > 0:
             assert len(line_runs) == 3
             line_run = line_runs[0]
@@ -248,7 +248,7 @@ class TestExperiment:
             # Assert session exists
             # TODO: Task 2942400, avoid sleep/if and assert traces
             time.sleep(10)  # TODO fix this
-            line_runs = client._traces.list_line_runs(collection=session)
+            line_runs = client.traces.list_line_runs(collection=session)
             if len(line_runs) > 0:
                 assert len(line_runs) == 1
                 line_run = line_runs[0]
@@ -277,6 +277,33 @@ class TestExperiment:
                     experiment=template_path,
                 )
             assert "not found in experiment" in str(error.value)
+
+    @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
+    def test_experiment_test(self):
+        template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"
+        client = PFClient()
+        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+            mock_func.return_value = True
+            result = client._experiments.test(
+                experiment=template_path,
+            )
+            assert len(result) == 2
+
+    @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
+    def test_experiment_test_with_skip_node(self):
+        template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"
+        client = PFClient()
+        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+            mock_func.return_value = True
+            result = client._experiments.test(
+                experiment=template_path,
+                context={
+                    "node": FLOW_ROOT / "web_classification" / "flow.dag.yaml",
+                    "outputs": {"category": "Channel", "evidence": "Both"},
+                    "run_id": "123",
+                },
+            )
+            assert len(result) == 1
 
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
     def test_eager_flow_test_with_experiment(self, monkeypatch):

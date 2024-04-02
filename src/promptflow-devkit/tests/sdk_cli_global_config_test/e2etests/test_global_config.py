@@ -4,7 +4,7 @@ import mock
 import pytest
 
 from promptflow._sdk._load_functions import load_flow
-from promptflow._sdk.entities._flow._flow_context_resolver import FlowContextResolver
+from promptflow._sdk.entities._flows._flow_context_resolver import FlowContextResolver
 from promptflow.core._connection_provider._workspace_connection_provider import WorkspaceConnectionProvider
 
 FLOWS_DIR = Path(__file__).parent.parent.parent / "test_configs" / "flows"

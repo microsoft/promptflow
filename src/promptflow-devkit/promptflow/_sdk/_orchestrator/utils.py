@@ -41,7 +41,7 @@ from promptflow._sdk._constants import (
 from promptflow._sdk._errors import InvalidFlowError, RunOperationError
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._utils import _merge_local_code_and_additional_includes
-from promptflow._sdk.entities._flow import FlexFlow, Flow
+from promptflow._sdk.entities._flows import FlexFlow, Flow
 from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag
 from promptflow._utils.logger_utils import FileHandler, get_cli_sdk_logger
 from promptflow.contracts.flow import Flow as ExecutableFlow

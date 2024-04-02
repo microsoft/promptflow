@@ -1,10 +1,11 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
+import re
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Tuple
 
+from promptflow._constants import FlowEntryRegex
 from promptflow._core._errors import UnexpectedError
 from promptflow._core.run_tracker import RunTracker
 from promptflow._sdk._constants import FLOW_META_JSON_GEN_TIMEOUT, FLOW_TOOLS_JSON_GEN_TIMEOUT
@@ -133,3 +134,8 @@ class PythonExecutorProxy(AbstractExecutorProxy):
             timeout=timeout,
             used_packages_only=True,
         )
+
+    @classmethod
+    def is_flex_flow_entry(cls, entry: str):
+        """Returns True if entry is flex flow's entry (in python)."""
+        return bool(isinstance(entry, str) and re.match(FlowEntryRegex.Python, entry))

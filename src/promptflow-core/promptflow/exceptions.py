@@ -8,8 +8,6 @@ from enum import Enum
 from functools import cached_property
 from typing import Dict, List
 
-from azure.core.exceptions import HttpResponseError
-
 
 class ErrorCategory(str, Enum):
     USER_ERROR = "UserError"
@@ -258,6 +256,10 @@ class _ErrorInfo:
     @classmethod
     def _is_system_error(cls, e: BaseException):
         if isinstance(e, SystemErrorException):
+            return True
+        try:
+            from azure.core.exceptions import HttpResponseError
+        except ImportError:
             return True
         if isinstance(e, HttpResponseError):
             status_code = str(e.status_code)

@@ -15,7 +15,7 @@ from promptflow._core._errors import NotSupported
 from promptflow._internal import ConnectionManager
 from promptflow._proxy import ProxyFactory
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
-from promptflow._sdk.entities._flow import Flow, FlowContext
+from promptflow._sdk.entities._flows import Flow, FlowContext
 from promptflow._sdk.operations._local_storage_operations import LoggerOperations
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.context_utils import _change_working_dir
@@ -30,7 +30,7 @@ from promptflow.executor._result import LineResult
 from promptflow.storage._run_storage import DefaultRunStorage
 
 from .._configuration import Configuration
-from ..entities._flow import FlexFlow
+from ..entities._flows import FlexFlow
 from .utils import (
     SubmitterHelper,
     print_chat_output,
