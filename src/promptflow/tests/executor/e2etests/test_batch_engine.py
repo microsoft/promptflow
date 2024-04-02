@@ -539,7 +539,6 @@ class TestBatch:
             dev_connections):
         simulation_role = ChatRole(
             flow=get_yaml_file(simulation_flow),
-            flow_file=get_yaml_file(simulation_flow),
             role="user",
             name="simulator",
             stop_signal="[STOP]",
@@ -553,7 +552,6 @@ class TestBatch:
         )
         copilot_role = ChatRole(
             flow=get_yaml_file(copilot_flow),
-            flow_file=get_yaml_file(copilot_flow),
             role="assistant",
             name="copilot",
             stop_signal="[STOP]",

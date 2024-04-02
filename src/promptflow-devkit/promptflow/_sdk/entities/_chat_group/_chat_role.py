@@ -36,7 +36,6 @@ class ChatRole:
                  inputs: Optional[Dict] = None,
                  name: Optional[str] = None,
                  stop_signal: Optional[str] = None,
-                 flow_file: Optional[Path] = None,
                  working_dir: Optional[Path] = None,
                  connections: Optional[Dict[str, Any]] = None,
                  inputs_mapping: Optional[Dict[str, str]] = None,
@@ -48,14 +47,15 @@ class ChatRole:
 
         # Below properties are used for cloud chat group. It may have some duplicate with above ones
         # Will evaluate and refine in the second step.
-        if flow_file is not None:
+        # In sdk chat group, flow can be both folder and file
+        # For cloud chat group, we only support file now
+        if self._flow.is_file():
             self._name = name
             self._stop_signal = stop_signal
-            self._flow_file = flow_file
-            self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
+            self._working_dir = Flow._resolve_working_dir(self._flow, working_dir)
             self._connections = connections
             self._inputs_mapping = inputs_mapping
-            self._flow_definition = Flow.from_yaml(flow_file, working_dir=self._working_dir)
+            self._flow_definition = Flow.from_yaml(self._flow, working_dir=self._working_dir)
 
         logger.info(f"Created chat role {self.role!r} with flow {self._flow.as_posix()!r}")
 
@@ -101,7 +101,7 @@ class ChatRole:
 
     @property
     def flow_file(self):
-        return self._flow_file
+        return self._flow
 
     @property
     def flow(self):
