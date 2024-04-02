@@ -33,8 +33,8 @@ from keyring.errors import NoKeyringError
 from marshmallow import ValidationError
 
 import promptflow
-from promptflow._core.entry_meta_generator import generate_flow_meta as _generate_flow_meta
 from promptflow._constants import ENABLE_MULTI_CONTAINER_KEY, EXTENSION_UA, FlowLanguage
+from promptflow._core.entry_meta_generator import generate_flow_meta as _generate_flow_meta
 from promptflow._sdk._constants import (
     AZURE_WORKSPACE_REGEX_FORMAT,
     DAG_FILE_NAME,

@@ -1,11 +1,11 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-import re
 
 from marshmallow import ValidationError, fields, validate, validates_schema
 
-from promptflow._constants import LANGUAGE_KEY, FlowEntryRegex, FlowLanguage
+from promptflow._constants import LANGUAGE_KEY, FlowLanguage
+from promptflow._proxy import ProxyFactory
 from promptflow._sdk._constants import FlowType
 from promptflow._sdk.schemas._base import PatchedSchemaMeta, YamlFileSchema
 from promptflow._sdk.schemas._fields import NestedField
@@ -67,17 +67,13 @@ class EagerFlowSchema(BaseFlowSchema):
     entry = fields.Str(required=True)
     inputs = fields.Dict(keys=fields.Str(), values=NestedField(FlowInputSchema), required=False)
     outputs = fields.Dict(keys=fields.Str(), values=NestedField(FlowOutputSchema), required=False)
-    inits = fields.Dict(keys=fields.Str(), values=NestedField(FlowInputSchema), required=False)
+    init = fields.Dict(keys=fields.Str(), values=NestedField(FlowInputSchema), required=False)
 
     @validates_schema(skip_on_field_errors=False)
     def validate_entry(self, data, **kwargs):
         """Validate entry."""
+        # the match of entry and input/output ports will be checked in entity._custom_validate instead of here
         language = data.get(LANGUAGE_KEY, FlowLanguage.Python)
-        entry_regex = None
-        if language == FlowLanguage.CSharp:
-            entry_regex = FlowEntryRegex.CSharp
-        elif language == FlowLanguage.Python:
-            entry_regex = FlowEntryRegex.Python
-
-        if entry_regex is not None and not re.match(entry_regex, data["entry"]):
+        inspector_proxy = ProxyFactory().create_inspector_proxy(language=language)
+        if not inspector_proxy.is_flex_flow_entry(data.get("entry", None)):
             raise ValidationError(field_name="entry", message=f"Entry function {data['entry']} is not valid.")

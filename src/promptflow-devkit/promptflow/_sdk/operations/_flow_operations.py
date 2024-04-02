@@ -2,10 +2,12 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import contextlib
+import copy
 import glob
 import json
 import os
 import shutil
+import stat
 import subprocess
 import sys
 import uuid
@@ -15,6 +17,7 @@ from pathlib import Path
 from typing import Dict, Iterable, List, NoReturn, Tuple, Union
 
 import pydash
+from pip._vendor import tomli as toml
 
 from promptflow._constants import FlowLanguage
 from promptflow._proxy import ProxyFactory
@@ -26,6 +29,7 @@ from promptflow._sdk._constants import (
     FLOW_META_JSON_GEN_TIMEOUT,
     FLOW_TOOLS_JSON_GEN_TIMEOUT,
     LOCAL_MGMT_DB_PATH,
+    SERVE_SAMPLE_JSON_PATH,
 )
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._orchestrator import TestSubmitter
@@ -610,23 +614,78 @@ class FlowOperations(TelemetryMixin):
         with open(output_dir / "config.json", "w") as file:
             json.dump(config_content, file, indent=4)
 
+        generate_hidden_imports, all_packages, meta_packages = self._generate_executable_dependency()
+        hidden_imports.extend(generate_hidden_imports)
         copy_tree_respect_template_and_ignore_file(
             source=Path(__file__).parent.parent / "data" / "executable",
             target=output_dir,
             render_context={
                 "hidden_imports": hidden_imports,
                 "runtime_interpreter_path": runtime_interpreter_path,
+                "all_packages": all_packages,
+                "meta_packages": meta_packages,
             },
         )
         self._run_pyinstaller(output_dir)
+
+    def _generate_executable_dependency(self):
+        def get_git_base_dir():
+            return Path(
+                subprocess.run(["git", "rev-parse", "--show-toplevel"], stdout=subprocess.PIPE)
+                .stdout.decode("utf-8")
+                .strip()
+            )
+
+        dependencies = ["promptflow-devkit", "promptflow-core", "promptflow-tracing"]
+        # get promptflow-** required and extra packages
+        extra_packages = []
+        required_packages = []
+        for package in dependencies:
+            with open(get_git_base_dir() / "src" / package / "pyproject.toml", "rb") as file:
+                data = toml.load(file)
+            extras = data.get("tool", {}).get("poetry", {}).get("extras", {})
+            for _, package in extras.items():
+                extra_packages.extend(package)
+            requires = data.get("tool", {}).get("poetry", {}).get("dependencies", [])
+            for package, _ in requires.items():
+                required_packages.append(package)
+
+        all_packages = list(set(dependencies) | set(required_packages) | set(extra_packages))
+        # remove all packages starting with promptflow
+        all_packages.remove("python")
+        all_packages = [package for package in all_packages if not package.startswith("promptflow")]
+
+        hidden_imports = copy.deepcopy(all_packages)
+        meta_packages = copy.deepcopy(all_packages)
+        special_packages = ["streamlit-quill", "flask-cors", "flask-restx"]
+        for i in range(len(hidden_imports)):
+            # need special handeling because it use _ to import
+            if hidden_imports[i] in special_packages:
+                hidden_imports[i] = hidden_imports[i].replace("-", "_").lower()
+            else:
+                hidden_imports[i] = hidden_imports[i].replace("-", ".").lower()
+
+        return hidden_imports, all_packages, meta_packages
 
     def _run_pyinstaller(self, output_dir):
         with _change_working_dir(output_dir, mkdir=False):
             try:
                 subprocess.run(["pyinstaller", "app.spec"], check=True)
                 print("PyInstaller command executed successfully.")
+
+                exe_dir = os.path.join(output_dir, "dist")
+                for file_name in ["pf.bat", "pf", "start_pfs.vbs"]:
+                    src_file = os.path.join(output_dir, file_name)
+                    dst_file = os.path.join(exe_dir, file_name)
+                    shutil.copy(src_file, dst_file)
+                    st = os.stat(dst_file)
+                    os.chmod(dst_file, st.st_mode | stat.S_IEXEC)
             except FileNotFoundError as e:
-                raise UserErrorException(message_format="app.spec not found when run pyinstaller") from e
+                raise UserErrorException(
+                    message_format="The pyinstaller command was not found. Please ensure that the "
+                    "executable directory of the current python environment has "
+                    "been added to the PATH environment variable."
+                ) from e
 
     @monitor_operation(activity_name="pf.flows.build", activity_type=ActivityType.PUBLICAPI)
     def build(
@@ -920,9 +979,9 @@ class FlowOperations(TelemetryMixin):
         return None
 
     @staticmethod
-    def _resolve_signature(original_signature, entry, working_dir, language):
-        if not original_signature:
-            original_signature = {}
+    def _resolve_signature(signature_overrides, entry, working_dir, language):
+        if not signature_overrides:
+            signature_overrides = {}
 
         inspector_proxy = ProxyFactory().create_inspector_proxy(language=language)
         if not inspector_proxy.is_flex_flow_entry(entry):
@@ -930,19 +989,24 @@ class FlowOperations(TelemetryMixin):
 
         # TODO: extract inits, and description?
         entry_meta = inspector_proxy.get_entry_meta(entry=entry, working_dir=working_dir)
-        for key in ["inputs", "outputs", "inits"]:
-            if key not in original_signature and key in entry_meta:
-                original_signature[key] = entry_meta[key]
+        signature = {}
+        for key in ["inputs", "outputs", "init"]:
+            if key in entry_meta:
+                signature[key] = entry_meta[key]
 
-            if key in original_signature and key in entry_meta:
-                if set(original_signature[key].keys()) != set(entry_meta[key].keys()):
-                    raise UserErrorException(
-                        f"Provided signature of {key} for entry {entry} does not match the actual signature.\n"
-                        f"Provided: {', '.join(original_signature[key].keys())}\n"
-                        f"Actual: {', '.join(entry_meta[key].keys())}\n"
-                    )
+            if key not in signature_overrides:
+                continue
 
-        return original_signature
+            if set(signature[key].keys()) != set(signature_overrides[key].keys()):
+                raise UserErrorException(
+                    f"Provided signature of {key} for entry {entry} does not match the entry.\n"
+                    f"Ports with signature: {', '.join(signature_overrides[key].keys())}\n"
+                    f"Actual ports: {', '.join(signature[key].keys())}\n"
+                )
+
+            signature[key] = signature_overrides[key]
+
+        return signature
 
     @monitor_operation(activity_name="pf.flows._save", activity_type=ActivityType.INTERNALCALL)
     def _save(
@@ -1005,7 +1069,7 @@ class FlowOperations(TelemetryMixin):
 
         data.update(
             self._resolve_signature(
-                original_signature=signature,
+                signature_overrides=signature,
                 entry=entry,
                 working_dir=code,
                 language=language or FlowLanguage.Python,
@@ -1020,7 +1084,7 @@ class FlowOperations(TelemetryMixin):
         if python_requirements:
             shutil.copy(python_requirements, target_flow_directory / Path(python_requirements).name)
         if input_sample:
-            with open(target_flow_directory / "sample.json", "w", encoding=DEFAULT_ENCODING) as f:
+            with open(target_flow_directory / SERVE_SAMPLE_JSON_PATH, "w", encoding=DEFAULT_ENCODING) as f:
                 json.dump(input_sample, f, indent=4)
         with open(target_flow_file, "w", encoding=DEFAULT_ENCODING):
             dump_yaml(data, target_flow_file)

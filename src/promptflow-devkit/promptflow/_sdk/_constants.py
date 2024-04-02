@@ -8,13 +8,13 @@ from enum import Enum
 from pathlib import Path
 
 from promptflow._constants import (
+    AZURE_WORKSPACE_REGEX_FORMAT,
     CONNECTION_SCRUBBED_VALUE,
     CONNECTION_SCRUBBED_VALUE_NO_CHANGE,
     PROMPT_FLOW_DIR_NAME,
     ConnectionAuthMode,
     ConnectionType,
     CustomStrongTypeConnectionConfigs,
-    AZURE_WORKSPACE_REGEX_FORMAT
 )
 
 LOGGER_NAME = "promptflow"
@@ -80,6 +80,7 @@ USE_VARIANTS = "use_variants"
 DEFAULT_VAR_ID = "default_variant_id"
 FLOW_TOOLS_JSON = "flow.tools.json"
 FLOW_META_JSON = "flow.json"
+SERVE_SAMPLE_JSON_PATH = "sample.json"
 FLOW_TOOLS_JSON_GEN_TIMEOUT = 60
 FLOW_META_JSON_GEN_TIMEOUT = 60
 PROMPT_FLOW_RUNS_DIR_NAME = ".runs"
