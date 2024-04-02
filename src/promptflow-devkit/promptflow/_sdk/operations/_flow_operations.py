@@ -25,6 +25,7 @@ from promptflow._sdk._constants import (
     FLOW_META_JSON_GEN_TIMEOUT,
     FLOW_TOOLS_JSON_GEN_TIMEOUT,
     LOCAL_MGMT_DB_PATH,
+    SERVE_SAMPLE_JSON_PATH,
 )
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._orchestrator import TestSubmitter
@@ -914,9 +915,9 @@ class FlowOperations(TelemetryMixin):
             if key in original_signature and key in entry_meta:
                 if set(original_signature[key].keys()) != set(entry_meta[key].keys()):
                     raise UserErrorException(
-                        f"Provided signature of {key} for entry {entry} does not match the actual signature.\n"
-                        f"Provided: {', '.join(original_signature[key].keys())}\n"
-                        f"Actual: {', '.join(entry_meta[key].keys())}\n"
+                        f"Provided signature of {key} for entry {entry} does not match the entry.\n"
+                        f"Ports with signature: {', '.join(original_signature[key].keys())}\n"
+                        f"Actual ports: {', '.join(entry_meta[key].keys())}\n"
                     )
 
         return original_signature
@@ -997,7 +998,7 @@ class FlowOperations(TelemetryMixin):
         if python_requirements:
             shutil.copy(python_requirements, target_flow_directory / Path(python_requirements).name)
         if input_sample:
-            with open(target_flow_directory / "sample.json", "w", encoding=DEFAULT_ENCODING) as f:
+            with open(target_flow_directory / SERVE_SAMPLE_JSON_PATH, "w", encoding=DEFAULT_ENCODING) as f:
                 json.dump(input_sample, f, indent=4)
         with open(target_flow_file, "w", encoding=DEFAULT_ENCODING):
             dump_yaml(data, target_flow_file)

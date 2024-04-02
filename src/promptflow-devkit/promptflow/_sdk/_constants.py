@@ -124,6 +124,7 @@ AZURE_WORKSPACE_REGEX_FORMAT = (
     "^azureml:[/]{1,2}subscriptions/([^/]+)/resource(groups|Groups)/([^/]+)"
     "(/providers/Microsoft.MachineLearningServices)?/workspaces/([^/]+)$"
 )
+SERVE_SAMPLE_JSON_PATH = "sample.json"
 DEFAULT_ENCODING = "utf-8"
 LOCAL_STORAGE_BATCH_SIZE = 1
 LOCAL_SERVICE_PORT = 5000
