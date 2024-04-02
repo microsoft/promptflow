@@ -105,7 +105,7 @@ class FlowOperations(TelemetryMixin):
             # For prompty flow, if output path is not specified, set output folder to .promptflow/prompty_file_name.
             # To avoid overwriting the execution info of different prompty in the same working dir.
             kwargs["output_path"] = (
-                kwargs.get("output_path", None) or Path(flow).parent / PROMPT_FLOW_DIR_NAME / Path(flow).stem
+                kwargs.get("output_path", None) or Path(flow).parent.resolve() / PROMPT_FLOW_DIR_NAME / Path(flow).stem
             )
         output_path = kwargs.get("output_path", None)
         result = self._test(
