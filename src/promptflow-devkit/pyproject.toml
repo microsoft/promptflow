@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "promptflow-devkit"
-version = "1.0.0.dev0"
+version = "1.8.0.dev0"
 description = "Prompt flow devkit"
 include = [
   "promptflow/_sdk/_service/static/*",
@@ -67,6 +67,7 @@ pyinstaller = ">=5.13.2"
 streamlit = ">=1.26.0"
 streamlit-quill = "<0.1.0"
 bs4 = "*"
+pywin32 = {version = "*", markers = "sys_platform == 'win32'"}  # Support PFS detach mode in windows
 
 [tool.poetry.extras]
 executable = [
