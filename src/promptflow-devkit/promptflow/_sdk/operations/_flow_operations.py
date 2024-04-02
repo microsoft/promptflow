@@ -460,7 +460,7 @@ class FlowOperations(TelemetryMixin):
         flow = load_flow(built_flow_dag_path)
         with _change_working_dir(flow.code):
             if flow.language == FlowLanguage.CSharp:
-                from promptflow.batch import CSharpExecutorProxy
+                from promptflow._proxy._csharp_executor_proxy import CSharpExecutorProxy
 
                 return self._migrate_connections(
                     connection_names=SubmitterHelper.get_used_connection_names(

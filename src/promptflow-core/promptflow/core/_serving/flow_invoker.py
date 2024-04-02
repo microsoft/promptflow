@@ -9,7 +9,7 @@ from typing import Callable, Union
 from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
 from promptflow._utils.flow_utils import dump_flow_result, is_executable_chat_flow
 from promptflow._utils.logger_utils import LoggerFactory
-from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64, persist_multimedia_data
+from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow.core._connection import _Connection
 from promptflow.core._connection_provider._connection_provider import ConnectionProvider
 from promptflow.core._flow import AbstractFlowBase
@@ -44,6 +44,8 @@ class FlowInvoker:
     :type connections_name_overrides: dict, optional
     :param raise_ex: Whether to raise exception when executing flow, defaults to True
     :type raise_ex: bool, optional
+    :param init_kwargs: Class init arguments for callable class, only supported for flex flow.
+    :type init_kwargs: dict, optional
     """
 
     def __init__(
@@ -54,9 +56,12 @@ class FlowInvoker:
         connections: dict = None,
         connections_name_overrides: dict = None,
         raise_ex: bool = True,
+        init_kwargs: dict = None,
         **kwargs,
     ):
         self.logger = kwargs.get("logger", LoggerFactory.get_logger("flowinvoker"))
+        self._init_kwargs = init_kwargs or {}
+        self.logger.debug(f"Init flow invoker with init kwargs: {self._init_kwargs}")
         # TODO: avoid to use private attribute after we finalize the inheritance
         self.flow = init_executable(working_dir=flow._code, flow_path=flow._path)
         self.connections = connections or {}
@@ -74,6 +79,7 @@ class FlowInvoker:
         # TODO: avoid to use private attribute after we finalize the inheritance
         self._init_executor(flow._path, flow._code)
         self._dump_file_prefix = "chat" if self._is_chat_flow else "flow"
+        self._multimedia_processor = MultimediaProcessor.create(self.flow.message_format)
 
     def resolve_connections(
         self,
@@ -165,6 +171,7 @@ class FlowInvoker:
             connections=self.connections,
             raise_ex=self.raise_ex,
             storage=storage,
+            init_kwargs=self._init_kwargs,
         )
         self.executor.enable_streaming_for_llm_flow(self.streaming)
         self.logger.info("Promptflow executor initiated successfully.")
@@ -222,13 +229,13 @@ class FlowInvoker:
 
     def _convert_multimedia_data_to_base64(self, output_dict):
         resolved_outputs = {
-            k: convert_multimedia_data_to_base64(v, with_type=True, dict_type=True) for k, v in output_dict.items()
+            k: self._multimedia_processor.convert_multimedia_data_to_base64_dict(v) for k, v in output_dict.items()
         }
         return resolved_outputs
 
     def _dump_invoke_result(self, invoke_result):
         if self._dump_to:
-            invoke_result.output = persist_multimedia_data(
+            invoke_result.output = self._multimedia_processor.persist_multimedia_data(
                 invoke_result.output, base_dir=self._dump_to, sub_dir=Path(".promptflow/output")
             )
 
