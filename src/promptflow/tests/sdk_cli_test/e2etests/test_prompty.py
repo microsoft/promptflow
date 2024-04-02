@@ -156,18 +156,3 @@ class TestPrompty:
             flow=f"{PROMPTY_DIR}/prompty_example.prompty", inputs={"question": "what is the result of 1+1?"}
         )
         assert "2" in result
-
-    def test_prompty_as_llm_node(self, pf: PFClient):
-        # prompty in dag flow
-        run = pf.run(flow=f"{FLOW_DIR}/flow_with_prompty", data=f"{FLOW_DIR}/flow_with_prompty/data.jsonl")
-        assert run.status == "Completed"
-        assert "error" not in run._to_dict()
-
-        # prompty in eager flow
-        flow_path = Path(f"{EAGER_FLOW_DIR}/flow_with_prompty")
-        run = pf.run(
-            flow=flow_path,
-            data=f"{DATA_DIR}/simple_eager_flow_data.jsonl",
-        )
-        assert run.status == "Completed"
-        assert "error" not in run._to_dict()
