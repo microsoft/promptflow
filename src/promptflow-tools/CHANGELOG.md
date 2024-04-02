@@ -1,5 +1,10 @@
 # Release History
 
+## 1.5.0 (Upcoming)
+
+### Features Added
+- Add "detail" to "Azure OpenAI GPT-4 Turbo with Vision" and "OpenAI GPT-4V" tool inputs.
+
 ## 1.4.0 (2024.03.26)
 
 ### Features Added
