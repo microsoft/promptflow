@@ -8,6 +8,7 @@ from enum import Enum
 from pathlib import Path
 
 from promptflow._constants import (
+    AZURE_WORKSPACE_REGEX_FORMAT,
     CONNECTION_SCRUBBED_VALUE,
     CONNECTION_SCRUBBED_VALUE_NO_CHANGE,
     PROMPT_FLOW_DIR_NAME,
@@ -79,6 +80,7 @@ USE_VARIANTS = "use_variants"
 DEFAULT_VAR_ID = "default_variant_id"
 FLOW_TOOLS_JSON = "flow.tools.json"
 FLOW_META_JSON = "flow.json"
+SERVE_SAMPLE_JSON_PATH = "sample.json"
 FLOW_TOOLS_JSON_GEN_TIMEOUT = 60
 FLOW_META_JSON_GEN_TIMEOUT = 60
 PROMPT_FLOW_RUNS_DIR_NAME = ".runs"
@@ -120,11 +122,7 @@ SCRUBBED_VALUE_USER_INPUT = "<user-input>"
 WORKSPACE_LINKED_DATASTORE_NAME = "workspaceblobstore"
 LINE_NUMBER = "line_number"
 AZUREML_PF_RUN_PROPERTIES_LINEAGE = "azureml.promptflow.input_run_id"
-AZURE_WORKSPACE_REGEX_FORMAT = (
-    "^azureml:[/]{1,2}subscriptions/([^/]+)/resource(groups|Groups)/([^/]+)"
-    "(/providers/Microsoft.MachineLearningServices)?/workspaces/([^/]+)$"
-)
-SERVE_SAMPLE_JSON_PATH = "sample.json"
+AZURE_WORKSPACE_REGEX_FORMAT = AZURE_WORKSPACE_REGEX_FORMAT
 DEFAULT_ENCODING = "utf-8"
 LOCAL_STORAGE_BATCH_SIZE = 1
 LOCAL_SERVICE_PORT = 5000

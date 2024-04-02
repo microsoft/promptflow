@@ -4,6 +4,8 @@
 
 import pytest
 
+from promptflow._sdk._version import VERSION
+
 from ..utils import PFSOperations, check_activity_end_telemetry
 
 
@@ -34,7 +36,7 @@ class TestTelemetryAPIs:
         with check_activity_end_telemetry(
             activity_name="pf.flow.test",
             activity_type="InternalCall",
-            user_agent=f"{user_agent} local_pfs/0.0.1",
+            user_agent=f"{user_agent} local_pfs/{VERSION}",
             request_id=request_id,
         ):
             response = pfs_op.create_telemetry(
