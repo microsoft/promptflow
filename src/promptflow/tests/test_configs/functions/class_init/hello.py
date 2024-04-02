@@ -1,6 +1,6 @@
 
 class Hello:
-    def __init__(self, background: str) -> None:
+    def __init__(self, background: str = "World") -> None:
         self.background = background
 
     def __call__(self, text: str) -> str:

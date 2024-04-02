@@ -7,7 +7,6 @@ from pathlib import Path
 import pytest
 
 from promptflow._sdk._pf_client import PFClient
-from promptflow._utils.yaml_utils import load_yaml
 from promptflow.exceptions import UserErrorException
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
@@ -141,6 +140,30 @@ class TestFlowSave:
                 },
                 id="data_class_output",
             ),
+            pytest.param(
+                {
+                    "entry": "hello:Hello",
+                },
+                {
+                    "init": {
+                        "background": {
+                            "type": "string",
+                            "default": "World",
+                        }
+                    },
+                    "inputs": {
+                        "text": {
+                            "type": "string",
+                        }
+                    },
+                    "outputs": {
+                        "output": {
+                            "type": "string",
+                        },
+                    },
+                },
+                id="class_init",
+            ),
         ],
     )
     def test_pf_save_succeed(self, save_args_overrides, request, expected_signature: dict):
@@ -163,9 +186,11 @@ class TestFlowSave:
         pf = PFClient()
         pf.flows._save(**save_args)
 
-        data = load_yaml(target_path)
+        from promptflow.client import load_flow
+
+        flow = load_flow(target_path)
         for key, value in expected_signature.items():
-            assert data[key] == value
+            assert flow._data[key] == value, f"key: {key}, expected value: {value}, flow._data[key]: {flow._data[key]}"
 
         # will we support flow as function for flex flow?
         # TODO: invoke is also not supported for flex flow for now

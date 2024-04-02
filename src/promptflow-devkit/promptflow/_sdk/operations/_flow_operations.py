@@ -979,9 +979,9 @@ class FlowOperations(TelemetryMixin):
         return None
 
     @staticmethod
-    def _resolve_signature(original_signature, entry, working_dir, language):
-        if not original_signature:
-            original_signature = {}
+    def _resolve_signature(signature_overrides, entry, working_dir, language):
+        if not signature_overrides:
+            signature_overrides = {}
 
         inspector_proxy = ProxyFactory().create_inspector_proxy(language=language)
         if not inspector_proxy.is_flex_flow_entry(entry):
@@ -989,19 +989,24 @@ class FlowOperations(TelemetryMixin):
 
         # TODO: extract inits, and description?
         entry_meta = inspector_proxy.get_entry_meta(entry=entry, working_dir=working_dir)
-        for key in ["inputs", "outputs", "inits"]:
-            if key not in original_signature and key in entry_meta:
-                original_signature[key] = entry_meta[key]
+        signature = {}
+        for key in ["inputs", "outputs", "init"]:
+            if key in entry_meta:
+                signature[key] = entry_meta[key]
 
-            if key in original_signature and key in entry_meta:
-                if set(original_signature[key].keys()) != set(entry_meta[key].keys()):
-                    raise UserErrorException(
-                        f"Provided signature of {key} for entry {entry} does not match the entry.\n"
-                        f"Ports with signature: {', '.join(original_signature[key].keys())}\n"
-                        f"Actual ports: {', '.join(entry_meta[key].keys())}\n"
-                    )
+            if key not in signature_overrides:
+                continue
 
-        return original_signature
+            if set(signature[key].keys()) != set(signature_overrides[key].keys()):
+                raise UserErrorException(
+                    f"Provided signature of {key} for entry {entry} does not match the entry.\n"
+                    f"Ports with signature: {', '.join(signature_overrides[key].keys())}\n"
+                    f"Actual ports: {', '.join(signature[key].keys())}\n"
+                )
+
+            signature[key] = signature_overrides[key]
+
+        return signature
 
     @monitor_operation(activity_name="pf.flows._save", activity_type=ActivityType.INTERNALCALL)
     def _save(
@@ -1064,7 +1069,7 @@ class FlowOperations(TelemetryMixin):
 
         data.update(
             self._resolve_signature(
-                original_signature=signature,
+                signature_overrides=signature,
                 entry=entry,
                 working_dir=code,
                 language=language or FlowLanguage.Python,
