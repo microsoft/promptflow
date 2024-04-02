@@ -6,6 +6,7 @@ from tests.utils import CustomException, Deployment
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 from promptflow.contracts.multimedia import Image
 from promptflow.tools.common import (
+    ChatAPIAssistantRoleInvalidFormat,
     ChatAPIInvalidFunctions,
     ChatAPIInvalidTools,
     ChatInputList,
@@ -16,6 +17,7 @@ from promptflow.tools.common import (
     list_deployment_connections,
     normalize_connection_config,
     parse_chat,
+    parse_tool_calls_for_assistant,
     preprocess_template_string,
     process_function_call,
     process_tool_choice,
@@ -251,7 +253,7 @@ class TestCommon:
         assert actual_result == expected_result
 
     @pytest.mark.parametrize(
-        "chat_str, expected_result, success",
+        "chat_str, expected_result, success, error_message",
         [
             (
                 '# tool:\n## tool_call_id:\ncall_001\n## content:\n{"location": "San Francisco, CA", "temperature": "72", "unit": null}\n',
@@ -263,6 +265,7 @@ class TestCommon:
                     }
                 ],
                 True,
+                "",
             ),
             (
                 """
@@ -302,6 +305,7 @@ call_003
                     },
                 ],
                 True,
+                "",
             ),
             (
                 """
@@ -341,6 +345,7 @@ call_003
                     }
                 ],
                 True,
+                "",
             ),
             (
                 """
@@ -425,15 +430,40 @@ call_003
                     },
                 ],
                 True,
+                "",
+            ),
+            (
+                """
+# assistant:
+## tool_calls:
+[{'id': 'call_001', 'function1': {'arguments': '{"location": {"city": "San Francisco", "country": "USA"}, "unit": "metric"}', 'name': 'get_current_weather_py'}, 'type': 'function'}]
+""",
+                [],
+                False,
+                "it should contain required keys 'id', 'type', 'function'",
             ),
         ],
     )
-    def test_try_parse_chat_with_tools(self, chat_str: str, expected_result, success: bool):
+    def test_try_parse_chat_with_tools(self, chat_str: str, expected_result, success: bool, error_message: str):
         if success:
             actual_result = parse_chat(chat_str)
             assert actual_result == expected_result
         else:
-            pass
+            with pytest.raises(ChatAPIAssistantRoleInvalidFormat) as exc_info:
+                parse_chat(chat_str)
+            assert error_message in exc_info.value.message
+
+    @pytest.mark.parametrize("chunk, error_message", [
+        ("""
+## tool_calls:
+[{'id': 'call_001'}]
+         """, "Please make sure each item in 'tool_calls' in the prompt must be a dict, and it should contain required keys 'id', 'type', 'function'.")
+    ])
+    def test_parse_tool_calls_for_assistant(self, chunk: str, error_message: str):
+        last_message = {'role': 'assistant'}
+        with pytest.raises(ChatAPIAssistantRoleInvalidFormat) as exc_info:
+            parse_tool_calls_for_assistant(last_message, chunk)
+        assert error_message in exc_info.value.message
 
     @pytest.mark.parametrize(
         "kwargs, expected_result",
