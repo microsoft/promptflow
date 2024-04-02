@@ -17,7 +17,14 @@ import argparse  # noqa: E402
 import logging  # noqa: E402
 import sys  # noqa: E402
 
-from promptflow._sdk._utils import get_promptflow_sdk_version, print_pf_version  # noqa: E402
+from promptflow._sdk._utils import (  # noqa: E402
+    get_promptflow_azure_version,
+    get_promptflow_core_version,
+    get_promptflow_devkit_version,
+    get_promptflow_sdk_version,
+    get_promptflow_tracing_version,
+    print_pf_version,
+)
 from promptflow._utils.logger_utils import get_cli_sdk_logger  # noqa: E402
 from promptflow._utils.user_agent_utils import setup_user_agent_to_operation_context  # noqa: E402
 from promptflow.azure._cli._flow import add_parser_flow, dispatch_flow_commands  # noqa: E402
@@ -117,7 +124,28 @@ def main():
     command_args = sys.argv[1:]
     if len(command_args) == 1 and command_args[0] == "version":
         version_dict = {"promptflow": get_promptflow_sdk_version()}
-        return json.dumps(version_dict, ensure_ascii=False, indent=2, sort_keys=True, separators=(",", ": ")) + "\n"
+        # check tracing version
+        version_tracing = get_promptflow_tracing_version()
+        if version_tracing:
+            version_dict["promptflow-tracing"] = version_tracing
+        # check azure version
+        version_azure = get_promptflow_azure_version()
+        if version_azure:
+            version_dict["promptflow-azure"] = version_azure
+        # check core version
+        version_core = get_promptflow_core_version()
+        if version_core:
+            version_dict["promptflow-core"] = version_core
+        # check devkit version
+        version_devkit = get_promptflow_devkit_version()
+        if version_devkit:
+            version_dict["promptflow-devkit"] = version_devkit
+
+        version_dict_string = (
+            json.dumps(version_dict, ensure_ascii=False, indent=2, sort_keys=True, separators=(",", ": ")) + "\n"
+        )
+        print(version_dict_string)
+        return
     if len(command_args) == 0:
         # print privacy statement & welcome message like azure-cli
         show_privacy_statement()
