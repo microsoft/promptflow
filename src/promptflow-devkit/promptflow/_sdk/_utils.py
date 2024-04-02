@@ -369,7 +369,7 @@ def get_promptflow_azure_version() -> Union[str, None]:
         return None
 
 
-def print_pf_version():
+def print_pf_version(with_azure: bool = False):
     version_promptflow = get_promptflow_sdk_version()
     if version_promptflow:
         print("promptflow\t\t\t {}".format(version_promptflow))
@@ -382,9 +382,10 @@ def print_pf_version():
     version_devkit = get_promptflow_devkit_version()
     if version_devkit:
         print("promptflow-devkit\t\t {}".format(version_devkit))
-    version_azure = get_promptflow_azure_version()
-    if version_azure:
-        print("promptflow-azure\t\t {}".format(version_azure))
+    if with_azure:
+        version_azure = get_promptflow_azure_version()
+        if version_azure:
+            print("promptflow-azure\t\t {}".format(version_azure))
     print()
     print("Executable '{}'".format(os.path.abspath(sys.executable)))
     print("Python ({}) {}".format(platform.system(), sys.version))
