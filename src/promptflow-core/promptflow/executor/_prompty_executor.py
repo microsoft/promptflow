@@ -23,11 +23,16 @@ class PromptyExecutor(ScriptExecutor):
         *,
         storage: Optional[AbstractRunStorage] = None,
     ):
-
         self.prompty = Prompty.load(source=flow_file)
         super().__init__(flow_file=flow_file, connections=connections, working_dir=working_dir, storage=storage)
 
     def _initialize_function(self):
+        """
+        This function will be called when initializing the executor.
+        Used to initialize functions to be executed and support inputs.
+        Overwrite the initialize logic, using callable prompty as the function to be executed and prompty inputs
+        as executor input.
+        """
         # If the function is not decorated with trace, add trace for it.
         func = _traced(self.prompty)
         self._func = self.prompty
