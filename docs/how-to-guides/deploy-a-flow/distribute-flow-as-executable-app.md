@@ -43,7 +43,7 @@ Exported files & its dependencies are located in the same folder. The structure 
 ### A template script of the entry file
 PyInstaller reads a spec file or Python script written by you. It analyzes your code to discover every other module and library your script needs in order to execute. Then it collects copies of all those files, including the active Python interpreter, and puts them with your script in a single folder, or optionally in a single executable file. 
 
-We provide a Python entry script named [app.py](https://github.com/microsoft/promptflow/blob/main/src/promptflow-devkit/promptflow/_sdk/data/executable/app.py]) as the entry point for the bundled app, which enables you to serve a flow folder as an endpoint.
+We provide a Python entry script named [app.py](https://github.com/microsoft/promptflow/blob/main/src/promptflow-devkit/promptflow/_sdk/data/executable/app.py) as the entry point for the bundled app, which enables you to serve a flow folder as an endpoint.
 
 
 ### A template script of the spec file
