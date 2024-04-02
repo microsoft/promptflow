@@ -1548,7 +1548,7 @@ class TestCli:
         with pytest.raises(SystemExit):
             run_pf_command("tool", "list", "--flow", "invalid_flow_folder")
         outerr = capsys.readouterr()
-        assert "invalid_flow_folder does not exist" in outerr.out
+        assert "Can't find file flow.dag.yaml or flow.flex.yaml in the flow path" in outerr.out
 
     def test_tool_validate(self):
         # Test validate tool script

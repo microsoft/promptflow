@@ -83,8 +83,8 @@ def resolve_flow_path(
         target_file = FLOW_FLEX_YAML if flex_file_exist else FLOW_DAG_YAML
         if dag_file_exist and flex_file_exist:
             raise ValidationException(
-                f"Both exist {FLOW_DAG_YAML} and {FLOW_FLEX_YAML} in the {flow_path}. "
-                f"Please specify the file instead of the folder, "
+                f"Both exist {FLOW_DAG_YAML} and {FLOW_FLEX_YAML} in the flow path {flow_path}, "
+                f"please specify the file instead of the folder, "
                 f"or delete the excess yaml file.",
                 privacy_info=[str(flow_path)],
             )

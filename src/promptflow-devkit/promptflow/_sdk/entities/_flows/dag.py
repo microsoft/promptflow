@@ -36,7 +36,7 @@ class Flow(FlowBase):
 
         # TODO: this can be dangerous. path always point to the flow yaml file; code always point to the flow directory;
         #   but path may not under code (like a temp generated flow yaml file).
-        self._flow_dir, self._dag_file_name = resolve_flow_path(self.code)
+        self._flow_dir, self._dag_file_name = resolve_flow_path(self.path)
         self._executable = None
         self._params_override = params_override
 

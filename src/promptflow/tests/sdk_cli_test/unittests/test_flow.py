@@ -8,6 +8,7 @@ from marshmallow import ValidationError
 
 from promptflow import load_flow
 from promptflow._sdk.entities._flows import FlexFlow, Flow
+from promptflow.exceptions import ValidationException
 
 FLOWS_DIR = Path("./tests/test_configs/flows")
 EAGER_FLOWS_DIR = Path("./tests/test_configs/eager_flows")
@@ -65,3 +66,13 @@ class TestRun:
             load_flow(**kwargs)
 
         assert error_message in str(e.value)
+
+    def test_mutiple_flow_load(self):
+        with pytest.raises(ValidationException) as e:
+            load_flow(EAGER_FLOWS_DIR / "mutiple_flow_yaml")
+
+        assert "Both exist flow.dag.yaml and flow.flex.yaml in the flow path" in str(e.value)
+
+    def test_specify_flow_load(self):
+        load_flow(EAGER_FLOWS_DIR / "mutiple_flow_yaml" / "flow.dag.yaml")
+        load_flow(EAGER_FLOWS_DIR / "mutiple_flow_yaml" / "flow.flex.yaml")
