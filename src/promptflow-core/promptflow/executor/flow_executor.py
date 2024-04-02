@@ -36,9 +36,9 @@ from promptflow._utils.execution_utils import (
 from promptflow._utils.flow_utils import is_flex_flow
 from promptflow._utils.logger_utils import flow_logger, logger
 from promptflow._utils.multimedia_utils import MultimediaProcessor
+from promptflow._utils.user_agent_utils import append_promptflow_package_ua
 from promptflow._utils.utils import get_int_env_var, transpose
 from promptflow._utils.yaml_utils import load_yaml
-from promptflow._version import VERSION
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
@@ -322,7 +322,7 @@ class FlowExecutor:
             operation_context = OperationContext.get_instance()
             original_context = operation_context.copy()
             try:
-                operation_context.append_user_agent(f"promptflow/{VERSION}")
+                append_promptflow_package_ua(operation_context)
                 operation_context.set_default_tracing_keys({"run_mode", "root_run_id", "flow_id", "batch_input_source"})
                 operation_context["run_mode"] = RunMode.SingleNode.name
                 # Inject OpenAI API to make sure traces and headers injection works and
@@ -796,7 +796,7 @@ class FlowExecutor:
         else:
             values_for_otel = {"line_run_id": run_id}
         try:
-            operation_context.append_user_agent(f"promptflow/{VERSION}")
+            append_promptflow_package_ua(operation_context)
             operation_context.set_default_tracing_keys({"run_mode", "root_run_id", "flow_id", "batch_input_source"})
             operation_context.run_mode = original_mode or RunMode.Test.name
             operation_context.update(values_for_context)
@@ -842,6 +842,8 @@ class FlowExecutor:
         allow_generator_output=False,
     ):
         with open_telemetry_tracer.start_as_current_span(self._flow.name) as span:
+            # Store otel trace id in context for correlation
+            OperationContext.get_instance()["otel_trace_id"] = f"{span.get_span_context().trace_id:032x}"
             # initialize span
             span.set_attributes(
                 {

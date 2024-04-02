@@ -135,12 +135,14 @@ class TestSummary:
             {"op": "add", "path": f"/evaluations/{self.summary.span.name}", "value": asdict(expected_item)}
         ]
 
-        client.query_items.return_value = [{"id": "main_id", "status": OK_LINE_RUN_STATUS}]
+        client.query_items.return_value = [
+            {"id": "main_id", "partition_key": "test_main_partition_key", "status": OK_LINE_RUN_STATUS}
+        ]
         self.summary._insert_evaluation(client)
         client.query_items.assert_called_once()
         client.patch_item.assert_called_once_with(
             item="main_id",
-            partition_key=self.FAKE_COLLECTION_ID,
+            partition_key="test_main_partition_key",
             patch_operations=expected_patch_operations,
         )
 
@@ -151,7 +153,9 @@ class TestSummary:
             SpanAttributeFieldName.LINE_RUN_ID: "line_run_id",
             SpanAttributeFieldName.OUTPUT: '{"output_key": "output_value"}',
         }
-        client.query_items.return_value = [{"id": "main_id", "status": OK_LINE_RUN_STATUS}]
+        client.query_items.return_value = [
+            {"id": "main_id", "partition_key": "test_main_partition_key", "status": OK_LINE_RUN_STATUS}
+        ]
         self.summary._insert_evaluation(client)
         client.query_items.assert_called_once_with(
             query=(
@@ -163,7 +167,7 @@ class TestSummary:
                 {"name": "@batch_run_id", "value": None},
                 {"name": "@line_number", "value": None},
             ],
-            partition_key=self.FAKE_COLLECTION_ID,
+            enable_cross_partition_query=True,
         )
 
         expected_item = LineEvaluation(
@@ -180,7 +184,7 @@ class TestSummary:
         ]
         client.patch_item.assert_called_once_with(
             item="main_id",
-            partition_key=self.FAKE_COLLECTION_ID,
+            partition_key="test_main_partition_key",
             patch_operations=expected_patch_operations,
         )
 
@@ -192,7 +196,9 @@ class TestSummary:
             SpanAttributeFieldName.LINE_NUMBER: 1,
             SpanAttributeFieldName.OUTPUT: '{"output_key": "output_value"}',
         }
-        client.query_items.return_value = [{"id": "main_id", "status": OK_LINE_RUN_STATUS}]
+        client.query_items.return_value = [
+            {"id": "main_id", "partition_key": "test_main_partition_key", "status": OK_LINE_RUN_STATUS}
+        ]
 
         self.summary._insert_evaluation(client)
         client.query_items.assert_called_once_with(
@@ -205,7 +211,7 @@ class TestSummary:
                 {"name": "@batch_run_id", "value": "referenced_batch_run_id"},
                 {"name": "@line_number", "value": 1},
             ],
-            partition_key=self.FAKE_COLLECTION_ID,
+            enable_cross_partition_query=True,
         )
 
         expected_item = LineEvaluation(
@@ -218,12 +224,10 @@ class TestSummary:
             name=self.summary.span.name,
             created_by=self.FAKE_CREATED_BY,
         )
-        expected_patch_operations = [
-            {"op": "add", "path": f"/evaluations/{self.summary.span.name}", "value": asdict(expected_item)}
-        ]
+        expected_patch_operations = [{"op": "add", "path": "/evaluations/batch_run_id", "value": asdict(expected_item)}]
         client.patch_item.assert_called_once_with(
             item="main_id",
-            partition_key=self.FAKE_COLLECTION_ID,
+            partition_key="test_main_partition_key",
             patch_operations=expected_patch_operations,
         )
 
