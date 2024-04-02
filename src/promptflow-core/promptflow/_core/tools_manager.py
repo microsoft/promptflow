@@ -30,7 +30,6 @@ from promptflow._utils.connection_utils import (
 )
 from promptflow._utils.tool_utils import (
     _DEPRECATED_TOOLS,
-    DynamicListError,
     RetrieveToolFuncResultError,
     _find_deprecated_tools,
     append_workspace_triple_to_func_input_params,
@@ -38,7 +37,6 @@ from promptflow._utils.tool_utils import (
     function_to_tool_definition,
     get_prompt_param_name_from_func,
     load_function_from_function_path,
-    validate_dynamic_list_func_response_type,
     validate_tool_func_result,
 )
 from promptflow._utils.yaml_utils import load_yaml
