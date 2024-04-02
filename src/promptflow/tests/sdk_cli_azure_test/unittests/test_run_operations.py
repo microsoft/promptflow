@@ -7,12 +7,14 @@ from azure.ai.ml.entities import IdentityConfiguration
 from pytest_mock import MockerFixture
 
 from promptflow._sdk._errors import RunOperationParameterError
+from promptflow._sdk._utils import parse_otel_span_status_code
 from promptflow._sdk.entities import Run
 from promptflow.azure import PFClient
 from promptflow.exceptions import UserErrorException
 
 FLOWS_DIR = "./tests/test_configs/flows"
 DATAS_DIR = "./tests/test_configs/datas"
+EAGER_FLOWS_DIR = "./tests/test_configs/eager_flows"
 
 
 @pytest.mark.unittest
@@ -80,6 +82,18 @@ class TestRunOperations:
             with pytest.raises(UserErrorException) as e:
                 pf.runs._resolve_identity(run)
             assert error_msg in str(e)
+
+    def test_flex_flow_with_imported_func(self, pf: PFClient):
+        # TODO(3017093): won't support this for now
+        with pytest.raises(UserErrorException) as e:
+            pf.run(
+                flow=parse_otel_span_status_code,
+                data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+                # set code folder to avoid snapshot too big
+                code=f"{EAGER_FLOWS_DIR}/multiple_entries",
+                column_mapping={"value": "${data.input_val}"},
+            )
+        assert "not supported" in str(e)
 
     def test_wrong_workspace_type(
         self, mocker: MockerFixture, subscription_id: str, resource_group_name: str, workspace_name: str

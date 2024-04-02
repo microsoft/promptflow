@@ -6,7 +6,6 @@ import glob
 import json
 import os
 import subprocess
-import sys
 import uuid
 from importlib.metadata import version
 from os import PathLike
@@ -140,6 +139,81 @@ class FlowOperations(TelemetryMixin):
         TestSubmitter._raise_error_when_test_failed(result, show_trace=node is not None)
         return result.output
 
+    def _test_with_ui(
+        self,
+        flow: Union[str, PathLike],
+        output_path: PathLike,
+        *,
+        inputs: dict = None,
+        variant: str = None,
+        node: str = None,
+        environment_variables: dict = None,
+        entry: str = None,
+        **kwargs,
+    ) -> dict:
+        """Test flow or node by http request.
+
+        :param flow: path to flow directory to test
+        :type flow: Union[str, PathLike]
+        :param inputs: Input data for the flow test
+        :type inputs: dict
+        :param variant: Node & variant name in format of ${node_name.variant_name}, will use default variant
+           if not specified.
+        :type variant: str
+        :param node: If specified it will only test this node, else it will test the flow.
+        :type node: str
+        :param environment_variables: Environment variables to set by specifying a property path and value.
+           Example: {"key1": "${my_connection.api_key}", "key2"="value2"}
+           The value reference to connection keys will be resolved to the actual value,
+           and all environment variables specified will be set into os.environ.
+        :type environment_variables: dict
+        :return: The result of flow or node
+        :rtype: dict
+        """
+        # The api is used for ux calling pfs. We need the api to read detail.json and log and return to ux as the
+        # format they expected.
+        experiment = kwargs.get("experiment", None)
+        result = self.test(
+            flow=flow,
+            inputs=inputs,
+            environment_variables=environment_variables,
+            variant=variant,
+            node=node,
+            output_path=output_path,
+            **kwargs,
+        )
+        if Configuration.get_instance().is_internal_features_enabled() and experiment:
+            return_output = {}
+            for key in result:
+                detail_path = output_path / key / "flow.detail.json"
+                log_path = output_path / key / "flow.log"
+                detail_content = json_load(detail_path)
+                with open(log_path, "r") as file:
+                    log_content = file.read()
+                return_output[key] = {
+                    "detail": detail_content,
+                    "log": log_content,
+                    "output_path": (output_path / key).as_posix(),
+                }
+        else:
+            if node:
+                detail_path = output_path / f"flow-{node}.node.detail.json"
+                log_path = output_path / f"{node}.node.log"
+            else:
+                if variant:
+                    tuning_node, node_variant = parse_variant(variant)
+                    detail_path = output_path / f"flow-{tuning_node}-{node_variant}.detail.json"
+                else:
+                    detail_path = output_path / "flow.detail.json"
+                log_path = output_path / "flow.log"
+            detail_content = json_load(detail_path)
+            with open(log_path, "r") as file:
+                log_content = file.read()
+            return_output = {
+                "flow": {"detail": detail_content, "log": log_content, "output_path": output_path.as_posix()}
+            }
+        return return_output
+
     def _test(
         self,
         flow: Union[str, PathLike],
@@ -258,111 +332,6 @@ class FlowOperations(TelemetryMixin):
                 show_step_output=kwargs.get("show_step_output", False),
             )
 
-    def _test_with_ui(
-        self,
-        flow: Union[str, PathLike],
-        output_path: PathLike,
-        *,
-        inputs: dict = None,
-        variant: str = None,
-        node: str = None,
-        environment_variables: dict = None,
-        entry: str = None,
-        **kwargs,
-    ) -> dict:
-        """Test flow or node by http request.
-
-        :param flow: path to flow directory to test
-        :type flow: Union[str, PathLike]
-        :param inputs: Input data for the flow test
-        :type inputs: dict
-        :param variant: Node & variant name in format of ${node_name.variant_name}, will use default variant
-           if not specified.
-        :type variant: str
-        :param node: If specified it will only test this node, else it will test the flow.
-        :type node: str
-        :param environment_variables: Environment variables to set by specifying a property path and value.
-           Example: {"key1": "${my_connection.api_key}", "key2"="value2"}
-           The value reference to connection keys will be resolved to the actual value,
-           and all environment variables specified will be set into os.environ.
-        :type environment_variables: dict
-        :return: The result of flow or node
-        :rtype: dict
-        """
-        # TODO : it's not clear why we need this method, please help verify:
-        #  1. why we can't use test method directly
-        #  2. is _chat_with_ui still necessary
-        experiment = kwargs.pop("experiment", None)
-        if Configuration.get_instance().is_internal_features_enabled() and experiment:
-            result = self.test(
-                flow=flow,
-                inputs=inputs,
-                environment_variables=environment_variables,
-                variant=variant,
-                node=node,
-                allow_generator_output=kwargs.pop("allow_generator_output", False),
-                stream_output=kwargs.pop("stream_output", False),
-                experiment=experiment,
-                output_path=output_path,
-            )
-            return_output = {}
-            for key in result:
-                detail_path = output_path / key / "flow.detail.json"
-                log_path = output_path / key / "flow.log"
-                detail_content = json_load(detail_path)
-                with open(log_path, "r") as file:
-                    log_content = file.read()
-                return_output[key] = {"detail": detail_content, "log": log_content}
-        else:
-            self.test(
-                flow=flow,
-                inputs=inputs,
-                environment_variables=environment_variables,
-                variant=variant,
-                node=node,
-                allow_generator_output=False,
-                stream_output=False,
-                dump_test_result=True,
-                output_path=output_path,
-            )
-            if node:
-                detail_path = output_path / f"flow-{node}.node.detail.json"
-                log_path = output_path / f"{node}.node.log"
-            else:
-                if variant:
-                    tuning_node, node_variant = parse_variant(variant)
-                    detail_path = output_path / f"flow-{tuning_node}-{node_variant}.detail.json"
-                else:
-                    detail_path = output_path / "flow.detail.json"
-                log_path = output_path / "flow.log"
-            detail_content = json_load(detail_path)
-            with open(log_path, "r") as file:
-                log_content = file.read()
-            return_output = {"flow": {"detail": detail_content, "log": log_content}}
-        return return_output
-
-    @monitor_operation(activity_name="pf.flows._chat_with_ui", activity_type=ActivityType.INTERNALCALL)
-    def _chat_with_ui(self, script, skip_open_browser: bool = False):
-        try:
-            import bs4  # noqa: F401
-            import streamlit_quill  # noqa: F401
-            from streamlit.web import cli as st_cli
-        except ImportError as ex:
-            raise UserErrorException(
-                f"Please try 'pip install promptflow[executable]' to install dependency, {ex.msg}."
-            )
-        sys.argv = [
-            "streamlit",
-            "run",
-            script,
-            "--global.developmentMode=false",
-            "--client.toolbarMode=viewer",
-            "--browser.gatherUsageStats=false",
-        ]
-        if skip_open_browser:
-            sys.argv += ["--server.headless=true"]
-        st_cli.main()
-
     def _build_environment_config(self, flow_dag_path: Path):
         flow_info = load_yaml(flow_dag_path)
         # standard env object:
@@ -471,7 +440,7 @@ class FlowOperations(TelemetryMixin):
         flow = load_flow(built_flow_dag_path)
         with _change_working_dir(flow.code):
             if flow.language == FlowLanguage.CSharp:
-                from promptflow.batch import CSharpExecutorProxy
+                from promptflow._proxy._csharp_executor_proxy import CSharpExecutorProxy
 
                 return self._migrate_connections(
                     connection_names=SubmitterHelper.get_used_connection_names(

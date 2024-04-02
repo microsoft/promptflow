@@ -6,7 +6,10 @@ import pytest
 
 from promptflow._core._errors import UnexpectedError
 from promptflow._proxy import ProxyFactory
-from promptflow.batch import APIBasedExecutorProxy, BatchEngine, CSharpExecutorProxy, PythonExecutorProxy
+from promptflow._proxy._base_executor_proxy import APIBasedExecutorProxy
+from promptflow._proxy._csharp_executor_proxy import CSharpExecutorProxy
+from promptflow._proxy._python_executor_proxy import PythonExecutorProxy
+from promptflow.batch import BatchEngine
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget
 from promptflow.executor._errors import ConnectionNotFound

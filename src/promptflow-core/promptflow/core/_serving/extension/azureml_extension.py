@@ -8,15 +8,15 @@ import re
 from typing import Any, Tuple
 
 from promptflow._utils.retry_utils import retry
-from promptflow._version import VERSION
 from promptflow.contracts.flow import Flow
 from promptflow.core._serving._errors import InvalidConnectionData, MissingConnectionProvider
 from promptflow.core._serving.extension.default_extension import AppExtension
 from promptflow.core._serving.extension.extension_type import ExtensionType
 from promptflow.core._serving.monitor.data_collector import FlowDataCollector
 from promptflow.core._serving.utils import decode_dict, get_pf_serving_env, normalize_connection_name
+from promptflow.core._version import __version__
 
-USER_AGENT = f"promptflow-cloud-serving/{VERSION}"
+USER_AGENT = f"promptflow-cloud-serving/{__version__}"
 AML_DEPLOYMENT_RESOURCE_ID_REGEX = "/subscriptions/(.*)/resourceGroups/(.*)/providers/Microsoft.MachineLearningServices/workspaces/(.*)/onlineEndpoints/(.*)/deployments/(.*)"  # noqa: E501
 AML_CONNECTION_PROVIDER_TEMPLATE = "azureml://subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}"  # noqa: E501
 
