@@ -17,7 +17,7 @@ from ._load_functions import load_flow
 from ._user_agent import USER_AGENT
 from ._utils import generate_yaml_entry, is_python_flex_flow_entry
 from .entities import Run
-from .entities._flow import FlexFlow
+from .entities._flows import FlexFlow
 from .operations import RunOperations
 from .operations._connection_operations import ConnectionOperations
 from .operations._experiment_operations import ExperimentOperations

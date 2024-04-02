@@ -34,7 +34,7 @@ from promptflow._sdk._utils import (
     json_load,
     logger,
 )
-from promptflow._sdk.entities._flow import FlexFlow, Flow
+from promptflow._sdk.entities._flows import FlexFlow, Flow
 from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.flow_utils import dump_flow_result, is_executable_chat_flow, is_flex_flow, parse_variant

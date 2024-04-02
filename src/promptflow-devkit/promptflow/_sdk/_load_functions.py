@@ -15,7 +15,7 @@ from ._errors import MultipleExperimentTemplateError, NoExperimentTemplateError
 from .entities import Run
 from .entities._connection import CustomConnection, _Connection
 from .entities._experiment import Experiment, ExperimentTemplate
-from .entities._flow import Flow
+from .entities._flows import Flow
 
 logger = get_cli_sdk_logger()
 
