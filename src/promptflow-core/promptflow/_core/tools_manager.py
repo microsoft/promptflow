@@ -186,25 +186,6 @@ def retrieve_tool_func_result(
     return result
 
 
-def gen_dynamic_list(func_path: str, func_input_params_dict: Dict, ws_triple_dict: Dict[str, str] = {}):
-    func = load_function_from_function_path(func_path)
-    # get param names from func signature.
-    func_sig_params = inspect.signature(func).parameters
-    module_logger.warning(f"func_sig_params of func_path is: '{func_sig_params}'")
-    module_logger.warning(f"func_input_params_dict is: '{func_input_params_dict}'")
-    combined_func_input_params = append_workspace_triple_to_func_input_params(
-        func_sig_params, func_input_params_dict, ws_triple_dict
-    )
-    try:
-        result = func(**combined_func_input_params)
-    except Exception as e:
-        raise DynamicListError(f"Error when calling function {func_path}: {e}")
-    # validate response is of required format. Throw correct message if response is empty.
-    validate_dynamic_list_func_response_type(result, func.__name__)
-
-    return result
-
-
 class BuiltinsManager:
     def __init__(self) -> None:
         pass
