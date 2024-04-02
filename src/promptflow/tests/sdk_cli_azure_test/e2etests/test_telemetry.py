@@ -259,7 +259,7 @@ class TestTelemetry:
             )
             user_agent = ClientUserAgentUtil.get_user_agent()
             ua_dict = parse_ua_to_dict(user_agent)
-            assert ua_dict.keys() == {"promptflow-sdk"}
+            assert ua_dict.keys() == {"promptflow-azure-sdk"}
 
             # Call log_activity
             with log_activity(logger, "test_activity", activity_type=ActivityType.PUBLICAPI):
@@ -275,7 +275,7 @@ class TestTelemetry:
         )
         user_agent = ClientUserAgentUtil.get_user_agent()
         ua_dict = parse_ua_to_dict(user_agent)
-        assert ua_dict.keys() == {"promptflow-sdk", "a"}
+        assert ua_dict.keys() == {"promptflow-azure-sdk", "a"}
 
         context = OperationContext().get_instance()
         context.user_agent = ""
