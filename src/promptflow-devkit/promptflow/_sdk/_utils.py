@@ -325,13 +325,63 @@ def incremental_print(log: str, printed: int, fileout) -> int:
 def get_promptflow_sdk_version() -> str:
     try:
         return promptflow.__version__
-    except AttributeError:
+    except ImportError:
         # if promptflow is installed from source, it does not have __version__ attribute
-        return "0.0.1"
+        return None
+
+
+def get_promptflow_tracing_version() -> Union[str, None]:
+    try:
+        from promptflow.tracing._version import __version__
+
+        return __version__
+    except ImportError:
+        return None
+
+
+def get_promptflow_core_version() -> Union[str, None]:
+    try:
+        from promptflow.core._version import __version__
+
+        return __version__
+    except ImportError:
+        return None
+
+
+def get_promptflow_devkit_version() -> Union[str, None]:
+    try:
+        from promptflow._sdk._version import __version__
+
+        return __version__
+    except ImportError:
+        return None
+
+
+def get_promptflow_azure_version() -> Union[str, None]:
+    try:
+        from promptflow.azure._version import __version__
+
+        return __version__
+    except ImportError:
+        return None
 
 
 def print_pf_version():
-    print("promptflow\t\t\t {}".format(get_promptflow_sdk_version()))
+    version_promptflow = get_promptflow_sdk_version()
+    if version_promptflow:
+        print("promptflow\t\t\t {}".format(version_promptflow))
+    version_tracing = get_promptflow_tracing_version()
+    if version_tracing:
+        print("promptflow-tracing\t\t {}".format(version_tracing))
+    version_core = get_promptflow_core_version()
+    if version_core:
+        print("promptflow-core\t\t\t {}".format(version_core))
+    version_devkit = get_promptflow_devkit_version()
+    if version_devkit:
+        print("promptflow-devkit\t\t {}".format(version_devkit))
+    version_azure = get_promptflow_azure_version()
+    if version_azure:
+        print("promptflow-azure\t\t {}".format(version_azure))
     print()
     print("Executable '{}'".format(os.path.abspath(sys.executable)))
     print("Python ({}) {}".format(platform.system(), sys.version))

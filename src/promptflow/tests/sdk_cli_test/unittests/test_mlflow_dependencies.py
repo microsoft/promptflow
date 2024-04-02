@@ -13,7 +13,7 @@ class TestMLFlowDependencies:
     def test_mlflow_dependencies(self):
         assert module.DAG_FILE_NAME == "flow.dag.yaml"
         assert module.FLEX_FILE_NAME == "flow.flex.yaml"
-        assert module.Flow == promptflow._sdk.entities._flow.Flow
+        assert module.Flow == promptflow._sdk.entities._flows.Flow
         assert module.FlowInvoker == promptflow.core._serving.flow_invoker.FlowInvoker
         assert module.remove_additional_includes is not None
         assert module._merge_local_code_and_additional_includes is not None

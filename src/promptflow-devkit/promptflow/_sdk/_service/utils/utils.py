@@ -31,7 +31,7 @@ from promptflow._sdk._errors import ConnectionNotFoundError, RunNotFoundError
 from promptflow._sdk._utils import get_promptflow_sdk_version, read_write_by_user
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
-from promptflow._version import VERSION
+from promptflow._sdk._version import VERSION
 from promptflow.exceptions import PromptflowException, UserErrorException
 
 logger = get_cli_sdk_logger()
@@ -278,7 +278,9 @@ def is_run_from_built_binary():
 
     Allow customer to use environment variable to control the triggering.
     """
-    return sys.executable.endswith("pfcli.exe") or os.environ.get(PF_RUN_AS_BUILT_BINARY, "").lower() == "true"
+    return (not sys.executable.endswith("python.exe") and not sys.executable.endswith("python")) or os.environ.get(
+        PF_RUN_AS_BUILT_BINARY, ""
+    ).lower() == "true"
 
 
 def encrypt_flow_path(flow_path):

@@ -28,9 +28,7 @@ class ConnectionProvider(ABC):
             try:
                 from promptflow._sdk._connection_provider._local_connection_provider import LocalConnectionProvider
             except ImportError as e:
-                raise MissingRequiredPackage(
-                    message="Please install 'promptflow-devkit' to use local connection."
-                ) from e
+                raise MissingRequiredPackage(message="Please install 'promptflow' to use local connection.") from e
             return LocalConnectionProvider()
         if provider_config.startswith(ConnectionProviderConfig.AZUREML):
             from promptflow.core._connection_provider._workspace_connection_provider import WorkspaceConnectionProvider
