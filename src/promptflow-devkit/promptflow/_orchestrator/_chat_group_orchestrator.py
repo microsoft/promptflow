@@ -11,11 +11,12 @@ from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow._utils.execution_utils import apply_default_value_for_input
 from promptflow._proxy._proxy_factory import ProxyFactory
 from promptflow._utils.logger_utils import bulk_logger
-from promptflow._constants import CONVERSATION_HISTORY_EXPRESSION, CONVERSATION_HISTORY_OUTPUT_KEY
+from promptflow._constants import CONVERSATION_HISTORY_EXPRESSION, CONVERSATION_HISTORY_OUTPUT_KEY, CHAT_ROLE_KEY
 from promptflow._orchestrator._errors import (
     InvalidChatRoleCount,
     MissingConversationHistoryExpression,
-    MultipleConversationHistoryInputsMapping
+    MultipleConversationHistoryInputsMapping,
+    UsingReservedRoleKey
 )
 
 
@@ -190,7 +191,12 @@ class ChatGroupOrchestrator:
             outputs: dict,
             aggregation_inputs: dict):
 
-        current_turn = {"role": chat_role.role}
+        if CHAT_ROLE_KEY in current_line_result.output:
+            message = f"chat role output use reserved key {CHAT_ROLE_KEY}"
+            bulk_logger.error(message)
+            raise UsingReservedRoleKey(message=message)
+
+        current_turn = {CHAT_ROLE_KEY: chat_role.role}
         current_turn.update(current_line_result.output)
         conversation_history.append(current_turn)
 
