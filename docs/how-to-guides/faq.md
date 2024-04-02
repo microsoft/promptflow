@@ -23,6 +23,25 @@ which may introduce breaking changes to custom tool code.
 
 Reach [OpenAI migration guide](https://github.com/openai/openai-python/discussions/742) for more details.
 
+### Promptflow 1.8.0 upgrade guide
+If you are upgrading promptflow from an existing version to promptflow 1.8.0, please run:
+1. `pip uninstall -y promptflow promptflow-core promptflow-devkit promptflow-azure` at first to uninstall promptflow.
+2. `pip install promptflow>=1.8.0` to install the version>=1.8.0.
+
+Reason for 'pip install promptflow>=1.8.0' or 'pf upgrade' directly not working:
+
+`promptflow` package has been split into multiple packages. When installing `promptflow`, you will get the following packages:
+  - `promptflow`:
+    - `promptflow-tracing`: Tracing capability for promptflow.
+    - `promptflow-core`: Core functionality to run flow.
+    - `promptflow-devkit`: Development kit for promptflow.
+    - `promptflow-azure`: Azure extra requires(`promptflow[azure]`) for promptflow to integrate with Azure.
+
+When upgrading promptflow from an existing version to promptflow 1.8.0, pip will remove the promptflow 1.7.0 after installing promptflow subpackages, 
+which caused subpackage files got wrongly removed.
+
+![upgrade-wrongly-remove](../media/how-to-guides/upgrade-error.png)
+
 ## Troubleshooting ##
 
 ### Connection creation failed with StoreConnectionEncryptionKeyError
