@@ -128,7 +128,7 @@ class FlowNode(YAMLTranslatableMixin):
     def _save_snapshot(self, target):
         """Save flow source to experiment snapshot."""
         # Resolve additional includes in flow
-        from promptflow._sdk.entities._flow.prompty import Prompty
+        from promptflow._sdk.entities._flows import Prompty
 
         from .._load_functions import load_flow
         from .._orchestrator import remove_additional_includes
