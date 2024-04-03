@@ -469,8 +469,8 @@ class ToolResolver:
                 # 2. Register_apis doesn't support Union;
                 # So in order to release this append "/v1" function without breaking old promptflow package.
                 # We move this logic here.
-                # This is a short-term solution. After MaaS supports OpenAI compatible rest API, 
-                # we should remove the V1 tricky here. 
+                # This is a short-term solution. After MaaS supports OpenAI compatible rest API,
+                # we should remove the V1 tricky here.
                 suffix = "/v1"
                 base_url = connection.api_base
                 if not base_url.endswith(suffix):
