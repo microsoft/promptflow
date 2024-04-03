@@ -1,0 +1,16 @@
+---
+name: Hello Prompty
+description: A basic prompt
+model:
+    api: chat
+    connection: azure_open_ai_connection
+    parameters:
+      deployment_name: gpt-35-turbo
+      max_tokens: 128
+      temperature: 0.2
+inputs:
+  text:
+    type: string
+---
+system:
+Write a simple {{text}} program that displays the greeting message.

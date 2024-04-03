@@ -47,7 +47,7 @@ def run_command(args):
             for handler in logger.handlers:
                 handler.setLevel(logging.DEBUG)
         if args.version:
-            print_pf_version()
+            print_pf_version(with_azure=True)
         elif args.action == "run":
             dispatch_run_commands(args)
         elif args.action == "flow":
@@ -140,7 +140,6 @@ def main():
         version_devkit = get_promptflow_devkit_version()
         if version_devkit:
             version_dict["promptflow-devkit"] = version_devkit
-
         version_dict_string = (
             json.dumps(version_dict, ensure_ascii=False, indent=2, sort_keys=True, separators=(",", ": ")) + "\n"
         )
