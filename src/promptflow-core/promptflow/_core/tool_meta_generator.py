@@ -117,10 +117,10 @@ def collect_flow_entry_in_module(m, entry):
     func_name = entry.split(":")[-1]
     func = getattr(m, func_name, None)
     if isinstance(func, types.FunctionType):
-        return func
+        return func, None
     elif inspect.isclass(func) and hasattr(func, "__call__"):
         # check if the entry is a callable class
-        return func.__call__
+        return func.__call__, func
     raise PythonLoadError(
         message_format="Failed to collect flow entry '{entry}' in module '{module}'.",
         entry=entry,
@@ -506,27 +506,37 @@ def generate_flow_meta_dict_by_file(data: dict, source: str = None, path: str = 
     else:
         m = load_python_module_from_entry(entry)
 
-    f = collect_flow_entry_in_module(m, entry)
+    f, cls = collect_flow_entry_in_module(m, entry)
     # Since the flow meta is generated from the entry function, we leverage the function
     # _parse_tool_from_function to parse the interface of the entry function to get the inputs and outputs.
     tool = _parse_tool_from_function(f, include_outputs=True)
 
     # Include data in generated meta to avoid flow definition's fields(e.g. environment variable) missing.
     flow_meta = {"function": f.__name__, **data}
+    if cls:
+        init_tool = _parse_tool_from_function(cls.__init__, include_outputs=False)
+        init_inputs = init_tool.inputs
+    else:
+        init_inputs = None
+
     if source:
         flow_meta["source"] = source
-    if tool.inputs:
-        flow_meta["inputs"] = {}
-        for k, v in tool.inputs.items():
-            # We didn't support specifying multiple types for inputs, so we only take the first one.
-            flow_meta["inputs"][k] = {"type": v.type[0].value}
-            if v.default is not None:
-                flow_meta["inputs"][k]["default"] = v.default
-    if tool.outputs:
-        flow_meta["outputs"] = {}
-        for k, v in tool.outputs.items():
-            # We didn't support specifying multiple types for outputs, so we only take the first one.
-            flow_meta["outputs"][k] = {"type": v.type[0].value}
+
+    for ports, meta_key in [
+        (tool.inputs, "inputs"),
+        (tool.outputs, "outputs"),
+        (init_inputs, "init"),
+    ]:
+        if not ports:
+            continue
+
+        flow_meta[meta_key] = {}
+        for k, v in ports.items():
+            # We didn't support specifying multiple types for inputs/outputs/init, so we only take the first one.
+            flow_meta[meta_key][k] = {"type": v.type[0].value}
+            # init/inputs may have default value
+            if meta_key != "outputs" and v.default is not None:
+                flow_meta[meta_key][k]["default"] = v.default
     return flow_meta
 
 

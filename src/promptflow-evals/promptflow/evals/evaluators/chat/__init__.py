@@ -128,28 +128,27 @@ class ChatEvaluator:
                     }
 
                     for future in as_completed(future_to_evaluator):
-                        score = future.result()
-                        current_turn_result.update(score)
+                        result = future.result()
+                        current_turn_result.update(result)
             else:
                 # Sequential execution
                 for evaluator in selected_evaluators:
-                    score = self._evaluate_turn(turn_num, questions, answers, contexts, evaluator)
-                    current_turn_result.update(score)
+                    result = self._evaluate_turn(turn_num, questions, answers, contexts, evaluator)
+                    current_turn_result.update(result)
 
             per_turn_results.append(current_turn_result)
 
         # Aggregate results
         # Final aggregated results for a conversation will look like:
-        # {
-        #     "gpt_groundedness": 0.9,
-        #     "gpt_groundedness_per_turn": [0.9, 0.8, 0.9, ...],
-        #     ...
+        #     "gpt_groundedness": 2.0, # Mean of all groundedness scores
+        #     "evaluation_per_turn": {
+        #         "gpt_groundedness": {
+        #             "score": [1.0, ...],
+        #             "reason": ["reason1", ...],
+        #         },
+        #     },
         # }
-        aggregated = {}
-        for key in per_turn_results[0].keys():
-            values = [d[key] for d in per_turn_results]
-            aggregated[key] = np.nanmean(values)
-            aggregated[key + "_per_turn"] = values
+        aggregated = self._aggregate_results(per_turn_results)
 
         return aggregated
 
@@ -169,6 +168,37 @@ class ChatEvaluator:
             logger.warning(
                 f"Evaluator {evaluator.__class__.__name__} failed for turn {turn_num + 1} with exception: {e}")
             return {}
+
+    def _aggregate_results(self, per_turn_results: List[Dict]):
+        scores = {}
+        reasons = {}
+
+        for turn in per_turn_results:
+            for metric, value in turn.items():
+                if 'reason' in metric:
+                    if metric not in reasons:
+                        reasons[metric] = []
+                    reasons[metric].append(value)
+                else:
+                    if metric not in scores:
+                        scores[metric] = []
+                    scores[metric].append(value)
+
+        aggregated = {}
+        evaluation_per_turn = {}
+
+        for metric, values in scores.items():
+            aggregated[metric] = np.nanmean(values)
+
+            # Prepare per-turn evaluations
+            evaluation_per_turn[metric] = {"score": values}
+            reason_key = f"{metric}_reason"
+            if reason_key in reasons:
+                evaluation_per_turn[metric]["reason"] = reasons[reason_key]
+
+        aggregated["evaluation_per_turn"] = evaluation_per_turn
+
+        return aggregated
 
     def _validate_conversation(self, conversation: List[Dict]):
         if conversation is None or not isinstance(conversation, list):
