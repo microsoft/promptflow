@@ -19,3 +19,7 @@ class MultipleConversationHistoryInputsMapping(UserErrorException):
 
 class UsingReservedRoleKey(UserErrorException):
     pass
+
+
+class InvalidMaxTurnValue(UserErrorException):
+    pass
