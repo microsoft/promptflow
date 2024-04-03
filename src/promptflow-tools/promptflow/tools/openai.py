@@ -155,7 +155,7 @@ class OpenAI(ToolProvider):
 
 register_apis(OpenAI)
 
-# Hard code to register ServerlessConnection for OpenAI so that ServerlessConnection 
+# Hard code to register ServerlessConnection for OpenAI so that ServerlessConnection
 # can call into promptflow.tools.openai.Reason for this hard code:
 # In order to compatible with old version (<=1.7.0) promptflow package, since
 # the register_apis in the old version promptflow package doesn't support Union
