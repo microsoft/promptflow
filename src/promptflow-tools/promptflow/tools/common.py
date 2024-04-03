@@ -569,7 +569,7 @@ def normalize_connection_config(connection):
             "base_url": connection.base_url
         }
     
-
+    # For old promptflow package, there is NO ServerlessConnection, so here add try
     try:
         from promptflow.connections import ServerlessConnection
         if isinstance(connection, ServerlessConnection):
@@ -591,6 +591,9 @@ def normalize_connection_config(connection):
     raise InvalidConnectionType(message=error_message)
 
 
+# Here the connection type should be Union[OpenAIConnection, ServerlessConnection]
+# But in order to compatible with old version (<=1.7.0) promptflow package, not add the ServerlessConnection here,
+# since there is NO ServerlessConnection in old promptflow package
 def init_openai_client(connection: OpenAIConnection):
     try:
         from openai import OpenAI as OpenAIClient

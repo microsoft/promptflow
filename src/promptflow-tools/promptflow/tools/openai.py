@@ -22,6 +22,9 @@ class Engine(str, Enum):
 
 
 class OpenAI(ToolProvider):
+    # Here the connection type should be Union[OpenAIConnection, ServerlessConnection]
+    # But in order to compatible with old version (<=1.7.0) promptflow package, not add the ServerlessConnection here,
+    # since the register_apis in the old version promptflow package doesn't support Union
     def __init__(self, connection: OpenAIConnection):
         super().__init__()
         self._client = init_openai_client(connection)
