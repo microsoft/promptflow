@@ -5,7 +5,7 @@
 [![SDK](https://img.shields.io/badge/SDK-reference-blue)](https://microsoft.github.io/promptflow/reference/python-library-reference/promptflow-core/promptflow.html)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/promptflow-core)](https://pypi.org/project/promptflow-core/)
 
-## Introduction 
+## Introduction
 
 The `promptflow-core` package provides the essential features needed to execute a `flow` in prompt flow.
 

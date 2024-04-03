@@ -32,7 +32,7 @@ The `promptflow-devkit` is a subpackage of [`promptflow`](https://pypi.org/proje
     - Deploy your flow to the serving platform you choose or integrate into your app's code base easily.
 
 
-NOTE: 
+NOTE:
 - For users seeking a **minimal** dependency to execute a flow in serving or cloud run scenarios, consider installing the `promptflow-core` package. This package equips you with the fundamental features necessary for executing a `flow` in prompt flow.
 - For users need to leverage the cloud version of [prompt flow in Azure AI](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/overview-what-is-prompt-flow?view=azureml-api-2), please install the `promptflow-azure` package.
 
