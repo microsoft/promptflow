@@ -12,6 +12,7 @@ import pandas as pd
 from ._utils import load_jsonl
 from ._flow_run_wrapper import FlowRunWrapper
 from promptflow import PFClient
+from os import PathLike
 
 
 def _calculate_mean(df) -> Dict[str, float]:
@@ -53,7 +54,7 @@ def evaluate(
         evaluation_name: Optional[str] = None,
         target: Optional[Callable] = None,
         data: Optional[str] = None,
-        evaluators: Optional[Dict[str, Callable]] = None,
+        evaluators: Optional[Dict[str, Union[str, PathLike]]] = None,
         evaluator_config: Optional[Dict[str, Dict[str, str]]] = {},
         tracking_uri: Optional[str] = None,
         output_path: Optional[str] = None,
@@ -68,6 +69,8 @@ def evaluate(
     :keyword data: Path to the data to be evaluated or passed to target if target is set.
         Only .jsonl format files are supported.  `target` and `data` both cannot be None
     :paramtype data: Optional[str]
+    :keyword evaluators: The dictionary, mapping evaluator names to promptflow pipeline folders.
+    :paramtype evaluators: Optional[Dict[str, Union[str, PathLike]]]
     :keyword evaluator_config: Configuration for evaluators.
     :paramtype evaluator_config: Optional[Dict[str, Dict[str, str]]
     :keyword output_path: The local folder path to save evaluation artifacts to if set
@@ -101,6 +104,7 @@ def evaluate(
             result_df = pd.concat(
                 [eval_run.get_result_df(all_results=True, exclude_inputs=True), result_df],
                 axis=1,
+                ignore_index=True,
                 verify_integrity=True
             )
 
