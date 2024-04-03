@@ -12,6 +12,8 @@ from promptflow.core._errors import MissingRequiredPackage, UnsupportedConnectio
 
 
 class ConnectionProvider(ABC):
+    """The connection provider interface to list/get connections in the current environment."""
+
     PROVIDER_CONFIG_KEY = "CONNECTION_PROVIDER_CONFIG"
     _instance = None
 
@@ -27,6 +29,9 @@ class ConnectionProvider(ABC):
 
     @classmethod
     def get_instance(cls) -> "ConnectionProvider":
+        """Get the connection provider instance in the current environment.
+        It will returned different implementations based on the current environment.
+        """
         if not cls._instance:
             cls._instance = cls._init_from_env()
         return cls._instance
