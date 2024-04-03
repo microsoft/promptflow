@@ -100,7 +100,7 @@ class TraceOperations:
         collection: typing.Optional[str] = None,
         started_before: typing.Optional[typing.Union[str, datetime.datetime]] = None,
         **kwargs,
-    ) -> typing.Optional[int]:
+    ) -> int:
         """Delete traces permanently.
 
         Support delete according to:
@@ -122,7 +122,7 @@ class TraceOperations:
         :param dry_run: If True, will not perform real deletion.
         :type dry_run: bool
         :return: Number of traces to delete, only return in dry run mode.
-        :rtype: Optional[int]
+        :rtype: int
         """
         dry_run = kwargs.get("dry_run", False)
         self._logger.debug(
@@ -182,7 +182,7 @@ class TraceOperations:
         collection: typing.Optional[str] = None,
         started_before: typing.Optional[datetime.datetime] = None,
         dry_run: bool = False,
-    ) -> typing.Optional[int]:
+    ) -> int:
         # delete will occur across 3 tables: line_runs, spans and events
         # which be done in a transaction
         from sqlalchemy.orm import Query
@@ -207,5 +207,5 @@ class TraceOperations:
             span_cnt = session.query(ORMSpan).filter(ORMSpan.trace_id.in_(trace_ids)).delete()
             line_run_cnt = query.delete()
             session.commit()
-
         self._logger.debug("deleted %d line runs, %d spans, and %d events", line_run_cnt, span_cnt, event_cnt)
+        return len(trace_ids)

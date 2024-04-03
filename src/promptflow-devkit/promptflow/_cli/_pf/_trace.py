@@ -91,9 +91,9 @@ def delete_trace(args: argparse.Namespace) -> None:
             print("The delete operation is canceled.")
             return
 
-    client.traces.delete(
+    num_traces = client.traces.delete(
         run=args.run,
         collection=args.collection,
         started_before=args.started_before,
     )
-    print("Delete traces successfully.")
+    print(f"Delete {num_traces} traces successfully.")
