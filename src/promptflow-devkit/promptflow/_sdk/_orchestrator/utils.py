@@ -40,12 +40,15 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import InvalidFlowError, RunOperationError
 from promptflow._sdk._load_functions import load_flow
-from promptflow._sdk._utils import _merge_local_code_and_additional_includes
-from promptflow._sdk.entities._flow import FlexFlow, Flow
+from promptflow._sdk._utils import (
+    _merge_local_code_and_additional_includes,
+    get_used_connection_names_from_dict,
+    update_dict_value_with_connections,
+)
+from promptflow._sdk.entities._flows import FlexFlow, Flow, Prompty
 from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag
 from promptflow._utils.logger_utils import FileHandler, get_cli_sdk_logger
 from promptflow.contracts.flow import Flow as ExecutableFlow
-from promptflow.core._utils import get_used_connection_names_from_dict, update_dict_value_with_connections
 from promptflow.exceptions import UserErrorException
 
 logger = get_cli_sdk_logger()
@@ -211,7 +214,7 @@ def variant_overwrite_context(
     """Override variant and connections in the flow."""
     flow_dag = flow._data
     flow_dir_path = Path(flow.code)
-    if flow.additional_includes:
+    if getattr(flow, "additional_includes", []):
         # Merge the flow folder and additional includes to temp folder for both eager flow & dag flow.
         with _merge_local_code_and_additional_includes(code_path=flow_dir_path) as temp_dir:
             if not isinstance(flow, FlexFlow):
@@ -223,8 +226,8 @@ def variant_overwrite_context(
             dump_flow_dag(flow_dag, Path(temp_dir))
             flow = load_flow(temp_dir)
             yield flow
-    elif isinstance(flow, FlexFlow):
-        # eager flow don't support overwrite variant
+    elif isinstance(flow, (FlexFlow, Prompty)):
+        # eager flow and prompty don't support overwrite variant
         yield flow
     else:
         # Generate a flow, the code path points to the original flow folder,
@@ -259,6 +262,9 @@ class SubmitterHelper:
         from .._pf_client import PFClient
 
         client = client or PFClient()
+
+        if isinstance(flow, Prompty):
+            return {}
 
         connection_names = (
             ProxyFactory()

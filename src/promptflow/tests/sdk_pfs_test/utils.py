@@ -11,6 +11,7 @@ import werkzeug
 from flask.testing import FlaskClient
 
 from promptflow._sdk._service.utils.utils import encrypt_flow_path
+from promptflow._sdk._version import VERSION
 
 
 @contextlib.contextmanager
@@ -33,7 +34,7 @@ def check_activity_end_telemetry(
             "first_call": True,
             "activity_type": "PublicApi",
             "completion_status": "Success",
-            "user_agent": [f"Werkzeug/{werkzeug.__version__}", "local_pfs/0.0.1"],
+            "user_agent": [f"Werkzeug/{werkzeug.__version__}", f"local_pfs/{VERSION}"],
         }
         for i, expected_activity in enumerate(expected_activities):
             temp = default_expected_call.copy()
