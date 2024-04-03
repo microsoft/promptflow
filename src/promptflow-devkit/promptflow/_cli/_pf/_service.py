@@ -256,16 +256,16 @@ def start_service(args):
             print(message)
             logger.info(message)
         else:
-            logger.warning(f"Pfs service start failed in {port}.")
+            logger.warning(f"Promptflow service start failed in {port}.")
 
 
 def stop_service():
     port = get_port_from_config()
     if port is not None and is_port_in_use(port):
         kill_exist_service(port)
-        message = f"Pfs service stop in {port}."
+        message = f"Promptflow service stop in {port}."
     else:
-        message = "Pfs service is not started."
+        message = "Promptflow service is not started."
     logger.debug(message)
     print(message)
 
