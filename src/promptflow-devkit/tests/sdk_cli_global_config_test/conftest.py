@@ -6,8 +6,8 @@ import os
 import pytest
 from _constants import DEFAULT_RESOURCE_GROUP_NAME, DEFAULT_SUBSCRIPTION_ID, DEFAULT_WORKSPACE_NAME
 
-from promptflow import PFClient
 from promptflow._sdk._configuration import Configuration
+from promptflow.client import PFClient
 
 AZUREML_RESOURCE_PROVIDER = "Microsoft.MachineLearningServices"
 RESOURCE_ID_FORMAT = "/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}"

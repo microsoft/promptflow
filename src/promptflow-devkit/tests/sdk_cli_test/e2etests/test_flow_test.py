@@ -121,7 +121,7 @@ class TestFlowTest:
 
     @pytest.mark.skip("TODO this test case failed in windows and Mac")
     def test_pf_test_with_additional_includes(self, caplog):
-        from promptflow import VERSION
+        from promptflow._sdk._version import VERSION
 
         print(VERSION)
         with caplog.at_level(level=logging.WARNING, logger=LOGGER_NAME):

@@ -239,3 +239,9 @@ class LineRunNotFoundError(SDKError):
     """Exception raised if line run cannot be found."""
 
     pass
+
+
+class MissingRequiredPackage(SDKError):
+    """Exception raised if missing required package."""
+
+    pass

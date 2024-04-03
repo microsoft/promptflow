@@ -9,9 +9,9 @@ from pathlib import Path
 
 import pytest
 
-from promptflow import PFClient
 from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
+from promptflow.client import PFClient
 from promptflow.contracts._run_management import RunMetadata
 
 from ..utils import PFSOperations, check_activity_end_telemetry

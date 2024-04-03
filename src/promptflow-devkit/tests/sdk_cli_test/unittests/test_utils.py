@@ -43,10 +43,10 @@ from promptflow._sdk._utils import (
     get_system_info,
     refresh_connections_dir,
 )
+from promptflow._sdk._version_hint_utils import check_latest_version
 from promptflow._utils.load_data import load_data
 from promptflow._utils.retry_utils import http_retry_wrapper, retry
 from promptflow._utils.utils import snake_to_camel
-from promptflow._utils.version_hint_utils import check_latest_version
 from promptflow.core._utils import (
     override_connection_config_with_environment_variable,
     resolve_connections_environment_variable_reference,
@@ -219,8 +219,8 @@ class TestUtils:
             time.sleep(5)
             check_latest_version()
 
-        with patch("promptflow._utils.version_hint_utils.datetime") as mock_datetime, patch(
-            "promptflow._utils.version_hint_utils.check_latest_version", side_effect=mock_check_latest_version
+        with patch("promptflow._sdk._version_hint_utils.datetime") as mock_datetime, patch(
+            "promptflow._sdk._version_hint_utils.check_latest_version", side_effect=mock_check_latest_version
         ):
             from promptflow._sdk._telemetry import monitor_operation
 

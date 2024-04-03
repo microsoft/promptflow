@@ -5,7 +5,7 @@
 import pytest
 from flask.app import Flask
 
-from promptflow import PFClient
+from promptflow.client import PFClient
 
 from .utils import PFSOperations
 

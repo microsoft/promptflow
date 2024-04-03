@@ -1764,8 +1764,8 @@ class TestCli:
     def test_run_create_with_existing_run_folder(self):
         run_name = "web_classification_variant_0_20231205_120253_104100"
         # clean the run if exists
-        from promptflow import PFClient
         from promptflow._cli._utils import _try_delete_existing_run_record
+        from promptflow.client import PFClient
 
         pf = PFClient()
         _try_delete_existing_run_record(run_name)

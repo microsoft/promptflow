@@ -6,8 +6,8 @@ from pathlib import Path
 import pytest
 from marshmallow import ValidationError
 
-from promptflow import load_flow
 from promptflow._sdk.entities._flows import FlexFlow, Flow
+from promptflow.client import load_flow
 
 FLOWS_DIR = Path("./tests/test_configs/flows")
 EAGER_FLOWS_DIR = Path("./tests/test_configs/eager_flows")

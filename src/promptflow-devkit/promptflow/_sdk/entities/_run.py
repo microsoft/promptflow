@@ -36,7 +36,7 @@ from promptflow._sdk._constants import (
     RunStatus,
     RunTypes,
 )
-from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError
+from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, MissingRequiredPackage
 from promptflow._sdk._orm import RunInfo as ORMRun
 from promptflow._sdk._utils import (
     _sanitize_python_variable_name,
@@ -523,14 +523,25 @@ class Run(YAMLTranslatableMixin):
         return RunSchema
 
     def _to_rest_object(self):
-        from azure.ai.ml._utils._storage_utils import AzureMLDatastorePathUri
+        try:
+            from azure.ai.ml._utils._storage_utils import AzureMLDatastorePathUri
 
-        from promptflow.azure._restclient.flow.models import (
-            BatchDataInput,
-            RunDisplayNameGenerationType,
-            SessionSetupModeEnum,
-            SubmitBulkRunRequest,
-        )
+            from promptflow.azure._restclient.flow.models import (
+                BatchDataInput,
+                RunDisplayNameGenerationType,
+                SessionSetupModeEnum,
+                SubmitBulkRunRequest,
+            )
+        except ImportError:
+            msg = (
+                '"promptflow[azure]" is required, '
+                'please install it by running "pip install promptflow[azure]" with your version.'
+            )
+            raise UserErrorException(
+                message=msg,
+                target=ErrorTarget.CONTROL_PLANE_SDK,
+                no_personal_data_message=msg,
+            )
 
         if self.run is not None:
             if isinstance(self.run, Run):

@@ -3,8 +3,8 @@
 # ---------------------------------------------------------
 import pytest
 
-from promptflow import PFClient
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
+from promptflow.client import PFClient
 
 
 @pytest.mark.sdk_test

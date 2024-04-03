@@ -227,7 +227,7 @@ class Configuration(object):
                     '"promptflow[azure]" is required to validate trace provider, '
                     'please install it by running "pip install promptflow[azure]" with your version.'
                 )
-                raise UserErrorException(
+                raise MissingRequiredPackage(
                     message=msg,
                     target=ErrorTarget.CONTROL_PLANE_SDK,
                     no_personal_data_message=msg,

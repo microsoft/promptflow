@@ -12,7 +12,6 @@ from _constants import PROMPTFLOW_ROOT
 from marshmallow import ValidationError
 from pytest_mock import MockerFixture
 
-from promptflow import PFClient
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
 from promptflow._sdk._constants import (
     FLOW_DIRECTORY_MACRO_IN_CONFIG,
@@ -37,6 +36,7 @@ from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.yaml_utils import load_yaml
+from promptflow.client import PFClient
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.exceptions import UserErrorException
 

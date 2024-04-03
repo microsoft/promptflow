@@ -16,6 +16,7 @@ from promptflow.core._connection_provider._utils import (
     is_from_cli,
     is_github_codespaces,
 )
+from promptflow.exceptions import ErrorTarget, UserErrorException
 
 logger = get_cli_sdk_logger()
 
@@ -37,7 +38,18 @@ class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
     @property
     def _client(self):
         if self._pfazure_client is None:
-            from promptflow.azure._pf_client import PFClient as PFAzureClient
+            try:
+                from promptflow.azure._pf_client import PFClient as PFAzureClient
+            except ImportError as e:
+                msg = (
+                    '"promptflow[azure]" is required to validate trace provider, '
+                    'please install it by running "pip install promptflow[azure]" with your version.'
+                )
+                raise UserErrorException(
+                    message=msg,
+                    target=ErrorTarget.CONTROL_PLANE_SDK,
+                    no_personal_data_message=msg,
+                )
 
             self._pfazure_client = PFAzureClient(
                 # TODO: disable interactive credential when starting as a service
@@ -51,9 +63,20 @@ class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
 
     @classmethod
     def _get_credential(cls):
-        from azure.identity import DefaultAzureCredential, DeviceCodeCredential
+        try:
+            from azure.identity import DefaultAzureCredential, DeviceCodeCredential
 
-        from promptflow.azure._utils.general import get_arm_token
+            from promptflow.azure._utils.general import get_arm_token
+        except ImportError as e:
+            msg = (
+                '"promptflow[azure]" is required to validate trace provider, '
+                'please install it by running "pip install promptflow[azure]" with your version.'
+            )
+            raise UserErrorException(
+                message=msg,
+                target=ErrorTarget.CONTROL_PLANE_SDK,
+                no_personal_data_message=msg,
+            )
 
         if is_from_cli():
             try:
@@ -105,7 +128,18 @@ class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
         if with_secrets:
             # Do not use pfazure_client here as it requires workspace read permission
             # Get secrets from arm only requires workspace listsecrets permission
-            from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
+            try:
+                from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
+            except ImportError as e:
+                msg = (
+                    '"promptflow[azure]" is required to validate trace provider, '
+                    'please install it by running "pip install promptflow[azure]" with your version.'
+                )
+                raise UserErrorException(
+                    message=msg,
+                    target=ErrorTarget.CONTROL_PLANE_SDK,
+                    no_personal_data_message=msg,
+                )
 
             return ArmConnectionOperations._direct_get(
                 name, self._subscription_id, self._resource_group, self._workspace_name, self._credential
