@@ -91,7 +91,7 @@ class TestDataGenerator:
         model_config = dict(api_base=API_BASE, api_key=API_KEY, deployment=DEPLOYMENT, model=MODEL)
         qa_generator = QADataGenerator(model_config)
         qas = list(zip(questions, answers))
-        filepath = os.path.join(pathlib.Path(__file__).parent)
+        filepath = os.path.join(pathlib.Path(__file__).parent.parent.resolve(), "test_configs")
         output_file = os.path.join(filepath, f"test_{qa_type.value}_{structure.value}.jsonl")
         qa_generator.export_to_file(output_file, qa_type, qas, structure)
 
