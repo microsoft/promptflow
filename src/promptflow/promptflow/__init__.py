@@ -12,6 +12,7 @@ try:
     from promptflow._core.metric_logger import log_metric as _log_metric
     from promptflow._core.tool import ToolProvider as _ToolProvider
     from promptflow._core.tool import tool as _tool
+    from promptflow._core.tool import tool as tool
 
     # control plane sdk functions
     from promptflow._sdk._load_functions import load_flow as _load_flow

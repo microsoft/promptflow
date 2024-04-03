@@ -23,6 +23,7 @@ from ._tracer import Tracer, _create_trace_from_function_call, get_node_name_fro
 from ._utils import get_input_names_for_prompt_template, get_prompt_param_name_from_func, serialize
 from .contracts.generator_proxy import GeneratorProxy
 from .contracts.trace import Trace, TraceType
+from .exp_poc.exp import Exp
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
 
@@ -263,7 +264,29 @@ def enrich_span_with_llm_output(span, output):
             else:
                 generated_message = None
             enrich_span_with_llm(span, model, generated_message)
+   
+def enrich_span_with_exp_info(span: ReadableSpan):
+    ruid = Exp.get_ruid()
+    variant_names = Exp.get_config_names_from_context()
 
+    span_id = span.get_span_context().span_id
+    parent_span_id = None
+    if hasattr(span, "parent") and (span.parent is not None):
+        parent_span_id = span.parent.span_id
+
+    if (variant_names is not None) and (parent_span_id is not None):
+        Exp.map_ruid_with_trace_id(ruid, parent_span_id)
+    elif variant_names is None:
+        ruid = Exp.get_ruid_by_trace_id(span_id)
+        variant_names = Exp.get_config_names_by_trace_id(span_id)
+        if (variant_names is None) and (parent_span_id is not None):
+            ruid = Exp.get_ruid_by_trace_id(parent_span_id)
+            variant_names = Exp.get_config_names_by_trace_id(parent_span_id)
+
+    if variant_names:
+        span.set_attribute("exp.variant", ",".join(variant_names))
+    if ruid:
+        span.set_attribute("exp.ruid", ruid)
 
 def serialize_attribute(value):
     """Serialize values that can be used as attributes in span."""
@@ -350,6 +373,7 @@ def _traced_async(
                 enrich_span_with_input(span, trace.inputs)
                 output = await func(*args, **kwargs)
                 output = enrich_span_with_trace_type(span, trace.inputs, output, trace_type)
+                enrich_span_with_exp_info(span)
                 span.set_status(StatusCode.OK)
                 output = Tracer.pop(output)
             except Exception as e:
@@ -414,6 +438,7 @@ def _traced_sync(
                 enrich_span_with_input(span, trace.inputs)
                 output = func(*args, **kwargs)
                 output = enrich_span_with_trace_type(span, trace.inputs, output, trace_type)
+                enrich_span_with_exp_info(span)
                 span.set_status(StatusCode.OK)
                 output = Tracer.pop(output)
             except Exception as e:

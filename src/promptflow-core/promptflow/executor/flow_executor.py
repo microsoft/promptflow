@@ -65,6 +65,7 @@ from promptflow.tracing._trace import (
     enrich_span_with_context,
     enrich_span_with_input,
     enrich_span_with_trace_type,
+    enrich_span_with_exp_info,
     open_telemetry_tracer,
 )
 from promptflow.tracing.contracts.trace import TraceType
@@ -875,6 +876,8 @@ class FlowExecutor:
             )
             # enrich span with trace type
             enrich_span_with_trace_type(span, inputs, output, trace_type=TraceType.FLOW)
+            enrich_span_with_exp_info(span)
+            
             # set status
             span.set_status(StatusCode.OK)
             return output, aggregation_inputs
