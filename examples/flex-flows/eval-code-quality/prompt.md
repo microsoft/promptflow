@@ -6,7 +6,7 @@ You task is to evaluate the code based on correctness, readability.
 
 # user:
 This correctness value should always be an integer between 1 and 5. So the correctness produced should be 1 or 2 or 3 or 4 or 5.
-This readability value should always be an integer between 1 and 5. So the correctness produced should be 1 or 2 or 3 or 4 or 5.
+This readability value should always be an integer between 1 and 5. So the readability produced should be 1 or 2 or 3 or 4 or 5.
 
 Here are a few examples:
 {% for ex in examples %}

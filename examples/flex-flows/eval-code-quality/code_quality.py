@@ -31,7 +31,7 @@ class Result:
 
 @trace
 def eval_code(code: str) -> Result:
-    """Evaluate the code based on correctness, readability, and adherence to best practices."""
+    """Evaluate the code based on correctness, readability."""
     examples = [
         {
             "code": 'print("Hello, world!")',
