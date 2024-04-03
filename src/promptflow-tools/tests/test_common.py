@@ -75,45 +75,58 @@ class TestCommon:
         assert exc_info.value.error_codes == error_codes.split("/")
 
     @pytest.mark.parametrize(
-        "chat_str, images, expected_result",
+        "chat_str, images, image_detail, expected_result",
         [
-            ("system:\nthis is my function:\ndef hello", None, [
+            ("system:\nthis is my function:\ndef hello", None, "auto", [
                 {'role': 'system', 'content': 'this is my function:\ndef hello'}]),
-            ("#system:\nthis is my ##function:\ndef hello", None, [
+            ("#system:\nthis is my ##function:\ndef hello", None, "auto", [
                 {'role': 'system', 'content': 'this is my ##function:\ndef hello'}]),
-            (" \n system:\nthis is my function:\ndef hello", None, [
+            (" \n system:\nthis is my function:\ndef hello", None, "auto", [
                 {'role': 'system', 'content': 'this is my function:\ndef hello'}]),
-            (" \n # system:\nthis is my function:\ndef hello", None, [
+            (" \n # system:\nthis is my function:\ndef hello", None, "auto", [
                 {'role': 'system', 'content': 'this is my function:\ndef hello'}]),
-            ("user:\nhi\nassistant:\nanswer\nfunction:\nname:\nn\ncontent:\nc", None, [
+            ("user:\nhi\nassistant:\nanswer\nfunction:\nname:\nn\ncontent:\nc", None, "auto", [
                 {'role': 'user', 'content': 'hi'},
                 {'role': 'assistant', 'content': 'answer'},
                 {'role': 'function', 'name': 'n', 'content': 'c'}]),
-            ("#user :\nhi\n #assistant:\nanswer\n# function:\n##name:\nn\n##content:\nc", None, [
+            ("#user :\nhi\n #assistant:\nanswer\n# function:\n##name:\nn\n##content:\nc", None, "auto", [
                 {'role': 'user', 'content': 'hi'},
                 {'role': 'assistant', 'content': 'answer'},
                 {'role': 'function', 'name': 'n', 'content': 'c'}]),
-            ("\nsystem:\nfirst\n\nsystem:\nsecond", None, [
+            ("\nsystem:\nfirst\n\nsystem:\nsecond", None, "auto", [
                 {'role': 'system', 'content': 'first'}, {'role': 'system', 'content': 'second'}]),
-            ("\n#system:\nfirst\n\n#system:\nsecond", None, [
+            ("\n#system:\nfirst\n\n#system:\nsecond", None, "auto", [
                 {'role': 'system', 'content': 'first'}, {'role': 'system', 'content': 'second'}]),
-            ("\n#system:\nfirst\n#assistant:\n#user:\nsecond", None, [
+            ("\n#system:\nfirst\n#assistant:\n#user:\nsecond", None, "auto", [
                 {'role': 'system', 'content': 'first'},
                 {'role': 'assistant', 'content': ''},
                 {'role': 'user', 'content': 'second'}
             ]),
-            # todo: enable this test case after we support image_url officially
-            # ("#user:\ntell me about the images\nImage(1edf82c2)\nImage(9b65b0f4)", [
-            #     Image("image1".encode()), Image("image2".encode(), "image/png", "https://image_url")], [
-            #     {'role': 'user', 'content': [
-            #         {'type': 'text', 'text': 'tell me about the images'},
-            #         {'type': 'image_url', 'image_url': {'url': 'data:image/*;base64,aW1hZ2Ux'}},
-            #         {'type': 'image_url', 'image_url': 'https://image_url'}]},
-            # ])
+            ("#user:\ntell me about the images\nImage(1edf82c2)\nImage(9b65b0f4)", [
+                Image("image1".encode()), Image("image2".encode(), "image/png", "https://image_url")], "low", [
+                {'role': 'user', 'content': [
+                    {'type': 'text', 'text': 'tell me about the images'},
+                    {'type': 'image_url', 'image_url': {'url': 'data:image/*;base64,aW1hZ2Ux', 'detail': 'low'}},
+                    {'type': 'image_url', 'image_url': {'url': 'https://image_url', 'detail': 'low'}}]},
+            ]),
+            ("#user:\ntell me about the images\nImage(1edf82c2)\nImage(9b65b0f4)", [
+                Image("image1".encode()), Image("image2".encode(), "image/png", "https://image_url")], "high", [
+                {'role': 'user', 'content': [
+                    {'type': 'text', 'text': 'tell me about the images'},
+                    {'type': 'image_url', 'image_url': {'url': 'data:image/*;base64,aW1hZ2Ux', 'detail': 'high'}},
+                    {'type': 'image_url', 'image_url': {'url': 'https://image_url', 'detail': 'high'}}]},
+            ]),
+            ("#user:\ntell me about the images\nImage(1edf82c2)\nImage(9b65b0f4)", [
+                Image("image1".encode()), Image("image2".encode(), "image/png", "https://image_url")], "auto", [
+                {'role': 'user', 'content': [
+                    {'type': 'text', 'text': 'tell me about the images'},
+                    {'type': 'image_url', 'image_url': {'url': 'data:image/*;base64,aW1hZ2Ux', 'detail': 'auto'}},
+                    {'type': 'image_url', 'image_url': {'url': 'https://image_url', 'detail': 'auto'}}]},
+            ])
         ]
     )
-    def test_success_parse_role_prompt(self, chat_str, images, expected_result):
-        actual_result = parse_chat(chat_str, images)
+    def test_success_parse_role_prompt(self, chat_str, images, image_detail, expected_result):
+        actual_result = parse_chat(chat_str=chat_str, images=images, image_detail=image_detail)
         assert actual_result == expected_result
 
     @pytest.mark.parametrize(

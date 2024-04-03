@@ -1,0 +1,26 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+
+type: command
+
+name: data_prep
+display_name: data preparation
+version: 0.0.1
+
+inputs:
+  input_data_file:
+    type: uri_file
+
+outputs:
+  output_data_folder:
+    type: uri_folder
+
+code: ./
+
+environment: 
+  image: mcr.microsoft.com/azureml/inference-base-2004:latest
+  conda_file: ./conda.yaml
+
+command: >-
+  python data-prep.py
+  --input_data_file ${{inputs.input_data_file}}
+  --output_data_folder ${{outputs.output_data_folder}}
