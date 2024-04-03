@@ -8,7 +8,7 @@ from typing import Dict, Optional, Union
 import yaml  # type: ignore[import]
 from packaging import version
 
-from promptflow.index.resources import EmbeddingsModelConfig, AzureAISearchConfig, ACSSource, LocalSource
+from promptflow.index.resources import EmbeddingsModelConfig, AzureAISearchConfig, AzureAISearchSource, LocalSource
 from promptflow.index._utils._open_ai_utils import build_open_ai_protocol
 
 
@@ -16,7 +16,7 @@ def build_index(
     *,
     name: str,
     vector_store: str,
-    input_source: Union[ACSSource, LocalSource],
+    input_source: Union[AzureAISearchSource, LocalSource],
     index_config: AzureAISearchConfig,  # todo better name?
     embeddings_model_config: EmbeddingsModelConfig,
     data_source_url: Optional[str] = None,
@@ -36,7 +36,7 @@ def build_index(
     :keyword vector_store: The vector store to be indexed.
     :paramtype vector_store: str
     :keyword input_source: The configuration for input data source.
-    :paramtype input_source: Union[ACSSource, LocalSource]
+    :paramtype input_source: Union[AzureAISearchSource, LocalSource]
     :keyword index_config: The configuration for Azure Cognitive Search output.
     :paramtype index_config: AzureAISearchConfig
     :keyword index_config: The configuration for AOAI embedding model.
@@ -75,12 +75,12 @@ def build_index(
         raise ValueError("Please specify embeddings_model_config.embeddings_model")
     embeddings_model = build_open_ai_protocol(embeddings_model_config.embeddings_model)
 
-    if vector_store == "azure_cognitive_search" and isinstance(input_source, ACSSource):
-        return _create_mlindex_from_existing_acs(
+    if vector_store == "azure_ai_search" and isinstance(input_source, AzureAISearchSource):
+        return _create_mlindex_from_existing_ai_search(
             # TODO: Fix Bug 2818331
             embedding_model=embeddings_model,  # type: ignore[no-redef,arg-type]
             aoai_connection=embeddings_model_config.aoai_connection_id,
-            acs_config=input_source,
+            ai_search_config=input_source,
         )
     embeddings_cache_path = str(Path(embeddings_cache_path) if embeddings_cache_path else Path.cwd())
     save_path = str(Path(embeddings_cache_path) / f"{name}-mlindex")
@@ -91,7 +91,7 @@ def build_index(
         splitter_args["chunk_preprend_summary"] = chunk_prepend_summary
 
     chunked_docs = DocumentChunksIterator(
-        files_source=input_source.input_data.path,
+        files_source=input_source.input_data_path,
         glob=input_glob,
         base_url=data_source_url,
         document_path_replacement_regex=document_path_replacement_regex,
@@ -128,7 +128,7 @@ def build_index(
                 "endpoint": os.getenv(api_base),
             }
     embedder = EmbeddingsContainer.from_uri(
-        model_uri=embeddings_model,
+        uri=embeddings_model,
         **connection_args,
     )
 
@@ -136,15 +136,15 @@ def build_index(
 
     if vector_store.lower() == "faiss":
         embeddings.write_as_faiss_mlindex(save_path)
-    if vector_store.lower() == "azure_cognitive_search":
-        acs_args = {
-            "index_name": index_config.acs_index_name,
+    if vector_store.lower() == "azure_ai_search":
+        ai_search_args = {
+            "index_name": index_config.ai_search_index_name,
         }
-        if not index_config.acs_connection_id:
+        if not index_config.ai_search_connection_id:
             import os
 
-            acs_args = {
-                **acs_args,
+            ai_search_args = {
+                **ai_search_args,
                 **{
                     "endpoint": os.getenv("AZURE_AI_SEARCH_ENDPOINT")
                     if "AZURE_AI_SEARCH_ENDPOINT" in os.environ
@@ -154,24 +154,24 @@ def build_index(
             }
             connection_args = {"connection_type": "environment", "connection": {"key": "AZURE_AI_SEARCH_KEY"}}
         else:
-            acs_connection = get_connection_by_id_v2(index_config.acs_connection_id)
-            acs_args = {
-                **acs_args,
+            ai_search_connection = get_connection_by_id_v2(index_config.ai_search_connection_id)
+            ai_search_args = {
+                **ai_search_args,
                 **{
-                    "endpoint": acs_connection["properties"]["target"],
-                    "api_version": acs_connection["properties"]
+                    "endpoint": ai_search_connection["properties"]["target"],
+                    "api_version": ai_search_connection["properties"]
                     .get("metadata", {})
                     .get("apiVersion", "2023-07-01-preview"),
                 },
             }
             connection_args = {
                 "connection_type": "workspace_connection",
-                "connection": {"id": index_config.acs_connection_id},
+                "connection": {"id": index_config.ai_search_connection_id},
             }
 
         create_index_from_raw_embeddings(
             emb=embedder,
-            acs_config=acs_args,
+            acs_config=ai_search_args,
             connection=connection_args,
             output_path=save_path,
         )
@@ -179,10 +179,10 @@ def build_index(
     return save_path
 
 
-def _create_mlindex_from_existing_acs(
+def _create_mlindex_from_existing_ai_search(
     embedding_model: str,
     aoai_connection: Optional[str],
-    acs_config: ACSSource,
+    ai_search_config: AzureAISearchSource,
 ) -> str:
     try:
         from azureml.rag.embeddings import EmbeddingsContainer
@@ -194,7 +194,7 @@ def _create_mlindex_from_existing_acs(
         raise e
     mlindex_config = {}
     connection_info = {}
-    if not acs_config.acs_connection_id:
+    if not ai_search_config.ai_search_connection_id:
         import os
 
         connection_info = {
@@ -205,30 +205,30 @@ def _create_mlindex_from_existing_acs(
             "connection": {"key": "AZURE_AI_SEARCH_KEY"},
         }
     else:
-        acs_connection = get_connection_by_id_v2(acs_config.acs_connection_id)
+        ai_search_connection = get_connection_by_id_v2(ai_search_config.ai_search_connection_id)
         connection_info = {
-            "endpoint": acs_connection["properties"]["target"],
+            "endpoint": ai_search_connection["properties"]["target"],
             "connection_type": "workspace_connection",
             "connection": {
-                "id": acs_config.acs_connection_id,
+                "id": ai_search_config.ai_search_connection_id,
             },
         }
     mlindex_config["index"] = {
         "kind": "acs",
         "engine": "azure-sdk",
-        "index": acs_config.acs_index_name,
+        "index": ai_search_config.ai_search_index_name,
         "api_version": "2023-07-01-preview",
         "field_mapping": {
-            "content": acs_config.acs_content_key,
-            "embedding": acs_config.acs_embedding_key,
+            "content": ai_search_config.ai_search_content_key,
+            "embedding": ai_search_config.ai_search_embedding_key,
         },
         **connection_info,
     }
 
-    if acs_config.acs_title_key:
-        mlindex_config["index"]["field_mapping"]["title"] = acs_config.acs_title_key
-    if acs_config.acs_metadata_key:
-        mlindex_config["index"]["field_mapping"]["metadata"] = acs_config.acs_metadata_key
+    if ai_search_config.ai_search_title_key:
+        mlindex_config["index"]["field_mapping"]["title"] = ai_search_config.ai_search_title_key
+    if ai_search_config.ai_search_metadata_key:
+        mlindex_config["index"]["field_mapping"]["metadata"] = ai_search_config.ai_search_metadata_key
 
     model_connection_args: Dict[str, Optional[Union[str, Dict]]]
     if not aoai_connection:
@@ -243,7 +243,7 @@ def _create_mlindex_from_existing_acs(
     embedding = EmbeddingsContainer.from_uri(embedding_model, credential=None, **model_connection_args)
     mlindex_config["embeddings"] = embedding.get_metadata()
 
-    path = Path.cwd() / f"import-acs-{acs_config.acs_index_name}-mlindex"
+    path = Path.cwd() / f"import-ai_search-{ai_search_config.ai_search_index_name}-mlindex"
 
     path.mkdir(exist_ok=True)
     with open(path / "MLIndex", "w", encoding="utf-8") as f:

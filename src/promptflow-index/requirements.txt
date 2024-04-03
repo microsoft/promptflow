@@ -1,3 +1,2 @@
 azureml-rag[azure,faiss,cognitive_search,document_parsing]
-azure-ai-ml>=1.14.0
 openai

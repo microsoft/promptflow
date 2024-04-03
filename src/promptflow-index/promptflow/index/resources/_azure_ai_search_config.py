@@ -11,19 +11,19 @@ from typing import Optional
 
 
 class AzureAISearchConfig:
-    """Config class for creating an Azure Cognitive Services index.
+    """Config class for creating an Azure AI Search index.
 
-    :param acs_index_name: The name of the Azure Cognitive Services index.
-    :type acs_index_name: Optional[str]
-    :param acs_connection_id: The Azure Cognitive Services connection ID.
-    :type acs_connection_id: Optional[str]
+    :param ai_search_index_name: The name of the Azure AI Search index.
+    :type ai_search_index_name: Optional[str]
+    :param ai_search_connection_id: The Azure AI Search connection ID.
+    :type ai_search_connection_id: Optional[str]
     """
 
     def __init__(
         self,
         *,
-        acs_index_name: Optional[str] = None,
-        acs_connection_id: Optional[str] = None,
+        ai_search_index_name: Optional[str] = None,
+        ai_search_connection_id: Optional[str] = None,
     ) -> None:
-        self.acs_index_name = acs_index_name
-        self.acs_connection_id = acs_connection_id
+        self.ai_search_index_name = ai_search_index_name
+        self.ai_search_connection_id = ai_search_connection_id
