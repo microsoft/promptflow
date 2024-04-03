@@ -164,6 +164,29 @@ class TestFlowSave:
                 },
                 id="class_init",
             ),
+            pytest.param(
+                {
+                    "entry": "hello:Hello",
+                },
+                {
+                    "init": {
+                        "connection": {
+                            "type": "AzureOpenAIConnection",
+                        }
+                    },
+                    "inputs": {
+                        "text": {
+                            "type": "string",
+                        }
+                    },
+                    "outputs": {
+                        "output": {
+                            "type": "string",
+                        },
+                    },
+                },
+                id="class_init_with_connection",
+            ),
         ],
     )
     def test_pf_save_succeed(self, save_args_overrides, request, expected_signature: dict):

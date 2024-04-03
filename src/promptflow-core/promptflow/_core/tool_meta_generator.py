@@ -40,7 +40,7 @@ from promptflow._utils.exception_utils import (
 )
 from promptflow._utils.process_utils import block_terminate_signal_to_parent
 from promptflow._utils.tool_utils import asdict_without_none, function_to_interface, get_inputs_for_prompt_template
-from promptflow.contracts.tool import Tool, ToolType
+from promptflow.contracts.tool import InputDefinition, Tool, ToolType, ValueType
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 
@@ -533,9 +533,14 @@ def generate_flow_meta_dict_by_file(data: dict, source: str = None, path: str = 
         flow_meta[meta_key] = {}
         for k, v in ports.items():
             # We didn't support specifying multiple types for inputs/outputs/init, so we only take the first one.
-            flow_meta[meta_key][k] = {"type": v.type[0].value}
+            param_type = v.type[0]
+            # For connections, param_type is a string; for primitive types, param_type is
+            # a promptflow.contracts.tool.InputDefinition.
+            param_type = param_type.value if isinstance(param_type, ValueType) else param_type
+
+            flow_meta[meta_key][k] = {"type": param_type}
             # init/inputs may have default value
-            if meta_key != "outputs" and v.default is not None:
+            if isinstance(v, InputDefinition) and v.default is not None:
                 flow_meta[meta_key][k]["default"] = v.default
     return flow_meta
 
