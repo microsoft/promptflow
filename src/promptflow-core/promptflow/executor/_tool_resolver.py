@@ -5,7 +5,6 @@
 import copy
 import inspect
 import types
-import logging
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
