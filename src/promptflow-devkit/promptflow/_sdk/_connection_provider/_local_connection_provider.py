@@ -12,6 +12,9 @@ class LocalConnectionProvider(ConnectionProvider):
 
         self._operations = ConnectionOperations()
 
+    def list(self):
+        raise NotImplementedError("Method 'list' is not implemented now.")
+
     def get(self, name: str, **kwargs):
         # Connection provider here target for execution, so we always get with secrets.
         with_secrets = kwargs.pop("with_secrets", True)

@@ -3,6 +3,7 @@ from promptflow.evals.evaluators import ChatEvaluator
 from promptflow.entities import AzureOpenAIConnection
 
 
+@pytest.mark.unittest
 class TestChatEvaluator:
     def test_conversation_validation_normal(self):
         model_config = AzureOpenAIConnection(
@@ -88,3 +89,34 @@ class TestChatEvaluator:
         with pytest.raises(ValueError) as e:
             chat_eval(conversation=conversation)
         assert str(e.value) == "'citations' in context must be a list. Turn number: 2"
+
+    def test_per_turn_results_aggregation(self):
+        model_config = AzureOpenAIConnection(
+            api_base="mocked_endpoint",
+            api_key="mocked_key",
+            api_type="azure",
+        )
+        chat_eval = ChatEvaluator(model_config=model_config, deployment_name="gpt-4")
+
+        per_turn_results = [
+            {
+                "gpt_groundedness": 1.0,
+                "gpt_groundedness_reason": "reason1",
+                "gpt_fluency": 2.0,
+
+            },
+            {
+                "gpt_groundedness": 3.0,
+                "gpt_groundedness_reason": "reason2",
+                "gpt_fluency": 4.0,
+            },
+        ]
+        aggregated = chat_eval._aggregate_results(per_turn_results)
+        assert aggregated == {
+            "gpt_groundedness": 2.0,
+            "gpt_fluency": 3.0,
+            "evaluation_per_turn": {
+                "gpt_groundedness": {"score": [1.0, 3.0], "reason": ["reason1", "reason2"]},
+                "gpt_fluency": {"score": [2.0, 4.0]},
+            }
+        }

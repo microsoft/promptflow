@@ -22,6 +22,7 @@ from promptflow._constants import CosmosDBContainerName, SpanResourceAttributesF
 from promptflow._sdk._constants import TRACE_DEFAULT_COLLECTION
 from promptflow._sdk._utils import parse_kv_from_pb_attribute
 from promptflow._sdk.entities._trace import Span
+from promptflow._sdk.operations._trace_operations import TraceOperations
 from promptflow._utils.thread_utils import ThreadWithContextVars
 
 
@@ -66,10 +67,11 @@ def trace_collector(
             for scope_span in resource_span.scope_spans:
                 for span in scope_span.spans:
                     # TODO: persist with batch
-                    span = Span._from_protobuf_object(span, resource=resource, logger=logger)
+                    span: Span = TraceOperations._parse_protobuf_span(span, resource=resource, logger=logger)
                     if not cloud_trace_only:
                         all_spans.append(copy.deepcopy(span))
                         span._persist()
+                        logger.debug("Persisted trace id: %s, span id: %s", span.trace_id, span.span_id)
                     else:
                         all_spans.append(span)
 
