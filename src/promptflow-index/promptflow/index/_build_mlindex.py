@@ -72,7 +72,7 @@ def build_index(
         raise e
 
     if not embeddings_model_config.embeddings_model:
-        raise ValueError("In order to use build_index to build an Index locally, you must specify embeddings_model_config.embeddings_model")
+        raise ValueError("Please specify embeddings_model_config.embeddings_model")
     embeddings_model = build_open_ai_protocol(embeddings_model_config.embeddings_model)
 
     if vector_store == "azure_cognitive_search" and isinstance(input_source, ACSSource):

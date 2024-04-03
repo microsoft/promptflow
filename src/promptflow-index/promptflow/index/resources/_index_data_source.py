@@ -31,7 +31,7 @@ class IndexDataSource:
     def __init__(self, *, input_type: Union[str, IndexInputType]):
         self.input_type = input_type
 
-    def _createComponent(self, index_config: IndexConfig, acs_config: Optional[AzureAISearchConfig] = None) -> Pipeline:
+    def _create_component(self, index_config: IndexConfig, acs_config: Optional[AzureAISearchConfig] = None) -> Pipeline:
         """Given the general config values, as well as the config values related to the output index, produce
         and populate a component that creates an index of the specified type from this input config's data source.
 
@@ -64,15 +64,15 @@ class GitSource(IndexDataSource):
         self.git_connection_id = git_connection_id
         super().__init__(input_type=IndexInputType.GIT)
 
-    def _createComponent(self, index_config: IndexConfig, acs_config: Optional[AzureAISearchConfig] = None) -> Pipeline:
+    def _create_component(self, index_config: IndexConfig, acs_config: Optional[AzureAISearchConfig] = None) -> Pipeline:
         curr_file_path = os.path.dirname(__file__)
         if acs_config:
             acs_index_name = acs_config.acs_index_name
             acs_import_config = json.dumps({"index_name": acs_index_name})
             git_create_or_update_acs_component = load_component(
                 os.path.join(curr_file_path, "component-configs", "git_create_or_update_acs_index.yml")
-                )
-            rag_job_component: Pipeline =  git_create_or_update_acs_component(
+            )
+            rag_job_component: Pipeline = git_create_or_update_acs_component(
                 embeddings_dataset_name=index_config.output_index_name,
                 git_connection=self.git_connection_id,
                 git_repository=self.git_url,
@@ -115,6 +115,7 @@ class GitSource(IndexDataSource):
             rag_job_component.properties["azureml.mlIndexAssetKind"] = IndexType.FAISS
             return rag_job_component
 
+
 class ACSSource(IndexDataSource):
     """Config class for creating an ML index from an OpenAI <thing>.
 
@@ -134,7 +135,9 @@ class ACSSource(IndexDataSource):
     :type num_docs_to_import: int
     """
 
-    def __init__(self, *,
+    def __init__(
+        self,
+        *,
         acs_index_name: str,
         acs_content_key: str,
         acs_embedding_key: str,
@@ -150,20 +153,21 @@ class ACSSource(IndexDataSource):
         self.acs_title_key = acs_title_key
         self.acs_metadata_key= acs_metadata_key
         self.num_docs_to_import = num_docs_to_import
-        super().__init__(input_type=IndexInputType.AOAI)
+        super().__init__(input_type = IndexInputType.AOAI)
 
-    def _createComponent(self, index_config: IndexConfig, acs_config: Optional[AzureAISearchConfig] = None) -> Pipeline:
+    def _create_component(self, index_config: IndexConfig, acs_config: Optional[AzureAISearchConfig] = None) -> Pipeline:
         curr_file_path = os.path.dirname(__file__)
-        acs_import_config = json.dumps({"index_name": self.acs_index_name,
-                                        "content_key": self.acs_content_key,
-                                        "embedding_key": self.acs_embedding_key,
-                                        "title_key": self.acs_title_key,
-                                        "metadata_key": self.acs_metadata_key,
-                                        "embedding_model_uri": index_config.embeddings_model,
-                                        })
+        acs_import_config = json.dumps({
+            "index_name": self.acs_index_name,
+            "content_key": self.acs_content_key,
+            "embedding_key": self.acs_embedding_key,
+            "title_key": self.acs_title_key,
+            "metadata_key": self.acs_metadata_key,
+            "embedding_model_uri": index_config.embeddings_model,
+        })
         import_acs_component = load_component(os.path.join(curr_file_path, "component-configs", "import_acs_index.yml"))
 
-        rag_job_component: Pipeline =  import_acs_component(
+        rag_job_component: Pipeline = import_acs_component(
             embeddings_dataset_name=index_config.output_index_name,
             embedding_connection=index_config.aoai_connection_id,
             num_docs_to_import=self.num_docs_to_import,
@@ -172,6 +176,7 @@ class ACSSource(IndexDataSource):
             data_source_url=index_config.data_source_url
         )
         return rag_job_component
+
 
 class LocalSource(IndexDataSource):
     """Config class for creating an ML index from a collection of local files.
@@ -184,7 +189,7 @@ class LocalSource(IndexDataSource):
         self.input_data = Input(type="uri_folder", path=input_data)
         super().__init__(input_type=IndexInputType.LOCAL)
 
-    def _createComponent(self, index_config: IndexConfig, acs_config: Optional[AzureAISearchConfig] = None) -> Pipeline:
+    def _create_component(self, index_config: IndexConfig, acs_config: Optional[AzureAISearchConfig] = None) -> Pipeline:
         curr_file_path = os.path.dirname(__file__)
         if acs_config:
             acs_index_name = acs_config.acs_index_name
@@ -192,7 +197,7 @@ class LocalSource(IndexDataSource):
             git_create_or_update_acs_component = load_component(
                 os.path.join(curr_file_path, "component-configs", "dataset_create_or_update_acs_index.yml")
                 )
-            rag_job_component: Pipeline =  git_create_or_update_acs_component(
+            rag_job_component: Pipeline = git_create_or_update_acs_component(
                 embeddings_dataset_name=index_config.output_index_name,
                 data_source_url=index_config.data_source_url,
                 input_data=self.input_data,

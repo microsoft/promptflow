@@ -194,7 +194,12 @@
     "nologo",
     "wscript",
     "raisvc",
-    "evals"
+    "evals",
+    "mlindex",
+    "redef",
+    "rcts",
+    "Chunker",
+    "mpnet"
   ],
   "flagWords": [
     "Prompt Flow"

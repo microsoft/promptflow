@@ -9,6 +9,7 @@
 
 from typing import Optional
 
+
 class EmbeddingsModelConfig:
     """Config class for a embedding model in AOAI.
 

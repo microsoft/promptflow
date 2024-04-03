@@ -9,6 +9,7 @@
 
 from typing import Optional
 
+
 class AzureAISearchConfig:
     """Config class for creating an Azure Cognitive Services index.
 
