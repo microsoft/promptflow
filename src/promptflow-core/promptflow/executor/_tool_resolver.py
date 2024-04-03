@@ -462,6 +462,13 @@ class ToolResolver:
             # This is a fallback for the case that ServerlessConnection related tool is not ready
             # in legacy versions, then we can directly use OpenAIConnection.
             if isinstance(connection, ServerlessConnection):
+                # The ServerlessConnection should be passed into promptflow-tools as it is.
+                # And this append "/v1" logic should exist in promptflow-tools.
+                # But since old version promptflow package doesn't support below things:
+                # 1. There is NO ServerlessConnection;
+                # 2. Register_apis doesn't support Union;
+                # So in order to release this append "/v1" function without breaking old promptflow package.
+                # We move this logic here.
                 suffix = "/v1"
                 base_url = connection.api_base
                 if not base_url.endswith(suffix):
