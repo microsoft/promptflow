@@ -25,13 +25,13 @@ from promptflow._sdk._service.utils.utils import (
     check_pfs_service_status,
     dump_port_to_config,
     get_current_env_pfs_file,
+    get_pfs_version,
     get_port_from_config,
     get_started_service_info,
     is_port_in_use,
     is_run_from_built_binary,
     kill_exist_service,
 )
-from promptflow._sdk._utils import get_pfs_version
 from promptflow._utils.logger_utils import get_cli_sdk_logger  # noqa: E402
 from promptflow.exceptions import UserErrorException
 

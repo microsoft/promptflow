@@ -45,7 +45,7 @@ overwrite_null_std_logger()
 
 
 def heartbeat():
-    response = get_pfs_version()
+    response = {"promptflow": get_pfs_version()}
     return jsonify(response)
 
 
