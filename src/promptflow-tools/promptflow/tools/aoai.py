@@ -1,6 +1,7 @@
 import json
 from promptflow.tools.common import render_jinja_template, handle_openai_error, parse_chat, to_bool, \
-    validate_functions, process_function_call, post_process_chat_api_response, init_azure_openai_client
+    validate_functions, process_function_call, post_process_chat_api_response, \
+    init_azure_openai_client, process_tool_choice, validate_tools
 
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
 # since the code here is in promptflow namespace as well
@@ -140,10 +141,9 @@ class AzureOpenAI(ToolProvider):
         # functions and function_call are deprecated and are replaced by tools and tool_choice.
         # if both are provided, tools and tool_choice are used and functions and function_call are ignored.
         if tools:
-            # TODO: add validate_tools
+            validate_tools(tools)
             params["tools"] = tools
-            # TODO: add validate_tool_choice
-            params["tool_choice"] = tool_choice
+            params["tool_choice"] = process_tool_choice(tool_choice)
         else:
             if functions:
                 validate_functions(functions)

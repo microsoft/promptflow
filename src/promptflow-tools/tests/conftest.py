@@ -135,6 +135,13 @@ def example_prompt_template_with_function() -> str:
 
 
 @pytest.fixture
+def example_prompt_template_with_tool() -> str:
+    with open(PROMOTFLOW_ROOT / "tests/test_configs/prompt_templates/prompt_with_tool.jinja2") as f:
+        prompt_template = f.read()
+    return prompt_template
+
+
+@pytest.fixture
 def example_prompt_template_with_image() -> str:
     with open(PROMOTFLOW_ROOT / "tests/test_configs/prompt_templates/prompt_with_image.jinja2") as f:
         prompt_template = f.read()
@@ -165,3 +172,61 @@ def functions():
 @pytest.fixture
 def azure_content_safety_connection():
     return ConnectionManager().get("azure_content_safety_connection")
+
+
+@pytest.fixture
+def parsed_chat_with_tools():
+    return [
+        {
+            "role": "system",
+            "content": "Don't make assumptions about what values to plug into functions.",
+        },
+        {
+            "role": "user",
+            "content": "What's the weather like in San Francisco, Tokyo, and Paris?",
+        },
+        {
+            "role": "assistant",
+            "tool_calls": [
+                {
+                    "id": "call_001",
+                    "function": {
+                        "arguments": '{"location": {"city": "San Francisco", "country": "USA"}, "unit": "metric"}',
+                        "name": "get_current_weather_py",
+                    },
+                    "type": "function",
+                },
+                {
+                    "id": "call_002",
+                    "function": {
+                        "arguments": '{"location": {"city": "Tokyo", "country": "Japan"}, "unit": "metric"}',
+                        "name": "get_current_weather_py",
+                    },
+                    "type": "function",
+                },
+                {
+                    "id": "call_003",
+                    "function": {
+                        "arguments": '{"location": {"city": "Paris", "country": "France"}, "unit": "metric"}',
+                        "name": "get_current_weather_py",
+                    },
+                    "type": "function",
+                },
+            ],
+        },
+        {
+            "role": "tool",
+            "tool_call_id": "call_001",
+            "content": '{"location": "San Francisco, CA", "temperature": "72", "unit": null}',
+        },
+        {
+            "role": "tool",
+            "tool_call_id": "call_002",
+            "content": '{"location": "Tokyo", "temperature": "72", "unit": null}',
+        },
+        {
+            "role": "tool",
+            "tool_call_id": "call_003",
+            "content": '{"location": "Paris", "temperature": "72", "unit": null}',
+        },
+    ]
