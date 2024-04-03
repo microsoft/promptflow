@@ -6,10 +6,6 @@ from typing import Union
 from promptflow.index.constants import IndexInputType
 
 
-# General todo: need to determine which args are required or optional when parsed out into groups like this.
-# General todo: move these to more permanent locations?
-
-# Defines stuff related to supplying inputs for an index AKA the base data.
 class IndexDataSource:
     """Base class for configs that define data that will be processed into an ML index.
     This class should not be instantiated directly. Use one of its child classes instead.
@@ -21,6 +17,7 @@ class IndexDataSource:
 
     def __init__(self, *, input_type: Union[str, IndexInputType]):
         self.input_type = input_type
+
 
 class AzureAISearchSource(IndexDataSource):
     """Config class for creating an ML index from an OpenAI <thing>.
