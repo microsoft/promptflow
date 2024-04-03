@@ -93,7 +93,7 @@ class OpenAI(ToolProvider):
     def chat(
         self,
         prompt: PromptTemplate,
-        model: str = "gpt-3.5-turbo",
+        model: str = "",
         temperature: float = 1.0,
         top_p: float = 1.0,
         n: int = 1,
