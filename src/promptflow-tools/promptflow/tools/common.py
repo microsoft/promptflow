@@ -131,36 +131,24 @@ def validate_functions(functions):
 
 
 def validate_tools(tools):
-    """
-        tools = [
-      {
-        "type": "function",
-        "function": {
-          "name": "get_current_weather",
-          "description": "Get the current weather in a given location",
-          "parameters": {
-            "type": "object",
-            "properties": {
-              "location": {
-                "type": "string",
-                "description": "The city and state, e.g. San Francisco, CA",
-              },
-              "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
-            },
-            "required": ["location"],
-          },
-        }
-      }
-    ]
-    """
     tool_example = json.dumps(
         {
-            "name": "function_name",
-            "parameters": {
-                "type": "object",
-                "properties": {"parameter_name": {"type": "integer", "description": "parameter_description"}},
+            "type": "function",
+            "function": {
+                "name": "get_current_weather",
+                "description": "Get the current weather in a given location",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "location": {
+                            "type": "string",
+                            "description": "The city and state, e.g. San Francisco, CA",
+                        },
+                        "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
+                    },
+                    "required": ["location"],
+                },
             },
-            "description": "function_description",
         }
     )
     common_tsg = (
@@ -193,8 +181,8 @@ def try_parse_name_and_content(role_prompt):
 
 
 def try_parse_tool_call_id_and_content(role_prompt):
-    # customer can add ## in front of name/content for markdown highlight.
-    # and we still support name/content without ## prefix for backward compatibility.
+    # customer can add ## in front of tool_call_id/content for markdown highlight.
+    # and we still support tool_call_id/content without ## prefix for backward compatibility.
     pattern = r"\n*#{0,2}\s*tool_call_id:\n+\s*(\S+)\s*\n*#{0,2}\s*content:\n?(.*)"
     match = re.search(pattern, role_prompt, re.DOTALL)
     if match:
@@ -203,9 +191,9 @@ def try_parse_tool_call_id_and_content(role_prompt):
 
 
 def try_parse_tool_calls(role_prompt):
-    # customer can add ## in front of name/content for markdown highlight.
-    # and we still support name/content without ## prefix for backward compatibility.
-    pattern = r"## tool_calls:\n(.*)"
+    # customer can add ## in front of tool_calls for markdown highlight.
+    # and we still support tool_calls without ## prefix for backward compatibility.
+    pattern = r"\n*#{0,2}\s*tool_calls:\n*\s*(\[.*?\])"
     match = re.search(pattern, role_prompt, re.DOTALL)
     if match:
         return match.group(1)
@@ -222,56 +210,22 @@ def is_assistant_tool_calls_chunk(last_message, chunk):
 
 def parse_tool_calls_for_assistant(last_message, chunk):
     parsed_result = try_parse_tool_calls(chunk)
-    parsed_result = parsed_result.rstrip()
+    error_msg = "Failed to parse assistant role prompt with tool_calls. Please make sure the prompt follows the format:"
+    " 'tool_calls:\\n[{ id: tool_call_id, type: tool_type, function: {name: function_name, arguments: function_args }]'"
+    "See more details in https://platform.openai.com/docs/api-reference/chat/create#chat-create-messages"
+
     if parsed_result is None:
-        raise ChatAPIAssistantRoleInvalidFormat(
-            message="Failed to parse assistant role prompt with tool_calls. "
-            "Please make sure the prompt follows the format: 'tool_calls:\\n[{ id: tool_call_id, type: tool_type, "
-            "function: {name: function_name, arguments: function_arguments }]'. "
-            "See more details in https://platform.openai.com/docs/api-reference/chat/create#chat-create-messages"
-        )
+        raise ChatAPIAssistantRoleInvalidFormat(message=error_msg)
     else:
         parsed_array = None
         try:
             parsed_array = eval(parsed_result)
+            last_message["tool_calls"] = parsed_array
         except Exception:
-            raise ChatAPIAssistantRoleInvalidFormat(
-                message="Failed to parse assistant role prompt with tool_calls. "
-                "Please make sure the prompt follows the format: 'tool_calls:\\n[{ id: tool_call_id, type: tool_type,"
-                " function: {name: function_name, arguments: function_arguments }]'. "
-                "See more details in https://platform.openai.com/docs/api-reference/chat/create#chat-create-messages"
-            )
-
-        if isinstance(parsed_array, list):
-            for item in parsed_array:
-                if isinstance(item, dict) and all(key in item for key in ["id", "type", "function"]):
-                    function = item["function"]
-                    if isinstance(function, dict) and all(key in function for key in ["name", "arguments"]):
-                        last_message["tool_calls"] = parsed_array
-                    else:
-                        raise ChatAPIAssistantRoleInvalidFormat(
-                            message="Failed to parse assistant role prompt with tool_calls. "
-                            "Please make sure the 'function' parameter in the prompt must be a dict, "
-                            "and it should contain required keys 'name' and 'arguments'. See more details in "
-                            "https://platform.openai.com/docs/api-reference/chat/create#chat-create-messages"
-                        )
-                else:
-                    raise ChatAPIAssistantRoleInvalidFormat(
-                        message="Failed to parse assistant role prompt with tool_calls. "
-                        "Please make sure each item in 'tool_calls' in the prompt must be a dict, "
-                        "and it should contain required keys 'id', 'type', 'function'. See more details in "
-                        "https://platform.openai.com/docs/api-reference/chat/create#chat-create-messages"
-                    )
-        else:
-            raise ChatAPIAssistantRoleInvalidFormat(
-                        message=f"Failed to parse assistant role prompt with tool_calls. "
-                        f"Please make sure the 'tool_calls' in the prompt must be an array, "
-                        f"but not '{type(parsed_array)}'. See more details in "
-                        f"https://platform.openai.com/docs/api-reference/chat/create#chat-create-messages"
-                    )
+            raise ChatAPIAssistantRoleInvalidFormat(message=error_msg)
 
 
-def parse_tools(last_message, chunk, hash2images):
+def parse_tools(last_message, chunk, hash2images, image_detail):
     parsed_result = try_parse_tool_call_id_and_content(chunk)
     if parsed_result is None:
         raise ChatAPIToolRoleInvalidFormat(
@@ -282,7 +236,7 @@ def parse_tools(last_message, chunk, hash2images):
         )
     else:
         last_message["tool_call_id"] = parsed_result[0]
-        last_message["content"] = to_content_str_or_list(parsed_result[1], hash2images)
+        last_message["content"] = to_content_str_or_list(parsed_result[1], hash2images, image_detail)
 
 
 def parse_chat(chat_str, images: List = None, valid_roles: List[str] = None, image_detail: str = 'auto'):
@@ -303,7 +257,7 @@ def parse_chat(chat_str, images: List = None, valid_roles: List[str] = None, ima
     for chunk in chunks:
         last_message = chat_list[-1] if len(chat_list) > 0 else None
         if is_tools_chunk(last_message):
-            parse_tools(last_message, chunk, hash2images)
+            parse_tools(last_message, chunk, hash2images, image_detail)
             continue
 
         if is_assistant_tool_calls_chunk(last_message, chunk):

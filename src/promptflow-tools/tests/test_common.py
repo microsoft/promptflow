@@ -1,30 +1,16 @@
 from unittest.mock import patch
 
 import pytest
-from tests.utils import CustomException, Deployment
+from promptflow.tools.common import ChatAPIInvalidFunctions, validate_functions, process_function_call, \
+    parse_chat, find_referenced_image_set, preprocess_template_string, convert_to_chat_list, ChatInputList, \
+    ParseConnectionError, _parse_resource_id, list_deployment_connections, \
+    normalize_connection_config, parse_tool_calls_for_assistant, validate_tools, process_tool_choice
+from promptflow.tools.exception import ListDeploymentsError, ChatAPIInvalidTools, ChatAPIAssistantRoleInvalidFormat
 
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 from promptflow.contracts.multimedia import Image
-from promptflow.tools.common import (
-    ChatAPIAssistantRoleInvalidFormat,
-    ChatAPIInvalidFunctions,
-    ChatAPIInvalidTools,
-    ChatInputList,
-    ParseConnectionError,
-    _parse_resource_id,
-    convert_to_chat_list,
-    find_referenced_image_set,
-    list_deployment_connections,
-    normalize_connection_config,
-    parse_chat,
-    parse_tool_calls_for_assistant,
-    preprocess_template_string,
-    process_function_call,
-    process_tool_choice,
-    validate_functions,
-    validate_tools,
-)
-from promptflow.tools.exception import ListDeploymentsError
+from tests.utils import CustomException, Deployment
+from tests.constants import CHAT_WITH_TOOLS_TEST_CASES, ASSISTANT_WITH_TOOL_CALLS_TEST_CASES, VALIDATE_TOOLS_TEST_CASES
 
 DEFAULT_SUBSCRIPTION_ID = "sub"
 DEFAULT_RESOURCE_GROUP_NAME = "rg"
@@ -77,58 +63,7 @@ class TestCommon:
         assert exc_info.value.error_codes == error_codes.split("/")
 
     @pytest.mark.parametrize(
-        "tools, error_message, success",
-        [
-            (
-                [
-                    {
-                        "type": "function",
-                        "function": {
-                            "name": "get_current_weather",
-                            "description": "Get the current weather in a given location",
-                            "parameters": {
-                                "type": "object",
-                                "properties": {
-                                    "location": {
-                                        "type": "string",
-                                        "description": "The city and state, e.g. San Francisco, CA",
-                                    },
-                                    "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
-                                },
-                                "required": ["location"],
-                            },
-                        },
-                    }
-                ],
-                "",
-                True,
-            ),
-            ([], "tools cannot be an empty list", False),
-            (["str"], "is not a dict. Here is a valid tool example", False),
-            ([{"type1": "function", "function": "str"}], "does not have 'type' property", False),
-            ([{"type": "function", "function": "str"}], "is not a dict. Here is a valid tool example", False),
-            ([{"type": "function", "function": {"name": "func1"}}], "does not have 'parameters' property", False),
-            (
-                [{"type": "function", "function": {"name": "func1", "parameters": "param1"}}],
-                "should be described as a JSON Schema object",
-                False,
-            ),
-            (
-                [{"type": "function", "function": {"name": "func1", "parameters": {"type": "int", "properties": {}}}}],
-                "parameters 'type' should be 'object'",
-                False,
-            ),
-            (
-                [
-                    {
-                        "type": "function",
-                        "function": {"name": "func1", "parameters": {"type": "object", "properties": []}},
-                    }
-                ],
-                "should be described as a JSON Schema object",
-                False,
-            ),
-        ],
+        "tools, error_message, success", VALIDATE_TOOLS_TEST_CASES
     )
     def test_chat_api_validate_tools(self, tools, error_message: str, success: bool):
         if success:
@@ -239,13 +174,14 @@ class TestCommon:
     @pytest.mark.parametrize(
         "chat_str, expected_result",
         [
-            (
-                "\n#system:\n##name:\nAI \n content:\nfirst\n\n#user:\nsecond",
-                [{"role": "system", "name": "AI", "content": "first"}, {"role": "user", "content": "second"}],
-            ),
-            ("\nuser:\nname:\n\nperson\n content:\n", [{"role": "user", "name": "person", "content": ""}]),
-            ("\nsystem:\nname:\n\n content:\nfirst", [{"role": "system", "content": "name:\n\n content:\nfirst"}]),
-            ("\nsystem:\nname:\n\n", [{"role": "system", "content": "name:"}]),
+            ("\n#system:\n##name:\nAI \n content:\nfirst\n\n#user:\nsecond", [
+                {'role': 'system', 'name': 'AI', 'content': 'first'}, {'role': 'user', 'content': 'second'}]),
+            ("\nuser:\nname:\n\nperson\n content:\n", [
+                {'role': 'user', 'name': 'person', 'content': ''}]),
+            ("\nsystem:\nname:\n\n content:\nfirst", [
+                {'role': 'system', 'content': 'name:\n\n content:\nfirst'}]),
+            ("\nsystem:\nname:\n\n", [
+                {'role': 'system', 'content': 'name:'}])
         ],
     )
     def test_parse_chat_with_name_in_role_prompt(self, chat_str, expected_result):
@@ -253,235 +189,44 @@ class TestCommon:
         assert actual_result == expected_result
 
     @pytest.mark.parametrize(
-        "chat_str, expected_result, success, error_message",
-        [
-            (
-                '# tool:\n## tool_call_id:\ncall_001\n## content:\n{"location": "San Francisco, CA", "temperature": "72", "unit": null}\n',
-                [
-                    {
-                        "role": "tool",
-                        "tool_call_id": "call_001",
-                        "content": '{"location": "San Francisco, CA", "temperature": "72", "unit": null}',
-                    }
-                ],
-                True,
-                "",
-            ),
-            (
-                """
-# tool:
-## tool_call_id:
-call_001
-## content:
-{"location": "San Francisco, CA", "temperature": "72", "unit": null}
-
-# tool:
-## tool_call_id:
-call_002
-## content:
-{"location": "San Francisco, CA", "temperature": "72", "unit": null}
-
-# tool:
-## tool_call_id:
-call_003
-## content:
-{"location": "San Francisco, CA", "temperature": "72", "unit": null}
-""",
-                [
-                    {
-                        "role": "tool",
-                        "tool_call_id": "call_001",
-                        "content": '{"location": "San Francisco, CA", "temperature": "72", "unit": null}',
-                    },
-                    {
-                        "role": "tool",
-                        "tool_call_id": "call_002",
-                        "content": '{"location": "San Francisco, CA", "temperature": "72", "unit": null}',
-                    },
-                    {
-                        "role": "tool",
-                        "tool_call_id": "call_003",
-                        "content": '{"location": "San Francisco, CA", "temperature": "72", "unit": null}',
-                    },
-                ],
-                True,
-                "",
-            ),
-            (
-                """
-# assistant:
-## tool_calls:
-[{'id': 'call_001', 'function': {'arguments': '{"location": {"city": "San Francisco", "country": "USA"}, "unit": "metric"}', 'name': 'get_current_weather_py'}, 'type': 'function'}, {'id': 'call_002', 'function': {'arguments': '{"location": {"city": "Tokyo", "country": "Japan"}, "unit": "metric"}', 'name': 'get_current_weather_py'}, 'type': 'function'}, {'id': 'call_003', 'function': {'arguments': '{"location": {"city": "Paris", "country": "France"}, "unit": "metric"}', 'name': 'get_current_weather_py'}, 'type': 'function'}]
-""",
-                [
-                    {
-                        "role": "assistant",
-                        "tool_calls": [
-                            {
-                                "id": "call_001",
-                                "function": {
-                                    "arguments": '{"location": {"city": "San Francisco", "country": "USA"}, "unit": "metric"}',
-                                    "name": "get_current_weather_py",
-                                },
-                                "type": "function",
-                            },
-                            {
-                                "id": "call_002",
-                                "function": {
-                                    "arguments": '{"location": {"city": "Tokyo", "country": "Japan"}, "unit": "metric"}',
-                                    "name": "get_current_weather_py",
-                                },
-                                "type": "function",
-                            },
-                            {
-                                "id": "call_003",
-                                "function": {
-                                    "arguments": '{"location": {"city": "Paris", "country": "France"}, "unit": "metric"}',
-                                    "name": "get_current_weather_py",
-                                },
-                                "type": "function",
-                            },
-                        ],
-                    }
-                ],
-                True,
-                "",
-            ),
-            (
-                """
-# system:
-Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous.
-
-# user:
-What's the weather like in San Francisco, Tokyo, and Paris?
-
-# assistant:
-## tool_calls:
-[{'id': 'call_001', 'function': {'arguments': '{"location": {"city": "San Francisco", "country": "USA"}, "unit": "metric"}', 'name': 'get_current_weather_py'}, 'type': 'function'}, {'id': 'call_002', 'function': {'arguments': '{"location": {"city": "Tokyo", "country": "Japan"}, "unit": "metric"}', 'name': 'get_current_weather_py'}, 'type': 'function'}, {'id': 'call_003', 'function': {'arguments': '{"location": {"city": "Paris", "country": "France"}, "unit": "metric"}', 'name': 'get_current_weather_py'}, 'type': 'function'}]
-
-# tool:
-## tool_call_id:
-call_001
-## content:
-{"location": "San Francisco, CA", "temperature": "72", "unit": null}
-# tool:
-## tool_call_id:
-call_002
-## content:
-{"location": "Tokyo", "temperature": "72", "unit": null}
-# tool:
-## tool_call_id:
-call_003
-## content:
-{"location": "Paris", "temperature": "72", "unit": null}
-""",
-                [
-                    {
-                        "role": "system",
-                        "content": "Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous.",
-                    },
-                    {
-                        "role": "user",
-                        "content": "What's the weather like in San Francisco, Tokyo, and Paris?",
-                    },
-                    {
-                        "role": "assistant",
-                        "tool_calls": [
-                            {
-                                "id": "call_001",
-                                "function": {
-                                    "arguments": '{"location": {"city": "San Francisco", "country": "USA"}, "unit": "metric"}',
-                                    "name": "get_current_weather_py",
-                                },
-                                "type": "function",
-                            },
-                            {
-                                "id": "call_002",
-                                "function": {
-                                    "arguments": '{"location": {"city": "Tokyo", "country": "Japan"}, "unit": "metric"}',
-                                    "name": "get_current_weather_py",
-                                },
-                                "type": "function",
-                            },
-                            {
-                                "id": "call_003",
-                                "function": {
-                                    "arguments": '{"location": {"city": "Paris", "country": "France"}, "unit": "metric"}',
-                                    "name": "get_current_weather_py",
-                                },
-                                "type": "function",
-                            },
-                        ],
-                    },
-                    {
-                        "role": "tool",
-                        "tool_call_id": "call_001",
-                        "content": '{"location": "San Francisco, CA", "temperature": "72", "unit": null}',
-                    },
-                    {
-                        "role": "tool",
-                        "tool_call_id": "call_002",
-                        "content": '{"location": "Tokyo", "temperature": "72", "unit": null}',
-                    },
-                    {
-                        "role": "tool",
-                        "tool_call_id": "call_003",
-                        "content": '{"location": "Paris", "temperature": "72", "unit": null}',
-                    },
-                ],
-                True,
-                "",
-            ),
-            (
-                """
-# assistant:
-## tool_calls:
-[{'id': 'call_001', 'function1': {'arguments': '{"location": {"city": "San Francisco", "country": "USA"}, "unit": "metric"}', 'name': 'get_current_weather_py'}, 'type': 'function'}]
-""",
-                [],
-                False,
-                "it should contain required keys 'id', 'type', 'function'",
-            ),
-        ],
+        "chat_str, expected_result, success, error_message, exception_type", CHAT_WITH_TOOLS_TEST_CASES
     )
-    def test_try_parse_chat_with_tools(self, chat_str: str, expected_result, success: bool, error_message: str):
+    def test_try_parse_chat_with_tools(self, chat_str, expected_result, success, error_message, exception_type):
         if success:
             actual_result = parse_chat(chat_str)
             assert actual_result == expected_result
         else:
-            with pytest.raises(ChatAPIAssistantRoleInvalidFormat) as exc_info:
+            with pytest.raises(exception_type) as exc_info:
                 parse_chat(chat_str)
             assert error_message in exc_info.value.message
 
-    @pytest.mark.parametrize("chunk, error_message", [
-        ("""
-## tool_calls:
-[{'id': 'call_001'}]
-         """, "Please make sure each item in 'tool_calls' in the prompt must be a dict, and it should contain required keys 'id', 'type', 'function'.")
-    ])
-    def test_parse_tool_calls_for_assistant(self, chunk: str, error_message: str):
+    @pytest.mark.parametrize("chunk, expected_res, error_msg, success", ASSISTANT_WITH_TOOL_CALLS_TEST_CASES)
+    def test_parse_tool_calls_for_assistant(self, chunk: str, expected_res, error_msg: str, success: bool):
         last_message = {'role': 'assistant'}
-        with pytest.raises(ChatAPIAssistantRoleInvalidFormat) as exc_info:
+        if success:
             parse_tool_calls_for_assistant(last_message, chunk)
-        assert error_message in exc_info.value.message
+            assert last_message["tool_calls"] == expected_res
+        else:
+            with pytest.raises(ChatAPIAssistantRoleInvalidFormat) as exc_info:
+                parse_tool_calls_for_assistant(last_message, chunk)
+            assert error_msg in exc_info.value.message
 
     @pytest.mark.parametrize(
         "kwargs, expected_result",
         [
             ({}, set()),
-            (
-                {"image_1": Image("image1".encode()), "image_2": Image("image2".encode()), "t1": "text"},
-                {Image("image1".encode()), Image("image2".encode())},
-            ),
-            (
-                {"images": [Image("image1".encode()), Image("image2".encode())]},
-                {Image("image1".encode()), Image("image2".encode())},
-            ),
-            ({"image_1": Image("image1".encode()), "image_2": Image("image1".encode())}, {Image("image1".encode())}),
-            (
-                {"images": {"image_1": Image("image1".encode()), "image_2": Image("image2".encode())}},
-                {Image("image1".encode()), Image("image2".encode())},
-            ),
+            ({"image_1": Image("image1".encode()), "image_2": Image("image2".encode()), "t1": "text"}, {
+                Image("image1".encode()), Image("image2".encode())
+            }),
+            ({"images": [Image("image1".encode()), Image("image2".encode())]}, {
+                Image("image1".encode()), Image("image2".encode())
+            }),
+            ({"image_1": Image("image1".encode()), "image_2": Image("image1".encode())}, {
+                Image("image1".encode())
+            }),
+            ({"images": {"image_1": Image("image1".encode()), "image_2": Image("image2".encode())}}, {
+                Image("image1".encode()), Image("image2".encode())
+            })
         ],
     )
     def test_find_referenced_image_set(self, kwargs, expected_result):
@@ -625,22 +370,21 @@ call_003
     @pytest.mark.parametrize(
         "input_data, expected_output",
         [
-            (
-                OpenAIConnection(api_key="fake_key", organization="fake_org", base_url="https://openai"),
-                {"max_retries": 0, "api_key": "fake_key", "organization": "fake_org", "base_url": "https://openai"},
-            ),
-            (
-                AzureOpenAIConnection(api_key="fake_key", api_base="https://aoai", api_version="v1"),
-                {"max_retries": 0, "api_key": "fake_key", "api_version": "v1", "azure_endpoint": "https://aoai"},
-            ),
-        ],
+            (OpenAIConnection(api_key="fake_key", organization="fake_org", base_url="https://openai"),
+             {"max_retries": 0, "api_key": "fake_key", "organization": "fake_org", "base_url": "https://openai"}),
+            (AzureOpenAIConnection(api_key="fake_key", api_base="https://aoai", api_version="v1"),
+             {"max_retries": 0, "api_key": "fake_key", "api_version": "v1", "azure_endpoint": "https://aoai"}),
+        ]
     )
     def test_normalize_connection_config(self, input_data, expected_output):
         actual_result = normalize_connection_config(input_data)
         assert actual_result == expected_output
 
     def test_normalize_connection_config_for_aoai_meid(self):
-        aoai_meid_connection = AzureOpenAIConnection(api_base="https://aoai", api_version="v1", auth_mode="meid_token")
+        aoai_meid_connection = AzureOpenAIConnection(
+            api_base="https://aoai",
+            api_version="v1",
+            auth_mode="meid_token")
         normalized_config = normalize_connection_config(aoai_meid_connection)
         expected_output = {
             "max_retries": 0,
