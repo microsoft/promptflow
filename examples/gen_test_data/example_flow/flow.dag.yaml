@@ -1,0 +1,129 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+environment:
+  python_requirements_txt: requirements.txt
+inputs:
+  text_chunk:
+    type: string
+    is_chat_input: false
+    default: Prompt flow is a suite of development tools designed to streamline the
+      end-to-end development cycle of LLM-based AI applications, from ideation,
+      prototyping, testing, evaluation to production deployment and monitoring.
+      It makes prompt engineering much easier and enables you to build LLM apps
+      with production quality.
+outputs:
+  question:
+    type: string
+    reference: ${validate_question.output.question}
+  suggested_answer:
+    type: string
+    reference: ${validate_suggested_answer.output.suggested_answer}
+  debug_info:
+    type: string
+    reference: ${generate_debug_info.output}
+nodes:
+- name: score_text_chunk_prompt
+  type: prompt
+  source:
+    type: code
+    path: score_text_chunk_prompt.jinja2
+  inputs:
+    context: ${inputs.text_chunk}
+  use_variants: false
+- name: validate_question_prompt
+  type: prompt
+  source:
+    type: code
+    path: validate_question_prompt.jinja2
+  inputs:
+    question: ${generate_question.output}
+    context: ${inputs.text_chunk}
+  use_variants: false
+- name: generate_question_prompt
+  type: prompt
+  source:
+    type: code
+    path: generate_question_prompt.jinja2
+  inputs:
+    context: ${inputs.text_chunk}
+  use_variants: false
+- name: generate_suggested_answer_prompt
+  type: prompt
+  source:
+    type: code
+    path: generate_suggested_answer_prompt.jinja2
+  inputs:
+    context: ${inputs.text_chunk}
+    question: ${validate_question.output.question}
+  use_variants: false
+- name: generate_question
+  type: python
+  source:
+    type: code
+    path: generate_question.py
+  inputs:
+    connection: ""
+    context: ${validate_text_chunk.output.context}
+    temperature: 0.2
+    generate_question_prompt: ${generate_question_prompt.output}
+  use_variants: false
+- name: validate_question
+  type: python
+  source:
+    type: code
+    path: validate_question.py
+  inputs:
+    connection: ""
+    temperature: 0.2
+    generated_question: ${generate_question.output}
+    validate_question_prompt: ${validate_question_prompt.output}
+  use_variants: false
+- name: generate_suggested_answer
+  type: python
+  source:
+    type: code
+    path: generate_suggested_answer.py
+  inputs:
+    connection: ""
+    context: ${inputs.text_chunk}
+    generate_suggested_answer_prompt: ${generate_suggested_answer_prompt.output}
+    question: ${validate_question.output.question}
+    temperature: 0.2
+  use_variants: false
+- name: generate_debug_info
+  type: python
+  source:
+    type: code
+    path: generate_debug_info.py
+  inputs:
+    text_chunk: ${inputs.text_chunk}
+    validate_suggested_answer_output: ${validate_suggested_answer.output}
+    text_chunk_validation_res: ${validate_text_chunk.output.validation_res}
+    validate_question_output: ${validate_question.output}
+- name: validate_suggested_answer_prompt
+  type: prompt
+  source:
+    type: code
+    path: validate_suggested_answer_prompt.jinja2
+  inputs:
+    answer: ${generate_suggested_answer.output}
+- name: validate_suggested_answer
+  type: python
+  source:
+    type: code
+    path: validate_suggested_answer.py
+  inputs:
+    connection: ""
+    suggested_answer: ${generate_suggested_answer.output}
+    validate_suggested_answer_prompt: ${validate_suggested_answer_prompt.output}
+    temperature: 0.2
+- name: validate_text_chunk
+  type: python
+  source:
+    type: code
+    path: validate_text_chunk.py
+  inputs:
+    connection: ""
+    score_text_chunk_prompt: ${score_text_chunk_prompt.output}
+    context: ${inputs.text_chunk}
+    score_threshold: 4
+    temperature: 0.2

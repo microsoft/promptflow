@@ -1,0 +1,57 @@
+# Common section: this section provides common values for all other sections. Required.
+# Configure 'document_folder', 'document_chunk_size' and 'document_chunk_overlap' if you require document splitting.
+documents_folder: <your-document-folder-path>
+document_chunk_size: 512 # The token chunk size for each chunk.
+document_chunk_overlap: 100 # The token overlap of each chunk when splitting.
+
+# However, if you wish to bypass the document split process, simply provide the 'document_nodes_file', which is a JSONL file.
+# When both 'documents_folder' and 'document_nodes_file' are configured, will use 'document_nodes_file' and ignore 'documents_folder'.
+# For cloud mode, both local files and data assets can be used.
+# document_nodes_file: <your-node-file-path>
+
+# Test data gen flow configs
+# You can utilize our provided example test data generation flow directly. Alternatively, you can create your own flow and set up corresponding node inputs override.
+# The example flow folder path is <promptflow github repo>\examples\gen_test_data\example_flow
+flow_folder: <your-test-data-gen-flow-folder-path>
+node_inputs_override: # Override some node inputs, if not fill in 'node_inputs_override', will use the values in flow.dag.yaml
+  validate_text_chunk: # node name in flow.dag.yaml
+    connection: <your-connection-name> # connection name of node 'validate_text_chunk'
+    # Use 'deployment_name' for Azure OpenAI connection, 'model' for OpenAI
+    deployment_name: <your-deployment-name>
+    # model: <your-model>
+  generate_question:
+    connection: <your-connection-name>
+    deployment_name: <your-deployment-name>
+    # model: <your-model>
+  validate_question:
+    connection: <your-connection-name>
+    deployment_name: <your-deployment-name>
+    # model: <your-model>
+  generate_suggested_answer:
+    connection: <your-connection-name>
+    deployment_name: <your-deployment-name>
+    # model: <your-model>
+  validate_suggested_answer:
+    connection: <your-connection-name>
+    deployment_name: <your-deployment-name>
+    # model: <your-model>
+
+
+# Local section: this section is for local test data generation related configuration. Can skip if not run in local.
+output_folder: <your-output-folder-path>
+flow_batch_run_size: 4 # Higher values may speed up flow runs but risk hitting OpenAI's rate limit.
+
+
+# Cloud section: this section is for cloud test data generation related configuration. Can skip if not run in cloud.
+subscription_id: <your-sub-id>
+resource_group: <your-resource-group>
+workspace_name: <your-workspace-name>
+aml_cluster: <your-compute-name>
+
+# Parallel run step configs
+prs_instance_count: 2
+prs_mini_batch_size: 1
+prs_max_concurrency_per_instance: 4
+prs_max_retry_count: 3
+prs_run_invocation_time: 800
+prs_allowed_failed_count: -1

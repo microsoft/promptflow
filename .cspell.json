@@ -196,7 +196,9 @@
     "nologo",
     "wscript",
     "raisvc",
-    "evals"
+    "evals",
+    "setenv",
+    "pypdf"
   ],
   "flagWords": [
     "Prompt Flow"

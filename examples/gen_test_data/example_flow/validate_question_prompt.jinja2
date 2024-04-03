@@ -1,0 +1,64 @@
+# system:
+
+Verdict a question based on following rules:
+
+1. If there are acronyms or terms in the question, then please check if they exist in the given context. If no, verdict no. If yes, check if other rules are satisfied.
+2. Determine if the given question can be clearly understood and give the reason.
+
+Output a valid json with reason and verdict.
+
+Here are some examples:
+question: What is the discovery about space?
+answer:
+{
+    "reason":"The question is too vague and does not specify which discovery about space it is referring to."
+    "verdict":"no"
+}
+
+question: What caused the Great Depression?
+answer:
+{
+    "reason":"The question is specific and refers to a well-known historical economic event, making it clear and answerable.",
+    "verdict":"yes"
+}
+
+question: What is the keyword that best describes the paper's focus in natural language understanding tasks?
+answer:
+{
+    "reason": "The question mentions a 'paper' in it without referring it's name which makes it unclear without it",
+    "verdict": "no"
+}
+
+question: Who wrote 'Romeo and Juliet'?
+answer:
+{
+    "reason": "The question is clear and refers to a specific work by name therefore it is clear",
+    "verdict": "yes"
+}
+
+question: What did the study mention?
+answer:
+{
+    "reason": "The question is vague and does not specify which study it is referring to",
+    "verdict": "no"
+}
+
+question: What is the focus of the REPLUG paper?
+answer:
+{
+    "reason": "The question refers to a specific work by it's name hence can be understood",
+    "verdict": "yes"
+}
+
+question: What is the purpose of the reward-driven stage in the training process?
+answer:
+{
+    "reason": "The question lacks specific context regarding the type of training process, making it potentially ambiguous and open to multiple interpretations.",
+    "verdict": "no"
+}
+
+# user:
+context: {{context}}
+
+question: {{question}}
+answer:
