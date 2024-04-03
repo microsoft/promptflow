@@ -9,13 +9,7 @@ from os import PathLike
 from pathlib import Path
 from typing import Optional, Tuple, Union
 
-from promptflow._constants import (
-    CHAT_HISTORY,
-    DEFAULT_ENCODING,
-    DEFAULT_FLOW_YAML_FILE_NAME,
-    PROMPT_FLOW_DIR_NAME,
-    PROMPTY_EXTENSION,
-)
+from promptflow._constants import CHAT_HISTORY, DEFAULT_ENCODING, FLOW_DAG_YAML, PROMPT_FLOW_DIR_NAME, PROMPTY_EXTENSION
 from promptflow._core._errors import MetaFileNotFound, MetaFileReadError
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.utils import strip_quotation
@@ -83,11 +77,11 @@ def resolve_flow_path(
 
     if new:
         if flow_path.is_dir():
-            return flow_path, DEFAULT_FLOW_YAML_FILE_NAME
+            return flow_path, FLOW_DAG_YAML
         return flow_path.parent, flow_path.name
 
-    if flow_path.is_dir() and (flow_path / DEFAULT_FLOW_YAML_FILE_NAME).is_file():
-        return flow_path, DEFAULT_FLOW_YAML_FILE_NAME
+    if flow_path.is_dir() and (flow_path / FLOW_DAG_YAML).is_file():
+        return flow_path, FLOW_DAG_YAML
     elif flow_path.is_file():
         return flow_path.parent, flow_path.name
 
