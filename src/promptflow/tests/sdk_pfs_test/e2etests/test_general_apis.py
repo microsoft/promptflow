@@ -4,7 +4,7 @@
 
 import pytest
 
-from promptflow._sdk._utils import get_pfs_version
+from promptflow._sdk._service.utils.utils import get_pfs_version
 
 from ..utils import PFSOperations
 
