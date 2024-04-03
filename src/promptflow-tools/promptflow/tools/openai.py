@@ -117,7 +117,6 @@ class OpenAI(ToolProvider):
         # TODO: remove below type conversion after client can pass json rather than string.
         stream = to_bool(stream)
         params = {
-            "model": model,
             "messages": messages,
             "temperature": float(temperature),
             "top_p": float(top_p),
