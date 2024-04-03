@@ -485,7 +485,7 @@ def post_process_chat_api_response(completion, stream, functions=None, tools=Non
     else:
         # When calling function/tool, function_call/tool_call response will be returned as a field in message,
         # so we need return message directly. Otherwise, we only return content.
-        if functions is not None or tools is not None:
+        if functions or tools:
             return completion.model_dump()["choices"][0]["message"]
         else:
             # chat api may return message with no content.

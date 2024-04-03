@@ -91,3 +91,11 @@ promptflow.tools.llm_vision.llm_vision:
         - int
       ui_hints:
         text_box_size: xs
+    detail:
+      enum:
+      - low
+      - high
+      - auto
+      type:
+        - string
+      default: auto
