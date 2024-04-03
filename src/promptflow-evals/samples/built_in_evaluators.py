@@ -18,7 +18,8 @@ deployment_name = "GPT-4-Prod"
 project_scope = {
     "subscription_id": "e0fd569c-e34a-4249-8c24-e8d723c7f054",
     "resource_group_name": "resource-group",
-    "project_name": "project-name
+    "project_name": "project-name"
+
 }
 
 
