@@ -1,15 +1,15 @@
 {
+    "package": {},
     "code": {
         "fetch_text_content_from_url.py": {
             "type": "python",
             "inputs": {
-                "fetch_url": {
+                "url": {
                     "type": [
                         "string"
                     ]
                 }
             },
-            "source": "fetch_text_content_from_url.py",
             "function": "fetch_text_content_from_url"
         },
         "summarize_text_content.jinja2": {
@@ -21,7 +21,7 @@
                     ]
                 }
             },
-            "source": "summarize_text_content.jinja2"
+            "description": "Summarize webpage content into a short paragraph."
         },
         "summarize_text_content__variant_1.jinja2": {
             "type": "llm",
@@ -31,12 +31,10 @@
                         "string"
                     ]
                 }
-            },
-            "source": "summarize_text_content__variant_1.jinja2"
+            }
         },
         "prepare_examples.py": {
             "type": "python",
-            "source": "prepare_examples.py",
             "function": "prepare_examples"
         },
         "classify_with_llm.jinja2": {
@@ -58,7 +56,7 @@
                     ]
                 }
             },
-            "source": "classify_with_llm.jinja2"
+            "description": "Multi-class classification of a given url and text content."
         },
         "convert_to_dict.py": {
             "type": "python",
@@ -69,9 +67,7 @@
                     ]
                 }
             },
-            "source": "convert_to_dict.py",
             "function": "convert_to_dict"
         }
-    },
-    "package": {}
+    }
 }
