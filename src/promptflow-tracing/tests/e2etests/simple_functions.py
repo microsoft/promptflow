@@ -1,7 +1,9 @@
 import asyncio
+import re
 from time import sleep
 from typing import Union
 
+from jinja2 import Template
 from openai import AsyncAzureOpenAI, AzureOpenAI
 
 from promptflow.tracing._trace import trace
@@ -59,10 +61,12 @@ def openai_chat(connection: dict, prompt: str, stream: bool = False):
     response = client.chat.completions.create(model="gpt-35-turbo", messages=messages, stream=stream)
 
     if stream:
+
         def generator():
             for chunk in response:
                 if chunk.choices:
                     yield chunk.choices[0].delta.content or ""
+
         return "".join(generator())
     return response.choices[0].message.content or ""
 
@@ -73,10 +77,12 @@ def openai_completion(connection: dict, prompt: str, stream: bool = False):
     response = client.completions.create(model="text-ada-001", prompt=prompt, stream=stream)
 
     if stream:
+
         def generator():
             for chunk in response:
                 if chunk.choices:
                     yield chunk.choices[0].text or ""
+
         return "".join(generator())
     return response.choices[0].text or ""
 
@@ -86,3 +92,52 @@ async def openai_embedding_async(connection: dict, input: Union[str, list]):
     client = AsyncAzureOpenAI(**connection)
     resp = await client.embeddings.create(model="text-embedding-ada-002", input=input)
     return resp.data[0].embedding
+
+
+@trace
+def prompt_tpl_completion(connection: dict, prompt_tpl: str, stream: bool = False, **kwargs):
+    client = AzureOpenAI(**connection)
+    prompt = Template(prompt_tpl).render(**kwargs)
+    response = client.completions.create(model="text-ada-001", prompt=prompt, stream=stream)
+
+    if stream:
+
+        def generator():
+            for chunk in response:
+                if chunk.choices:
+                    yield chunk.choices[0].text or ""
+
+        return "".join(generator())
+    return response.choices[0].text or ""
+
+
+def parse_chat(chat_str):
+    valid_roles = ["system", "user", "assistant", "function"]
+
+    # Split the chat string into chunks based on the role lines
+    chunks = re.split(rf"(?i)^\s*#?\s*({'|'.join(valid_roles)})\s*:\s*\n", chat_str, flags=re.MULTILINE)
+
+    chat_list = [
+        {"role": chunks[i].strip().lower(), "content": chunks[i + 1].strip()} for i in range(1, len(chunks), 2)
+    ]
+
+    return chat_list
+
+
+@trace
+def prompt_tpl_chat(connection: dict, prompt_tpl: str, stream: bool = False, **kwargs):
+    client = AzureOpenAI(**connection)
+    prompt = Template(prompt_tpl).render(**kwargs)
+    messages = parse_chat(prompt)
+
+    response = client.chat.completions.create(model="gpt-35-turbo", messages=messages, stream=stream)
+
+    if stream:
+
+        def generator():
+            for chunk in response:
+                if chunk.choices:
+                    yield chunk.choices[0].delta.content or ""
+
+        return "".join(generator())
+    return response.choices[0].message.content or ""
