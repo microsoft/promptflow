@@ -10,10 +10,10 @@ from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY
 from promptflow._utils.flow_utils import resolve_entry_file
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
-from .dag import Flow
+from .base import Flow as FlowBase
 
 
-class FlexFlow(Flow):
+class FlexFlow(FlowBase):
     """A FlexFlow represents a flow defined with codes directly. It doesn't involve a directed acyclic graph (DAG)
     explicitly, but its entry function haven't been provided.
     FlexFlow basically behave like a Flow.
