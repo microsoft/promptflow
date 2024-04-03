@@ -203,7 +203,7 @@ class LocalStorageOperations(AbstractBatchRunStorage):
         )
         # snapshot
         self._snapshot_folder_path = prepare_folder(self.path / LocalStorageFilenames.SNAPSHOT_FOLDER)
-        _, flow_file = resolve_flow_path(self._run.flow, check_flow_exist=False)
+        _, flow_file = resolve_flow_path(self._run.flow or self._run.path, check_flow_exist=False)
         self._dag_path = self._snapshot_folder_path / flow_file
         self._flow_tools_json_path = (
             self._snapshot_folder_path / PROMPT_FLOW_DIR_NAME / LocalStorageFilenames.FLOW_TOOLS_JSON
