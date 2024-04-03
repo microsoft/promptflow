@@ -26,6 +26,7 @@ USER_AGENT_OVERRIDE_KEY = "user_agent_override"
 
 FLOW_DAG_YAML = "flow.dag.yaml"
 FLOW_FLEX_YAML = "flow.flex.yaml"
+PROMPTY_EXTENSION = ".prompty"
 
 CHAT_HISTORY = "chat_history"
 

@@ -69,6 +69,7 @@ def _prepare_home_dir() -> Path:
 
 HOME_PROMPT_FLOW_DIR = _prepare_home_dir()
 
+DEFAULT_REQUIREMENTS_FILE_NAME = "requirements.txt"
 NODE_VARIANTS = "node_variants"
 VARIANTS = "variants"
 NODES = "nodes"
@@ -78,6 +79,7 @@ USE_VARIANTS = "use_variants"
 DEFAULT_VAR_ID = "default_variant_id"
 FLOW_TOOLS_JSON = "flow.tools.json"
 FLOW_META_JSON = "flow.json"
+SERVE_SAMPLE_JSON_PATH = "sample.json"
 FLOW_TOOLS_JSON_GEN_TIMEOUT = 60
 FLOW_META_JSON_GEN_TIMEOUT = 60
 PROMPT_FLOW_RUNS_DIR_NAME = ".runs"

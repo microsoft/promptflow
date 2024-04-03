@@ -33,7 +33,7 @@ from promptflow._utils.execution_utils import (
     extract_aggregation_inputs,
     get_aggregation_inputs_properties,
 )
-from promptflow._utils.flow_utils import is_flex_flow
+from promptflow._utils.flow_utils import is_flex_flow, is_prompty_flow
 from promptflow._utils.logger_utils import flow_logger, logger
 from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow._utils.user_agent_utils import append_promptflow_package_ua
@@ -207,6 +207,14 @@ class FlowExecutor:
 
             return ScriptExecutor(
                 flow_file=Path(flow_file), working_dir=working_dir, storage=storage, init_kwargs=init_kwargs
+            )
+        elif is_prompty_flow(file_path=flow_file):
+            from ._prompty_executor import PromptyExecutor
+
+            return PromptyExecutor(
+                flow_file=Path(flow_file),
+                working_dir=working_dir,
+                storage=storage,
             )
         else:
             if init_kwargs:

@@ -9,7 +9,14 @@ from os import PathLike
 from pathlib import Path
 from typing import Optional, Tuple, Union
 
-from promptflow._constants import CHAT_HISTORY, DEFAULT_ENCODING, FLOW_DAG_YAML, FLOW_FLEX_YAML, PROMPT_FLOW_DIR_NAME
+from promptflow._constants import (
+    CHAT_HISTORY,
+    DEFAULT_ENCODING,
+    FLOW_DAG_YAML,
+    FLOW_FLEX_YAML,
+    PROMPT_FLOW_DIR_NAME,
+    PROMPTY_EXTENSION,
+)
 from promptflow._core._errors import MetaFileNotFound, MetaFileReadError
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.utils import strip_quotation
@@ -147,6 +154,16 @@ def is_flex_flow(
             return False
         yaml_dict = load_yaml(file_path)
     return isinstance(yaml_dict, dict) and "entry" in yaml_dict
+
+
+def is_prompty_flow(file_path: Union[str, Path], raise_error: bool = False):
+    """Check if the flow is a prompty flow by extension of the flow file is .prompty."""
+    if not file_path or not Path(file_path).exists():
+        if raise_error:
+            raise UserErrorException(f"Cannot find the prompty file {file_path}.")
+        else:
+            return False
+    return Path(file_path).suffix.lower() == PROMPTY_EXTENSION
 
 
 def resolve_entry_file(entry: str, working_dir: Path) -> Optional[str]:
