@@ -3,7 +3,6 @@ import re
 from time import sleep
 from typing import Union
 
-from jinja2 import Template
 from openai import AsyncAzureOpenAI, AzureOpenAI
 
 from promptflow.tracing._trace import trace
@@ -94,10 +93,16 @@ async def openai_embedding_async(connection: dict, input: Union[str, list]):
     return resp.data[0].embedding
 
 
+def render(template, **kwargs):
+    for key, value in kwargs.items():
+        template = template.replace("{{" + key + "}}", str(value))
+    return template
+
+
 @trace
 def prompt_tpl_completion(connection: dict, prompt_tpl: str, stream: bool = False, **kwargs):
     client = AzureOpenAI(**connection)
-    prompt = Template(prompt_tpl).render(**kwargs)
+    prompt = render(prompt_tpl, **kwargs)
     response = client.completions.create(model="text-ada-001", prompt=prompt, stream=stream)
 
     if stream:
@@ -127,7 +132,7 @@ def parse_chat(chat_str):
 @trace
 def prompt_tpl_chat(connection: dict, prompt_tpl: str, stream: bool = False, **kwargs):
     client = AzureOpenAI(**connection)
-    prompt = Template(prompt_tpl).render(**kwargs)
+    prompt = render(prompt_tpl, **kwargs)
     messages = parse_chat(prompt)
 
     response = client.chat.completions.create(model="gpt-35-turbo", messages=messages, stream=stream)
