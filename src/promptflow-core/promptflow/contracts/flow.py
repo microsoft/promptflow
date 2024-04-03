@@ -10,14 +10,13 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from promptflow._constants import LANGUAGE_KEY, FlowLanguage, MessageFormatType
+from promptflow._constants import DEFAULT_ENCODING, LANGUAGE_KEY, FlowLanguage, MessageFormatType
 from promptflow._utils.utils import _match_reference, _sanitize_python_variable_name, try_import
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts._errors import FlowDefinitionError
 from promptflow.exceptions import ErrorTarget
 from promptflow.tracing._utils import serialize
 
-from .._sdk._constants import DEFAULT_ENCODING
 from ._errors import FailedToImportModule
 from .tool import ConnectionType, Tool, ToolType, ValueType
 
@@ -739,6 +738,15 @@ class Flow(FlowBase):
             environment_variables_overrides=environment_variables_overrides
         )
 
+    @staticmethod
+    def load_message_format_from_yaml(flow_file: Path, working_dir=None) -> str:
+        if flow_file and Path(flow_file).suffix.lower() in [".yaml", ".yml"]:
+            flow_file = working_dir / flow_file if working_dir else flow_file
+            with open(flow_file, "r", encoding="utf-8") as fin:
+                flow_dag = load_yaml(fin)
+            return flow_dag.get("message_format", MessageFormatType.BASIC)
+        return MessageFormatType.BASIC
+
     def _set_tool_loader(self, working_dir):
         package_tool_keys = [node.source.tool for node in self.nodes if node.source and node.source.tool]
         from promptflow._core.tools_manager import ToolLoader
@@ -929,10 +937,14 @@ class EagerFlow(FlowBase):
     :type program_language: str
     :param environment_variables: The default environment variables of the flow.
     :type environment_variables: Dict[str, object]
+    :param message_format: The message format type of the flow to represent different multimedia contracts.
+    :type message_format: str
     """
 
     program_language: str = FlowLanguage.Python
     environment_variables: Dict[str, object] = None
+    # eager flow does not support multimedia contract currently, it is set to basic by default.
+    message_format: str = MessageFormatType.BASIC
 
     @staticmethod
     def deserialize(data: dict) -> "EagerFlow":

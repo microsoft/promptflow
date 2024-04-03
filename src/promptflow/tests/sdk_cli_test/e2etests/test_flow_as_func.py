@@ -14,7 +14,7 @@ import pytest
 from promptflow import load_flow
 from promptflow._sdk._errors import ConnectionNotFoundError, InvalidFlowError
 from promptflow._sdk.entities import CustomConnection
-from promptflow._sdk.entities._flow._flow_context_resolver import FlowContextResolver
+from promptflow._sdk.entities._flows._flow_context_resolver import FlowContextResolver
 from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag
 from promptflow.entities import FlowContext
 from promptflow.exceptions import UserErrorException
@@ -125,7 +125,7 @@ class TestFlowAsFunc:
         f.context.connections = {"hello_node": {"connection": CustomConnection(secrets={"k": "v"})}}
 
         result = f(text="hello")
-        assert result["output"]["secrets"] == {"k": "v"}
+        assert result["output"] == {"k": "v"}
 
     def test_overrides(self):
         f = load_flow(f"{FLOWS_DIR}/print_env_var")

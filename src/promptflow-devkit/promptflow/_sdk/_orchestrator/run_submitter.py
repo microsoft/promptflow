@@ -9,7 +9,7 @@ from typing import Union
 
 from promptflow._constants import FlowLanguage
 from promptflow._sdk._constants import REMOTE_URI_PREFIX, ContextAttributeKey, FlowRunProperties
-from promptflow._sdk.entities._flow import Flow
+from promptflow._sdk.entities._flows import Flow, Prompty
 from promptflow._sdk.entities._run import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.context_utils import _change_working_dir
@@ -23,7 +23,7 @@ from promptflow.tracing._operation_context import OperationContext
 
 from .._configuration import Configuration
 from .._load_functions import load_flow
-from ..entities._flow import FlexFlow
+from ..entities._flows import FlexFlow
 from .utils import SubmitterHelper, variant_overwrite_context
 
 logger = LoggerFactory.get_logger(name=__name__)
@@ -103,7 +103,9 @@ class RunSubmitter:
             error = ValidationException("Either run or data or resume from run must be specified for flow run.")
             raise UserErrorException(message=str(error), error=error)
 
-    def _submit_bulk_run(self, flow: Union[Flow, FlexFlow], run: Run, local_storage: LocalStorageOperations) -> dict:
+    def _submit_bulk_run(
+        self, flow: Union[Flow, FlexFlow, Prompty], run: Run, local_storage: LocalStorageOperations
+    ) -> dict:
         logger.info(f"Submitting run {run.name}, log path: {local_storage.logger.file_path}")
         run_id = run.name
         # for python, we can get metadata in-memory, so no need to dump them first
@@ -150,6 +152,7 @@ class RunSubmitter:
                 entry=flow.entry if isinstance(flow, FlexFlow) else None,
                 storage=local_storage,
                 log_path=local_storage.logger.file_path,
+                init_kwargs=run.init,
             )
             batch_result = batch_engine.run(
                 input_dirs=input_dirs,

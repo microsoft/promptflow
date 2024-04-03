@@ -168,6 +168,17 @@ class SingleNodeValidationError(UserErrorException):
     pass
 
 
+class AggregationNodeExecutionTimeoutError(UserErrorException):
+    """Exception raised when aggregation node execution timeout"""
+
+    def __init__(self, timeout):
+        super().__init__(
+            message_format="Aggregation node execution timeout for exceeding {timeout} seconds",
+            timeout=timeout,
+            target=ErrorTarget.EXECUTOR,
+        )
+
+
 class LineExecutionTimeoutError(UserErrorException):
     """Exception raised when single line execution timeout"""
 

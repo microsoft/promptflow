@@ -18,7 +18,7 @@ from promptflow._sdk.entities._connection import (
 )
 from promptflow._sdk.entities._run import Run
 from promptflow._core.tool import InputSetting, DynamicList
-from promptflow._sdk.entities._flow import FlowContext
+from promptflow._sdk.entities._flows import FlowContext
 
 __all__ = [
     # region Connection

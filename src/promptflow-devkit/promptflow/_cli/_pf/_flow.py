@@ -20,6 +20,7 @@ from promptflow._cli._params import (
     add_param_environment_variables,
     add_param_flow_display_name,
     add_param_function,
+    add_param_init,
     add_param_inputs,
     add_param_prompt_template,
     add_param_source,
@@ -32,6 +33,7 @@ from promptflow._cli._pf._init_entry_generators import (
     ChatFlowDAGGenerator,
     FlowDAGGenerator,
     OpenAIConnectionGenerator,
+    StreamlitFileReplicator,
     ToolMetaGenerator,
     ToolPyGenerator,
     copy_extra_files,
@@ -163,6 +165,7 @@ pf flow serve --source <path_to_flow> --skip-open-browser
             add_param_environment_variables,
             add_param_config,
             add_param_skip_browser,
+            add_param_init,
         ]
         + base_params,
         subparsers=subparsers,
@@ -394,7 +397,7 @@ def test_flow(args):
         _test_flow_experiment(args, pf_client, inputs, environment_variables)
         return
     if args.multi_modal or args.ui:
-        _test_flow_multi_modal(args)
+        _test_flow_multi_modal(args, pf_client)
         return
     if args.interactive:
         _test_flow_interactive(args, pf_client, inputs, environment_variables)
@@ -421,23 +424,43 @@ def _build_inputs_for_flow_test(args):
     return inputs
 
 
-def _test_flow_multi_modal(args):
+def _test_flow_multi_modal(args, pf_client):
     """Test flow with multi modality mode."""
     from promptflow._sdk._load_functions import load_flow
-    from promptflow._sdk._tracing import _invoke_pf_svc
 
-    # Todo: use base64 encode for now, will consider whether need use encryption or use db to store flow path info
-    def generate_url(flow_path, port):
-        encrypted_flow_path = encrypt_flow_path(flow_path)
-        query_params = urlencode({"flow": encrypted_flow_path})
-        return urlunparse(("http", f"127.0.0.1:{port}", "/v1.0/ui/chat", "", query_params, ""))
+    if Configuration.get_instance().is_internal_features_enabled():
+        from promptflow._sdk._tracing import _invoke_pf_svc
 
-    pfs_port = _invoke_pf_svc()
-    flow = load_flow(args.flow)
-    flow_dir = os.path.abspath(flow.code)
-    chat_page_url = generate_url(flow_dir, pfs_port)
-    print(f"You can begin chat flow on {chat_page_url}")
-    webbrowser.open(chat_page_url)
+        # Todo: use base64 encode for now, will consider whether need use encryption or use db to store flow path info
+        def generate_url(flow_path, port):
+            encrypted_flow_path = encrypt_flow_path(flow_path)
+            query_params = urlencode({"flow": encrypted_flow_path})
+            return urlunparse(("http", f"127.0.0.1:{port}", "/v1.0/ui/chat", "", query_params, ""))
+
+        pfs_port = _invoke_pf_svc()
+        flow = load_flow(args.flow)
+        flow_dir = os.path.abspath(flow.code)
+        chat_page_url = generate_url(flow_dir, pfs_port)
+        print(f"You can begin chat flow on {chat_page_url}")
+        if not args.skip_open_browser:
+            webbrowser.open(chat_page_url)
+    else:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            flow = load_flow(args.flow)
+
+            script_path = [
+                os.path.join(temp_dir, "main.py"),
+                os.path.join(temp_dir, "utils.py"),
+                os.path.join(temp_dir, "logo.png"),
+            ]
+            for script in script_path:
+                StreamlitFileReplicator(
+                    flow_name=flow.display_name if flow.display_name else flow.name,
+                    flow_dag_path=flow.flow_dag_path,
+                ).generate_to_file(script)
+            main_script_path = os.path.join(temp_dir, "main.py")
+            logger.info("Start streamlit with main script generated at: %s", main_script_path)
+            pf_client.flows._chat_with_ui(script=main_script_path, skip_open_browser=args.skip_open_browser)
 
 
 def _test_flow_interactive(args, pf_client, inputs, environment_variables):
@@ -510,7 +533,7 @@ def serve_flow(args):
 
 
 def serve_flow_csharp(args, source):
-    from promptflow.batch._csharp_executor_proxy import EXECUTOR_SERVICE_DLL
+    from promptflow._proxy._csharp_executor_proxy import EXECUTOR_SERVICE_DLL
 
     try:
         # Change working directory to model dir
@@ -572,6 +595,7 @@ def serve_flow_python(args, source):
         static_folder=static_folder,
         environment_variables=list_of_dict_to_dict(args.environment_variables),
         connection_provider=connection_provider,
+        inits=list_of_dict_to_dict(args.inits),
     )
     if not args.skip_open_browser:
         target = f"http://{args.host}:{args.port}"

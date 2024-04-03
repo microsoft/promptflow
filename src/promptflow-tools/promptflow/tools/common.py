@@ -4,7 +4,7 @@ import os
 import re
 import sys
 import time
-from typing import List, Mapping
+from typing import List, Mapping, Union
 
 from jinja2 import Template
 from openai import APIConnectionError, APIStatusError, OpenAIError, RateLimitError, APITimeoutError, BadRequestError
@@ -13,7 +13,7 @@ from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, L
     ChatAPIFunctionRoleInvalidFormat, InvalidConnectionType, ListDeploymentsError, ParseConnectionError
 
 from promptflow._cli._utils import get_workspace_triad_from_local
-from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
+from promptflow.connections import AzureOpenAIConnection, OpenAIConnection, ServerlessConnection
 from promptflow.exceptions import SystemErrorException, UserErrorException
 
 
@@ -123,7 +123,7 @@ def try_parse_name_and_content(role_prompt):
     return None
 
 
-def parse_chat(chat_str, images: List = None, valid_roles: List[str] = None):
+def parse_chat(chat_str, images: List = None, valid_roles: List[str] = None, image_detail: str = 'auto'):
     if not valid_roles:
         valid_roles = ["system", "user", "assistant", "function"]
 
@@ -155,10 +155,10 @@ def parse_chat(chat_str, images: List = None, valid_roles: List[str] = None):
                                 "or view sample 'How to use functions with chat models' in our gallery.")
                 # "name" is optional for other role types.
                 else:
-                    last_message["content"] = to_content_str_or_list(chunk, hash2images)
+                    last_message["content"] = to_content_str_or_list(chunk, hash2images, image_detail)
             else:
                 last_message["name"] = parsed_result[0]
-                last_message["content"] = to_content_str_or_list(parsed_result[1], hash2images)
+                last_message["content"] = to_content_str_or_list(parsed_result[1], hash2images, image_detail)
         else:
             if chunk.strip() == "":
                 continue
@@ -171,7 +171,7 @@ def parse_chat(chat_str, images: List = None, valid_roles: List[str] = None):
     return chat_list
 
 
-def to_content_str_or_list(chat_str: str, hash2images: Mapping):
+def to_content_str_or_list(chat_str: str, hash2images: Mapping, image_detail: str):
     chat_str = chat_str.strip()
     chunks = chat_str.split("\n")
     include_image = False
@@ -185,8 +185,11 @@ def to_content_str_or_list(chat_str: str, hash2images: Mapping):
             if not image_url:
                 image_bs64 = hash2images[chunk.strip()].to_base64()
                 image_mine_type = hash2images[chunk.strip()]._mime_type
-                image_url = {"url": f"data:{image_mine_type};base64,{image_bs64}"}
-            image_message["image_url"] = image_url
+                image_url = f"data:{image_mine_type};base64,{image_bs64}"
+            image_message["image_url"] = {
+                "url": image_url,
+                "detail": image_detail
+            }
             result.append(image_message)
             include_image = True
         elif chunk.strip() == "":
@@ -565,13 +568,24 @@ def normalize_connection_config(connection):
             "organization": connection.organization,
             "base_url": connection.base_url
         }
+    elif isinstance(connection, ServerlessConnection):
+        suffix = "/v1"
+        base_url = connection.api_base
+        if not base_url.endswith(suffix):
+            # append "/v1" to ServerlessConnection api_base so that it can directly use the OpenAI SDK.
+            base_url += suffix
+        return {
+            "max_retries": 0,
+            "api_key": connection.api_key,
+            "base_url": base_url
+        }
     else:
         error_message = f"Not Support connection type '{type(connection).__name__}'. " \
                         f"Connection type should be in [AzureOpenAIConnection, OpenAIConnection]."
         raise InvalidConnectionType(message=error_message)
 
 
-def init_openai_client(connection: OpenAIConnection):
+def init_openai_client(connection: Union[OpenAIConnection, ServerlessConnection]):
     try:
         from openai import OpenAI as OpenAIClient
     except ImportError as e:

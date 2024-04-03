@@ -257,3 +257,9 @@ class UnexpectedAttributeError(SDKError):
     """Exception raised if unexpected attribute is found."""
 
     pass
+
+
+class LineRunNotFoundError(SDKError):
+    """Exception raised if line run cannot be found."""
+
+    pass

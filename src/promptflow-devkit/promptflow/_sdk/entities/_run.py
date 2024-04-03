@@ -101,6 +101,8 @@ class Run(YAMLTranslatableMixin):
     :type connections: Optional[Dict[str, Dict]]
     :param properties: Properties of the run.
     :type properties: Optional[Dict[str, Any]]
+    :param init: Class init arguments for callable class, only supported for flex flow.
+    :type init: Optional[Dict[str, Any]]
     :param kwargs: Additional keyword arguments.
     :type kwargs: Optional[dict]
     """
@@ -126,6 +128,7 @@ class Run(YAMLTranslatableMixin):
         connections: Optional[Dict[str, Dict]] = None,
         properties: Optional[Dict[str, Any]] = None,
         source: Optional[Union[Path, str]] = None,
+        init: Optional[Dict[str, Any]] = None,
         **kwargs,
     ):
         # !!! Caution !!!: Please update self._copy() if you add new fields to init
@@ -187,6 +190,8 @@ class Run(YAMLTranslatableMixin):
         self._identity = kwargs.get("identity", {})
         self._outputs = kwargs.get("outputs", None)
         self._command = kwargs.get("command", None)
+        if init:
+            self._properties[FlowRunProperties.INIT_KWARGS] = init
 
     @property
     def created_on(self) -> str:
@@ -228,6 +233,10 @@ class Run(YAMLTranslatableMixin):
             **result,
             **self._properties,
         }
+
+    @property
+    def init(self):
+        return self._properties.get(FlowRunProperties.INIT_KWARGS, None)
 
     @classmethod
     def _from_orm_object(cls, obj: ORMRun) -> "Run":
@@ -753,7 +762,7 @@ class Run(YAMLTranslatableMixin):
 
         from promptflow._constants import FlowType
         from promptflow._sdk._load_functions import load_flow
-        from promptflow._sdk.entities._flow import FlexFlow
+        from promptflow._sdk.entities._flows import FlexFlow
 
         flow_obj = load_flow(source=self.flow)
         if isinstance(flow_obj, FlexFlow):

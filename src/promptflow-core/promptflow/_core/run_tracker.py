@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from types import GeneratorType
 from typing import Any, Dict, List, Mapping, Optional, Union
 
+from promptflow._constants import MessageFormatType
 from promptflow._core._errors import FlowOutputUnserializable, RunRecordNotFound, ToolCanceledError
 from promptflow._core.log_manager import NodeLogManager
 from promptflow._utils.exception_utils import ExceptionPresenter
@@ -22,6 +23,7 @@ from promptflow.exceptions import ErrorTarget
 from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DummyRunStorage
 from promptflow.tracing._openai_utils import OpenAIMetricsCalculator
+from promptflow.tracing._operation_context import OperationContext
 from promptflow.tracing._thread_local_singleton import ThreadLocalSingleton
 from promptflow.tracing._utils import serialize
 
@@ -81,6 +83,7 @@ class RunTracker(ThreadLocalSingleton):
         parent_run_id="",
         inputs=None,
         index=None,
+        message_format=MessageFormatType.BASIC,
     ) -> FlowRunInfo:
         """Create a flow run and save to run storage on demand."""
         run_info = FlowRunInfo(
@@ -98,6 +101,7 @@ class RunTracker(ThreadLocalSingleton):
             start_time=datetime.utcnow(),
             end_time=None,
             index=index,
+            message_format=message_format,
         )
         self.persist_flow_run(run_info)
         self._flow_runs[run_id] = run_info
@@ -111,6 +115,7 @@ class RunTracker(ThreadLocalSingleton):
         parent_run_id,
         run_id,
         index,
+        message_format=MessageFormatType.BASIC,
     ):
         run_info = RunInfo(
             node=node,
@@ -124,6 +129,7 @@ class RunTracker(ThreadLocalSingleton):
             parent_run_id=parent_run_id,
             start_time=datetime.utcnow(),
             end_time=None,
+            message_format=message_format,
         )
         self._node_runs[run_id] = run_info
         self._current_run_id = run_id
@@ -138,6 +144,7 @@ class RunTracker(ThreadLocalSingleton):
         parent_run_id,
         run_id,
         index,
+        message_format=MessageFormatType.BASIC,
     ):
         run_info = RunInfo(
             node=node,
@@ -154,11 +161,14 @@ class RunTracker(ThreadLocalSingleton):
             result=None,
             index=index,
             api_calls=[],
+            message_format=message_format,
         )
         self._node_runs[run_id] = run_info
         return run_info
 
     def _flow_run_postprocess(self, run_info: FlowRunInfo, output, ex: Optional[Exception]):
+        #  Try get otel trace id for correlation.
+        run_info.otel_trace_id = OperationContext.get_instance().get("otel_trace_id")
         if output:
             try:
                 self._assert_flow_output_serializable(output)

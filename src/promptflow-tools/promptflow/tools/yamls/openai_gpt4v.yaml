@@ -55,3 +55,11 @@ promptflow.tools.openai_gpt4v.OpenAI.chat:
       default: ""
       type:
         - int
+    detail:
+      enum:
+      - low
+      - high
+      - auto
+      type:
+        - string
+      default: auto
