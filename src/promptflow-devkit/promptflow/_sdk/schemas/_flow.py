@@ -4,11 +4,12 @@
 
 from marshmallow import ValidationError, fields, validate, validates_schema
 
-from promptflow._constants import LANGUAGE_KEY, FlowLanguage
+from promptflow._constants import LANGUAGE_KEY, ConnectionType, FlowLanguage
 from promptflow._proxy import ProxyFactory
 from promptflow._sdk._constants import FlowType
 from promptflow._sdk.schemas._base import PatchedSchemaMeta, YamlFileSchema
 from promptflow._sdk.schemas._fields import NestedField
+from promptflow.contracts.tool import ValueType
 
 
 class FlowInputSchema(metaclass=PatchedSchemaMeta):
@@ -60,14 +61,64 @@ class FlowSchema(BaseFlowSchema):
     node_variants = fields.Dict(keys=fields.Str(), values=fields.Dict())
 
 
+class FlexFlowInputSchema(FlowInputSchema):
+    type = fields.Str(
+        required=True,
+        validate=validate.OneOf(
+            [
+                ValueType.DOUBLE,
+                ValueType.BOOL,
+                ValueType.INT,
+                ValueType.STRING,
+                ValueType.LIST,
+                # only dict is allowed actually
+                ValueType.OBJECT
+                # should we support IMAGE here?
+                # do we support connections here?
+            ]
+        ),
+    )
+
+
+class FlexFlowInitSchema(FlowInputSchema):
+    type = fields.Str(
+        required=True,
+        validate=validate.OneOf(
+            [ValueType.DOUBLE, ValueType.BOOL, ValueType.INT, ValueType.STRING]
+            + list(
+                map(lambda x: f"{x.value}Connection", filter(lambda x: x != ConnectionType._NOT_SET, ConnectionType))
+            )
+        ),
+    )
+
+
+class FlexFlowOutputSchema(FlowOutputSchema):
+    type = fields.Str(
+        required=True,
+        validate=validate.OneOf(
+            [
+                ValueType.DOUBLE,
+                ValueType.BOOL,
+                ValueType.INT,
+                ValueType.STRING,
+                ValueType.LIST,
+                # only dict is allowed actually
+                ValueType.OBJECT
+                # should we support IMAGE here?
+                # do we support connections here?
+            ]
+        ),
+    )
+
+
 class EagerFlowSchema(BaseFlowSchema):
     """Schema for eager flow."""
 
     # entry point for eager flow
     entry = fields.Str(required=True)
-    inputs = fields.Dict(keys=fields.Str(), values=NestedField(FlowInputSchema), required=False)
-    outputs = fields.Dict(keys=fields.Str(), values=NestedField(FlowOutputSchema), required=False)
-    init = fields.Dict(keys=fields.Str(), values=NestedField(FlowInputSchema), required=False)
+    inputs = fields.Dict(keys=fields.Str(), values=NestedField(FlexFlowInputSchema), required=False)
+    outputs = fields.Dict(keys=fields.Str(), values=NestedField(FlexFlowOutputSchema), required=False)
+    init = fields.Dict(keys=fields.Str(), values=NestedField(FlexFlowInitSchema), required=False)
 
     @validates_schema(skip_on_field_errors=False)
     def validate_entry(self, data, **kwargs):

@@ -175,13 +175,13 @@ class TestFlowSave:
                         }
                     },
                     "inputs": {
-                        "text": {
-                            "type": "string",
+                        "words": {
+                            "type": "list",
                         }
                     },
                     "outputs": {
                         "output": {
-                            "type": "string",
+                            "type": "object",
                         },
                     },
                 },
@@ -254,10 +254,20 @@ class TestFlowSave:
                 r"Ports with signature: non-exist",
                 id="hello_world.outputs_mismatch",
             ),
+            pytest.param(
+                {
+                    "entry": "hello:Hello",
+                },
+                UserErrorException,
+                r"Schema validation failed: {'init.words.type'",
+                id="class_init_with_invalid_ports",
+            ),
         ],
     )
     def test_pf_save_failed(self, save_args_overrides, request, expected_error_type, expected_error_regex: str):
         target_path = f"{FLOWS_DIR}/saved/{request.node.callspec.id}"
+        if os.path.exists(target_path):
+            shutil.rmtree(target_path)
         target_code_dir = request.node.callspec.id
         target_code_dir = re.sub(r"\.[a-z_]+$", "", target_code_dir)
         save_args = {

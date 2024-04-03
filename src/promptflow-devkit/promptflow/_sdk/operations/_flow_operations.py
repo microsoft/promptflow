@@ -1098,6 +1098,10 @@ class FlowOperations(TelemetryMixin):
         )
 
         target_flow_file = target_flow_directory / DAG_FILE_NAME
+
+        # schema validation, here target_flow_file doesn't exist actually
+        FlexFlow(path=target_flow_file, code=code, data=data, entry=entry)._validate(raise_error=True)
+
         target_flow_directory.parent.mkdir(parents=True, exist_ok=True)
 
         # TODO: handle ignore
