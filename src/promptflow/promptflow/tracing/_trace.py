@@ -237,7 +237,7 @@ def enrich_span_with_llm_model(span, output):
 
 def enrich_span_with_exp_info(span: ReadableSpan):
     ruid = Exp.get_ruid()
-    variant_names = Exp.get_variant_names_from_context()
+    variant_names = Exp.get_config_names_from_context()
 
     span_id = span.get_span_context().span_id
     parent_span_id = None
@@ -248,10 +248,10 @@ def enrich_span_with_exp_info(span: ReadableSpan):
         Exp.map_ruid_with_trace_id(ruid, parent_span_id)
     elif variant_names is None:
         ruid = Exp.get_ruid_by_trace_id(span_id)
-        variant_names = Exp.get_variant_names_by_trace_id(span_id)
+        variant_names = Exp.get_config_names_by_trace_id(span_id)
         if (variant_names is None) and (parent_span_id is not None):
             ruid = Exp.get_ruid_by_trace_id(parent_span_id)
-            variant_names = Exp.get_variant_names_by_trace_id(parent_span_id)
+            variant_names = Exp.get_config_names_by_trace_id(parent_span_id)
 
     if variant_names:
         span.set_attribute("exp.variant", ",".join(variant_names))

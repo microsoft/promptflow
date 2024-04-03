@@ -10,7 +10,7 @@ class GroupType(str, Enum):
 
 
 @dataclass
-class Variant:
+class ExpConfig:
     name: str = None
     variables: Dict = None
     type: GroupType = None
@@ -32,17 +32,17 @@ class Step:
 @dataclass
 class Experiment:
     name: str = None
-    variants: List[Variant] = None
+    variants: List[ExpConfig] = None
     steps: List[Step] = None
 
 
 @dataclass
-class ExperimentConfig:
+class ExperimentsDefinition:
     experiments: List[Experiment] = None
 
 
 @dataclass
-class ExperimentConfigCache:
+class ExperimentsDefinitionCache:
     file_identifier: str = None
-    experiment_config: ExperimentConfig = None
+    experiments_definition: ExperimentsDefinition = None
     last_updated: datetime = None

@@ -1,10 +1,8 @@
 import os
 from .file_clients.file_client_factory import FileClientFactory
 from .utils.yaml_parser import YamlParser
-from .contracts.entities import ExperimentConfig, ExperimentConfigCache
-from .contracts.entities import GroupType, Step
-from .contracts.entities import Experiment
-from .contracts.entities import Variant
+from .contracts.entities import Experiment, ExperimentsDefinition, ExperimentsDefinitionCache
+from .contracts.entities import GroupType, Step, ExpConfig
 
 from datetime import datetime
 from typing import Dict, List
@@ -25,16 +23,19 @@ class Exp:
     _exp_config_file_identifier: str = None
 
     # cache for experiment config
-    _exp_config_cache: ExperimentConfigCache = None
+    _exp_config_cache: ExperimentsDefinitionCache = None
     _exp_config_cache_lock = threading.Lock()
 
     # context of ruid
     _exp_ruid = contextvars.ContextVar("exp_ruid")
     _exp_ruid.set(None)
 
-    # kvs for ruid to (experiment name -> variant)
-    _ruid_to_variants: Dict[str, Dict[str, Variant]] = {}
-    _ruid_to_variants_lock = threading.Lock()
+    # kvs for ruid to (experiment name -> ExpConfig)
+    _ruid_to_configs: Dict[str, Dict[str, ExpConfig]] = {}
+    _ruid_to_configs_lock = threading.Lock()
+
+    # kvs for ruid to (variable name -> value)
+    _ruid_to_variables: Dict[str, Dict[str, object]] = {}
 
     # kvs for tracing/span id to ruid
     _trace_id_to_ruid: Dict[str, str] = {}
@@ -50,20 +51,20 @@ class Exp:
             else:
                 Exp._update_cache_actively()
 
-    # Get variant based on given randonmization unit ID and experiment name
+    # Get config based on given randonmization unit ID and experiment name
     # Extra Requirement: add extra columns into all the upcoming spans under
     # same trace, including root span
-    # 1. "_exp.variants" column, the content format should be
-    #     "variant1A,variant2B", which includes assigned variant
+    # 1. "_exp.configs" column, the content format should be
+    #     "config1A,config2B", which includes assigned config
     #     name of all experiments
     # 2. "_exp.ruid" column, the value is the input rand_unit_id
     @staticmethod
-    def assign_variant(
+    def get_config(
         ruid: str,
         experiment_name: str
-    ) -> Variant:
+    ) -> ExpConfig:
         if not Exp._exp_config_file_identifier:
-            return Variant()
+            return ExpConfig()
 
         if not Exp._is_serving_mode():
             Exp._update_cache_actively()
@@ -72,30 +73,34 @@ class Exp:
 
         Exp._exp_ruid.set(ruid)
         bucket = Exp._get_bucket(ruid)
-        for exp in Exp._exp_config_cache.experiment_config.experiments:
+        for exp in Exp._exp_config_cache.experiments_definition.experiments:
             if exp.name == experiment_name:
-                variant = Exp._get_variant(exp, bucket)
+                config = Exp._get_config(exp, bucket)
 
-                with Exp._ruid_to_variants_lock:
-                    if ruid not in Exp._ruid_to_variants:
-                        Exp._ruid_to_variants[ruid] = {}
-                    Exp._ruid_to_variants[ruid][experiment_name] = variant
-                return variant
+                with Exp._ruid_to_configs_lock:
+                    if ruid not in Exp._ruid_to_configs:
+                        Exp._ruid_to_configs[ruid] = {}
+                    if ruid not in Exp._ruid_to_variables:
+                        Exp._ruid_to_variables[ruid] = {}
+                    user_configs = Exp._ruid_to_configs[ruid]
+                    user_variables = Exp._ruid_to_variables[ruid]
+                    if experiment_name in user_configs:
+                        for variable_name in user_configs[experiment_name].variables.keys():
+                            del user_variables[variable_name]
+                    user_configs[experiment_name] = config
+                    for variable_name in user_configs[experiment_name].variables.keys():
+                        user_variables[variable_name] = user_configs[experiment_name].variables[variable_name]
+                return config
         return None
 
     @staticmethod
-    def get_variable(experiment_name: str, variable_name: str, default: object):
+    def get_variable(variable_name: str, default: object):
         if not Exp._exp_config_file_identifier:
             return default
 
         ruid = Exp.get_ruid()
-        variant = None
-        if ruid and ruid in Exp._ruid_to_variants:
-            variants = Exp._ruid_to_variants[ruid]
-            if experiment_name in variants:
-                variant = variants[experiment_name]
-        if variable_name in variant.variables:
-            return variant.variables[variable_name]
+        if ruid and ruid in Exp._ruid_to_variables:
+            return Exp._ruid_to_variables[ruid].get(variable_name, default)
         return default
 
     @staticmethod
@@ -110,20 +115,20 @@ class Exp:
         return Exp._trace_id_to_ruid[trace_id]
 
     @staticmethod
-    def get_variant_names_by_trace_id(trace_id: str) -> List[str]:
+    def get_config_names_by_trace_id(trace_id: str) -> List[str]:
         if trace_id not in Exp._trace_id_to_ruid:
             return None
         ruid = Exp._trace_id_to_ruid[trace_id]
-        if ruid not in Exp._ruid_to_variants:
+        if ruid not in Exp._ruid_to_configs:
             return None
-        return [variant.name for variant in Exp._ruid_to_variants[ruid].values()]
+        return [config.name for config in Exp._ruid_to_configs[ruid].values()]
 
     @staticmethod
-    def get_variant_names_from_context() -> List[str]:
+    def get_config_names_from_context() -> List[str]:
         ruid = Exp.get_ruid()
-        if not ruid or (ruid not in Exp._ruid_to_variants):
+        if not ruid or (ruid not in Exp._ruid_to_configs):
             return None
-        return [variant.name for variant in Exp._ruid_to_variants[ruid].values()]
+        return [config.name for config in Exp._ruid_to_configs[ruid].values()]
 
     @staticmethod
     def get_ruid() -> str:
@@ -150,9 +155,9 @@ class Exp:
         experiment_config = Exp._load_config(Exp._exp_config_file_identifier)
         if experiment_config:
             with Exp._exp_config_cache_lock:
-                Exp._exp_config_cache = ExperimentConfigCache(
+                Exp._exp_config_cache = ExperimentsDefinitionCache(
                     file_identifier=Exp._exp_config_file_identifier,
-                    experiment_config=experiment_config,
+                    experiments_definition=experiment_config,
                     last_updated=datetime.now()
                 )
 
@@ -161,7 +166,7 @@ class Exp:
         return sum(ord(c) for c in rand_unit_id) % 100
 
     @staticmethod
-    def _get_variant(experiment: Experiment, bucket: int) -> Variant:
+    def _get_config(experiment: Experiment, bucket: int) -> ExpConfig:
         cur = 0
         default = None
 
@@ -174,14 +179,14 @@ class Exp:
         if not cur_step:
             return default
 
-        for variant in experiment.variants:
-            if variant.type == GroupType.CONTROL:
-                default = variant
-            if (variant.type == GroupType.TREATMENT
-                    and cur_step.traffic[variant.name] > 0):
-                if bucket >= cur and bucket < cur + cur_step.traffic[variant.name]:
-                    return variant
-                cur += cur_step.traffic[variant.name]
+        for config in experiment.variants:
+            if config.type == GroupType.CONTROL:
+                default = config
+            if (config.type == GroupType.TREATMENT
+                    and cur_step.traffic[config.name] > 0):
+                if bucket >= cur and bucket < cur + cur_step.traffic[config.name]:
+                    return config
+                cur += cur_step.traffic[config.name]
         return default
 
     @staticmethod
@@ -197,9 +202,9 @@ class Exp:
             return diff.total_seconds() < CACHE_EXPIRATION_SECONDS
 
     @staticmethod
-    def _load_config(file_identifier: str) -> ExperimentConfig:
+    def _load_config(file_identifier: str) -> ExperimentsDefinition:
         client = FileClientFactory.get_file_client(file_identifier)
-        return YamlParser.load_to_dataclass(ExperimentConfig, client.load())
+        return YamlParser.load_to_dataclass(ExperimentsDefinition, client.load())
 
     @staticmethod
     def _is_serving_mode() -> bool:
