@@ -2,6 +2,7 @@
 
 /src/promptflow-tracing/promptflow/tracing/_start_trace.py @microsoft/promptflow-sdk
 
+/src/promptflow-tracing/ @microsoft/promptflow-execution
 /src/promptflow-tracing/promptflow/tracing/ @microsoft/promptflow-execution
 /src/promptflow-core/promptflow/_core/ @microsoft/promptflow-execution
 /src/promptflow-devkit/promptflow/_internal/ @microsoft/promptflow-execution
@@ -15,6 +16,8 @@
 /src/promptflow-core/ @microsoft/promptflow-sdk
 /src/promptflow-devkit/ @microsoft/promptflow-sdk
 /src/promptflow-azure/ @microsoft/promptflow-sdk
+/src/promptflow-recording/ @microsoft/promptflow-sdk
+/src/promptflow-execution/ @microsoft/promptflow-sdk
 /src/promptflow/tests/sdk_cli_test/ @microsoft/promptflow-sdk
 /src/promptflow/tests/sdk_cli_azure_test/ @microsoft/promptflow-sdk
 /src/promptflow/tests/sdk_cli_global_config_test/ @microsoft/promptflow-sdk
