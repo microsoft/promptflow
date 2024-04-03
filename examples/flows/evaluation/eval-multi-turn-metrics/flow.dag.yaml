@@ -1,0 +1,201 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+inputs:
+  chat_history:
+    type: list
+    default:
+    - inputs:
+        question: What is the purpose of creating a custom strong type connection?
+        ground_truth: XXXXXXXXX
+      outputs:
+        answer: Creating a custom strong type connection in prompt flow serves several
+          purposes. It allows you to define a custom connection class with
+          strongly typed keys, enhancing the user experience by eliminating the
+          need to manually enter connection keys. It also provides a rich
+          intellisense experience, with real-time suggestions and
+          auto-completion of available keys when working in VS Code.
+          Furthermore, it offers a central location to view available keys and
+          data types. This type of connection also provides a secure method for
+          managing credentials for external APIs and data sources.
+        context: "['What is a Custom Strong Type Connection?\\\\nA custom strong type
+          connection in prompt flow allows you to define a custom connection
+          class with strongly typed keys. This provides the following
+          benefits:\\\\n\\\\n* Enhanced user experience - no need to manually
+          enter connection keys.\\\\n* Rich intellisense experience - defining
+          key types enables real-time suggestions and auto-completion of
+          available keys as you work in VS Code.\\\\n* Central location to view
+          available keys and data types.\\\\n\\\\nFor other connections types,
+          please refer to Connections.', 'Create and Use Your Own Custom Strong
+          Type Connection\\\\nConnections provide a secure method for managing
+          credentials for external APIs and data sources in prompt flow. This
+          guide explains how to create and use a custom strong type
+          connection.']"
+    - inputs:
+        question: What is the functionality of the SerpAPI API in Python?
+        ground_truth: XXXXXXXXX
+      outputs:
+        answer: The SerpAPI API in Python is a tool that provides a wrapper to the
+          SerpAPI Google Search Engine Results API and SerpAPI Bing Search
+          Engine Results API. It allows users to retrieve search results from
+          different search engines, including Google and Bing. Users can specify
+          a range of search parameters, such as the search query, location,
+          device type, and more.
+        context: "['Introduction\\\\n\\\\nThe SerpAPI API is a Python tool that provides
+          a wrapper to the SerpAPI Google Search Engine Results API and [SerpApi
+          Bing Search Engine Results
+          API\\\\n](https://serpapi.com/bing-search-api). \\\\nWe could use the
+          tool to retrieve search results from a number of different search
+          engines, including Google and Bing, and you can specify a range of
+          search parameters, such as the search query, location, device type,
+          and more.', 'SerpAPI']"
+    is_chat_input: false
+  metrics:
+    type: string
+    default: creativity,conversation_quality,answer_relevance,grounding
+    is_chat_input: false
+outputs:
+  creativity:
+    type: string
+    reference: ${concat_scores.output.creativity}
+  answer_relevance:
+    type: string
+    reference: ${concat_scores.output.answer_relevance}
+  conversation_quality:
+    type: string
+    reference: ${concat_scores.output.conversation_quality}
+  grounding:
+    type: string
+    reference: ${concat_scores.output.grounding}
+nodes:
+- name: select_metrics
+  type: python
+  source:
+    type: code
+    path: select_metrics.py
+  inputs:
+    metrics: ${inputs.metrics}
+  use_variants: false
+- name: validate_input
+  type: python
+  source:
+    type: code
+    path: validate_input.py
+  inputs:
+    chat_history: ${inputs.chat_history}
+    selected_metrics: ${select_metrics.output}
+  use_variants: false
+- name: convert_chat_history_to_conversation
+  type: python
+  source:
+    type: code
+    path: convert_chat_history_to_conversation.py
+  inputs:
+    chat_history: ${inputs.chat_history}
+  use_variants: false
+- name: answer_relevance
+  type: llm
+  source:
+    type: code
+    path: answer_relevance.jinja2
+  inputs:
+    deployment_name: gpt-4
+    temperature: 0
+    top_p: 1
+    presence_penalty: 0
+    frequency_penalty: 0
+    conversation: ${convert_chat_history_to_conversation.output}
+  provider: AzureOpenAI
+  connection: open_ai_connection
+  api: chat
+  module: promptflow.tools.aoai
+  activate:
+    when: ${validate_input.output.answer_relevance}
+    is: true
+  use_variants: false
+- name: conversation_quality
+  type: llm
+  source:
+    type: code
+    path: conversation_quality_prompt.jinja2
+  inputs:
+    deployment_name: gpt-4
+    temperature: 0
+    top_p: 1
+    presence_penalty: 0
+    frequency_penalty: 0
+    conversation: ${convert_chat_history_to_conversation.output}
+  provider: AzureOpenAI
+  connection: open_ai_connection
+  api: chat
+  module: promptflow.tools.aoai
+  activate:
+    when: ${validate_input.output.conversation_quality}
+    is: true
+  use_variants: false
+- name: creativity
+  type: llm
+  source:
+    type: code
+    path: creativity.jinja2
+  inputs:
+    deployment_name: gpt-4
+    temperature: 0
+    top_p: 1
+    presence_penalty: 0
+    frequency_penalty: 0
+    conversation: ${convert_chat_history_to_conversation.output}
+  provider: AzureOpenAI
+  connection: open_ai_connection
+  api: chat
+  module: promptflow.tools.aoai
+  activate:
+    when: ${validate_input.output.creativity}
+    is: true
+  use_variants: false
+- name: grounding_prompt
+  type: prompt
+  source:
+    type: code
+    path: grounding_prompt.jinja2
+  inputs: {}
+  activate:
+    when: ${validate_input.output.grounding}
+    is: true
+  use_variants: false
+- name: grounding
+  type: python
+  source:
+    type: code
+    path: grounding.py
+  inputs:
+    connection: open_ai_connection
+    chat_history: ${inputs.chat_history}
+    model_or_deployment_name: gpt-4
+    prompt: ${grounding_prompt.output}
+  activate:
+    when: ${validate_input.output.grounding}
+    is: true
+  use_variants: false
+- name: concat_scores
+  type: python
+  source:
+    type: code
+    path: concat_scores.py
+  inputs:
+    answer_relevance: ${answer_relevance.output}
+    conversation_quality: ${conversation_quality.output}
+    creativity: ${creativity.output}
+    grounding: ${grounding.output}
+  use_variants: false
+- name: aggregate_results
+  type: python
+  source:
+    type: code
+    path: aggregate_results.py
+  inputs:
+    metrics: ${inputs.metrics}
+    results: ${concat_scores.output}
+  aggregation: true
+  use_variants: false
+node_variants: {}
+environment:
+  python_requirements_txt: requirements.txt

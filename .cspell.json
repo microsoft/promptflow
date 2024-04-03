@@ -98,7 +98,8 @@
     "Bhavik",
     "meid",
     "Entra",
-    "uvicorn"
+    "uvicorn",
+    "attribited"
   ],
   "ignoreWords": [
     "openmpi",
