@@ -11,7 +11,8 @@ from promptflow._orchestrator._errors import (
     MissingConversationHistoryExpression,
     MultipleConversationHistoryInputsMapping,
     InvalidChatRoleCount,
-    UsingReservedRoleKey
+    UsingReservedRoleKey,
+    InvalidMaxTurnValue
 )
 from .test_result import get_flow_run_info, get_node_run_infos
 
@@ -73,7 +74,7 @@ class TestChatGroupOrchestrator:
             connections=None,
             inputs_mapping=inputs_mapping
         )
-        orchestrator = ChatGroupOrchestrator([simulation_role, simulation_role])
+        orchestrator = ChatGroupOrchestrator([simulation_role, simulation_role], 3)
         with pytest.raises(error_code) as e:
             orchestrator._process_batch_inputs(inputs=[])
         assert error_message in str(e.value), "Expected: {}, Actual: {}".format(error_message, str(e.value))
@@ -98,7 +99,30 @@ class TestChatGroupOrchestrator:
             inputs_mapping={"topic": "${data.topic}", "ground_truth": "${data.ground_truth}"}
         )
         with pytest.raises(error_code) as e:
-            ChatGroupOrchestrator([simulation_role])
+            ChatGroupOrchestrator([simulation_role], 3)
+        assert error_message in str(e.value), "Expected: {}, Actual: {}".format(error_message, str(e.value))
+
+    @pytest.mark.parametrize(
+        "error_code, error_message",
+        [
+            (
+                    InvalidMaxTurnValue,
+                    "Invalid max_turn value for chat group run: 0. Please assign max_turn at least 1."
+            )
+        ],
+    )
+    def test_process_chat_roles_inputs_with_invalid_max_turn_count(self, error_code, error_message):
+        simulation_role = ChatRole(
+            flow=get_yaml_file("chat_group/cloud_batch_runs/chat_group_simulation"),
+            role="user",
+            name="simulator",
+            stop_signal="[STOP]",
+            working_dir=get_flow_folder("chat_group/cloud_batch_runs/chat_group_simulation"),
+            connections=None,
+            inputs_mapping={"topic": "${data.topic}", "ground_truth": "${data.ground_truth}"}
+        )
+        with pytest.raises(error_code) as e:
+            ChatGroupOrchestrator([simulation_role, simulation_role])
         assert error_message in str(e.value), "Expected: {}, Actual: {}".format(error_message, str(e.value))
 
     @pytest.mark.parametrize(
@@ -123,7 +147,8 @@ class TestChatGroupOrchestrator:
             [
                 get_chat_role(role="user", flow_file=get_yaml_file("hello-world")),
                 chat_role
-            ]
+            ],
+            3
         )
         conversation_history_len = len(conversation_history)
         outputs = {}
@@ -152,7 +177,7 @@ class TestChatGroupOrchestrator:
         )
         conversation_history = get_conversation_history(empty=True)
         chat_role = get_chat_role(role="user", flow_file=get_yaml_file("hello-world"))
-        orchestrator = ChatGroupOrchestrator([chat_role, chat_role])
+        orchestrator = ChatGroupOrchestrator([chat_role, chat_role], 3)
         outputs = {}
         with pytest.raises(error_code) as e:
             orchestrator._process_flow_outputs(0, chat_role, line_result, conversation_history, outputs, {})

@@ -16,7 +16,8 @@ from promptflow._orchestrator._errors import (
     InvalidChatRoleCount,
     MissingConversationHistoryExpression,
     MultipleConversationHistoryInputsMapping,
-    UsingReservedRoleKey
+    UsingReservedRoleKey,
+    InvalidMaxTurnValue
 )
 
 
@@ -24,7 +25,7 @@ class ChatGroupOrchestrator:
     def __init__(
         self,
         chat_group_roles: List[ChatRole],
-        max_turn: Optional[int] = None,
+        max_turn: Optional[int] = 0,
         storage: Optional[AbstractRunStorage] = None,
         max_lines_count: Optional[int] = None,
         **kwargs
@@ -44,6 +45,14 @@ class ChatGroupOrchestrator:
         self._chat_group_roles = chat_group_roles
         self._max_lines_count = max_lines_count
 
+        if self._max_turn == 0:
+            bulk_logger.error(f"Invalid max_turn value for chat group run: {self._max_turn}")
+            message = (
+                f"Invalid max_turn value for chat group run: {self._max_turn}. "
+                "Please assign max_turn at least 1."
+            )
+            raise InvalidMaxTurnValue(message=message)
+
         if len(self._chat_group_roles) < 2:
             bulk_logger.error(f"Invalid chat group role count: {len(self._chat_group_roles)}")
             message = (
@@ -58,7 +67,7 @@ class ChatGroupOrchestrator:
     def create(
         cls,
         chat_group_roles: List[ChatRole],
-        max_turn: Optional[int] = None,
+        max_turn: Optional[int] = 0,
         storage: Optional[AbstractRunStorage] = None,
         max_lines_count: Optional[int] = None,
     ) -> "ChatGroupOrchestrator":
@@ -74,7 +83,7 @@ class ChatGroupOrchestrator:
         executor_proxy_factory = ProxyFactory()
         for chat_role in self._chat_group_roles:
             executor_proxy = executor_proxy_factory.create_executor_proxy(
-                flow_file=chat_role._flow,
+                flow_file=chat_role._flow_file,
                 working_dir=chat_role._working_dir,
                 connections=chat_role._connections,
                 storage=self._storage,
