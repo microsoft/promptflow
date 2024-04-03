@@ -11,6 +11,7 @@ import pytest
 from promptflow._sdk._constants import FLOW_TOOLS_JSON, NODE_VARIANTS, PROMPT_FLOW_DIR_NAME, USE_VARIANTS
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.connections import AzureOpenAIConnection
+from promptflow.core._flow import Prompty
 from promptflow.exceptions import UserErrorException
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
@@ -21,6 +22,7 @@ CONNECTION_FILE = (PROMOTFLOW_ROOT / "connections.json").resolve().absolute().as
 FLOWS_DIR = "./tests/test_configs/flows"
 EAGER_FLOWS_DIR = "./tests/test_configs/eager_flows"
 DATAS_DIR = "./tests/test_configs/datas"
+PROMPTY_DIR = "./tests/test_configs/prompty"
 
 
 def e2e_test_docker_build_and_run(output_path):
@@ -503,3 +505,13 @@ class TestFlowLocalOperations:
         assert tools_error == {}
         assert tools_meta["package"] == {}
         assert tools_meta["code"] == {}
+
+    def test_flow_generate_tools_meta_for_prompty_flow(self, pf) -> None:
+        source = f"{PROMPTY_DIR}/prompty_example.prompty"
+
+        tools_meta, tools_error = pf.flows._generate_tools_meta(source)
+        assert tools_error == {}
+        assert tools_meta["package"] == {}
+        assert "prompty_example.prompty" in tools_meta["code"]
+        prompty = Prompty.load(source=source)
+        assert all([key in tools_meta["code"]["prompty_example.prompty"]["inputs"] for key in prompty._inputs.keys()])

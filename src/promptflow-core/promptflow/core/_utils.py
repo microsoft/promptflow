@@ -6,6 +6,8 @@ import re
 from pathlib import Path
 from typing import Dict
 
+from jinja2 import Template
+
 from promptflow._utils.flow_utils import is_flex_flow, resolve_entry_file, resolve_flow_path
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.utils import _match_reference
@@ -13,6 +15,11 @@ from promptflow._utils.yaml_utils import load_yaml
 from promptflow.exceptions import UserErrorException
 
 logger = LoggerFactory.get_logger(name=__name__)
+
+
+def render_jinja_template_content(template_content, *, trim_blocks=True, keep_trailing_newline=True, **kwargs):
+    template = Template(template_content, trim_blocks=trim_blocks, keep_trailing_newline=keep_trailing_newline)
+    return template.render(**kwargs)
 
 
 def init_executable(*, flow_dag: dict = None, flow_path: Path = None, working_dir: Path = None):

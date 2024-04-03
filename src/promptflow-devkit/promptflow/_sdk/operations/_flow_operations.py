@@ -19,7 +19,7 @@ from typing import Dict, Iterable, List, NoReturn, Tuple, Union
 import pydash
 from pip._vendor import tomli as toml
 
-from promptflow._constants import FlowLanguage
+from promptflow._constants import PROMPT_FLOW_DIR_NAME, FlowLanguage
 from promptflow._proxy import ProxyFactory
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
@@ -44,10 +44,16 @@ from promptflow._sdk._utils import (
     json_load,
     logger,
 )
-from promptflow._sdk.entities._flows import FlexFlow, Flow
+from promptflow._sdk.entities._flows import FlexFlow, Flow, Prompty
 from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._utils.context_utils import _change_working_dir
-from promptflow._utils.flow_utils import dump_flow_result, is_executable_chat_flow, is_flex_flow, parse_variant
+from promptflow._utils.flow_utils import (
+    dump_flow_result,
+    is_executable_chat_flow,
+    is_flex_flow,
+    is_prompty_flow,
+    parse_variant,
+)
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
@@ -91,7 +97,6 @@ class FlowOperations(TelemetryMixin):
         :rtype: dict
         """
         experiment = kwargs.pop("experiment", None)
-        output_path = kwargs.get("output_path", None)
         if Configuration.get_instance().is_internal_features_enabled() and experiment:
             if variant is not None or node is not None:
                 error = ValueError("--variant or --node is not supported experiment is specified.")
@@ -107,7 +112,13 @@ class FlowOperations(TelemetryMixin):
                 experiment=experiment,
                 **kwargs,
             )
-
+        elif is_prompty_flow(flow):
+            # For prompty flow, if output path is not specified, set output folder to .promptflow/prompty_file_name.
+            # To avoid overwriting the execution info of different prompty in the same working dir.
+            kwargs["output_path"] = (
+                kwargs.get("output_path", None) or Path(flow).parent.resolve() / PROMPT_FLOW_DIR_NAME / Path(flow).stem
+            )
+        output_path = kwargs.get("output_path", None)
         result = self._test(
             flow=flow,
             inputs=inputs,
@@ -264,7 +275,7 @@ class FlowOperations(TelemetryMixin):
             stream_output=stream_output,
             session=session,
         ) as submitter:
-            if isinstance(flow, FlexFlow):
+            if isinstance(flow, FlexFlow) or isinstance(flow, Prompty):
                 # TODO(2897153): support chat eager flow
                 # set is chat flow to True to allow generator output
                 is_chat_flow, chat_history_input_name = False, None
@@ -868,6 +879,16 @@ class FlowOperations(TelemetryMixin):
         if is_flex_flow(yaml_dict=flow._data):
             # No tools meta for eager flow
             return {"package": {}, "code": {}}, {}
+        elif isinstance(flow, Prompty):
+            return {
+                "package": {},
+                "code": {
+                    flow.path.name: {
+                        "type": "llm",
+                        "inputs": {k: {"type": [v.get("type", "string")]} for k, v in flow._data["inputs"].items()},
+                    }
+                },
+            }, {}
 
         with self._resolve_additional_includes(flow.flow_dag_path) as new_flow_dag_path:
             flow_tools = generate_flow_tools_json(

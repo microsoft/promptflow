@@ -77,3 +77,10 @@ class EagerFlowSchema(BaseFlowSchema):
         inspector_proxy = ProxyFactory().create_inspector_proxy(language=language)
         if not inspector_proxy.is_flex_flow_entry(data.get("entry", None)):
             raise ValidationError(field_name="entry", message=f"Entry function {data['entry']} is not valid.")
+
+
+class PromptySchema(BaseFlowSchema):
+    """Schema for prompty."""
+
+    model = fields.Dict()
+    inputs = fields.Dict()
