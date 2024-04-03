@@ -43,7 +43,7 @@ class ConnectionProvider(ABC):
         Expected value:
         - local
         - azureml://subscriptions/<your-subscription>/resourceGroups/<your-resourcegroup>/
-            providers/Microsoft.MachineLearningServices/workspaces/<your-workspace>
+        providers/Microsoft.MachineLearningServices/workspaces/<your-workspace>
         """
         if not provider_config or provider_config == ConnectionProviderConfig.LOCAL:
             try:
