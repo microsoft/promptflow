@@ -32,7 +32,6 @@ from jinja2 import Template
 from keyring.errors import NoKeyringError
 from marshmallow import ValidationError
 
-import promptflow
 from promptflow._constants import ENABLE_MULTI_CONTAINER_KEY, EXTENSION_UA, FlowLanguage
 from promptflow._sdk._constants import (
     AZURE_WORKSPACE_REGEX_FORMAT,
@@ -327,8 +326,10 @@ def incremental_print(log: str, printed: int, fileout) -> int:
 
 def get_promptflow_sdk_version() -> str:
     try:
+        import promptflow
+
         return promptflow.__version__
-    except ImportError:
+    except (ImportError, AttributeError):
         # if promptflow is not installed from root, it does not have __version__ attribute
         return None
 
