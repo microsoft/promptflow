@@ -3,6 +3,7 @@ from promptflow.evals.evaluators import ChatEvaluator
 from promptflow.entities import AzureOpenAIConnection
 
 
+@pytest.mark.unittest
 class TestChatEvaluator:
     def test_conversation_validation_normal(self):
         model_config = AzureOpenAIConnection(

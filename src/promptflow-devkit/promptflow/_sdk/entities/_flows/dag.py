@@ -6,11 +6,11 @@ from typing import Dict, Optional
 
 from marshmallow import Schema
 
-from promptflow._constants import FLOW_TOOLS_JSON, LANGUAGE_KEY, PROMPT_FLOW_DIR_NAME, FlowLanguage
+from promptflow._constants import DEFAULT_ENCODING, FLOW_TOOLS_JSON, LANGUAGE_KEY, PROMPT_FLOW_DIR_NAME, FlowLanguage
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY
-from promptflow._utils.flow_utils import resolve_flow_path
+from promptflow._utils.flow_utils import is_flex_flow, is_prompty_flow, resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
-from promptflow._utils.yaml_utils import load_yaml
+from promptflow._utils.yaml_utils import load_yaml, load_yaml_string
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 from .base import Flow as FlowBase
@@ -131,11 +131,18 @@ class Flow(FlowBase):
             return ExecutableFlow.from_yaml(flow_file=flow.path, working_dir=flow.code)
 
     @classmethod
-    def _dispatch_flow_creation(cls, is_eager_flow, flow_path, data, content_hash, raise_error=True, **kwargs):
-        """Dispatch flow load to eager flow or async flow."""
-        from .flex import FlexFlow
+    def _dispatch_flow_creation(cls, flow_path, raise_error=True, **kwargs):
+        """Dispatch flow load to eager flow, async flow or prompty flow."""
+        from promptflow._sdk.entities._flows import FlexFlow, Prompty
 
-        if is_eager_flow:
+        if is_prompty_flow(file_path=flow_path, raise_error=raise_error):
+            return Prompty._load(path=flow_path, **kwargs)
+
+        with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
+            flow_content = f.read()
+            data = load_yaml_string(flow_content)
+            content_hash = hash(flow_content)
+        if is_flex_flow(yaml_dict=data):
             return FlexFlow._load(path=flow_path, data=data, raise_error=raise_error, **kwargs)
         else:
             # TODO: schema validation and warning on unknown fields
