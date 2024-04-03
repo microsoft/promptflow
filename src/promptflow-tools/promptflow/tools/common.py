@@ -568,7 +568,7 @@ def normalize_connection_config(connection):
             "organization": connection.organization,
             "base_url": connection.base_url
         }
-    
+
     # For old promptflow package, there is NO ServerlessConnection, so here add try
     try:
         from promptflow.connections import ServerlessConnection

@@ -8,6 +8,7 @@ from promptflow.tools.common import render_jinja_template, handle_openai_error, 
 from promptflow._internal import ToolProvider, tool, register_apis
 from promptflow.connections import OpenAIConnection
 from promptflow.contracts.types import PromptTemplate
+from promptflow._core.tools_manager import connection_type_to_api_mapping
 
 
 class Engine(str, Enum):
@@ -154,11 +155,10 @@ class OpenAI(ToolProvider):
 
 register_apis(OpenAI)
 
-# Hard code to register ServerlessConnection for OpenAI so that ServerlessConnection can call into promptflow.tools.openai
-# Reason for this hard code:
+# Hard code to register ServerlessConnection for OpenAI so that ServerlessConnection 
+# can call into promptflow.tools.openai.Reason for this hard code:
 # In order to compatible with old version (<=1.7.0) promptflow package, since
 # the register_apis in the old version promptflow package doesn't support Union
-from promptflow._core.tools_manager import connection_type_to_api_mapping
 connection_type_to_api_mapping["ServerlessConnection"] = "OpenAI"
 
 
