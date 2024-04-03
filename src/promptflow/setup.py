@@ -51,17 +51,17 @@ setup(
     install_requires=REQUIRES,
     extras_require={
         "all": [
-            "promptflow-core[executor-service]==1.1.0rc9",
-            "promptflow-devkit[all]==1.8.0rc9",
+            "promptflow-core[executor-service]==1.1.0rc9rc2==1.1.0rc9",
+            "promptflow-devkit[all]==1.8.0rc9rc2==1.8.0rc9",
             "promptflow-azure==1.8.0rc9",
         ],
         "azure": ["promptflow-azure==1.8.0rc9"],
-        "executable": ["promptflow-devkit[executable]==1.8.0rc9"],
+        "executable": ["promptflow-devkit[executable]==1.8.0rc9rc2==1.8.0rc9"],
         "azureml-serving": [
-            "promptflow-core[azureml-serving]==1.1.0rc9",
+            "promptflow-core[azureml-serving]==1.1.0rc9rc2==1.1.0rc9",
         ],
         "executor-service": [
-            "promptflow-core[executor-service]==1.1.0rc9",  # used to build web executor server
+            "promptflow-core[executor-service]==1.1.0rc9rc2==1.1.0rc9",  # used to build web executor server
         ],
     },
     packages=find_packages(),
