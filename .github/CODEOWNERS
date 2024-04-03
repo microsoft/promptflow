@@ -1,9 +1,10 @@
 # CAUTION: Order is important; the LAST matching pattern takes the most precedence.
 # So put outside folders first, and then inside folders.
+# Don't change the sequence of the regions.
 
 * @microsoft/prompt-flow-approver
 
-# Folders
+# 1. Folders
 /src/promptflow-tracing/ @microsoft/promptflow-execution
 
 /src/promptflow-eval/ @microsoft/pf-eval-team-contributor
@@ -22,7 +23,7 @@
 /scripts/tool/ @microsoft/promptflow-tools
 /examples/tools/ @microsoft/promptflow-tools
 
-# Subfolders
+# 2. Subfolders
 /src/promptflow-tracing/promptflow/tracing/ @microsoft/promptflow-execution
 /src/promptflow-core/promptflow/_core/ @microsoft/promptflow-execution
 /src/promptflow-devkit/promptflow/_internal/ @microsoft/promptflow-execution
@@ -32,13 +33,13 @@
 /src/promptflow-core/promptflow/integrations/ @microsoft/promptflow-execution
 /src/promptflow-core/promptflow/storage/ @microsoft/promptflow-execution
 
-# Test folder extras
+# 3. Test folder extras
 /src/promptflow/tests/executor/ @microsoft/promptflow-execution
 /src/promptflow/tests/sdk_cli_test/ @microsoft/promptflow-sdk
 /src/promptflow/tests/sdk_cli_azure_test/ @microsoft/promptflow-sdk
 /src/promptflow/tests/sdk_cli_global_config_test/ @microsoft/promptflow-sdk
 /src/promptflow/tests/sdk_pfs_test/ @microsoft/promptflow-sdk
 
-# Extra Files
+# 4. Extra Files
 /docs/how-to-guides/develop-a-tool/ @microsoft/promptflow-tools
 /src/promptflow-tracing/promptflow/tracing/_start_trace.py @microsoft/promptflow-sdk
