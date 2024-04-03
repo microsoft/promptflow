@@ -14,7 +14,7 @@ import uuid
 from pathlib import Path
 from threading import current_thread
 from types import GeneratorType
-from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
+from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 
 from opentelemetry.trace.status import StatusCode
 
@@ -42,6 +42,8 @@ from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
+from promptflow.core._connection_provider._connection_provider import ConnectionProvider
+from promptflow.core._connection_provider._dict_connection_provider import DictConnectionProvider
 from promptflow.exceptions import PromptflowException
 from promptflow.executor import _input_assignment_parser
 from promptflow.executor._async_nodes_scheduler import AsyncNodesScheduler
@@ -96,7 +98,7 @@ class FlowExecutor:
     def __init__(
         self,
         flow: Flow,
-        connections: dict,
+        connections: Union[dict, ConnectionProvider],
         run_tracker: RunTracker,
         cache_manager: AbstractCacheManager,
         loaded_tools: Mapping[str, Callable],
@@ -111,7 +113,7 @@ class FlowExecutor:
         :param flow: The Flow object to execute.
         :type flow: ~promptflow.contracts.flow.Flow
         :param connections: The connections between nodes in the Flow.
-        :type connections: dict
+        :type connections: Union[dict, ConnectionProvider]
         :param run_tracker: The RunTracker object to track the execution of the Flow.
         :type run_tracker: ~promptflow._core.run_tracker.RunTracker
         :param cache_manager: The AbstractCacheManager object to manage caching of results.
@@ -168,7 +170,7 @@ class FlowExecutor:
     def create(
         cls,
         flow_file: Path,
-        connections: dict,
+        connections: Union[dict, ConnectionProvider],
         working_dir: Optional[Path] = None,
         *,
         entry: Optional[str] = None,
@@ -183,7 +185,7 @@ class FlowExecutor:
         :param flow_file: The path to the flow file.
         :type flow_file: Path
         :param connections: The connections to be used for the flow.
-        :type connections: dict
+        :type connections: Union[dict, ConnectionProvider]
         :param working_dir: The working directory to be used for the flow. Default is None.
         :type working_dir: Optional[str]
         :param func: The function to be used for the flow if .py is provided. Default is None.
@@ -227,7 +229,7 @@ class FlowExecutor:
     def _create_from_flow(
         cls,
         flow: Flow,
-        connections: dict,
+        connections: Union[dict, ConnectionProvider],
         working_dir: Optional[Path],
         *,
         flow_file: Optional[Path] = None,
@@ -243,6 +245,8 @@ class FlowExecutor:
         flow = flow._apply_default_node_variants()
 
         package_tool_keys = [node.source.tool for node in flow.nodes if node.source and node.source.tool]
+        if isinstance(connections, dict):
+            connections = DictConnectionProvider(connections)
         tool_resolver = ToolResolver(working_dir, connections, package_tool_keys, message_format=flow.message_format)
 
         with _change_working_dir(working_dir):
