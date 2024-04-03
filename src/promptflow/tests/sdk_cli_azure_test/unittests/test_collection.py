@@ -27,11 +27,23 @@ class TestCollectionCosmosDB:
         assert collection.collection_id == "test_collection_id"
         assert collection.location == 1
 
+        self.span.attributes = {"batch_run_id": "test_batch_run_id"}
+        collection = CollectionCosmosDB(self.span, True, self.created_by)
+        assert collection.collection_name == "test_collection_name"
+        assert collection.collection_id == "test_batch_run_id"
+        assert collection.location == 1
+
     def test_collection_properties_local(self):
         collection = CollectionCosmosDB(self.span, False, self.created_by)
         assert collection.collection_name == "test_collection_name"
         # For local, use collection name and user id to generate collection id
         assert collection.collection_id == "test_collection_name_test_user_id"
+        assert collection.location == 0
+
+        self.span.attributes = {"batch_run_id": "test_batch_run_id"}
+        collection = CollectionCosmosDB(self.span, False, self.created_by)
+        assert collection.collection_name == "test_collection_name"
+        assert collection.collection_id == "test_batch_run_id"
         assert collection.location == 0
 
     def test_create_collection_if_not_exist(self):

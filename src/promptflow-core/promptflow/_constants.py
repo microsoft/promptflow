@@ -100,11 +100,16 @@ DEFAULT_SPAN_TYPE = "default"
 RUNNING_LINE_RUN_STATUS = "Running"
 OK_LINE_RUN_STATUS = "Ok"
 SPAN_EVENTS_ATTRIBUTES_EVENT_ID = "event.id"
+AZURE_WORKSPACE_REGEX_FORMAT = (
+    "^azureml:[/]{1,2}subscriptions/([^/]+)/resource(groups|Groups)/([^/]+)"
+    "(/providers/Microsoft.MachineLearningServices)?/workspaces/([^/]+)$"
+)
 
 
 class TraceEnvironmentVariableName:
     EXPERIMENT = "PF_TRACE_EXPERIMENT"
-    SESSION_ID = "PF_TRACE_SESSION_ID"
+    COLLECTION = "PF_TRACE_COLLECTION"
+    SESSION_ID = "PF_TRACE_SESSION_ID"  # will be deprecated
     COLLECTION_ID = "PF_TRACE_COLLECTION_ID"
     SUBSCRIPTION_ID = "PF_TRACE_SUBSCRIPTION_ID"
     RESOURCE_GROUP_NAME = "PF_TRACE_RESOURCE_GROUP_NAME"

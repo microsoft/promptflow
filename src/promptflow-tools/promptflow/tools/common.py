@@ -266,9 +266,10 @@ def list_deployment_connections(
         # from promptflow.azure.operations._arm_connection_operations import \
         #     ArmConnectionOperations, OpenURLFailedUserError
 
-        from promptflow.azure.operations._arm_connection_operations import \
-            ArmConnectionOperations
+        # from promptflow.azure.operations._arm_connection_operations import \
+        #     ArmConnectionOperations
         from promptflow.core._errors import OpenURLFailedUserError
+        from promptflow.core._connection_provider._connection_provider import ConnectionProvider
     except ImportError:
         return None
 
@@ -279,14 +280,13 @@ def list_deployment_connections(
     try:
         credential = _get_credential()
         try:
-            # Currently, the param 'connection' is str, not AzureOpenAIConnection type.
-            conn = ArmConnectionOperations._build_connection_dict(
-                name=connection,
-                subscription_id=subscription_id,
-                resource_group_name=resource_group_name,
-                workspace_name=workspace_name,
+            # provider_config = "local"
+            provider_config = "azureml://subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.MachineLearningServices/workspaces/{2}".format(subscription_id, resource_group_name, workspace_name)
+            workspace_connection_provider = ConnectionProvider.init_from_provider_config(
+                provider_config,
                 credential=credential
             )
+            conn = dict(workspace_connection_provider.get(connection))
             resource_id = conn.get("value").get('resource_id', "")
             if not resource_id:
                 return None

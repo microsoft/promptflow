@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Mapping, Optional
 
 from promptflow._constants import OutputsFolderName
+from promptflow._utils.logger_utils import LogContext
 from promptflow.executor import FlowExecutor
 from promptflow.executor._line_execution_process_pool import LineExecutionProcessPool
 from promptflow.executor._service._errors import UninitializedError
@@ -33,6 +34,9 @@ class BatchCoordinator:
     ):
         if self._init:
             return
+        # Save log context for close method
+        self._log_context = LogContext.get_current()
+
         # Init flow executor and validate flow
         self._output_dir = output_dir
 
@@ -63,6 +67,9 @@ class BatchCoordinator:
                 "Please initialize the executor service with the '/initialize' api before sending execution requests."
             )
         return cls._instance
+
+    def get_log_context(self):
+        return self._log_context
 
     def start(self):
         """Start the process pool."""

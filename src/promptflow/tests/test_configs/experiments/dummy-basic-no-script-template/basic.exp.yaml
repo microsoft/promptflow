@@ -1,0 +1,31 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Experiment.schema.json
+
+description: Basic experiment without script node
+
+data:
+  - name: my_data
+    path: ../../flows/dummy_web_classification/data.jsonl
+
+inputs:
+  - name: my_input
+    type: int
+    default: 1
+
+nodes:
+  - name: main
+    type: flow
+    path: ../../flows/dummy_web_classification/flow.dag.yaml
+    inputs:
+      url: ${data.my_data.url}
+    variant: ${summarize_text_content.variant_0}
+    environment_variables: {}
+    connections: {}
+
+  - name: eval
+    type: flow
+    path: ../../flows/eval-classification-accuracy
+    inputs:
+      groundtruth: ${data.my_data.answer}  # No node can be named with "data"
+      prediction: ${main.outputs.category}
+    environment_variables: {}
+    connections: {}

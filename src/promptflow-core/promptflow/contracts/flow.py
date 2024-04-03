@@ -10,15 +10,12 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from promptflow._constants import DEFAULT_ENCODING, LANGUAGE_KEY, FlowLanguage, MessageFormatType
 from promptflow._utils.utils import _match_reference, _sanitize_python_variable_name, try_import
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts._errors import FlowDefinitionError
 from promptflow.exceptions import ErrorTarget
 from promptflow.tracing._utils import serialize
-
-# after pf https://github.com/microsoft/promptflow/pull/2557/files fix, change to from promptflow.connections import AzureOpenAIConnection
-from promptflow._constants import LANGUAGE_KEY, FlowLanguage, MessageFormatType, DEFAULT_ENCODING
-# from .._sdk._constants import DEFAULT_ENCODING
 from ._errors import FailedToImportModule
 from .tool import ConnectionType, Tool, ToolType, ValueType
 

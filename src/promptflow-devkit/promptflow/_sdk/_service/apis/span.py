@@ -110,7 +110,7 @@ class Spans(Resource):
     def get(self):
         client: PFClient = get_client_from_request()
         args = ListSpanParser.from_request()
-        spans = client._traces.list_spans(
+        spans = client.traces.list_spans(
             trace_ids=args.trace_ids,
             lazy_load=args.lazy_load,
         )
@@ -123,4 +123,4 @@ class Event(Resource):
     @api.response(code=200, description="Event")
     def get(self, event_id: str):
         client: PFClient = get_client_from_request()
-        return client._traces.get_event(event_id=event_id)
+        return client.traces.get_event(event_id=event_id)

@@ -23,7 +23,7 @@ def mock_build_connection_dict_func1(**kwargs):
     raise OpenURLFailedUserError
 
 
-def mock_build_connection_dict_func2(**kwargs):
+def mock_build_connection_dict_func2(self, name: str, **kwargs):
     return {"value": {"resource_id": "abc"}}
 
 
@@ -222,11 +222,11 @@ class TestCommon:
         assert res is None
 
     def test_list_deployment_connections_with_wrong_connection_id(self, monkeypatch):
-        from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
+        from promptflow.core._connection_provider._workspace_connection_provider import WorkspaceConnectionProvider
 
         monkeypatch.setattr(
-            ArmConnectionOperations,
-            "_build_connection_dict",
+            WorkspaceConnectionProvider,
+            "get",
             mock_build_connection_dict_func2
         )
         with pytest.raises(ListDeploymentsError):
