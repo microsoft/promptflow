@@ -5,6 +5,7 @@
 import copy
 import inspect
 import types
+import logging
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
@@ -515,7 +516,7 @@ class ToolResolver:
                         f"Invalid connection '{node.connection}' type {type(connection).__name__!r} "
                         f"for node '{node.name}', valid types {input.type}."
                     )
-                    raise InvalidConnectionType(message=msg)
+                    logging.warning(msg)
                 return key, connection
         raise InvalidConnectionType(
             message_format="Connection type can not be resolved for tool {tool_name}", tool_name=tool.name
