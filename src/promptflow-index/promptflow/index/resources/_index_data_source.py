@@ -31,7 +31,11 @@ class IndexDataSource:
     def __init__(self, *, input_type: Union[str, IndexInputType]):
         self.input_type = input_type
 
-    def _create_component(self, index_config: IndexConfig, acs_config: Optional[AzureAISearchConfig] = None) -> Pipeline:
+    def _create_component(
+            self,
+            index_config: IndexConfig,
+            acs_config: Optional[AzureAISearchConfig] = None
+        ) -> Pipeline:
         """Given the general config values, as well as the config values related to the output index, produce
         and populate a component that creates an index of the specified type from this input config's data source.
 
@@ -64,7 +68,11 @@ class GitSource(IndexDataSource):
         self.git_connection_id = git_connection_id
         super().__init__(input_type=IndexInputType.GIT)
 
-    def _create_component(self, index_config: IndexConfig, acs_config: Optional[AzureAISearchConfig] = None) -> Pipeline:
+    def _create_component(
+            self,
+            index_config: IndexConfig,
+            acs_config: Optional[AzureAISearchConfig] = None
+        ) -> Pipeline:
         curr_file_path = os.path.dirname(__file__)
         if acs_config:
             acs_index_name = acs_config.acs_index_name
@@ -151,11 +159,15 @@ class ACSSource(IndexDataSource):
         self.acs_content_key = acs_content_key
         self.acs_embedding_key = acs_embedding_key
         self.acs_title_key = acs_title_key
-        self.acs_metadata_key= acs_metadata_key
+        self.acs_metadata_key = acs_metadata_key
         self.num_docs_to_import = num_docs_to_import
-        super().__init__(input_type = IndexInputType.AOAI)
+        super().__init__(input_type=IndexInputType.AOAI)
 
-    def _create_component(self, index_config: IndexConfig, acs_config: Optional[AzureAISearchConfig] = None) -> Pipeline:
+    def _create_component(
+            self,
+            index_config: IndexConfig,
+            acs_config: Optional[AzureAISearchConfig] = None
+        ) -> Pipeline:
         curr_file_path = os.path.dirname(__file__)
         acs_import_config = json.dumps({
             "index_name": self.acs_index_name,
@@ -189,7 +201,11 @@ class LocalSource(IndexDataSource):
         self.input_data = Input(type="uri_folder", path=input_data)
         super().__init__(input_type=IndexInputType.LOCAL)
 
-    def _create_component(self, index_config: IndexConfig, acs_config: Optional[AzureAISearchConfig] = None) -> Pipeline:
+    def _create_component(
+            self,
+            index_config: IndexConfig,
+            acs_config: Optional[AzureAISearchConfig] = None
+        ) -> Pipeline:
         curr_file_path = os.path.dirname(__file__)
         if acs_config:
             acs_index_name = acs_config.acs_index_name
