@@ -13,6 +13,7 @@ import httpx
 
 from promptflow._constants import DEFAULT_ENCODING, LINE_TIMEOUT_SEC
 from promptflow._core._errors import NotSupported, UnexpectedError
+from promptflow._proxy._errors import ExecutorServiceUnhealthy
 from promptflow._sdk._constants import (
     DAG_FILE_NAME,
     FLOW_META_JSON,
@@ -26,7 +27,6 @@ from promptflow._utils.exception_utils import ErrorResponse, ExceptionPresenter
 from promptflow._utils.flow_utils import is_flex_flow, read_json_content
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.utils import load_json
-from promptflow.batch._errors import ExecutorServiceUnhealthy
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.exceptions import ErrorTarget, ValidationException
 from promptflow.executor._errors import AggregationNodeExecutionTimeoutError, LineExecutionTimeoutError
