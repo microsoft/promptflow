@@ -35,7 +35,7 @@ class IndexDataSource:
             self,
             index_config: IndexConfig,
             acs_config: Optional[AzureAISearchConfig] = None
-        ) -> Pipeline:
+    ) -> Pipeline:
         """Given the general config values, as well as the config values related to the output index, produce
         and populate a component that creates an index of the specified type from this input config's data source.
 
@@ -72,7 +72,7 @@ class GitSource(IndexDataSource):
             self,
             index_config: IndexConfig,
             acs_config: Optional[AzureAISearchConfig] = None
-        ) -> Pipeline:
+    ) -> Pipeline:
         curr_file_path = os.path.dirname(__file__)
         if acs_config:
             acs_index_name = acs_config.acs_index_name
@@ -167,7 +167,7 @@ class ACSSource(IndexDataSource):
             self,
             index_config: IndexConfig,
             acs_config: Optional[AzureAISearchConfig] = None
-        ) -> Pipeline:
+    ) -> Pipeline:
         curr_file_path = os.path.dirname(__file__)
         acs_import_config = json.dumps({
             "index_name": self.acs_index_name,
@@ -205,7 +205,7 @@ class LocalSource(IndexDataSource):
             self,
             index_config: IndexConfig,
             acs_config: Optional[AzureAISearchConfig] = None
-        ) -> Pipeline:
+    ) -> Pipeline:
         curr_file_path = os.path.dirname(__file__)
         if acs_config:
             acs_index_name = acs_config.acs_index_name
