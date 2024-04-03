@@ -1380,7 +1380,9 @@ def _force_flush_tracer_provider():
     finally:
         try:
             # Force flush the tracer provider to ensure all spans are exported before the process exits.
-            otel_trace.get_tracer_provider().force_flush()
+            tracer_provider = otel_trace.get_tracer_provider()
+            if hasattr(tracer_provider, "force_flush"):
+                tracer_provider.force_flush()
         except Exception as e:
             flow_logger.warning(f"Error occurred while force flush tracer provider: {e}")
 
