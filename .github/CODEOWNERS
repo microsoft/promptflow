@@ -12,7 +12,7 @@
 /src/promptflow-azure/ @microsoft/promptflow-sdk
 /src/promptflow-recording/ @microsoft/promptflow-sdk
 
-/src/promptflow-eval/ @microsoft/pf-eval-team-contributor
+/src/promptflow-evals/ @microsoft/pf-eval-team-contributor
 
 /scripts/docs/ @microsoft/promptflow-sdk
 /scripts/installer/ @microsoft/promptflow-sdk
