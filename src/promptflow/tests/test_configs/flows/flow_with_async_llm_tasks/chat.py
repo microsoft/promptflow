@@ -3,7 +3,7 @@ from typing import List
 
 from openai import AsyncAzureOpenAI
 
-from promptflow import tool
+from promptflow.core import tool
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.tracing import trace
 
