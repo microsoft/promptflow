@@ -5,12 +5,16 @@ from promptflow.tools.common import ChatAPIInvalidFunctions, validate_functions,
     parse_chat, find_referenced_image_set, preprocess_template_string, convert_to_chat_list, ChatInputList, \
     ParseConnectionError, _parse_resource_id, list_deployment_connections, \
     normalize_connection_config, parse_tool_calls_for_assistant, validate_tools, process_tool_choice
-from promptflow.tools.exception import ListDeploymentsError, ChatAPIInvalidTools, ChatAPIAssistantRoleInvalidFormat
+from promptflow.tools.exception import (
+    ListDeploymentsError,
+    ChatAPIInvalidTools,
+    ChatAPIAssistantRoleInvalidFormat,
+    ChatAPIToolRoleInvalidFormat,
+)
 
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 from promptflow.contracts.multimedia import Image
 from tests.utils import CustomException, Deployment
-from tests.constants import CHAT_WITH_TOOLS_TEST_CASES, ASSISTANT_WITH_TOOL_CALLS_TEST_CASES, VALIDATE_TOOLS_TEST_CASES
 
 DEFAULT_SUBSCRIPTION_ID = "sub"
 DEFAULT_RESOURCE_GROUP_NAME = "rg"
@@ -42,17 +46,15 @@ class TestCommon:
         "functions, error_message",
         [
             ([], "functions cannot be an empty list"),
-            (["str"], "is not a dict. Here is a valid function example"),
+            (["str"],
+             "is not a dict. Here is a valid function example"),
             ([{"name": "func1"}], "does not have 'parameters' property"),
-            ([{"name": "func1", "parameters": "param1"}], "should be described as a JSON Schema object"),
-            (
-                [{"name": "func1", "parameters": {"type": "int", "properties": {}}}],
-                "parameters 'type' should be 'object'",
-            ),
-            (
-                [{"name": "func1", "parameters": {"type": "object", "properties": []}}],
-                "should be described as a JSON Schema object",
-            ),
+            ([{"name": "func1", "parameters": "param1"}],
+             "should be described as a JSON Schema object"),
+            ([{"name": "func1", "parameters": {"type": "int", "properties": {}}}],
+             "parameters 'type' should be 'object'"),
+            ([{"name": "func1", "parameters": {"type": "object", "properties": []}}],
+             "should be described as a JSON Schema object"),
         ],
     )
     def test_chat_api_invalid_functions(self, functions, error_message):
@@ -63,7 +65,35 @@ class TestCommon:
         assert exc_info.value.error_codes == error_codes.split("/")
 
     @pytest.mark.parametrize(
-        "tools, error_message, success", VALIDATE_TOOLS_TEST_CASES
+        "tools, error_message, success", [
+            ([{
+                "type": "function",
+                "function": {
+                    "name": "get_current_weather",
+                    "description": "Get the current weather in a given location",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "location": {
+                                "type": "string",
+                                "description": "The city and state, e.g. San Francisco, CA",
+                            },
+                            "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
+                        },
+                        "required": ["location"],
+                    }}}], "", True),
+            ([], "tools cannot be an empty list", False),
+            (["str"], "is not a dict. Here is a valid tool example", False),
+            ([{"type1": "function", "function": "str"}], "does not have 'type' property", False),
+            ([{"type": "function", "function": "str"}], "is not a dict. Here is a valid tool example", False),
+            ([{"type": "function", "function": {"name": "func1"}}], "does not have 'parameters' property", False),
+            ([{"type": "function", "function": {"name": "func1", "parameters": "param1"}}],
+                "should be described as a JSON Schema object", False,),
+            ([{"type": "function", "function": {"name": "func1", "parameters": {"type": "int", "properties": {}}}}],
+                "parameters 'type' should be 'object'", False,),
+            ([{"type": "function", "function": {"name": "func1", "parameters": {"type": "object", "properties": []}}}],
+                "should be described as a JSON Schema object", False,),
+        ]
     )
     def test_chat_api_validate_tools(self, tools, error_message: str, success: bool):
         if success:
@@ -79,10 +109,9 @@ class TestCommon:
         "function_call, error_message",
         [
             ("123", "function_call parameter '123' must be a dict"),
-            (
-                {"name1": "get_current_weather"},
-                'function_call parameter {"name1": "get_current_weather"} must ' 'contain "name" field',
-            ),
+            ({"name1": "get_current_weather"},
+             'function_call parameter {"name1": "get_current_weather"} must '
+             'contain "name" field'),
         ],
     )
     def test_chat_api_invalid_function_call(self, function_call, error_message):
@@ -189,21 +218,73 @@ class TestCommon:
         assert actual_result == expected_result
 
     @pytest.mark.parametrize(
-        "chat_str, expected_result, success, error_message, exception_type", CHAT_WITH_TOOLS_TEST_CASES
-    )
-    def test_try_parse_chat_with_tools(self, chat_str, expected_result, success, error_message, exception_type):
-        if success:
-            actual_result = parse_chat(chat_str)
-            assert actual_result == expected_result
-        else:
-            with pytest.raises(exception_type) as exc_info:
-                parse_chat(chat_str)
-            assert error_message in exc_info.value.message
+        "chat_str, error_message, exception_type",
+        [("""
+            # assistant:
+            ## tool_calls:
+        """, "Failed to parse assistant role prompt with tool_calls", ChatAPIAssistantRoleInvalidFormat),
+         ("""
+            # tool:
+            ## tool_call_id:
+        """, "Failed to parse tool role prompt.", ChatAPIToolRoleInvalidFormat,)])
+    def test_try_parse_chat_with_tools_with_error(self, chat_str, error_message, exception_type):
+        with pytest.raises(exception_type) as exc_info:
+            parse_chat(chat_str)
+        assert error_message in exc_info.value.message
 
-    @pytest.mark.parametrize("chunk, expected_res, error_msg, success", ASSISTANT_WITH_TOOL_CALLS_TEST_CASES)
-    def test_parse_tool_calls_for_assistant(self, chunk: str, expected_res, error_msg: str, success: bool):
+    def test_try_parse_chat_with_tools(self, example_prompt_template_with_tool, parsed_chat_with_tools):
+        actual_result = parse_chat(example_prompt_template_with_tool)
+        assert actual_result == parsed_chat_with_tools
+
+    @pytest.mark.parametrize("chunk, error_msg, success", [
+        ("""
+            ## tool_calls:
+            """, "Failed to parse assistant role prompt with tool_calls", False),
+        ("""
+            ## tool_calls:
+            tool_calls_str
+            """, "Failed to parse assistant role prompt with tool_calls", False),
+        ("""
+            ## tool_calls:
+            [{"id": "tool_call_id", "type": "function", "function": {"name": "func1", "arguments": ""}}]
+            """, "", True),
+        ("""
+            ## tool_calls:
+
+            [{"id": "tool_call_id", "type": "function", "function": {"name": "func1", "arguments": ""}}]
+            """, "", True),
+        ("""
+            ## tool_calls:[{"id": "tool_call_id", "type": "function", "function": {"name": "func1", "arguments": ""}}]
+            """, "", True),
+        ("""
+            ## tool_calls:
+            [{
+                "id": "tool_call_id",
+                "type": "function",
+                "function": {"name": "func1", "arguments": ""}
+            }]
+            """, "", True),
+        ("""
+            ## tool_calls:
+            [{
+                "id": "tool_call_id", "type": "function",
+                    "function": {"name": "func1", "arguments": ""}
+            }]
+            """, "", True),
+    ])
+    def test_parse_tool_calls_for_assistant(self, chunk: str, error_msg: str, success: bool):
         last_message = {'role': 'assistant'}
         if success:
+            expected_res = [
+                {
+                    "id": "tool_call_id",
+                    "type": "function",
+                    "function": {
+                        "name": "func1",
+                        "arguments": "",
+                    },
+                }
+            ]
             parse_tool_calls_for_assistant(last_message, chunk)
             assert last_message["tool_calls"] == expected_res
         else:
@@ -253,10 +334,8 @@ class TestCommon:
             ({"key": "value"}, {"key": "value"}),
             (["item1", "item2"], ChatInputList(["item1", "item2"])),
             ({"key": ["item1", "item2"]}, {"key": ChatInputList(["item1", "item2"])}),
-            (
-                ["item1", ["nested_item1", "nested_item2"]],
-                ChatInputList(["item1", ChatInputList(["nested_item1", "nested_item2"])]),
-            ),
+            (["item1", ["nested_item1", "nested_item2"]],
+             ChatInputList(["item1", ChatInputList(["nested_item1", "nested_item2"])])),
         ],
     )
     def test_convert_to_chat_list(self, input_data, expected_output):
@@ -268,7 +347,8 @@ class TestCommon:
         rg = "dummy_rg"
         account = "dummy_account"
         resource_id = (
-            f"/subscriptions/{sub}/resourceGroups/{rg}/providers/" f"Microsoft.CognitiveServices/accounts/{account}"
+            f"/subscriptions/{sub}/resourceGroups/{rg}/providers/"
+            f"Microsoft.CognitiveServices/accounts/{account}"
         )
         parsed_sub, parsed_rg, parsed_account = _parse_resource_id(resource_id)
         assert sub == parsed_sub and rg == parsed_rg and account == parsed_account
@@ -287,16 +367,27 @@ class TestCommon:
     def test_list_deployment_connections_with_conn_error(self, monkeypatch):
         from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
 
-        monkeypatch.setattr(ArmConnectionOperations, "_build_connection_dict", mock_build_connection_dict_func1)
+        monkeypatch.setattr(
+            ArmConnectionOperations,
+            "_build_connection_dict",
+            mock_build_connection_dict_func1
+        )
         res = list_deployment_connections(
-            DEFAULT_SUBSCRIPTION_ID, DEFAULT_RESOURCE_GROUP_NAME, DEFAULT_WORKSPACE_NAME, DEFAULT_CONNECTION
+            DEFAULT_SUBSCRIPTION_ID,
+            DEFAULT_RESOURCE_GROUP_NAME,
+            DEFAULT_WORKSPACE_NAME,
+            DEFAULT_CONNECTION
         )
         assert res is None
 
     def test_list_deployment_connections_with_wrong_connection_id(self, monkeypatch):
         from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
 
-        monkeypatch.setattr(ArmConnectionOperations, "_build_connection_dict", mock_build_connection_dict_func2)
+        monkeypatch.setattr(
+            ArmConnectionOperations,
+            "_build_connection_dict",
+            mock_build_connection_dict_func2
+        )
         with pytest.raises(ListDeploymentsError):
             list_deployment_connections(
                 DEFAULT_SUBSCRIPTION_ID,
@@ -308,8 +399,12 @@ class TestCommon:
     def test_list_deployment_connections_with_permission_issue(self, monkeypatch):
         from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
 
-        monkeypatch.setattr(ArmConnectionOperations, "_build_connection_dict", mock_build_connection_dict_func3)
-        with patch("azure.mgmt.cognitiveservices.CognitiveServicesManagementClient") as mock:
+        monkeypatch.setattr(
+            ArmConnectionOperations,
+            "_build_connection_dict",
+            mock_build_connection_dict_func3
+        )
+        with patch('azure.mgmt.cognitiveservices.CognitiveServicesManagementClient') as mock:
             mock.side_effect = CustomException("", 403)
             with pytest.raises(ListDeploymentsError) as excinfo:
                 list_deployment_connections(
@@ -321,37 +416,46 @@ class TestCommon:
             assert "Failed to list deployments due to permission issue" in str(excinfo.value)
 
     def test_list_deployment_connections(self, monkeypatch):
+        from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
         from azure.ai.ml._azure_environments import AzureEnvironments
 
-        from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
-
-        monkeypatch.setattr(ArmConnectionOperations, "_build_connection_dict", mock_build_connection_dict_func3)
+        monkeypatch.setattr(
+            ArmConnectionOperations,
+            "_build_connection_dict",
+            mock_build_connection_dict_func3
+        )
         with (
-            patch("azure.ai.ml._azure_environments._get_default_cloud_name") as mock_cloud_name,
-            patch("azure.mgmt.cognitiveservices.CognitiveServicesManagementClient") as mock,
+            patch('azure.ai.ml._azure_environments._get_default_cloud_name') as mock_cloud_name,
+            patch('azure.mgmt.cognitiveservices.CognitiveServicesManagementClient') as mock
         ):
             mock_cloud_name.return_value = AzureEnvironments.ENV_DEFAULT
             instance = mock.return_value
             instance.deployments.list.return_value = {
                 Deployment("deployment1", "model1", "vision-preview"),
-                Deployment("deployment2", "model2", "version2"),
+                Deployment("deployment2", "model2", "version2")
             }
             res = list_deployment_connections(
-                DEFAULT_SUBSCRIPTION_ID, DEFAULT_RESOURCE_GROUP_NAME, DEFAULT_WORKSPACE_NAME, DEFAULT_CONNECTION
+                DEFAULT_SUBSCRIPTION_ID,
+                DEFAULT_RESOURCE_GROUP_NAME,
+                DEFAULT_WORKSPACE_NAME,
+                DEFAULT_CONNECTION
             )
             assert len(res) == 2
 
     def test_list_deployment_connections_sovereign_credential(self, monkeypatch):
+        from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
         from azure.ai.ml._azure_environments import AzureEnvironments
 
-        from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
-
-        monkeypatch.setattr(ArmConnectionOperations, "_build_connection_dict", mock_build_connection_dict_func3)
+        monkeypatch.setattr(
+            ArmConnectionOperations,
+            "_build_connection_dict",
+            mock_build_connection_dict_func3
+        )
         with (
-            patch("azure.ai.ml._azure_environments._get_default_cloud_name") as mock_cloud_name,
-            patch("azure.ai.ml._azure_environments._get_cloud") as mock_cloud,
-            patch("azure.identity.DefaultAzureCredential") as mock_cre,
-            patch("azure.mgmt.cognitiveservices.CognitiveServicesManagementClient") as mock,
+            patch('azure.ai.ml._azure_environments._get_default_cloud_name') as mock_cloud_name,
+            patch('azure.ai.ml._azure_environments._get_cloud') as mock_cloud,
+            patch('azure.identity.DefaultAzureCredential') as mock_cre,
+            patch('azure.mgmt.cognitiveservices.CognitiveServicesManagementClient') as mock
         ):
             mock_cloud_name.return_value = AzureEnvironments.ENV_CHINA
             cloud = mock_cloud.return_value
@@ -360,10 +464,13 @@ class TestCommon:
             instance = mock.return_value
             instance.deployments.list.return_value = {
                 Deployment("deployment1", "model1", "vision-preview"),
-                Deployment("deployment2", "model2", "version2"),
+                Deployment("deployment2", "model2", "version2")
             }
             res = list_deployment_connections(
-                DEFAULT_SUBSCRIPTION_ID, DEFAULT_RESOURCE_GROUP_NAME, DEFAULT_WORKSPACE_NAME, DEFAULT_CONNECTION
+                DEFAULT_SUBSCRIPTION_ID,
+                DEFAULT_RESOURCE_GROUP_NAME,
+                DEFAULT_WORKSPACE_NAME,
+                DEFAULT_CONNECTION
             )
             assert len(res) == 2
 
@@ -390,6 +497,6 @@ class TestCommon:
             "max_retries": 0,
             "api_version": "v1",
             "azure_endpoint": "https://aoai",
-            "azure_ad_token_provider": aoai_meid_connection.get_token,
+            "azure_ad_token_provider": aoai_meid_connection.get_token
         }
         assert normalized_config == expected_output
