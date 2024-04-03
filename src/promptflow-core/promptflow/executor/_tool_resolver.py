@@ -528,7 +528,7 @@ class ToolResolver:
                         f"Invalid connection '{node.connection}' type {type(connection).__name__!r} "
                         f"for node '{node.name}', valid types {input.type}."
                     )
-                    logging.warning(msg)
+                    raise InvalidConnectionType(message=msg)
                 return key, connection
         raise InvalidConnectionType(
             message_format="Connection type can not be resolved for tool {tool_name}", tool_name=tool.name
