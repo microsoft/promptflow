@@ -13,12 +13,13 @@ model_config = AzureOpenAIConnection(
     api_type="azure",
 )
 
-deployment_name = "gpt-4"
+deployment_name = "GPT-4-Prod"
 
 project_scope = {
-    "subscription_id": "2d385bf4-0756-4a76-aa95-28bf9ed3b625",
-    "resource_group_name": "rg-name",
-    "project_name": "project-name",
+    "subscription_id": "e0fd569c-e34a-4249-8c24-e8d723c7f054",
+    "resource_group_name": "resource-group",
+    "project_name": "project-name"
+
 }
 
 
@@ -114,7 +115,7 @@ def run_safety_evaluators():
 
 
 def run_qa_evaluator():
-    qa_eval = QAEvaluator(model_config=model_config, deployment_name="gpt-4")
+    qa_eval = QAEvaluator(model_config=model_config, deployment_name=deployment_name)
 
     score = qa_eval(
         question="Tokyo is the capital of which country?",
@@ -128,7 +129,7 @@ def run_qa_evaluator():
 
 
 def run_chat_evaluator():
-    chat_eval = ChatEvaluator(model_config=model_config, deployment_name="gpt-4")
+    chat_eval = ChatEvaluator(model_config=model_config, deployment_name=deployment_name)
 
     conversation = [
         {"role": "user", "content": "What is the value of 2 + 2?"},
