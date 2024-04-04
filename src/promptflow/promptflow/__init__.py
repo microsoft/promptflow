@@ -8,14 +8,23 @@ from typing import Any
 
 # Note: Keep old import ensure import order
 # Keep old import as hidden to let __getattr__ works
-from promptflow._core.metric_logger import log_metric as _log_metric
-from promptflow._core.tool import ToolProvider as _ToolProvider
-from promptflow._core.tool import tool as _tool
+try:
+    from promptflow._core.metric_logger import log_metric as _log_metric
+    from promptflow._core.tool import ToolProvider as _ToolProvider
+    from promptflow._core.tool import tool as _tool
 
-# control plane sdk functions
-from promptflow._sdk._load_functions import load_flow as _load_flow
-from promptflow._sdk._load_functions import load_run as _load_run
-from promptflow._sdk._pf_client import PFClient as _PFClient
+    # control plane sdk functions
+    from promptflow._sdk._load_functions import load_flow as _load_flow
+    from promptflow._sdk._load_functions import load_run as _load_run
+    from promptflow._sdk._pf_client import PFClient as _PFClient
+except ImportError:
+    raise Exception(
+        "Promptflow not installed correctly. If you are upgrading from 'promptflow<1.8.0' to 'promptflow>=1.8.0', "
+        "please run 'pip uninstall -y promptflow promptflow-core promptflow-devkit promptflow-azure', "
+        "then 'pip install promptflow>=1.8.0'. Reach "
+        "https://microsoft.github.io/promptflow/how-to-guides/faq.html#promptflow-1-8-0-upgrade-guide "
+        "for more information."
+    )
 
 # flake8: noqa
 from ._version import VERSION

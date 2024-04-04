@@ -28,12 +28,12 @@ import keyring
 import pydash
 from cryptography.fernet import Fernet
 from filelock import FileLock
-from jinja2 import Template
 from keyring.errors import NoKeyringError
 from marshmallow import ValidationError
 
 import promptflow
 from promptflow._constants import ENABLE_MULTI_CONTAINER_KEY, EXTENSION_UA, FlowLanguage
+from promptflow._core.entry_meta_generator import generate_flow_meta as _generate_flow_meta
 from promptflow._sdk._constants import (
     AZURE_WORKSPACE_REGEX_FORMAT,
     DAG_FILE_NAME,
@@ -63,13 +63,15 @@ from promptflow._sdk._errors import (
     UnsecureConnectionError,
 )
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
-from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
 from promptflow.contracts.tool import ToolType
-from promptflow.core._utils import generate_flow_meta as _generate_flow_meta
-from promptflow.core._utils import get_used_connection_names_from_dict, update_dict_value_with_connections
+from promptflow.core._utils import (
+    get_used_connection_names_from_dict,
+    render_jinja_template_content,
+    update_dict_value_with_connections,
+)
 from promptflow.exceptions import ErrorTarget, UserErrorException, ValidationException
 
 logger = get_cli_sdk_logger()
@@ -193,8 +195,9 @@ def load_from_dict(schema: Any, data: Dict, context: Dict, additional_message: s
 
 def render_jinja_template(template_path, *, trim_blocks=True, keep_trailing_newline=True, **kwargs):
     with open(template_path, "r", encoding=DEFAULT_ENCODING) as f:
-        template = Template(f.read(), trim_blocks=trim_blocks, keep_trailing_newline=keep_trailing_newline)
-    return template.render(**kwargs)
+        return render_jinja_template_content(
+            f.read(), trim_blocks=trim_blocks, keep_trailing_newline=keep_trailing_newline, **kwargs
+        )
 
 
 def print_yellow_warning(message):
@@ -928,20 +931,6 @@ def parse_otel_span_status_code(value: int) -> str:
         return "Ok"
     else:
         return "Error"
-
-
-def _generate_meta_from_file(working_dir, source_path, entry, meta_dict, exception_list):
-    from promptflow._core.tool_meta_generator import generate_flow_meta_dict_by_file
-
-    with _change_working_dir(working_dir), inject_sys_path(working_dir):
-        try:
-            result = generate_flow_meta_dict_by_file(
-                path=source_path,
-                entry=entry,
-            )
-            meta_dict.update(result)
-        except Exception as e:
-            exception_list.append(str(e))
 
 
 def extract_workspace_triad_from_trace_provider(trace_provider: str) -> AzureMLWorkspaceTriad:
