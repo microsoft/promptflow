@@ -1,6 +1,6 @@
 import pytest
 from promptflow.evals.evaluators import ChatEvaluator
-from promptflow.entities import AzureOpenAIConnection
+from promptflow.connections import AzureOpenAIConnection
 
 
 @pytest.mark.unittest
