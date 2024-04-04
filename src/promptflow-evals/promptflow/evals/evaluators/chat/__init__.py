@@ -4,7 +4,7 @@
 
 __path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
 
-from promptflow.entities import AzureOpenAIConnection
+from promptflow.connections import AzureOpenAIConnection
 from promptflow.evals.evaluators import GroundednessEvaluator, RelevanceEvaluator, CoherenceEvaluator, FluencyEvaluator
 from typing import List, Dict
 from concurrent.futures import ThreadPoolExecutor, as_completed
