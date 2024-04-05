@@ -1,19 +1,14 @@
 import json
 import multiprocessing
-import os
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 from pytest_mock import MockerFixture
 
+from promptflow.executor._line_execution_process_pool import _process_wrapper
+from promptflow.executor._process_manager import create_spawned_fork_process_manager
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
-
-from .utils import _run_in_subprocess
-
-PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
-CONNECTION_FILE = (PROMOTFLOW_ROOT / "promptflow-evals/connections.json").resolve().absolute().as_posix()
-
 
 try:
     from promptflow.recording.local import recording_array_reset
@@ -36,7 +31,9 @@ except ImportError:
         return False
 
 
-RECORDINGS_TEST_CONFIGS_ROOT = PROMOTFLOW_ROOT / "promptflow-recording/recordings/local"
+PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
+CONNECTION_FILE = (PROMOTFLOW_ROOT / "promptflow-evals/connections.json").resolve().absolute().as_posix()
+RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMOTFLOW_ROOT / "promptflow-recording/recordings/local").resolve()
 
 
 def pytest_configure():
@@ -55,15 +52,6 @@ def dev_connections() -> dict:
         return json.load(f)
 
 
-@pytest.fixture
-def project_scope() -> dict:
-    return {
-        "subscription_id": os.environ.get("DEFAULT_SUBSCRIPTION_ID"),
-        "resource_group_name": os.environ.get("DEFAULT_RESOURCE_GROUP_NAME"),
-        "project_name": os.environ.get("DEFAULT_WORKSPACE_NAME"),
-    }
-
-
 # ==================== Recording injection ====================
 # To inject patches in subprocesses, add new mock method in setup_recording_injection_if_enabled
 # in fork mode, this is automatically enabled.
@@ -74,8 +62,10 @@ SpawnProcess = multiprocessing.get_context("spawn").Process
 
 class MockSpawnProcess(SpawnProcess):
     def __init__(self, group=None, target=None, *args, **kwargs):
-        if target == _run_in_subprocess:
-            target = _run_in_subprocess_with_recording
+        if target == _process_wrapper:
+            target = _mock_process_wrapper
+        if target == create_spawned_fork_process_manager:
+            target = _mock_create_spawned_fork_process_manager
         super().__init__(group, target, *args, **kwargs)
 
 
@@ -145,6 +135,11 @@ def setup_recording_injection_if_enabled():
     return patches
 
 
-def _run_in_subprocess_with_recording(queue, func, args, kwargs):
+def _mock_process_wrapper(*args, **kwargs):
     setup_recording_injection_if_enabled()
-    return _run_in_subprocess(queue, func, args, kwargs)
+    return _process_wrapper(*args, **kwargs)
+
+
+def _mock_create_spawned_fork_process_manager(*args, **kwargs):
+    setup_recording_injection_if_enabled()
+    return create_spawned_fork_process_manager(*args, **kwargs)
