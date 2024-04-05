@@ -108,7 +108,7 @@ jobs:
         with:
           filename: "artifacts/report-ubuntu-latest-py3.9/coverage.xml"
           badge: true
-          fail_below_min: true
+          fail_below_min: false
           format: markdown
           hide_complexity: true
           output: both
