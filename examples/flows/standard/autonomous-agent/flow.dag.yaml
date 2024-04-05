@@ -9,6 +9,14 @@ inputs:
   role:
     type: string
     default: "an AI specialized in film trivia that provides accurate and up-to-date information about movies, directors, actors, and more."
+  tokens_per_message:
+    type: int
+    default: 3
+    description: "This parameter is related with the model_or_deployment_name used in this flow, such as gpt-4 in this sample."
+  tokens_per_name:
+    type: int
+    default: 1
+    description: "This parameter is related with the model_or_deployment_name used in this flow, such as gpt-4 in this sample."
 outputs:
   output:
     type: string
@@ -26,6 +34,8 @@ nodes:
     system_prompt: ${system_prompt.output}
     triggering_prompt: ${triggering_prompt.output}
     user_prompt: ${user_prompt.output}
+    tokens_per_message: ${inputs.tokens_per_message}
+    tokens_per_name: ${inputs.tokens_per_name}
 - name: system_prompt
   type: prompt
   source:
