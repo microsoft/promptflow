@@ -5,6 +5,7 @@
 """Question-Answer Data Generator."""
 
 import asyncio
+import logging
 import os
 import time
 from collections import defaultdict
@@ -17,6 +18,8 @@ from azure.core.tracing.decorator import distributed_trace
 from packaging import version
 
 from promptflow._sdk._telemetry import ActivityType, monitor_operation
+
+logger = logging.getLogger(__name__)
 
 try:
     import pkg_resources  # type: ignore[import]
@@ -37,7 +40,7 @@ try:
         )
 
 except ImportError as e:
-    print("In order to use qa, please install the 'prompflow-evals' extra of promptflow")
+    logger.critical("In order to use qa, please install 'prompflow-evals")
     raise e
 
 _TEMPLATES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates")
@@ -364,7 +367,6 @@ class QADataGenerator:
                 chat_history = []
                 for question, answer in qs_and_as:
                     if qa_type == QAType.CONVERSATION:
-                        print(f"Chat data dict: {data_dict['messages']}\n\n")
                         chat_history.append({"role": "user", "content": question})
                         chat_history.append({"role": "assistant", "content": answer})
                         data_dict["messages"].append(list(chat_history))
@@ -377,7 +379,7 @@ class QADataGenerator:
         try:
             import pandas as pd
         except ImportError as ie:
-            print("In order to write qa data to file, please install pandas")
+            logger.critical("In order to write qa data to file, please install pandas")
             raise ie
 
         data_df = pd.DataFrame(data_dict, columns=list(data_dict.keys()))
