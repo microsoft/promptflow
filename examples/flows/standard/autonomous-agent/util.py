@@ -122,7 +122,8 @@ def create_chat_message(role, content, name=None):
         return {"role": role, "name": name, "content": content}
 
 
-def generate_context(prompt, full_message_history, user_prompt, model="gpt-3.5-turbo"):
+def generate_context(prompt, full_message_history, user_prompt, tokens_per_message, tokens_per_name,
+                     model="gpt-3.5-turbo"):
     current_context = [
         create_chat_message("system", prompt),
         create_chat_message(
@@ -135,7 +136,7 @@ def generate_context(prompt, full_message_history, user_prompt, model="gpt-3.5-t
     next_message_to_add_index = len(full_message_history) - 1
     insertion_index = len(current_context)
     # Count the currently used tokens
-    current_tokens_used = count_message_tokens(current_context, model)
+    current_tokens_used = count_message_tokens(current_context, tokens_per_message, tokens_per_name, model)
     return (
         next_message_to_add_index,
         current_tokens_used,

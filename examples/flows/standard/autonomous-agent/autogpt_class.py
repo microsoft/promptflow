@@ -42,7 +42,8 @@ class AutoGPT:
             current_tokens_used,
             insertion_index,
             current_context,
-        ) = generate_context(self.system_prompt, self.full_message_history, self.user_prompt)
+        ) = generate_context(self.system_prompt, self.full_message_history, self.user_prompt, self.tokens_per_message,
+                             self.tokens_per_name)
         # Account for user input (appended later)
         current_tokens_used += count_message_tokens([create_chat_message("user", self.triggering_prompt)],
                                                     self.tokens_per_message, self.tokens_per_name)
