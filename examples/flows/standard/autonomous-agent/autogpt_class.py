@@ -44,13 +44,15 @@ class AutoGPT:
             current_context,
         ) = generate_context(self.system_prompt, self.full_message_history, self.user_prompt)
         # Account for user input (appended later)
-        current_tokens_used += count_message_tokens([create_chat_message("user", self.triggering_prompt)], self.tokens_per_message, self.tokens_per_name)
+        current_tokens_used += count_message_tokens([create_chat_message("user", self.triggering_prompt)],
+                                                    self.tokens_per_message, self.tokens_per_name)
         current_tokens_used += 500  # Account for memory (appended later)
         # Add Messages until the token limit is reached or there are no more messages to add.
         while next_message_to_add_index >= 0:
             message_to_add = self.full_message_history[next_message_to_add_index]
 
-            tokens_to_add = count_message_tokens([message_to_add])
+            tokens_to_add = count_message_tokens([message_to_add], self.tokens_per_message,
+                                                 self.tokens_per_name)
             if current_tokens_used + tokens_to_add > send_token_limit:
                 break
 

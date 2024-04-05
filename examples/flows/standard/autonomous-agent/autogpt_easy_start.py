@@ -6,7 +6,8 @@ from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 
 @tool
 def autogpt_easy_start(connection: Union[AzureOpenAIConnection, OpenAIConnection], system_prompt: str, user_prompt: str,
-                       triggering_prompt: str, functions: list, model_or_deployment_name: str, tokens_per_message: int, tokens_per_name: int):
+                       triggering_prompt: str, functions: list, model_or_deployment_name: str, tokens_per_message: int,
+                       tokens_per_name: int):
     from wiki_search import search
     from python_repl import python
     from autogpt_class import AutoGPT
