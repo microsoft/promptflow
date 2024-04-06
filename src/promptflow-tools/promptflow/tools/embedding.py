@@ -19,20 +19,21 @@ class EmbeddingModel(str, Enum):
 @tool
 @handle_openai_error()
 def embedding(connection: Union[AzureOpenAIConnection, OpenAIConnection], input: str, deployment_name: str = "",
-              model: EmbeddingModel = EmbeddingModel.TEXT_EMBEDDING_ADA_002):
+              model: EmbeddingModel = EmbeddingModel.TEXT_EMBEDDING_ADA_002, dimensions: int = None):
+    params = {
+        "input": input
+    }
+    if dimensions is not None:
+        params["dimensions"] = dimensions
     if isinstance(connection, AzureOpenAIConnection):
         client = init_azure_openai_client(connection)
-        return client.embeddings.create(
-            input=input,
-            model=deployment_name,
-            extra_headers={"ms-azure-ai-promptflow-called-from": "aoai-tool"}
-        ).data[0].embedding
+        params["model"] = deployment_name
+        params["extra_headers"] = {"ms-azure-ai-promptflow-called-from": "aoai-tool"}
+        return client.embeddings.create(**params).data[0].embedding
     elif isinstance(connection, OpenAIConnection):
         client = init_openai_client(connection)
-        return client.embeddings.create(
-            input=input,
-            model=model
-        ).data[0].embedding
+        params["model"] = model
+        return client.embeddings.create(**params).data[0].embedding
     else:
         error_message = f"Not Support connection type '{type(connection).__name__}' for embedding api. " \
                         f"Connection type should be in [AzureOpenAIConnection, OpenAIConnection]."

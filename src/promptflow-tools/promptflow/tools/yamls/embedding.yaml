@@ -30,6 +30,10 @@ promptflow.tools.embedding.embedding:
       - text-search-ada-doc-001
       - text-search-ada-query-001
       allow_manual_entry: true
+    dimensions:
+      default: ""
+      type:
+      - int
     input:
       type:
       - string
