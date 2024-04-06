@@ -103,6 +103,50 @@ class TestFlowRun:
         assert run2.name == name2
         assert run2._resume_from == run.name
 
+    def test_run_resume_token(self, pf: PFClient, randstr: Callable[[str], str]):
+        name = "resume_from_run_token"
+        try:
+            original_run = pf.runs.get(run=name)
+        except RunNotFoundError:
+            original_run = pf.run(
+                flow=f"{FLOWS_DIR}/web_classification_random_fail",
+                data=f"{FLOWS_DIR}/web_classification_random_fail/data.jsonl",
+                column_mapping={"url": "${data.url}"},
+                variant="${summarize_text_content.variant_0}",
+                name=name,
+            )
+        assert isinstance(original_run, Run)
+        assert original_run.name == name
+        original_token = original_run.properties["azureml.promptflow.total_tokens"]
+
+        resume_name = randstr("name")
+        resume_run = pf.run(resume_from=original_run, name=resume_name)
+        assert isinstance(resume_run, Run)
+        assert resume_run.name == resume_name
+        assert resume_run._resume_from == original_run.name
+        resume_token = resume_run.properties["azureml.promptflow.total_tokens"]
+        assert original_token < resume_token
+
+    def test_run_resume_with_image_aggregation(self, pf: PFClient, randstr: Callable[[str], str]):
+        name = "resume_from_run_with_image_aggregation"
+        try:
+            original_run = pf.runs.get(run=name)
+        except RunNotFoundError:
+            original_run = pf.run(
+                flow=f"{FLOWS_DIR}/eval_flow_with_image_resume_random_fail",
+                data=f"{FLOWS_DIR}/eval_flow_with_image_resume_random_fail/data.jsonl",
+                column_mapping={"url": "${data.url}"},
+                variant="${summarize_text_content.variant_0}",
+                name=name,
+            )
+        assert isinstance(original_run, Run)
+        assert original_run.name == name
+        resume_name = randstr("name")
+        resume_run = pf.run(resume_from=original_run, name=resume_name)
+        assert isinstance(resume_run, Run)
+        assert resume_run.name == resume_name
+        assert resume_run._resume_from == original_run.name
+
     def test_run_bulk_from_yaml(self, pf, runtime: str, randstr: Callable[[str], str]):
         run_id = randstr("run_id")
         run = load_run(
