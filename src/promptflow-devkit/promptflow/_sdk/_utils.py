@@ -373,6 +373,34 @@ def get_promptflow_azure_version() -> Union[str, None]:
         return None
 
 
+def print_promptflow_version_dict_string(with_azure: bool = False, ignore_none: bool = False):
+    version_dict = {"promptflow": get_promptflow_sdk_version()}
+    # check tracing version
+    version_tracing = get_promptflow_tracing_version()
+    if version_tracing:
+        version_dict["promptflow-tracing"] = version_tracing
+    # check core version
+    version_core = get_promptflow_core_version()
+    if version_core:
+        version_dict["promptflow-core"] = version_core
+    # check devkit version
+    version_devkit = get_promptflow_devkit_version()
+    if version_devkit:
+        version_dict["promptflow-devkit"] = version_devkit
+
+    if with_azure:
+        # check azure version
+        version_azure = get_promptflow_azure_version()
+        if version_azure:
+            version_dict["promptflow-azure"] = version_azure
+    if ignore_none:
+        version_dict = {k: v for k, v in version_dict.items() if v is not None}
+    version_dict_string = (
+        json.dumps(version_dict, ensure_ascii=False, indent=2, sort_keys=True, separators=(",", ": ")) + "\n"
+    )
+    print(version_dict_string)
+
+
 def print_pf_version(with_azure: bool = False):
     version_promptflow = get_promptflow_sdk_version()
     if version_promptflow:

@@ -156,6 +156,7 @@ def make_response_no_content():
 
 
 def get_pfs_version():
+    """Promptflow service show promptflow version if installed from root, else devkit version"""
     version_promptflow = get_promptflow_sdk_version()
     if version_promptflow:
         return version_promptflow

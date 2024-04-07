@@ -110,6 +110,7 @@ def upgrade_version(args):
     importlib.reload(json)
 
     version_result = subprocess.check_output(["pf", "version"], shell=platform.system() == "Windows")
+    # Remove ANSI codes which control color and format of text in the console output.
     version_result = version_result.decode().replace("\x1b[0m", "").strip()
     version_json = json.loads(version_result)
     new_version = version_json["promptflow"]
