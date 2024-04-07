@@ -14,7 +14,7 @@ from promptflow.connections import AzureOpenAIConnection, OpenAIConnection, Serv
 
 def get_cloud_connection(connection_name, subscription_id, resource_group_name, workspace_name):
     try:
-        # TODO: remove pf-azure, and azure dependencies by moving build_connection_dict process before calling tool func.
+        # TODO: remove pf-azure dependencies by using ConnectionProvider.get_instance() method.
         credential = _get_credential()
         from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
 
@@ -31,7 +31,7 @@ def get_cloud_connection(connection_name, subscription_id, resource_group_name, 
     
 def get_local_connection(connection_name):
     try:
-        # TODO: remove pf-devkit dependencies by moving build_connection_dict process before calling tool func.
+        # TODO: remove pf-devkit dependencies by using ConnectionProvider.get_instance() method.
         from promptflow import PFClient
 
         pf = PFClient()
@@ -97,6 +97,7 @@ def llm(
     best_of: int = 1,
     **kwargs,
 ):
+    # TODO: get rid of `register_apis` dependency from llm.py.
     if isinstance(connection, AzureOpenAIConnection):
         if api == "completion":
             return AzureOpenAI(connection).completion(
