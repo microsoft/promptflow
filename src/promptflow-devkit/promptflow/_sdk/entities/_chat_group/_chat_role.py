@@ -48,6 +48,7 @@ class ChatRole:
                  init_kwargs: Optional[Dict[str, Any]] = None,
                  **kwargs):
         self._role = role
+        logger.warning(f"Working dir is {working_dir}")
         if working_dir is None:
             flow_path = Path(flow).resolve()
         else:
