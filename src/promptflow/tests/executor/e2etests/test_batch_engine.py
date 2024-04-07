@@ -538,7 +538,7 @@ class TestBatch:
             input_file_name,
             dev_connections):
         simulation_role = ChatRole(
-            flow="flow.dag.yaml",  # use yaml file, similar with runtime payload
+            flow=get_yaml_file(simulation_flow),
             role="user",
             name="simulator",
             stop_signal="[STOP]",
@@ -551,7 +551,7 @@ class TestBatch:
             }
         )
         copilot_role = ChatRole(
-            flow="flow.dag.yaml",
+            flow=get_yaml_file(copilot_flow),
             role="assistant",
             name="copilot",
             stop_signal="[STOP]",
