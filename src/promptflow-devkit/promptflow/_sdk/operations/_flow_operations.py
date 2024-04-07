@@ -1063,7 +1063,7 @@ class FlowOperations(TelemetryMixin):
         entry: Union[str, Callable],
         code: Union[str, PathLike, None] = None,
         *,
-        python_requirements: str = None,
+        python_requirements_txt: str = None,
         image: str = None,
         signature: dict = None,
         input_sample: dict = None,
@@ -1078,9 +1078,9 @@ class FlowOperations(TelemetryMixin):
         :type entry: str
         :param code: path to the code directory
         :type code: Union[str, PathLike]
-        :param python_requirements: path to the python requirements file. If not specified, will use `requirements.txt`
-              if existed in code directory.
-        :type python_requirements: str
+        :param python_requirements_txt: path to the python requirements file. If not specified, will use
+              `requirements.txt` if existed in code directory.
+        :type python_requirements_txt: str
         :param image: image to run the flow. Will use default image if not specified.
         :type image: str
         :param signature: signature of the flow, indicates the input and output ports of the flow
@@ -1124,7 +1124,7 @@ class FlowOperations(TelemetryMixin):
 
         # python_requirements_txt
         # avoid editing the original python_requirements as it will be used in copy stage
-        _python_requirements = self._resolve_requirements_txt(python_requirements, code)
+        _python_requirements = self._resolve_requirements_txt(python_requirements_txt, code)
         if _python_requirements:
             pydash.set_(data, "environment.python_requirements_txt", _python_requirements)
 
@@ -1143,8 +1143,8 @@ class FlowOperations(TelemetryMixin):
 
         # TODO: handle ignore
         shutil.copytree(code, target_flow_directory)
-        if python_requirements:
-            shutil.copy(python_requirements, target_flow_directory / Path(python_requirements).name)
+        if python_requirements_txt:
+            shutil.copy(python_requirements_txt, target_flow_directory / Path(python_requirements_txt).name)
         if input_sample:
             with open(target_flow_directory / SERVE_SAMPLE_JSON_PATH, "w", encoding=DEFAULT_ENCODING) as f:
                 json.dump(input_sample, f, indent=4)

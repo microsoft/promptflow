@@ -202,7 +202,7 @@ def _parse_tool_from_function(
             for k, v in ports.items():
                 if ValueType.OBJECT not in v.type:
                     continue
-                if resolve_annotation(fields[k]) != dict:
+                if resolve_annotation(fields[k]) not in [dict, inspect.Signature.empty]:
                     raise BadFunctionInterface(
                         message_format=(
                             "Parse interface for tool '{tool_name}' failed: "

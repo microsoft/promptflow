@@ -50,6 +50,10 @@ def global_hello(text: str) -> str:
     return f"Hello {text}!"
 
 
+def global_hello_no_hint(text) -> str:
+    return f"Hello {text}!"
+
+
 @pytest.mark.usefixtures(
     "use_secrets_config_file", "recording_injection", "setup_local_connection", "install_custom_tool_pkg"
 )
@@ -443,3 +447,18 @@ class TestFlowSave:
 
         with pytest.raises(UserErrorException, match="Schema validation failed: {'init.words.type'"):
             pf.flows._infer_signature(entry=GlobalHelloWithInvalidInit)
+
+        flow_meta, code = pf.flows._infer_signature(entry=global_hello_no_hint)
+        assert flow_meta == {
+            "inputs": {
+                "text": {
+                    # port without type hint will be treated as a dict
+                    "type": "object",
+                }
+            },
+            "outputs": {
+                "output": {
+                    "type": "string",
+                },
+            },
+        }
