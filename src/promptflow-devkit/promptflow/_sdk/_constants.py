@@ -297,7 +297,6 @@ class CLIListOutputFormat:
 
 class LocalStorageFilenames:
     SNAPSHOT_FOLDER = "snapshot"
-    DAG = DAG_FILE_NAME
     FLOW_TOOLS_JSON = FLOW_TOOLS_JSON
     INPUTS = "inputs.jsonl"
     OUTPUTS = "outputs.jsonl"

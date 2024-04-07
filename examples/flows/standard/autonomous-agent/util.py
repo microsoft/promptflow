@@ -38,7 +38,7 @@ def parse_reply(text: str):
 
 
 def count_message_tokens(
-    messages: List, model: str = "gpt-3.5-turbo-0301"
+    messages: List, tokens_per_message: int, tokens_per_name: int, model: str = "gpt-3.5-turbo-0301"
 ) -> int:
     """
     Returns the number of tokens used by a list of messages.
@@ -52,6 +52,8 @@ def count_message_tokens(
     Returns:
         int: The number of tokens used by the list of messages.
     """
+    tokens_per_message = tokens_per_message
+    tokens_per_name = tokens_per_name
     try:
         encoding = tiktoken.encoding_for_model(model)
     except KeyError:
@@ -59,10 +61,10 @@ def count_message_tokens(
     if model == "gpt-3.5-turbo":
         # !Note: gpt-3.5-turbo may change over time.
         # Returning num tokens assuming gpt-3.5-turbo-0301.")
-        return count_message_tokens(messages, model="gpt-3.5-turbo-0301")
+        return count_message_tokens(messages, tokens_per_message, tokens_per_name, model="gpt-3.5-turbo-0301")
     elif model == "gpt-4":
         # !Note: gpt-4 may change over time. Returning num tokens assuming gpt-4-0314.")
-        return count_message_tokens(messages, model="gpt-4-0314")
+        return count_message_tokens(messages, tokens_per_message, tokens_per_name, model="gpt-4-0314")
     elif model == "gpt-3.5-turbo-0301":
         tokens_per_message = (
             4  # every message follows <|start|>{role/name}\n{content}<|end|>\n
@@ -74,7 +76,7 @@ def count_message_tokens(
     else:
         raise NotImplementedError(
             f"num_tokens_from_messages() is not implemented for model {model}.\n"
-            " See https://github.com/openai/openai-python/blob/main/chatml.md for"
+            " See https://cookbook.openai.com/examples/how_to_count_tokens_with_tiktoken for"
             " information on how messages are converted to tokens."
         )
     num_tokens = 0
@@ -120,7 +122,8 @@ def create_chat_message(role, content, name=None):
         return {"role": role, "name": name, "content": content}
 
 
-def generate_context(prompt, full_message_history, user_prompt, model="gpt-3.5-turbo"):
+def generate_context(prompt, full_message_history, user_prompt, tokens_per_message, tokens_per_name,
+                     model="gpt-3.5-turbo"):
     current_context = [
         create_chat_message("system", prompt),
         create_chat_message(
@@ -133,7 +136,7 @@ def generate_context(prompt, full_message_history, user_prompt, model="gpt-3.5-t
     next_message_to_add_index = len(full_message_history) - 1
     insertion_index = len(current_context)
     # Count the currently used tokens
-    current_tokens_used = count_message_tokens(current_context, model)
+    current_tokens_used = count_message_tokens(current_context, tokens_per_message, tokens_per_name, model)
     return (
         next_message_to_add_index,
         current_tokens_used,
