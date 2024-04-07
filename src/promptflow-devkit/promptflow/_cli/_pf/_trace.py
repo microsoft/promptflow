@@ -5,8 +5,8 @@
 import argparse
 import typing
 
-from promptflow._cli._params import base_params
-from promptflow._cli._utils import activate_action
+from promptflow._cli._params import add_param_yes, base_params
+from promptflow._cli._utils import activate_action, confirm
 from promptflow._sdk._pf_client import PFClient
 
 _client: typing.Optional[PFClient] = None
@@ -63,6 +63,7 @@ pf trace delete --collection <collection> --started-before '2024-03-19T15:17:23.
         _add_param_run,
         _add_param_collection,
         _add_param_started_before,
+        add_param_yes,
     ] + base_params
     activate_action(
         name="delete",
@@ -76,8 +77,23 @@ pf trace delete --collection <collection> --started-before '2024-03-19T15:17:23.
 
 
 def delete_trace(args: argparse.Namespace) -> None:
-    _get_pf_client().traces.delete(
+    skip_confirm = args.yes
+    client = _get_pf_client()
+    if not skip_confirm:
+        num_traces = client.traces.delete(
+            run=args.run,
+            collection=args.collection,
+            started_before=args.started_before,
+            dry_run=True,
+        )
+        prompt_msg = f"This delete operation will delete {num_traces} traces permanently, " "are you sure to continue?"
+        if not confirm(prompt_msg, skip_confirm=False):
+            print("The delete operation is canceled.")
+            return
+
+    num_traces = client.traces.delete(
         run=args.run,
         collection=args.collection,
         started_before=args.started_before,
     )
+    print(f"Delete {num_traces} traces successfully.")
