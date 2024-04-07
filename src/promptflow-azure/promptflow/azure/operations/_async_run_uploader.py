@@ -9,7 +9,7 @@ from azure.storage.blob.aio import BlobServiceClient
 from promptflow._cli._utils import merge_jsonl_files
 from promptflow._constants import OutputsFolderName
 from promptflow._sdk._constants import Local2Cloud, LocalStorageFilenames
-from promptflow._sdk._errors import UploadInternalError, UploadUserError, UserAuthenticationError
+from promptflow._sdk._errors import RunNotFoundError, UploadInternalError, UploadUserError, UserAuthenticationError
 from promptflow._sdk.entities import Run
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure._storage.blob.client import _get_datastore_credential
@@ -47,8 +47,26 @@ class AsyncRunUploader:
         credential = _get_datastore_credential(self.datastore, self.run_ops._datastore_operations)
         return BlobServiceClient(account_url=account_url, credential=credential)
 
+    def _check_run_exists(self):
+        """Check if run exists in cloud."""
+        try:
+            self.run_ops.get(self.run.name)
+        except RunNotFoundError:
+            # go ahead to upload if run does not exist
+            pass
+        else:
+            msg_prefix = f"Run record {self.run.name!r} already exists in cloud"
+            if self.overwrite is True:
+                logger.warning(f"{msg_prefix}. Overwrite is set to True, will overwrite existing run record.")
+            else:
+                raise UploadUserError(f"{msg_prefix}. Overwrite is set to False, cannot upload the run record.")
+
     async def upload(self) -> Dict:
         """Upload run record to cloud."""
+        # check if run already exists in cloud
+        self._check_run_exists()
+
+        # upload run details to cloud
         error_msg_prefix = f"Failed to upload run {self.run.name!r}"
         try:
             async with self.blob_service_client:

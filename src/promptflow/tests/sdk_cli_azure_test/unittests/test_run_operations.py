@@ -6,10 +6,12 @@ from azure.ai.ml import ManagedIdentityConfiguration
 from azure.ai.ml.entities import IdentityConfiguration
 from pytest_mock import MockerFixture
 
-from promptflow._sdk._errors import RunOperationParameterError
+from promptflow._sdk._errors import RunOperationParameterError, UploadUserError, UserAuthenticationError
 from promptflow._sdk._utils import parse_otel_span_status_code
 from promptflow._sdk.entities import Run
+from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow.azure import PFClient
+from promptflow.azure.operations._async_run_uploader import AsyncRunUploader
 from promptflow.exceptions import UserErrorException
 
 FLOWS_DIR = "./tests/test_configs/flows"
@@ -118,3 +120,37 @@ class TestRunOperations:
         with pytest.raises(RunOperationParameterError, match="Failed to get default workspace datastore"):
             datastore = pf.runs._workspace_default_datastore
             assert datastore
+
+    def test_upload_run_with_invalid_workspace_datastore(self, pf: PFClient, mocker: MockerFixture):
+        # test download with invalid workspace datastore
+        mocker.patch.object(pf.runs, "_workspace_default_datastore", "test")
+        with pytest.raises(UserErrorException, match="workspace default datastore is not supported"):
+            pf.runs._upload(run="web_classification_variant_0_20240404_162837_477195")
+
+    def test_upload_run_with_running_status(self, pf: PFClient):
+        # test upload run with running status
+        with patch.object(RunOperations, "get") as mock_get:
+            mock_get.return_value.status = "Running"
+            with pytest.raises(UserErrorException, match="Can only upload the run with status"):
+                pf.runs._upload(run="fake_run_name")
+
+    def test_upload_run_with_authentication_error(
+        self,
+        pf: PFClient,
+    ):
+        # test upload run with authentication error
+        from azure.core.exceptions import HttpResponseError
+        from azure.storage.blob.aio._blob_client_async import BlobClient
+
+        response = MagicMock()
+        response.status_code = 403
+        with patch.object(BlobClient, "upload_blob", side_effect=HttpResponseError(response=response)):
+            with pytest.raises(UserAuthenticationError, match="User does not have permission"):
+                pf.runs._upload(run="web_classification_variant_0_20240404_162837_477195")
+
+    def test_upload_run_with_run_exist(self, pf: PFClient):
+        # test upload run with run exist
+        run_uploader = AsyncRunUploader._from_run_operations(run=MagicMock(), run_ops=pf.runs)
+        with patch.object(pf.runs, "get"), patch.object(run_uploader, "overwrite", False):
+            with pytest.raises(UploadUserError, match="cannot upload the run record"):
+                run_uploader._check_run_exists()

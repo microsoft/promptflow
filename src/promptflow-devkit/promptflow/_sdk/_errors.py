@@ -211,18 +211,6 @@ class UploadUserError(SDKError):
     pass
 
 
-class RunHistoryInternalError(SDKInternalError):
-    """Exception raised if run history system error."""
-
-    pass
-
-
-class AssetInternalError(SDKInternalError):
-    """Exception raised if asset system error."""
-
-    pass
-
-
 class UserAuthenticationError(SDKError):
     """Exception raised when user authentication failed"""
 
