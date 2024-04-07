@@ -109,11 +109,10 @@ def resolve_flow_path(
         )
 
     if not (target_folder / target_file).is_file():
-        error = FileNotFoundError(
-            f"Can't find file {FLOW_DAG_YAML} or {FLOW_FLEX_YAML} "
-            f"in the flow path {flow_path.absolute().as_posix()}."
+        raise UserErrorException(
+            f"Can't find file {target_file}, " f"in the flow path {target_folder.absolute().as_posix()}.",
+            privacy_info=[target_folder.absolute().as_posix()],
         )
-        raise UserErrorException(message=str(error), privacy_info=[flow_path.absolute().as_posix()]) from error
 
     return target_folder.resolve().absolute(), target_file
 
