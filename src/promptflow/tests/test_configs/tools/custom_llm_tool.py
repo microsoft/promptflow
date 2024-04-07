@@ -1,7 +1,7 @@
 from jinja2 import Template
 from promptflow.connections import CustomConnection
 
-from promptflow.core import toolProvider, tool
+from promptflow.core import ToolProvider, tool
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.contracts.types import PromptTemplate
 
