@@ -323,3 +323,7 @@ class FlowEntryInitializationError(UserErrorException):
             init_kwargs=init_kwargs,
             ex=ex,
         )
+
+
+class InvalidAggregationInterface(UserErrorException):
+    """Exception raised when aggregation result is invalid."""

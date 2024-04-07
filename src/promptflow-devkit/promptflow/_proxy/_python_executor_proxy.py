@@ -71,6 +71,8 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         aggregation_inputs: Mapping[str, Any],
         run_id: Optional[str] = None,
     ) -> AggregationResult:
+        if isinstance(self._flow_executor, ScriptExecutor):
+            return self._flow_executor._exec_aggregation(batch_inputs, run_id=run_id)
         with self._flow_executor._run_tracker.node_log_manager:
             return self._flow_executor._exec_aggregation(batch_inputs, aggregation_inputs, run_id=run_id)
 

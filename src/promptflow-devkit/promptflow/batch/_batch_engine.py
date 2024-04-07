@@ -110,7 +110,8 @@ class BatchEngine:
         self._flow_file = flow_file
         self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
         if is_prompty_flow(self._flow_file):
-            self._is_eager_flow = True
+            self._is_prompty_flow = True
+            self._is_eager_flow = False
             self._program_language = FlowLanguage.Python
         else:
             self._is_prompty_flow = False
@@ -526,7 +527,27 @@ class BatchEngine:
         run_id: Optional[str] = None,
     ) -> AggregationResult:
         if self._is_eager_flow:
-            return AggregationResult({}, {}, {})
+            run_infos = [r.run_info for r in line_results]
+            succeeded = [i for i, r in enumerate(run_infos) if r.status == Status.Completed]
+            succeeded_line_results = [line_results[i].output for i in succeeded]
+            try:
+                aggr_result = await self._executor_proxy.exec_aggregation_async(
+                    succeeded_line_results, {}, run_id=run_id
+                )
+                bulk_logger.info("Finish executing aggregation function.")
+                return aggr_result
+            except PromptflowException as e:
+                # for PromptflowException, we already do classification, so throw directly.
+                raise e
+            except Exception as e:
+                error_type_and_message = f"({e.__class__.__name__}) {e}"
+                raise UnexpectedError(
+                    message_format=(
+                        "Unexpected error occurred while executing the aggregation function. "
+                        "Please fix or contact support for assistance. The error details: {error_type_and_message}."
+                    ),
+                    error_type_and_message=error_type_and_message,
+                ) from e
         aggregation_nodes = {node.name for node in self._flow.nodes if node.aggregation}
         if not aggregation_nodes:
             return AggregationResult({}, {}, {})
