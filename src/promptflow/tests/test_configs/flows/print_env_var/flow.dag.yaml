@@ -1,7 +1,6 @@
 inputs:
   key:
     type: string
-    default: 'key'
 outputs:
   output:
     type: string
