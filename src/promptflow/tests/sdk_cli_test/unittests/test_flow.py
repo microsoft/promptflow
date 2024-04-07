@@ -67,7 +67,7 @@ class TestRun:
 
         assert error_message in str(e.value)
 
-    def test_mutiple_flow_load(self):
+    def test_multiple_flow_load(self):
         with pytest.raises(ValidationException) as e:
             load_flow(EAGER_FLOWS_DIR / "mutiple_flow_yaml")
 
