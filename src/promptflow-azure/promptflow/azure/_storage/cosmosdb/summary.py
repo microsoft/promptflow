@@ -163,7 +163,8 @@ class Summary:
 
     def _truncate_inputs_outputs_content(self, content):
         def _process_value(value):
-            if isinstance(value, (int, float)):
+            # For python, bool is subclass of int, so we don't need to check bool again.
+            if value is None or isinstance(value, (int, float)):
                 return value
             elif isinstance(value, str):
                 # Truncate string values, use large enough limit for UX display.

@@ -348,6 +348,7 @@ class TestSummary:
             [123, 123],
             [3.14, 3.14],
             [True, True],
+            [None, None],
         ],
     )
     def test_truncate_inputs_outputs_content(self, content, expected_result):
