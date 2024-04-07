@@ -702,12 +702,13 @@ class Flow(FlowBase):
         sys.path.insert(0, str(working_dir))
 
     @classmethod
-    def from_yaml(cls, flow_file: Path, working_dir=None, fallback_name=None) -> "Flow":
+    def from_yaml(cls, flow_file: Path, working_dir=None, name=None) -> "Flow":
         """Load flow from yaml file."""
         working_dir = cls._parse_working_dir(flow_file, working_dir)
         with open(working_dir / flow_file, "r", encoding=DEFAULT_ENCODING) as fin:
             flow_dag = load_yaml(fin)
-        fallback_name = _sanitize_python_variable_name(working_dir.stem) if not fallback_name else fallback_name
+        # Name priority: name from yaml content > name from payload > working_dir.stem
+        fallback_name = _sanitize_python_variable_name(working_dir.stem) if not name else name
         flow_dag["name"] = flow_dag.get("name", fallback_name)
         return Flow._from_dict(flow_dag=flow_dag, working_dir=working_dir)
 
