@@ -20,7 +20,7 @@ from promptflow._utils.yaml_utils import load_yaml
 from promptflow.connections import ConnectionProvider
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.tool import ConnectionType
-from promptflow.executor._result import LineResult
+from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DefaultRunStorage
 from promptflow.tracing._trace import _traced
@@ -46,6 +46,7 @@ class ScriptExecutor(FlowExecutor):
         self._flow_file = flow_file
         self._init_kwargs = init_kwargs or {}
         self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
+        self._aggregate_method = None
         self._initialize_function()
         self._connections = connections
         self._storage = storage or DefaultRunStorage()
@@ -54,6 +55,27 @@ class ScriptExecutor(FlowExecutor):
         self._line_timeout_sec = 600
         self._message_format = MessageFormatType.BASIC
         self._multimedia_processor = BasicMultimediaProcessor()
+
+    @property
+    def has_aggregation_node(self):
+        return self._aggregate_method is not None
+
+    def _exec_aggregation(
+        self, inputs: Mapping[LINE_NUMBER_KEY, Any], aggregation_inputs: Mapping[LINE_NUMBER_KEY, Any], run_id=None
+    ) -> AggregationResult:
+        metrics = {}
+
+        def _log_metric(key, value):
+            metrics[key] = value
+
+        from promptflow._core.metric_logger import add_metric_logger, remove_metric_logger
+
+        add_metric_logger(_log_metric)
+        try:
+            output = self._aggregate_method(aggregation_inputs)
+        finally:
+            remove_metric_logger(_log_metric)
+        return AggregationResult(output, metrics, {})
 
     def exec_line(
         self,
@@ -177,6 +199,7 @@ class ScriptExecutor(FlowExecutor):
                 except Exception as e:
                     raise FlowEntryInitializationError(init_kwargs=self._init_kwargs, ex=e) from e
                 func = getattr(obj, "__call__")
+                self._aggregate_method = getattr(obj, "__aggregate__", None)
             else:
                 raise PythonLoadError(
                     message_format="Python class entry '{func_name}' does not have __call__ method.",
