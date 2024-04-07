@@ -112,6 +112,14 @@ class ChatRole:
         """Flow definition of the chat role"""
         return self._flow_definition
 
+    @property
+    def working_dir(self):
+        return self._working_dir
+
+    @property
+    def output_dir(self):
+        return self._output_dir
+
     def _validate_flow(self, flow_path: Path):
         """Validate flow"""
         logger.debug(f"Validating chat role flow source {flow_path!r}")
@@ -185,7 +193,7 @@ class ChatRole:
         return result
 
     def check_language_from_yaml(self):
-        flow_file = self._working_dir / self._flow_file if self._working_dir else self._flow_file
+        flow_file = self._working_dir / self._flow_file if self.working_dir else self._flow_file
         if flow_file.suffix.lower() == ".dll":
             return FlowLanguage.CSharp
         with open(flow_file, "r", encoding="utf-8") as fin:

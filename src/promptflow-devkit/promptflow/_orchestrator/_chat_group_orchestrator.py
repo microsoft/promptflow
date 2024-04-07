@@ -84,7 +84,7 @@ class ChatGroupOrchestrator:
         for chat_role in self._chat_group_roles:
             executor_proxy = executor_proxy_factory.create_executor_proxy(
                 flow_file=chat_role._flow_file,
-                working_dir=chat_role._working_dir,
+                working_dir=chat_role.working_dir,
                 connections=chat_role._connections,
                 storage=self._storage,
                 language=chat_role.check_language_from_yaml(),
@@ -237,7 +237,7 @@ class ChatGroupOrchestrator:
                 raise MultipleConversationHistoryInputsMapping(message=message)
 
             batch_input_processor = BatchInputsProcessor(
-                chat_role._working_dir,
+                chat_role.working_dir,
                 chat_role._flow_definition.inputs,
                 self._max_lines_count)
             batch_input = batch_input_processor._process_batch_inputs_line(inputs, chat_role._inputs_mapping)
