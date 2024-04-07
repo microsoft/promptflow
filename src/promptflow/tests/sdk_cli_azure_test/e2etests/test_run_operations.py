@@ -124,7 +124,7 @@ class TestFlowRun:
         assert resume_run.name == resume_name
         assert resume_run._resume_from == original_run.name
         resume_token = resume_run.properties["azureml.promptflow.total_tokens"]
-        assert original_token < resume_token
+        assert int(original_token) < int(resume_token)
 
     def test_run_resume_with_image_aggregation(self, pf: PFClient, randstr: Callable[[str], str]):
         name = "resume_from_run_with_image_aggregation"
@@ -145,6 +145,10 @@ class TestFlowRun:
         assert isinstance(resume_run, Run)
         assert resume_run.name == resume_name
         assert resume_run._resume_from == original_run.name
+
+        original_metrics = pf.runs.get_metrics(run=name)
+        resume_metrics = pf.runs.get_metrics(run=resume_name)
+        assert original_metrics["image_count"] < resume_metrics["image_count"]
 
     def test_run_bulk_from_yaml(self, pf, runtime: str, randstr: Callable[[str], str]):
         run_id = randstr("run_id")
