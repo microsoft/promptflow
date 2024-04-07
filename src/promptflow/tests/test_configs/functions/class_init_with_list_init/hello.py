@@ -1,8 +1,5 @@
 from typing import List
 
-from promptflow._sdk.entities import AzureOpenAIConnection
-
-
 class Hello:
     def __init__(self, words: List[str]) -> None:
         self.words = words

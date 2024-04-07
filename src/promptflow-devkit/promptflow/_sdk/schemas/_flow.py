@@ -71,10 +71,8 @@ class FlexFlowInputSchema(FlowInputSchema):
                 ValueType.INT,
                 ValueType.STRING,
                 ValueType.LIST,
-                # only dict is allowed actually
                 ValueType.OBJECT
-                # should we support IMAGE here?
-                # do we support connections here?
+                # TODO 3062609: Flex flow GPT-V support
             ]
         ),
     )
@@ -96,17 +94,7 @@ class FlexFlowOutputSchema(FlowOutputSchema):
     type = fields.Str(
         required=True,
         validate=validate.OneOf(
-            [
-                ValueType.DOUBLE,
-                ValueType.BOOL,
-                ValueType.INT,
-                ValueType.STRING,
-                ValueType.LIST,
-                # only dict is allowed actually
-                ValueType.OBJECT
-                # should we support IMAGE here?
-                # do we support connections here?
-            ]
+            [ValueType.DOUBLE, ValueType.BOOL, ValueType.INT, ValueType.STRING, ValueType.LIST, ValueType.OBJECT]
         ),
     )
 

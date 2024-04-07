@@ -260,8 +260,17 @@ class TestFlowSave:
                 },
                 UserErrorException,
                 r"Schema validation failed: {'init.words.type'",
-                id="class_init_with_invalid_ports",
+                id="class_init_with_list_init",
             ),
+            # TODO: check if ports are of dict type
+            # pytest.param(
+            #     {
+            #         "entry": "hello:Hello",
+            #     },
+            #     UserErrorException,
+            #     r"Schema validation failed: {'init.words.type'",
+            #     id="class_init_with_entity_inputs",
+            # ),
         ],
     )
     def test_pf_save_failed(self, save_args_overrides, request, expected_error_type, expected_error_regex: str):
