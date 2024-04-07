@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Dict, Iterable, List, NoReturn, Tuple, Union
 
 import pydash
-from pip._vendor import tomli as toml
+import tomli as toml
 
 from promptflow._constants import PROMPT_FLOW_DIR_NAME, FlowLanguage
 from promptflow._proxy import ProxyFactory

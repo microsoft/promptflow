@@ -2,7 +2,7 @@ import ast
 import re
 import subprocess
 import copy
-from pip._vendor import tomli as toml
+import tomli as toml
 from pathlib import Path
 from promptflow._sdk._utils import render_jinja_template
 

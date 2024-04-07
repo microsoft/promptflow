@@ -67,6 +67,7 @@ pyinstaller = ">=5.13.2"
 streamlit = ">=1.26.0"
 streamlit-quill = "<0.1.0"
 bs4 = "*"
+tomli = "*"
 pywin32 = {version = "*", markers = "sys_platform == 'win32'"}  # Support PFS detach mode in windows
 
 [tool.poetry.extras]
