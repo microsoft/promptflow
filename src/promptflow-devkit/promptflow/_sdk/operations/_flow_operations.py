@@ -691,7 +691,6 @@ class FlowOperations(TelemetryMixin):
         ]
         all_packages = list(set(dependencies) | set(required_packages) | set(extra_packages))
         # remove all packages starting with promptflow
-        all_packages.remove("python")
         all_packages = [package for package in all_packages if not package.startswith("promptflow")]
 
         hidden_imports = copy.deepcopy(all_packages)
