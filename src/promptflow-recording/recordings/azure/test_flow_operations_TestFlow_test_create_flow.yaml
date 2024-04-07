@@ -17,13 +17,13 @@ interactions:
     body:
       string: '{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000",
         "name": "00000", "type": "Microsoft.MachineLearningServices/workspaces", "location":
-        "eastus2euap", "tags": {}, "etag": null, "kind": "Default", "sku": {"name":
-        "Basic", "tier": "Basic"}, "properties": {"discoveryUrl": "https://eastus.api.azureml.ms/discovery"}}'
+        "eastus", "tags": {}, "etag": null, "kind": "Default", "sku": {"name": "Basic",
+        "tier": "Basic"}, "properties": {"discoveryUrl": "https://eastus.api.azureml.ms/discovery"}}'
     headers:
       cache-control:
       - no-cache
       content-length:
-      - '3697'
+      - '3678'
       content-type:
       - application/json; charset=utf-8
       expires:
@@ -39,7 +39,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.018'
+      - '0.027'
     status:
       code: 200
       message: OK
@@ -67,15 +67,15 @@ interactions:
         "00000", "datastoreType": "AzureFile", "accountName": "fake_account_name",
         "fileShareName": "fake-file-share-name", "endpoint": "core.windows.net", "protocol":
         "https", "serviceDataAccessAuthIdentity": "None"}, "systemData": {"createdAt":
-        "2023-09-22T05:26:30.7517548+00:00", "createdBy": "779301c0-18b2-4cdc-801b-a0a3368fee0a",
-        "createdByType": "Application", "lastModifiedAt": "2023-09-22T05:26:31.3275814+00:00",
+        "2023-04-08T02:53:06.6001169+00:00", "createdBy": "779301c0-18b2-4cdc-801b-a0a3368fee0a",
+        "createdByType": "Application", "lastModifiedAt": "2023-04-08T02:53:07.2885525+00:00",
         "lastModifiedBy": "779301c0-18b2-4cdc-801b-a0a3368fee0a", "lastModifiedByType":
         "Application"}}'
     headers:
       cache-control:
       - no-cache
       content-length:
-      - '1166'
+      - '1161'
       content-type:
       - application/json; charset=utf-8
       expires:
@@ -91,7 +91,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.064'
+      - '0.175'
     status:
       code: 200
       message: OK
@@ -132,7 +132,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.394'
+      - '0.279'
     status:
       code: 200
       message: OK
@@ -150,7 +150,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-file-share/12.15.0 Python/3.10.12 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
       x-ms-date:
-      - Sun, 07 Apr 2024 05:48:55 GMT
+      - Sun, 07 Apr 2024 06:34:25 GMT
       x-ms-file-attributes:
       - none
       x-ms-file-creation-time:
@@ -166,7 +166,7 @@ interactions:
   response:
     body:
       string: "\uFEFF<?xml version=\"1.0\" encoding=\"utf-8\"?><Error><Code>ResourceAlreadyExists</Code><Message>The
-        specified resource already exists.\nRequestId:17d9a475-c01a-002a-1daf-881910000000\nTime:2024-04-07T05:48:56.4330380Z</Message></Error>"
+        specified resource already exists.\nRequestId:0c8640dc-601a-0088-35b5-88e885000000\nTime:2024-04-07T06:34:26.5829006Z</Message></Error>"
     headers:
       content-length:
       - '228'
@@ -195,7 +195,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-file-share/12.15.0 Python/3.10.12 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
       x-ms-date:
-      - Sun, 07 Apr 2024 05:48:57 GMT
+      - Sun, 07 Apr 2024 06:34:27 GMT
       x-ms-file-attributes:
       - none
       x-ms-file-creation-time:
@@ -211,7 +211,7 @@ interactions:
   response:
     body:
       string: "\uFEFF<?xml version=\"1.0\" encoding=\"utf-8\"?><Error><Code>ResourceAlreadyExists</Code><Message>The
-        specified resource already exists.\nRequestId:8959c569-901a-0045-32af-8813e3000000\nTime:2024-04-07T05:48:58.2801035Z</Message></Error>"
+        specified resource already exists.\nRequestId:2e0a24a6-701a-010d-58b5-883b55000000\nTime:2024-04-07T06:34:28.5285957Z</Message></Error>"
     headers:
       content-length:
       - '228'
@@ -240,7 +240,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-file-share/12.15.0 Python/3.10.12 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
       x-ms-date:
-      - Sun, 07 Apr 2024 05:48:58 GMT
+      - Sun, 07 Apr 2024 06:34:28 GMT
       x-ms-file-attributes:
       - none
       x-ms-file-creation-time:
@@ -256,7 +256,7 @@ interactions:
   response:
     body:
       string: "\uFEFF<?xml version=\"1.0\" encoding=\"utf-8\"?><Error><Code>ResourceAlreadyExists</Code><Message>The
-        specified resource already exists.\nRequestId:ef48036d-101a-005b-1faf-88ff3b000000\nTime:2024-04-07T05:48:58.9796400Z</Message></Error>"
+        specified resource already exists.\nRequestId:d60dae6f-e01a-00f4-45b5-88c67a000000\nTime:2024-04-07T06:34:29.2676781Z</Message></Error>"
     headers:
       content-length:
       - '228'
@@ -285,7 +285,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-file-share/12.15.0 Python/3.10.12 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
       x-ms-date:
-      - Sun, 07 Apr 2024 05:48:58 GMT
+      - Sun, 07 Apr 2024 06:34:29 GMT
       x-ms-file-attributes:
       - none
       x-ms-file-creation-time:
@@ -301,7 +301,7 @@ interactions:
   response:
     body:
       string: "\uFEFF<?xml version=\"1.0\" encoding=\"utf-8\"?><Error><Code>ResourceAlreadyExists</Code><Message>The
-        specified resource already exists.\nRequestId:57e8a3eb-e01a-0060-35af-88ba9f000000\nTime:2024-04-07T05:48:59.6872349Z</Message></Error>"
+        specified resource already exists.\nRequestId:88493116-001a-00d3-3eb5-88d1be000000\nTime:2024-04-07T06:34:30.0186433Z</Message></Error>"
     headers:
       content-length:
       - '228'
@@ -328,7 +328,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-file-share/12.15.0 Python/3.10.12 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
       x-ms-date:
-      - Sun, 07 Apr 2024 05:48:59 GMT
+      - Sun, 07 Apr 2024 06:34:29 GMT
       x-ms-version:
       - '2023-11-03'
     method: GET
@@ -336,7 +336,7 @@ interactions:
   response:
     body:
       string: "\uFEFF<?xml version=\"1.0\" encoding=\"utf-8\"?><Error><Code>ResourceNotFound</Code><Message>The
-        specified resource does not exist.\nRequestId:5a4d3f29-201a-0050-33af-880450000000\nTime:2024-04-07T05:49:00.3688227Z</Message></Error>"
+        specified resource does not exist.\nRequestId:00b5a7f8-b01a-00e9-5fb5-88cbc6000000\nTime:2024-04-07T06:34:30.7371784Z</Message></Error>"
     headers:
       content-length:
       - '223'
@@ -367,7 +367,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-file-share/12.15.0 Python/3.10.12 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
       x-ms-date:
-      - Sun, 07 Apr 2024 05:49:00 GMT
+      - Sun, 07 Apr 2024 06:34:30 GMT
       x-ms-file-attributes:
       - none
       x-ms-file-creation-time:
@@ -387,21 +387,21 @@ interactions:
       content-length:
       - '0'
       last-modified:
-      - Sun, 07 Apr 2024 05:49:01 GMT
+      - Sun, 07 Apr 2024 06:34:31 GMT
       server:
       - Windows-Azure-File/1.0 Microsoft-HTTPAPI/2.0
       x-ms-file-attributes:
       - Directory
       x-ms-file-change-time:
-      - '2024-04-07T05:49:01.0580053Z'
+      - '2024-04-07T06:34:31.4893341Z'
       x-ms-file-creation-time:
-      - '2024-04-07T05:49:01.0580053Z'
+      - '2024-04-07T06:34:31.4893341Z'
       x-ms-file-id:
-      - '13835154142290509824'
+      - '13835069346751184896'
       x-ms-file-last-write-time:
-      - '2024-04-07T05:49:01.0580053Z'
+      - '2024-04-07T06:34:31.4893341Z'
       x-ms-file-parent-id:
-      - '13835132289496907776'
+      - '13835071545774440448'
       x-ms-request-server-encrypted:
       - 'true'
       x-ms-version:
@@ -423,7 +423,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-file-share/12.15.0 Python/3.10.12 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
       x-ms-date:
-      - Sun, 07 Apr 2024 05:49:01 GMT
+      - Sun, 07 Apr 2024 06:34:31 GMT
       x-ms-file-attributes:
       - none
       x-ms-file-creation-time:
@@ -443,21 +443,21 @@ interactions:
       content-length:
       - '0'
       last-modified:
-      - Sun, 07 Apr 2024 05:49:01 GMT
+      - Sun, 07 Apr 2024 06:34:32 GMT
       server:
       - Windows-Azure-File/1.0 Microsoft-HTTPAPI/2.0
       x-ms-file-attributes:
       - Directory
       x-ms-file-change-time:
-      - '2024-04-07T05:49:01.7499719Z'
+      - '2024-04-07T06:34:32.2280808Z'
       x-ms-file-creation-time:
-      - '2024-04-07T05:49:01.7499719Z'
+      - '2024-04-07T06:34:32.2280808Z'
       x-ms-file-id:
-      - '13835118957918420992'
+      - '13835139715495362560'
       x-ms-file-last-write-time:
-      - '2024-04-07T05:49:01.7499719Z'
+      - '2024-04-07T06:34:32.2280808Z'
       x-ms-file-parent-id:
-      - '13835154142290509824'
+      - '13835069346751184896'
       x-ms-request-server-encrypted:
       - 'true'
       x-ms-version:
@@ -479,7 +479,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-file-share/12.15.0 Python/3.10.12 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
       x-ms-date:
-      - Sun, 07 Apr 2024 05:49:01 GMT
+      - Sun, 07 Apr 2024 06:34:32 GMT
       x-ms-file-attributes:
       - none
       x-ms-file-creation-time:
@@ -499,21 +499,21 @@ interactions:
       content-length:
       - '0'
       last-modified:
-      - Sun, 07 Apr 2024 05:49:02 GMT
+      - Sun, 07 Apr 2024 06:34:32 GMT
       server:
       - Windows-Azure-File/1.0 Microsoft-HTTPAPI/2.0
       x-ms-file-attributes:
       - Directory
       x-ms-file-change-time:
-      - '2024-04-07T05:49:02.7057814Z'
+      - '2024-04-07T06:34:32.9897293Z'
       x-ms-file-creation-time:
-      - '2024-04-07T05:49:02.7057814Z'
+      - '2024-04-07T06:34:32.9897293Z'
       x-ms-file-id:
-      - '13835189326662598656'
+      - '13835104531123273728'
       x-ms-file-last-write-time:
-      - '2024-04-07T05:49:02.7057814Z'
+      - '2024-04-07T06:34:32.9897293Z'
       x-ms-file-parent-id:
-      - '13835154142290509824'
+      - '13835069346751184896'
       x-ms-request-server-encrypted:
       - 'true'
       x-ms-version:
@@ -537,7 +537,7 @@ interactions:
       x-ms-content-length:
       - '14'
       x-ms-date:
-      - Sun, 07 Apr 2024 05:49:02 GMT
+      - Sun, 07 Apr 2024 06:34:32 GMT
       x-ms-file-attributes:
       - none
       x-ms-file-creation-time:
@@ -559,21 +559,21 @@ interactions:
       content-length:
       - '0'
       last-modified:
-      - Sun, 07 Apr 2024 05:49:03 GMT
+      - Sun, 07 Apr 2024 06:34:33 GMT
       server:
       - Windows-Azure-File/1.0 Microsoft-HTTPAPI/2.0
       x-ms-file-attributes:
       - Archive
       x-ms-file-change-time:
-      - '2024-04-07T05:49:03.3997395Z'
+      - '2024-04-07T06:34:33.7374366Z'
       x-ms-file-creation-time:
-      - '2024-04-07T05:49:03.3997395Z'
+      - '2024-04-07T06:34:33.7374366Z'
       x-ms-file-id:
-      - '13835074977453309952'
+      - '13835174899867451392'
       x-ms-file-last-write-time:
-      - '2024-04-07T05:49:03.3997395Z'
+      - '2024-04-07T06:34:33.7374366Z'
       x-ms-file-parent-id:
-      - '13835154142290509824'
+      - '13835069346751184896'
       x-ms-request-server-encrypted:
       - 'true'
       x-ms-version:
@@ -601,7 +601,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-file-share/12.15.0 Python/3.10.12 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
       x-ms-date:
-      - Sun, 07 Apr 2024 05:49:03 GMT
+      - Sun, 07 Apr 2024 06:34:33 GMT
       x-ms-range:
       - bytes=0-13
       x-ms-version:
@@ -619,11 +619,11 @@ interactions:
       content-md5:
       - nYmkCopuDuFj82431amzZw==
       last-modified:
-      - Sun, 07 Apr 2024 05:49:04 GMT
+      - Sun, 07 Apr 2024 06:34:34 GMT
       server:
       - Windows-Azure-File/1.0 Microsoft-HTTPAPI/2.0
       x-ms-file-last-write-time:
-      - '2024-04-07T05:49:04.1106226Z'
+      - '2024-04-07T06:34:34.4841507Z'
       x-ms-request-server-encrypted:
       - 'true'
       x-ms-version:
@@ -647,7 +647,7 @@ interactions:
       x-ms-content-length:
       - '631'
       x-ms-date:
-      - Sun, 07 Apr 2024 05:49:04 GMT
+      - Sun, 07 Apr 2024 06:34:34 GMT
       x-ms-file-attributes:
       - none
       x-ms-file-creation-time:
@@ -669,21 +669,21 @@ interactions:
       content-length:
       - '0'
       last-modified:
-      - Sun, 07 Apr 2024 05:49:04 GMT
+      - Sun, 07 Apr 2024 06:34:35 GMT
       server:
       - Windows-Azure-File/1.0 Microsoft-HTTPAPI/2.0
       x-ms-file-attributes:
       - Archive
       x-ms-file-change-time:
-      - '2024-04-07T05:49:04.7856640Z'
+      - '2024-04-07T06:34:35.1990043Z'
       x-ms-file-creation-time:
-      - '2024-04-07T05:49:04.7856640Z'
+      - '2024-04-07T06:34:35.1990043Z'
       x-ms-file-id:
-      - '11529315531123326976'
+      - '13835086938937229312'
       x-ms-file-last-write-time:
-      - '2024-04-07T05:49:04.7856640Z'
+      - '2024-04-07T06:34:35.1990043Z'
       x-ms-file-parent-id:
-      - '13835189326662598656'
+      - '13835104531123273728'
       x-ms-request-server-encrypted:
       - 'true'
       x-ms-version:
@@ -725,7 +725,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-file-share/12.15.0 Python/3.10.12 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
       x-ms-date:
-      - Sun, 07 Apr 2024 05:49:04 GMT
+      - Sun, 07 Apr 2024 06:34:35 GMT
       x-ms-range:
       - bytes=0-630
       x-ms-version:
@@ -743,11 +743,11 @@ interactions:
       content-md5:
       - 4xvZisyz3aqT9bHeHwyeyA==
       last-modified:
-      - Sun, 07 Apr 2024 05:49:05 GMT
+      - Sun, 07 Apr 2024 06:34:35 GMT
       server:
       - Windows-Azure-File/1.0 Microsoft-HTTPAPI/2.0
       x-ms-file-last-write-time:
-      - '2024-04-07T05:49:05.4796220Z'
+      - '2024-04-07T06:34:35.9745899Z'
       x-ms-request-server-encrypted:
       - 'true'
       x-ms-version:
@@ -771,7 +771,7 @@ interactions:
       x-ms-content-length:
       - '279'
       x-ms-date:
-      - Sun, 07 Apr 2024 05:49:05 GMT
+      - Sun, 07 Apr 2024 06:34:35 GMT
       x-ms-file-attributes:
       - none
       x-ms-file-creation-time:
@@ -793,21 +793,21 @@ interactions:
       content-length:
       - '0'
       last-modified:
-      - Sun, 07 Apr 2024 05:49:06 GMT
+      - Sun, 07 Apr 2024 06:34:36 GMT
       server:
       - Windows-Azure-File/1.0 Microsoft-HTTPAPI/2.0
       x-ms-file-attributes:
       - Archive
       x-ms-file-change-time:
-      - '2024-04-07T05:49:06.1606365Z'
+      - '2024-04-07T06:34:36.7043778Z'
       x-ms-file-creation-time:
-      - '2024-04-07T05:49:06.1606365Z'
+      - '2024-04-07T06:34:36.7043778Z'
       x-ms-file-id:
-      - '13835145346197487616'
+      - '13835157307681406976'
       x-ms-file-last-write-time:
-      - '2024-04-07T05:49:06.1606365Z'
+      - '2024-04-07T06:34:36.7043778Z'
       x-ms-file-parent-id:
-      - '13835189326662598656'
+      - '13835104531123273728'
       x-ms-request-server-encrypted:
       - 'true'
       x-ms-version:
@@ -839,7 +839,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-file-share/12.15.0 Python/3.10.12 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
       x-ms-date:
-      - Sun, 07 Apr 2024 05:49:06 GMT
+      - Sun, 07 Apr 2024 06:34:36 GMT
       x-ms-range:
       - bytes=0-278
       x-ms-version:
@@ -857,11 +857,11 @@ interactions:
       content-md5:
       - hFC8nan3DR5KTPtD41njnw==
       last-modified:
-      - Sun, 07 Apr 2024 05:49:06 GMT
+      - Sun, 07 Apr 2024 06:34:37 GMT
       server:
       - Windows-Azure-File/1.0 Microsoft-HTTPAPI/2.0
       x-ms-file-last-write-time:
-      - '2024-04-07T05:49:06.8565857Z'
+      - '2024-04-07T06:34:37.4311787Z'
       x-ms-request-server-encrypted:
       - 'true'
       x-ms-version:
@@ -885,7 +885,7 @@ interactions:
       x-ms-content-length:
       - '250'
       x-ms-date:
-      - Sun, 07 Apr 2024 05:49:06 GMT
+      - Sun, 07 Apr 2024 06:34:37 GMT
       x-ms-file-attributes:
       - none
       x-ms-file-creation-time:
@@ -907,21 +907,21 @@ interactions:
       content-length:
       - '0'
       last-modified:
-      - Sun, 07 Apr 2024 05:49:07 GMT
+      - Sun, 07 Apr 2024 06:34:38 GMT
       server:
       - Windows-Azure-File/1.0 Microsoft-HTTPAPI/2.0
       x-ms-file-attributes:
       - Archive
       x-ms-file-change-time:
-      - '2024-04-07T05:49:07.5804135Z'
+      - '2024-04-07T06:34:38.1241284Z'
       x-ms-file-creation-time:
-      - '2024-04-07T05:49:07.5804135Z'
+      - '2024-04-07T06:34:38.1241284Z'
       x-ms-file-id:
-      - '13835110161825398784'
+      - '11529351681863057408'
       x-ms-file-last-write-time:
-      - '2024-04-07T05:49:07.5804135Z'
+      - '2024-04-07T06:34:38.1241284Z'
       x-ms-file-parent-id:
-      - '13835154142290509824'
+      - '13835069346751184896'
       x-ms-request-server-encrypted:
       - 'true'
       x-ms-version:
@@ -950,7 +950,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-file-share/12.15.0 Python/3.10.12 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
       x-ms-date:
-      - Sun, 07 Apr 2024 05:49:07 GMT
+      - Sun, 07 Apr 2024 06:34:38 GMT
       x-ms-range:
       - bytes=0-249
       x-ms-version:
@@ -968,11 +968,11 @@ interactions:
       content-md5:
       - CT1FTZp5JScB8fq+HjnINw==
       last-modified:
-      - Sun, 07 Apr 2024 05:49:08 GMT
+      - Sun, 07 Apr 2024 06:34:38 GMT
       server:
       - Windows-Azure-File/1.0 Microsoft-HTTPAPI/2.0
       x-ms-file-last-write-time:
-      - '2024-04-07T05:49:08.2664055Z'
+      - '2024-04-07T06:34:38.8748240Z'
       x-ms-request-server-encrypted:
       - 'true'
       x-ms-version:
@@ -996,7 +996,7 @@ interactions:
       x-ms-content-length:
       - '110'
       x-ms-date:
-      - Sun, 07 Apr 2024 05:49:08 GMT
+      - Sun, 07 Apr 2024 06:34:38 GMT
       x-ms-file-attributes:
       - none
       x-ms-file-creation-time:
@@ -1018,21 +1018,21 @@ interactions:
       content-length:
       - '0'
       last-modified:
-      - Sun, 07 Apr 2024 05:49:08 GMT
+      - Sun, 07 Apr 2024 06:34:39 GMT
       server:
       - Windows-Azure-File/1.0 Microsoft-HTTPAPI/2.0
       x-ms-file-attributes:
       - Archive
       x-ms-file-change-time:
-      - '2024-04-07T05:49:08.9603632Z'
+      - '2024-04-07T06:34:39.5926643Z'
       x-ms-file-creation-time:
-      - '2024-04-07T05:49:08.9603632Z'
+      - '2024-04-07T06:34:39.5926643Z'
       x-ms-file-id:
-      - '13835180530569576448'
+      - '13835122123309318144'
       x-ms-file-last-write-time:
-      - '2024-04-07T05:49:08.9603632Z'
+      - '2024-04-07T06:34:39.5926643Z'
       x-ms-file-parent-id:
-      - '13835154142290509824'
+      - '13835069346751184896'
       x-ms-request-server-encrypted:
       - 'true'
       x-ms-version:
@@ -1059,7 +1059,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-file-share/12.15.0 Python/3.10.12 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
       x-ms-date:
-      - Sun, 07 Apr 2024 05:49:08 GMT
+      - Sun, 07 Apr 2024 06:34:39 GMT
       x-ms-range:
       - bytes=0-109
       x-ms-version:
@@ -1077,11 +1077,11 @@ interactions:
       content-md5:
       - 3CPKwiOwfwiEOJC0UpjR0Q==
       last-modified:
-      - Sun, 07 Apr 2024 05:49:09 GMT
+      - Sun, 07 Apr 2024 06:34:40 GMT
       server:
       - Windows-Azure-File/1.0 Microsoft-HTTPAPI/2.0
       x-ms-file-last-write-time:
-      - '2024-04-07T05:49:09.6702514Z'
+      - '2024-04-07T06:34:40.3184710Z'
       x-ms-request-server-encrypted:
       - 'true'
       x-ms-version:
@@ -1108,24 +1108,24 @@ interactions:
       - promptflow-azure-sdk/1.8.0.dev0 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
         Python/3.10.12 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
     method: POST
-    uri: https://eastus2euap.api.azureml.ms/flow/api/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/Flows
+    uri: https://eastus.api.azureml.ms/flow/api/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/Flows
   response:
     body:
-      string: '{"eTag": {}, "studioPortalEndpoint": "https://ml.azure.com/prompts/flow/1120f13e-d319-44f3-9a12-271bf34ad372/27a0ada3-5fad-4e40-86e9-2f6db505cb30/details?wsid=/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000",
-        "flowId": "27a0ada3-5fad-4e40-86e9-2f6db505cb30", "flowName": "flow_display_name",
+      string: '{"eTag": {}, "studioPortalEndpoint": "https://ml.azure.com/prompts/flow/3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/3a620baa-25ea-444d-904a-8c4b87efe0e4/details?wsid=/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000",
+        "flowId": "3a620baa-25ea-444d-904a-8c4b87efe0e4", "flowName": "flow_display_name",
         "description": "test flow description", "tags": {"owner": "sdk-test"}, "flowType":
         "Default", "experimentId": "00000000-0000-0000-0000-000000000000", "createdDate":
-        "2024-04-07T05:49:11.6740731Z", "lastModifiedDate": "2024-04-07T05:49:11.6740748Z",
+        "2024-04-07T06:34:42.3877314Z", "lastModifiedDate": "2024-04-07T06:34:42.3877314Z",
         "owner": {"userObjectId": "00000000-0000-0000-0000-000000000000", "userTenantId":
         "00000000-0000-0000-0000-000000000000", "userName": "Philip Gao"}, "flowResourceId":
-        "azureml://locations/eastus2euap/workspaces/00000/flows/27a0ada3-5fad-4e40-86e9-2f6db505cb30",
+        "azureml://locations/eastus/workspaces/00000/flows/3a620baa-25ea-444d-904a-8c4b87efe0e4",
         "isArchived": false, "flowDefinitionFilePath": "Users/unknown_user/promptflow/flow_name/flow.dag.yaml",
         "enableMultiContainer": false}'
     headers:
       connection:
       - keep-alive
       content-length:
-      - '1082'
+      - '1072'
       content-type:
       - application/json; charset=utf-8
       strict-transport-security:
@@ -1137,7 +1137,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.210'
+      - '0.473'
     status:
       code: 200
       message: OK
@@ -1153,7 +1153,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-file-share/12.15.0 Python/3.10.12 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
       x-ms-date:
-      - Sun, 07 Apr 2024 05:49:11 GMT
+      - Sun, 07 Apr 2024 06:34:42 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -1167,7 +1167,7 @@ interactions:
       content-type:
       - application/octet-stream
       last-modified:
-      - Sun, 07 Apr 2024 05:49:08 GMT
+      - Sun, 07 Apr 2024 06:34:38 GMT
       server:
       - Windows-Azure-File/1.0 Microsoft-HTTPAPI/2.0
       vary:
@@ -1175,15 +1175,15 @@ interactions:
       x-ms-file-attributes:
       - Archive
       x-ms-file-change-time:
-      - '2024-04-07T05:49:08.2664055Z'
+      - '2024-04-07T06:34:38.8748240Z'
       x-ms-file-creation-time:
-      - '2024-04-07T05:49:07.5804135Z'
+      - '2024-04-07T06:34:38.1241284Z'
       x-ms-file-id:
-      - '13835110161825398784'
+      - '11529351681863057408'
       x-ms-file-last-write-time:
-      - '2024-04-07T05:49:08.2664055Z'
+      - '2024-04-07T06:34:38.8748240Z'
       x-ms-file-parent-id:
-      - '13835154142290509824'
+      - '13835069346751184896'
       x-ms-type:
       - File
       x-ms-version:
