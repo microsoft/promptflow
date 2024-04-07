@@ -204,7 +204,7 @@ class FlowExecutor:
         :rtype: ~promptflow.executor.flow_executor.FlowExecutor
         """
         setup_exporter_from_environ()
-        if hasattr(flow_file, "__call__") or isfunction(flow_file):
+        if hasattr(flow_file, "__call__") or inspect.isfunction(flow_file):
             from ._script_executor import ScriptExecutor
 
             return ScriptExecutor(flow_file, storage=storage)
