@@ -908,7 +908,6 @@ class TestFlowRun:
             assert isinstance(inner_exception, HttpResponseError)
             assert inner_exception.message == "customized error message."
 
-
     # it is a known issue that executor/runtime might write duplicate storage for line records,
     # this will lead to the lines that assert line count (`len(detail)`) fails.
     @pytest.mark.xfail(reason="BUG 2819328: Duplicate line in flow artifacts jsonl", run=True, strict=False)
