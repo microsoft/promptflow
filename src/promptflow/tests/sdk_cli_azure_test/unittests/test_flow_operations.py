@@ -20,7 +20,7 @@ data_dir = tests_root_dir / "test_configs/datas"
 @pytest.mark.unittest
 class TestFlowOperations:
     def test_create_flow_with_invalid_parameters(self, pf):
-        with pytest.raises(UserErrorException, match=r"Flow source must be a directory with"):
+        with pytest.raises(UserErrorException, match=r"Can't find file fake_source, in the flow path"):
             pf.flows.create_or_update(flow="fake_source")
 
         flow_source = flow_test_dir / "web_classification/"
