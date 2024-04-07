@@ -106,17 +106,18 @@ def get_parser_args(argv):
         "-v", "--version", dest="version", action="store_true", help="show current CLI version and exit"
     )
     subparsers = parser.add_subparsers()
-    add_upgrade_parser(subparsers)
-    add_flow_parser(subparsers)
-    add_connection_parser(subparsers)
-    add_run_parser(subparsers)
+    # lexicographical order
     add_config_parser(subparsers)
-    add_tool_parser(subparsers)
-    add_service_parser(subparsers)
-    add_trace_parser(subparsers)
-
+    add_connection_parser(subparsers)
     if Configuration.get_instance().is_internal_features_enabled():
         add_experiment_parser(subparsers)
+
+    add_flow_parser(subparsers)
+    add_run_parser(subparsers)
+    add_tool_parser(subparsers)
+    add_trace_parser(subparsers)
+    add_service_parser(subparsers)
+    add_upgrade_parser(subparsers)
 
     return parser.prog, parser.parse_args(argv)
 

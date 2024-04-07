@@ -56,8 +56,8 @@ def add_service_parser(subparsers):
     """Add service parser to the pf subparsers."""
     service_parser = subparsers.add_parser(
         "service",
-        description="Manage the PromptFlow service, which offers chat and trace UI functionalities.",
-        help="pf service",
+        description="Manage prompt flow service, which offers chat and trace UI functionalities.",
+        help="Manage prompt flow service.",
     )
     service_subparsers = service_parser.add_subparsers()
     add_parser_start_service(service_subparsers)
@@ -80,7 +80,7 @@ def add_parser_start_service(subparsers):
     epilog = """
     Examples:
 
-    # Start promptflow service:
+    # Start prompt flow service:
     pf service start
     # Force restart promptflow service:
     pf service start --force
@@ -97,7 +97,7 @@ def add_parser_start_service(subparsers):
     )
     activate_action(
         name="start",
-        description="Start promptflow service.",
+        description="Start prompt flow service.",
         epilog=epilog,
         add_params=[
             add_param_port,
@@ -105,7 +105,7 @@ def add_parser_start_service(subparsers):
         ]
         + base_params,
         subparsers=subparsers,
-        help_message="pf service start",
+        help_message="Start prompt flow service.",
         action_param_name="sub_action",
     )
 
@@ -115,16 +115,16 @@ def add_parser_stop_service(subparsers):
     epilog = """
     Examples:
 
-    # Stop promptflow service:
+    # Stop prompt flow service:
     pf service stop
     """  # noqa: E501
     activate_action(
         name="stop",
-        description="Stop promptflow service.",
+        description="Stop prompt flow service.",
         epilog=epilog,
         add_params=base_params,
         subparsers=subparsers,
-        help_message="pf service stop",
+        help_message="Stop prompt flow service.",
         action_param_name="sub_action",
     )
 
@@ -134,16 +134,16 @@ def add_parser_show_service(subparsers):
     epilog = """
     Examples:
 
-    # Display the started promptflow service info.:
+    # Display the started prompt flow service info.:
     pf service show-status
     """  # noqa: E501
     activate_action(
         name="show-status",
-        description="Display the started promptflow service info.",
+        description="Show the started prompt flow service status.",
         epilog=epilog,
         add_params=base_params,
         subparsers=subparsers,
-        help_message="pf service show-status",
+        help_message="Show the started prompt flow service status.",
         action_param_name="sub_action",
     )
 

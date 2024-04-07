@@ -2,7 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import time
-from promptflow import PFClient
+from promptflow.client import PFClient
 
 
 class FlowRunWrapper(object):
