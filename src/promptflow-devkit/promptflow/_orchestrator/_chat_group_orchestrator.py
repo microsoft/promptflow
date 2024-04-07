@@ -215,7 +215,11 @@ class ChatGroupOrchestrator:
     def _process_batch_inputs(self, inputs: Dict[str, Any]):
         batch_inputs: List = []
         for chat_role in self._chat_group_roles:
-            if CONVERSATION_HISTORY_EXPRESSION not in chat_role._inputs_mapping.values():
+            conversation_history_mapping = [
+                (key, value) for key, value in chat_role._inputs_mapping.items()
+                if value == CONVERSATION_HISTORY_EXPRESSION
+            ]
+            if len(conversation_history_mapping) == 0:
                 bulk_logger.error(
                     f"Cannot find conversation expression mapping for "
                     f"chat role: {chat_role.role}. name: {chat_role.name}"
@@ -227,8 +231,7 @@ class ChatGroupOrchestrator:
                 )
                 raise MissingConversationHistoryExpression(message=message)
 
-            conversation_mapping_count = list(chat_role._inputs_mapping.values()).count(CONVERSATION_HISTORY_EXPRESSION)
-            if conversation_mapping_count > 1:
+            if len(conversation_history_mapping) > 1:
                 bulk_logger.error(f"Multiple inputs mapping of {CONVERSATION_HISTORY_EXPRESSION}")
                 message = (
                     f"chat role: {chat_role.role}. name: {chat_role.name} "
@@ -236,11 +239,18 @@ class ChatGroupOrchestrator:
                 )
                 raise MultipleConversationHistoryInputsMapping(message=message)
 
+            cleaned_inputs_mapping = {
+                key: value for key, value in chat_role._inputs_mapping.items()
+                if value != CONVERSATION_HISTORY_EXPRESSION
+            }
+
             batch_input_processor = BatchInputsProcessor(
                 chat_role.working_dir,
                 chat_role._flow_definition.inputs,
                 self._max_lines_count)
-            batch_input = batch_input_processor._process_batch_inputs_line(inputs, chat_role._inputs_mapping)
+            batch_input = batch_input_processor._process_batch_inputs_line(inputs, cleaned_inputs_mapping)
+            bulk_logger.info(f"Init conversation history for role: {chat_role.role}")
+            batch_input[CONVERSATION_HISTORY_OUTPUT_KEY] = []
             resolved_batch_input = apply_default_value_for_input(chat_role._flow_definition.inputs, batch_input)
 
             batch_inputs.append(resolved_batch_input)

@@ -1,10 +1,14 @@
 import os.path
 import pytest
+from tempfile import mkdtemp
+from pathlib import Path
 
 from typing import List, Mapping, Any
 from ...utils import get_yaml_file, get_flow_folder
 from promptflow.contracts.run_info import Status
 from promptflow.executor._result import LineResult
+from promptflow._utils.utils import dump_list_to_jsonl
+from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow._sdk.entities._chat_group._chat_role import ChatRole
 from promptflow._orchestrator._chat_group_orchestrator import ChatGroupOrchestrator
 from promptflow._orchestrator._errors import (
@@ -78,6 +82,36 @@ class TestChatGroupOrchestrator:
         with pytest.raises(error_code) as e:
             orchestrator._process_batch_inputs(inputs=[])
         assert error_message in str(e.value), "Expected: {}, Actual: {}".format(error_message, str(e.value))
+
+    def test_process_chat_roles_inputs(self):
+        simulation_role = ChatRole(
+            flow=get_yaml_file("chat_group/cloud_batch_runs/chat_group_simulation"),
+            role="user",
+            name="simulator",
+            stop_signal="[STOP]",
+            working_dir=get_flow_folder("chat_group/cloud_batch_runs/chat_group_simulation"),
+            connections=None,
+            inputs_mapping={
+                    "topic": "${data.topic}",
+                    "ground_truth": "${data.ground_truth}",
+                    "conversation_history": "${parent.conversation_history}",
+                }
+        )
+        data = [
+            {"ground_truth": "apple", "topic": "fruit"},
+            {"ground_truth": "football", "topic": "sport"},
+        ]
+        data_file = Path(mkdtemp()) / "data.jsonl"
+        dump_list_to_jsonl(data_file, data)
+        input_dirs = {"data": data_file}
+        inputs = BatchInputsProcessor("", {}).process_batch_inputs_without_inputs_mapping(input_dirs)
+        orchestrator = ChatGroupOrchestrator([simulation_role, simulation_role], 3)
+        batch_inputs = orchestrator._process_batch_inputs(inputs[0])
+        assert len(batch_inputs) == 2
+        for i, input in enumerate(batch_inputs):
+            assert isinstance(input, dict)
+            assert "line_number" in input, f"line_number is not in {i}th input {input}"
+            assert "conversation_history" in input, f"conversation_history is not in {i}th output {input}"
 
     @pytest.mark.parametrize(
         "error_code, error_message",

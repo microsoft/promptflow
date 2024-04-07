@@ -4,9 +4,9 @@
 import re
 from typing import Any, Dict, Mapping
 
+from promptflow._constants import LINE_NUMBER_KEY
 from promptflow._utils._errors import ApplyInputMappingError
 from promptflow._utils.logger_utils import LoggerFactory
-from promptflow._constants import LINE_NUMBER_KEY, CONVERSATION_HISTORY_EXPRESSION_KEY
 
 logger = LoggerFactory.get_logger(name=__name__)
 
@@ -59,14 +59,6 @@ def apply_inputs_mapping(
         match = re.search(r"^\${([^{}]+)}$", map_value)
         if match is not None:
             pattern = match.group(1)
-            if pattern == CONVERSATION_HISTORY_EXPRESSION_KEY:
-                logger.info(
-                    f"Meet reserved inputs mapping: {CONVERSATION_HISTORY_EXPRESSION_KEY}. "
-                    "Initialize empty conversation history."
-                )
-                result[map_to_key] = []
-                continue
-
             # Could also try each pair of key value from inputs to match the pattern.
             # But split pattern by '.' is one deterministic way.
             # So, give key with less '.' higher priority.
