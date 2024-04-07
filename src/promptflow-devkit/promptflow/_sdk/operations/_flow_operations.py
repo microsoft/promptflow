@@ -19,7 +19,7 @@ from typing import Dict, Iterable, List, NoReturn, Tuple, Union
 import pydash
 from pip._vendor import tomli as toml
 
-from promptflow._constants import PROMPT_FLOW_DIR_NAME, FlowLanguage
+from promptflow._constants import FLOW_DAG_YAML, PROMPT_FLOW_DIR_NAME, FlowLanguage
 from promptflow._proxy import ProxyFactory
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
@@ -52,7 +52,6 @@ from promptflow._utils.flow_utils import (
     is_flex_flow,
     is_prompty_flow,
     parse_variant,
-    resolve_flow_path,
 )
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.exceptions import ErrorTarget, UserErrorException
@@ -1097,8 +1096,7 @@ class FlowOperations(TelemetryMixin):
             )
         )
 
-        _, flow_file = resolve_flow_path(target_flow_directory, check_flow_exist=False)
-        target_flow_file = target_flow_directory / flow_file
+        target_flow_file = target_flow_directory / FLOW_DAG_YAML
         target_flow_directory.parent.mkdir(parents=True, exist_ok=True)
 
         # TODO: handle ignore
