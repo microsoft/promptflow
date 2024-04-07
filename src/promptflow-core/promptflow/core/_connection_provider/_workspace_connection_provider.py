@@ -402,7 +402,6 @@ class WorkspaceConnectionProvider(ConnectionProvider):
         return rest_list_connection_dict
 
     def list(self) -> List[_Connection]:
-        # TODO: try-catch this.
         rest_list_connection_dict = self._build_list_connection_dict(
             subscription_id=self.subscription_id,
             resource_group_name=self.resource_group_name,
