@@ -179,6 +179,7 @@ class FlowExecutor:
         node_override: Optional[Dict[str, Dict[str, Any]]] = None,
         line_timeout_sec: Optional[int] = None,
         init_kwargs: Optional[Dict[str, Any]] = None,
+        **kwargs,
     ) -> "FlowExecutor":
         """Create a new instance of FlowExecutor.
 
@@ -221,7 +222,12 @@ class FlowExecutor:
         else:
             if init_kwargs:
                 logger.warning(f"Got unexpected init args {init_kwargs} for non-script flow. Ignoring them.")
-            flow = Flow.from_yaml(flow_file, working_dir=working_dir)
+
+            # For flow, use name from payload as fallback name to make sure customer defined name in yaml is in higher
+            # priority.
+            # For flex, use function name directly, it is also customer defined.
+            fallback_name = kwargs.get("name", None)
+            flow = Flow.from_yaml(flow_file, working_dir=working_dir, fallback_name=fallback_name)
             return cls._create_from_flow(
                 flow_file=flow_file,
                 flow=flow,
