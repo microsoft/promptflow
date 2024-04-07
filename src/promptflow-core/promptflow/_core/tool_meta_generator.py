@@ -495,32 +495,18 @@ def generate_tool_meta_in_subprocess(
     return tool_dict, exception_dict
 
 
-def generate_flow_meta_dict_by_file(data: dict, source: str = None, path: str = None):
-    """Generate flow meta for eager flow data.
-    Original flow configuration like environment variables will be generated in meta.
-    """
-
-    entry = data.get("entry")
-    if path:
-        m = load_python_module_from_file(Path(path))
-    else:
-        m = load_python_module_from_entry(entry)
-
-    f, cls = collect_flow_entry_in_module(m, entry)
+def generate_flow_meta_dict_by_object(f, cls):
     # Since the flow meta is generated from the entry function, we leverage the function
     # _parse_tool_from_function to parse the interface of the entry function to get the inputs and outputs.
     tool = _parse_tool_from_function(f, include_outputs=True)
 
     # Include data in generated meta to avoid flow definition's fields(e.g. environment variable) missing.
-    flow_meta = {"function": f.__name__, **data}
+    flow_meta = {}
     if cls:
         init_tool = _parse_tool_from_function(cls.__init__, include_outputs=False)
         init_inputs = init_tool.inputs
     else:
         init_inputs = None
-
-    if source:
-        flow_meta["source"] = source
 
     for ports, meta_key in [
         (tool.inputs, "inputs"),
@@ -542,6 +528,28 @@ def generate_flow_meta_dict_by_file(data: dict, source: str = None, path: str = 
             # init/inputs may have default value
             if isinstance(v, InputDefinition) and v.default is not None:
                 flow_meta[meta_key][k]["default"] = v.default
+    return flow_meta
+
+
+def generate_flow_meta_dict_by_file(data: dict, source: str = None, path: str = None):
+    """Generate flow meta for eager flow data.
+    Original flow configuration like environment variables will be generated in meta.
+    """
+
+    entry = data.get("entry")
+    if path:
+        m = load_python_module_from_file(Path(path))
+    else:
+        m = load_python_module_from_entry(entry)
+
+    f, cls = collect_flow_entry_in_module(m, entry)
+
+    flow_meta = {"function": f.__name__, **data}
+    if source:
+        flow_meta["source"] = source
+
+    flow_meta.update(generate_flow_meta_dict_by_object(f, cls))
+
     return flow_meta
 
 

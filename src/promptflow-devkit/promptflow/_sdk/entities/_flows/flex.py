@@ -71,9 +71,9 @@ class FlexFlow(FlowBase):
     @classmethod
     def _create_schema_for_validation(cls, context):
         # import here to avoid circular import
-        from promptflow._sdk.schemas._flow import EagerFlowSchema
+        from promptflow._sdk.schemas._flow import FlexFlowSchema
 
-        return EagerFlowSchema(context=context)
+        return FlexFlowSchema(context=context)
 
     def _default_context(self) -> dict:
         return {BASE_PATH_CONTEXT_KEY: self.code}
@@ -111,7 +111,7 @@ class FlexFlow(FlowBase):
 
     def _init_executable(self, **kwargs):
         from promptflow._proxy import ProxyFactory
-        from promptflow.contracts.flow import EagerFlow as ExecutableEagerFlow
+        from promptflow.contracts.flow import FlexFlow as ExecutableEagerFlow
 
         meta_dict = (
             ProxyFactory()

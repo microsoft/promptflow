@@ -7,6 +7,8 @@ from pathlib import Path
 import pytest
 
 from promptflow._sdk._pf_client import PFClient
+from promptflow._sdk.entities import AzureOpenAIConnection
+from promptflow.client import load_flow
 from promptflow.exceptions import UserErrorException
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
@@ -26,6 +28,18 @@ def clear_module_cache(module_name):
         del sys.modules[module_name]
     except Exception:
         pass
+
+
+class GlobalHello:
+    def __init__(self, connection: AzureOpenAIConnection):
+        self.connection = connection
+
+    def __call__(self, text: str) -> str:
+        return f"Hello {text} via {self.connection.name}!"
+
+
+def global_hello(text: str) -> str:
+    return f"Hello {text}!"
 
 
 @pytest.mark.usefixtures(
@@ -209,8 +223,6 @@ class TestFlowSave:
         pf = PFClient()
         pf.flows._save(**save_args)
 
-        from promptflow.client import load_flow
-
         flow = load_flow(target_path)
         for key, value in expected_signature.items():
             assert flow._data[key] == value, f"key: {key}, expected value: {value}, flow._data[key]: {flow._data[key]}"
@@ -235,7 +247,7 @@ class TestFlowSave:
                     },
                 },
                 UserErrorException,
-                r"Ports with signature: non-exist",
+                r"Ports from signature: non-exist",
                 id="hello_world.inputs_mismatch",
             ),
             pytest.param(
@@ -251,7 +263,7 @@ class TestFlowSave:
                     },
                 },
                 UserErrorException,
-                r"Ports with signature: non-exist",
+                r"Ports from signature: non-exist",
                 id="hello_world.outputs_mismatch",
             ),
             pytest.param(
@@ -292,3 +304,58 @@ class TestFlowSave:
         pf = PFClient()
         with pytest.raises(expected_error_type, match=expected_error_regex):
             pf.flows._save(**save_args)
+
+    def test_pf_save_callable_class(self):
+        pf = PFClient()
+        target_path = f"{FLOWS_DIR}/saved/hello_callable"
+        if os.path.exists(target_path):
+            shutil.rmtree(target_path)
+        pf.flows._save(
+            entry=GlobalHello,
+            path=target_path,
+        )
+
+        flow = load_flow(target_path)
+        assert flow._data == {
+            "entry": "test_flow_save:GlobalHello",
+            "init": {
+                "connection": {
+                    "type": "AzureOpenAIConnection",
+                }
+            },
+            "inputs": {
+                "text": {
+                    "type": "string",
+                }
+            },
+            "outputs": {
+                "output": {
+                    "type": "string",
+                },
+            },
+        }
+
+    def test_pf_save_callable_object(self):
+        pf = PFClient()
+        target_path = f"{FLOWS_DIR}/saved/hello_callable"
+        if os.path.exists(target_path):
+            shutil.rmtree(target_path)
+        pf.flows._save(
+            entry=global_hello,
+            path=target_path,
+        )
+
+        flow = load_flow(target_path)
+        assert flow._data == {
+            "entry": "test_flow_save:global_hello",
+            "inputs": {
+                "text": {
+                    "type": "string",
+                }
+            },
+            "outputs": {
+                "output": {
+                    "type": "string",
+                },
+            },
+        }

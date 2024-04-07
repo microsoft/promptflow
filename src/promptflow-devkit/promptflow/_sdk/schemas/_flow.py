@@ -99,7 +99,7 @@ class FlexFlowOutputSchema(FlowOutputSchema):
     )
 
 
-class EagerFlowSchema(BaseFlowSchema):
+class FlexFlowSchema(BaseFlowSchema):
     """Schema for eager flow."""
 
     # entry point for eager flow
