@@ -538,7 +538,7 @@ class TestBatch:
             input_file_name,
             dev_connections):
         simulation_role = ChatRole(
-            flow=get_yaml_file(simulation_flow),
+            flow="flow.dag.yaml",  # Use relative path similar with runtime payload
             role="user",
             name="simulator",
             stop_signal="[STOP]",

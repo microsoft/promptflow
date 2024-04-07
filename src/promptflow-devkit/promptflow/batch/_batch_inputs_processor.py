@@ -69,7 +69,6 @@ class BatchInputsProcessor:
                 )
             )
         return apply_inputs_mapping(inputs, inputs_mapping)
-        return self._validate_and_apply_inputs_mapping(input_dicts, inputs_mapping)
 
     def _resolve_input_data(self, input_dirs: Dict[str, str]):
         """Resolve input data from input dirs"""

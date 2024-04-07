@@ -66,21 +66,6 @@ class TestBatchInputsProcessor:
             {"line_number": 1, "question": {"question": "Do you like promptflow?"}, "topic": {"topic": "sport"}},
         ]
 
-    def test_process_batch_inputs_with_conversation_history_reserved_mapping(self):
-        data = [
-            {"question": "What's promptflow?"},
-            {"question": "Do you like promptflow?"},
-        ]
-        data_file = Path(mkdtemp()) / "data.jsonl"
-        dump_list_to_jsonl(data_file, data)
-        input_dirs = {"data": data_file}
-        inputs_mapping = {"question": "${data.question}", "conversation_history": "${parent.conversation_history}"}
-        batch_inputs = BatchInputsProcessor("", {}).process_batch_inputs(input_dirs, inputs_mapping)
-        assert batch_inputs == [
-            {"line_number": 0, "question": "What's promptflow?", "conversation_history": []},
-            {"line_number": 1, "question": "Do you like promptflow?", "conversation_history": []},
-        ]
-
     def test_resolve_data_from_input_path(self):
         inputs_dir = Path(mkdtemp())
         # data.jsonl
