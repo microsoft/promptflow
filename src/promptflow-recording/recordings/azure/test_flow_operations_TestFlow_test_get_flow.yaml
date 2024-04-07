@@ -799,7 +799,7 @@ interactions:
       code: 201
       message: Created
 - request:
-    body: "from promptflow import tool\n\n\n@tool\ndef hello_world(name: str) -> str:\n
+    body: "from promptflow.core import tool\n\n\n@tool\ndef hello_world(name: str) -> str:\n
       \   return f\"Hello World {name}!\"\n"
     headers:
       Accept:
