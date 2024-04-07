@@ -5,6 +5,7 @@ from promptflow.contracts.tool import InputDefinition
 from promptflow.core._flow import Prompty
 from promptflow.storage import AbstractRunStorage
 from promptflow.tracing._trace import _traced
+from promptflow.tracing.contracts.trace import TraceType
 
 from ._script_executor import ScriptExecutor
 
@@ -34,7 +35,7 @@ class PromptyExecutor(ScriptExecutor):
         as executor input.
         """
         # If the function is not decorated with trace, add trace for it.
-        func = _traced(self.prompty)
+        func = _traced(self.prompty, trace_type=TraceType.FLOW)
         self._func = self.prompty
         inputs = {
             input_name: InputDefinition(type=[input_value["type"]], default=input_value.get("default", None))

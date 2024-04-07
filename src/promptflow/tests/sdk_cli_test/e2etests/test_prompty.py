@@ -18,6 +18,9 @@ FLOW_DIR = TEST_ROOT / "test_configs/flows"
 EAGER_FLOW_DIR = TEST_ROOT / "test_configs/eager_flows"
 
 
+@pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection")
+@pytest.mark.sdk_test
+@pytest.mark.e2etest
 class TestPrompty:
     def test_load_prompty(self):
         expect_data = {
