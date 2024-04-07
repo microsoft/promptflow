@@ -196,8 +196,7 @@
     "nologo",
     "wscript",
     "raisvc",
-    "evals",
-    "pyarrow"
+    "evals"
   ],
   "flagWords": [
     "Prompt Flow"
