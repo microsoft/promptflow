@@ -808,10 +808,6 @@ class TestFlowRun:
             assert "customized error message" in str(e.value)
             # request id should be included in FlowRequestException
             assert f"request id: {pf.runs._service_caller._request_id}" in str(e.value)
-            inner_exception = e.inner_exception()
-            assert inner_exception is not None
-            assert isinstance(inner_exception, HttpResponseError)
-            assert inner_exception.message == "customized error message."
 
     def test_get_detail_against_partial_fail_run(self, pf, runtime: str, randstr: Callable[[str], str]) -> None:
         run = pf.run(
@@ -906,6 +902,12 @@ class TestFlowRun:
             assert len(request_ids) == 1
             # request id should be included in FlowRequestException
             assert f"request id: {pf.runs._service_caller._request_id}" in str(e.value)
+
+            inner_exception = e.value.inner_exception
+            assert inner_exception is not None
+            assert isinstance(inner_exception, HttpResponseError)
+            assert inner_exception.message == "customized error message."
+
 
     # it is a known issue that executor/runtime might write duplicate storage for line records,
     # this will lead to the lines that assert line count (`len(detail)`) fails.
