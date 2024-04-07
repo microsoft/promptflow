@@ -53,8 +53,8 @@ jobs:
         with:
           name: report-${{ matrix.os }}-py${{ matrix.python-version }}
           path: |
-            ${{ env.WORKING_DIRECTORY }}/*.xml
-            ${{ env.WORKING_DIRECTORY }}/htmlcov/
+            ${{ env.WORKING_DIRECTORY }}/core/*.xml
+            ${{ env.WORKING_DIRECTORY }}/core/htmlcov/
 
   azureml_serving_test:
     strategy:
@@ -93,8 +93,8 @@ jobs:
         with:
           name: report-${{ matrix.os }}-py${{ matrix.python-version }}
           path: |
-            ${{ env.WORKING_DIRECTORY }}/*.xml
-            ${{ env.WORKING_DIRECTORY }}/htmlcov/
+            ${{ env.WORKING_DIRECTORY }}/azureml-serving/*.xml
+            ${{ env.WORKING_DIRECTORY }}/azureml-serving/htmlcov/
 
   report:
     needs: [core_test, azureml_serving_test]
