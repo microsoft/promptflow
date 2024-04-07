@@ -1027,7 +1027,7 @@ class FlowOperations(TelemetryMixin):
         return signature
 
     @monitor_operation(activity_name="pf.flows._infer_signature", activity_type=ActivityType.INTERNALCALL)
-    def _infer_signature(self, entry: Callable, keep_entry: bool = False) -> Tuple[dict, Path]:
+    def _infer_signature(self, entry: Callable, keep_entry: bool = False, validate: bool = True) -> Tuple[dict, Path]:
         """Infer signature of a flow entry.
 
         Note that this is a Python only feature.
@@ -1047,9 +1047,13 @@ class FlowOperations(TelemetryMixin):
 
         flow_meta = generate_flow_meta_dict_by_object(func, cls)
         source_path = Path(inspect.getfile(entry))
-        if keep_entry:
-            # TODO: should we handle the case that entry is not defined in root level of the source?
-            flow_meta["entry"] = f"{source_path.stem}:{entry.__name__}"
+        # TODO: should we handle the case that entry is not defined in root level of the source?
+        flow_meta["entry"] = f"{source_path.stem}:{entry.__name__}"
+        if validate:
+            flow = FlexFlow(path=source_path, code=source_path.parent, data=flow_meta, entry=flow_meta["entry"])
+            flow._validate(raise_error=True)
+        if not keep_entry:
+            del flow_meta["entry"]
         return flow_meta, source_path.parent
 
     @monitor_operation(activity_name="pf.flows._save", activity_type=ActivityType.INTERNALCALL)
@@ -1113,7 +1117,7 @@ class FlowOperations(TelemetryMixin):
                 "Code path will be the parent of entry source " "and can't be customized when entry is a callable."
             )
         else:
-            entry_meta, code = self._infer_signature(entry, keep_entry=True)
+            entry_meta, code = self._infer_signature(entry, keep_entry=True, validate=False)
 
         data = self._merge_signature(entry_meta, signature)
         data["entry"] = entry_meta["entry"]

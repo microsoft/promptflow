@@ -5,6 +5,7 @@
 """
 This file can generate a meta file for the given prompt template or a python file.
 """
+import dataclasses
 import importlib.util
 import inspect
 import json
@@ -39,7 +40,12 @@ from promptflow._utils.exception_utils import (
     last_frame_info,
 )
 from promptflow._utils.process_utils import block_terminate_signal_to_parent
-from promptflow._utils.tool_utils import asdict_without_none, function_to_interface, get_inputs_for_prompt_template
+from promptflow._utils.tool_utils import (
+    asdict_without_none,
+    function_to_interface,
+    get_inputs_for_prompt_template,
+    resolve_annotation,
+)
 from promptflow.contracts.tool import InputDefinition, Tool, ToolType, ValueType
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
@@ -149,7 +155,12 @@ def collect_tool_methods_with_init_inputs_in_module(m):
 
 
 def _parse_tool_from_function(
-    f, initialize_inputs=None, gen_custom_type_conn=False, skip_prompt_template=False, include_outputs=False
+    f,
+    initialize_inputs=None,
+    gen_custom_type_conn=False,
+    skip_prompt_template=False,
+    include_outputs=False,
+    allow_any_object=True,
 ):
     try:
         tool_type = getattr(f, "__type", None) or ToolType.PYTHON
@@ -175,6 +186,34 @@ def _parse_tool_from_function(
             tool_name=f.__name__,
             error_type_and_message=error_type_and_message,
         ) from e
+    # we have to do this check here as f will be dropped in the return value
+    if not allow_any_object:
+        signature = inspect.signature(f)
+        input_fields = {k: signature.parameters[k].annotation for k in inputs.keys()}
+        return_type = resolve_annotation(signature.return_annotation)
+        if dataclasses.is_dataclass(return_type):
+            output_fields = {x.name: x.type for x in dataclasses.fields(return_type)}
+        else:
+            output_fields = {"output": return_type}
+
+        for port_type, ports, fields in [("input", inputs, input_fields), ("output", outputs, output_fields)]:
+            if port_type == "output" and not include_outputs:
+                continue
+            for k, v in ports.items():
+                if ValueType.OBJECT not in v.type:
+                    continue
+                if resolve_annotation(fields[k]) != dict:
+                    raise BadFunctionInterface(
+                        message_format=(
+                            "Parse interface for tool '{tool_name}' failed: "
+                            "The {port_type} '{k}' is of a complex python type. "
+                            "Please use a dict instead."
+                        ),
+                        port_type=port_type,
+                        tool_name=f.__name__,
+                        k=k,
+                    )
+
     class_name = None
     if "." in f.__qualname__:
         class_name = f.__qualname__.replace(f".{f.__name__}", "")
@@ -498,12 +537,14 @@ def generate_tool_meta_in_subprocess(
 def generate_flow_meta_dict_by_object(f, cls):
     # Since the flow meta is generated from the entry function, we leverage the function
     # _parse_tool_from_function to parse the interface of the entry function to get the inputs and outputs.
-    tool = _parse_tool_from_function(f, include_outputs=True)
+    # flow will be deployed as a service finally, so we will raise error if any port is of a complex python type.
+    # need to update this if we support serializable python object in the future.
+    tool = _parse_tool_from_function(f, include_outputs=True, allow_any_object=False)
 
     # Include data in generated meta to avoid flow definition's fields(e.g. environment variable) missing.
     flow_meta = {}
     if cls:
-        init_tool = _parse_tool_from_function(cls.__init__, include_outputs=False)
+        init_tool = _parse_tool_from_function(cls.__init__, include_outputs=False, allow_any_object=False)
         init_inputs = init_tool.inputs
     else:
         init_inputs = None

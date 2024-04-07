@@ -1,7 +1,5 @@
-from typing import List
-
 class Hello:
-    def __init__(self, words: List[str]) -> None:
+    def __init__(self, words: list) -> None:
         self.words = words
 
     def __call__(self, text: str) -> str:

@@ -38,6 +38,14 @@ class GlobalHello:
         return f"Hello {text} via {self.connection.name}!"
 
 
+class GlobalHelloWithInvalidInit:
+    def __init__(self, connection: AzureOpenAIConnection, words: list):
+        self.connection = connection
+
+    def __call__(self, text: str) -> str:
+        return f"Hello {text} via {self.connection.name}!"
+
+
 def global_hello(text: str) -> str:
     return f"Hello {text}!"
 
@@ -186,20 +194,62 @@ class TestFlowSave:
                     "init": {
                         "connection": {
                             "type": "AzureOpenAIConnection",
-                        }
+                        },
+                        "s": {
+                            "type": "string",
+                        },
+                        "i": {
+                            "type": "int",
+                        },
+                        "f": {
+                            "type": "double",
+                        },
+                        "b": {
+                            "type": "bool",
+                        },
                     },
                     "inputs": {
-                        "words": {
+                        "s": {
+                            "type": "string",
+                        },
+                        "i": {
+                            "type": "int",
+                        },
+                        "f": {
+                            "type": "double",
+                        },
+                        "b": {
+                            "type": "bool",
+                        },
+                        "li": {
                             "type": "list",
-                        }
+                        },
+                        "d": {
+                            "type": "object",
+                        },
                     },
                     "outputs": {
-                        "output": {
+                        "s": {
+                            "type": "string",
+                        },
+                        "i": {
+                            "type": "int",
+                        },
+                        "f": {
+                            "type": "double",
+                        },
+                        "b": {
+                            "type": "bool",
+                        },
+                        "l": {
+                            "type": "list",
+                        },
+                        "d": {
                             "type": "object",
                         },
                     },
                 },
-                id="class_init_with_connection",
+                id="class_init_complicated_ports",
             ),
         ],
     )
@@ -274,15 +324,30 @@ class TestFlowSave:
                 r"Schema validation failed: {'init.words.type'",
                 id="class_init_with_list_init",
             ),
-            # TODO: check if ports are of dict type
-            # pytest.param(
-            #     {
-            #         "entry": "hello:Hello",
-            #     },
-            #     UserErrorException,
-            #     r"Schema validation failed: {'init.words.type'",
-            #     id="class_init_with_entity_inputs",
-            # ),
+            pytest.param(
+                {
+                    "entry": "hello:Hello",
+                },
+                UserErrorException,
+                r"The input 'text' is of a complex python type. Please use a dict instead",
+                id="class_init_with_entity_inputs",
+            ),
+            pytest.param(
+                {
+                    "entry": "hello:Hello",
+                },
+                UserErrorException,
+                r"The output 'output' is of a complex python type. Please use a dict instead",
+                id="class_init_with_entity_outputs",
+            ),
+            pytest.param(
+                {
+                    "entry": "hello:Hello",
+                },
+                UserErrorException,
+                r"The output 'entity' is of a complex python type. Please use a dict instead",
+                id="class_init_with_dataclass_entity_fields",
+            ),
         ],
     )
     def test_pf_save_failed(self, save_args_overrides, request, expected_error_type, expected_error_regex: str):
@@ -335,7 +400,7 @@ class TestFlowSave:
             },
         }
 
-    def test_pf_save_callable_object(self):
+    def test_pf_save_callable_function(self):
         pf = PFClient()
         target_path = f"{FLOWS_DIR}/saved/hello_callable"
         if os.path.exists(target_path):
@@ -359,3 +424,22 @@ class TestFlowSave:
                 },
             },
         }
+
+    def test_infer_signature(self):
+        pf = PFClient()
+        flow_meta, code = pf.flows._infer_signature(entry=global_hello)
+        assert flow_meta == {
+            "inputs": {
+                "text": {
+                    "type": "string",
+                }
+            },
+            "outputs": {
+                "output": {
+                    "type": "string",
+                },
+            },
+        }
+
+        with pytest.raises(UserErrorException, match="Schema validation failed: {'init.words.type'"):
+            pf.flows._infer_signature(entry=GlobalHelloWithInvalidInit)
