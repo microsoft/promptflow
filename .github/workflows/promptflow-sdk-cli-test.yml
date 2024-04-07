@@ -18,37 +18,7 @@ env:
   IS_IN_CI_PIPELINE: "true"
   RECORD_DIRECTORY: ${{ github.workspace }}/src/promptflow-recording
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-    runs-on: ubuntu-latest
-    steps:
-    - name: checkout
-      uses: actions/checkout@v4
-    - name: Display and Set Environment Variables
-      run: |
-        env | sort >> $GITHUB_OUTPUT
-      id: display_env
-      shell: bash -el {0}
-    - name: Python Setup - ubuntu-latest - Python Version 3.9
-      uses: "./.github/actions/step_create_python_environment"
-      with:
-        pythonVersion: 3.9
-    - name: Build wheel
-      uses: "./.github/actions/step_sdk_setup"
-      with:
-        setupType: promptflow_with_extra
-        scriptPath: ${{ env.testWorkingDirectory }}
-    - name: Upload Wheel
-      if: always()
-      uses: actions/upload-artifact@v3
-      with:
-        name: wheel
-        path: |
-          ${{ github.workspace }}/src/promptflow/dist/*.whl
-          ${{ github.workspace }}/src/promptflow-tools/dist/*.whl
   sdk_cli_tests:
-    needs: build
     strategy:
       fail-fast: false
       matrix:
@@ -69,11 +39,6 @@ jobs:
       uses: "./.github/actions/step_create_python_environment"
       with:
         pythonVersion: ${{ matrix.pythonVersion }}
-    - name: Download Artifacts
-      uses: actions/download-artifact@v3
-      with:
-        name: wheel
-        path: artifacts
     - name: Install wheel
       shell: pwsh
       working-directory: artifacts
@@ -84,13 +49,11 @@ jobs:
         pip install ${{ github.workspace }}/src/promptflow-core
         pip install ${{ github.workspace }}/src/promptflow-devkit[pyarrow]
         pip install ${{ github.workspace }}/src/promptflow
-        gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
-        pip freeze
-    - name: install recording
-      run: |
+        pip install ${{ github.workspace }}/src/promptflow-tools
+
         pip install vcrpy
-        pip install .
-      working-directory: ${{ env.RECORD_DIRECTORY }}
+        pip install ${{ github.workspace }}/src/promptflow-recording
+        pip freeze
     - name: Azure login (non pull_request workflow)
       if: github.event_name != 'pull_request'
       uses: azure/login@v1
