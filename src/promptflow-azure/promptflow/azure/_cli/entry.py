@@ -39,7 +39,7 @@ def run_command(args):
             for handler in logger.handlers:
                 handler.setLevel(logging.DEBUG)
         if args.version:
-            print_pf_version(with_azure=True)
+            print_pf_version(with_azure=True, ignore_none=True)
         elif args.action == "run":
             dispatch_run_commands(args)
         elif args.action == "flow":
