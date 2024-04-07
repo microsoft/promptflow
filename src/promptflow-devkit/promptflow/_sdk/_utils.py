@@ -401,24 +401,8 @@ def print_promptflow_version_dict_string(with_azure: bool = False, ignore_none: 
     print(version_dict_string)
 
 
-def print_pf_version(with_azure: bool = False):
-    version_promptflow = get_promptflow_sdk_version()
-    if version_promptflow:
-        print("promptflow\t\t\t {}".format(version_promptflow))
-    version_tracing = get_promptflow_tracing_version()
-    if version_tracing:
-        print("promptflow-tracing\t\t {}".format(version_tracing))
-    version_core = get_promptflow_core_version()
-    if version_core:
-        print("promptflow-core\t\t\t {}".format(version_core))
-    version_devkit = get_promptflow_devkit_version()
-    if version_devkit:
-        print("promptflow-devkit\t\t {}".format(version_devkit))
-    if with_azure:
-        version_azure = get_promptflow_azure_version()
-        if version_azure:
-            print("promptflow-azure\t\t {}".format(version_azure))
-    print()
+def print_pf_version(with_azure: bool = False, ignore_none: bool = False):
+    print_promptflow_version_dict_string(with_azure, ignore_none)
     print("Executable '{}'".format(os.path.abspath(sys.executable)))
     print("Python ({}) {}".format(platform.system(), sys.version))
 
