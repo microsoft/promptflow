@@ -52,7 +52,7 @@ jobs:
         pip install ${{ github.workspace }}/src/promptflow-tools
 
         pip install vcrpy
-        pip install ${{ github.workspace }}/src/promptflow-recording
+        pip install -e ${{ github.workspace }}/src/promptflow-recording
         pip freeze
     - name: Azure login (non pull_request workflow)
       if: github.event_name != 'pull_request'
