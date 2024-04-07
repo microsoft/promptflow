@@ -1097,7 +1097,7 @@ class FlowOperations(TelemetryMixin):
             )
         )
 
-        _, flow_file = resolve_flow_path(target_flow_directory)
+        _, flow_file = resolve_flow_path(target_flow_directory, check_flow_exist=False)
         target_flow_file = target_flow_directory / flow_file
         target_flow_directory.parent.mkdir(parents=True, exist_ok=True)
 
