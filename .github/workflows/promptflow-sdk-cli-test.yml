@@ -83,7 +83,6 @@ jobs:
           --ignore-glob ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test/e2etests/test_executable.py
     - name: Install pf executable
       shell: pwsh
-      working-directory: artifacts
       run: |
         Set-PSDebug -Trace 1
         pip install ${{ github.workspace }}/src/promptflow-devkit[pyarrow,executable]
