@@ -48,11 +48,10 @@ class ChatRole:
                  init_kwargs: Optional[Dict[str, Any]] = None,
                  **kwargs):
         self._role = role
-        logger.warning(f"Working dir is {working_dir}")
         if working_dir is None:
             flow_path = Path(flow).resolve()
         else:
-            flow_path = working_dir / Path(flow).resolve()
+            flow_path = (working_dir / Path(flow)).resolve()
         self._flow, self._flow_object = self._validate_flow(flow_path)
         self._inputs, self._outputs = self._build_role_io(flow_path, inputs)
 
