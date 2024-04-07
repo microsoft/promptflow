@@ -16,7 +16,7 @@ class HttpConnectionProvider(ConnectionProvider):
     def __init__(self, endpoint: str):
         self._endpoint = endpoint
 
-    def get(self, name: str) -> Any:
+    def get(self, name: str, **kwargs) -> Any:
         resp = httpx.get(f"{self._endpoint}/connections/{name}")
         resp.raise_for_status()  # TODO: Better error handling
         return DictConnectionProvider._build_connection(resp.json())

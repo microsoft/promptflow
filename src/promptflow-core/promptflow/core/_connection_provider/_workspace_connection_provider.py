@@ -1,7 +1,8 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from typing import Any, Optional, Union
+import logging
+from typing import Any, Dict, List, Union
 
 import requests
 
@@ -35,6 +36,8 @@ LIST_CONNECTION_URL = (
 )
 FLOW_META_PREFIX = "azureml.flow."
 
+logger = logging.getLogger(__name__)
+
 
 # Note: We define the category and auth type here because newly added enum values may
 # depend on azure-ai-ml package update, which is not in our control.
@@ -64,9 +67,9 @@ def get_case_insensitive_key(d, key, default=None):
 class WorkspaceConnectionProvider(ConnectionProvider):
     def __init__(
         self,
-        subscription_id: Optional[str] = None,
-        resource_group_name: Optional[str] = None,
-        workspace_name: Optional[str] = None,
+        subscription_id: str,
+        resource_group_name: str,
+        workspace_name: str,
         credential=None,
     ):
         self._credential = credential
@@ -213,7 +216,10 @@ class WorkspaceConnectionProvider(ConnectionProvider):
             if not isinstance(props.auth_type, str):
                 raise UnsupportedConnectionAuthType(message=unsupported_message % props.auth_type)
             if props.auth_type.lower() == ConnectionAuthType.ApiKey.lower():
-                return {"api_key": props.credentials.key, "auth_mode": ConnectionAuthMode.KEY}
+                return {
+                    "api_key": props.credentials.key if props.credentials else None,
+                    "auth_mode": ConnectionAuthMode.KEY,
+                }
             elif props.auth_type.lower() == ConnectionAuthType.AAD.lower():
                 return {"api_key": None, "auth_mode": ConnectionAuthMode.MEID_TOKEN}
             raise UnsupportedConnectionAuthType(message=unsupported_message % props.auth_type)
@@ -249,11 +255,11 @@ class WorkspaceConnectionProvider(ConnectionProvider):
         elif properties.category == ConnectionCategory.CustomKeys:
             # Merge secrets from credentials.keys and other string fields from metadata
             value = {
-                **properties.credentials.keys,
+                **(properties.credentials.keys if properties.credentials else {}),
                 **{k: v for k, v in properties.metadata.items() if not k.startswith(FLOW_META_PREFIX)},
             }
             if type_name == CustomConnection.__name__:
-                meta["secret_keys"] = list(properties.credentials.keys.keys())
+                meta["secret_keys"] = list(properties.credentials.keys.keys()) if properties.credentials else []
         else:
             raise UnknownConnectionType(
                 message_format=(
@@ -333,8 +339,83 @@ class WorkspaceConnectionProvider(ConnectionProvider):
                 name=conn_name,
             )
 
-    def list(self):
-        raise NotImplementedError("Method 'list' is not implemented now.")
+    @classmethod
+    def _build_list_connection_dict(
+        cls, subscription_id, resource_group_name, workspace_name, credential
+    ) -> Dict[str, dict]:
+        url = LIST_CONNECTION_URL.format(
+            sub=subscription_id,
+            rg=resource_group_name,
+            ws=workspace_name,
+        )
+        # Note: There is a try-catch in get arm token. It requires azure-ai-ml.
+        # TODO: Remove the azure-ai-ml dependency.
+        from ._utils import get_arm_token
+
+        try:
+            from azure.core.exceptions import ClientAuthenticationError
+
+            from ._models import WorkspaceConnectionPropertiesV2BasicResourceArmPaginatedResult
+        except ImportError as e:
+            raise MissingRequiredPackage(
+                message="Please install 'promptflow-core[azureml-serving]' to use workspace connection."
+            ) from e
+        try:
+            token = get_arm_token(credential=credential)
+            rest_obj: WorkspaceConnectionPropertiesV2BasicResourceArmPaginatedResult = cls.open_url(
+                token,
+                url=url,
+                action="list",
+                method="GET",
+                model=WorkspaceConnectionPropertiesV2BasicResourceArmPaginatedResult,
+            )
+            result_list = [rest_obj]
+            while rest_obj.next_link is not None:
+                logger.debug("Workspace connection list is paginated, fetching next page.")
+                rest_obj = cls.open_url(
+                    token,
+                    url=rest_obj.next_link,
+                    action="list",
+                    method="GET",
+                    model=WorkspaceConnectionPropertiesV2BasicResourceArmPaginatedResult,
+                )
+                result_list.append(rest_obj)
+        except AccessDeniedError:
+            auth_error_message = (
+                "Access denied to list workspace connections due to invalid authentication. "
+                "Please ensure you have gain RBAC role 'Azure Machine Learning Workspace Connection Secrets Reader' "
+                "for current workspace, and wait for a few minutes to make sure the new role takes effect. "
+            )
+            raise OpenURLUserAuthenticationError(message=auth_error_message)
+        except ClientAuthenticationError as e:
+            raise UserErrorException(target=ErrorTarget.CORE, message=str(e), error=e) from e
+        except Exception as e:
+            raise SystemErrorException(target=ErrorTarget.CORE, message=str(e), error=e) from e
+
+        rest_list_connection_dict = {}
+        for rest_obj in result_list:
+            for conn in rest_obj.value:
+                try:
+                    rest_list_connection_dict[conn.name] = cls.build_connection_dict_from_rest_object(conn.name, conn)
+                except Exception as e:
+                    logger.warning("Connection %r skipped: build connection dict failed with %s.", conn.name, e)
+        return rest_list_connection_dict
+
+    def list(self) -> List[_Connection]:
+        # TODO: try-catch this.
+        rest_list_connection_dict = self._build_list_connection_dict(
+            subscription_id=self.subscription_id,
+            resource_group_name=self.resource_group_name,
+            workspace_name=self.workspace_name,
+            credential=self.credential,
+        )
+        connection_list = []
+        for name, conn_dict in rest_list_connection_dict.items():
+            try:
+                connection_list.append(_Connection._from_execution_connection_dict(name=name, data=conn_dict))
+            except Exception as e:
+                logger.warning("Connection %r skipped: build connection object failed with %s.", name, e)
+        return connection_list
 
     def get(self, name: str, **kwargs) -> _Connection:
         connection_dict = self._build_connection_dict(
