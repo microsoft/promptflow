@@ -1,18 +1,18 @@
 import asyncio
 import tempfile
 from pathlib import Path
+from typing import Dict
 
 from azure.core.exceptions import HttpResponseError, ResourceExistsError
 from azure.storage.blob.aio import BlobServiceClient
 
 from promptflow._cli._utils import merge_jsonl_files
 from promptflow._constants import OutputsFolderName
-from promptflow._sdk._constants import AzureRunTypes, Local2Cloud
-from promptflow._sdk._errors import UploadInternalError, UserAuthenticationError
+from promptflow._sdk._constants import Local2Cloud, LocalStorageFilenames
+from promptflow._sdk._errors import UploadInternalError, UploadUserError, UserAuthenticationError
 from promptflow._sdk.entities import Run
 from promptflow._utils.logger_utils import get_cli_sdk_logger
-from promptflow.azure._utils._asset_client import AsyncAssetClient
-from promptflow.azure._utils._run_history_client import AsyncRunHistoryClient
+from promptflow.azure._storage.blob.client import _get_datastore_credential
 from promptflow.exceptions import UserErrorException
 
 logger = get_cli_sdk_logger()
@@ -28,91 +28,104 @@ class AsyncRunUploader:
         self.run_output_path = Path(run.properties["output_path"])
         self.run_ops = run_ops
         self.overwrite = overwrite
-        self.datastore = run_ops._workspace_default_datastore
+        self.datastore = self._get_datastore_with_secrets()
         self.blob_service_client = self._init_blob_service_client()
-        self.run_history_client = AsyncRunHistoryClient.from_run_operations(run_ops)
-        self.asset_client = AsyncAssetClient.from_run_operations(run_ops)
+
+    def _get_datastore_with_secrets(self):
+        operations = self.run_ops._datastore_operations
+        datastore = operations.get_default(include_secrets=True)
+        cred = getattr(datastore.credentials, "account_key", None)
+        if not cred:
+            raise UploadInternalError(f"Datastore {datastore.name!r} does not have valid account key.")
+        return datastore
 
     def _init_blob_service_client(self):
         logger.debug("Initializing blob service client.")
         account_url = f"{self.datastore.account_name}.blob.{self.datastore.endpoint}"
-        return BlobServiceClient(account_url=account_url, credential=self.run_ops._credential)
+        # use credential from datastore, in this way user does not need RBAC role "Storage Blob Data Contributor"
+        # to perform write operation on the blob storage.
+        credential = _get_datastore_credential(self.datastore, self.run_ops._datastore_operations)
+        return BlobServiceClient(account_url=account_url, credential=credential)
 
-    async def upload(self) -> None:
+    async def upload(self) -> Dict:
         """Upload run record to cloud."""
         error_msg_prefix = f"Failed to upload run {self.run.name!r}"
         try:
-            # pass verify=False to client to disable SSL verification.
-            # Source: https://github.com/encode/httpx/issues/1331
             async with self.blob_service_client:
-                # create run history record
-                await self._create_run_history_record()
                 # upload other artifacts
                 tasks = [
                     # put async functions in tasks to run in coroutines
-                    self._upload_run_artifacts(),
+                    self._upload_flow_artifacts(),
+                    self._upload_node_artifacts(),
+                    self._upload_run_outputs(),
                     # self._upload_run_snapshot(httpx_client),
                 ]
-                await asyncio.gather(*tasks)
+                results = await asyncio.gather(*tasks)
+
+                # merge the results to be a dict
+                result_dict = {
+                    OutputsFolderName.FLOW_ARTIFACTS: results[0],
+                    OutputsFolderName.NODE_ARTIFACTS: results[1],
+                    OutputsFolderName.FLOW_OUTPUTS: results[2],
+                }
+                return result_dict
+
         except UserAuthenticationError:
+            raise
+        except UploadUserError:
             raise
         except Exception as e:
             raise UploadInternalError(f"{error_msg_prefix}. Error: {e}") from e
 
-    async def _create_run_history_record(self) -> None:
-        """Create run history record"""
-        logger.debug(f"Creating run history record for run {self.run.name!r}.")
-        # set run property to label the run as local to cloud
-        properties = dict()
-        properties[Local2Cloud.PROPERTY_KEY] = "true"
-
-        # prepare the payload
-        payload = {
-            "runId": self.run.name,
-            "status": self.run.status,
-            "runType": AzureRunTypes.EVALUATION if self.run.run else AzureRunTypes.BATCH,
-            "displayName": self.run.display_name,
-            "description": self.run.description,
-            "properties": properties,
-            "tags": self.run.tags,
-        }
-        payload = {k: v for k, v in payload.items() if v}
-        await self.run_history_client.patch_run(payload)
-        logger.debug(f"Successfully created run history record for run {self.run.name!r}.")
-
-    async def _update_run_record_with_artifacts_asset_id(self, asset_id):
-        """Update run record with artifacts asset id"""
-        logger.debug(f"Updating run record {self.run.name!r} with artifacts asset id {asset_id!r}.")
-        payload = {
-            "runId": self.run.name,
-            "Outputs": {Local2Cloud.ASSET_NAME_DEBUG_INFO: {"assetId": asset_id, "type": "UriFolder"}},
-        }
-        await self.run_history_client.patch_run(payload)
-
-    async def _upload_run_artifacts(self) -> None:
+    async def _upload_flow_artifacts(self) -> str:
         """Upload run artifacts to cloud."""
+        logger.debug(f"Uploading flow artifacts for run {self.run.name!r}.")
+        # need to merge jsonl files before uploading
         with tempfile.TemporaryDirectory() as temp_dir:
             local_folder = self.run_output_path / f"{OutputsFolderName.FLOW_ARTIFACTS}"
             temp_local_folder = Path(temp_dir) / f"{OutputsFolderName.FLOW_ARTIFACTS}"
-            # need to merge jsonl files before uploading
+            logger.debug("Merging run artifacts jsonl files.")
             merge_jsonl_files(local_folder, temp_local_folder)
             remote_folder = f"{Local2Cloud.BLOB_ROOT}/{Local2Cloud.BLOB_ARTIFACTS}/{self.run.name}"
             # upload the artifacts folder to blob
             await self._upload_local_folder_to_blob(temp_local_folder, remote_folder)
-        # create asset for the artifacts folder
-        asset_id = await self._create_asset(remote_folder, Local2Cloud.ASSET_NAME_DEBUG_INFO)
-        # update flow artifacts asset id to the run record
-        await self._update_run_record_with_artifacts_asset_id(asset_id)
+        return f"{remote_folder}/{OutputsFolderName.FLOW_ARTIFACTS}"
 
-    async def _create_asset(self, relative_path, output_name):
-        asset_id = await self.asset_client.create_unregistered_output(
-            run_id=self.run.name,
-            datastore_name=self.datastore.name,
-            relative_path=relative_path,
-            output_name=output_name,
-        )
-        logger.debug(f"Created {output_name} Asset: {asset_id}")
-        return asset_id
+    async def _upload_node_artifacts(self) -> str:
+        logger.debug(f"Uploading node artifacts for run {self.run.name!r}.")
+        local_folder = self.run_output_path / f"{OutputsFolderName.NODE_ARTIFACTS}"
+        remote_folder = f"{Local2Cloud.BLOB_ROOT}/{Local2Cloud.BLOB_ARTIFACTS}/{self.run.name}"
+        await self._upload_local_folder_to_blob(local_folder, remote_folder)
+        return f"{remote_folder}/{OutputsFolderName.NODE_ARTIFACTS}"
+
+    async def _upload_run_outputs(self) -> str:
+        """Upload run outputs to cloud."""
+        logger.debug(f"Uploading run outputs for run {self.run.name!r}.")
+        local_folder = self.run_output_path / f"{OutputsFolderName.FLOW_OUTPUTS}"
+        remote_folder = f"{Local2Cloud.BLOB_ROOT}/{Local2Cloud.BLOB_ARTIFACTS}/{self.run.name}"
+        await self._upload_local_folder_to_blob(local_folder, remote_folder)
+        return f"{remote_folder}/{OutputsFolderName.FLOW_OUTPUTS}"
+
+    async def _upload_logs(self) -> str:
+        """Upload logs to cloud."""
+        logger.debug(f"Uploading logs for run {self.run.name!r}.")
+        local_folder = self.run_output_path / "logs"
+        remote_folder = f"{Local2Cloud.BLOB_ROOT}/{Local2Cloud.BLOB_LOGS}/{self.run.name}"
+        await self._upload_local_folder_to_blob(local_folder, remote_folder)
+
+    async def _upload_snapshot(self) -> str:
+        """Upload run snapshot to cloud."""
+        logger.debug(f"Uploading snapshot for run {self.run.name!r}.")
+        local_folder = self.run_output_path / LocalStorageFilenames.SNAPSHOT_FOLDER
+        remote_folder = f"{Local2Cloud.BLOB_ROOT}/{Local2Cloud.BLOB_SNAPSHOT}/{self.run.name}"
+        await self._upload_local_folder_to_blob(local_folder, remote_folder)
+
+    async def _upload_metrics(self) -> None:
+        """Upload run metrics to cloud."""
+        logger.debug(f"Uploading metrics for run {self.run.name!r}.")
+        local_folder = self.run_output_path / LocalStorageFilenames.METRICS
+        remote_folder = f"{Local2Cloud.BLOB_ROOT}/{Local2Cloud.BLOB_METRICS}/{self.run.name}"
+        await self._upload_local_folder_to_blob(local_folder, remote_folder)
 
     async def _upload_local_folder_to_blob(self, local_folder, remote_folder):
         """Upload local folder to remote folder in blob.
@@ -120,6 +133,7 @@ class AsyncRunUploader:
         Note:
             If local folder is "a/b/c", and remote folder is "x/y/z", the blob path will be "x/y/z/c".
         """
+        logger.debug(f"Uploading local folder {local_folder.resolve().as_posix()!r} to blob {remote_folder!r}.")
         local_folder = Path(local_folder)
 
         if not local_folder.is_dir():
@@ -142,19 +156,30 @@ class AsyncRunUploader:
                 # Construct the blob path
                 relative_path = file.relative_to(local_folder)
                 blob_path = f"{remote_folder}/{local_folder.name}/{relative_path}"
-
-                # Create a blob client for the blob path
-                blob_client = self.blob_service_client.get_blob_client(
-                    container=self.datastore.container_name, blob=blob_path
-                )
-                # Upload the file to the blob
-                await self._upload_single_blob(blob_client, file)
+                await self._upload_local_file_to_blob(file, blob_path)
 
         # return the remote folder path
         return f"{remote_folder}/{local_folder.name}"
 
+    async def _upload_local_file_to_blob(self, local_file, remote_file):
+        """Upload local file to remote file in blob."""
+        local_file = Path(local_file)
+
+        if not local_file.is_file():
+            raise UploadInternalError(
+                f"Local file {local_file.resolve().as_posix()!r} does not exist or it's not a file."
+            )
+
+        # Create a blob client for the blob path
+        blob_client = self.blob_service_client.get_blob_client(
+            container=self.datastore.container_name, blob=remote_file
+        )
+        # Upload the file to the blob
+        await self._upload_single_blob(blob_client, local_file)
+
     async def _upload_single_blob(self, blob_client, data_path) -> None:
         """Upload a single blob to cloud."""
+        logger.debug(f"Uploading local file {data_path.resolve().as_posix()!r} to blob {blob_client.blob_name!r}.")
         data_path = Path(data_path)
         if not data_path.is_file():
             UploadInternalError(f"Data path {data_path.resolve().as_posix()!r} does not exist or it's not a file.")
@@ -165,14 +190,16 @@ class AsyncRunUploader:
                     await blob_client.upload_blob(f, overwrite=self.overwrite)
                 except ResourceExistsError as e:
                     error_msg = (
+                        f"Failed to upload run {self.run.name!r}. "
                         f"Specified blob {blob_client.blob_name!r} already exists and overwrite is set to False. "
                         f"Container: {blob_client.container_name!r}. Datastore: {self.datastore.name!r}."
                     )
-                    raise UploadInternalError(error_msg) from e
+                    raise UploadUserError(error_msg) from e
                 except HttpResponseError as e:
                     if e.status_code == 403:
                         raise UserAuthenticationError(
-                            f"User does not have permission to perform this operation on storage account "
+                            f"Failed to upload run {self.run.name!r}. "
+                            f"User does not have permission to perform write operation on storage account "
                             f"{self.datastore.account_name!r} container {self.datastore.container_name!r}. "
                             f"Original azure blob error: {str(e)}"
                         )

@@ -205,6 +205,12 @@ class UploadInternalError(SDKInternalError):
     pass
 
 
+class UploadUserError(SDKError):
+    """Exception raised if upload user error."""
+
+    pass
+
+
 class RunHistoryInternalError(SDKInternalError):
     """Exception raised if run history system error."""
 

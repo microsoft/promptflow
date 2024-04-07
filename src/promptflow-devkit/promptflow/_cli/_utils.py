@@ -519,7 +519,7 @@ def merge_jsonl_files(source_folder: Union[str, Path], output_folder: Union[str,
         000000001_000000001.jsonl
         000000002_000000002.jsonl
 
-        merged to: 000000000_000000002.jsonl
+        merged to: 000000000_0000000024.jsonl
 
     Args:
         source_folder (str): The path to the source folder containing the .jsonl files to merge.
@@ -537,7 +537,9 @@ def merge_jsonl_files(source_folder: Union[str, Path], output_folder: Union[str,
 
     for i in range(0, len(jsonl_files), group_size):
         group = jsonl_files[i : i + group_size]
-        output_file_name = f"{group[0].stem.split('_')[0]}_{group[-1].stem.split('_')[0]}.jsonl"
+        file_name_part_0 = str(i).zfill(9)
+        file_name_part_1 = str(i + group_size - 1).zfill(9)
+        output_file_name = f"{file_name_part_0}_{file_name_part_1}.jsonl"
         output_file_path = output_folder_path / output_file_name
 
         with output_file_path.open("w", encoding=DEFAULT_ENCODING) as output_file:

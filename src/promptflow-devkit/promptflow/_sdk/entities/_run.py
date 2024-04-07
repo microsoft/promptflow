@@ -603,6 +603,9 @@ class Run(YAMLTranslatableMixin):
             enable_multi_container=is_multi_container_enabled(),
         )
 
+        # use when uploading a local existing run to cloud
+        local_to_cloud_info = getattr(self, "_local_to_cloud_info", None)
+
         if str(self.flow).startswith(REMOTE_URI_PREFIX):
             if not self._use_remote_flow:
                 # in normal case, we will upload local flow to datastore and resolve the self.flow to be remote uri
@@ -628,6 +631,9 @@ class Run(YAMLTranslatableMixin):
                 return common_submit_bulk_run_request(
                     flow_definition_resource_id=self.flow,
                 )
+        elif local_to_cloud_info:
+            # register local run to cloud
+            pass
         else:
             # upload via CodeOperations.create_or_update
             # submit with param FlowDefinitionDataUri
