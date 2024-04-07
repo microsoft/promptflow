@@ -7,6 +7,8 @@ import pytest
 
 from promptflow._utils.exception_utils import ExceptionPresenter, JsonSerializedPromptflowException, ResponseCode
 from promptflow._utils.logger_utils import bulk_logger, flow_logger, logger, service_logger
+from promptflow._version import VERSION as PF_VERSION
+from promptflow.core._version import __version__ as PF_CORE_VERSION
 from promptflow.executor._service._errors import ExecutionTimeoutError
 from promptflow.executor._service.contracts.execution_request import BaseExecutionRequest, FlowExecutionRequest
 from promptflow.executor._service.utils.service_utils import (
@@ -64,7 +66,10 @@ class TestServiceUtils:
             "request_id": "dummy_request_id",
         }
         operation_context = update_and_get_operation_context(context_dict)
-        assert operation_context.user_agent == "dummy_user_agent promptflow/0.0.1"
+        assert (
+            operation_context.user_agent
+            == f"dummy_user_agent promptflow/{PF_VERSION} promptflow-core/{PF_CORE_VERSION}"
+        )
         assert operation_context.request_id == "dummy_request_id"
 
     def test_get_commit_id(self, monkeypatch):

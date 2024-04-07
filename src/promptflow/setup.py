@@ -58,18 +58,13 @@ setup(
         "azure": ["promptflow-azure"],
         "executable": ["promptflow-devkit[executable]"],
         "azureml-serving": [
-            # AzureML connection dependencies
-            "azure-identity>=1.12.0,<2.0.0",
-            "azure-ai-ml>=1.14.0,<2.0.0",
-            # MDC dependencies for monitoring
-            "azureml-ai-monitoring>=0.1.0b3,<1.0.0",
+            "promptflow-core[azureml-serving]",
         ],
         "executor-service": [
             "promptflow-core[executor-service]",  # used to build web executor server
         ],
     },
     packages=find_packages(),
-    scripts=["pf.bat"],
     include_package_data=True,
     project_urls={
         "Bug Reports": "https://github.com/microsoft/promptflow/issues",

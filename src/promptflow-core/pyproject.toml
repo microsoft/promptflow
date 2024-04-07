@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "promptflow-core"
-version = "1.0.0.dev0"
+version = "1.1.0.dev0"
 description = "Prompt flow core"
 include = [
   "promptflow/core/_serving/static/*",
@@ -44,13 +44,23 @@ python = "<4.0,>=3.8"
 promptflow-tracing = ">=1.0.0,<2.0.0"
 "ruamel.yaml" = ">=0.17.10,<1.0.0"  # used to generate connection templates with preserved comments
 docutils = "*"  # used to generate description for tools
+psutil = "*"  # promptflow/_utils/process_utils.py
 jsonschema = ">=4.0.0,<5.0.0"  # used to validate tool
 filetype = ">=1.2.0"  # used to detect the mime type for multi-media input
 flask = ">=2.2.3,<4.0.0"  # Serving endpoint requirements
+python-dateutil = ">=2.1.0,<3.0.0"  # Contracts RunInfo
+# ========executor-service dependencies========
 fastapi = ">=0.109.0,<1.0.0" # used to build web executor server
+# ========azureml-serving dependencies========
+# AzureML connection dependencies
+azure-identity = ">=1.12.0,<2.0.0"
+azure-ai-ml = ">=1.14.0,<2.0.0"
+# MDC dependencies for monitoring
+azureml-ai-monitoring = ">=0.1.0b3,<1.0.0"
 
 [tool.poetry.extras]
 executor-service = ["fastapi"]
+azureml-serving = ["azure-identity", "azure-ai-ml", "azureml-ai-monitoring"]
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "*"
@@ -70,6 +80,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.pytest.ini_options]
 markers = [
   "unittest",
+  "e2etest",
 ]
 # junit - analyse and publish test results (https://github.com/EnricoMi/publish-unit-test-result-action)
 # durations - list the slowest test durations
@@ -86,6 +97,8 @@ addopts = """
 testpaths = ["tests"]
 
 [tool.coverage.run]
+concurrency = ["multiprocessing"]
+source = ["promptflow"]
 omit = [
   "__init__.py",
 ]

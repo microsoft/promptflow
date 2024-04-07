@@ -10,11 +10,12 @@ from functools import partial
 from pathlib import Path
 from typing import Callable, List, Optional
 
+from promptflow._constants import MessageFormatType
 from promptflow._core._errors import InvalidSource
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping
-from promptflow._utils.multimedia_utils import create_image, load_multimedia_data_recursively
+from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
@@ -55,6 +56,7 @@ class ToolResolver:
         working_dir: Path,
         connections: Optional[dict] = None,
         package_tool_keys: Optional[List[str]] = None,
+        message_format: str = MessageFormatType.BASIC,
     ):
         try:
             # Import openai and aoai for llm tool
@@ -64,6 +66,7 @@ class ToolResolver:
         self._tool_loader = ToolLoader(working_dir, package_tool_keys=package_tool_keys)
         self._working_dir = working_dir
         self._connection_manager = ConnectionManager(connections)
+        self._multimedia_processor = MultimediaProcessor.create(message_format)
 
     @classmethod
     def start_resolver(
@@ -275,7 +278,7 @@ class ToolResolver:
                     updated_inputs[k].value = self._convert_to_connection_value(k, v, node_name, tool_input.type)
             elif value_type == ValueType.IMAGE:
                 try:
-                    updated_inputs[k].value = create_image(v.value)
+                    updated_inputs[k].value = self._multimedia_processor.create_image(v.value)
                 except Exception as e:
                     error_type_and_message = f"({e.__class__.__name__}) {e}"
                     raise NodeInputValidationError(
@@ -310,7 +313,9 @@ class ToolResolver:
                         target=ErrorTarget.EXECUTOR,
                     ) from e
                 try:
-                    updated_inputs[k].value = load_multimedia_data_recursively(updated_inputs[k].value)
+                    updated_inputs[k].value = self._multimedia_processor.load_multimedia_data_recursively(
+                        updated_inputs[k].value
+                    )
                 except Exception as e:
                     error_type_and_message = f"({e.__class__.__name__}) {e}"
                     raise NodeInputValidationError(
@@ -407,7 +412,9 @@ class ToolResolver:
         for input_name, input in prompt_tpl_inputs_mapping.items():
             if ValueType.IMAGE in input.type and input_name in node_inputs:
                 if node_inputs[input_name].value_type == InputValueType.LITERAL:
-                    node_inputs[input_name].value = create_image(node_inputs[input_name].value)
+                    node_inputs[input_name].value = self._multimedia_processor.create_image(
+                        node_inputs[input_name].value
+                    )
         return node_inputs
 
     def _resolve_prompt_node(self, node: Node) -> ResolvedTool:
@@ -455,9 +462,23 @@ class ToolResolver:
             # This is a fallback for the case that ServerlessConnection related tool is not ready
             # in legacy versions, then we can directly use OpenAIConnection.
             if isinstance(connection, ServerlessConnection):
+                # The ServerlessConnection should be passed into promptflow-tools as it is.
+                # And this append "/v1" logic should exist in promptflow-tools.
+                # But since old version promptflow package doesn't support below things:
+                # 1. There is NO ServerlessConnection;
+                # 2. Register_apis doesn't support Union;
+                # So in order to release this append "/v1" function without breaking old promptflow package.
+                # We move this logic here.
+                # This is a short-term solution. After MaaS supports OpenAI compatible rest API,
+                # we should remove the V1 tricky here.
+                suffix = "/v1"
+                base_url = connection.api_base
+                if not base_url.endswith(suffix):
+                    # append "/v1" to ServerlessConnection api_base so that it can directly use the OpenAI SDK.
+                    base_url += suffix
                 connection = OpenAIConnection(
                     api_key=connection.api_key,
-                    base_url=connection.api_base,
+                    base_url=base_url,
                     name=connection.name,
                 )
                 connection_type = "OpenAIConnection"
