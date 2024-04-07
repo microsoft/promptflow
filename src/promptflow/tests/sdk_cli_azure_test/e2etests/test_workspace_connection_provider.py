@@ -20,6 +20,7 @@ class TestWorkspaceConnectionProvider:
             subscription_id=pf._ml_client._operation_scope.subscription_id,
             resource_group_name=pf._ml_client._operation_scope.resource_group_name,
             workspace_name=pf._ml_client._operation_scope.workspace_name,
+            credential=pf._ml_client._credential,
         )
         connections = provider.list()
         assert len(connections) > 0
