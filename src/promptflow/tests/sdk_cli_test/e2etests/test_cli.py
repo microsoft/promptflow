@@ -20,6 +20,7 @@ import pytest
 
 from promptflow._cli._pf.entry import main
 from promptflow._constants import LINE_NUMBER_KEY, PF_USER_AGENT
+from promptflow._core.metric_logger import add_metric_logger
 from promptflow._sdk._constants import LOGGER_NAME, SCRUBBED_VALUE, ExperimentStatus
 from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
@@ -2239,6 +2240,13 @@ class TestCli:
         )
 
     def test_flow_run_resume_with_image_aggregation(self, local_client) -> None:
+        metrics = {}
+
+        def test_metric_logger(key, value):
+            metrics[key] = value
+
+        add_metric_logger(test_metric_logger)
+
         run_id = str(uuid.uuid4())
         # fetch std out
         run_pf_command(
@@ -2259,6 +2267,7 @@ class TestCli:
         with open(output_path, "r") as file:
             original_output = [json.loads(line) for line in file]
         original_success_count = len(original_output)
+        original_image_count = metrics.get("image_count", None)
 
         new_run_id = str(uuid.uuid4())
         display_name = "test"
@@ -2277,6 +2286,7 @@ class TestCli:
             "tags.B=B",
         )
         resume_run = local_client.runs.get(name=new_run_id)
+        resume_image_count = metrics.get("image_count", None)
         assert resume_run.name == new_run_id
         assert resume_run.display_name == display_name
         assert resume_run.description == description
@@ -2293,6 +2303,9 @@ class TestCli:
         with open(log_path, "r") as file:
             log_text = file.read()
         assert f"Skipped the execution of {original_success_count} existing results." in log_text
+
+        # assert aggregation node works
+        assert original_image_count < resume_image_count
 
     def test_flow_run_exclusive_param(self, capfd) -> None:
         # fetch std out
