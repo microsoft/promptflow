@@ -44,11 +44,11 @@ jobs:
       run: |
         Set-PSDebug -Trace 1
         pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
-        pip install ${{ github.workspace }}/src/promptflow-tracing
-        pip install ${{ github.workspace }}/src/promptflow-core
-        pip install ${{ github.workspace }}/src/promptflow-devkit[pyarrow]
-        pip install ${{ github.workspace }}/src/promptflow
-        pip install ${{ github.workspace }}/src/promptflow-tools
+        pip install -e ${{ github.workspace }}/src/promptflow-tracing
+        pip install -e ${{ github.workspace }}/src/promptflow-core
+        pip install -e ${{ github.workspace }}/src/promptflow-devkit[pyarrow]
+        pip install -e ${{ github.workspace }}/src/promptflow
+        pip install -e ${{ github.workspace }}/src/promptflow-tools
 
         pip install vcrpy
         pip install -e ${{ github.workspace }}/src/promptflow-recording
