@@ -73,8 +73,9 @@ def resolve_flow_path(
     :param base_path: The base path to resolve the flow path. If not specified, the flow path will be
       resolved based on the current working directory.
     :type base_path: Union[str, Path, PathLike]
-    :param check_flow_exist: If True, the function will return the flow directory path and the file name of the
-        target yaml. If False, the function will try to check the target yaml and raise FileNotFoundError if not found.
+    :param check_flow_exist: If True, the function will try to check the target yaml and
+      raise FileNotFoundError if not found.
+      If False, the function will return the flow directory path and the file name of the target yaml.
     :return: The flow directory path and the file name of the target yaml.
     :rtype: Tuple[Path, str]
     """
@@ -90,9 +91,8 @@ def resolve_flow_path(
         target_file = FLOW_FLEX_YAML if flex_file_exist else FLOW_DAG_YAML
         if dag_file_exist and flex_file_exist:
             raise ValidationException(
-                f"Both exist {FLOW_DAG_YAML} and {FLOW_FLEX_YAML} in the flow path {flow_path}, "
-                f"please specify the file instead of the folder, "
-                f"or delete the excess yaml file.",
+                f"Both {FLOW_DAG_YAML} and {FLOW_FLEX_YAML} exist in {flow_path}. "
+                f"Please specify a file or remove the extra YAML.",
                 privacy_info=[str(flow_path)],
             )
     else:
