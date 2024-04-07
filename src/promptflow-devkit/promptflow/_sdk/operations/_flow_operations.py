@@ -639,59 +639,8 @@ class FlowOperations(TelemetryMixin):
         self._run_pyinstaller(output_dir)
 
     def _generate_executable_dependency(self):
-        def get_git_base_dir():
-            return Path(
-                subprocess.run(["git", "rev-parse", "--show-toplevel"], stdout=subprocess.PIPE)
-                .stdout.decode("utf-8")
-                .strip()
-            )
-
-        def is_tool(name):
-            """Check whether `name` is on PATH and marked as executable."""
-
-            # from whichcraft import which
-            from shutil import which
-
-            return which(name) is not None
-
-        def get_package_dependencies(package_name_list):
-            dependencies = []
-            for package_name in package_name_list:
-                if is_tool("conda"):
-                    result = subprocess.run(
-                        "conda activate root | pip show {}".format(package_name), shell=True, stdout=subprocess.PIPE
-                    )
-                else:
-                    result = subprocess.run(["pip", "show", package_name], stdout=subprocess.PIPE)
-                lines = result.stdout.decode("utf-8", errors="ignore").splitlines()
-                for line in lines:
-                    if line.startswith("Requires"):
-                        dependency = line.split(": ")[1].split(", ")
-                        if dependency != [""]:
-                            dependencies.extend(dependency)
-                        break
-
-            dependencies = [dependency for dependency in dependencies if not dependency.startswith("promptflow")]
-            return dependencies
-
-        dependencies = ["promptflow-devkit", "promptflow-core", "promptflow-tracing"]
-        # get promptflow-** required packages
-        required_packages = get_package_dependencies(dependencies)
-        # hard-code promptflow-** required extra packages for now
-        extra_packages = [
-            "pyarrow",
-            "pyinstaller",
-            "streamlit",
-            "streamlit-quill",
-            "bs4",
-            "fastapi",
-            "azure-identity",
-            "azure-ai-ml",
-            "azureml-ai-monitoring",
-        ]
-        all_packages = list(set(dependencies) | set(required_packages) | set(extra_packages))
-        # remove all packages starting with promptflow
-        all_packages = [package for package in all_packages if not package.startswith("promptflow")]
+        with open(Path(__file__).parent.parent / "data" / "executable" / "requirements.txt", "r") as f:
+            all_packages = f.read().splitlines()
 
         hidden_imports = copy.deepcopy(all_packages)
         meta_packages = copy.deepcopy(all_packages)

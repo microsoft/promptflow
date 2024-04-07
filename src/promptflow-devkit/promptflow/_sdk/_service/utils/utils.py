@@ -187,7 +187,10 @@ def check_pfs_service_status(pfs_port, time_delay=1, count_threshold=20) -> bool
     time.sleep(time_delay)
     is_healthy = is_pfs_service_healthy(pfs_port)
     while is_healthy is False and count_threshold > cnt:
-        logger.info(f"Promptflow service is not ready. will try at most {count_threshold} times.")
+        logger.info(
+            f"Promptflow service is not ready. It has been tried for {cnt} times, will try at most {count_threshold} "
+            f"times."
+        )
         cnt += 1
         time.sleep(time_delay)
         is_healthy = is_pfs_service_healthy(pfs_port)
