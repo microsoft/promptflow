@@ -77,7 +77,7 @@ jobs:
         run: poetry install
         working-directory: ${{ env.TRACING_DIRECTORY }}
       - name: install promptflow-core[azureml-serving]
-        run: poetry install .[azureml-serving]
+        run: poetry install -E azureml-serving
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: install test dependency group
         run: poetry install --only test
