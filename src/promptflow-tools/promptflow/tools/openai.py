@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import Union
 from promptflow.tools.common import render_jinja_template, handle_openai_error, \
     parse_chat, to_bool, validate_functions, process_function_call, \
     post_process_chat_api_response, init_openai_client
@@ -7,7 +6,7 @@ from promptflow.tools.common import render_jinja_template, handle_openai_error, 
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
 # since the code here is in promptflow namespace as well
 from promptflow._internal import ToolProvider, tool, register_apis
-from promptflow.connections import OpenAIConnection, ServerlessConnection
+from promptflow.connections import OpenAIConnection
 from promptflow.contracts.types import PromptTemplate
 
 
@@ -23,7 +22,7 @@ class Engine(str, Enum):
 
 
 class OpenAI(ToolProvider):
-    def __init__(self, connection: Union[OpenAIConnection, ServerlessConnection]):
+    def __init__(self, connection: OpenAIConnection):
         super().__init__()
         self._client = init_openai_client(connection)
 

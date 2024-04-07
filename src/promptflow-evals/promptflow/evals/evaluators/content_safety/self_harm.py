@@ -1,4 +1,4 @@
-from promptflow import load_flow
+from promptflow.client import load_flow
 from pathlib import Path
 from azure.core.credentials import TokenCredential
 from promptflow.evals._constants import EvaluationMetrics

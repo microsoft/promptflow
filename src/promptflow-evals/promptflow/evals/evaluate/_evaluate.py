@@ -4,7 +4,7 @@
 from typing import Optional, Dict, Callable
 import pandas as pd
 from ._flow_run_wrapper import FlowRunWrapper
-from promptflow import PFClient
+from promptflow.client import PFClient
 
 
 def _calculate_mean(df) -> Dict[str, float]:

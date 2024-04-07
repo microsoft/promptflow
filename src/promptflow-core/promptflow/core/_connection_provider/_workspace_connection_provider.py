@@ -333,6 +333,9 @@ class WorkspaceConnectionProvider(ConnectionProvider):
                 name=conn_name,
             )
 
+    def list(self):
+        raise NotImplementedError("Method 'list' is not implemented now.")
+
     def get(self, name: str, **kwargs) -> _Connection:
         connection_dict = self._build_connection_dict(
             name,
