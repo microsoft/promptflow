@@ -529,4 +529,6 @@ class TestRetryUtils:
             "r",
         ) as f:
             executable_all_packages = f.read().splitlines()
+        # check if all packages in requirements.txt are the same with pyproject.toml in devkit/core/tracinf packages.
+        # If not, maybe you need update requirements.txt
         assert all_packages == executable_all_packages
