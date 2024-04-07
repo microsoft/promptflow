@@ -23,7 +23,6 @@ from promptflow._constants import PROMPT_FLOW_DIR_NAME, FlowLanguage
 from promptflow._proxy import ProxyFactory
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
-    DAG_FILE_NAME,
     DEFAULT_ENCODING,
     DEFAULT_REQUIREMENTS_FILE_NAME,
     FLOW_META_JSON_GEN_TIMEOUT,
@@ -53,6 +52,7 @@ from promptflow._utils.flow_utils import (
     is_flex_flow,
     is_prompty_flow,
     parse_variant,
+    resolve_flow_path,
 )
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.exceptions import ErrorTarget, UserErrorException
@@ -1097,7 +1097,8 @@ class FlowOperations(TelemetryMixin):
             )
         )
 
-        target_flow_file = target_flow_directory / DAG_FILE_NAME
+        _, flow_file = resolve_flow_path(target_flow_directory)
+        target_flow_file = target_flow_directory / flow_file
         target_flow_directory.parent.mkdir(parents=True, exist_ok=True)
 
         # TODO: handle ignore

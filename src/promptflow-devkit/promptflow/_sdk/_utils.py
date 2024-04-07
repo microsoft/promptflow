@@ -32,11 +32,10 @@ from keyring.errors import NoKeyringError
 from marshmallow import ValidationError
 
 import promptflow
-from promptflow._constants import ENABLE_MULTI_CONTAINER_KEY, EXTENSION_UA, FlowLanguage
+from promptflow._constants import ENABLE_MULTI_CONTAINER_KEY, EXTENSION_UA, FLOW_DAG_YAML, FlowLanguage
 from promptflow._core.entry_meta_generator import generate_flow_meta as _generate_flow_meta
 from promptflow._sdk._constants import (
     AZURE_WORKSPACE_REGEX_FORMAT,
-    DAG_FILE_NAME,
     DEFAULT_ENCODING,
     FLOW_TOOLS_JSON,
     FLOW_TOOLS_JSON_GEN_TIMEOUT,
@@ -63,6 +62,7 @@ from promptflow._sdk._errors import (
     UnsecureConnectionError,
 )
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
+from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
@@ -289,12 +289,8 @@ def _merge_local_code_and_additional_includes(code_path: Path):
             for name in src.glob("*"):
                 additional_includes_copy(name, Path(relative_path) / name.name, target_dir)
 
-    if code_path.is_dir():
-        yaml_path = (Path(code_path) / DAG_FILE_NAME).resolve()
-        code_path = code_path.resolve()
-    else:
-        yaml_path = code_path.resolve()
-        code_path = code_path.parent.resolve()
+    code_path, yaml_file = resolve_flow_path(code_path, check_flow_exist=False)
+    yaml_path = code_path / yaml_file
 
     with tempfile.TemporaryDirectory() as temp_dir:
         shutil.copytree(code_path.resolve().as_posix(), temp_dir, dirs_exist_ok=True)
@@ -642,9 +638,9 @@ def generate_flow_tools_json(
     :param used_packages_only: whether to only include used packages, default value is False.
     :param source_path_mapping: if specified, record yaml paths for each source.
     """
-    flow_directory = Path(flow_directory).resolve()
+    flow_directory, flow_file = resolve_flow_path(flow_directory, check_flow_exist=False)
     # parse flow DAG
-    data = load_yaml(flow_directory / DAG_FILE_NAME)
+    data = load_yaml(flow_directory / flow_file)
 
     tools, used_packages, _source_path_mapping = _get_involved_code_and_package(data)
 
@@ -984,7 +980,7 @@ def create_temp_flex_flow_yaml(entry: Union[str, PathLike, Callable], code: Path
         code = Path(code)
         if not code.exists():
             raise UserErrorException(f"Code path {code.as_posix()} does not exist.")
-    flow_yaml_path = code / DAG_FILE_NAME
+    flow_yaml_path = code / FLOW_DAG_YAML
     existing_content = None
 
     try:
