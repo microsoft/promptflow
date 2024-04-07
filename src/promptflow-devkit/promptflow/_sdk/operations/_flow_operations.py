@@ -17,7 +17,6 @@ from pathlib import Path
 from typing import Dict, Iterable, List, NoReturn, Tuple, Union
 
 import pydash
-import tomli as toml
 
 from promptflow._constants import PROMPT_FLOW_DIR_NAME, FlowLanguage
 from promptflow._proxy import ProxyFactory
@@ -653,6 +652,8 @@ class FlowOperations(TelemetryMixin):
         required_packages = []
         for package in dependencies:
             with open(get_git_base_dir() / "src" / package / "pyproject.toml", "rb") as file:
+                import tomli as toml
+
                 data = toml.load(file)
             extras = data.get("tool", {}).get("poetry", {}).get("extras", {})
             for _, package in extras.items():
