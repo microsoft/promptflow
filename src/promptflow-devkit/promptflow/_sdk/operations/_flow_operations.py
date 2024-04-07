@@ -17,7 +17,6 @@ from pathlib import Path
 from typing import Dict, Iterable, List, NoReturn, Tuple, Union
 
 import pydash
-from pip._vendor import tomli as toml
 
 from promptflow._constants import PROMPT_FLOW_DIR_NAME, FlowLanguage
 from promptflow._proxy import ProxyFactory
@@ -647,20 +646,49 @@ class FlowOperations(TelemetryMixin):
                 .strip()
             )
 
-        dependencies = ["promptflow-devkit", "promptflow-core", "promptflow-tracing"]
-        # get promptflow-** required and extra packages
-        extra_packages = []
-        required_packages = []
-        for package in dependencies:
-            with open(get_git_base_dir() / "src" / package / "pyproject.toml", "rb") as file:
-                data = toml.load(file)
-            extras = data.get("tool", {}).get("poetry", {}).get("extras", {})
-            for _, package in extras.items():
-                extra_packages.extend(package)
-            requires = data.get("tool", {}).get("poetry", {}).get("dependencies", [])
-            for package, _ in requires.items():
-                required_packages.append(package)
+        def is_tool(name):
+            """Check whether `name` is on PATH and marked as executable."""
 
+            # from whichcraft import which
+            from shutil import which
+
+            return which(name) is not None
+
+        def get_package_dependencies(package_name_list):
+            dependencies = []
+            for package_name in package_name_list:
+                if is_tool("conda"):
+                    result = subprocess.run(
+                        "conda activate root | pip show {}".format(package_name), shell=True, stdout=subprocess.PIPE
+                    )
+                else:
+                    result = subprocess.run(["pip", "show", package_name], stdout=subprocess.PIPE)
+                lines = result.stdout.decode("utf-8", errors="ignore").splitlines()
+                for line in lines:
+                    if line.startswith("Requires"):
+                        dependency = line.split(": ")[1].split(", ")
+                        if dependency != [""]:
+                            dependencies.extend(dependency)
+                        break
+
+            dependencies = [dependency for dependency in dependencies if not dependency.startswith("promptflow")]
+            return dependencies
+
+        dependencies = ["promptflow-devkit", "promptflow-core", "promptflow-tracing"]
+        # get promptflow-** required packages
+        required_packages = get_package_dependencies(dependencies)
+        # hard-code promptflow-** required extra packages for now
+        extra_packages = [
+            "pyarrow",
+            "pyinstaller",
+            "streamlit",
+            "streamlit-quill",
+            "bs4",
+            "fastapi",
+            "azure-identity",
+            "azure-ai-ml",
+            "azureml-ai-monitoring",
+        ]
         all_packages = list(set(dependencies) | set(required_packages) | set(extra_packages))
         # remove all packages starting with promptflow
         all_packages.remove("python")
