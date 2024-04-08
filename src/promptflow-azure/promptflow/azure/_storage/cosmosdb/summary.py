@@ -170,9 +170,9 @@ class Summary:
                 # Truncate string values, use large enough limit for UX display.
                 return value[:500]
             elif isinstance(value, list):
-                return "[LIST]"
+                return "[...]"
             elif isinstance(value, dict):
-                return "[DICT]"
+                return "{...}"
             else:
                 # For any other type, use a generic placeholder
                 return "[UNSUPPORTED TYPE]"
