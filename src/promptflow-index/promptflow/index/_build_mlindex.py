@@ -128,7 +128,7 @@ def build_index(
                 "endpoint": os.getenv(api_base),
             }
     embedder = EmbeddingsContainer.from_uri(
-        uri=embeddings_model,
+        embeddings_model,
         **connection_args,
     )
 
