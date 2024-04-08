@@ -72,12 +72,14 @@ def validate_trace_provider(value: str) -> None:
     3. the workspace Cosmos DB is initialized
     """
     # valid Azure ML workspace ARM resource ID; otherwise, a ValueError will be raised
+    _logger.debug("Validating trace provider value...")
     try:
         workspace_triad = extract_workspace_triad_from_trace_provider(value)
     except ValueError as e:
         raise _create_trace_provider_value_user_error(str(e))
 
     # the workspace exists
+    _logger.debug("Validating Azure ML workspace...")
     ml_client = MLClient(
         credential=_get_credential(),
         subscription_id=workspace_triad.subscription_id,
@@ -88,11 +90,18 @@ def validate_trace_provider(value: str) -> None:
         ml_client.workspaces.get(name=workspace_triad.workspace_name)
     except ResourceNotFoundError as e:
         raise _create_trace_provider_value_user_error(str(e))
+    _logger.debug("Azure ML workspace is valid.")
 
     # the workspace Cosmos DB is initialized
     # try to retrieve the token from PFS; if failed, call PFS init API and start polling
+    _logger.debug("Validating workspace Cosmos DB is initialized...")
     pf_client = PFClient(ml_client=ml_client)
     try:
         pf_client._traces._get_cosmos_db_token(container_name=CosmosDBContainerName.SPAN)
+        _logger.debug("The workspace Cosmos DB is already initialized.")
     except FlowRequestException:
+        _logger.debug("The workspace Cosmos DB is not initialized yet, start initialization...")
         _init_workspace_cosmos_db(pf_client)
+    _logger.debug("The workspace Cosmos DB is initialized.")
+
+    _logger.debug("Trace provider value is valid.")
