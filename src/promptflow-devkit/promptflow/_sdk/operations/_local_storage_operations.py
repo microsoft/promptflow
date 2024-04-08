@@ -14,7 +14,7 @@ from typing import Any, Dict, List, NewType, Optional, Tuple, Union
 
 from filelock import FileLock
 
-from promptflow._constants import OUTPUT_FILE_NAME, OutputsFolderName
+from promptflow._constants import FLOW_DAG_YAML, OUTPUT_FILE_NAME, OutputsFolderName
 from promptflow._sdk._constants import (
     HOME_PROMPT_FLOW_DIR,
     LINE_NUMBER,
@@ -203,7 +203,7 @@ class LocalStorageOperations(AbstractBatchRunStorage):
         )
         # snapshot
         self._snapshot_folder_path = prepare_folder(self.path / LocalStorageFilenames.SNAPSHOT_FOLDER)
-        self._dag_path = self._snapshot_folder_path / LocalStorageFilenames.DAG
+        self._dag_path = self._snapshot_folder_path / FLOW_DAG_YAML
         self._flow_tools_json_path = (
             self._snapshot_folder_path / PROMPT_FLOW_DIR_NAME / LocalStorageFilenames.FLOW_TOOLS_JSON
         )

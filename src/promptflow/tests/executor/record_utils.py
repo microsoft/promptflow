@@ -53,6 +53,7 @@ def setup_recording():
             "promptflow._core.tool.tool": mocked_tool,
             "promptflow._internal.tool": mocked_tool,
             "promptflow.tool": mocked_tool,
+            "promptflow.core.tool": mocked_tool,
             "promptflow.tracing._integrations._openai_injector.inject_sync": inject_sync_with_recording,
             "promptflow.tracing._integrations._openai_injector.inject_async": inject_async_with_recording,
         }

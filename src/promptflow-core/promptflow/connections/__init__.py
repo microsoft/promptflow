@@ -17,6 +17,7 @@ from promptflow.core._connection import (
     ServerlessConnection,
     _Connection,
 )
+from promptflow.core._connection_provider._connection_provider import ConnectionProvider
 
 
 @dataclass
@@ -39,6 +40,7 @@ __all__ = [
     "CustomConnection",
     "CustomStrongTypeConnection",
     "ServerlessConnection",
+    "ConnectionProvider",
 ]
 
 register_connections(

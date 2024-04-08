@@ -1,6 +1,6 @@
 from typing import Union
 
-from promptflow import tool
+from promptflow.core import tool
 from promptflow._core.tool import InputSetting, DynamicList, GeneratedBy
 from typing import Dict, List
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection, CognitiveSearchConnection

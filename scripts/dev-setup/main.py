@@ -19,6 +19,8 @@ PROMPT_FLOW_PKGS = [
     "promptflow-azure",
     "promptflow[azure]",
     "promptflow-tools",
+    "promptflow-evals",
+    "promptflow-recording",
 ]
 
 
