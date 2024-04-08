@@ -122,7 +122,7 @@ class TestExecutorTelemetry:
         by mocking chat api method. The mock method will return a generator that yields a
         namedtuple with a json string of the headers passed to the method.
         """
-        flow_folder = "openai_chat_api_flow"
+        flow_folder = "openai_chat_api_flow_dup"
 
         operation_context = OperationContext.get_instance()
         operation_context.clear()
