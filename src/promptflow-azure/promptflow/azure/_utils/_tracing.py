@@ -35,13 +35,13 @@ def _create_trace_provider_value_user_error(message: str) -> UserErrorException:
     return UserErrorException(message=message, target=ErrorTarget.CONTROL_PLANE_SDK)
 
 
-def _init_workspace_cosmos_db(pf_client: PFClient) -> None:
+def _init_workspace_cosmos_db(init_cosmos_func: typing.Callable) -> None:
     # SDK will call PFS async API to execute workspace Cosmos DB initialization
     # and poll the status until it's done, the signal is the response is not None
     start_time = time.time()
     while True:
         try:
-            cosmos_res = pf_client._traces._init_cosmos_db()
+            cosmos_res = init_cosmos_func()
             if cosmos_res is not None:
                 return
         except FlowRequestException:
@@ -104,7 +104,7 @@ def validate_trace_provider(value: str) -> None:
         init_cosmos_msg = "The workspace Cosmos DB is not initialized yet, will start initialization..."
         print(init_cosmos_msg)
         _logger.debug(init_cosmos_msg)
-        _init_workspace_cosmos_db(pf_client)
+        _init_workspace_cosmos_db(init_cosmos_func=pf_client._traces._init_cosmos_db)
     _logger.debug("The workspace Cosmos DB is initialized.")
 
     _logger.debug("Trace provider value is valid.")
