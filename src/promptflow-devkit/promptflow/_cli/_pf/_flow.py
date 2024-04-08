@@ -45,6 +45,7 @@ from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._service.utils.utils import encrypt_flow_path
 from promptflow._sdk.operations._flow_operations import FlowOperations
+from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
@@ -438,9 +439,9 @@ def _test_flow_multi_modal(args, pf_client):
             return urlunparse(("http", f"127.0.0.1:{port}", "/v1.0/ui/chat", "", query_params, ""))
 
         pfs_port = _invoke_pf_svc()
-        flow = load_flow(args.flow)
-        flow_dir = os.path.abspath(flow.code)
-        chat_page_url = generate_url(flow_dir, pfs_port)
+        flow_path_dir, flow_path_file = resolve_flow_path(args.flow)
+        flow_path = (flow_path_dir / flow_path_file).as_posix()
+        chat_page_url = generate_url(flow_path, pfs_port)
         print(f"You can begin chat flow on {chat_page_url}")
         if not args.skip_open_browser:
             webbrowser.open(chat_page_url)
