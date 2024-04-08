@@ -74,6 +74,7 @@ class Flow(AdditionalIncludesMixin):
         """
         flow_path, flow_file = resolve_flow_path(source)
         absolute_path = flow_path / flow_file
+
         return absolute_path
 
     def _load_flow_yaml(self, path: Union[str, Path]) -> Dict:

@@ -23,7 +23,7 @@ from promptflow._sdk._constants import (
 )
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.exception_utils import ErrorResponse, ExceptionPresenter
-from promptflow._utils.flow_utils import is_flex_flow, read_json_content, resolve_flow_path
+from promptflow._utils.flow_utils import is_flex_flow, read_json_content
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.utils import load_json
 from promptflow.contracts.run_info import FlowRunInfo
@@ -239,7 +239,6 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         """Get the inputs definition of an eager flow"""
         from promptflow.contracts.flow import FlowInputDefinition
 
-        _, flow_file = resolve_flow_path(self.working_dir, check_flow_exist=False)
         flow_meta = self.generate_flow_json(
             flow_file=self.working_dir / FLOW_FLEX_YAML,
             working_dir=self.working_dir,
