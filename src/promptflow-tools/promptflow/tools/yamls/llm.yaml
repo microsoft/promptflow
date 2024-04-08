@@ -217,7 +217,6 @@ promptflow.tools.llm.llm:
         display_style: reusable_tool
     tool_choice:
       type:
-      - string
       - object
       default: ""
       enabled_by: api
