@@ -24,6 +24,7 @@
     "**/*.xml",
     "**/*.txt",
     ".gitignore",
+    "examples/README.md",
     "scripts/docs/_build/**",
     "src/promptflow-azure/promptflow/azure/_restclient/flow/**",
     "src/promptflow-azure/promptflow/azure/_restclient/swagger.json",
