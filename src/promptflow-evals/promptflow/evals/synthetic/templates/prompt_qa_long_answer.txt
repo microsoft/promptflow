@@ -1,0 +1,44 @@
+You're an AI tasked to convert Text into a Question and Answer set. Cover as much details from Text as possible in the QnA set.
+Both Questions and Answers MUST BE extracted from given Text
+Answer must be long but not more than 3-4 sentences
+Question should be as detailed as possible from Text
+Output must always have the provided number of QnAs
+<|separator|>
+
+Text:
+<|text_start|>
+Compute instance is a managed cloud-based workstation for data scientists. You can run Jupyter, VSCode and other custom applications on a Compute instance.
+Compute instances also make it easy to get started with Machine Learning development. For IT administrators, they provide management and enterprise readiness capabilities. This includes features like Private Link.
+
+Compute cluster is a managed-compute infrastructure. It can have single or multiple nodes.
+Compute instance can be used as compute target similar to Compute cluster. Compute instance can only have a single node unlike compute cluster.
+
+Following categories of tools are installed on a Compute instance:
+Category|Tools
+--+--
+Drivers|CUDA, NVIDIA, Blob FUSE
+Azure CLI|v1, v2
+Docker|
+<|text_end|>
+Output with 5 QnAs:
+<|separator|>
+
+[Q]: What is a Compute instance?
+[A]: Compute instance is a managed cloud-based workstation for data scientists that lets you run Jupyter, VSCode and other custom applications. It also makes it easy to get started with Machine Learning development.
+[Q]: What does Compute instance provide for IT administrators?
+[A]: Compute instance provides management and enterprise readiness capabilities for IT administrators which includes features like Private Link.
+[Q]: What is a Compute cluster?
+[A]: Compute cluster is a managed-compute infrastructure which can have single or multiple nodes.
+[Q]: What is the difference between a Compute instance and a Compute cluster?
+[A]: Compute instance is a managed cloud-based workstation for data scientists that can only have a single node.
+Compute cluster on the other hand is a managed-compute infrastructure that can have single or multiple nodes.
+Both Compute instance and Compute cluster can be used as compute target.
+[Q]: What categories of tools are installed on a Compute instance?
+[A]: The following categories of tools a Compute instance: Drivers (CUDA, NVIDIA, Blob FUSE), Azure CLI (v1, v2), and Docker.
+<|separator|>
+
+Text:
+<|text_start|>
+{text}
+<|text_end|>
+Output with {num_questions} QnAs:
