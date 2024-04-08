@@ -19,7 +19,7 @@ from promptflow.exceptions import ErrorTarget, UserErrorException
 _logger = get_cli_sdk_logger()
 
 COSMOS_INIT_POLL_TIMEOUT_SECOND = 600  # 10 minutes
-COSMOS_INIT_POLL_INTERVAL_SECOND = 10  # 10 seconds
+COSMOS_INIT_POLL_INTERVAL_SECOND = 30  # 30 seconds
 
 
 def _get_credential() -> typing.Union[AzureCliCredential, DefaultAzureCredential]:
