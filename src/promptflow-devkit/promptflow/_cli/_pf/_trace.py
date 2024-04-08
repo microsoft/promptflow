@@ -22,8 +22,8 @@ def _get_pf_client() -> PFClient:
 def add_trace_parser(subparsers: argparse._SubParsersAction):
     trace_parser: argparse.ArgumentParser = subparsers.add_parser(
         "trace",
-        description="[Experimental] A CLI tool to manage traces for prompt flow.",
-        help="[Experimental] pf trace. This is an experimental feature, and may change at any time.",
+        description="A CLI tool to manage traces for prompt flow.",
+        help="Manage traces.",
     )
     subparsers = trace_parser.add_subparsers()
     add_delete_trace_params(subparsers)

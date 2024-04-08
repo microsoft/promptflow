@@ -31,13 +31,16 @@
 /src/promptflow-core/promptflow/storage/ @microsoft/promptflow-execution
 /src/promptflow-devkit/promptflow/_internal/ @microsoft/promptflow-execution
 /src/promptflow-devkit/promptflow/batch/ @microsoft/promptflow-execution
-/src/promptflow-devkit/promptflow/_proxy/ @microsoft/promptflow-execution
-
 /src/promptflow/tests/executor/ @microsoft/promptflow-execution
+
+/src/promptflow-devkit/promptflow/_proxy/ @microsoft/promptflow-execution @microsoft/promptflow-sdk
+
 /src/promptflow/tests/sdk_cli_test/ @microsoft/promptflow-sdk
 /src/promptflow/tests/sdk_cli_azure_test/ @microsoft/promptflow-sdk
 /src/promptflow/tests/sdk_cli_global_config_test/ @microsoft/promptflow-sdk
 /src/promptflow/tests/sdk_pfs_test/ @microsoft/promptflow-sdk
+/src/promptflow/tests/executor/_prompty_executor.py @microsoft/promptflow-execution @microsoft/promptflow-sdk
+/src/promptflow/tests/executor/_script_executor.py @microsoft/promptflow-execution @microsoft/promptflow-sdk
+/src/promptflow-tracing/promptflow/tracing/_start_trace.py @microsoft/promptflow-sdk
 
 /docs/how-to-guides/develop-a-tool/ @microsoft/promptflow-tools
-/src/promptflow-tracing/promptflow/tracing/_start_trace.py @microsoft/promptflow-sdk
