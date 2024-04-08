@@ -75,11 +75,6 @@ class ChatRole:
             self._line_timeout_sec = line_timeout_sec
             self._init_kwargs = init_kwargs
 
-        # Below properties are used for cloud chat group. It may have some duplicate with above ones
-        # Will evaluate and refine in the second step.
-        # In sdk chat group, flow can be both folder and file
-        # For cloud chat group, we only support file now
-
         logger.info(f"Created chat role {self.role!r} with flow {flow_path.as_posix()!r}")
 
     @property
