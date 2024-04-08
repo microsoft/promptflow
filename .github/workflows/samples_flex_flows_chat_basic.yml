@@ -50,8 +50,8 @@ jobs:
           fi
           if [[ -e ../.env.example ]]; then
             echo "env replacement"
-            sed -i -e "s/<your_AOAI_key>/$AOAI_API_KEY/g" -e "s/<your_AOAI_endpoint>/$AOAI_API_ENDPOINT/g" .env.example
-            mv ../.env.example .env
+            sed -i -e "s/<your_AOAI_key>/$AOAI_API_KEY/g" -e "s/<your_AOAI_endpoint>/$AOAI_API_ENDPOINT/g" ../.env.example
+            mv ../.env.example ../.env
           fi
       - name: Create run.yml
         working-directory: examples/flex-flows/chat-basic
