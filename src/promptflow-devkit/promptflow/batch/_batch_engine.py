@@ -121,7 +121,6 @@ class BatchEngine:
             self._is_eager_flow = True
             self._program_language = FlowLanguage.Python
         else:
-            self._is_prompty_flow = False
             self._is_eager_flow, self._program_language = self._check_eager_flow_and_language_from_yaml()
 
         # TODO: why self._flow is not initialized for eager flow?
