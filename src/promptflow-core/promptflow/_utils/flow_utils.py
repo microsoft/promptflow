@@ -13,6 +13,7 @@ from promptflow._constants import (
     CHAT_HISTORY,
     DEFAULT_ENCODING,
     FLOW_DAG_YAML,
+    FLOW_FILE_SUFFIX,
     FLOW_FLEX_YAML,
     PROMPT_FLOW_DIR_NAME,
     PROMPTY_EXTENSION,
@@ -95,7 +96,7 @@ def resolve_flow_path(
                 f"Please specify a file or remove the extra YAML.",
                 privacy_info=[str(flow_path)],
             )
-    elif flow_path.is_file() or flow_path.suffix.lower() in (".yaml", ".yml"):
+    elif flow_path.is_file() or flow_path.suffix.lower() in FLOW_FILE_SUFFIX:
         flow_folder = flow_path.parent
         flow_file = flow_path.name
     else:  # flow_path doesn't exist
@@ -103,7 +104,7 @@ def resolve_flow_path(
         flow_file = FLOW_DAG_YAML
 
     file_path = flow_folder / flow_file
-    if file_path.suffix.lower() not in (".yaml", ".yml"):
+    if file_path.suffix.lower() not in FLOW_FILE_SUFFIX:
         raise UserErrorException(
             error_format=f"The flow file suffix must be yaml or yml, " f"and cannot be {file_path.suffix}"
         )
@@ -161,9 +162,9 @@ def is_flex_flow(
     if flow_path is not None:
         flow_path, flow_file = resolve_flow_path(flow_path, base_path=working_dir, check_flow_exist=False)
         file_path = flow_path / flow_file
-        if file_path.is_file():
+        if file_path.is_file() and file_path.suffix.lower() in ("yaml", "yml"):
             yaml_dict = load_yaml(file_path)
-        if not check_flow_exist and str(file_path).endswith(FLOW_FLEX_YAML):
+        if not check_flow_exist and flow_file == FLOW_FLEX_YAML:
             return True
 
     return isinstance(yaml_dict, dict) and "entry" in yaml_dict
