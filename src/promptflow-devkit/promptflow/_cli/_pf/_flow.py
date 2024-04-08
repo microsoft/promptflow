@@ -58,7 +58,7 @@ def add_flow_parser(subparsers):
     flow_parser = subparsers.add_parser(
         "flow",
         description="Manage flows for promptflow.",
-        help="pf flow",
+        help="Manage flows.",
     )
     flow_subparsers = flow_parser.add_subparsers()
     add_parser_init_flow(flow_subparsers)
