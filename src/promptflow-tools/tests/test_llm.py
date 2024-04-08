@@ -309,3 +309,13 @@ class TestLLM:
             assert res[0].get("display_value") == "chat"
             assert res[1].get("value") == "completion"
             assert res[1].get("display_value") == "completion"
+
+    @pytest.mark.skip_if_no_api_key("serverless_connection")
+    def test_serverless_chat(self, serverless_connection, example_prompt_template):
+        result = llm(
+            connection=serverless_connection,
+            prompt=example_prompt_template,
+            user_input="Fill in more details about trend 2."
+        )
+        assert "trend 2:".lower() in result.lower()
+
