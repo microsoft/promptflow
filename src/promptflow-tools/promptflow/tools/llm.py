@@ -73,6 +73,8 @@ def list_apis(
 @tool
 @handle_openai_error()
 def llm(
+    # connection can be of type AzureOpenAIConnection, OpenAIConnection, ServerlessConnection.
+    # do not set type hint here to be compatible with pf version < 1.6.0.
     connection, 
     prompt: PromptTemplate,
     api: str = "chat",
