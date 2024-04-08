@@ -10,6 +10,13 @@ from promptflow.tools.openai import OpenAI
 # since the code here is in promptflow namespace as well
 from promptflow._internal import tool
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
+try:
+    from promptflow.connections import ServerlessConnection
+except ImportError:
+    # If unable to import ServerlessConnection, define a placeholder class to allow isinstance checks to pass.
+    # ServerlessConnection was introduced in pf version 1.6.0.
+    class ServerlessConnection:
+        pass
 
 
 def get_cloud_connection(connection_name, subscription_id, resource_group_name, workspace_name):
@@ -102,8 +109,6 @@ def llm(
     **kwargs,
 ):
     # TODO: get rid of `register_apis` dependency from llm.py.
-    from promptflow.connections import ServerlessConnection
-
     if isinstance(connection, AzureOpenAIConnection):
         if api == "completion":
             return AzureOpenAI(connection).completion(
