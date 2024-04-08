@@ -8,7 +8,8 @@ from typing import Any, Dict, Optional, Union
 
 from aiohttp import ClientTimeout  # pylint: disable=networking-import-outside-azure-core-transport
 from aiohttp_retry import RetryClient  # pylint: disable=networking-import-outside-azure-core-transport
-from prompflow.evals.synthetic.simulator._model_tools.identity_manager import KeyVaultAPITokenManager
+
+from promptflow.evals.synthetic.simulator._model_tools.identity_manager import KeyVaultAPITokenManager
 
 ENDPOINT_URL = "https://lasertag-vision.cognitiveservices.azure.com/"
 FEATURE_NAMES = ["tags", "objects", "caption", "denseCaptions", "read", "smartCrops", "people"]  # Excluding: None

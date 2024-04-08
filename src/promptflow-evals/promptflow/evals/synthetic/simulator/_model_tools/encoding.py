@@ -2,11 +2,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import json
 import logging
 from enum import Enum
 from typing import Any, Dict, Optional
-
-import json5 as json
 
 logger = logging.getLogger(__name__)
 

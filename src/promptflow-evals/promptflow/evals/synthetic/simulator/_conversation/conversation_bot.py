@@ -6,7 +6,8 @@ import logging
 from typing import Dict, List, Tuple, Union
 
 import jinja2
-from prompflow.evals.synthetic.simulator._model_tools import (
+
+from promptflow.evals.synthetic.simulator._model_tools import (
     LLAMAChatCompletionsModel,
     LLMBase,
     OpenAIChatCompletionsModel,

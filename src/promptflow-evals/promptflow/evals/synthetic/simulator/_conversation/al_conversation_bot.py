@@ -6,7 +6,7 @@ import logging
 import time
 from typing import Dict, List, Tuple
 
-from prompflow.evals.synthetic.simulator._model_tools import RetryClient
+from promptflow.evals.synthetic.simulator._model_tools import RetryClient
 
 from .augloop_client import AugLoopClient, AugLoopParams
 from .constants import ConversationRole

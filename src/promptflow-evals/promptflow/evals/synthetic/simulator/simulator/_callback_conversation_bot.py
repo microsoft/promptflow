@@ -5,7 +5,7 @@
 import copy
 from typing import List, Tuple
 
-from prompflow.evals.synthetic.simulator._conversation import ConversationBot, ConversationTurn
+from promptflow.evals.synthetic.simulator._conversation import ConversationBot, ConversationTurn
 
 
 class CallbackConversationBot(ConversationBot):
