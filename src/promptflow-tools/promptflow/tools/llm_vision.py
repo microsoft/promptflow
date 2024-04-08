@@ -62,6 +62,5 @@ def llm_vision(
         )
     else:
         error_message = f"Not Support connection type '{type(connection).__name__}' for llm. " \
-                        "Connection type should be in [AzureOpenAIConnection, OpenAIConnection" \
-                        ", ServerlessConnection]."
+                        "Connection type should be in [AzureOpenAIConnection, OpenAIConnection]."
         raise InvalidConnectionType(message=error_message)

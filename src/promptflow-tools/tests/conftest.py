@@ -10,7 +10,7 @@ from tests.utils import verify_url_exists
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
 # since the code here is in promptflow namespace as well
 from promptflow._internal import ConnectionManager
-from promptflow.connections import CustomConnection, OpenAIConnection, SerpConnection
+from promptflow.connections import CustomConnection, OpenAIConnection, SerpConnection, ServerlessConnection
 from promptflow.contracts.multimedia import Image
 from promptflow.tools.aoai import AzureOpenAI
 from promptflow.tools.aoai_gpt4v import AzureOpenAI as AzureOpenAIVision
@@ -60,6 +60,11 @@ def serp_connection():
     return ConnectionManager().get("serp_connection")
 
 
+@pytest.fixture
+def serverless_connection():
+    return ConnectionManager().get("serverless_connection")
+
+
 def verify_om_llm_custom_connection(connection: CustomConnection) -> bool:
     '''Verify that there is a MIR endpoint up and available for the Custom Connection.
     We explicitly do not pass the endpoint key to avoid the delay in generating a response.
@@ -93,7 +98,8 @@ def skip_if_no_api_key(request, mocker):
         conn_name = request.node.get_closest_marker('skip_if_no_api_key').args[0]
         connection = request.getfixturevalue(conn_name)
         # if dummy placeholder key, skip.
-        if isinstance(connection, OpenAIConnection) or isinstance(connection, SerpConnection):
+        if isinstance(connection, OpenAIConnection) or isinstance(connection, SerpConnection) \
+                or isinstance(connection, ServerlessConnection):
             if "-api-key" in connection.api_key:
                 pytest.skip('skipped because no key')
         elif isinstance(connection, CustomConnection):
