@@ -1033,7 +1033,9 @@ def callable_to_entry_string(callable_obj: Callable) -> str:
 def is_flex_run(run: "Run") -> bool:
     if run._run_source == RunInfoSources.LOCAL:
         try:
-            return is_flex_flow(flow_path=run.flow)
+            # The flow yaml may have been temporarily generated and deleted after creating a run.
+            # So check_flow_exist=False
+            return is_flex_flow(flow_path=run.flow, check_flow_exist=False)
         except Exception as e:
             # For run with incomplete flow snapshot, ignore load flow error to make sure it can still show.
             logger.debug(f"Failed to check is flex flow from {run.flow} due to {e}.")

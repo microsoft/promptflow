@@ -12,7 +12,11 @@ def get_flow_folder(folder_name, root: str = FLOW_ROOT) -> Path:
     return flow_folder_path
 
 
-def get_yaml_file(folder_name, root: str = FLOW_ROOT) -> Path:
-    flow_path, flow_file = resolve_flow_path(get_flow_folder(folder_name, root), check_flow_exist=False)
-    yaml_file = flow_path / flow_file
+def get_yaml_file(folder_name, root: str = FLOW_ROOT, file_name: str = None) -> Path:
+    if file_name is None:
+        flow_path, flow_file = resolve_flow_path(get_flow_folder(folder_name, root), check_flow_exist=False)
+        yaml_file = flow_path / flow_file
+    else:
+        yaml_file = get_flow_folder(folder_name, root) / file_name
+
     return yaml_file

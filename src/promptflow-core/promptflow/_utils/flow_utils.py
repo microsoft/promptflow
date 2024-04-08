@@ -151,6 +151,7 @@ def is_flex_flow(
     flow_path: Union[str, Path, PathLike, None] = None,
     yaml_dict: Optional[dict] = None,
     working_dir: Union[str, Path, PathLike, None] = None,
+    check_flow_exist=True,
 ):
     """Check if the flow is a flex flow."""
     if flow_path is None and yaml_dict is None:
@@ -158,8 +159,13 @@ def is_flex_flow(
     if flow_path is not None and yaml_dict is not None:
         raise UserErrorException("Only one of file_path and yaml_dict should be provided.")
     if flow_path is not None:
-        flow_path, flow_file = resolve_flow_path(flow_path, base_path=working_dir)
-        yaml_dict = load_yaml(flow_path / flow_file)
+        flow_path, flow_file = resolve_flow_path(flow_path, base_path=working_dir, check_flow_exist=False)
+        file_path = flow_path / flow_file
+        if file_path.is_file():
+            yaml_dict = load_yaml(file_path)
+        if not check_flow_exist and str(file_path).endswith(FLOW_FLEX_YAML):
+            return True
+
     return isinstance(yaml_dict, dict) and "entry" in yaml_dict
 
 
