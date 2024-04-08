@@ -116,7 +116,7 @@ class ScriptExecutor(FlowExecutor):
             # We assume the error comes from user's code.
             # For these cases, raise FlexFlowExecutionError, which is classified as UserError
             # and shows stack trace in the error message to make it easy for user to troubleshoot.
-            error_type_and_message = f"({e.__class__.__name__}) {self.e}"
+            error_type_and_message = f"({e.__class__.__name__}) {e}"
             e = FlexFlowExecutionError(
                 message_format="Execution failure in '{func_name}': {error_type_and_message}",
                 func_name=self._func.__qualname__,
