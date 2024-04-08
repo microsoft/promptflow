@@ -205,7 +205,9 @@ class FlowUxInputs(Resource):
         if not os.path.exists(flow_path):
             raise UserErrorException(f"The flow doesn't exist: {flow_path}")
         flow_path, _ = resolve_flow_path(flow_path)
-        flow_ux_inputs_path = flow_path / PROMPT_FLOW_DIR_NAME / UX_INPUTS_JSON
+        flow_ux_inputs_dir = flow_path / PROMPT_FLOW_DIR_NAME
+        flow_ux_inputs_dir.mkdir(parents=True, exist_ok=True)
+        flow_ux_inputs_path = flow_ux_inputs_dir / UX_INPUTS_JSON
         if not flow_ux_inputs_path.exists():
             flow_ux_inputs_path.touch(mode=read_write_by_user(), exist_ok=True)
         try:
@@ -223,7 +225,9 @@ class FlowUxInputs(Resource):
         flow_path = args.flow
         flow_path = decrypt_flow_path(flow_path)
         flow_path, _ = resolve_flow_path(flow_path)
-        flow_ux_inputs_path = flow_path / PROMPT_FLOW_DIR_NAME / UX_INPUTS_JSON
+        flow_ux_inputs_dir = flow_path / PROMPT_FLOW_DIR_NAME
+        flow_ux_inputs_dir.mkdir(parents=True, exist_ok=True)
+        flow_ux_inputs_path = flow_ux_inputs_dir / UX_INPUTS_JSON
         flow_ux_inputs_path.touch(mode=read_write_by_user(), exist_ok=True)
         with open(flow_ux_inputs_path, mode="w", encoding=DEFAULT_ENCODING) as f:
             json.dump(content, f, ensure_ascii=False, indent=2)
