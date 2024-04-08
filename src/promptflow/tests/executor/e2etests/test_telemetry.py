@@ -64,7 +64,6 @@ def mock_process_manager(*args, **kwargs):
 @pytest.mark.usefixtures("dev_connections")
 @pytest.mark.e2etest
 class TestExecutorTelemetry:
-    @pytest.mark.skip("test")
     def test_executor_openai_telemetry(self, dev_connections):
         """This test validates telemetry info header is correctly injected to OpenAI API
         by mocking chat api method. The mock method will return a generator that yields a
@@ -118,7 +117,7 @@ class TestExecutorTelemetry:
             assert "ms-azure-ai-promptflow-scenario" not in promptflow_headers
             assert promptflow_headers.get("run_mode") == RunMode.SingleNode.name
 
-    def test_executor_openai_telemetry_with_batch_run(self, dev_connections, recording_injection):
+    def test_executor_openai_telemetry_with_batch_run(self, dev_connections):
         """This test validates telemetry info header is correctly injected to OpenAI API
         by mocking chat api method. The mock method will return a generator that yields a
         namedtuple with a json string of the headers passed to the method.
