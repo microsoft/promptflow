@@ -1682,6 +1682,28 @@ class TestFlowRun:
         run = pf.runs.create_or_update(run=run)
         assert_batch_run_result(run, pf, assert_func)
 
+    def test_run_with_init_connection(self, pf, azure_open_ai_connection: AzureOpenAIConnection):
+        def assert_func(details_dict):
+            return (
+                details_dict["outputs.func_input"]
+                == [
+                    "func_input",
+                    "func_input",
+                    "func_input",
+                    "func_input",
+                ]
+                and details_dict["outputs.obj_input"] == ["val", "val", "val", "val"]
+                and details_dict["outputs.connection_api_type"] == ["azure", "azure", "azure", "azure"]
+            )
+
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/callable_class_init_connection")
+        run = pf.run(
+            flow=flow_path,
+            data=f"{EAGER_FLOWS_DIR}/callable_class_init_connection/inputs.jsonl",
+            init={"obj_input": "val", "connection": "azure_open_ai_connection"},
+        )
+        assert_batch_run_result(run, pf, assert_func)
+
 
 def assert_batch_run_result(run: Run, pf: PFClient, assert_func):
     assert run.status == "Completed"
