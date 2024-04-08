@@ -1,6 +1,6 @@
 import os
 import asyncio
-from promptflow import tool
+from promptflow.core import tool
 
 
 @tool

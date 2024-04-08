@@ -1,4 +1,4 @@
-from promptflow import tool
+from promptflow.core import tool
 
 1 / 0
 

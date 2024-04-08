@@ -10,5 +10,5 @@ Exported Dockerfile & its dependencies are located in the same folder. The struc
 - settings.json: a json file to store the settings of the docker image
 - README.md: the readme file to describe how to use the dockerfile
 
-Please refer to [official doc](https://microsoft.github.io/promptflow/how-to-guides/deploy-and-export-a-flow.html#export-a-flow)
+Please refer to [official doc](https://microsoft.github.io/promptflow/how-to-guides/deploy-a-flow/deploy-using-docker.html)
 for more details about how to use the exported dockerfile and scripts.

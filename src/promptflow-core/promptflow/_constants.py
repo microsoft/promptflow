@@ -24,7 +24,8 @@ EXTENSION_UA = "prompt-flow-extension"
 LANGUAGE_KEY = "language"
 USER_AGENT_OVERRIDE_KEY = "user_agent_override"
 
-DEFAULT_FLOW_YAML_FILE_NAME = "flow.dag.yaml"
+FLOW_DAG_YAML = "flow.dag.yaml"
+FLOW_FLEX_YAML = "flow.flex.yaml"
 PROMPTY_EXTENSION = ".prompty"
 
 CHAT_HISTORY = "chat_history"
@@ -268,5 +269,3 @@ AZURE_WORKSPACE_REGEX_FORMAT = (
     "(/providers/Microsoft.MachineLearningServices)?/workspaces/([^/]+)$"
 )
 CONNECTION_DATA_CLASS_KEY = "DATA_CLASS"
-
-FLEX_FLOW_PUBLIC_NAME = "flex"
