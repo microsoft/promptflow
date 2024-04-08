@@ -68,4 +68,4 @@ class TestChatGroup:
             name="copilot",
             working_dir=FLOWS_DIR / "chat_group_copilot",
         )
-        assert copilot.flow is not None
+        assert copilot._flow_definition is not None
