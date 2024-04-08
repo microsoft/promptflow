@@ -69,7 +69,7 @@ class TestFlowContract:
     @pytest.mark.parametrize(
         "file_name, name_from_payload, expected_name",
         [
-            ("yaml_with_name.yaml", "name_from_payload", "name_from_yaml"),
+            ("yaml_with_name.yaml", "name_from_payload", "name_from_payload"),
             ("yaml_with_name.yaml", None, "name_from_yaml"),
             ("yaml_without_name.yaml", "name_from_payload", "name_from_payload"),
             ("yaml_without_name.yaml", None, "flow_name"),
