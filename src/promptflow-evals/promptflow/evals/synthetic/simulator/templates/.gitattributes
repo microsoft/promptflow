@@ -1,0 +1,3 @@
+# Force git to checkout text files with LF (line feed) as the ending (vs CRLF)
+# This allows us to consistently run tests that depend on the exact contents of a file
+* text=auto eol=lf
