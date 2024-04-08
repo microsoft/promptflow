@@ -10,7 +10,7 @@ from ._dict_connection_provider import DictConnectionProvider
 
 
 class HttpConnectionProvider(ConnectionProvider):
-    ENDPOINT_KEY = "HTTP_CONNECTION_PROVIDER_ENDPOINT"
+    ENDPOINT_KEY = "PF_HTTP_CONNECTION_PROVIDER_ENDPOINT"
     """Connection provider based on http, core scenario: cloud submission."""
 
     def __init__(self, endpoint: str):
