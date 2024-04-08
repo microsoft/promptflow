@@ -15,6 +15,7 @@ from pathlib import Path
 from urllib.parse import urlencode, urlunparse
 
 from promptflow._cli._params import (
+    AppendToDictAction,
     add_param_config,
     add_param_entry,
     add_param_environment_variables,
@@ -62,6 +63,7 @@ def add_flow_parser(subparsers):
     )
     flow_subparsers = flow_parser.add_subparsers()
     add_parser_init_flow(flow_subparsers)
+    add_parser_save_flow(flow_subparsers)
     add_parser_test_flow(flow_subparsers)
     add_parser_serve_flow(flow_subparsers)
     add_parser_build(flow_subparsers, "flow")
@@ -80,6 +82,8 @@ def dispatch_flow_commands(args: argparse.Namespace):
         build_flow(args)
     elif args.sub_action == "validate":
         validate_flow(args)
+    elif args.sub_action == "save":
+        save_flow(args)
 
 
 def add_parser_init_flow(subparsers):
@@ -125,6 +129,52 @@ pf flow init --flow intent_copilot --entry intent.py --function extract_intent -
         add_params=add_params,
         subparsers=subparsers,
         help_message="Initialize a prompt flow directory.",
+        action_param_name="sub_action",
+    )
+
+
+def add_parser_save_flow(subparsers):
+    """Add flow save parser to the pf flow subparsers."""
+    epilog = """
+Examples:
+
+# Creating a flex flow folder in a specific path:
+pf flow save --path my-awesome-flow --entry intent:extract_intent --code src
+# Creating a flex flow definition yaml under existing folder:
+pf flow save --entry intent:extract_intent --code src
+# Creating a flex flow with signature override:
+pf flow save --path my-awesome-flow --entry intent:extract_intent --code src --signature inputs.s.description="input description"
+"""  # noqa: E501
+    add_params = [
+        lambda parser: parser.add_argument(
+            "--entry",
+            type=str,
+            help="The entry to be saved as a flex flow, should be relative to code.",
+            required=True,
+        ),
+        lambda parser: parser.add_argument(
+            "--code", type=str, required=True, help="The folder containing the base snapshot for the flex flow."
+        ),
+        lambda parser: parser.add_argument(
+            "--path",
+            type=str,
+            help="The path to save the flow. Will update the existing code directory if not specified.",
+        ),
+        lambda parser: parser.add_argument(
+            "--signature",
+            nargs="+",
+            action=AppendToDictAction,
+            help="Override the signature of the flex flow. Base signature will be inferred from the entry.",
+        ),
+        # TODO: other parameters
+    ] + base_params
+    activate_action(
+        name="save",
+        description="Creating a flex flow with a specific callable class or a specific function as entry.",
+        epilog=epilog,
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="Save a callable class or a function as a flex flow.",
         action_param_name="sub_action",
     )
 
@@ -649,3 +699,15 @@ def validate_flow(args):
         sys.exit(1)
     else:
         sys.exit(0)
+
+
+def save_flow(args):
+    pf_client = PFClient()
+
+    pf_client.flows.save(
+        entry=args.entry,
+        code=args.code,
+        path=args.path,
+        signature=args.signature,
+    )
+    print(f"Saved flow to {Path(args.path).absolute().as_posix()}.")

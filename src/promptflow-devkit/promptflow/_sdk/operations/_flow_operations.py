@@ -997,6 +997,7 @@ class FlowOperations(TelemetryMixin):
                     f"Ports from entry: {', '.join(signature[key].keys())}\n"
                 )
 
+            # TODO: merge the signature
             signature[key] = signature_overrides[key]
 
         return signature
@@ -1031,12 +1032,78 @@ class FlowOperations(TelemetryMixin):
             del flow_meta["entry"]
         return flow_meta, source_path.parent
 
+    @monitor_operation(activity_name="pf.flows.infer_signature", activity_type=ActivityType.PUBLICAPI)
+    def infer_signature(self, entry: Callable) -> dict:
+        """Extract signature for a callable class or a function. Signature indicates the ports of a flex flow using
+        the callable as entry.
+
+        If entry is a callable function, the signature includes inputs and outputs. For example:
+        def my_func(a: int, b: str) -> int:
+            pass
+        Signature:
+        {
+            "inputs": {
+                "a": {
+                    "type": "int",
+                },
+                "b": {
+                    "type": "string",
+                },
+            },
+            "outputs": {
+                "output": {
+                    "type": "int",
+                },
+            },
+        }
+
+        If entry is a callable class, the signature includes inputs, outputs, and init. For example:
+        @dataclasses.dataclass
+        class MyDataClass:
+            c: int
+
+        class MyFlow:
+            def __init__(self, a: int):
+                pass
+
+            def __call__(self, b: str) -> MyDataClass:
+                pass
+        Signature:
+        {
+            "init": {
+                "a": {
+                    "type": "int",
+                },
+            },
+            "inputs": {
+                "b": {
+                    "type": "string",
+                },
+            },
+            "outputs": {
+                "c": {
+                    "type": "int",
+                },
+            }
+        }
+
+        Given flow accepts json input in batch run and serve, we support only a part of types for those ports. Errors
+        will be raised if annotated types are not supported.
+        :param entry: entry of the flow, should be a method name relative to code
+        :type entry: Callable
+        :return: signature of the flow
+        :rtype: dict
+        """
+        # TODO: should we support string entry? If so, we should also add a parameter to specify the working directory
+        flow_meta, _ = self._infer_signature(entry=entry)
+        return flow_meta
+
     @monitor_operation(activity_name="pf.flows._save", activity_type=ActivityType.INTERNALCALL)
     def _save(
         self,
-        path: Union[str, PathLike],
         entry: Union[str, Callable],
         code: Union[str, PathLike, None] = None,
+        path: Union[str, PathLike, None] = None,
         *,
         python_requirements_txt: str = None,
         image: str = None,
@@ -1044,30 +1111,6 @@ class FlowOperations(TelemetryMixin):
         input_sample: dict = None,
         **kwargs,
     ) -> NoReturn:
-        """
-        Save flow to a directory.
-
-        :param path: path to save the flow
-        :type path: Union[str, PathLike]
-        :param entry: entry of the flow, should be a method name relative to code
-        :type entry: str
-        :param code: path to the code directory
-        :type code: Union[str, PathLike]
-        :param python_requirements_txt: path to the python requirements file. If not specified, will use
-              `requirements.txt` if existed in code directory.
-        :type python_requirements_txt: str
-        :param image: image to run the flow. Will use default image if not specified.
-        :type image: str
-        :param signature: signature of the flow, indicates the input and output ports of the flow
-        :type signature: dict
-        :param input_sample: sample input data for the flow. Will be used for swagger generation in `flow serve`.
-        :type input_sample: dict
-
-        """
-        target_flow_directory = Path(path)
-        if target_flow_directory.exists() and len(os.listdir(target_flow_directory.as_posix())) != 0:
-            raise UserErrorException(f"Target path {target_flow_directory.as_posix()} exists and is not empty.")
-
         # hide the language field before csharp support go public
         language: str = kwargs.get(LANGUAGE_KEY, FlowLanguage.Python)
 
@@ -1109,18 +1152,80 @@ class FlowOperations(TelemetryMixin):
         if LANGUAGE_KEY in kwargs:
             data[LANGUAGE_KEY] = language
 
-        target_flow_file = target_flow_directory / FLOW_FLEX_YAML
         # schema validation, here target_flow_file doesn't exist actually
-        FlexFlow(path=target_flow_file, code=code, data=data, entry=data["entry"])._validate(raise_error=True)
+        # TODO: allow flex flow without path
+        FlexFlow(path=code / FLOW_FLEX_YAML, code=code, data=data, entry=data["entry"])._validate(raise_error=True)
 
-        target_flow_directory.parent.mkdir(parents=True, exist_ok=True)
+        if path:
+            # copy code to target directory if path is specified
+            target_flow_directory = Path(path)
+            if target_flow_directory.exists() and len(os.listdir(target_flow_directory.as_posix())) != 0:
+                raise UserErrorException(f"Target path {target_flow_directory.as_posix()} exists and is not empty.")
+            target_flow_directory.parent.mkdir(parents=True, exist_ok=True)
 
-        # TODO: handle ignore
-        shutil.copytree(code, target_flow_directory)
+            # TODO: handle ignore
+            shutil.copytree(code, target_flow_directory, dirs_exist_ok=True)
+        else:
+            # or we update the flow definition yaml file in code only
+            target_flow_directory = code
+            target_flow_directory.parent.mkdir(parents=True, exist_ok=True)
+
+        target_flow_file = target_flow_directory / FLOW_FLEX_YAML
+
         if python_requirements_txt:
             shutil.copy(python_requirements_txt, target_flow_directory / Path(python_requirements_txt).name)
+
         if input_sample:
             with open(target_flow_directory / SERVE_SAMPLE_JSON_PATH, "w", encoding=DEFAULT_ENCODING) as f:
                 json.dump(input_sample, f, indent=4)
         with open(target_flow_file, "w", encoding=DEFAULT_ENCODING):
             dump_yaml(data, target_flow_file)
+
+    @monitor_operation(activity_name="pf.flows.save", activity_type=ActivityType.PUBLICAPI)
+    def save(
+        self,
+        entry: Union[str, Callable],
+        code: Union[str, PathLike, None] = None,
+        path: Union[str, PathLike, None] = None,
+        *,
+        python_requirements_txt: str = None,
+        image: str = None,
+        signature: dict = None,
+        input_sample: dict = None,
+        **kwargs,
+    ) -> NoReturn:
+        """
+        Save a callable class or a function as a flex flow.
+
+        :param entry: entry of the flow. If entry is a string, code will be required and entry should be a
+            method name relative to code, like "module.method". If entry is a callable class or a function,
+            code must be left None.
+        :type entry: Union[str, Callable]
+        :param code: path to the code directory. Will be copied to the target directory. If entry is a callable,
+            code must be left None and the parent directory of the entry source will be used as code.
+        :type code: Union[str, PathLike]
+        :param path: target directory to create the flow. If specified, it must be an empty or non-existent directory;
+            if not specified, will update the flow definition yaml file in code.
+        :type path: Union[str, PathLike]
+        :param python_requirements_txt: path to the python requirements file. If not specified, will use
+              `requirements.txt` if existed in code directory.
+        :type python_requirements_txt: str
+        :param image: image to run the flow. Will use default image if not specified.
+        :type image: str
+        :param signature: signature of the flow, indicates the input and output ports of the flow
+        :type signature: dict
+        :param input_sample: sample input data for the flow. Will be used for swagger generation in `flow serve`.
+        :type input_sample: dict
+        :return: no return
+        :rtype: None
+        """
+        return self._save(
+            path=path,
+            entry=entry,
+            code=code,
+            python_requirements_txt=python_requirements_txt,
+            image=image,
+            signature=signature,
+            input_sample=input_sample,
+            **kwargs,
+        )

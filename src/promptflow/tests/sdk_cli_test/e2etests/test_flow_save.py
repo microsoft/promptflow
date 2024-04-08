@@ -2,6 +2,7 @@ import os
 import re
 import shutil
 import sys
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -462,3 +463,36 @@ class TestFlowSave:
                 },
             },
         }
+
+    def test_public_sdk_api(self):
+        pf = PFClient()
+        assert pf.flows.infer_signature(entry=global_hello) == {
+            "inputs": {
+                "text": {
+                    "type": "string",
+                }
+            },
+            "outputs": {
+                "output": {
+                    "type": "string",
+                },
+            },
+        }
+
+        with tempfile.TemporaryDirectory() as tempdir:
+            pf.flows.save(entry=global_hello, path=tempdir)
+            assert load_flow(tempdir)._data == {
+                "entry": "test_flow_save:global_hello",
+                "inputs": {
+                    "text": {
+                        "type": "string",
+                    }
+                },
+                "outputs": {
+                    "output": {
+                        "type": "string",
+                    },
+                },
+            }
+
+        # TODO: test for cli
