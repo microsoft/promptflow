@@ -100,7 +100,10 @@ def validate_trace_provider(value: str) -> None:
         pf_client._traces._get_cosmos_db_token(container_name=CosmosDBContainerName.SPAN)
         _logger.debug("The workspace Cosmos DB is already initialized.")
     except FlowRequestException:
-        _logger.debug("The workspace Cosmos DB is not initialized yet, start initialization...")
+        # print here to let users aware this operation as it's kind of time consuming
+        init_cosmos_msg = "The workspace Cosmos DB is not initialized yet, will start initialization..."
+        print(init_cosmos_msg)
+        _logger.debug(init_cosmos_msg)
         _init_workspace_cosmos_db(pf_client)
     _logger.debug("The workspace Cosmos DB is initialized.")
 
