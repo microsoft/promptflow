@@ -125,6 +125,10 @@ class ScriptExecutor(FlowExecutor):
             line_result.output[LINE_NUMBER_KEY] = index
         return line_result
 
+    @property
+    def has_aggregation_node(self):
+        return hasattr(self, "_aggr_func")
+
     def _exec_aggregation(
         self,
         inputs: List[Any],
@@ -239,7 +243,7 @@ class ScriptExecutor(FlowExecutor):
                 except Exception as e:
                     raise FlowEntryInitializationError(init_kwargs=self._init_kwargs, ex=e) from e
                 func = getattr(obj, "__call__")
-                self.__initialize_aggr_function(obj)
+                self._initialize_aggr_function(obj)
             else:
                 raise PythonLoadError(
                     message_format="Python class entry '{func_name}' does not have __call__ method.",
@@ -266,7 +270,7 @@ class ScriptExecutor(FlowExecutor):
         self._is_async = inspect.iscoroutinefunction(self._func)
         return func
 
-    def __initialize_aggr_function(self, flow_obj: object):
+    def _initialize_aggr_function(self, flow_obj: object):
         aggr_func = getattr(flow_obj, "__aggregate__", None)
         if aggr_func is not None:
             sign = inspect.signature(aggr_func)

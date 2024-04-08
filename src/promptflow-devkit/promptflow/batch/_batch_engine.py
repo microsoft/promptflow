@@ -118,8 +118,7 @@ class BatchEngine:
             self._is_eager_flow = True
             self._program_language = FlowLanguage.Python
         elif is_prompty_flow(self._flow_file):
-            self._is_prompty_flow = True
-            self._is_eager_flow = False
+            self._is_eager_flow = True
             self._program_language = FlowLanguage.Python
         else:
             self._is_prompty_flow = False
@@ -528,20 +527,47 @@ class BatchEngine:
         async with semaphore:
             return await self._executor_proxy.exec_line_async(inputs, index, run_id)
 
+    def _should_exec_aggregation(self) -> bool:
+        if self._is_prompty_flow or self._is_eager_flow:
+            return self._executor_proxy.has_aggregation
+        aggregation_nodes = {node.name for node in self._flow.nodes if node.aggregation}
+        return bool(aggregation_nodes)
+
+    def _get_aggregation_inputs(self, batch_inputs, line_results: List[LineResult]):
+        run_infos = [r.run_info for r in line_results]
+        succeeded = [i for i, r in enumerate(run_infos) if r.status == Status.Completed]
+
+        if self._is_eager_flow:
+            return None, [line_results[i].output for i in succeeded]
+
+        succeeded_batch_inputs = [batch_inputs[i] for i in succeeded]
+        resolved_succeeded_batch_inputs = [
+            FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=input) for input in succeeded_batch_inputs
+        ]
+        succeeded_inputs = transpose(resolved_succeeded_batch_inputs, keys=list(self._flow.inputs.keys()))
+        aggregation_inputs = transpose(
+            [result.aggregation_inputs for result in line_results],
+            keys=get_aggregation_inputs_properties(self._flow),
+        )
+        succeeded_aggregation_inputs = collect_lines(succeeded, aggregation_inputs)
+        return succeeded_inputs, succeeded_aggregation_inputs
+
     async def _exec_aggregation(
         self,
         batch_inputs: List[dict],
         line_results: List[LineResult],
         run_id: Optional[str] = None,
     ) -> AggregationResult:
+        if not self._should_exec_aggregation():
+            return AggregationResult({}, {}, {})
+
+        bulk_logger.info("Executing aggregation nodes...")
+
+        inputs, aggregation_inputs = self._get_aggregation_inputs(batch_inputs, line_results)
+
         if self._is_eager_flow:
-            run_infos = [r.run_info for r in line_results]
-            succeeded = [i for i, r in enumerate(run_infos) if r.status == Status.Completed]
-            succeeded_line_results = [line_results[i].output for i in succeeded]
             try:
-                aggr_result = await self._executor_proxy.exec_aggregation_async(
-                    succeeded_line_results, {}, run_id=run_id
-                )
+                aggr_result = await self._executor_proxy.exec_aggregation_async(aggregation_inputs, {}, run_id=run_id)
                 bulk_logger.info("Finish executing aggregation function.")
                 return aggr_result
             except PromptflowException as e:
@@ -556,31 +582,9 @@ class BatchEngine:
                     ),
                     error_type_and_message=error_type_and_message,
                 ) from e
-        aggregation_nodes = {node.name for node in self._flow.nodes if node.aggregation}
-        if not aggregation_nodes:
-            return AggregationResult({}, {}, {})
 
-        bulk_logger.info("Executing aggregation nodes...")
-
-        run_infos = [r.run_info for r in line_results]
-        succeeded = [i for i, r in enumerate(run_infos) if r.status == Status.Completed]
-
-        succeeded_batch_inputs = [batch_inputs[i] for i in succeeded]
-        resolved_succeeded_batch_inputs = [
-            FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=input) for input in succeeded_batch_inputs
-        ]
-
-        succeeded_inputs = transpose(resolved_succeeded_batch_inputs, keys=list(self._flow.inputs.keys()))
-
-        aggregation_inputs = transpose(
-            [result.aggregation_inputs for result in line_results],
-            keys=get_aggregation_inputs_properties(self._flow),
-        )
-        succeeded_aggregation_inputs = collect_lines(succeeded, aggregation_inputs)
         try:
-            aggr_result = await self._executor_proxy.exec_aggregation_async(
-                succeeded_inputs, succeeded_aggregation_inputs, run_id
-            )
+            aggr_result = await self._executor_proxy.exec_aggregation_async(inputs, aggregation_inputs, run_id)
             # if the flow language is python, we have already persisted node run infos during execution.
             # so we should persist node run infos in aggr_result for other languages.
             if not isinstance(self._executor_proxy, PythonExecutorProxy):
