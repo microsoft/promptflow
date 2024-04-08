@@ -153,6 +153,33 @@ class TestExperiment:
         run = client.runs.get(name=exp.node_runs["echo"][0]["name"])
         assert run.type == RunTypes.COMMAND
 
+    @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
+    def test_experiment_start_with_prompty(self):
+        template_path = EXP_ROOT / "experiment-with-prompty-template" / "basic-script.exp.yaml"
+        # Load template and create experiment
+        template = load_common(ExperimentTemplate, source=template_path)
+        experiment = Experiment.from_template(template)
+        client = PFClient()
+        exp = client._experiments.create_or_update(experiment)
+        session = str(uuid.uuid4())
+        if pytest.is_live:
+            # Async start
+            exp = client._experiments.start(exp, session=session)
+            # Test the experiment in progress cannot be started.
+            with pytest.raises(RunOperationError) as e:
+                client._experiments.start(exp)
+            assert f"Experiment {exp.name} is {exp.status}" in str(e.value)
+            assert exp.status in [ExperimentStatus.IN_PROGRESS, ExperimentStatus.QUEUING]
+            exp = self.wait_for_experiment_terminated(client, exp)
+        else:
+            exp = client._experiments.get(exp.name)
+            exp = ExperimentOrchestrator(client, exp).start(session=session)
+        # Assert record log in experiment folder
+        assert (Path(exp._output_dir) / "logs" / "exp.attempt_0.log").exists()
+        assert exp.status == ExperimentStatus.TERMINATED
+        for name, runs in exp.node_runs.items():
+            assert all([run["status"] == RunStatus.COMPLETED] for run in runs)
+
     @pytest.mark.skipif(condition=not pytest.is_live, reason="Injection cannot passed to detach process.")
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
     def test_experiment_start_from_nodes(self):

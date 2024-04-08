@@ -6,9 +6,9 @@ from os import PathLike
 from pathlib import Path
 from typing import Union
 
-from promptflow._constants import DEFAULT_ENCODING
+from promptflow._constants import DEFAULT_ENCODING, PROMPTY_EXTENSION
 from promptflow._sdk.entities._validation import SchemaValidatableMixin
-from promptflow._utils.flow_utils import is_flex_flow, resolve_flow_path
+from promptflow._utils.flow_utils import is_flex_flow, is_prompty_flow, resolve_flow_path
 from promptflow._utils.yaml_utils import load_yaml_string
 from promptflow.core._flow import AbstractFlowBase
 from promptflow.exceptions import UserErrorException
@@ -156,9 +156,18 @@ class Flow(FlowBase):
         return cls(code=path.parent, path=path, dag=dag, **kwargs)
 
     @classmethod
-    def _dispatch_flow_creation(cls, is_eager_flow, flow_path, data, content_hash, raise_error=True, **kwargs):
-        """Dispatch flow load to non-dag flow or async flow."""
-        if is_eager_flow:
+    def _dispatch_flow_creation(cls, flow_path, raise_error=True, **kwargs):
+        """Dispatch flow load to non-dag flow or async flow or prompty."""
+        if is_prompty_flow(file_path=flow_path, raise_error=raise_error):
+            from .prompty import Prompty
+
+            return Prompty._load(path=flow_path, raise_error=True, **kwargs)
+
+        with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
+            flow_content = f.read()
+            data = load_yaml_string(flow_content)
+            content_hash = hash(flow_content)
+        if is_flex_flow(yaml_dict=data):
             from .flex import FlexFlow
 
             return FlexFlow._load(path=flow_path, data=data, raise_error=raise_error, **kwargs)
@@ -170,19 +179,12 @@ class Flow(FlowBase):
 
     @classmethod
     def _load_prepare(cls, source: Union[str, PathLike]):
-        source_path = Path(source)
-        if not source_path.exists():
-            raise UserErrorException(f"Source {source_path.absolute().as_posix()} does not exist")
-
-        flow_dir, flow_filename = resolve_flow_path(source_path, new=True)
+        flow_dir, flow_filename = resolve_flow_path(source)
         flow_path = flow_dir / flow_filename
 
-        if not flow_path.exists():
-            raise UserErrorException(f"Flow file {flow_path.absolute().as_posix()} does not exist")
-
-        if flow_path.suffix not in [".yaml", ".yml"]:
-            raise UserErrorException("Source must be a directory or a 'flow.dag.yaml' file")
-        return source_path, flow_path
+        if flow_path.suffix not in [".yaml", ".yml", PROMPTY_EXTENSION]:
+            raise UserErrorException("Source must be a directory or a 'flow.dag.yaml' file or a prompty file")
+        return flow_dir, flow_path
 
     @classmethod
     def load(
@@ -204,13 +206,7 @@ class Flow(FlowBase):
         :rtype: Flow
         """
         _, flow_path = cls._load_prepare(source)
-        with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
-            flow_content = f.read()
-            data = load_yaml_string(flow_content)
-            content_hash = hash(flow_content)
-        return cls._dispatch_flow_creation(
-            is_flex_flow(yaml_dict=data), flow_path, data, content_hash, raise_error=raise_error, **kwargs
-        )
+        return cls._dispatch_flow_creation(flow_path, raise_error=raise_error, **kwargs)
 
     def _init_executable(self):
         from promptflow.contracts.flow import Flow as ExecutableFlow

@@ -1,5 +1,5 @@
 from pathlib import Path
-from promptflow import tool
+from promptflow.core import tool
 
 # read file from additional includes
 lines = open(r"fetch_text_content_from_url.py", "r").readlines()

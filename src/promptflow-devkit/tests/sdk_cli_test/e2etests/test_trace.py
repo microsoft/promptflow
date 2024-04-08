@@ -248,6 +248,12 @@ class TestTraceEntitiesAndOperations:
         pf.traces.delete(collection=collection2, started_before=delete_query_time.isoformat())
         assert len(pf.traces.list_line_runs(collection=collection2)) == 0
 
+    def test_delete_traces_dry_run(self, pf: PFClient) -> None:
+        mock_run = str(uuid.uuid4())
+        mock_span_for_delete_tests(run=mock_run)
+        num_traces = pf.traces.delete(run=mock_run, dry_run=True)
+        assert num_traces == 1
+
 
 @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
 @pytest.mark.e2etest

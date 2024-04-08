@@ -191,6 +191,8 @@
     "pywin",
     "STARTF",
     "mltable",
+    "prompty",
+    "Prompty",
     "setenv",
     "cscript",
     "nologo",

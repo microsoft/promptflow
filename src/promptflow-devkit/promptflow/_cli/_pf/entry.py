@@ -29,7 +29,6 @@ from promptflow._cli._pf._upgrade import add_upgrade_parser, upgrade_version  # 
 from promptflow._cli._pf.help import show_privacy_statement, show_welcome_message  # noqa: E402
 from promptflow._cli._user_agent import USER_AGENT  # noqa: E402
 from promptflow._sdk._utils import (  # noqa: E402
-    get_promptflow_azure_version,
     get_promptflow_core_version,
     get_promptflow_devkit_version,
     get_promptflow_sdk_version,
@@ -107,17 +106,18 @@ def get_parser_args(argv):
         "-v", "--version", dest="version", action="store_true", help="show current CLI version and exit"
     )
     subparsers = parser.add_subparsers()
-    add_upgrade_parser(subparsers)
-    add_flow_parser(subparsers)
-    add_connection_parser(subparsers)
-    add_run_parser(subparsers)
+    # lexicographical order
     add_config_parser(subparsers)
-    add_tool_parser(subparsers)
-    add_service_parser(subparsers)
-    add_trace_parser(subparsers)
-
+    add_connection_parser(subparsers)
     if Configuration.get_instance().is_internal_features_enabled():
         add_experiment_parser(subparsers)
+
+    add_flow_parser(subparsers)
+    add_run_parser(subparsers)
+    add_tool_parser(subparsers)
+    add_trace_parser(subparsers)
+    add_service_parser(subparsers)
+    add_upgrade_parser(subparsers)
 
     return parser.prog, parser.parse_args(argv)
 
@@ -143,10 +143,6 @@ def main():
         version_tracing = get_promptflow_tracing_version()
         if version_tracing:
             version_dict["promptflow-tracing"] = version_tracing
-        # check azure version
-        version_azure = get_promptflow_azure_version()
-        if version_azure:
-            version_dict["promptflow-azure"] = version_azure
         # check core version
         version_core = get_promptflow_core_version()
         if version_core:

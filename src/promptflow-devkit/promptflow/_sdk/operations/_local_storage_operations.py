@@ -14,7 +14,7 @@ from typing import Any, Dict, List, NewType, Optional, Tuple, Union
 
 from filelock import FileLock
 
-from promptflow._constants import OUTPUT_FILE_NAME, OutputsFolderName
+from promptflow._constants import FLOW_DAG_YAML, OUTPUT_FILE_NAME, OutputsFolderName
 from promptflow._sdk._constants import (
     HOME_PROMPT_FLOW_DIR,
     LINE_NUMBER,
@@ -38,6 +38,7 @@ from promptflow._sdk._utils import (
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._flows import FlexFlow, Flow
 from promptflow._utils.exception_utils import PromptflowExceptionPresenter
+from promptflow._utils.flow_utils import is_prompty_flow
 from promptflow._utils.logger_utils import LogContext, get_cli_sdk_logger
 from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow._utils.utils import prepare_folder
@@ -202,7 +203,7 @@ class LocalStorageOperations(AbstractBatchRunStorage):
         )
         # snapshot
         self._snapshot_folder_path = prepare_folder(self.path / LocalStorageFilenames.SNAPSHOT_FOLDER)
-        self._dag_path = self._snapshot_folder_path / LocalStorageFilenames.DAG
+        self._dag_path = self._snapshot_folder_path / FLOW_DAG_YAML
         self._flow_tools_json_path = (
             self._snapshot_folder_path / PROMPT_FLOW_DIR_NAME / LocalStorageFilenames.FLOW_TOOLS_JSON
         )
@@ -229,6 +230,7 @@ class LocalStorageOperations(AbstractBatchRunStorage):
 
         self._dump_meta_file()
         self._eager_mode = self._calculate_eager_mode(run)
+        self._is_prompty_flow = is_prompty_flow(run.flow)
 
     @property
     def eager_mode(self) -> bool:
@@ -270,7 +272,7 @@ class LocalStorageOperations(AbstractBatchRunStorage):
             dirs_exist_ok=True,
         )
         # replace DAG file with the overwrite one
-        if not self._eager_mode:
+        if not self._eager_mode and not self._is_prompty_flow:
             self._dag_path.unlink()
             shutil.copy(flow.path, self._dag_path)
 

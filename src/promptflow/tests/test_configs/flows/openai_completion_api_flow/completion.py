@@ -1,7 +1,7 @@
 from openai.version import VERSION as OPENAI_VERSION
 import openai
 
-from promptflow import tool
+from promptflow.core import tool
 from promptflow.connections import AzureOpenAIConnection
 
 IS_LEGACY_OPENAI = OPENAI_VERSION.startswith("0.")

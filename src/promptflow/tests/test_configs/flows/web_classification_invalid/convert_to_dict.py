@@ -1,7 +1,7 @@
 import json
 import time
 
-from promptflow import tool
+from promptflow.core import tool
 
 
 # use this to test the timeout
