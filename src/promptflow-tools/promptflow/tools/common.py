@@ -715,6 +715,8 @@ def normalize_connection_config(connection):
     This function takes a connection object and normalizes its configuration,
     ensuring it is compatible and standardized for use.
     """
+    from promptflow.connections import ServerlessConnection
+
     if isinstance(connection, AzureOpenAIConnection):
         if connection.api_key:
             return {
@@ -739,9 +741,21 @@ def normalize_connection_config(connection):
             "organization": connection.organization,
             "base_url": connection.base_url
         }
+    elif isinstance(connection, ServerlessConnection):
+        suffix = "/v1"
+        base_url = connection.api_base
+        if not base_url.endswith(suffix):
+            # append "/v1" to ServerlessConnection api_base so that it can directly use the OpenAI SDK.
+            base_url += suffix
+        return {
+            "max_retries": 0,
+            "api_key": connection.api_key,
+            "base_url": base_url
+        }
     else:
         error_message = f"Not Support connection type '{type(connection).__name__}'. " \
-                        f"Connection type should be in [AzureOpenAIConnection, OpenAIConnection]."
+                        "Connection type should be in [AzureOpenAIConnection, OpenAIConnection, " \
+                        "ServerlessConnection]."
         raise InvalidConnectionType(message=error_message)
 
 

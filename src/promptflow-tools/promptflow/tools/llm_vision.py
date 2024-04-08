@@ -15,7 +15,7 @@ from promptflow.tools.openai_gpt4v import OpenAI
 @tool
 @handle_openai_error()
 def llm_vision(
-    connection: Union[AzureOpenAIConnection, OpenAIConnection], 
+    connection: Union[AzureOpenAIConnection, OpenAIConnection],
     prompt: PromptTemplate,
     deployment_name: str = "", model: str = "",
     temperature: float = 1.0,

@@ -1,4 +1,4 @@
-from typing import Union, List, Dict
+from typing import List, Dict
 
 from promptflow.tools.common import handle_openai_error, _get_credential
 from promptflow.tools.exception import InvalidConnectionType
@@ -9,7 +9,7 @@ from promptflow.tools.openai import OpenAI
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
 # since the code here is in promptflow namespace as well
 from promptflow._internal import tool
-from promptflow.connections import AzureOpenAIConnection, OpenAIConnection, ServerlessConnection
+from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 
 
 def get_cloud_connection(connection_name, subscription_id, resource_group_name, workspace_name):
@@ -74,7 +74,10 @@ def list_apis(
 @tool
 @handle_openai_error()
 def llm(
-    connection: Union[AzureOpenAIConnection, OpenAIConnection, ServerlessConnection], 
+    # connection can be of type AzureOpenAIConnection, OpenAIConnection, ServerlessConnection.
+    # ServerlessConnection was introduced in pf version 1.6.0.
+    # cannot set type hint here to be compatible with pf version < 1.6.0.
+    connection,
     prompt: PromptTemplate,
     api: str = "chat",
     deployment_name: str = "", model: str = "",
@@ -99,6 +102,8 @@ def llm(
     **kwargs,
 ):
     # TODO: get rid of `register_apis` dependency from llm.py.
+    from promptflow.connections import ServerlessConnection
+
     if isinstance(connection, AzureOpenAIConnection):
         if api == "completion":
             return AzureOpenAI(connection).completion(
