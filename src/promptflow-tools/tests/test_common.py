@@ -120,7 +120,7 @@ class TestCommon:
             process_function_call(function_call)
         assert error_message in exc_info.value.message
         assert exc_info.value.error_codes == error_codes.split("/")
-    
+
     @pytest.mark.parametrize(
         "tool_choice, error_message, success",
         [
@@ -506,4 +506,3 @@ class TestCommon:
             AzureOpenAIConnection(api_key="fake_key", api_base="https://aoai", api_version="v1"))
         # verify if openai built-in retry mechanism is disabled
         assert client.max_retries == 0
-

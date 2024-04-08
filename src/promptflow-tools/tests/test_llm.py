@@ -318,4 +318,3 @@ class TestLLM:
             user_input="Fill in more details about trend 2."
         )
         assert "trend 2:".lower() in result.lower()
-

@@ -1,8 +1,6 @@
 import pytest
 from unittest.mock import patch
 
-from promptflow.tools.aoai_gpt4v import list_deployment_names
-from tests.utils import Deployment
 from promptflow.tools.llm_vision import llm_vision
 
 
