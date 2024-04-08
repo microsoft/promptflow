@@ -142,7 +142,7 @@ jobs:
           -t ${{ env.testWorkingDirectory }}/tests/executor/e2etests `
           -l eastus `
           -m "all" `
-          -n ${{ steps.cpu-cores.outputs.count }}`
+          -n 1 `
           --coverage-config ${{ env.testWorkingDirectory }}/tests/executor/.coveragerc `
           --disable-cov-branch
     - name: Upload Test Results
