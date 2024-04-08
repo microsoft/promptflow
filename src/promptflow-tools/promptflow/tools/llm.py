@@ -9,7 +9,7 @@ from promptflow.tools.openai import OpenAI
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
 # since the code here is in promptflow namespace as well
 from promptflow._internal import tool
-from promptflow.connections import AzureOpenAIConnection, OpenAIConnection, ServerlessConnection
+from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 
 
 def get_cloud_connection(connection_name, subscription_id, resource_group_name, workspace_name):
@@ -73,7 +73,7 @@ def list_apis(
 @tool
 @handle_openai_error()
 def llm(
-    connection: Union[AzureOpenAIConnection, OpenAIConnection, ServerlessConnection], 
+    connection: Union[AzureOpenAIConnection, OpenAIConnection],
     prompt: PromptTemplate,
     api: str = "chat",
     deployment_name: str = "", model: str = "",
@@ -135,7 +135,7 @@ def llm(
                 seed=seed,
                 **kwargs
             )
-    elif isinstance(connection, (OpenAIConnection, ServerlessConnection)):
+    elif isinstance(connection, (OpenAIConnection)):
         if api == "completion":
             return OpenAI(connection).completion(
                 prompt=prompt,
