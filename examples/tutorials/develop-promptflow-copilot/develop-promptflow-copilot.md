@@ -1,13 +1,14 @@
 # Develop promptflow copilot
 
-In this tutorial, we will show you how to develop a RAG based copilot step by step using the toolsets provided by Azure Machine Learning promptflow. Specifically, we will cover the following topics:
-- How to initialize a RAG based copilot flow from AzureML workspace portal
-- How to generate synthetic test data for the copilot
-- How to evaluate your copilot with test data
-- How to improve your copilot flow
-- How to bring your copilot to customers
+In this tutorial, we will provide a detailed walkthrough on creating a RAG-based copilot using the Azure Machine Learning promptflow toolkit. Our tutorial will cover a range of essential topics, including:
 
-We will develop copilot for promptflow as example in this tutorial, you can develop your own copilot following the similar steps.
+- Initiating a RAG-based copilot flow through the AzureML Workspace Portal.
+- Generating synthetic test data for the copilot.
+- Evaluating the copilot's performance using test data.
+- Enhancing the functionality and efficiency of your copilot flow.
+- Deploying your copilot for customer use.
+
+While we will focus on constructing a copilot for promptflow as a case study, the methodologies and steps outlined can be adapted to develop your customized copilot solutions.
 
 ## Prerequisites
 
@@ -18,9 +19,9 @@ We will develop copilot for promptflow as example in this tutorial, you can deve
 
 ## Step 1: Initialize a RAG based copilot flow
 
-Firstly, clone the promptflow repository to your local machine. Then, in your Azure Machine Learning workspace, create vector index using the document files inside `./docs` folder. For detailed instructions about create vector index, you can reference the document [here](https://learn.microsoft.com/en-us/azure/machine-learning/how-to-create-vector-index?view=azureml-api-2#create-a-vector-index-by-using-machine-learning-studio).
+First, begin by cloning the promptFlow repository to your local machine. Subsequently, within your Azure Machine Learning workspace, proceed to create a vector index utilizing the document files located in the `./docs` folder. For comprehensive guidance on creating a vector index, kindly consult the documentation available at [here](https://learn.microsoft.com/en-us/azure/machine-learning/how-to-create-vector-index?view=azureml-api-2#create-a-vector-index-by-using-machine-learning-studio).
 
-After the vector index created, an example prompt flow will be automatically generated in the workspace. You can find the example prompt flow's link in the vector index's detail page. The example flow is a typical RAG based copilot flow, it will be a good start point for use to develop our copilot.
+Upon successful creation of the vector index, an example flow will be automatically generated within your workspace. This example flow, which is a standard Retrieval-Augmented Generation (RAG) based copilot flow, serves as an excellent starting point for developing your own copilot. You can locate the link to this example flow on the vector index's detail page.
 
 This is how the example flow looks like:
 
@@ -33,16 +34,16 @@ With some minor configuration, you can open the chat panel and directly chat wit
 ### Tips
 
 ```
-Prepare your data carefully. The quality of the data will directly affect the performance of the copilot. Promptflow had prepared rich and insightful document in the `./docs` folder, so we vectorized it as the context for our copilot. Meanwhile, we filter out the image files which cannot be vectorized and some markdown files that contains no meaningful information.
+Currently, the volume of test data generated cannot be directly manipulated by the user. Instead, it is contingent upon the number of segments your documents are divided into. This segmentation can be adjusted by modifying the 'document_chunk_size' and 'document_chunk_overlap' parameters in your config.yml file. Additionally, you have the option to alter the 'temperature' parameter of the LLM tool within the 'gen_test_data' example flow. By executing the 'gen_test_data' script multiple times, you can indirectly increase the quantity of test data produced.
 ```
 
 ## Step 2: Generate synthetic test data
 
-To ensure the quality of the promptflow copilot, we need to test it on a large set of data. The test data could be from the real user cases, like questions posted on stackoverflow. However, the test data from real user cases is usually lack of amount and comprehensiveness. Therefore, we need to generate synthetic test data to cover more scenarios.
+To ensure the quality of the promptFlow copilot, it's imperative to conduct extensive testing using a broad dataset. Ideally, this dataset would consist of real user inquiries, such as those found on platforms like StackOverflow. However, real-world cases often fall short in both quantity and diversity. To address this gap, the creation of synthetic test data is necessary to encompass a wider array of scenarios.
 
-Promptflow had prepared detailed guidelines on how to generate synthetic test data for your documents by leveraging the capabilities of LLM. For detailed steps, you can reference [this doc](../../../docs/how-to-guides/generate-test-data.md).
+Promptflow has provided comprehensive guidelines for generating synthetic test data using Large Language Models (LLMs). For step-by-step instructions, please refer to the document available at [here](../../../docs/how-to-guides/generate-test-data.md).
 
-Create a new Data asset in your workspace if your want to evaluate your copilot with the test data in azure.
+To facilitate evaluation of your copilot in Azure, consider creating a new Data Asset in your workspace specifically for this purpose.
 
 ### Tips
 
@@ -51,7 +52,7 @@ Currently, you cannot directly control how much test data you want to generate. 
 ```
 
 ## Step 3: Evaluate your copilot with test data
-After we prepared the test data, we can use evaluation flow to evaluate the performance of our copilot againt the test data. Promptflow had prepared various of evaluation flows for different scenarios. For our RAG based copilot, we can leverage the evaluation flow in [this folder](../../../examples/flows/evaluation/eval-single-turn-metrics/).
+After preparing the test data, we can utilize the evaluation flow to assess the performance of our copilot against the test data. Promptflow has developed various evaluation flows tailored for different scenarios. For our RAG-based copilot, we can leverage the evaluation flow in [this folder](../../../examples/flows/evaluation/eval-single-turn-metrics/) to ensure comprehensive and accurate performance analysis.
 
 Clone this evaluation flow folder to your local machine or upload it to your workspace.
 
@@ -62,21 +63,19 @@ Clone this evaluation flow folder to your local machine or upload it to your wor
 ### Tips
 
 ```
-- The evaluation flow supports calculating multiple metrics, and have detailed explanations for each metric in the readme file. Make sure you understand each of them and choose the metrics that are most relevant to your copilot.
+- The evaluation process is designed to compute multiple metrics, each accompanied by comprehensive explanations in the readme file. It is imperative to understand these metrics thoroughly and select those most applicable to your project.
 
 - The answer produced by the initial copilot flow will have a "(Source: citation)" part at the end. This is because we told the model to do that in the prompt. You can modify the default prompt to remove this part in case it affects the evaluation results as we did not append this part when generating the test data.
 
-- The evaluation flow will give you aggregated metrics. It's important to zoom into the metrics result for each line, especially for the line with lower score.
+- Furthermore, the evaluation process will present aggregated metrics. It is essential to closely examine the results for each line, especially for the line with lower metric.
+Typically, suboptimal results stem from one of two issues: either the process is underperforming, possibly due to inadequate context retrieval or prompt formulation, or the quality of the test data is insufficient.
 
-The bad cases usually caused by two reasons: one is the flow is not performing well, whether because the context retrival or prompt; the other is the test data is not good enough.
-
-For the first case, you can try to debug or tune the flow in local or in the workspace.
-For the second case, you can try to modify the test case or abandon it from your test dataset.
+To address the first issue, consider debugging or refining the process either locally or within the workspace. For the latter, you might either revise the problematic test cases or exclude them from your test dataset altogether.
 ```
 
 ## Step 4: Improve your copilot flow
 
-After evaluation, you will find that the initial copilot flow works well and can achieve relatively good metrics. We can continue improve the copilot in various ways.
+After evaluation, you will find that the initial copilot flow works well and can achieve relatively good metrics. We can continue to improve the copilot in various ways.
 
 ### Improve context retrieval
 The context retrieval is the most important part of RAG based approach, the quality of the retrieved context will directly affect the performance of the copilot. Take a close look at the initial copilot flow, you will find that the context retrieval is achieved by 'lookup_question_from_indexed_docs' node which is using 'Index Lookup' tool.
@@ -93,9 +92,8 @@ You can tune the prompt of these two nodes by leveraging the variants feature of
 ### Add doc link to the answer
 It's important to add the link of the document which is used as the context to generate the answer. This will help the user to understand where the answer comes from and also help the user to find more information if needed.
 
-The answer produced by the initial copilot flow will have a "(Source: citation)" part at the end. But the citation is not reachable link for end user, and the source:citation format is not suitable to be shown as a hyperlink.
-
-To append the doc link gracefully to the answer, we can slightly modify the code of the 'generate_prompt_context' node to make the citation a reachable hyperlink. And modify the prompt of the 'answer_the_question_with_context' node to make the answer include the doc link with a proper format. The final answer will look like this:
+The answer generated by the initial flow will include a citation in the format "(Source: citation)." However, this citation format does not present a clickable link, making it inconvenient for end-users to directly access the source.
+To address this, we propose modifications to the code within the 'generate_prompt_context' node. These adjustments aim to transform the citation into an accessible hyperlink. Furthermore, alterations to the prompt in the 'answer_the_question_with_context' node are suggested to ensure the document link is seamlessly integrated into the response. By implementing these changes, the final response will effectively incorporate the document link in a user-friendly format. The final answer will look like this:
 
 ![doc-link](doc-link.png)
 
@@ -107,9 +105,9 @@ Avoid abuse is a critical topic when you want to deploy your copilot to producti
 
 But what if we cannot add the authentication layer or we want to save the login effort for the users ? How do we avoid the abuse of the copilot in this case?
 
-A common way is to adjust the prompt used in the 'answer_the_question_with_context' node to tell the model only answer the question if the answer can be found from the retrived context. But the testing result shows that even if we do so, the model will still answer the questions which are irrelevant to the context, especially when the question is a general question like "what is the capital of China ?" or chat history becomes longer.
+One common approach is to refine the prompts used in the 'answer_the_question_with_context' function to instruct the model to only respond if the answer can be sourced from the provided context. Despite this, test results indicate that the model may still respond to queries unrelated to the context, particularly with general inquiries such as "What is the capital of China?" or when chat histories extend over multiple interactions.
 
-A better way could be adding an extra LLM node to determine the relevance of the question to the copilot (in our case, the promptflow) and give a score to the relevance. Then we check the score, if the relevance score is lower than a threshold, we will skip the context retrieval step and directly return a message to the users to tell them that the question is not relevant to the copilot and suggest them to rephrase the question.
+A more effective strategy involves integrating an additional LLM node tasked with evaluating the relevance of a query to the copilot's capabilities (in this scenario, referred to as 'promptflow'). This node assigns a relevance score to each query. Queries with a relevance score below a predetermined threshold would bypass the context retrieval phase, and the system would instead inform the user that their question is not pertinent to the copilot's functionality. Users would be encouraged to rephrase their queries for better alignment with the copilot's capabilities.
 
 You can find the specific code changes in the source of the promptflow copilot flow in [this folder](../../../examples/flows/chat/promptflow-copilot/).
 
@@ -121,19 +119,18 @@ The final step is to bring our intelligent copilot to customers. Obviously, we c
 We want our customers to access promptflow copilot through a web page with chat UI experience, so we will deploy the flow as a managed online endpoint. You can find the detailed instructions [here](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/how-to-deploy-for-real-time-inference?view=azureml-api-2).
 
 ### Host web app with Azure App Service
-Currently, managed online endpoint does not support CORS, so we cannot directly access the endpoint from a web page. We need to host a web app to interact with the endpoint. Azure App Service is a fully managed platform for building, deploying, and scaling web apps. You can use Azure App Service to host your web app and interact with the promptflow copilot endpoint.
+Currently, the managed online endpoint does not support Cross-Origin Resource Sharing (CORS), preventing direct access from a webpage. To facilitate interaction with the endpoint, it is necessary to host a web application. Azure App Service offers a comprehensive solution for this requirement, providing a fully managed platform designed for building, deploying, and scaling web applications. By utilizing Azure App Service, you can host your web application efficiently and establish interaction with the promptflow copilot endpoint.
 
 ### Chat UI experience
-The chat UI experience is also a critical part of the copilot, it will directly affect the user's experience. It's not complicated to implement a ChatGPT like UI from scratch, but it will be much easier and faster to leverage the wonderful open source projects. One of the projects we have tried is `chatgpt-lite`, we had built our promptflow copilot's UI based on it. You can find the source code of the chat UI [here](https://github.com/melionel/chatgpt-lite/tree/talk_to_endpoint_appservice).
+The chat interface significantly impacts the overall user experience with the copilot, directly influencing how users interact with the system. While constructing a ChatGPT-style interface from the ground up is feasible, utilizing established open-source projects can greatly streamline and expedite the process. One of the projects we have tried is `chatgpt-lite`, we had built our promptflow copilot's UI based on it. You can find the source code of the chat UI [here](https://github.com/melionel/chatgpt-lite/tree/talk_to_endpoint_appservice).
 
 ![chat-ui](chat-ui.png)
 
 ### Provide suggested follow-up questions
 
-Provide suggested follow-up questions is a good way to improve the user experience and communication efficiency.
-A simple solution is to directly tell the model to return the follow-up questions along with the answer in the response, however this is not realiable and increase the complexity of processing the response. Another solution is to use another flow to do the follow-up question generation task. You can leverage the 'question_simulation' flow in [this folder](../../../examples/flows/standard/question-simulation/) to generate the suggestions for the next question based on the previous chat history.
+Incorporating follow-up question suggestions is an effective strategy to enhance user experience and communication efficiency. One approach is to instruct the model to include follow-up questions in its responses. However, this method may not always be reliable and could complicate response processing. An alternative strategy involves utilizing a separate flow dedicated to generating follow-up question suggestions. For this purpose, you can employ the 'question_simulation' flow found in [this folder](../../../examples/flows/standard/question-simulation/).
 
-Deploy the `question_simulation` flow as a managed online endpoint and call it in your web app to get the follow-up questions.
+Deploying the `question_simulation` flow as a managed online endpoint and integrating it into your web application allows for dynamic generation of pertinent follow-up questions based on previous chat interactions.
 
 ### Tips
 ```
