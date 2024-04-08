@@ -528,7 +528,7 @@ class BatchEngine:
             return await self._executor_proxy.exec_line_async(inputs, index, run_id)
 
     def _should_exec_aggregation(self) -> bool:
-        if self._is_prompty_flow or self._is_eager_flow:
+        if self._is_eager_flow:
             return self._executor_proxy.has_aggregation
         aggregation_nodes = {node.name for node in self._flow.nodes if node.aggregation}
         return bool(aggregation_nodes)
