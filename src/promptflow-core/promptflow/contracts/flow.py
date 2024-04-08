@@ -922,8 +922,8 @@ class Flow(FlowBase):
 
 
 @dataclass
-class EagerFlow(FlowBase):
-    """This class represents an eager flow.
+class FlexFlow(FlowBase):
+    """This class represents a flex flow.
 
     :param id: The id of the flow.
     :type id: str
@@ -947,7 +947,7 @@ class EagerFlow(FlowBase):
     message_format: str = MessageFormatType.BASIC
 
     @staticmethod
-    def deserialize(data: dict) -> "EagerFlow":
+    def deserialize(data: dict) -> "FlexFlow":
         """Deserialize the flow from a dict.
 
         :param data: The dict to be deserialized.
@@ -958,7 +958,7 @@ class EagerFlow(FlowBase):
 
         inputs = data.get("inputs") or {}
         outputs = data.get("outputs") or {}
-        return EagerFlow(
+        return FlexFlow(
             id=data.get("id", "default_flow_id"),
             name=data.get("name", "default_flow"),
             inputs={name: FlowInputDefinition.deserialize(i) for name, i in inputs.items()},
