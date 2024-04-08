@@ -16,7 +16,7 @@ from promptflow.core._connection_provider._workspace_connection_provider import 
 def build_from_data_and_assert(data, expected):
     data = copy.deepcopy(data)
     obj = WorkspaceConnectionPropertiesV2BasicResource.deserialize(data)
-    assert WorkspaceConnectionProvider.build_connection_dict_from_rest_object("mock", obj) == expected
+    assert WorkspaceConnectionProvider.build_connection_dict_from_rest_object(data["name"], obj) == expected
 
 
 @pytest.mark.unittest
@@ -44,6 +44,7 @@ class TestWorkspaceConnectionProvider:
         expected = {
             "type": "AzureOpenAIConnection",
             "module": "promptflow.connections",
+            "name": "azure_open_ai_connection",
             "value": {
                 "api_base": "<api-base>",
                 "api_key": "***",
@@ -76,6 +77,7 @@ class TestWorkspaceConnectionProvider:
         expected = {
             "type": "AzureOpenAIConnection",
             "module": "promptflow.connections",
+            "name": "azure_open_ai_connection",
             "value": {
                 "api_base": "<api-base>",
                 "api_key": "***",
@@ -108,6 +110,7 @@ class TestWorkspaceConnectionProvider:
         expected = {
             "type": "AzureOpenAIConnection",
             "module": "promptflow.connections",
+            "name": "test_aad_aoai",
             "value": {
                 "api_base": "<api-base>",
                 "api_type": "azure",
@@ -138,6 +141,7 @@ class TestWorkspaceConnectionProvider:
         expected = {
             "type": "CustomConnection",
             "module": "promptflow.connections",
+            "name": "custom_connection",
             "value": {"my_key1": "***", "my_key2": "***", "general_key": "general_value"},
             "secret_keys": ["my_key1", "my_key2"],
         }
@@ -167,6 +171,7 @@ class TestWorkspaceConnectionProvider:
         expected = {
             "type": "CognitiveSearchConnection",
             "module": "promptflow.connections",
+            "name": "test",
             "value": {
                 "api_key": "***",
                 "api_base": "mock_target",
@@ -198,6 +203,7 @@ class TestWorkspaceConnectionProvider:
         expected = {
             "type": "AzureContentSafetyConnection",
             "module": "promptflow.connections",
+            "name": "ACS_Connection",
             "value": {
                 "api_key": "***",
                 "endpoint": "mock_target",
@@ -250,7 +256,7 @@ class TestWorkspaceConnectionProvider:
         }
         with pytest.raises(Exception) as e:
             build_from_data_and_assert(data, {})
-        assert "Unknown connection mock category Unknown" in str(e.value)
+        assert "Unknown connection ACS_Connection category Unknown" in str(e.value)
 
     def test_build_serverless_category_connection_from_rest_object(self):
         data = {
@@ -271,6 +277,7 @@ class TestWorkspaceConnectionProvider:
         expected = {
             "type": "ServerlessConnection",
             "module": "promptflow.connections",
+            "name": "test_serverless_connection",
             "value": {"api_key": "***", "api_base": "mock_base", "auth_mode": "key"},
         }
         build_from_data_and_assert(data, expected)
@@ -358,6 +365,7 @@ class TestWorkspaceConnectionProvider:
             {
                 "type": "AzureOpenAIConnection",
                 "module": "promptflow.connections",
+                "name": "azure_open_ai_connection",
                 "value": {
                     "api_base": "mock_target",
                     "api_type": "azure",
@@ -369,12 +377,14 @@ class TestWorkspaceConnectionProvider:
             {
                 "type": "CustomConnection",
                 "module": "promptflow.connections",
+                "name": "test1",
                 "value": {},
                 "secret_keys": [],
             },
             {
                 "type": "CognitiveSearchConnection",
                 "module": "promptflow.connections",
+                "name": "AmlRunbook_CogSearch",
                 "value": {"api_base": "_", "api_version": "2023-07-01-Preview", "auth_mode": "key"},
             },
         ]

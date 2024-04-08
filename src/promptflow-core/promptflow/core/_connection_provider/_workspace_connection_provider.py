@@ -209,7 +209,7 @@ class WorkspaceConnectionProvider(ConnectionProvider):
         # Note: Category is connectionType in MT, but type name should be class name, which is flowValueType in MT.
         # Handle old connections here, see details: https://github.com/Azure/promptflow/tree/main/connections
         type_name = f"{type_name}Connection" if not type_name.endswith("Connection") else type_name
-        meta = {"type": type_name, "module": module}
+        meta = {"type": type_name, "module": module, "name": name}
 
         def get_auth_config(props):
             unsupported_message = "Unsupported connection auth type %r, supported types are 'ApiKey' and 'AAD'."
