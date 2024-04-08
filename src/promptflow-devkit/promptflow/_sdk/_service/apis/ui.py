@@ -232,12 +232,14 @@ class FlowUxInputs(Resource):
 
 
 def serve_trace_ui(path):
-    if path != "" and os.path.exists(os.path.join(current_app.static_folder, path)):
+    # trace ui static folder: static/trace/
+    static_folder = os.path.join(current_app.static_folder, "trace")
+    if path != "" and os.path.exists(os.path.join(static_folder, path)):
         # explicitly set mimetype for js files since flask auto-detection is not reliable
         _, ext = os.path.splitext(path)
         if ext.lower() == ".js":
             mimetype = "application/javascript"
         else:
             mimetype = None
-        return send_from_directory(current_app.static_folder, path, mimetype=mimetype)
-    return send_from_directory(current_app.static_folder, "index.html")
+        return send_from_directory(static_folder, path, mimetype=mimetype)
+    return send_from_directory(static_folder, "index.html")
