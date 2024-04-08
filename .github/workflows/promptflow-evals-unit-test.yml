@@ -23,34 +23,6 @@ jobs:
     - name: build
       run: poetry build
       working-directory: ${{ env.WORKING_DIRECTORY }}
-    - name: Setup
-      run: |
-        python -m pip install --upgrade pip
-        pip install pytest pytest_mock
-        pip install azure-identity azure-keyvault-secrets
-        # "DEPENDENCY_SOURCE_MODE" is "main" or "package", means the dependency source of code
-        if [ "$DEPENDENCY_SOURCE_MODE" = "main" ]; then
-          pip install ${{ github.workspace }}/src/promptflow-tracing
-          pip install ${{ github.workspace }}/src/promptflow-core
-          pip install ${{ github.workspace }}/src/promptflow-devkit
-          pip install ${{ github.workspace }}/src/promptflow-azure
-          pip install ${{ github.workspace }}/src/promptflow
-          pip install google-search-results==2.4.1
-          pip install openai>=1.0.0
-          pip install azure-mgmt-cognitiveservices==13.5.0
-        else
-          pip install ${{ github.workspace }}/src/promptflow-tracing
-          pip install ${{ github.workspace }}/src/promptflow-core
-          pip install ${{ github.workspace }}/src/promptflow-devkit
-          pip install ${{ github.workspace }}/src/promptflow-azure
-          pip install ${{ github.workspace }}/src/promptflow
-          pip install ${{ github.workspace }}/src/promptflow-tools
-          pip install ${{ github.workspace }}/src/promptflow-evals
-          pip install google-search-results==2.4.1
-          pip install openai>=1.0.0
-          pip install azure-mgmt-cognitiveservices==13.5.0
-        fi
-        pip list
     - uses: actions/upload-artifact@v4
       with:
         name: promptflow-evals
@@ -94,6 +66,9 @@ jobs:
       - name: install recording
         run: poetry install
         working-directory: ${{ env.RECORD_DIRECTORY }}
+      - name: install azure.keyvault
+        run: pip install azure-keyvault-secrets
+        working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: run unit tests
         run: poetry run pytest -m unittest --cov=promptflow --cov-config=pyproject.toml --cov-report=term --cov-report=html --cov-report=xml
         working-directory: ${{ env.WORKING_DIRECTORY }}
