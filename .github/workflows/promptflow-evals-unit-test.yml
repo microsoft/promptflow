@@ -66,9 +66,6 @@ jobs:
       - name: install recording
         run: poetry install
         working-directory: ${{ env.RECORD_DIRECTORY }}
-      - name: install azure.keyvault
-        run: pip install azure-keyvault-secrets
-        working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: run unit tests
         run: poetry run pytest -m unittest --cov=promptflow --cov-config=pyproject.toml --cov-report=term --cov-report=html --cov-report=xml
         working-directory: ${{ env.WORKING_DIRECTORY }}
