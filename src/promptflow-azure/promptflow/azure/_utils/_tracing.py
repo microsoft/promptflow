@@ -58,7 +58,7 @@ def _init_workspace_cosmos_db(pf_client: PFClient) -> None:
     error_msg = (
         "The workspace Cosmos DB initialization is still in progress "
         f"after {COSMOS_INIT_POLL_TIMEOUT_SECOND} seconds, "
-        "please wait for a while and retry the command."
+        "please wait for a while and retry."
     )
     _logger.error(error_msg)
     raise Exception(error_msg)
