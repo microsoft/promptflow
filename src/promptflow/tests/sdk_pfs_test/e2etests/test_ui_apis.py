@@ -33,14 +33,17 @@ class TestUIAPIs:
         )
 
     def test_get_eager_flow_yaml(self, pfs_op: PFSOperations) -> None:
-        with check_activity_end_telemetry(expected_activities=[]):
+        with check_activity_end_telemetry(
+            expected_activities=[{"activity_name": "pf.flows._generate_flow_meta", "activity_type": "InternalCall"}]
+        ):
             flow_yaml_from_pfs = pfs_op.get_flow_yaml(flow_path=str(EAGER_FLOW_ROOT / "builtin_llm")).data.decode(
                 "utf-8"
             )
         assert flow_yaml_from_pfs == (
-            "entry: builtin_call:flow_entry\ninputs:\n  question:\n    type: string\n    "
-            "default: What is ChatGPT?\n  chat_history:\n    type: list\n    "
-            "default: '[]'\n  stream:\n    type: bool\n    default: 'False'\n"
+            "entry: builtin_call:flow_entry\nfunction: flow_entry\ninputs:\n  question:\n    "
+            "type: string\n    default: What is ChatGPT?\n  chat_history:\n    "
+            "type: list\n    default: '[]'\n  stream:\n    type: bool\n    "
+            "default: 'False'\noutputs:\n  output:\n    type: string\n"
         )
 
     def test_get_experiment_yaml(self, pfs_op: PFSOperations) -> None:
