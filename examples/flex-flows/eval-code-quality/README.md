@@ -20,6 +20,11 @@ Ensure you have put your azure open ai endpoint key in [.env](../.env) file. You
 cat ../.env
 ```
 
+- Run as normal Python file
+```bash
+python code_quality.py
+```
+
 - Test flow
 ```bash
 # correct

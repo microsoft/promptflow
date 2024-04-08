@@ -20,7 +20,12 @@ Ensure you have put your azure open ai endpoint key in [.env](../.env) file. You
 cat ../.env
 ```
 
-- Test flow/node
+- Run/Debug as normal Python file
+```bash
+python flow.py
+```
+
+- Test flow
 ```bash
 # test with default input value in flow.dag.yaml
 pf flow test --flow .
@@ -46,7 +51,7 @@ pf run list
 
 # get a sample run name
 
-name=$(pf run list -r 10 | jq '.[] | select(.name | contains("basic_code_first")) | .name'| head -n 1 | tr -d '"')
+name=$(pf run list -r 10 | jq '.[] | select(.name | contains("basic_")) | .name'| head -n 1 | tr -d '"')
 # show specific run detail
 pf run show --name $name
 
@@ -86,7 +91,7 @@ pf run create --flow . --data ./data.jsonl --stream --environment-variables AZUR
 pf run create --file run.yml --stream
 
 # show outputs
-name=$(pf run list -r 10 | jq '.[] | select(.name | contains("basic_variant_0")) | .name'| head -n 1 | tr -d '"')
+name=$(pf run list -r 10 | jq '.[] | select(.name | contains("basic_")) | .name'| head -n 1 | tr -d '"')
 pf run show-details --name $name
 ```
 
@@ -112,7 +117,7 @@ pfazure run create --file run.yml --stream
 pfazure run list -r 3
 
 # get a sample run name
-name=$(pfazure run list -r 100 | jq '.[] | select(.name | contains("basic_code_first")) | .name'| head -n 1 | tr -d '"')
+name=$(pfazure run list -r 100 | jq '.[] | select(.name | contains("basic_")) | .name'| head -n 1 | tr -d '"')
 
 # show specific run detail
 pfazure run show --name $name
