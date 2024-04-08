@@ -1,4 +1,4 @@
-from promptflow import tool, log_metric
+from promptflow.core import tool, log_metric
 from typing import List
 
 

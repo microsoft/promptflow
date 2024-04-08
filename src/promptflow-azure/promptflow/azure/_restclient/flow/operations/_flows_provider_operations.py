@@ -135,7 +135,7 @@ class FlowsProviderOperations(object):
         :type resource_group_name: str
         :param workspace_name: The name of the workspace.
         :type workspace_name: str
-        :param body:  Default value is None.
+        :param body:
         :type body:
          ~flow.models.UnversionedEntityRequestDtoFlowIndexEntityFlowAnnotationsFlowPropertiesExtensibleObject
         :keyword callable cls: A custom type or function that will be passed the direct response
@@ -210,7 +210,7 @@ class FlowsProviderOperations(object):
         :type resource_group_name: str
         :param workspace_name: The name of the workspace.
         :type workspace_name: str
-        :param body:  Default value is None.
+        :param body:
         :type body:
          ~flow.models.UnversionedRebuildIndexDtoFlowIndexEntityFlowAnnotationsFlowPropertiesExtensibleObject
         :keyword callable cls: A custom type or function that will be passed the direct response

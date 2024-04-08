@@ -886,8 +886,8 @@ class FlowLanguage(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
 class FlowMessageFormatType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
-    BASIC = "Basic"
-    OPENAI_VISION = "OpenaiVision"
+    BASIC = "basic"
+    OPENAI_VISION = "openai-vision"
 
 class FlowPatchOperationType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
@@ -1529,6 +1529,7 @@ class RuntimeType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     MANAGED_ONLINE_ENDPOINT = "ManagedOnlineEndpoint"
     COMPUTE_INSTANCE = "ComputeInstance"
     TRAINING_SESSION = "TrainingSession"
+    LOCAL = "Local"
 
 class RunType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 

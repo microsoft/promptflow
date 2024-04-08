@@ -386,7 +386,6 @@ try:
     from ._models_py3 import GeneralSettings
     from ._models_py3 import GeneratePipelineComponentRequest
     from ._models_py3 import GenerateToolMetaRequest
-    from ._models_py3 import GetDynamicListRequest
     from ._models_py3 import GetRunDataResultDto
     from ._models_py3 import GetTrainingSessionDto
     from ._models_py3 import GlobalJobDispatcherConfiguration
@@ -1116,7 +1115,6 @@ except (SyntaxError, ImportError):
     from ._models import GeneralSettings  # type: ignore
     from ._models import GeneratePipelineComponentRequest  # type: ignore
     from ._models import GenerateToolMetaRequest  # type: ignore
-    from ._models import GetDynamicListRequest  # type: ignore
     from ._models import GetRunDataResultDto  # type: ignore
     from ._models import GetTrainingSessionDto  # type: ignore
     from ._models import GlobalJobDispatcherConfiguration  # type: ignore
@@ -2067,7 +2065,6 @@ __all__ = [
     'GeneralSettings',
     'GeneratePipelineComponentRequest',
     'GenerateToolMetaRequest',
-    'GetDynamicListRequest',
     'GetRunDataResultDto',
     'GetTrainingSessionDto',
     'GlobalJobDispatcherConfiguration',

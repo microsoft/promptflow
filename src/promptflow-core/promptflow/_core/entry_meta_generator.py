@@ -43,10 +43,7 @@ def _generate_flow_meta(
     """Generate tool meta from files.
 
     :param flow_directory: flow directory
-    :param tools: tool list
-    :param raise_error: whether raise error when generate meta failed
     :param timeout: timeout for generate meta
-    :param include_errors_in_output: whether include errors in output
     :param load_in_subprocess: whether load tool meta with subprocess to prevent system path disturb. Default is True.
         If set to False, will load tool meta in sync mode and timeout need to be handled outside current process.
     :return: tool meta dict

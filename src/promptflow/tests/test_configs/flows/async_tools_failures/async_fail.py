@@ -1,4 +1,4 @@
-from promptflow import tool
+from promptflow.core import tool
 
 async def raise_exception_async(s):
     msg = f"In raise_exception_async: {s}"

@@ -13,7 +13,8 @@ class LocalConnectionProvider(ConnectionProvider):
         self._operations = ConnectionOperations()
 
     def list(self):
-        raise NotImplementedError("Method 'list' is not implemented now.")
+        # Return all connection here as list target for tool connection drop down.
+        return self._operations.list(all_results=True)
 
     def get(self, name: str, **kwargs):
         # Connection provider here target for execution, so we always get with secrets.

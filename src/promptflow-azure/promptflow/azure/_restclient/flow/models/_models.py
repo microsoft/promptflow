@@ -12048,7 +12048,7 @@ class CreateFlowRuntimeRequest(msrest.serialization.Model):
     """CreateFlowRuntimeRequest.
 
     :ivar runtime_type: Possible values include: "ManagedOnlineEndpoint", "ComputeInstance",
-     "TrainingSession".
+     "TrainingSession", "Local".
     :vartype runtime_type: str or ~flow.models.RuntimeType
     :ivar identity:
     :vartype identity: ~flow.models.ManagedServiceIdentity
@@ -12098,7 +12098,7 @@ class CreateFlowRuntimeRequest(msrest.serialization.Model):
     ):
         """
         :keyword runtime_type: Possible values include: "ManagedOnlineEndpoint", "ComputeInstance",
-         "TrainingSession".
+         "TrainingSession", "Local".
         :paramtype runtime_type: str or ~flow.models.RuntimeType
         :keyword identity:
         :paramtype identity: ~flow.models.ManagedServiceIdentity
@@ -16081,16 +16081,16 @@ class EvaluationFlowRunSettings(msrest.serialization.Model):
     :vartype log_file_relative_path: str
     :ivar connections: This is a dictionary.
     :vartype connections: dict[str, dict[str, str]]
-    :ivar runtime_name:
-    :vartype runtime_name: str
-    :ivar collie_run_settings:
-    :vartype collie_run_settings: ~flow.models.CollieRunSettings
+    :ivar promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
+    :vartype promptflow_engine_type: str or ~flow.models.PromptflowEngineType
     :ivar worker_count:
     :vartype worker_count: int
     :ivar timeout_in_seconds:
     :vartype timeout_in_seconds: int
-    :ivar promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
-    :vartype promptflow_engine_type: str or ~flow.models.PromptflowEngineType
+    :ivar runtime_name:
+    :vartype runtime_name: str
+    :ivar collie_run_settings:
+    :vartype collie_run_settings: ~flow.models.CollieRunSettings
     :ivar vm_size:
     :vartype vm_size: str
     :ivar max_idle_time_seconds:
@@ -16125,11 +16125,11 @@ class EvaluationFlowRunSettings(msrest.serialization.Model):
         'init_k_wargs': {'key': 'initKWargs', 'type': '{object}'},
         'log_file_relative_path': {'key': 'logFileRelativePath', 'type': 'str'},
         'connections': {'key': 'connections', 'type': '{{str}}'},
-        'runtime_name': {'key': 'runtimeName', 'type': 'str'},
-        'collie_run_settings': {'key': 'collieRunSettings', 'type': 'CollieRunSettings'},
+        'promptflow_engine_type': {'key': 'promptflowEngineType', 'type': 'str'},
         'worker_count': {'key': 'workerCount', 'type': 'int'},
         'timeout_in_seconds': {'key': 'timeoutInSeconds', 'type': 'int'},
-        'promptflow_engine_type': {'key': 'promptflowEngineType', 'type': 'str'},
+        'runtime_name': {'key': 'runtimeName', 'type': 'str'},
+        'collie_run_settings': {'key': 'collieRunSettings', 'type': 'CollieRunSettings'},
         'vm_size': {'key': 'vmSize', 'type': 'str'},
         'max_idle_time_seconds': {'key': 'maxIdleTimeSeconds', 'type': 'long'},
         'identity': {'key': 'identity', 'type': 'str'},
@@ -16185,16 +16185,16 @@ class EvaluationFlowRunSettings(msrest.serialization.Model):
         :paramtype log_file_relative_path: str
         :keyword connections: This is a dictionary.
         :paramtype connections: dict[str, dict[str, str]]
-        :keyword runtime_name:
-        :paramtype runtime_name: str
-        :keyword collie_run_settings:
-        :paramtype collie_run_settings: ~flow.models.CollieRunSettings
+        :keyword promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
+        :paramtype promptflow_engine_type: str or ~flow.models.PromptflowEngineType
         :keyword worker_count:
         :paramtype worker_count: int
         :keyword timeout_in_seconds:
         :paramtype timeout_in_seconds: int
-        :keyword promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
-        :paramtype promptflow_engine_type: str or ~flow.models.PromptflowEngineType
+        :keyword runtime_name:
+        :paramtype runtime_name: str
+        :keyword collie_run_settings:
+        :paramtype collie_run_settings: ~flow.models.CollieRunSettings
         :keyword vm_size:
         :paramtype vm_size: str
         :keyword max_idle_time_seconds:
@@ -16228,11 +16228,11 @@ class EvaluationFlowRunSettings(msrest.serialization.Model):
         self.init_k_wargs = kwargs.get('init_k_wargs', None)
         self.log_file_relative_path = kwargs.get('log_file_relative_path', None)
         self.connections = kwargs.get('connections', None)
-        self.runtime_name = kwargs.get('runtime_name', None)
-        self.collie_run_settings = kwargs.get('collie_run_settings', None)
+        self.promptflow_engine_type = kwargs.get('promptflow_engine_type', None)
         self.worker_count = kwargs.get('worker_count', None)
         self.timeout_in_seconds = kwargs.get('timeout_in_seconds', None)
-        self.promptflow_engine_type = kwargs.get('promptflow_engine_type', None)
+        self.runtime_name = kwargs.get('runtime_name', None)
+        self.collie_run_settings = kwargs.get('collie_run_settings', None)
         self.vm_size = kwargs.get('vm_size', None)
         self.max_idle_time_seconds = kwargs.get('max_idle_time_seconds', None)
         self.identity = kwargs.get('identity', None)
@@ -17012,16 +17012,16 @@ class ExperimentNodeRunSettings(msrest.serialization.Model):
     :vartype log_file_relative_path: str
     :ivar connections: This is a dictionary.
     :vartype connections: dict[str, dict[str, str]]
-    :ivar runtime_name:
-    :vartype runtime_name: str
-    :ivar collie_run_settings:
-    :vartype collie_run_settings: ~flow.models.CollieRunSettings
+    :ivar promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
+    :vartype promptflow_engine_type: str or ~flow.models.PromptflowEngineType
     :ivar worker_count:
     :vartype worker_count: int
     :ivar timeout_in_seconds:
     :vartype timeout_in_seconds: int
-    :ivar promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
-    :vartype promptflow_engine_type: str or ~flow.models.PromptflowEngineType
+    :ivar runtime_name:
+    :vartype runtime_name: str
+    :ivar collie_run_settings:
+    :vartype collie_run_settings: ~flow.models.CollieRunSettings
     :ivar vm_size:
     :vartype vm_size: str
     :ivar max_idle_time_seconds:
@@ -17050,11 +17050,11 @@ class ExperimentNodeRunSettings(msrest.serialization.Model):
         'init_k_wargs': {'key': 'initKWargs', 'type': '{object}'},
         'log_file_relative_path': {'key': 'logFileRelativePath', 'type': 'str'},
         'connections': {'key': 'connections', 'type': '{{str}}'},
-        'runtime_name': {'key': 'runtimeName', 'type': 'str'},
-        'collie_run_settings': {'key': 'collieRunSettings', 'type': 'CollieRunSettings'},
+        'promptflow_engine_type': {'key': 'promptflowEngineType', 'type': 'str'},
         'worker_count': {'key': 'workerCount', 'type': 'int'},
         'timeout_in_seconds': {'key': 'timeoutInSeconds', 'type': 'int'},
-        'promptflow_engine_type': {'key': 'promptflowEngineType', 'type': 'str'},
+        'runtime_name': {'key': 'runtimeName', 'type': 'str'},
+        'collie_run_settings': {'key': 'collieRunSettings', 'type': 'CollieRunSettings'},
         'vm_size': {'key': 'vmSize', 'type': 'str'},
         'max_idle_time_seconds': {'key': 'maxIdleTimeSeconds', 'type': 'long'},
         'identity': {'key': 'identity', 'type': 'str'},
@@ -17098,16 +17098,16 @@ class ExperimentNodeRunSettings(msrest.serialization.Model):
         :paramtype log_file_relative_path: str
         :keyword connections: This is a dictionary.
         :paramtype connections: dict[str, dict[str, str]]
-        :keyword runtime_name:
-        :paramtype runtime_name: str
-        :keyword collie_run_settings:
-        :paramtype collie_run_settings: ~flow.models.CollieRunSettings
+        :keyword promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
+        :paramtype promptflow_engine_type: str or ~flow.models.PromptflowEngineType
         :keyword worker_count:
         :paramtype worker_count: int
         :keyword timeout_in_seconds:
         :paramtype timeout_in_seconds: int
-        :keyword promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
-        :paramtype promptflow_engine_type: str or ~flow.models.PromptflowEngineType
+        :keyword runtime_name:
+        :paramtype runtime_name: str
+        :keyword collie_run_settings:
+        :paramtype collie_run_settings: ~flow.models.CollieRunSettings
         :keyword vm_size:
         :paramtype vm_size: str
         :keyword max_idle_time_seconds:
@@ -17135,11 +17135,11 @@ class ExperimentNodeRunSettings(msrest.serialization.Model):
         self.init_k_wargs = kwargs.get('init_k_wargs', None)
         self.log_file_relative_path = kwargs.get('log_file_relative_path', None)
         self.connections = kwargs.get('connections', None)
-        self.runtime_name = kwargs.get('runtime_name', None)
-        self.collie_run_settings = kwargs.get('collie_run_settings', None)
+        self.promptflow_engine_type = kwargs.get('promptflow_engine_type', None)
         self.worker_count = kwargs.get('worker_count', None)
         self.timeout_in_seconds = kwargs.get('timeout_in_seconds', None)
-        self.promptflow_engine_type = kwargs.get('promptflow_engine_type', None)
+        self.runtime_name = kwargs.get('runtime_name', None)
+        self.collie_run_settings = kwargs.get('collie_run_settings', None)
         self.vm_size = kwargs.get('vm_size', None)
         self.max_idle_time_seconds = kwargs.get('max_idle_time_seconds', None)
         self.identity = kwargs.get('identity', None)
@@ -19455,16 +19455,16 @@ class FlowRunSettings(msrest.serialization.Model):
     :vartype log_file_relative_path: str
     :ivar connections: This is a dictionary.
     :vartype connections: dict[str, dict[str, str]]
-    :ivar runtime_name:
-    :vartype runtime_name: str
-    :ivar collie_run_settings:
-    :vartype collie_run_settings: ~flow.models.CollieRunSettings
+    :ivar promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
+    :vartype promptflow_engine_type: str or ~flow.models.PromptflowEngineType
     :ivar worker_count:
     :vartype worker_count: int
     :ivar timeout_in_seconds:
     :vartype timeout_in_seconds: int
-    :ivar promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
-    :vartype promptflow_engine_type: str or ~flow.models.PromptflowEngineType
+    :ivar runtime_name:
+    :vartype runtime_name: str
+    :ivar collie_run_settings:
+    :vartype collie_run_settings: ~flow.models.CollieRunSettings
     :ivar vm_size:
     :vartype vm_size: str
     :ivar max_idle_time_seconds:
@@ -19513,11 +19513,11 @@ class FlowRunSettings(msrest.serialization.Model):
         'init_k_wargs': {'key': 'initKWargs', 'type': '{object}'},
         'log_file_relative_path': {'key': 'logFileRelativePath', 'type': 'str'},
         'connections': {'key': 'connections', 'type': '{{str}}'},
-        'runtime_name': {'key': 'runtimeName', 'type': 'str'},
-        'collie_run_settings': {'key': 'collieRunSettings', 'type': 'CollieRunSettings'},
+        'promptflow_engine_type': {'key': 'promptflowEngineType', 'type': 'str'},
         'worker_count': {'key': 'workerCount', 'type': 'int'},
         'timeout_in_seconds': {'key': 'timeoutInSeconds', 'type': 'int'},
-        'promptflow_engine_type': {'key': 'promptflowEngineType', 'type': 'str'},
+        'runtime_name': {'key': 'runtimeName', 'type': 'str'},
+        'collie_run_settings': {'key': 'collieRunSettings', 'type': 'CollieRunSettings'},
         'vm_size': {'key': 'vmSize', 'type': 'str'},
         'max_idle_time_seconds': {'key': 'maxIdleTimeSeconds', 'type': 'long'},
         'identity': {'key': 'identity', 'type': 'str'},
@@ -19602,16 +19602,16 @@ class FlowRunSettings(msrest.serialization.Model):
         :paramtype log_file_relative_path: str
         :keyword connections: This is a dictionary.
         :paramtype connections: dict[str, dict[str, str]]
-        :keyword runtime_name:
-        :paramtype runtime_name: str
-        :keyword collie_run_settings:
-        :paramtype collie_run_settings: ~flow.models.CollieRunSettings
+        :keyword promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
+        :paramtype promptflow_engine_type: str or ~flow.models.PromptflowEngineType
         :keyword worker_count:
         :paramtype worker_count: int
         :keyword timeout_in_seconds:
         :paramtype timeout_in_seconds: int
-        :keyword promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
-        :paramtype promptflow_engine_type: str or ~flow.models.PromptflowEngineType
+        :keyword runtime_name:
+        :paramtype runtime_name: str
+        :keyword collie_run_settings:
+        :paramtype collie_run_settings: ~flow.models.CollieRunSettings
         :keyword vm_size:
         :paramtype vm_size: str
         :keyword max_idle_time_seconds:
@@ -19659,11 +19659,11 @@ class FlowRunSettings(msrest.serialization.Model):
         self.init_k_wargs = kwargs.get('init_k_wargs', None)
         self.log_file_relative_path = kwargs.get('log_file_relative_path', None)
         self.connections = kwargs.get('connections', None)
-        self.runtime_name = kwargs.get('runtime_name', None)
-        self.collie_run_settings = kwargs.get('collie_run_settings', None)
+        self.promptflow_engine_type = kwargs.get('promptflow_engine_type', None)
         self.worker_count = kwargs.get('worker_count', None)
         self.timeout_in_seconds = kwargs.get('timeout_in_seconds', None)
-        self.promptflow_engine_type = kwargs.get('promptflow_engine_type', None)
+        self.runtime_name = kwargs.get('runtime_name', None)
+        self.collie_run_settings = kwargs.get('collie_run_settings', None)
         self.vm_size = kwargs.get('vm_size', None)
         self.max_idle_time_seconds = kwargs.get('max_idle_time_seconds', None)
         self.identity = kwargs.get('identity', None)
@@ -19733,6 +19733,55 @@ class FlowRunSettingsBase(msrest.serialization.Model):
     :vartype flow_run_output_directory: str
     :ivar connection_overrides:
     :vartype connection_overrides: list[~flow.models.ConnectionOverrideSetting]
+    :ivar flow_run_display_name:
+    :vartype flow_run_display_name: str
+    :ivar description:
+    :vartype description: str
+    :ivar tags: A set of tags. This is a dictionary.
+    :vartype tags: dict[str, str]
+    :ivar properties: This is a dictionary.
+    :vartype properties: dict[str, str]
+    :ivar run_display_name_generation_type: Possible values include: "AutoAppend",
+     "UserProvidedMacro".
+    :vartype run_display_name_generation_type: str or ~flow.models.RunDisplayNameGenerationType
+    :ivar experiment_node_name:
+    :vartype experiment_node_name: str
+    :ivar output_data_store:
+    :vartype output_data_store: str
+    :ivar flow_artifacts_root_path:
+    :vartype flow_artifacts_root_path: str
+    :ivar batch_data_input:
+    :vartype batch_data_input: ~flow.models.BatchDataInput
+    :ivar inputs_mapping: This is a dictionary.
+    :vartype inputs_mapping: dict[str, str]
+    :ivar environment_variables: This is a dictionary.
+    :vartype environment_variables: dict[str, str]
+    :ivar init_k_wargs: This is a dictionary.
+    :vartype init_k_wargs: dict[str, any]
+    :ivar log_file_relative_path:
+    :vartype log_file_relative_path: str
+    :ivar connections: This is a dictionary.
+    :vartype connections: dict[str, dict[str, str]]
+    :ivar promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
+    :vartype promptflow_engine_type: str or ~flow.models.PromptflowEngineType
+    :ivar worker_count:
+    :vartype worker_count: int
+    :ivar timeout_in_seconds:
+    :vartype timeout_in_seconds: int
+    :ivar runtime_name:
+    :vartype runtime_name: str
+    :ivar collie_run_settings:
+    :vartype collie_run_settings: ~flow.models.CollieRunSettings
+    :ivar vm_size:
+    :vartype vm_size: str
+    :ivar max_idle_time_seconds:
+    :vartype max_idle_time_seconds: long
+    :ivar identity:
+    :vartype identity: str
+    :ivar compute_name:
+    :vartype compute_name: str
+    :ivar enable_multi_container:
+    :vartype enable_multi_container: bool
     """
 
     _attribute_map = {
@@ -19765,6 +19814,30 @@ class FlowRunSettingsBase(msrest.serialization.Model):
         'data_inputs': {'key': 'dataInputs', 'type': '{str}'},
         'flow_run_output_directory': {'key': 'flowRunOutputDirectory', 'type': 'str'},
         'connection_overrides': {'key': 'connectionOverrides', 'type': '[ConnectionOverrideSetting]'},
+        'flow_run_display_name': {'key': 'flowRunDisplayName', 'type': 'str'},
+        'description': {'key': 'description', 'type': 'str'},
+        'tags': {'key': 'tags', 'type': '{str}'},
+        'properties': {'key': 'properties', 'type': '{str}'},
+        'run_display_name_generation_type': {'key': 'runDisplayNameGenerationType', 'type': 'str'},
+        'experiment_node_name': {'key': 'experimentNodeName', 'type': 'str'},
+        'output_data_store': {'key': 'outputDataStore', 'type': 'str'},
+        'flow_artifacts_root_path': {'key': 'flowArtifactsRootPath', 'type': 'str'},
+        'batch_data_input': {'key': 'batchDataInput', 'type': 'BatchDataInput'},
+        'inputs_mapping': {'key': 'inputsMapping', 'type': '{str}'},
+        'environment_variables': {'key': 'environmentVariables', 'type': '{str}'},
+        'init_k_wargs': {'key': 'initKWargs', 'type': '{object}'},
+        'log_file_relative_path': {'key': 'logFileRelativePath', 'type': 'str'},
+        'connections': {'key': 'connections', 'type': '{{str}}'},
+        'promptflow_engine_type': {'key': 'promptflowEngineType', 'type': 'str'},
+        'worker_count': {'key': 'workerCount', 'type': 'int'},
+        'timeout_in_seconds': {'key': 'timeoutInSeconds', 'type': 'int'},
+        'runtime_name': {'key': 'runtimeName', 'type': 'str'},
+        'collie_run_settings': {'key': 'collieRunSettings', 'type': 'CollieRunSettings'},
+        'vm_size': {'key': 'vmSize', 'type': 'str'},
+        'max_idle_time_seconds': {'key': 'maxIdleTimeSeconds', 'type': 'long'},
+        'identity': {'key': 'identity', 'type': 'str'},
+        'compute_name': {'key': 'computeName', 'type': 'str'},
+        'enable_multi_container': {'key': 'enableMultiContainer', 'type': 'bool'},
     }
 
     def __init__(
@@ -19831,6 +19904,55 @@ class FlowRunSettingsBase(msrest.serialization.Model):
         :paramtype flow_run_output_directory: str
         :keyword connection_overrides:
         :paramtype connection_overrides: list[~flow.models.ConnectionOverrideSetting]
+        :keyword flow_run_display_name:
+        :paramtype flow_run_display_name: str
+        :keyword description:
+        :paramtype description: str
+        :keyword tags: A set of tags. This is a dictionary.
+        :paramtype tags: dict[str, str]
+        :keyword properties: This is a dictionary.
+        :paramtype properties: dict[str, str]
+        :keyword run_display_name_generation_type: Possible values include: "AutoAppend",
+         "UserProvidedMacro".
+        :paramtype run_display_name_generation_type: str or ~flow.models.RunDisplayNameGenerationType
+        :keyword experiment_node_name:
+        :paramtype experiment_node_name: str
+        :keyword output_data_store:
+        :paramtype output_data_store: str
+        :keyword flow_artifacts_root_path:
+        :paramtype flow_artifacts_root_path: str
+        :keyword batch_data_input:
+        :paramtype batch_data_input: ~flow.models.BatchDataInput
+        :keyword inputs_mapping: This is a dictionary.
+        :paramtype inputs_mapping: dict[str, str]
+        :keyword environment_variables: This is a dictionary.
+        :paramtype environment_variables: dict[str, str]
+        :keyword init_k_wargs: This is a dictionary.
+        :paramtype init_k_wargs: dict[str, any]
+        :keyword log_file_relative_path:
+        :paramtype log_file_relative_path: str
+        :keyword connections: This is a dictionary.
+        :paramtype connections: dict[str, dict[str, str]]
+        :keyword promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
+        :paramtype promptflow_engine_type: str or ~flow.models.PromptflowEngineType
+        :keyword worker_count:
+        :paramtype worker_count: int
+        :keyword timeout_in_seconds:
+        :paramtype timeout_in_seconds: int
+        :keyword runtime_name:
+        :paramtype runtime_name: str
+        :keyword collie_run_settings:
+        :paramtype collie_run_settings: ~flow.models.CollieRunSettings
+        :keyword vm_size:
+        :paramtype vm_size: str
+        :keyword max_idle_time_seconds:
+        :paramtype max_idle_time_seconds: long
+        :keyword identity:
+        :paramtype identity: str
+        :keyword compute_name:
+        :paramtype compute_name: str
+        :keyword enable_multi_container:
+        :paramtype enable_multi_container: bool
         """
         super(FlowRunSettingsBase, self).__init__(**kwargs)
         self.flow_run_display_name = kwargs.get('flow_run_display_name', None)
@@ -19862,6 +19984,30 @@ class FlowRunSettingsBase(msrest.serialization.Model):
         self.data_inputs = kwargs.get('data_inputs', None)
         self.flow_run_output_directory = kwargs.get('flow_run_output_directory', None)
         self.connection_overrides = kwargs.get('connection_overrides', None)
+        self.flow_run_display_name = kwargs.get('flow_run_display_name', None)
+        self.description = kwargs.get('description', None)
+        self.tags = kwargs.get('tags', None)
+        self.properties = kwargs.get('properties', None)
+        self.run_display_name_generation_type = kwargs.get('run_display_name_generation_type', None)
+        self.experiment_node_name = kwargs.get('experiment_node_name', None)
+        self.output_data_store = kwargs.get('output_data_store', None)
+        self.flow_artifacts_root_path = kwargs.get('flow_artifacts_root_path', None)
+        self.batch_data_input = kwargs.get('batch_data_input', None)
+        self.inputs_mapping = kwargs.get('inputs_mapping', None)
+        self.environment_variables = kwargs.get('environment_variables', None)
+        self.init_k_wargs = kwargs.get('init_k_wargs', None)
+        self.log_file_relative_path = kwargs.get('log_file_relative_path', None)
+        self.connections = kwargs.get('connections', None)
+        self.promptflow_engine_type = kwargs.get('promptflow_engine_type', None)
+        self.worker_count = kwargs.get('worker_count', None)
+        self.timeout_in_seconds = kwargs.get('timeout_in_seconds', None)
+        self.runtime_name = kwargs.get('runtime_name', None)
+        self.collie_run_settings = kwargs.get('collie_run_settings', None)
+        self.vm_size = kwargs.get('vm_size', None)
+        self.max_idle_time_seconds = kwargs.get('max_idle_time_seconds', None)
+        self.identity = kwargs.get('identity', None)
+        self.compute_name = kwargs.get('compute_name', None)
+        self.enable_multi_container = kwargs.get('enable_multi_container', None)
 
 
 class FlowRunStatusResponse(msrest.serialization.Model):
@@ -19934,7 +20080,7 @@ class FlowRuntimeDto(msrest.serialization.Model):
     :ivar runtime_description:
     :vartype runtime_description: str
     :ivar runtime_type: Possible values include: "ManagedOnlineEndpoint", "ComputeInstance",
-     "TrainingSession".
+     "TrainingSession", "Local".
     :vartype runtime_type: str or ~flow.models.RuntimeType
     :ivar environment:
     :vartype environment: str
@@ -20021,7 +20167,7 @@ class FlowRuntimeDto(msrest.serialization.Model):
         :keyword runtime_description:
         :paramtype runtime_description: str
         :keyword runtime_type: Possible values include: "ManagedOnlineEndpoint", "ComputeInstance",
-         "TrainingSession".
+         "TrainingSession", "Local".
         :paramtype runtime_type: str or ~flow.models.RuntimeType
         :keyword environment:
         :paramtype environment: str
@@ -20121,7 +20267,7 @@ class FlowSessionDto(msrest.serialization.Model):
     :ivar runtime_description:
     :vartype runtime_description: str
     :ivar runtime_type: Possible values include: "ManagedOnlineEndpoint", "ComputeInstance",
-     "TrainingSession".
+     "TrainingSession", "Local".
     :vartype runtime_type: str or ~flow.models.RuntimeType
     :ivar environment:
     :vartype environment: str
@@ -20232,7 +20378,7 @@ class FlowSessionDto(msrest.serialization.Model):
         :keyword runtime_description:
         :paramtype runtime_description: str
         :keyword runtime_type: Possible values include: "ManagedOnlineEndpoint", "ComputeInstance",
-         "TrainingSession".
+         "TrainingSession", "Local".
         :paramtype runtime_type: str or ~flow.models.RuntimeType
         :keyword environment:
         :paramtype environment: str
@@ -20335,7 +20481,7 @@ class FlowSnapshot(msrest.serialization.Model):
     :vartype language: str or ~flow.models.FlowLanguage
     :ivar entry:
     :vartype entry: str
-    :ivar message_format: Possible values include: "Basic", "OpenaiVision".
+    :ivar message_format: Possible values include: "basic", "openai-vision".
     :vartype message_format: str or ~flow.models.FlowMessageFormatType
     """
 
@@ -20372,7 +20518,7 @@ class FlowSnapshot(msrest.serialization.Model):
         :paramtype language: str or ~flow.models.FlowLanguage
         :keyword entry:
         :paramtype entry: str
-        :keyword message_format: Possible values include: "Basic", "OpenaiVision".
+        :keyword message_format: Possible values include: "basic", "openai-vision".
         :paramtype message_format: str or ~flow.models.FlowMessageFormatType
         """
         super(FlowSnapshot, self).__init__(**kwargs)
@@ -20464,16 +20610,16 @@ class FlowSubmitRunSettings(msrest.serialization.Model):
     :vartype log_file_relative_path: str
     :ivar connections: This is a dictionary.
     :vartype connections: dict[str, dict[str, str]]
-    :ivar runtime_name:
-    :vartype runtime_name: str
-    :ivar collie_run_settings:
-    :vartype collie_run_settings: ~flow.models.CollieRunSettings
+    :ivar promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
+    :vartype promptflow_engine_type: str or ~flow.models.PromptflowEngineType
     :ivar worker_count:
     :vartype worker_count: int
     :ivar timeout_in_seconds:
     :vartype timeout_in_seconds: int
-    :ivar promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
-    :vartype promptflow_engine_type: str or ~flow.models.PromptflowEngineType
+    :ivar runtime_name:
+    :vartype runtime_name: str
+    :ivar collie_run_settings:
+    :vartype collie_run_settings: ~flow.models.CollieRunSettings
     :ivar vm_size:
     :vartype vm_size: str
     :ivar max_idle_time_seconds:
@@ -20523,11 +20669,11 @@ class FlowSubmitRunSettings(msrest.serialization.Model):
         'init_k_wargs': {'key': 'initKWargs', 'type': '{object}'},
         'log_file_relative_path': {'key': 'logFileRelativePath', 'type': 'str'},
         'connections': {'key': 'connections', 'type': '{{str}}'},
-        'runtime_name': {'key': 'runtimeName', 'type': 'str'},
-        'collie_run_settings': {'key': 'collieRunSettings', 'type': 'CollieRunSettings'},
+        'promptflow_engine_type': {'key': 'promptflowEngineType', 'type': 'str'},
         'worker_count': {'key': 'workerCount', 'type': 'int'},
         'timeout_in_seconds': {'key': 'timeoutInSeconds', 'type': 'int'},
-        'promptflow_engine_type': {'key': 'promptflowEngineType', 'type': 'str'},
+        'runtime_name': {'key': 'runtimeName', 'type': 'str'},
+        'collie_run_settings': {'key': 'collieRunSettings', 'type': 'CollieRunSettings'},
         'vm_size': {'key': 'vmSize', 'type': 'str'},
         'max_idle_time_seconds': {'key': 'maxIdleTimeSeconds', 'type': 'long'},
         'identity': {'key': 'identity', 'type': 'str'},
@@ -20614,16 +20760,16 @@ class FlowSubmitRunSettings(msrest.serialization.Model):
         :paramtype log_file_relative_path: str
         :keyword connections: This is a dictionary.
         :paramtype connections: dict[str, dict[str, str]]
-        :keyword runtime_name:
-        :paramtype runtime_name: str
-        :keyword collie_run_settings:
-        :paramtype collie_run_settings: ~flow.models.CollieRunSettings
+        :keyword promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
+        :paramtype promptflow_engine_type: str or ~flow.models.PromptflowEngineType
         :keyword worker_count:
         :paramtype worker_count: int
         :keyword timeout_in_seconds:
         :paramtype timeout_in_seconds: int
-        :keyword promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
-        :paramtype promptflow_engine_type: str or ~flow.models.PromptflowEngineType
+        :keyword runtime_name:
+        :paramtype runtime_name: str
+        :keyword collie_run_settings:
+        :paramtype collie_run_settings: ~flow.models.CollieRunSettings
         :keyword vm_size:
         :paramtype vm_size: str
         :keyword max_idle_time_seconds:
@@ -20672,11 +20818,11 @@ class FlowSubmitRunSettings(msrest.serialization.Model):
         self.init_k_wargs = kwargs.get('init_k_wargs', None)
         self.log_file_relative_path = kwargs.get('log_file_relative_path', None)
         self.connections = kwargs.get('connections', None)
-        self.runtime_name = kwargs.get('runtime_name', None)
-        self.collie_run_settings = kwargs.get('collie_run_settings', None)
+        self.promptflow_engine_type = kwargs.get('promptflow_engine_type', None)
         self.worker_count = kwargs.get('worker_count', None)
         self.timeout_in_seconds = kwargs.get('timeout_in_seconds', None)
-        self.promptflow_engine_type = kwargs.get('promptflow_engine_type', None)
+        self.runtime_name = kwargs.get('runtime_name', None)
+        self.collie_run_settings = kwargs.get('collie_run_settings', None)
         self.vm_size = kwargs.get('vm_size', None)
         self.max_idle_time_seconds = kwargs.get('max_idle_time_seconds', None)
         self.identity = kwargs.get('identity', None)
@@ -21266,35 +21412,6 @@ class GenerateToolMetaRequest(msrest.serialization.Model):
         super(GenerateToolMetaRequest, self).__init__(**kwargs)
         self.tools = kwargs.get('tools', None)
         self.working_dir = kwargs.get('working_dir', None)
-
-
-class GetDynamicListRequest(msrest.serialization.Model):
-    """GetDynamicListRequest.
-
-    :ivar func_path:
-    :vartype func_path: str
-    :ivar func_kwargs: This is a dictionary.
-    :vartype func_kwargs: dict[str, any]
-    """
-
-    _attribute_map = {
-        'func_path': {'key': 'func_path', 'type': 'str'},
-        'func_kwargs': {'key': 'func_kwargs', 'type': '{object}'},
-    }
-
-    def __init__(
-        self,
-        **kwargs
-    ):
-        """
-        :keyword func_path:
-        :paramtype func_path: str
-        :keyword func_kwargs: This is a dictionary.
-        :paramtype func_kwargs: dict[str, any]
-        """
-        super(GetDynamicListRequest, self).__init__(**kwargs)
-        self.func_path = kwargs.get('func_path', None)
-        self.func_kwargs = kwargs.get('func_kwargs', None)
 
 
 class GetRunDataResultDto(msrest.serialization.Model):
@@ -24337,12 +24454,15 @@ class LogRunTerminatedEventDto(msrest.serialization.Model):
     :vartype action_type: str or ~flow.models.ActionType
     :ivar last_checked_time:
     :vartype last_checked_time: ~datetime.datetime
+    :ivar flow_run_created_time:
+    :vartype flow_run_created_time: ~datetime.datetime
     """
 
     _attribute_map = {
         'next_action_interval_in_seconds': {'key': 'nextActionIntervalInSeconds', 'type': 'int'},
         'action_type': {'key': 'actionType', 'type': 'str'},
         'last_checked_time': {'key': 'lastCheckedTime', 'type': 'iso-8601'},
+        'flow_run_created_time': {'key': 'flowRunCreatedTime', 'type': 'iso-8601'},
     }
 
     def __init__(
@@ -24357,11 +24477,14 @@ class LogRunTerminatedEventDto(msrest.serialization.Model):
         :paramtype action_type: str or ~flow.models.ActionType
         :keyword last_checked_time:
         :paramtype last_checked_time: ~datetime.datetime
+        :keyword flow_run_created_time:
+        :paramtype flow_run_created_time: ~datetime.datetime
         """
         super(LogRunTerminatedEventDto, self).__init__(**kwargs)
         self.next_action_interval_in_seconds = kwargs.get('next_action_interval_in_seconds', None)
         self.action_type = kwargs.get('action_type', None)
         self.last_checked_time = kwargs.get('last_checked_time', None)
+        self.flow_run_created_time = kwargs.get('flow_run_created_time', None)
 
 
 class LongRunningOperationUriResponse(msrest.serialization.Model):
@@ -38218,16 +38341,16 @@ class SubmitBulkRunRequest(msrest.serialization.Model):
     :vartype log_file_relative_path: str
     :ivar connections: This is a dictionary.
     :vartype connections: dict[str, dict[str, str]]
-    :ivar runtime_name:
-    :vartype runtime_name: str
-    :ivar collie_run_settings:
-    :vartype collie_run_settings: ~flow.models.CollieRunSettings
+    :ivar promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
+    :vartype promptflow_engine_type: str or ~flow.models.PromptflowEngineType
     :ivar worker_count:
     :vartype worker_count: int
     :ivar timeout_in_seconds:
     :vartype timeout_in_seconds: int
-    :ivar promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
-    :vartype promptflow_engine_type: str or ~flow.models.PromptflowEngineType
+    :ivar runtime_name:
+    :vartype runtime_name: str
+    :ivar collie_run_settings:
+    :vartype collie_run_settings: ~flow.models.CollieRunSettings
     :ivar vm_size:
     :vartype vm_size: str
     :ivar max_idle_time_seconds:
@@ -38270,11 +38393,11 @@ class SubmitBulkRunRequest(msrest.serialization.Model):
         'init_k_wargs': {'key': 'initKWargs', 'type': '{object}'},
         'log_file_relative_path': {'key': 'logFileRelativePath', 'type': 'str'},
         'connections': {'key': 'connections', 'type': '{{str}}'},
-        'runtime_name': {'key': 'runtimeName', 'type': 'str'},
-        'collie_run_settings': {'key': 'collieRunSettings', 'type': 'CollieRunSettings'},
+        'promptflow_engine_type': {'key': 'promptflowEngineType', 'type': 'str'},
         'worker_count': {'key': 'workerCount', 'type': 'int'},
         'timeout_in_seconds': {'key': 'timeoutInSeconds', 'type': 'int'},
-        'promptflow_engine_type': {'key': 'promptflowEngineType', 'type': 'str'},
+        'runtime_name': {'key': 'runtimeName', 'type': 'str'},
+        'collie_run_settings': {'key': 'collieRunSettings', 'type': 'CollieRunSettings'},
         'vm_size': {'key': 'vmSize', 'type': 'str'},
         'max_idle_time_seconds': {'key': 'maxIdleTimeSeconds', 'type': 'long'},
         'identity': {'key': 'identity', 'type': 'str'},
@@ -38347,16 +38470,16 @@ class SubmitBulkRunRequest(msrest.serialization.Model):
         :paramtype log_file_relative_path: str
         :keyword connections: This is a dictionary.
         :paramtype connections: dict[str, dict[str, str]]
-        :keyword runtime_name:
-        :paramtype runtime_name: str
-        :keyword collie_run_settings:
-        :paramtype collie_run_settings: ~flow.models.CollieRunSettings
+        :keyword promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
+        :paramtype promptflow_engine_type: str or ~flow.models.PromptflowEngineType
         :keyword worker_count:
         :paramtype worker_count: int
         :keyword timeout_in_seconds:
         :paramtype timeout_in_seconds: int
-        :keyword promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
-        :paramtype promptflow_engine_type: str or ~flow.models.PromptflowEngineType
+        :keyword runtime_name:
+        :paramtype runtime_name: str
+        :keyword collie_run_settings:
+        :paramtype collie_run_settings: ~flow.models.CollieRunSettings
         :keyword vm_size:
         :paramtype vm_size: str
         :keyword max_idle_time_seconds:
@@ -38398,11 +38521,11 @@ class SubmitBulkRunRequest(msrest.serialization.Model):
         self.init_k_wargs = kwargs.get('init_k_wargs', None)
         self.log_file_relative_path = kwargs.get('log_file_relative_path', None)
         self.connections = kwargs.get('connections', None)
-        self.runtime_name = kwargs.get('runtime_name', None)
-        self.collie_run_settings = kwargs.get('collie_run_settings', None)
+        self.promptflow_engine_type = kwargs.get('promptflow_engine_type', None)
         self.worker_count = kwargs.get('worker_count', None)
         self.timeout_in_seconds = kwargs.get('timeout_in_seconds', None)
-        self.promptflow_engine_type = kwargs.get('promptflow_engine_type', None)
+        self.runtime_name = kwargs.get('runtime_name', None)
+        self.collie_run_settings = kwargs.get('collie_run_settings', None)
         self.vm_size = kwargs.get('vm_size', None)
         self.max_idle_time_seconds = kwargs.get('max_idle_time_seconds', None)
         self.identity = kwargs.get('identity', None)
@@ -40410,16 +40533,16 @@ class TuningNodeRunSetting(msrest.serialization.Model):
     :vartype log_file_relative_path: str
     :ivar connections: This is a dictionary.
     :vartype connections: dict[str, dict[str, str]]
-    :ivar runtime_name:
-    :vartype runtime_name: str
-    :ivar collie_run_settings:
-    :vartype collie_run_settings: ~flow.models.CollieRunSettings
+    :ivar promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
+    :vartype promptflow_engine_type: str or ~flow.models.PromptflowEngineType
     :ivar worker_count:
     :vartype worker_count: int
     :ivar timeout_in_seconds:
     :vartype timeout_in_seconds: int
-    :ivar promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
-    :vartype promptflow_engine_type: str or ~flow.models.PromptflowEngineType
+    :ivar runtime_name:
+    :vartype runtime_name: str
+    :ivar collie_run_settings:
+    :vartype collie_run_settings: ~flow.models.CollieRunSettings
     :ivar vm_size:
     :vartype vm_size: str
     :ivar max_idle_time_seconds:
@@ -40454,11 +40577,11 @@ class TuningNodeRunSetting(msrest.serialization.Model):
         'init_k_wargs': {'key': 'initKWargs', 'type': '{object}'},
         'log_file_relative_path': {'key': 'logFileRelativePath', 'type': 'str'},
         'connections': {'key': 'connections', 'type': '{{str}}'},
-        'runtime_name': {'key': 'runtimeName', 'type': 'str'},
-        'collie_run_settings': {'key': 'collieRunSettings', 'type': 'CollieRunSettings'},
+        'promptflow_engine_type': {'key': 'promptflowEngineType', 'type': 'str'},
         'worker_count': {'key': 'workerCount', 'type': 'int'},
         'timeout_in_seconds': {'key': 'timeoutInSeconds', 'type': 'int'},
-        'promptflow_engine_type': {'key': 'promptflowEngineType', 'type': 'str'},
+        'runtime_name': {'key': 'runtimeName', 'type': 'str'},
+        'collie_run_settings': {'key': 'collieRunSettings', 'type': 'CollieRunSettings'},
         'vm_size': {'key': 'vmSize', 'type': 'str'},
         'max_idle_time_seconds': {'key': 'maxIdleTimeSeconds', 'type': 'long'},
         'identity': {'key': 'identity', 'type': 'str'},
@@ -40514,16 +40637,16 @@ class TuningNodeRunSetting(msrest.serialization.Model):
         :paramtype log_file_relative_path: str
         :keyword connections: This is a dictionary.
         :paramtype connections: dict[str, dict[str, str]]
-        :keyword runtime_name:
-        :paramtype runtime_name: str
-        :keyword collie_run_settings:
-        :paramtype collie_run_settings: ~flow.models.CollieRunSettings
+        :keyword promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
+        :paramtype promptflow_engine_type: str or ~flow.models.PromptflowEngineType
         :keyword worker_count:
         :paramtype worker_count: int
         :keyword timeout_in_seconds:
         :paramtype timeout_in_seconds: int
-        :keyword promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
-        :paramtype promptflow_engine_type: str or ~flow.models.PromptflowEngineType
+        :keyword runtime_name:
+        :paramtype runtime_name: str
+        :keyword collie_run_settings:
+        :paramtype collie_run_settings: ~flow.models.CollieRunSettings
         :keyword vm_size:
         :paramtype vm_size: str
         :keyword max_idle_time_seconds:
@@ -40557,11 +40680,11 @@ class TuningNodeRunSetting(msrest.serialization.Model):
         self.init_k_wargs = kwargs.get('init_k_wargs', None)
         self.log_file_relative_path = kwargs.get('log_file_relative_path', None)
         self.connections = kwargs.get('connections', None)
-        self.runtime_name = kwargs.get('runtime_name', None)
-        self.collie_run_settings = kwargs.get('collie_run_settings', None)
+        self.promptflow_engine_type = kwargs.get('promptflow_engine_type', None)
         self.worker_count = kwargs.get('worker_count', None)
         self.timeout_in_seconds = kwargs.get('timeout_in_seconds', None)
-        self.promptflow_engine_type = kwargs.get('promptflow_engine_type', None)
+        self.runtime_name = kwargs.get('runtime_name', None)
+        self.collie_run_settings = kwargs.get('collie_run_settings', None)
         self.vm_size = kwargs.get('vm_size', None)
         self.max_idle_time_seconds = kwargs.get('max_idle_time_seconds', None)
         self.identity = kwargs.get('identity', None)

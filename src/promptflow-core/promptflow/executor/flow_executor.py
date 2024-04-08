@@ -204,6 +204,12 @@ class FlowExecutor:
         :rtype: ~promptflow.executor.flow_executor.FlowExecutor
         """
         setup_exporter_from_environ()
+        if hasattr(flow_file, "__call__") or inspect.isfunction(flow_file):
+            from ._script_executor import ScriptExecutor
+
+            return ScriptExecutor(flow_file, storage=storage)
+        if not isinstance(flow_file, (Path, str)):
+            raise NotImplementedError("Only support Path or str for flow_file.")
         if is_flex_flow(file_path=flow_file, working_dir=working_dir):
             from ._script_executor import ScriptExecutor
 
@@ -1380,7 +1386,9 @@ def _force_flush_tracer_provider():
     finally:
         try:
             # Force flush the tracer provider to ensure all spans are exported before the process exits.
-            otel_trace.get_tracer_provider().force_flush()
+            tracer_provider = otel_trace.get_tracer_provider()
+            if hasattr(tracer_provider, "force_flush"):
+                tracer_provider.force_flush()
         except Exception as e:
             flow_logger.warning(f"Error occurred while force flush tracer provider: {e}")
 

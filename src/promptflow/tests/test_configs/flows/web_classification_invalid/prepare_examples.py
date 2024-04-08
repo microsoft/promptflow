@@ -1,6 +1,6 @@
 import time
 from pathlib import Path
-from promptflow import tool
+from promptflow.core import tool
 
 @tool
 def prepare_examples():
