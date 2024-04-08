@@ -138,15 +138,6 @@ class ScriptExecutor(FlowExecutor):
             return AggregationResult({}, {}, {})
         # Similar to dag flow, add a prefix "reduce" for aggregation run_id.
         run_id = f"{run_id}_reduce" or f"{str(uuid.uuid4())}_reduce"
-        run_tracker = RunTracker(self._storage)
-        run_info = run_tracker.start_node_run(
-            node=self._aggr_func.__name__,
-            flow_run_id=self._flow_id,
-            run_id=run_id,
-            parent_run_id=run_id,
-            index=None,
-            message_format=self._message_format,
-        )
 
         metrics = {}
 
@@ -164,16 +155,12 @@ class ScriptExecutor(FlowExecutor):
             else:
                 output = self._aggr_func(**{self._aggr_input_name: inputs})
             traces = Tracer.end_tracing(run_id)
-            output_dict = convert_eager_flow_output_to_dict(output)
-            run_tracker.end_run(run_id, result=output_dict, traces=traces)
-        except Exception as e:
+        except Exception:
             if not traces:
                 traces = Tracer.end_tracing(run_id)
-            run_tracker.end_run(run_id, ex=e, traces=traces)
         finally:
-            run_tracker.persist_node_run(run_info)
             remove_metric_logger(_log_metric)
-        return AggregationResult({}, metrics, {self._aggr_func.__name__: run_info})
+        return AggregationResult(output, metrics, {})
 
     def _stringify_generator_output(self, output):
         if isinstance(output, dict):
