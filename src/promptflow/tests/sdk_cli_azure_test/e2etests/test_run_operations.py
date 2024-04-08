@@ -1259,7 +1259,13 @@ class TestFlowRun:
     def test_flex_flow_run(self, pf: PFClient, randstr: Callable[[str], str]):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_callable_class")
         run = pf.run(
-            flow=flow_path, data=f"{EAGER_FLOWS_DIR}/basic_callable_class/inputs.jsonl", init={"obj_input": "val"}
+            flow=flow_path,
+            data=f"{EAGER_FLOWS_DIR}/basic_callable_class/inputs.jsonl",
+            init={"obj_input": "val"},
+            name=randstr("name"),
         )
         run = pf.runs.stream(run)
         assert run.status == RunStatus.COMPLETED
+        assert run.properties["azureml.promptflow.init_kwargs"] == '{"obj_input":"val"}'
+        details = pf.runs.get_details(run)
+        assert details.shape[0] == 2
