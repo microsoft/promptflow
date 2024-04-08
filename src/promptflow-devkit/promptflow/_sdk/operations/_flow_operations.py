@@ -1108,7 +1108,7 @@ class FlowOperations(TelemetryMixin):
         python_requirements_txt: str = None,
         image: str = None,
         signature: dict = None,
-        input_sample: dict = None,
+        sample: dict = None,
         **kwargs,
     ) -> NoReturn:
         # hide the language field before csharp support go public
@@ -1175,9 +1175,9 @@ class FlowOperations(TelemetryMixin):
         if python_requirements_txt:
             shutil.copy(python_requirements_txt, target_flow_directory / Path(python_requirements_txt).name)
 
-        if input_sample:
+        if sample:
             with open(target_flow_directory / SERVE_SAMPLE_JSON_PATH, "w", encoding=DEFAULT_ENCODING) as f:
-                json.dump(input_sample, f, indent=4)
+                json.dump(sample, f, indent=4)
         with open(target_flow_file, "w", encoding=DEFAULT_ENCODING):
             dump_yaml(data, target_flow_file)
 
@@ -1191,7 +1191,7 @@ class FlowOperations(TelemetryMixin):
         python_requirements_txt: str = None,
         image: str = None,
         signature: dict = None,
-        input_sample: dict = None,
+        sample: dict = None,
         **kwargs,
     ) -> NoReturn:
         """
@@ -1214,8 +1214,8 @@ class FlowOperations(TelemetryMixin):
         :type image: str
         :param signature: signature of the flow, indicates the input and output ports of the flow
         :type signature: dict
-        :param input_sample: sample input data for the flow. Will be used for swagger generation in `flow serve`.
-        :type input_sample: dict
+        :param sample: sample input data for the flow. Will be used for swagger generation in `flow serve`.
+        :type sample: dict
         :return: no return
         :rtype: None
         """
@@ -1226,6 +1226,6 @@ class FlowOperations(TelemetryMixin):
             python_requirements_txt=python_requirements_txt,
             image=image,
             signature=signature,
-            input_sample=input_sample,
+            sample=sample,
             **kwargs,
         )
