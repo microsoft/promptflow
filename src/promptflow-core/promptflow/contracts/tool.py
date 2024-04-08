@@ -8,7 +8,7 @@ from dataclasses import asdict, dataclass
 from enum import Enum
 from typing import Any, Dict, List, Optional, Type, TypeVar
 
-from promptflow._constants import CONNECTION_NAME_PROPERTY, CONNECTION_DATA_CLASS_KEY
+from promptflow._constants import CONNECTION_DATA_CLASS_KEY, CONNECTION_NAME_PROPERTY
 
 from .multimedia import Image
 from .types import AssistantDefinition, FilePath, PromptTemplate, Secret
@@ -213,10 +213,7 @@ class ConnectionType:
 
         try:
             return issubclass(val, CustomStrongTypeConnection)
-        except TypeError as e:
-            # TypeError is not expected to happen, but if it does, we will log it for debugging and return False.
-            # The try-except block cannot be confidently removed due to the uncertainty of TypeError that may occur.
-            logger.warning(f"Failed to check if {val} is a custom strong type: {e}")
+        except TypeError:
             return False
 
     @staticmethod
