@@ -10,14 +10,15 @@ from pathlib import Path
 from unittest import mock
 
 import pytest
+from _constants import PROMPTFLOW_ROOT
 
 from promptflow._cli._user_agent import USER_AGENT as CLI_USER_AGENT  # noqa: E402
 from promptflow._sdk._telemetry import log_activity
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 
-FLOWS_DIR = "./tests/test_configs/flows"
-CONNECTIONS_DIR = "./tests/test_configs/connections"
-DATAS_DIR = "./tests/test_configs/datas"
+FLOWS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/flows"
+CONNECTIONS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/connections"
+DATAS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/datas"
 
 
 def mock_log_activity(*args, **kwargs):

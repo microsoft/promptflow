@@ -5,13 +5,14 @@ from pathlib import Path
 
 import mock
 import pytest
+from _constants import PROMPTFLOW_ROOT
 
 from .test_cli import run_pf_command
 
-FLOWS_DIR = "./tests/test_configs/flows"
-RUNS_DIR = "./tests/test_configs/runs"
-CONNECTIONS_DIR = "./tests/test_configs/connections"
-DATAS_DIR = "./tests/test_configs/datas"
+FLOWS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/flows"
+RUNS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/runs"
+CONNECTIONS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/connections"
+DATAS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/datas"
 
 
 @pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg")

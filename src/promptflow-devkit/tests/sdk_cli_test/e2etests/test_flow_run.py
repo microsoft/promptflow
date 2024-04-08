@@ -41,12 +41,11 @@ from promptflow.connections import AzureOpenAIConnection
 from promptflow.exceptions import UserErrorException
 
 TEST_ROOT = PROMPTFLOW_ROOT / "tests"
-MODEL_ROOT = TEST_ROOT / "test_configs/e2e_samples"
 CONNECTION_FILE = (PROMPTFLOW_ROOT / "connections.json").resolve().absolute().as_posix()
-FLOWS_DIR = "./tests/test_configs/flows"
-EAGER_FLOWS_DIR = "./tests/test_configs/eager_flows"
-RUNS_DIR = "./tests/test_configs/runs"
-DATAS_DIR = "./tests/test_configs/datas"
+FLOWS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/flows"
+EAGER_FLOWS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/eager_flows"
+RUNS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/runs"
+DATAS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/datas"
 
 
 def my_entry(input1: str):
@@ -235,7 +234,7 @@ class TestFlowRun:
         # path not exist
         with pytest.raises(UserErrorException) as e:
             pf.run(
-                flow=f"{MODEL_ROOT}/not_exist",
+                flow=f"{FLOWS_DIR}/not_exist",
                 data=f"{DATAS_DIR}/webClassification3.jsonl",
                 column_mapping={"question": "${data.question}", "context": "${data.context}"},
                 variant="${summarize_text_content.variant_0}",

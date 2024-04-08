@@ -10,6 +10,7 @@ from types import GeneratorType
 
 import mock
 import pytest
+from _constants import PROMPTFLOW_ROOT
 
 from promptflow._sdk._errors import ConnectionNotFoundError, InvalidFlowError
 from promptflow._sdk.entities import CustomConnection
@@ -19,9 +20,9 @@ from promptflow.client import load_flow
 from promptflow.entities import FlowContext
 from promptflow.exceptions import UserErrorException
 
-FLOWS_DIR = "./tests/test_configs/flows"
-RUNS_DIR = "./tests/test_configs/runs"
-DATAS_DIR = "./tests/test_configs/datas"
+FLOWS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/flows"
+RUNS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/runs"
+DATAS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/datas"
 
 
 @pytest.mark.usefixtures(

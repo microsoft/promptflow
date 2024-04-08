@@ -17,6 +17,7 @@ from unittest.mock import patch
 
 import mock
 import pytest
+from _constants import PROMPTFLOW_ROOT
 
 from promptflow._cli._pf.entry import main
 from promptflow._constants import LINE_NUMBER_KEY, PF_USER_AGENT
@@ -30,14 +31,14 @@ from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.tracing._operation_context import OperationContext
 
-FLOWS_DIR = "./tests/test_configs/flows"
-EAGER_FLOWS_DIR = "./tests/test_configs/eager_flows"
-EXPERIMENT_DIR = "./tests/test_configs/experiments"
-RUNS_DIR = "./tests/test_configs/runs"
-CONNECTIONS_DIR = "./tests/test_configs/connections"
-DATAS_DIR = "./tests/test_configs/datas"
+FLOWS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/flows"
+EAGER_FLOWS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/eager_flows"
+EXPERIMENT_DIR = PROMPTFLOW_ROOT / "tests/test_configs/experiments"
+RUNS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/runs"
+CONNECTIONS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/connections"
+DATAS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/datas"
 TOOL_ROOT = "./tests/test_configs/tools"
-PROMPTY_DIR = "./tests/test_configs/prompty"
+PROMPTY_DIR = PROMPTFLOW_ROOT / "tests/test_configs/prompty"
 
 TARGET_URL = "https://www.youtube.com/watch?v=o5ZQyXaAv1g"
 

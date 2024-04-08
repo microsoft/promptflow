@@ -16,12 +16,11 @@ from promptflow.core._flow import Prompty
 from promptflow.exceptions import UserErrorException
 
 TEST_ROOT = PROMPTFLOW_ROOT / "tests"
-MODEL_ROOT = TEST_ROOT / "test_configs/e2e_samples"
 CONNECTION_FILE = (PROMPTFLOW_ROOT / "connections.json").resolve().absolute().as_posix()
-FLOWS_DIR = "./tests/test_configs/flows"
-EAGER_FLOWS_DIR = "./tests/test_configs/eager_flows"
-DATAS_DIR = "./tests/test_configs/datas"
-PROMPTY_DIR = "./tests/test_configs/prompty"
+FLOWS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/flows"
+EAGER_FLOWS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/eager_flows"
+DATAS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/datas"
+PROMPTY_DIR = PROMPTFLOW_ROOT / "tests/test_configs/prompty"
 
 
 def e2e_test_docker_build_and_run(output_path):

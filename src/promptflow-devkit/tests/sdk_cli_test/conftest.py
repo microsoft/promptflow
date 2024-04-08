@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-from _constants import CONNECTION_FILE, MODEL_ROOT, PROMPTFLOW_ROOT
+from _constants import CONNECTION_FILE, PROMPTFLOW_ROOT
 from mock import mock
 from pytest_mock import MockerFixture
 from sqlalchemy import create_engine
@@ -43,8 +43,9 @@ except ImportError:
 
 
 EAGER_FLOW_ROOT = Path(PROMPTFLOW_ROOT / "tests/test_configs/eager_flows")
+MODEL_ROOT = Path(PROMPTFLOW_ROOT / "tests/test_configs/flows")
 
-RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "src" / "promptflow-recording/recordings/local").resolve()
+RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "../promptflow-recording/recordings/local").resolve()
 
 
 def pytest_configure():

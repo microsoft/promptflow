@@ -2,7 +2,6 @@ from pathlib import Path
 
 PROMPTFLOW_ROOT = Path(__file__).parent.parent.parent / "promptflow"
 RUNTIME_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "tests/test_configs/runtime")
-MODEL_ROOT = Path(PROMPTFLOW_ROOT / "tests/test_configs/e2e_samples")
 CONNECTION_FILE = (PROMPTFLOW_ROOT / "connections.json").resolve().absolute().as_posix()
 ENV_FILE = (PROMPTFLOW_ROOT / ".env").resolve().absolute().as_posix()
 
