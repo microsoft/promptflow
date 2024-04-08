@@ -50,6 +50,8 @@ def _init_workspace_cosmos_db(pf_client: PFClient) -> None:
         # set a timeout here to prevent the potential infinite loop
         if int(time.time() - start_time) > COSMOS_INIT_POLL_TIMEOUT_SECOND:
             break
+        prompt_msg = "The workspace Cosmos DB initialization is still in progress..."
+        _logger.info(prompt_msg)
         time.sleep(COSMOS_INIT_POLL_INTERVAL_SECOND)
     # initialization does not finish in time, we need to ensure the Cosmos resource is ready
     # so print error log and raise error here
