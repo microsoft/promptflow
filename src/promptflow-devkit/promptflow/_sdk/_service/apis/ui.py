@@ -71,7 +71,7 @@ flow_ux_input_post_parser = create_parser(flow_arg, ux_inputs_arg)
 class ChatUI(Resource):
     def get(self):
         return Response(
-            render_template("chat_index.html", url_for=url_for),
+            render_template("chat-window/index.html", url_for=url_for),
             mimetype="text/html",
         )
 
