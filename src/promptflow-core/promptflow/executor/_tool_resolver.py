@@ -462,9 +462,23 @@ class ToolResolver:
             # This is a fallback for the case that ServerlessConnection related tool is not ready
             # in legacy versions, then we can directly use OpenAIConnection.
             if isinstance(connection, ServerlessConnection):
+                # The ServerlessConnection should be passed into promptflow-tools as it is.
+                # And this append "/v1" logic should exist in promptflow-tools.
+                # But since old version promptflow package doesn't support below things:
+                # 1. There is NO ServerlessConnection;
+                # 2. Register_apis doesn't support Union;
+                # So in order to release this append "/v1" function without breaking old promptflow package.
+                # We move this logic here.
+                # This is a short-term solution. After MaaS supports OpenAI compatible rest API,
+                # we should remove the V1 tricky here.
+                suffix = "/v1"
+                base_url = connection.api_base
+                if not base_url.endswith(suffix):
+                    # append "/v1" to ServerlessConnection api_base so that it can directly use the OpenAI SDK.
+                    base_url += suffix
                 connection = OpenAIConnection(
                     api_key=connection.api_key,
-                    base_url=connection.api_base,
+                    base_url=base_url,
                     name=connection.name,
                 )
                 connection_type = "OpenAIConnection"

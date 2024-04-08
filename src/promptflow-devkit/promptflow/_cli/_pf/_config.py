@@ -48,7 +48,7 @@ def add_config_show(subparsers):
 
 def add_config_parser(subparsers):
     config_parser = subparsers.add_parser(
-        "config", description="A CLI tool to set prompt flow configs for current user.", help="pf config"
+        "config", description="A CLI tool to set prompt flow configs for current user.", help="Manage configs."
     )
     subparsers = config_parser.add_subparsers()
     add_config_set(subparsers)

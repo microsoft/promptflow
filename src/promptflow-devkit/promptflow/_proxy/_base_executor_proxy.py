@@ -239,10 +239,10 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         """Get the inputs definition of an eager flow"""
         from promptflow.contracts.flow import FlowInputDefinition
 
-        flow_path, flow_file = resolve_flow_path(self.working_dir, check_flow_exist=False)
+        _, flow_file = resolve_flow_path(self.working_dir, check_flow_exist=False)
         flow_meta = self.generate_flow_json(
-            flow_file=flow_path / flow_file,
-            working_dir=flow_file,
+            flow_file=self.working_dir / flow_file,
+            working_dir=self.working_dir,
             dump=False,
         )
         inputs = {}

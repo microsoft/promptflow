@@ -73,8 +73,9 @@ def resolve_flow_path(
     :param base_path: The base path to resolve the flow path. If not specified, the flow path will be
       resolved based on the current working directory.
     :type base_path: Union[str, Path, PathLike]
-    :param check_flow_exist: If True, the function will return the flow directory path and the file name of the
-        target yaml. If False, the function will try to check the target yaml and raise FileNotFoundError if not found.
+    :param check_flow_exist: If True, the function will try to check the target yaml and
+      raise FileNotFoundError if not found.
+      If False, the function will return the flow directory path and the file name of the target yaml.
     :return: The flow directory path and the file name of the target yaml.
     :rtype: Tuple[Path, str]
     """
@@ -84,38 +85,39 @@ def resolve_flow_path(
         flow_path = Path(flow_path)
 
     if flow_path.is_dir():
-        target_folder = flow_path
-        dag_file_exist = (target_folder / FLOW_DAG_YAML).exists()
-        flex_file_exist = (target_folder / FLOW_FLEX_YAML).exists()
-        target_file = FLOW_FLEX_YAML if flex_file_exist else FLOW_DAG_YAML
+        flow_folder = flow_path
+        dag_file_exist = (flow_folder / FLOW_DAG_YAML).is_file()
+        flex_file_exist = (flow_folder / FLOW_FLEX_YAML).is_file()
+        flow_file = FLOW_FLEX_YAML if flex_file_exist else FLOW_DAG_YAML
         if dag_file_exist and flex_file_exist:
             raise ValidationException(
-                f"Both exist {FLOW_DAG_YAML} and {FLOW_FLEX_YAML} in the flow path {flow_path}, "
-                f"please specify the file instead of the folder, "
-                f"or delete the excess yaml file.",
+                f"Both {FLOW_DAG_YAML} and {FLOW_FLEX_YAML} exist in {flow_path}. "
+                f"Please specify a file or remove the extra YAML.",
                 privacy_info=[str(flow_path)],
             )
-    else:
-        target_folder = flow_path.parent
-        target_file = flow_path.name
+    elif flow_path.is_file() or flow_path.suffix in (".yaml", ".yml"):
+        flow_folder = flow_path.parent
+        flow_file = flow_path.name
+    else:  # flow_path doesn't exist
+        flow_folder = flow_path
+        flow_file = FLOW_DAG_YAML
 
     if not check_flow_exist:
-        return target_folder.resolve().absolute(), target_file
+        return flow_folder.resolve().absolute(), flow_file
 
-    if not target_folder.exists():
+    if not flow_folder.exists():
         raise UserErrorException(
             f"Flow path {flow_path.absolute().as_posix()} does not exist.",
             privacy_info=[flow_path.absolute().as_posix()],
         )
 
-    if not (target_folder / target_file).is_file():
-        error = FileNotFoundError(
-            f"Can't find file {FLOW_DAG_YAML} or {FLOW_FLEX_YAML} "
-            f"in the flow path {flow_path.absolute().as_posix()}."
+    if not (flow_folder / flow_file).is_file():
+        raise UserErrorException(
+            f"Can't find file {flow_file}, " f"in the flow path {flow_folder.absolute().as_posix()}.",
+            privacy_info=[flow_folder.absolute().as_posix()],
         )
-        raise UserErrorException(message=str(error), privacy_info=[flow_path.absolute().as_posix()]) from error
 
-    return target_folder.resolve().absolute(), target_file
+    return flow_folder.resolve().absolute(), flow_file
 
 
 def load_flow_dag(flow_path: Path):

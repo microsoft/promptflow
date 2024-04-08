@@ -67,7 +67,8 @@ def _request_wrapper():
                     f"Status code: {e.status_code} \n"
                     f"Reason: {e.reason} \n"
                     f"Error message: {e.message} \n",
-                    privacy_info=[e.reason, e.message]
+                    privacy_info=[e.reason, e.message],
+                    error=e,
                 )
 
         return wrapper

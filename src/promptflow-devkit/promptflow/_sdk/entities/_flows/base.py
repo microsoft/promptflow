@@ -182,8 +182,8 @@ class Flow(FlowBase):
         flow_dir, flow_filename = resolve_flow_path(source)
         flow_path = flow_dir / flow_filename
 
-        if flow_path.suffix not in [".yaml", ".yml"]:
-            raise UserErrorException("Source must be a directory or a yaml file")
+        if flow_path.suffix not in [".yaml", ".yml", PROMPTY_EXTENSION]:
+            raise UserErrorException("Source must be a directory or a 'flow.dag.yaml' file or a prompty file")
         return flow_dir, flow_path
 
     @classmethod

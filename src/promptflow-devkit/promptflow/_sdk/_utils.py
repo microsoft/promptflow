@@ -32,7 +32,7 @@ from keyring.errors import NoKeyringError
 from marshmallow import ValidationError
 
 import promptflow
-from promptflow._constants import ENABLE_MULTI_CONTAINER_KEY, EXTENSION_UA, FLOW_FLEX_YAML, FlowLanguage
+from promptflow._constants import ENABLE_MULTI_CONTAINER_KEY, EXTENSION_UA, FLOW_DAG_YAML, FlowLanguage
 from promptflow._core.entry_meta_generator import generate_flow_meta as _generate_flow_meta
 from promptflow._sdk._constants import (
     AZURE_WORKSPACE_REGEX_FORMAT,
@@ -981,8 +981,7 @@ def create_temp_flex_flow_yaml(entry: Union[str, PathLike, Callable], code: Path
         code = Path(code)
         if not code.exists():
             raise UserErrorException(f"Code path {code.as_posix()} does not exist.")
-
-    flow_yaml_path = code / FLOW_FLEX_YAML
+    flow_yaml_path = code / FLOW_DAG_YAML
     existing_content = None
 
     try:

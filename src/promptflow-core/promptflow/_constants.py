@@ -269,5 +269,3 @@ AZURE_WORKSPACE_REGEX_FORMAT = (
     "(/providers/Microsoft.MachineLearningServices)?/workspaces/([^/]+)$"
 )
 CONNECTION_DATA_CLASS_KEY = "DATA_CLASS"
-
-FLEX_FLOW_PUBLIC_NAME = "flex"

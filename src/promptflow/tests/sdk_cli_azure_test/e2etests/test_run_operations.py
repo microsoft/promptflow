@@ -19,7 +19,7 @@ import pytest
 from azure.ai.ml import ManagedIdentityConfiguration
 from azure.ai.ml.entities import IdentityConfiguration
 
-from promptflow._constants import FLOW_FLEX_YAML
+from promptflow._constants import FLOW_DAG_YAML
 from promptflow._sdk._constants import DownloadedRun, RunStatus
 from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, RunNotFoundError
 from promptflow._sdk._load_functions import load_run
@@ -904,6 +904,11 @@ class TestFlowRun:
             # request id should be included in FlowRequestException
             assert f"request id: {pf.runs._service_caller._request_id}" in str(e.value)
 
+            inner_exception = e.value.inner_exception
+            assert inner_exception is not None
+            assert isinstance(inner_exception, HttpResponseError)
+            assert inner_exception.message == "customized error message."
+
     # it is a known issue that executor/runtime might write duplicate storage for line records,
     # this will lead to the lines that assert line count (`len(detail)`) fails.
     @pytest.mark.xfail(reason="BUG 2819328: Duplicate line in flow artifacts jsonl", run=True, strict=False)
@@ -1242,7 +1247,7 @@ class TestFlowRun:
 
         # test YAML is generated
         expected_files = [
-            f"{DownloadedRun.SNAPSHOT_FOLDER}/{FLOW_FLEX_YAML}",
+            f"{DownloadedRun.SNAPSHOT_FOLDER}/{FLOW_DAG_YAML}",
         ]
         with TemporaryDirectory() as tmp_dir:
             pf.runs.download(run=run.name, output=tmp_dir)
