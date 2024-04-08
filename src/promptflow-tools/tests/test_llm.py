@@ -20,7 +20,6 @@ class TestLLM:
             api="completion",
             prompt=prompt_template,
             deployment_name="gpt-35-turbo-instruct",
-            model="gpt-35-turbo-instruct",
             stop=[],
             logit_bias={}
         )
@@ -73,14 +72,14 @@ class TestLLM:
             assert called_with_params['seed'] == seed_value
 
     @pytest.mark.parametrize(
-        "function_call",
+        "tool_choice",
         [
             "auto",
-            {"name": "get_current_weather"},
+            {"type": "function", "function": {"name": "get_current_weather"}}
         ],
     )
-    def test_aoai_chat_with_function(
-            self, azure_open_ai_connection, example_prompt_template, chat_history, functions, function_call):
+    def test_aoai_chat_with_tools(
+            self, azure_open_ai_connection, example_prompt_template, chat_history, tools, tool_choice):
         result = llm(
             connection=azure_open_ai_connection,
             api="chat",
@@ -90,14 +89,14 @@ class TestLLM:
             temperature=0,
             user_input="What is the weather in Boston?",
             chat_history=chat_history,
-            functions=functions,
-            function_call=function_call
+            tools=tools,
+            tool_choice=tool_choice
         )
-        assert "function_call" in result
-        assert result["function_call"]["name"] == "get_current_weather"
+        assert "tool_calls" in result
+        assert result["tool_calls"][0]["function"]["name"] == "get_current_weather"
 
     def test_aoai_chat_with_name_in_roles(
-            self, azure_open_ai_connection, example_prompt_template_with_name_in_roles, chat_history, functions):
+            self, azure_open_ai_connection, example_prompt_template_with_name_in_roles, chat_history, tools):
         result = llm(
             connection=azure_open_ai_connection,
             api="chat",
@@ -105,14 +104,14 @@ class TestLLM:
             deployment_name="gpt-35-turbo",
             max_tokens="inF",
             temperature=0,
-            functions=functions,
+            tools=tools,
             name="get_location",
             result=json.dumps({"location": "Austin"}),
             question="What is the weather in Boston?",
             prev_question="Where is Boston?"
         )
-        assert "function_call" in result
-        assert result["function_call"]["name"] == "get_current_weather"
+        assert "tool_calls" in result
+        assert result["tool_calls"][0]["function"]["name"] == "get_current_weather"
 
     def test_aoai_chat_message_with_no_content(self, azure_open_ai_connection):
         # missing colon after role name. Sometimes following prompt may result in empty content.
