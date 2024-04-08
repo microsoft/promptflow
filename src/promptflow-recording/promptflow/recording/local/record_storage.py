@@ -81,6 +81,7 @@ class RecordFile:
             if file_content_line is not None:
                 lock = FileLock(self.real_file.parent / "record_file.lock")
                 with lock:
+                    # Use dumb db for compatibility with windows/linux
                     db = dumb.open(self.record_file_str, "c")
                     saved_dict = shelve.Shelf(db, writeback=False)
                     saved_dict[hashkey] = file_content_line
