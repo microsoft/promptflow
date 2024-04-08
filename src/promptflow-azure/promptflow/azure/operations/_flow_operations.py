@@ -24,7 +24,7 @@ from azure.ai.ml.entities import Workspace
 from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
 from azure.core.exceptions import HttpResponseError
 
-from promptflow._constants import FLEX_FLOW_PUBLIC_NAME
+from promptflow._constants import FlowType as FlowYamlType
 from promptflow._proxy import ProxyFactory
 from promptflow._sdk._constants import (
     CLIENT_FLOW_TYPE_2_SERVICE_FLOW_TYPE,
@@ -218,7 +218,7 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         flow_entity = load_local_flow(flow_path)
         if isinstance(flow_entity, FlexFlow):
             raise UserErrorException(
-                f"Flow source {Path(flow_path).resolve().as_posix()!r}. is {FLEX_FLOW_PUBLIC_NAME} flow. "
+                f"Flow source {Path(flow_path).resolve().as_posix()!r}. is {FlowYamlType.FLEX_FLOW} flow. "
                 "Creating it to cloud is not supported."
             )
 
