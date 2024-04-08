@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import json
 import os
 from os import PathLike
 from pathlib import Path
@@ -312,7 +313,7 @@ class PFClient:
         self,
         flow: Union[str, PathLike],
         *,
-        inputs: dict = None,
+        inputs: Union[dict, PathLike] = None,
         variant: str = None,
         node: str = None,
         environment_variables: dict = None,
@@ -321,8 +322,8 @@ class PFClient:
 
         :param flow: path to flow directory to test
         :type flow: Union[str, PathLike]
-        :param inputs: Input data for the flow test
-        :type inputs: dict
+        :param inputs: Input data or json file for the flow test
+        :type inputs: Union[dict, PathLike]
         :param variant: Node & variant name in format of ${node_name.variant_name}, will use default variant
             if not specified.
         :type variant: str
@@ -336,6 +337,12 @@ class PFClient:
         :return: The result of flow or node
         :rtype: dict
         """
+        # Load the inputs for the flow test from sample file.
+        if isinstance(inputs, (str, Path)):
+            if not Path(inputs).exists():
+                raise UserErrorException(f"Cannot find inputs file {inputs}.")
+            with open(inputs, "r") as f:
+                inputs = json.load(f)
         return self.flows.test(
             flow=flow, inputs=inputs, variant=variant, environment_variables=environment_variables, node=node
         )
