@@ -1,6 +1,6 @@
 from typing import List
 
-from promptflow import tool
+from promptflow.core import tool
 
 
 def get_answer_from_conversation_history(conversation_history: List) -> str:

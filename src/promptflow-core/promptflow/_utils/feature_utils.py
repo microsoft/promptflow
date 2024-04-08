@@ -61,6 +61,11 @@ def get_feature_list():
             description="Support starting local http server for flow test.",
             state=FeatureState.E2ETEST,
         ),
+        Feature(
+            name="OpenTelemetryTrace",
+            description="Support OpenTelemetry trace.",
+            state=FeatureState.E2ETEST,
+        ),
     ]
 
     return feature_list

@@ -10,10 +10,16 @@ from promptflow._constants import (
     OK_LINE_RUN_STATUS,
     RUNNING_LINE_RUN_STATUS,
     SpanAttributeFieldName,
+    SpanEventFieldName,
     SpanResourceAttributesFieldName,
     SpanStatusFieldName,
 )
-from promptflow._sdk._constants import TRACE_DEFAULT_COLLECTION
+from promptflow._sdk._constants import (
+    SPAN_EVENTS_ATTRIBUTE_PAYLOAD,
+    SPAN_EVENTS_NAME_PF_INPUTS,
+    SPAN_EVENTS_NAME_PF_OUTPUT,
+    TRACE_DEFAULT_COLLECTION,
+)
 from promptflow._sdk._utils import json_loads_parse_const_as_str
 from promptflow._sdk.entities._trace import Span
 from promptflow.azure._storage.cosmosdb.cosmosdb_utils import safe_create_cosmosdb_item
@@ -77,17 +83,20 @@ class Summary:
         self.logger = logger
         self.session_id = self.span.resource.get(SpanResourceAttributesFieldName.COLLECTION, TRACE_DEFAULT_COLLECTION)
         self.collection_id = collection_id
+        self.inputs = None
+        self.outputs = None
 
     def persist(self, client: ContainerProxy):
         if self.span.parent_id:
             # For non root span, write a placeholder item to LineSummary table.
             self._persist_running_item(client)
             return
-        attributes = self.span.attributes
+        self._parse_inputs_outputs_from_events()
 
         # Persist root span as a line run.
         self._persist_line_run(client)
 
+        attributes = self.span.attributes
         if (
             SpanAttributeFieldName.LINE_RUN_ID not in attributes
             and SpanAttributeFieldName.BATCH_RUN_ID not in attributes
@@ -127,6 +136,59 @@ class Summary:
             item.line_number = attributes[SpanAttributeFieldName.LINE_NUMBER]
         safe_create_cosmosdb_item(client, item)
 
+    # Parse inputs and outputs from span events and truncate the content for cosmosdb 2MB limit.
+    # After truncation, the query ability for inputs and outputs will be limited.
+    def _parse_inputs_outputs_from_events(self):
+        events = self.span.events
+        # Only use the first payload for input and output in case there are multiple valid events.
+        for event in events:
+            value_for_input = self._get_pf_defined_payload(event, SPAN_EVENTS_NAME_PF_INPUTS)
+            if value_for_input is not None:
+                self.inputs = self._truncate_and_replace_content(value_for_input)
+                break
+        for event in events:
+            value_for_output = self._get_pf_defined_payload(event, SPAN_EVENTS_NAME_PF_OUTPUT)
+            if value_for_output is not None:
+                self.outputs = self._truncate_and_replace_content(value_for_output)
+                break
+
+    def _get_pf_defined_payload(self, event, key):
+        if event.get(SpanEventFieldName.NAME, "") != key:
+            return None
+        attributes = event.get(SpanEventFieldName.ATTRIBUTES, {})
+        if SPAN_EVENTS_ATTRIBUTE_PAYLOAD not in attributes:
+            return None
+        #  Do not constraint the payload to be dict in case of trace from customer script.
+        return json_loads_parse_const_as_str(attributes[SPAN_EVENTS_ATTRIBUTE_PAYLOAD])
+
+    def _truncate_and_replace_content(self, content):
+        TRUNCATE_THRESHOLD_FOR_STRING = 500  # Truncate string values, use large enough limit for UX display.
+        PLACEHOLDER_FOR_LIST = "[...]"
+        PLACEHOLDER_FOR_DICT = "{...}"
+        PLACEHOLDER_FOR_UNSUPPORTED_TYPE = "[UNSUPPORTED TYPE]"  # For any other type, use a generic placeholder
+
+        def _process_value(value):
+            # For python, bool is subclass of int, so we don't need to check bool again.
+            if value is None or isinstance(value, (int, float)):
+                return value
+            elif isinstance(value, str):
+                return value[:TRUNCATE_THRESHOLD_FOR_STRING]
+            elif isinstance(value, list):
+                return PLACEHOLDER_FOR_LIST
+            elif isinstance(value, dict):
+                return PLACEHOLDER_FOR_DICT
+            else:
+                return PLACEHOLDER_FOR_UNSUPPORTED_TYPE
+
+        # Promptflow defined input/output is a dictionary, so we need to process the first level dict differently.
+        if isinstance(content, dict):
+            truncated_content = {}
+            for key, value in content.items():
+                truncated_content[key] = _process_value(value)
+            return truncated_content
+        else:
+            return _process_value(content)
+
     def _persist_line_run(self, client: ContainerProxy):
         attributes: dict = self.span.attributes
 
@@ -159,8 +221,8 @@ class Summary:
             trace_id=self.span.trace_id,
             collection_id=self.collection_id,
             root_span_id=self.span.span_id,
-            inputs=json_loads_parse_const_as_str(attributes.get(SpanAttributeFieldName.INPUTS, "{}")),
-            outputs=json_loads_parse_const_as_str(attributes.get(SpanAttributeFieldName.OUTPUT, "{}")),
+            inputs=self.inputs,
+            outputs=self.outputs,
             start_time=start_time,
             end_time=end_time,
             status=self.span.status[SpanStatusFieldName.STATUS_CODE],
@@ -200,7 +262,7 @@ class Summary:
             trace_id=self.span.trace_id,
             root_span_id=self.span.span_id,
             collection_id=self.collection_id,
-            outputs=json_loads_parse_const_as_str(attributes.get(SpanAttributeFieldName.OUTPUT, "{}")),
+            outputs=self.outputs,
             name=self.span.name,
             created_by=self.created_by,
         )
