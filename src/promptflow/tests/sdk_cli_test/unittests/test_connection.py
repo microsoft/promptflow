@@ -10,7 +10,7 @@ import pytest
 
 from promptflow._cli._pf._connection import validate_and_interactive_get_secrets
 from promptflow._sdk._constants import SCRUBBED_VALUE, ConnectionAuthMode, CustomStrongTypeConnectionConfigs
-from promptflow._sdk._errors import SDKError
+from promptflow._sdk._errors import ConnectionClassNotFoundError, SDKError
 from promptflow._sdk._load_functions import _load_env_to_connection
 from promptflow._sdk.entities._connection import (
     AzureContentSafetyConnection,
@@ -25,6 +25,7 @@ from promptflow._sdk.entities._connection import (
     WeaviateConnection,
     _Connection,
 )
+from promptflow._sdk.operations._connection_operations import ConnectionOperations
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.core._connection import RequiredEnvironmentVariablesNotSetError
 from promptflow.exceptions import UserErrorException
@@ -262,6 +263,7 @@ secrets:
         # Assert custom connection build
         connection = CustomConnection(name="test_connection", configs={"a": "1"}, secrets={"b": "2"})
         assert connection._to_execution_connection_dict() == {
+            "name": "test_connection",
             "module": "promptflow.connections",
             "secret_keys": ["b"],
             "type": "CustomConnection",
@@ -278,6 +280,7 @@ secrets:
             api_version="2023-07-01-preview",
         )
         assert connection._to_execution_connection_dict() == {
+            "name": "test_connection_1",
             "module": "promptflow.connections",
             "secret_keys": ["api_key"],
             "type": "AzureOpenAIConnection",
@@ -300,6 +303,7 @@ secrets:
             api_version="2023-07-01-preview",
         )
         assert connection._to_execution_connection_dict() == {
+            "name": "test_connection_1",
             "module": "promptflow.connections",
             "secret_keys": [],
             "type": "AzureOpenAIConnection",
@@ -319,6 +323,7 @@ secrets:
             organization="test_org",
         )
         assert connection._to_execution_connection_dict() == {
+            "name": "test_connection_1",
             "module": "promptflow.connections",
             "secret_keys": ["api_key"],
             "type": "OpenAIConnection",
@@ -467,3 +472,41 @@ secrets:
                 "organization": "test_org",
                 "base_url": "test_base",
             }
+
+    def test_convert_core_connection_to_sdk_connection(self):
+        # Assert strong type
+        from promptflow.connections import AzureOpenAIConnection as CoreAzureOpenAIConnection
+
+        connection_args = {
+            "name": "abc",
+            "api_base": "abc",
+            "auth_mode": "meid_token",
+            "api_version": "2023-07-01-preview",
+        }
+        connection = CoreAzureOpenAIConnection(**connection_args)
+        sdk_connection = ConnectionOperations._convert_core_connection_to_sdk_connection(connection)
+        assert isinstance(sdk_connection, AzureOpenAIConnection)
+        assert sdk_connection._to_dict() == {
+            "module": "promptflow.connections",
+            "type": "azure_open_ai",
+            "api_type": "azure",
+            **connection_args,
+        }
+        # Assert custom type
+        from promptflow.connections import CustomConnection as CoreCustomConnection
+
+        connection_args = {
+            "name": "abc",
+            "configs": {"a": "1"},
+            "secrets": {"b": "2"},
+        }
+        connection = CoreCustomConnection(**connection_args)
+        sdk_connection = ConnectionOperations._convert_core_connection_to_sdk_connection(connection)
+        assert isinstance(sdk_connection, CustomConnection)
+        assert sdk_connection._to_dict() == {"module": "promptflow.connections", "type": "custom", **connection_args}
+
+        # Bad case
+        connection = CoreCustomConnection(**connection_args)
+        connection.type = "unknown"
+        with pytest.raises(ConnectionClassNotFoundError):
+            ConnectionOperations._convert_core_connection_to_sdk_connection(connection)

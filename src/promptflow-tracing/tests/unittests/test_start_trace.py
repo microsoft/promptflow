@@ -26,7 +26,7 @@ class TestStartTrace:
         assert isinstance(tracer_provider, TracerProvider)
         attrs = tracer_provider.resource.attributes
         assert attrs[ResourceAttributesFieldName.SERVICE_NAME] == RESOURCE_ATTRIBUTES_SERVICE_NAME
-        assert ResourceAttributesFieldName.SESSION_ID not in attrs
+        assert ResourceAttributesFieldName.COLLECTION not in attrs
 
     def test_tracer_provider_overwritten(self) -> None:
         trace.set_tracer_provider(TracerProvider())
@@ -36,12 +36,12 @@ class TestStartTrace:
         assert id(old_tracer_provider) != id(new_tracer_provider)
 
     def test_tracer_provider_resource_attributes(self) -> None:
-        session_id = str(uuid.uuid4())
+        collection = str(uuid.uuid4())
         res_attrs = {"attr1": "value1", "attr2": "value2"}
-        start_trace(resource_attributes=res_attrs, session=session_id)
+        start_trace(resource_attributes=res_attrs, collection=collection)
         tracer_provider: TracerProvider = trace.get_tracer_provider()
         attrs = tracer_provider.resource.attributes
-        assert attrs[ResourceAttributesFieldName.SESSION_ID] == session_id
+        assert attrs[ResourceAttributesFieldName.COLLECTION] == collection
         assert attrs["attr1"] == "value1"
         assert attrs["attr2"] == "value2"
 

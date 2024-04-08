@@ -8,7 +8,7 @@ This documentation will walk you through how to manage your runs with CLI, SDK a
 
 In general:
 - For `CLI`, you can run `pf/pfazure run --help` in terminal to see the help messages.
-- For `SDK`, you can refer to [Promptflow Python Library Reference](../reference/python-library-reference/promptflow.md) and check `PFClient.runs` for more run operations.
+- For `SDK`, you can refer to [Promptflow Python Library Reference](../reference/python-library-reference/promptflow-devkit/promptflow.rst) and check `PFClient.runs` for more run operations.
 
 Let's take a look at the following topics:
 
@@ -76,7 +76,7 @@ The expected result is as follows if the run is created successfully.
 Using SDK, create `Run` object and submit it with `PFClient`. The following code snippet shows how to import the required class and create the run:
 
 ```python
-from promptflow import PFClient
+from promptflow.client import PFClient
 from promptflow.entities import Run
 
 # Get a pf client to manage runs
@@ -130,7 +130,7 @@ pf run show --name <run-name>
 :sync: SDK
 Show run with `PFClient`
 ```python
-from promptflow import PFClient
+from promptflow.client import PFClient
 # Get a pf client to manage runs
 pf = PFClient()
 # Get and print the run
@@ -166,7 +166,7 @@ pf run show-details --name <run-name>
 :sync: SDK
 Show run details with `PFClient`
 ```python
-from promptflow import PFClient
+from promptflow.client import PFClient
 from tabulate import tabulate
 
 # Get a pf client to manage runs
@@ -204,7 +204,7 @@ pf run show-metrics --name <run-name>
 :sync: SDK
 Show run metrics with `PFClient`
 ```python
-from promptflow import PFClient
+from promptflow.client import PFClient
 import json
 
 # Get a pf client to manage runs
@@ -240,7 +240,7 @@ A browser will open and display run outputs.
 :sync: SDK
 Visualize run with `PFClient`
 ```python
-from promptflow import PFClient
+from promptflow.client import PFClient
 
 # Get a pf client to manage runs
 pf = PFClient()
@@ -280,7 +280,7 @@ pf run list
 :sync: SDK
 List with `PFClient`
 ```python
-from promptflow import PFClient
+from promptflow.client import PFClient
 
 # Get a pf client to manage runs
 pf = PFClient()
@@ -317,7 +317,7 @@ pf run update --name <run-name> --set display_name=new_display_name
 :sync: SDK
 Update run with `PFClient`
 ```python
-from promptflow import PFClient
+from promptflow.client import PFClient
 
 # Get a pf client to manage runs
 pf = PFClient()
@@ -346,7 +346,7 @@ pf run archive --name <run-name>
 :sync: SDK
 Archive with `PFClient`
 ```python
-from promptflow import PFClient
+from promptflow.client import PFClient
 
 # Get a pf client to manage runs
 pf = PFClient()
@@ -379,7 +379,7 @@ pf run restore --name <run-name>
 :sync: SDK
 Restore with `PFClient`
 ```python
-from promptflow import PFClient
+from promptflow.client import PFClient
 
 # Get a pf client to manage runs
 pf = PFClient()
@@ -409,7 +409,7 @@ pf run delete --name <run-name>
 :sync: SDK
 Delete with `PFClient`
 ```python
-from promptflow import PFClient
+from promptflow.client import PFClient
 
 # Get a pf client to manage runs
 pf = PFClient()

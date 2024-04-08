@@ -1,0 +1,25 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Experiment.schema.json
+
+description: Basic experiment without script node
+
+data:
+  - name: my_data
+    path: ../../datas/prompty_inputs.jsonl
+
+nodes:
+  - name: gen_data
+    type: command
+    command: python generate_data.py --input-path ${inputs.input_path} --output-path ${outputs.output_path}
+    code: ./generate_data
+    inputs:
+      input_path: ${data.my_data}
+    outputs:
+      output_path:
+
+  - name: prompty_node1
+    type: flow
+    path: ../../prompty/prompty_example.prompty
+    inputs:
+      question: ${gen_data.outputs.output_path.question}
+    environment_variables: {}
+    connections: {}

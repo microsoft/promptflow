@@ -15,8 +15,8 @@ from ruamel.yaml import YAML
 from promptflow._sdk._constants import PF_TRACE_CONTEXT, ExperimentStatus, RunStatus, RunTypes
 from promptflow._sdk._errors import ExperimentValueError, RunOperationError
 from promptflow._sdk._load_functions import _load_experiment, load_common
+from promptflow._sdk._orchestrator.experiment_orchestrator import ExperimentOrchestrator, ExperimentTemplateTestContext
 from promptflow._sdk._pf_client import PFClient
-from promptflow._sdk._submitter.experiment_orchestrator import ExperimentOrchestrator
 from promptflow._sdk.entities._experiment import CommandNode, Experiment, ExperimentTemplate, FlowNode
 
 TEST_ROOT = Path(__file__).parent.parent.parent
@@ -116,7 +116,7 @@ class TestExperiment:
         metrics = client.runs.get_metrics(name=eval_run.name)
         assert "accuracy" in metrics
         # Assert Trace
-        line_runs = client._traces.list_line_runs(session_id=session)
+        line_runs = client.traces.list_line_runs(collection=session)
         if len(line_runs) > 0:
             assert len(line_runs) == 3
             line_run = line_runs[0]
@@ -151,6 +151,33 @@ class TestExperiment:
             assert val[0]["status"] == RunStatus.COMPLETED, f"Node {key} run failed"
         run = client.runs.get(name=exp.node_runs["echo"][0]["name"])
         assert run.type == RunTypes.COMMAND
+
+    @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
+    def test_experiment_start_with_prompty(self):
+        template_path = EXP_ROOT / "experiment-with-prompty-template" / "basic-script.exp.yaml"
+        # Load template and create experiment
+        template = load_common(ExperimentTemplate, source=template_path)
+        experiment = Experiment.from_template(template)
+        client = PFClient()
+        exp = client._experiments.create_or_update(experiment)
+        session = str(uuid.uuid4())
+        if pytest.is_live:
+            # Async start
+            exp = client._experiments.start(exp, session=session)
+            # Test the experiment in progress cannot be started.
+            with pytest.raises(RunOperationError) as e:
+                client._experiments.start(exp)
+            assert f"Experiment {exp.name} is {exp.status}" in str(e.value)
+            assert exp.status in [ExperimentStatus.IN_PROGRESS, ExperimentStatus.QUEUING]
+            exp = self.wait_for_experiment_terminated(client, exp)
+        else:
+            exp = client._experiments.get(exp.name)
+            exp = ExperimentOrchestrator(client, exp).start(session=session)
+        # Assert record log in experiment folder
+        assert (Path(exp._output_dir) / "logs" / "exp.attempt_0.log").exists()
+        assert exp.status == ExperimentStatus.TERMINATED
+        for name, runs in exp.node_runs.items():
+            assert all([run["status"] == RunStatus.COMPLETED] for run in runs)
 
     @pytest.mark.skipif(condition=not pytest.is_live, reason="Injection cannot passed to detach process.")
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
@@ -248,7 +275,7 @@ class TestExperiment:
             # Assert session exists
             # TODO: Task 2942400, avoid sleep/if and assert traces
             time.sleep(10)  # TODO fix this
-            line_runs = client._traces.list_line_runs(session_id=session)
+            line_runs = client.traces.list_line_runs(collection=session)
             if len(line_runs) > 0:
                 assert len(line_runs) == 1
                 line_run = line_runs[0]
@@ -277,6 +304,33 @@ class TestExperiment:
                     experiment=template_path,
                 )
             assert "not found in experiment" in str(error.value)
+
+    @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
+    def test_experiment_test(self):
+        template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"
+        client = PFClient()
+        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+            mock_func.return_value = True
+            result = client._experiments.test(
+                experiment=template_path,
+            )
+            assert len(result) == 2
+
+    @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
+    def test_experiment_test_with_skip_node(self):
+        template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"
+        client = PFClient()
+        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+            mock_func.return_value = True
+            result = client._experiments.test(
+                experiment=template_path,
+                context={
+                    "node": FLOW_ROOT / "web_classification" / "flow.dag.yaml",
+                    "outputs": {"category": "Channel", "evidence": "Both"},
+                    "run_id": "123",
+                },
+            )
+            assert len(result) == 1
 
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
     def test_eager_flow_test_with_experiment(self, monkeypatch):
@@ -320,3 +374,17 @@ class TestExperiment:
         else:
             exp = pf._experiments.get(exp.name)
             exp = ExperimentOrchestrator(pf, exp).start()
+
+    @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
+    def test_experiment_test_chat_group_node(self, pf: PFClient):
+        template_path = EXP_ROOT / "chat-group-node-exp-template" / "exp.yaml"
+        template = load_common(ExperimentTemplate, source=template_path)
+        orchestrator = ExperimentOrchestrator(pf)
+        test_context = ExperimentTemplateTestContext(template=template)
+        chat_group_node = template.nodes[0]
+        assert chat_group_node.name == "multi_turn_chat"
+
+        history = orchestrator._test_node(chat_group_node, test_context)
+        assert len(history) == 4
+        assert history[0][0] == history[2][0] == "assistant"
+        assert history[1][0] == history[3][0] == "user"

@@ -19,7 +19,7 @@ param(
 [string] $RepoRootPath = $ScriptPath | Split-Path -Parent | Split-Path -Parent
 [string] $DocPath = [System.IO.Path]::Combine($RepoRootPath, "docs")
 [string] $TempDocPath = New-TemporaryFile | % { Remove-Item $_; New-Item -ItemType Directory -Path $_ }
-[string] $PkgSrcPath = [System.IO.Path]::Combine($RepoRootPath, "src\promptflow\promptflow")
+[string] $PkgSrcPath = [System.IO.Path]::Combine($RepoRootPath, "src")
 [string] $OutPath = [System.IO.Path]::Combine($ScriptPath, "_build")
 [string] $SphinxApiDoc = [System.IO.Path]::Combine($DocPath, "sphinx_apidoc.log")
 [string] $SphinxBuildDoc = [System.IO.Path]::Combine($DocPath, "sphinx_build.log")
@@ -68,8 +68,24 @@ function ForceOverwrite {
     )
     $FileName = "promptflow.{0}.rst" -f $Module
     $TargetRst = [System.IO.Path]::Combine($RepoRootPath, ("scripts\docs\{0}" -f $FileName))
-    $AutoGenConnectionRst = [System.IO.Path]::Combine($RefDocPath, $FileName)
-    Copy-Item -Path $TargetRst -Destination $AutoGenConnectionRst -Force
+    $AutoGenRst = [System.IO.Path]::Combine($RefDocPath, $FileName)
+    Copy-Item -Path $TargetRst -Destination $AutoGenRst -Force
+}
+
+function Update-Sub-Pkg-Index-Title {
+    param (
+        [string] $SubPkgRefDocPath,
+        [string] $SubPkgName
+    )
+    # This is used to update the title of the promptflow.rst file in the sub package
+    # from 'promptflow namespaces' to package name
+    $IndexRst = [System.IO.Path]::Combine($SubPkgRefDocPath, "promptflow.rst")
+    $IndexContent = Get-Content $IndexRst
+    $IndexContent[0] = ("{0} package" -f $SubPkgName)
+    $IndexContent[1] = "================================="
+    $IndexContent[2] = ".. py:module:: promptflow"
+    $IndexContent[3] = "   :noindex:"
+    Set-Content $IndexRst $IndexContent
 }
 
 if($WithReferenceDoc){
@@ -80,15 +96,27 @@ if($WithReferenceDoc){
     }
     Remove-Item $RefDocPath -Recurse -Force
     Write-Host "===============Build Promptflow Reference Doc==============="
-    sphinx-apidoc --module-first --no-headings --no-toc --implicit-namespaces "$PkgSrcPath" -o "$RefDocPath" | Tee-Object -FilePath $SphinxApiDoc 
-    $apidocWarningsAndErrors = Select-String -Path $SphinxApiDoc -Pattern $WarningErrorPattern
-
-    Write-Host "=============== Overwrite promptflow.connections.rst ==============="
-    # We are doing this overwrite because the connection entities are also defined in the promptflow.entities module
-    # and it will raise duplicate object description error if we don't do so when we run sphinx-build later.
-    ForceOverwrite "connections"
-    ForceOverwrite "core"
-    ForceOverwrite "client"
+    $ApidocWarningsAndErrors = [System.Collections.ArrayList]::new()
+    $IncludeList = @("promptflow-tracing", "promptflow-core", "promptflow-devkit", "promptflow-azure")
+    foreach($Item in Get-Childitem -path $PkgSrcPath){
+        if(-not ($Item -is [System.IO.DirectoryInfo])){
+            # Only looking for package directory
+            continue
+        }
+        if(-not ($IncludeList -contains $Item.Name)){
+            continue
+        }
+        $SubPkgPath = [System.IO.Path]::Combine($Item.FullName, "promptflow")
+        $SubPkgRefDocPath = [System.IO.Path]::Combine($RefDocPath, $Item.Name)
+        Write-Host "===============Build $Item Reference Doc==============="
+        $TemplatePath = [System.IO.Path]::Combine($RepoRootPath, "scripts\docs\api_doc_templates")
+        sphinx-apidoc --module-first --no-headings --no-toc --implicit-namespaces "$SubPkgPath" -o "$SubPkgRefDocPath" -t $TemplatePath | Tee-Object -FilePath $SphinxApiDoc
+        $SubPkgWarningsAndErrors = Select-String -Path $SphinxApiDoc -Pattern $WarningErrorPattern
+        if($SubPkgWarningsAndErrors){
+            $ApidocWarningsAndErrors.AddRange($SubPkgWarningsAndErrors)
+        }
+        Update-Sub-Pkg-Index-Title $SubPkgRefDocPath $Item.Name
+    }
 }
 
 
@@ -107,9 +135,9 @@ $buildWarningsAndErrors = Select-String -Path $SphinxBuildDoc -Pattern $WarningE
 Write-Host "Clean path: $TempDocPath"
 Remove-Item $TempDocPath -Recurse -Confirm:$False -Force
 
-if ($apidocWarningsAndErrors) {  
+if ($ApidocWarningsAndErrors) {
     Write-Host "=============== API doc warnings and errors ==============="  
-    foreach ($line in $apidocWarningsAndErrors) {  
+    foreach ($line in $ApidocWarningsAndErrors) {
         Write-Host $line -ForegroundColor Red  
     }  
 }  

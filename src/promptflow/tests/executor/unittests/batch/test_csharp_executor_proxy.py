@@ -8,8 +8,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from promptflow._core._errors import MetaFileNotFound, MetaFileReadError
+from promptflow._proxy._csharp_executor_proxy import CSharpExecutorProxy
 from promptflow._sdk._constants import FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
-from promptflow.batch import CSharpExecutorProxy
 from promptflow.executor._result import AggregationResult
 
 from ...utils import get_flow_folder, get_yaml_file

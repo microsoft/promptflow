@@ -11,6 +11,7 @@ from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanE
 
 from promptflow.core._serving.constants import FEEDBACK_TRACE_FIELD_NAME
 from promptflow.core._serving.utils import load_feedback_swagger
+from promptflow.exceptions import UserErrorException
 from promptflow.tracing._operation_context import OperationContext
 
 
@@ -193,7 +194,7 @@ def test_user_agent(flow_serving_client):
 @pytest.mark.e2etest
 def test_serving_api(flow_serving_client):
     response = flow_serving_client.get("/health")
-    assert b'{"status":"Healthy","version":"0.0.1"}' in response.data
+    assert b"Healthy" in response.data
     response = flow_serving_client.get("/")
     print(response.data)
     assert response.status_code == 200
@@ -557,20 +558,18 @@ def test_eager_flow_serve_dataclass_output(simple_eager_flow_dataclass_output):
 
 
 @pytest.mark.e2etest
-def test_eager_flow_serve_non_json_serializable_output(non_json_serializable_output):
-    response = non_json_serializable_output.post("/score", data=json.dumps({}))
-    assert (
-        response.status_code == 400
-    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
-    response = json.loads(response.data.decode())
-    assert response == {
-        "error": {
-            "code": "UserError",
-            "message": "The output 'output' for flow is incorrect. The output value is not JSON serializable. "
-            "JSON dump failed: (TypeError) Object of type Output is not JSON serializable. "
-            "Please verify your flow output and make sure the value serializable.",
-        }
-    }
+def test_eager_flow_serve_non_json_serializable_output(mocker):
+    with pytest.raises(UserErrorException, match="Parse interface for tool 'my_flow' failed:"):
+        # instead of giving 400 response for all requests, we raise user error on serving now
+        from pathlib import Path
+
+        from ..conftest import create_client_by_model
+
+        create_client_by_model(
+            "non_json_serializable_output",
+            mocker,
+            model_root=Path(__file__).parent.parent.parent / "test_configs" / "eager_flows",
+        )
 
 
 @pytest.mark.e2etest
@@ -631,3 +630,65 @@ def test_eager_flow_multiple_stream_output(multiple_stream_outputs):
     ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
     response = json.loads(response.data.decode())
     assert response == {"error": {"code": "UserError", "message": "Multiple stream output fields not supported."}}
+
+
+@pytest.mark.e2etest
+def test_eager_flow_evc(eager_flow_evc):
+    # Supported: flow with EVC in definition
+    response = eager_flow_evc.post("/score", data=json.dumps({}))
+    assert (
+        response.status_code == 200
+    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
+    response = json.loads(response.data.decode())
+    assert response == "Hello world! azure"
+
+
+@pytest.mark.e2etest
+def test_eager_flow_evc_override(eager_flow_evc_override):
+    # Supported: EVC's connection exist in flow definition
+    response = eager_flow_evc_override.post("/score", data=json.dumps({}))
+    assert (
+        response.status_code == 200
+    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
+    response = json.loads(response.data.decode())
+    assert response != "Hello world! ${azure_open_ai_connection.api_base}"
+
+
+@pytest.mark.e2etest
+def test_eager_flow_evc_override_not_exist(eager_flow_evc_override_not_exist):
+    # EVC's connection not exist in flow definition, will resolve it.
+    response = eager_flow_evc_override_not_exist.post("/score", data=json.dumps({}))
+    assert (
+        response.status_code == 200
+    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
+    response = json.loads(response.data.decode())
+    # EVC not resolved since the connection not exist in flow definition
+    assert response == "Hello world! azure"
+
+
+@pytest.mark.e2etest
+def test_eager_flow_evc_connection_not_exist(eager_flow_evc_connection_not_exist):
+    # Won't get not existed connection since it's override
+    response = eager_flow_evc_connection_not_exist.post("/score", data=json.dumps({}))
+    assert (
+        response.status_code == 200
+    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
+    response = json.loads(response.data.decode())
+    # EVC not resolved since the connection not exist in flow definition
+    assert response == "Hello world! VALUE"
+
+
+@pytest.mark.e2etest
+def test_eager_flow_with_init(callable_class):
+    response1 = callable_class.post("/score", data=json.dumps({"func_input": "input2"}))
+    assert (
+        response1.status_code == 200
+    ), f"Response code indicates error {response1.status_code} - {response1.data.decode()}"
+    response1 = json.loads(response1.data.decode())
+
+    response2 = callable_class.post("/score", data=json.dumps({"func_input": "input2"}))
+    assert (
+        response2.status_code == 200
+    ), f"Response code indicates error {response2.status_code} - {response2.data.decode()}"
+    response2 = json.loads(response2.data.decode())
+    assert response1 == response2

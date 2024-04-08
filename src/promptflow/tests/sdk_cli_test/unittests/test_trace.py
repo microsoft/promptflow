@@ -3,7 +3,9 @@
 # ---------------------------------------------------------
 
 import base64
+import datetime
 import json
+import logging
 import os
 import uuid
 from typing import Dict
@@ -22,9 +24,16 @@ from promptflow._constants import (
     SpanResourceFieldName,
     TraceEnvironmentVariableName,
 )
-from promptflow._sdk._constants import PF_TRACE_CONTEXT, PF_TRACE_CONTEXT_ATTR, ContextAttributeKey
+from promptflow._sdk._constants import (
+    PF_TRACE_CONTEXT,
+    PF_TRACE_CONTEXT_ATTR,
+    TRACE_DEFAULT_COLLECTION,
+    ContextAttributeKey,
+)
 from promptflow._sdk._tracing import start_trace_with_devkit
-from promptflow._sdk.entities._trace import Span
+from promptflow._sdk.operations._trace_operations import TraceOperations
+from promptflow.client import PFClient
+from promptflow.exceptions import UserErrorException
 from promptflow.tracing._operation_context import OperationContext
 from promptflow.tracing._start_trace import _is_tracer_provider_set, setup_exporter_from_environ, start_trace
 
@@ -69,13 +78,13 @@ class TestStartTrace:
 
         # set some required environment variables
         endpoint = "http://localhost:23333/v1/traces"
-        session_id = str(uuid.uuid4())
+        collection = str(uuid.uuid4())
         experiment = "test_experiment"
         with patch.dict(
             os.environ,
             {
                 OTEL_EXPORTER_OTLP_ENDPOINT: endpoint,
-                TraceEnvironmentVariableName.SESSION_ID: session_id,
+                TraceEnvironmentVariableName.COLLECTION: collection,
                 TraceEnvironmentVariableName.EXPERIMENT: experiment,
             },
             clear=True,
@@ -84,7 +93,7 @@ class TestStartTrace:
 
         assert _is_tracer_provider_set()
         tracer_provider: TracerProvider = trace.get_tracer_provider()
-        assert session_id == tracer_provider._resource.attributes[SpanResourceAttributesFieldName.SESSION_ID]
+        assert collection == tracer_provider._resource.attributes[SpanResourceAttributesFieldName.COLLECTION]
         assert experiment == tracer_provider._resource.attributes[SpanResourceAttributesFieldName.EXPERIMENT_NAME]
 
     @pytest.mark.usefixtures("reset_tracer_provider")
@@ -92,10 +101,11 @@ class TestStartTrace:
         with patch.dict(
             os.environ,
             {
-                TraceEnvironmentVariableName.SESSION_ID: str(uuid.uuid4()),
+                TraceEnvironmentVariableName.COLLECTION: str(uuid.uuid4()),
                 TraceEnvironmentVariableName.SUBSCRIPTION_ID: "test_subscription_id",
                 TraceEnvironmentVariableName.RESOURCE_GROUP_NAME: "test_resource_group_name",
                 TraceEnvironmentVariableName.WORKSPACE_NAME: "test_workspace_name",
+                OTEL_EXPORTER_OTLP_ENDPOINT: "https://dummy-endpoint",
             },
             clear=True,
         ):
@@ -118,11 +128,10 @@ class TestStartTrace:
         pb_span.parent_span_id = base64.b64decode("C+++WS+OuxI=")
         pb_span.kind = PBSpan.SpanKind.SPAN_KIND_INTERNAL
         # below line should execute successfully
-        span = Span._from_protobuf_object(pb_span, resource=mock_resource)
+        span = TraceOperations._parse_protobuf_span(pb_span, resource=mock_resource, logger=logging.getLogger(__name__))
         # as the above span do not have any attributes, so the parsed span should not have any attributes
-        attributes = span._content["attributes"]
-        assert isinstance(attributes, dict)
-        assert len(attributes) == 0
+        assert isinstance(span.attributes, dict)
+        assert len(span.attributes) == 0
 
     def test_experiment_test_lineage(self, monkeypatch: pytest.MonkeyPatch, mock_promptflow_service_invocation) -> None:
         # experiment orchestrator will help set this context in environment
@@ -130,7 +139,7 @@ class TestStartTrace:
         ctx = {PF_TRACE_CONTEXT_ATTR: {ContextAttributeKey.REFERENCED_LINE_RUN_ID: referenced_line_run_id}}
         with monkeypatch.context() as m:
             m.setenv(PF_TRACE_CONTEXT, json.dumps(ctx))
-            start_trace_with_devkit(session_id=None)
+            start_trace_with_devkit(collection=None)
             # lineage is stored in context
             op_ctx = OperationContext.get_instance()
             otel_attrs = op_ctx._get_otel_attributes()
@@ -144,7 +153,7 @@ class TestStartTrace:
         op_ctx._add_otel_attributes(SpanAttributeFieldName.REFERENCED_LINE_RUN_ID, str(uuid.uuid4()))
         with monkeypatch.context() as m:
             m.setenv(PF_TRACE_CONTEXT, json.dumps({PF_TRACE_CONTEXT_ATTR: dict()}))
-            start_trace_with_devkit(session_id=None)
+            start_trace_with_devkit(collection=None)
             # lineage will be reset
             otel_attrs = op_ctx._get_otel_attributes()
             assert SpanAttributeFieldName.REFERENCED_LINE_RUN_ID not in otel_attrs
@@ -152,9 +161,11 @@ class TestStartTrace:
     def test_setup_exporter_in_executor(self, monkeypatch: pytest.MonkeyPatch):
         with monkeypatch.context() as m:
             m.delenv(OTEL_EXPORTER_OTLP_ENDPOINT, raising=False)
+            original_proivder = trace.get_tracer_provider()
             setup_exporter_from_environ()
-            tracer_provider: TracerProvider = trace.get_tracer_provider()
-            assert len(tracer_provider._active_span_processor._span_processors) == 0
+            new_provider: TracerProvider = trace.get_tracer_provider()
+            # Assert the provider without exporter is not the one with exporter
+            assert original_proivder == new_provider
 
     def test_setup_exporter_in_executor_with_preview_flag(self, mock_promptflow_service_invocation):
         with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
@@ -168,3 +179,22 @@ class TestStartTrace:
                 tracer_provider._active_span_processor._span_processors[0].span_exporter._endpoint
                 == f"http://localhost:{MOCK_PROMPTFLOW_SERVICE_PORT}/v1/traces"
             )
+
+
+@pytest.mark.unittest
+@pytest.mark.sdk_test
+class TestTraceOperations:
+    def test_validate_delete_query_params(self, pf: PFClient) -> None:
+        expected_error_message = (
+            'Valid delete queries: 1) specify `run`; 2) specify `collection` (not "default"); '
+            "3) specify `collection` and `started_before` (ISO 8601)."
+        )
+
+        def _validate_invalid_params(kwargs: Dict):
+            with pytest.raises(UserErrorException) as e:
+                pf.traces._validate_delete_query_params(**kwargs)
+            assert expected_error_message in str(e)
+
+        _validate_invalid_params({"run": str(uuid.uuid4()), "started_before": datetime.datetime.now().isoformat()})
+        _validate_invalid_params({"collection": TRACE_DEFAULT_COLLECTION})
+        _validate_invalid_params({"collection": str(uuid.uuid4()), "started_before": "invalid isoformat"})

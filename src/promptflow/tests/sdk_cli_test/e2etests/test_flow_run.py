@@ -29,12 +29,12 @@ from promptflow._sdk._errors import (
     RunNotFoundError,
 )
 from promptflow._sdk._load_functions import load_flow, load_run
+from promptflow._sdk._orchestrator.utils import SubmitterHelper
 from promptflow._sdk._run_functions import create_yaml_run
-from promptflow._sdk._submitter.utils import SubmitterHelper
-from promptflow._sdk._utils import _get_additional_includes
+from promptflow._sdk._utils import _get_additional_includes, parse_otel_span_status_code
 from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
-from promptflow._utils.context_utils import _change_working_dir
+from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.exceptions import UserErrorException
@@ -48,6 +48,14 @@ FLOWS_DIR = "./tests/test_configs/flows"
 EAGER_FLOWS_DIR = "./tests/test_configs/eager_flows"
 RUNS_DIR = "./tests/test_configs/runs"
 DATAS_DIR = "./tests/test_configs/datas"
+
+
+def my_entry(input1: str):
+    return input1
+
+
+async def my_async_entry(input2: str):
+    return input2
 
 
 def create_run_against_multi_line_data(client) -> Run:
@@ -1286,6 +1294,82 @@ class TestFlowRun:
         details_dict = details.to_dict(orient="list")
         assert details_dict == {"inputs.line_number": [0], "outputs.output": ["entry2flow2"]}
 
+    def test_flex_flow_with_func(self, pf):
+        run = pf.run(
+            flow=my_entry,
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+            # set code folder to avoid snapshot too big
+            code=f"{EAGER_FLOWS_DIR}/multiple_entries",
+            column_mapping={"input1": "${data.input_val}"},
+        )
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict()
+
+        # actual result will be entry2:my_flow2
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {"inputs.input1": ["input1"], "inputs.line_number": [0], "outputs.output": ["input1"]}
+
+        run = pf.run(
+            flow=my_async_entry,
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+            # set code folder to avoid snapshot too big
+            code=f"{EAGER_FLOWS_DIR}/multiple_entries",
+            column_mapping={"input2": "${data.input_val}"},
+        )
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict()
+
+        # actual result will be entry2:my_flow2
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {"inputs.input2": ["input1"], "inputs.line_number": [0], "outputs.output": ["input1"]}
+
+    def test_flex_flow_with_local_imported_func(self, pf):
+        # run eager flow against a function from local file
+        with inject_sys_path(f"{EAGER_FLOWS_DIR}/multiple_entries"):
+            from entry2 import my_flow2
+
+            run = pf.run(
+                flow=my_flow2,
+                data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+                # set code folder to avoid snapshot too big
+                code=f"{EAGER_FLOWS_DIR}/multiple_entries",
+                column_mapping={"input1": "${data.input_val}"},
+            )
+            assert run.status == "Completed"
+            assert "error" not in run._to_dict()
+
+            # actual result will be entry2:my_flow2
+            details = pf.get_details(run.name)
+            # convert DataFrame to dict
+            details_dict = details.to_dict(orient="list")
+            assert details_dict == {
+                "inputs.input1": ["input1"],
+                "inputs.line_number": [0],
+                "outputs.output": ["entry2flow2"],
+            }
+
+    def test_flex_flow_with_imported_func(self, pf):
+        # run eager flow against a function from module
+        run = pf.run(
+            flow=parse_otel_span_status_code,
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+            # set code folder to avoid snapshot too big
+            code=f"{EAGER_FLOWS_DIR}/multiple_entries",
+            column_mapping={"value": "${data.input_val}"},
+        )
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict()
+
+        # actual result will be entry2:my_flow2
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {"inputs.line_number": [0], "inputs.value": ["input1"], "outputs.output": ["Error"]}
+
     def test_eager_flow_run_in_working_dir(self, pf):
         working_dir = f"{EAGER_FLOWS_DIR}/multiple_entries"
         with _change_working_dir(working_dir):
@@ -1459,6 +1543,86 @@ class TestFlowRun:
         assert "error" in run_dict
         assert "get_env_var() got an unexpected keyword argument" in run_dict["error"]["message"]
 
+    def test_shadow_evc(self, pf):
+        # run without env override will fail
+        with pytest.raises(ConnectionNotFoundError):
+            pf.run(
+                flow=f"{FLOWS_DIR}/evc_connection_not_exist",
+                data=f"{DATAS_DIR}/env_var_names.jsonl",
+            )
+        # won't fail with connection not found
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/evc_connection_not_exist",
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
+            environment_variables={"API_BASE": "VAL"},
+        )
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict()
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {"inputs.key": ["API_BASE"], "inputs.line_number": [0], "outputs.output": ["VAL"]}
+
+    def test_shadow_evc_flex_flow(self, pf):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/evc_connection_not_exist")
+
+        # run without env override will fail
+        with pytest.raises(ConnectionNotFoundError):
+            pf.run(
+                flow=flow_path,
+                data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+            )
+
+        # won't fail in flex flow
+        run = pf.run(
+            flow=flow_path,
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+            environment_variables={"TEST": "VAL"},
+        )
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict()
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {"inputs.line_number": [0], "outputs.output": ["Hello world! VAL"]}
+
+    def test_eager_flow_evc_override(self, pf):
+        # resolve evc when used same name as flow's evc
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/print_environment_variables")
+        run = pf.run(
+            flow=flow_path,
+            data=f"{DATAS_DIR}/env_var_test.jsonl",
+            environment_variables={"TEST": "${azure_open_ai_connection.api_type}"},
+        )
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict(), run._to_dict()["error"]
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {
+            "inputs.key": ["TEST"],
+            "inputs.line_number": [0],
+            "outputs.output": ["Hello world! azure"],
+        }
+
+        # won't get connection & resolve when added new env var names
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/print_environment_variables")
+        run = pf.run(
+            flow=flow_path,
+            data=f"{DATAS_DIR}/env_var_new_key.jsonl",
+            environment_variables={"NEW_KEY": "${not_exist.api_type}"},
+        )
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict(), run._to_dict()["error"]
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {
+            "inputs.key": ["NEW_KEY"],
+            "inputs.line_number": [0],
+            "outputs.output": ["Hello world! ${not_exist.api_type}"],
+        }
+
     def test_run_with_non_provided_connection_override(self, pf, local_custom_connection):
         # override non-provided connection when submission
         run = pf.run(
@@ -1496,3 +1660,33 @@ class TestFlowRun:
             "inputs.line_number": [0],
             "outputs.output": [{"connection": "Custom", "key": "API_BASE"}],
         }
+
+    def test_run_with_init(self, pf):
+        def assert_func(details_dict):
+            return details_dict["outputs.func_input"] == [
+                "func_input",
+                "func_input",
+                "func_input",
+                "func_input",
+            ] and details_dict["outputs.obj_input"] == ["val", "val", "val", "val"]
+
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_callable_class")
+        run = pf.run(
+            flow=flow_path, data=f"{EAGER_FLOWS_DIR}/basic_callable_class/inputs.jsonl", init={"obj_input": "val"}
+        )
+        assert_batch_run_result(run, pf, assert_func)
+
+        run = load_run(
+            source=f"{EAGER_FLOWS_DIR}/basic_callable_class/run.yaml",
+        )
+        run = pf.runs.create_or_update(run=run)
+        assert_batch_run_result(run, pf, assert_func)
+
+
+def assert_batch_run_result(run: Run, pf: PFClient, assert_func):
+    assert run.status == "Completed"
+    assert "error" not in run._to_dict(), run._to_dict()["error"]
+    details = pf.get_details(run.name)
+    # convert DataFrame to dict
+    details_dict = details.to_dict(orient="list")
+    assert assert_func(details_dict), details_dict

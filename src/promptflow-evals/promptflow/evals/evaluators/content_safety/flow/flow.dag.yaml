@@ -1,0 +1,46 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+environment:
+  python_requirements_txt: requirements.txt
+inputs:
+  question:
+    type: string
+  answer:
+    type: string
+  metric_name:
+    type: string
+  project_scope:
+    type: object
+    default: {}
+  credential:
+    type: object
+    default: {}
+  threshold:
+    type: int
+    default: 4
+outputs:
+  result:
+    type: string
+    reference: ${evaluate_with_rai_service.output}
+nodes:
+- name: validate_inputs
+  type: python
+  source:
+    type: code
+    path: validate_inputs.py
+  inputs:
+    question: ${inputs.question}
+    answer: ${inputs.answer}
+- name: evaluate_with_rai_service
+  type: python
+  source:
+    type: code
+    path: evaluate_with_rai_service.py
+  inputs:
+    question: ${inputs.question}
+    answer: ${inputs.answer}
+    project_scope: ${inputs.project_scope}
+    credential: ${inputs.credential}
+    metric_name: ${inputs.metric_name}
+  activate:
+    when: ${validate_inputs.output}
+    is: true

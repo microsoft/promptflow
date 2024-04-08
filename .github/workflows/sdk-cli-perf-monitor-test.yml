@@ -7,6 +7,8 @@ on:
   pull_request:
     paths:
       - src/promptflow/**
+      - src/promptflow-core/**
+      - src/promptflow-devkit/**
       - scripts/building/**
       - .github/workflows/sdk-cli-perf-monitor-test.yml
 
@@ -58,21 +60,40 @@ jobs:
       - name: Build wheel
         uses: "./.github/actions/step_sdk_setup"
         with:
-          setupType: ${{ env.packageSetupType }}
+          setupType: promptflow_with_extra
           scriptPath: ${{ env.testWorkingDirectory }}
+      - name: Upload Wheel
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: wheel
+          path: |
+            ${{ github.workspace }}/src/promptflow/dist/*.whl
+            ${{ github.workspace }}/src/promptflow-tools/dist/*.whl
+      - name: Download Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: wheel
+          path: artifacts
+      - name: Install wheel
+        shell: pwsh
+        working-directory: artifacts
+        run: |
+          Set-PSDebug -Trace 1
+          pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
+          pip install ${{ github.workspace }}/src/promptflow-tracing
+          pip install ${{ github.workspace }}/src/promptflow-core
+          pip install ${{ github.workspace }}/src/promptflow-devkit
+          pip install ${{ github.workspace }}/src/promptflow-azure
+          gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[all]"}}
+          gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
+          pip freeze
 
       - name: install recording
         run:
           pip install vcrpy
           pip install -e .
         working-directory: ${{ env.RECORD_DIRECTORY }}
-
-      - name: Install tracing
-        shell: pwsh
-        run: |
-          pip uninstall -y promptflow-tracing
-          pip install -e ${{ github.workspace }}/src/promptflow-tracing
-          pip freeze
 
       - name: Generate (mock) connections.json
         shell: pwsh
