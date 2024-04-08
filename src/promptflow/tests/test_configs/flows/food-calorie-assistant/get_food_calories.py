@@ -1,5 +1,5 @@
 import random
-from promptflow import tool
+from promptflow.core import tool
 
 @tool
 def get_food_calories(food: str, amount: float, unit: str) -> float:
