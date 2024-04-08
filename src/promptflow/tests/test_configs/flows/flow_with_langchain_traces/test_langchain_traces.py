@@ -6,7 +6,7 @@ from langchain.agents.agent_types import AgentType
 from langchain.agents.initialize import initialize_agent
 from langchain.agents.load_tools import load_tools
 
-from promptflow import tool
+from promptflow.core import tool
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.integrations.langchain import PromptFlowCallbackHandler
 

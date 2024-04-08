@@ -11,11 +11,13 @@ import os
 import signal
 import threading
 import uuid
+from contextlib import contextmanager
 from pathlib import Path
 from threading import current_thread
 from types import GeneratorType
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
+import opentelemetry.trace as otel_trace
 from opentelemetry.trace.status import StatusCode
 
 from promptflow._constants import LINE_NUMBER_KEY
@@ -202,6 +204,12 @@ class FlowExecutor:
         :rtype: ~promptflow.executor.flow_executor.FlowExecutor
         """
         setup_exporter_from_environ()
+        if hasattr(flow_file, "__call__") or inspect.isfunction(flow_file):
+            from ._script_executor import ScriptExecutor
+
+            return ScriptExecutor(flow_file, storage=storage)
+        if not isinstance(flow_file, (Path, str)):
+            raise NotImplementedError("Only support Path or str for flow_file.")
         if is_flex_flow(file_path=flow_file, working_dir=working_dir):
             from ._script_executor import ScriptExecutor
 
@@ -1343,7 +1351,7 @@ def execute_flow(
     """
     flow_executor = FlowExecutor.create(flow_file, connections, working_dir, raise_ex=False, **kwargs)
     flow_executor.enable_streaming_for_llm_flow(lambda: enable_stream_output)
-    with _change_working_dir(working_dir):
+    with _change_working_dir(working_dir), _force_flush_tracer_provider():
         # Execute nodes in the flow except the aggregation nodes
         # TODO: remove index=0 after UX no longer requires a run id similar to batch runs
         # (run_id_index, eg. xxx_0) for displaying the interface
@@ -1369,6 +1377,20 @@ def execute_flow(
             # remove line_number from output
             line_result.output.pop(LINE_NUMBER_KEY, None)
         return line_result
+
+
+@contextmanager
+def _force_flush_tracer_provider():
+    try:
+        yield
+    finally:
+        try:
+            # Force flush the tracer provider to ensure all spans are exported before the process exits.
+            tracer_provider = otel_trace.get_tracer_provider()
+            if hasattr(tracer_provider, "force_flush"):
+                tracer_provider.force_flush()
+        except Exception as e:
+            flow_logger.warning(f"Error occurred while force flush tracer provider: {e}")
 
 
 def signal_handler(sig, frame):

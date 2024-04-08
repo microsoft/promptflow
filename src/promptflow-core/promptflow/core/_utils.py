@@ -36,7 +36,7 @@ def init_executable(*, flow_dag: dict = None, flow_path: Path = None, working_di
         if not working_dir:
             working_dir = flow_dir
 
-    from promptflow.contracts.flow import EagerFlow as ExecutableEagerFlow
+    from promptflow.contracts.flow import FlexFlow as ExecutableEagerFlow
     from promptflow.contracts.flow import Flow as ExecutableFlow
 
     if is_flex_flow(yaml_dict=flow_dag):
