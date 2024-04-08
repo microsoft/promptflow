@@ -56,8 +56,8 @@ def add_service_parser(subparsers):
     """Add service parser to the pf subparsers."""
     service_parser = subparsers.add_parser(
         "service",
-        description="Manage the PromptFlow service, which offers chat and trace UI functionalities.",
-        help="pf service",
+        description="Manage prompt flow service, which offers chat and trace UI functionalities.",
+        help="Manage prompt flow service.",
     )
     service_subparsers = service_parser.add_subparsers()
     add_parser_start_service(service_subparsers)
@@ -80,7 +80,7 @@ def add_parser_start_service(subparsers):
     epilog = """
     Examples:
 
-    # Start promptflow service:
+    # Start prompt flow service:
     pf service start
     # Force restart promptflow service:
     pf service start --force
@@ -97,7 +97,7 @@ def add_parser_start_service(subparsers):
     )
     activate_action(
         name="start",
-        description="Start promptflow service.",
+        description="Start prompt flow service.",
         epilog=epilog,
         add_params=[
             add_param_port,
@@ -105,7 +105,7 @@ def add_parser_start_service(subparsers):
         ]
         + base_params,
         subparsers=subparsers,
-        help_message="pf service start",
+        help_message="Start prompt flow service.",
         action_param_name="sub_action",
     )
 
@@ -115,16 +115,16 @@ def add_parser_stop_service(subparsers):
     epilog = """
     Examples:
 
-    # Stop promptflow service:
+    # Stop prompt flow service:
     pf service stop
     """  # noqa: E501
     activate_action(
         name="stop",
-        description="Stop promptflow service.",
+        description="Stop prompt flow service.",
         epilog=epilog,
         add_params=base_params,
         subparsers=subparsers,
-        help_message="pf service stop",
+        help_message="Stop prompt flow service.",
         action_param_name="sub_action",
     )
 
@@ -134,16 +134,16 @@ def add_parser_show_service(subparsers):
     epilog = """
     Examples:
 
-    # Display the started promptflow service info.:
+    # Display the started prompt flow service info.:
     pf service show-status
     """  # noqa: E501
     activate_action(
         name="show-status",
-        description="Display the started promptflow service info.",
+        description="Show the started prompt flow service status.",
         epilog=epilog,
         add_params=base_params,
         subparsers=subparsers,
-        help_message="pf service show-status",
+        help_message="Show the started prompt flow service status.",
         action_param_name="sub_action",
     )
 
@@ -202,6 +202,13 @@ def start_service(args):
             sys.stdout = old_stdout
             sys.stderr = old_stderr
     else:
+        # Add executable script dir to PATH to make sure the subprocess can find the executable, especially in notebook
+        # environment which won't add it to system path automatically.
+        python_dir = os.path.dirname(sys.executable)
+        executable_dir = os.path.join(python_dir, "Scripts") if platform.system() == "Windows" else python_dir
+        if executable_dir not in os.environ["PATH"].split(os.pathsep):
+            os.environ["PATH"] = executable_dir + os.pathsep + os.environ["PATH"]
+
         # Start a pfs process using detach mode. It will start a new process and create a new app. So we use environment
         # variable to pass the debug mode, since it will inherit parent process environment variable.
         if platform.system() == "Windows":
@@ -252,7 +259,7 @@ def start_service(args):
             subprocess.Popen(cmd, stdout=subprocess.DEVNULL, start_new_session=True)
         is_healthy = check_pfs_service_status(port)
         if is_healthy:
-            message = f"Start Prompt Flow Service on port {port}, version: {get_pfs_version()}."
+            message = f"Start Promptflow Service on port {port}, version: {get_pfs_version()}."
             print(message)
             logger.info(message)
         else:

@@ -27,7 +27,7 @@ def add_upgrade_parser(subparsers):
         epilog=epilog,
         add_params=add_params,
         subparsers=subparsers,
-        help_message="pf upgrade",
+        help_message="Upgrade prompt flow CLI.",
         action_param_name="action",
     )
 
