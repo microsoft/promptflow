@@ -89,14 +89,8 @@ class TestConnectionAPIs:
     @pytest.mark.skipif(is_replay(), reason="connection provider test, skip in non-live mode.")
     def test_get_connection_by_provicer(self, pfs_op, subscription_id, resource_group_name, workspace_name):
         target = "promptflow._sdk._pf_client.Configuration.get_connection_provider"
-        provider_url_target = (
-            "promptflow._sdk.operations._local_azure_connection_operations."
-            "LocalAzureConnectionOperations._extract_workspace"
-        )
-        mock_provider_url = (subscription_id, resource_group_name, workspace_name)
-        with mock.patch(target) as mocked_config, mock.patch(provider_url_target) as mocked_provider_url:
+        with mock.patch(target) as mocked_config:
             mocked_config.return_value = "azureml"
-            mocked_provider_url.return_value = mock_provider_url
             connections = pfs_op.list_connections(status_code=200).json
             assert len(connections) > 0
 

@@ -7,7 +7,14 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-from _constants import CONNECTION_FILE, ENV_FILE, PROMPTFLOW_ROOT
+from _constants import (
+    CONNECTION_FILE,
+    DEFAULT_RESOURCE_GROUP_NAME,
+    DEFAULT_SUBSCRIPTION_ID,
+    DEFAULT_WORKSPACE_NAME,
+    ENV_FILE,
+    PROMPTFLOW_ROOT,
+)
 from _pytest.monkeypatch import MonkeyPatch
 from dotenv import load_dotenv
 from filelock import FileLock
@@ -212,3 +219,19 @@ def mock_module_with_for_retrieve_tool_func_result(
 
         mock_import.side_effect = side_effect
         yield
+
+
+# region pfazure constants
+@pytest.fixture
+def subscription_id() -> str:
+    return os.getenv("PROMPT_FLOW_SUBSCRIPTION_ID", DEFAULT_SUBSCRIPTION_ID)
+
+
+@pytest.fixture
+def resource_group_name() -> str:
+    return os.getenv("PROMPT_FLOW_RESOURCE_GROUP_NAME", DEFAULT_RESOURCE_GROUP_NAME)
+
+
+@pytest.fixture
+def workspace_name() -> str:
+    return os.getenv("PROMPT_FLOW_WORKSPACE_NAME", DEFAULT_WORKSPACE_NAME)
