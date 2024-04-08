@@ -13,7 +13,7 @@ from msrest import Deserializer, Serializer
 
 from .. import models
 from ._configuration import AzureMachineLearningDesignerServiceClientConfiguration
-from .operations import BulkRunsOperations, ConnectionOperations, ConnectionsOperations, ExperimentTemplatesOperations, ExperimentsOperations, FlowRuntimesOperations, FlowRuntimesWorkspaceIndependentOperations, FlowSessionsOperations, FlowsOperations, FlowsProviderOperations, ToolsOperations, TraceSessionsOperations
+from .operations import BulkRunsOperations, ConnectionOperations, ConnectionsOperations, ExperimentTemplatesOperations, ExperimentTemplatesProviderOperations, ExperimentsOperations, ExperimentsProviderOperations, FlowRuntimesOperations, FlowRuntimesWorkspaceIndependentOperations, FlowSessionsOperations, FlowsOperations, FlowsProviderOperations, ToolsOperations, TraceSessionsOperations
 
 class AzureMachineLearningDesignerServiceClient:
     """AzureMachineLearningDesignerServiceClient.
@@ -26,8 +26,13 @@ class AzureMachineLearningDesignerServiceClient:
     :vartype connections: flow.aio.operations.ConnectionsOperations
     :ivar experiments: ExperimentsOperations operations
     :vartype experiments: flow.aio.operations.ExperimentsOperations
+    :ivar experiments_provider: ExperimentsProviderOperations operations
+    :vartype experiments_provider: flow.aio.operations.ExperimentsProviderOperations
     :ivar experiment_templates: ExperimentTemplatesOperations operations
     :vartype experiment_templates: flow.aio.operations.ExperimentTemplatesOperations
+    :ivar experiment_templates_provider: ExperimentTemplatesProviderOperations operations
+    :vartype experiment_templates_provider:
+     flow.aio.operations.ExperimentTemplatesProviderOperations
     :ivar flow_runtimes: FlowRuntimesOperations operations
     :vartype flow_runtimes: flow.aio.operations.FlowRuntimesOperations
     :ivar flow_runtimes_workspace_independent: FlowRuntimesWorkspaceIndependentOperations
@@ -67,7 +72,9 @@ class AzureMachineLearningDesignerServiceClient:
         self.connection = ConnectionOperations(self._client, self._config, self._serialize, self._deserialize)
         self.connections = ConnectionsOperations(self._client, self._config, self._serialize, self._deserialize)
         self.experiments = ExperimentsOperations(self._client, self._config, self._serialize, self._deserialize)
+        self.experiments_provider = ExperimentsProviderOperations(self._client, self._config, self._serialize, self._deserialize)
         self.experiment_templates = ExperimentTemplatesOperations(self._client, self._config, self._serialize, self._deserialize)
+        self.experiment_templates_provider = ExperimentTemplatesProviderOperations(self._client, self._config, self._serialize, self._deserialize)
         self.flow_runtimes = FlowRuntimesOperations(self._client, self._config, self._serialize, self._deserialize)
         self.flow_runtimes_workspace_independent = FlowRuntimesWorkspaceIndependentOperations(self._client, self._config, self._serialize, self._deserialize)
         self.flows = FlowsOperations(self._client, self._config, self._serialize, self._deserialize)

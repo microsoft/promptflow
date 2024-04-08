@@ -1,4 +1,4 @@
-from promptflow import tool
+from promptflow.core import tool
 from dummy_utils.util_tool import passthrough
 
 
