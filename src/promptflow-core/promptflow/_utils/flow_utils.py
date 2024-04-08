@@ -162,7 +162,7 @@ def is_flex_flow(
     if flow_path is not None:
         flow_path, flow_file = resolve_flow_path(flow_path, base_path=working_dir, check_flow_exist=False)
         file_path = flow_path / flow_file
-        if file_path.is_file() and file_path.suffix.lower() in ("yaml", "yml"):
+        if file_path.is_file() and file_path.suffix.lower() in (".yaml", ".yml"):
             yaml_dict = load_yaml(file_path)
         if not check_flow_exist and flow_file == FLOW_FLEX_YAML:
             return True
