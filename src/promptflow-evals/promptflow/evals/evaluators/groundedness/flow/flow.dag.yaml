@@ -4,11 +4,8 @@ environment:
 inputs:
   answer:
     type: string
-    default: The Alpine Explorer Tent is the most waterproof.
   context:
     type: string
-    default: From the our product list, the alpine explorer tent is the most
-      waterproof. The Adventure Dining Table has higher weight.
 outputs:
   gpt_groundedness:
     type: string

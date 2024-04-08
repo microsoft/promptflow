@@ -748,7 +748,9 @@ def _exec_line_for_queue(
                         # Meet span missing issue when end process normally (even add wait() when end it).
                         # Shutdown the tracer provider to flush the remaining spans.
                         # The tracer provider is created for each process, so it's ok to shutdown it here.
-                        otel_trace.get_tracer_provider().shutdown()
+                        tracer_provider = otel_trace.get_tracer_provider()
+                        if hasattr(tracer_provider, "shutdown"):
+                            tracer_provider.shutdown()
                     except Exception as e:
                         bulk_logger.warning(f"Error occurred while shutting down tracer provider: {e}")
 

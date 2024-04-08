@@ -38,6 +38,16 @@ NOTE:
 
 # Release History
 
-## 0.1.0b1 (Upcoming)
+## 1.9.0 (Upcoming)
+
+### Improvements
+
+- Improve pf cli command help message.
+
+## 1.8.0 (Upcoming)
+
+- First public version in PyPI.
+
+## 0.1.0b1 (2024.03.29)
 
 - Stub version in PyPI.
