@@ -1,4 +1,4 @@
-from typing import Union, List, Dict
+from typing import List, Dict
 
 from promptflow.tools.common import handle_openai_error, _get_credential
 from promptflow.tools.exception import InvalidConnectionType
@@ -28,7 +28,8 @@ def get_cloud_connection(connection_name, subscription_id, resource_group_name, 
     except Exception as e:
         print(f"Error getting cloud connection: {e}")
         return None
-    
+
+
 def get_local_connection(connection_name):
     try:
         # TODO: remove pf-devkit dependencies by using ConnectionProvider.get_instance() method.
@@ -74,8 +75,9 @@ def list_apis(
 @handle_openai_error()
 def llm(
     # connection can be of type AzureOpenAIConnection, OpenAIConnection, ServerlessConnection.
-    # do not set type hint here to be compatible with pf version < 1.6.0.
-    connection, 
+    # ServerlessConnection was introduced in pf version 1.6.0.
+    # cannot set type hint here to be compatible with pf version < 1.6.0.
+    connection,
     prompt: PromptTemplate,
     api: str = "chat",
     deployment_name: str = "", model: str = "",
