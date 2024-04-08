@@ -105,31 +105,6 @@
                     "Connections"
                 ]
             },
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "Connection details",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
-                    },
-                    "403": {
-                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
-                    }
-                },
-                "description": "Get connection",
-                "operationId": "get_connection",
-                "parameters": [
-                    {
-                        "name": "working_directory",
-                        "in": "query",
-                        "type": "string"
-                    }
-                ],
-                "tags": [
-                    "Connections"
-                ]
-            },
             "put": {
                 "responses": {
                     "200": {
@@ -152,6 +127,31 @@
                         "schema": {
                             "$ref": "#/definitions/ConnectionDict"
                         }
+                    }
+                ],
+                "tags": [
+                    "Connections"
+                ]
+            },
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Connection details",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    },
+                    "403": {
+                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
+                    }
+                },
+                "description": "Get connection",
+                "operationId": "get_connection",
+                "parameters": [
+                    {
+                        "name": "working_directory",
+                        "in": "query",
+                        "type": "string"
                     }
                 ],
                 "tags": [
@@ -455,21 +455,6 @@
                     "Runs"
                 ]
             },
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "Get run info",
-                        "schema": {
-                            "$ref": "#/definitions/RunDict"
-                        }
-                    }
-                },
-                "description": "Get run",
-                "operationId": "get_run",
-                "tags": [
-                    "Runs"
-                ]
-            },
             "put": {
                 "responses": {
                     "200": {
@@ -502,6 +487,21 @@
                     "application/x-www-form-urlencoded",
                     "multipart/form-data"
                 ],
+                "tags": [
+                    "Runs"
+                ]
+            },
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Get run info",
+                        "schema": {
+                            "$ref": "#/definitions/RunDict"
+                        }
+                    }
+                },
+                "description": "Get run",
+                "operationId": "get_run",
                 "tags": [
                     "Runs"
                 ]
