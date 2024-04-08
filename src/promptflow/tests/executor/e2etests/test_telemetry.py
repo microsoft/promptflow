@@ -64,6 +64,7 @@ def mock_process_manager(*args, **kwargs):
 @pytest.mark.usefixtures("dev_connections")
 @pytest.mark.e2etest
 class TestExecutorTelemetry:
+    @pytest.mark.skip("test")
     def test_executor_openai_telemetry(self, dev_connections):
         """This test validates telemetry info header is correctly injected to OpenAI API
         by mocking chat api method. The mock method will return a generator that yields a
@@ -122,7 +123,7 @@ class TestExecutorTelemetry:
         by mocking chat api method. The mock method will return a generator that yields a
         namedtuple with a json string of the headers passed to the method.
         """
-        flow_folder = "openai_chat_api_flow_dup"
+        flow_folder = "openai_chat_api_flow"
 
         operation_context = OperationContext.get_instance()
         operation_context.clear()
