@@ -7,6 +7,7 @@ import json
 import os
 import shelve
 import traceback
+from dbm import dumb
 from pathlib import Path
 from typing import Dict, Iterator, Union
 
@@ -80,7 +81,8 @@ class RecordFile:
             if file_content_line is not None:
                 lock = FileLock(self.real_file.parent / "record_file.lock")
                 with lock:
-                    saved_dict = shelve.open(self.record_file_str, "c", writeback=False)
+                    db = dumb.open(self.record_file_str, "c")
+                    saved_dict = shelve.Shelf(db, writeback=False)
                     saved_dict[hashkey] = file_content_line
                     saved_dict.close()
             else:
@@ -108,7 +110,8 @@ class RecordFile:
         # Load file directly.
         lock = FileLock(self.real_file.parent / "record_file.lock")
         with lock:
-            saved_dict = shelve.open(self.record_file_str, "r", writeback=False)
+            db = dumb.open(self.record_file_str, "r")
+            saved_dict = shelve.Shelf(db, writeback=False)
             cached_items[self.record_file_str] = {}
             for key, value in saved_dict.items():
                 cached_items[self.record_file_str][key] = value
