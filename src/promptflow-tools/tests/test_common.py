@@ -3,8 +3,8 @@ from unittest.mock import patch
 import pytest
 from promptflow.tools.common import ChatAPIInvalidFunctions, validate_functions, process_function_call, \
     parse_chat, find_referenced_image_set, preprocess_template_string, convert_to_chat_list, ChatInputList, \
-    ParseConnectionError, _parse_resource_id, list_deployment_connections, \
-    normalize_connection_config, parse_tool_calls_for_assistant, validate_tools, process_tool_choice
+    ParseConnectionError, _parse_resource_id, list_deployment_connections, normalize_connection_config, \
+    parse_tool_calls_for_assistant, validate_tools, process_tool_choice, init_azure_openai_client
 from promptflow.tools.exception import (
     ListDeploymentsError,
     ChatAPIInvalidTools,
@@ -500,3 +500,10 @@ class TestCommon:
             "azure_ad_token_provider": aoai_meid_connection.get_token
         }
         assert normalized_config == expected_output
+
+    def test_disable_openai_builtin_retry_mechanism(self):
+        client = init_azure_openai_client(
+            AzureOpenAIConnection(api_key="fake_key", api_base="https://aoai", api_version="v1"))
+        # verify if openai built-in retry mechanism is disabled
+        assert client.max_retries == 0
+

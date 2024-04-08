@@ -28,7 +28,8 @@ def get_cloud_connection(connection_name, subscription_id, resource_group_name, 
     except Exception as e:
         print(f"Error getting cloud connection: {e}")
         return None
-    
+
+
 def get_local_connection(connection_name):
     try:
         # TODO: remove pf-devkit dependencies by moving build_connection_dict process before calling tool func.
