@@ -39,10 +39,10 @@ from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow._utils.user_agent_utils import append_promptflow_package_ua
 from promptflow._utils.utils import get_int_env_var, transpose
 from promptflow._utils.yaml_utils import load_yaml
+from promptflow.connections import ConnectionProvider
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
-from promptflow.core._connection_provider._connection_provider import ConnectionProvider
 from promptflow.core._connection_provider._dict_connection_provider import DictConnectionProvider
 from promptflow.exceptions import PromptflowException
 from promptflow.executor import _input_assignment_parser
@@ -98,7 +98,7 @@ class FlowExecutor:
     def __init__(
         self,
         flow: Flow,
-        connections: Union[dict, ConnectionProvider],
+        connections: ConnectionProvider,
         run_tracker: RunTracker,
         cache_manager: AbstractCacheManager,
         loaded_tools: Mapping[str, Callable],

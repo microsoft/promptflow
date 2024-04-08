@@ -17,10 +17,10 @@ from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connecti
 from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
 from promptflow._utils.yaml_utils import load_yaml
+from promptflow.connections import ConnectionProvider
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
 from promptflow.contracts.types import AssistantDefinition, PromptTemplate
-from promptflow.core._connection_provider._dict_connection_provider import ConnectionProvider
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
 from promptflow.executor._assistant_tool_invoker import (
     AssistantTool,
