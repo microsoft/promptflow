@@ -6,11 +6,11 @@ outputs:
     type: int
     reference: ${my_python_tool_with_failed_line.output}
 nodes:
-- name: my_python_tool
+- name: my_python_tool_bkup
   type: python
   source:
     type: code
-    path: my_python_tool.py
+    path: my_python_tool_bkup.py
   inputs:
     idx: ${inputs.idx}
 - name: my_python_tool_with_failed_line
@@ -19,4 +19,4 @@ nodes:
     type: code
     path: my_python_tool_with_failed_line.py
   inputs:
-    idx: ${my_python_tool.output}
+    idx: ${my_python_tool_bkup.output}

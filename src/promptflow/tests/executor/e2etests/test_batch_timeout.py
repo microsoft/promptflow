@@ -47,7 +47,7 @@ class TestBatchTimeout:
         assert batch_results.total_lines == 2
         assert batch_results.node_status == {
             "my_python_tool_with_failed_line.canceled": 2,
-            "my_python_tool.completed": 2,
+            "my_python_tool_bkup.completed": 2,
         }
 
         # assert mem_run_storage persists run infos correctly
@@ -102,7 +102,7 @@ class TestBatchTimeout:
         assert batch_results.node_status == {
             "my_python_tool_with_failed_line.completed": 2,
             "my_python_tool_with_failed_line.canceled": 1,
-            "my_python_tool.completed": 3,
+            "my_python_tool_bkup.completed": 3,
         }
 
         # assert the error summary in batch result
@@ -154,7 +154,7 @@ class TestBatchTimeout:
         assert batch_results.node_status == {
             "my_python_tool_with_failed_line.completed": 2,
             "my_python_tool_with_failed_line.canceled": 1,
-            "my_python_tool.completed": 3,
+            "my_python_tool_bkup.completed": 3,
         }
 
         # assert the error summary in batch result
