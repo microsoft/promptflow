@@ -19,6 +19,8 @@ on:
       - src/promptflow/tests/*
       - src/promptflow/tests/executor/**
       - src/promptflow-tracing/promptflow/**
+      - src/promptflow-core/promptflow/**
+      - src/promptflow-devkit/promptflow/**
       - scripts/building/**
       - .github/workflows/promptflow-executor-e2e-test.yml
   workflow_dispatch:
