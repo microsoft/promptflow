@@ -61,7 +61,7 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         **kwargs,
     ) -> "PythonExecutorProxy":
         flow_executor = FlowExecutor.create(
-            flow_file, connections, working_dir, storage=storage, raise_ex=False, init_kwargs=init_kwargs
+            flow_file, connections, working_dir, storage=storage, raise_ex=False, init_kwargs=init_kwargs, **kwargs
         )
         return cls(flow_executor)
 

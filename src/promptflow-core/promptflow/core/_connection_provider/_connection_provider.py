@@ -18,7 +18,7 @@ class ConnectionProvider(ABC):
     _instance = None
 
     @abstractmethod
-    def get(self, name: str, **kwargs) -> _Connection:
+    def get(self, name: str) -> _Connection:
         """Get connection by name."""
         raise NotImplementedError("Method 'get' is not implemented.")
 
@@ -30,7 +30,7 @@ class ConnectionProvider(ABC):
     @classmethod
     def get_instance(cls) -> "ConnectionProvider":
         """Get the connection provider instance in the current environment.
-        It will returned different implementations based on the current environment.
+        It will return different implementations based on the current environment.
         """
         if not cls._instance:
             cls._instance = cls._init_from_env()

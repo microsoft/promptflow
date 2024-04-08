@@ -2,25 +2,20 @@ examples:
 - examples/**
 documentation:
 - docs/**
-cli:
-- src/promptflow-devkit/promptflow/_cli/**
-sdk:
-- src/promptflow-devkit/promptflow/_sdk/**
-- src/promptflow-azure/promptflow/azure/**
-promptflow:
-- src/promptflow-core/**
 promptflow-tracing:
 - src/promptflow-tracing/**
+promptflow-core:
+- src/promptflow-core/**
+promptflow-devkit:
+- src/promptflow-devkit/**
+promptflow-azure:
+- src/promptflow-azure/**
+promptflow-evals:
+- src/promptflow-evals/**
+promptflow:
+- src/promptflow/**
 promptflow-tools:
 - src/promptflow-tools/**
-executor:
-- src/promptflow-devkit/promptflow/batch/**
-- src/promptflow-core/promptflow/executor/**
-- src/promptflow-core/promptflow/_core/**
-- src/promptflow-devkit/promptflow/_internal/**
-- src/promptflow-core/promptflow/integrations/**
-- src/promptflow-core/promptflow/storage/**
-- src/promptflow/tests/executor/**
 fundamental:
 - scripts/**
 - .github/**

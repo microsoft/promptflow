@@ -96,5 +96,5 @@ class DictConnectionProvider(ConnectionProvider):
     def list(self):
         return [c for c in self._connections.values()]
 
-    def get(self, name: str) -> Any:
+    def get(self, name: str, **kwargs) -> Any:
         return self._connections.get(name)

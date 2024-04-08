@@ -144,7 +144,7 @@ QdrantConnectionSchema, CognitiveSearchConnectionSchema, SerpConnectionSchema, A
 FormRecognizerConnectionSchema, CustomConnectionSchema, WeaviateConnectionSchema, ServerlessConnectionSchema, \
 CustomStrongTypeConnectionSchema
 from promptflow._sdk.schemas._run import RunSchema
-from promptflow._sdk.schemas._flow import FlowSchema, EagerFlowSchema
+from promptflow._sdk.schemas._flow import FlowSchema, FlexFlowSchema
 
 
 if __name__ == "__main__":
@@ -167,7 +167,7 @@ python scripts/json_schema/gen_json_schema.py -a # Generate all schema files
 
     # Special case for Flow and EagerFlow
     if "Flow" in args.output_file:
-        cls_list = [FlowSchema, EagerFlowSchema]
+        cls_list = [FlowSchema, FlexFlowSchema]
         schema_list = []
         for cls in cls_list:
             target_schema = PatchedJSONSchema().dump(cls(context={"base_path": "./"}))

@@ -5,7 +5,7 @@ from typing import Union
 from openai import AsyncAzureOpenAI, AsyncOpenAI
 from openai.types.beta.threads import TextContentBlock, ImageFileContentBlock
 
-from promptflow import tool
+from promptflow.core import tool
 from promptflow.connections import OpenAIConnection, AzureOpenAIConnection
 from promptflow.contracts.multimedia import Image
 from promptflow.contracts.types import AssistantDefinition

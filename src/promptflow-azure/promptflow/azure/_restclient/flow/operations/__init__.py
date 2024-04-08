@@ -8,7 +8,9 @@ from ._bulk_runs_operations import BulkRunsOperations
 from ._connection_operations import ConnectionOperations
 from ._connections_operations import ConnectionsOperations
 from ._experiments_operations import ExperimentsOperations
+from ._experiments_provider_operations import ExperimentsProviderOperations
 from ._experiment_templates_operations import ExperimentTemplatesOperations
+from ._experiment_templates_provider_operations import ExperimentTemplatesProviderOperations
 from ._flow_runtimes_operations import FlowRuntimesOperations
 from ._flow_runtimes_workspace_independent_operations import FlowRuntimesWorkspaceIndependentOperations
 from ._flows_operations import FlowsOperations
@@ -22,7 +24,9 @@ __all__ = [
     'ConnectionOperations',
     'ConnectionsOperations',
     'ExperimentsOperations',
+    'ExperimentsProviderOperations',
     'ExperimentTemplatesOperations',
+    'ExperimentTemplatesProviderOperations',
     'FlowRuntimesOperations',
     'FlowRuntimesWorkspaceIndependentOperations',
     'FlowsOperations',
