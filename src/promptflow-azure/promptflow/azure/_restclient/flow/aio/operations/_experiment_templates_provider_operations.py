@@ -14,12 +14,12 @@ from azure.core.tracing.decorator_async import distributed_trace_async
 
 from ... import models as _models
 from ..._vendor import _convert_request
-from ...operations._experiments_operations import build_get_experiment_request, build_resubmit_experiment_request, build_submit_experiment_request
+from ...operations._experiment_templates_provider_operations import build_get_index_entity_by_id_request, build_get_updated_entity_ids_for_workspace_request
 T = TypeVar('T')
 ClsType = Optional[Callable[[PipelineResponse[HttpRequest, AsyncHttpResponse], T, Dict[str, Any]], Any]]
 
-class ExperimentsOperations:
-    """ExperimentsOperations async operations.
+class ExperimentTemplatesProviderOperations:
+    """ExperimentTemplatesProviderOperations async operations.
 
     You should not instantiate this class directly. Instead, you should create a Client instance that
     instantiates it for you and attaches it as an attribute.
@@ -41,18 +41,15 @@ class ExperimentsOperations:
         self._config = config
 
     @distributed_trace_async
-    async def submit_experiment(
+    async def get_index_entity_by_id(
         self,
         subscription_id: str,
         resource_group_name: str,
         workspace_name: str,
-        experiment_id: str,
-        experiment_name: Optional[str] = None,
-        description: Optional[str] = None,
-        body: Optional["_models.SubmitExperimentRequest"] = None,
+        body: Optional["_models.UnversionedEntityRequestDtoExperimentTemplateIndexEntityExperimentTemplateAnnotationsExperimentTemplatePropertiesExtensibleObject"] = None,
         **kwargs: Any
-    ) -> "_models.FlowDto":
-        """submit_experiment.
+    ) -> "_models.UnversionedEntityResponseDtoExperimentTemplateIndexEntityExperimentTemplateAnnotationsExperimentTemplatePropertiesExtensibleObject":
+        """get_index_entity_by_id.
 
         :param subscription_id: The Azure Subscription ID.
         :type subscription_id: str
@@ -60,20 +57,18 @@ class ExperimentsOperations:
         :type resource_group_name: str
         :param workspace_name: The name of the workspace.
         :type workspace_name: str
-        :param experiment_id:
-        :type experiment_id: str
-        :param experiment_name:  Default value is None.
-        :type experiment_name: str
-        :param description:  Default value is None.
-        :type description: str
         :param body:  Default value is None.
-        :type body: ~flow.models.SubmitExperimentRequest
+        :type body:
+         ~flow.models.UnversionedEntityRequestDtoExperimentTemplateIndexEntityExperimentTemplateAnnotationsExperimentTemplatePropertiesExtensibleObject
         :keyword callable cls: A custom type or function that will be passed the direct response
-        :return: FlowDto, or the result of cls(response)
-        :rtype: ~flow.models.FlowDto
+        :return:
+         UnversionedEntityResponseDtoExperimentTemplateIndexEntityExperimentTemplateAnnotationsExperimentTemplatePropertiesExtensibleObject,
+         or the result of cls(response)
+        :rtype:
+         ~flow.models.UnversionedEntityResponseDtoExperimentTemplateIndexEntityExperimentTemplateAnnotationsExperimentTemplatePropertiesExtensibleObject
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType["_models.FlowDto"]
+        cls = kwargs.pop('cls', None)  # type: ClsType["_models.UnversionedEntityResponseDtoExperimentTemplateIndexEntityExperimentTemplateAnnotationsExperimentTemplatePropertiesExtensibleObject"]
         error_map = {
             401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
         }
@@ -82,20 +77,17 @@ class ExperimentsOperations:
         content_type = kwargs.pop('content_type', "application/json")  # type: Optional[str]
 
         if body is not None:
-            _json = self._serialize.body(body, 'SubmitExperimentRequest')
+            _json = self._serialize.body(body, 'UnversionedEntityRequestDtoExperimentTemplateIndexEntityExperimentTemplateAnnotationsExperimentTemplatePropertiesExtensibleObject')
         else:
             _json = None
 
-        request = build_submit_experiment_request(
+        request = build_get_index_entity_by_id_request(
             subscription_id=subscription_id,
             resource_group_name=resource_group_name,
             workspace_name=workspace_name,
-            experiment_id=experiment_id,
             content_type=content_type,
             json=_json,
-            experiment_name=experiment_name,
-            description=description,
-            template_url=self.submit_experiment.metadata['url'],
+            template_url=self.get_index_entity_by_id.metadata['url'],
         )
         request = _convert_request(request)
         request.url = self._client.format_url(request.url)
@@ -112,26 +104,26 @@ class ExperimentsOperations:
             error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
             raise HttpResponseError(response=response, model=error)
 
-        deserialized = self._deserialize('FlowDto', pipeline_response)
+        deserialized = self._deserialize('UnversionedEntityResponseDtoExperimentTemplateIndexEntityExperimentTemplateAnnotationsExperimentTemplatePropertiesExtensibleObject', pipeline_response)
 
         if cls:
             return cls(pipeline_response, deserialized, {})
 
         return deserialized
 
-    submit_experiment.metadata = {'url': "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Experiments/{experimentId}"}  # type: ignore
+    get_index_entity_by_id.metadata = {'url': "/flow/v1.0/flowexperimenttemplates/getIndexEntities"}  # type: ignore
 
 
     @distributed_trace_async
-    async def get_experiment(
+    async def get_updated_entity_ids_for_workspace(
         self,
         subscription_id: str,
         resource_group_name: str,
         workspace_name: str,
-        experiment_id: str,
+        body: Optional["_models.UnversionedRebuildIndexDtoExperimentTemplateIndexEntityExperimentTemplateAnnotationsExperimentTemplatePropertiesExtensibleObject"] = None,
         **kwargs: Any
-    ) -> "_models.ExperimentDefinition":
-        """get_experiment.
+    ) -> "_models.UnversionedRebuildResponseDtoExperimentTemplateIndexEntityExperimentTemplateAnnotationsExperimentTemplatePropertiesExtensibleObject":
+        """get_updated_entity_ids_for_workspace.
 
         :param subscription_id: The Azure Subscription ID.
         :type subscription_id: str
@@ -139,80 +131,18 @@ class ExperimentsOperations:
         :type resource_group_name: str
         :param workspace_name: The name of the workspace.
         :type workspace_name: str
-        :param experiment_id:
-        :type experiment_id: str
-        :keyword callable cls: A custom type or function that will be passed the direct response
-        :return: ExperimentDefinition, or the result of cls(response)
-        :rtype: ~flow.models.ExperimentDefinition
-        :raises: ~azure.core.exceptions.HttpResponseError
-        """
-        cls = kwargs.pop('cls', None)  # type: ClsType["_models.ExperimentDefinition"]
-        error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
-        }
-        error_map.update(kwargs.pop('error_map', {}))
-
-        
-        request = build_get_experiment_request(
-            subscription_id=subscription_id,
-            resource_group_name=resource_group_name,
-            workspace_name=workspace_name,
-            experiment_id=experiment_id,
-            template_url=self.get_experiment.metadata['url'],
-        )
-        request = _convert_request(request)
-        request.url = self._client.format_url(request.url)
-
-        pipeline_response = await self._client._pipeline.run(  # pylint: disable=protected-access
-            request,
-            stream=False,
-            **kwargs
-        )
-        response = pipeline_response.http_response
-
-        if response.status_code not in [200]:
-            map_error(status_code=response.status_code, response=response, error_map=error_map)
-            error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
-            raise HttpResponseError(response=response, model=error)
-
-        deserialized = self._deserialize('ExperimentDefinition', pipeline_response)
-
-        if cls:
-            return cls(pipeline_response, deserialized, {})
-
-        return deserialized
-
-    get_experiment.metadata = {'url': "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Experiments/{experimentId}"}  # type: ignore
-
-
-    @distributed_trace_async
-    async def resubmit_experiment(
-        self,
-        subscription_id: str,
-        resource_group_name: str,
-        workspace_name: str,
-        experiment_id: str,
-        body: Optional["_models.ResubmitExperimentRequest"] = None,
-        **kwargs: Any
-    ) -> "_models.FlowDto":
-        """resubmit_experiment.
-
-        :param subscription_id: The Azure Subscription ID.
-        :type subscription_id: str
-        :param resource_group_name: The Name of the resource group in which the workspace is located.
-        :type resource_group_name: str
-        :param workspace_name: The name of the workspace.
-        :type workspace_name: str
-        :param experiment_id:
-        :type experiment_id: str
         :param body:  Default value is None.
-        :type body: ~flow.models.ResubmitExperimentRequest
+        :type body:
+         ~flow.models.UnversionedRebuildIndexDtoExperimentTemplateIndexEntityExperimentTemplateAnnotationsExperimentTemplatePropertiesExtensibleObject
         :keyword callable cls: A custom type or function that will be passed the direct response
-        :return: FlowDto, or the result of cls(response)
-        :rtype: ~flow.models.FlowDto
+        :return:
+         UnversionedRebuildResponseDtoExperimentTemplateIndexEntityExperimentTemplateAnnotationsExperimentTemplatePropertiesExtensibleObject,
+         or the result of cls(response)
+        :rtype:
+         ~flow.models.UnversionedRebuildResponseDtoExperimentTemplateIndexEntityExperimentTemplateAnnotationsExperimentTemplatePropertiesExtensibleObject
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType["_models.FlowDto"]
+        cls = kwargs.pop('cls', None)  # type: ClsType["_models.UnversionedRebuildResponseDtoExperimentTemplateIndexEntityExperimentTemplateAnnotationsExperimentTemplatePropertiesExtensibleObject"]
         error_map = {
             401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
         }
@@ -221,18 +151,17 @@ class ExperimentsOperations:
         content_type = kwargs.pop('content_type', "application/json")  # type: Optional[str]
 
         if body is not None:
-            _json = self._serialize.body(body, 'ResubmitExperimentRequest')
+            _json = self._serialize.body(body, 'UnversionedRebuildIndexDtoExperimentTemplateIndexEntityExperimentTemplateAnnotationsExperimentTemplatePropertiesExtensibleObject')
         else:
             _json = None
 
-        request = build_resubmit_experiment_request(
+        request = build_get_updated_entity_ids_for_workspace_request(
             subscription_id=subscription_id,
             resource_group_name=resource_group_name,
             workspace_name=workspace_name,
-            experiment_id=experiment_id,
             content_type=content_type,
             json=_json,
-            template_url=self.resubmit_experiment.metadata['url'],
+            template_url=self.get_updated_entity_ids_for_workspace.metadata['url'],
         )
         request = _convert_request(request)
         request.url = self._client.format_url(request.url)
@@ -249,12 +178,12 @@ class ExperimentsOperations:
             error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
             raise HttpResponseError(response=response, model=error)
 
-        deserialized = self._deserialize('FlowDto', pipeline_response)
+        deserialized = self._deserialize('UnversionedRebuildResponseDtoExperimentTemplateIndexEntityExperimentTemplateAnnotationsExperimentTemplatePropertiesExtensibleObject', pipeline_response)
 
         if cls:
             return cls(pipeline_response, deserialized, {})
 
         return deserialized
 
-    resubmit_experiment.metadata = {'url': "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Experiments/{experimentId}/resubmit"}  # type: ignore
+    get_updated_entity_ids_for_workspace.metadata = {'url': "/flow/v1.0/flowexperimenttemplates/rebuildIndex"}  # type: ignore
 

@@ -38,7 +38,7 @@ def build_get_index_entity_by_id_request(
 
     accept = "application/json"
     # Construct URL
-    _url = kwargs.pop("template_url", "/flow/v1.0/flows/getIndexEntities")
+    _url = kwargs.pop("template_url", "/flow/v1.0/flowexperimenttemplates/getIndexEntities")
     path_format_arguments = {
         "subscriptionId": _SERIALIZER.url("subscription_id", subscription_id, 'str'),
         "resourceGroupName": _SERIALIZER.url("resource_group_name", resource_group_name, 'str'),
@@ -72,7 +72,7 @@ def build_get_updated_entity_ids_for_workspace_request(
 
     accept = "application/json"
     # Construct URL
-    _url = kwargs.pop("template_url", "/flow/v1.0/flows/rebuildIndex")
+    _url = kwargs.pop("template_url", "/flow/v1.0/flowexperimenttemplates/rebuildIndex")
     path_format_arguments = {
         "subscriptionId": _SERIALIZER.url("subscription_id", subscription_id, 'str'),
         "resourceGroupName": _SERIALIZER.url("resource_group_name", resource_group_name, 'str'),
@@ -95,8 +95,8 @@ def build_get_updated_entity_ids_for_workspace_request(
     )
 
 # fmt: on
-class FlowsProviderOperations(object):
-    """FlowsProviderOperations operations.
+class ExperimentTemplatesProviderOperations(object):
+    """ExperimentTemplatesProviderOperations operations.
 
     You should not instantiate this class directly. Instead, you should create a Client instance that
     instantiates it for you and attaches it as an attribute.
@@ -123,10 +123,10 @@ class FlowsProviderOperations(object):
         subscription_id,  # type: str
         resource_group_name,  # type: str
         workspace_name,  # type: str
-        body=None,  # type: Optional["_models.UnversionedEntityRequestDtoFlowIndexEntityFlowAnnotationsFlowPropertiesExtensibleObject"]
+        body=None,  # type: Optional["_models.UnversionedEntityRequestDtoExperimentTemplateIndexEntityExperimentTemplateAnnotationsExperimentTemplatePropertiesExtensibleObject"]
         **kwargs  # type: Any
     ):
-        # type: (...) -> "_models.UnversionedEntityResponseDtoFlowIndexEntityFlowAnnotationsFlowPropertiesExtensibleObject"
+        # type: (...) -> "_models.UnversionedEntityResponseDtoExperimentTemplateIndexEntityExperimentTemplateAnnotationsExperimentTemplatePropertiesExtensibleObject"
         """get_index_entity_by_id.
 
         :param subscription_id: The Azure Subscription ID.
@@ -137,16 +137,16 @@ class FlowsProviderOperations(object):
         :type workspace_name: str
         :param body:  Default value is None.
         :type body:
-         ~flow.models.UnversionedEntityRequestDtoFlowIndexEntityFlowAnnotationsFlowPropertiesExtensibleObject
+         ~flow.models.UnversionedEntityRequestDtoExperimentTemplateIndexEntityExperimentTemplateAnnotationsExperimentTemplatePropertiesExtensibleObject
         :keyword callable cls: A custom type or function that will be passed the direct response
         :return:
-         UnversionedEntityResponseDtoFlowIndexEntityFlowAnnotationsFlowPropertiesExtensibleObject, or
-         the result of cls(response)
+         UnversionedEntityResponseDtoExperimentTemplateIndexEntityExperimentTemplateAnnotationsExperimentTemplatePropertiesExtensibleObject,
+         or the result of cls(response)
         :rtype:
-         ~flow.models.UnversionedEntityResponseDtoFlowIndexEntityFlowAnnotationsFlowPropertiesExtensibleObject
+         ~flow.models.UnversionedEntityResponseDtoExperimentTemplateIndexEntityExperimentTemplateAnnotationsExperimentTemplatePropertiesExtensibleObject
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType["_models.UnversionedEntityResponseDtoFlowIndexEntityFlowAnnotationsFlowPropertiesExtensibleObject"]
+        cls = kwargs.pop('cls', None)  # type: ClsType["_models.UnversionedEntityResponseDtoExperimentTemplateIndexEntityExperimentTemplateAnnotationsExperimentTemplatePropertiesExtensibleObject"]
         error_map = {
             401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
         }
@@ -155,7 +155,7 @@ class FlowsProviderOperations(object):
         content_type = kwargs.pop('content_type', "application/json")  # type: Optional[str]
 
         if body is not None:
-            _json = self._serialize.body(body, 'UnversionedEntityRequestDtoFlowIndexEntityFlowAnnotationsFlowPropertiesExtensibleObject')
+            _json = self._serialize.body(body, 'UnversionedEntityRequestDtoExperimentTemplateIndexEntityExperimentTemplateAnnotationsExperimentTemplatePropertiesExtensibleObject')
         else:
             _json = None
 
@@ -182,14 +182,14 @@ class FlowsProviderOperations(object):
             error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
             raise HttpResponseError(response=response, model=error)
 
-        deserialized = self._deserialize('UnversionedEntityResponseDtoFlowIndexEntityFlowAnnotationsFlowPropertiesExtensibleObject', pipeline_response)
+        deserialized = self._deserialize('UnversionedEntityResponseDtoExperimentTemplateIndexEntityExperimentTemplateAnnotationsExperimentTemplatePropertiesExtensibleObject', pipeline_response)
 
         if cls:
             return cls(pipeline_response, deserialized, {})
 
         return deserialized
 
-    get_index_entity_by_id.metadata = {'url': "/flow/v1.0/flows/getIndexEntities"}  # type: ignore
+    get_index_entity_by_id.metadata = {'url': "/flow/v1.0/flowexperimenttemplates/getIndexEntities"}  # type: ignore
 
 
     @distributed_trace
@@ -198,10 +198,10 @@ class FlowsProviderOperations(object):
         subscription_id,  # type: str
         resource_group_name,  # type: str
         workspace_name,  # type: str
-        body=None,  # type: Optional["_models.UnversionedRebuildIndexDtoFlowIndexEntityFlowAnnotationsFlowPropertiesExtensibleObject"]
+        body=None,  # type: Optional["_models.UnversionedRebuildIndexDtoExperimentTemplateIndexEntityExperimentTemplateAnnotationsExperimentTemplatePropertiesExtensibleObject"]
         **kwargs  # type: Any
     ):
-        # type: (...) -> "_models.UnversionedRebuildResponseDtoFlowIndexEntityFlowAnnotationsFlowPropertiesExtensibleObject"
+        # type: (...) -> "_models.UnversionedRebuildResponseDtoExperimentTemplateIndexEntityExperimentTemplateAnnotationsExperimentTemplatePropertiesExtensibleObject"
         """get_updated_entity_ids_for_workspace.
 
         :param subscription_id: The Azure Subscription ID.
@@ -212,16 +212,16 @@ class FlowsProviderOperations(object):
         :type workspace_name: str
         :param body:  Default value is None.
         :type body:
-         ~flow.models.UnversionedRebuildIndexDtoFlowIndexEntityFlowAnnotationsFlowPropertiesExtensibleObject
+         ~flow.models.UnversionedRebuildIndexDtoExperimentTemplateIndexEntityExperimentTemplateAnnotationsExperimentTemplatePropertiesExtensibleObject
         :keyword callable cls: A custom type or function that will be passed the direct response
         :return:
-         UnversionedRebuildResponseDtoFlowIndexEntityFlowAnnotationsFlowPropertiesExtensibleObject, or
-         the result of cls(response)
+         UnversionedRebuildResponseDtoExperimentTemplateIndexEntityExperimentTemplateAnnotationsExperimentTemplatePropertiesExtensibleObject,
+         or the result of cls(response)
         :rtype:
-         ~flow.models.UnversionedRebuildResponseDtoFlowIndexEntityFlowAnnotationsFlowPropertiesExtensibleObject
+         ~flow.models.UnversionedRebuildResponseDtoExperimentTemplateIndexEntityExperimentTemplateAnnotationsExperimentTemplatePropertiesExtensibleObject
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType["_models.UnversionedRebuildResponseDtoFlowIndexEntityFlowAnnotationsFlowPropertiesExtensibleObject"]
+        cls = kwargs.pop('cls', None)  # type: ClsType["_models.UnversionedRebuildResponseDtoExperimentTemplateIndexEntityExperimentTemplateAnnotationsExperimentTemplatePropertiesExtensibleObject"]
         error_map = {
             401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
         }
@@ -230,7 +230,7 @@ class FlowsProviderOperations(object):
         content_type = kwargs.pop('content_type', "application/json")  # type: Optional[str]
 
         if body is not None:
-            _json = self._serialize.body(body, 'UnversionedRebuildIndexDtoFlowIndexEntityFlowAnnotationsFlowPropertiesExtensibleObject')
+            _json = self._serialize.body(body, 'UnversionedRebuildIndexDtoExperimentTemplateIndexEntityExperimentTemplateAnnotationsExperimentTemplatePropertiesExtensibleObject')
         else:
             _json = None
 
@@ -257,12 +257,12 @@ class FlowsProviderOperations(object):
             error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
             raise HttpResponseError(response=response, model=error)
 
-        deserialized = self._deserialize('UnversionedRebuildResponseDtoFlowIndexEntityFlowAnnotationsFlowPropertiesExtensibleObject', pipeline_response)
+        deserialized = self._deserialize('UnversionedRebuildResponseDtoExperimentTemplateIndexEntityExperimentTemplateAnnotationsExperimentTemplatePropertiesExtensibleObject', pipeline_response)
 
         if cls:
             return cls(pipeline_response, deserialized, {})
 
         return deserialized
 
-    get_updated_entity_ids_for_workspace.metadata = {'url': "/flow/v1.0/flows/rebuildIndex"}  # type: ignore
+    get_updated_entity_ids_for_workspace.metadata = {'url': "/flow/v1.0/flowexperimenttemplates/rebuildIndex"}  # type: ignore
 
