@@ -5,6 +5,7 @@
 """
 This file can generate a meta file for the given prompt template or a python file.
 """
+import dataclasses
 import importlib.util
 import inspect
 import json
@@ -39,8 +40,13 @@ from promptflow._utils.exception_utils import (
     last_frame_info,
 )
 from promptflow._utils.process_utils import block_terminate_signal_to_parent
-from promptflow._utils.tool_utils import asdict_without_none, function_to_interface, get_inputs_for_prompt_template
-from promptflow.contracts.tool import Tool, ToolType
+from promptflow._utils.tool_utils import (
+    asdict_without_none,
+    function_to_interface,
+    get_inputs_for_prompt_template,
+    resolve_annotation,
+)
+from promptflow.contracts.tool import InputDefinition, Tool, ToolType, ValueType
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 
@@ -149,7 +155,11 @@ def collect_tool_methods_with_init_inputs_in_module(m):
 
 
 def _parse_tool_from_function(
-    f, initialize_inputs=None, gen_custom_type_conn=False, skip_prompt_template=False, include_outputs=False
+    f,
+    initialize_inputs=None,
+    gen_custom_type_conn=False,
+    skip_prompt_template=False,
+    include_outputs=False,
 ):
     try:
         tool_type = getattr(f, "__type", None) or ToolType.PYTHON
@@ -495,32 +505,51 @@ def generate_tool_meta_in_subprocess(
     return tool_dict, exception_dict
 
 
-def generate_flow_meta_dict_by_file(data: dict, source: str = None, path: str = None):
-    """Generate flow meta for eager flow data.
-    Original flow configuration like environment variables will be generated in meta.
-    """
+def validate_interface(ports, fields, tool_name, port_type):
+    """Validate if the interface are serializable."""
+    for k, v in ports.items():
+        if ValueType.OBJECT not in v.type:
+            continue
+        if resolve_annotation(fields[k]) not in [dict, inspect.Signature.empty]:
+            raise BadFunctionInterface(
+                message_format=(
+                    "Parse interface for tool '{tool_name}' failed: "
+                    "The {port_type} '{k}' is of a complex python type. "
+                    "Please use a dict instead."
+                ),
+                port_type=port_type,
+                tool_name=tool_name,
+                k=k,
+            )
 
-    entry = data.get("entry")
-    if path:
-        m = load_python_module_from_file(Path(path))
-    else:
-        m = load_python_module_from_entry(entry)
 
-    f, cls = collect_flow_entry_in_module(m, entry)
+def generate_flow_meta_dict_by_object(f, cls):
     # Since the flow meta is generated from the entry function, we leverage the function
     # _parse_tool_from_function to parse the interface of the entry function to get the inputs and outputs.
     tool = _parse_tool_from_function(f, include_outputs=True)
 
+    # flow will be deployed as a service finally, so we will raise error if any port is of a complex python type.
+    # need to update this if we support serializable python object in the future.
+    signature = inspect.signature(f)
+    input_fields = {k: v.annotation for k, v in signature.parameters.items()}
+    validate_interface(tool.inputs, input_fields, tool.name, "input")
+
+    # validate output
+    return_type = resolve_annotation(signature.return_annotation)
+    if dataclasses.is_dataclass(return_type):
+        output_fields = {x.name: x.type for x in dataclasses.fields(return_type)}
+    else:
+        output_fields = {"output": return_type}
+    validate_interface(tool.outputs, output_fields, tool.name, "output")
+
     # Include data in generated meta to avoid flow definition's fields(e.g. environment variable) missing.
-    flow_meta = {"function": f.__name__, **data}
+    flow_meta = {}
     if cls:
         init_tool = _parse_tool_from_function(cls.__init__, include_outputs=False)
         init_inputs = init_tool.inputs
+        # no need to validate init as dict is not allowed in init for now.
     else:
         init_inputs = None
-
-    if source:
-        flow_meta["source"] = source
 
     for ports, meta_key in [
         (tool.inputs, "inputs"),
@@ -533,10 +562,37 @@ def generate_flow_meta_dict_by_file(data: dict, source: str = None, path: str = 
         flow_meta[meta_key] = {}
         for k, v in ports.items():
             # We didn't support specifying multiple types for inputs/outputs/init, so we only take the first one.
-            flow_meta[meta_key][k] = {"type": v.type[0].value}
+            param_type = v.type[0]
+            # For connections, param_type is a string; for primitive types, param_type is
+            # a promptflow.contracts.tool.InputDefinition.
+            param_type = param_type.value if isinstance(param_type, ValueType) else param_type
+
+            flow_meta[meta_key][k] = {"type": param_type}
             # init/inputs may have default value
-            if meta_key != "outputs" and v.default is not None:
+            if isinstance(v, InputDefinition) and v.default is not None:
                 flow_meta[meta_key][k]["default"] = v.default
+    return flow_meta
+
+
+def generate_flow_meta_dict_by_file(data: dict, source: str = None, path: str = None):
+    """Generate flow meta for eager flow data.
+    Original flow configuration like environment variables will be generated in meta.
+    """
+
+    entry = data.get("entry")
+    if path:
+        m = load_python_module_from_file(Path(path))
+    else:
+        m = load_python_module_from_entry(entry)
+
+    f, cls = collect_flow_entry_in_module(m, entry)
+
+    flow_meta = {"function": f.__name__, **data}
+    if source:
+        flow_meta["source"] = source
+
+    flow_meta.update(generate_flow_meta_dict_by_object(f, cls))
+
     return flow_meta
 
 
