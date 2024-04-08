@@ -53,10 +53,11 @@ More case of adding trace for autogen and langchain:
 #### **`@trace` to allow you trace for any function**
 More common scenario is the application has complicated code structure, and developer would like to add trace on critical path that they would like to debug and monitor. 
 
-See the **[math_to_code](./math_to_code.py)** example. Execute `python math_to_code.py` will get an URL to display the trace records and trace details of each test.
+See the **[math_to_code](./math_to_code.py)** example. Execute below command will get an URL to display the trace records and trace details of each test.
 
-
-
+```cmd
+python math_to_code.py
+```
 
 ### Flow Traces
 If your application is created with DAG flow, all flow test and batch run will be automatically enable trace function. Take the **[chat_with_pdf](../../flows/chat/chat-with-pdf/)** as example. Run `pf flow test --flow .`, each flow test will generate single line in the trace UI:
