@@ -14,7 +14,7 @@ from typing import Any, Dict, List, NewType, Optional, Tuple, Union
 
 from filelock import FileLock
 
-from promptflow._constants import FLOW_DAG_YAML, OUTPUT_FILE_NAME, OutputsFolderName
+from promptflow._constants import OUTPUT_FILE_NAME, OutputsFolderName
 from promptflow._sdk._constants import (
     HOME_PROMPT_FLOW_DIR,
     LINE_NUMBER,
@@ -38,7 +38,7 @@ from promptflow._sdk._utils import (
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._flows import FlexFlow, Flow
 from promptflow._utils.exception_utils import PromptflowExceptionPresenter
-from promptflow._utils.flow_utils import is_prompty_flow
+from promptflow._utils.flow_utils import is_prompty_flow, resolve_flow_path
 from promptflow._utils.logger_utils import LogContext, get_cli_sdk_logger
 from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow._utils.utils import prepare_folder
@@ -203,7 +203,8 @@ class LocalStorageOperations(AbstractBatchRunStorage):
         )
         # snapshot
         self._snapshot_folder_path = prepare_folder(self.path / LocalStorageFilenames.SNAPSHOT_FOLDER)
-        self._dag_path = self._snapshot_folder_path / FLOW_DAG_YAML
+        _, flow_file = resolve_flow_path(self._run.flow, check_flow_exist=False)
+        self._dag_path = self._snapshot_folder_path / flow_file
         self._flow_tools_json_path = (
             self._snapshot_folder_path / PROMPT_FLOW_DIR_NAME / LocalStorageFilenames.FLOW_TOOLS_JSON
         )
