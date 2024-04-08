@@ -601,6 +601,7 @@ class Run(YAMLTranslatableMixin):
             compute_name=compute_name,
             identity=identity_resource_id,
             enable_multi_container=is_multi_container_enabled(),
+            init_k_wargs=self.init,
         )
 
         if str(self.flow).startswith(REMOTE_URI_PREFIX):

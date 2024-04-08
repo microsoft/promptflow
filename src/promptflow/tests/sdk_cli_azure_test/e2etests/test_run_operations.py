@@ -1250,3 +1250,11 @@ class TestFlowRun:
 
         # the YAML file will not exist in user's folder
         assert not Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/flow.dag.yaml").exists()
+
+    def test_flex_flow_run(self, pf: PFClient, randstr: Callable[[str], str]):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_callable_class")
+        run = pf.run(
+            flow=flow_path, data=f"{EAGER_FLOWS_DIR}/basic_callable_class/inputs.jsonl", init={"obj_input": "val"}
+        )
+        run = pf.runs.stream(run)
+        assert run.status == RunStatus.COMPLETED
