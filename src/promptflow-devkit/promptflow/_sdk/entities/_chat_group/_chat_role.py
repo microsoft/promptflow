@@ -48,12 +48,8 @@ class ChatRole:
                  init_kwargs: Optional[Dict[str, Any]] = None,
                  **kwargs):
         self._role = role
-        if working_dir is None:
-            flow_path = Path(flow).resolve()
-        else:
-            flow_path = (working_dir / Path(flow)).resolve()
-        self._flow, self._flow_object = self._validate_flow(flow_path)
-        self._inputs, self._outputs = self._build_role_io(flow_path, inputs)
+        self._flow, self._flow_object = self._validate_flow(flow, working_dir)
+        self._inputs, self._outputs = self._build_role_io(self._flow, inputs)
 
         # Below properties are used for cloud chat group. It may have some duplicate with above ones
         # Will evaluate and refine in the second step.
@@ -75,7 +71,7 @@ class ChatRole:
             self._line_timeout_sec = line_timeout_sec
             self._init_kwargs = init_kwargs
 
-        logger.info(f"Created chat role {self.role!r} with flow {flow_path.as_posix()!r}")
+        logger.info(f"Created chat role {self.role!r} with flow {self._flow.as_posix()!r}")
 
     @property
     def role(self):
@@ -92,32 +88,13 @@ class ChatRole:
         """Outputs of the chat role"""
         return self._outputs
 
-    @property
-    def name(self):
-        """Name of the chat role"""
-        return self._name
-
-    @property
-    def stop_signal(self):
-        """Stop signal of the role"""
-        return self._stop_signal
-
-    @property
-    def flow(self):
-        """Flow definition of the chat role"""
-        return self._flow_definition
-
-    @property
-    def working_dir(self):
-        return self._working_dir
-
-    @property
-    def output_dir(self):
-        return self._output_dir
-
-    def _validate_flow(self, flow_path: Path):
+    def _validate_flow(self, flow: Union[str, PathLike], working_dir: Optional[Path] = None):
         """Validate flow"""
-        logger.debug(f"Validating chat role flow source {flow_path!r}")
+        logger.debug(f"Validating chat role flow source {flow!r}")
+        if working_dir is None:
+            flow_path = Path(flow).resolve()
+        else:
+            flow_path = (working_dir / Path(flow)).resolve()
         try:
             flow_object = load_flow(flow_path)
         except Exception as e:
@@ -188,7 +165,7 @@ class ChatRole:
         return result
 
     def check_language_from_yaml(self):
-        flow_file = self._working_dir / self._flow_file if self.working_dir else self._flow_file
+        flow_file = self._working_dir / self._flow_file if self._working_dir else self._flow_file
         if flow_file.suffix.lower() == ".dll":
             return FlowLanguage.CSharp
         with open(flow_file, "r", encoding="utf-8") as fin:
