@@ -6,7 +6,7 @@ from os import PathLike
 from pathlib import Path
 from typing import Union
 
-from promptflow._constants import DEFAULT_ENCODING, PROMPTY_EXTENSION, FLOW_FILE_SUFFIX
+from promptflow._constants import DEFAULT_ENCODING, FLOW_FILE_SUFFIX
 from promptflow._sdk.entities._validation import SchemaValidatableMixin
 from promptflow._utils.flow_utils import is_flex_flow, is_prompty_flow, resolve_flow_path
 from promptflow._utils.yaml_utils import load_yaml_string
