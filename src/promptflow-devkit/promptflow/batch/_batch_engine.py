@@ -501,6 +501,7 @@ class BatchEngine:
         total_lines = len(batch_inputs)
         completed_line = 0
         last_log_count = 0
+        bulk_logger.warning(f"Not Coming in.... completed_line: {completed_line}, last_log_count: {last_log_count}")
         while completed_line < total_lines:
             # wait for any task to complete
             done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
@@ -510,6 +511,7 @@ class BatchEngine:
             line_results.extend(completed_line_results)
             # update the progress log
             completed_line = len(line_results)
+            bulk_logger.warning(f"Coming in.... completed_line: {completed_line}, last_log_count: {last_log_count}")
             last_log_count = log_progress(
                 run_start_time=self._start_time,
                 total_count=total_lines,
