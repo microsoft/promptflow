@@ -22,6 +22,7 @@ from promptflow.storage._run_storage import DefaultRunStorage
 from promptflow.tracing._trace import _traced
 from promptflow.tracing._tracer import Tracer
 
+from ._errors import FlexFlowExecutionError
 from .flow_executor import FlowExecutor
 
 
@@ -93,6 +94,15 @@ class ScriptExecutor(FlowExecutor):
             output_dict = convert_eager_flow_output_to_dict(output)
             run_tracker.end_run(line_run_id, result=output_dict, traces=traces)
         except Exception as e:
+            # We assume the error comes from user's code.
+            # For these cases, raise FlexFlowExecutionError, which is classified as UserError
+            # and shows stack trace in the error message to make it easy for user to troubleshoot.
+            error_type_and_message = f"({e.__class__.__name__}) {self.e}"
+            e = FlexFlowExecutionError(
+                message_format="Execution failure in '{func_name}': {error_type_and_message}",
+                func_name=self._func.__qualname__,
+                error_type_and_message=error_type_and_message,
+            )
             if not traces:
                 traces = Tracer.end_tracing(line_run_id)
             run_tracker.end_run(line_run_id, ex=e, traces=traces)

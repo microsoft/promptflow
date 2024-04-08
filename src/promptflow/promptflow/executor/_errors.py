@@ -76,6 +76,10 @@ class InvalidFlowRequest(ValidationException):
         )
 
 
+class FlexFlowExecutionError(UserErrorException):
+    pass
+
+
 class NodeInputValidationError(InvalidFlowRequest):
     pass
 
