@@ -17,7 +17,7 @@ pip install -r requirements.txt
 Ensure you have put your azure open ai endpoint key in [.env](../.env) file. You can create one refer to this [example file](../.env.example).
 
 ```bash
-cat .env
+cat ../.env
 ```
 
 - Test flow

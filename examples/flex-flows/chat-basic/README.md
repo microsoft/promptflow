@@ -1,9 +1,6 @@
 # Basic chat
 This example shows how to create a basic chat flow. It demonstrates how to create a chatbot that can remember previous interactions and use the conversation history to generate next message.
 
-Tools used in this flow：
-- `llm` tool
-
 ## Prerequisites
 
 Install promptflow sdk and other dependencies in this folder:
@@ -44,7 +41,7 @@ See <a href="https://platform.openai.com/docs/api-reference/chat/create#chat/cre
 Ensure you have put your azure open ai endpoint key in [.env](../.env) file. You can create one refer to this [example file](../.env.example).
 
 ```bash
-cat .env
+cat ../.env
 ```
 
 - Test flow/node
