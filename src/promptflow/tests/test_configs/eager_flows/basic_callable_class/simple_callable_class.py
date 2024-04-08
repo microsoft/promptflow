@@ -2,7 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from promptflow._core.metric_logger import log_metric
+from promptflow.core import log_metric
 
 class MyFlow:
     def __init__(self, obj_input: str):
