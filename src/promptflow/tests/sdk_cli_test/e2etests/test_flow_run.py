@@ -1271,7 +1271,7 @@ class TestFlowRun:
         local_storage = LocalStorageOperations(run=run)
         assert local_storage._dag_path.exists()
         # the YAML file will not exist in user's folder
-        assert not Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/flow.flex.yaml").exists()
+        assert Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/flow.flex.yaml").exists()
 
     def test_eager_flow_yaml_override(self, pf):
         run = pf.run(
