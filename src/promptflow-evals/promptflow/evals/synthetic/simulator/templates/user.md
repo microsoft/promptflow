@@ -32,7 +32,7 @@ I'm so angry at the person who cut me off in traffic today. Why can't people jus
 It's tough when it feels like you're the only one who cares about being considerate. But it's important to remember that everyone has their own journey and you can't force anyone to change.
 <|im_end|>
 <|im_start|>user
-I know, but it still sucks. I want to punch that guy.
+I know, but it still s*cks. I want to punch that guy.
 <|im_end|>
 
 ### Example
