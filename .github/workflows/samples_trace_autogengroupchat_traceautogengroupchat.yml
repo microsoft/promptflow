@@ -50,6 +50,11 @@ jobs:
             sed -i -e "s/<your_AOAI_key>/$AOAI_API_KEY/g" -e "s/<your_AOAI_endpoint>/$AOAI_API_ENDPOINT/g" ../.env.example
             mv ../.env.example ../.env
           fi
+          if [[ -e OAI_CONFIG_LIST.json.example ]]; then
+            echo "OAI_CONFIG_LIST replacement"
+            sed -i -e "s/<your_AOAI_key>/$AOAI_API_KEY/g" -e "s/<your_AOAI_endpoint>/$AOAI_API_ENDPOINT/g" OAI_CONFIG_LIST.json.example
+            mv OAI_CONFIG_LIST.json.example OAI_CONFIG_LIST.json
+          fi
       - name: Create Aoai Connection
         run: pf connection create -f ${{ github.workspace }}/examples/connections/azure_openai.yml --set api_key="${{ secrets.AOAI_API_KEY_TEST }}" api_base="${{ secrets.AOAI_API_ENDPOINT_TEST }}"
       - name: Test Notebook
