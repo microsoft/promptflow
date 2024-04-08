@@ -351,9 +351,9 @@ class TestSummary:
             [None, None],
         ],
     )
-    def test_truncate_inputs_outputs_content(self, content, expected_result):
+    def test_truncate_and_replace_content(self, content, expected_result):
 
-        truncated_content = self.summary._truncate_inputs_outputs_content(content)
+        truncated_content = self.summary._truncate_and_replace_content(content)
 
         assert truncated_content == expected_result
 

@@ -144,12 +144,12 @@ class Summary:
         for event in events:
             value_for_input = self._get_pf_defined_payload(event, SPAN_EVENTS_NAME_PF_INPUTS)
             if value_for_input is not None:
-                self.inputs = self._truncate_inputs_outputs_content(value_for_input)
+                self.inputs = self._truncate_and_replace_content(value_for_input)
                 break
         for event in events:
             value_for_output = self._get_pf_defined_payload(event, SPAN_EVENTS_NAME_PF_OUTPUT)
             if value_for_output is not None:
-                self.outputs = self._truncate_inputs_outputs_content(value_for_output)
+                self.outputs = self._truncate_and_replace_content(value_for_output)
                 break
 
     def _get_pf_defined_payload(self, event, key):
@@ -161,23 +161,26 @@ class Summary:
         #  Do not constraint the payload to be dict in case of trace from customer script.
         return json_loads_parse_const_as_str(attributes[SPAN_EVENTS_ATTRIBUTE_PAYLOAD])
 
-    def _truncate_inputs_outputs_content(self, content):
+    def _truncate_and_replace_content(self, content):
+        TRUNCATE_THRESHOLD_FOR_STRING = 500  # Truncate string values, use large enough limit for UX display.
+        PLACEHOLDER_FOR_LIST = "[...]"
+        PLACEHOLDER_FOR_DICT = "{...}"
+        PLACEHOLDER_FOR_UNSUPPORTED_TYPE = "[UNSUPPORTED TYPE]"  # For any other type, use a generic placeholder
+
         def _process_value(value):
             # For python, bool is subclass of int, so we don't need to check bool again.
             if value is None or isinstance(value, (int, float)):
                 return value
             elif isinstance(value, str):
-                # Truncate string values, use large enough limit for UX display.
-                return value[:500]
+                return value[:TRUNCATE_THRESHOLD_FOR_STRING]
             elif isinstance(value, list):
-                return "[...]"
+                return PLACEHOLDER_FOR_LIST
             elif isinstance(value, dict):
-                return "{...}"
+                return PLACEHOLDER_FOR_DICT
             else:
-                # For any other type, use a generic placeholder
-                return "[UNSUPPORTED TYPE]"
+                return PLACEHOLDER_FOR_UNSUPPORTED_TYPE
 
-        # Promptflow defined output is a dictionary, so we need to process the first level dict differently.
+        # Promptflow defined input/output is a dictionary, so we need to process the first level dict differently.
         if isinstance(content, dict):
             truncated_content = {}
             for key, value in content.items():
