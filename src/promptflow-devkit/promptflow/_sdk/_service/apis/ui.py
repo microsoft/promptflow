@@ -168,7 +168,7 @@ class YamlEdit(Resource):
         flow_path = get_set_flow_yaml(flow, experiment)
         flow_path_dir, flow_path_file = resolve_flow_path(flow_path)
         flow_info = load_yaml(flow_path_dir / flow_path_file)
-        if is_flex_flow(file_path=flow_path_dir / flow_path_file):
+        if is_flex_flow(flow_path=flow_path_dir / flow_path_file):
             # call api provided by han to get flow input
             flow_input = {}
             flow_info.update(flow_input)

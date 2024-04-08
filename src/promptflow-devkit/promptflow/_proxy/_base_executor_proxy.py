@@ -52,7 +52,7 @@ class AbstractExecutorProxy:
         load_in_subprocess: bool = True,
     ) -> dict:
         """Generate flow.tools.json for the specified flow."""
-        if is_flex_flow(file_path=flow_file, working_dir=working_dir):
+        if is_flex_flow(flow_path=flow_file, working_dir=working_dir):
             return {}
         else:
             return cls._generate_flow_tools_json(flow_file, working_dir, dump, timeout, load_in_subprocess)
@@ -93,7 +93,7 @@ class AbstractExecutorProxy:
         :return: The metadata of the flow.
         :rtype: Dict[str, Any]
         """
-        if is_flex_flow(file_path=flow_file, working_dir=working_dir):
+        if is_flex_flow(flow_path=flow_file, working_dir=working_dir):
             return cls._generate_flow_json(flow_file, working_dir, dump, timeout, load_in_subprocess)
         else:
             return {}
