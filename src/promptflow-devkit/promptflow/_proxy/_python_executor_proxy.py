@@ -13,7 +13,6 @@ from promptflow._utils.flow_utils import resolve_entry_file
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.run_mode import RunMode
-from promptflow.core._utils import generate_flow_meta
 from promptflow.executor import FlowExecutor
 from promptflow.executor._line_execution_process_pool import LineExecutionProcessPool
 from promptflow.executor._result import AggregationResult, LineResult
@@ -37,6 +36,8 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         timeout: int = FLOW_META_JSON_GEN_TIMEOUT,
         load_in_subprocess: bool = True,
     ) -> Dict[str, Any]:
+        from promptflow._core.entry_meta_generator import generate_flow_meta
+
         flow_dag = load_yaml(flow_file)
         # generate flow.json only for eager flow for now
         return generate_flow_meta(
@@ -60,7 +61,7 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         **kwargs,
     ) -> "PythonExecutorProxy":
         flow_executor = FlowExecutor.create(
-            flow_file, connections, working_dir, storage=storage, raise_ex=False, init_kwargs=init_kwargs
+            flow_file, connections, working_dir, storage=storage, raise_ex=False, init_kwargs=init_kwargs, **kwargs
         )
         return cls(flow_executor)
 

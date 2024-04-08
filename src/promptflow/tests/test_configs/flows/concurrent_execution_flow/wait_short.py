@@ -1,6 +1,6 @@
 import threading
 from time import sleep
-from promptflow import tool
+from promptflow.core import tool
 
 
 @tool

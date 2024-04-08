@@ -13,8 +13,8 @@ import httpx
 
 from promptflow._constants import DEFAULT_ENCODING, LINE_TIMEOUT_SEC
 from promptflow._core._errors import NotSupported, UnexpectedError
+from promptflow._proxy._errors import ExecutorServiceUnhealthy
 from promptflow._sdk._constants import (
-    DAG_FILE_NAME,
     FLOW_META_JSON,
     FLOW_META_JSON_GEN_TIMEOUT,
     FLOW_TOOLS_JSON,
@@ -23,10 +23,9 @@ from promptflow._sdk._constants import (
 )
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.exception_utils import ErrorResponse, ExceptionPresenter
-from promptflow._utils.flow_utils import is_flex_flow, read_json_content
+from promptflow._utils.flow_utils import is_flex_flow, read_json_content, resolve_flow_path
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.utils import load_json
-from promptflow.batch._errors import ExecutorServiceUnhealthy
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.exceptions import ErrorTarget, ValidationException
 from promptflow.executor._errors import AggregationNodeExecutionTimeoutError, LineExecutionTimeoutError
@@ -240,8 +239,9 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         """Get the inputs definition of an eager flow"""
         from promptflow.contracts.flow import FlowInputDefinition
 
+        _, flow_file = resolve_flow_path(self.working_dir, check_flow_exist=False)
         flow_meta = self.generate_flow_json(
-            flow_file=self.working_dir / DAG_FILE_NAME,
+            flow_file=self.working_dir / flow_file,
             working_dir=self.working_dir,
             dump=False,
         )

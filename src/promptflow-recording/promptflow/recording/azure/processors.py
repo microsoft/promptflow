@@ -124,12 +124,14 @@ class AzureResourceProcessor(RecordingProcessor):
         return body
 
     def _sanitize_response_for_arm_connection(self, body: Dict) -> Dict:
-        if body["properties"]["authType"] == "CustomKeys":
-            # custom connection, sanitize "properties.credentials.keys"
-            body["properties"]["credentials"]["keys"] = {}
-        else:
-            # others, sanitize "properties.credentials.key"
-            body["properties"]["credentials"]["key"] = "_"
+        # Note: list api returns credentials as null
+        if body["properties"]["credentials"] is not None:
+            if body["properties"]["authType"] == "CustomKeys":
+                # custom connection, sanitize "properties.credentials.keys"
+                body["properties"]["credentials"]["keys"] = {}
+            else:
+                # others, sanitize "properties.credentials.key"
+                body["properties"]["credentials"]["key"] = "_"
         body["properties"]["target"] = "_"
         return body
 

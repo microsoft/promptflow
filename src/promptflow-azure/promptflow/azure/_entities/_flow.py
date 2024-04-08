@@ -11,9 +11,9 @@ from typing import Dict, List, Optional, Union
 import pydash
 
 from promptflow._constants import FlowLanguage
-from promptflow._sdk._constants import DAG_FILE_NAME, SERVICE_FLOW_TYPE_2_CLIENT_FLOW_TYPE, AzureFlowSource, FlowType
+from promptflow._sdk._constants import SERVICE_FLOW_TYPE_2_CLIENT_FLOW_TYPE, AzureFlowSource, FlowType
 from promptflow._sdk._utils import PromptflowIgnoreFile, load_yaml, remove_empty_element_from_dict
-from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag
+from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag, resolve_flow_path
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.azure._ml import AdditionalIncludesMixin, Code
 
@@ -72,11 +72,9 @@ class Flow(AdditionalIncludesMixin):
         :param source: The source of the flow.
         :type source: Union[str, PathLike]
         """
-        absolute_path = Path(source).resolve().absolute()
-        if absolute_path.is_dir():
-            absolute_path = absolute_path / DAG_FILE_NAME
-        if not absolute_path.exists():
-            raise ValueError(f"Flow file {absolute_path.as_posix()} does not exist.")
+        flow_path, flow_file = resolve_flow_path(source)
+        absolute_path = flow_path / flow_file
+
         return absolute_path
 
     def _load_flow_yaml(self, path: Union[str, Path]) -> Dict:

@@ -17,6 +17,8 @@ To enable this feature, customer need to:
 
 :::
 
+To explore an executable end-to-end example of running sample flow within Azure ML workspace, you can refer to this tutorial notebook: [run flow with pipeline](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/run-flow-with-pipeline/pipeline.ipynb)
+
 For more information about AzureML and component:
 - [What is Azure CLI](https://learn.microsoft.com/en-us/cli/azure/what-is-azure-cli)
 - [Install and set up the CLI(v2)](https://learn.microsoft.com/en-us/azure/machine-learning/how-to-configure-cli)
