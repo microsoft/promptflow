@@ -716,7 +716,6 @@ class Run(YAMLTranslatableMixin):
             run_info = json.load(f)
 
         return cls(
-            flow=run_info.get("properties", {}).get("azureml.promptflow.flow_definition_blob_path", None),
             name=run_info["name"],
             source=source,
             run_source=RunInfoSources.EXISTING_RUN,
