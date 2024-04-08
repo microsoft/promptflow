@@ -1,4 +1,4 @@
-from promptflow.core import toolProvider, tool
+from promptflow.core import ToolProvider, tool
 
 
 class ScriptToolWithInit(ToolProvider):
