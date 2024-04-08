@@ -1269,3 +1269,16 @@ class TestFlowRun:
         assert run.properties["azureml.promptflow.init_kwargs"] == '{"obj_input":"val"}'
         details = pf.runs.get_details(run)
         assert details.shape[0] == 2
+
+    def test_flex_flow_run_init_connection(self, pf: PFClient, randstr: Callable[[str], str]):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/callable_class_init_connection")
+        run = pf.run(
+            flow=flow_path,
+            data=f"{EAGER_FLOWS_DIR}/callable_class_init_connection/inputs.jsonl",
+            init={"obj_input": "val", "connection": "azure_open_ai_connection"},
+            name=randstr("name"),
+        )
+        run = pf.runs.stream(run)
+        assert run.status == RunStatus.COMPLETED
+        details = pf.runs.get_details(run)
+        assert details.shape[0] == 2
