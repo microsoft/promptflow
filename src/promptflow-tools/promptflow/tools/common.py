@@ -715,7 +715,13 @@ def normalize_connection_config(connection):
     This function takes a connection object and normalizes its configuration,
     ensuring it is compatible and standardized for use.
     """
-    from promptflow.connections import ServerlessConnection
+    try:
+        from promptflow.connections import ServerlessConnection
+    except ImportError:
+        # If unable to import ServerlessConnection, define a placeholder class to allow isinstance checks to pass.
+        # ServerlessConnection was introduced in pf version 1.6.0.
+        class ServerlessConnection:
+            pass
 
     if isinstance(connection, AzureOpenAIConnection):
         if connection.api_key:
