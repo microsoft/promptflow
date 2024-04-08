@@ -1,6 +1,6 @@
 import os
 
-from promptflow import tool
+from promptflow.core import tool
 from promptflow.connections import CustomConnection
 
 

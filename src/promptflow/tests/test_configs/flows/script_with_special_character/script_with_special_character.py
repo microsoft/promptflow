@@ -1,4 +1,4 @@
-from promptflow import tool
+from promptflow.core import tool
 
 @tool
 def print_special_character(input1: str) -> str:

@@ -10,10 +10,10 @@ from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY
 from promptflow._utils.flow_utils import resolve_entry_file
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
-from .dag import Flow
+from .base import Flow as FlowBase
 
 
-class FlexFlow(Flow):
+class FlexFlow(FlowBase):
     """A FlexFlow represents a flow defined with codes directly. It doesn't involve a directed acyclic graph (DAG)
     explicitly, but its entry function haven't been provided.
     FlexFlow basically behave like a Flow.
@@ -71,9 +71,9 @@ class FlexFlow(Flow):
     @classmethod
     def _create_schema_for_validation(cls, context):
         # import here to avoid circular import
-        from promptflow._sdk.schemas._flow import EagerFlowSchema
+        from promptflow._sdk.schemas._flow import FlexFlowSchema
 
-        return EagerFlowSchema(context=context)
+        return FlexFlowSchema(context=context)
 
     def _default_context(self) -> dict:
         return {BASE_PATH_CONTEXT_KEY: self.code}
@@ -111,7 +111,7 @@ class FlexFlow(Flow):
 
     def _init_executable(self, **kwargs):
         from promptflow._proxy import ProxyFactory
-        from promptflow.contracts.flow import EagerFlow as ExecutableEagerFlow
+        from promptflow.contracts.flow import FlexFlow as ExecutableEagerFlow
 
         meta_dict = (
             ProxyFactory()
