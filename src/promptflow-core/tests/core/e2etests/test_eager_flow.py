@@ -16,6 +16,15 @@ SAMPLE_EVAL_FLOW = "classification_accuracy_evaluation"
 SAMPLE_FLOW_WITH_PARTIAL_FAILURE = "python_tool_partial_failure"
 
 
+class ClassEntry:
+    def __call__(self, input_str: str) -> str:
+        return "Hello " + input_str
+
+
+def func_entry(input_str: str) -> str:
+    return "Hello " + input_str
+
+
 @pytest.mark.e2etest
 class TestEagerFlow:
     @pytest.mark.parametrize(
@@ -54,6 +63,16 @@ class TestEagerFlow:
         # run the same line again will get same output
         line_result2 = executor.exec_line(inputs=inputs, index=0)
         assert line_result1.output == line_result2.output
+
+    @pytest.mark.parametrize(
+        "entry, inputs, expected_output",
+        [(ClassEntry(), {"input_str": "world"}, "Hello world"), (func_entry, {"input_str": "world"}, "Hello world")],
+    )
+    def test_flow_run_with_function_entry(self, entry, inputs, expected_output):
+        executor = FlowExecutor.create(entry, {})
+        line_result = executor.exec_line(inputs=inputs)
+        assert line_result.run_info.status == Status.Completed
+        assert line_result.output == expected_output
 
     def test_flow_run_with_invalid_case(self):
         flow_folder = "dummy_flow_with_exception"
