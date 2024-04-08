@@ -28,7 +28,11 @@ from promptflow._sdk._constants import (
     PF_SERVICE_PORT_FILE,
 )
 from promptflow._sdk._errors import ConnectionNotFoundError, RunNotFoundError
+<<<<<<< HEAD
 from promptflow._sdk._utils import get_promptflow_devkit_version, get_promptflow_sdk_version, read_write_by_user
+=======
+from promptflow._sdk._utils import get_promptflow_sdk_version, read_write_by_user
+>>>>>>> 59132eb2e ([Hotfix]Fix pf flow build executable (#2666))
 from promptflow._sdk._version import VERSION
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
