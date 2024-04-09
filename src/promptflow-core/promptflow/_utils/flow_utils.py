@@ -164,8 +164,8 @@ def is_flex_flow(
         file_path = flow_path / flow_file
         if file_path.is_file() and file_path.suffix.lower() in (".yaml", ".yml"):
             yaml_dict = load_yaml(file_path)
-        if not check_flow_exist and flow_file == FLOW_FLEX_YAML:
-            return True
+        elif not check_flow_exist:
+            return flow_file == FLOW_FLEX_YAML
 
     return isinstance(yaml_dict, dict) and "entry" in yaml_dict
 
