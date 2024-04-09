@@ -10,6 +10,7 @@ from promptflow.core._errors import (
     ChatAPIInvalidRoleError,
     CoreError,
     InvalidConnectionError,
+    InvalidOutputKeyError,
     UnknownConnectionType,
 )
 from promptflow.core._utils import render_jinja_template_content
@@ -123,21 +124,57 @@ def send_request_to_llm(client, api, parameters):
     return result
 
 
-def format_llm_response(response, api, response_format=None, raw=False, streaming=False):
-    if raw or streaming:
+def format_llm_response(response, api, is_first_choice, response_format=None, streaming=False, outputs=None):
+    """
+    Format LLM response
+
+    :param response: LLM response.
+    :type response:
+    :param api: API type of the LLM.
+    :type api: str
+    :param is_first_choice: If true, it will return the first item in response choices, else it will return all choices.
+    :type is_first_choice: bool
+    :param response_format: An object specifying the format that the model must output.
+    :type response_format: str
+    :param streaming: Indicates whether to stream the response
+    :type streaming: bool
+    :param outputs: Extract corresponding output in json format response
+    :type outputs: dict
+    :return: Formatted LLM response.
+    :rtype: Union[str, dict, Response]
+    """
+
+    def format_choice(item):
+        # response_format is one of text or json_object.
+        # https://platform.openai.com/docs/api-reference/chat/create#chat-create-response_format
+        if response_format == "json_object":
+            result_dict = json.loads(item)
+            if not outputs:
+                return result_dict
+            # return the keys in outputs
+            output_results = {}
+            for key in outputs:
+                if key not in output_results:
+                    raise InvalidOutputKeyError(f"Cannot find {key} in response {list(result_dict.keys())}")
+                output_results[key] = result_dict[key]
+            return output_results
+        # Return text format response
+        return item
+
+    if streaming:
         return response
 
-    if api == "completion":
-        result = response.choices[0].text
+    if is_first_choice:
+        if api == "completion":
+            result = format_choice(response.choices[0].text)
+        else:
+            result = format_choice(getattr(response.choices[0].message, "content", ""))
     else:
-        result = getattr(response.choices[0].message, "content", "")
-
-    # response_format is one of text or json_object.
-    # https://platform.openai.com/docs/api-reference/chat/create#chat-create-response_format
-    if response_format == "json_object":
-        return json.loads(result)
-    else:
-        return result
+        if api == "completion":
+            result = [format_choice(item.text) for item in response.choices]
+        else:
+            result = [format_choice(getattr(item, "content", "")) for item in response.choices]
+    return result
 
 
 # region: Copied from promptflow-tools

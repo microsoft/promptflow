@@ -262,6 +262,7 @@ class Prompty(FlowBase):
         self._parameters = prompty_model.get("parameters", None)
         self._api = prompty_model["api"]
         self._inputs = configs.get("inputs", {})
+        self._outputs = configs.get("outputs", {})
         configs["model"] = prompty_model
         super().__init__(code=path.parent, path=path, data=configs, content_hash=None, **kwargs)
 
@@ -368,7 +369,9 @@ class Prompty(FlowBase):
             response=response,
             api=self._api,
             response_format=params.get("response_format", None),
-            raw=self._data.get("format", None) == "raw",
+            is_first_choice=self._data.get("response", None) == "first",
+            streaming=params.get("stream", False),
+            outputs=self._outputs,
         )
 
 
@@ -418,5 +421,7 @@ class AsyncPrompty(Prompty):
             response=response,
             api=self._api,
             response_format=params.get("response_format", None),
-            raw=self._data.get("format", None) == "raw",
+            is_first_choice=self._data.get("response", None) == "first",
+            streaming=params.get("stream", False),
+            outputs=self._outputs,
         )

@@ -90,6 +90,12 @@ class MissingRequiredInputError(CoreError):
     pass
 
 
+class InvalidOutputKeyError(CoreError):
+    """Exception raised when invalid output key."""
+
+    pass
+
+
 class OpenURLUserAuthenticationError(UserAuthenticationError):
     def __init__(self, **kwargs):
         super().__init__(target=ErrorTarget.CORE, **kwargs)
