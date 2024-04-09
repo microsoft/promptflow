@@ -10,11 +10,11 @@ from jinja2 import TemplateSyntaxError
 from promptflow._core._errors import InvalidSource
 from promptflow._core.tools_manager import ToolLoader
 from promptflow._internal import tool
-from promptflow.connections import CustomConnection, CustomStrongTypeConnection
-from promptflow.connections import AzureOpenAIConnection
+from promptflow.connections import AzureOpenAIConnection, CustomConnection, CustomStrongTypeConnection
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
 from promptflow.contracts.tool import AssistantDefinition, InputDefinition, Secret, Tool, ToolType, ValueType
 from promptflow.contracts.types import PromptTemplate
+from promptflow.core._connection_provider._dict_connection_provider import DictConnectionProvider
 from promptflow.exceptions import UserErrorException
 from promptflow.executor._errors import (
     ConnectionNotFound,
@@ -48,7 +48,7 @@ def mock_package_func(prompt: PromptTemplate, **kwargs):
 class TestToolResolver:
     @pytest.fixture
     def resolver(self):
-        return ToolResolver(working_dir=None, connections={})
+        return ToolResolver(working_dir=None)
 
     def test_resolve_tool_by_node_with_diff_type(self, resolver, mocker):
         node = mocker.Mock(name="node", tool=None, inputs={})
@@ -180,7 +180,7 @@ class TestToolResolver:
         assert expected_message in exec_info.value.message
 
     def test_convert_node_literal_input_types_with_invalid_case(self):
-        # Case 1: conn_name not in connections, should raise conn_name not found error
+        # Case 1: conn_name not in connection_provider, should raise conn_name not found error
         tool = Tool(name="mock", type="python", inputs={"conn": InputDefinition(type=["CustomConnection"])})
         node = Node(
             name="mock",
@@ -188,13 +188,13 @@ class TestToolResolver:
             inputs={"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL)},
         )
         with pytest.raises(ConnectionNotFound):
-            tool_resolver = ToolResolver(working_dir=None, connections={})
+            tool_resolver = ToolResolver(working_dir=None, connection_provider=DictConnectionProvider({}))
             tool_resolver._convert_node_literal_input_types(node, tool)
 
-        # Case 2: conn_name in connections, but type not matched
+        # Case 2: conn_name in connection_provider, but type not matched
         connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
         with pytest.raises(NodeInputValidationError) as exe_info:
-            tool_resolver = ToolResolver(working_dir=None, connections=connections)
+            tool_resolver = ToolResolver(working_dir=None, connection_provider=DictConnectionProvider(connections))
             tool_resolver._convert_node_literal_input_types(node, tool)
         message = "'AzureOpenAIConnection' is not supported, valid types ['CustomConnection']"
         assert message in exe_info.value.message, "Expected: {}, Actual: {}".format(message, exe_info.value.message)
@@ -207,7 +207,7 @@ class TestToolResolver:
             inputs={"int_input": InputAssignment(value="invalid", value_type=InputValueType.LITERAL)},
         )
         with pytest.raises(NodeInputValidationError) as exe_info:
-            tool_resolver = ToolResolver(working_dir=None, connections={})
+            tool_resolver = ToolResolver(working_dir=None)
             tool_resolver._convert_node_literal_input_types(node, tool)
         message = "value 'invalid' is not type int"
         assert message in exe_info.value.message, "Expected: {}, Actual: {}".format(message, exe_info.value.message)
@@ -220,7 +220,7 @@ class TestToolResolver:
             inputs={"int_input": InputAssignment(value="invalid", value_type=InputValueType.LITERAL)},
         )
         with pytest.raises(ValueTypeUnresolved):
-            tool_resolver = ToolResolver(working_dir=None, connections={})
+            tool_resolver = ToolResolver(working_dir=None)
             tool_resolver._convert_node_literal_input_types(node, tool)
 
         # Case 5: Literal value, invalid image in list
@@ -232,7 +232,7 @@ class TestToolResolver:
             inputs={"list_input": InputAssignment(value=[invalid_image], value_type=InputValueType.LITERAL)},
         )
         with pytest.raises(NodeInputValidationError) as exe_info:
-            tool_resolver = ToolResolver(working_dir=None, connections={})
+            tool_resolver = ToolResolver(working_dir=None)
             tool_resolver._convert_node_literal_input_types(node, tool)
         message = "Invalid base64 image"
         assert message in exe_info.value.message, "Expected: {}, Actual: {}".format(message, exe_info.value.message)
@@ -249,7 +249,7 @@ class TestToolResolver:
             inputs={"assistant_definition": InputAssignment(value="invalid_path", value_type=InputValueType.LITERAL)},
         )
         with pytest.raises(NodeInputValidationError) as exe_info:
-            tool_resolver = ToolResolver(working_dir=Path(__file__).parent, connections={})
+            tool_resolver = ToolResolver(working_dir=Path(__file__).parent)
             tool_resolver._convert_node_literal_input_types(node, tool)
         assert (
             "Failed to load assistant definition" in exe_info.value.message
@@ -257,6 +257,9 @@ class TestToolResolver:
         ), "Expected: {}, Actual: {}".format(message, exe_info.value.message)
 
     def test_resolve_llm_connection_to_inputs(self):
+        connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
+        connection_provider = DictConnectionProvider(connections)
+
         # Case 1: node.connection is not specified
         tool = Tool(name="mock", type="python", inputs={"conn": InputDefinition(type=["CustomConnection"])})
         node = Node(
@@ -264,9 +267,8 @@ class TestToolResolver:
             tool=tool,
             inputs={"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL)},
         )
-        connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
         with pytest.raises(ConnectionNotFound):
-            tool_resolver = ToolResolver(working_dir=None, connections=connections)
+            tool_resolver = ToolResolver(working_dir=None, connection_provider=connection_provider)
             tool_resolver._resolve_llm_connection_to_inputs(node, tool)
 
         # Case 2: node.connection is not found from connection manager
@@ -277,9 +279,8 @@ class TestToolResolver:
             inputs={"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL)},
             connection="conn_name1",
         )
-        connections = {}
         with pytest.raises(ConnectionNotFound):
-            tool_resolver = ToolResolver(working_dir=None, connections=connections)
+            tool_resolver = ToolResolver(working_dir=None, connection_provider=DictConnectionProvider({}))
             tool_resolver._resolve_llm_connection_to_inputs(node, tool)
 
         # Case 3: Tool definition with bad input type list
@@ -290,9 +291,8 @@ class TestToolResolver:
             inputs={"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL)},
             connection="conn_name",
         )
-        connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
         with pytest.raises(InvalidConnectionType) as exe_info:
-            tool_resolver = ToolResolver(working_dir=None, connections=connections)
+            tool_resolver = ToolResolver(working_dir=None, connection_provider=connection_provider)
             tool_resolver._resolve_llm_connection_to_inputs(node, tool)
         assert "Connection type can not be resolved for tool" in exe_info.value.message
 
@@ -304,9 +304,8 @@ class TestToolResolver:
             inputs={"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL)},
             connection="conn_name",
         )
-        connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
         with pytest.raises(InvalidConnectionType) as exe_info:
-            tool_resolver = ToolResolver(working_dir=None, connections=connections)
+            tool_resolver = ToolResolver(working_dir=None, connection_provider=connection_provider)
             tool_resolver._resolve_llm_connection_to_inputs(node, tool)
         assert "Invalid connection" in exe_info.value.message
 
@@ -322,9 +321,7 @@ class TestToolResolver:
             inputs={"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL)},
             connection="conn_name",
         )
-        connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
-
-        tool_resolver = ToolResolver(working_dir=None, connections=connections)
+        tool_resolver = ToolResolver(working_dir=None, connection_provider=connection_provider)
         key, conn = tool_resolver._resolve_llm_connection_to_inputs(node, tool)
         assert key == "conn"
         assert isinstance(conn, AzureOpenAIConnection)
@@ -345,7 +342,7 @@ class TestToolResolver:
         )
 
         connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
-        tool_resolver = ToolResolver(working_dir=None, connections=connections)
+        tool_resolver = ToolResolver(working_dir=None, connection_provider=DictConnectionProvider(connections))
         tool_resolver._tool_loader = tool_loader
         mocker.patch.object(tool_resolver, "_load_source_content", return_value="{{text}}![image]({{image}})")
 
@@ -383,7 +380,7 @@ class TestToolResolver:
         )
 
         connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
-        tool_resolver = ToolResolver(working_dir=None, connections=connections)
+        tool_resolver = ToolResolver(working_dir=None, connection_provider=DictConnectionProvider(connections))
         tool_resolver._tool_loader = tool_loader
 
         node = Node(
@@ -419,7 +416,7 @@ class TestToolResolver:
             return_value=(mock_python_func, {}),
         )
 
-        tool_resolver = ToolResolver(working_dir=Path(__file__).parent, connections={})
+        tool_resolver = ToolResolver(working_dir=Path(__file__).parent)
         tool_resolver._tool_loader = tool_loader
         mocker.patch("builtins.open", mock_open())
         mocker.patch(
@@ -447,7 +444,7 @@ class TestToolResolver:
         )
 
         connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
-        tool_resolver = ToolResolver(working_dir=None, connections=connections)
+        tool_resolver = ToolResolver(working_dir=None, connection_provider=DictConnectionProvider(connections))
         tool_resolver._tool_loader = tool_loader
 
         node = Node(
@@ -467,7 +464,7 @@ class TestToolResolver:
         assert resolved_tool.callable(**kwargs) == "Hello World!"
 
     def test_integrate_prompt_in_package_node(self, mocker):
-        tool_resolver = ToolResolver(working_dir=None, connections={})
+        tool_resolver = ToolResolver(working_dir=None)
         mocker.patch.object(
             tool_resolver,
             "_load_source_content",
@@ -500,7 +497,7 @@ class TestToolResolver:
     )
     def test_convert_to_custom_strong_type_connection_value(self, conn_types: List[str], expected_type, mocker):
         connections = {"conn_name": {"type": "CustomConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
-        tool_resolver = ToolResolver(working_dir=None, connections=connections)
+        tool_resolver = ToolResolver(working_dir=None, connection_provider=DictConnectionProvider(connections))
 
         node = mocker.Mock(name="node", tool=None, inputs={})
         node.type = ToolType.PYTHON
@@ -564,7 +561,9 @@ class TestToolResolver:
 
         # Test load tools
         connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
-        tool_resolver = ToolResolver(working_dir=Path(__file__).parent, connections=connections)
+        tool_resolver = ToolResolver(
+            working_dir=Path(__file__).parent, connection_provider=DictConnectionProvider(connections)
+        )
         tool_resolver._resolve_assistant_tools("node_name", assistant_definitions)
         invoker = assistant_definitions._tool_invoker
         assert len(invoker._assistant_tools) == len(assistant_definitions.tools) == len(tool_definitions)
