@@ -124,7 +124,7 @@ def send_request_to_llm(client, api, parameters):
     return result
 
 
-def format_llm_response(response, api, is_first_choice, response_format=None, raw=False, streaming=False, outputs=None):
+def format_llm_response(response, api, is_first_choice, response_format=None, streaming=False, outputs=None):
     """
     Format LLM response
 
@@ -132,12 +132,10 @@ def format_llm_response(response, api, is_first_choice, response_format=None, ra
     :type response:
     :param api: API type of the LLM.
     :type api: str
-    :param is_first_choice: If true, it will return the first item in response choices, else it will return all choices.
+    :param is_first_choice: If true, it will return the first item in response choices, else it will return ll response
     :type is_first_choice: bool
     :param response_format: An object specifying the format that the model must output.
     :type response_format: str
-    :param raw: Directly return LLM response.
-    :type raw: bool
     :param streaming: Indicates whether to stream the response
     :type streaming: bool
     :param outputs: Extract corresponding output in json format response
@@ -163,19 +161,13 @@ def format_llm_response(response, api, is_first_choice, response_format=None, ra
         # Return text format response
         return item
 
-    if raw or streaming:
+    if not is_first_choice or streaming:
         return response
 
-    if is_first_choice:
-        if api == "completion":
-            result = format_choice(response.choices[0].text)
-        else:
-            result = format_choice(getattr(response.choices[0].message, "content", ""))
+    if api == "completion":
+        result = format_choice(response.choices[0].text)
     else:
-        if api == "completion":
-            result = [format_choice(item.text) for item in response.choices]
-        else:
-            result = [format_choice(getattr(item.message, "content", "")) for item in response.choices]
+        result = format_choice(getattr(response.choices[0].message, "content", ""))
     return result
 
 

@@ -18,7 +18,7 @@ FLOW_DIR = TEST_ROOT / "test_configs/flows"
 EAGER_FLOW_DIR = TEST_ROOT / "test_configs/eager_flows"
 
 
-@pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection")
+@pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection", "recording_injection")
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
 class TestPrompty:
@@ -128,8 +128,8 @@ class TestPrompty:
         result = asyncio.run(async_prompty(question="what is the result of 1+1?"))
         assert "2" in result
 
-        # Test format is raw
-        async_prompty = AsyncPrompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", format="raw")
+        # Test return all choices
+        async_prompty = AsyncPrompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", model={"response": "all"})
         result = asyncio.run(async_prompty(question="what is the result of 1+1?"))
         assert isinstance(result, ChatCompletion)
 
@@ -194,21 +194,5 @@ class TestPrompty:
         prompty = Prompty.load(
             source=f"{PROMPTY_DIR}/prompty_example.prompty", model={"parameters": {"n": 2}, "response": "all"}
         )
-        result = prompty(question="what is the result of 1+1?")
-        assert len(result) == 2
-
-        # Test return all choices with specified output
-        prompty = Prompty.load(
-            source=f"{PROMPTY_DIR}/prompty_example_with_json_format.prompty",
-            model={"parameters": {"n": 2}, "response": "all"},
-            outputs={"answer": {"type": "number"}},
-        )
-        result = prompty(question="what is the result of 1+1?")
-        assert len(result) == 2
-        assert all(["name" not in item for item in result])
-        assert all([2 == item["answer"] for item in result])
-
-        # Test format is raw
-        prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", format="raw")
         result = prompty(question="what is the result of 1+1?")
         assert isinstance(result, ChatCompletion)

@@ -371,7 +371,6 @@ class Prompty(FlowBase):
         return format_llm_response(
             response=response,
             api=self._api,
-            raw=self._data.get("format", None) == "raw",
             response_format=params.get("response_format", {}).get("type", None),
             is_first_choice=self._data.get("model", {}).get("response", None) != "all",
             streaming=params.get("stream", False),
@@ -424,9 +423,8 @@ class AsyncPrompty(Prompty):
         return format_llm_response(
             response=response,
             api=self._api,
-            raw=self._data.get("format", None) == "raw",
             response_format=params.get("response_format", {}).get("type", None),
-            is_first_choice=self._data.get("response", None) != "all",
+            is_first_choice=self._data.get("model", {}).get("response", None) != "all",
             streaming=params.get("stream", False),
             outputs=self._outputs,
         )
