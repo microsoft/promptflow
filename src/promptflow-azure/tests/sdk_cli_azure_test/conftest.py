@@ -53,6 +53,7 @@ EAGER_FLOWS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/eager_flows"
 DATAS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/datas"
 AZUREML_RESOURCE_PROVIDER = "Microsoft.MachineLearningServices"
 RESOURCE_ID_FORMAT = "/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}"
+MODEL_ROOT = FLOWS_DIR
 
 
 def pytest_configure():
@@ -217,10 +218,6 @@ def remote_web_classification_data(remote_client):
 @pytest.fixture(scope="session")
 def runtime(runtime_name: str) -> str:
     return runtime_name
-
-
-PROMPTFLOW_ROOT = Path(__file__) / "../../.."
-MODEL_ROOT = Path(PROMPTFLOW_ROOT / "tests/test_configs/flows")
 
 
 @pytest.fixture
@@ -443,7 +440,7 @@ def mock_get_user_identity_info(user_object_id: str, tenant_id: str) -> None:
 def created_flow(pf: PFClient, randstr: Callable[[str], str], variable_recorder) -> Flow:
     """Create a flow for test."""
     flow_display_name = randstr("flow_display_name")
-    flow_source = FLOWS_DIR + "/simple_hello_world/"
+    flow_source = FLOWS_DIR / "simple_hello_world"
     description = "test flow description"
     tags = {"owner": "sdk-test"}
     result = pf.flows.create_or_update(

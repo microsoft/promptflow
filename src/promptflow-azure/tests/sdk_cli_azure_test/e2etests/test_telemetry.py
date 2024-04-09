@@ -126,47 +126,51 @@ class TestTelemetry:
             assert isinstance(custom_dimensions, dict)
             # Note: need privacy review if we add new fields.
             if "start" in envelope.data.base_data.name:
-                assert custom_dimensions.keys() == {
-                    "request_id",
-                    "activity_name",
-                    "activity_type",
-                    "subscription_id",
-                    "resource_group_name",
-                    "workspace_name",
-                    "level",
-                    "python_version",
-                    "user_agent",
-                    "installation_id",
-                    "first_call",
-                    "from_ci",
-                    "error_category",
-                    "error_type",
-                    "error_target",
-                    "error_message",
-                    "error_detail",
-                }
+                assert sorted(custom_dimensions.keys()) == sorted(
+                    {
+                        "request_id",
+                        "activity_name",
+                        "activity_type",
+                        "subscription_id",
+                        "resource_group_name",
+                        "workspace_name",
+                        "level",
+                        "python_version",
+                        "user_agent",
+                        "installation_id",
+                        "first_call",
+                        "from_ci",
+                        "error_category",
+                        "error_type",
+                        "error_target",
+                        "error_message",
+                        "error_detail",
+                    }
+                )
             elif "complete" in envelope.data.base_data.name:
-                assert custom_dimensions.keys() == {
-                    "request_id",
-                    "activity_name",
-                    "activity_type",
-                    "subscription_id",
-                    "resource_group_name",
-                    "workspace_name",
-                    "completion_status",
-                    "duration_ms",
-                    "level",
-                    "python_version",
-                    "user_agent",
-                    "installation_id",
-                    "first_call",
-                    "from_ci",
-                    "error_category",
-                    "error_type",
-                    "error_target",
-                    "error_message",
-                    "error_detail",
-                }
+                assert sorted(custom_dimensions.keys()) == sorted(
+                    {
+                        "request_id",
+                        "activity_name",
+                        "activity_type",
+                        "subscription_id",
+                        "resource_group_name",
+                        "workspace_name",
+                        "completion_status",
+                        "duration_ms",
+                        "level",
+                        "python_version",
+                        "user_agent",
+                        "installation_id",
+                        "first_call",
+                        "from_ci",
+                        "error_category",
+                        "error_type",
+                        "error_target",
+                        "error_message",
+                        "error_detail",
+                    }
+                )
             else:
                 raise ValueError("Invalid message: {}".format(envelope.data.base_data.name))
             assert envelope.data.base_data.name.startswith("pfazure.runs.get")
