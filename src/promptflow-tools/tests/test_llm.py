@@ -388,3 +388,7 @@ class TestLLM:
             assert res[0].get("display_value") == "chat"
             assert res[1].get("value") == "completion"
             assert res[1].get("display_value") == "completion"
+
+    # the test is to verify the tool can support serving streaming functionality.
+    def test_streaming_option_parameter_is_set(self):
+        assert getattr(llm, "_streaming_option_parameter") == "stream"

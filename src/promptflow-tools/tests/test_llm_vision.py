@@ -92,3 +92,7 @@ class TestLLMVision:
             mock_create.assert_called_once()
             called_with_params = mock_create.call_args[1]
             assert called_with_params['seed'] == seed_value
+
+    # the test is to verify the tool can support serving streaming functionality.
+    def test_streaming_option_parameter_is_set(self):
+        assert getattr(llm_vision, "_streaming_option_parameter") == "stream"
