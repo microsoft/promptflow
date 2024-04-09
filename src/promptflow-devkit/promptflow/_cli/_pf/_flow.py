@@ -139,8 +139,8 @@ Examples:
 
 # Creating a flex flow folder in a specific path:
 pf flow save --path my-awesome-flow --entry intent:extract_intent --code src
-# Creating a flex flow definition yaml under existing folder:
-pf flow save --entry intent:extract_intent --code src
+# Creating a flex flow definition yaml under current folder:
+pf flow save --entry intent:extract_intent
 """  # noqa: E501
     add_params = [
         lambda parser: parser.add_argument(
@@ -150,7 +150,7 @@ pf flow save --entry intent:extract_intent --code src
             required=True,
         ),
         lambda parser: parser.add_argument(
-            "--code", type=str, required=True, help="The folder containing the snapshot for the flex flow."
+            "--code", type=str, help="The folder containing the snapshot for the flex flow."
         ),
         lambda parser: parser.add_argument(
             "--path",
@@ -696,7 +696,7 @@ def save_flow(args):
 
     pf_client.flows.save(
         entry=args.entry,
-        code=args.code,
+        code=args.code or os.curdir,
         path=args.path,
     )
-    print(f"Saved flow to {Path(args.path or args.code).absolute().as_posix()}.")
+    print(f"Saved flow to {Path(args.path or args.code or os.curdir).absolute().as_posix()}.")

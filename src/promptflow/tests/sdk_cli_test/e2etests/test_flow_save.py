@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import shutil
@@ -83,7 +84,7 @@ class TestFlowSave:
                             }
                         },
                     },
-                    "input_sample": {"text": "promptflow"},
+                    "sample": {"text": "promptflow"},
                 },
                 {
                     "inputs": {
@@ -98,6 +99,7 @@ class TestFlowSave:
                             "description": "The answer",
                         }
                     },
+                    "sample": "sample.json",
                 },
                 id="hello_world.main",
             ),
@@ -308,6 +310,15 @@ class TestFlowSave:
             pytest.param(
                 {
                     "entry": "hello:hello_world",
+                    "sample": {"non-exist": "promptflow"},
+                },
+                UserErrorException,
+                r"Sample keys non-exist do not match the inputs text.",
+                id="hello_world.sample_mismatch",
+            ),
+            pytest.param(
+                {
+                    "entry": "hello:hello_world",
                     "signature": {
                         "outputs": {
                             "non-exist": {
@@ -464,7 +475,7 @@ class TestFlowSave:
             },
         }
 
-    def test_public_sdk_api(self):
+    def test_public_infer_signature(self):
         pf = PFClient()
         assert pf.flows.infer_signature(entry=global_hello) == {
             "inputs": {
@@ -479,6 +490,8 @@ class TestFlowSave:
             },
         }
 
+    def test_public_save(self):
+        pf = PFClient()
         with tempfile.TemporaryDirectory() as tempdir:
             pf.flows.save(entry=global_hello, path=tempdir)
             assert load_flow(tempdir)._data == {
@@ -495,4 +508,28 @@ class TestFlowSave:
                 },
             }
 
-        # TODO: test for cli
+    def test_public_save_with_path_sample(self):
+        pf = PFClient()
+        with tempfile.TemporaryDirectory() as tempdir:
+            with open(f"{tempdir}/sample.json", "w") as f:
+                json.dump(
+                    {
+                        "text": "promptflow",
+                    },
+                    f,
+                )
+            pf.flows.save(entry=global_hello, path=f"{tempdir}/flow", sample=f"{tempdir}/sample.json")
+            assert load_flow(f"{tempdir}/flow")._data == {
+                "entry": "test_flow_save:global_hello",
+                "inputs": {
+                    "text": {
+                        "type": "string",
+                    }
+                },
+                "outputs": {
+                    "output": {
+                        "type": "string",
+                    },
+                },
+                "sample": "sample.json",
+            }

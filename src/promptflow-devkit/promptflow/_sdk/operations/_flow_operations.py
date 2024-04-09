@@ -1072,7 +1072,7 @@ class FlowOperations(TelemetryMixin):
 
         if validate:
             # this path is actually not used
-            flow = FlexFlow(path=code / FLOW_DAG_YAML, code=code, data=flow_meta, entry=flow_meta["entry"])
+            flow = FlexFlow(path=code / FLOW_FLEX_YAML, code=code, data=flow_meta, entry=flow_meta["entry"])
             flow._validate(raise_error=True)
         if not keep_entry:
             flow_meta.pop("entry", None)
@@ -1086,22 +1086,10 @@ class FlowOperations(TelemetryMixin):
         If entry is a callable function, the signature includes inputs and outputs.
         If entry is a callable class, the signature includes inputs, outputs, and init.
         Type of each port is inferred from the type hints of the callable and follows type system of json schema.
-        Sample signature:
-        {
-            "inputs": {
-                "input1": {
-                    "type": "integer",
-                }
-            },
-            "outputs": {
-                "output1": {
-                    "type": "number",
-                }
-            }
-        }
         Given flow accepts json input in batch run and serve, we support only a part of types for those ports.
         Complicated types must be decorated with dataclasses.dataclass.
         Errors will be raised if annotated types are not supported.
+
         :param entry: entry of the flow, should be a method name relative to code
         :type entry: Callable
         :return: signature of the flow
@@ -1170,8 +1158,18 @@ class FlowOperations(TelemetryMixin):
             shutil.copy(python_requirements_txt, target_flow_directory / Path(python_requirements_txt).name)
 
         if sample:
+            inputs = data.get("inputs", {})
+            if not isinstance(sample, dict):
+                raise UserErrorException("Sample must be a dict.")
+            if not set(sample.keys()) == set(inputs.keys()):
+                raise UserErrorException(
+                    message_format="Sample keys {actual} do not match the inputs {expected}.",
+                    actual=", ".join(sample.keys()),
+                    expected=", ".join(inputs.keys()),
+                )
             with open(target_flow_directory / SERVE_SAMPLE_JSON_PATH, "w", encoding=DEFAULT_ENCODING) as f:
                 json.dump(sample, f, indent=4)
+            data["sample"] = SERVE_SAMPLE_JSON_PATH
         with open(target_flow_file, "w", encoding=DEFAULT_ENCODING):
             dump_yaml(data, target_flow_file)
 
@@ -1185,7 +1183,7 @@ class FlowOperations(TelemetryMixin):
         python_requirements_txt: str = None,
         image: str = None,
         signature: dict = None,
-        sample: dict = None,
+        sample: Union[str, PathLike, dict] = None,
         **kwargs,
     ) -> NoReturn:
         """
@@ -1213,6 +1211,11 @@ class FlowOperations(TelemetryMixin):
         :return: no return
         :rtype: None
         """
+        # this transformation is put here to limit the scope of _save. Inner call should not involve a file sample.
+        if isinstance(sample, (str, Path, PathLike)):
+            with open(sample, "r", encoding=DEFAULT_ENCODING) as f:
+                sample = json.load(f)
+
         return self._save(
             path=path,
             entry=entry,
