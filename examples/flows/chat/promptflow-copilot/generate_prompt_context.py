@@ -6,6 +6,7 @@ from promptflow import tool
 from promptflow_vectordb.core.contracts import SearchResultEntity
 import re
 
+
 @tool
 def generate_prompt_context(search_result: List[dict]) -> str:
     """Generate the context for the prompt."""
@@ -31,7 +32,6 @@ def generate_prompt_context(search_result: List[dict]) -> str:
                 if URL_KEY in entity.metadata[SOURCE_KEY]:
                     source = entity.metadata[SOURCE_KEY][URL_KEY] or ""
 
-        # source = source.replace("azureml://locations/eastus2euap/workspaces/c3a40c81-f452-449b-b62e-ba25cf5b6029/data/vector-index-input-1705993805833/versions/1/community", "https://github.com/microsoft/promptflow/blob/main/docs")
         source = re.sub(pattern, replacement_text, source)
         retrieved_docs.append({
             "Content": content,

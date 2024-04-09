@@ -1,5 +1,6 @@
 from promptflow import tool
 
+
 @tool
 def my_python_tool(answer_question_prompt: str, refuse_prompt: str, not_relevant: bool) -> str:
     if not_relevant:

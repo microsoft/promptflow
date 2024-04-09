@@ -1,5 +1,5 @@
-
 from promptflow import tool
+
 
 @tool
 def my_python_tool(score: str) -> str:
