@@ -2,7 +2,7 @@ import json
 from unittest.mock import patch
 
 import pytest
-from promptflow.connections import AzureOpenAIConnection
+from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 from promptflow.tools.exception import WrappedOpenAIError
 from promptflow.tools.llm import llm, list_apis
 
@@ -33,8 +33,8 @@ class TestLLM:
             connection=connection,
             api="completion",
             prompt=prompt_template,
-            deployment_name=model_or_deployment_name,
-            model=model_or_deployment_name,
+            deployment_name=model_or_deployment_name if isinstance(connection, AzureOpenAIConnection) else None,
+            model=model_or_deployment_name if isinstance(connection, OpenAIConnection) else None,
             **params
         )
 
@@ -53,12 +53,13 @@ class TestLLM:
     )
     def test_llm_chat(self, request, connection_type, model_or_deployment_name, example_prompt_template, chat_history,
                       params):
+        connection = request.getfixturevalue(connection_type)
         result = llm(
-            connection=request.getfixturevalue(connection_type),
+            connection=connection,
             api="chat",
             prompt=example_prompt_template,
-            deployment_name=model_or_deployment_name,
-            model=model_or_deployment_name,
+            deployment_name=model_or_deployment_name if isinstance(connection, AzureOpenAIConnection) else None,
+            model=model_or_deployment_name if isinstance(connection, OpenAIConnection) else None,
             chat_history=chat_history,
             **params
         )
@@ -77,12 +78,13 @@ class TestLLM:
     )
     def test_llm_stream_chat(self, request, connection_type, model_or_deployment_name, example_prompt_template,
                              chat_history, params, expected_message):
+        connection = request.getfixturevalue(connection_type)
         result = llm(
-            connection=request.getfixturevalue(connection_type),
+            connection=connection,
             api="chat",
             prompt=example_prompt_template,
-            deployment_name=model_or_deployment_name,
-            model=model_or_deployment_name,
+            deployment_name=model_or_deployment_name if isinstance(connection, AzureOpenAIConnection) else None,
+            model=model_or_deployment_name if isinstance(connection, OpenAIConnection) else None,
             chat_history=chat_history,
             **params
         )
@@ -135,12 +137,13 @@ class TestLLM:
     def test_llm_chat_with_tools(
             self, request, connection_type, model_or_deployment_name, example_prompt_template, chat_history, tools,
             tool_choice):
+        connection = request.getfixturevalue(connection_type)
         result = llm(
-            connection=request.getfixturevalue(connection_type),
+            connection=connection,
             api="chat",
             prompt=example_prompt_template,
-            deployment_name=model_or_deployment_name,
-            model=model_or_deployment_name,
+            deployment_name=model_or_deployment_name if isinstance(connection, AzureOpenAIConnection) else None,
+            model=model_or_deployment_name if isinstance(connection, OpenAIConnection) else None,
             max_tokens="inF",
             temperature=0,
             user_input="What is the weather in Boston?",
@@ -161,12 +164,13 @@ class TestLLM:
     )
     def test_llm_chat_with_name_in_roles(
             self, request, connection_type, model_or_deployment_name, prompt, chat_history, tools):
+        connection = request.getfixturevalue(connection_type)
         result = llm(
-            connection=request.getfixturevalue(connection_type),
+            connection=connection,
             api="chat",
             prompt=request.getfixturevalue(prompt),
-            deployment_name=model_or_deployment_name,
-            model=model_or_deployment_name,
+            deployment_name=model_or_deployment_name if isinstance(connection, AzureOpenAIConnection) else None,
+            model=model_or_deployment_name if isinstance(connection, OpenAIConnection) else None,
             max_tokens="inF",
             temperature=0,
             tools=tools,
@@ -199,8 +203,8 @@ class TestLLM:
             connection=connection,
             api="chat",
             prompt=prompt,
-            deployment_name=model_or_deployment_name,
-            model=model_or_deployment_name,
+            deployment_name=model_or_deployment_name if isinstance(connection, AzureOpenAIConnection) else None,
+            model=model_or_deployment_name if isinstance(connection, OpenAIConnection) else None,
         )
         # empty content after role name:\n
         prompt = "user:\n"
@@ -208,8 +212,8 @@ class TestLLM:
             connection=connection,
             api="chat",
             prompt=prompt,
-            deployment_name=model_or_deployment_name,
-            model=model_or_deployment_name,
+            deployment_name=model_or_deployment_name if isinstance(connection, AzureOpenAIConnection) else None,
+            model=model_or_deployment_name if isinstance(connection, OpenAIConnection) else None,
         )
 
     @pytest.mark.parametrize(
@@ -219,7 +223,7 @@ class TestLLM:
             ({"stop": ["</i>"], "logit_bias": {"16": 100, "17": 100}}, {}),
         ],
     )
-    def test_aoai_parameters(self, params, expected):
+    def test_llm_parameters(self, params, expected):
         for k, v in params.items():
             if k not in expected:
                 expected[k] = v
@@ -260,12 +264,13 @@ class TestLLM:
     )
     def test_llm_chat_with_response_format(self, request, connection_type, model_or_deployment_name, response_format,
                                            example_prompt_template, chat_history, expected_message):
+        connection = request.getfixturevalue(connection_type)
         result = llm(
-            connection=request.getfixturevalue(connection_type),
+            connection=connection,
             api="chat",
             prompt=example_prompt_template,
-            deployment_name=model_or_deployment_name,
-            model=model_or_deployment_name,
+            deployment_name=model_or_deployment_name if isinstance(connection, AzureOpenAIConnection) else None,
+            model=model_or_deployment_name if isinstance(connection, OpenAIConnection) else None,
             temperature=0,
             user_input="Write a slogan for product X, please response with json.",
             chat_history=chat_history,
@@ -334,12 +339,13 @@ class TestLLM:
             exception
     ):
         with pytest.raises(exception) as exc_info:
+            connection = request.getfixturevalue(connection_type)
             llm(
-                connection=request.getfixturevalue(connection_type),
+                connection=connection,
                 api="chat",
                 prompt=example_prompt_template,
-                deployment_name=model_or_deployment_name,
-                model=model_or_deployment_name,
+                deployment_name=model_or_deployment_name if isinstance(connection, AzureOpenAIConnection) else None,
+                model=model_or_deployment_name if isinstance(connection, OpenAIConnection) else None,
                 temperature=0,
                 user_input=user_input,
                 chat_history=chat_history,
@@ -358,12 +364,13 @@ class TestLLM:
     )
     def test_llm_with_vision_model(self, request, connection_type, model_or_deployment_name):
         # The issue https://github.com/microsoft/promptflow/issues/1683 is fixed
+        connection = request.getfixturevalue(connection_type)
         result = llm(
-            connection=request.getfixturevalue(connection_type),
+            connection=connection,
             api="chat",
             prompt="user:\nhello",
-            deployment_name=model_or_deployment_name,
-            model=model_or_deployment_name,
+            deployment_name=model_or_deployment_name if isinstance(connection, AzureOpenAIConnection) else None,
+            model=model_or_deployment_name if isinstance(connection, OpenAIConnection) else None,
             stop=None,
             logit_bias={}
         )
