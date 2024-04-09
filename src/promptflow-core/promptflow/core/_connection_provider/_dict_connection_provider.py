@@ -6,6 +6,7 @@ from typing import Any, Dict
 
 from promptflow._constants import CONNECTION_NAME_PROPERTY, CONNECTION_SECRET_KEYS, CustomStrongTypeConnectionConfigs
 from promptflow._utils.utils import try_import
+from promptflow.contracts.tool import ConnectionType
 from promptflow.contracts.types import Secret
 
 from ._connection_provider import ConnectionProvider
@@ -79,4 +80,8 @@ class DictConnectionProvider(ConnectionProvider):
             try_import(module, f"Import connection module {module!r} failed.", raise_error=False)
 
     def get(self, name: str) -> Any:
-        return self._connections.get(name)
+        if isinstance(name, str):
+            return self._connections.get(name)
+        elif ConnectionType.is_connection_value(name):
+            return name
+        return None
