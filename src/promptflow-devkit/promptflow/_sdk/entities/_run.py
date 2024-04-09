@@ -646,8 +646,8 @@ class Run(YAMLTranslatableMixin):
             snapshot_file_path = f"{snapshot_folder}/{FLOW_DAG_YAML}"
 
             # get the start and end time. Plus "Z" to specify the timezone is UTC, otherwise there will be warning
-            # when send the request to the server. e.g.
-            # WARNING:msrest.serialization:Datetime with no tzinfo will be considered UTC.
+            # when sending the request to the server.
+            # e.g. WARNING:msrest.serialization:Datetime with no tzinfo will be considered UTC.
             # for start_time, switch to "_start_time" once the bug item is fixed: BUG - 3085432.
             start_time = self._created_on.isoformat() + "Z" if self._created_on else None
             end_time = self._end_time.isoformat() + "Z" if self._end_time else None

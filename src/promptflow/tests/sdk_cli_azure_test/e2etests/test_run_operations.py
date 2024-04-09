@@ -847,6 +847,7 @@ class TestFlowRun:
             for file in expected_files:
                 assert Path(tmp_dir, created_batch_run_without_llm.name, file).exists()
 
+    @pytest.mark.skipif(condition=not pytest.is_live, reason="Wait for replay mode fix, item: 3089145")
     @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
     def test_upload_run(
         self,

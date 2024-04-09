@@ -1,4 +1,5 @@
 import tempfile
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -10,6 +11,7 @@ from promptflow._sdk._errors import RunOperationParameterError, UploadUserError,
 from promptflow._sdk._utils import parse_otel_span_status_code
 from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._run_operations import RunOperations
+from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow.azure import PFClient
 from promptflow.azure.operations._async_run_uploader import AsyncRunUploader
 from promptflow.exceptions import UserErrorException
@@ -140,13 +142,16 @@ class TestRunOperations:
     ):
         # test upload run with authentication error
         from azure.core.exceptions import HttpResponseError
-        from azure.storage.blob.aio._blob_client_async import BlobClient
 
+        random_data = Path(DATAS_DIR, "numbers.jsonl")
         response = MagicMock()
         response.status_code = 403
-        with patch.object(BlobClient, "upload_blob", side_effect=HttpResponseError(response=response)):
-            with pytest.raises(UserAuthenticationError, match="User does not have permission"):
-                pf.runs._upload(run="web_classification_variant_0_20240404_162837_477195")
+        blob_client = MagicMock()
+        blob_client.upload_blob.side_effect = HttpResponseError(response=response)
+
+        run_uploader = AsyncRunUploader._from_run_operations(run=MagicMock(), run_ops=pf.runs)
+        with pytest.raises(UserAuthenticationError, match="User does not have permission"):
+            async_run_allowing_running_loop(run_uploader._upload_single_blob, blob_client, random_data)
 
     def test_upload_run_with_run_exist(self, pf: PFClient):
         # test upload run with run exist
