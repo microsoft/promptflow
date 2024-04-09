@@ -5,13 +5,11 @@ from typing import Callable
 from unittest import mock
 
 import pytest
+from sdk_cli_azure_test.conftest import DATAS_DIR, FLOWS_DIR
 
 from promptflow._cli._user_agent import USER_AGENT as CLI_USER_AGENT  # noqa: E402
 from promptflow._sdk._telemetry import log_activity
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
-
-FLOWS_DIR = "./tests/test_configs/flows"
-DATAS_DIR = "./tests/test_configs/datas"
 
 
 def mock_log_activity(*args, **kwargs):

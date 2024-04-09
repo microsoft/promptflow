@@ -2,18 +2,14 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import json
-from pathlib import Path
 
 import pytest
+from sdk_cli_azure_test.conftest import FLOWS_DIR
 
 from promptflow.azure._entities._flow import Flow
 from promptflow.exceptions import UserErrorException
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
-
-tests_root_dir = Path(__file__).parent.parent.parent
-flow_test_dir = tests_root_dir / "test_configs/flows"
-data_dir = tests_root_dir / "test_configs/datas"
 
 
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
@@ -64,7 +60,7 @@ class TestFlow:
         from promptflow import PFClient
 
         client = PFClient(config={"connection.provider": remote_workspace_resource_id})
-        output = client.test(flow=flow_test_dir / "web_classification")
+        output = client.test(flow=FLOWS_DIR / "web_classification")
         assert output.keys() == {"category", "evidence"}
 
     @pytest.mark.usefixtures("mock_get_user_identity_info")

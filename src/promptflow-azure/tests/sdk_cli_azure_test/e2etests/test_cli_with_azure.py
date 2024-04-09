@@ -8,7 +8,9 @@ import uuid
 from typing import Callable
 
 import pytest
+from _constants import PROMPTFLOW_ROOT
 from mock.mock import patch
+from sdk_cli_azure_test.conftest import DATAS_DIR, FLOWS_DIR
 
 from promptflow._constants import PF_USER_AGENT
 from promptflow._sdk.entities import Run
@@ -19,9 +21,7 @@ from promptflow.tracing._operation_context import OperationContext
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
 
-FLOWS_DIR = "./tests/test_configs/flows"
-DATAS_DIR = "./tests/test_configs/datas"
-RUNS_DIR = "./tests/test_configs/runs"
+RUNS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/runs"
 
 
 # TODO: move this to a shared utility module

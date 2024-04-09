@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-from _constants import CONNECTION_FILE, ENV_FILE
+from _constants import CONNECTION_FILE, ENV_FILE, PROMPTFLOW_ROOT
 from _pytest.monkeypatch import MonkeyPatch
 from dotenv import load_dotenv
 from filelock import FileLock
@@ -77,7 +77,7 @@ def temp_output_dir() -> str:
 
 @pytest.fixture
 def prepare_symbolic_flow() -> str:
-    flows_dir = Path(__file__).parent / "test_configs" / "flows"
+    flows_dir = PROMPTFLOW_ROOT / "tests" / "test_configs" / "flows"
     target_folder = flows_dir / "web_classification_with_symbolic"
     source_folder = flows_dir / "web_classification"
 

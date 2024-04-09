@@ -8,12 +8,9 @@ from unittest.mock import ANY, MagicMock, patch
 import pandas as pd
 import pytest
 from pytest_mock import MockFixture
+from sdk_cli_azure_test.conftest import FLOWS_DIR
 
 from promptflow._sdk._constants import VIS_PORTAL_URL_TMPL
-
-tests_root_dir = Path(__file__).parent.parent.parent
-flow_test_dir = tests_root_dir / "test_configs/flows"
-data_dir = tests_root_dir / "test_configs/datas"
 
 
 def run_pf_command(*args, cwd=None):
@@ -243,7 +240,7 @@ class TestAzureCli:
 
         mocked = mocker.patch.object(FlowOperations, "create_or_update")
         mocked.return_value._to_dict.return_value = {"name": "test_run"}
-        flow_dir = Path(flow_test_dir, "web_classification").resolve().as_posix()
+        flow_dir = Path(FLOWS_DIR, "web_classification").resolve().as_posix()
         run_pf_command(
             "flow",
             "create",
@@ -269,7 +266,7 @@ class TestAzureCli:
 
         mocked = mocker.patch.object(FlowOperations, "create_or_update")
         mocked.return_value._to_dict.return_value = {"name": "test_run"}
-        flow_dir = Path(flow_test_dir, "web_classification").resolve().as_posix()
+        flow_dir = Path(FLOWS_DIR, "web_classification").resolve().as_posix()
         run_pf_command(
             "flow",
             "create",

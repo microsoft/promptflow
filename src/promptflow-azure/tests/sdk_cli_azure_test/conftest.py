@@ -44,11 +44,13 @@ except ImportError:
         return False
 
 
+from _constants import PROMPTFLOW_ROOT
+
 from ._azure_utils import get_cred
 
-FLOWS_DIR = "./tests/test_configs/flows"
-EAGER_FLOWS_DIR = "./tests/test_configs/eager_flows"
-DATAS_DIR = "./tests/test_configs/datas"
+FLOWS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/flows"
+EAGER_FLOWS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/eager_flows"
+DATAS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/datas"
 AZUREML_RESOURCE_PROVIDER = "Microsoft.MachineLearningServices"
 RESOURCE_ID_FORMAT = "/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}"
 
@@ -606,5 +608,5 @@ def mock_check_latest_version() -> None:
     As CI uses docker, it will always trigger this check behavior, and we don't have recording for this;
     and this will hit many unknown issue with vcrpy.
     """
-    with patch("promptflow._utils.version_hint_utils.check_latest_version", new=lambda: None):
+    with patch("promptflow._sdk._version_hint_utils.check_latest_version", new=lambda: None):
         yield

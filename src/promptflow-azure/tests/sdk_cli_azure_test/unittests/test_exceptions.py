@@ -12,8 +12,6 @@ from promptflow.exceptions import ErrorCategory, ErrorTarget, UserErrorException
 from promptflow.executor import FlowValidator
 from promptflow.executor._errors import InvalidNodeReference
 
-FLOWS_DIR = "./tests/test_configs/flows/print_input_flow"
-
 
 def is_match_error_detail(expected_info, actual_info):
     expected_info = re.sub(r"line \d+", r"", expected_info).replace("\n", "").replace(" ", "")

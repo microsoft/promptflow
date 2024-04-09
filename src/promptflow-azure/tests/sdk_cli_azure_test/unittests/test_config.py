@@ -1,9 +1,9 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from pathlib import Path
 
 import pytest
+from _constants import PROMPTFLOW_ROOT
 
 from promptflow._sdk._configuration import ConfigFileNotFound, Configuration, InvalidConfigFile
 from promptflow._utils.context_utils import _change_working_dir
@@ -11,7 +11,8 @@ from promptflow._utils.context_utils import _change_working_dir
 AZUREML_RESOURCE_PROVIDER = "Microsoft.MachineLearningServices"
 RESOURCE_ID_FORMAT = "/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}"
 
-CONFIG_DATA_ROOT = Path(__file__).parent.parent.parent / "test_configs" / "configs"
+
+CONFIG_DATA_ROOT = PROMPTFLOW_ROOT / "tests/test_configs/configs"
 
 
 @pytest.fixture

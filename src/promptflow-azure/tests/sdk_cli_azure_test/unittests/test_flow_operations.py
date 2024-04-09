@@ -1,20 +1,18 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+from _constants import PROMPTFLOW_ROOT
+from sdk_cli_azure_test.conftest import FLOWS_DIR
 
 from promptflow._sdk._constants import AzureFlowSource
 from promptflow._sdk._errors import FlowOperationError
 from promptflow.azure._entities._flow import Flow
 from promptflow.exceptions import UserErrorException
 
-tests_root_dir = Path(__file__).parent.parent.parent
-eager_flow_test_dir = tests_root_dir / "test_configs/eager_flows"
-flow_test_dir = tests_root_dir / "test_configs/flows"
-data_dir = tests_root_dir / "test_configs/datas"
+EAGER_FLOWS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/eager_flows"
 
 
 @pytest.mark.unittest
@@ -23,7 +21,7 @@ class TestFlowOperations:
         with pytest.raises(UserErrorException, match=r"fake_source does not exist."):
             pf.flows.create_or_update(flow="fake_source")
 
-        flow_source = flow_test_dir / "web_classification/"
+        flow_source = FLOWS_DIR / "web_classification/"
         with pytest.raises(UserErrorException, match="Not a valid string"):
             pf.flows.create_or_update(flow=flow_source, display_name=False)
 
@@ -42,7 +40,7 @@ class TestFlowOperations:
 
     @pytest.mark.usefixtures("enable_logger_propagate")
     def test_create_flow_with_warnings(self, pf, caplog):
-        flow_source = flow_test_dir / "web_classification/"
+        flow_source = FLOWS_DIR / "web_classification/"
         pf.flows._validate_flow_creation_parameters(source=flow_source, random="random")
         assert "random: Unknown field" in caplog.text
 
@@ -90,7 +88,7 @@ class TestFlowOperations:
                 assert user_tenant_id == mock_tid
 
     def test_eager_flow_creation(self, pf):
-        flow_source = eager_flow_test_dir / "simple_with_yaml"
+        flow_source = EAGER_FLOWS_DIR / "simple_with_yaml"
         with pytest.raises(UserErrorException) as e:
             pf.flows.create_or_update(
                 flow=flow_source,

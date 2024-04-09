@@ -15,6 +15,8 @@ from unittest.mock import MagicMock, patch
 
 import pydash
 import pytest
+from _constants import PROMPTFLOW_ROOT
+from sdk_cli_azure_test.conftest import DATAS_DIR, FLOWS_DIR
 
 from promptflow import load_run
 from promptflow._constants import PF_USER_AGENT
@@ -35,6 +37,9 @@ from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_
 from promptflow.tracing._operation_context import OperationContext
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
+
+EAGER_FLOWS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/eager_flows"
+RUNS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/runs"
 
 
 @contextlib.contextmanager
@@ -63,10 +68,6 @@ def extension_consent_config_overwrite(val):
             config.set_config(key=Configuration.EXTENSION_COLLECT_TELEMETRY, value=original_consent)
         else:
             config.set_config(key=Configuration.EXTENSION_COLLECT_TELEMETRY, value=True)
-
-
-RUNS_DIR = "./tests/test_configs/runs"
-FLOWS_DIR = "./tests/test_configs/flows"
 
 
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
@@ -445,8 +446,8 @@ class TestTelemetry:
         ):
             flow_type = FlowType.DAG_FLOW
             pf.run(
-                flow="./tests/test_configs/flows/print_input_flow",
-                data="./tests/test_configs/datas/print_input_flow.jsonl",
+                flow=FLOWS_DIR / "print_input_flow",
+                data=DATAS_DIR / "print_input_flow.jsonl",
                 name=randstr("name"),
             )
             logger = get_telemetry_logger()
@@ -455,8 +456,8 @@ class TestTelemetry:
 
             flow_type = FlowType.FLEX_FLOW
             pf.run(
-                flow="./tests/test_configs/eager_flows/simple_with_req",
-                data="./tests/test_configs/datas/simple_eager_flow_data.jsonl",
+                flow=EAGER_FLOWS_DIR / "simple_with_req",
+                data=DATAS_DIR / "simple_eager_flow_data.jsonl",
                 name=randstr("name"),
             )
             logger.handlers[0].flush()

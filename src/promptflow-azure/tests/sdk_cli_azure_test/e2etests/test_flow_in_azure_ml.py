@@ -3,17 +3,12 @@ from pathlib import Path
 
 import pydash
 import pytest
+from _constants import PROMPTFLOW_ROOT
 
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml_string
 from promptflow.connections import AzureOpenAIConnection
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
-
-PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
-
-TEST_ROOT = Path(__file__).parent.parent.parent
-MODEL_ROOT = TEST_ROOT / "test_configs/e2e_samples"
-CONNECTION_FILE = (PROMOTFLOW_ROOT / "connections.json").resolve().absolute().as_posix()
 
 
 def assert_dict_equals_with_skip_fields(item1, item2, skip_fields):
@@ -106,7 +101,7 @@ class TestFlowInAzureML:
         # keep the simplest test here, more tests are in azure-ai-ml
         from azure.ai.ml import load_component
 
-        flows_dir = "./tests/test_configs/flows"
+        flows_dir = PROMPTFLOW_ROOT / "tests/test_configs/flows"
 
         flow_func: Component = load_component(
             f"{flows_dir}/web_classification/flow.dag.yaml", params_override=[load_params]
@@ -114,10 +109,9 @@ class TestFlowInAzureML:
 
         # TODO: snapshot of flow component changed every time?
         created_component = ml_client.components.create_or_update(flow_func, is_anonymous=True)
+        spec_path = flows_dir / "saved_component_spec" / f"{request.node.callspec.id}.yaml"
 
-        update_saved_spec(
-            created_component, f"./tests/test_configs/flows/saved_component_spec/{request.node.callspec.id}.yaml"
-        )
+        update_saved_spec(created_component, spec_path.resolve().absolute().as_posix())
 
         component_dict = created_component._to_dict()
         slimmed_created_component_attrs = {key: pydash.get(component_dict, key) for key in expected_spec_attrs.keys()}

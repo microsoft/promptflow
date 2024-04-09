@@ -8,7 +8,9 @@ import uuid
 from pathlib import Path
 
 import pytest
+from _constants import PROMPTFLOW_ROOT
 from mock.mock import Mock
+from sdk_cli_azure_test.conftest import FLOWS_DIR
 
 from promptflow import load_run
 from promptflow._sdk._vendor import get_upload_files_from_folder
@@ -17,9 +19,7 @@ from promptflow.azure._constants._flow import ENVIRONMENT, PYTHON_REQUIREMENTS_T
 from promptflow.azure._entities._flow import Flow
 from promptflow.exceptions import ValidationException
 
-tests_root_dir = Path(__file__).parent.parent.parent
-FLOWS_DIR = (tests_root_dir / "test_configs/flows").resolve()
-RUNS_DIR = (tests_root_dir / "test_configs/runs").resolve()
+RUNS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/runs"
 
 
 def load_flow(source):
@@ -33,7 +33,7 @@ class TestFlow:
     @pytest.mark.skip(reason="TODO: add back when we bring back meta.yaml")
     def test_load_flow(self):
 
-        local_file = tests_root_dir / "test_configs/flows/meta_files/flow.meta.yaml"
+        local_file = FLOWS_DIR / "meta_files/flow.meta.yaml"
 
         flow = load_flow(source=local_file)
 
@@ -58,7 +58,7 @@ class TestFlow:
     def test_load_flow_from_remote_storage(self):
         from promptflow.azure.operations._flow_operations import FlowOperations
 
-        local_file = tests_root_dir / "test_configs/flows/meta_files/remote_fs.meta.yaml"
+        local_file = FLOWS_DIR / "meta_files/remote_fs.meta.yaml"
 
         flow = load_flow(source=local_file)
 
@@ -79,7 +79,7 @@ class TestFlow:
         }
 
     def test_ignore_files_in_flow(self):
-        local_file = tests_root_dir / "test_configs/flows/web_classification"
+        local_file = FLOWS_DIR / "web_classification"
         with tempfile.TemporaryDirectory() as temp:
             flow_path = Path(temp) / "flow"
             shutil.copytree(local_file, flow_path)

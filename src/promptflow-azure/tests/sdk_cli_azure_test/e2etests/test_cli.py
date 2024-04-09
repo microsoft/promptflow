@@ -4,13 +4,13 @@ import sys
 from pathlib import Path
 
 import pytest
+from _constants import PROMPTFLOW_ROOT
+from sdk_cli_azure_test.conftest import FLOWS_DIR
 
 from promptflow._cli._pf.entry import main
 
-FLOWS_DIR = "./tests/test_configs/flows"
-RUNS_DIR = "./tests/test_configs/runs"
-CONNECTIONS_DIR = "./tests/test_configs/connections"
-DATAS_DIR = "./tests/test_configs/datas"
+RUNS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/runs"
+CONNECTIONS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/connections"
 
 
 # TODO: move this to a shared utility module

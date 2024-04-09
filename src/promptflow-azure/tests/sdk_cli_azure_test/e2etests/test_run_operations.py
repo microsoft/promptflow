@@ -16,8 +16,10 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import pydash
 import pytest
+from _constants import PROMPTFLOW_ROOT
 from azure.ai.ml import ManagedIdentityConfiguration
 from azure.ai.ml.entities import IdentityConfiguration
+from sdk_cli_azure_test.conftest import DATAS_DIR, FLOWS_DIR
 
 from promptflow._constants import FLOW_DAG_YAML
 from promptflow._sdk._constants import DownloadedRun, RunStatus
@@ -39,15 +41,8 @@ from promptflow.exceptions import UserErrorException
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
 
-PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
-
-TEST_ROOT = Path(__file__).parent.parent.parent
-MODEL_ROOT = TEST_ROOT / "test_configs/e2e_samples"
-CONNECTION_FILE = (PROMOTFLOW_ROOT / "connections.json").resolve().absolute().as_posix()
-FLOWS_DIR = "./tests/test_configs/flows"
-EAGER_FLOWS_DIR = "./tests/test_configs/eager_flows"
-RUNS_DIR = "./tests/test_configs/runs"
-DATAS_DIR = "./tests/test_configs/datas"
+EAGER_FLOWS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/eager_flows"
+RUNS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/runs"
 
 
 def create_registry_run(name: str, registry_name: str, runtime: str, pf: PFClient):

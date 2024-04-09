@@ -5,16 +5,13 @@ import pytest
 from azure.ai.ml import ManagedIdentityConfiguration
 from azure.ai.ml.entities import IdentityConfiguration
 from pytest_mock import MockerFixture
+from sdk_cli_azure_test.conftest import DATAS_DIR, EAGER_FLOWS_DIR, FLOWS_DIR
 
 from promptflow._sdk._errors import RunOperationParameterError
 from promptflow._sdk._utils import parse_otel_span_status_code
 from promptflow._sdk.entities import Run
 from promptflow.azure import PFClient
 from promptflow.exceptions import UserErrorException
-
-FLOWS_DIR = "./tests/test_configs/flows"
-DATAS_DIR = "./tests/test_configs/datas"
-EAGER_FLOWS_DIR = "./tests/test_configs/eager_flows"
 
 
 @pytest.mark.unittest
