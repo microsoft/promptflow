@@ -768,10 +768,10 @@ interactions:
       code: 201
       message: Created
 - request:
-    body: "inputs:\r\n  name:\r\n    type: string\r\n    default: hod\r\noutputs:\r\n
-      \ result:\r\n    type: string\r\n    reference: ${hello_world.output}\r\nnodes:\r\n-
-      name: hello_world\r\n  type: python\r\n  source:\r\n    type: code\r\n    path:
-      hello_world.py\r\n  inputs:\r\n    name: ${inputs.name}\r\n"
+    body: "inputs:\n  name:\n    type: string\n    default: hod\noutputs:\n
+      \ result:\n    type: string\n    reference: ${hello_world.output}\nnodes:\n-
+      name: hello_world\n  type: python\n  source:\n    type: code\n    path:
+      hello_world.py\n  inputs:\n    name: ${inputs.name}\n"
     headers:
       Accept:
       - application/xml
