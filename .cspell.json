@@ -194,7 +194,9 @@
     "nologo",
     "wscript",
     "raisvc",
-    "evals"
+    "evals",
+    "redoc",
+    "starlette"
   ],
   "flagWords": [
     "Prompt Flow"
