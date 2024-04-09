@@ -96,11 +96,22 @@ def _invoke_pf_svc() -> str:
             return port
     add_executable_script_to_env_path()
     print("Starting Prompt flow Tracing Server...")
-    start_pfs = subprocess.Popen(cmd_args, shell=True)
-    # Wait for service to be started
-    start_pfs.wait()
-    logger.debug("Prompt flow service is serving on port %s", port)
-    print(hint_stop_message)
+    start_pfs = None
+    try:
+        start_pfs = subprocess.Popen(cmd_args, shell=True, stderr=subprocess.PIPE)
+        # Wait for service to be started
+        start_pfs.wait(timeout=20)
+    except subprocess.TimeoutExpired:
+        print("The starting promptflow process did not finish within the timeout period.", file=sys.stderr)
+    except Exception as e:
+        print(f"An error occurred when starting promptflow process: {e}", file=sys.stderr)
+    # Check if there were any errors
+    if start_pfs is not None and start_pfs.returncode != 0:
+        error_message = start_pfs.stderr.read().decode()
+        print(f"The starting promptflow process returned an error: {error_message}", file=sys.stderr)
+    else:
+        logger.debug("Prompt flow service is serving on port %s", port)
+        print(hint_stop_message)
     return port
 
 

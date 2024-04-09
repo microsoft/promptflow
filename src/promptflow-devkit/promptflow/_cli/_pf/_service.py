@@ -194,7 +194,7 @@ def start_service(args):
                 app.logger.setLevel(logging.DEBUG)
             else:
                 app.logger.setLevel(logging.INFO)
-            message = f"Start Prompt Flow Service on {port}, version: {get_promptflow_sdk_version()}."
+            message = f"Starting Prompt Flow Service on {port}, version: {get_promptflow_sdk_version()}."
             app.logger.info(message)
             print(message)
             sys.stdout.flush()
