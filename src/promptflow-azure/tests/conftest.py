@@ -1,30 +1,20 @@
-import importlib
 import json
 import os
 import tempfile
-from multiprocessing import Lock
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 import pytest
-from _constants import CONNECTION_FILE, ENV_FILE, PROMPTFLOW_ROOT
+from _constants import CONNECTION_FILE, PROMPTFLOW_ROOT
 from _pytest.monkeypatch import MonkeyPatch
 from dotenv import load_dotenv
-from filelock import FileLock
 from pytest_mock import MockerFixture
 
-from promptflow._cli._utils import AzureMLWorkspaceTriad
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow._sdk.entities._connection import AzureOpenAIConnection
 from promptflow._utils.context_utils import _change_working_dir
 
 load_dotenv()
-
-
-@pytest.fixture(scope="session", autouse=True)
-def modify_work_directory():
-    os.chdir(Path(__file__).parent.parent.absolute())
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -43,25 +33,8 @@ def mock_build_info():
 
 
 @pytest.fixture
-def dev_connections() -> dict:
-    with open(CONNECTION_FILE, "r") as f:
-        return json.load(f)
-
-
-@pytest.fixture
 def use_secrets_config_file(mocker: MockerFixture):
     mocker.patch.dict(os.environ, {PROMPTFLOW_CONNECTIONS: CONNECTION_FILE})
-
-
-@pytest.fixture
-def env_with_secrets_config_file():
-    _lock = Lock()
-    with _lock:
-        with open(ENV_FILE, "w") as f:
-            f.write(f"{PROMPTFLOW_CONNECTIONS}={CONNECTION_FILE}\n")
-        yield ENV_FILE
-        if os.path.exists(ENV_FILE):
-            os.remove(ENV_FILE)
 
 
 @pytest.fixture
@@ -89,97 +62,6 @@ def prepare_symbolic_flow() -> str:
     return target_folder
 
 
-@pytest.fixture(scope="session")
-def install_custom_tool_pkg():
-    # The tests could be running in parallel. Use a lock to prevent race conditions.
-    lock = FileLock("custom_tool_pkg_installation.lock")
-    with lock:
-        try:
-            import my_tool_package  # noqa: F401
-
-        except ImportError:
-            import subprocess
-            import sys
-
-            subprocess.check_call([sys.executable, "-m", "pip", "install", "test-custom-tools==0.0.2"])
-
-
-@pytest.fixture
-def mocked_ws_triple() -> AzureMLWorkspaceTriad:
-    return AzureMLWorkspaceTriad("mock_subscription_id", "mock_resource_group", "mock_workspace_name")
-
-
-@pytest.fixture(scope="session")
-def mock_list_func():
-    """Mock function object for dynamic list testing."""
-
-    def my_list_func(prefix: str = "", size: int = 10, **kwargs):
-        return [
-            {
-                "value": "fig0",
-                "display_value": "My_fig0",
-                "hyperlink": "https://www.bing.com/search?q=fig0",
-                "description": "this is 0 item",
-            },
-            {
-                "value": "kiwi1",
-                "display_value": "My_kiwi1",
-                "hyperlink": "https://www.bing.com/search?q=kiwi1",
-                "description": "this is 1 item",
-            },
-        ]
-
-    return my_list_func
-
-
-@pytest.fixture(scope="session")
-def mock_module_with_list_func(mock_list_func):
-    """Mock module object for dynamic list testing."""
-    mock_module = MagicMock()
-    mock_module.my_list_func = mock_list_func
-    mock_module.my_field = 1
-    original_import_module = importlib.import_module  # Save this to prevent recursion
-
-    with patch.object(importlib, "import_module") as mock_import:
-
-        def side_effect(module_name, *args, **kwargs):
-            if module_name == "my_tool_package.tools.tool_with_dynamic_list_input":
-                return mock_module
-            else:
-                return original_import_module(module_name, *args, **kwargs)
-
-        mock_import.side_effect = side_effect
-        yield
-
-
-@pytest.fixture(scope="session")
-def mock_generated_by_func():
-    """Mock function object for generated_by testing."""
-
-    def my_generated_by_func(index_type: str):
-        inputs = ""
-        if index_type == "Azure Cognitive Search":
-            inputs = {"index_type": index_type, "index": "index_1"}
-        elif index_type == "Workspace MLIndex":
-            inputs = {"index_type": index_type, "index": "index_2"}
-
-        result = json.dumps(inputs)
-        return result
-
-    return my_generated_by_func
-
-
-@pytest.fixture(scope="session")
-def mock_reverse_generated_by_func():
-    """Mock function object for reverse_generated_by testing."""
-
-    def my_reverse_generated_by_func(index_json: str):
-        result = json.loads(index_json)
-        return result
-
-    return my_reverse_generated_by_func
-
-
 @pytest.fixture
 def enable_logger_propagate():
     """This is for test cases that need to check the log output."""
@@ -190,31 +72,3 @@ def enable_logger_propagate():
     logger.propagate = True
     yield
     logger.propagate = original_value
-
-
-@pytest.fixture(scope="session")
-def mock_module_with_for_retrieve_tool_func_result(
-    mock_list_func, mock_generated_by_func, mock_reverse_generated_by_func
-):
-    """Mock module object for dynamic list testing."""
-    mock_module_list_func = MagicMock()
-    mock_module_list_func.my_list_func = mock_list_func
-    mock_module_list_func.my_field = 1
-    mock_module_generated_by = MagicMock()
-    mock_module_generated_by.generated_by_func = mock_generated_by_func
-    mock_module_generated_by.reverse_generated_by_func = mock_reverse_generated_by_func
-    mock_module_generated_by.my_field = 1
-    original_import_module = importlib.import_module  # Save this to prevent recursion
-
-    with patch.object(importlib, "import_module") as mock_import:
-
-        def side_effect(module_name, *args, **kwargs):
-            if module_name == "my_tool_package.tools.tool_with_dynamic_list_input":
-                return mock_module_list_func
-            elif module_name == "my_tool_package.tools.tool_with_generated_by_input":
-                return mock_module_generated_by
-            else:
-                return original_import_module(module_name, *args, **kwargs)
-
-        mock_import.side_effect = side_effect
-        yield
