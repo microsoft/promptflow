@@ -247,9 +247,15 @@ class RunSubmitter:
     def _upload_run_to_cloud(cls, run: Run):
         error_msg_prefix = f"Failed to upload run {run.name!r} to cloud."
         try:
+            from promptflow._sdk._tracing import _get_ws_triad_from_pf_config
             from promptflow.azure._cli._utils import _get_azure_pf_client
 
-            pf = _get_azure_pf_client()
+            ws_triad = _get_ws_triad_from_pf_config()
+            pf = _get_azure_pf_client(
+                subscription_id=ws_triad.subscription_id,
+                resource_group=ws_triad.resource_group_name,
+                workspace_name=ws_triad.workspace_name,
+            )
             pf.runs._upload(run=run)
         except ImportError as e:
             error_message = (

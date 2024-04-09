@@ -949,22 +949,27 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         # upload local run details to cloud
         run_uploader = AsyncRunUploader._from_run_operations(run=run, run_ops=self)
         result_dict = async_run_allowing_running_loop(run_uploader.upload)
-        logger.info(f"Successfully uploaded run details of {run!r} to cloud.")
-
-        # register the run in the cloud
+        # patch details about the uploaded run
         run._local_to_cloud_info = result_dict
+        logger.debug(f"Successfully uploaded run details of {run!r} to cloud.")
+
+        # registry the run in the cloud
+        self._registry_existing_bulk_run(run=run)
+
+        # print portal url when executing in jupyter notebook
+        if in_jupyter_notebook():
+            print(f"Portal url: {self._get_run_portal_url(run_id=run.name)}")
+
+    def _registry_existing_bulk_run(self, run: Run):
+        # register the run in the cloud
         rest_obj = run._to_rest_object()
-        self._service_caller.register_local_run(
+        self._service_caller.create_existing_bulk_run(
             subscription_id=self._operation_scope.subscription_id,
             resource_group_name=self._operation_scope.resource_group_name,
             workspace_name=self._operation_scope.workspace_name,
             body=rest_obj,
         )
         logger.info(f"Successfully registered run {run!r} to cloud.")
-
-        # print portal url when executing in jupyter notebook
-        if in_jupyter_notebook():
-            print(f"Portal url: {self._get_run_portal_url(run_id=run.name)}")
 
     def _validate_for_run_download(self, run: Union[str, Run], output: Optional[Union[str, Path]], overwrite):
         """Validate the run download parameters."""

@@ -470,10 +470,18 @@ class LineRunFieldName:
 class Local2Cloud:
     EXPERIMENT_NAME = "local_to_cloud"
     PROPERTY_KEY = "azureml.promptflow.local_to_cloud"
-    BLOB_ROOT = "promptflow"
+    BLOB_ROOT_PROMPTFLOW = "promptflow"
+    BLOB_ROOT_RUNS = "runs"
     BLOB_ARTIFACTS = "PromptFlowArtifacts"
+    BLOB_EXPERIMENT_RUN = "ExperimentRun"
     ASSET_NAME_DEBUG_INFO = "debug_info"
     ASSET_NAME_FLOW_OUTPUTS = "flow_outputs"
+    EXECUTION_LOG = "logs/azureml/executionlogs.txt"
+
+
+class CloudDatastore:
+    DEFAULT = "workspaceblobstore"
+    ARTIFACT = "workspaceartifactstore"
 
 
 class CreatedByFieldName:

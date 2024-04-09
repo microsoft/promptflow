@@ -850,7 +850,7 @@ class TestFlowRun:
         from promptflow._sdk._pf_client import PFClient as LocalPFClient
 
         pf_local = LocalPFClient()
-        run = pf_local.runs.get(name="web_classification_variant_0_20240404_162837_477195")
+        run = pf_local.runs.get(name="web_classification_variant_0_20240408_173549_791090")
         pf.runs._upload(run=run)
 
     def test_request_id_when_making_http_requests(self, pf, runtime: str, randstr: Callable[[str], str]):
