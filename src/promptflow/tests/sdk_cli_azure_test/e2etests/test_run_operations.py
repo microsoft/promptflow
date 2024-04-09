@@ -864,6 +864,15 @@ class TestFlowRun:
         with patch.object(Configuration, "get_trace_provider", return_value=trace_provider):
             name = randstr("batch_run_name")
             local_pf = LocalPFClient()
+
+            # in replay mode, `randstr` will always return the parameter
+            # this will lead to run already exists error for local run
+            # so add a try delete to avoid this error
+            try:
+                local_pf.runs.delete(name=name)
+            except RunNotFoundError:
+                pass
+
             local_pf.run(
                 flow=f"{FLOWS_DIR}/hello-world",
                 data=f"{DATAS_DIR}/webClassification3.jsonl",
