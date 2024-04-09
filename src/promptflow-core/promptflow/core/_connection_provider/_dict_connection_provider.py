@@ -48,7 +48,7 @@ class DictConnectionProvider(ConnectionProvider):
             secret_keys = connection_dict.get("secret_keys", [])
             secrets = {k: v for k, v in value.items() if k in secret_keys}
             configs = {k: v for k, v in value.items() if k not in secrets}
-            connection_value = connection_class(configs=configs, secrets=secrets, name=key)
+            connection_value = connection_class(configs=configs, secrets=secrets, name=name)
             if CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY in configs:
                 connection_value.custom_type = configs[CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY]
         else:
@@ -86,7 +86,7 @@ class DictConnectionProvider(ConnectionProvider):
     def import_requisites(cls, _dict: Mapping[str, dict]):
         """Import connection required modules."""
         modules = set()
-        for key, connection_dict in _dict.items():
+        for _, connection_dict in _dict.items():
             module = connection_dict.get("module")
             if module:
                 modules.add(module)
