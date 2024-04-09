@@ -1189,7 +1189,9 @@ class FlowOperations(TelemetryMixin):
             target_flow_directory.parent.mkdir(parents=True, exist_ok=True)
 
             # TODO: handle ignore
-            shutil.copytree(code, target_flow_directory, dirs_exist_ok=True)
+            shutil.copytree(
+                code, target_flow_directory, dirs_exist_ok=True, ignore=shutil.ignore_patterns("__pycache__")
+            )
         else:
             # or we update the flow definition yaml file in code only
             target_flow_directory = code

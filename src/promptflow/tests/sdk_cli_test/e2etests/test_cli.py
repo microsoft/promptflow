@@ -2303,6 +2303,47 @@ class TestCli:
         run = pf.runs.get(run_id)
         assert_batch_run_result(run, pf, assert_func)
 
+    def test_pf_flow_save(self, pf):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            run_pf_command(
+                "flow",
+                "save",
+                "--path",
+                temp_dir,
+                "--entry",
+                "hello:hello_world",
+                "--code",
+                f"{EAGER_FLOWS_DIR}/../functions/hello_world",
+            )
+            assert os.listdir(temp_dir) == ["flow.dag.yaml", "hello.py"]
+            content = load_yaml(Path(temp_dir) / "flow.dag.yaml")
+            assert content == {
+                "entry": "hello:hello_world",
+                "inputs": {
+                    "text": {
+                        "type": "string",
+                    }
+                },
+                "outputs": {
+                    "output": {
+                        "type": "string",
+                    }
+                },
+            }
+            os.unlink(Path(temp_dir) / "flow.dag.yaml")
+            run_pf_command(
+                "flow",
+                "save",
+                "--entry",
+                "hello:hello_world",
+                "--code",
+                temp_dir,
+            )
+            # __pycache__ will be created when inspecting the module
+            assert os.listdir(temp_dir) == ["flow.dag.yaml", "hello.py", "__pycache__"]
+            new_content = load_yaml(Path(temp_dir) / "flow.dag.yaml")
+            assert new_content == content
+
 
 def assert_batch_run_result(run, pf, assert_func):
     assert run.status == "Completed"
