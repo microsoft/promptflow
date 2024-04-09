@@ -69,7 +69,7 @@ def _get_line_result_dict(run_id, index, inputs, has_error=False):
         "output": {"answer": "Hello world!"},
         "aggregation_inputs": {},
         "run_info": {
-            "run_id": run_id,
+            "run_id": f"{run_id}_{index}",
             "status": "Completed",
             "inputs": inputs,
             "output": {"answer": "Hello world!"},
