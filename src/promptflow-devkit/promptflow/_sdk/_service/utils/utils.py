@@ -69,17 +69,17 @@ def get_port_from_config(create_if_not_exists=False):
         port_file_path.touch(mode=read_write_by_user(), exist_ok=True)
     else:
         port_file_path = get_current_env_pfs_file(PF_SERVICE_PORT_FILE)
-    with open(port_file_path, "r", encoding=DEFAULT_ENCODING) as f:
+    with open(port_file_path, "r+", encoding=DEFAULT_ENCODING) as f:
         service_config = load_yaml(f) or {}
         port = service_config.get("service", {}).get("port", None)
-    if not port and create_if_not_exists:
-        with open(port_file_path, "w", encoding=DEFAULT_ENCODING) as f:
-            # Set random port to ~/.promptflow/pf.yaml
+        if not port and create_if_not_exists:
             port = get_random_port()
             service_config["service"] = service_config.get("service", {})
             service_config["service"]["port"] = port
             logger.debug(f"Set port {port} to file {port_file_path}")
+            f.seek(0)  # Move the file pointer to the beginning of the file
             dump_yaml(service_config, f)
+            f.truncate()  # Remove any remaining content
     return port
 
 
@@ -90,13 +90,15 @@ def dump_port_to_config(port):
     else:
         # Set port to ~/.promptflow/pfs/**_pf.port, if already have a port in file , will overwrite it.
         port_file_path = get_current_env_pfs_file(PF_SERVICE_PORT_FILE)
-    with open(port_file_path, "r", encoding=DEFAULT_ENCODING) as f:
+    with open(port_file_path, "r+", encoding=DEFAULT_ENCODING) as f:
         service_config = load_yaml(f) or {}
-    with open(port_file_path, "w", encoding=DEFAULT_ENCODING) as f:
         service_config["service"] = service_config.get("service", {})
-        service_config["service"]["port"] = port
-        logger.debug(f"Set port {port} to file {port_file_path}")
-        dump_yaml(service_config, f)
+        if service_config["service"].get("port", None) != port:
+            service_config["service"]["port"] = port
+            logger.debug(f"Set port {port} to file {port_file_path}")
+            f.seek(0)  # Move the file pointer to the beginning of the file
+            dump_yaml(service_config, f)
+            f.truncate()  # Remove any remaining content
 
 
 def is_port_in_use(port: int):
