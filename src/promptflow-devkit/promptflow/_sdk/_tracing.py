@@ -32,6 +32,7 @@ from promptflow._sdk._constants import (
     ContextAttributeKey,
 )
 from promptflow._sdk._service.utils.utils import (
+    add_executable_script_to_env_path,
     get_port_from_config,
     is_pfs_service_healthy,
     is_port_in_use,
@@ -88,10 +89,12 @@ def _invoke_pf_svc() -> str:
     if is_port_in_use(int(port)):
         if not is_pfs_service_healthy(port):
             cmd_args.append("--force")
+            logger.debug("Prompt flow service is not healthy, force to start...")
         else:
             print("Prompt flow Tracing Server has started...")
             print(hint_stop_message)
             return port
+    add_executable_script_to_env_path()
     print("Starting Prompt flow Tracing Server...")
     start_pfs = subprocess.Popen(cmd_args, shell=True)
     # Wait for service to be started

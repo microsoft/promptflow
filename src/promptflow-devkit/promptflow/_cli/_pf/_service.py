@@ -22,6 +22,7 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._service.app import create_app
 from promptflow._sdk._service.utils.utils import (
+    add_executable_script_to_env_path,
     check_pfs_service_status,
     dump_port_to_config,
     get_current_env_pfs_file,
@@ -202,13 +203,7 @@ def start_service(args):
             sys.stdout = old_stdout
             sys.stderr = old_stderr
     else:
-        # Add executable script dir to PATH to make sure the subprocess can find the executable, especially in notebook
-        # environment which won't add it to system path automatically.
-        python_dir = os.path.dirname(sys.executable)
-        executable_dir = os.path.join(python_dir, "Scripts") if platform.system() == "Windows" else python_dir
-        if executable_dir not in os.environ["PATH"].split(os.pathsep):
-            os.environ["PATH"] = executable_dir + os.pathsep + os.environ["PATH"]
-
+        add_executable_script_to_env_path()
         # Start a pfs process using detach mode. It will start a new process and create a new app. So we use environment
         # variable to pass the debug mode, since it will inherit parent process environment variable.
         if platform.system() == "Windows":

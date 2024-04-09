@@ -78,6 +78,7 @@ def get_port_from_config(create_if_not_exists=False):
             port = get_random_port()
             service_config["service"] = service_config.get("service", {})
             service_config["service"]["port"] = port
+            logger.debug(f"Set port {port} to file {port_file_path}")
             dump_yaml(service_config, f)
     return port
 
@@ -93,8 +94,10 @@ def dump_port_to_config(port):
         service_config = load_yaml(f) or {}
     with open(port_file_path, "w", encoding=DEFAULT_ENCODING) as f:
         service_config["service"] = service_config.get("service", {})
-        service_config["service"]["port"] = port
-        dump_yaml(service_config, f)
+        if service_config["service"].get("port", None) != port:
+            service_config["service"]["port"] = port
+            logger.debug(f"Set port {port} to file {port_file_path}")
+            dump_yaml(service_config, f)
 
 
 def is_port_in_use(port: int):
@@ -176,21 +179,23 @@ def is_pfs_service_healthy(pfs_port) -> bool:
             return is_healthy
     except Exception:  # pylint: disable=broad-except
         pass
-    logger.debug(
-        f"Promptflow service can't be reached through port {pfs_port}, will try to (force) start promptflow service."
-    )
+    logger.debug(f"Promptflow service can't call /heartbeat on port {pfs_port}")
     return False
 
 
-def check_pfs_service_status(pfs_port, time_delay=1, count_threshold=20) -> bool:
+def check_pfs_service_status(pfs_port, time_delay=1, count_threshold=10) -> bool:
     cnt = 1
     time.sleep(time_delay)
     is_healthy = is_pfs_service_healthy(pfs_port)
+    message = (
+        f"Promptflow service is not healthy. It has been tried for {cnt} times, will try at most "
+        f"{count_threshold} times."
+    )
     while is_healthy is False and count_threshold > cnt:
-        logger.info(
-            f"Promptflow service is not ready. It has been tried for {cnt} times, will try at most {count_threshold} "
-            f"times."
-        )
+        if cnt >= 3:
+            logger.warning(message)
+        else:
+            logger.info(message)
         cnt += 1
         time.sleep(time_delay)
         is_healthy = is_pfs_service_healthy(pfs_port)
@@ -278,9 +283,20 @@ def is_run_from_built_binary():
 
     Allow customer to use environment variable to control the triggering.
     """
-    return (not sys.executable.endswith("python.exe") and not sys.executable.endswith("python")) or os.environ.get(
-        PF_RUN_AS_BUILT_BINARY, ""
-    ).lower() == "true"
+    return (
+        sys.executable.endswith("pfcli.exe")
+        or sys.executable.endswith("app.exe")
+        or os.environ.get(PF_RUN_AS_BUILT_BINARY, "").lower() == "true"
+    )
+
+
+def add_executable_script_to_env_path():
+    # Add executable script dir to PATH to make sure the subprocess can find the executable, especially in notebook
+    # environment which won't add it to system path automatically.
+    python_dir = os.path.dirname(sys.executable)
+    executable_dir = os.path.join(python_dir, "Scripts") if platform.system() == "Windows" else python_dir
+    if executable_dir not in os.environ["PATH"].split(os.pathsep):
+        os.environ["PATH"] = executable_dir + os.pathsep + os.environ["PATH"]
 
 
 def encrypt_flow_path(flow_path):
