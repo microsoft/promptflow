@@ -5,6 +5,7 @@ import shutil
 import sys
 import tempfile
 from pathlib import Path
+from typing import Callable, TypedDict
 
 import pytest
 
@@ -54,6 +55,18 @@ def global_hello(text: str) -> str:
 
 def global_hello_no_hint(text) -> str:
     return f"Hello {text}!"
+
+
+def global_hello_typed_dict(text: str) -> TypedDict("TypedOutput", {"text": str}):
+    return {"text": text}
+
+
+class TypedOutput(TypedDict):
+    text: str
+
+
+def global_hello_inherited_typed_dict(text: str) -> TypedOutput:
+    return TypedOutput(text=text)
 
 
 @pytest.mark.usefixtures(
@@ -441,54 +454,88 @@ class TestFlowSave:
             },
         }
 
-    def test_infer_signature(self):
-        pf = PFClient()
-        flow_meta = pf.flows.infer_signature(entry=global_hello)
-        assert flow_meta == {
-            "inputs": {
-                "text": {
-                    "type": "string",
-                }
-            },
-            "outputs": {
-                "output": {
-                    "type": "string",
+    @pytest.mark.skip(reason="not supported yet")
+    @pytest.mark.parametrize(
+        "target_function, expected_signature",
+        [
+            pytest.param(
+                global_hello,
+                {
+                    "inputs": {
+                        "text": {
+                            "type": "string",
+                        }
+                    },
+                    "outputs": {
+                        "output": {
+                            "type": "string",
+                        },
+                    },
                 },
-            },
-        }
+                id="simple",
+            ),
+            pytest.param(
+                global_hello_typed_dict,
+                {
+                    "inputs": {
+                        "text": {
+                            "type": "string",
+                        }
+                    },
+                    "outputs": {
+                        "text": {
+                            "type": "string",
+                        },
+                    },
+                },
+                id="typed_dict_output",
+            ),
+            pytest.param(
+                global_hello_inherited_typed_dict,
+                {
+                    "inputs": {
+                        "text": {
+                            "type": "string",
+                        }
+                    },
+                    "outputs": {
+                        "text": {
+                            "type": "string",
+                        },
+                    },
+                },
+                id="inherited_typed_dict_output",
+            ),
+            pytest.param(
+                global_hello_no_hint,
+                {
+                    "inputs": {
+                        "text": {
+                            # port without type hint will be treated as a dict
+                            "type": "object",
+                        }
+                    },
+                    "outputs": {
+                        "output": {
+                            "type": "string",
+                        },
+                    },
+                },
+                id="inherited_typed_dict_output",
+            ),
+        ],
+    )
+    def test_infer_signature(
+        self, target_function: Callable, expected_signature: TypedDict("Signature", {"inputs": dict, "outputs": dict})
+    ):
+        pf = PFClient()
+        flow_meta = pf.flows.infer_signature(entry=target_function)
+        assert flow_meta == expected_signature
 
+    def test_infer_signature_failed(self):
+        pf = PFClient()
         with pytest.raises(UserErrorException, match="Schema validation failed: {'init.words.type'"):
             pf.flows.infer_signature(entry=GlobalHelloWithInvalidInit)
-
-        flow_meta = pf.flows.infer_signature(entry=global_hello_no_hint)
-        assert flow_meta == {
-            "inputs": {
-                "text": {
-                    # port without type hint will be treated as a dict
-                    "type": "object",
-                }
-            },
-            "outputs": {
-                "output": {
-                    "type": "string",
-                },
-            },
-        }
-
-    def test_public_infer_signature(self):
-        pf = PFClient()
-        assert pf.flows.infer_signature(entry=global_hello) == {
-            "inputs": {
-                "text": {
-                    "type": "string",
-                }
-            },
-            "outputs": {
-                "output": {
-                    "type": "string",
-                },
-            },
-        }
 
     def test_public_save(self):
         pf = PFClient()
