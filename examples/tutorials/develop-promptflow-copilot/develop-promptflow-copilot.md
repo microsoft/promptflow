@@ -132,8 +132,13 @@ Incorporating follow-up question suggestions is an effective strategy to enhance
 
 Deploying the `question_simulation` flow as a managed online endpoint and integrating it into your web application allows for dynamic generation of pertinent follow-up questions based on previous chat interactions.
 
-### Tips
+### Collect user feedback
+
+User feedback is invaluable for enhancing the copilot's performance and user experience. By incorporating a feedback mechanism into the chat interface, users can provide real-time feedback on the copilot's responses. This feedback can be used to refine the copilot's performance and prompt formulation, ensuring continuous improvement.
+
+When you deploy the flow as a managed online endpoint, you will find the endpoint has provided two POST APIs if you check the endpoint's swagger: `/score` for trigger your copilot flow with inputs and `/feedback` for collecting user feedback into the trace data.
+
 ```
-- You are recommended to turn on these two options when you deploy the MIR endpoint, so that you can collect the related data and calculate online metrics.
+- You are recommended to turn on this options when you deploy the MIR endpoint, so that you can collect the related data and calculate online metrics.
 ```
 ![mir-options](mir-options.png)
