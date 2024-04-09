@@ -123,11 +123,16 @@ class TestRunOperations:
             datastore = pf.runs._workspace_default_datastore
             assert datastore
 
+    @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
     def test_upload_run_with_invalid_workspace_datastore(self, pf: PFClient, mocker: MockerFixture):
         # test download with invalid workspace datastore
+        from promptflow._sdk.operations import RunOperations
+
+        mocked = mocker.patch.object(RunOperations, "get")
+        mocked.return_value.status = "Completed"
         mocker.patch.object(pf.runs, "_workspace_default_datastore", "test")
         with pytest.raises(UserErrorException, match="workspace default datastore is not supported"):
-            pf.runs._upload(run="web_classification_variant_0_20240404_162837_477195")
+            pf.runs._upload(run="fake_run_name")
 
     def test_upload_run_with_running_status(self, pf: PFClient):
         # test upload run with running status
@@ -136,6 +141,7 @@ class TestRunOperations:
             with pytest.raises(UserErrorException, match="Can only upload the run with status"):
                 pf.runs._upload(run="fake_run_name")
 
+    @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
     def test_upload_run_with_authentication_error(
         self,
         pf: PFClient,
@@ -153,6 +159,7 @@ class TestRunOperations:
         with pytest.raises(UserAuthenticationError, match="User does not have permission"):
             async_run_allowing_running_loop(run_uploader._upload_single_blob, blob_client, random_data)
 
+    @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
     def test_upload_run_with_run_exist(self, pf: PFClient):
         # test upload run with run exist
         run_uploader = AsyncRunUploader._from_run_operations(run=MagicMock(), run_ops=pf.runs)
