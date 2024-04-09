@@ -77,8 +77,8 @@ def list_apis(
             {"value": "chat", "display_value": "chat"},
         ]
 
-
-@tool
+# need to set metadata "streaming_option_parameter" to support serving streaming functionality.
+@tool(streaming_option_parameter="stream")
 @handle_openai_error()
 def llm(
     # connection can be of type AzureOpenAIConnection, OpenAIConnection, ServerlessConnection.
