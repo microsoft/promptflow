@@ -1,21 +1,39 @@
 import json
+import multiprocessing
 import sys
+import threading
 import uuid
+from pathlib import Path
 from types import GeneratorType
+from unittest.mock import patch
 
+import opentelemetry.trace as otel_trace
 import pytest
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor, SpanExporter, SpanExportResult
 from opentelemetry.trace.status import StatusCode
 
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template
+from promptflow.batch._result import BatchResult
 from promptflow.contracts.run_info import Status
 from promptflow.executor import FlowExecutor
+from promptflow.executor._line_execution_process_pool import _process_wrapper
+from promptflow.executor._process_manager import create_spawned_fork_process_manager
 from promptflow.executor._result import LineResult
-from promptflow.tracing._utils import serialize
 from promptflow.tracing import trace
+from promptflow.tracing._utils import serialize
 from promptflow.tracing.contracts.trace import TraceType
 
-from ..process_utils import execute_function_in_subprocess
-from ..utils import get_flow_folder, get_flow_sample_inputs, get_yaml_file, load_content, prepare_memory_exporter
+from ..process_utils import execute_function_in_subprocess, override_process_pool_targets
+from ..utils import (
+    MemoryRunStorage,
+    get_flow_folder,
+    get_flow_sample_inputs,
+    get_yaml_file,
+    load_content,
+    prepare_memory_exporter,
+    submit_batch_run,
+)
 
 LLM_FUNCTION_NAMES = [
     "openai.resources.chat.completions.Completions.create",
@@ -58,6 +76,57 @@ SHOULD_INCLUDE_PROMPT_FUNCTION_NAMES = [
     "AzureOpenAI.chat",
 ]
 
+lock = multiprocessing.Lock()
+
+
+class JsonSpanExporter(SpanExporter):
+    _lock = threading.Lock()
+
+    def __init__(self, file_path):
+        self.file_path = file_path
+
+    def export(self, spans):
+        try:
+            if self._lock:
+                with open(self.file_path, "a") as f:
+                    for span in spans:
+                        f.write(span.to_json() + "\n\n")
+            return SpanExportResult.SUCCESS
+        except Exception:
+            return SpanExportResult.FAILURE
+
+    def shutdown(self):
+        pass
+
+
+def mock_exporter_for_batch_tracing():
+    patch_targets = {
+        "promptflow.executor.flow_executor.setup_exporter_from_environ": mock_setup_exporter_from_environ,
+    }
+    for target, func in patch_targets.items():
+        patcher = patch(target, func)
+        patcher.start()
+
+
+def mock_setup_exporter_from_environ():
+    with lock:
+        idx = len(list(Path("./.span").glob("*.jsonl")))
+        Path(f"./.span/line_span_{idx}.jsonl").touch()
+    tracer_provider = TracerProvider()
+    json_exporter = JsonSpanExporter(file_path=f"./.span/line_span_{idx}.jsonl")
+    tracer_provider.add_span_processor(SimpleSpanProcessor(json_exporter))
+    otel_trace.set_tracer_provider(tracer_provider)
+
+
+def mock_process_wrapper(*args, **kwargs):
+    mock_exporter_for_batch_tracing()
+    _process_wrapper(*args, **kwargs)
+
+
+def mock_process_manager(*args, **kwargs):
+    mock_exporter_for_batch_tracing()
+    create_spawned_fork_process_manager(*args, **kwargs)
+
 
 def get_chat_input(stream):
     return {
@@ -97,11 +166,11 @@ class TestExecutorTraces:
         """
         get_trace = False
         if apicall.get("name", "") in (
-            "openai.api_resources.chat_completion.ChatCompletion.create",
-            "openai.api_resources.completion.Completion.create",
-            "openai.api_resources.embedding.Embedding.create",
-            "openai.resources.completions.Completions.create",  # openai>=1.0.0
-            "openai.resources.chat.completions.Completions.create",  # openai>=1.0.0
+            "openai_completion_legacy",
+            "openai_chat_legacy",
+            "openai_embedding_legacy",
+            "openai_chat",  # openai>=1.0.0
+            "openai_completion",  # openai>=1.0.0
         ):
             get_trace = True
             output = apicall.get("output")
@@ -410,7 +479,12 @@ class TestOTelTracer:
         expected_span_length,
     ):
         execute_function_in_subprocess(
-            self.assert_otel_traces_with_llm, dev_connections, flow_file, inputs, is_stream, expected_span_length,
+            self.assert_otel_traces_with_llm,
+            dev_connections,
+            flow_file,
+            inputs,
+            is_stream,
+            expected_span_length,
         )
 
     def assert_otel_traces_with_llm(self, dev_connections, flow_file, inputs, is_stream, expected_span_length):
@@ -461,7 +535,7 @@ class TestOTelTracer:
         self.validate_span_list(span_list, line_run_id, expected_span_length)
         for span in span_list:
             if span.attributes.get("function", "") in EMBEDDING_FUNCTION_NAMES:
-                assert span.attributes.get("llm.response.model", "") == "ada"
+                assert "ada" in span.attributes.get("llm.response.model", "")
                 embeddings = span.attributes.get("embedding.embeddings", "")
                 assert "embedding.vector" in embeddings
                 assert "embedding.text" in embeddings
@@ -510,17 +584,78 @@ class TestOTelTracer:
     def test_flow_with_nested_tool(self):
         memory_exporter = prepare_memory_exporter()
 
-        line_result, line_run_id = self.submit_flow_run("flow_with_nested_tool", {"input": "Hello"}, {})
+        line_result, _ = self.submit_flow_run("flow_with_nested_tool", {"input": "Hello"}, {})
         assert line_result.output == {"output": "Hello"}
 
         span_list = memory_exporter.get_finished_spans()
         for span in span_list:
             if span.attributes.get("span_type", "") != "Flow":
                 inputs = span.attributes.get("inputs", None)
-                if "\"recursive_call\": false" in inputs:
+                if '"recursive_call": false' in inputs:
                     assert span.name == "nested_tool"
                 else:
                     assert span.name == "nested_tool_node"
+
+    def test_otel_trace_with_batch(self, dev_connections):
+        flow_file = "flow_with_trace"
+        execute_function_in_subprocess(self.assert_otel_traces_with_batch, dev_connections, flow_file)
+
+    def assert_otel_traces_with_batch(self, dev_connections, flow_file):
+        flow_folder = get_flow_folder(flow_file)
+        if (span_folder := flow_folder / ".span").exists():
+            for file in span_folder.glob("*.jsonl"):
+                file.unlink()
+        else:
+            span_folder.mkdir()
+
+        with override_process_pool_targets(process_manager=mock_process_manager, process_wrapper=mock_process_wrapper):
+            mem_run_storage = MemoryRunStorage()
+            batch_result = submit_batch_run(
+                flow_folder=flow_file,
+                inputs_mapping={"user_id": "${data.user_id}"},
+                input_file_name="inputs.jsonl",
+                connections=dev_connections,
+                storage=mem_run_storage,
+            )
+            assert isinstance(batch_result, BatchResult)
+
+            batch_run_id = list(mem_run_storage._flow_runs.values())[0].root_run_id
+            assert (flow_folder / ".span").exists()
+            trace_ids = []
+            for file in span_folder.glob("*.jsonl"):
+                spans = []
+                with open(file, "r") as f:
+                    json_chunks = f.read().strip().split("\n\n")
+                    for chunk in json_chunks:
+                        spans.append(json.loads(chunk))
+                trace_ids.append(spans[0]["context"]["trace_id"])
+                assert len(spans) == 5, f"Got {len(spans)} spans."
+                root_spans = [span for span in spans if span["parent_id"] is None]
+                assert len(root_spans) == 1
+                root_span = root_spans[0]
+                for span in spans:
+                    span["status"]["status_code"] = "OK"
+                    span["attributes"]["batch_run_id"] = batch_run_id
+                    span["attributes"]["framework"] = "promptflow"
+                    if span["parent_id"] is None:
+                        expected_span_type = "Flow"
+                    elif span["attributes"].get("function", "") in LLM_FUNCTION_NAMES:
+                        expected_span_type = "LLM"
+                    elif span["attributes"].get("function", "") in EMBEDDING_FUNCTION_NAMES:
+                        expected_span_type = "Embedding"
+                    else:
+                        expected_span_type = "Function"
+                    msg = f"span_type: {span['attributes']['span_type']}, expected: {expected_span_type}"
+                    assert span["attributes"]["span_type"] == expected_span_type, msg
+                    if span != root_span:  # Non-root spans should have a parent
+                        assert span["attributes"]["function"]
+                    inputs = json.loads(span["attributes"]["inputs"])
+                    output = json.loads(span["attributes"]["output"])
+                    assert isinstance(inputs, dict)
+                    assert output is not None
+
+            for run_info in mem_run_storage._flow_runs.values():
+                assert f"0x{int(run_info.otel_trace_id, 16):032x}" in trace_ids
 
     def submit_flow_run(self, flow_file, inputs, dev_connections):
         executor = FlowExecutor.create(get_yaml_file(flow_file), dev_connections)

@@ -19,7 +19,7 @@ import mock
 import pytest
 
 from promptflow._cli._pf.entry import main
-from promptflow._constants import PF_USER_AGENT
+from promptflow._constants import LINE_NUMBER_KEY, PF_USER_AGENT
 from promptflow._sdk._constants import LOGGER_NAME, SCRUBBED_VALUE, ExperimentStatus
 from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
@@ -30,14 +30,14 @@ from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.tracing._operation_context import OperationContext
 
-from ..recording_utilities import is_live
-
 FLOWS_DIR = "./tests/test_configs/flows"
+EAGER_FLOWS_DIR = "./tests/test_configs/eager_flows"
 EXPERIMENT_DIR = "./tests/test_configs/experiments"
 RUNS_DIR = "./tests/test_configs/runs"
 CONNECTIONS_DIR = "./tests/test_configs/connections"
 DATAS_DIR = "./tests/test_configs/datas"
 TOOL_ROOT = "./tests/test_configs/tools"
+PROMPTY_DIR = "./tests/test_configs/prompty"
 
 TARGET_URL = "https://www.youtube.com/watch?v=o5ZQyXaAv1g"
 
@@ -298,6 +298,42 @@ class TestCli:
         with open(log_path, "r") as f:
             log_content = f.read()
         assert previous_log_content not in log_content
+
+        # Test flow test with simple input file
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/web_classification",
+            "--inputs",
+            f"{DATAS_DIR}/webClassification1.jsonl",
+        )
+        output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.output.json"
+        assert output_path.exists()
+
+        # Test flow test with invalid simple input file
+        with pytest.raises(ValueError) as ex:
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{FLOWS_DIR}/web_classification",
+                "--inputs",
+                f"{DATAS_DIR}/invalid_path.json",
+            )
+        assert "Cannot find inputs file" in ex.value.args[0]
+
+        # Test flow test with invalid file extension
+        with pytest.raises(ValueError) as ex:
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{FLOWS_DIR}/web_classification",
+                "--inputs",
+                f"{DATAS_DIR}/logo.jpg",
+            )
+        assert "Only support jsonl or json file as input" in ex.value.args[0]
 
     def test_flow_with_aad_connection(self):
         run_pf_command("flow", "test", "--flow", f"{FLOWS_DIR}/flow_with_aad_connection")
@@ -577,7 +613,7 @@ class TestCli:
         ],
     )
     def test_flow_test_with_environment_variable(self, flow_folder_name, env_key, except_value, local_client):
-        from promptflow._sdk._submitter.utils import SubmitterHelper
+        from promptflow._sdk._orchestrator.utils import SubmitterHelper
 
         def validate_stdout(detail_path):
             with open(detail_path, "r") as f:
@@ -1549,7 +1585,7 @@ class TestCli:
         with pytest.raises(SystemExit):
             run_pf_command("tool", "list", "--flow", "invalid_flow_folder")
         outerr = capsys.readouterr()
-        assert "invalid_flow_folder does not exist" in outerr.out
+        assert "invalid_flow_folder does not exist." in outerr.out
 
     def test_tool_validate(self):
         # Test validate tool script
@@ -1942,7 +1978,7 @@ class TestCli:
                 f"{EXPERIMENT_DIR}/basic-no-script-template/basic.exp.yaml",
             )
 
-    @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
+    @pytest.mark.skipif(condition=not pytest.is_live, reason="Injection cannot passed to detach process.")
     @pytest.mark.usefixtures("setup_experiment_table")
     def test_experiment_start(self, monkeypatch, capfd, local_client):
         def wait_for_experiment_terminated(experiment_name):
@@ -1982,7 +2018,7 @@ class TestCli:
             metrics = local_client.runs.get_metrics(name=exp.node_runs["eval"][0]["name"])
             assert "accuracy" in metrics
 
-    @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
+    @pytest.mark.skipif(condition=not pytest.is_live, reason="Injection cannot passed to detach process.")
     @pytest.mark.usefixtures("setup_experiment_table")
     def test_experiment_start_anonymous_experiment(self, monkeypatch, local_client):
         with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
@@ -2022,6 +2058,20 @@ class TestCli:
             for node_name in ["main", "eval"]:
                 path = Path(tmpdir) / node_name / filename
                 assert path.is_file()
+
+    @pytest.mark.usefixtures("setup_experiment_table", "recording_injection")
+    def test_experiment_direct_test(self, monkeypatch, capfd, local_client, tmpdir):
+        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+            mock_func.return_value = True
+            run_pf_command(
+                "experiment",
+                "test",
+                "--template",
+                f"{EXPERIMENT_DIR}/basic-no-script-template/basic.exp.yaml",
+            )
+            out, _ = capfd.readouterr()
+            assert "main" in out
+            assert "eval" in out
 
     def test_run_list(self, local_client):
         from promptflow._sdk.entities import Run
@@ -2119,6 +2169,49 @@ class TestCli:
         assert run.tags == {"A": "A", "B": "B"}
         assert run._resume_from == run_id
 
+    def test_flow_run_resume_partially_failed_run(self, capfd, local_client) -> None:
+        run_id = str(uuid.uuid4())
+        data_path = f"{DATAS_DIR}/simple_hello_world_multi_lines.jsonl"
+        with open(data_path, "r") as f:
+            total_lines = len(f.readlines())
+        # fetch std out
+        run_pf_command(
+            "run",
+            "create",
+            "--flow",
+            f"{FLOWS_DIR}/simple_hello_world_random_fail",
+            "--data",
+            data_path,
+            "--name",
+            run_id,
+        )
+        out, _ = capfd.readouterr()
+        assert "Completed" in out
+
+        def get_successful_lines(output_path):
+            with open(Path(output_path) / "outputs.jsonl", "r") as f:
+                return set(map(lambda x: x[LINE_NUMBER_KEY], map(json.loads, f.readlines())))
+
+        completed_line_set = set()
+        while True:
+            run = local_client.runs.get(name=run_id)
+            new_completed_line_set = get_successful_lines(run.properties["output_path"])
+            if len(new_completed_line_set) == total_lines:
+                break
+            assert new_completed_line_set.issuperset(completed_line_set), "successful lines should be increasing"
+            completed_line_set = new_completed_line_set
+
+            new_run_id = str(uuid.uuid4())
+            run_pf_command(
+                "run",
+                "create",
+                "--resume-from",
+                run_id,
+                "--name",
+                new_run_id,
+            )
+            run_id = new_run_id
+
     def test_flow_run_exclusive_param(self, capfd) -> None:
         # fetch std out
         with pytest.raises(SystemExit):
@@ -2157,3 +2250,64 @@ class TestCli:
         assert output_path.exists()
         detail_path = Path(flow_dir) / ".promptflow" / "chat.detail.json"
         assert detail_path.exists()
+
+    def test_flow_test_prompty(self):
+        prompty_path = Path(PROMPTY_DIR) / "prompty_example.prompty"
+        run_pf_command("flow", "test", "--flow", prompty_path.as_posix(), "--inputs", 'question="who are you"')
+        output_path = Path(prompty_path).parent / ".promptflow" / "prompty_example"
+        assert output_path.exists()
+        assert (output_path / "flow.log").exists()
+        assert (output_path / "flow.detail.json").exists()
+        assert (output_path / "flow.output.json").exists()
+
+    def test_flow_run_prompty(self, capfd):
+        prompty_path = Path(PROMPTY_DIR) / "prompty_example.prompty"
+
+        run_pf_command(
+            "run",
+            "create",
+            "--flow",
+            prompty_path.as_posix(),
+            "--data",
+            f"{DATAS_DIR}/prompty_inputs.jsonl",
+            "--name",
+            str(uuid.uuid4()),
+        )
+        out, _ = capfd.readouterr()
+        assert "Completed" in out
+
+    def test_pf_run_with_init(self, pf):
+        run_id = str(uuid.uuid4())
+        run_pf_command(
+            "run",
+            "create",
+            "--flow",
+            f"{EAGER_FLOWS_DIR}/basic_callable_class",
+            "--data",
+            f"{EAGER_FLOWS_DIR}/basic_callable_class/inputs.jsonl",
+            "--name",
+            run_id,
+            "--init",
+            "obj_input=val",
+        )
+
+        def assert_func(details_dict):
+            return details_dict["outputs.func_input"] == [
+                "func_input",
+                "func_input",
+                "func_input",
+                "func_input",
+            ] and details_dict["outputs.obj_input"] == ["val", "val", "val", "val"]
+
+        # check run results
+        run = pf.runs.get(run_id)
+        assert_batch_run_result(run, pf, assert_func)
+
+
+def assert_batch_run_result(run, pf, assert_func):
+    assert run.status == "Completed"
+    assert "error" not in run._to_dict(), run._to_dict()["error"]
+    details = pf.get_details(run.name)
+    # convert DataFrame to dict
+    details_dict = details.to_dict(orient="list")
+    assert assert_func(details_dict), details_dict

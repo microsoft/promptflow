@@ -25,16 +25,23 @@
     "**/*.txt",
     ".gitignore",
     "scripts/docs/_build/**",
-    "src/promptflow/promptflow/azure/_restclient/flow/**",
-    "src/promptflow/promptflow/azure/_restclient/swagger.json",
-    "src/promptflow/promptflow/azure/_models/**",
+    "src/promptflow-azure/promptflow/azure/_restclient/flow/**",
+    "src/promptflow-azure/promptflow/azure/_restclient/swagger.json",
+    "src/promptflow-azure/promptflow/azure/_models/**",
+    "src/promptflow-azure/tests/**",
+    "src/promptflow-core/promptflow/core/_connection_provider/_models/**",
     "src/promptflow/tests/**",
+    "src/promptflow-recording/**",
     "src/promptflow-tools/tests/**",
+    "src/promptflow-devkit/promptflow/_sdk/_service/static/index.html",
     "**/flow.dag.yaml",
+    "**/pyproject.toml",
     "**/setup.py",
     "scripts/installer/curl_install_pypi/**",
     "scripts/installer/windows/**",
-    "src/promptflow/promptflow/_sdk/_service/pfsvc.py"
+    ".github/workflows/**",
+    ".github/actions/**",
+    ".github/pipelines/**"
   ],
   "words": [
     "aoai",
@@ -86,7 +93,6 @@
     "nunit",
     "astext",
     "Likert",
-    "pfsvc",
     "geval",
     "Summ",
     "Bhavik",
@@ -183,7 +189,14 @@
     "pywin",
     "STARTF",
     "mltable",
-    "setenv"
+    "prompty",
+    "Prompty",
+    "setenv",
+    "cscript",
+    "nologo",
+    "wscript",
+    "raisvc",
+    "evals"
   ],
   "flagWords": [
     "Prompt Flow"

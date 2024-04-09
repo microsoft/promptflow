@@ -1,0 +1,16 @@
+#!/bin/bash
+
+SCRIPT_DIR=$(dirname "$0")
+MAIN_EXE="$SCRIPT_DIR/app"
+
+# Check if the first argument is 'service'
+if [ "$1" == "service" ]; then
+    # Check if the second argument is 'start'
+    if [ "$2" == "start" ]; then
+        nohup "$MAIN_EXE" pf "${@:1}" > output.txt 2>&1 &
+    else
+        "$MAIN_EXE" pf "${@:1}"
+    fi
+else
+    "$MAIN_EXE" pf "${@:1}"
+fi

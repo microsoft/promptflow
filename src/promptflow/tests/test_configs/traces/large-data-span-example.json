@@ -1,0 +1,54 @@
+{
+    "name": "openai.resources.chat.completions.Completions.create",
+    "context": {
+      "trace_id": "32a6fb50e281736543979ce5b929dfdc",
+      "span_id": "3a3596a19efef900",
+      "trace_state": ""
+    },
+    "kind": "1",
+    "parent_id": "9c63581c6da66596",
+    "start_time": "2024-03-21T06:37:22.332582",
+    "end_time": "2024-03-21T06:37:26.445007",
+    "status": {
+      "status_code": "Ok",
+      "description": ""
+    },
+    "attributes": {
+      "framework": "promptflow",
+      "span_type": "LLM",
+      "function": "openai.resources.chat.completions.Completions.create",
+      "node_name": "Azure_OpenAI_GPT_4_Turbo_with_Vision_mrr4",
+      "line_run_id": "277fab99-d26e-4c43-8ec4-b0c61669fd68",
+      "llm.response.model": "gpt-4",
+      "__computed__.cumulative_token_count.completion": "14",
+      "__computed__.cumulative_token_count.prompt": "1497",
+      "__computed__.cumulative_token_count.total": "1511",
+      "llm.usage.completion_tokens": "14",
+      "llm.usage.prompt_tokens": "1497",
+      "llm.usage.total_tokens": "1511"
+    },
+    "events": [
+      {
+        "name": "promptflow.function.inputs",
+        "timestamp": "2024-03-21T06:37:22.332582",
+        "attributes": {
+          "payload": "{\"input1\": \"value1\", \"input2\": \"value2\"}"
+        }
+      },
+      {
+        "name": "promptflow.function.output",
+        "timestamp": "2024-03-21T06:37:26.445007",
+        "attributes": {
+          "payload": "{\"output1\": \"val1\", \"output2\": \"val2\"}"
+        }
+      }
+    ],
+    "links": [],
+    "resource": {
+      "attributes": {
+        "service.name": "promptflow",
+        "collection": "default"
+      },
+      "schema_url": ""
+    }
+  }

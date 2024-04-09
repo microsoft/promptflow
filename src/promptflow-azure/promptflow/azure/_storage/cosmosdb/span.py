@@ -1,0 +1,88 @@
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
+
+import json
+from copy import deepcopy
+from typing import Any, Dict
+
+from azure.cosmos.container import ContainerProxy
+from azure.storage.blob import ContainerClient
+
+from promptflow._constants import SpanContextFieldName, SpanEventFieldName, SpanFieldName
+from promptflow._sdk.entities._trace import Span as SpanEntity
+
+
+class Span:
+    name: str = None
+    context: dict = None
+    kind: str = None
+    parent_id: str = None
+    start_time: str = None
+    end_time: str = None
+    status: dict = None
+    attributes: dict = None
+    events: list = None
+    links: list = None
+    resource: dict = None
+    id: str = None
+    partition_key: str = None
+    collection_id: str = None
+    created_by: dict = None
+    external_event_data_uris: list = None
+
+    def __init__(self, span: SpanEntity, collection_id: str, created_by: dict) -> None:
+        self.name = span.name
+        self.context = span.context
+        self.kind = span.kind
+        self.parent_id = span.parent_id
+        self.start_time = span.start_time.isoformat()
+        self.end_time = span.end_time.isoformat()
+        self.status = span.status
+        self.attributes = span.attributes
+        # We will remove attributes from events for cosmosdb 2MB size limit.
+        # Deep copy to keep original data for LineSummary container.
+        self.events = deepcopy(span.events)
+        self.links = span.links
+        self.resource = span.resource
+        self.partition_key = collection_id
+        self.collection_id = collection_id
+        self.id = span.span_id
+        self.created_by = created_by
+        self.external_event_data_uris = []
+
+    def persist(self, cosmos_client: ContainerProxy, blob_container_client: ContainerClient, blob_base_uri: str):
+        if self.id is None or self.partition_key is None or self.resource is None:
+            return
+
+        resource_attributes = self.resource.get(SpanFieldName.ATTRIBUTES, None)
+        if resource_attributes is None:
+            return
+
+        if self.events and blob_container_client is not None and blob_base_uri is not None:
+            self._persist_events(blob_container_client, blob_base_uri)
+
+        from azure.cosmos.exceptions import CosmosResourceExistsError
+
+        try:
+            return cosmos_client.create_item(body=self.to_dict())
+        except CosmosResourceExistsError:
+            return
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {k: v for k, v in self.__dict__.items() if v}
+
+    def _persist_events(self, blob_container_client: ContainerClient, blob_base_uri: str):
+        for idx, event in enumerate(self.events):
+            event_data = json.dumps(event)
+            blob_client = blob_container_client.get_blob_client(self._event_path(idx))
+            blob_client.upload_blob(event_data)
+
+            event[SpanEventFieldName.ATTRIBUTES] = {}
+            self.external_event_data_uris.append(f"{blob_base_uri}{self._event_path(idx)}")
+
+    EVENT_PATH_PREFIX = ".promptflow/.trace"
+
+    def _event_path(self, idx: int) -> str:
+        trace_id = self.context[SpanContextFieldName.TRACE_ID]
+        return f"{self.EVENT_PATH_PREFIX}/{self.collection_id}/{trace_id}/{self.id}/{idx}"

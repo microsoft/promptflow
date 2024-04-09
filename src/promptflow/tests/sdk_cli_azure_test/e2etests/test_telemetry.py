@@ -35,7 +35,6 @@ from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_
 from promptflow.tracing._operation_context import OperationContext
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
-from ..recording_utilities import is_live
 
 
 @contextlib.contextmanager
@@ -228,7 +227,7 @@ class TestTelemetry:
         def assert_ua(*args, **kwargs):
             ua = pydash.get(kwargs, "extra.custom_dimensions.user_agent", None)
             ua_dict = parse_ua_to_dict(ua)
-            assert ua_dict.keys() == {"promptflow-sdk"}
+            assert "promptflow-sdk" in ua_dict.keys()
 
         logger = MagicMock()
         logger.info = MagicMock()
@@ -260,7 +259,8 @@ class TestTelemetry:
             )
             user_agent = ClientUserAgentUtil.get_user_agent()
             ua_dict = parse_ua_to_dict(user_agent)
-            assert ua_dict.keys() == {"promptflow-sdk"}
+            # multiple sdk agent since shared Operation Context
+            assert ua_dict.keys() == {"promptflow-azure-sdk", "promptflow-sdk"}
 
             # Call log_activity
             with log_activity(logger, "test_activity", activity_type=ActivityType.PUBLICAPI):
@@ -276,7 +276,8 @@ class TestTelemetry:
         )
         user_agent = ClientUserAgentUtil.get_user_agent()
         ua_dict = parse_ua_to_dict(user_agent)
-        assert ua_dict.keys() == {"promptflow-sdk", "a"}
+        # multiple sdk agent since shared Operation Context
+        assert ua_dict.keys() == {"promptflow-sdk", "promptflow-azure-sdk", "a"}
 
         context = OperationContext().get_instance()
         context.user_agent = ""
@@ -326,6 +327,7 @@ class TestTelemetry:
             mock_logger.side_effect = check_inner_call
             run = load_run(
                 source=f"{RUNS_DIR}/run_with_env.yaml",
+                params_override=[{"environment_variables": {}}],
             )
             # create 2 times will get 2 request ids
             run.name = str(uuid.uuid4())
@@ -407,7 +409,8 @@ class TestTelemetry:
                 pf.flows.test(temp_dir, inputs={"key": "API_BASE"})
 
     @pytest.mark.skipif(
-        condition=not is_live(), reason="Live mode can run successfully, but an error will be reported when recording."
+        condition=not pytest.is_live,
+        reason="Live mode can run successfully, but an error will be reported when recording.",
     )
     def test_run_yaml_type(self, pf, randstr: Callable[[str], str]):
         from promptflow._constants import FlowType

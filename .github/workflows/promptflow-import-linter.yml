@@ -18,20 +18,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.11
     - uses: snok/install-poetry@v1
     - name: Install all packages
       run: |
         cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-tracing
-        touch ./promptflow/__init__.py
+        touch promptflow/__init__.py
         poetry install --with dev
         cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-core
-        touch ./promptflow/__init__.py
+        touch promptflow/__init__.py
         poetry install --with dev
         cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-devkit
-        touch ./promptflow/__init__.py
+        touch promptflow/__init__.py
         poetry install --with dev
         cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-azure
-        touch ./promptflow/__init__.py
+        touch promptflow/__init__.py
+        poetry install --with dev
+        cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-evals
+        touch promptflow/__init__.py
         poetry install --with dev
       working-directory: ${{ env.WORKING_DIRECTORY }}
     - name: import lint
@@ -47,6 +54,9 @@ jobs:
         poetry run lint-imports
         echo "=== Running import lint in promptflow-azure ==="
         cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-azure
+        poetry run lint-imports
+        echo "=== Running import lint in promptflow-evals ==="
+        cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-evals
         poetry run lint-imports
       working-directory: ${{ env.WORKING_DIRECTORY }}
 

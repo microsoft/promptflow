@@ -1,28 +1,46 @@
+# CAUTION: Order is important; the LAST matching pattern takes the most precedence.
+# So put outside folders first, and then inside folders.
+# Don't change the sequence of the regions.
+
 * @microsoft/prompt-flow-approvers
 
-/src/promptflow/promptflow/_core/ @microsoft/promptflow-execution
-/src/promptflow/promptflow/_internal/ @microsoft/promptflow-execution
-/src/promptflow/promptflow/batch/ @microsoft/promptflow-execution
-/src/promptflow/promptflow/executor/ @microsoft/promptflow-execution
-/src/promptflow/promptflow/integrations/ @microsoft/promptflow-execution
-/src/promptflow/promptflow/storage/ @microsoft/promptflow-execution
-/src/promptflow/tests/executor/ @microsoft/promptflow-execution
+# 1. Folders
+/src/promptflow/ @microsoft/promptflow-sdk
+/src/promptflow-tracing/ @microsoft/promptflow-execution
+/src/promptflow-core/ @microsoft/promptflow-sdk
+/src/promptflow-devkit/ @microsoft/promptflow-sdk
+/src/promptflow-azure/ @microsoft/promptflow-sdk
+/src/promptflow-recording/ @microsoft/promptflow-sdk
 
-/src/promptflow/promptflow/_cli/ @microsoft/promptflow-sdk
-/src/promptflow/promptflow/_sdk/ @microsoft/promptflow-sdk
-/src/promptflow/promptflow/azure/ @microsoft/promptflow-sdk
-/src/promptflow/promptflow/entities/ @microsoft/promptflow-sdk
-/src/promptflow/promptflow/operations/ @microsoft/promptflow-sdk
-/src/promptflow/tests/sdk_cli_test/ @microsoft/promptflow-sdk
-/src/promptflow/tests/sdk_cli_azure_test/ @microsoft/promptflow-sdk
-/src/promptflow/tests/sdk_cli_global_config_test/ @microsoft/promptflow-sdk
-/src/promptflow/tests/sdk_pfs_test/ @microsoft/promptflow-sdk
+/src/promptflow-evals/ @microsoft/pf-eval-team-contributor
+
 /scripts/docs/ @microsoft/promptflow-sdk
 /scripts/installer/ @microsoft/promptflow-sdk
 /scripts/json_schema/ @microsoft/promptflow-sdk
 /scripts/readme/ @microsoft/promptflow-sdk
 
-/docs/how-to-guides/develop-a-tool/ @microsoft/promptflow-tools
 /src/promptflow-tools/ @microsoft/promptflow-tools
-/examples/tools/ @microsoft/promptflow-tools
 /scripts/tool/ @microsoft/promptflow-tools
+/examples/tools/ @microsoft/promptflow-tools
+
+# 2. Subfolders
+/src/promptflow-tracing/promptflow/tracing/ @microsoft/promptflow-execution
+/src/promptflow-core/promptflow/_core/ @microsoft/promptflow-execution
+/src/promptflow-core/promptflow/executor/ @microsoft/promptflow-execution
+/src/promptflow-core/promptflow/integrations/ @microsoft/promptflow-execution
+/src/promptflow-core/promptflow/storage/ @microsoft/promptflow-execution
+/src/promptflow-devkit/promptflow/_internal/ @microsoft/promptflow-execution
+/src/promptflow-devkit/promptflow/batch/ @microsoft/promptflow-execution
+/src/promptflow/tests/executor/ @microsoft/promptflow-execution
+
+/src/promptflow-devkit/promptflow/_proxy/ @microsoft/promptflow-execution @microsoft/promptflow-sdk
+
+/src/promptflow/tests/sdk_cli_test/ @microsoft/promptflow-sdk
+/src/promptflow/tests/sdk_cli_azure_test/ @microsoft/promptflow-sdk
+/src/promptflow/tests/sdk_cli_global_config_test/ @microsoft/promptflow-sdk
+/src/promptflow/tests/sdk_pfs_test/ @microsoft/promptflow-sdk
+/src/promptflow/tests/executor/_prompty_executor.py @microsoft/promptflow-execution @microsoft/promptflow-sdk
+/src/promptflow/tests/executor/_script_executor.py @microsoft/promptflow-execution @microsoft/promptflow-sdk
+/src/promptflow-tracing/promptflow/tracing/_start_trace.py @microsoft/promptflow-sdk
+
+/docs/how-to-guides/develop-a-tool/ @microsoft/promptflow-tools

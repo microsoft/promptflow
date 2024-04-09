@@ -1,12 +1,13 @@
 from typing import Union
 
-from promptflow import tool
+from promptflow.core import tool
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 
 
 @tool
 def autogpt_easy_start(connection: Union[AzureOpenAIConnection, OpenAIConnection], system_prompt: str, user_prompt: str,
-                       triggering_prompt: str, functions: list, model_or_deployment_name: str):
+                       triggering_prompt: str, functions: list, model_or_deployment_name: str, tokens_per_message: int,
+                       tokens_per_name: int):
     from wiki_search import search
     from python_repl import python
     from autogpt_class import AutoGPT
@@ -24,7 +25,9 @@ def autogpt_easy_start(connection: Union[AzureOpenAIConnection, OpenAIConnection
         model_or_deployment_name=model_or_deployment_name,
         functions=functions,
         user_prompt=user_prompt,
-        triggering_prompt=triggering_prompt
+        triggering_prompt=triggering_prompt,
+        tokens_per_message=tokens_per_message,
+        tokens_per_name=tokens_per_name,
     )
     result = agent.run()
     return result

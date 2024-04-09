@@ -18,7 +18,6 @@ from promptflow.azure import PFClient
 from promptflow.tracing._operation_context import OperationContext
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
-from ..recording_utilities import is_live
 
 FLOWS_DIR = "./tests/test_configs/flows"
 DATAS_DIR = "./tests/test_configs/datas"
@@ -153,7 +152,7 @@ class TestCliWithAzure:
         assert isinstance(run, Run)
         assert run.properties["azureml.promptflow.runtime_name"] == runtime
 
-    @pytest.mark.skipif(condition=not is_live(), reason="This test requires an actual PFClient")
+    @pytest.mark.skipif(condition=not pytest.is_live, reason="This test requires an actual PFClient")
     def test_azure_cli_ua(self, pf: PFClient):
         # clear user agent before test
         context = OperationContext().get_instance()
@@ -169,7 +168,7 @@ class TestCliWithAzure:
                 )
             user_agent = ClientUserAgentUtil.get_user_agent()
             ua_dict = parse_ua_to_dict(user_agent)
-            assert ua_dict.keys() == {"promptflow-sdk", "promptflow-cli"}
+            assert ua_dict.keys() == {"promptflow-azure-sdk", "promptflow-azure-cli"}
 
     def test_cli_telemetry(self, pf, runtime: str, randstr: Callable[[str], str]) -> None:
         name = randstr("name")
@@ -182,16 +181,27 @@ class TestCliWithAzure:
                 assert kwargs["custom_dimensions"]["subscription_id"] == pf._ml_client.subscription_id
             yield None
 
-        with patch("promptflow._sdk._telemetry.activity.log_activity") as mock_log_activity:
-            mock_log_activity.side_effect = check_workspace_info
-            run_pf_command(
-                "run",
-                "create",
-                "--file",
-                f"{RUNS_DIR}/run_with_env.yaml",
-                "--set",
-                f"runtime={runtime}",
-                "--name",
-                name,
-                pf=pf,
-            )
+        # we have a known issue for this test: TypeError: super(type, obj): obj must be an instance or subtype of type
+        # which should result in this test has concurrent requests (telemetry, pf), this might hit vcrpy issue
+        # to avoid this makes CI flaky, we add retry here
+        for _ in range(3):
+            try:
+                with patch("promptflow._sdk._telemetry.activity.log_activity") as mock_log_activity:
+                    mock_log_activity.side_effect = check_workspace_info
+                    run_pf_command(
+                        "run",
+                        "create",
+                        "--file",
+                        f"{RUNS_DIR}/run_with_env.yaml",
+                        "--set",
+                        f"runtime={runtime}",
+                        "--name",
+                        name,
+                        pf=pf,
+                    )
+                break
+            except TypeError as e:
+                # only pass when the error message is the expected one
+                if "obj must be an instance or subtype of type" in str(e):
+                    pass
+                raise

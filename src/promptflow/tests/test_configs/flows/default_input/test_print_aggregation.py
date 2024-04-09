@@ -1,5 +1,5 @@
 from typing import List
-from promptflow import tool
+from promptflow.core import tool
 
 @tool
 def test_print_input(input_str: List[str], input_bool: List[bool], input_list: List[List], input_dict: List[dict]):

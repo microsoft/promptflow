@@ -9,6 +9,7 @@ import importlib
 import json
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 import threading
@@ -20,6 +21,7 @@ from unittest.mock import patch
 import mock
 import pandas as pd
 import pytest
+from pip._vendor import tomli as toml
 from requests import Response
 
 from promptflow._cli._params import AppendToDictAction
@@ -40,14 +42,16 @@ from promptflow._sdk._utils import (
     generate_flow_tools_json,
     get_mac_address,
     get_system_info,
-    override_connection_config_with_environment_variable,
     refresh_connections_dir,
-    resolve_connections_environment_variable_reference,
 )
 from promptflow._utils.load_data import load_data
 from promptflow._utils.retry_utils import http_retry_wrapper, retry
 from promptflow._utils.utils import snake_to_camel
 from promptflow._utils.version_hint_utils import check_latest_version
+from promptflow.core._utils import (
+    override_connection_config_with_environment_variable,
+    resolve_connections_environment_variable_reference,
+)
 
 TEST_ROOT = Path(__file__).parent.parent.parent
 CONNECTION_ROOT = TEST_ROOT / "test_configs/connections"
@@ -486,3 +490,45 @@ class TestRetryUtils:
         system_info_hash = hashlib.sha256((host_name + system + machine).encode()).hexdigest()
         compute_info_hash = hashlib.sha256((mac_address + system_info_hash).encode()).hexdigest()
         assert str(uuid.uuid5(uuid.NAMESPACE_OID, compute_info_hash)) == gen_uuid_by_compute_info()
+
+    def test_executable_package_match_toml_file(self):
+        def get_git_base_dir():
+            return Path(
+                subprocess.run(["git", "rev-parse", "--show-toplevel"], stdout=subprocess.PIPE)
+                .stdout.decode("utf-8")
+                .strip()
+            )
+
+        def get_toml_dependencies():
+            packages = ["promptflow-tracing", "promptflow-core", "promptflow-devkit"]
+            dependencies = []
+
+            for package in packages:
+                with open(get_git_base_dir() / "src" / package / "pyproject.toml", "rb") as file:
+                    data = toml.load(file)
+                extra_package_names = data.get("tool", {}).get("poetry", {}).get("dependencies", {})
+                dependencies.extend(extra_package_names.keys())
+            dependencies = [
+                dependency
+                for dependency in dependencies
+                if not dependency.startswith("promptflow") and not dependency == "python"
+            ]
+            return dependencies
+
+        all_packages = get_toml_dependencies()
+
+        with open(
+            get_git_base_dir()
+            / "src"
+            / "promptflow-devkit"
+            / "promptflow"
+            / "_sdk"
+            / "data"
+            / "executable"
+            / "requirements.txt",
+            "r",
+        ) as f:
+            executable_all_packages = f.read().splitlines()
+        # check if all packages in requirements.txt are the same with pyproject.toml in devkit/core/tracinf packages.
+        # If not, maybe you need update requirements.txt
+        assert all_packages == executable_all_packages

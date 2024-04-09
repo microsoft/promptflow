@@ -53,7 +53,7 @@ class TestBatchTimeout:
         # assert mem_run_storage persists run infos correctly
         assert len(mem_run_storage._flow_runs) == 2, "Flow runs are persisted in memory storage."
         assert len(mem_run_storage._node_runs) == 4, "Node runs are persisted in memory storage."
-        msg = "Tool execution is canceled because of the error: Line execution timeout after 5 seconds."
+        msg = "Tool execution is canceled because: Line execution timeout after 5 seconds."
         for run in mem_run_storage._node_runs.values():
             if run.node == "my_python_tool_with_failed_line":
                 assert run.status == Status.Canceled
@@ -160,7 +160,11 @@ class TestBatchTimeout:
         # assert the error summary in batch result
         if batch_run_status == Status.Failed:
             ex = BatchRunTimeoutError(
-                message="The batch run failed due to timeout. Please adjust the timeout settings to a higher value.",
+                message_format=(
+                    "The batch run failed due to timeout [{batch_timeout_sec}s]. "
+                    "Please adjust the timeout to a higher value."
+                ),
+                batch_timeout_sec=batch_timeout_sec,
                 target=ErrorTarget.BATCH,
             )
             assert batch_results.error_summary.batch_error_dict == ExceptionPresenter.create(ex).to_dict()

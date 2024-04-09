@@ -8,10 +8,11 @@ from pathlib import Path
 
 import mock
 import pytest
-from sdk_cli_azure_test.recording_utilities import is_replay
 
 from promptflow import PFClient
 from promptflow._sdk.entities import CustomConnection
+from promptflow._sdk._version import VERSION
+from promptflow.recording.record_mode import is_replay
 
 from ..utils import PFSOperations, check_activity_end_telemetry
 
@@ -34,7 +35,7 @@ class TestConnectionAPIs:
 
     def test_list_connections_with_different_user_agent(self, pf_client: PFClient, pfs_op: PFSOperations) -> None:
         create_custom_connection(pf_client)
-        base_user_agent = ["local_pfs/0.0.1"]
+        base_user_agent = [f"local_pfs/{VERSION}"]
         for _, extra_user_agent in enumerate(
             [
                 ["another_test_user_agent/0.0.1"],
