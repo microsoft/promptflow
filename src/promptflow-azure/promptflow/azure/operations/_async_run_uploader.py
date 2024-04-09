@@ -10,7 +10,13 @@ from azure.storage.blob.aio import BlobServiceClient
 
 from promptflow._cli._utils import merge_jsonl_files
 from promptflow._constants import OutputsFolderName
-from promptflow._sdk._constants import DEFAULT_ENCODING, CloudDatastore, Local2Cloud, LocalStorageFilenames
+from promptflow._sdk._constants import (
+    DEFAULT_ENCODING,
+    CloudDatastore,
+    FlowRunProperties,
+    Local2Cloud,
+    LocalStorageFilenames,
+)
 from promptflow._sdk._errors import RunNotFoundError, UploadInternalError, UploadUserError, UserAuthenticationError
 from promptflow._sdk.entities import Run
 from promptflow._utils.logger_utils import get_cli_sdk_logger
@@ -27,7 +33,7 @@ class AsyncRunUploader:
 
     def __init__(self, run: Run, run_ops: "RunOperations", overwrite=True):
         self.run = run
-        self.run_output_path = Path(run.properties["output_path"])
+        self.run_output_path = Path(run.properties[FlowRunProperties.OUTPUT_PATH])
         self.run_ops = run_ops
         self.overwrite = overwrite
         self.datastore = self._get_datastore_with_secrets()

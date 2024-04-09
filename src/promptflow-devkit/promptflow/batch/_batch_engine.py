@@ -2,13 +2,14 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import asyncio
+import inspect
 import signal
 import threading
 import uuid
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional, Type
+from typing import Any, Callable, Dict, List, Mapping, Optional, Type, Union
 
 from promptflow._constants import (
     LANGUAGE_KEY,
@@ -75,7 +76,7 @@ class BatchEngine:
 
     def __init__(
         self,
-        flow_file: Path,
+        flow_file: Union[Path, Callable],
         working_dir: Optional[Path] = None,
         *,
         connections: Optional[dict] = None,
@@ -108,8 +109,15 @@ class BatchEngine:
         :type kwargs: Any
         """
         self._flow_file = flow_file
-        self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
-        if is_prompty_flow(self._flow_file):
+        is_function_entry = hasattr(flow_file, "__call__") or inspect.isfunction(flow_file)
+        if is_function_entry:
+            self._working_dir = working_dir or Path.cwd()
+        else:
+            self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
+        if is_function_entry:
+            self._is_eager_flow = True
+            self._program_language = FlowLanguage.Python
+        elif is_prompty_flow(self._flow_file):
             self._is_eager_flow = True
             self._program_language = FlowLanguage.Python
         else:

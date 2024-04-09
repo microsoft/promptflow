@@ -82,6 +82,11 @@ class PFAzureIntegrationTestRecording:
     def _get_recording_file(self) -> Path:
         test_file_path = Path(inspect.getfile(self.test_class)).resolve()
         recording_dir = (Path(__file__).parent / "../../../recordings/azure").resolve()
+        # when promptflow-recording is installed as a package (not editable mode)
+        # __file__ will direct to the installed package path (with "site-packages" in it)
+        # where the recording is not there, so we need to leverage test class to find the recording in repo
+        if "site-packages" in recording_dir.as_posix():
+            recording_dir = test_file_path.parent.parent.parent.parent.parent / "promptflow-recording/recordings/azure"
         recording_dir.mkdir(exist_ok=True)
 
         test_file_name = test_file_path.stem

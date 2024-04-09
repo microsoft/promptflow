@@ -5,10 +5,10 @@ from os import PathLike
 from pathlib import Path
 from typing import Dict, Optional, Union
 
-from promptflow._sdk._constants import DAG_FILE_NAME
 from promptflow._sdk._errors import ChatRoleError
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk.entities._chat_group._chat_group_io import ChatRoleInputs, ChatRoleOutputs
+from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import load_yaml
 
@@ -62,7 +62,8 @@ class ChatRole:
     def _build_role_io(self, flow: Union[str, PathLike], inputs_value: Dict = None):
         """Build role io"""
         logger.debug(f"Building io for chat role {self.role!r}.")
-        flow_dict = load_yaml(Path(flow) / DAG_FILE_NAME)
+        flow_path, flow_file = resolve_flow_path(flow, check_flow_exist=False)
+        flow_dict = load_yaml(flow_path / flow_file)
         inputs = flow_dict.get("inputs", {})
         for key in inputs:
             # fill the inputs with the provided values

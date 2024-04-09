@@ -27,6 +27,7 @@ USER_AGENT_OVERRIDE_KEY = "user_agent_override"
 FLOW_DAG_YAML = "flow.dag.yaml"
 FLOW_FLEX_YAML = "flow.flex.yaml"
 PROMPTY_EXTENSION = ".prompty"
+FLOW_FILE_SUFFIX = (".yaml", ".yml", PROMPTY_EXTENSION)
 
 CHAT_HISTORY = "chat_history"
 
@@ -269,5 +270,3 @@ AZURE_WORKSPACE_REGEX_FORMAT = (
     "(/providers/Microsoft.MachineLearningServices)?/workspaces/([^/]+)$"
 )
 CONNECTION_DATA_CLASS_KEY = "DATA_CLASS"
-
-FLEX_FLOW_PUBLIC_NAME = "flex"

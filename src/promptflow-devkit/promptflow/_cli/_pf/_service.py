@@ -25,13 +25,13 @@ from promptflow._sdk._service.utils.utils import (
     check_pfs_service_status,
     dump_port_to_config,
     get_current_env_pfs_file,
+    get_pfs_version,
     get_port_from_config,
     get_started_service_info,
     is_port_in_use,
     is_run_from_built_binary,
     kill_exist_service,
 )
-from promptflow._sdk._utils import get_promptflow_sdk_version
 from promptflow._utils.logger_utils import get_cli_sdk_logger  # noqa: E402
 from promptflow.exceptions import UserErrorException
 
@@ -193,7 +193,7 @@ def start_service(args):
                 app.logger.setLevel(logging.DEBUG)
             else:
                 app.logger.setLevel(logging.INFO)
-            message = f"Start Prompt Flow Service on {port}, version: {get_promptflow_sdk_version()}."
+            message = f"Start Prompt Flow Service on {port}, version: {get_pfs_version()}."
             app.logger.info(message)
             print(message)
             sys.stdout.flush()
@@ -202,6 +202,13 @@ def start_service(args):
             sys.stdout = old_stdout
             sys.stderr = old_stderr
     else:
+        # Add executable script dir to PATH to make sure the subprocess can find the executable, especially in notebook
+        # environment which won't add it to system path automatically.
+        python_dir = os.path.dirname(sys.executable)
+        executable_dir = os.path.join(python_dir, "Scripts") if platform.system() == "Windows" else python_dir
+        if executable_dir not in os.environ["PATH"].split(os.pathsep):
+            os.environ["PATH"] = executable_dir + os.pathsep + os.environ["PATH"]
+
         # Start a pfs process using detach mode. It will start a new process and create a new app. So we use environment
         # variable to pass the debug mode, since it will inherit parent process environment variable.
         if platform.system() == "Windows":
@@ -252,20 +259,20 @@ def start_service(args):
             subprocess.Popen(cmd, stdout=subprocess.DEVNULL, start_new_session=True)
         is_healthy = check_pfs_service_status(port)
         if is_healthy:
-            message = f"Start Prompt Flow Service on port {port}, version: {get_promptflow_sdk_version()}."
+            message = f"Start Promptflow Service on port {port}, version: {get_pfs_version()}."
             print(message)
             logger.info(message)
         else:
-            logger.warning(f"Pfs service start failed in {port}.")
+            logger.warning(f"Promptflow service start failed in {port}.")
 
 
 def stop_service():
     port = get_port_from_config()
     if port is not None and is_port_in_use(port):
         kill_exist_service(port)
-        message = f"Pfs service stop in {port}."
+        message = f"Promptflow service stop in {port}."
     else:
-        message = "Pfs service is not started."
+        message = "Promptflow service is not started."
     logger.debug(message)
     print(message)
 
