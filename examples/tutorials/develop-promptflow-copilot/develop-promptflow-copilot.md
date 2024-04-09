@@ -139,6 +139,6 @@ User feedback is invaluable for enhancing the copilot's performance and user exp
 When you deploy the flow as a managed online endpoint, you will find the endpoint has provided two POST APIs if you check the endpoint's swagger: `/score` for trigger your copilot flow with inputs and `/feedback` for collecting user feedback into the trace data.
 
 ```
-- You are recommended to turn on this options when you deploy the MIR endpoint, so that you can collect the related data and calculate online metrics.
+- You are recommended to turn on this options when you deploy the MIR endpoint, so that you can collect the related data and calculate online metrics to your workspace's application insights.
 ```
 ![mir-options](mir-options.png)
