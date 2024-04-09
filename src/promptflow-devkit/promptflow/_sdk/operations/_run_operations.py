@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from promptflow._constants import LANGUAGE_KEY, AvailableIDE, FlowLanguage
 from promptflow._sdk._constants import (
+    EAGER,
     MAX_RUN_LIST_RESULTS,
     MAX_SHOW_DETAILS_RESULTS,
     FlowRunProperties,
@@ -360,7 +361,7 @@ class RunOperations(TelemetryMixin):
                 metrics=local_storage.load_metrics(parse_const_as_str=True),
                 dag=local_storage.load_dag_as_string(),
                 flow_tools_json=local_storage.load_flow_tools_json(),
-                mode="eager" if local_storage.eager_mode else "",
+                mode=EAGER.lower() if local_storage.eager_mode else "",
             )
             details.append(copy.deepcopy(detail))
             metadatas.append(asdict(metadata))
