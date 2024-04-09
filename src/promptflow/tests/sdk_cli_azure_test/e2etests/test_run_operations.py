@@ -847,7 +847,7 @@ class TestFlowRun:
             for file in expected_files:
                 assert Path(tmp_dir, created_batch_run_without_llm.name, file).exists()
 
-    @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
+    @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore", "mock_get_azure_pf_client")
     def test_upload_run(
         self,
         pf: PFClient,
