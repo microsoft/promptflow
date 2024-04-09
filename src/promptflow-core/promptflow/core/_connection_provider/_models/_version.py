@@ -2,4 +2,5 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-VERSION = "2024-01-01-preview"
+# This record the _models.py version
+VERSION = "2024-04-01-preview"

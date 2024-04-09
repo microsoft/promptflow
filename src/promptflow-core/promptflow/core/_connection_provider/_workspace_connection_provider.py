@@ -157,6 +157,8 @@ class WorkspaceConnectionProvider(ConnectionProvider):
         # Note: CustomKeys may store different connection types for now, e.g. openai, serp.
         if category in [
             ConnectionCategory.AzureOpenAI,
+            ConnectionCategory.OpenAI,
+            ConnectionCategory.Serp,
             ConnectionCategory.CognitiveSearch,
             ConnectionCategory.Serverless,
         ]:
@@ -211,22 +213,25 @@ class WorkspaceConnectionProvider(ConnectionProvider):
         type_name = f"{type_name}Connection" if not type_name.endswith("Connection") else type_name
         meta = {"type": type_name, "module": module, "name": name}
 
-        def get_auth_config(props):
-            unsupported_message = "Unsupported connection auth type %r, supported types are 'ApiKey' and 'AAD'."
+        def get_auth_config(props, support_aad=False):
+            postfix = " and 'AAD'." if support_aad else "."
+            unsupported_message = f"Unsupported connection auth type %r, supported types are 'ApiKey'{postfix}"
             if not isinstance(props.auth_type, str):
                 raise UnsupportedConnectionAuthType(message=unsupported_message % props.auth_type)
             if props.auth_type.lower() == ConnectionAuthType.ApiKey.lower():
-                return {
+                result = {
                     "api_key": props.credentials.key if props.credentials else None,
-                    "auth_mode": ConnectionAuthMode.KEY,
                 }
-            elif props.auth_type.lower() == ConnectionAuthType.AAD.lower():
+                if support_aad:
+                    result["auth_mode"] = ConnectionAuthMode.KEY
+                return result
+            elif support_aad and props.auth_type.lower() == ConnectionAuthType.AAD.lower():
                 return {"api_key": None, "auth_mode": ConnectionAuthMode.MEID_TOKEN}
             raise UnsupportedConnectionAuthType(message=unsupported_message % props.auth_type)
 
         if properties.category == ConnectionCategory.AzureOpenAI:
             value = {
-                **get_auth_config(properties),
+                **get_auth_config(properties, support_aad=True),
                 "api_base": properties.target,
                 "api_type": get_case_insensitive_key(properties.metadata, "ApiType"),
                 "api_version": get_case_insensitive_key(properties.metadata, "ApiVersion"),
@@ -237,20 +242,30 @@ class WorkspaceConnectionProvider(ConnectionProvider):
                 value["resource_id"] = resource_id
         elif properties.category == ConnectionCategory.CognitiveSearch:
             value = {
-                **get_auth_config(properties),
+                **get_auth_config(properties, support_aad=True),
                 "api_base": properties.target,
                 "api_version": get_case_insensitive_key(properties.metadata, "ApiVersion"),
             }
         elif properties.category == ConnectionCategory.Serverless:
             value = {
-                **get_auth_config(properties),
+                **get_auth_config(properties, support_aad=True),
                 "api_base": properties.target,
             }
         elif properties.category == ConnectionCategory.CognitiveService:
             value = {
-                **get_auth_config(properties),
+                **get_auth_config(properties, support_aad=True),
                 "endpoint": properties.target,
                 "api_version": get_case_insensitive_key(properties.metadata, "ApiVersion"),
+            }
+        elif properties.category == ConnectionCategory.OpenAI:
+            value = {
+                **get_auth_config(properties),
+                "base_url": properties.target,
+                "organization": get_case_insensitive_key(properties.metadata, "organization"),
+            }
+        elif properties.category == ConnectionCategory.Serp:
+            value = {
+                **get_auth_config(properties),
             }
         elif properties.category == ConnectionCategory.CustomKeys:
             # Merge secrets from credentials.keys and other string fields from metadata

@@ -702,12 +702,16 @@ class Flow(FlowBase):
         sys.path.insert(0, str(working_dir))
 
     @classmethod
-    def from_yaml(cls, flow_file: Path, working_dir=None) -> "Flow":
+    def from_yaml(cls, flow_file: Path, working_dir=None, name=None) -> "Flow":
         """Load flow from yaml file."""
         working_dir = cls._parse_working_dir(flow_file, working_dir)
         with open(working_dir / flow_file, "r", encoding=DEFAULT_ENCODING) as fin:
             flow_dag = load_yaml(fin)
-        flow_dag["name"] = flow_dag.get("name", _sanitize_python_variable_name(working_dir.stem))
+        # Name priority: name from payload > name from yaml content > working_dir.stem
+        # For portal created flow, there is a meaningless predefined name in yaml, use name from payload to override it.
+        if name is None:
+            name = flow_dag.get("name", _sanitize_python_variable_name(working_dir.stem))
+        flow_dag["name"] = name
         return Flow._from_dict(flow_dag=flow_dag, working_dir=working_dir)
 
     @classmethod
