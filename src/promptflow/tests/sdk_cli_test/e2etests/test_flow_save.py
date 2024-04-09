@@ -443,7 +443,7 @@ class TestFlowSave:
 
     def test_infer_signature(self):
         pf = PFClient()
-        flow_meta, code = pf.flows._infer_signature(entry=global_hello)
+        flow_meta = pf.flows.infer_signature(entry=global_hello)
         assert flow_meta == {
             "inputs": {
                 "text": {
@@ -458,9 +458,9 @@ class TestFlowSave:
         }
 
         with pytest.raises(UserErrorException, match="Schema validation failed: {'init.words.type'"):
-            pf.flows._infer_signature(entry=GlobalHelloWithInvalidInit)
+            pf.flows.infer_signature(entry=GlobalHelloWithInvalidInit)
 
-        flow_meta, code = pf.flows._infer_signature(entry=global_hello_no_hint)
+        flow_meta = pf.flows.infer_signature(entry=global_hello_no_hint)
         assert flow_meta == {
             "inputs": {
                 "text": {
@@ -533,3 +533,27 @@ class TestFlowSave:
                 },
                 "sample": "sample.json",
             }
+
+    def test_flow_save_file_code(self):
+        pf = PFClient()
+        with tempfile.TemporaryDirectory() as temp_dir:
+            pf.flows.save(
+                entry="hello_world",
+                code=f"{TEST_ROOT}/test_configs/functions/file_code/hello.py",
+                path=temp_dir,
+            )
+            flow = load_flow(temp_dir)
+            assert flow._data == {
+                "entry": "hello:hello_world",
+                "inputs": {
+                    "text": {
+                        "type": "string",
+                    }
+                },
+                "outputs": {
+                    "output": {
+                        "type": "string",
+                    }
+                },
+            }
+            assert os.listdir(temp_dir) == ["flow.flex.yaml", "hello.py"]

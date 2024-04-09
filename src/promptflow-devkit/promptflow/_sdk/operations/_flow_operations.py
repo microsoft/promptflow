@@ -1004,20 +1004,20 @@ class FlowOperations(TelemetryMixin):
 
         return signature
 
-    @monitor_operation(activity_name="pf.flows._infer_signature", activity_type=ActivityType.INTERNALCALL)
+    @staticmethod
     def _infer_signature(
-        self,
         entry: Union[Callable, str],
         *,
         code: str = None,
         keep_entry: bool = False,
         validate: bool = True,
         language: str = FlowLanguage.Python,
-    ) -> Tuple[dict, Path]:
+    ) -> Tuple[dict, Path, List[str]]:
         """Infer signature of a flow entry.
 
         Note that this is a Python only feature.
         """
+        snapshot_list = None
         # resolve entry and code
         if isinstance(entry, str):
             if not code:
@@ -1025,6 +1025,10 @@ class FlowOperations(TelemetryMixin):
             code = Path(code)
             if not code.exists():
                 raise UserErrorException(f"Specified code {code} does not exist.")
+            if code.is_file():
+                snapshot_list = [code.name]
+                entry = f"{code.stem}:{entry}"
+                code = code.parent
 
             inspector_proxy = ProxyFactory().create_inspector_proxy(language=language)
             if not inspector_proxy.is_flex_flow_entry(entry):
@@ -1076,7 +1080,7 @@ class FlowOperations(TelemetryMixin):
             flow._validate(raise_error=True)
         if not keep_entry:
             flow_meta.pop("entry", None)
-        return flow_meta, code
+        return flow_meta, code, snapshot_list
 
     @monitor_operation(activity_name="pf.flows.infer_signature", activity_type=ActivityType.PUBLICAPI)
     def infer_signature(self, entry: Callable) -> dict:
@@ -1096,10 +1100,9 @@ class FlowOperations(TelemetryMixin):
         :rtype: dict
         """
         # TODO: should we support string entry? If so, we should also add a parameter to specify the working directory
-        flow_meta, _ = self._infer_signature(entry=entry)
+        flow_meta, _, _ = self._infer_signature(entry=entry)
         return flow_meta
 
-    @monitor_operation(activity_name="pf.flows._save", activity_type=ActivityType.INTERNALCALL)
     def _save(
         self,
         entry: Union[str, Callable],
@@ -1115,7 +1118,9 @@ class FlowOperations(TelemetryMixin):
         # hide the language field before csharp support go public
         language: str = kwargs.get(LANGUAGE_KEY, FlowLanguage.Python)
 
-        entry_meta, code = self._infer_signature(entry, code=code, keep_entry=True, validate=False, language=language)
+        entry_meta, code, snapshot_list = self._infer_signature(
+            entry, code=code, keep_entry=True, validate=False, language=language
+        )
 
         data = self._merge_signature(entry_meta, signature)
         data["entry"] = entry_meta["entry"]
@@ -1144,9 +1149,13 @@ class FlowOperations(TelemetryMixin):
             target_flow_directory.parent.mkdir(parents=True, exist_ok=True)
 
             # TODO: handle ignore
-            shutil.copytree(
-                code, target_flow_directory, dirs_exist_ok=True, ignore=shutil.ignore_patterns("__pycache__")
-            )
+            if snapshot_list is not None:
+                for snapshot in snapshot_list:
+                    shutil.copy(code / snapshot, target_flow_directory / snapshot)
+            else:
+                shutil.copytree(
+                    code, target_flow_directory, dirs_exist_ok=True, ignore=shutil.ignore_patterns("__pycache__")
+                )
         else:
             # or we update the flow definition yaml file in code only
             target_flow_directory = code

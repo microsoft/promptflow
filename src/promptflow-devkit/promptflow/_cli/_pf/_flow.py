@@ -137,9 +137,12 @@ def add_parser_save_flow(subparsers):
     epilog = """
 Examples:
 
-# Creating a flex flow folder in a specific path:
+# Creating a flex flow folder in a specific path.
+# There should be a src/intent.py file with extract_intent function defined.
+# After running this command, all content in the src folder will be copied to my-awesome-flow folder;
+# and a flow.flex.yaml will be created in my-awesome-flow folder.
 pf flow save --path my-awesome-flow --entry intent:extract_intent --code src
-# Creating a flex flow definition yaml under current folder:
+# Creating a flow.flex.yaml under current folder with intent:extract_intent as entry.
 pf flow save --entry intent:extract_intent
 """  # noqa: E501
     add_params = [
@@ -150,12 +153,14 @@ pf flow save --entry intent:extract_intent
             required=True,
         ),
         lambda parser: parser.add_argument(
-            "--code", type=str, help="The folder containing the snapshot for the flex flow."
+            "--code",
+            type=str,
+            help="The folder or file containing the snapshot for the flex flow. Default to current folder.",
         ),
         lambda parser: parser.add_argument(
             "--path",
             type=str,
-            help="The path to save the flow. Will update the existing code directory if not specified.",
+            help="The path to save the flow. Will create flow.flex.yaml under code if not specified.",
         ),
     ] + base_params
     activate_action(
