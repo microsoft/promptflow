@@ -1525,6 +1525,7 @@ class TestCli:
             outerr = capsys.readouterr()
             assert "Cannot find the icon path" in outerr.out
 
+    @pytest.mark.skip("Enable after promptflow-tool depend on core")
     def test_list_tool_cache(self, caplog, mocker):
         with tempfile.TemporaryDirectory() as temp_dir:
             package_name = "mock_tool_package_name"

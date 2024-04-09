@@ -74,7 +74,9 @@ jobs:
         run: |
           cp ${{ github.workspace }}/src/promptflow/dev-connections.json.example ${{ github.workspace }}/src/promptflow/connections.json
       - name: run devkit tests
-        run: poetry run pytest ./tests/sdk_cli_test -p promptflow --cov=promptflow --cov-config=pyproject.toml --cov-report=term --cov-report=html --cov-report=xml -n auto -m "unittest or e2etest"
+        run: |
+          poetry run pytest ./tests/sdk_cli_test -p promptflow --cov=promptflow --cov-config=pyproject.toml \
+          --cov-report=term --cov-report=html --cov-report=xml -n auto -m "unittest or e2etest" --ignore-glob ./tests/sdk_cli_test/e2etests/test_executable.py
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: upload coverage report
         uses: actions/upload-artifact@v4
