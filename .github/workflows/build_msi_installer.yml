@@ -150,6 +150,13 @@ jobs:
           pyinstaller promptflow.spec
         shell: pwsh
 
+      - name: Generate SBOM
+        working-directory: ${{ github.workspace }}/scripts/installer/windows/scripts/dist/promptflow
+        run: |
+          curl -Lo $env:TEMP\sbom-tool.exe https://github.com/microsoft/sbom-tool/releases/latest/download/sbom-tool-win-x64.exe
+          $env:TEMP\sbom-tool.exe generate -b . -bc . -pn promptflow -pv ${{ steps.get-version.outputs.version }} -ps Microsoft -nsb https://github.com/microsoft/promptflow/tree/main -V Verbose
+        shell: powershell
+
       - name: Generate portable promptflow
         run: |
           Compress-Archive -Path ${{ github.workspace }}/scripts/installer/windows/scripts/dist/promptflow -DestinationPath promptflow-${{ steps.get-version.outputs.version }}.zip
@@ -168,11 +175,6 @@ jobs:
 
           msbuild /t:rebuild /p:Configuration=Release /p:Platform=x64 promptflow.wixproj
         shell: pwsh
-
-      - task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0
-        displayName: 'SBOM'
-        inputs:
-          BuildDropPath: 'scripts/installer/windows/out/'
 
       - name: Azure Login
         uses: azure/login@v1
