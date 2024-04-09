@@ -19,8 +19,9 @@ import pytest
 from azure.ai.ml import ManagedIdentityConfiguration
 from azure.ai.ml.entities import IdentityConfiguration
 
+from promptflow._constants import FLOW_FLEX_YAML
 from promptflow._sdk._configuration import Configuration
-from promptflow._sdk._constants import DAG_FILE_NAME, DownloadedRun, RunStatus
+from promptflow._sdk._constants import DownloadedRun, RunStatus
 from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, RunNotFoundError
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk.entities import Run
@@ -944,6 +945,11 @@ class TestFlowRun:
             # request id should be included in FlowRequestException
             assert f"request id: {pf.runs._service_caller._request_id}" in str(e.value)
 
+            inner_exception = e.value.inner_exception
+            assert inner_exception is not None
+            assert isinstance(inner_exception, HttpResponseError)
+            assert inner_exception.message == "customized error message."
+
     # it is a known issue that executor/runtime might write duplicate storage for line records,
     # this will lead to the lines that assert line count (`len(detail)`) fails.
     @pytest.mark.xfail(reason="BUG 2819328: Duplicate line in flow artifacts jsonl", run=True, strict=False)
@@ -1068,7 +1074,7 @@ class TestFlowRun:
             DownloadedRun.RUN_METADATA_FILE_NAME,
             DownloadedRun.LOGS_FILE_NAME,
             DownloadedRun.METRICS_FILE_NAME,
-            f"{DownloadedRun.SNAPSHOT_FOLDER}/flow.dag.yaml",
+            f"{DownloadedRun.SNAPSHOT_FOLDER}/flow.flex.yaml",
         ]
 
         # test download
@@ -1282,7 +1288,7 @@ class TestFlowRun:
 
         # test YAML is generated
         expected_files = [
-            f"{DownloadedRun.SNAPSHOT_FOLDER}/{DAG_FILE_NAME}",
+            f"{DownloadedRun.SNAPSHOT_FOLDER}/{FLOW_FLEX_YAML}",
         ]
         with TemporaryDirectory() as tmp_dir:
             pf.runs.download(run=run.name, output=tmp_dir)
@@ -1290,4 +1296,4 @@ class TestFlowRun:
                 assert Path(tmp_dir, run.name, file).exists()
 
         # the YAML file will not exist in user's folder
-        assert not Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/flow.dag.yaml").exists()
+        assert not Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/flow.flex.yaml").exists()

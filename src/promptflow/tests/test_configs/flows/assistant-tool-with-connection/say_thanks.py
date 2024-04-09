@@ -1,7 +1,7 @@
 import random
 import time
 
-from promptflow import tool
+from promptflow.core import tool
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.tools.common import parse_chat
 

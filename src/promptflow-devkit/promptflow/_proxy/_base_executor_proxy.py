@@ -11,11 +11,10 @@ from typing import Any, Dict, List, Mapping, NoReturn, Optional
 
 import httpx
 
-from promptflow._constants import DEFAULT_ENCODING, LINE_TIMEOUT_SEC
+from promptflow._constants import DEFAULT_ENCODING, FLOW_FLEX_YAML, LINE_TIMEOUT_SEC
 from promptflow._core._errors import NotSupported, UnexpectedError
 from promptflow._proxy._errors import ExecutorServiceUnhealthy
 from promptflow._sdk._constants import (
-    DAG_FILE_NAME,
     FLOW_META_JSON,
     FLOW_META_JSON_GEN_TIMEOUT,
     FLOW_TOOLS_JSON,
@@ -53,7 +52,7 @@ class AbstractExecutorProxy:
         load_in_subprocess: bool = True,
     ) -> dict:
         """Generate flow.tools.json for the specified flow."""
-        if is_flex_flow(file_path=flow_file, working_dir=working_dir):
+        if is_flex_flow(flow_path=flow_file, working_dir=working_dir):
             return {}
         else:
             return cls._generate_flow_tools_json(flow_file, working_dir, dump, timeout, load_in_subprocess)
@@ -94,7 +93,7 @@ class AbstractExecutorProxy:
         :return: The metadata of the flow.
         :rtype: Dict[str, Any]
         """
-        if is_flex_flow(file_path=flow_file, working_dir=working_dir):
+        if is_flex_flow(flow_path=flow_file, working_dir=working_dir):
             return cls._generate_flow_json(flow_file, working_dir, dump, timeout, load_in_subprocess)
         else:
             return {}
@@ -241,7 +240,7 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         from promptflow.contracts.flow import FlowInputDefinition
 
         flow_meta = self.generate_flow_json(
-            flow_file=self.working_dir / DAG_FILE_NAME,
+            flow_file=self.working_dir / FLOW_FLEX_YAML,
             working_dir=self.working_dir,
             dump=False,
         )

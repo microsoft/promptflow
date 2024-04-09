@@ -1,5 +1,5 @@
 from time import sleep
-from promptflow import tool
+from promptflow.core import tool
 from promptflow.tracing import trace
 
 
@@ -28,6 +28,6 @@ def format_greeting(user_name):
 @tool
 def greetings(user_id):
     user_name = get_user_name(user_id)
-    greeting = format_greeting(user_name) 
+    greeting = format_greeting(user_name)
     print(greeting)
     return {"greeting": greeting}
