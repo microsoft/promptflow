@@ -171,8 +171,8 @@ class ScriptExecutor(FlowExecutor):
             if inspect.isfunction(self._entry):
                 return self._entry
             return self._entry.__call__
+        module_name, func_name = self._parse_flow_file()
         try:
-            module_name, func_name = self._parse_flow_file()
             module = importlib.import_module(module_name)
         except Exception as e:
             raise PythonLoadError(
