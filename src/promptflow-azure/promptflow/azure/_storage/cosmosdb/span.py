@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import json
+import sys
 from copy import deepcopy
 from typing import Any, Dict
 
@@ -72,17 +73,22 @@ class Span:
     def to_dict(self) -> Dict[str, Any]:
         return {k: v for k, v in self.__dict__.items() if v}
 
-    def to_cosmosdb_item(self, attr_value_length_limit: int = 1024):
+    def to_cosmosdb_item(self, attr_value_truncation_length: int = 8 * 1024):
         """
         Convert the object to a dictionary for persistence to CosmosDB.
         Truncate attribute values to avoid exceeding CosmosDB's 2MB size limit.
         """
         item = self.to_dict()  # use to_dict method to get a dictionary representation of the object
-        attributes = item.get("attributes")
-        if attributes:
-            item["attributes"] = {
-                k: (v if not isinstance(v, str) else v[:attr_value_length_limit]) for k, v in attributes.items()
-            }
+        item_size = sys.getsizeof(json.dumps(item))
+        max_size_in_bytes = 2 * 1024 * 1024  # 2MB in bytes
+
+        if item_size > max_size_in_bytes:
+            attributes = item.get("attributes")
+            if attributes:
+                item["attributes"] = {
+                    k: (v if not isinstance(v, str) else v[:attr_value_truncation_length])
+                    for k, v in attributes.items()
+                }
         return item
 
     def _persist_events(self, blob_container_client: ContainerClient, blob_base_uri: str):
