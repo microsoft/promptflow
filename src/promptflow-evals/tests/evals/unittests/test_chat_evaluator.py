@@ -1,6 +1,6 @@
 import pytest
 
-from promptflow.connections import AzureOpenAIConnection
+from promptflow.entities import AzureOpenAIConnection
 from promptflow.evals.evaluators import ChatEvaluator
 
 
@@ -30,10 +30,9 @@ class TestChatEvaluator:
                     "citations": [
                         {
                             "id": "doc.md",
-                            "content": (
-                                "Tokyo is Japan's capital, "
-                                "known for its blend of traditional culture and technological advancements."
-                            ),
+                            "content": "Tokyo is Japan's capital, known for its blend of traditional culture and \
+                                technological"
+                            "advancements.",
                         }
                     ]
                 },
