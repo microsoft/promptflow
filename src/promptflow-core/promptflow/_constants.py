@@ -238,6 +238,13 @@ class ConnectionAuthMode:
     MEID_TOKEN = "meid_token"  # Microsoft Entra ID
 
 
+class ConnectionDefaultApiVersion:
+    AZURE_OPEN_AI = "2024-02-01"
+    COGNITIVE_SEARCH = "2023-11-01"
+    AZURE_CONTENT_SAFETY = "2023-10-01"
+    FORM_RECOGNIZER = "2023-07-31"
+
+
 class CustomStrongTypeConnectionConfigs:
     PREFIX = "promptflow.connection."
     TYPE = "custom_type"

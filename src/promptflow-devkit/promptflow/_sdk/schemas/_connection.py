@@ -5,7 +5,12 @@ import copy
 
 from marshmallow import ValidationError, fields, post_load, pre_dump, validates
 
-from promptflow._constants import ConnectionAuthMode, ConnectionType, CustomStrongTypeConnectionConfigs
+from promptflow._constants import (
+    ConnectionAuthMode,
+    ConnectionDefaultApiVersion,
+    ConnectionType,
+    CustomStrongTypeConnectionConfigs,
+)
 from promptflow._sdk._constants import SCHEMA_KEYS_CONTEXT_CONFIG_KEY, SCHEMA_KEYS_CONTEXT_SECRET_KEY
 from promptflow._sdk.schemas._base import YamlFileSchema
 from promptflow._sdk.schemas._fields import StringTransformedEnum
@@ -36,7 +41,7 @@ class AzureOpenAIConnectionSchema(ConnectionSchema):
     api_key = fields.Str()
     api_base = fields.Str(required=True)
     api_type = fields.Str(dump_default="azure")
-    api_version = fields.Str(dump_default="2024-02-01")
+    api_version = fields.Str(dump_default=ConnectionDefaultApiVersion.AZURE_OPEN_AI)
     auth_mode = StringTransformedEnum(
         allowed_values=[ConnectionAuthMode.MEID_TOKEN, ConnectionAuthMode.KEY],
         allow_none=True,
@@ -85,7 +90,7 @@ class CognitiveSearchConnectionSchema(ConnectionSchema):
     )
     api_key = fields.Str(required=True)
     api_base = fields.Str(required=True)
-    api_version = fields.Str(dump_default="2023-11-01")
+    api_version = fields.Str(dump_default=ConnectionDefaultApiVersion.COGNITIVE_SEARCH)
 
 
 class SerpConnectionSchema(ConnectionSchema):
@@ -100,7 +105,7 @@ class AzureContentSafetyConnectionSchema(ConnectionSchema):
     )
     api_key = fields.Str(required=True)
     endpoint = fields.Str(required=True)
-    api_version = fields.Str(dump_default="2023-10-01")
+    api_version = fields.Str(dump_default=ConnectionDefaultApiVersion.AZURE_CONTENT_SAFETY)
     api_type = fields.Str(dump_default="Content Safety")
 
 
@@ -111,7 +116,7 @@ class FormRecognizerConnectionSchema(ConnectionSchema):
     )
     api_key = fields.Str(required=True)
     endpoint = fields.Str(required=True)
-    api_version = fields.Str(dump_default="2023-07-31")
+    api_version = fields.Str(dump_default=ConnectionDefaultApiVersion.FORM_RECOGNIZER)
     api_type = fields.Str(dump_default="Form Recognizer")
 
 
