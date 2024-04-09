@@ -72,7 +72,7 @@ class Span:
     def to_dict(self) -> Dict[str, Any]:
         return {k: v for k, v in self.__dict__.items() if v}
 
-    def to_cosmosdb_item(self, max_attr_value_length: int = 2048):
+    def to_cosmosdb_item(self, attr_value_length_limit: int = 1024):
         """
         Convert the object to a dictionary for persistence to CosmosDB.
         Truncate attribute values to avoid exceeding CosmosDB's 2MB size limit.
@@ -81,8 +81,7 @@ class Span:
         attributes = item.get("attributes")
         if attributes:
             item["attributes"] = {
-                k: (v if not isinstance(v, str) or len(v) <= max_attr_value_length else v[:max_attr_value_length])
-                for k, v in attributes.items()
+                k: (v if not isinstance(v, str) else v[:attr_value_length_limit]) for k, v in attributes.items()
             }
         return item
 
