@@ -37,7 +37,6 @@ from promptflow._core.entry_meta_generator import generate_flow_meta as _generat
 from promptflow._sdk._constants import (
     AZURE_WORKSPACE_REGEX_FORMAT,
     DEFAULT_ENCODING,
-    EAGER,
     FLOW_TOOLS_JSON,
     FLOW_TOOLS_JSON_GEN_TIMEOUT,
     HOME_PROMPT_FLOW_DIR,
@@ -56,6 +55,7 @@ from promptflow._sdk._constants import (
     AzureMLWorkspaceTriad,
     CommonYamlFields,
     RunInfoSources,
+    RunMode,
 )
 from promptflow._sdk._errors import (
     DecryptConnectionError,
@@ -1042,7 +1042,7 @@ def is_flex_run(run: "Run") -> bool:
             logger.debug(f"Failed to check is flex flow from {run.flow} due to {e}.")
             return False
     elif run._run_source in [RunInfoSources.INDEX_SERVICE, RunInfoSources.RUN_HISTORY]:
-        return run._properties.get("azureml.promptflow.run_mode") == EAGER
+        return run._properties.get("azureml.promptflow.run_mode") == RunMode.EAGER
     # TODO(2901279): support eager mode for run created from run folder
     return False
 

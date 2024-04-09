@@ -162,7 +162,6 @@ AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "reso
 STOP_SIGNAL = "[STOP]"
 CHAT_GROUP_REFERENCE_NAME = "parent"
 CONVERSATION_HISTORY = "conversation_history"
-EAGER = "Eager"
 
 
 class RunTypes:
@@ -488,6 +487,10 @@ class IdentityKeys(str, Enum):
 class OSType:
     WINDOWS = "Windows"
     LINUX = "Linux"
+
+
+class RunMode:
+    EAGER = "Eager"
 
 
 # Note: Keep these for backward compatibility
