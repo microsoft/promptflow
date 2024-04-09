@@ -313,7 +313,7 @@ jobs:
         run: poetry install
         working-directory: ${{ github.workspace }}/src/promptflow-recording
       - name: run core tests
-        run: poetry run pytest --cov=promptflow --cov-config=pyproject.toml --cov-report=term --cov-report=html --cov-report=xml
+        run: poetry run pytest ./tests/core --cov=promptflow --cov-config=pyproject.toml --cov-report=term --cov-report=html --cov-report=xml
         working-directory: ${{ github.workspace }}/src/promptflow-core
       - name: upload coverage report
         uses: actions/upload-artifact@v4
@@ -328,9 +328,58 @@ jobs:
         with:
           name: promptflow_core_tests Test Results (Python ${{ matrix.pythonVersion }}) (OS ${{ matrix.os }})
           path: ${{ github.workspace }}/*.xml
+
+  promptflow_core_azureml_serving_tests:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call' || github.event_name == 'pull_request' }}
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        pythonVersion: ['3.8', '3.9', '3.10', '3.11']
+    # snok/install-poetry need this to support Windows
+    defaults:
+      run:
+        shell: bash
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: snok/install-poetry@v1
+      - name: install promptflow-tracing
+        run: poetry install
+        working-directory: ${{ github.workspace }}/src/promptflow-tracing
+      - name: install promptflow-core[azureml-serving]
+        run: poetry install -E azureml-serving
+        working-directory: ${{ github.workspace }}/src/promptflow-core
+      - name: install test dependency group
+        run: poetry install --only test
+        working-directory: ${{ github.workspace }}/src/promptflow-core
+      - name: install recording
+        run: poetry install
+        working-directory: ${{ github.workspace }}/src/promptflow-recording
+      - name: run azureml-serving tests
+        run: poetry run pytest ./tests/azureml-serving --cov=promptflow --cov-config=pyproject.toml --cov-report=term --cov-report=html --cov-report=xml
+        working-directory: ${{ github.workspace }}/src/promptflow-core/
+      - name: upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: |
+            ${{ env.WORKING_DIRECTORY }}/*.xml
+            ${{ env.WORKING_DIRECTORY }}/htmlcov/
+      - name: Upload pytest test results (Python ${{ matrix.pythonVersion }}) (OS ${{ matrix.os }})
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: promptflow_core_tests Test Results (Python ${{ matrix.pythonVersion }}) (OS ${{ matrix.os }})
+          path: ${{ github.workspace }}/*.xml
+
   publish-test-results:
     name: "Publish Tests Results"
-    needs: [ promptflow_sdk_cli_tests, promptflow_sdk_cli_azure_tests, promptflow_executor_tests ]
+    needs: [ promptflow_sdk_cli_tests, promptflow_sdk_cli_azure_tests, promptflow_executor_tests, promptflow_core_tests, promptflow_core_azureml_serving_tests ]
     runs-on: ubuntu-latest
     permissions:
       checks: write

@@ -3837,7 +3837,7 @@ interactions:
     uri: https://fake_account_name.blob.core.windows.net/fake-container-name/runs/batch_run_name/hello_world.py
   response:
     body:
-      string: "import time\r\n\r\nfrom promptflow import tool\r\n\r\n\r\n@tool\r\ndef
+      string: "import time\r\n\r\nfrom promptflow.core import tool\r\n\r\n\r\n@tool\r\ndef
         hello_world(name: str) -> str:\r\n    # Sleep for 1.2 seconds\r\n    time.sleep(1.2)\r\n
         \   return f\"Hello World {name}!\"\r\n"
     headers:

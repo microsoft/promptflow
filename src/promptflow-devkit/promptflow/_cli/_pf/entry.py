@@ -28,7 +28,13 @@ from promptflow._cli._pf._trace import add_trace_parser, dispatch_trace_cmds  # 
 from promptflow._cli._pf._upgrade import add_upgrade_parser, upgrade_version  # noqa: E402
 from promptflow._cli._pf.help import show_privacy_statement, show_welcome_message  # noqa: E402
 from promptflow._cli._user_agent import USER_AGENT  # noqa: E402
-from promptflow._sdk._utils import get_promptflow_sdk_version, print_pf_version  # noqa: E402
+from promptflow._sdk._utils import (  # noqa: E402
+    get_promptflow_core_version,
+    get_promptflow_devkit_version,
+    get_promptflow_sdk_version,
+    get_promptflow_tracing_version,
+    print_pf_version,
+)
 from promptflow._utils.logger_utils import get_cli_sdk_logger  # noqa: E402
 from promptflow._utils.user_agent_utils import setup_user_agent_to_operation_context  # noqa: E402
 
@@ -100,17 +106,18 @@ def get_parser_args(argv):
         "-v", "--version", dest="version", action="store_true", help="show current CLI version and exit"
     )
     subparsers = parser.add_subparsers()
-    add_upgrade_parser(subparsers)
-    add_flow_parser(subparsers)
-    add_connection_parser(subparsers)
-    add_run_parser(subparsers)
+    # lexicographical order
     add_config_parser(subparsers)
-    add_tool_parser(subparsers)
-    add_service_parser(subparsers)
-    add_trace_parser(subparsers)
-
+    add_connection_parser(subparsers)
     if Configuration.get_instance().is_internal_features_enabled():
         add_experiment_parser(subparsers)
+
+    add_flow_parser(subparsers)
+    add_run_parser(subparsers)
+    add_tool_parser(subparsers)
+    add_trace_parser(subparsers)
+    add_service_parser(subparsers)
+    add_upgrade_parser(subparsers)
 
     return parser.prog, parser.parse_args(argv)
 
@@ -132,6 +139,19 @@ def main():
     command_args = sys.argv[1:]
     if len(command_args) == 1 and command_args[0] == "version":
         version_dict = {"promptflow": get_promptflow_sdk_version()}
+        # check tracing version
+        version_tracing = get_promptflow_tracing_version()
+        if version_tracing:
+            version_dict["promptflow-tracing"] = version_tracing
+        # check core version
+        version_core = get_promptflow_core_version()
+        if version_core:
+            version_dict["promptflow-core"] = version_core
+        # check devkit version
+        version_devkit = get_promptflow_devkit_version()
+        if version_devkit:
+            version_dict["promptflow-devkit"] = version_devkit
+
         version_dict_string = (
             json.dumps(version_dict, ensure_ascii=False, indent=2, sort_keys=True, separators=(",", ": ")) + "\n"
         )

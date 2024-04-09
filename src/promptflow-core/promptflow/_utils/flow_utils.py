@@ -9,13 +9,20 @@ from os import PathLike
 from pathlib import Path
 from typing import Optional, Tuple, Union
 
-from promptflow._constants import CHAT_HISTORY, DEFAULT_ENCODING, DEFAULT_FLOW_YAML_FILE_NAME, PROMPT_FLOW_DIR_NAME
+from promptflow._constants import (
+    CHAT_HISTORY,
+    DEFAULT_ENCODING,
+    FLOW_DAG_YAML,
+    FLOW_FLEX_YAML,
+    PROMPT_FLOW_DIR_NAME,
+    PROMPTY_EXTENSION,
+)
 from promptflow._core._errors import MetaFileNotFound, MetaFileReadError
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.utils import strip_quotation
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.contracts.flow import Flow as ExecutableFlow
-from promptflow.exceptions import ErrorTarget, UserErrorException
+from promptflow.exceptions import ErrorTarget, UserErrorException, ValidationException
 from promptflow.tracing._utils import serialize
 
 logger = LoggerFactory.get_logger(name=__name__)
@@ -54,7 +61,9 @@ def get_flow_lineage_id(flow_dir: Union[str, PathLike]):
 
 
 def resolve_flow_path(
-    flow_path: Union[str, Path, PathLike], base_path: Union[str, Path, PathLike, None] = None, new: bool = False
+    flow_path: Union[str, Path, PathLike],
+    base_path: Union[str, Path, PathLike, None] = None,
+    check_flow_exist: bool = True,
 ) -> Tuple[Path, str]:
     """Resolve flow path and return the flow directory path and the file name of the target yaml.
 
@@ -64,9 +73,9 @@ def resolve_flow_path(
     :param base_path: The base path to resolve the flow path. If not specified, the flow path will be
       resolved based on the current working directory.
     :type base_path: Union[str, Path, PathLike]
-    :param new: If True, the function will return the flow directory path and the file name of the
-        target yaml that should be created. If False, the function will try to find the existing
-        target yaml and raise FileNotFoundError if not found.
+    :param check_flow_exist: If True, the function will try to check the target yaml and
+      raise FileNotFoundError if not found.
+      If False, the function will return the flow directory path and the file name of the target yaml.
     :return: The flow directory path and the file name of the target yaml.
     :rtype: Tuple[Path, str]
     """
@@ -75,17 +84,40 @@ def resolve_flow_path(
     else:
         flow_path = Path(flow_path)
 
-    if new:
-        if flow_path.is_dir():
-            return flow_path, DEFAULT_FLOW_YAML_FILE_NAME
-        return flow_path.parent, flow_path.name
+    if flow_path.is_dir():
+        flow_folder = flow_path
+        dag_file_exist = (flow_folder / FLOW_DAG_YAML).is_file()
+        flex_file_exist = (flow_folder / FLOW_FLEX_YAML).is_file()
+        flow_file = FLOW_FLEX_YAML if flex_file_exist else FLOW_DAG_YAML
+        if dag_file_exist and flex_file_exist:
+            raise ValidationException(
+                f"Both {FLOW_DAG_YAML} and {FLOW_FLEX_YAML} exist in {flow_path}. "
+                f"Please specify a file or remove the extra YAML.",
+                privacy_info=[str(flow_path)],
+            )
+    elif flow_path.is_file() or flow_path.suffix in (".yaml", ".yml"):
+        flow_folder = flow_path.parent
+        flow_file = flow_path.name
+    else:  # flow_path doesn't exist
+        flow_folder = flow_path
+        flow_file = FLOW_DAG_YAML
 
-    if flow_path.is_dir() and (flow_path / DEFAULT_FLOW_YAML_FILE_NAME).is_file():
-        return flow_path, DEFAULT_FLOW_YAML_FILE_NAME
-    elif flow_path.is_file():
-        return flow_path.parent, flow_path.name
+    if not check_flow_exist:
+        return flow_folder.resolve().absolute(), flow_file
 
-    raise FileNotFoundError(f"Can't find flow with path {flow_path.as_posix()}.")
+    if not flow_folder.exists():
+        raise UserErrorException(
+            f"Flow path {flow_path.absolute().as_posix()} does not exist.",
+            privacy_info=[flow_path.absolute().as_posix()],
+        )
+
+    if not (flow_folder / flow_file).is_file():
+        raise UserErrorException(
+            f"Can't find file {flow_file}, " f"in the flow path {flow_folder.absolute().as_posix()}.",
+            privacy_info=[flow_folder.absolute().as_posix()],
+        )
+
+    return flow_folder.resolve().absolute(), flow_file
 
 
 def load_flow_dag(flow_path: Path):
@@ -101,7 +133,7 @@ def load_flow_dag(flow_path: Path):
 
 def dump_flow_dag(flow_dag: dict, flow_path: Path):
     """Dump flow dag to given flow path."""
-    flow_dir, flow_filename = resolve_flow_path(flow_path, new=True)
+    flow_dir, flow_filename = resolve_flow_path(flow_path, check_flow_exist=False)
     flow_path = flow_dir / flow_filename
     with open(flow_path, "w", encoding=DEFAULT_ENCODING) as f:
         dump_yaml(flow_dag, f)
@@ -124,6 +156,16 @@ def is_flex_flow(
             return False
         yaml_dict = load_yaml(file_path)
     return isinstance(yaml_dict, dict) and "entry" in yaml_dict
+
+
+def is_prompty_flow(file_path: Union[str, Path], raise_error: bool = False):
+    """Check if the flow is a prompty flow by extension of the flow file is .prompty."""
+    if not file_path or not Path(file_path).exists():
+        if raise_error:
+            raise UserErrorException(f"Cannot find the prompty file {file_path}.")
+        else:
+            return False
+    return Path(file_path).suffix.lower() == PROMPTY_EXTENSION
 
 
 def resolve_entry_file(entry: str, working_dir: Path) -> Optional[str]:
