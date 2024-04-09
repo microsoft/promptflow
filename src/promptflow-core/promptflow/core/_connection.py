@@ -157,8 +157,8 @@ class AzureOpenAIConnection(_StrongTypeConnection):
     :type api_type: str
     :param api_version: The api version, default "2023-07-01-preview".
     :type api_version: str
-    :param auth_type: The auth type, supported value ["key", "meid_token"].
-    :type api_version: str
+    :param auth_mode: The auth mode, supported value ["key", "meid_token"].
+    :type auth_mode: str
     :param name: Connection name.
     :type name: str
     """
@@ -170,7 +170,7 @@ class AzureOpenAIConnection(_StrongTypeConnection):
         api_base: str,
         api_key: str = None,
         api_type: str = "azure",
-        api_version: str = "2023-07-01-preview",
+        api_version: str = "2024-02-01",
         auth_mode: str = ConnectionAuthMode.KEY,
         **kwargs,
     ):
@@ -239,7 +239,7 @@ class AzureOpenAIConnection(_StrongTypeConnection):
         Relevant environment variables:
         - AZURE_OPENAI_ENDPOINT: The api base.
         - AZURE_OPENAI_API_KEY: The api key.
-        - OPENAI_API_VERSION: Optional. The api version, default "2023-07-01-preview".
+        - OPENAI_API_VERSION: Optional. The api version, default "2024-02-01".
         """
         # Env var name reference: https://github.com/openai/openai-python/blob/main/src/openai/lib/azure.py#L160
         api_base = os.getenv("AZURE_OPENAI_ENDPOINT")
@@ -414,7 +414,7 @@ class CognitiveSearchConnection(_StrongTypeConnection):
     :type api_key: str
     :param api_base: The api base.
     :type api_base: str
-    :param api_version: The api version, default "2023-07-01-Preview".
+    :param api_version: The api version, default "2023-11-01".
     :type api_version: str
     :param name: Connection name.
     :type name: str
@@ -422,7 +422,7 @@ class CognitiveSearchConnection(_StrongTypeConnection):
 
     TYPE = ConnectionType.COGNITIVE_SEARCH.value
 
-    def __init__(self, api_key: str, api_base: str, api_version: str = "2023-07-01-Preview", **kwargs):
+    def __init__(self, api_key: str, api_base: str, api_version: str = "2023-11-01", **kwargs):
         configs = {"api_base": api_base, "api_version": api_version}
         secrets = {"api_key": api_key}
         super().__init__(configs=configs, secrets=secrets, **kwargs)
