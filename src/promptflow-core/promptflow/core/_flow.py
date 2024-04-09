@@ -251,6 +251,9 @@ class Prompty(FlowBase):
                 prompty_model["parameters"].update(model["parameters"])
             else:
                 prompty_model["parameters"] = model["parameters"]
+        for k, v in model.items():
+            if k not in prompty_model:
+                prompty_model[k] = v
         for k in list(kwargs.keys()):
             value = kwargs.pop(k)
             if k in configs and isinstance(value, dict):
@@ -368,8 +371,9 @@ class Prompty(FlowBase):
         return format_llm_response(
             response=response,
             api=self._api,
-            response_format=params.get("response_format", None),
-            is_first_choice=self._data.get("response", None) == "first",
+            raw=self._data.get("format", None) == "raw",
+            response_format=params.get("response_format", {}).get("type", None),
+            is_first_choice=self._data.get("model", {}).get("response", None) != "all",
             streaming=params.get("stream", False),
             outputs=self._outputs,
         )
@@ -420,8 +424,9 @@ class AsyncPrompty(Prompty):
         return format_llm_response(
             response=response,
             api=self._api,
-            response_format=params.get("response_format", None),
-            is_first_choice=self._data.get("response", None) == "first",
+            raw=self._data.get("format", None) == "raw",
+            response_format=params.get("response_format", {}).get("type", None),
+            is_first_choice=self._data.get("response", None) != "all",
             streaming=params.get("stream", False),
             outputs=self._outputs,
         )

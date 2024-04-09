@@ -120,11 +120,6 @@ class TestPrompty:
         result = prompty(question="what is the result of 1+1?")
         assert "2" in result
 
-        # Test format is raw
-        prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", format="raw")
-        result = prompty(question="what is the result of 1+1?")
-        assert isinstance(result, ChatCompletion)
-
     def test_prompty_async_call(self):
         async_prompty = AsyncPrompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty")
         with pytest.raises(MissingRequiredInputError) as e:
@@ -159,3 +154,52 @@ class TestPrompty:
             flow=f"{PROMPTY_DIR}/prompty_example.prompty", inputs={"question": "what is the result of 1+1?"}
         )
         assert "2" in result
+
+    def test_prompty_format_output(self, pf: PFClient):
+        # Test json_object format
+        prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example_with_json_format.prompty")
+        result = prompty(question="what is the result of 1+1?")
+        assert isinstance(result, dict)
+        assert 2 == result["answer"]
+        assert "John" == result["name"]
+
+        # Test json_object format with specified output
+        prompty = Prompty.load(
+            source=f"{PROMPTY_DIR}/prompty_example_with_json_format.prompty", outputs={"answer": {"type": "number"}}
+        )
+        result = prompty(question="what is the result of 1+1?")
+        assert isinstance(result, dict)
+        assert 2 == result["answer"]
+        assert "name" not in result
+
+        # Test stream output
+        prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", model={"parameters": {"stream": True}})
+        result = prompty(question="what is the result of 1+1?")
+        result_content = ""
+        for item in result:
+            if len(item.choices) > 0 and item.choices[0].delta.content:
+                result_content += item.choices[0].delta.content
+        assert "2" in result_content
+
+        # Test return all choices
+        prompty = Prompty.load(
+            source=f"{PROMPTY_DIR}/prompty_example.prompty", model={"parameters": {"n": 2}, "response": "all"}
+        )
+        result = prompty(question="what is the result of 1+1?")
+        assert len(result) == 2
+
+        # Test return all choices with specified output
+        prompty = Prompty.load(
+            source=f"{PROMPTY_DIR}/prompty_example_with_json_format.prompty",
+            model={"parameters": {"n": 2}, "response": "all"},
+            outputs={"answer": {"type": "number"}},
+        )
+        result = prompty(question="what is the result of 1+1?")
+        assert len(result) == 2
+        assert all(["name" not in item for item in result])
+        assert all([2 == item["answer"] for item in result])
+
+        # Test format is raw
+        prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", format="raw")
+        result = prompty(question="what is the result of 1+1?")
+        assert isinstance(result, ChatCompletion)

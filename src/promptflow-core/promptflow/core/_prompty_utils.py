@@ -124,7 +124,7 @@ def send_request_to_llm(client, api, parameters):
     return result
 
 
-def format_llm_response(response, api, is_first_choice, response_format=None, streaming=False, outputs=None):
+def format_llm_response(response, api, is_first_choice, response_format=None, raw=False, streaming=False, outputs=None):
     """
     Format LLM response
 
@@ -136,6 +136,8 @@ def format_llm_response(response, api, is_first_choice, response_format=None, st
     :type is_first_choice: bool
     :param response_format: An object specifying the format that the model must output.
     :type response_format: str
+    :param raw: Directly return LLM response.
+    :type raw: bool
     :param streaming: Indicates whether to stream the response
     :type streaming: bool
     :param outputs: Extract corresponding output in json format response
@@ -154,14 +156,14 @@ def format_llm_response(response, api, is_first_choice, response_format=None, st
             # return the keys in outputs
             output_results = {}
             for key in outputs:
-                if key not in output_results:
+                if key not in result_dict:
                     raise InvalidOutputKeyError(f"Cannot find {key} in response {list(result_dict.keys())}")
                 output_results[key] = result_dict[key]
             return output_results
         # Return text format response
         return item
 
-    if streaming:
+    if raw or streaming:
         return response
 
     if is_first_choice:
@@ -173,7 +175,7 @@ def format_llm_response(response, api, is_first_choice, response_format=None, st
         if api == "completion":
             result = [format_choice(item.text) for item in response.choices]
         else:
-            result = [format_choice(getattr(item, "content", "")) for item in response.choices]
+            result = [format_choice(getattr(item.message, "content", "")) for item in response.choices]
     return result
 
 
