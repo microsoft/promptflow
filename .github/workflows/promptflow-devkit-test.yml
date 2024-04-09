@@ -47,6 +47,8 @@ jobs:
           poetry run pip install ${{ env.TRACING_DIRECTORY }}
           poetry run pip install ${{ env.CORE_DIRECTORY }}[azureml-serving]
           poetry run pip install ${{ env.WORKING_DIRECTORY }}
+
+          echo "Need to install promptflow to avoid tool dependency issue"
           poetry run pip install ${{ env.PROMPTFLOW_DIRECTORY }}
           poetry run pip install ${{ env.TOOL_DIRECTORY }}
           poetry run pip install -e ${{ env.RECORD_DIRECTORY }}
@@ -66,8 +68,8 @@ jobs:
         working-directory: ${{ env.PROMPTFLOW_DIRECTORY }}
         run: |
           cp ${{ github.workspace }}/src/promptflow/dev-connections.json.example ${{ github.workspace }}/src/promptflow/connections.json
-      - name: run core tests
-        run: poetry run pytest ./tests/sdk-cli-test -p promptflow --cov=promptflow --cov-config=pyproject.toml --cov-report=term --cov-report=html --cov-report=xml -n auto -m "unittest or e2etest"
+      - name: run devkit tests
+        run: poetry run pytest ./tests/sdk_cli_test -p promptflow --cov=promptflow --cov-config=pyproject.toml --cov-report=term --cov-report=html --cov-report=xml -n auto -m "unittest or e2etest"
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: upload coverage report
         uses: actions/upload-artifact@v4
