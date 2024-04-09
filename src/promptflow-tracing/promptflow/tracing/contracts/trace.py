@@ -14,6 +14,7 @@ class TraceType(str, Enum):
     FUNCTION = "Function"
     LANGCHAIN = "LangChain"
     FLOW = "Flow"
+    PROMPTY = "Prompty"
     EMBEDDING = "Embedding"
 
 

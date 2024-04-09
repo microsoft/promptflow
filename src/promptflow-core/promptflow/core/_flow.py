@@ -266,6 +266,7 @@ class Prompty(FlowBase):
         self._api = prompty_model["api"]
         self._inputs = configs.get("inputs", {})
         self._outputs = configs.get("outputs", {})
+        self._name = configs.get("name", path.stem)
         configs["model"] = prompty_model
         super().__init__(code=path.parent, path=path, data=configs, content_hash=None, **kwargs)
 

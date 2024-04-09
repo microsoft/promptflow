@@ -132,7 +132,7 @@ def format_llm_response(response, api, is_first_choice, response_format=None, st
     :type response:
     :param api: API type of the LLM.
     :type api: str
-    :param is_first_choice: If true, it will return the first item in response choices, else it will return ll response
+    :param is_first_choice: If true, it will return the first item in response choices, else it will return all response
     :type is_first_choice: bool
     :param response_format: An object specifying the format that the model must output.
     :type response_format: str
