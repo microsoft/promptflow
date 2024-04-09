@@ -1,13 +1,13 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+from types import FunctionType
 from typing import Callable, Dict, Optional
 
 import pandas as pd
 
 from promptflow.client import PFClient
-
-from ._flow_run_wrapper import FlowRunWrapper
+from ._code_client import CodeClient
 
 
 def _calculate_mean(df) -> Dict[str, float]:
@@ -76,36 +76,51 @@ def evaluate(
 
     _validation(target, data, evaluators, output_path, tracking_uri, evaluation_name)
 
-    evaluator_run_list = []
     pf_client = PFClient()
+    code_client = CodeClient()
+
+    evaluator_info = {}
 
     for evaluator_name, evaluator in evaluators.items():
-        evaluator_run_list.append(
-            FlowRunWrapper(
-                pf_client.run(
-                    flow=evaluator,
-                    column_mapping=evaluator_config.get(evaluator_name, evaluator_config.get("default", None)),
-                    data=data,
-                    stream=True,
-                ),
-                prefix=evaluator_name,
-            )
+        if isinstance(evaluator, FunctionType):
+            evaluator_info.update({evaluator_name: {"client": pf_client, "evaluator": evaluator}})
+        else:
+            evaluator_info.update({evaluator_name: {"client": code_client, "evaluator": evaluator}})
+
+        evaluator_info[evaluator_name]["run"] = evaluator_info[evaluator_name]["client"].run(
+            flow=evaluator,
+            column_mapping=evaluator_config.get(evaluator_name, evaluator_config.get("default", None)),
+            data=data,
+            stream=True,
         )
 
-    result_df = None
-    for eval_run in evaluator_run_list:
-        if result_df is None:
-            result_df = eval_run.get_result_df(all_results=True, exclude_inputs=True)
-        else:
-            result_df = pd.concat(
-                [eval_run.get_result_df(all_results=True, exclude_inputs=True), result_df],
-                axis=1,
-                verify_integrity=True,
-            )
+    evaluators_result_df = None
+    for evaluator_name, evaluator_info in evaluator_info.items():
+        evaluator_result_df = evaluator_info["client"].get_details(evaluator_info["run"], all_results=True)
+
+        # drop input columns
+        evaluator_result_df = evaluator_result_df.drop(
+            columns=[col for col in evaluator_result_df.columns if col.startswith("inputs.")]
+        )
+
+        # rename output columns
+        # Assuming after removing inputs columns, all columns are output columns
+        evaluator_result_df = evaluator_result_df.rename(
+            columns={
+                col: f"outputs.{evaluator_name}.{col.replace('outputs.', '')}" for col in evaluator_result_df.columns
+            }
+        )
+
+        evaluators_result_df = (
+            pd.concat([evaluators_result_df, evaluator_result_df], axis=1, verify_integrity=True)
+            if evaluators_result_df is not None
+            else evaluator_result_df
+        )
 
     input_data_df = pd.read_json(data, lines=True)
     input_data_df = input_data_df.rename(columns={col: f"inputs.{col}" for col in input_data_df.columns})
 
-    row_results = pd.concat([input_data_df, result_df], axis=1, verify_integrity=True)
+    result_df = pd.concat([input_data_df, evaluators_result_df], axis=1, verify_integrity=True)
 
-    return {"rows": row_results.to_dict("records"), "metrics": _calculate_mean(result_df), "traces": {}}
+    return {"rows": result_df.to_dict("records"), "metrics": _calculate_mean(result_df), "traces": {}}
+
