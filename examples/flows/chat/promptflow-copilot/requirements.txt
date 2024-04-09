@@ -1,1 +1,1 @@
-
+promptflow-vectordb==0.2.8
