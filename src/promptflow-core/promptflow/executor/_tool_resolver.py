@@ -232,8 +232,6 @@ class ToolResolver:
 
     def _generate_tool_definition(self, tool: Tool, func: Callable, predefined_inputs: dict) -> dict:
         try:
-            # Must keep initialize_inputs None to exclude it from inputs
-            inputs, _, _, _ = function_to_interface(func)
             # Attempt to extract the description, handling exceptions
             try:
                 description, param_descriptions = DocstringParser.parse_description(func.__doc__)
@@ -250,6 +248,7 @@ class ToolResolver:
                 "parameters": {"type": "object", "properties": {}, "required": []},
             }
 
+            inputs, _, _, _ = function_to_interface(func)
             for name, param in inputs.items():
                 if name in predefined_inputs:
                     # Exclude predefined inputs from definition generation
