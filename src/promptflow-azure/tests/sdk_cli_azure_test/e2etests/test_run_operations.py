@@ -21,7 +21,7 @@ from azure.ai.ml import ManagedIdentityConfiguration
 from azure.ai.ml.entities import IdentityConfiguration
 from sdk_cli_azure_test.conftest import DATAS_DIR, FLOWS_DIR
 
-from promptflow._constants import FLOW_DAG_YAML
+from promptflow._constants import FLOW_FLEX_YAML
 from promptflow._sdk._constants import DownloadedRun, RunStatus
 from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, RunNotFoundError
 from promptflow._sdk._load_functions import load_run
@@ -1028,7 +1028,7 @@ class TestFlowRun:
             DownloadedRun.RUN_METADATA_FILE_NAME,
             DownloadedRun.LOGS_FILE_NAME,
             DownloadedRun.METRICS_FILE_NAME,
-            f"{DownloadedRun.SNAPSHOT_FOLDER}/flow.dag.yaml",
+            f"{DownloadedRun.SNAPSHOT_FOLDER}/flow.flex.yaml",
         ]
 
         # test download
@@ -1242,7 +1242,7 @@ class TestFlowRun:
 
         # test YAML is generated
         expected_files = [
-            f"{DownloadedRun.SNAPSHOT_FOLDER}/{FLOW_DAG_YAML}",
+            f"{DownloadedRun.SNAPSHOT_FOLDER}/{FLOW_FLEX_YAML}",
         ]
         with TemporaryDirectory() as tmp_dir:
             pf.runs.download(run=run.name, output=tmp_dir)
@@ -1250,4 +1250,4 @@ class TestFlowRun:
                 assert Path(tmp_dir, run.name, file).exists()
 
         # the YAML file will not exist in user's folder
-        assert not Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/flow.dag.yaml").exists()
+        assert not Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/flow.flex.yaml").exists()

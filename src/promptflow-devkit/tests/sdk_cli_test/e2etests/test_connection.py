@@ -6,6 +6,7 @@ import pytest
 from _constants import PROMPTFLOW_ROOT
 from mock import mock
 
+from promptflow._constants import ConnectionDefaultApiVersion
 from promptflow._sdk._constants import SCRUBBED_VALUE
 from promptflow._sdk._errors import ConnectionNameNotSetError
 from promptflow._sdk._pf_client import PFClient
@@ -33,7 +34,7 @@ class TestConnection:
             "auth_mode": "key",
             "api_base": "test",
             "api_type": "azure",
-            "api_version": "2023-07-01-preview",
+            "api_version": ConnectionDefaultApiVersion.AZURE_OPEN_AI,
         }
         # Update
         conn.api_base = "test2"
@@ -45,7 +46,7 @@ class TestConnection:
             "auth_mode": "key",
             "api_base": "test2",
             "api_type": "azure",
-            "api_version": "2023-07-01-preview",
+            "api_version": ConnectionDefaultApiVersion.AZURE_OPEN_AI,
         }
         # List
         result = _client.connections.list()

@@ -45,7 +45,7 @@ class TestAzureCli:
     def test_pf_azure_version(self, capfd):
         run_pf_command("--version")
         out, err = capfd.readouterr()
-        assert "0.0.1\n" in out
+        assert "0.0.1" in out
 
     def test_run_show(self, mocker: MockFixture, operation_scope_args):
         from promptflow.azure.operations._run_operations import RunOperations

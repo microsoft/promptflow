@@ -20,6 +20,7 @@ CONNECTION_FILE = (PROMPTFLOW_ROOT / "connections.json").resolve().absolute().as
 FLOWS_DIR = (TEST_ROOT / "test_configs/flows").resolve().absolute().as_posix()
 EAGER_FLOWS_DIR = (TEST_ROOT / "test_configs/eager_flows").resolve().absolute().as_posix()
 FLOW_RESULT_KEYS = ["category", "evidence"]
+DATA_ROOT = TEST_ROOT / "test_configs/datas"
 
 _client = PFClient()
 
@@ -46,6 +47,20 @@ class TestFlowTest:
 
         result = _client.test(flow=f"{FLOWS_DIR}/web_classification")
         assert all([key in FLOW_RESULT_KEYS for key in result])
+
+        # Test flow test with sample input file
+        result = _client.test(flow=flow_path, inputs=DATA_ROOT / "webClassification1.jsonl")
+        assert all([key in FLOW_RESULT_KEYS for key in result])
+
+        # Test flow test with invalid input file
+        with pytest.raises(UserErrorException) as ex:
+            _client.test(flow=flow_path, inputs=DATA_ROOT / "invalid_path.json")
+        assert "Cannot find inputs file" in ex.value.message
+
+        # Test flow test with invalid file extension
+        with pytest.raises(UserErrorException) as ex:
+            _client.test(flow=flow_path, inputs=DATA_ROOT / "logo.jpg")
+        assert "Only support jsonl or json file as input" in ex.value.message
 
     def test_pf_test_flow_with_package_tool_with_custom_strong_type_connection(self, install_custom_tool_pkg):
         inputs = {"text": "Hello World!"}

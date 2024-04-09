@@ -340,7 +340,7 @@ class TestExperiment:
             mock_func.return_value = True
 
             template_path = EXP_ROOT / "eager-flow-exp-template" / "flow.exp.yaml"
-            target_flow_path = EAGER_FLOW_ROOT / "flow_with_dataclass_output" / "flow.dag.yaml"
+            target_flow_path = EAGER_FLOW_ROOT / "flow_with_dataclass_output" / "flow.flex.yaml"
             client = PFClient()
             result = client.flows.test(target_flow_path, experiment=template_path)
             assert result == {

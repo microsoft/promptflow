@@ -20,7 +20,7 @@ class TestRun:
         "kwargs",
         [
             {"source": EAGER_FLOWS_DIR / "simple_with_yaml"},
-            {"source": EAGER_FLOWS_DIR / "simple_with_yaml" / "flow.dag.yaml"},
+            {"source": EAGER_FLOWS_DIR / "simple_with_yaml" / "flow.flex.yaml"},
         ],
     )
     def test_eager_flow_load(self, kwargs):

@@ -85,7 +85,7 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
     @classmethod
     def get_outputs_definition(cls, flow_file: Path, working_dir: Path) -> dict:
         # TODO: no outputs definition for eager flow for now
-        if is_flex_flow(file_path=flow_file, working_dir=working_dir):
+        if is_flex_flow(flow_path=flow_file, working_dir=working_dir):
             return {}
 
         # TODO: get this from self._get_flow_meta for both eager flow and non-eager flow then remove

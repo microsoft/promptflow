@@ -108,6 +108,7 @@ def override_process_pool_targets(process_wrapper=None, process_manager=None):
         current_process_wrapper_var.set(process_wrapper)
     if process_manager is not None:
         current_process_manager_var.set(process_manager)
+    original_process_class = override_process_class({"spawn": MockSpawnProcess, "forkserver": MockForkServerProcess})
 
     try:
         yield
@@ -115,3 +116,4 @@ def override_process_pool_targets(process_wrapper=None, process_manager=None):
         # Revert back to the original states
         current_process_wrapper_var.set(original_process_wrapper)
         current_process_manager_var.set(original_process_manager)
+        override_process_class(original_process_class)

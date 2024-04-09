@@ -5,6 +5,7 @@ import collections
 import datetime
 import hashlib
 import importlib
+import inspect
 import json
 import os
 import platform
@@ -31,8 +32,7 @@ from filelock import FileLock
 from keyring.errors import NoKeyringError
 from marshmallow import ValidationError
 
-import promptflow
-from promptflow._constants import ENABLE_MULTI_CONTAINER_KEY, EXTENSION_UA, FLOW_DAG_YAML, FlowLanguage
+from promptflow._constants import ENABLE_MULTI_CONTAINER_KEY, EXTENSION_UA, FLOW_FLEX_YAML, FlowLanguage
 from promptflow._core.entry_meta_generator import generate_flow_meta as _generate_flow_meta
 from promptflow._sdk._constants import (
     AZURE_WORKSPACE_REGEX_FORMAT,
@@ -54,6 +54,8 @@ from promptflow._sdk._constants import (
     VARIANTS,
     AzureMLWorkspaceTriad,
     CommonYamlFields,
+    RunInfoSources,
+    RunMode,
 )
 from promptflow._sdk._errors import (
     DecryptConnectionError,
@@ -62,7 +64,7 @@ from promptflow._sdk._errors import (
     UnsecureConnectionError,
 )
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
-from promptflow._utils.flow_utils import resolve_flow_path
+from promptflow._utils.flow_utils import is_flex_flow, resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
@@ -326,9 +328,11 @@ def incremental_print(log: str, printed: int, fileout) -> int:
 
 def get_promptflow_sdk_version() -> str:
     try:
+        import promptflow
+
         return promptflow.__version__
-    except ImportError:
-        # if promptflow is installed from source, it does not have __version__ attribute
+    except (ImportError, AttributeError):
+        # if promptflow is not installed from root, it does not have __version__ attribute
         return None
 
 
@@ -368,24 +372,36 @@ def get_promptflow_azure_version() -> Union[str, None]:
         return None
 
 
-def print_pf_version(with_azure: bool = False):
-    version_promptflow = get_promptflow_sdk_version()
-    if version_promptflow:
-        print("promptflow\t\t\t {}".format(version_promptflow))
+def print_promptflow_version_dict_string(with_azure: bool = False, ignore_none: bool = False):
+    version_dict = {"promptflow": get_promptflow_sdk_version()}
+    # check tracing version
     version_tracing = get_promptflow_tracing_version()
     if version_tracing:
-        print("promptflow-tracing\t\t {}".format(version_tracing))
+        version_dict["promptflow-tracing"] = version_tracing
+    # check core version
     version_core = get_promptflow_core_version()
     if version_core:
-        print("promptflow-core\t\t\t {}".format(version_core))
+        version_dict["promptflow-core"] = version_core
+    # check devkit version
     version_devkit = get_promptflow_devkit_version()
     if version_devkit:
-        print("promptflow-devkit\t\t {}".format(version_devkit))
+        version_dict["promptflow-devkit"] = version_devkit
+
     if with_azure:
+        # check azure version
         version_azure = get_promptflow_azure_version()
         if version_azure:
-            print("promptflow-azure\t\t {}".format(version_azure))
-    print()
+            version_dict["promptflow-azure"] = version_azure
+    if ignore_none:
+        version_dict = {k: v for k, v in version_dict.items() if v is not None}
+    version_dict_string = (
+        json.dumps(version_dict, ensure_ascii=False, indent=2, sort_keys=True, separators=(",", ": ")) + "\n"
+    )
+    print(version_dict_string)
+
+
+def print_pf_version(with_azure: bool = False, ignore_none: bool = False):
+    print_promptflow_version_dict_string(with_azure, ignore_none)
     print("Executable '{}'".format(os.path.abspath(sys.executable)))
     print("Python ({}) {}".format(platform.system(), sys.version))
 
@@ -970,6 +986,7 @@ def generate_yaml_entry(entry: Union[str, PathLike, Callable], code: Path = None
 @contextmanager
 def create_temp_flex_flow_yaml(entry: Union[str, PathLike, Callable], code: Path = None):
     """Create a temporary flow.dag.yaml in code folder"""
+
     logger.info("Create temporary entry for flex flow.")
     if callable(entry):
         entry = callable_to_entry_string(entry)
@@ -980,7 +997,7 @@ def create_temp_flex_flow_yaml(entry: Union[str, PathLike, Callable], code: Path
         code = Path(code)
         if not code.exists():
             raise UserErrorException(f"Code path {code.as_posix()} does not exist.")
-    flow_yaml_path = code / FLOW_DAG_YAML
+    flow_yaml_path = code / FLOW_FLEX_YAML
     existing_content = None
 
     try:
@@ -1002,6 +1019,12 @@ def create_temp_flex_flow_yaml(entry: Union[str, PathLike, Callable], code: Path
                     flow_yaml_path.unlink()
                 except Exception as e:
                     logger.warning(f"Failed to delete generated: {flow_yaml_path.as_posix()}, error: {e}")
+
+
+def can_accept_kwargs(func):
+    sig = inspect.signature(func)
+    params = sig.parameters.values()
+    return any(param.kind == param.VAR_KEYWORD for param in params)
 
 
 def callable_to_entry_string(callable_obj: Callable) -> str:
@@ -1026,6 +1049,22 @@ def callable_to_entry_string(callable_obj: Callable) -> str:
         )
 
     return f"{module_str}:{func_str}"
+
+
+def is_flex_run(run: "Run") -> bool:
+    if run._run_source == RunInfoSources.LOCAL:
+        try:
+            # The flow yaml may have been temporarily generated and deleted after creating a run.
+            # So check_flow_exist=False.
+            return is_flex_flow(flow_path=run.flow, check_flow_exist=False)
+        except Exception as e:
+            # For run with incomplete flow snapshot, ignore load flow error to make sure it can still show.
+            logger.debug(f"Failed to check is flex flow from {run.flow} due to {e}.")
+            return False
+    elif run._run_source in [RunInfoSources.INDEX_SERVICE, RunInfoSources.RUN_HISTORY]:
+        return run._properties.get("azureml.promptflow.run_mode") == RunMode.EAGER
+    # TODO(2901279): support eager mode for run created from run folder
+    return False
 
 
 generate_flow_meta = _generate_flow_meta
