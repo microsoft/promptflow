@@ -2,7 +2,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from typing import Dict, Type
+from pathlib import Path
+from typing import Any, Dict, Optional, Type
 
 from promptflow._constants import FlowLanguage
 from promptflow._proxy._base_executor_proxy import AbstractExecutorProxy
@@ -47,7 +48,22 @@ class ProxyFactory:
         cls.executor_proxy_classes[language] = executor_proxy_cls
 
     def create_executor_proxy(
-        self, flow_file, working_dir, connections, storage, language: str, init_kwargs: dict = None, **kwargs
+        self,
+        flow_file,
+        working_dir,
+        connections,
+        storage,
+        language: str,
+        init_kwargs: dict = None,
+        # below parameters are added for multi-container
+        # executor_client is provided by runtime PythonExecutorClient class
+        executor_client: Optional[Any] = None,
+        environment_variables: Optional[dict] = None,
+        log_path: Optional[Path] = None,
+        output_dir: Optional[Path] = None,
+        worker_count: Optional[int] = None,
+        line_timeout_sec: Optional[int] = None,
+        **kwargs,
     ) -> AbstractExecutorProxy:
         executor_proxy_cls = self.get_executor_proxy_cls(language)
         return async_run_allowing_running_loop(
@@ -57,6 +73,12 @@ class ProxyFactory:
             connections=connections,
             storage=storage,
             init_kwargs=init_kwargs,
+            executor_client=executor_client,
+            environment_variables=environment_variables,
+            log_path=log_path,
+            output_dir=output_dir,
+            worker_count=worker_count,
+            line_timeout_sec=line_timeout_sec,
             **kwargs,
         )
 
