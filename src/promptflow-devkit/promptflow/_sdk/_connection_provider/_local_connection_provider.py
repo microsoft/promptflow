@@ -12,6 +12,10 @@ class LocalConnectionProvider(ConnectionProvider):
 
         self._operations = ConnectionOperations()
 
+    def list(self):
+        # Return all connection here as list target for tool connection drop down.
+        return self._operations.list(all_results=True)
+
     def get(self, name: str, **kwargs):
         # Connection provider here target for execution, so we always get with secrets.
         with_secrets = kwargs.pop("with_secrets", True)

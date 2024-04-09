@@ -8,6 +8,7 @@ from enum import Enum
 from pathlib import Path
 
 from promptflow._constants import (
+    AZURE_WORKSPACE_REGEX_FORMAT,
     CONNECTION_SCRUBBED_VALUE,
     CONNECTION_SCRUBBED_VALUE_NO_CHANGE,
     PROMPT_FLOW_DIR_NAME,
@@ -68,7 +69,7 @@ def _prepare_home_dir() -> Path:
 
 HOME_PROMPT_FLOW_DIR = _prepare_home_dir()
 
-DAG_FILE_NAME = "flow.dag.yaml"
+DEFAULT_REQUIREMENTS_FILE_NAME = "requirements.txt"
 NODE_VARIANTS = "node_variants"
 VARIANTS = "variants"
 NODES = "nodes"
@@ -78,6 +79,7 @@ USE_VARIANTS = "use_variants"
 DEFAULT_VAR_ID = "default_variant_id"
 FLOW_TOOLS_JSON = "flow.tools.json"
 FLOW_META_JSON = "flow.json"
+SERVE_SAMPLE_JSON_PATH = "sample.json"
 FLOW_TOOLS_JSON_GEN_TIMEOUT = 60
 FLOW_META_JSON_GEN_TIMEOUT = 60
 PROMPT_FLOW_RUNS_DIR_NAME = ".runs"
@@ -119,10 +121,7 @@ SCRUBBED_VALUE_USER_INPUT = "<user-input>"
 WORKSPACE_LINKED_DATASTORE_NAME = "workspaceblobstore"
 LINE_NUMBER = "line_number"
 AZUREML_PF_RUN_PROPERTIES_LINEAGE = "azureml.promptflow.input_run_id"
-AZURE_WORKSPACE_REGEX_FORMAT = (
-    "^azureml:[/]{1,2}subscriptions/([^/]+)/resource(groups|Groups)/([^/]+)"
-    "(/providers/Microsoft.MachineLearningServices)?/workspaces/([^/]+)$"
-)
+AZURE_WORKSPACE_REGEX_FORMAT = AZURE_WORKSPACE_REGEX_FORMAT
 DEFAULT_ENCODING = "utf-8"
 LOCAL_STORAGE_BATCH_SIZE = 1
 LOCAL_SERVICE_PORT = 5000
@@ -292,7 +291,6 @@ class CLIListOutputFormat:
 
 class LocalStorageFilenames:
     SNAPSHOT_FOLDER = "snapshot"
-    DAG = DAG_FILE_NAME
     FLOW_TOOLS_JSON = FLOW_TOOLS_JSON
     INPUTS = "inputs.jsonl"
     OUTPUTS = "outputs.jsonl"
@@ -489,6 +487,10 @@ class IdentityKeys(str, Enum):
 class OSType:
     WINDOWS = "Windows"
     LINUX = "Linux"
+
+
+class RunMode:
+    EAGER = "Eager"
 
 
 # Note: Keep these for backward compatibility

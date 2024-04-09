@@ -1,3 +1,4 @@
+import multiprocessing
 import os
 import sys
 
@@ -25,18 +26,25 @@ def create_connections(directory_path) -> None:
 
 
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
+    command = sys.argv[1] if len(sys.argv) > 1 else None
+    if command == "pf":
+        sys.argv = sys.argv[1:]
+        from promptflow._cli._pf.entry import main as pf_main
 
-    create_connections(os.path.join(os.path.dirname(__file__), "connections"))
-    if exists():
-        start()
+        pf_main()
     else:
-        main_script = os.path.join(os.path.dirname(__file__), "main.py")
-        sys.argv = [
-            "streamlit",
-            "run",
-            main_script,
-            "--global.developmentMode=false",
-            "--client.toolbarMode=viewer",
-            "--browser.gatherUsageStats=false",
-        ]
-        st_cli.main(prog_name="streamlit")
+        create_connections(os.path.join(os.path.dirname(__file__), "connections"))
+        if exists():
+            start()
+        else:
+            main_script = os.path.join(os.path.dirname(__file__), "main.py")
+            sys.argv = [
+                "streamlit",
+                "run",
+                main_script,
+                "--global.developmentMode=false",
+                "--client.toolbarMode=viewer",
+                "--browser.gatherUsageStats=false",
+            ]
+            st_cli.main(prog_name="streamlit")

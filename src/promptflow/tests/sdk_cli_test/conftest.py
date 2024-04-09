@@ -176,6 +176,7 @@ def create_client_by_model(
     extension_type=None,
     environment_variables={},
     model_root=MODEL_ROOT,
+    init=None,
 ):
     model_path = (Path(model_root) / model_name).resolve().absolute().as_posix()
     mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
@@ -183,7 +184,7 @@ def create_client_by_model(
         mocker.patch.dict(os.environ, connections)
     if extension_type and extension_type == "azureml":
         environment_variables["API_TYPE"] = "${azure_open_ai_connection.api_type}"
-    app = create_serving_app(environment_variables=environment_variables, extension_type=extension_type)
+    app = create_serving_app(environment_variables=environment_variables, extension_type=extension_type, init=init)
     app.config.update(
         {
             "TESTING": True,
@@ -292,6 +293,13 @@ def eager_flow_evc_connection_not_exist(mocker: MockerFixture):
     )
 
 
+@pytest.fixture
+def callable_class(mocker: MockerFixture):
+    return create_client_by_model(
+        "basic_callable_class", mocker, model_root=EAGER_FLOW_ROOT, init={"obj_input": "input1"}
+    )
+
+
 # ==================== Recording injection ====================
 # To inject patches in subprocesses, add new mock method in setup_recording_injection_if_enabled
 # in fork mode, this is automatically enabled.
@@ -368,6 +376,7 @@ def setup_recording_injection_if_enabled():
             "promptflow._core.tool.tool": mocked_tool,
             "promptflow._internal.tool": mocked_tool,
             "promptflow.tool": mocked_tool,
+            "promptflow.core.tool": mocked_tool,
             "promptflow.tracing._integrations._openai_injector.inject_sync": inject_sync_with_recording,
             "promptflow.tracing._integrations._openai_injector.inject_async": inject_async_with_recording,
         }

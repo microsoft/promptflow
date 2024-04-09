@@ -1,7 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from promptflow._version import VERSION
+from promptflow.core._version import __version__
 
 
 @pytest.mark.unittest
@@ -20,6 +20,6 @@ class TestCommonApis:
 
         response = response.json()
         assert response["status"] == "healthy"
-        assert response["version"] == VERSION
+        assert response["version"] == __version__
         assert response["commit_id"] == "test-commit-id"
         assert isinstance(response["feature_list"], list)

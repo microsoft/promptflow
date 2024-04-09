@@ -10,14 +10,13 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from promptflow._constants import LANGUAGE_KEY, FlowLanguage, MessageFormatType
+from promptflow._constants import DEFAULT_ENCODING, LANGUAGE_KEY, FlowLanguage, MessageFormatType
 from promptflow._utils.utils import _match_reference, _sanitize_python_variable_name, try_import
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts._errors import FlowDefinitionError
 from promptflow.exceptions import ErrorTarget
 from promptflow.tracing._utils import serialize
 
-from .._sdk._constants import DEFAULT_ENCODING
 from ._errors import FailedToImportModule
 from .tool import ConnectionType, Tool, ToolType, ValueType
 
@@ -703,12 +702,16 @@ class Flow(FlowBase):
         sys.path.insert(0, str(working_dir))
 
     @classmethod
-    def from_yaml(cls, flow_file: Path, working_dir=None) -> "Flow":
+    def from_yaml(cls, flow_file: Path, working_dir=None, name=None) -> "Flow":
         """Load flow from yaml file."""
         working_dir = cls._parse_working_dir(flow_file, working_dir)
         with open(working_dir / flow_file, "r", encoding=DEFAULT_ENCODING) as fin:
             flow_dag = load_yaml(fin)
-        flow_dag["name"] = flow_dag.get("name", _sanitize_python_variable_name(working_dir.stem))
+        # Name priority: name from payload > name from yaml content > working_dir.stem
+        # For portal created flow, there is a meaningless predefined name in yaml, use name from payload to override it.
+        if name is None:
+            name = flow_dag.get("name", _sanitize_python_variable_name(working_dir.stem))
+        flow_dag["name"] = name
         return Flow._from_dict(flow_dag=flow_dag, working_dir=working_dir)
 
     @classmethod
@@ -923,8 +926,8 @@ class Flow(FlowBase):
 
 
 @dataclass
-class EagerFlow(FlowBase):
-    """This class represents an eager flow.
+class FlexFlow(FlowBase):
+    """This class represents a flex flow.
 
     :param id: The id of the flow.
     :type id: str
@@ -948,7 +951,7 @@ class EagerFlow(FlowBase):
     message_format: str = MessageFormatType.BASIC
 
     @staticmethod
-    def deserialize(data: dict) -> "EagerFlow":
+    def deserialize(data: dict) -> "FlexFlow":
         """Deserialize the flow from a dict.
 
         :param data: The dict to be deserialized.
@@ -959,7 +962,7 @@ class EagerFlow(FlowBase):
 
         inputs = data.get("inputs") or {}
         outputs = data.get("outputs") or {}
-        return EagerFlow(
+        return FlexFlow(
             id=data.get("id", "default_flow_id"),
             name=data.get("name", "default_flow"),
             inputs={name: FlowInputDefinition.deserialize(i) for name, i in inputs.items()},

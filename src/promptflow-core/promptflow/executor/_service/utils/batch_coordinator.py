@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Mapping, Optional
 
 from promptflow._constants import OutputsFolderName
+from promptflow._utils.logger_utils import LogContext
 from promptflow.executor import FlowExecutor
 from promptflow.executor._line_execution_process_pool import LineExecutionProcessPool
 from promptflow.executor._service._errors import UninitializedError
@@ -27,12 +28,16 @@ class BatchCoordinator:
         working_dir: Path,
         flow_file: Path,
         output_dir: Path,
+        flow_name: str = None,
         connections: Optional[Mapping[str, Any]] = None,
         worker_count: Optional[int] = None,
         line_timeout_sec: Optional[int] = None,
     ):
         if self._init:
             return
+        # Save log context for close method
+        self._log_context = LogContext.get_current()
+
         # Init flow executor and validate flow
         self._output_dir = output_dir
 
@@ -42,7 +47,7 @@ class BatchCoordinator:
         # So we pass DummyRunStorage to FlowExecutor because we don't need to
         # persist the run infos during execution in server mode.
         self._flow_executor = FlowExecutor.create(
-            flow_file, connections, working_dir, storage=DummyRunStorage(), raise_ex=False
+            flow_file, connections, working_dir, storage=DummyRunStorage(), raise_ex=False, name=flow_name
         )
 
         # Init line execution process pool and set serialize_multimedia_during_execution to True
@@ -63,6 +68,9 @@ class BatchCoordinator:
                 "Please initialize the executor service with the '/initialize' api before sending execution requests."
             )
         return cls._instance
+
+    def get_log_context(self):
+        return self._log_context
 
     def start(self):
         """Start the process pool."""

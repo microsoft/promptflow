@@ -2,7 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 # pylint: disable=wrong-import-position
-import json
 import time
 
 from promptflow._cli._pf._experiment import add_experiment_parser, dispatch_experiment_commands
@@ -24,10 +23,11 @@ from promptflow._cli._pf._flow import add_flow_parser, dispatch_flow_commands  #
 from promptflow._cli._pf._run import add_run_parser, dispatch_run_commands  # noqa: E402
 from promptflow._cli._pf._service import add_service_parser, dispatch_service_commands  # noqa: E402
 from promptflow._cli._pf._tool import add_tool_parser, dispatch_tool_commands  # noqa: E402
+from promptflow._cli._pf._trace import add_trace_parser, dispatch_trace_cmds  # noqa: E402
 from promptflow._cli._pf._upgrade import add_upgrade_parser, upgrade_version  # noqa: E402
 from promptflow._cli._pf.help import show_privacy_statement, show_welcome_message  # noqa: E402
 from promptflow._cli._user_agent import USER_AGENT  # noqa: E402
-from promptflow._sdk._utils import get_promptflow_sdk_version, print_pf_version  # noqa: E402
+from promptflow._sdk._utils import print_pf_version, print_promptflow_version_dict_string  # noqa: E402
 from promptflow._utils.logger_utils import get_cli_sdk_logger  # noqa: E402
 from promptflow._utils.user_agent_utils import setup_user_agent_to_operation_context  # noqa: E402
 
@@ -66,6 +66,8 @@ def run_command(args):
             dispatch_experiment_commands(args)
         elif args.action == "service":
             dispatch_service_commands(args)
+        elif args.action == "trace":
+            dispatch_trace_cmds(args)
     except KeyboardInterrupt as ex:
         logger.debug("Keyboard interrupt is captured.")
         raise ex
@@ -97,16 +99,18 @@ def get_parser_args(argv):
         "-v", "--version", dest="version", action="store_true", help="show current CLI version and exit"
     )
     subparsers = parser.add_subparsers()
-    add_upgrade_parser(subparsers)
-    add_flow_parser(subparsers)
-    add_connection_parser(subparsers)
-    add_run_parser(subparsers)
+    # lexicographical order
     add_config_parser(subparsers)
-    add_tool_parser(subparsers)
-    add_service_parser(subparsers)
-
+    add_connection_parser(subparsers)
     if Configuration.get_instance().is_internal_features_enabled():
         add_experiment_parser(subparsers)
+
+    add_flow_parser(subparsers)
+    add_run_parser(subparsers)
+    add_tool_parser(subparsers)
+    add_trace_parser(subparsers)
+    add_service_parser(subparsers)
+    add_upgrade_parser(subparsers)
 
     return parser.prog, parser.parse_args(argv)
 
@@ -127,11 +131,7 @@ def main():
     """Entrance of pf CLI."""
     command_args = sys.argv[1:]
     if len(command_args) == 1 and command_args[0] == "version":
-        version_dict = {"promptflow": get_promptflow_sdk_version()}
-        version_dict_string = (
-            json.dumps(version_dict, ensure_ascii=False, indent=2, sort_keys=True, separators=(",", ": ")) + "\n"
-        )
-        print(version_dict_string)
+        print_promptflow_version_dict_string()
         return
     if len(command_args) == 0:
         # print privacy statement & welcome message like azure-cli
