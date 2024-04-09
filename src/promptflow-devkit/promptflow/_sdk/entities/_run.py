@@ -645,12 +645,18 @@ class Run(YAMLTranslatableMixin):
             snapshot_folder = local_to_cloud_info[LocalStorageFilenames.SNAPSHOT_FOLDER]
             snapshot_file_path = f"{snapshot_folder}/{FLOW_DAG_YAML}"
 
+            # get the start and end time. Plus "Z" to specify the timezone is UTC, otherwise there will be warning
+            # when send the request to the server. e.g.
+            # WARNING:msrest.serialization:Datetime with no tzinfo will be considered UTC.
+            # for start_time, switch to "_start_time" once the bug item is fixed: BUG - 3085432.
+            start_time = self._created_on.isoformat() + "Z" if self._created_on else None
+            end_time = self._end_time.isoformat() + "Z" if self._end_time else None
+
             return CreateExistingBulkRunRequest(
                 run_id=self.name,
                 run_status=self.status,
-                # switch to "_start_time" once the bug item is fixed BUG - 3085432.
-                start_time_utc=self._created_on.isoformat() if self._created_on else None,
-                end_time_utc=self._end_time.isoformat() if self._end_time else None,
+                start_time_utc=start_time,
+                end_time_utc=end_time,
                 run_display_name=self._get_default_display_name(),
                 description=self.description,
                 tags=self.tags,

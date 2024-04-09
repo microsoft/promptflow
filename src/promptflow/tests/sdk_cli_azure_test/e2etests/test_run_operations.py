@@ -19,6 +19,7 @@ import pytest
 from azure.ai.ml import ManagedIdentityConfiguration
 from azure.ai.ml.entities import IdentityConfiguration
 
+from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import DAG_FILE_NAME, DownloadedRun, RunStatus
 from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, RunNotFoundError
 from promptflow._sdk._load_functions import load_run
@@ -846,12 +847,44 @@ class TestFlowRun:
                 assert Path(tmp_dir, created_batch_run_without_llm.name, file).exists()
 
     @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
-    def test_upload_run(self, pf: PFClient):
+    def test_upload_run(
+        self,
+        pf: PFClient,
+        randstr: Callable[[str], str],
+        subscription_id: str,
+        resource_group_name: str,
+        workspace_name: str,
+    ):
         from promptflow._sdk._pf_client import PFClient as LocalPFClient
 
-        pf_local = LocalPFClient()
-        run = pf_local.runs.get(name="web_classification_variant_0_20240408_173549_791090")
-        pf.runs._upload(run=run)
+        trace_provider = (
+            f"azureml://subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/"
+            f"providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}"
+        )
+        with patch.object(Configuration, "get_trace_provider", return_value=trace_provider):
+            name = randstr("batch_run_name")
+            local_pf = LocalPFClient()
+            local_pf.run(
+                flow=f"{FLOWS_DIR}/hello-world",
+                data=f"{DATAS_DIR}/webClassification3.jsonl",
+                column_mapping={"name": "${data.url}"},
+                name=name,
+                display_name="sdk-cli-test-run-local-to-cloud",
+                tags={"sdk-cli-test": "true"},
+                description="test sdk local to cloud",
+            )
+            run = local_pf.runs.stream(name)
+            assert run.status == RunStatus.COMPLETED
+
+        # check if local run is uploaded
+        cloud_run = pf.runs.get(run.name)
+        assert cloud_run.display_name == run.display_name
+        assert cloud_run.description == run.description
+        assert cloud_run.tags == run.tags
+        assert cloud_run.status == run.status
+        assert cloud_run._start_time and cloud_run._end_time
+        assert cloud_run.properties["azureml.promptflow.local_to_cloud"] == "true"
+        assert cloud_run.properties["azureml.promptflow.snapshot_id"]
 
     def test_request_id_when_making_http_requests(self, pf, runtime: str, randstr: Callable[[str], str]):
         from azure.core.exceptions import HttpResponseError

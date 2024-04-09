@@ -1,0 +1,1163 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate, br
+      Connection:
+      - keep-alive
+      User-Agent:
+      - promptflow-azure-sdk/1.0.0.dev0 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.9.19 (Windows-10-10.0.22631-SP0)
+    method: GET
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000
+  response:
+    body:
+      string: '{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000",
+        "name": "00000", "type": "Microsoft.MachineLearningServices/workspaces", "location":
+        "eastus", "tags": {}, "etag": null, "kind": "Default", "sku": {"name": "Basic",
+        "tier": "Basic"}, "properties": {"discoveryUrl": "https://eastus.api.azureml.ms/discovery"}}'
+    headers:
+      cache-control:
+      - no-cache
+      content-length:
+      - '3678'
+      content-type:
+      - application/json; charset=utf-8
+      expires:
+      - '-1'
+      pragma:
+      - no-cache
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      vary:
+      - Accept-Encoding
+      x-cache:
+      - CONFIG_NOCACHE
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.036'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, br
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.31.0
+    method: GET
+    uri: http://localhost:50318/heartbeat
+  response:
+    body:
+      string: '{"promptflow": "0.0.1"}'
+    headers:
+      access-control-allow-origin:
+      - '*'
+      content-length:
+      - '23'
+      content-type:
+      - application/json
+      server:
+      - waitress
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate, br
+      Connection:
+      - keep-alive
+      User-Agent:
+      - azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0 Python/3.9.19
+        (Windows-10-10.0.22631-SP0)
+    method: GET
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000
+  response:
+    body:
+      string: '{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000",
+        "name": "00000", "type": "Microsoft.MachineLearningServices/workspaces", "location":
+        "eastus", "tags": {}, "etag": null, "kind": "Default", "sku": {"name": "Basic",
+        "tier": "Basic"}, "properties": {"discoveryUrl": "https://eastus.api.azureml.ms/discovery"}}'
+    headers:
+      cache-control:
+      - no-cache
+      content-length:
+      - '3678'
+      content-type:
+      - application/json; charset=utf-8
+      expires:
+      - '-1'
+      pragma:
+      - no-cache
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      vary:
+      - Accept-Encoding
+      x-cache:
+      - CONFIG_NOCACHE
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.047'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate, br
+      Connection:
+      - keep-alive
+      User-Agent:
+      - azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0 Python/3.9.19
+        (Windows-10-10.0.22631-SP0)
+    method: GET
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores?count=30&isDefault=true&orderByAsc=false
+  response:
+    body:
+      string: '{"value": [{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore",
+        "name": "workspaceblobstore", "type": "Microsoft.MachineLearningServices/workspaces/datastores",
+        "properties": {"description": null, "tags": null, "properties": null, "isDefault":
+        true, "credentials": {"credentialsType": "AccountKey"}, "intellectualProperty":
+        null, "subscriptionId": "00000000-0000-0000-0000-000000000000", "resourceGroup":
+        "00000", "datastoreType": "AzureBlob", "accountName": "fake_account_name",
+        "containerName": "fake-container-name", "endpoint": "core.windows.net", "protocol":
+        "https", "serviceDataAccessAuthIdentity": "WorkspaceSystemAssignedIdentity"},
+        "systemData": {"createdAt": "2023-04-08T02:53:06.5886442+00:00", "createdBy":
+        "779301c0-18b2-4cdc-801b-a0a3368fee0a", "createdByType": "Application", "lastModifiedAt":
+        "2023-04-08T02:53:07.521127+00:00", "lastModifiedBy": "779301c0-18b2-4cdc-801b-a0a3368fee0a",
+        "lastModifiedByType": "Application"}}]}'
+    headers:
+      cache-control:
+      - no-cache
+      content-length:
+      - '1372'
+      content-type:
+      - application/json; charset=utf-8
+      expires:
+      - '-1'
+      pragma:
+      - no-cache
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      vary:
+      - Accept-Encoding
+      x-cache:
+      - CONFIG_NOCACHE
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.113'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate, br
+      Connection:
+      - keep-alive
+      User-Agent:
+      - azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0 Python/3.9.19
+        (Windows-10-10.0.22631-SP0)
+    method: GET
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores?count=30&isDefault=true&orderByAsc=false
+  response:
+    body:
+      string: '{"value": [{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore",
+        "name": "workspaceblobstore", "type": "Microsoft.MachineLearningServices/workspaces/datastores",
+        "properties": {"description": null, "tags": null, "properties": null, "isDefault":
+        true, "credentials": {"credentialsType": "AccountKey"}, "intellectualProperty":
+        null, "subscriptionId": "00000000-0000-0000-0000-000000000000", "resourceGroup":
+        "00000", "datastoreType": "AzureBlob", "accountName": "fake_account_name",
+        "containerName": "fake-container-name", "endpoint": "core.windows.net", "protocol":
+        "https", "serviceDataAccessAuthIdentity": "WorkspaceSystemAssignedIdentity"},
+        "systemData": {"createdAt": "2023-04-08T02:53:06.5886442+00:00", "createdBy":
+        "779301c0-18b2-4cdc-801b-a0a3368fee0a", "createdByType": "Application", "lastModifiedAt":
+        "2023-04-08T02:53:07.521127+00:00", "lastModifiedBy": "779301c0-18b2-4cdc-801b-a0a3368fee0a",
+        "lastModifiedByType": "Application"}}]}'
+    headers:
+      cache-control:
+      - no-cache
+      content-length:
+      - '1372'
+      content-type:
+      - application/json; charset=utf-8
+      expires:
+      - '-1'
+      pragma:
+      - no-cache
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      vary:
+      - Accept-Encoding
+      x-cache:
+      - CONFIG_NOCACHE
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.079'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate, br
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '0'
+      User-Agent:
+      - azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0 Python/3.9.19
+        (Windows-10-10.0.22631-SP0)
+    method: POST
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore/listSecrets
+  response:
+    body:
+      string: '{"secretsType": "AccountKey", "key": "dGhpcyBpcyBmYWtlIGtleQ=="}'
+    headers:
+      cache-control:
+      - no-cache
+      content-length:
+      - '134'
+      content-type:
+      - application/json; charset=utf-8
+      expires:
+      - '-1'
+      pragma:
+      - no-cache
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      x-cache:
+      - CONFIG_NOCACHE
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.144'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate, br
+      Connection:
+      - keep-alive
+      User-Agent:
+      - azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0 Python/3.9.19
+        (Windows-10-10.0.22631-SP0)
+    method: GET
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceartifactstore
+  response:
+    body:
+      string: '{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceartifactstore",
+        "name": "workspaceartifactstore", "type": "Microsoft.MachineLearningServices/workspaces/datastores",
+        "properties": {"description": null, "tags": null, "properties": null, "isDefault":
+        false, "credentials": {"credentialsType": "AccountKey"}, "intellectualProperty":
+        null, "subscriptionId": "00000000-0000-0000-0000-000000000000", "resourceGroup":
+        "00000", "datastoreType": "AzureBlob", "accountName": "fake_account_name",
+        "containerName": "fake-container-name", "endpoint": "core.windows.net", "protocol":
+        "https", "serviceDataAccessAuthIdentity": "None"}, "systemData": {"createdAt":
+        "2023-04-08T02:53:06.5960953+00:00", "createdBy": "779301c0-18b2-4cdc-801b-a0a3368fee0a",
+        "createdByType": "Application", "lastModifiedAt": "2023-04-08T02:53:07.3571778+00:00",
+        "lastModifiedBy": "779301c0-18b2-4cdc-801b-a0a3368fee0a", "lastModifiedByType":
+        "Application"}}'
+    headers:
+      cache-control:
+      - no-cache
+      content-length:
+      - '1121'
+      content-type:
+      - application/json; charset=utf-8
+      expires:
+      - '-1'
+      pragma:
+      - no-cache
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      vary:
+      - Accept-Encoding
+      x-cache:
+      - CONFIG_NOCACHE
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.078'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate, br
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '0'
+      User-Agent:
+      - azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0 Python/3.9.19
+        (Windows-10-10.0.22631-SP0)
+    method: POST
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceartifactstore/listSecrets
+  response:
+    body:
+      string: '{"secretsType": "AccountKey", "key": "dGhpcyBpcyBmYWtlIGtleQ=="}'
+    headers:
+      cache-control:
+      - no-cache
+      content-length:
+      - '134'
+      content-type:
+      - application/json; charset=utf-8
+      expires:
+      - '-1'
+      pragma:
+      - no-cache
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      x-cache:
+      - CONFIG_NOCACHE
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.101'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: "inputs:\r\n  name:\r\n    type: string\r\n    default: hod\r\noutputs:\r\n
+      \ result:\r\n    type: string\r\n    reference: ${hello_world.output}\r\nnodes:\r\n-
+      name: hello_world\r\n  type: python\r\n  source:\r\n    type: code\r\n    path:
+      hello_world.py\r\n  inputs:\r\n    name: ${inputs.name}\r\n"
+    headers:
+      Accept:
+      - application/xml
+      Content-Length:
+      - '266'
+      Content-Type:
+      - application/octet-stream
+      User-Agent:
+      - azsdk-python-storage-blob/12.19.1 Python/3.9.19 (Windows-10-10.0.22631-SP0)
+      x-ms-blob-type:
+      - BlockBlob
+      x-ms-date:
+      - Tue, 09 Apr 2024 07:56:41 GMT
+      x-ms-version:
+      - '2023-11-03'
+    method: PUT
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/runs/batch_run_name/flow.dag.yaml
+  response:
+    body:
+      string: ''
+    headers:
+      content-length:
+      - '0'
+      content-md5:
+      - UZm3TyOoKWjSR23+Up6qUA==
+      last-modified:
+      - Tue, 09 Apr 2024 07:56:41 GMT
+      server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      x-ms-content-crc64:
+      - ZXPJlDHNG6w=
+      x-ms-request-server-encrypted:
+      - 'true'
+      x-ms-version:
+      - '2023-11-03'
+    status:
+      code: 201
+      message: Created
+- request:
+    body: '{"NodeName": "hello_world", "line_number": 0, "run_info": {"node": "hello_world",
+      "flow_run_id": "cf317c56-2e72-46d0-b94a-0b5b43177b98", "run_id": "cf317c56-2e72-46d0-b94a-0b5b43177b98_hello_world_0",
+      "status": "Completed", "inputs": {"name": "https://www.youtube.com/watch?v=o5ZQyXaAv1g"},
+      "output": "Hello World https://www.youtube.com/watch?v=o5ZQyXaAv1g!", "metrics":
+      null, "error": null, "parent_run_id": "cf317c56-2e72-46d0-b94a-0b5b43177b98_0",
+      "start_time": "2024-04-09T07:56:21.880401Z", "end_time": "2024-04-09T07:56:23.095616Z",
+      "index": 0, "api_calls": [{"name": "hello_world", "type": "Function", "inputs":
+      {"name": "https://www.youtube.com/watch?v=o5ZQyXaAv1g"}, "output": "Hello World
+      https://www.youtube.com/watch?v=o5ZQyXaAv1g!", "start_time": 1712620581.880401,
+      "end_time": 1712620583.094614, "error": null, "children": [], "node_name": "hello_world",
+      "parent_id": "", "id": "1885f97e-870a-4c27-8718-c7d5cf9f7d4a", "function": "hello_world",
+      "system_metrics": {}}], "cached_run_id": null, "cached_flow_run_id": null, "logs":
+      {"stdout": "", "stderr": ""}, "system_metrics": {"duration": 1.215215}, "result":
+      null, "message_format": "basic"}, "start_time": "2024-04-09T07:56:21.880401",
+      "end_time": "2024-04-09T07:56:23.095616", "status": "Completed"}'
+    headers:
+      Accept:
+      - application/xml
+      Content-Length:
+      - '1267'
+      Content-Type:
+      - application/octet-stream
+      User-Agent:
+      - azsdk-python-storage-blob/12.19.1 Python/3.9.19 (Windows-10-10.0.22631-SP0)
+      x-ms-blob-type:
+      - BlockBlob
+      x-ms-date:
+      - Tue, 09 Apr 2024 07:56:41 GMT
+      x-ms-version:
+      - '2023-11-03'
+    method: PUT
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/promptflow/PromptFlowArtifacts/batch_run_name/node_artifacts/hello_world%5C000000000.jsonl
+  response:
+    body:
+      string: ''
+    headers:
+      content-length:
+      - '0'
+      content-md5:
+      - 4Pg0KZ5HgKsFc+bRNrumag==
+      last-modified:
+      - Tue, 09 Apr 2024 07:56:41 GMT
+      server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      x-ms-content-crc64:
+      - PeBFZLYWkAQ=
+      x-ms-request-server-encrypted:
+      - 'true'
+      x-ms-version:
+      - '2023-11-03'
+    status:
+      code: 201
+      message: Created
+- request:
+    body: "2024-04-09 15:56:17 +0800   33036 execution.bulk     INFO     Current system's
+      available memory is 35551.59375MB, memory consumption of current process is
+      306.1875MB, estimated available worker count is 35551.59375/306.1875 = 116\r\n2024-04-09
+      15:56:17 +0800   33036 execution.bulk     INFO     Set process count to 3 by
+      taking the minimum value among the factors of {'default_worker_count': 4, 'row_count':
+      3, 'estimated_worker_count_based_on_memory_usage': 116}.\r\n2024-04-09 15:56:21
+      +0800   33036 execution.bulk     INFO     Process name(SpawnProcess-2)-Process
+      id(30772)-Line number(0) start execution.\r\n2024-04-09 15:56:21 +0800   33036
+      execution.bulk     INFO     Process name(SpawnProcess-4)-Process id(8736)-Line
+      number(1) start execution.\r\n2024-04-09 15:56:21 +0800   33036 execution.bulk
+      \    INFO     Process name(SpawnProcess-3)-Process id(23680)-Line number(2)
+      start execution.\r\n2024-04-09 15:56:23 +0800   33036 execution.bulk     INFO
+      \    Finished 1 / 3 lines.\r\n2024-04-09 15:56:23 +0800   33036 execution.bulk
+      \    INFO     Average execution time for completed lines: 2.01 seconds. Estimated
+      time for incomplete lines: 4.02 seconds.\r\n2024-04-09 15:56:23 +0800   33036
+      execution.bulk     INFO     Process name(SpawnProcess-2)-Process id(30772)-Line
+      number(0) completed.\r\n2024-04-09 15:56:25 +0800   33036 execution.bulk     INFO
+      \    Process name(SpawnProcess-4)-Process id(8736)-Line number(1) completed.\r\n2024-04-09
+      15:56:25 +0800   33036 execution.bulk     INFO     Process name(SpawnProcess-3)-Process
+      id(23680)-Line number(2) completed.\r\n2024-04-09 15:56:26 +0800   33036 execution.bulk
+      \    INFO     Finished 3 / 3 lines.\r\n2024-04-09 15:56:26 +0800   33036 execution.bulk
+      \    INFO     Average execution time for completed lines: 1.68 seconds. Estimated
+      time for incomplete lines: 0.0 seconds.\r\n2024-04-09 15:56:26 +0800   33036
+      execution.bulk     INFO     The thread monitoring the process [8736-SpawnProcess-4]
+      will be terminated.\r\n2024-04-09 15:56:26 +0800   33036 execution.bulk     INFO
+      \    The thread monitoring the process [23680-SpawnProcess-3] will be terminated.\r\n2024-04-09
+      15:56:26 +0800   33036 execution.bulk     INFO     The thread monitoring the
+      process [30772-SpawnProcess-2] will be terminated.\r\n2024-04-09 15:56:26 +0800
+      \   8736 execution.bulk     INFO     The process [8736] has received a terminate
+      signal.\r\n2024-04-09 15:56:26 +0800   23680 execution.bulk     INFO     The
+      process [23680] has received a terminate signal.\r\n2024-04-09 15:56:26 +0800
+      \  30772 execution.bulk     INFO     The process [30772] has received a terminate
+      signal.\r\n2024-04-09 15:56:26 +0800   33036 execution.bulk     INFO     Process
+      8736 terminated.\r\n2024-04-09 15:56:26 +0800   33036 execution.bulk     INFO
+      \    Process 23680 terminated.\r\n2024-04-09 15:56:26 +0800   33036 execution.bulk
+      \    INFO     Process 30772 terminated.\r\n"
+    headers:
+      Accept:
+      - application/xml
+      Content-Length:
+      - '2841'
+      Content-Type:
+      - application/octet-stream
+      User-Agent:
+      - azsdk-python-storage-blob/12.19.1 Python/3.9.19 (Windows-10-10.0.22631-SP0)
+      x-ms-blob-type:
+      - BlockBlob
+      x-ms-date:
+      - Tue, 09 Apr 2024 07:56:41 GMT
+      x-ms-version:
+      - '2023-11-03'
+    method: PUT
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/ExperimentRun/dcid.batch_run_name/logs/fake-container-name/executionlogs.txt
+  response:
+    body:
+      string: ''
+    headers:
+      content-length:
+      - '0'
+      content-md5:
+      - UGhLXJIIz6du+mYR6o6eVA==
+      last-modified:
+      - Tue, 09 Apr 2024 07:56:41 GMT
+      server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      x-ms-content-crc64:
+      - ECuR4T5jIhw=
+      x-ms-request-server-encrypted:
+      - 'true'
+      x-ms-version:
+      - '2023-11-03'
+    status:
+      code: 201
+      message: Created
+- request:
+    body: "{\"line_number\": 0, \"run_info\": {\"run_id\": \"cf317c56-2e72-46d0-b94a-0b5b43177b98_0\",
+      \"status\": \"Completed\", \"error\": null, \"inputs\": {\"name\": \"https://www.youtube.com/watch?v=o5ZQyXaAv1g\",
+      \"line_number\": 0}, \"output\": {\"result\": \"Hello World https://www.youtube.com/watch?v=o5ZQyXaAv1g!\"},
+      \"metrics\": null, \"request\": null, \"parent_run_id\": \"cf317c56-2e72-46d0-b94a-0b5b43177b98\",
+      \"root_run_id\": \"cf317c56-2e72-46d0-b94a-0b5b43177b98\", \"source_run_id\":
+      null, \"flow_id\": \"default_flow_id\", \"start_time\": \"2024-04-09T07:56:21.801727Z\",
+      \"end_time\": \"2024-04-09T07:56:23.097615Z\", \"index\": 0, \"api_calls\":
+      [{\"name\": \"flow\", \"node_name\": \"flow\", \"type\": \"Flow\", \"start_time\":
+      1712620581.801727, \"end_time\": 1712620583.097615, \"children\": [{\"name\":
+      \"hello_world\", \"type\": \"Function\", \"inputs\": {\"name\": \"https://www.youtube.com/watch?v=o5ZQyXaAv1g\"},
+      \"output\": \"Hello World https://www.youtube.com/watch?v=o5ZQyXaAv1g!\", \"start_time\":
+      1712620581.880401, \"end_time\": 1712620583.094614, \"error\": null, \"children\":
+      [], \"node_name\": \"hello_world\", \"parent_id\": \"\", \"id\": \"1885f97e-870a-4c27-8718-c7d5cf9f7d4a\",
+      \"function\": \"hello_world\", \"system_metrics\": {}}], \"system_metrics\":
+      {\"duration\": 1.295888, \"prompt_tokens\": 0, \"completion_tokens\": 0, \"total_tokens\":
+      0}, \"inputs\": {\"name\": \"https://www.youtube.com/watch?v=o5ZQyXaAv1g\",
+      \"line_number\": 0}, \"output\": {\"result\": \"Hello World https://www.youtube.com/watch?v=o5ZQyXaAv1g!\"},
+      \"error\": null}], \"name\": \"\", \"description\": \"\", \"tags\": null, \"system_metrics\":
+      {\"duration\": 1.295888, \"prompt_tokens\": 0, \"completion_tokens\": 0, \"total_tokens\":
+      0}, \"result\": null, \"upload_metrics\": false, \"otel_trace_id\": \"a29cd9bbd3970bfa5eb6822ab758db84\",
+      \"message_format\": \"basic\"}, \"start_time\": \"2024-04-09T07:56:21.801727\",
+      \"end_time\": \"2024-04-09T07:56:23.097615\", \"name\": \"\", \"description\":
+      \"\", \"status\": \"Completed\", \"tags\": null}\r\n{\"line_number\": 1, \"run_info\":
+      {\"run_id\": \"cf317c56-2e72-46d0-b94a-0b5b43177b98_1\", \"status\": \"Completed\",
+      \"error\": null, \"inputs\": {\"name\": \"https://www.youtube.com/watch?v=o5ZQyXaAv1g\",
+      \"line_number\": 1}, \"output\": {\"result\": \"Hello World https://www.youtube.com/watch?v=o5ZQyXaAv1g!\"},
+      \"metrics\": null, \"request\": null, \"parent_run_id\": \"cf317c56-2e72-46d0-b94a-0b5b43177b98\",
+      \"root_run_id\": \"cf317c56-2e72-46d0-b94a-0b5b43177b98\", \"source_run_id\":
+      null, \"flow_id\": \"default_flow_id\", \"start_time\": \"2024-04-09T07:56:24.540592Z\",
+      \"end_time\": \"2024-04-09T07:56:25.840597Z\", \"index\": 1, \"api_calls\":
+      [{\"name\": \"flow\", \"node_name\": \"flow\", \"type\": \"Flow\", \"start_time\":
+      1712620584.540592, \"end_time\": 1712620585.840597, \"children\": [{\"name\":
+      \"hello_world\", \"type\": \"Function\", \"inputs\": {\"name\": \"https://www.youtube.com/watch?v=o5ZQyXaAv1g\"},
+      \"output\": \"Hello World https://www.youtube.com/watch?v=o5ZQyXaAv1g!\", \"start_time\":
+      1712620584.620704, \"end_time\": 1712620585.837149, \"error\": null, \"children\":
+      [], \"node_name\": \"hello_world\", \"parent_id\": \"\", \"id\": \"4b7004f3-9972-44d9-9892-96d47e23342d\",
+      \"function\": \"hello_world\", \"system_metrics\": {}}], \"system_metrics\":
+      {\"duration\": 1.300005, \"prompt_tokens\": 0, \"completion_tokens\": 0, \"total_tokens\":
+      0}, \"inputs\": {\"name\": \"https://www.youtube.com/watch?v=o5ZQyXaAv1g\",
+      \"line_number\": 1}, \"output\": {\"result\": \"Hello World https://www.youtube.com/watch?v=o5ZQyXaAv1g!\"},
+      \"error\": null}], \"name\": \"\", \"description\": \"\", \"tags\": null, \"system_metrics\":
+      {\"duration\": 1.300005, \"prompt_tokens\": 0, \"completion_tokens\": 0, \"total_tokens\":
+      0}, \"result\": null, \"upload_metrics\": false, \"otel_trace_id\": \"c3bb853bf4ffb6e8c4e7686c30dedcf7\",
+      \"message_format\": \"basic\"}, \"start_time\": \"2024-04-09T07:56:24.540592\",
+      \"end_time\": \"2024-04-09T07:56:25.840597\", \"name\": \"\", \"description\":
+      \"\", \"status\": \"Completed\", \"tags\": null}\r\n{\"line_number\": 2, \"run_info\":
+      {\"run_id\": \"cf317c56-2e72-46d0-b94a-0b5b43177b98_2\", \"status\": \"Completed\",
+      \"error\": null, \"inputs\": {\"name\": \"https://www.youtube.com/watch?v=o5ZQyXaAv1g\",
+      \"line_number\": 2}, \"output\": {\"result\": \"Hello World https://www.youtube.com/watch?v=o5ZQyXaAv1g!\"},
+      \"metrics\": null, \"request\": null, \"parent_run_id\": \"cf317c56-2e72-46d0-b94a-0b5b43177b98\",
+      \"root_run_id\": \"cf317c56-2e72-46d0-b94a-0b5b43177b98\", \"source_run_id\":
+      null, \"flow_id\": \"default_flow_id\", \"start_time\": \"2024-04-09T07:56:24.540592Z\",
+      \"end_time\": \"2024-04-09T07:56:25.841157Z\", \"index\": 2, \"api_calls\":
+      [{\"name\": \"flow\", \"node_name\": \"flow\", \"type\": \"Flow\", \"start_time\":
+      1712620584.540592, \"end_time\": 1712620585.841157, \"children\": [{\"name\":
+      \"hello_world\", \"type\": \"Function\", \"inputs\": {\"name\": \"https://www.youtube.com/watch?v=o5ZQyXaAv1g\"},
+      \"output\": \"Hello World https://www.youtube.com/watch?v=o5ZQyXaAv1g!\", \"start_time\":
+      1712620584.621709, \"end_time\": 1712620585.837724, \"error\": null, \"children\":
+      [], \"node_name\": \"hello_world\", \"parent_id\": \"\", \"id\": \"c677eeaa-6dcb-4aae-8b6f-d812037630e1\",
+      \"function\": \"hello_world\", \"system_metrics\": {}}], \"system_metrics\":
+      {\"duration\": 1.300565, \"prompt_tokens\": 0, \"completion_tokens\": 0, \"total_tokens\":
+      0}, \"inputs\": {\"name\": \"https://www.youtube.com/watch?v=o5ZQyXaAv1g\",
+      \"line_number\": 2}, \"output\": {\"result\": \"Hello World https://www.youtube.com/watch?v=o5ZQyXaAv1g!\"},
+      \"error\": null}], \"name\": \"\", \"description\": \"\", \"tags\": null, \"system_metrics\":
+      {\"duration\": 1.300565, \"prompt_tokens\": 0, \"completion_tokens\": 0, \"total_tokens\":
+      0}, \"result\": null, \"upload_metrics\": false, \"otel_trace_id\": \"edb2b3b112f9386f6818ec7de0e49997\",
+      \"message_format\": \"basic\"}, \"start_time\": \"2024-04-09T07:56:24.540592\",
+      \"end_time\": \"2024-04-09T07:56:25.841157\", \"name\": \"\", \"description\":
+      \"\", \"status\": \"Completed\", \"tags\": null}\r\n"
+    headers:
+      Accept:
+      - application/xml
+      Content-Length:
+      - '5601'
+      Content-Type:
+      - application/octet-stream
+      User-Agent:
+      - azsdk-python-storage-blob/12.19.1 Python/3.9.19 (Windows-10-10.0.22631-SP0)
+      x-ms-blob-type:
+      - BlockBlob
+      x-ms-date:
+      - Tue, 09 Apr 2024 07:56:40 GMT
+      x-ms-version:
+      - '2023-11-03'
+    method: PUT
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/promptflow/PromptFlowArtifacts/batch_run_name/flow_artifacts/000000000_000000024.jsonl
+  response:
+    body:
+      string: ''
+    headers:
+      content-length:
+      - '0'
+      content-md5:
+      - YqD5F6lcP3mmLqHoot73xg==
+      last-modified:
+      - Tue, 09 Apr 2024 07:56:41 GMT
+      server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      x-ms-content-crc64:
+      - qNZ/fxZyJ10=
+      x-ms-request-server-encrypted:
+      - 'true'
+      x-ms-version:
+      - '2023-11-03'
+    status:
+      code: 201
+      message: Created
+- request:
+    body: "{\"line_number\": 0, \"result\": \"Hello World https://www.youtube.com/watch?v=o5ZQyXaAv1g!\"}\r\n{\"line_number\":
+      1, \"result\": \"Hello World https://www.youtube.com/watch?v=o5ZQyXaAv1g!\"}\r\n{\"line_number\":
+      2, \"result\": \"Hello World https://www.youtube.com/watch?v=o5ZQyXaAv1g!\"}\r\n"
+    headers:
+      Accept:
+      - application/xml
+      Content-Length:
+      - '270'
+      Content-Type:
+      - application/octet-stream
+      User-Agent:
+      - azsdk-python-storage-blob/12.19.1 Python/3.9.19 (Windows-10-10.0.22631-SP0)
+      x-ms-blob-type:
+      - BlockBlob
+      x-ms-date:
+      - Tue, 09 Apr 2024 07:56:41 GMT
+      x-ms-version:
+      - '2023-11-03'
+    method: PUT
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/promptflow/PromptFlowArtifacts/batch_run_name/flow_outputs/output.jsonl
+  response:
+    body:
+      string: ''
+    headers:
+      content-length:
+      - '0'
+      content-md5:
+      - t7ffq893KrgRPDiXwEQx9g==
+      last-modified:
+      - Tue, 09 Apr 2024 07:56:41 GMT
+      server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      x-ms-content-crc64:
+      - BDn/6mBFEyM=
+      x-ms-request-server-encrypted:
+      - 'true'
+      x-ms-version:
+      - '2023-11-03'
+    status:
+      code: 201
+      message: Created
+- request:
+    body: "import time\r\n\r\nfrom promptflow import tool\r\n\r\n\r\n@tool\r\ndef
+      hello_world(name: str) -> str:\r\n    # Sleep for 1.2 seconds\r\n    time.sleep(1.2)\r\n
+      \   return f\"Hello World {name}!\"\r\n"
+    headers:
+      Accept:
+      - application/xml
+      Content-Length:
+      - '176'
+      Content-Type:
+      - application/octet-stream
+      User-Agent:
+      - azsdk-python-storage-blob/12.19.1 Python/3.9.19 (Windows-10-10.0.22631-SP0)
+      x-ms-blob-type:
+      - BlockBlob
+      x-ms-date:
+      - Tue, 09 Apr 2024 07:56:41 GMT
+      x-ms-version:
+      - '2023-11-03'
+    method: PUT
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/runs/batch_run_name/hello_world.py
+  response:
+    body:
+      string: ''
+    headers:
+      content-length:
+      - '0'
+      content-md5:
+      - BFN4r9XsBmk5qWPq5c30DA==
+      last-modified:
+      - Tue, 09 Apr 2024 07:56:41 GMT
+      server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      x-ms-content-crc64:
+      - Daml5ui9dAs=
+      x-ms-request-server-encrypted:
+      - 'true'
+      x-ms-version:
+      - '2023-11-03'
+    status:
+      code: 201
+      message: Created
+- request:
+    body: '{"NodeName": "hello_world", "line_number": 1, "run_info": {"node": "hello_world",
+      "flow_run_id": "cf317c56-2e72-46d0-b94a-0b5b43177b98", "run_id": "cf317c56-2e72-46d0-b94a-0b5b43177b98_hello_world_1",
+      "status": "Completed", "inputs": {"name": "https://www.youtube.com/watch?v=o5ZQyXaAv1g"},
+      "output": "Hello World https://www.youtube.com/watch?v=o5ZQyXaAv1g!", "metrics":
+      null, "error": null, "parent_run_id": "cf317c56-2e72-46d0-b94a-0b5b43177b98_1",
+      "start_time": "2024-04-09T07:56:24.620704Z", "end_time": "2024-04-09T07:56:25.837724Z",
+      "index": 1, "api_calls": [{"name": "hello_world", "type": "Function", "inputs":
+      {"name": "https://www.youtube.com/watch?v=o5ZQyXaAv1g"}, "output": "Hello World
+      https://www.youtube.com/watch?v=o5ZQyXaAv1g!", "start_time": 1712620584.620704,
+      "end_time": 1712620585.837149, "error": null, "children": [], "node_name": "hello_world",
+      "parent_id": "", "id": "4b7004f3-9972-44d9-9892-96d47e23342d", "function": "hello_world",
+      "system_metrics": {}}], "cached_run_id": null, "cached_flow_run_id": null, "logs":
+      {"stdout": "", "stderr": ""}, "system_metrics": {"duration": 1.21702}, "result":
+      null, "message_format": "basic"}, "start_time": "2024-04-09T07:56:24.620704",
+      "end_time": "2024-04-09T07:56:25.837724", "status": "Completed"}'
+    headers:
+      Accept:
+      - application/xml
+      Content-Length:
+      - '1266'
+      Content-Type:
+      - application/octet-stream
+      User-Agent:
+      - azsdk-python-storage-blob/12.19.1 Python/3.9.19 (Windows-10-10.0.22631-SP0)
+      x-ms-blob-type:
+      - BlockBlob
+      x-ms-date:
+      - Tue, 09 Apr 2024 07:56:41 GMT
+      x-ms-version:
+      - '2023-11-03'
+    method: PUT
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/promptflow/PromptFlowArtifacts/batch_run_name/node_artifacts/hello_world%5C000000001.jsonl
+  response:
+    body:
+      string: ''
+    headers:
+      content-length:
+      - '0'
+      content-md5:
+      - J8GXI0q+Or8mIE1lf4gYMA==
+      last-modified:
+      - Tue, 09 Apr 2024 07:56:41 GMT
+      server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      x-ms-content-crc64:
+      - MIxTF1aN4TQ=
+      x-ms-request-server-encrypted:
+      - 'true'
+      x-ms-version:
+      - '2023-11-03'
+    status:
+      code: 201
+      message: Created
+- request:
+    body: '{"batch_size": 25}'
+    headers:
+      Accept:
+      - application/xml
+      Content-Length:
+      - '18'
+      Content-Type:
+      - application/octet-stream
+      User-Agent:
+      - azsdk-python-storage-blob/12.19.1 Python/3.9.19 (Windows-10-10.0.22631-SP0)
+      x-ms-blob-type:
+      - BlockBlob
+      x-ms-date:
+      - Tue, 09 Apr 2024 07:56:41 GMT
+      x-ms-version:
+      - '2023-11-03'
+    method: PUT
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/promptflow/PromptFlowArtifacts/batch_run_name/meta.json
+  response:
+    body:
+      string: ''
+    headers:
+      content-length:
+      - '0'
+      content-md5:
+      - /u1NXUpgXMFDmZEw835qnw==
+      last-modified:
+      - Tue, 09 Apr 2024 07:56:41 GMT
+      server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      x-ms-content-crc64:
+      - /9Grig3aMP8=
+      x-ms-request-server-encrypted:
+      - 'true'
+      x-ms-version:
+      - '2023-11-03'
+    status:
+      code: 201
+      message: Created
+- request:
+    body: "{\r\n    \"code\": {\r\n        \"hello_world.py\": {\r\n            \"type\":
+      \"python\",\r\n            \"inputs\": {\r\n                \"name\": {\r\n
+      \                   \"type\": [\r\n                        \"string\"\r\n                    ]\r\n
+      \               }\r\n            },\r\n            \"source\": \"hello_world.py\",\r\n
+      \           \"function\": \"hello_world\"\r\n        }\r\n    },\r\n    \"package\":
+      {\r\n        \"promptflow.tools.embedding.embedding\": {\r\n            \"name\":
+      \"Embedding\",\r\n            \"description\": \"Use Open AI's embedding model
+      to create an embedding vector representing the input text.\",\r\n            \"type\":
+      \"python\",\r\n            \"module\": \"promptflow.tools.embedding\",\r\n            \"function\":
+      \"embedding\",\r\n            \"inputs\": {\r\n                \"connection\":
+      {\r\n                    \"type\": [\r\n                        \"AzureOpenAIConnection\",\r\n
+      \                       \"OpenAIConnection\"\r\n                    ]\r\n                },\r\n
+      \               \"deployment_name\": {\r\n                    \"type\": [\r\n
+      \                       \"string\"\r\n                    ],\r\n                    \"enabled_by\":
+      \"connection\",\r\n                    \"enabled_by_type\": [\r\n                        \"AzureOpenAIConnection\"\r\n
+      \                   ],\r\n                    \"capabilities\": {\r\n                        \"completion\":
+      false,\r\n                        \"chat_completion\": false,\r\n                        \"embeddings\":
+      true\r\n                    },\r\n                    \"model_list\": [\r\n
+      \                       \"text-embedding-ada-002\",\r\n                        \"text-search-ada-doc-001\",\r\n
+      \                       \"text-search-ada-query-001\"\r\n                    ]\r\n
+      \               },\r\n                \"model\": {\r\n                    \"type\":
+      [\r\n                        \"string\"\r\n                    ],\r\n                    \"enabled_by\":
+      \"connection\",\r\n                    \"enabled_by_type\": [\r\n                        \"OpenAIConnection\"\r\n
+      \                   ],\r\n                    \"enum\": [\r\n                        \"text-embedding-ada-002\",\r\n
+      \                       \"text-search-ada-doc-001\",\r\n                        \"text-search-ada-query-001\"\r\n
+      \                   ]\r\n                },\r\n                \"input\": {\r\n
+      \                   \"type\": [\r\n                        \"string\"\r\n                    ]\r\n
+      \               }\r\n            },\r\n            \"package\": \"promptflow-tools\",\r\n
+      \           \"package_version\": \"0.1.0b5\"\r\n        },\r\n        \"promptflow.tools.serpapi.SerpAPI.search\":
+      {\r\n            \"name\": \"Serp API\",\r\n            \"description\": \"Use
+      Serp API to obtain search results from a specific search engine.\",\r\n            \"inputs\":
+      {\r\n                \"connection\": {\r\n                    \"type\": [\r\n
+      \                       \"SerpConnection\"\r\n                    ]\r\n                },\r\n
+      \               \"engine\": {\r\n                    \"default\": \"google\",\r\n
+      \                   \"enum\": [\r\n                        \"google\",\r\n                        \"bing\"\r\n
+      \                   ],\r\n                    \"type\": [\r\n                        \"string\"\r\n
+      \                   ]\r\n                },\r\n                \"location\":
+      {\r\n                    \"default\": \"\",\r\n                    \"type\":
+      [\r\n                        \"string\"\r\n                    ]\r\n                },\r\n
+      \               \"num\": {\r\n                    \"default\": \"10\",\r\n                    \"type\":
+      [\r\n                        \"int\"\r\n                    ]\r\n                },\r\n
+      \               \"query\": {\r\n                    \"type\": [\r\n                        \"string\"\r\n
+      \                   ]\r\n                },\r\n                \"safe\": {\r\n
+      \                   \"default\": \"off\",\r\n                    \"enum\": [\r\n
+      \                       \"active\",\r\n                        \"off\"\r\n                    ],\r\n
+      \                   \"type\": [\r\n                        \"string\"\r\n                    ]\r\n
+      \               }\r\n            },\r\n            \"type\": \"python\",\r\n
+      \           \"module\": \"promptflow.tools.serpapi\",\r\n            \"class_name\":
+      \"SerpAPI\",\r\n            \"function\": \"search\",\r\n            \"package\":
+      \"promptflow-tools\",\r\n            \"package_version\": \"0.1.0b5\"\r\n        },\r\n
+      \       \"my_tool_package.tools.my_tool_1.my_tool\": {\r\n            \"function\":
+      \"my_tool\",\r\n            \"inputs\": {\r\n                \"connection\":
+      {\r\n                    \"type\": [\r\n                        \"CustomConnection\"\r\n
+      \                   ],\r\n                    \"custom_type\": [\r\n                        \"MyFirstConnection\",\r\n
+      \                       \"MySecondConnection\"\r\n                    ]\r\n
+      \               },\r\n                \"input_text\": {\r\n                    \"type\":
+      [\r\n                        \"string\"\r\n                    ]\r\n                }\r\n
+      \           },\r\n            \"module\": \"my_tool_package.tools.my_tool_1\",\r\n
+      \           \"name\": \"My First Tool\",\r\n            \"description\": \"This
+      is my first tool\",\r\n            \"type\": \"python\",\r\n            \"package\":
+      \"test-custom-tools\",\r\n            \"package_version\": \"0.0.2\"\r\n        },\r\n
+      \       \"my_tool_package.tools.my_tool_2.MyTool.my_tool\": {\r\n            \"class_name\":
+      \"MyTool\",\r\n            \"function\": \"my_tool\",\r\n            \"inputs\":
+      {\r\n                \"connection\": {\r\n                    \"type\": [\r\n
+      \                       \"CustomConnection\"\r\n                    ],\r\n                    \"custom_type\":
+      [\r\n                        \"MySecondConnection\"\r\n                    ]\r\n
+      \               },\r\n                \"input_text\": {\r\n                    \"type\":
+      [\r\n                        \"string\"\r\n                    ]\r\n                }\r\n
+      \           },\r\n            \"module\": \"my_tool_package.tools.my_tool_2\",\r\n
+      \           \"name\": \"My Second Tool\",\r\n            \"description\": \"This
+      is my second tool\",\r\n            \"type\": \"python\",\r\n            \"package\":
+      \"test-custom-tools\",\r\n            \"package_version\": \"0.0.2\"\r\n        },\r\n
+      \       \"my_tool_package.tools.my_tool_with_custom_strong_type_connection.my_tool\":
+      {\r\n            \"function\": \"my_tool\",\r\n            \"inputs\": {\r\n
+      \               \"connection\": {\r\n                    \"custom_type\": [\r\n
+      \                       \"MyCustomConnection\"\r\n                    ],\r\n
+      \                   \"type\": [\r\n                        \"CustomConnection\"\r\n
+      \                   ]\r\n                },\r\n                \"input_param\":
+      {\r\n                    \"type\": [\r\n                        \"string\"\r\n
+      \                   ]\r\n                }\r\n            },\r\n            \"module\":
+      \"my_tool_package.tools.my_tool_with_custom_strong_type_connection\",\r\n            \"name\":
+      \"Tool With Custom Strong Type Connection\",\r\n            \"description\":
+      \"This is my tool with custom strong type connection.\",\r\n            \"type\":
+      \"python\",\r\n            \"package\": \"test-custom-tools\",\r\n            \"package_version\":
+      \"0.0.2\"\r\n        }\r\n    }\r\n}"
+    headers:
+      Accept:
+      - application/xml
+      Content-Length:
+      - '6757'
+      Content-Type:
+      - application/octet-stream
+      User-Agent:
+      - azsdk-python-storage-blob/12.19.1 Python/3.9.19 (Windows-10-10.0.22631-SP0)
+      x-ms-blob-type:
+      - BlockBlob
+      x-ms-date:
+      - Tue, 09 Apr 2024 07:56:41 GMT
+      x-ms-version:
+      - '2023-11-03'
+    method: PUT
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/runs/batch_run_name/.promptflow%5Cflow.tools.json
+  response:
+    body:
+      string: ''
+    headers:
+      content-length:
+      - '0'
+      content-md5:
+      - fOBGZZ7KBVmEztEHF9lj9w==
+      last-modified:
+      - Tue, 09 Apr 2024 07:56:41 GMT
+      server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      x-ms-content-crc64:
+      - 9VCa3VzrFwQ=
+      x-ms-request-server-encrypted:
+      - 'true'
+      x-ms-version:
+      - '2023-11-03'
+    status:
+      code: 201
+      message: Created
+- request:
+    body: '{"NodeName": "hello_world", "line_number": 2, "run_info": {"node": "hello_world",
+      "flow_run_id": "cf317c56-2e72-46d0-b94a-0b5b43177b98", "run_id": "cf317c56-2e72-46d0-b94a-0b5b43177b98_hello_world_2",
+      "status": "Completed", "inputs": {"name": "https://www.youtube.com/watch?v=o5ZQyXaAv1g"},
+      "output": "Hello World https://www.youtube.com/watch?v=o5ZQyXaAv1g!", "metrics":
+      null, "error": null, "parent_run_id": "cf317c56-2e72-46d0-b94a-0b5b43177b98_2",
+      "start_time": "2024-04-09T07:56:24.620704Z", "end_time": "2024-04-09T07:56:25.838236Z",
+      "index": 2, "api_calls": [{"name": "hello_world", "type": "Function", "inputs":
+      {"name": "https://www.youtube.com/watch?v=o5ZQyXaAv1g"}, "output": "Hello World
+      https://www.youtube.com/watch?v=o5ZQyXaAv1g!", "start_time": 1712620584.621709,
+      "end_time": 1712620585.837724, "error": null, "children": [], "node_name": "hello_world",
+      "parent_id": "", "id": "c677eeaa-6dcb-4aae-8b6f-d812037630e1", "function": "hello_world",
+      "system_metrics": {}}], "cached_run_id": null, "cached_flow_run_id": null, "logs":
+      {"stdout": "", "stderr": ""}, "system_metrics": {"duration": 1.217532}, "result":
+      null, "message_format": "basic"}, "start_time": "2024-04-09T07:56:24.620704",
+      "end_time": "2024-04-09T07:56:25.838236", "status": "Completed"}'
+    headers:
+      Accept:
+      - application/xml
+      Content-Length:
+      - '1267'
+      Content-Type:
+      - application/octet-stream
+      User-Agent:
+      - azsdk-python-storage-blob/12.19.1 Python/3.9.19 (Windows-10-10.0.22631-SP0)
+      x-ms-blob-type:
+      - BlockBlob
+      x-ms-date:
+      - Tue, 09 Apr 2024 07:56:41 GMT
+      x-ms-version:
+      - '2023-11-03'
+    method: PUT
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/promptflow/PromptFlowArtifacts/batch_run_name/node_artifacts/hello_world%5C000000002.jsonl
+  response:
+    body:
+      string: ''
+    headers:
+      content-length:
+      - '0'
+      content-md5:
+      - qs2mvDgTyk7qzl3IUva1Pw==
+      last-modified:
+      - Tue, 09 Apr 2024 07:56:42 GMT
+      server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      x-ms-content-crc64:
+      - hRoZ2XhtV98=
+      x-ms-request-server-encrypted:
+      - 'true'
+      x-ms-version:
+      - '2023-11-03'
+    status:
+      code: 201
+      message: Created
+- request:
+    body: '{"runId": "batch_run_name", "runDisplayName": "sdk-cli-test-run-local-to-cloud",
+      "tags": {"sdk-cli-test": "true"}, "runExperimentName": "", "runDisplayNameGenerationType":
+      "UserProvidedMacro", "outputDataStore": "workspaceblobstore", "flowArtifactsRootPath":
+      "promptflow/PromptFlowArtifacts/batch_run_name", "logFileRelativePath": "ExperimentRun/dcid.batch_run_name/logs/azureml/executionlogs.txt",
+      "flowDefinitionDataStoreName": "workspaceblobstore", "flowDefinitionBlobPath":
+      "runs/batch_run_name/flow.dag.yaml", "runStatus": "Completed", "endTimeUtc":
+      "2024-04-09T15:56:26.843402Z", "startTimeUtc": "2024-04-09T15:56:16.890098Z"}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate, br
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '731'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - promptflow-azure-sdk/1.0.0.dev0 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
+        Python/3.9.19 (Windows-10-10.0.22631-SP0)
+    method: POST
+    uri: https://eastus.api.fake-container-name.ms/flow/api/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/BulkRuns/create
+  response:
+    body:
+      string: '"batch_run_name"'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '38'
+      content-type:
+      - application/json; charset=utf-8
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '2.362'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate, br
+      Connection:
+      - keep-alive
+      User-Agent:
+      - promptflow-azure-sdk/1.0.0.dev0 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
+        Python/3.9.19 (Windows-10-10.0.22631-SP0)
+    method: GET
+    uri: https://eastus.api.fake-container-name.ms/flow/api/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/BulkRuns/batch_run_name
+  response:
+    body:
+      string: '{"flowGraph": {"nodes": [{"name": "hello_world", "type": "python",
+        "source": {"type": "code", "path": "hello_world.py"}, "inputs": {"name": "${inputs.name}"},
+        "tool": "hello_world.py", "reduce": false}], "tools": [], "inputs": {"name":
+        {"type": "string", "default": "hod", "is_chat_input": false}}, "outputs":
+        {"result": {"type": "string", "reference": "${hello_world.output}", "evaluation_only":
+        false, "is_chat_output": false}}}, "flowRunResourceId": "azureml://locations/eastus/workspaces/00000/flows/batch_run_name/flowRuns/batch_run_name",
+        "flowRunId": "batch_run_name", "flowRunDisplayName": "sdk-cli-test-run-local-to-cloud",
+        "flowRunType": "FlowRun", "flowType": "Default", "outputDatastoreName": "workspaceblobstore",
+        "childRunBasePath": "promptflow/PromptFlowArtifacts/batch_run_name/flow_artifacts",
+        "flowDagFileRelativePath": "flow.dag.yaml", "flowSnapshotId": "0555b5eb-d8ec-45e9-a264-46edd97261f5",
+        "studioPortalEndpoint": "https://ml.azure.com/runs/batch_run_name?wsid=/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '1220'
+      content-type:
+      - application/json; charset=utf-8
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.357'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"runId": "batch_run_name", "selectRunMetadata": true, "selectRunDefinition":
+      true, "selectJobSpecification": true}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, br
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '137'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.31.0
+    method: POST
+    uri: https://eastus.api.fake-container-name.ms/history/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/rundata
+  response:
+    body:
+      string: '{"runMetadata": {"runNumber": 1712649406, "rootRunId": "batch_run_name",
+        "createdUtc": "2024-04-09T07:56:46.6325666+00:00", "createdBy": {"userObjectId":
+        "00000000-0000-0000-0000-000000000000", "userPuId": "10032000324F7449", "userIdp":
+        null, "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
+        "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "Honglin
+        Du", "upn": null}, "userId": "00000000-0000-0000-0000-000000000000", "token":
+        null, "tokenExpiryTimeUtc": null, "error": null, "warnings": null, "revision":
+        1, "statusRevision": 0, "runUuid": "0dce030e-26f7-424b-8eee-00c5cedd0298",
+        "parentRunUuid": null, "rootRunUuid": "0dce030e-26f7-424b-8eee-00c5cedd0298",
+        "lastStartTimeUtc": "2024-04-09T15:56:16.890098+00:00", "currentComputeTime":
+        "00:00:00", "computeDuration": "00:00:00", "effectiveStartTimeUtc": "2024-04-09T15:56:16.890098+00:00",
+        "lastModifiedBy": {"userObjectId": "00000000-0000-0000-0000-000000000000",
+        "userPuId": "10032000324F7449", "userIdp": null, "userAltSecId": null, "userIss":
+        "https://sts.windows.net/00000000-0000-0000-0000-000000000000/", "userTenantId":
+        "00000000-0000-0000-0000-000000000000", "userName": "Honglin Du", "upn": null},
+        "lastModifiedUtc": "2024-04-09T07:56:46.6325666+00:00", "duration": "00:00:09.9533040",
+        "cancelationReason": null, "currentAttemptId": 1, "runId": "batch_run_name",
+        "parentRunId": null, "experimentId": "b1e733a1-2a5f-4c17-bc34-4d66d2858228",
+        "status": "Completed", "startTimeUtc": "2024-04-09T15:56:16.890098+00:00",
+        "endTimeUtc": "2024-04-09T15:56:26.843402+00:00", "scheduleId": null, "displayName":
+        "sdk-cli-test-run-local-to-cloud", "name": null, "dataContainerId": "dcid.batch_run_name",
+        "description": null, "hidden": false, "runType": "azureml.promptflow.FlowRun",
+        "runTypeV2": {"orchestrator": null, "traits": [], "attribution": "PromptFlow",
+        "computeType": null}, "properties": {"azureml.promptflow.runtime_name": null,
+        "azureml.promptflow.local_to_cloud": "true", "azureml.promptflow.snapshot_id":
+        "0555b5eb-d8ec-45e9-a264-46edd97261f5", "_azureml.evaluation_run": "promptflow.BatchRun"},
+        "parameters": {}, "actionUris": {}, "scriptName": null, "target": null, "uniqueChildRunComputeTargets":
+        [], "tags": {"sdk-cli-test": "true"}, "settings": {}, "services": {}, "inputDatasets":
+        [], "outputDatasets": [], "runDefinition": null, "jobSpecification": null,
+        "primaryMetricName": null, "createdFrom": null, "cancelUri": null, "completeUri":
+        null, "diagnosticsUri": null, "computeRequest": null, "compute": null, "retainForLifetimeOfWorkspace":
+        false, "queueingInfo": null, "inputs": null, "outputs": null}, "runDefinition":
+        {"Nodes": [{"Name": "hello_world", "Type": "python", "Source": {"Type": "code",
+        "Tool": null, "Path": "hello_world.py"}, "Inputs": {"name": "${inputs.name}"},
+        "Tool": "hello_world.py", "Reduce": false, "Activate": null, "Comment": null,
+        "Api": null, "Provider": null, "Connection": null, "Module": null}], "Tools":
+        [], "Codes": null, "Inputs": {"name": {"name": null, "type": "string", "default":
+        "hod", "description": null, "is_chat_input": false, "is_chat_history": null}},
+        "Outputs": {"result": {"name": null, "type": "string", "description": null,
+        "reference": "${hello_world.output}", "evaluation_only": false, "is_chat_output":
+        false}}}, "jobSpecification": null, "systemSettings": null}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '4191'
+      content-type:
+      - application/json; charset=utf-8
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.044'
+    status:
+      code: 200
+      message: OK
+version: 1

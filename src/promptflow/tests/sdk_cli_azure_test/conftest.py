@@ -489,28 +489,6 @@ def created_batch_run_without_llm(pf: PFClient, randstr: Callable[[str], str], r
 
 
 @pytest.fixture(scope=package_scope_in_live_mode())
-def created_batch_run_without_llm_local(randstr: Callable[[str], str]) -> Run:
-    """Create a batch run that does not require LLM with local PFClient."""
-    from promptflow._sdk._pf_client import PFClient as LocalPFClient
-
-    name = randstr("batch_run_name")
-    pf = LocalPFClient()
-    pf.run(
-        # copy test_configs/flows/simple_hello_world to a separate folder
-        # as pf.run will generate .promptflow/flow.tools.json
-        # it will affect Azure file share upload logic and replay test
-        flow=f"{FLOWS_DIR}/hello-world",
-        data=f"{DATAS_DIR}/webClassification3.jsonl",
-        column_mapping={"name": "${data.url}"},
-        name=name,
-        display_name="sdk-cli-test-fixture-batch-run-without-llm",
-    )
-    run = pf.runs.stream(run=name)
-    assert run.status == RunStatus.COMPLETED
-    yield run
-
-
-@pytest.fixture(scope=package_scope_in_live_mode())
 def simple_eager_run(pf: PFClient, randstr: Callable[[str], str]) -> Run:
     """Create a simple eager run."""
     run = pf.run(
