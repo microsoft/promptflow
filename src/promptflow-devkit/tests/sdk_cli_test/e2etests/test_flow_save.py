@@ -2,21 +2,18 @@ import os
 import re
 import shutil
 import sys
-from pathlib import Path
 
 import pytest
+from _constants import PROMPTFLOW_ROOT
 
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk.entities import AzureOpenAIConnection
 from promptflow.client import load_flow
 from promptflow.exceptions import UserErrorException
 
-PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
-
-TEST_ROOT = Path(__file__).parent.parent.parent
-CONNECTION_FILE = (PROMOTFLOW_ROOT / "connections.json").resolve().absolute().as_posix()
-FLOWS_DIR = (TEST_ROOT / "test_configs/flows").resolve().absolute().as_posix()
-EAGER_FLOWS_DIR = (TEST_ROOT / "test_configs/eager_flows").resolve().absolute().as_posix()
+TEST_ROOT = PROMPTFLOW_ROOT / "tests"
+FLOWS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/flows"
+EAGER_FLOWS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/eager_flows"
 FLOW_RESULT_KEYS = ["category", "evidence"]
 
 _client = PFClient()

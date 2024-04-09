@@ -3,6 +3,7 @@ import os
 import re
 
 import pytest
+from _constants import PROMPTFLOW_ROOT
 from opentelemetry import trace
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
@@ -13,6 +14,8 @@ from promptflow.core._serving.constants import FEEDBACK_TRACE_FIELD_NAME
 from promptflow.core._serving.utils import load_feedback_swagger
 from promptflow.exceptions import UserErrorException
 from promptflow.tracing._operation_context import OperationContext
+
+TEST_CONFIGS = PROMPTFLOW_ROOT / "tests" / "test_configs" / "eager_flows"
 
 
 @pytest.mark.usefixtures("recording_injection", "setup_local_connection")
@@ -561,14 +564,13 @@ def test_eager_flow_serve_dataclass_output(simple_eager_flow_dataclass_output):
 def test_eager_flow_serve_non_json_serializable_output(mocker):
     with pytest.raises(UserErrorException, match="Parse interface for tool 'my_flow' failed:"):
         # instead of giving 400 response for all requests, we raise user error on serving now
-        from pathlib import Path
 
         from ..conftest import create_client_by_model
 
         create_client_by_model(
             "non_json_serializable_output",
             mocker,
-            model_root=Path(__file__).parent.parent.parent / "test_configs" / "eager_flows",
+            model_root=TEST_CONFIGS,
         )
 
 

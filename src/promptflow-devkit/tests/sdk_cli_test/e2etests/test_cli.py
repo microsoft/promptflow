@@ -37,7 +37,7 @@ EXPERIMENT_DIR = PROMPTFLOW_ROOT / "tests/test_configs/experiments"
 RUNS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/runs"
 CONNECTIONS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/connections"
 DATAS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/datas"
-TOOL_ROOT = "./tests/test_configs/tools"
+TOOL_ROOT = PROMPTFLOW_ROOT / "tests/test_configs/tools"
 PROMPTY_DIR = PROMPTFLOW_ROOT / "tests/test_configs/prompty"
 
 TARGET_URL = "https://www.youtube.com/watch?v=o5ZQyXaAv1g"
@@ -1518,6 +1518,7 @@ class TestCli:
             assert "List tools meta from cache file" in caplog.text
             assert f"{package_name}.{func_name}.{func_name}" in tools_meta
 
+    @pytest.mark.skip("Enable after promptflow-tool depend on core")
     def test_tool_list(self, capsys):
         # List package tools in environment
         run_pf_command("tool", "list")
