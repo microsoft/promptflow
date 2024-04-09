@@ -1,65 +1,115 @@
+import json
 from unittest.mock import patch
 
 import pytest
-import json
-from promptflow.connections import AzureOpenAIConnection
+from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 from promptflow.tools.exception import WrappedOpenAIError
+from promptflow.tools.llm import llm, list_apis
 
 from tests.utils import AttrDict
-from promptflow.tools.llm import llm, list_apis
 
 
 @pytest.mark.usefixtures("use_secrets_config_file")
 class TestLLM:
-    def test_aoai_completion(self, azure_open_ai_connection):
+    @pytest.mark.parametrize(
+        "connection_type, model_or_deployment_name, params",
+        [
+            # test whether tool can handle param "stop" with value empty list
+            # as openai raises "[] is not valid under any of the given schemas - 'stop'"
+            pytest.param("azure_open_ai_connection", "gpt-35-turbo-instruct", {"stop": [], "logit_bias": {}}),
+            pytest.param("open_ai_connection", "gpt-3.5-turbo-instruct", {},
+                         marks=pytest.mark.skip_if_no_api_key("open_ai_connection")),
+            # test completion stream
+            pytest.param("azure_open_ai_connection", "gpt-35-turbo-instruct",
+                         {"stop": [], "logit_bias": {}, "stream": True}),
+            pytest.param("open_ai_connection", "gpt-3.5-turbo-instruct", {"stream": True},
+                         marks=pytest.mark.skip_if_no_api_key("open_ai_connection")),
+        ]
+    )
+    def test_llm_completion(self, request, connection_type, model_or_deployment_name, params):
+        connection = request.getfixturevalue(connection_type)
         prompt_template = "please complete this sentence: world war II "
-        # test whether tool can handle param "stop" with value empty list
-        # as openai raises "[] is not valid under any of the given schemas - 'stop'"
         llm(
-            connection=azure_open_ai_connection,
+            connection=connection,
             api="completion",
             prompt=prompt_template,
-            deployment_name="gpt-35-turbo-instruct",
-            stop=[],
-            logit_bias={}
+            deployment_name=model_or_deployment_name if isinstance(connection, AzureOpenAIConnection) else None,
+            model=model_or_deployment_name if isinstance(connection, OpenAIConnection) else None,
+            **params
         )
 
-    def test_aoai_stream_completion(self, azure_open_ai_connection):
-        prompt_template = "please complete this sentence: world war II "
-        # test whether tool can handle param "stop" with value empty list in stream mode
-        # as openai raises "[] is not valid under any of the given schemas - 'stop'"
-        llm(
-            connection=azure_open_ai_connection,
-            api="completion",
-            prompt=prompt_template,
-            deployment_name="gpt-35-turbo-instruct",
-            stop=[],
-            logit_bias={},
-            stream=True
-        )
-
-    def test_aoai_chat(self, azure_open_ai_connection, example_prompt_template, chat_history):
+    @pytest.mark.parametrize(
+        "connection_type, model_or_deployment_name, params",
+        [
+            pytest.param("azure_open_ai_connection", "gpt-35-turbo",
+                         {"max_tokens": "inf", "temperature": 0, "user_input": "Fill in more details about trend 2.",
+                          "seed": 123}),
+            pytest.param("open_ai_connection", "gpt-3.5-turbo",
+                         {"max_tokens": 32, "temperature": 0, "user_input": "Fill in more details about trend 2.",
+                          "seed": 123}, marks=pytest.mark.skip_if_no_api_key("open_ai_connection")),
+            pytest.param("serverless_connection", None, {"user_input": "Fill in more details about trend 2."},
+                         marks=pytest.mark.skip_if_no_api_key("serverless_connection")),
+        ]
+    )
+    def test_llm_chat(self, request, connection_type, model_or_deployment_name, example_prompt_template, chat_history,
+                      params):
+        connection = request.getfixturevalue(connection_type)
         result = llm(
-            connection=azure_open_ai_connection,
+            connection=connection,
             api="chat",
             prompt=example_prompt_template,
-            deployment_name="gpt-35-turbo",
-            max_tokens="inF",
-            temperature=0,
-            user_input="Write a slogan for product X",
+            deployment_name=model_or_deployment_name if isinstance(connection, AzureOpenAIConnection) else None,
+            model=model_or_deployment_name if isinstance(connection, OpenAIConnection) else None,
             chat_history=chat_history,
-            seed=123
+            **params
         )
-        assert "Product X".lower() in result.lower()
+        assert "trend 2".lower() in result.lower()
 
-    def test_correctly_pass_params(self, azure_open_ai_connection, example_prompt_template, chat_history):
+    @pytest.mark.parametrize(
+        "connection_type, model_or_deployment_name, params, expected_message",
+        [
+            pytest.param("azure_open_ai_connection", "gpt-35-turbo",
+                         {"max_tokens": "32", "temperature": 0, "user_input": "Fill in more details about trend 2.",
+                          "stream": True}, "additional details"),
+            pytest.param("open_ai_connection", "gpt-3.5-turbo",
+                         {"max_tokens": 32, "temperature": 0, "user_input": "Fill in more details about trend 2.",
+                          "stream": True}, "trend 2", marks=pytest.mark.skip_if_no_api_key("open_ai_connection")),
+        ]
+    )
+    def test_llm_stream_chat(self, request, connection_type, model_or_deployment_name, example_prompt_template,
+                             chat_history, params, expected_message):
+        connection = request.getfixturevalue(connection_type)
+        result = llm(
+            connection=connection,
+            api="chat",
+            prompt=example_prompt_template,
+            deployment_name=model_or_deployment_name if isinstance(connection, AzureOpenAIConnection) else None,
+            model=model_or_deployment_name if isinstance(connection, OpenAIConnection) else None,
+            chat_history=chat_history,
+            **params
+        )
+        answer = ""
+        while True:
+            try:
+                answer += next(result)
+            except Exception:
+                break
+        assert expected_message in answer.lower()
+
+    @pytest.mark.parametrize(
+        "connection_type",
+        [
+            pytest.param("azure_open_ai_connection"),
+            pytest.param("open_ai_connection", marks=pytest.mark.skip_if_no_api_key("open_ai_connection")),
+        ]
+    )
+    def test_correctly_pass_params(self, request, connection_type, example_prompt_template, chat_history):
         seed_value = 123
         with patch("openai.resources.chat.Completions.create") as mock_create:
             llm(
-                connection=azure_open_ai_connection,
+                connection=request.getfixturevalue(connection_type),
                 api="chat",
                 prompt=example_prompt_template,
-                deployment_name="gpt-35-turbo",
                 max_tokens="32",
                 temperature=0,
                 user_input="Fill in more details about trend 2.",
@@ -72,19 +122,28 @@ class TestLLM:
             assert called_with_params['seed'] == seed_value
 
     @pytest.mark.parametrize(
-        "tool_choice",
+        "connection_type, model_or_deployment_name, tool_choice",
         [
-            "auto",
-            {"type": "function", "function": {"name": "get_current_weather"}}
+            pytest.param("azure_open_ai_connection", "gpt-35-turbo", "auto"),
+            pytest.param("azure_open_ai_connection", "gpt-35-turbo",
+                         {"type": "function", "function": {"name": "get_current_weather"}}),
+            pytest.param("open_ai_connection", "gpt-3.5-turbo", "auto",
+                         marks=pytest.mark.skip_if_no_api_key("open_ai_connection")),
+            pytest.param("open_ai_connection", "gpt-3.5-turbo",
+                         {"type": "function", "function": {"name": "get_current_weather"}},
+                         marks=pytest.mark.skip_if_no_api_key("open_ai_connection")),
         ],
     )
-    def test_aoai_chat_with_tools(
-            self, azure_open_ai_connection, example_prompt_template, chat_history, tools, tool_choice):
+    def test_llm_chat_with_tools(
+            self, request, connection_type, model_or_deployment_name, example_prompt_template, chat_history, tools,
+            tool_choice):
+        connection = request.getfixturevalue(connection_type)
         result = llm(
-            connection=azure_open_ai_connection,
+            connection=connection,
             api="chat",
             prompt=example_prompt_template,
-            deployment_name="gpt-35-turbo",
+            deployment_name=model_or_deployment_name if isinstance(connection, AzureOpenAIConnection) else None,
+            model=model_or_deployment_name if isinstance(connection, OpenAIConnection) else None,
             max_tokens="inF",
             temperature=0,
             user_input="What is the weather in Boston?",
@@ -95,13 +154,23 @@ class TestLLM:
         assert "tool_calls" in result
         assert result["tool_calls"][0]["function"]["name"] == "get_current_weather"
 
-    def test_aoai_chat_with_name_in_roles(
-            self, azure_open_ai_connection, example_prompt_template_with_name_in_roles, chat_history, tools):
+    @pytest.mark.parametrize(
+        "connection_type, model_or_deployment_name, prompt",
+        [
+            pytest.param("azure_open_ai_connection", "gpt-35-turbo", "example_prompt_template_with_name_in_roles"),
+            pytest.param("open_ai_connection", "gpt-3.5-turbo", "example_prompt_template_with_function",
+                         marks=pytest.mark.skip_if_no_api_key("open_ai_connection"))
+        ],
+    )
+    def test_llm_chat_with_name_in_roles(
+            self, request, connection_type, model_or_deployment_name, prompt, chat_history, tools):
+        connection = request.getfixturevalue(connection_type)
         result = llm(
-            connection=azure_open_ai_connection,
+            connection=connection,
             api="chat",
-            prompt=example_prompt_template_with_name_in_roles,
-            deployment_name="gpt-35-turbo",
+            prompt=request.getfixturevalue(prompt),
+            deployment_name=model_or_deployment_name if isinstance(connection, AzureOpenAIConnection) else None,
+            model=model_or_deployment_name if isinstance(connection, OpenAIConnection) else None,
             max_tokens="inF",
             temperature=0,
             tools=tools,
@@ -113,8 +182,17 @@ class TestLLM:
         assert "tool_calls" in result
         assert result["tool_calls"][0]["function"]["name"] == "get_current_weather"
 
-    def test_aoai_chat_message_with_no_content(self, azure_open_ai_connection):
+    @pytest.mark.parametrize(
+        "connection_type, model_or_deployment_name",
+        [
+            pytest.param("azure_open_ai_connection", "gpt-35-turbo"),
+            pytest.param("open_ai_connection", "gpt-3.5-turbo",
+                         marks=pytest.mark.skip_if_no_api_key("open_ai_connection")),
+        ]
+    )
+    def test_llm_chat_message_with_no_content(self, request, connection_type, model_or_deployment_name):
         # missing colon after role name. Sometimes following prompt may result in empty content.
+        connection = request.getfixturevalue(connection_type)
         prompt = (
             "user:\n what is your name\nassistant\nAs an AI language model developed by"
             " OpenAI, I do not have a name. You can call me OpenAI or AI assistant. "
@@ -122,39 +200,21 @@ class TestLLM:
         )
         # assert chat tool can handle.
         llm(
-            connection=azure_open_ai_connection,
+            connection=connection,
             api="chat",
             prompt=prompt,
-            deployment_name="gpt-35-turbo",
+            deployment_name=model_or_deployment_name if isinstance(connection, AzureOpenAIConnection) else None,
+            model=model_or_deployment_name if isinstance(connection, OpenAIConnection) else None,
         )
         # empty content after role name:\n
         prompt = "user:\n"
         llm(
-            connection=azure_open_ai_connection,
+            connection=connection,
             api="chat",
             prompt=prompt,
-            deployment_name="gpt-35-turbo",
+            deployment_name=model_or_deployment_name if isinstance(connection, AzureOpenAIConnection) else None,
+            model=model_or_deployment_name if isinstance(connection, OpenAIConnection) else None,
         )
-
-    def test_aoai_stream_chat(self, azure_open_ai_connection, example_prompt_template, chat_history):
-        result = llm(
-            connection=azure_open_ai_connection,
-            api="chat",
-            prompt=example_prompt_template,
-            deployment_name="gpt-35-turbo",
-            max_tokens="32",
-            temperature=0,
-            user_input="Fill in more details about trend 2.",
-            chat_history=chat_history,
-            stream=True,
-        )
-        answer = ""
-        while True:
-            try:
-                answer += next(result)
-            except Exception:
-                break
-        assert "additional details" in answer.lower()
 
     @pytest.mark.parametrize(
         "params, expected",
@@ -163,7 +223,7 @@ class TestLLM:
             ({"stop": ["</i>"], "logit_bias": {"16": 100, "17": 100}}, {}),
         ],
     )
-    def test_aoai_parameters(self, params, expected):
+    def test_llm_parameters(self, params, expected):
         for k, v in params.items():
             if k not in expected:
                 expected[k] = v
@@ -189,41 +249,87 @@ class TestLLM:
             )
             assert result == prompt
 
-    def test_aoai_chat_with_response_format(
-            self,
-            azure_open_ai_connection,
-            example_prompt_template,
-            chat_history):
+    @pytest.mark.parametrize(
+        "connection_type, model_or_deployment_name, response_format, expected_message",
+        [
+            # test response_format with json_object value
+            pytest.param("azure_open_ai_connection", "gpt-35-turbo-1106", {"type": "json_object"}, "x:"),
+            pytest.param("open_ai_connection", "gpt-3.5-turbo-1106", {"type": "json_object"}, "x:",
+                         marks=pytest.mark.skip_if_no_api_key("open_ai_connection")),
+            # test response_format with text value for models which not support response_format,
+            pytest.param("azure_open_ai_connection", "gpt-35-turbo", {"type": "text"}, "Product X"),
+            pytest.param("open_ai_connection", "gpt-3.5-turbo", {"type": "text"}, "Product X",
+                         marks=pytest.mark.skip_if_no_api_key("open_ai_connection")),
+        ]
+    )
+    def test_llm_chat_with_response_format(self, request, connection_type, model_or_deployment_name, response_format,
+                                           example_prompt_template, chat_history, expected_message):
+        connection = request.getfixturevalue(connection_type)
         result = llm(
-            connection=azure_open_ai_connection,
+            connection=connection,
             api="chat",
             prompt=example_prompt_template,
-            deployment_name="gpt-35-turbo-1106",
+            deployment_name=model_or_deployment_name if isinstance(connection, AzureOpenAIConnection) else None,
+            model=model_or_deployment_name if isinstance(connection, OpenAIConnection) else None,
             temperature=0,
             user_input="Write a slogan for product X, please response with json.",
             chat_history=chat_history,
-            response_format={"type": "json_object"}
+            response_format=response_format
         )
-        assert "x:".lower() in result.lower()
+        assert str(expected_message).lower() in result.lower()
 
     @pytest.mark.parametrize(
-        "response_format, user_input, error_message, error_codes, exception",
+        "connection_type, model_or_deployment_name, response_format, user_input, error_message, error_codes, exception",
         [
-            ({"type": "json"}, "Write a slogan for product X, please response with json.",
-             "\'json\' is not one of [\'json_object\', \'text\']", "UserError/OpenAIError/BadRequestError",
-             WrappedOpenAIError),
-            ({"type": "json_object"}, "Write a slogan for product X",
-             "\'messages\' must contain the word \'json\' in some form", "UserError/OpenAIError/BadRequestError",
-             WrappedOpenAIError),
-            ({"types": "json_object"}, "Write a slogan for product X",
-             "The response_format parameter needs to be a dictionary such as {\"type\": \"text\"}",
-             "UserError/OpenAIError/BadRequestError",
-             WrappedOpenAIError)
+            # test invalid response_format value
+            pytest.param("azure_open_ai_connection", "gpt-35-turbo-1106", {"type": "json"},
+                         "Write a slogan for product X, please response with json.",
+                         "\'json\' is not one of [\'json_object\', \'text\']", "UserError/OpenAIError/BadRequestError",
+                         WrappedOpenAIError),
+            pytest.param("open_ai_connection", "gpt-3.5-turbo-1106", {"type": "json"},
+                         "Write a slogan for product X, please reponse with json.",
+                         "\'json\' is not one of [\'json_object\', \'text\']", "UserError/OpenAIError/BadRequestError",
+                         WrappedOpenAIError, marks=pytest.mark.skip_if_no_api_key("open_ai_connection")),
+            # test no json string in prompt
+            pytest.param("azure_open_ai_connection", "gpt-35-turbo-1106", {"type": "json_object"},
+                         "Write a slogan for product X",
+                         "\'messages\' must contain the word \'json\' in some form",
+                         "UserError/OpenAIError/BadRequestError",
+                         WrappedOpenAIError),
+            pytest.param("open_ai_connection", "gpt-3.5-turbo-1106", {"type": "json_object"},
+                         "Write a slogan for product X",
+                         "\'messages\' must contain the word \'json\' in some form",
+                         "UserError/OpenAIError/BadRequestError",
+                         WrappedOpenAIError, marks=pytest.mark.skip_if_no_api_key("open_ai_connection")),
+            # test invalid key in response_format value
+            pytest.param("azure_open_ai_connection", "gpt-35-turbo-1106", {"types": "json_object"},
+                         "Write a slogan for product X",
+                         "The response_format parameter needs to be a dictionary such as {\"type\": \"text\"}",
+                         "UserError/OpenAIError/BadRequestError",
+                         WrappedOpenAIError),
+            pytest.param("open_ai_connection", "gpt-3.5-turbo-1106", {"types": "json_object"},
+                         "Write a slogan for product X",
+                         "The response_format parameter needs to be a dictionary such as {\"type\": \"text\"}",
+                         "UserError/OpenAIError/BadRequestError",
+                         WrappedOpenAIError, marks=pytest.mark.skip_if_no_api_key("open_ai_connection")),
+            # test not support response format json mode model
+            pytest.param("azure_open_ai_connection", "gpt-35-turbo", {"types": "json_object"},
+                         "Write a slogan for product X",
+                         "The response_format parameter needs to be a dictionary such as {\"type\": \"text\"}",
+                         "UserError/OpenAIError/BadRequestError",
+                         WrappedOpenAIError),
+            pytest.param("open_ai_connection", "gpt-3.5-turbo", {"types": "json_object"},
+                         "Write a slogan for product X",
+                         "The response_format parameter needs to be a dictionary such as {\"type\": \"text\"}.",
+                         "UserError/OpenAIError/BadRequestError",
+                         WrappedOpenAIError, marks=pytest.mark.skip_if_no_api_key("open_ai_connection"))
         ]
     )
-    def test_aoai_chat_with_invalid_response_format(
+    def test_llm_chat_with_response_format_error(
             self,
-            azure_open_ai_connection,
+            request,
+            connection_type,
+            model_or_deployment_name,
             example_prompt_template,
             chat_history,
             response_format,
@@ -233,11 +339,13 @@ class TestLLM:
             exception
     ):
         with pytest.raises(exception) as exc_info:
+            connection = request.getfixturevalue(connection_type)
             llm(
-                connection=azure_open_ai_connection,
+                connection=connection,
                 api="chat",
                 prompt=example_prompt_template,
-                deployment_name="gpt-35-turbo-1106",
+                deployment_name=model_or_deployment_name if isinstance(connection, AzureOpenAIConnection) else None,
+                model=model_or_deployment_name if isinstance(connection, OpenAIConnection) else None,
                 temperature=0,
                 user_input=user_input,
                 chat_history=chat_history,
@@ -246,52 +354,23 @@ class TestLLM:
         assert error_message in exc_info.value.message
         assert exc_info.value.error_codes == error_codes.split("/")
 
-    def test_aoai_chat_with_not_support_response_format_json_mode_model(
-            self,
-            azure_open_ai_connection,
-            example_prompt_template,
-            chat_history
-    ):
-        with pytest.raises(WrappedOpenAIError) as exc_info:
-            llm(
-                connection=azure_open_ai_connection,
-                api="chat",
-                prompt=example_prompt_template,
-                deployment_name="gpt-35-turbo",
-                temperature=0,
-                user_input="Write a slogan for product X, please response with json.",
-                chat_history=chat_history,
-                response_format={"type": "json_object"}
-            )
-        error_message = "The response_format parameter needs to be a dictionary such as {\"type\": \"text\"}."
-        assert error_message in exc_info.value.message
-        assert exc_info.value.error_codes == "UserError/OpenAIError/BadRequestError".split("/")
-
-    def test_aoai_chat_with_response_format_text_mode(
-            self,
-            azure_open_ai_connection,
-            example_prompt_template,
-            chat_history
-    ):
-        result = llm(
-            connection=azure_open_ai_connection,
-            api="chat",
-            prompt=example_prompt_template,
-            deployment_name="gpt-35-turbo",
-            temperature=0,
-            user_input="Write a slogan for product X.",
-            chat_history=chat_history,
-            response_format={"type": "text"}
-        )
-        assert "Product X".lower() in result.lower()
-
-    def test_aoai_with_vision_model(self, azure_open_ai_connection):
+    @pytest.mark.parametrize(
+        "connection_type, model_or_deployment_name",
+        [
+            pytest.param("azure_open_ai_connection", "gpt-4v"),
+            pytest.param("open_ai_connection", "gpt-4-vision-preview",
+                         marks=pytest.mark.skip_if_no_api_key("open_ai_connection")),
+        ]
+    )
+    def test_llm_with_vision_model(self, request, connection_type, model_or_deployment_name):
         # The issue https://github.com/microsoft/promptflow/issues/1683 is fixed
+        connection = request.getfixturevalue(connection_type)
         result = llm(
-            connection=azure_open_ai_connection,
+            connection=connection,
             api="chat",
             prompt="user:\nhello",
-            deployment_name="gpt-4v",
+            deployment_name=model_or_deployment_name if isinstance(connection, AzureOpenAIConnection) else None,
+            model=model_or_deployment_name if isinstance(connection, OpenAIConnection) else None,
             stop=None,
             logit_bias={}
         )
@@ -309,12 +388,3 @@ class TestLLM:
             assert res[0].get("display_value") == "chat"
             assert res[1].get("value") == "completion"
             assert res[1].get("display_value") == "completion"
-
-    @pytest.mark.skip_if_no_api_key("serverless_connection")
-    def test_serverless_chat(self, serverless_connection, example_prompt_template):
-        result = llm(
-            connection=serverless_connection,
-            prompt=example_prompt_template,
-            user_input="Fill in more details about trend 2."
-        )
-        assert "trend 2:".lower() in result.lower()
