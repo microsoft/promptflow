@@ -56,6 +56,58 @@ class TestWorkspaceConnectionProvider:
         }
         build_from_data_and_assert(data, expected)
 
+    def test_build_strong_type_openai_connection_from_rest_object(self):
+        data = {
+            "id": "mock_id",
+            "name": "test_new_openai",
+            "type": "Microsoft.MachineLearningServices/workspaces/connections",
+            "properties": {
+                "authType": "ApiKey",
+                "credentials": {"key": "mock_key"},
+                "group": "AzureAI",
+                "category": "OpenAI",
+                "target": "mock_base",
+                "sharedUserList": [],
+                "metadata": {"Organization": "mock"},
+            },
+        }
+        expected = {
+            "type": "OpenAIConnection",
+            "module": "promptflow.connections",
+            "name": "test_new_openai",
+            "value": {
+                "api_key": "mock_key",
+                "organization": "mock",
+                "base_url": "mock_base",
+            },
+        }
+        build_from_data_and_assert(data, expected)
+
+    def test_build_strong_type_serp_connection_from_rest_object(self):
+        data = {
+            "id": "mock_id",
+            "name": "test_new_serp",
+            "type": "Microsoft.MachineLearningServices/workspaces/connections",
+            "properties": {
+                "authType": "ApiKey",
+                "credentials": {"key": "mock"},
+                "group": "AzureAI",
+                "category": "Serp",
+                "target": "_",
+                "sharedUserList": [],
+                "metadata": {},
+            },
+        }
+        expected = {
+            "type": "SerpConnection",
+            "module": "promptflow.connections",
+            "name": "test_new_serp",
+            "value": {
+                "api_key": "mock",
+            },
+        }
+        build_from_data_and_assert(data, expected)
+
     def test_build_default_azure_openai_connection_missing_metadata(self):
         # Test on ApiKey type with AzureOpenAI category
         data = {

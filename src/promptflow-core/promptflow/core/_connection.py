@@ -271,7 +271,7 @@ class OpenAIConnection(_StrongTypeConnection):
     TYPE = ConnectionType.OPEN_AI.value
 
     def __init__(self, api_key: str, organization: str = None, base_url=None, **kwargs):
-        if base_url == "":
+        if base_url in ["", "_"]:  # Note for _, rp return _ if no target specified.
             # Keep empty as None to avoid disturbing openai pick the default api base.
             base_url = None
         configs = {"organization": organization, "base_url": base_url}
