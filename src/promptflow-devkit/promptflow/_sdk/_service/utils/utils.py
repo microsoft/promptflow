@@ -94,10 +94,9 @@ def dump_port_to_config(port):
         service_config = load_yaml(f) or {}
     with open(port_file_path, "w", encoding=DEFAULT_ENCODING) as f:
         service_config["service"] = service_config.get("service", {})
-        if service_config["service"].get("port", None) != port:
-            service_config["service"]["port"] = port
-            logger.debug(f"Set port {port} to file {port_file_path}")
-            dump_yaml(service_config, f)
+        service_config["service"]["port"] = port
+        logger.debug(f"Set port {port} to file {port_file_path}")
+        dump_yaml(service_config, f)
 
 
 def is_port_in_use(port: int):
