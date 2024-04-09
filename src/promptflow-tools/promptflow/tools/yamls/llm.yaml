@@ -218,6 +218,7 @@ promptflow.tools.llm.llm:
     tool_choice:
       type:
       - object
+      - string
       default: ""
       enabled_by: api
       enabled_by_value:
