@@ -18,7 +18,7 @@ By leveraging the capabilities of llm, this guide streamlines the test data gene
     - The test data generator may not function effectively for non-Latin characters, such as Chinese, in certain document types. The limitation is caused by dependent text loader capabilities, such as `pypdf`.
     - The test data generator may not generate meaningful questions if the document is not well-organized or contains massive code snippets/links, such as API introduction documents or reference documents.
 
-2. Prepare local environment. Go to [example_gen_test_data](../../examples/gen_test_data) folder and install required packages.
+2. Prepare local environment. Go to [example_gen_test_data](../../examples/gen_test_data/) folder and install required packages.
 
     ```bash
     pip install -r requirements.txt
@@ -32,10 +32,10 @@ By leveraging the capabilities of llm, this guide streamlines the test data gene
 
 3. Install VSCode extension `Prompt flow`.
 
-4. Create your AzureOpenAI or OpenAI connection by following [this doc](../how-to-guides/manage-connections.md#create-a-connection).
+4. Create your AzureOpenAI or OpenAI connection by following [this doc](manage-connections.md#create-a-connection).
 
 5. Prepare test data generation setting.
-    - Navigate to [example_gen_test_data](../../examples/gen_test_data) folder.
+    - Navigate to [example_gen_test_data](../../examples/gen_test_data/) folder.
     - Prepare `config.yml` by copying [`config.yml.example`](../../examples/gen_test_data/config.yml.example).
     - Fill in configurations in the `config.yml` by following inline comment instructions. The config is made up of 3 sections:
       - Common section: this section provides common values for all other sections. Required.
@@ -48,7 +48,7 @@ By leveraging the capabilities of llm, this guide streamlines the test data gene
 
 
 ## Generate test data
-- Navigate to [example_gen_test_data](../../examples/gen_test_data) folder.
+- Navigate to [example_gen_test_data](../../examples/gen_test_data/) folder.
 
 - After configuration, run the following command to generate the test data set:
   ```bash
@@ -57,11 +57,11 @@ By leveraging the capabilities of llm, this guide streamlines the test data gene
 
 - The generated test data will be a data jsonl file. See detailed log print in console "Saved ... valid test data to ..." to find it.
 
-If you expect to generate a large amount of test data beyond your local compute capability, you may try generating test data in cloud, please see this [guide](../../docs/cloud/azureai/generate-test-data-cloud.md) for more detailed steps.
+If you expect to generate a large amount of test data beyond your local compute capability, you may try generating test data in cloud, please see this [guide](../cloud/azureai/generate-test-data-cloud.md) for more detailed steps.
 
 ## [*Optional*] Customize test data generation flow
 
-- Open the [example test data generation flow](../../examples/gen_test_data) in "Prompt flow" VSCode Extension. This flow is designed to generate a pair of question and suggested answer based on the given text chunk. The flow also includes validation prompts to ensure the quality of the generated test data.
+- Open the [example test data generation flow](../../examples/gen_test_data/) in "Prompt flow" VSCode Extension. This flow is designed to generate a pair of question and suggested answer based on the given text chunk. The flow also includes validation prompts to ensure the quality of the generated test data.
 
 - Customize your test data generation logic refering to [tune-prompts-with-variants](../how-to-guides/tune-prompts-with-variants.md).
 
