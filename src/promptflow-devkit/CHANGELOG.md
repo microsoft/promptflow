@@ -1,4 +1,4 @@
-## 1.1.0 (Upcoming)
+## 1.9.0 (Upcoming)
 
 ### Features Added
 - [SDK/CLI] Save a callable class or a function as a flex flow:

@@ -1083,58 +1083,25 @@ class FlowOperations(TelemetryMixin):
         """Extract signature for a callable class or a function. Signature indicates the ports of a flex flow using
         the callable as entry.
 
-        If entry is a callable function, the signature includes inputs and outputs. For example:
-        def my_func(a: int, b: str) -> int:
-            pass
-        Signature:
+        If entry is a callable function, the signature includes inputs and outputs.
+        If entry is a callable class, the signature includes inputs, outputs, and init.
+        Type of each port is inferred from the type hints of the callable and follows type system of json schema.
+        Sample signature:
         {
             "inputs": {
-                "a": {
-                    "type": "int",
-                },
-                "b": {
-                    "type": "string",
-                },
+                "input1": {
+                    "type": "integer",
+                }
             },
             "outputs": {
-                "output": {
-                    "type": "int",
-                },
-            },
-        }
-
-        If entry is a callable class, the signature includes inputs, outputs, and init. For example:
-        @dataclasses.dataclass
-        class MyDataClass:
-            c: int
-
-        class MyFlow:
-            def __init__(self, a: int):
-                pass
-
-            def __call__(self, b: str) -> MyDataClass:
-                pass
-        Signature:
-        {
-            "init": {
-                "a": {
-                    "type": "int",
-                },
-            },
-            "inputs": {
-                "b": {
-                    "type": "string",
-                },
-            },
-            "outputs": {
-                "c": {
-                    "type": "int",
-                },
+                "output1": {
+                    "type": "number",
+                }
             }
         }
-
-        Given flow accepts json input in batch run and serve, we support only a part of types for those ports. Errors
-        will be raised if annotated types are not supported.
+        Given flow accepts json input in batch run and serve, we support only a part of types for those ports.
+        Complicated types must be decorated with dataclasses.dataclass.
+        Errors will be raised if annotated types are not supported.
         :param entry: entry of the flow, should be a method name relative to code
         :type entry: Callable
         :return: signature of the flow
