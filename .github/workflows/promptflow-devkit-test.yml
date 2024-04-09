@@ -56,7 +56,7 @@ jobs:
           poetry run pip show promptflow-tracing
           poetry run pip show promptflow-core
           poetry run pip show promptflow-devkit
-          poetry run ip show promptflow-tools
+          poetry run pip show promptflow-tools
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: Azure login (non pull_request workflow)
         if: github.event_name != 'pull_request'
