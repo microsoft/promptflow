@@ -169,6 +169,11 @@ jobs:
           msbuild /t:rebuild /p:Configuration=Release /p:Platform=x64 promptflow.wixproj
         shell: pwsh
 
+      - task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0
+        displayName: 'SBOM'
+        inputs:
+          BuildDropPath: 'scripts/installer/windows/out/'
+
       - name: Azure Login
         uses: azure/login@v1
         with:
