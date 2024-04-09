@@ -299,6 +299,42 @@ class TestCli:
             log_content = f.read()
         assert previous_log_content not in log_content
 
+        # Test flow test with simple input file
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/web_classification",
+            "--inputs",
+            f"{DATAS_DIR}/webClassification1.jsonl",
+        )
+        output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.output.json"
+        assert output_path.exists()
+
+        # Test flow test with invalid simple input file
+        with pytest.raises(ValueError) as ex:
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{FLOWS_DIR}/web_classification",
+                "--inputs",
+                f"{DATAS_DIR}/invalid_path.json",
+            )
+        assert "Cannot find inputs file" in ex.value.args[0]
+
+        # Test flow test with invalid file extension
+        with pytest.raises(ValueError) as ex:
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{FLOWS_DIR}/web_classification",
+                "--inputs",
+                f"{DATAS_DIR}/logo.jpg",
+            )
+        assert "Only support jsonl or json file as input" in ex.value.args[0]
+
     def test_flow_with_aad_connection(self):
         run_pf_command("flow", "test", "--flow", f"{FLOWS_DIR}/flow_with_aad_connection")
         output_path = Path(FLOWS_DIR) / "flow_with_aad_connection" / ".promptflow" / "flow.output.json"
@@ -1549,7 +1585,7 @@ class TestCli:
         with pytest.raises(SystemExit):
             run_pf_command("tool", "list", "--flow", "invalid_flow_folder")
         outerr = capsys.readouterr()
-        assert "Can't find file invalid_flow_folder, in the flow path" in outerr.out
+        assert "invalid_flow_folder does not exist." in outerr.out
 
     def test_tool_validate(self):
         # Test validate tool script

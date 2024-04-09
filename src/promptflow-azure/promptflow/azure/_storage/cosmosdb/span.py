@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import json
+from copy import deepcopy
 from typing import Any, Dict
 
 from azure.cosmos.container import ContainerProxy
@@ -39,7 +40,9 @@ class Span:
         self.end_time = span.end_time.isoformat()
         self.status = span.status
         self.attributes = span.attributes
-        self.events = span.events
+        # We will remove attributes from events for cosmosdb 2MB size limit.
+        # Deep copy to keep original data for LineSummary container.
+        self.events = deepcopy(span.events)
         self.links = span.links
         self.resource = span.resource
         self.partition_key = collection_id
