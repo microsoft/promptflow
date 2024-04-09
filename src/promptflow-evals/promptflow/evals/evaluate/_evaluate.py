@@ -31,8 +31,8 @@ def _validate_input_data_for_evaluator(evaluator, evaluator_name, data_df):
 
 
 def _validation(target, data, evaluators, output_path, tracking_uri, evaluation_name):
-    if target is None and data is None:
-        raise ValueError("Either target or data must be provided for evaluation.")
+    if data is None:
+        raise ValueError("data must be provided for evaluation.")
 
     if target is not None:
         if not callable(target):
@@ -58,7 +58,11 @@ def _validation(target, data, evaluators, output_path, tracking_uri, evaluation_
         if not isinstance(evaluation_name, str):
             raise ValueError("evaluation_name must be a string.")
 
-    data_df = pd.read_json(data, lines=True) if data is not None else None
+    try:
+        data_df = pd.read_json(data, lines=True)
+    except Exception as e:
+        raise ValueError(f"Failed to load data from {data}. Please validate it is a valid jsonl data. Error: {str(e)}.")
+
     for evaluator_name, evaluator in evaluators.items():
         _validate_input_data_for_evaluator(evaluator, evaluator_name, data_df)
 
