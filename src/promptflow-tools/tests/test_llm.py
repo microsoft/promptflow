@@ -17,12 +17,12 @@ class TestLLM:
             # test whether tool can handle param "stop" with value empty list
             # as openai raises "[] is not valid under any of the given schemas - 'stop'"
             pytest.param("azure_open_ai_connection", "gpt-35-turbo-instruct", {"stop": [], "logit_bias": {}}),
-            pytest.param("open_ai_connection", "gpt-3.5-turbo-instruct", {"max_tokens": 32},
+            pytest.param("open_ai_connection", "gpt-3.5-turbo-instruct", {},
                          marks=pytest.mark.skip_if_no_api_key("open_ai_connection")),
             # test completion stream
             pytest.param("azure_open_ai_connection", "gpt-35-turbo-instruct",
                          {"stop": [], "logit_bias": {}, "stream": True}),
-            pytest.param("open_ai_connection", "gpt-3.5-turbo-instruct", {"max_tokens": 32, "stream": True},
+            pytest.param("open_ai_connection", "gpt-3.5-turbo-instruct", {"stream": True},
                          marks=pytest.mark.skip_if_no_api_key("open_ai_connection")),
         ]
     )
