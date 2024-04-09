@@ -385,7 +385,7 @@ interactions:
       x-ms-version:
       - '2023-11-03'
     method: PUT
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/promptflow/PromptFlowArtifacts/batch_run_name/node_artifacts/hello_world%5C000000000.jsonl
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/promptflow/PromptFlowArtifacts/batch_run_name/node_artifacts/hello_world/000000000.jsonl
   response:
     body:
       string: ''
@@ -705,7 +705,7 @@ interactions:
       x-ms-version:
       - '2023-11-03'
     method: PUT
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/promptflow/PromptFlowArtifacts/batch_run_name/node_artifacts/hello_world%5C000000001.jsonl
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/promptflow/PromptFlowArtifacts/batch_run_name/node_artifacts/hello_world/000000001.jsonl
   response:
     body:
       string: ''
@@ -842,7 +842,7 @@ interactions:
       x-ms-version:
       - '2023-11-03'
     method: PUT
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/promptflow/PromptFlowArtifacts/batch_run_name/node_artifacts/hello_world%5C000000002.jsonl
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/promptflow/PromptFlowArtifacts/batch_run_name/node_artifacts/hello_world/000000002.jsonl
   response:
     body:
       string: ''
