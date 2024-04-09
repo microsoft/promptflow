@@ -1,7 +1,7 @@
 import os
 import sys
 
-from promptflow import tool
+from promptflow.core import tool
 
 sys.path.append(f"{os.path.dirname(__file__)}/custom_lib")
 from custom_lib.foo import foo

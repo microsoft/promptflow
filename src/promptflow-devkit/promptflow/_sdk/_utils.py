@@ -4,6 +4,7 @@
 import collections
 import datetime
 import hashlib
+import importlib
 import json
 import os
 import platform
@@ -17,24 +18,24 @@ import zipfile
 from contextlib import contextmanager
 from enum import Enum
 from functools import partial
+from inspect import isfunction
 from os import PathLike
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
 from urllib.parse import urlparse
 
 import keyring
 import pydash
 from cryptography.fernet import Fernet
 from filelock import FileLock
-from jinja2 import Template
 from keyring.errors import NoKeyringError
 from marshmallow import ValidationError
 
 import promptflow
-from promptflow._constants import ENABLE_MULTI_CONTAINER_KEY, EXTENSION_UA, FlowEntryRegex
+from promptflow._constants import ENABLE_MULTI_CONTAINER_KEY, EXTENSION_UA, FLOW_DAG_YAML, FlowLanguage
+from promptflow._core.entry_meta_generator import generate_flow_meta as _generate_flow_meta
 from promptflow._sdk._constants import (
     AZURE_WORKSPACE_REGEX_FORMAT,
-    DAG_FILE_NAME,
     DEFAULT_ENCODING,
     FLOW_TOOLS_JSON,
     FLOW_TOOLS_JSON_GEN_TIMEOUT,
@@ -61,13 +62,16 @@ from promptflow._sdk._errors import (
     UnsecureConnectionError,
 )
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
-from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
+from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
 from promptflow.contracts.tool import ToolType
-from promptflow.core._utils import generate_flow_meta as _generate_flow_meta
-from promptflow.core._utils import get_used_connection_names_from_dict, update_dict_value_with_connections
+from promptflow.core._utils import (
+    get_used_connection_names_from_dict,
+    render_jinja_template_content,
+    update_dict_value_with_connections,
+)
 from promptflow.exceptions import ErrorTarget, UserErrorException, ValidationException
 
 logger = get_cli_sdk_logger()
@@ -191,8 +195,9 @@ def load_from_dict(schema: Any, data: Dict, context: Dict, additional_message: s
 
 def render_jinja_template(template_path, *, trim_blocks=True, keep_trailing_newline=True, **kwargs):
     with open(template_path, "r", encoding=DEFAULT_ENCODING) as f:
-        template = Template(f.read(), trim_blocks=trim_blocks, keep_trailing_newline=keep_trailing_newline)
-    return template.render(**kwargs)
+        return render_jinja_template_content(
+            f.read(), trim_blocks=trim_blocks, keep_trailing_newline=keep_trailing_newline, **kwargs
+        )
 
 
 def print_yellow_warning(message):
@@ -284,12 +289,8 @@ def _merge_local_code_and_additional_includes(code_path: Path):
             for name in src.glob("*"):
                 additional_includes_copy(name, Path(relative_path) / name.name, target_dir)
 
-    if code_path.is_dir():
-        yaml_path = (Path(code_path) / DAG_FILE_NAME).resolve()
-        code_path = code_path.resolve()
-    else:
-        yaml_path = code_path.resolve()
-        code_path = code_path.parent.resolve()
+    code_path, yaml_file = resolve_flow_path(code_path, check_flow_exist=False)
+    yaml_path = code_path / yaml_file
 
     with tempfile.TemporaryDirectory() as temp_dir:
         shutil.copytree(code_path.resolve().as_posix(), temp_dir, dirs_exist_ok=True)
@@ -326,13 +327,64 @@ def incremental_print(log: str, printed: int, fileout) -> int:
 def get_promptflow_sdk_version() -> str:
     try:
         return promptflow.__version__
-    except AttributeError:
+    except ImportError:
         # if promptflow is installed from source, it does not have __version__ attribute
-        return "0.0.1"
+        return None
 
 
-def print_pf_version():
-    print("promptflow\t\t\t {}".format(get_promptflow_sdk_version()))
+def get_promptflow_tracing_version() -> Union[str, None]:
+    try:
+        from promptflow.tracing._version import __version__
+
+        return __version__
+    except ImportError:
+        return None
+
+
+def get_promptflow_core_version() -> Union[str, None]:
+    try:
+        from promptflow.core._version import __version__
+
+        return __version__
+    except ImportError:
+        return None
+
+
+def get_promptflow_devkit_version() -> Union[str, None]:
+    try:
+        from promptflow._sdk._version import __version__
+
+        return __version__
+    except ImportError:
+        return None
+
+
+def get_promptflow_azure_version() -> Union[str, None]:
+    try:
+        from promptflow.azure._version import __version__
+
+        return __version__
+    except ImportError:
+        return None
+
+
+def print_pf_version(with_azure: bool = False):
+    version_promptflow = get_promptflow_sdk_version()
+    if version_promptflow:
+        print("promptflow\t\t\t {}".format(version_promptflow))
+    version_tracing = get_promptflow_tracing_version()
+    if version_tracing:
+        print("promptflow-tracing\t\t {}".format(version_tracing))
+    version_core = get_promptflow_core_version()
+    if version_core:
+        print("promptflow-core\t\t\t {}".format(version_core))
+    version_devkit = get_promptflow_devkit_version()
+    if version_devkit:
+        print("promptflow-devkit\t\t {}".format(version_devkit))
+    if with_azure:
+        version_azure = get_promptflow_azure_version()
+        if version_azure:
+            print("promptflow-azure\t\t {}".format(version_azure))
     print()
     print("Executable '{}'".format(os.path.abspath(sys.executable)))
     print("Python ({}) {}".format(platform.system(), sys.version))
@@ -586,9 +638,9 @@ def generate_flow_tools_json(
     :param used_packages_only: whether to only include used packages, default value is False.
     :param source_path_mapping: if specified, record yaml paths for each source.
     """
-    flow_directory = Path(flow_directory).resolve()
+    flow_directory, flow_file = resolve_flow_path(flow_directory, check_flow_exist=False)
     # parse flow DAG
-    data = load_yaml(flow_directory / DAG_FILE_NAME)
+    data = load_yaml(flow_directory / flow_file)
 
     tools, used_packages, _source_path_mapping = _get_involved_code_and_package(data)
 
@@ -843,11 +895,10 @@ def gen_uuid_by_compute_info() -> Union[str, None]:
     return str(uuid.uuid4())
 
 
-def convert_time_unix_nano_to_timestamp(time_unix_nano: str) -> str:
+def convert_time_unix_nano_to_timestamp(time_unix_nano: str) -> datetime.datetime:
     nanoseconds = int(time_unix_nano)
     seconds = nanoseconds / 1_000_000_000
-    timestamp = datetime.datetime.utcfromtimestamp(seconds)
-    return timestamp.isoformat()
+    return datetime.datetime.utcfromtimestamp(seconds)
 
 
 def parse_kv_from_pb_attribute(attribute: Dict) -> Tuple[str, str]:
@@ -878,20 +929,6 @@ def parse_otel_span_status_code(value: int) -> str:
         return "Error"
 
 
-def _generate_meta_from_file(working_dir, source_path, entry, meta_dict, exception_list):
-    from promptflow._core.tool_meta_generator import generate_flow_meta_dict_by_file
-
-    with _change_working_dir(working_dir), inject_sys_path(working_dir):
-        try:
-            result = generate_flow_meta_dict_by_file(
-                path=source_path,
-                entry=entry,
-            )
-            meta_dict.update(result)
-        except Exception as e:
-            exception_list.append(str(e))
-
-
 def extract_workspace_triad_from_trace_provider(trace_provider: str) -> AzureMLWorkspaceTriad:
     match = re.match(AZURE_WORKSPACE_REGEX_FORMAT, trace_provider)
     if not match or len(match.groups()) != 5:
@@ -915,29 +952,37 @@ def overwrite_null_std_logger():
         sys.stderr = sys.stdout
 
 
-def is_python_flex_flow_entry(entry: str):
-    """Returns True if entry is flex flow's entry (in python)."""
-    return isinstance(entry, str) and re.match(FlowEntryRegex.Python, entry)
-
-
 @contextmanager
-def generate_yaml_entry(entry: Union[str, PathLike], code: Path):
+def generate_yaml_entry(entry: Union[str, PathLike, Callable], code: Path = None):
     """Generate yaml entry to run."""
-    if is_python_flex_flow_entry(entry=entry):
-        with create_temp_eager_flow_yaml(entry, code) as flow_yaml_path:
+    from promptflow._proxy import ProxyFactory
+
+    executor_proxy = ProxyFactory().get_executor_proxy_cls(FlowLanguage.Python)
+    if callable(entry) or executor_proxy.is_flex_flow_entry(entry=entry):
+        with create_temp_flex_flow_yaml(entry, code) as flow_yaml_path:
             yield flow_yaml_path
     else:
-        logger.warning(f"Specify code {code} is only supported for Python flex flow entry, ignoring it.")
+        if code:
+            logger.warning(f"Specify code {code} is only supported for Python flex flow entry, ignoring it.")
         yield entry
 
 
 @contextmanager
-def create_temp_eager_flow_yaml(entry: Union[str, PathLike], code: Path):
+def create_temp_flex_flow_yaml(entry: Union[str, PathLike, Callable], code: Path = None):
     """Create a temporary flow.dag.yaml in code folder"""
-    # directly return the entry if it's a file
-
-    flow_yaml_path = code / DAG_FILE_NAME
+    logger.info("Create temporary entry for flex flow.")
+    if callable(entry):
+        entry = callable_to_entry_string(entry)
+    if not code:
+        code = Path.cwd()
+        logger.warning(f"Code path is not specified, use current working directory: {code.as_posix()}")
+    else:
+        code = Path(code)
+        if not code.exists():
+            raise UserErrorException(f"Code path {code.as_posix()} does not exist.")
+    flow_yaml_path = code / FLOW_DAG_YAML
     existing_content = None
+
     try:
         if flow_yaml_path.exists():
             logger.warning(f"Found existing {flow_yaml_path.as_posix()}, will not respect it in runtime.")
@@ -957,6 +1002,30 @@ def create_temp_eager_flow_yaml(entry: Union[str, PathLike], code: Path):
                     flow_yaml_path.unlink()
                 except Exception as e:
                     logger.warning(f"Failed to delete generated: {flow_yaml_path.as_posix()}, error: {e}")
+
+
+def callable_to_entry_string(callable_obj: Callable) -> str:
+    """Convert callable object to entry string."""
+    if not isfunction(callable_obj):
+        raise UserErrorException(f"{callable_obj} is not function, only function is supported.")
+
+    try:
+        module_str = callable_obj.__module__
+        func_str = callable_obj.__name__
+    except AttributeError as e:
+        raise UserErrorException(
+            f"Failed to convert {callable_obj} to entry, please make sure it has __module__ and __name__"
+        ) from e
+
+    # check if callable can be imported from module
+    module = importlib.import_module(module_str)
+    func = getattr(module, func_str, None)
+    if not func:
+        raise UserErrorException(
+            f"Failed to import {callable_obj} from module {module}, please make sure it's a global function."
+        )
+
+    return f"{module_str}:{func_str}"
 
 
 generate_flow_meta = _generate_flow_meta

@@ -11,11 +11,13 @@ import os
 import signal
 import threading
 import uuid
+from contextlib import contextmanager
 from pathlib import Path
 from threading import current_thread
 from types import GeneratorType
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
+import opentelemetry.trace as otel_trace
 from opentelemetry.trace.status import StatusCode
 
 from promptflow._constants import LINE_NUMBER_KEY
@@ -33,16 +35,12 @@ from promptflow._utils.execution_utils import (
     extract_aggregation_inputs,
     get_aggregation_inputs_properties,
 )
-from promptflow._utils.flow_utils import is_flex_flow
+from promptflow._utils.flow_utils import is_flex_flow, is_prompty_flow
 from promptflow._utils.logger_utils import flow_logger, logger
-from promptflow._utils.multimedia_utils import (
-    load_multimedia_data,
-    load_multimedia_data_recursively,
-    persist_multimedia_data,
-)
+from promptflow._utils.multimedia_utils import MultimediaProcessor
+from promptflow._utils.user_agent_utils import append_promptflow_package_ua
 from promptflow._utils.utils import get_int_env_var, transpose
 from promptflow._utils.yaml_utils import load_yaml
-from promptflow._version import VERSION
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
@@ -165,6 +163,8 @@ class FlowExecutor:
         self._completed_idx = None
         # TODO: Improve the experience about configuring node concurrency.
         self._node_concurrency = DEFAULT_CONCURRENCY_BULK
+        self._message_format = flow.message_format
+        self._multimedia_processor = MultimediaProcessor.create(flow.message_format)
 
     @classmethod
     def create(
@@ -179,6 +179,7 @@ class FlowExecutor:
         node_override: Optional[Dict[str, Dict[str, Any]]] = None,
         line_timeout_sec: Optional[int] = None,
         init_kwargs: Optional[Dict[str, Any]] = None,
+        **kwargs,
     ) -> "FlowExecutor":
         """Create a new instance of FlowExecutor.
 
@@ -204,16 +205,32 @@ class FlowExecutor:
         :rtype: ~promptflow.executor.flow_executor.FlowExecutor
         """
         setup_exporter_from_environ()
+        if hasattr(flow_file, "__call__") or inspect.isfunction(flow_file):
+            from ._script_executor import ScriptExecutor
+
+            return ScriptExecutor(flow_file, storage=storage)
+        if not isinstance(flow_file, (Path, str)):
+            raise NotImplementedError("Only support Path or str for flow_file.")
         if is_flex_flow(file_path=flow_file, working_dir=working_dir):
             from ._script_executor import ScriptExecutor
 
             return ScriptExecutor(
                 flow_file=Path(flow_file), working_dir=working_dir, storage=storage, init_kwargs=init_kwargs
             )
+        elif is_prompty_flow(file_path=flow_file):
+            from ._prompty_executor import PromptyExecutor
+
+            return PromptyExecutor(
+                flow_file=Path(flow_file),
+                working_dir=working_dir,
+                storage=storage,
+            )
         else:
             if init_kwargs:
                 logger.warning(f"Got unexpected init args {init_kwargs} for non-script flow. Ignoring them.")
-            flow = Flow.from_yaml(flow_file, working_dir=working_dir)
+
+            name = kwargs.get("name", None)
+            flow = Flow.from_yaml(flow_file, working_dir=working_dir, name=name)
             return cls._create_from_flow(
                 flow_file=flow_file,
                 flow=flow,
@@ -243,8 +260,9 @@ class FlowExecutor:
         if node_override:
             flow = flow._apply_node_overrides(node_override)
         flow = flow._apply_default_node_variants()
+
         package_tool_keys = [node.source.tool for node in flow.nodes if node.source and node.source.tool]
-        tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
+        tool_resolver = ToolResolver(working_dir, connections, package_tool_keys, message_format=flow.message_format)
 
         with _change_working_dir(working_dir):
             resolved_tools = [tool_resolver.resolve_tool_by_node(node) for node in flow.nodes]
@@ -255,6 +273,7 @@ class FlowExecutor:
             inputs=flow.inputs,
             outputs=flow.outputs,
             tools=[],
+            message_format=flow.message_format,
         )
         # ensure_flow_valid including validation + resolve
         # Todo: 1) split pure validation + resolve from below method 2) provide completed validation()
@@ -322,7 +341,7 @@ class FlowExecutor:
             operation_context = OperationContext.get_instance()
             original_context = operation_context.copy()
             try:
-                operation_context.append_user_agent(f"promptflow/{VERSION}")
+                append_promptflow_package_ua(operation_context)
                 operation_context.set_default_tracing_keys({"run_mode", "root_run_id", "flow_id", "batch_input_source"})
                 operation_context["run_mode"] = RunMode.SingleNode.name
                 # Inject OpenAI API to make sure traces and headers injection works and
@@ -369,10 +388,12 @@ class FlowExecutor:
         converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(
             flow, node, inputs_with_default_value
         )
-        inputs = load_multimedia_data(node_referenced_flow_inputs, converted_flow_inputs_for_node)
-        dependency_nodes_outputs = load_multimedia_data_recursively(dependency_nodes_outputs)
+
+        multimedia_processor = MultimediaProcessor.create(flow.message_format)
+        inputs = multimedia_processor.load_multimedia_data(node_referenced_flow_inputs, converted_flow_inputs_for_node)
+        dependency_nodes_outputs = multimedia_processor.load_multimedia_data_recursively(dependency_nodes_outputs)
         package_tool_keys = [node.source.tool] if node.source and node.source.tool else []
-        tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
+        tool_resolver = ToolResolver(working_dir, connections, package_tool_keys, message_format=flow.message_format)
         resolved_node = tool_resolver.resolve_tool_by_node(node)
 
         # Prepare callable and real inputs here
@@ -397,6 +418,7 @@ class FlowExecutor:
         if storage is None:
             sub_dir = "." if output_sub_dir is None else output_sub_dir
             storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path(sub_dir))
+
         run_tracker = RunTracker(storage)
         with run_tracker.node_log_manager, update_operation_context():
             # Will generate node run in context
@@ -404,6 +426,7 @@ class FlowExecutor:
                 name=flow.name,
                 run_tracker=run_tracker,
                 cache_manager=AbstractCacheManager.init_from_env(),
+                message_format=flow.message_format,
             )
 
             try:
@@ -613,14 +636,14 @@ class FlowExecutor:
         run_id = run_id or str(uuid.uuid4())
         nodes = [copy.deepcopy(node) for node in self._flow.nodes if node.aggregation]
         # Load multimedia data from aggregation_inputs
-        aggregation_inputs = load_multimedia_data_recursively(aggregation_inputs)
+        aggregation_inputs = self._multimedia_processor.load_multimedia_data_recursively(aggregation_inputs)
         # Update the inputs of the aggregation nodes with the aggregation inputs.
         for node in nodes:
             node.inputs = {
                 k: FlowExecutor._try_get_aggregation_input(v, aggregation_inputs) for k, v in node.inputs.items()
             }
         # Load multimedia data for the flow inputs of aggregation nodes.
-        inputs = load_multimedia_data(self._flow.inputs, inputs)
+        inputs = self._multimedia_processor.load_multimedia_data(self._flow.inputs, inputs)
 
         # TODO: Use a new run tracker to avoid memory increase infinitely.
         run_tracker = self._run_tracker
@@ -630,6 +653,7 @@ class FlowExecutor:
             cache_manager=self._cache_manager,
             run_id=run_id,
             flow_id=self._flow_id,
+            message_format=self._message_format,
         )
         metrics = {}
 
@@ -791,7 +815,7 @@ class FlowExecutor:
         else:
             values_for_otel = {"line_run_id": run_id}
         try:
-            operation_context.append_user_agent(f"promptflow/{VERSION}")
+            append_promptflow_package_ua(operation_context)
             operation_context.set_default_tracing_keys({"run_mode", "root_run_id", "flow_id", "batch_input_source"})
             operation_context.run_mode = original_mode or RunMode.Test.name
             operation_context.update(values_for_context)
@@ -837,6 +861,8 @@ class FlowExecutor:
         allow_generator_output=False,
     ):
         with open_telemetry_tracer.start_as_current_span(self._flow.name) as span:
+            # Store otel trace id in context for correlation
+            OperationContext.get_instance()["otel_trace_id"] = f"{span.get_span_context().trace_id:032x}"
             # initialize span
             span.set_attributes(
                 {
@@ -873,7 +899,7 @@ class FlowExecutor:
     ):
         if validate_inputs:
             inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=run_info.index)
-        inputs = load_multimedia_data(self._flow.inputs, inputs)
+        inputs = self._multimedia_processor.load_multimedia_data(self._flow.inputs, inputs)
         # Inputs are assigned after validation and multimedia data loading, instead of at the start of the flow run.
         # This way, if validation or multimedia data loading fails, we avoid persisting invalid inputs.
         run_info.inputs = inputs
@@ -926,6 +952,7 @@ class FlowExecutor:
             run_id=line_run_id,
             parent_run_id=run_id,
             index=line_number,
+            message_format=self._message_format,
         )
         context = FlowExecutionContext(
             name=self._flow.name,
@@ -934,6 +961,7 @@ class FlowExecutor:
             run_id=run_id,
             flow_id=self._flow_id,
             line_number=line_number,
+            message_format=self._message_format,
         )
         output = {}
         aggregation_inputs = {}
@@ -1007,6 +1035,7 @@ class FlowExecutor:
             parent_run_id=run_id,
             inputs={k: inputs[k] for k in self._flow.inputs if k in inputs},
             index=line_number,
+            message_format=self._message_format,
         )
         context = FlowExecutionContext(
             name=self._flow.name,
@@ -1015,6 +1044,7 @@ class FlowExecutor:
             run_id=run_id,
             flow_id=self._flow_id,
             line_number=line_number,
+            message_format=self._message_format,
         )
         output = {}
         aggregation_inputs = {}
@@ -1022,7 +1052,7 @@ class FlowExecutor:
             if validate_inputs:
                 inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=line_number)
             # TODO: Consider async implementation for load_multimedia_data
-            inputs = load_multimedia_data(self._flow.inputs, inputs)
+            inputs = self._multimedia_processor.load_multimedia_data(self._flow.inputs, inputs)
             # Make sure the run_info with converted inputs results rather than original inputs
             run_info.inputs = inputs
             output, nodes_outputs = await self._traverse_nodes_async(inputs, context)
@@ -1324,15 +1354,17 @@ def execute_flow(
     """
     flow_executor = FlowExecutor.create(flow_file, connections, working_dir, raise_ex=False, **kwargs)
     flow_executor.enable_streaming_for_llm_flow(lambda: enable_stream_output)
-    with _change_working_dir(working_dir):
+    with _change_working_dir(working_dir), _force_flush_tracer_provider():
         # Execute nodes in the flow except the aggregation nodes
         # TODO: remove index=0 after UX no longer requires a run id similar to batch runs
         # (run_id_index, eg. xxx_0) for displaying the interface
         line_result = flow_executor.exec_line(
             inputs, index=0, allow_generator_output=allow_generator_output, run_id=run_id
         )
-        # Persist the output to the output directory
-        line_result.output = persist_multimedia_data(line_result.output, base_dir=working_dir, sub_dir=output_dir)
+        # persist the output to the output directory
+        line_result.output = flow_executor._multimedia_processor.persist_multimedia_data(
+            line_result.output, base_dir=working_dir, sub_dir=output_dir
+        )
         if run_aggregation and line_result.aggregation_inputs:
             # Convert inputs of aggregation to list type
             flow_inputs = {k: [v] for k, v in inputs.items()}
@@ -1348,6 +1380,20 @@ def execute_flow(
             # remove line_number from output
             line_result.output.pop(LINE_NUMBER_KEY, None)
         return line_result
+
+
+@contextmanager
+def _force_flush_tracer_provider():
+    try:
+        yield
+    finally:
+        try:
+            # Force flush the tracer provider to ensure all spans are exported before the process exits.
+            tracer_provider = otel_trace.get_tracer_provider()
+            if hasattr(tracer_provider, "force_flush"):
+                tracer_provider.force_flush()
+        except Exception as e:
+            flow_logger.warning(f"Error occurred while force flush tracer provider: {e}")
 
 
 def signal_handler(sig, frame):

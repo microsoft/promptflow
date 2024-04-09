@@ -36,6 +36,7 @@ Setup connections to provisioned resources in prompt flow.
 | top_p                  | float       | the probability of using the top choice from the generated tokens. Default is 1.               | No       |
 | presence\_penalty      | float       | value that controls the model's behavior with regards to repeating phrases. Default is 0.      | No       |
 | frequency\_penalty     | float       | value that controls the model's behavior with regards to generating rare phrases. Default is 0. | No       |
+| detail                 | string      | configure how the model interprets and processes images, default is "auto". [Read more](https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/gpt-with-vision?tabs=rest%2Csystem-assigned%2Cresource#detail-parameter-settings-in-image-processing-low-high-auto) | No       |
 
 ## Outputs
 

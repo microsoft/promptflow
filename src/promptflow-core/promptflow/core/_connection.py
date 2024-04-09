@@ -6,8 +6,13 @@ import os
 import types
 from typing import Dict, List
 
-from promptflow._constants import CONNECTION_SCRUBBED_VALUE as SCRUBBED_VALUE, CONNECTION_SCRUBBED_VALUE_NO_CHANGE
-from promptflow._constants import ConnectionAuthMode, ConnectionType, CustomStrongTypeConnectionConfigs
+from promptflow._constants import CONNECTION_SCRUBBED_VALUE as SCRUBBED_VALUE
+from promptflow._constants import (
+    CONNECTION_SCRUBBED_VALUE_NO_CHANGE,
+    ConnectionAuthMode,
+    ConnectionType,
+    CustomStrongTypeConnectionConfigs,
+)
 from promptflow._core.token_provider import AzureTokenProvider
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.utils import in_jupyter_notebook
@@ -86,6 +91,7 @@ class _Connection:
         value = {**self.configs, **self.secrets}
         secret_keys = list(self.secrets.keys())
         return {
+            "name": self.name,
             "type": self.class_name,  # Required class name for connection in executor
             "module": self.module,
             "value": {k: v for k, v in value.items() if v is not None},  # Filter None value out
@@ -265,7 +271,7 @@ class OpenAIConnection(_StrongTypeConnection):
     TYPE = ConnectionType.OPEN_AI.value
 
     def __init__(self, api_key: str, organization: str = None, base_url=None, **kwargs):
-        if base_url == "":
+        if base_url in ["", "_"]:  # Note for _, rp return _ if no target specified.
             # Keep empty as None to avoid disturbing openai pick the default api base.
             base_url = None
         configs = {"organization": organization, "base_url": base_url}

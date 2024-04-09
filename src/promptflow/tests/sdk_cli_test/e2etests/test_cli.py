@@ -31,11 +31,13 @@ from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.tracing._operation_context import OperationContext
 
 FLOWS_DIR = "./tests/test_configs/flows"
+EAGER_FLOWS_DIR = "./tests/test_configs/eager_flows"
 EXPERIMENT_DIR = "./tests/test_configs/experiments"
 RUNS_DIR = "./tests/test_configs/runs"
 CONNECTIONS_DIR = "./tests/test_configs/connections"
 DATAS_DIR = "./tests/test_configs/datas"
 TOOL_ROOT = "./tests/test_configs/tools"
+PROMPTY_DIR = "./tests/test_configs/prompty"
 
 TARGET_URL = "https://www.youtube.com/watch?v=o5ZQyXaAv1g"
 
@@ -1547,7 +1549,7 @@ class TestCli:
         with pytest.raises(SystemExit):
             run_pf_command("tool", "list", "--flow", "invalid_flow_folder")
         outerr = capsys.readouterr()
-        assert "invalid_flow_folder does not exist" in outerr.out
+        assert "invalid_flow_folder does not exist." in outerr.out
 
     def test_tool_validate(self):
         # Test validate tool script
@@ -2021,6 +2023,20 @@ class TestCli:
                 path = Path(tmpdir) / node_name / filename
                 assert path.is_file()
 
+    @pytest.mark.usefixtures("setup_experiment_table", "recording_injection")
+    def test_experiment_direct_test(self, monkeypatch, capfd, local_client, tmpdir):
+        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+            mock_func.return_value = True
+            run_pf_command(
+                "experiment",
+                "test",
+                "--template",
+                f"{EXPERIMENT_DIR}/basic-no-script-template/basic.exp.yaml",
+            )
+            out, _ = capfd.readouterr()
+            assert "main" in out
+            assert "eval" in out
+
     def test_run_list(self, local_client):
         from promptflow._sdk.entities import Run
 
@@ -2198,3 +2214,64 @@ class TestCli:
         assert output_path.exists()
         detail_path = Path(flow_dir) / ".promptflow" / "chat.detail.json"
         assert detail_path.exists()
+
+    def test_flow_test_prompty(self):
+        prompty_path = Path(PROMPTY_DIR) / "prompty_example.prompty"
+        run_pf_command("flow", "test", "--flow", prompty_path.as_posix(), "--inputs", 'question="who are you"')
+        output_path = Path(prompty_path).parent / ".promptflow" / "prompty_example"
+        assert output_path.exists()
+        assert (output_path / "flow.log").exists()
+        assert (output_path / "flow.detail.json").exists()
+        assert (output_path / "flow.output.json").exists()
+
+    def test_flow_run_prompty(self, capfd):
+        prompty_path = Path(PROMPTY_DIR) / "prompty_example.prompty"
+
+        run_pf_command(
+            "run",
+            "create",
+            "--flow",
+            prompty_path.as_posix(),
+            "--data",
+            f"{DATAS_DIR}/prompty_inputs.jsonl",
+            "--name",
+            str(uuid.uuid4()),
+        )
+        out, _ = capfd.readouterr()
+        assert "Completed" in out
+
+    def test_pf_run_with_init(self, pf):
+        run_id = str(uuid.uuid4())
+        run_pf_command(
+            "run",
+            "create",
+            "--flow",
+            f"{EAGER_FLOWS_DIR}/basic_callable_class",
+            "--data",
+            f"{EAGER_FLOWS_DIR}/basic_callable_class/inputs.jsonl",
+            "--name",
+            run_id,
+            "--init",
+            "obj_input=val",
+        )
+
+        def assert_func(details_dict):
+            return details_dict["outputs.func_input"] == [
+                "func_input",
+                "func_input",
+                "func_input",
+                "func_input",
+            ] and details_dict["outputs.obj_input"] == ["val", "val", "val", "val"]
+
+        # check run results
+        run = pf.runs.get(run_id)
+        assert_batch_run_result(run, pf, assert_func)
+
+
+def assert_batch_run_result(run, pf, assert_func):
+    assert run.status == "Completed"
+    assert "error" not in run._to_dict(), run._to_dict()["error"]
+    details = pf.get_details(run.name)
+    # convert DataFrame to dict
+    details_dict = details.to_dict(orient="list")
+    assert assert_func(details_dict), details_dict

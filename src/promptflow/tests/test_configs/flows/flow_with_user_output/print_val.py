@@ -1,6 +1,6 @@
 import sys
 
-from promptflow import tool
+from promptflow.core import tool
 
 
 @tool
