@@ -161,7 +161,7 @@ class TestFlowSave:
                             "type": "string",
                         },
                         "length": {
-                            "type": "int",
+                            "type": "integer",
                         },
                     },
                 },
@@ -204,13 +204,13 @@ class TestFlowSave:
                             "type": "string",
                         },
                         "i": {
-                            "type": "int",
+                            "type": "integer",
                         },
                         "f": {
-                            "type": "double",
+                            "type": "number",
                         },
                         "b": {
-                            "type": "bool",
+                            "type": "boolean",
                         },
                     },
                     "inputs": {
@@ -218,16 +218,16 @@ class TestFlowSave:
                             "type": "string",
                         },
                         "i": {
-                            "type": "int",
+                            "type": "integer",
                         },
                         "f": {
-                            "type": "double",
+                            "type": "number",
                         },
                         "b": {
-                            "type": "bool",
+                            "type": "boolean",
                         },
                         "li": {
-                            "type": "list",
+                            "type": "array",
                         },
                         "d": {
                             "type": "object",
@@ -238,16 +238,16 @@ class TestFlowSave:
                             "type": "string",
                         },
                         "i": {
-                            "type": "int",
+                            "type": "integer",
                         },
                         "f": {
-                            "type": "double",
+                            "type": "number",
                         },
                         "b": {
-                            "type": "bool",
+                            "type": "boolean",
                         },
                         "l": {
-                            "type": "list",
+                            "type": "array",
                         },
                         "d": {
                             "type": "object",

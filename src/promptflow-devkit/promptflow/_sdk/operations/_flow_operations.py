@@ -29,6 +29,7 @@ from promptflow._sdk._constants import (
     FLOW_TOOLS_JSON_GEN_TIMEOUT,
     LOCAL_MGMT_DB_PATH,
     SERVE_SAMPLE_JSON_PATH,
+    SignatureValueType,
 )
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._orchestrator import TestSubmitter
@@ -54,6 +55,7 @@ from promptflow._utils.flow_utils import (
     parse_variant,
 )
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
+from promptflow.contracts.tool import ValueType
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 
@@ -1003,34 +1005,78 @@ class FlowOperations(TelemetryMixin):
         return signature
 
     @monitor_operation(activity_name="pf.flows._infer_signature", activity_type=ActivityType.INTERNALCALL)
-    def _infer_signature(self, entry: Callable, keep_entry: bool = False, validate: bool = True) -> Tuple[dict, Path]:
+    def _infer_signature(
+        self,
+        entry: Union[Callable, str],
+        *,
+        code: str = None,
+        keep_entry: bool = False,
+        validate: bool = True,
+        language: str = FlowLanguage.Python,
+    ) -> Tuple[dict, Path]:
         """Infer signature of a flow entry.
 
         Note that this is a Python only feature.
         """
-        if inspect.isclass(entry):
-            if not hasattr(entry, "__call__"):
-                raise UserErrorException("Class entry must have a __call__ method.")
-            cls = entry
-            func = getattr(entry, "__call__")
-        elif inspect.isfunction(entry):
-            cls = None
-            func = entry
+        # resolve entry and code
+        if isinstance(entry, str):
+            if not code:
+                raise UserErrorException("Code path is required when entry is a string.")
+            code = Path(code)
+            if not code.exists():
+                raise UserErrorException(f"Specified code {code} does not exist.")
+
+            inspector_proxy = ProxyFactory().create_inspector_proxy(language=language)
+            if not inspector_proxy.is_flex_flow_entry(entry):
+                raise UserErrorException(f"Entry {entry} is not a valid entry for flow.")
+
+            # TODO: extract description?
+            flow_meta = inspector_proxy.get_entry_meta(entry=entry, working_dir=code)
+        elif code is not None:
+            # TODO: support specifying code when inferring signature?
+            raise UserErrorException(
+                "Code path will be the parent of entry source " "and can't be customized when entry is a callable."
+            )
+        elif inspect.isclass(entry) or inspect.isfunction(entry):
+            if inspect.isclass(entry):
+                if not hasattr(entry, "__call__"):
+                    raise UserErrorException("Class entry must have a __call__ method.")
+                f, cls = entry.__call__, entry
+            else:
+                f, cls = entry, None
+
+            # callable entry must be of python, so we directly import from promptflow._core locally here
+            from promptflow._core.tool_meta_generator import generate_flow_meta_dict_by_object
+
+            flow_meta = generate_flow_meta_dict_by_object(f, cls)
+            source_path = Path(inspect.getfile(entry))
+            code = source_path.parent
+            # TODO: should we handle the case that entry is not defined in root level of the source?
+            flow_meta["entry"] = f"{source_path.stem}:{entry.__name__}"
         else:
             raise UserErrorException("Entry must be a function or a class.")
-        # this is a python only feature, so we directly import from promptflow._core locally here
-        from promptflow._core.tool_meta_generator import generate_flow_meta_dict_by_object
 
-        flow_meta = generate_flow_meta_dict_by_object(func, cls)
-        source_path = Path(inspect.getfile(entry))
-        # TODO: should we handle the case that entry is not defined in root level of the source?
-        flow_meta["entry"] = f"{source_path.stem}:{entry.__name__}"
+        # signature is language irrelevant, so we apply json type system
+        value_type_map = {
+            ValueType.INT.value: SignatureValueType.INT.value,
+            ValueType.DOUBLE.value: SignatureValueType.NUMBER.value,
+            ValueType.LIST.value: SignatureValueType.ARRAY.value,
+            ValueType.BOOL.value: SignatureValueType.BOOL.value,
+        }
+        for port_type in ["inputs", "outputs", "init"]:
+            if port_type not in flow_meta:
+                continue
+            for port_name, port in flow_meta[port_type].items():
+                if port["type"] in value_type_map:
+                    port["type"] = value_type_map[port["type"]]
+
         if validate:
-            flow = FlexFlow(path=source_path, code=source_path.parent, data=flow_meta, entry=flow_meta["entry"])
+            # this path is actually not used
+            flow = FlexFlow(path=code / FLOW_DAG_YAML, code=code, data=flow_meta, entry=flow_meta["entry"])
             flow._validate(raise_error=True)
         if not keep_entry:
-            del flow_meta["entry"]
-        return flow_meta, source_path.parent
+            flow_meta.pop("entry", None)
+        return flow_meta, code
 
     @monitor_operation(activity_name="pf.flows.infer_signature", activity_type=ActivityType.PUBLICAPI)
     def infer_signature(self, entry: Callable) -> dict:
@@ -1114,28 +1160,7 @@ class FlowOperations(TelemetryMixin):
         # hide the language field before csharp support go public
         language: str = kwargs.get(LANGUAGE_KEY, FlowLanguage.Python)
 
-        # resolve entry and code
-        if isinstance(entry, str):
-            if not code:
-                raise UserErrorException("Code path is required when entry is a string.")
-            code = Path(code)
-            if not code.exists():
-                raise UserErrorException(f"Specified code {code} does not exist.")
-
-            inspector_proxy = ProxyFactory().create_inspector_proxy(language=language)
-            if not inspector_proxy.is_flex_flow_entry(entry):
-                raise UserErrorException(f"Entry {entry} is not a valid entry for flow.")
-
-            # TODO: extract description?
-            entry_meta = inspector_proxy.get_entry_meta(entry=entry, working_dir=code)
-            entry_meta["entry"] = entry
-        elif code is not None:
-            # TODO: support specifying code and make saved entry a relative path?
-            raise UserErrorException(
-                "Code path will be the parent of entry source " "and can't be customized when entry is a callable."
-            )
-        else:
-            entry_meta, code = self._infer_signature(entry, keep_entry=True, validate=False)
+        entry_meta, code = self._infer_signature(entry, code=code, keep_entry=True, validate=False, language=language)
 
         data = self._merge_signature(entry_meta, signature)
         data["entry"] = entry_meta["entry"]
