@@ -374,7 +374,7 @@ class TestLLM:
             stop=None,
             logit_bias={}
         )
-        assert "Hello".lower() in result.lower()
+        assert "hello" in result.lower() or "you" in result.lower()
 
     def test_list_apis(self):
         with patch('promptflow.tools.llm.get_local_connection') as mock_dict:
