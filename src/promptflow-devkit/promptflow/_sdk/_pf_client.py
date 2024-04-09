@@ -339,10 +339,17 @@ class PFClient:
         """
         # Load the inputs for the flow test from sample file.
         if isinstance(inputs, (str, Path)):
+            if Path(inputs).suffix not in [".json", ".jsonl"]:
+                raise UserErrorException("Only support jsonl or json file as input.")
             if not Path(inputs).exists():
                 raise UserErrorException(f"Cannot find inputs file {inputs}.")
-            with open(inputs, "r") as f:
-                inputs = json.load(f)
+            if Path(inputs).suffix == ".json":
+                with open(inputs, "r") as f:
+                    inputs = json.load(f)
+            else:
+                from promptflow._utils.load_data import load_data
+
+                inputs = load_data(local_path=inputs)[0]
         return self.flows.test(
             flow=flow, inputs=inputs, variant=variant, environment_variables=environment_variables, node=node
         )

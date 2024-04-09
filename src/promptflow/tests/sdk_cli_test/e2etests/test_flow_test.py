@@ -59,6 +59,11 @@ class TestFlowTest:
             _client.test(flow=flow_path, inputs=DATA_ROOT / "invalid_path.json")
         assert "Cannot find inputs file" in ex.value.message
 
+        # Test flow test with invalid file extension
+        with pytest.raises(UserErrorException) as ex:
+            _client.test(flow=flow_path, inputs=DATA_ROOT / "logo.jpg")
+        assert "Only support jsonl or json file as input" in ex.value.message
+
     def test_pf_test_flow_with_package_tool_with_custom_strong_type_connection(self, install_custom_tool_pkg):
         inputs = {"text": "Hello World!"}
         flow_path = Path(f"{FLOWS_DIR}/flow_with_package_tool_with_custom_strong_type_connection").absolute()

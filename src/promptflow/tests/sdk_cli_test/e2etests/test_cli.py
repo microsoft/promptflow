@@ -323,6 +323,18 @@ class TestCli:
             )
         assert "Cannot find inputs file" in ex.value.args[0]
 
+        # Test flow test with invalid file extension
+        with pytest.raises(ValueError) as ex:
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{FLOWS_DIR}/web_classification",
+                "--inputs",
+                f"{DATAS_DIR}/logo.jpg",
+            )
+        assert "Only support jsonl or json file as input" in ex.value.args[0]
+
     def test_flow_with_aad_connection(self):
         run_pf_command("flow", "test", "--flow", f"{FLOWS_DIR}/flow_with_aad_connection")
         output_path = Path(FLOWS_DIR) / "flow_with_aad_connection" / ".promptflow" / "flow.output.json"
