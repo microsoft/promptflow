@@ -58,7 +58,7 @@ class OpenAI(ToolProvider):
             model=model.value if isinstance(model, Enum) else model,
             # empty string suffix should be treated as None.
             suffix=suffix if suffix else None,
-            max_tokens=int(max_tokens),
+            max_tokens=int(max_tokens) if max_tokens is not None else None,
             temperature=float(temperature),
             top_p=float(top_p),
             n=int(n),

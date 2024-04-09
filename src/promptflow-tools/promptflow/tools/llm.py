@@ -150,8 +150,7 @@ def llm(
                 top_p=top_p,
                 stream=stream,
                 stop=stop,
-                # max_tokens default value is 16 for openai completion api
-                max_tokens=16 if max_tokens is None else max_tokens,
+                max_tokens=max_tokens,
                 presence_penalty=presence_penalty,
                 frequency_penalty=frequency_penalty,
                 logit_bias=logit_bias,
