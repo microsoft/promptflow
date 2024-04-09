@@ -4,6 +4,7 @@
 import contextlib
 import copy
 import glob
+import inspect
 import json
 import os
 import shutil
@@ -14,15 +15,14 @@ import uuid
 from importlib.metadata import version
 from os import PathLike
 from pathlib import Path
-from typing import Dict, Iterable, List, NoReturn, Tuple, Union
+from typing import Callable, Dict, Iterable, List, NoReturn, Tuple, Union
 
 import pydash
 
-from promptflow._constants import PROMPT_FLOW_DIR_NAME, FlowLanguage
+from promptflow._constants import FLOW_FLEX_YAML, LANGUAGE_KEY, PROMPT_FLOW_DIR_NAME, FlowLanguage
 from promptflow._proxy import ProxyFactory
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
-    DAG_FILE_NAME,
     DEFAULT_ENCODING,
     DEFAULT_REQUIREMENTS_FILE_NAME,
     FLOW_META_JSON_GEN_TIMEOUT,
@@ -976,43 +976,69 @@ class FlowOperations(TelemetryMixin):
         return None
 
     @staticmethod
-    def _resolve_signature(signature_overrides, entry, working_dir, language):
+    def _merge_signature(extracted, signature_overrides):
         if not signature_overrides:
             signature_overrides = {}
 
-        inspector_proxy = ProxyFactory().create_inspector_proxy(language=language)
-        if not inspector_proxy.is_flex_flow_entry(entry):
-            raise UserErrorException(f"Entry {entry} is not a valid entry for flow.")
-
-        # TODO: extract inits, and description?
-        entry_meta = inspector_proxy.get_entry_meta(entry=entry, working_dir=working_dir)
         signature = {}
         for key in ["inputs", "outputs", "init"]:
-            if key in entry_meta:
-                signature[key] = entry_meta[key]
+            if key in extracted:
+                signature[key] = extracted[key]
+            elif key in signature_overrides:
+                raise UserErrorException(f"Provided signature for {key}, which is not found in the entry.")
 
             if key not in signature_overrides:
                 continue
 
-            if set(signature[key].keys()) != set(signature_overrides[key].keys()):
+            if set(extracted[key].keys()) != set(signature_overrides[key].keys()):
                 raise UserErrorException(
-                    f"Provided signature of {key} for entry {entry} does not match the entry.\n"
-                    f"Ports with signature: {', '.join(signature_overrides[key].keys())}\n"
-                    f"Actual ports: {', '.join(signature[key].keys())}\n"
+                    f"Provided signature of {key} does not match the entry.\n"
+                    f"Ports from signature: {', '.join(signature_overrides[key].keys())}\n"
+                    f"Ports from entry: {', '.join(signature[key].keys())}\n"
                 )
 
             signature[key] = signature_overrides[key]
 
         return signature
 
+    @monitor_operation(activity_name="pf.flows._infer_signature", activity_type=ActivityType.INTERNALCALL)
+    def _infer_signature(self, entry: Callable, keep_entry: bool = False, validate: bool = True) -> Tuple[dict, Path]:
+        """Infer signature of a flow entry.
+
+        Note that this is a Python only feature.
+        """
+        if inspect.isclass(entry):
+            if not hasattr(entry, "__call__"):
+                raise UserErrorException("Class entry must have a __call__ method.")
+            cls = entry
+            func = getattr(entry, "__call__")
+        elif inspect.isfunction(entry):
+            cls = None
+            func = entry
+        else:
+            raise UserErrorException("Entry must be a function or a class.")
+        # this is a python only feature, so we directly import from promptflow._core locally here
+        from promptflow._core.tool_meta_generator import generate_flow_meta_dict_by_object
+
+        flow_meta = generate_flow_meta_dict_by_object(func, cls)
+        source_path = Path(inspect.getfile(entry))
+        # TODO: should we handle the case that entry is not defined in root level of the source?
+        flow_meta["entry"] = f"{source_path.stem}:{entry.__name__}"
+        if validate:
+            flow = FlexFlow(path=source_path, code=source_path.parent, data=flow_meta, entry=flow_meta["entry"])
+            flow._validate(raise_error=True)
+        if not keep_entry:
+            del flow_meta["entry"]
+        return flow_meta, source_path.parent
+
     @monitor_operation(activity_name="pf.flows._save", activity_type=ActivityType.INTERNALCALL)
     def _save(
         self,
         path: Union[str, PathLike],
-        entry: str,
-        code: Union[str, PathLike],
+        entry: Union[str, Callable],
+        code: Union[str, PathLike, None] = None,
         *,
-        python_requirements: str = None,
+        python_requirements_txt: str = None,
         image: str = None,
         signature: dict = None,
         input_sample: dict = None,
@@ -1027,9 +1053,9 @@ class FlowOperations(TelemetryMixin):
         :type entry: str
         :param code: path to the code directory
         :type code: Union[str, PathLike]
-        :param python_requirements: path to the python requirements file. If not specified, will use `requirements.txt`
-              if existed in code directory.
-        :type python_requirements: str
+        :param python_requirements_txt: path to the python requirements file. If not specified, will use
+              `requirements.txt` if existed in code directory.
+        :type python_requirements_txt: str
         :param image: image to run the flow. Will use default image if not specified.
         :type image: str
         :param signature: signature of the flow, indicates the input and output ports of the flow
@@ -1042,44 +1068,57 @@ class FlowOperations(TelemetryMixin):
         if target_flow_directory.exists() and len(os.listdir(target_flow_directory.as_posix())) != 0:
             raise UserErrorException(f"Target path {target_flow_directory.as_posix()} exists and is not empty.")
 
-        code = Path(code)
-        if not code.exists():
-            raise UserErrorException(f"Specified code {code} does not exist.")
+        # hide the language field before csharp support go public
+        language: str = kwargs.get(LANGUAGE_KEY, FlowLanguage.Python)
 
-        data = {
-            "entry": entry,
-        }
+        # resolve entry and code
+        if isinstance(entry, str):
+            if not code:
+                raise UserErrorException("Code path is required when entry is a string.")
+            code = Path(code)
+            if not code.exists():
+                raise UserErrorException(f"Specified code {code} does not exist.")
+
+            inspector_proxy = ProxyFactory().create_inspector_proxy(language=language)
+            if not inspector_proxy.is_flex_flow_entry(entry):
+                raise UserErrorException(f"Entry {entry} is not a valid entry for flow.")
+
+            # TODO: extract description?
+            entry_meta = inspector_proxy.get_entry_meta(entry=entry, working_dir=code)
+            entry_meta["entry"] = entry
+        elif code is not None:
+            # TODO: support specifying code and make saved entry a relative path?
+            raise UserErrorException(
+                "Code path will be the parent of entry source " "and can't be customized when entry is a callable."
+            )
+        else:
+            entry_meta, code = self._infer_signature(entry, keep_entry=True, validate=False)
+
+        data = self._merge_signature(entry_meta, signature)
+        data["entry"] = entry_meta["entry"]
 
         # python_requirements_txt
         # avoid editing the original python_requirements as it will be used in copy stage
-        _python_requirements = self._resolve_requirements_txt(python_requirements, code)
+        _python_requirements = self._resolve_requirements_txt(python_requirements_txt, code)
         if _python_requirements:
             pydash.set_(data, "environment.python_requirements_txt", _python_requirements)
 
         if image:
             pydash.set_(data, "environment.image", image)
 
-        # hide the language field before csharp support go public
-        language = kwargs.pop("language", None)
-        if language:
-            data["language"] = language
+        if LANGUAGE_KEY in kwargs:
+            data[LANGUAGE_KEY] = language
 
-        data.update(
-            self._resolve_signature(
-                signature_overrides=signature,
-                entry=entry,
-                working_dir=code,
-                language=language or FlowLanguage.Python,
-            )
-        )
+        target_flow_file = target_flow_directory / FLOW_FLEX_YAML
+        # schema validation, here target_flow_file doesn't exist actually
+        FlexFlow(path=target_flow_file, code=code, data=data, entry=data["entry"])._validate(raise_error=True)
 
-        target_flow_file = target_flow_directory / DAG_FILE_NAME
         target_flow_directory.parent.mkdir(parents=True, exist_ok=True)
 
         # TODO: handle ignore
         shutil.copytree(code, target_flow_directory)
-        if python_requirements:
-            shutil.copy(python_requirements, target_flow_directory / Path(python_requirements).name)
+        if python_requirements_txt:
+            shutil.copy(python_requirements_txt, target_flow_directory / Path(python_requirements_txt).name)
         if input_sample:
             with open(target_flow_directory / SERVE_SAMPLE_JSON_PATH, "w", encoding=DEFAULT_ENCODING) as f:
                 json.dump(input_sample, f, indent=4)
