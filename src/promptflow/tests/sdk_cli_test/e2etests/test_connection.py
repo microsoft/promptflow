@@ -47,7 +47,7 @@ class TestConnection:
             "auth_mode": "key",
             "api_base": "test2",
             "api_type": "azure",
-            "api_version": "2023-07-01-preview",
+            "api_version": ConnectionDefaultApiVersion.AZURE_OPEN_AI,
         }
         # List
         result = _client.connections.list()
