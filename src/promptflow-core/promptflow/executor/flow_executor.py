@@ -397,6 +397,8 @@ class FlowExecutor:
         inputs = multimedia_processor.load_multimedia_data(node_referenced_flow_inputs, converted_flow_inputs_for_node)
         dependency_nodes_outputs = multimedia_processor.load_multimedia_data_recursively(dependency_nodes_outputs)
         package_tool_keys = [node.source.tool] if node.source and node.source.tool else []
+        if isinstance(connections, dict):
+            connections = DictConnectionProvider(connections)
         tool_resolver = ToolResolver(working_dir, connections, package_tool_keys, message_format=flow.message_format)
         resolved_node = tool_resolver.resolve_tool_by_node(node)
 
