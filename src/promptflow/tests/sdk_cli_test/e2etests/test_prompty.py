@@ -8,7 +8,7 @@ from openai.types.chat import ChatCompletion
 from promptflow._sdk._pf_client import PFClient
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.core import Flow
-from promptflow.core._errors import MissingRequiredInputError
+from promptflow.core._errors import InvalidOutputKeyError, MissingRequiredInputError
 from promptflow.core._flow import AsyncPrompty, Prompty
 
 TEST_ROOT = Path(__file__).parent.parent.parent
@@ -171,6 +171,15 @@ class TestPrompty:
         assert isinstance(result, dict)
         assert 2 == result["answer"]
         assert "name" not in result
+
+        # Test json_object format with invalid output
+        prompty = Prompty.load(
+            source=f"{PROMPTY_DIR}/prompty_example_with_json_format.prompty",
+            outputs={"invalid_output": {"type": "number"}},
+        )
+        with pytest.raises(InvalidOutputKeyError) as ex:
+            prompty(question="what is the result of 1+1?")
+        assert "Cannot find invalid_output in response ['name', 'answer']" in ex.value.message
 
         # Test stream output
         prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", model={"parameters": {"stream": True}})
