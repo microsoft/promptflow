@@ -32,7 +32,7 @@ from filelock import FileLock
 from keyring.errors import NoKeyringError
 from marshmallow import ValidationError
 
-from promptflow._constants import ENABLE_MULTI_CONTAINER_KEY, EXTENSION_UA, FLOW_DAG_YAML, FlowLanguage
+from promptflow._constants import ENABLE_MULTI_CONTAINER_KEY, EXTENSION_UA, FLOW_FLEX_YAML, FlowLanguage
 from promptflow._core.entry_meta_generator import generate_flow_meta as _generate_flow_meta
 from promptflow._sdk._constants import (
     AZURE_WORKSPACE_REGEX_FORMAT,
@@ -54,6 +54,8 @@ from promptflow._sdk._constants import (
     VARIANTS,
     AzureMLWorkspaceTriad,
     CommonYamlFields,
+    RunInfoSources,
+    RunMode,
 )
 from promptflow._sdk._errors import (
     DecryptConnectionError,
@@ -62,7 +64,7 @@ from promptflow._sdk._errors import (
     UnsecureConnectionError,
 )
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
-from promptflow._utils.flow_utils import resolve_flow_path
+from promptflow._utils.flow_utils import is_flex_flow, resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
@@ -984,6 +986,7 @@ def generate_yaml_entry(entry: Union[str, PathLike, Callable], code: Path = None
 @contextmanager
 def create_temp_flex_flow_yaml(entry: Union[str, PathLike, Callable], code: Path = None):
     """Create a temporary flow.dag.yaml in code folder"""
+
     logger.info("Create temporary entry for flex flow.")
     if callable(entry):
         entry = callable_to_entry_string(entry)
@@ -994,7 +997,7 @@ def create_temp_flex_flow_yaml(entry: Union[str, PathLike, Callable], code: Path
         code = Path(code)
         if not code.exists():
             raise UserErrorException(f"Code path {code.as_posix()} does not exist.")
-    flow_yaml_path = code / FLOW_DAG_YAML
+    flow_yaml_path = code / FLOW_FLEX_YAML
     existing_content = None
 
     try:
@@ -1046,6 +1049,22 @@ def callable_to_entry_string(callable_obj: Callable) -> str:
         )
 
     return f"{module_str}:{func_str}"
+
+
+def is_flex_run(run: "Run") -> bool:
+    if run._run_source == RunInfoSources.LOCAL:
+        try:
+            # The flow yaml may have been temporarily generated and deleted after creating a run.
+            # So check_flow_exist=False.
+            return is_flex_flow(flow_path=run.flow, check_flow_exist=False)
+        except Exception as e:
+            # For run with incomplete flow snapshot, ignore load flow error to make sure it can still show.
+            logger.debug(f"Failed to check is flex flow from {run.flow} due to {e}.")
+            return False
+    elif run._run_source in [RunInfoSources.INDEX_SERVICE, RunInfoSources.RUN_HISTORY]:
+        return run._properties.get("azureml.promptflow.run_mode") == RunMode.EAGER
+    # TODO(2901279): support eager mode for run created from run folder
+    return False
 
 
 generate_flow_meta = _generate_flow_meta
