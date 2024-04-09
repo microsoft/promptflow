@@ -875,7 +875,7 @@ class TestFlowRun:
                 pass
 
             local_pf.run(
-                flow=f"{FLOWS_DIR}/hello-world",
+                flow=f"{FLOWS_DIR}/simple_hello_world",
                 data=f"{DATAS_DIR}/webClassification3.jsonl",
                 column_mapping={"name": "${data.url}"},
                 name=name,
