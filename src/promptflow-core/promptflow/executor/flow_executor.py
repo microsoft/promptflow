@@ -11,11 +11,13 @@ import os
 import signal
 import threading
 import uuid
+from contextlib import contextmanager
 from pathlib import Path
 from threading import current_thread
 from types import GeneratorType
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
+import opentelemetry.trace as otel_trace
 from opentelemetry.trace.status import StatusCode
 
 from promptflow._constants import LINE_NUMBER_KEY
@@ -33,7 +35,7 @@ from promptflow._utils.execution_utils import (
     extract_aggregation_inputs,
     get_aggregation_inputs_properties,
 )
-from promptflow._utils.flow_utils import is_flex_flow
+from promptflow._utils.flow_utils import is_flex_flow, is_prompty_flow
 from promptflow._utils.logger_utils import flow_logger, logger
 from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow._utils.user_agent_utils import append_promptflow_package_ua
@@ -177,6 +179,7 @@ class FlowExecutor:
         node_override: Optional[Dict[str, Dict[str, Any]]] = None,
         line_timeout_sec: Optional[int] = None,
         init_kwargs: Optional[Dict[str, Any]] = None,
+        **kwargs,
     ) -> "FlowExecutor":
         """Create a new instance of FlowExecutor.
 
@@ -202,16 +205,32 @@ class FlowExecutor:
         :rtype: ~promptflow.executor.flow_executor.FlowExecutor
         """
         setup_exporter_from_environ()
-        if is_flex_flow(file_path=flow_file, working_dir=working_dir):
+        if hasattr(flow_file, "__call__") or inspect.isfunction(flow_file):
+            from ._script_executor import ScriptExecutor
+
+            return ScriptExecutor(flow_file, storage=storage)
+        if not isinstance(flow_file, (Path, str)):
+            raise NotImplementedError("Only support Path or str for flow_file.")
+        if is_flex_flow(flow_path=flow_file, working_dir=working_dir):
             from ._script_executor import ScriptExecutor
 
             return ScriptExecutor(
                 flow_file=Path(flow_file), working_dir=working_dir, storage=storage, init_kwargs=init_kwargs
             )
+        elif is_prompty_flow(file_path=flow_file):
+            from ._prompty_executor import PromptyExecutor
+
+            return PromptyExecutor(
+                flow_file=Path(flow_file),
+                working_dir=working_dir,
+                storage=storage,
+            )
         else:
             if init_kwargs:
                 logger.warning(f"Got unexpected init args {init_kwargs} for non-script flow. Ignoring them.")
-            flow = Flow.from_yaml(flow_file, working_dir=working_dir)
+
+            name = kwargs.get("name", None)
+            flow = Flow.from_yaml(flow_file, working_dir=working_dir, name=name)
             return cls._create_from_flow(
                 flow_file=flow_file,
                 flow=flow,
@@ -1335,7 +1354,7 @@ def execute_flow(
     """
     flow_executor = FlowExecutor.create(flow_file, connections, working_dir, raise_ex=False, **kwargs)
     flow_executor.enable_streaming_for_llm_flow(lambda: enable_stream_output)
-    with _change_working_dir(working_dir):
+    with _change_working_dir(working_dir), _force_flush_tracer_provider():
         # Execute nodes in the flow except the aggregation nodes
         # TODO: remove index=0 after UX no longer requires a run id similar to batch runs
         # (run_id_index, eg. xxx_0) for displaying the interface
@@ -1361,6 +1380,20 @@ def execute_flow(
             # remove line_number from output
             line_result.output.pop(LINE_NUMBER_KEY, None)
         return line_result
+
+
+@contextmanager
+def _force_flush_tracer_provider():
+    try:
+        yield
+    finally:
+        try:
+            # Force flush the tracer provider to ensure all spans are exported before the process exits.
+            tracer_provider = otel_trace.get_tracer_provider()
+            if hasattr(tracer_provider, "force_flush"):
+                tracer_provider.force_flush()
+        except Exception as e:
+            flow_logger.warning(f"Error occurred while force flush tracer provider: {e}")
 
 
 def signal_handler(sig, frame):

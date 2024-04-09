@@ -67,7 +67,8 @@ def _request_wrapper():
                     f"Status code: {e.status_code} \n"
                     f"Reason: {e.reason} \n"
                     f"Error message: {e.message} \n",
-                    privacy_info=[e.reason, e.message]
+                    privacy_info=[e.reason, e.message],
+                    error=e,
                 )
 
         return wrapper
@@ -715,5 +716,24 @@ class FlowServiceCaller(RequestTelemetryMixin):
             container_name=container_name,
             acquire_write=acquire_write,
             headers=headers,
+            **kwargs,
+        )
+
+    @_request_wrapper()
+    def init_workspace_cosmos(
+        self,
+        subscription_id,  # type: str
+        resource_group_name,  # type: str
+        workspace_name,  # type: str
+        overwrite=False,  # type: bool
+        **kwargs,
+    ):
+        """Initialize workspace Cosmos."""
+        return self.caller.trace_sessions.init_trace_session_async(
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+            overwrite=overwrite,
+            headers=self._get_headers(),
             **kwargs,
         )

@@ -6,7 +6,12 @@ __path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
 # flake8: noqa
 
 """Put some imports here for internal packages to minimize the effort of refactoring."""
-from promptflow._constants import PROMPTFLOW_CONNECTIONS, SpanAttributeFieldName, TraceEnvironmentVariableName
+from promptflow._constants import (
+    PROMPTFLOW_CONNECTIONS,
+    CosmosDBContainerName,
+    SpanAttributeFieldName,
+    TraceEnvironmentVariableName,
+)
 from promptflow._core._errors import GenerateMetaUserError, PackageToolNotFoundError, ToolExecutionError
 from promptflow._core.cache_manager import AbstractCacheManager, CacheManager, enable_cache
 from promptflow._core.connection_manager import ConnectionManager

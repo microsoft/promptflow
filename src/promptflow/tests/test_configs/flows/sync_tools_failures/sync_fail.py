@@ -1,4 +1,4 @@
-from promptflow import tool
+from promptflow.core import tool
 
 def raise_exception(s):
     msg = f"In raise_exception: {s}"
