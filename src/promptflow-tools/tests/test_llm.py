@@ -289,7 +289,7 @@ class TestLLM:
             pytest.param("open_ai_connection", "gpt-3.5-turbo-1106", {"type": "json"},
                          "Write a slogan for product X, please reponse with json.",
                          "\'json\' is not one of [\'json_object\', \'text\']", "UserError/OpenAIError/BadRequestError",
-                         WrappedOpenAIError),
+                         WrappedOpenAIError, marks=pytest.mark.skip_if_no_api_key("open_ai_connection")),
             # test no json string in prompt
             pytest.param("azure_open_ai_connection", "gpt-35-turbo-1106", {"type": "json_object"},
                          "Write a slogan for product X",
@@ -300,7 +300,7 @@ class TestLLM:
                          "Write a slogan for product X",
                          "\'messages\' must contain the word \'json\' in some form",
                          "UserError/OpenAIError/BadRequestError",
-                         WrappedOpenAIError),
+                         WrappedOpenAIError, marks=pytest.mark.skip_if_no_api_key("open_ai_connection")),
             # test invalid key in response_format value
             pytest.param("azure_open_ai_connection", "gpt-35-turbo-1106", {"types": "json_object"},
                          "Write a slogan for product X",
@@ -311,7 +311,7 @@ class TestLLM:
                          "Write a slogan for product X",
                          "The response_format parameter needs to be a dictionary such as {\"type\": \"text\"}",
                          "UserError/OpenAIError/BadRequestError",
-                         WrappedOpenAIError),
+                         WrappedOpenAIError, marks=pytest.mark.skip_if_no_api_key("open_ai_connection")),
             # test not support response format json mode model
             pytest.param("azure_open_ai_connection", "gpt-35-turbo", {"types": "json_object"},
                          "Write a slogan for product X",
@@ -322,7 +322,7 @@ class TestLLM:
                          "Write a slogan for product X",
                          "The response_format parameter needs to be a dictionary such as {\"type\": \"text\"}.",
                          "UserError/OpenAIError/BadRequestError",
-                         WrappedOpenAIError)
+                         WrappedOpenAIError, marks=pytest.mark.skip_if_no_api_key("open_ai_connection"))
         ]
     )
     def test_llm_chat_with_response_format_error(
