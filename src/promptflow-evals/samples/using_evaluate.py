@@ -1,14 +1,17 @@
-from pprint import pprint
-
 from promptflow.evals import evaluate
+from pprint import pprint
 
 
 def answer_length(answer, **kwargs):
-    return {"value": len(answer)}
+    return {
+        "value": len(answer)
+    }
 
 
 def answer_length_percentage(answer, **kwargs):
-    return {"value": len(answer) / 100}
+    return {
+        "value": len(answer) / 100
+    }
 
 
 if __name__ == "__main__":
