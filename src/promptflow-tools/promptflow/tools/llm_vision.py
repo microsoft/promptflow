@@ -12,7 +12,8 @@ from promptflow.tools.aoai_gpt4v import AzureOpenAI
 from promptflow.tools.openai_gpt4v import OpenAI
 
 
-@tool
+# need to set below metadata to support serving streaming functionality.
+@tool(streaming_option_parameter="stream")
 @handle_openai_error()
 def llm_vision(
     connection: Union[AzureOpenAIConnection, OpenAIConnection],
