@@ -1,4 +1,4 @@
-name: promptflow-core-test [Pure]
+name: promptflow-devkit-test
 
 on:
   schedule:
