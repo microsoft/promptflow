@@ -232,9 +232,9 @@ For example, with `OPENAI_API_KEY` set to environment, an `OpenAIConnection` obj
 
 Some promptflow connection types supports connection authentication with Microsoft Entra ID.
 
-| Connection Type       | Yaml Field | Value     | Requirements                                                |
-| --------------------- |------------|-----------|-------------------------------------------------------------|
-| AzureOpenAIConnection | auth_mode  | meid_token | `promptflow[azureml-serving]>=1.7.0, promptflow-tools>=1.4.0` |
+| Connection Type       | Yaml Field | Value     | Package Requirements                                          | VS Code Extension |
+| --------------------- |------------|-----------|---------------------------------------------------------------|------------------|
+| AzureOpenAIConnection | auth_mode  | meid_token | `promptflow[azureml-serving]>=1.7.0, promptflow-tools>=1.4.0` | 1.20.0           |
 
 
 ## Next steps
