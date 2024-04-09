@@ -34,14 +34,14 @@ class CodeClient:
         row_metric_futures = []
         row_metric_results = []
         input_df = input_df.rename(columns={v: k for k, v in column_mapping.items()}) if column_mapping else input_df
-        for idx, value in enumerate(input_df.to_dict("records")):
+        for value in input_df.to_dict("records"):
             row_metric_futures.append(self._thread_pool.submit(evaluator, **value))
 
         for row_number, row_metric_future in enumerate(row_metric_futures):
             try:
                 row_metric_results.append(row_metric_future.result())
             except Exception as ex:  # pylint: disable=broad-except
-                msg_1 = f"Error calculating value for a row for metric {evaluator_name}, "
+                msg_1 = f"Error calculating value for row {row_number} for metric {evaluator_name}, "
                 msg_2 = f"failed with error {str(ex)} : Stack trace : {str(ex.__traceback__)}"
                 LOGGER.info(msg_1 + msg_2)
                 # If a row fails to calculate, add an empty dict to maintain the row index
@@ -67,6 +67,8 @@ class CodeClient:
             raise ValueError(f"Failed to parse data as JSON: {data}. Please provide a valid json lines data.")
 
         input_df = pd.DataFrame(json_data)
+        if column_mapping:
+            input_df.rename(columns={v: k for k, v in column_mapping.items()}, inplace=True)
         eval_future = self._thread_pool.submit(self._calculate_metric, flow, input_df, column_mapping, evaluator_name)
         return CodeRun(run=eval_future, column_mapping=column_mapping, input_data=data, evaluator_name=evaluator_name)
 
