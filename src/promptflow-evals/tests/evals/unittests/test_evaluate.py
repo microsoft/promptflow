@@ -58,7 +58,7 @@ class TestEvaluate:
     def test_evaluate_invalid_jsonl_data(self, mock_model_config, deployment_name, invalid_jsonl_file):
         with pytest.raises(ValueError) as exc_info:
             evaluate(
-                data=invalid_data_file,
+                data=invalid_jsonl_file,
                 evaluators={
                     "g": GroundednessEvaluator(model_config=mock_model_config, deployment_name=deployment_name)
                 },
