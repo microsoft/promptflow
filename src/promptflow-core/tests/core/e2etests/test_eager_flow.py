@@ -85,13 +85,6 @@ class TestEagerFlow:
         assert line_result.run_info.status == Status.Failed
         assert "dummy exception" in line_result.run_info.error["message"]
 
-    def test_flow_run_with_invalid_entry(self):
-        flow_folder = "dummy_flow_with_invalid_entry"
-        flow_file = get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT)
-        with pytest.raises(InvalidFlexFlowEntry) as e:
-            ScriptExecutor(flow_file=flow_file)
-        assert "Invalid entry" in e.value.message
-
     def test_flow_with_operation_context(self):
         flow_folder = "flow_with_operation_context"
         flow_file = get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT)
@@ -115,7 +108,7 @@ class TestEagerFlow:
         [
             ("callable_flow_with_init_exception", FlowEntryInitializationError, "Failed to initialize flow entry with"),
             ("invalid_illegal_entry", PythonLoadError, "Failed to load python module for"),
-            ("incorrect_entry", PythonLoadError, "Failed to load python module for"),
+            ("incorrect_entry", InvalidFlexFlowEntry, "Invalid entry"),
         ],
     )
     def test_execute_func_with_user_error(self, flow_folder, expected_exception, expected_error_msg):
