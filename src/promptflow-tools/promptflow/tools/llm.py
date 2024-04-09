@@ -77,7 +77,7 @@ def list_apis(
             {"value": "chat", "display_value": "chat"},
         ]
 
-# need to set below metadata to support serving streaming functionality.
+# need to set metadata "streaming_option_parameter" to support serving streaming functionality.
 @tool(streaming_option_parameter="stream")
 @handle_openai_error()
 def llm(
