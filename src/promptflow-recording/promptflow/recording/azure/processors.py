@@ -140,7 +140,12 @@ class AzureResourceProcessor(RecordingProcessor):
         body["properties"]["accountName"] = SanitizedValues.FAKE_ACCOUNT_NAME
         # blob storage
         if "containerName" in body["properties"]:
-            self.storage_container_names.add(body["properties"]["containerName"])
+            container_name = body["properties"]["containerName"]
+            # we might get container name "azureml"
+            # considering we have naive string replace, this will lead to unexpected replace
+            # so add such a hard code exception here
+            if container_name != "azureml":
+                self.storage_container_names.add(container_name)
             body["properties"]["containerName"] = SanitizedValues.FAKE_CONTAINER_NAME
         # file share
         elif "fileShareName" in body["properties"]:
