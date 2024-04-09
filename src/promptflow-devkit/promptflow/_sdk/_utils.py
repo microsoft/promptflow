@@ -5,6 +5,7 @@ import collections
 import datetime
 import hashlib
 import importlib
+import inspect
 import json
 import os
 import platform
@@ -1002,6 +1003,12 @@ def create_temp_flex_flow_yaml(entry: Union[str, PathLike, Callable], code: Path
                     flow_yaml_path.unlink()
                 except Exception as e:
                     logger.warning(f"Failed to delete generated: {flow_yaml_path.as_posix()}, error: {e}")
+
+
+def can_accept_kwargs(func):
+    sig = inspect.signature(func)
+    params = sig.parameters.values()
+    return any(param.kind == param.VAR_KEYWORD for param in params)
 
 
 def callable_to_entry_string(callable_obj: Callable) -> str:
