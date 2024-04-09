@@ -25,7 +25,6 @@ from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
 from azure.core.exceptions import HttpResponseError
 
 from promptflow._constants import FlowType as FlowYamlType
-from promptflow._proxy import ProxyFactory
 from promptflow._sdk._constants import (
     CLIENT_FLOW_TYPE_2_SERVICE_FLOW_TYPE,
     MAX_LIST_CLI_RESULTS,
@@ -476,6 +475,8 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
 
     @classmethod
     def _try_resolve_code_for_flow(cls, flow: Flow, ops: OperationOrchestrator, ignore_tools_json=False) -> None:
+        from promptflow._proxy import ProxyFactory
+
         if flow.path:
             # remote path
             if flow.path.startswith("azureml://datastores"):
