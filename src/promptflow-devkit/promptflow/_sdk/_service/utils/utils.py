@@ -219,6 +219,7 @@ class ErrorInfo:
                 self.code = "UserError"
             self.message = exception.message
             self.message_format = exception.message_format
+            self.message_parameters = {k: str(v) for k, v in exception.message_parameters.items()}
             self.message_parameters = exception.message_parameters
             self.target = exception.target
             self.module = exception.module
