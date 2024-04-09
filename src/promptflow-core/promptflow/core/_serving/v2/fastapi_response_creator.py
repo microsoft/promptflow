@@ -1,3 +1,7 @@
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
+
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from promptflow._constants import DEFAULT_OUTPUT_NAME

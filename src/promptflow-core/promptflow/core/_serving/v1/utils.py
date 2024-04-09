@@ -1,3 +1,7 @@
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
+
 from flask import jsonify, request
 
 from promptflow._utils.exception_utils import ErrorResponse, ExceptionPresenter

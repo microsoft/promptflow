@@ -1,3 +1,7 @@
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
+
 from contextvars import ContextVar
 
 from promptflow.core._serving.monitor.context_data_provider import ContextDataProvider
