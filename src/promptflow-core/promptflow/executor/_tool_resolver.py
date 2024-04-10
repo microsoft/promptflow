@@ -182,7 +182,7 @@ class ToolResolver:
         self, tool: Tool, callable: Callable, predefined_inputs: dict
     ) -> ResolvedAssistantTool:
         func_name = tool.function
-        definition = self._generate_tool_definition(tool, callable, predefined_inputs)
+        definition = self._generate_assistant_tool_definition(tool, callable, predefined_inputs)
         if predefined_inputs:
             inputs = {name: value.value for name, value in predefined_inputs.items()}
             func = partial(callable, **inputs)
@@ -230,7 +230,7 @@ class ToolResolver:
         # Step IV: construct the AssistantTool object from the updated predefined_inputs + Tool object
         return self._construct_assistant_tool(tool, callable, updated_predefined_inputs)
 
-    def _generate_tool_definition(self, tool: Tool, func: Callable, predefined_inputs: dict) -> dict:
+    def _generate_assistant_tool_definition(self, tool: Tool, func: Callable, predefined_inputs: dict) -> dict:
         try:
             # Attempt to extract the description, handling exceptions
             try:
