@@ -1,7 +1,9 @@
+import json
 import os
 import re
 import shutil
 import sys
+import tempfile
 
 import pytest
 from _constants import PROMPTFLOW_ROOT
@@ -78,7 +80,7 @@ class TestFlowSave:
                             }
                         },
                     },
-                    "input_sample": {"text": "promptflow"},
+                    "sample": {"text": "promptflow"},
                 },
                 {
                     "inputs": {
@@ -93,6 +95,7 @@ class TestFlowSave:
                             "description": "The answer",
                         }
                     },
+                    "sample": "sample.json",
                 },
                 id="hello_world.main",
             ),
@@ -156,7 +159,7 @@ class TestFlowSave:
                             "type": "string",
                         },
                         "length": {
-                            "type": "int",
+                            "type": "integer",
                         },
                     },
                 },
@@ -199,13 +202,13 @@ class TestFlowSave:
                             "type": "string",
                         },
                         "i": {
-                            "type": "int",
+                            "type": "integer",
                         },
                         "f": {
-                            "type": "double",
+                            "type": "number",
                         },
                         "b": {
-                            "type": "bool",
+                            "type": "boolean",
                         },
                     },
                     "inputs": {
@@ -213,16 +216,16 @@ class TestFlowSave:
                             "type": "string",
                         },
                         "i": {
-                            "type": "int",
+                            "type": "integer",
                         },
                         "f": {
-                            "type": "double",
+                            "type": "number",
                         },
                         "b": {
-                            "type": "bool",
+                            "type": "boolean",
                         },
                         "li": {
-                            "type": "list",
+                            "type": "array",
                         },
                         "d": {
                             "type": "object",
@@ -233,16 +236,16 @@ class TestFlowSave:
                             "type": "string",
                         },
                         "i": {
-                            "type": "int",
+                            "type": "integer",
                         },
                         "f": {
-                            "type": "double",
+                            "type": "number",
                         },
                         "b": {
-                            "type": "bool",
+                            "type": "boolean",
                         },
                         "l": {
-                            "type": "list",
+                            "type": "array",
                         },
                         "d": {
                             "type": "object",
@@ -299,6 +302,15 @@ class TestFlowSave:
                 UserErrorException,
                 r"Ports from signature: non-exist",
                 id="hello_world.inputs_mismatch",
+            ),
+            pytest.param(
+                {
+                    "entry": "hello:hello_world",
+                    "sample": {"non-exist": "promptflow"},
+                },
+                UserErrorException,
+                r"Sample keys non-exist do not match the inputs text.",
+                id="hello_world.sample_mismatch",
             ),
             pytest.param(
                 {
@@ -427,7 +439,7 @@ class TestFlowSave:
 
     def test_infer_signature(self):
         pf = PFClient()
-        flow_meta, code = pf.flows._infer_signature(entry=global_hello)
+        flow_meta = pf.flows.infer_signature(entry=global_hello)
         assert flow_meta == {
             "inputs": {
                 "text": {
@@ -442,9 +454,9 @@ class TestFlowSave:
         }
 
         with pytest.raises(UserErrorException, match="Schema validation failed: {'init.words.type'"):
-            pf.flows._infer_signature(entry=GlobalHelloWithInvalidInit)
+            pf.flows.infer_signature(entry=GlobalHelloWithInvalidInit)
 
-        flow_meta, code = pf.flows._infer_signature(entry=global_hello_no_hint)
+        flow_meta = pf.flows.infer_signature(entry=global_hello_no_hint)
         assert flow_meta == {
             "inputs": {
                 "text": {
@@ -458,3 +470,86 @@ class TestFlowSave:
                 },
             },
         }
+
+    def test_public_infer_signature(self):
+        pf = PFClient()
+        assert pf.flows.infer_signature(entry=global_hello) == {
+            "inputs": {
+                "text": {
+                    "type": "string",
+                }
+            },
+            "outputs": {
+                "output": {
+                    "type": "string",
+                },
+            },
+        }
+
+    def test_public_save(self):
+        pf = PFClient()
+        with tempfile.TemporaryDirectory() as tempdir:
+            pf.flows.save(entry=global_hello, path=tempdir)
+            assert load_flow(tempdir)._data == {
+                "entry": "test_flow_save:global_hello",
+                "inputs": {
+                    "text": {
+                        "type": "string",
+                    }
+                },
+                "outputs": {
+                    "output": {
+                        "type": "string",
+                    },
+                },
+            }
+
+    def test_public_save_with_path_sample(self):
+        pf = PFClient()
+        with tempfile.TemporaryDirectory() as tempdir:
+            with open(f"{tempdir}/sample.json", "w") as f:
+                json.dump(
+                    {
+                        "text": "promptflow",
+                    },
+                    f,
+                )
+            pf.flows.save(entry=global_hello, path=f"{tempdir}/flow", sample=f"{tempdir}/sample.json")
+            assert load_flow(f"{tempdir}/flow")._data == {
+                "entry": "test_flow_save:global_hello",
+                "inputs": {
+                    "text": {
+                        "type": "string",
+                    }
+                },
+                "outputs": {
+                    "output": {
+                        "type": "string",
+                    },
+                },
+                "sample": "sample.json",
+            }
+
+    def test_flow_save_file_code(self):
+        pf = PFClient()
+        with tempfile.TemporaryDirectory() as temp_dir:
+            pf.flows.save(
+                entry="hello_world",
+                code=f"{TEST_ROOT}/test_configs/functions/file_code/hello.py",
+                path=temp_dir,
+            )
+            flow = load_flow(temp_dir)
+            assert flow._data == {
+                "entry": "hello:hello_world",
+                "inputs": {
+                    "text": {
+                        "type": "string",
+                    }
+                },
+                "outputs": {
+                    "output": {
+                        "type": "string",
+                    }
+                },
+            }
+            assert os.listdir(temp_dir) == ["flow.flex.yaml", "hello.py"]

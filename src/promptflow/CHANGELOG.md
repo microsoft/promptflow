@@ -18,7 +18,6 @@
   - CLI: Support `pfazure run create --resume-from <original-run-name>` to create a run resume from another run.
   - SDK: Support `p.run(resume_from=<original-run-name>)` to create a run resume from another run.
 
-
 ## 1.7.0 (2024.03.25)
 
 ### NOTICES
