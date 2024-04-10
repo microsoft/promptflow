@@ -108,6 +108,7 @@ pf = "promptflow._cli.pf:main"
 [tool.pytest.ini_options]
 markers = [
   "unittest",
+  "e2etest"
 ]
 # junit - analyse and publish test results (https://github.com/EnricoMi/publish-unit-test-result-action)
 # durations - list the slowest test durations

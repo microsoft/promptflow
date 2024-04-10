@@ -46,7 +46,7 @@ jobs:
           poetry install --only test
           poetry run pip install ${{ env.TRACING_DIRECTORY }}
           poetry run pip install ${{ env.CORE_DIRECTORY }}[azureml-serving]
-          poetry run pip install -e ${{ env.WORKING_DIRECTORY }}
+          poetry run pip install -e ${{ env.WORKING_DIRECTORY }}[pyarrow]
 
           echo "Need to install promptflow to avoid tool dependency issue"
           poetry run pip install ${{ env.PROMPTFLOW_DIRECTORY }}
@@ -77,8 +77,7 @@ jobs:
         run: |
           poetry run pytest ./tests/sdk_cli_test -p promptflow --cov=promptflow --cov-config=pyproject.toml \
           --cov-report=term --cov-report=html --cov-report=xml -n auto -m "unittest or e2etest" \
-          --ignore-glob ./tests/sdk_cli_test/e2etests/test_executable.py \
-          --ignore tests/sdk_cli_test/unittests/test_utils.py::TestUtils::test_load_data
+          --ignore-glob ./tests/sdk_cli_test/e2etests/test_executable.py
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: upload coverage report
         uses: actions/upload-artifact@v4
@@ -87,11 +86,10 @@ jobs:
           path: |
             ${{ env.WORKING_DIRECTORY }}/*.xml
             ${{ env.WORKING_DIRECTORY }}/htmlcov/
-      - run: poetry run pip install ${{ env.WORKING_DIRECTORY }}[pyarrow,executable]
+      - run: poetry run pip install ${{ env.WORKING_DIRECTORY }}[executable]
       - name: run devkit e2e tests
         run: |
-          poetry run pytest -n auto -m "unittest or e2etest" ./tests/sdk_cli_test/e2etests/test_executable.py \
-          tests/sdk_cli_test/unittests/test_utils.py::TestUtils::test_load_data
+          poetry run pytest -n auto -m "unittest or e2etest" ./tests/sdk_cli_test/e2etests/test_executable.py
         working-directory: ${{ env.WORKING_DIRECTORY }}
 
   report:
