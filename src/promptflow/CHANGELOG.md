@@ -2,6 +2,9 @@
 
 ## 1.9.0 (Upcoming)
 
+### Features Added
+- [CLI]: Added autocomplete feature.
+
 ### Others
 - [promptflow-core] Connection default api version changed:
   - AzureOpenAIConnection: 2023-07-01-preview -> 2024-02-01

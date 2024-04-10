@@ -66,6 +66,11 @@ def get_feature_list():
             description="Support OpenTelemetry trace.",
             state=FeatureState.E2ETEST,
         ),
+        Feature(
+            name="OpenaiVisionMessageFormat",
+            description="Support openai vision message format type.",
+            state=FeatureState.E2ETEST,
+        ),
     ]
 
     return feature_list

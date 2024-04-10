@@ -1,4 +1,5 @@
 import datetime
+import json
 
 import pytest
 
@@ -91,6 +92,82 @@ class TestSpan:
             "created_by": {"oid": "fake_oid"},
             "resource": {"collection": "test_session_id"},
         }
+
+    def test_to_cosmosdb_item_truncation(self):
+        span = Span(
+            SpanEntity(
+                name="test",
+                trace_id=self.FAKE_TRACE_ID,
+                span_id=self.FAKE_SPAN_ID,
+                context={
+                    "trace_id": self.FAKE_TRACE_ID,
+                    "span_id": self.FAKE_SPAN_ID,
+                },
+                kind="test",
+                parent_id="test",
+                start_time=datetime.datetime.fromisoformat("2022-01-01T00:00:00"),
+                end_time=datetime.datetime.fromisoformat("2022-01-01T00:01:00"),
+                status={},
+                attributes={
+                    "attr1": "a" * 1024 * 1024,  # 1MB
+                    "attr2": "b" * 1024 * 1024,  # 1MB
+                    "attr3": "c" * 1024 * 1024,  # 1MB
+                },  # attribute value that exceeds max length
+                events=[],
+                resource={"collection": "test_session_id"},
+            ),
+            collection_id=self.FAKE_COLLECTION_ID,
+            created_by=self.FAKE_CREATED_BY,
+        )
+
+        item = span.to_cosmosdb_item()
+
+        item_size = len(json.dumps(item, separators=(",", ":")).encode("utf-8"))
+        max_size_in_bytes = 2 * 1024 * 1024  # 2MB in bytes
+        assert item_size <= max_size_in_bytes  # item size should not exceed 2MB
+
+        for value in item["attributes"].values():
+            assert len(value) == 8 * 1024  # attribute value should be truncated to max length
+
+    def test_to_cosmosdb_item_no_truncation_needed(self):
+        # Create a Span object with a long attribute that does not exceed the 2MB limit
+        span = Span(
+            SpanEntity(
+                name="test",
+                trace_id=self.FAKE_TRACE_ID,
+                span_id=self.FAKE_SPAN_ID,
+                context={
+                    "trace_id": self.FAKE_TRACE_ID,
+                    "span_id": self.FAKE_SPAN_ID,
+                },
+                kind="test",
+                parent_id="test",
+                start_time=datetime.datetime.fromisoformat("2022-01-01T00:00:00"),
+                end_time=datetime.datetime.fromisoformat("2022-01-01T00:01:00"),
+                status={},
+                attributes={
+                    "attr1": "a" * 1024 * 5,
+                    "attr2": "b" * 1024 * 5,
+                    "attr3": "c" * 1024 * 5,
+                },
+                events=[],
+                resource={"collection": "test_session_id"},
+            ),
+            collection_id=self.FAKE_COLLECTION_ID,
+            created_by=self.FAKE_CREATED_BY,
+        )
+
+        # Convert the Span object to a CosmosDB item
+        item = span.to_cosmosdb_item()
+
+        # Check that the size of the item does not exceed the 2MB limit
+        item_size = len(json.dumps(item, separators=(",", ":")).encode("utf-8"))
+        max_size_in_bytes = 2 * 1024 * 1024  # 2MB in bytes
+        assert item_size <= max_size_in_bytes
+
+        # Check that the attribute values have not been truncated
+        for value in item["attributes"].values():
+            assert len(value) == 1024 * 5
 
     def test_event_path(self):
         span = Span(
