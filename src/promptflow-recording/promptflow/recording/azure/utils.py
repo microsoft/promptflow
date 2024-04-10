@@ -43,6 +43,7 @@ class MockDatastore:
     account_name: str
     container_name: str
     endpoint: str
+    credentials: FakeTokenCredential
 
 
 def mock_datastore_get_default(*args, **kwargs) -> MockDatastore:
@@ -51,6 +52,7 @@ def mock_datastore_get_default(*args, **kwargs) -> MockDatastore:
         account_name=SanitizedValues.FAKE_ACCOUNT_NAME,
         container_name=SanitizedValues.FAKE_CONTAINER_NAME,
         endpoint="core.windows.net",
+        credentials=FakeTokenCredential(),
     )
 
 

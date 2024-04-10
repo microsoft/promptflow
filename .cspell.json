@@ -199,7 +199,8 @@
     "nologo",
     "wscript",
     "raisvc",
-    "evals"
+    "evals",
+    "dcid"
   ],
   "flagWords": [
     "Prompt Flow"

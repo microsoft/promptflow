@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Union
 
 from promptflow._constants import FlowLanguage
-from promptflow._sdk._constants import ContextAttributeKey, FlowRunProperties
+from promptflow._sdk._constants import REMOTE_URI_PREFIX, ContextAttributeKey, FlowRunProperties
 from promptflow._sdk.entities._flows import Flow, Prompty
 from promptflow._sdk.entities._run import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
@@ -34,6 +34,7 @@ class RunSubmitter:
 
     def __init__(self, client):
         self._client = client
+        self._config = Configuration(overrides=self._client._config)
         self.run_operations = self._client.runs
 
     def submit(self, run: Run, stream=False, **kwargs):
@@ -83,7 +84,7 @@ class RunSubmitter:
             logger.debug(f"Resume from run {run._resume_from!r}...")
             run._resume_from = self._ensure_run_completed(run._resume_from)
         # Start trace
-        if Configuration(overrides=self._client._config).is_internal_features_enabled():
+        if self._config.is_internal_features_enabled():
             from promptflow.tracing._start_trace import start_trace
 
             logger.debug("Starting trace for flow run...")
@@ -207,6 +208,12 @@ class RunSubmitter:
                 system_metrics=system_metrics,
             )
 
+            # upload run to cloud if the trace provider is set to cloud
+            trace_provider = self._config.get_trace_provider()
+            if trace_provider and trace_provider.startswith(REMOTE_URI_PREFIX):
+                logger.debug(f"Trace provider set to {trace_provider!r}, uploading run to cloud...")
+                self._upload_run_to_cloud(run=run)
+
     def _resolve_input_dirs(self, run: Run):
         result = {"data": run.data if run.data else None}
         if run.run is not None:
@@ -235,3 +242,24 @@ class RunSubmitter:
                 "Column mapping must contain at least one mapping binding, "
                 f"current column mapping contains all static values: {column_mapping}"
             )
+
+    @classmethod
+    def _upload_run_to_cloud(cls, run: Run):
+        error_msg_prefix = f"Failed to upload run {run.name!r} to cloud."
+        try:
+            from promptflow._sdk._tracing import _get_ws_triad_from_pf_config
+            from promptflow.azure._cli._utils import _get_azure_pf_client
+
+            ws_triad = _get_ws_triad_from_pf_config()
+            pf = _get_azure_pf_client(
+                subscription_id=ws_triad.subscription_id,
+                resource_group=ws_triad.resource_group_name,
+                workspace_name=ws_triad.workspace_name,
+            )
+            pf.runs._upload(run=run)
+        except ImportError as e:
+            error_message = (
+                f'{error_msg_prefix}. "promptflow[azure]" is required for local to cloud tracing experience, '
+                f'please install it by running "pip install promptflow[azure]". Original error: {str(e)}'
+            )
+            raise UserErrorException(message=error_message) from e

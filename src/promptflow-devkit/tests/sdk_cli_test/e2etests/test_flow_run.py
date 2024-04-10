@@ -969,6 +969,15 @@ class TestFlowRun:
         assert run.status == "Completed"
         assert "error" not in run._to_dict()
 
+    def test_openai_vision_image_flow_bulk_run(self, pf, local_client) -> None:
+        image_flow_path = f"{FLOWS_DIR}/python_tool_with_openai_vision_image"
+        data_path = f"{image_flow_path}/inputs.jsonl"
+
+        result = pf.run(flow=image_flow_path, data=data_path, column_mapping={"image": "${data.image}"})
+        run = local_client.runs.get(name=result.name)
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict()
+
     def test_python_tool_with_composite_image(self, pf) -> None:
         image_flow_path = f"{FLOWS_DIR}/python_tool_with_composite_image"
         data_path = f"{image_flow_path}/inputs.jsonl"

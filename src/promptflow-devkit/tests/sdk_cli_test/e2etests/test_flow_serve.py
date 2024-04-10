@@ -10,6 +10,7 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
+from promptflow._utils.multimedia_utils import OpenaiVisionMultimediaProcessor
 from promptflow.core._serving.constants import FEEDBACK_TRACE_FIELD_NAME
 from promptflow.core._serving.utils import load_feedback_swagger
 from promptflow.exceptions import UserErrorException
@@ -403,6 +404,18 @@ def test_list_image_flow(serving_client_composite_image_flow, sample_image):
     assert (
         "data:image/jpg;base64" in response["output"][0]
     ), f"data:image/jpg;base64 not in output list {response['output']}"
+
+
+@pytest.mark.usefixtures("serving_client_openai_vision_image_flow", "recording_injection", "setup_local_connection")
+@pytest.mark.e2etest
+def test_openai_vision_image_flow(serving_client_openai_vision_image_flow, sample_image):
+    response = serving_client_openai_vision_image_flow.post("/score", data=json.dumps({"image": sample_image}))
+    assert (
+        response.status_code == 200
+    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
+    response = json.loads(response.data.decode())
+    assert {"output"} == response.keys()
+    assert OpenaiVisionMultimediaProcessor.is_multimedia_dict(response["output"])
 
 
 @pytest.mark.usefixtures("serving_client_with_environment_variables")

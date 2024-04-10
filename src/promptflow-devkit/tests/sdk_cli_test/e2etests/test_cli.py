@@ -1635,6 +1635,18 @@ class TestCli:
         image_path = Path(FLOWS_DIR) / "python_tool_with_composite_image" / ".promptflow" / "intermediate"
         assert image_path.exists()
 
+    def test_flow_test_with_openai_vision_image_input_and_output(self):
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/python_tool_with_openai_vision_image",
+        )
+        output_path = Path(FLOWS_DIR) / "python_tool_with_openai_vision_image" / ".promptflow" / "output"
+        assert output_path.exists()
+        image_path = Path(FLOWS_DIR) / "python_tool_with_openai_vision_image" / ".promptflow" / "intermediate"
+        assert image_path.exists()
+
     def test_run_file_with_set(self, pf) -> None:
         name = str(uuid.uuid4())
         run_pf_command(

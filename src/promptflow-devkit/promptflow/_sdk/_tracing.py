@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import importlib.metadata
 import json
 import os
 import platform
@@ -55,6 +56,14 @@ def get_ws_tracing_base_url(ws_triad: AzureMLWorkspaceTriad) -> str:
         "/providers/Microsoft.MachineLearningServices"
         f"/workspaces/{ws_triad.workspace_name}"
     )
+
+
+def _is_azure_ext_installed() -> bool:
+    try:
+        importlib.metadata.version("promptflow-azure")
+        return True
+    except importlib.metadata.PackageNotFoundError:
+        return False
 
 
 def _inject_attrs_to_op_ctx(attrs: typing.Dict[str, str]) -> None:
@@ -214,6 +223,14 @@ def start_trace_with_devkit(
 
     # local to cloud feature
     ws_triad = _get_ws_triad_from_pf_config()
+    if ws_triad is not None and not _is_azure_ext_installed():
+        warning_msg = (
+            "Azure extension is not installed, though export to cloud is configured, "
+            "traces cannot be exported to cloud. To fix this, please run `pip install promptflow-azure` "
+            "and restart prompt flow service."
+        )
+        logger.warning(warning_msg)
+
     # invoke prompt flow service
     pfs_port = _invoke_pf_svc()
 

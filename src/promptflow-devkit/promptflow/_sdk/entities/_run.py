@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from dateutil import parser as date_parser
 
+from promptflow._constants import FLOW_DAG_YAML, OutputsFolderName
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
@@ -27,9 +28,11 @@ from promptflow._sdk._constants import (
     TIMESTAMP_MACRO,
     VARIANT_ID_MACRO,
     AzureRunTypes,
+    CloudDatastore,
     DownloadedRun,
     FlowRunProperties,
     IdentityKeys,
+    LocalStorageFilenames,
     RestRunTypes,
     RunDataKeys,
     RunInfoSources,
@@ -528,6 +531,7 @@ class Run(YAMLTranslatableMixin):
 
             from promptflow.azure._restclient.flow.models import (
                 BatchDataInput,
+                CreateExistingBulkRunRequest,
                 RunDisplayNameGenerationType,
                 SessionSetupModeEnum,
                 SubmitBulkRunRequest,
@@ -606,6 +610,9 @@ class Run(YAMLTranslatableMixin):
             enable_multi_container=is_multi_container_enabled(),
         )
 
+        # use when uploading a local existing run to cloud
+        local_to_cloud_info = getattr(self, "_local_to_cloud_info", None)
+
         if str(self.flow).startswith(REMOTE_URI_PREFIX):
             if not self._use_remote_flow:
                 # in normal case, we will upload local flow to datastore and resolve the self.flow to be remote uri
@@ -631,6 +638,39 @@ class Run(YAMLTranslatableMixin):
                 return common_submit_bulk_run_request(
                     flow_definition_resource_id=self.flow,
                 )
+        elif local_to_cloud_info:
+            # register local run to cloud
+
+            # parse local_to_cloud_info to get necessary information
+            flow_artifact_path = local_to_cloud_info[OutputsFolderName.FLOW_ARTIFACTS]
+            flow_artifact_root_path = Path(flow_artifact_path).parent.as_posix()
+            log_file_relative_path = local_to_cloud_info[LocalStorageFilenames.LOG]
+            snapshot_folder = local_to_cloud_info[LocalStorageFilenames.SNAPSHOT_FOLDER]
+            snapshot_file_path = f"{snapshot_folder}/{FLOW_DAG_YAML}"
+
+            # get the start and end time. Plus "Z" to specify the timezone is UTC, otherwise there will be warning
+            # when sending the request to the server.
+            # e.g. WARNING:msrest.serialization:Datetime with no tzinfo will be considered UTC.
+            # for start_time, switch to "_start_time" once the bug item is fixed: BUG - 3085432.
+            start_time = self._created_on.isoformat() + "Z" if self._created_on else None
+            end_time = self._end_time.isoformat() + "Z" if self._end_time else None
+
+            return CreateExistingBulkRunRequest(
+                run_id=self.name,
+                run_status=self.status,
+                start_time_utc=start_time,
+                end_time_utc=end_time,
+                run_display_name=self._get_default_display_name(),
+                description=self.description,
+                tags=self.tags,
+                run_experiment_name=self._experiment_name,
+                run_display_name_generation_type=RunDisplayNameGenerationType.USER_PROVIDED_MACRO,
+                output_data_store=CloudDatastore.DEFAULT,
+                flow_artifacts_root_path=flow_artifact_root_path,
+                log_file_relative_path=log_file_relative_path,
+                flow_definition_data_store_name=CloudDatastore.DEFAULT,
+                flow_definition_blob_path=snapshot_file_path,
+            )
         else:
             # upload via CodeOperations.create_or_update
             # submit with param FlowDefinitionDataUri
