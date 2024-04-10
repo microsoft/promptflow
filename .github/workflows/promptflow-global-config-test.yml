@@ -7,6 +7,7 @@ on:
       - src/promptflow-core/**
       - src/promptflow-devkit/**
       - src/promptflow-tracing/**
+      - src/promptflow-azure/**
       - src/promptflow/**
       - scripts/building/**
       - .github/workflows/promptflow-global-config-test.yml
@@ -19,6 +20,7 @@ env:
   WORKING_DIRECTORY: ${{ github.workspace }}/src/promptflow-devkit
   PROMPTFLOW_DIRECTORY: ${{ github.workspace }}/src/promptflow
   TOOL_DIRECTORY: ${{ github.workspace }}/src/promptflow-tools
+  AZURE_DIRECTORY: ${{ github.workspace }}/src/promptflow-azure
 jobs:
   authorize:
     environment:
@@ -62,6 +64,7 @@ jobs:
         poetry run pip install ${{ env.TRACING_DIRECTORY }}
         poetry run pip install ${{ env.CORE_DIRECTORY }}[azureml-serving]
         poetry run pip install -e ${{ env.WORKING_DIRECTORY }}[pyarrow]
+        poetry run pip install -e ${{ env.AZURE_DIRECTORY }}
 
         echo "Need to install promptflow to avoid tool dependency issue"
         poetry run pip install ${{ env.PROMPTFLOW_DIRECTORY }}
@@ -71,6 +74,7 @@ jobs:
         poetry run pip show promptflow-tracing
         poetry run pip show promptflow-core
         poetry run pip show promptflow-devkit
+        poetry run pip show promptflow-azure
         poetry run pip show promptflow-tools
     - name: Azure Login
       uses: azure/login@v1
