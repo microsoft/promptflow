@@ -139,7 +139,9 @@ class TestExperimentAPIs:
                     "experiment_template": (
                         EXPERIMENT_ROOT / "eager-flow-exp-template/basic_without_binding/flow.exp.yaml"
                     ).as_posix(),
-                    "override_flow_path": (EAGER_FLOWS_DIR / "flow_with_dataclass_output" / "flow.dag.yaml").as_posix(),
+                    "override_flow_path": (
+                        EAGER_FLOWS_DIR / "flow_with_dataclass_output" / "flow.flex.yaml"
+                    ).as_posix(),
                     "inputs": {"models": ["model1"], "text": "text1"},
                 }
             ).json
@@ -161,7 +163,9 @@ class TestExperimentAPIs:
             experiment = pfs_op.experiment_test(
                 body={
                     "experiment_template": (EXPERIMENT_ROOT / "eager-flow-exp-template/flow.exp.yaml").as_posix(),
-                    "override_flow_path": (EAGER_FLOWS_DIR / "flow_with_dataclass_output" / "flow.dag.yaml").as_posix(),
+                    "override_flow_path": (
+                        EAGER_FLOWS_DIR / "flow_with_dataclass_output" / "flow.flex.yaml"
+                    ).as_posix(),
                     "inputs": {"models": ["model1"], "text": "text1"},
                 }
             ).json
@@ -185,7 +189,9 @@ class TestExperimentAPIs:
                     "experiment_template": (
                         EXPERIMENT_ROOT / "eager-flow-exp-template/bind_to_flow_input/flow.exp.yaml"
                     ).as_posix(),
-                    "override_flow_path": (EAGER_FLOWS_DIR / "flow_with_dataclass_output" / "flow.dag.yaml").as_posix(),
+                    "override_flow_path": (
+                        EAGER_FLOWS_DIR / "flow_with_dataclass_output" / "flow.flex.yaml"
+                    ).as_posix(),
                     "inputs": {"models": ["model1"], "text": "text1"},
                 }
             ).json
@@ -245,7 +251,7 @@ class TestExperimentAPIs:
             experiment = pfs_op.experiment_test_with_skip(
                 body={
                     "experiment_template": (EXPERIMENT_ROOT / "eager-flow-exp-template/flow.exp.yaml").as_posix(),
-                    "skip_flow": (EAGER_FLOWS_DIR / "flow_with_dataclass_output" / "flow.dag.yaml").as_posix(),
+                    "skip_flow": (EAGER_FLOWS_DIR / "flow_with_dataclass_output" / "flow.flex.yaml").as_posix(),
                     "skip_flow_output": {"models": ["model"], "text": "text"},
                     "skip_flow_run_id": "123",
                 }
