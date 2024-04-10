@@ -2,21 +2,9 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-import typing
-
 import jwt
-from azure.ai.ml import MLClient
-from azure.ai.ml.entities import Workspace
-from azure.identity import AzureCliCredential, DefaultAzureCredential
 
-from promptflow._sdk._utils import extract_workspace_triad_from_trace_provider
 from promptflow.core._connection_provider._utils import get_arm_token, get_token
-
-
-class WorkspaceKind:
-    DEFAULT = "default"
-    HUB = "hub"
-    PROJECT = "project"
 
 
 def is_arm_id(obj) -> bool:
@@ -59,36 +47,3 @@ def set_event_loop_policy():
         # Reference: https://stackoverflow.com/questions/45600579/asyncio-event-loop-is-closed-when-getting-loop
         # On Windows seems to be a problem with EventLoopPolicy, use this snippet to work around it
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-
-
-def is_workspace(workspace: Workspace) -> bool:
-    return workspace._kind == WorkspaceKind.DEFAULT
-
-
-def is_hub(workspace: Workspace) -> bool:
-    return workspace._kind == WorkspaceKind.HUB
-
-
-def is_project(workspace: Workspace) -> bool:
-    return workspace._kind == WorkspaceKind.PROJECT
-
-
-def _get_credential() -> typing.Union[AzureCliCredential, DefaultAzureCredential]:
-    try:
-        credential = AzureCliCredential()
-        credential.get_token("https://management.azure.com/.default")
-        return credential
-    except Exception:  # pylint: disable=broad-except
-        return DefaultAzureCredential()
-
-
-def get_workspace_from_resource_id(resource_id: str, ml_client: typing.Optional[MLClient] = None) -> Workspace:
-    workspace_triad = extract_workspace_triad_from_trace_provider(resource_id)
-    if ml_client is None:
-        ml_client = MLClient(
-            credential=_get_credential(),
-            subscription_id=workspace_triad.subscription_id,
-            resource_group_name=workspace_triad.resource_group_name,
-            workspace_name=workspace_triad.workspace_name,
-        )
-    return ml_client.workspaces.get(name=workspace_triad.workspace_name)

@@ -2,11 +2,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import os
-import re
 
-from promptflow._constants import AZURE_WORKSPACE_REGEX_FORMAT, PF_NO_INTERACTIVE_LOGIN
+from promptflow._constants import PF_NO_INTERACTIVE_LOGIN
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
-from promptflow.core._errors import MalformedConnectionProviderConfig, MissingRequiredPackage
+from promptflow.core._errors import MissingRequiredPackage
 from promptflow.exceptions import ValidationException
 
 
@@ -51,16 +50,6 @@ def get_token(credential, resource) -> str:
         )
 
     return token
-
-
-def extract_workspace(provider_config) -> tuple:
-    match = re.match(AZURE_WORKSPACE_REGEX_FORMAT, provider_config)
-    if not match or len(match.groups()) != 5:
-        raise MalformedConnectionProviderConfig(provider_config=provider_config)
-    subscription_id = match.group(1)
-    resource_group = match.group(3)
-    workspace_name = match.group(5)
-    return subscription_id, resource_group, workspace_name
 
 
 def is_github_codespaces():

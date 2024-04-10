@@ -7,29 +7,19 @@ import typing
 
 from azure.ai.ml import MLClient
 from azure.core.exceptions import ResourceNotFoundError
-from azure.identity import AzureCliCredential, DefaultAzureCredential
 
-from promptflow._constants import CosmosDBContainerName
+from promptflow._cli._utils import get_credentials_for_cli
+from promptflow._constants import AzureWorkspaceKind, CosmosDBContainerName
 from promptflow._sdk._utils import extract_workspace_triad_from_trace_provider
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure import PFClient
 from promptflow.azure._restclient.flow_service_caller import FlowRequestException
-from promptflow.azure._utils.general import is_hub
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 _logger = get_cli_sdk_logger()
 
 COSMOS_INIT_POLL_TIMEOUT_SECOND = 600  # 10 minutes
 COSMOS_INIT_POLL_INTERVAL_SECOND = 30  # 30 seconds
-
-
-def _get_credential() -> typing.Union[AzureCliCredential, DefaultAzureCredential]:
-    try:
-        credential = AzureCliCredential()
-        credential.get_token("https://management.azure.com/.default")
-        return credential
-    except Exception:  # pylint: disable=broad-except
-        return DefaultAzureCredential()
 
 
 def _create_trace_provider_value_user_error(message: str) -> UserErrorException:
@@ -83,7 +73,7 @@ def validate_trace_provider(value: str) -> None:
     # the resource exists
     _logger.debug("Validating resource exists...")
     ml_client = MLClient(
-        credential=_get_credential(),
+        credential=get_credentials_for_cli(),
         subscription_id=workspace_triad.subscription_id,
         resource_group_name=workspace_triad.resource_group_name,
         workspace_name=workspace_triad.workspace_name,
@@ -96,7 +86,7 @@ def validate_trace_provider(value: str) -> None:
 
     # Azure ML workspace or AI project
     _logger.debug("Validating resource type...")
-    if is_hub(workspace):
+    if AzureWorkspaceKind.is_hub(workspace):
         error_msg = (
             f"{workspace.name!r} is an Azure AI hub, which is not a valid type. "
             "Currently we support Azure ML workspace and AI project as trace provider."
