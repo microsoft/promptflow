@@ -19,7 +19,7 @@ import mock
 import pytest
 
 from promptflow._cli._pf.entry import main
-from promptflow._constants import LINE_NUMBER_KEY, PF_USER_AGENT
+from promptflow._constants import FLOW_FLEX_YAML, LINE_NUMBER_KEY, PF_USER_AGENT
 from promptflow._sdk._constants import LOGGER_NAME, SCRUBBED_VALUE, ExperimentStatus
 from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
@@ -2302,6 +2302,46 @@ class TestCli:
         # check run results
         run = pf.runs.get(run_id)
         assert_batch_run_result(run, pf, assert_func)
+
+    def test_pf_flow_save(self, pf):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            run_pf_command(
+                "flow",
+                "save",
+                "--path",
+                temp_dir,
+                "--entry",
+                "hello:hello_world",
+                "--code",
+                f"{EAGER_FLOWS_DIR}/../functions/hello_world",
+            )
+            assert os.listdir(temp_dir) == [FLOW_FLEX_YAML, "hello.py"]
+            content = load_yaml(Path(temp_dir) / FLOW_FLEX_YAML)
+            assert content == {
+                "entry": "hello:hello_world",
+                "inputs": {
+                    "text": {
+                        "type": "string",
+                    }
+                },
+                "outputs": {
+                    "output": {
+                        "type": "string",
+                    }
+                },
+            }
+            os.unlink(Path(temp_dir) / FLOW_FLEX_YAML)
+            run_pf_command(
+                "flow",
+                "save",
+                "--entry",
+                "hello:hello_world",
+                cwd=temp_dir,
+            )
+            # __pycache__ will be created when inspecting the module
+            assert os.listdir(temp_dir) == [FLOW_FLEX_YAML, "hello.py", "__pycache__"]
+            new_content = load_yaml(Path(temp_dir) / FLOW_FLEX_YAML)
+            assert new_content == content
 
 
 def assert_batch_run_result(run, pf, assert_func):
