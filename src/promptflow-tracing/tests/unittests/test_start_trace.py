@@ -6,6 +6,7 @@ import uuid
 
 import pytest
 from opentelemetry import trace
+from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from pytest_mock import MockerFixture
 
@@ -18,7 +19,18 @@ from promptflow.tracing._constants import (
 )
 
 
+@pytest.fixture
+def reset_tracer_provider():
+    from opentelemetry.trace import _TRACER_PROVIDER_SET_ONCE
+
+    with _TRACER_PROVIDER_SET_ONCE._lock:
+        _TRACER_PROVIDER_SET_ONCE._done = False
+
+    yield
+
+
 @pytest.mark.unittest
+@pytest.mark.usefixtures("reset_tracer_provider")
 class TestStartTrace:
     def test_tracer_provider_after_start_trace(self) -> None:
         start_trace()
@@ -27,13 +39,6 @@ class TestStartTrace:
         attrs = tracer_provider.resource.attributes
         assert attrs[ResourceAttributesFieldName.SERVICE_NAME] == RESOURCE_ATTRIBUTES_SERVICE_NAME
         assert ResourceAttributesFieldName.COLLECTION not in attrs
-
-    def test_tracer_provider_overwritten(self) -> None:
-        trace.set_tracer_provider(TracerProvider())
-        old_tracer_provider = trace.get_tracer_provider()
-        start_trace()
-        new_tracer_provider = trace.get_tracer_provider()
-        assert id(old_tracer_provider) != id(new_tracer_provider)
 
     def test_tracer_provider_resource_attributes(self) -> None:
         collection = str(uuid.uuid4())
@@ -44,6 +49,14 @@ class TestStartTrace:
         assert attrs[ResourceAttributesFieldName.COLLECTION] == collection
         assert attrs["attr1"] == "value1"
         assert attrs["attr2"] == "value2"
+
+    def test_tracer_provider_resource_merge(self) -> None:
+        existing_res = {"existing_attr": "existing_value"}
+        trace.set_tracer_provider(TracerProvider(resource=Resource(existing_res)))
+        start_trace()
+        tracer_provider: TracerProvider = trace.get_tracer_provider()
+        assert "existing_attr" in tracer_provider.resource.attributes
+        assert ResourceAttributesFieldName.SERVICE_NAME in tracer_provider.resource.attributes
 
     def test_skip_tracing_local_setup(self, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
         spy = mocker.spy(promptflow.tracing._start_trace, "_is_devkit_installed")
