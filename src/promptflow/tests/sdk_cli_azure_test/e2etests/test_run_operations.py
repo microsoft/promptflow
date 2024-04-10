@@ -84,7 +84,7 @@ class TestFlowRun:
 
     def test_run_resume(self, pf: PFClient, randstr: Callable[[str], str]):
         # Note: Use fixed run name here to ensure resume call has same body then can be recorded.
-        name = "resume_from_run_using_automatic_runtime04081530"
+        name = "resume_from_run_using_automatic_runtime"
         try:
             run = pf.runs.get(run=name)
         except RunNotFoundError:
@@ -142,16 +142,16 @@ class TestFlowRun:
     def test_run_resume_with_image_aggregation(
         self, pf: PFClient, randstr: Callable[[str], str], capfd: pytest.CaptureFixture
     ):
-        name = "resume_from_run_with_image_and_aggregation04101726"
-        # try:
-        #     original_run = pf.runs.get(run=name)
-        # except RunNotFoundError:
-        original_run = pf.run(
-            flow=f"{FLOWS_DIR}/eval_flow_with_image_resume_random_fail",
-            data=f"{FLOWS_DIR}/eval_flow_with_image_resume_random_fail/input_data",
-            column_mapping={"input_image": "${data.input_image}"},
-            name=name,
-        )
+        name = "resume_from_run_with_image_and_aggregation_node"
+        try:
+            original_run = pf.runs.get(run=name)
+        except RunNotFoundError:
+            original_run = pf.run(
+                flow=f"{FLOWS_DIR}/eval_flow_with_image_resume_random_fail",
+                data=f"{FLOWS_DIR}/eval_flow_with_image_resume_random_fail/input_data",
+                column_mapping={"input_image": "${data.input_image}"},
+                name=name,
+            )
         original_run = pf.runs.stream(run=name)
         assert isinstance(original_run, Run)
         assert original_run.name == name
