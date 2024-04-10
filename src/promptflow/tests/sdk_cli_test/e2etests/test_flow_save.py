@@ -42,7 +42,7 @@ class GlobalHello:
 
 
 class GlobalHelloWithInvalidInit:
-    def __init__(self, connection: AzureOpenAIConnection, words: list):
+    def __init__(self, connection: AzureOpenAIConnection, words: GlobalHello):
         self.connection = connection
 
     def __call__(self, text: str) -> str:
@@ -227,6 +227,12 @@ class TestFlowSave:
                         "b": {
                             "type": "boolean",
                         },
+                        "li": {
+                            "type": "array",
+                        },
+                        "d": {
+                            "type": "object",
+                        },
                     },
                     "inputs": {
                         "s": {
@@ -350,8 +356,8 @@ class TestFlowSave:
                     "entry": "hello:Hello",
                 },
                 UserErrorException,
-                r"Schema validation failed: {'init.words.type'",
-                id="class_init_with_list_init",
+                r"The input 'words' is of a complex python type. Please use a dict instead",
+                id="class_init_with_entity_init",
             ),
             pytest.param(
                 {
@@ -533,7 +539,7 @@ class TestFlowSave:
 
     def test_infer_signature_failed(self):
         pf = PFClient()
-        with pytest.raises(UserErrorException, match="Schema validation failed: {'init.words.type'"):
+        with pytest.raises(UserErrorException, match="The input 'words' is of a complex python type"):
             pf.flows.infer_signature(entry=GlobalHelloWithInvalidInit)
 
     def test_public_save(self):

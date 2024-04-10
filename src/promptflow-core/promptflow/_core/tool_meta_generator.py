@@ -543,7 +543,12 @@ def generate_flow_meta_dict_by_object(f, cls):
     if cls:
         init_tool = _parse_tool_from_function(cls.__init__, include_outputs=False)
         init_inputs = init_tool.inputs
-        # no need to validate init as dict is not allowed in init for now.
+        validate_interface(
+            init_inputs,
+            {k: v.annotation for k, v in inspect.signature(cls.__init__).parameters.items()},
+            tool.name,
+            "input",
+        )
     else:
         init_inputs = None
 
