@@ -71,6 +71,18 @@ def mock_promptflow_service_invocation():
 
 @pytest.mark.sdk_test
 @pytest.mark.unittest
+class TestImports:
+    def test_imports_in_tracing(self):
+        # promptflow-tracing has imports from promptflow-devkit
+        # make these in promptflow._internal and add this test to avoid breaking
+        from promptflow._internal import setup_exporter_to_pfs, start_trace_with_devkit
+
+        assert callable(setup_exporter_to_pfs)
+        assert callable(start_trace_with_devkit)
+
+
+@pytest.mark.sdk_test
+@pytest.mark.unittest
 class TestStartTrace:
     @pytest.mark.usefixtures("reset_tracer_provider")
     def test_setup_exporter_from_environ(self) -> None:

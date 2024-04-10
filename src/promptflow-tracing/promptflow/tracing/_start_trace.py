@@ -51,7 +51,7 @@ def start_trace(
     _set_tracer_provider(res_attrs)
 
     if _is_devkit_installed():
-        from promptflow._sdk._tracing import start_trace_with_devkit
+        from promptflow._internal import start_trace_with_devkit
 
         start_trace_with_devkit(
             collection=collection,
@@ -71,7 +71,7 @@ def setup_exporter_from_environ() -> None:
         return
 
     if _is_devkit_installed():
-        from promptflow._sdk._tracing import setup_exporter_to_pfs
+        from promptflow._internal import setup_exporter_to_pfs
 
         setup_exporter_to_pfs()
 
