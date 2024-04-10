@@ -166,16 +166,26 @@ def _inject_res_attrs_to_environ(
     ws_triad: typing.Optional[AzureMLWorkspaceTriad] = None,
 ) -> None:
     if collection is not None:
+        _logger.debug("set collection to environ: %s", collection)
         os.environ[TraceEnvironmentVariableName.COLLECTION] = collection
     if exp is not None:
+        _logger.debug("set experiment to environ: %s", exp)
         os.environ[TraceEnvironmentVariableName.EXPERIMENT] = exp
     if ws_triad is not None:
+        _logger.debug(
+            "set workspace triad to environ: %s, %s, %s",
+            ws_triad.subscription_id,
+            ws_triad.resource_group_name,
+            ws_triad.workspace_name,
+        )
         os.environ[TraceEnvironmentVariableName.SUBSCRIPTION_ID] = ws_triad.subscription_id
         os.environ[TraceEnvironmentVariableName.RESOURCE_GROUP_NAME] = ws_triad.resource_group_name
         os.environ[TraceEnvironmentVariableName.WORKSPACE_NAME] = ws_triad.workspace_name
     # we will not overwrite the value if it is already set
     if OTEL_EXPORTER_OTLP_ENDPOINT not in os.environ:
-        os.environ[OTEL_EXPORTER_OTLP_ENDPOINT] = f"http://localhost:{pfs_port}/v1/traces"
+        otlp_endpoint = f"http://localhost:{pfs_port}/v1/traces"
+        _logger.debug("set OTLP endpoint to environ: %s", otlp_endpoint)
+        os.environ[OTEL_EXPORTER_OTLP_ENDPOINT] = otlp_endpoint
 
 
 def _create_res(
