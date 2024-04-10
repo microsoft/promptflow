@@ -2,8 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from promptflow.core import log_metric
-
 class MyFlow:
     def __init__(self, obj_input: str):
         self.obj_input = obj_input
@@ -16,8 +14,7 @@ class MyFlow:
         }
 
     def __aggregate__(self, results: list) -> dict:
-        log_metric("length", len(results))
-        return results
+        return {"length": len(results)}
 
 
 if __name__ == "__main__":

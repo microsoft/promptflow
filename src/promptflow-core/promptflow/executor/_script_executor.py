@@ -10,7 +10,6 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 
 from promptflow._constants import LINE_NUMBER_KEY, MessageFormatType
 from promptflow._core.log_manager import NodeLogManager
-from promptflow._core.metric_logger import add_metric_logger, remove_metric_logger
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool_meta_generator import PythonLoadError
 from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
@@ -21,6 +20,7 @@ from promptflow._utils.yaml_utils import load_yaml
 from promptflow.connections import ConnectionProvider
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.tool import ConnectionType
+from promptflow.core import log_metric
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DefaultRunStorage
@@ -139,13 +139,6 @@ class ScriptExecutor(FlowExecutor):
         # Similar to dag flow, add a prefix "reduce" for aggregation run_id.
         run_id = f"{run_id}_reduce" or f"{str(uuid.uuid4())}_reduce"
 
-        metrics = {}
-
-        def _log_metric(key, value):
-            metrics[key] = value
-
-        add_metric_logger(_log_metric)
-
         output = None
         traces = []
         try:
@@ -154,13 +147,14 @@ class ScriptExecutor(FlowExecutor):
                 output = asyncio.run(self._aggr_func(**{self._aggr_input_name: inputs}))
             else:
                 output = self._aggr_func(**{self._aggr_input_name: inputs})
+            if not isinstance(output, dict):
+                output = {"metric": output}
+            log_metric(output)
             traces = Tracer.end_tracing(run_id)
         except Exception:
             if not traces:
                 traces = Tracer.end_tracing(run_id)
-        finally:
-            remove_metric_logger(_log_metric)
-        return AggregationResult(output, metrics, {})
+        return AggregationResult({}, output, {})
 
     def _stringify_generator_output(self, output):
         if isinstance(output, dict):
