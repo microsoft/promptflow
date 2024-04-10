@@ -1,0 +1,22 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+inputs:
+  topic:
+    type: string
+  ground_truth:
+    type: string
+  history:
+    type: list
+outputs:
+  output:
+    type: string
+    reference: ${simulator.output}
+nodes:
+- name: simulator
+  type: python
+  source:
+    type: code
+    path: simulator.py
+  inputs:
+    question: ${inputs.topic}
+    ground_truth: ${inputs.ground_truth}
+    conversation_history: ${inputs.history}

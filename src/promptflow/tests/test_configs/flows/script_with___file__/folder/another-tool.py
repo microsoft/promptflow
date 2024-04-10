@@ -1,4 +1,4 @@
-from promptflow import tool
+from promptflow.core import tool
 
 
 print(f"The script is {__file__}")

@@ -194,7 +194,8 @@ class TraceOperations:
         run: typing.Optional[str] = None,
         collection: typing.Optional[str] = None,
         started_before: typing.Optional[typing.Union[str, datetime.datetime]] = None,
-    ) -> None:
+        **kwargs,
+    ) -> int:
         """Delete traces permanently.
 
         Support delete according to:
@@ -213,7 +214,12 @@ class TraceOperations:
         :type session: Optional[str]
         :param started_before: ISO 8601 format time string (e.g., "2024-03-19T15:17:23.807563").
         :type started_before: Optional[Union[str, datetime.datetime]]
+        :param dry_run: If True, will not perform real deletion.
+        :type dry_run: bool
+        :return: Number of traces to delete, only return in dry run mode.
+        :rtype: int
         """
+        dry_run = kwargs.get("dry_run", False)
         self._logger.debug(
             "delete traces with parameters, run: %s, collection: %s, started_before: %s",
             run,
@@ -221,10 +227,15 @@ class TraceOperations:
             started_before,
         )
         self._validate_delete_query_params(run=run, collection=collection, started_before=started_before)
-        self._logger.debug("try to delete line run(s)...")
+        if dry_run:
+            self._logger.debug("dry run mode, will not perform real deletion...")
+        else:
+            self._logger.debug("try to delete traces...")
         if isinstance(started_before, str):
             started_before = datetime.datetime.fromisoformat(started_before)
-        self._delete_within_transaction(run=run, collection=collection, started_before=started_before)
+        return self._delete_within_transaction(
+            run=run, collection=collection, started_before=started_before, dry_run=dry_run
+        )
 
     def _validate_delete_query_params(
         self,
@@ -256,6 +267,7 @@ class TraceOperations:
             'Valid delete queries: 1) specify `run`; 2) specify `collection` (not "default"); '
             "3) specify `collection` and `started_before` (ISO 8601)."
         )
+        self._logger.error(error_message)
         raise UserErrorException(error_message)
 
     @sqlite_retry
@@ -264,7 +276,8 @@ class TraceOperations:
         run: typing.Optional[str] = None,
         collection: typing.Optional[str] = None,
         started_before: typing.Optional[datetime.datetime] = None,
-    ) -> None:
+        dry_run: bool = False,
+    ) -> int:
         # delete will occur across 3 tables: line_runs, spans and events
         # which be done in a transaction
         from sqlalchemy.orm import Query
@@ -279,11 +292,15 @@ class TraceOperations:
             if started_before is not None:
                 query = query.filter(ORMLineRun.start_time < started_before)
             trace_ids = [line_run.trace_id for line_run in query.all()]
+
+            if dry_run:
+                return len(trace_ids)
+
             self._logger.debug("try to delete traces for trace_ids: %s", trace_ids)
             # deletes happen
             event_cnt = session.query(ORMEvent).filter(ORMEvent.trace_id.in_(trace_ids)).delete()
             span_cnt = session.query(ORMSpan).filter(ORMSpan.trace_id.in_(trace_ids)).delete()
             line_run_cnt = query.delete()
             session.commit()
-
         self._logger.debug("deleted %d line runs, %d spans, and %d events", line_run_cnt, span_cnt, event_cnt)
+        return len(trace_ids)

@@ -123,10 +123,10 @@ class FlowsProviderOperations(object):
         subscription_id,  # type: str
         resource_group_name,  # type: str
         workspace_name,  # type: str
-        body=None,  # type: Optional["_models.UnversionedEntityRequestDto"]
+        body=None,  # type: Optional["_models.UnversionedEntityRequestDtoFlowIndexEntityFlowAnnotationsFlowPropertiesExtensibleObject"]
         **kwargs  # type: Any
     ):
-        # type: (...) -> "_models.UnversionedEntityResponseDto"
+        # type: (...) -> "_models.UnversionedEntityResponseDtoFlowIndexEntityFlowAnnotationsFlowPropertiesExtensibleObject"
         """get_index_entity_by_id.
 
         :param subscription_id: The Azure Subscription ID.
@@ -136,13 +136,17 @@ class FlowsProviderOperations(object):
         :param workspace_name: The name of the workspace.
         :type workspace_name: str
         :param body:
-        :type body: ~flow.models.UnversionedEntityRequestDto
+        :type body:
+         ~flow.models.UnversionedEntityRequestDtoFlowIndexEntityFlowAnnotationsFlowPropertiesExtensibleObject
         :keyword callable cls: A custom type or function that will be passed the direct response
-        :return: UnversionedEntityResponseDto, or the result of cls(response)
-        :rtype: ~flow.models.UnversionedEntityResponseDto
+        :return:
+         UnversionedEntityResponseDtoFlowIndexEntityFlowAnnotationsFlowPropertiesExtensibleObject, or
+         the result of cls(response)
+        :rtype:
+         ~flow.models.UnversionedEntityResponseDtoFlowIndexEntityFlowAnnotationsFlowPropertiesExtensibleObject
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType["_models.UnversionedEntityResponseDto"]
+        cls = kwargs.pop('cls', None)  # type: ClsType["_models.UnversionedEntityResponseDtoFlowIndexEntityFlowAnnotationsFlowPropertiesExtensibleObject"]
         error_map = {
             401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
         }
@@ -151,7 +155,7 @@ class FlowsProviderOperations(object):
         content_type = kwargs.pop('content_type', "application/json")  # type: Optional[str]
 
         if body is not None:
-            _json = self._serialize.body(body, 'UnversionedEntityRequestDto')
+            _json = self._serialize.body(body, 'UnversionedEntityRequestDtoFlowIndexEntityFlowAnnotationsFlowPropertiesExtensibleObject')
         else:
             _json = None
 
@@ -174,7 +178,7 @@ class FlowsProviderOperations(object):
             error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
             raise HttpResponseError(response=response, model=error)
 
-        deserialized = self._deserialize('UnversionedEntityResponseDto', pipeline_response)
+        deserialized = self._deserialize('UnversionedEntityResponseDtoFlowIndexEntityFlowAnnotationsFlowPropertiesExtensibleObject', pipeline_response)
 
         if cls:
             return cls(pipeline_response, deserialized, {})
@@ -190,10 +194,10 @@ class FlowsProviderOperations(object):
         subscription_id,  # type: str
         resource_group_name,  # type: str
         workspace_name,  # type: str
-        body=None,  # type: Optional["_models.UnversionedRebuildIndexDto"]
+        body=None,  # type: Optional["_models.UnversionedRebuildIndexDtoFlowIndexEntityFlowAnnotationsFlowPropertiesExtensibleObject"]
         **kwargs  # type: Any
     ):
-        # type: (...) -> "_models.UnversionedRebuildResponseDto"
+        # type: (...) -> "_models.UnversionedRebuildResponseDtoFlowIndexEntityFlowAnnotationsFlowPropertiesExtensibleObject"
         """get_updated_entity_ids_for_workspace.
 
         :param subscription_id: The Azure Subscription ID.
@@ -203,13 +207,17 @@ class FlowsProviderOperations(object):
         :param workspace_name: The name of the workspace.
         :type workspace_name: str
         :param body:
-        :type body: ~flow.models.UnversionedRebuildIndexDto
+        :type body:
+         ~flow.models.UnversionedRebuildIndexDtoFlowIndexEntityFlowAnnotationsFlowPropertiesExtensibleObject
         :keyword callable cls: A custom type or function that will be passed the direct response
-        :return: UnversionedRebuildResponseDto, or the result of cls(response)
-        :rtype: ~flow.models.UnversionedRebuildResponseDto
+        :return:
+         UnversionedRebuildResponseDtoFlowIndexEntityFlowAnnotationsFlowPropertiesExtensibleObject, or
+         the result of cls(response)
+        :rtype:
+         ~flow.models.UnversionedRebuildResponseDtoFlowIndexEntityFlowAnnotationsFlowPropertiesExtensibleObject
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType["_models.UnversionedRebuildResponseDto"]
+        cls = kwargs.pop('cls', None)  # type: ClsType["_models.UnversionedRebuildResponseDtoFlowIndexEntityFlowAnnotationsFlowPropertiesExtensibleObject"]
         error_map = {
             401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
         }
@@ -218,7 +226,7 @@ class FlowsProviderOperations(object):
         content_type = kwargs.pop('content_type', "application/json")  # type: Optional[str]
 
         if body is not None:
-            _json = self._serialize.body(body, 'UnversionedRebuildIndexDto')
+            _json = self._serialize.body(body, 'UnversionedRebuildIndexDtoFlowIndexEntityFlowAnnotationsFlowPropertiesExtensibleObject')
         else:
             _json = None
 
@@ -241,7 +249,7 @@ class FlowsProviderOperations(object):
             error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
             raise HttpResponseError(response=response, model=error)
 
-        deserialized = self._deserialize('UnversionedRebuildResponseDto', pipeline_response)
+        deserialized = self._deserialize('UnversionedRebuildResponseDtoFlowIndexEntityFlowAnnotationsFlowPropertiesExtensibleObject', pipeline_response)
 
         if cls:
             return cls(pipeline_response, deserialized, {})
