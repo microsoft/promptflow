@@ -17,7 +17,7 @@ from promptflow._sdk._constants import (
     HOME_PROMPT_FLOW_DIR,
     SERVICE_CONFIG_FILE,
 )
-from promptflow._sdk._errors import MissingRequiredPackage
+from promptflow._sdk._errors import MissingAzurePackage
 from promptflow._sdk._utils import call_from_extension, gen_uuid_by_compute_info, read_write_by_user
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
@@ -224,7 +224,7 @@ class Configuration(object):
 
                 validate_trace_provider(value)
             except ImportError:
-                raise MissingRequiredPackage()
+                raise MissingAzurePackage()
         return
 
     def get_user_agent(self) -> Optional[str]:
