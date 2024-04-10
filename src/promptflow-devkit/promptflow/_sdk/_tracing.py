@@ -228,10 +228,9 @@ def start_trace_with_devkit(
     ws_triad = _get_ws_triad_from_pf_config()
     if ws_triad is not None and not _is_azure_ext_installed():
         warning_msg = (
-            "`trace.provider` is configured in prompt flow config, while Azure extension is not installed; "
-            "in this case, traces will not be exported to cloud. If you expect to export traces to cloud, "
-            "please install the Azure extension with command `pip install promptflow[azure]`, "
-            "and manually restart prompt flow service with command `pf service restart` to make it take effect."
+            "Azure extension is not installed, though export to cloud is configured, "
+            "traces cannot be exported to cloud. To fix this, please run `pip install promptflow-azure` "
+            "and restart prompt flow service."
         )
         logger.warning(warning_msg)
 
