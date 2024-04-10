@@ -2,13 +2,14 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import asyncio
+import inspect
 import signal
 import threading
 import uuid
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional, Type
+from typing import Any, Callable, Dict, List, Mapping, Optional, Type, Union
 
 from promptflow._constants import (
     LANGUAGE_KEY,
@@ -75,7 +76,7 @@ class BatchEngine:
 
     def __init__(
         self,
-        flow_file: Path,
+        flow_file: Union[Path, Callable],
         working_dir: Optional[Path] = None,
         *,
         connections: Optional[dict] = None,
@@ -108,21 +109,40 @@ class BatchEngine:
         :type kwargs: Any
         """
         self._flow_file = flow_file
-        self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
-        if is_prompty_flow(self._flow_file):
-            self._is_eager_flow = True
-            self._program_language = FlowLanguage.Python
+        is_function_entry = hasattr(flow_file, "__call__") or inspect.isfunction(flow_file)
+        if is_function_entry:
+            self._working_dir = working_dir or Path.cwd()
+        else:
+            self._working_dir = self._working_dir = Flow._resolve_working_dir(flow_file, working_dir) \
+                if flow_file is not None else working_dir
+
+        # Chat group doesn't pass flow_file
+        if self._flow_file is not None:
+            if is_function_entry:
+                self._is_eager_flow = True
+                self._program_language = FlowLanguage.Python
+            elif is_prompty_flow(self._flow_file):
+                self._is_eager_flow = True
+                self._program_language = FlowLanguage.Python
+            else:
+                self._is_prompty_flow = False
+                self._is_eager_flow, self._program_language = self._check_eager_flow_and_language_from_yaml()
         else:
             self._is_prompty_flow = False
-            self._is_eager_flow, self._program_language = self._check_eager_flow_and_language_from_yaml()
+            self._is_eager_flow = False
+            self._program_language = None
 
         # TODO: why self._flow is not initialized for eager flow?
-        if not self._is_eager_flow:
+        # Chat group run does not pass flow_file
+        if flow_file is not None and not self._is_eager_flow:
             self._flow = Flow.from_yaml(flow_file, working_dir=self._working_dir)
             FlowValidator.ensure_flow_valid_in_batch_mode(self._flow)
 
-        # eager flow does not support multimedia contract currently, just use basic format type.
-        self._message_format = self._flow.message_format if not self._is_eager_flow else MessageFormatType.BASIC
+        # eager flow and chat group does not support multimedia contract currently, just use basic format type.
+        if not self._is_eager_flow and self._flow_file is not None:
+            self._message_format = self._flow.message_format
+        else:
+            self._message_format = MessageFormatType.BASIC
         self._multimedia_processor = MultimediaProcessor.create(self._message_format)
 
         self._connections = connections
@@ -154,6 +174,7 @@ class BatchEngine:
         raise_on_line_failure: Optional[bool] = False,
         resume_from_run_storage: Optional[AbstractBatchRunStorage] = None,
         resume_from_run_output_dir: Optional[Path] = None,
+        executor_proxy: Optional[AbstractExecutorProxy] = None,
     ) -> BatchResult:
         """Run flow in batch mode
 
@@ -182,7 +203,7 @@ class BatchEngine:
             self._start_time = datetime.utcnow()
             with _change_working_dir(self._working_dir):
                 # create executor proxy instance according to the flow program language
-                self._executor_proxy = ProxyFactory().create_executor_proxy(
+                self._executor_proxy = executor_proxy or ProxyFactory().create_executor_proxy(
                     flow_file=self._flow_file,
                     working_dir=self._working_dir,
                     connections=self._connections,
@@ -204,16 +225,21 @@ class BatchEngine:
                                 "Current thread is not main thread, skip signal handler registration in BatchEngine."
                             )
 
-                    # set batch input source from input mapping
-                    set_batch_input_source_from_inputs_mapping(inputs_mapping)
-                    # if using eager flow, the self._flow is none, so we need to get inputs definition from executor
-                    inputs = self._executor_proxy.get_inputs_definition() if self._is_eager_flow else self._flow.inputs
+                    if self._executor_proxy.should_apply_inputs_mapping:
+                        # set batch input source from input mapping
+                        set_batch_input_source_from_inputs_mapping(inputs_mapping)
+                        # if using eager flow, the self._flow is none, so we need to get inputs definition from executor
+                        inputs = self._executor_proxy.get_inputs_definition() \
+                            if self._is_eager_flow else self._flow.inputs
 
-                    # resolve input data from input dirs and apply inputs mapping
-                    batch_input_processor = BatchInputsProcessor(
-                        self._working_dir, inputs, max_lines_count, message_format=self._message_format
-                    )
-                    batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
+                        # resolve input data from input dirs and apply inputs mapping
+                        batch_input_processor = BatchInputsProcessor(
+                            self._working_dir, inputs, max_lines_count, message_format=self._message_format
+                        )
+                        batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
+                    else:
+                        batch_input_processor = BatchInputsProcessor("", {}, max_lines_count)
+                        batch_inputs = batch_input_processor.process_batch_inputs_without_inputs_mapping(input_dirs)
                     # resolve output dir
                     output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
 
@@ -415,7 +441,7 @@ class BatchEngine:
         await self._executor_proxy.ensure_executor_health()
         # apply default value in early stage, so we can use it both in line and aggregation nodes execution.
         # if the flow is None, we don't need to apply default value for inputs.
-        if not self._is_eager_flow:
+        if not self._is_eager_flow and self._flow_file is not None:
             batch_inputs = [
                 apply_default_value_for_input(self._flow.inputs, each_line_input) for each_line_input in batch_inputs
             ]
@@ -460,12 +486,7 @@ class BatchEngine:
 
         # if the batch runs with errors, we should update the errors to ex
         ex = None
-        if not is_timeout:
-            # execute aggregation nodes
-            aggr_exec_result = await self._exec_aggregation(batch_inputs, line_results, run_id)
-            # use the execution result to update aggr_result to make sure we can get the aggr_result in _exec_in_task
-            self._update_aggr_result(aggr_result, aggr_exec_result)
-        else:
+        if is_timeout:
             ex = BatchRunTimeoutError(
                 message_format=(
                     "The batch run failed due to timeout [{batch_timeout_sec}s]. "
@@ -474,6 +495,11 @@ class BatchEngine:
                 batch_timeout_sec=self._batch_timeout_sec,
                 target=ErrorTarget.BATCH,
             )
+        elif self._executor_proxy.allow_aggregation:
+            # execute aggregation nodes
+            aggr_exec_result = await self._exec_aggregation(batch_inputs, line_results, run_id)
+            # use the execution result to update aggr_result to make sure we can get the aggr_result in _exec_in_task
+            self._update_aggr_result(aggr_result, aggr_exec_result)
         # summary some infos from line results and aggr results to batch result
         return BatchResult.create(self._start_time, datetime.utcnow(), line_results, aggr_result, exception=ex)
 

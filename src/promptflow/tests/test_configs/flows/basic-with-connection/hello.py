@@ -3,7 +3,7 @@ import os
 import openai
 from openai.version import VERSION as OPENAI_VERSION
 
-from promptflow import tool
+from promptflow.core import tool
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.tools.common import render_jinja_template, parse_chat
 

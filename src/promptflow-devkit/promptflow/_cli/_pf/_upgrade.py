@@ -27,7 +27,7 @@ def add_upgrade_parser(subparsers):
         epilog=epilog,
         add_params=add_params,
         subparsers=subparsers,
-        help_message="pf upgrade",
+        help_message="Upgrade prompt flow CLI.",
         action_param_name="action",
     )
 
@@ -40,17 +40,18 @@ def upgrade_version(args):
     from packaging.version import parse
 
     from promptflow._constants import _ENV_PF_INSTALLER, CLI_PACKAGE_NAME
+    from promptflow._sdk._utils import get_promptflow_sdk_version
     from promptflow._utils.version_hint_utils import get_latest_version
-    from promptflow._version import VERSION as local_version
 
     installer = os.getenv(_ENV_PF_INSTALLER) or ""
     installer = installer.upper()
     print(f"installer: {installer}")
     latest_version = get_latest_version(CLI_PACKAGE_NAME, installer=installer)
+    local_version = get_promptflow_sdk_version()
     if not latest_version:
         logger.warning("Failed to get the latest prompt flow version.")
         return
-    elif parse(latest_version) <= parse(local_version):
+    elif local_version and parse(latest_version) <= parse(local_version):
         logger.warning("You already have the latest prompt flow version: %s", local_version)
         return
 
@@ -109,6 +110,8 @@ def upgrade_version(args):
     importlib.reload(json)
 
     version_result = subprocess.check_output(["pf", "version"], shell=platform.system() == "Windows")
+    # Remove ANSI codes which control color and format of text in the console output.
+    version_result = version_result.decode().replace("\x1b[0m", "").strip()
     version_json = json.loads(version_result)
     new_version = version_json["promptflow"]
 

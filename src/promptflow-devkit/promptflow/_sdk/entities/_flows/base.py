@@ -6,7 +6,7 @@ from os import PathLike
 from pathlib import Path
 from typing import Union
 
-from promptflow._constants import DEFAULT_ENCODING, PROMPTY_EXTENSION
+from promptflow._constants import DEFAULT_ENCODING, FLOW_FILE_SUFFIX
 from promptflow._sdk.entities._validation import SchemaValidatableMixin
 from promptflow._utils.flow_utils import is_flex_flow, is_prompty_flow, resolve_flow_path
 from promptflow._utils.yaml_utils import load_yaml_string
@@ -179,19 +179,12 @@ class Flow(FlowBase):
 
     @classmethod
     def _load_prepare(cls, source: Union[str, PathLike]):
-        source_path = Path(source)
-        if not source_path.exists():
-            raise UserErrorException(f"Source {source_path.absolute().as_posix()} does not exist")
-
-        flow_dir, flow_filename = resolve_flow_path(source_path, new=True)
+        flow_dir, flow_filename = resolve_flow_path(source)
         flow_path = flow_dir / flow_filename
 
-        if not flow_path.exists():
-            raise UserErrorException(f"Flow file {flow_path.absolute().as_posix()} does not exist")
-
-        if flow_path.suffix not in [".yaml", ".yml", PROMPTY_EXTENSION]:
+        if flow_path.suffix not in FLOW_FILE_SUFFIX:
             raise UserErrorException("Source must be a directory or a 'flow.dag.yaml' file or a prompty file")
-        return source_path, flow_path
+        return flow_dir, flow_path
 
     @classmethod
     def load(

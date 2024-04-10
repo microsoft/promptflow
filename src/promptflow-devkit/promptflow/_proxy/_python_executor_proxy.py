@@ -9,6 +9,7 @@ from promptflow._constants import FlowEntryRegex
 from promptflow._core._errors import UnexpectedError
 from promptflow._core.run_tracker import RunTracker
 from promptflow._sdk._constants import FLOW_META_JSON_GEN_TIMEOUT, FLOW_TOOLS_JSON_GEN_TIMEOUT
+from promptflow._sdk._utils import can_accept_kwargs
 from promptflow._utils.flow_utils import resolve_entry_file
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.yaml_utils import load_yaml
@@ -25,6 +26,7 @@ from ._base_executor_proxy import AbstractExecutorProxy
 
 class PythonExecutorProxy(AbstractExecutorProxy):
     def __init__(self, flow_executor: FlowExecutor):
+        super().__init__()
         self._flow_executor = flow_executor
 
     @classmethod
@@ -60,9 +62,15 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         init_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs,
     ) -> "PythonExecutorProxy":
-        flow_executor = FlowExecutor.create(
-            flow_file, connections, working_dir, storage=storage, raise_ex=False, init_kwargs=init_kwargs
-        )
+        # Check if the method accepts kwargs in case of customer using an outdated version of core package.
+        if can_accept_kwargs(FlowExecutor.create):
+            flow_executor = FlowExecutor.create(
+                flow_file, connections, working_dir, storage=storage, raise_ex=False, init_kwargs=init_kwargs, **kwargs
+            )
+        else:
+            flow_executor = FlowExecutor.create(
+                flow_file, connections, working_dir, storage=storage, raise_ex=False, init_kwargs=init_kwargs
+            )
         return cls(flow_executor)
 
     async def exec_aggregation_async(

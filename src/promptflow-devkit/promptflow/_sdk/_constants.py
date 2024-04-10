@@ -69,7 +69,6 @@ def _prepare_home_dir() -> Path:
 
 HOME_PROMPT_FLOW_DIR = _prepare_home_dir()
 
-DAG_FILE_NAME = "flow.dag.yaml"
 DEFAULT_REQUIREMENTS_FILE_NAME = "requirements.txt"
 NODE_VARIANTS = "node_variants"
 VARIANTS = "variants"
@@ -292,7 +291,6 @@ class CLIListOutputFormat:
 
 class LocalStorageFilenames:
     SNAPSHOT_FOLDER = "snapshot"
-    DAG = DAG_FILE_NAME
     FLOW_TOOLS_JSON = FLOW_TOOLS_JSON
     INPUTS = "inputs.jsonl"
     OUTPUTS = "outputs.jsonl"
@@ -489,6 +487,21 @@ class IdentityKeys(str, Enum):
 class OSType:
     WINDOWS = "Windows"
     LINUX = "Linux"
+
+
+class SignatureValueType(str, Enum):
+    STRING = "string"
+    NUMBER = "number"
+    INT = "integer"
+    OBJECT = "object"
+    ARRAY = "array"
+    BOOL = "boolean"
+    # null will be controlled by required field
+    # NULL = "null"
+
+
+class RunMode:
+    EAGER = "Eager"
 
 
 # Note: Keep these for backward compatibility

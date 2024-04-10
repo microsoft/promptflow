@@ -1,7 +1,7 @@
 import random
 import time
 
-from promptflow import tool
+from promptflow.core import tool
 
 
 @tool
