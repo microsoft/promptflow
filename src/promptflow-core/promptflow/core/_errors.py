@@ -95,9 +95,11 @@ class MalformedConnectionProviderConfig(UserErrorException):
     """Exception raised when connection provider config is malformed."""
 
     def __init__(self, provider_config, **kwargs):
-        message = "Malformed connection provider config, expected azureml://subscriptions/<subscription_id>/"
-        "resourceGroups/<resource_group>/providers/Microsoft.MachineLearningServices/"
-        f"workspaces/<workspace_name>, got {provider_config}"
+        message = (
+            "Malformed connection provider config, expected azureml://subscriptions/<subscription_id>/"
+            "resourceGroups/<resource_group>/providers/Microsoft.MachineLearningServices/"
+            f"workspaces/<workspace_name>, got {provider_config}"
+        )
         super().__init__(target=ErrorTarget.CORE, message=message, **kwargs)
 
 
