@@ -30,8 +30,6 @@ def start_trace(
 ):
     """Promptflow instrumentation.
 
-    Instrument `openai`, and set tracer provider for current process.
-
     :param resource_attributes: Specify the resource attributes for current process.
     :type resource_attributes: typing.Optional[dict]
     :param collection: Specify the collection for current tracing.
