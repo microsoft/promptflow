@@ -144,6 +144,17 @@ class RunInfo(Base):
 
     @staticmethod
     @sqlite_retry
+    def search(search_name: str, max_results: Optional[int]):
+        with mgmt_db_session() as session:
+            statement = session.query(RunInfo).filter(RunInfo.name.like(f"{search_name}%"))
+
+            if isinstance(max_results, int):
+                return [run_info for run_info in statement.limit(max_results)]
+            else:
+                return [run_info for run_info in statement.all()]
+
+    @staticmethod
+    @sqlite_retry
     def list(max_results: Optional[int], list_view_type: ListViewType) -> List["RunInfo"]:
         with mgmt_db_session() as session:
             basic_statement = session.query(RunInfo)

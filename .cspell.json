@@ -41,7 +41,8 @@
     "scripts/installer/windows/**",
     ".github/workflows/**",
     ".github/actions/**",
-    ".github/pipelines/**"
+    ".github/pipelines/**",
+    ".github/CODEOWNERS"
   ],
   "words": [
     "aoai",
@@ -201,7 +202,8 @@
     "redef",
     "rcts",
     "Chunker",
-    "mpnet"
+    "mpnet",
+    "dcid"
   ],
   "flagWords": [
     "Prompt Flow"
