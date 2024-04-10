@@ -199,15 +199,20 @@ def _create_res(
     return Resource(attributes=res_attrs)
 
 
-def start_trace_with_devkit(
-    collection: typing.Optional[str],
-    attrs: typing.Optional[typing.Dict[str, str]] = None,
-    run: typing.Optional[str] = None,
-    **kwargs: typing.Any,
-) -> None:
+def start_trace_with_devkit(collection: typing.Optional[str], **kwargs: typing.Any) -> None:
+    _logger.debug("collection: %s", collection)
+    _logger.debug("kwargs: %s", kwargs)
+    attrs = kwargs.get("attributes", None)
+    run = kwargs.get("run", None)
+
     # honor and set attributes if user has specified
     if isinstance(attrs, dict):
         _inject_attrs_to_op_ctx(attrs)
+    # set session id if specified
+    # this is exclusive concept in chat experience with UX
+    session_id = kwargs.get("session", None)
+    if session_id is not None:
+        _inject_attrs_to_op_ctx({SpanAttributeFieldName.SESSION_ID: session_id})
 
     # experiment related attributes, pass from environment
     env_tracing_ctx = os.environ.get(PF_TRACE_CONTEXT, None)
@@ -221,6 +226,7 @@ def start_trace_with_devkit(
         op_ctx._remove_otel_attributes(SpanAttributeFieldName.REFERENCED_LINE_RUN_ID)
     else:
         op_ctx._add_otel_attributes(SpanAttributeFieldName.REFERENCED_LINE_RUN_ID, ref_line_run_id)
+    _logger.debug("operation context OTel attributes: %s", op_ctx._get_otel_attributes())
 
     # local to cloud feature
     ws_triad = _get_ws_triad_from_pf_config()
@@ -245,13 +251,17 @@ def start_trace_with_devkit(
 
 
 def setup_exporter_to_pfs() -> None:
+    _logger.debug("start setup exporter to prompt flow service...")
     # get resource attributes from environment
     # For local trace, collection is the only identifier for name and id
     # For cloud trace, we use collection here as name and collection_id for id
     collection = os.getenv(TraceEnvironmentVariableName.COLLECTION, None)
+    _logger.debug("collection from environ: %s", collection)
     # Only used for runtime
     collection_id = os.getenv(TraceEnvironmentVariableName.COLLECTION_ID, None)
+    _logger.debug("collection_id from environ: %s", collection_id)
     exp = os.getenv(TraceEnvironmentVariableName.EXPERIMENT, None)
+    _logger.debug("experiment from environ: %s", exp)
     # local to cloud scenario: workspace triad in resource.attributes
     workspace_triad = None
     subscription_id = os.getenv(TraceEnvironmentVariableName.SUBSCRIPTION_ID, None)
@@ -266,21 +276,31 @@ def setup_exporter_to_pfs() -> None:
     # tracer provider
     # create resource & tracer provider, or merge resource
     res = _create_res(collection=collection, collection_id=collection_id, exp=exp, ws_triad=workspace_triad)
+    _logger.debug("resource attributes: %s", res.attributes)
     cur_tracer_provider = trace.get_tracer_provider()
     if isinstance(cur_tracer_provider, TracerProvider):
+        _logger.info("tracer provider is already set, will merge the resource attributes...")
         cur_res: Resource = cur_tracer_provider.resource
+        _logger.debug("current resource: %s", cur_res.attributes)
         new_res = cur_res.merge(res)
         cur_tracer_provider._resource = new_res
+        _logger.info("tracer provider is updated with resource attributes: %s", new_res.attributes)
     else:
         tracer_provider = TracerProvider(resource=res)
         trace.set_tracer_provider(tracer_provider)
+        _logger.info("tracer provider is set with resource attributes: %s", res.attributes)
     # set exporter to PFS
     # get OTLP endpoint from environment
     endpoint = os.getenv(OTEL_EXPORTER_OTLP_ENDPOINT)
+    _logger.debug("environ OTEL_EXPORTER_OTLP_ENDPOINT: %s", endpoint)
     if endpoint is not None:
         # create OTLP span exporter if endpoint is set
         otlp_span_exporter = OTLPSpanExporter(endpoint=endpoint)
         tracer_provider: TracerProvider = trace.get_tracer_provider()
         if not getattr(tracer_provider, TRACER_PROVIDER_PFS_EXPORTER_SET_ATTR, False):
+            _logger.info("have not set exporter to prompt flow service, will set it...")
             tracer_provider.add_span_processor(BatchSpanProcessor(otlp_span_exporter))
             setattr(tracer_provider, TRACER_PROVIDER_PFS_EXPORTER_SET_ATTR, True)
+        else:
+            _logger.info("exporter to prompt flow service is already set, no action needed.")
+    _logger.debug("finish setup exporter to prompt flow service.")
