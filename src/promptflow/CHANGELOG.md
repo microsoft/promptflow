@@ -1,6 +1,14 @@
 # Release History
 
-## 1.8.0 (2024.04.03)
+## 1.9.0 (Upcoming)
+
+### Others
+- [promptflow-core] Connection default api version changed:
+  - AzureOpenAIConnection: 2023-07-01-preview -> 2024-02-01
+  - CognitiveSearchConnection: 2023-07-01-preview -> 2023-11-01
+
+
+## 1.8.0 (2024.04.10)
 
 ### NOTICES
 - `promptflow` package has been split into multiple packages. When installing `promptflow`, you will get the following packages:
@@ -17,7 +25,6 @@
 - [SDK/CLI][azure] Create a run with `resume_from`.
   - CLI: Support `pfazure run create --resume-from <original-run-name>` to create a run resume from another run.
   - SDK: Support `p.run(resume_from=<original-run-name>)` to create a run resume from another run.
-
 
 ## 1.7.0 (2024.03.25)
 

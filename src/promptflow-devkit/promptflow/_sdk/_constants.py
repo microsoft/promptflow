@@ -8,13 +8,13 @@ from enum import Enum
 from pathlib import Path
 
 from promptflow._constants import (
+    AZURE_WORKSPACE_REGEX_FORMAT,
     CONNECTION_SCRUBBED_VALUE,
     CONNECTION_SCRUBBED_VALUE_NO_CHANGE,
     PROMPT_FLOW_DIR_NAME,
     ConnectionAuthMode,
     ConnectionType,
     CustomStrongTypeConnectionConfigs,
-    AZURE_WORKSPACE_REGEX_FORMAT
 )
 
 LOGGER_NAME = "promptflow"
@@ -69,7 +69,7 @@ def _prepare_home_dir() -> Path:
 
 HOME_PROMPT_FLOW_DIR = _prepare_home_dir()
 
-DAG_FILE_NAME = "flow.dag.yaml"
+DEFAULT_REQUIREMENTS_FILE_NAME = "requirements.txt"
 NODE_VARIANTS = "node_variants"
 VARIANTS = "variants"
 NODES = "nodes"
@@ -79,6 +79,7 @@ USE_VARIANTS = "use_variants"
 DEFAULT_VAR_ID = "default_variant_id"
 FLOW_TOOLS_JSON = "flow.tools.json"
 FLOW_META_JSON = "flow.json"
+SERVE_SAMPLE_JSON_PATH = "sample.json"
 FLOW_TOOLS_JSON_GEN_TIMEOUT = 60
 FLOW_META_JSON_GEN_TIMEOUT = 60
 PROMPT_FLOW_RUNS_DIR_NAME = ".runs"
@@ -290,7 +291,6 @@ class CLIListOutputFormat:
 
 class LocalStorageFilenames:
     SNAPSHOT_FOLDER = "snapshot"
-    DAG = DAG_FILE_NAME
     FLOW_TOOLS_JSON = FLOW_TOOLS_JSON
     INPUTS = "inputs.jsonl"
     OUTPUTS = "outputs.jsonl"
@@ -487,6 +487,21 @@ class IdentityKeys(str, Enum):
 class OSType:
     WINDOWS = "Windows"
     LINUX = "Linux"
+
+
+class SignatureValueType(str, Enum):
+    STRING = "string"
+    NUMBER = "number"
+    INT = "integer"
+    OBJECT = "object"
+    ARRAY = "array"
+    BOOL = "boolean"
+    # null will be controlled by required field
+    # NULL = "null"
+
+
+class RunMode:
+    EAGER = "Eager"
 
 
 # Note: Keep these for backward compatibility

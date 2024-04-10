@@ -4,6 +4,7 @@
 import contextlib
 import copy
 import glob
+import inspect
 import json
 import os
 import shutil
@@ -14,15 +15,21 @@ import uuid
 from importlib.metadata import version
 from os import PathLike
 from pathlib import Path
-from typing import Dict, Iterable, List, Tuple, Union
+from typing import Callable, Dict, Iterable, List, NoReturn, Tuple, Union
 
-from promptflow._constants import FlowLanguage
+import pydash
+
+from promptflow._constants import FLOW_FLEX_YAML, LANGUAGE_KEY, PROMPT_FLOW_DIR_NAME, FlowLanguage
+from promptflow._proxy import ProxyFactory
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
     DEFAULT_ENCODING,
+    DEFAULT_REQUIREMENTS_FILE_NAME,
     FLOW_META_JSON_GEN_TIMEOUT,
     FLOW_TOOLS_JSON_GEN_TIMEOUT,
     LOCAL_MGMT_DB_PATH,
+    SERVE_SAMPLE_JSON_PATH,
+    SignatureValueType,
 )
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._orchestrator import TestSubmitter
@@ -37,11 +44,18 @@ from promptflow._sdk._utils import (
     json_load,
     logger,
 )
-from promptflow._sdk.entities._flows import FlexFlow, Flow
+from promptflow._sdk.entities._flows import FlexFlow, Flow, Prompty
 from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._utils.context_utils import _change_working_dir
-from promptflow._utils.flow_utils import dump_flow_result, is_executable_chat_flow, is_flex_flow, parse_variant
+from promptflow._utils.flow_utils import (
+    dump_flow_result,
+    is_executable_chat_flow,
+    is_flex_flow,
+    is_prompty_flow,
+    parse_variant,
+)
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
+from promptflow.contracts.tool import ValueType
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 
@@ -84,7 +98,6 @@ class FlowOperations(TelemetryMixin):
         :rtype: dict
         """
         experiment = kwargs.pop("experiment", None)
-        output_path = kwargs.get("output_path", None)
         if Configuration.get_instance().is_internal_features_enabled() and experiment:
             if variant is not None or node is not None:
                 error = ValueError("--variant or --node is not supported experiment is specified.")
@@ -100,7 +113,13 @@ class FlowOperations(TelemetryMixin):
                 experiment=experiment,
                 **kwargs,
             )
-
+        elif is_prompty_flow(flow):
+            # For prompty flow, if output path is not specified, set output folder to .promptflow/prompty_file_name.
+            # To avoid overwriting the execution info of different prompty in the same working dir.
+            kwargs["output_path"] = (
+                kwargs.get("output_path", None) or Path(flow).parent.resolve() / PROMPT_FLOW_DIR_NAME / Path(flow).stem
+            )
+        output_path = kwargs.get("output_path", None)
         result = self._test(
             flow=flow,
             inputs=inputs,
@@ -257,7 +276,7 @@ class FlowOperations(TelemetryMixin):
             stream_output=stream_output,
             session=session,
         ) as submitter:
-            if isinstance(flow, FlexFlow):
+            if isinstance(flow, FlexFlow) or isinstance(flow, Prompty):
                 # TODO(2897153): support chat eager flow
                 # set is chat flow to True to allow generator output
                 is_chat_flow, chat_history_input_name = False, None
@@ -838,6 +857,16 @@ class FlowOperations(TelemetryMixin):
         if is_flex_flow(yaml_dict=flow._data):
             # No tools meta for eager flow
             return {"package": {}, "code": {}}, {}
+        elif isinstance(flow, Prompty):
+            return {
+                "package": {},
+                "code": {
+                    flow.path.name: {
+                        "type": "llm",
+                        "inputs": {k: {"type": [v.get("type", "string")]} for k, v in flow._data["inputs"].items()},
+                    }
+                },
+            }, {}
 
         with self._resolve_additional_includes(flow.flow_dag_path) as new_flow_dag_path:
             flow_tools = generate_flow_tools_json(
@@ -933,3 +962,276 @@ class FlowOperations(TelemetryMixin):
                     load_in_subprocess=load_in_subprocess,
                 )
             )
+
+    @staticmethod
+    def _resolve_requirements_txt(python_requirements, code):
+        if python_requirements:
+            requirements_filename = Path(python_requirements).name
+            if (Path(code) / requirements_filename).exists():
+                raise UserErrorException(
+                    f"Specified requirements file {requirements_filename} already exists in code, please rename it."
+                )
+            return requirements_filename
+        if (code / DEFAULT_REQUIREMENTS_FILE_NAME).is_file():
+            # use %code%/requirements.txt if not specified and existed
+            return DEFAULT_REQUIREMENTS_FILE_NAME
+        return None
+
+    @staticmethod
+    def _merge_signature(extracted, signature_overrides):
+        if not signature_overrides:
+            signature_overrides = {}
+
+        signature = {}
+        for key in ["inputs", "outputs", "init"]:
+            if key in extracted:
+                signature[key] = extracted[key]
+            elif key in signature_overrides:
+                raise UserErrorException(f"Provided signature for {key}, which is not found in the entry.")
+
+            if key not in signature_overrides:
+                continue
+
+            if set(extracted[key].keys()) != set(signature_overrides[key].keys()):
+                raise UserErrorException(
+                    f"Provided signature of {key} does not match the entry.\n"
+                    f"Ports from signature: {', '.join(signature_overrides[key].keys())}\n"
+                    f"Ports from entry: {', '.join(signature[key].keys())}\n"
+                )
+
+            # TODO: merge the signature
+            signature[key] = signature_overrides[key]
+
+        return signature
+
+    @staticmethod
+    def _infer_signature(
+        entry: Union[Callable, str],
+        *,
+        code: str = None,
+        keep_entry: bool = False,
+        validate: bool = True,
+        language: str = FlowLanguage.Python,
+    ) -> Tuple[dict, Path, List[str]]:
+        """Infer signature of a flow entry.
+
+        Note that this is a Python only feature.
+        """
+        snapshot_list = None
+        # resolve entry and code
+        if isinstance(entry, str):
+            if not code:
+                raise UserErrorException("Code path is required when entry is a string.")
+            code = Path(code)
+            if not code.exists():
+                raise UserErrorException(f"Specified code {code} does not exist.")
+            if code.is_file():
+                snapshot_list = [code.name]
+                entry = f"{code.stem}:{entry}"
+                code = code.parent
+
+            inspector_proxy = ProxyFactory().create_inspector_proxy(language=language)
+            if not inspector_proxy.is_flex_flow_entry(entry):
+                raise UserErrorException(f"Entry {entry} is not a valid entry for flow.")
+
+            # TODO: extract description?
+            flow_meta = inspector_proxy.get_entry_meta(entry=entry, working_dir=code)
+        elif code is not None:
+            # TODO: support specifying code when inferring signature?
+            raise UserErrorException(
+                "Code path will be the parent of entry source " "and can't be customized when entry is a callable."
+            )
+        elif inspect.isclass(entry) or inspect.isfunction(entry):
+            if inspect.isclass(entry):
+                if not hasattr(entry, "__call__"):
+                    raise UserErrorException("Class entry must have a __call__ method.")
+                f, cls = entry.__call__, entry
+            else:
+                f, cls = entry, None
+
+            # callable entry must be of python, so we directly import from promptflow._core locally here
+            from promptflow._core.tool_meta_generator import generate_flow_meta_dict_by_object
+
+            flow_meta = generate_flow_meta_dict_by_object(f, cls)
+            source_path = Path(inspect.getfile(entry))
+            code = source_path.parent
+            # TODO: should we handle the case that entry is not defined in root level of the source?
+            flow_meta["entry"] = f"{source_path.stem}:{entry.__name__}"
+        else:
+            raise UserErrorException("Entry must be a function or a class.")
+
+        # signature is language irrelevant, so we apply json type system
+        value_type_map = {
+            ValueType.INT.value: SignatureValueType.INT.value,
+            ValueType.DOUBLE.value: SignatureValueType.NUMBER.value,
+            ValueType.LIST.value: SignatureValueType.ARRAY.value,
+            ValueType.BOOL.value: SignatureValueType.BOOL.value,
+        }
+        for port_type in ["inputs", "outputs", "init"]:
+            if port_type not in flow_meta:
+                continue
+            for port_name, port in flow_meta[port_type].items():
+                if port["type"] in value_type_map:
+                    port["type"] = value_type_map[port["type"]]
+
+        if validate:
+            # this path is actually not used
+            flow = FlexFlow(path=code / FLOW_FLEX_YAML, code=code, data=flow_meta, entry=flow_meta["entry"])
+            flow._validate(raise_error=True)
+        if not keep_entry:
+            flow_meta.pop("entry", None)
+        return flow_meta, code, snapshot_list
+
+    @monitor_operation(activity_name="pf.flows.infer_signature", activity_type=ActivityType.PUBLICAPI)
+    def infer_signature(self, entry: Callable) -> dict:
+        """Extract signature for a callable class or a function. Signature indicates the ports of a flex flow using
+        the callable as entry.
+
+        If entry is a callable function, the signature includes inputs and outputs.
+        If entry is a callable class, the signature includes inputs, outputs, and init.
+        Type of each port is inferred from the type hints of the callable and follows type system of json schema.
+        Given flow accepts json input in batch run and serve, we support only a part of types for those ports.
+        Complicated types must be decorated with dataclasses.dataclass.
+        Errors will be raised if annotated types are not supported.
+
+        :param entry: entry of the flow, should be a method name relative to code
+        :type entry: Callable
+        :return: signature of the flow
+        :rtype: dict
+        """
+        # TODO: should we support string entry? If so, we should also add a parameter to specify the working directory
+        flow_meta, _, _ = self._infer_signature(entry=entry)
+        return flow_meta
+
+    def _save(
+        self,
+        entry: Union[str, Callable],
+        code: Union[str, PathLike, None] = None,
+        path: Union[str, PathLike, None] = None,
+        *,
+        python_requirements_txt: str = None,
+        image: str = None,
+        signature: dict = None,
+        sample: dict = None,
+        **kwargs,
+    ) -> NoReturn:
+        # hide the language field before csharp support go public
+        language: str = kwargs.get(LANGUAGE_KEY, FlowLanguage.Python)
+
+        entry_meta, code, snapshot_list = self._infer_signature(
+            entry, code=code, keep_entry=True, validate=False, language=language
+        )
+
+        data = self._merge_signature(entry_meta, signature)
+        data["entry"] = entry_meta["entry"]
+
+        # python_requirements_txt
+        # avoid editing the original python_requirements as it will be used in copy stage
+        _python_requirements = self._resolve_requirements_txt(python_requirements_txt, code)
+        if _python_requirements:
+            pydash.set_(data, "environment.python_requirements_txt", _python_requirements)
+
+        if image:
+            pydash.set_(data, "environment.image", image)
+
+        if LANGUAGE_KEY in kwargs:
+            data[LANGUAGE_KEY] = language
+
+        # schema validation, here target_flow_file doesn't exist actually
+        # TODO: allow flex flow without path
+        FlexFlow(path=code / FLOW_FLEX_YAML, code=code, data=data, entry=data["entry"])._validate(raise_error=True)
+
+        if path:
+            # copy code to target directory if path is specified
+            target_flow_directory = Path(path)
+            if target_flow_directory.exists() and len(os.listdir(target_flow_directory.as_posix())) != 0:
+                raise UserErrorException(f"Target path {target_flow_directory.as_posix()} exists and is not empty.")
+            target_flow_directory.parent.mkdir(parents=True, exist_ok=True)
+
+            # TODO: handle ignore
+            if snapshot_list is not None:
+                for snapshot in snapshot_list:
+                    shutil.copy(code / snapshot, target_flow_directory / snapshot)
+            else:
+                shutil.copytree(
+                    code, target_flow_directory, dirs_exist_ok=True, ignore=shutil.ignore_patterns("__pycache__")
+                )
+        else:
+            # or we update the flow definition yaml file in code only
+            target_flow_directory = code
+            target_flow_directory.parent.mkdir(parents=True, exist_ok=True)
+
+        target_flow_file = target_flow_directory / FLOW_FLEX_YAML
+
+        if python_requirements_txt:
+            shutil.copy(python_requirements_txt, target_flow_directory / Path(python_requirements_txt).name)
+
+        if sample:
+            inputs = data.get("inputs", {})
+            if not isinstance(sample, dict):
+                raise UserErrorException("Sample must be a dict.")
+            if not set(sample.keys()) == set(inputs.keys()):
+                raise UserErrorException(
+                    message_format="Sample keys {actual} do not match the inputs {expected}.",
+                    actual=", ".join(sample.keys()),
+                    expected=", ".join(inputs.keys()),
+                )
+            with open(target_flow_directory / SERVE_SAMPLE_JSON_PATH, "w", encoding=DEFAULT_ENCODING) as f:
+                json.dump(sample, f, indent=4)
+            data["sample"] = SERVE_SAMPLE_JSON_PATH
+        with open(target_flow_file, "w", encoding=DEFAULT_ENCODING):
+            dump_yaml(data, target_flow_file)
+
+    @monitor_operation(activity_name="pf.flows.save", activity_type=ActivityType.PUBLICAPI)
+    def save(
+        self,
+        entry: Union[str, Callable],
+        code: Union[str, PathLike, None] = None,
+        path: Union[str, PathLike, None] = None,
+        *,
+        python_requirements_txt: str = None,
+        image: str = None,
+        signature: dict = None,
+        sample: Union[str, PathLike, dict] = None,
+        **kwargs,
+    ) -> NoReturn:
+        """
+        Save a callable class or a function as a flex flow.
+
+        :param entry: entry of the flow. If entry is a string, code will be required and entry should be a
+            method name relative to code, like "module.method". If entry is a callable class or a function,
+            code must be left None.
+        :type entry: Union[str, Callable]
+        :param code: path to the code directory. Will be copied to the target directory. If entry is a callable,
+            code must be left None and the parent directory of the entry source will be used as code.
+        :type code: Union[str, PathLike]
+        :param path: target directory to create the flow. If specified, it must be an empty or non-existent directory;
+            if not specified, will update the flow definition yaml file in code.
+        :type path: Union[str, PathLike]
+        :param python_requirements_txt: path to the python requirements file. If not specified, will use
+              `requirements.txt` if existed in code directory.
+        :type python_requirements_txt: str
+        :param image: image to run the flow. Will use default image if not specified.
+        :type image: str
+        :param signature: signature of the flow, indicates the input and output ports of the flow
+        :type signature: dict
+        :param sample: sample input data for the flow. Will be used for swagger generation in `flow serve`.
+        :type sample: dict
+        :return: no return
+        :rtype: None
+        """
+        # this transformation is put here to limit the scope of _save. Inner call should not involve a file sample.
+        if isinstance(sample, (str, Path, PathLike)):
+            with open(sample, "r", encoding=DEFAULT_ENCODING) as f:
+                sample = json.load(f)
+
+        return self._save(
+            path=path,
+            entry=entry,
+            code=code,
+            python_requirements_txt=python_requirements_txt,
+            image=image,
+            signature=signature,
+            sample=sample,
+            **kwargs,
+        )

@@ -181,16 +181,27 @@ class TestCliWithAzure:
                 assert kwargs["custom_dimensions"]["subscription_id"] == pf._ml_client.subscription_id
             yield None
 
-        with patch("promptflow._sdk._telemetry.activity.log_activity") as mock_log_activity:
-            mock_log_activity.side_effect = check_workspace_info
-            run_pf_command(
-                "run",
-                "create",
-                "--file",
-                f"{RUNS_DIR}/run_with_env.yaml",
-                "--set",
-                f"runtime={runtime}",
-                "--name",
-                name,
-                pf=pf,
-            )
+        # we have a known issue for this test: TypeError: super(type, obj): obj must be an instance or subtype of type
+        # which should result in this test has concurrent requests (telemetry, pf), this might hit vcrpy issue
+        # to avoid this makes CI flaky, we add retry here
+        for _ in range(3):
+            try:
+                with patch("promptflow._sdk._telemetry.activity.log_activity") as mock_log_activity:
+                    mock_log_activity.side_effect = check_workspace_info
+                    run_pf_command(
+                        "run",
+                        "create",
+                        "--file",
+                        f"{RUNS_DIR}/run_with_env.yaml",
+                        "--set",
+                        f"runtime={runtime}",
+                        "--name",
+                        name,
+                        pf=pf,
+                    )
+                break
+            except TypeError as e:
+                # only pass when the error message is the expected one
+                if "obj must be an instance or subtype of type" in str(e):
+                    pass
+                raise

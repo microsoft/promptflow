@@ -66,6 +66,30 @@ class UserAuthenticationError(UserErrorException):
     pass
 
 
+class InvalidConnectionError(CoreError):
+    """Exception raised if provide invalid connection info."""
+
+    pass
+
+
+class ChatAPIInvalidRoleError(CoreError):
+    """Exception raised when failed to validate chat api role."""
+
+    pass
+
+
+class ChatAPIFunctionRoleInvalidFormatError(CoreError):
+    """Exception raised when failed to validate chat api function role format."""
+
+    pass
+
+
+class MissingRequiredInputError(CoreError):
+    """Exception raised when missing required input"""
+
+    pass
+
+
 class OpenURLUserAuthenticationError(UserAuthenticationError):
     def __init__(self, **kwargs):
         super().__init__(target=ErrorTarget.CORE, **kwargs)

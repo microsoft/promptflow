@@ -41,7 +41,8 @@
     "scripts/installer/windows/**",
     ".github/workflows/**",
     ".github/actions/**",
-    ".github/pipelines/**"
+    ".github/pipelines/**",
+    ".github/CODEOWNERS"
   ],
   "words": [
     "aoai",
@@ -189,6 +190,8 @@
     "pywin",
     "STARTF",
     "mltable",
+    "prompty",
+    "Prompty",
     "setenv",
     "cscript",
     "nologo",
