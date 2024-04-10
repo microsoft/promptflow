@@ -241,7 +241,15 @@ class LineRunNotFoundError(SDKError):
     pass
 
 
-class MissingRequiredPackage(SDKError):
+class MissingAzurePackage(SDKError):
     """Exception raised if missing required package."""
 
-    pass
+    def __init__(
+        self,
+        **kwargs,
+    ):
+        msg = (
+            '"promptflow[azure]" is required for this functionality, '
+            'please install it by running "pip install promptflow-azure" with your version.'
+        )
+        super().__init__(message=msg, no_personal_data_message=msg, **kwargs)

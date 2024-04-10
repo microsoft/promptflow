@@ -1,10 +1,8 @@
-from pathlib import Path
-
 import pytest
+from _constants import PROMPTFLOW_ROOT
 
 from promptflow._sdk.entities._chat_group._chat_group import ChatGroup
 from promptflow._sdk.entities._chat_group._chat_role import ChatRole
-from _constants import PROMPTFLOW_ROOT
 
 FLOWS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/flows"
 

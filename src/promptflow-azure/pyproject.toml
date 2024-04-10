@@ -60,6 +60,7 @@ pytest-mock = "*"
 pytest-asyncio = "*"
 mock = "*"
 keyrings-alt = "*"
+bs4 = "*"
 
 [build-system]
 requires = ["poetry-core>=1.5.0"]
