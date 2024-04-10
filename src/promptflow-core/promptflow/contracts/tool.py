@@ -455,13 +455,3 @@ class ToolFuncCallScenario(str, Enum):
     GENERATED_BY = "generated_by"
     REVERSE_GENERATED_BY = "reverse_generated_by"
     DYNAMIC_LIST = "dynamic_list"
-
-
-to_json_type_mapping = {
-    ValueType.INT: "number",
-    ValueType.DOUBLE: "number",
-    ValueType.BOOL: "boolean",
-    ValueType.STRING: "string",
-    ValueType.LIST: "array",
-    ValueType.OBJECT: "object",
-}

@@ -24,7 +24,7 @@ from promptflow._utils.tool_utils import (
 )
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
-from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType, to_json_type_mapping
+from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
 from promptflow.contracts.types import AssistantDefinition, PromptTemplate
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
 from promptflow.executor._assistant_tool_invoker import (
@@ -32,6 +32,7 @@ from promptflow.executor._assistant_tool_invoker import (
     AssistantToolInvoker,
     AssistantToolResolver,
     ResolvedAssistantTool,
+    to_json_type_mapping,
 )
 from promptflow.executor._docstring_parser import DocstringParser
 from promptflow.executor._errors import (
