@@ -27,7 +27,7 @@ python flow.py
 
 - Test flow
 ```bash
-# test with default input value in flow.dag.yaml
+# test with default input value in flow.flex.yaml
 pf flow test --flow .
 
 # test with flow inputs
@@ -79,7 +79,7 @@ pf connection show -n open_ai_connection
 **Note**: we used `'` to wrap value since it supports raw value without escape in powershell & bash. For windows command prompt, you may remove the `'` to avoid it become part of the value.
 
 ```bash
-# test with default input value in flow.dag.yaml
+# test with default input value in flow.flex.yaml
 pf flow test --flow . --environment-variables AZURE_OPENAI_API_KEY='${open_ai_connection.api_key}' AZURE_OPENAI_ENDPOINT='${open_ai_connection.api_base}'
 ```
 
