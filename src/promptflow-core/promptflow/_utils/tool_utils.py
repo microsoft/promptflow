@@ -130,6 +130,8 @@ def param_to_definition(param, gen_custom_type_conn=False) -> (InputDefinition, 
 def resolve_complicated_type(return_type):
     if is_dataclass(return_type):
         output_fields = {x.name: x.type for x in fields(return_type)}
+    elif isinstance(return_type, type) and issubclass(return_type, dict) and hasattr(return_type, "__annotations__"):
+        output_fields = return_type.__annotations__
     else:
         output_fields = {"output": return_type}
 

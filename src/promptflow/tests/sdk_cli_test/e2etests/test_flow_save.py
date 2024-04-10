@@ -454,7 +454,6 @@ class TestFlowSave:
             },
         }
 
-    @pytest.mark.skip(reason="not supported yet")
     @pytest.mark.parametrize(
         "target_function, expected_signature",
         [
