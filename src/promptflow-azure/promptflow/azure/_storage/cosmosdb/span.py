@@ -65,12 +65,26 @@ class Span:
         from azure.cosmos.exceptions import CosmosResourceExistsError
 
         try:
-            return cosmos_client.create_item(body=self.to_dict())
+            return cosmos_client.create_item(body=self.to_cosmosdb_item())
         except CosmosResourceExistsError:
             return
 
     def to_dict(self) -> Dict[str, Any]:
         return {k: v for k, v in self.__dict__.items() if v}
+
+    def to_cosmosdb_item(self, attr_value_truncation_length: int = 8 * 1024):
+        """
+        Convert the object to a dictionary for persistence to CosmosDB.
+        Truncate attribute values to avoid exceeding CosmosDB's 2MB size limit.
+        """
+        item = self.to_dict()  # use to_dict method to get a dictionary representation of the object
+
+        attributes = item.get("attributes")
+        if attributes:
+            item["attributes"] = {
+                k: (v[:attr_value_truncation_length] if isinstance(v, str) else v) for k, v in attributes.items()
+            }
+        return item
 
     def _persist_events(self, blob_container_client: ContainerClient, blob_base_uri: str):
         for idx, event in enumerate(self.events):
