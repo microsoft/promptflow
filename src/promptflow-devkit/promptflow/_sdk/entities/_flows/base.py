@@ -6,7 +6,7 @@ from os import PathLike
 from pathlib import Path
 from typing import Union
 
-from promptflow._constants import DEFAULT_ENCODING, PROMPTY_EXTENSION
+from promptflow._constants import DEFAULT_ENCODING, FLOW_FILE_SUFFIX
 from promptflow._sdk.entities._validation import SchemaValidatableMixin
 from promptflow._utils.flow_utils import is_flex_flow, is_prompty_flow, resolve_flow_path
 from promptflow._utils.yaml_utils import load_yaml_string
@@ -182,7 +182,7 @@ class Flow(FlowBase):
         flow_dir, flow_filename = resolve_flow_path(source)
         flow_path = flow_dir / flow_filename
 
-        if flow_path.suffix not in [".yaml", ".yml", PROMPTY_EXTENSION]:
+        if flow_path.suffix not in FLOW_FILE_SUFFIX:
             raise UserErrorException("Source must be a directory or a 'flow.dag.yaml' file or a prompty file")
         return flow_dir, flow_path
 

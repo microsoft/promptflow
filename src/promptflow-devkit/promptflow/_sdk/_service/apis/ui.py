@@ -71,7 +71,7 @@ flow_ux_input_post_parser = create_parser(flow_arg, ux_inputs_arg)
 class ChatUI(Resource):
     def get(self):
         return Response(
-            render_template("chat_index.html", url_for=url_for),
+            render_template("chat-window/index.html", url_for=url_for),
             mimetype="text/html",
         )
 
@@ -168,7 +168,7 @@ class YamlEdit(Resource):
         flow_path = get_set_flow_yaml(flow, experiment)
         flow_path_dir, flow_path_file = resolve_flow_path(flow_path)
         flow_info = load_yaml(flow_path_dir / flow_path_file)
-        if is_flex_flow(file_path=flow_path_dir / flow_path_file):
+        if is_flex_flow(flow_path=flow_path_dir / flow_path_file):
             # call api provided by han to get flow input
             flow_input = {}
             flow_info.update(flow_input)
@@ -232,12 +232,14 @@ class FlowUxInputs(Resource):
 
 
 def serve_trace_ui(path):
-    if path != "" and os.path.exists(os.path.join(current_app.static_folder, path)):
+    # trace ui static folder: static/trace/
+    static_folder = os.path.join(current_app.static_folder, "trace")
+    if path != "" and os.path.exists(os.path.join(static_folder, path)):
         # explicitly set mimetype for js files since flask auto-detection is not reliable
         _, ext = os.path.splitext(path)
         if ext.lower() == ".js":
             mimetype = "application/javascript"
         else:
             mimetype = None
-        return send_from_directory(current_app.static_folder, path, mimetype=mimetype)
-    return send_from_directory(current_app.static_folder, "index.html")
+        return send_from_directory(static_folder, path, mimetype=mimetype)
+    return send_from_directory(static_folder, "index.html")

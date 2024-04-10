@@ -1,0 +1,17 @@
+[
+  {
+    "topic":  "fruit",
+    "ground_truth": "Yes",
+    "conversation_history": []
+  },
+  {
+    "topic":  "sport",
+    "ground_truth": "No",
+    "conversation_history": []
+  },
+  {
+    "topic":  "weather",
+    "ground_truth": "Sunny",
+    "conversation_history": []
+  }
+]

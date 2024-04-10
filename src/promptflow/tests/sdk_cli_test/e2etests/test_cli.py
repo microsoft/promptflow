@@ -69,7 +69,7 @@ class TestCli:
     def test_pf_version(self, capfd):
         run_pf_command("--version")
         out, _ = capfd.readouterr()
-        assert "0.0.1\n" in out
+        assert "0.0.1" in out
 
     def test_basic_flow_run(self, capfd) -> None:
         # fetch std out
@@ -298,6 +298,42 @@ class TestCli:
         with open(log_path, "r") as f:
             log_content = f.read()
         assert previous_log_content not in log_content
+
+        # Test flow test with simple input file
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/web_classification",
+            "--inputs",
+            f"{DATAS_DIR}/webClassification1.jsonl",
+        )
+        output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.output.json"
+        assert output_path.exists()
+
+        # Test flow test with invalid simple input file
+        with pytest.raises(ValueError) as ex:
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{FLOWS_DIR}/web_classification",
+                "--inputs",
+                f"{DATAS_DIR}/invalid_path.json",
+            )
+        assert "Cannot find inputs file" in ex.value.args[0]
+
+        # Test flow test with invalid file extension
+        with pytest.raises(ValueError) as ex:
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{FLOWS_DIR}/web_classification",
+                "--inputs",
+                f"{DATAS_DIR}/logo.jpg",
+            )
+        assert "Only support jsonl or json file as input" in ex.value.args[0]
 
     def test_flow_with_aad_connection(self):
         run_pf_command("flow", "test", "--flow", f"{FLOWS_DIR}/flow_with_aad_connection")

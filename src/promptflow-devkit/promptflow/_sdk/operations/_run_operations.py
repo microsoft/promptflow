@@ -16,6 +16,7 @@ from promptflow._sdk._constants import (
     FlowRunProperties,
     ListViewType,
     RunInfoSources,
+    RunMode,
     RunStatus,
 )
 from promptflow._sdk._errors import InvalidRunStatusError, RunExistsError, RunNotFoundError, RunOperationParameterError
@@ -67,9 +68,9 @@ class RunOperations(TelemetryMixin):
 
     @monitor_operation(activity_name="pf.runs.search", activity_type=ActivityType.INTERNALCALL)
     def _search(
-            self,
-            search_name: str,
-            max_results: Optional[int] = MAX_RUN_LIST_RESULTS,
+        self,
+        search_name: str,
+        max_results: Optional[int] = MAX_RUN_LIST_RESULTS,
     ) -> List[Run]:
         """List runs.
 
@@ -86,7 +87,6 @@ class RunOperations(TelemetryMixin):
             parser=Run._from_orm_object,
             message_generator=lambda x: f"Error parsing run {x.name!r}, skipped.",
         )
-
 
     @monitor_operation(activity_name="pf.runs.get", activity_type=ActivityType.PUBLICAPI)
     def get(self, name: str) -> Run:
@@ -383,7 +383,7 @@ class RunOperations(TelemetryMixin):
                 metrics=local_storage.load_metrics(parse_const_as_str=True),
                 dag=local_storage.load_dag_as_string(),
                 flow_tools_json=local_storage.load_flow_tools_json(),
-                mode="eager" if local_storage.eager_mode else "",
+                mode=RunMode.EAGER.lower() if local_storage.eager_mode else "",
             )
             details.append(copy.deepcopy(detail))
             metadatas.append(asdict(metadata))
