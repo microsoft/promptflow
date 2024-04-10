@@ -71,7 +71,7 @@ def validate_trace_provider(value: str) -> None:
     1. the value is a valid ARM resource ID for workspace/project
     2. the resource exists
     3. the resource is an Azure ML workspace or AI project
-    3. the workspace Cosmos DB is initialized
+    4. the workspace Cosmos DB is initialized
     """
     # valid workspace/project ARM resource ID; otherwise, a ValueError will be raised
     _logger.debug("Validating trace provider value...")
