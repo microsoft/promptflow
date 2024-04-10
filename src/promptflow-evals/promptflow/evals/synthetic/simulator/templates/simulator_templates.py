@@ -26,9 +26,6 @@ class Template:
             return "{{ch_template_placeholder}}"
         return self.text
 
-    def __to_ch_templates(self):  # pylint: disable=unused-private-member
-        pass
-
 
 class ContentHarmTemplatesUtils:
     @staticmethod
