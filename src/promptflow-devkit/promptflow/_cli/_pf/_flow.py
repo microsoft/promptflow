@@ -491,7 +491,7 @@ def _test_flow_multi_modal(args, pf_client):
         if not args.skip_open_browser:
             webbrowser.open(chat_page_url)
     else:
-        if is_flex_flow(file_path=args.flow):
+        if is_flex_flow(flow_path=args.flow):
             error = ValueError("Only support dag yaml in streamlit ui.")
             raise UserErrorException(
                 target=ErrorTarget.CONTROL_PLANE_SDK,

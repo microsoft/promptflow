@@ -166,7 +166,7 @@ class YamlEdit(Resource):
         flow_path = get_set_flow_yaml(flow, experiment)
         flow_path_dir, flow_path_file = resolve_flow_path(flow_path)
         flow_info = load_yaml(flow_path_dir / flow_path_file)
-        if is_flex_flow(file_path=flow_path_dir / flow_path_file):
+        if is_flex_flow(flow_path=flow_path_dir / flow_path_file):
             flow_meta = get_client_from_request()._flows._generate_flow_meta(flow_path_dir / flow_path_file)
             flow_info.update(flow_meta)
         flow_info = dump_yaml(flow_info)
