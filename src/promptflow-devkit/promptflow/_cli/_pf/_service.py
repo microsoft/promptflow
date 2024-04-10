@@ -209,11 +209,15 @@ def _validate_port(port, force_start):
     if is_port_in_use(port):
         if force_start:
             message = f"Force restart the service on the port {port}."
-            print(message)
+            if is_run_from_built_binary():
+                print(message)
             logger.warning(message)
             kill_exist_service(port)
         else:
-            logger.warning(f"Service port {port} is used.")
+            message = f"Service port {port} is used."
+            if is_run_from_built_binary():
+                print(message)
+            logger.warning(message)
             raise UserErrorException(f"Service port {port} is used.")
 
 
