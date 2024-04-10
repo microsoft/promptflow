@@ -87,7 +87,7 @@ jobs:
 
       - name: Run Test
         shell: pwsh
-        working-directory: ${{ env.PROMPTFLOW_DIRECTORY }}
+        working-directory: ${{ env.WORKING_DIRECTORY }}
         run: |
           gci env:* | sort-object name
           poetry run pytest ./tests/sdk_cli_azure_test ../promptflow-azure/tests/sdk_cli_azure_test -n auto -m "perf_monitor_test"
