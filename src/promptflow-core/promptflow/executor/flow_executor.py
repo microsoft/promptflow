@@ -179,6 +179,7 @@ class FlowExecutor:
         node_override: Optional[Dict[str, Dict[str, Any]]] = None,
         line_timeout_sec: Optional[int] = None,
         init_kwargs: Optional[Dict[str, Any]] = None,
+        **kwargs,
     ) -> "FlowExecutor":
         """Create a new instance of FlowExecutor.
 
@@ -210,7 +211,7 @@ class FlowExecutor:
             return ScriptExecutor(flow_file, storage=storage)
         if not isinstance(flow_file, (Path, str)):
             raise NotImplementedError("Only support Path or str for flow_file.")
-        if is_flex_flow(file_path=flow_file, working_dir=working_dir):
+        if is_flex_flow(flow_path=flow_file, working_dir=working_dir):
             from ._script_executor import ScriptExecutor
 
             return ScriptExecutor(
@@ -227,7 +228,9 @@ class FlowExecutor:
         else:
             if init_kwargs:
                 logger.warning(f"Got unexpected init args {init_kwargs} for non-script flow. Ignoring them.")
-            flow = Flow.from_yaml(flow_file, working_dir=working_dir)
+
+            name = kwargs.get("name", None)
+            flow = Flow.from_yaml(flow_file, working_dir=working_dir, name=name)
             return cls._create_from_flow(
                 flow_file=flow_file,
                 flow=flow,

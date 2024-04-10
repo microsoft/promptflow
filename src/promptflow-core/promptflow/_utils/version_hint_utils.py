@@ -107,7 +107,9 @@ def hint_for_update():
         if LATEST_VERSION in cached_versions:
             from packaging.version import parse
 
-            if parse(cached_versions[CURRENT_VERSION]) < parse(cached_versions[LATEST_VERSION]):
+            if cached_versions[CURRENT_VERSION] is None or parse(cached_versions[CURRENT_VERSION]) < parse(
+                cached_versions[LATEST_VERSION]
+            ):
                 cached_versions[LAST_HINT_TIME] = str(datetime.datetime.now())
                 message = (
                     f"New prompt flow version available: promptflow-{cached_versions[LATEST_VERSION]}. Running "

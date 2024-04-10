@@ -69,7 +69,6 @@ def _prepare_home_dir() -> Path:
 
 HOME_PROMPT_FLOW_DIR = _prepare_home_dir()
 
-DAG_FILE_NAME = "flow.dag.yaml"
 DEFAULT_REQUIREMENTS_FILE_NAME = "requirements.txt"
 NODE_VARIANTS = "node_variants"
 VARIANTS = "variants"
@@ -249,6 +248,11 @@ class RunStatus(object):
     def get_post_processing_statuses(cls):
         """Return the list of running statuses."""
         return [cls.CANCEL_REQUESTED, cls.FINALIZING]
+
+    @classmethod
+    def get_terminated_statuses(cls):
+        """Return the list of terminated statuses."""
+        return [cls.COMPLETED, cls.FAILED, cls.CANCELED]
 
 
 class FlowRunProperties:
@@ -462,6 +466,23 @@ class LineRunFieldName:
     EVALUATIONS = "evaluations"
 
 
+class Local2Cloud:
+    EXPERIMENT_NAME = "local_to_cloud"
+    PROPERTY_KEY = "azureml.promptflow.local_to_cloud"
+    BLOB_ROOT_PROMPTFLOW = "promptflow"
+    BLOB_ROOT_RUNS = "runs"
+    BLOB_ARTIFACTS = "PromptFlowArtifacts"
+    BLOB_EXPERIMENT_RUN = "ExperimentRun"
+    ASSET_NAME_DEBUG_INFO = "debug_info"
+    ASSET_NAME_FLOW_OUTPUTS = "flow_outputs"
+    EXECUTION_LOG = "logs/azureml/executionlogs.txt"
+
+
+class CloudDatastore:
+    DEFAULT = "workspaceblobstore"
+    ARTIFACT = "workspaceartifactstore"
+
+
 class CreatedByFieldName:
     OBJECT_ID = "object_id"
     TENANT_ID = "tenant_id"
@@ -488,6 +509,21 @@ class IdentityKeys(str, Enum):
 class OSType:
     WINDOWS = "Windows"
     LINUX = "Linux"
+
+
+class SignatureValueType(str, Enum):
+    STRING = "string"
+    NUMBER = "number"
+    INT = "integer"
+    OBJECT = "object"
+    ARRAY = "array"
+    BOOL = "boolean"
+    # null will be controlled by required field
+    # NULL = "null"
+
+
+class RunMode:
+    EAGER = "Eager"
 
 
 # Note: Keep these for backward compatibility

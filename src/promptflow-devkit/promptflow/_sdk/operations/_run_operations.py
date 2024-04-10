@@ -16,6 +16,7 @@ from promptflow._sdk._constants import (
     FlowRunProperties,
     ListViewType,
     RunInfoSources,
+    RunMode,
     RunStatus,
 )
 from promptflow._sdk._errors import InvalidRunStatusError, RunExistsError, RunNotFoundError, RunOperationParameterError
@@ -59,6 +60,28 @@ class RunOperations(TelemetryMixin):
         :rtype: List[~promptflow.entities.Run]
         """
         orm_runs = ORMRun.list(max_results=max_results, list_view_type=list_view_type)
+        return safe_parse_object_list(
+            obj_list=orm_runs,
+            parser=Run._from_orm_object,
+            message_generator=lambda x: f"Error parsing run {x.name!r}, skipped.",
+        )
+
+    @monitor_operation(activity_name="pf.runs.search", activity_type=ActivityType.INTERNALCALL)
+    def _search(
+        self,
+        search_name: str,
+        max_results: Optional[int] = MAX_RUN_LIST_RESULTS,
+    ) -> List[Run]:
+        """List runs.
+
+        :param search_name: The search name prefix.
+        :type search_name: str
+        :param max_results: Max number of results to return. Default: MAX_RUN_LIST_RESULTS.
+        :type max_results: Optional[int]
+        :return: List of run objects.
+        :rtype: List[~promptflow.entities.Run]
+        """
+        orm_runs = ORMRun.search(search_name=search_name, max_results=max_results)
         return safe_parse_object_list(
             obj_list=orm_runs,
             parser=Run._from_orm_object,
@@ -360,7 +383,7 @@ class RunOperations(TelemetryMixin):
                 metrics=local_storage.load_metrics(parse_const_as_str=True),
                 dag=local_storage.load_dag_as_string(),
                 flow_tools_json=local_storage.load_flow_tools_json(),
-                mode="eager" if local_storage.eager_mode else "",
+                mode=RunMode.EAGER.lower() if local_storage.eager_mode else "",
             )
             details.append(copy.deepcopy(detail))
             metadatas.append(asdict(metadata))
