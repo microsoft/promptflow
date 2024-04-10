@@ -536,7 +536,19 @@ def generate_flow_meta_dict_by_object(f, cls):
 
     # validate output
     return_type = resolve_annotation(signature.return_annotation)
-    validate_interface(tool.outputs, resolve_complicated_type(return_type), tool.name, "output")
+    output_fields, composed_output = resolve_complicated_type(return_type)
+    if composed_output:
+        validate_interface(tool.outputs, output_fields, tool.name, "output")
+    elif return_type not in [str, inspect.Signature.empty]:
+        raise BadFunctionInterface(
+            message_format=(
+                "Parse interface for '{entry}' failed: "
+                "The return annotation of the entry function must be dataclass, TypedDict, string or no return, "
+                "but got {t}."
+            ),
+            entry=cls.__name__ if cls else f.__name__,
+            t=str(return_type),
+        )
 
     # Include data in generated meta to avoid flow definition's fields(e.g. environment variable) missing.
     flow_meta = {}
@@ -554,7 +566,7 @@ def generate_flow_meta_dict_by_object(f, cls):
 
     for ports, meta_key in [
         (tool.inputs, "inputs"),
-        (tool.outputs, "outputs"),
+        (tool.outputs if composed_output else None, "outputs"),
         (init_inputs, "init"),
     ]:
         if not ports:

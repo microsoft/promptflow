@@ -129,13 +129,11 @@ def param_to_definition(param, gen_custom_type_conn=False) -> (InputDefinition, 
 
 def resolve_complicated_type(return_type):
     if is_dataclass(return_type):
-        output_fields = {x.name: x.type for x in fields(return_type)}
+        return {x.name: x.type for x in fields(return_type)}, True
     elif isinstance(return_type, type) and issubclass(return_type, dict) and hasattr(return_type, "__annotations__"):
-        output_fields = return_type.__annotations__
+        return return_type.__annotations__, True
     else:
-        output_fields = {"output": return_type}
-
-    return output_fields
+        return {"output": return_type}, False
 
 
 def function_to_interface(
@@ -170,7 +168,7 @@ def function_to_interface(
         if is_connection:
             connection_types.append(input_def.type)
     # Resolve output to definition
-    output_fields = resolve_complicated_type(resolve_annotation(sign.return_annotation))
+    output_fields, _ = resolve_complicated_type(resolve_annotation(sign.return_annotation))
     outputs = {
         k: OutputDefinition(
             # If the output annotation is a union type, then it should be a list.
