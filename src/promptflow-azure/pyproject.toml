@@ -56,6 +56,10 @@ import-linter = "*"
 pytest = "*"
 pytest-cov = "*"
 pytest-xdist = "*"
+pytest-mock = "*"
+pytest-asyncio = "*"
+mock = "*"
+keyrings-alt = "*"
 
 [build-system]
 requires = ["poetry-core>=1.5.0"]

@@ -86,7 +86,7 @@ jobs:
           path: |
             ${{ env.WORKING_DIRECTORY }}/*.xml
             ${{ env.WORKING_DIRECTORY }}/htmlcov/
-      - run: poetry run pip install ${{ env.WORKING_DIRECTORY }}[executable]
+      - run: poetry run pip install -e ${{ env.WORKING_DIRECTORY }}[executable]
       - name: run devkit e2e tests
         run: |
           poetry run pytest -n auto -m "unittest or e2etest" ./tests/sdk_cli_test/e2etests/test_executable.py
