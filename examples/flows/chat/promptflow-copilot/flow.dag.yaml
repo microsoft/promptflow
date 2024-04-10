@@ -11,7 +11,6 @@ outputs:
   output:
     type: string
     reference: ${answer_the_question_with_context.output}
-    evaluation_only: false
     is_chat_output: true
 nodes:
 - name: modify_query_with_history
