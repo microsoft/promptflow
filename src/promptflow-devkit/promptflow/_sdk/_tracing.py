@@ -43,7 +43,7 @@ from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
 from promptflow.tracing._operation_context import OperationContext
 
-logger = get_cli_sdk_logger()
+_logger = get_cli_sdk_logger()
 
 TRACER_PROVIDER_PFS_EXPORTER_SET_ATTR = "_pfs_exporter_set"
 
@@ -69,7 +69,7 @@ def _is_azure_ext_installed() -> bool:
 def _inject_attrs_to_op_ctx(attrs: typing.Dict[str, str]) -> None:
     if len(attrs) == 0:
         return
-    logger.debug("Inject attributes %s to context", attrs)
+    _logger.debug("inject attributes %s to context", attrs)
     op_ctx = OperationContext.get_instance()
     for attr_key, attr_value in attrs.items():
         op_ctx._add_otel_attributes(attr_key, attr_value)
@@ -106,7 +106,7 @@ def _invoke_pf_svc() -> str:
     start_pfs = subprocess.Popen(cmd_args, shell=True)
     # Wait for service to be started
     start_pfs.wait()
-    logger.debug("Prompt flow service is serving on port %s", port)
+    _logger.debug("prompt flow service is serving on port %s", port)
     print(hint_stop_message)
     return port
 
@@ -211,7 +211,7 @@ def start_trace_with_devkit(
 
     # experiment related attributes, pass from environment
     env_tracing_ctx = os.environ.get(PF_TRACE_CONTEXT, None)
-    logger.debug("Read tracing context from environment: %s", env_tracing_ctx)
+    _logger.debug("read tracing context from environment: %s", env_tracing_ctx)
     env_attrs = dict(json.loads(env_tracing_ctx)).get(PF_TRACE_CONTEXT_ATTR) if env_tracing_ctx else dict()
     exp = env_attrs.get(ContextAttributeKey.EXPERIMENT, None)
     ref_line_run_id = env_attrs.get(ContextAttributeKey.REFERENCED_LINE_RUN_ID, None)
@@ -230,7 +230,7 @@ def start_trace_with_devkit(
             "traces cannot be exported to cloud. To fix this, please run `pip install promptflow-azure` "
             "and restart prompt flow service."
         )
-        logger.warning(warning_msg)
+        _logger.warning(warning_msg)
 
     # invoke prompt flow service
     pfs_port = _invoke_pf_svc()
