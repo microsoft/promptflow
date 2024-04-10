@@ -1,6 +1,5 @@
 import datetime
 import json
-import sys
 
 import pytest
 
@@ -123,7 +122,7 @@ class TestSpan:
 
         item = span.to_cosmosdb_item()
 
-        item_size = sys.getsizeof(json.dumps(item))
+        item_size = len(json.dumps(item, separators=(",", ":")).encode("utf-8"))
         max_size_in_bytes = 2 * 1024 * 1024  # 2MB in bytes
         assert item_size <= max_size_in_bytes  # item size should not exceed 2MB
 
@@ -162,7 +161,7 @@ class TestSpan:
         item = span.to_cosmosdb_item()
 
         # Check that the size of the item does not exceed the 2MB limit
-        item_size = sys.getsizeof(json.dumps(item))
+        item_size = len(json.dumps(item, separators=(",", ":")).encode("utf-8"))
         max_size_in_bytes = 2 * 1024 * 1024  # 2MB in bytes
         assert item_size <= max_size_in_bytes
 

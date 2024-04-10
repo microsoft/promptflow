@@ -3,7 +3,6 @@
 # ---------------------------------------------------------
 
 import json
-import sys
 from copy import deepcopy
 from typing import Any, Dict
 
@@ -79,7 +78,12 @@ class Span:
         Truncate attribute values to avoid exceeding CosmosDB's 2MB size limit.
         """
         item = self.to_dict()  # use to_dict method to get a dictionary representation of the object
-        item_size = sys.getsizeof(json.dumps(item))
+
+        # Serialize the dictionary to a JSON string using separators (",", ":").
+        # This is done to align with the serialization method used by the CosmosDB Python SDK.
+        json_dumped = json.dumps(item, separators=(",", ":"))
+
+        item_size = len(json_dumped.encode("utf-8"))
         max_size_in_bytes = 2 * 1024 * 1024  # 2MB in bytes
 
         if item_size > max_size_in_bytes:
