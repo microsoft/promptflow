@@ -58,7 +58,6 @@ def get_ws_tracing_base_url(ws_triad: AzureMLWorkspaceTriad) -> str:
 
 
 def _is_azure_ext_installed() -> bool:
-    return False
     try:
         importlib.metadata.version("promptflow-azure")
         return True
