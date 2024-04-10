@@ -5,14 +5,8 @@
 __path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
 
 from promptflow.entities import AzureOpenAIConnection
-from promptflow.evals.evaluators import (
-    CoherenceEvaluator,
-    F1ScoreEvaluator,
-    FluencyEvaluator,
-    GroundednessEvaluator,
-    RelevanceEvaluator,
-    SimilarityEvaluator,
-)
+from promptflow.evals.evaluators import GroundednessEvaluator, RelevanceEvaluator, \
+    CoherenceEvaluator, FluencyEvaluator, SimilarityEvaluator, F1ScoreEvaluator
 
 
 class QAEvaluator:
@@ -65,10 +59,8 @@ class QAEvaluator:
         # TODO: How to parallelize metrics calculation
 
         return {
-            k: v
-            for d in [
-                evaluator(answer=answer, context=context, ground_truth=ground_truth, question=question)
-                for evaluator in self._evaluators
-            ]
+            k: v for d in
+            [evaluator(answer=answer, context=context, ground_truth=ground_truth, question=question) for evaluator in
+             self._evaluators]
             for k, v in d.items()
         }

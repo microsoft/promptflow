@@ -4,10 +4,9 @@
 
 __path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
 
-from pathlib import Path
-
 from promptflow.client import load_flow
 from promptflow.entities import AzureOpenAIConnection
+from pathlib import Path
 
 
 class RelevanceEvaluator:
@@ -44,7 +43,7 @@ class RelevanceEvaluator:
                     api_base=model_config.api_base,
                     api_key=model_config.api_key,
                     api_version=model_config.api_version,
-                    api_type="azure",
+                    api_type="azure"
                 ),
                 "deployment_name": deployment_name,
             }

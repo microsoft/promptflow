@@ -1,12 +1,11 @@
-from collections import Counter
-
 from promptflow.core import tool
+from collections import Counter
 
 
 @tool
 def compute_f1_score(answer: str, ground_truth: str) -> str:
-    import re
     import string
+    import re
 
     class QASplitTokenizer:
         def __call__(self, line):

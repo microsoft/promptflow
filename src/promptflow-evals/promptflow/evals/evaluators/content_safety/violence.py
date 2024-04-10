@@ -1,10 +1,8 @@
-from pathlib import Path
-from typing import Optional
-
-from azure.core.credentials import TokenCredential
-
 from promptflow.client import load_flow
+from pathlib import Path
+from azure.core.credentials import TokenCredential
 from promptflow.evals._constants import EvaluationMetrics
+from typing import Optional
 
 
 class ViolenceEvaluator:
@@ -51,7 +49,6 @@ class ViolenceEvaluator:
             question=question,
             answer=answer,
             project_scope=self._project_scope,
-            credential=self._credential,
-        )
+            credential=self._credential)
 
         return output["result"]

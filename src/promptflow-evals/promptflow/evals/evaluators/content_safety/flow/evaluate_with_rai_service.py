@@ -1,15 +1,13 @@
-import re
+from promptflow.core import tool
 import time
+from constants import RAIService, Tasks
 from typing import List
-
 import numpy as np
-import requests
+import re
+from utils import get_harm_severity_level
 from azure.core.credentials import TokenCredential
 from azure.identity import DefaultAzureCredential
-from constants import RAIService, Tasks
-from utils import get_harm_severity_level
-
-from promptflow.core import tool
+import requests
 
 
 def ensure_service_availability(rai_svc_url: str):
@@ -21,12 +19,19 @@ def ensure_service_availability(rai_svc_url: str):
 
 def submit_request(question: str, answer: str, metric: str, rai_svc_url: str, credential: TokenCredential):
     user_text = f"<Human>{question}</><System>{answer}</>"
-    normalized_user_text = user_text.replace("'", '\\"')
-    payload = {"UserTextList": [normalized_user_text], "AnnotationTask": Tasks.CONTENT_HARM, "MetricList": [metric]}
+    normalized_user_text = user_text.replace("'", "\\\"")
+    payload = {
+        "UserTextList": [normalized_user_text],
+        "AnnotationTask": Tasks.CONTENT_HARM,
+        "MetricList": [metric]
+    }
 
     url = rai_svc_url + "/submitannotation"
     bearer_token = credential.get_token("https://management.azure.com/.default").token
-    headers = {"Authorization": f"Bearer {bearer_token}", "Content-Type": "application/json"}
+    headers = {
+        'Authorization': f'Bearer {bearer_token}',
+        'Content-Type': 'application/json'
+    }
 
     response = requests.post(url, json=payload, headers=headers)
     if response.status_code != 202:
@@ -44,7 +49,10 @@ def fetch_result(operation_id: str, rai_svc_url: str, credential: TokenCredentia
 
     url = rai_svc_url + "/operations/" + operation_id
     bearer_token = credential.get_token("https://management.azure.com/.default").token
-    headers = {"Authorization": f"Bearer {bearer_token}", "Content-Type": "application/json"}
+    headers = {
+        'Authorization': f'Bearer {bearer_token}',
+        'Content-Type': 'application/json'
+    }
 
     while True:
         response = requests.get(url, headers=headers)
@@ -56,7 +64,7 @@ def fetch_result(operation_id: str, rai_svc_url: str, credential: TokenCredentia
             raise TimeoutError(f"Fetching annotation result times out after {time_elapsed:.2f} seconds")
 
         request_count += 1
-        sleep_time = RAIService.SLEEP_TIME**request_count
+        sleep_time = RAIService.SLEEP_TIME ** request_count
         time.sleep(sleep_time)
 
 
@@ -67,7 +75,11 @@ def parse_response(batch_response: List[dict], metric_name: str) -> List[List[di
     if key == "hate_fairness":
         key = "hate_unfairness"
 
-    result = {key: np.nan, key + "_score": np.nan, key + "_reason": ""}
+    result = {
+        key: np.nan,
+        key + "_score": np.nan,
+        key + "_reason": ""
+    }
 
     response = batch_response[0]
     if metric_name not in response:
@@ -93,18 +105,18 @@ def parse_response(batch_response: List[dict], metric_name: str) -> List[List[di
             harm_response = harm_response["output"]
 
         # get content harm metric_value
-        if "label" in harm_response:
-            metric_value = harm_response["label"]
-        elif "valid" in harm_response:
-            metric_value = 0 if harm_response["valid"] else np.nan
+        if 'label' in harm_response:
+            metric_value = harm_response['label']
+        elif 'valid' in harm_response:
+            metric_value = 0 if harm_response['valid'] else np.nan
         else:
             metric_value = np.nan
 
         # get reason
         if "reasoning" in harm_response:
-            reason = harm_response["reasoning"]
+            reason = harm_response['reasoning']
         elif "reason" in harm_response:
-            reason = harm_response["reason"]
+            reason = harm_response['reason']
         else:
             reason = ""
     elif harm_response != "" and isinstance(harm_response, str):
@@ -134,36 +146,35 @@ def parse_response(batch_response: List[dict], metric_name: str) -> List[List[di
 
 def get_rai_svc_url(project_scope: dict, credential: TokenCredential):
     from azure.ai.ml import MLClient
-
     ml_client = MLClient(
         credential=credential,
-        subscription_id=project_scope["subscription_id"],
-        resource_group_name=project_scope["resource_group_name"],
-    )
+        subscription_id=project_scope['subscription_id'],
+        resource_group_name=project_scope['resource_group_name'])
 
-    ws = ml_client.workspaces.get(project_scope["project_name"])
+    ws = ml_client.workspaces.get(project_scope['project_name'])
     response = requests.get(ws.discovery_url)
     if response.status_code != 200:
         raise Exception("Failed to retrieve the discovery service URL")
 
-    subscription_id = project_scope["subscription_id"]
-    resource_group_name = project_scope["resource_group_name"]
-    project_name = project_scope["project_name"]
+    subscription_id = project_scope['subscription_id']
+    resource_group_name = project_scope['resource_group_name']
+    project_name = project_scope['project_name']
     base_url = response.json()["api"]
-    rai_url = (
-        f"{base_url}/raisvc/v1.0"
-        f"/subscriptions/{subscription_id}"
-        f"/resourceGroups/{resource_group_name}"
-        f"/providers/Microsoft.MachineLearningServices/workspaces/{project_name}"
-    )
+    rai_url = f"{base_url}/raisvc/v1.0" \
+              f"/subscriptions/{subscription_id}" \
+              f"/resourceGroups/{resource_group_name}" \
+              f"/providers/Microsoft.MachineLearningServices/workspaces/{project_name}"
 
     return rai_url
 
 
 @tool
 def evaluate_with_rai_service(
-    question: str, answer: str, metric_name: str, project_scope: dict, credential: TokenCredential
-):
+        question: str,
+        answer: str,
+        metric_name: str,
+        project_scope: dict,
+        credential: TokenCredential):
     # Use DefaultAzureCredential if no credential is provided
     # This is for the for batch run scenario as the credential cannot be serialized by promoptflow
     if credential is None or credential == {}:

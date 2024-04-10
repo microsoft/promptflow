@@ -4,27 +4,24 @@
 
 __path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
 
+from promptflow.connections import AzureOpenAIConnection
+from promptflow.evals.evaluators import GroundednessEvaluator, RelevanceEvaluator, CoherenceEvaluator, FluencyEvaluator
+from typing import List, Dict
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import logging
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Dict, List
-
 import numpy as np
-
-from promptflow.connections import AzureOpenAIConnection
-from promptflow.evals.evaluators import CoherenceEvaluator, FluencyEvaluator, GroundednessEvaluator, RelevanceEvaluator
 
 logger = logging.getLogger(__name__)
 
 
 class ChatEvaluator:
     def __init__(
-        self,
-        model_config: AzureOpenAIConnection,
-        deployment_name: str,
-        eval_last_turn: bool = False,
-        parallel: bool = True,
-    ):
+            self,
+            model_config: AzureOpenAIConnection,
+            deployment_name: str,
+            eval_last_turn: bool = False,
+            parallel: bool = True):
         """
         Initialize an evaluator configured for a specific Azure OpenAI model.
 
@@ -106,10 +103,8 @@ class ChatEvaluator:
         # Select evaluators to be used for evaluation
         compute_rag_based_metrics = True
         if len(answers) != len(contexts):
-            safe_message = (
-                "Skipping rag based metrics as we need citations or "
-                "retrieved_documents in context key of every assistant's turn"
-            )
+            safe_message = "Skipping rag based metrics as we need citations or " \
+                           "retrieved_documents in context key of every assistant's turn"
             logger.warning(safe_message)
             compute_rag_based_metrics = False
 
@@ -127,9 +122,8 @@ class ChatEvaluator:
                 # Parallel execution
                 with ThreadPoolExecutor() as executor:
                     future_to_evaluator = {
-                        executor.submit(
-                            self._evaluate_turn, turn_num, questions, answers, contexts, evaluator
-                        ): evaluator
+                        executor.submit(self._evaluate_turn, turn_num, questions, answers, contexts, evaluator)
+                        : evaluator
                         for evaluator in selected_evaluators
                     }
 
@@ -164,13 +158,15 @@ class ChatEvaluator:
             answer = answers[turn_num] if turn_num < len(answers) else ""
             context = contexts[turn_num] if turn_num < len(contexts) else ""
 
-            score = evaluator(question=question, answer=answer, context=context)
+            score = evaluator(
+                question=question,
+                answer=answer,
+                context=context)
 
             return score
         except Exception as e:
             logger.warning(
-                f"Evaluator {evaluator.__class__.__name__} failed for turn {turn_num + 1} with exception: {e}"
-            )
+                f"Evaluator {evaluator.__class__.__name__} failed for turn {turn_num + 1} with exception: {e}")
             return {}
 
     def _aggregate_results(self, per_turn_results: List[Dict]):
@@ -179,7 +175,7 @@ class ChatEvaluator:
 
         for turn in per_turn_results:
             for metric, value in turn.items():
-                if "reason" in metric:
+                if 'reason' in metric:
                     if metric not in reasons:
                         reasons[metric] = []
                     reasons[metric].append(value)
@@ -218,13 +214,11 @@ class ChatEvaluator:
             if "role" not in turn or "content" not in turn:
                 raise ValueError(
                     f"Each turn in 'conversation' must have 'role' and 'content' keys. Turn number: "
-                    f"{one_based_turn_num}"
-                )
+                    f"{one_based_turn_num}")
 
             if turn["role"] != expected_role:
                 raise ValueError(
-                    f"Expected role {expected_role} but got {turn['role']}. Turn number: {one_based_turn_num}"
-                )
+                    f"Expected role {expected_role} but got {turn['role']}. Turn number: {one_based_turn_num}")
 
             if not isinstance(turn["content"], str):
                 raise ValueError(f"Content in each turn must be a string. Turn number: {one_based_turn_num}")
@@ -232,14 +226,12 @@ class ChatEvaluator:
             if turn["role"] == "assistant" and "context" in turn:
                 if not isinstance(turn["context"], dict):
                     raise ValueError(
-                        f"Context in each assistant's turn must be a dictionary. Turn number: {one_based_turn_num}"
-                    )
+                        f"Context in each assistant's turn must be a dictionary. Turn number: {one_based_turn_num}")
 
                 if "citations" not in turn["context"]:
                     raise ValueError(
                         f"Context in each assistant's turn must have 'citations' key. Turn number:"
-                        f" {one_based_turn_num}"
-                    )
+                        f" {one_based_turn_num}")
 
                 if not isinstance(turn["context"]["citations"], list):
                     raise ValueError(f"'citations' in context must be a list. Turn number: {one_based_turn_num}")
@@ -248,8 +240,7 @@ class ChatEvaluator:
                     if not isinstance(citation, dict):
                         raise ValueError(
                             f"Each citation in 'citations' must be a dictionary. Turn number: {one_based_turn_num},"
-                            f" Citation number: {citation_num + 1}"
-                        )
+                            f" Citation number: {citation_num + 1}")
 
             # Toggle expected role for the next turn
             expected_role = "user" if expected_role == "assistant" else "assistant"
