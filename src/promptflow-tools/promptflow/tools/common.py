@@ -247,8 +247,6 @@ def get_workspace_triad():
             and 'AZUREML_ARM_WORKSPACE_NAME' in os.environ:
         return os.environ["AZUREML_ARM_SUBSCRIPTION"], os.environ["AZUREML_ARM_RESOURCEGROUP"], \
                os.environ["AZUREML_ARM_WORKSPACE_NAME"]
-
-    # Return a tuple of Nones if flow is not submitted from cloud
     return "", "", ""
 
 
