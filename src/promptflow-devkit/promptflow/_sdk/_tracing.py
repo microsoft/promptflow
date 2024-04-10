@@ -124,7 +124,7 @@ def _get_ws_triad_from_pf_config() -> typing.Optional[AzureMLWorkspaceTriad]:
 # and url with experiment should be printed at the beginning of experiment start.
 def _print_tracing_url_from_local(
     pfs_port: str,
-    collection: typing.Optional[str],
+    collection: str,
     exp: typing.Optional[str] = None,
     run: typing.Optional[str] = None,
 ) -> None:
@@ -133,7 +133,8 @@ def _print_tracing_url_from_local(
         url += f"?#run={run}"
     elif exp is not None:
         url += f"?#experiment={exp}"
-    elif collection is not None:
+    else:
+        # collection will not be None
         url += f"?#collection={collection}"
     print(f"You can view the traces from local: {url}")
 
