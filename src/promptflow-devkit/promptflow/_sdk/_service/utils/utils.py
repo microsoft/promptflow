@@ -212,11 +212,11 @@ def check_pfs_service_status(pfs_port, time_delay=1, count_threshold=10) -> bool
     cnt = 1
     time.sleep(time_delay)
     is_healthy = is_pfs_service_healthy(pfs_port)
-    message = (
-        f"Promptflow service is not healthy. It has been tried for {cnt} times, will try at most "
-        f"{count_threshold} times."
-    )
     while is_healthy is False and count_threshold > cnt:
+        message = (
+            f"Promptflow service is not healthy. It has been tried for {cnt} times, will try at most "
+            f"{count_threshold} times."
+        )
         if cnt >= 3:
             logger.warning(message)
         else:
