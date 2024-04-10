@@ -11,15 +11,15 @@ from typing import Any, Mapping, Union
 from promptflow._constants import DEFAULT_ENCODING, LANGUAGE_KEY, PROMPTY_EXTENSION, FlowLanguage
 from promptflow._utils.flow_utils import is_flex_flow, is_prompty_flow, resolve_flow_path
 from promptflow._utils.yaml_utils import load_yaml_string
-from promptflow.contracts.tool import ValueType
 from promptflow.core._errors import MissingRequiredInputError
 from promptflow.core._prompty_utils import (
+    PromptyModelConfiguration,
     convert_prompt_template,
     format_llm_response,
-    get_connection,
     get_open_ai_client_by_connection,
     prepare_open_ai_request_params,
     send_request_to_llm,
+    update_dict_recursively,
 )
 from promptflow.exceptions import UserErrorException
 from promptflow.tracing import trace
@@ -240,29 +240,15 @@ class Prompty(FlowBase):
     ):
         # prompty file path
         path = Path(path)
-        model = model or {}
         configs, self._template = self._parse_prompty(path)
-        prompty_model = configs.get("model", {})
-        prompty_model["api"] = model.get("api") or prompty_model.get("api", "chat")
-        # TODO wait for model spec
-        prompty_model["connection"] = model.get("connection") or prompty_model.get("connection", None)
-        if model.get("parameters", None):
-            if prompty_model.get("parameters", {}):
-                prompty_model["parameters"].update(model["parameters"])
-            else:
-                prompty_model["parameters"] = model["parameters"]
-        for k in list(kwargs.keys()):
-            value = kwargs.pop(k)
-            if k in configs and isinstance(value, dict):
-                configs[k].update(value)
-            else:
-                configs[k] = value
-        configs["inputs"] = self._resolve_inputs(configs.get("inputs", {}))
-        self._connection = prompty_model["connection"]
-        self._parameters = prompty_model.get("parameters", None)
-        self._api = prompty_model["api"]
+        configs = update_dict_recursively(configs, kwargs)
+        configs["model"] = update_dict_recursively(configs.get("model", {}), model or {})
+
+        self._model = PromptyModelConfiguration(**configs["model"])
         self._inputs = configs.get("inputs", {})
-        configs["model"] = prompty_model
+        self._outputs = configs.get("outputs", {})
+        # TODO support more templating engine
+        self._template_engine = configs.get("template", "jinja2")
         super().__init__(code=path.parent, path=path, data=configs, content_hash=None, **kwargs)
 
     @classmethod
@@ -314,15 +300,6 @@ class Prompty(FlowBase):
         configs = load_yaml_string(config_content)
         return configs, prompt_template
 
-    def _resolve_inputs(self, inputs):
-        resolved_inputs = {}
-        for k, v in inputs.items():
-            if isinstance(v, dict):
-                resolved_inputs[k] = v
-            else:
-                resolved_inputs[k] = {"type": ValueType.from_value(v).value, "default": v}
-        return resolved_inputs
-
     def _validate_inputs(self, input_values):
         resolved_inputs = {}
         missing_inputs = []
@@ -348,25 +325,23 @@ class Prompty(FlowBase):
         """
         if args:
             raise UserErrorException("Prompty can only be called with keyword arguments.")
-        # 1. Get connection
-        connection = get_connection(self._connection)
 
-        # 2.deal with prompt
+        # 1.deal with prompt
         inputs = self._validate_inputs(kwargs)
         traced_convert_prompt_template = _traced(func=convert_prompt_template, args_to_ignore=["api"])
-        template = traced_convert_prompt_template(self._template, inputs, self._api)
+        template = traced_convert_prompt_template(self._template, inputs, self._model.api)
 
-        # 3. prepare params
-        params = prepare_open_ai_request_params(self._parameters, template, self._api, connection)
+        # 2. prepare params
+        params = prepare_open_ai_request_params(self._model, template)
 
-        # 4. send request to open ai
-        api_client = get_open_ai_client_by_connection(connection=connection)
+        # 3. send request to open ai
+        api_client = get_open_ai_client_by_connection(connection=self._model.get_connection())
 
         traced_llm_call = _traced(send_request_to_llm)
-        response = traced_llm_call(api_client, self._api, params)
+        response = traced_llm_call(api_client, self._model.api, params)
         return format_llm_response(
             response=response,
-            api=self._api,
+            api=self._model.api,
             response_format=params.get("response_format", None),
             raw=self._data.get("format", None) == "raw",
         )
@@ -399,24 +374,22 @@ class AsyncPrompty(Prompty):
         """
         if args:
             raise UserErrorException("Prompty can only be called with keyword arguments.")
-        # 1. Get connection
-        connection = get_connection(self._connection)
 
-        # 2.deal with prompt
+        # 1.deal with prompt
         inputs = self._validate_inputs(kwargs)
-        template = convert_prompt_template(self._template, inputs, self._api)
+        template = convert_prompt_template(self._template, inputs, self._model.api)
 
-        # 3. prepare params
-        params = prepare_open_ai_request_params(self._parameters, template, self._api, connection)
+        # 2. prepare params
+        params = prepare_open_ai_request_params(self._model, template)
 
-        # 4. send request to open ai
-        api_client = get_open_ai_client_by_connection(connection=connection, is_async=True)
+        # 3. send request to open ai
+        api_client = get_open_ai_client_by_connection(connection=self._model.get_connection(), is_async=True)
 
         traced_llm_call = _traced(send_request_to_llm)
-        response = await traced_llm_call(api_client, self._api, params)
+        response = await traced_llm_call(api_client, self._model.api, params)
         return format_llm_response(
             response=response,
-            api=self._api,
+            api=self._model.api,
             response_format=params.get("response_format", None),
             raw=self._data.get("format", None) == "raw",
         )

@@ -26,7 +26,8 @@ class TestPrompty:
             "model": {
                 "api": "chat",
                 "connection": "azure_open_ai_connection",
-                "parameters": {"deployment_name": "gpt-35-turbo", "max_tokens": 128, "temperature": 0.2},
+                "configuration": {"azure_deployment": "gpt-35-turbo", "type": "azure_openai"},
+                "parameters": {"max_tokens": 128, "temperature": 0.2},
             },
             "inputs": {
                 "firstName": {"type": "string", "default": "John"},
@@ -56,12 +57,8 @@ class TestPrompty:
             "model": {
                 "api": "chat",
                 "connection": "mock_connection_name",
-                "parameters": {
-                    "mock_key": "mock_value",
-                    "deployment_name": "gpt-35-turbo",
-                    "max_tokens": 64,
-                    "temperature": 0.2,
-                },
+                "configuration": {"azure_deployment": "gpt-35-turbo", "type": "azure_openai"},
+                "parameters": {"max_tokens": 64, "temperature": 0.2, "mock_key": "mock_value"},
             },
             "inputs": {
                 "firstName": {"type": "string", "default": "John"},
@@ -98,13 +95,18 @@ class TestPrompty:
         assert "2" in result
 
         # Test connection with dict
-        connection = pf.connections.get(name=prompty._connection, with_secrets=True)
-        connection_dict = {
-            "type": connection.TYPE,
-            "api_key": connection.api_key,
-            "api_base": connection.api_base,
+        connection = prompty._model.connection
+        model_dict = {
+            "configuration": {
+                "type": "azure_openai",
+                "azure_deployment": "gpt-35-turbo",
+                "api_key": connection.api_key,
+                "api_version": connection.api_version,
+                "azure_endpoint": connection.api_base,
+            },
+            "connection": None,
         }
-        prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", model={"connection": connection_dict})
+        prompty = Flow.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", model=model_dict)
         result = prompty(question="what is the result of 1+1?")
         assert "2" in result
 

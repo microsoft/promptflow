@@ -2,7 +2,8 @@ import copy
 import json
 import os
 import re
-from typing import List, Mapping
+from dataclasses import InitVar, dataclass
+from typing import List, Mapping, Union
 
 from promptflow.core._connection import AzureOpenAIConnection, OpenAIConnection, _Connection
 from promptflow.core._errors import (
@@ -13,6 +14,41 @@ from promptflow.core._errors import (
     UnknownConnectionType,
 )
 from promptflow.core._utils import render_jinja_template_content
+
+
+@dataclass
+class PromptyModelConfiguration:
+    api: str
+    configuration: dict
+    parameters: dict
+    response: str = "first"
+    connection: InitVar[Union[str, _Connection]] = None
+
+    def __post_init__(self, connection=None):
+        if connection:
+            self._connection_config = connection
+        else:
+            self._connection_config = copy.copy(self.configuration)
+            if self._connection_config.get("type", None) == "azure_openai":
+                self._connection_config["api_base"] = self._connection_config.get("azure_endpoint", None)
+
+    def get_connection(self):
+        if not hasattr(self, "_connection"):
+            self._connection = get_connection(self._connection_config)
+        return self._connection
+
+
+def update_dict_recursively(origin_dict, overwrite_dict):
+    updated_dict = {}
+    for k, v in origin_dict.items():
+        if isinstance(v, dict):
+            updated_dict[k] = update_dict_recursively(v, overwrite_dict.get(k, {}))
+        else:
+            updated_dict[k] = overwrite_dict.get(k, v)
+    for k, v in overwrite_dict.items():
+        if k not in updated_dict:
+            updated_dict[k] = v
+    return updated_dict
 
 
 def parse_environment_variable(value):
@@ -50,9 +86,9 @@ def get_connection(connection):
         connection = {k: parse_environment_variable(v) for k, v in connection.items()}
     else:
         return connection
-    if connection_type == AzureOpenAIConnection.TYPE:
+    if connection_type in [AzureOpenAIConnection.TYPE, "azure_openai"]:
         return AzureOpenAIConnection(**connection)
-    elif connection_type == OpenAIConnection.TYPE:
+    elif connection_type in [OpenAIConnection.TYPE, "openai"]:
         return OpenAIConnection(**connection)
     error_message = (
         f"Not Support connection type {connection_type} for embedding api. "
@@ -76,14 +112,16 @@ def convert_prompt_template(template, inputs, api):
         return parse_chat(rendered_prompt, list(referenced_images))
 
 
-def prepare_open_ai_request_params(params, template, api, connection):
+def prepare_open_ai_request_params(model_config, template):
     # TODO validate function in params
-    params = copy.copy(params)
-    if isinstance(connection, AzureOpenAIConnection):
-        params["model"] = params.pop("deployment_name")
+    params = copy.copy(model_config.parameters)
+    if isinstance(model_config.get_connection(), AzureOpenAIConnection):
+        params["model"] = model_config.configuration.get("azure_deployment")
         params["extra_headers"] = {"ms-azure-ai-promptflow-called-from": "promptflow-core"}
+    else:
+        params["model"] = model_config.configuration.get("model")
 
-    if api == "completion":
+    if model_config.api == "completion":
         params["prompt"] = template
     else:
         params["messages"] = template
