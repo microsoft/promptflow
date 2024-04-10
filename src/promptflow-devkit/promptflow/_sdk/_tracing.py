@@ -94,16 +94,19 @@ def _invoke_pf_svc() -> str:
         # Wait for service to be started
         start_pfs.wait(timeout=20)
     except subprocess.TimeoutExpired:
-        logger.warning("The starting prompt flow process did not finish within the timeout period.", file=sys.stderr)
+        logger.warning(
+            f"The starting prompt flow process did not finish within the timeout period. {hint_stop_before_upgrade}"
+        )
     except Exception as e:
-        logger.warning(f"An error occurred when starting prompt flow process: {e}", file=sys.stderr)
+        logger.warning(f"An error occurred when starting prompt flow process: {e}. {hint_stop_before_upgrade}")
 
     # Check if there were any errors
-    if start_pfs is not None and start_pfs.returncode != 0:
+    if start_pfs is not None and start_pfs.returncode is not None and start_pfs.returncode != 0:
         error_message = start_pfs.stderr.read().decode()
         message = f"The starting prompt flow process returned an error: {error_message}. "
-        logger.warning(message + hint_stop_before_upgrade)
+        logger.warning(message)
     elif not is_pfs_service_healthy(port):
+        # this branch is to check if the service is healthy for msi installer
         logger.warning(f"Prompt flow service is not healthy. {hint_stop_before_upgrade}")
     else:
         logger.debug("Prompt flow service is serving on port %s", port)

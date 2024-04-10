@@ -164,7 +164,7 @@ def start_service(args):
         parent_dir = os.path.dirname(sys.executable)
         output_path = os.path.join(parent_dir, "output.txt")
         with redirect_stdout_to_file(output_path):
-            validate_port(port, args.force)
+            port = validate_port(port, args.force)
             global app
             if app is None:
                 app, _ = create_app()
@@ -178,7 +178,7 @@ def start_service(args):
             sys.stdout.flush()
         waitress.serve(app, host="127.0.0.1", port=port, threads=PF_SERVICE_WORKER_NUM)
     else:
-        validate_port(port, args.force)
+        port = validate_port(port, args.force)
         add_executable_script_to_env_path()
         # Start a pfs process using detach mode. It will start a new process and create a new app. So we use environment
         # variable to pass the debug mode, since it will inherit parent process environment variable.
@@ -202,6 +202,7 @@ def validate_port(port, force_start):
     else:
         port = get_port_from_config(create_if_not_exists=True)
         _validate_port(port, force_start)
+    return port
 
 
 def _validate_port(port, force_start):
@@ -247,6 +248,7 @@ def _start_detach_service_in_win(port):
         f"waitress-serve --listen=127.0.0.1:{port} --threads={PF_SERVICE_WORKER_NUM} "
         "promptflow._cli._pf._service:get_app"
     )
+    logger.debug(f"Start Promptflow Service in Windows: {command}")
     startupinfo = win32process.STARTUPINFO()
     startupinfo.dwFlags |= win32process.STARTF_USESHOWWINDOW
     startupinfo.wShowWindow = win32con.SW_HIDE
@@ -274,15 +276,13 @@ def _start_detach_service_in_win(port):
 
 def _start_detach_service_in_unix(port):
     # Set host to localhost, only allow request from localhost.
-    print(port)
-    print(type(port))
-    print(f"--listen=127.0.0.1:{port}")
     cmd = [
         "waitress-serve",
         f"--listen=127.0.0.1:{port}",
         f"--threads={PF_SERVICE_WORKER_NUM}",
         "promptflow._cli._pf._service:get_app",
     ]
+    logger.debug(f"Start Promptflow Service in Unix: {cmd}")
     subprocess.Popen(cmd, stdout=subprocess.DEVNULL, start_new_session=True)
 
 
@@ -304,10 +304,11 @@ def show_service():
         log_file = HOME_PROMPT_FLOW_DIR / PF_SERVICE_LOG_FILE
     else:
         log_file = get_current_env_pfs_file(PF_SERVICE_LOG_FILE)
+    extra_info = {"log_file": log_file.as_posix(), "local_promptflow_version": get_pfs_version()}
     if status:
-        status.update({"log_file": log_file.as_posix()})
+        status.update(extra_info)
         print(status)
         return
     else:
-        logger.warning(f"Promptflow service is not started. log_file: {log_file.as_posix()}")
+        logger.warning(f"Promptflow service is not started. {extra_info}")
         sys.exit(1)
