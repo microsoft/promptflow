@@ -19,6 +19,8 @@ PROMPT_FLOW_PKGS = [
     "promptflow-azure",
     "promptflow[azure]",
     "promptflow-tools",
+    "promptflow-evals",
+    "promptflow-recording",
 ]
 
 
@@ -61,7 +63,7 @@ def inject_pth_file() -> None:
         f.write((REPO_ROOT_DIR / "src" / "promptflow").resolve().absolute().as_posix())
 
 
-def install_pkg_editable(pkg: str, verbose: bool) -> None:
+def install_pkg_editable(pkg: str, verbose: bool, is_vscode: bool = False) -> None:
     if "[" in pkg:
         folder_name, extras = pkg.split("[")
         extras = f"[{extras}"
@@ -96,17 +98,19 @@ def install_pkg_editable(pkg: str, verbose: bool) -> None:
         elif os.path.exists("pyproject.toml"):
             collect_and_install_from_pyproject()
 
-            # touch __init__.py for the package
+            # touch __init__.py for the package for VS Code
             # NOTE that this is a workaround to enable VS Code to recognize the namespace package
             #      we should be able to remove this after we fully deprecate promptflow in local development
-            with open(pkg_working_dir / "promptflow" / "__init__.py", mode="w", encoding="utf-8") as f:
-                f.write("")
+            if is_vscode:
+                with open(pkg_working_dir / "promptflow" / "__init__.py", mode="w", encoding="utf-8") as f:
+                    f.write("")
 
 
 @dataclass
 class Arguments:
     packages: typing.List[str]
     verbose: bool = False
+    vscode: bool = False
 
     @staticmethod
     def parse_args() -> "Arguments":
@@ -127,17 +131,24 @@ class Arguments:
             "-v",
             "--verbose",
             action="store_true",
-            help="turn on verbose output")
+            help="turn on verbose output",
+        )
+        parser.add_argument(
+            "--vscode",
+            action="store_true",
+            help="extra setup step for Visual Studio Code",
+        )
         args = parser.parse_args()
         return Arguments(
             packages=args.packages,
             verbose=args.verbose,
+            vscode=args.vscode,
         )
 
 
 def main(args: Arguments) -> None:
     for pkg in args.packages:
-        install_pkg_editable(pkg, verbose=args.verbose)
+        install_pkg_editable(pkg, verbose=args.verbose, is_vscode=args.vscode)
         # invoke test resource template creation function if available
         if pkg in REGISTERED_TEST_RESOURCES_FUNCTIONS:
             REGISTERED_TEST_RESOURCES_FUNCTIONS[pkg]()

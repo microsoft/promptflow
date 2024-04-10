@@ -24,7 +24,10 @@ EXTENSION_UA = "prompt-flow-extension"
 LANGUAGE_KEY = "language"
 USER_AGENT_OVERRIDE_KEY = "user_agent_override"
 
-DEFAULT_FLOW_YAML_FILE_NAME = "flow.dag.yaml"
+FLOW_DAG_YAML = "flow.dag.yaml"
+FLOW_FLEX_YAML = "flow.flex.yaml"
+PROMPTY_EXTENSION = ".prompty"
+FLOW_FILE_SUFFIX = (".yaml", ".yml", PROMPTY_EXTENSION)
 
 CHAT_HISTORY = "chat_history"
 
@@ -99,11 +102,13 @@ OTEL_RESOURCE_SERVICE_NAME = "promptflow"
 DEFAULT_SPAN_TYPE = "default"
 RUNNING_LINE_RUN_STATUS = "Running"
 OK_LINE_RUN_STATUS = "Ok"
+SPAN_EVENTS_ATTRIBUTES_EVENT_ID = "event.id"
 
 
 class TraceEnvironmentVariableName:
     EXPERIMENT = "PF_TRACE_EXPERIMENT"
-    SESSION_ID = "PF_TRACE_SESSION_ID"
+    COLLECTION = "PF_TRACE_COLLECTION"
+    SESSION_ID = "PF_TRACE_SESSION_ID"  # will be deprecated
     COLLECTION_ID = "PF_TRACE_COLLECTION_ID"
     SUBSCRIPTION_ID = "PF_TRACE_SUBSCRIPTION_ID"
     RESOURCE_GROUP_NAME = "PF_TRACE_RESOURCE_GROUP_NAME"
@@ -128,6 +133,7 @@ class SpanFieldName:
     EVENTS = "events"
     LINKS = "links"
     RESOURCE = "resource"
+    EXTERNAL_EVENT_DATA_URIS = "external_event_data_uris"
 
 
 class SpanContextFieldName:
@@ -164,11 +170,14 @@ class SpanAttributeFieldName:
     PROMPT_TOKEN_COUNT = "__computed__.cumulative_token_count.prompt"
     TOTAL_TOKEN_COUNT = "__computed__.cumulative_token_count.total"
 
+    SESSION_ID = "session_id"
+
 
 class SpanResourceAttributesFieldName:
     SERVICE_NAME = "service.name"
     SESSION_ID = "session.id"
-    COLLECTION_ID = "collection.id"
+    COLLECTION = "collection"  # local
+    COLLECTION_ID = "collection.id"  # cloud & local to cloud
     EXPERIMENT_NAME = "experiment.name"
     # local to cloud
     SUBSCRIPTION_ID = "subscription.id"
@@ -198,7 +207,7 @@ class SpanLinkFieldName:
 
 class MessageFormatType:
     BASIC = "basic"
-    OPENAI_VISION = "openai_vision"
+    OPENAI_VISION = "openai-vision"
 
 
 DEFAULT_OUTPUT_NAME = "output"
@@ -230,6 +239,13 @@ class ConnectionAuthMode:
     MEID_TOKEN = "meid_token"  # Microsoft Entra ID
 
 
+class ConnectionDefaultApiVersion:
+    AZURE_OPEN_AI = "2024-02-01"
+    COGNITIVE_SEARCH = "2023-11-01"
+    AZURE_CONTENT_SAFETY = "2023-10-01"
+    FORM_RECOGNIZER = "2023-07-31"
+
+
 class CustomStrongTypeConnectionConfigs:
     PREFIX = "promptflow.connection."
     TYPE = "custom_type"
@@ -256,6 +272,8 @@ class ConnectionProviderConfig:
     AZUREML = "azureml"
 
 
+AZURE_WORKSPACE_REGEX_FORMAT = (
+    "^azureml:[/]{1,2}subscriptions/([^/]+)/resource(groups|Groups)/([^/]+)"
+    "(/providers/Microsoft.MachineLearningServices)?/workspaces/([^/]+)$"
+)
 CONNECTION_DATA_CLASS_KEY = "DATA_CLASS"
-
-FLEX_FLOW_PUBLIC_NAME = "flex"

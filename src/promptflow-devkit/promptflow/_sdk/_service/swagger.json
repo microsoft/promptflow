@@ -59,6 +59,31 @@
                     "type": "string"
                 }
             ],
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Connection details",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    },
+                    "403": {
+                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
+                    }
+                },
+                "description": "Get connection",
+                "operationId": "get_connection",
+                "parameters": [
+                    {
+                        "name": "working_directory",
+                        "in": "query",
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "Connections"
+                ]
+            },
             "put": {
                 "responses": {
                     "200": {
@@ -81,49 +106,6 @@
                         "schema": {
                             "$ref": "#/definitions/ConnectionDict"
                         }
-                    }
-                ],
-                "tags": [
-                    "Connections"
-                ]
-            },
-            "delete": {
-                "responses": {
-                    "204": {
-                        "description": "Delete connection",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
-                    },
-                    "403": {
-                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
-                    }
-                },
-                "description": "Delete connection",
-                "operationId": "delete_connection",
-                "tags": [
-                    "Connections"
-                ]
-            },
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "Connection details",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
-                    },
-                    "403": {
-                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
-                    }
-                },
-                "description": "Get connection",
-                "operationId": "get_connection",
-                "parameters": [
-                    {
-                        "name": "working_directory",
-                        "in": "query",
-                        "type": "string"
                     }
                 ],
                 "tags": [
@@ -154,6 +136,24 @@
                         }
                     }
                 ],
+                "tags": [
+                    "Connections"
+                ]
+            },
+            "delete": {
+                "responses": {
+                    "204": {
+                        "description": "Delete connection",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    },
+                    "403": {
+                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
+                    }
+                },
+                "description": "Delete connection",
+                "operationId": "delete_connection",
                 "tags": [
                     "Connections"
                 ]
@@ -198,7 +198,7 @@
             "get": {
                 "responses": {
                     "200": {
-                        "description": "Experiments",
+                        "description": "Experiment",
                         "schema": {
                             "$ref": "#/definitions/ExperimentList"
                         }
@@ -211,20 +211,102 @@
                 ]
             }
         },
-        "/Flows/get": {
-            "get": {
+        "/Experiments/skip_test": {
+            "post": {
                 "responses": {
                     "200": {
-                        "description": "Return flow yaml as json",
-                        "schema": {
-                            "$ref": "#/definitions/FlowDict"
-                        }
+                        "description": "Experiment execution details."
                     }
                 },
-                "description": "Return flow yaml as json",
-                "operationId": "get_flow_get",
+                "description": "Test experiment with skipping node",
+                "operationId": "post_experiment_skip_test",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "experiment_template": {
+                                    "type": "string"
+                                },
+                                "environment_variables": {
+                                    "type": "string"
+                                },
+                                "output_path": {
+                                    "type": "string"
+                                },
+                                "session": {
+                                    "type": "string"
+                                },
+                                "skip_flow": {
+                                    "type": "string"
+                                },
+                                "skip_flow_output": {
+                                    "type": "string"
+                                },
+                                "skip_flow_run_id": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "produces": [
+                    "text/plain",
+                    "application/json"
+                ],
                 "tags": [
-                    "Flows"
+                    "Experiments"
+                ]
+            }
+        },
+        "/Experiments/test_with_flow_override": {
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Experiment execution details."
+                    }
+                },
+                "description": "Test experiment",
+                "operationId": "post_experiment_test",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "experiment_template": {
+                                    "type": "string"
+                                },
+                                "environment_variables": {
+                                    "type": "string"
+                                },
+                                "output_path": {
+                                    "type": "string"
+                                },
+                                "session": {
+                                    "type": "string"
+                                },
+                                "override_flow_path": {
+                                    "type": "string"
+                                },
+                                "inputs": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "produces": [
+                    "text/plain",
+                    "application/json"
+                ],
+                "tags": [
+                    "Experiments"
                 ]
             }
         },
@@ -242,53 +324,41 @@
                 "operationId": "post_flow_test",
                 "parameters": [
                     {
-                        "name": "payload",
+                        "name": "flow",
+                        "in": "query",
+                        "type": "string",
                         "required": true,
-                        "in": "body",
-                        "schema": {
-                            "$ref": "#/definitions/FlowTest"
-                        }
-                    }
-                ],
-                "tags": [
-                    "Flows"
-                ]
-            }
-        },
-        "/Flows/ux_inputs": {
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "Get the file content of file UX_INPUTS_JSON",
-                        "schema": {
-                            "$ref": "#/definitions/FlowDict"
-                        }
-                    }
-                },
-                "description": "Get the file content of file UX_INPUTS_JSON",
-                "operationId": "get_flow_ux_inputs",
-                "tags": [
-                    "Flows"
-                ]
-            },
-            "post": {
-                "responses": {
-                    "200": {
-                        "description": "Set the file content of file UX_INPUTS_JSON",
-                        "schema": {
-                            "$ref": "#/definitions/FlowDict"
-                        }
-                    }
-                },
-                "description": "Set the file content of file UX_INPUTS_JSON",
-                "operationId": "post_flow_ux_inputs",
-                "parameters": [
+                        "description": "Path to flow directory."
+                    },
                     {
                         "name": "payload",
                         "required": true,
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/FlowUxInput"
+                            "type": "object",
+                            "properties": {
+                                "node": {
+                                    "type": "string"
+                                },
+                                "variant": {
+                                    "type": "string"
+                                },
+                                "output_path": {
+                                    "type": "string"
+                                },
+                                "experiment": {
+                                    "type": "string"
+                                },
+                                "inputs": {
+                                    "type": "string"
+                                },
+                                "environment_variables": {
+                                    "type": "string"
+                                },
+                                "session": {
+                                    "type": "string"
+                                }
+                            }
                         }
                     }
                 ],
@@ -370,6 +440,21 @@
                     "type": "string"
                 }
             ],
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Get run info",
+                        "schema": {
+                            "$ref": "#/definitions/RunDict"
+                        }
+                    }
+                },
+                "description": "Get run",
+                "operationId": "get_run",
+                "tags": [
+                    "Runs"
+                ]
+            },
             "put": {
                 "responses": {
                     "200": {
@@ -417,21 +502,6 @@
                 },
                 "description": "Delete run",
                 "operationId": "delete_run",
-                "tags": [
-                    "Runs"
-                ]
-            },
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "Get run info",
-                        "schema": {
-                            "$ref": "#/definitions/RunDict"
-                        }
-                    }
-                },
-                "description": "Get run",
-                "operationId": "get_run",
                 "tags": [
                     "Runs"
                 ]
@@ -646,6 +716,28 @@
                 ]
             }
         },
+        "/Spans/Event/{event_id}": {
+            "parameters": [
+                {
+                    "name": "event_id",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ],
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Event"
+                    }
+                },
+                "description": "Get span event with event id",
+                "operationId": "get_event",
+                "tags": [
+                    "Spans"
+                ]
+            }
+        },
         "/Spans/list": {
             "get": {
                 "responses": {
@@ -755,11 +847,134 @@
                 "operationId": "post_media_save",
                 "parameters": [
                     {
+                        "name": "flow",
+                        "in": "query",
+                        "type": "string",
+                        "required": true,
+                        "description": "Path to flow directory."
+                    },
+                    {
                         "name": "payload",
                         "required": true,
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/MediaSave"
+                            "type": "object",
+                            "properties": {
+                                "base64_data": {
+                                    "type": "string"
+                                },
+                                "extension": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "tags": [
+                    "ui"
+                ]
+            }
+        },
+        "/ui/ux_inputs": {
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Get the file content of file UX_INPUTS_JSON",
+                        "schema": {
+                            "$ref": "#/definitions/UIDict"
+                        }
+                    }
+                },
+                "description": "Get the file content of file UX_INPUTS_JSON",
+                "operationId": "get_flow_ux_inputs",
+                "tags": [
+                    "ui"
+                ]
+            },
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Set the file content of file UX_INPUTS_JSON"
+                    }
+                },
+                "description": "Set the file content of file UX_INPUTS_JSON",
+                "operationId": "post_flow_ux_inputs",
+                "parameters": [
+                    {
+                        "name": "flow",
+                        "in": "query",
+                        "type": "string",
+                        "required": true,
+                        "description": "Path to flow directory."
+                    },
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "ux_inputs": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "tags": [
+                    "ui"
+                ]
+            }
+        },
+        "/ui/yaml": {
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Return flow yam"
+                    }
+                },
+                "description": "Return flow yaml as json",
+                "operationId": "get_yaml_edit",
+                "produces": [
+                    "text/yaml"
+                ],
+                "tags": [
+                    "ui"
+                ]
+            },
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Set the flow yaml content"
+                    }
+                },
+                "description": "Set the flow file content",
+                "operationId": "post_yaml_edit",
+                "parameters": [
+                    {
+                        "name": "flow",
+                        "in": "query",
+                        "type": "string",
+                        "required": true,
+                        "description": "Path to flow directory."
+                    },
+                    {
+                        "name": "experiment",
+                        "in": "query",
+                        "type": "string",
+                        "description": "Path to experiment."
+                    },
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "inputs": {
+                                    "type": "string"
+                                }
+                            }
                         }
                     }
                 ],
@@ -1015,6 +1230,12 @@
                 },
                 "resource": {
                     "$ref": "#/definitions/Resource"
+                },
+                "external_event_data_uris": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             },
             "type": "object"
@@ -1168,73 +1389,12 @@
             },
             "type": "object"
         },
-        "MediaSave": {
-            "required": [
-                "base64_data",
-                "extension"
-            ],
-            "properties": {
-                "base64_data": {
-                    "type": "string",
-                    "description": "Image base64 encoded data."
-                },
-                "extension": {
-                    "type": "string",
-                    "description": "Image file extension."
-                }
-            },
-            "type": "object"
-        },
-        "FlowTest": {
-            "properties": {
-                "node": {
-                    "type": "string",
-                    "description": "If specified it will only test this node, else it will test the flow."
-                },
-                "variant": {
-                    "type": "string",
-                    "description": "Node & variant name in format of ${node_name.variant_name}, will use default variant if not specified."
-                },
-                "output_path": {
-                    "type": "string",
-                    "description": "Output path of flow"
-                },
-                "experiment": {
-                    "type": "string",
-                    "description": "Path of experiment template"
-                },
-                "inputs": {
-                    "$ref": "#/definitions/FlowDict"
-                },
-                "environment_variables": {
-                    "$ref": "#/definitions/FlowDict"
-                }
-            },
+        "UIDict": {
+            "additionalProperties": true,
             "type": "object"
         },
         "FlowDict": {
             "additionalProperties": true,
-            "type": "object"
-        },
-        "FlowUxInput": {
-            "required": [
-                "flow",
-                "ux_inputs"
-            ],
-            "properties": {
-                "flow": {
-                    "type": "string",
-                    "description": "Path to flow directory."
-                },
-                "ux_inputs": {
-                    "description": "Flow ux inputs",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/FlowDict"
-                        }
-                    ]
-                }
-            },
             "type": "object"
         },
         "ExperimentList": {

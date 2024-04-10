@@ -180,7 +180,7 @@ def remote_client(subscription_id: str, resource_group_name: str, workspace_name
             resource_group_name=resource_group_name,
             workspace_name=workspace_name,
         )
-    assert "promptflow-sdk" in ClientUserAgentUtil.get_user_agent()
+    assert "promptflow-azure-sdk" in ClientUserAgentUtil.get_user_agent()
     assert "promptflow-test" not in ClientUserAgentUtil.get_user_agent()
     yield client
 
@@ -305,7 +305,7 @@ def create_serving_client_with_connections(model_name, mocker: MockerFixture, co
     with mock.patch(func) as mock_cred_func:
         mock_cred_func.return_value = None
         app = create_serving_app(
-            environment_variables={"API_TYPE": "${aoai connection.api_type}"},
+            environment_variables={"API_TYPE": "${azure_open_ai_connection.api_type}"},
             extension_type="azureml",
         )
     app.config.update(
@@ -419,6 +419,10 @@ def mock_get_azure_pf_client(mocker: MockerFixture, remote_client) -> None:
         )
         mocker.patch(
             "promptflow.azure._cli._flow._get_azure_pf_client",
+            return_value=remote_client,
+        )
+        mocker.patch(
+            "promptflow.azure._cli._utils._get_azure_pf_client",
             return_value=remote_client,
         )
     yield

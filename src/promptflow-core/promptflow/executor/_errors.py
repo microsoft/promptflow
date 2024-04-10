@@ -168,6 +168,17 @@ class SingleNodeValidationError(UserErrorException):
     pass
 
 
+class AggregationNodeExecutionTimeoutError(UserErrorException):
+    """Exception raised when aggregation node execution timeout"""
+
+    def __init__(self, timeout):
+        super().__init__(
+            message_format="Aggregation node execution timeout for exceeding {timeout} seconds",
+            timeout=timeout,
+            target=ErrorTarget.EXECUTOR,
+        )
+
+
 class LineExecutionTimeoutError(UserErrorException):
     """Exception raised when single line execution timeout"""
 
@@ -293,11 +304,18 @@ class ResolveToolError(PromptflowException):
         return [infer_error_code_from_class(SystemErrorException), self.__class__.__name__]
 
 
-class FailedToParseAssistantTool(UserErrorException):
-    """Exception raised when failed to parse assistant tool from docstring."""
+class FailedToGenerateToolDefinition(UserErrorException):
+    """Exception raised when failed to generate openai tool json definition."""
 
-    def __init__(self, func_name):
+    pass
+
+
+class FlowEntryInitializationError(UserErrorException):
+    """Exception raised when failed to initialize flow entry."""
+
+    def __init__(self, init_kwargs, ex):
         super().__init__(
-            message_format="Failed to get assistant tool by parsing the docstring of function '{func_name}'.",
-            func_name=func_name,
+            message_format="Failed to initialize flow entry with '{init_kwargs}', ex:'{ex}.",
+            init_kwargs=init_kwargs,
+            ex=ex,
         )

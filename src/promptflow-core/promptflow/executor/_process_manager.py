@@ -174,6 +174,7 @@ class AbstractProcessManager:
             # The subprocess will get terminate signal from input queue, so we need to wait for the process to exit.
             # If the process is still running after 10 seconds, it will raise psutil.TimeoutExpired exception.
             process.wait(timeout=10)
+            bulk_logger.info(f"Process {pid} terminated.")
         except psutil.NoSuchProcess:
             bulk_logger.warning(f"Process {pid} had been terminated.")
         except psutil.TimeoutExpired:
@@ -181,6 +182,7 @@ class AbstractProcessManager:
                 # If the process is still running after waiting 10 seconds, terminate it.
                 process.terminate()
                 process.wait()
+                bulk_logger.info(f"Process {pid} terminated.")
             except Exception as e:
                 bulk_logger.warning(warning_msg.format(i=i, pid=pid, e=e))
         except Exception as e:
@@ -513,6 +515,7 @@ def _create_executor_fork(*, flow_executor: FlowExecutor, storage: AbstractRunSt
             connections=flow_executor._connections,
             working_dir=flow_executor._working_dir,
             storage=storage,
+            init_kwargs=flow_executor._init_kwargs,
         )
     else:
         run_tracker = RunTracker(run_storage=storage)

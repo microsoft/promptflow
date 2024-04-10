@@ -11,14 +11,18 @@ import pytest
 
 from promptflow._constants import OUTPUT_FILE_NAME
 from promptflow._sdk.entities._run import Run
+from promptflow._proxy._proxy_factory import ProxyFactory
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.utils import dump_list_to_jsonl
 from promptflow.batch._batch_engine import BatchEngine
 from promptflow.batch._errors import EmptyInputsData
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.run_info import Status
+from promptflow._proxy._chat_group_orchestrator_proxy import ChatGroupOrchestratorProxy
+from promptflow._sdk.entities._chat_group._chat_role import ChatRole
 from promptflow.executor._errors import InputNotFound
 
+from ..single_line_python_executor_proxy import SingleLinePythonExecutorProxy
 from ..conftest import setup_recording
 from ..process_utils import MockForkServerProcess, MockSpawnProcess, override_process_class
 from ..utils import (
@@ -97,6 +101,7 @@ class MockRun(object):
         self._output_path = output_path
         self.data = None
         self._run_source = None
+        self.flow = None
 
 
 @pytest.mark.usefixtures("use_secrets_config_file", "dev_connections", "recording_injection")
@@ -462,6 +467,11 @@ class TestBatch:
             for content in contents:
                 assert content["run_info"]["root_run_id"] == resume_run_id
 
+        status_summary = {f"__pf__.nodes.{k}": v for k, v in resume_run_batch_results.node_status.items()}
+        assert status_summary["__pf__.nodes.grade.completed"] == 3
+        assert status_summary["__pf__.nodes.calculate_accuracy.completed"] == 1
+        assert status_summary["__pf__.nodes.aggregation_assert.completed"] == 1
+
     @pytest.mark.parametrize(
         "flow_folder, resume_from_run_name",
         [("eval_flow_with_image_resume", "eval_flow_with_image_resume_default_20240305_111258_103000")],
@@ -501,3 +511,259 @@ class TestBatch:
             contents = load_jsonl(file_path)
             for content in contents:
                 assert content["run_info"]["root_run_id"] == resume_run_id
+
+        status_summary = {f"__pf__.nodes.{k}": v for k, v in resume_run_batch_results.node_status.items()}
+        assert status_summary["__pf__.nodes.flip_image.completed"] == 3
+        assert status_summary["__pf__.nodes.count_image.completed"] == 1
+
+    @pytest.mark.parametrize(
+        "simulation_flow, copilot_flow, max_turn, input_file_name",
+        [
+            ("chat_group/cloud_batch_runs/chat_group_simulation",
+             "chat_group/cloud_batch_runs/chat_group_copilot",
+             5,
+             "inputs.json"),
+            ("chat_group/cloud_batch_runs/chat_group_simulation",
+             "chat_group/cloud_batch_runs/chat_group_copilot",
+             5,
+             "inputs_using_default_value.json")
+        ],
+    )
+    @pytest.mark.asyncio
+    async def test_chat_group_batch_run(
+            self,
+            simulation_flow,
+            copilot_flow,
+            max_turn,
+            input_file_name,
+            dev_connections):
+        simulation_role = ChatRole(
+            flow="flow.dag.yaml",  # Use relative path similar with runtime payload
+            role="user",
+            name="simulator",
+            stop_signal="[STOP]",
+            working_dir=get_flow_folder(simulation_flow),
+            connections=dev_connections,
+            inputs_mapping={
+                "topic": "${data.topic}",
+                "ground_truth": "${data.ground_truth}",
+                "history": "${parent.conversation_history}"
+            }
+        )
+        copilot_role = ChatRole(
+            flow=get_yaml_file(copilot_flow),
+            role="assistant",
+            name="copilot",
+            stop_signal="[STOP]",
+            working_dir=get_flow_folder(copilot_flow),
+            connections=dev_connections,
+            inputs_mapping={
+                "question": "${data.question}",
+                "conversation_history": "${parent.conversation_history}"
+            }
+        )
+        input_dirs = {"data": get_flow_inputs_file("chat_group/cloud_batch_runs", file_name=input_file_name)}
+        output_dir = Path(mkdtemp())
+        mem_run_storage = MemoryRunStorage()
+
+        # register python proxy since current python proxy cannot execute single line
+        ProxyFactory.register_executor("python", SingleLinePythonExecutorProxy)
+        chat_group_orchestrator_proxy = await ChatGroupOrchestratorProxy.create(
+            flow_file="",
+            chat_group_roles=[simulation_role, copilot_role],
+            max_turn=max_turn)
+        batchEngine = BatchEngine(
+            flow_file=None,
+            working_dir=get_flow_folder("chat_group"),
+            storage=mem_run_storage)
+        batch_result = batchEngine.run(input_dirs, {}, output_dir, executor_proxy=chat_group_orchestrator_proxy)
+
+        nlines = 3
+        assert batch_result.total_lines == nlines
+        assert batch_result.completed_lines == nlines
+        assert batch_result.start_time < batch_result.end_time
+        assert batch_result.system_metrics.duration > 0
+
+        outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
+        assert len(outputs) == nlines
+        for i, output in enumerate(outputs):
+            assert isinstance(output, dict)
+            assert "line_number" in output, f"line_number is not in {i}th output {output}"
+            assert "conversation_history" in output, f"conversation_history is not in {i}th output {output}"
+            assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
+            # "line_number is the first pair in the dict, conversation_history is the last pair in the dict"
+            assert len(output) == max_turn + 2
+            for j, line in enumerate(output):
+                if "line_number" not in output:
+                    assert "role" in line, f"role is not in {i}th output {j}th line {line}"
+
+        assert len(mem_run_storage._flow_runs) == nlines
+        assert all(flow_run_info.status == Status.Completed for flow_run_info in mem_run_storage._flow_runs.values())
+        assert all(node_run_info.status == Status.Completed for node_run_info in mem_run_storage._node_runs.values())
+
+    @pytest.mark.parametrize(
+        "simulation_flow, copilot_flow, max_turn, simulation_input_file_name, copilot_input_file_name",
+        [
+            ("chat_group/cloud_batch_runs/chat_group_simulation",
+             "chat_group/cloud_batch_runs/chat_group_copilot",
+             5,
+             "simulation_input.json",
+             "copilot_input.json")
+        ],
+    )
+    @pytest.mark.asyncio
+    async def test_chat_group_batch_run_multi_inputs(
+            self,
+            simulation_flow,
+            copilot_flow,
+            max_turn,
+            simulation_input_file_name,
+            copilot_input_file_name,
+            dev_connections):
+        simulation_role = ChatRole(
+            flow=get_yaml_file(simulation_flow),
+            role="user",
+            name="simulator",
+            stop_signal="[STOP]",
+            working_dir=get_flow_folder(simulation_flow),
+            connections=dev_connections,
+            inputs_mapping={
+                "topic": "${simulation.topic}",
+                "ground_truth": "${simulation.ground_truth}",
+                "history": "${parent.conversation_history}"
+            }
+        )
+        copilot_role = ChatRole(
+            flow=get_yaml_file(copilot_flow),
+            role="assistant",
+            name="copilot",
+            stop_signal="[STOP]",
+            working_dir=get_flow_folder(copilot_flow),
+            connections=dev_connections,
+            inputs_mapping={
+                "question": "${copilot.question}",
+                "conversation_history": "${parent.conversation_history}"
+            }
+        )
+        input_dirs = {
+            "simulation": get_flow_inputs_file("chat_group/cloud_batch_runs", file_name=simulation_input_file_name),
+            "copilot": get_flow_inputs_file("chat_group/cloud_batch_runs", file_name=copilot_input_file_name),
+        }
+        output_dir = Path(mkdtemp())
+        mem_run_storage = MemoryRunStorage()
+
+        # register python proxy since current python proxy cannot execute single line
+        ProxyFactory.register_executor("python", SingleLinePythonExecutorProxy)
+        chat_group_orchestrator_proxy = await ChatGroupOrchestratorProxy.create(
+            flow_file="",
+            chat_group_roles=[simulation_role, copilot_role],
+            max_turn=max_turn)
+        batchEngine = BatchEngine(
+            flow_file=None,
+            working_dir=get_flow_folder("chat_group"),
+            storage=mem_run_storage)
+        batch_result = batchEngine.run(input_dirs, {}, output_dir, executor_proxy=chat_group_orchestrator_proxy)
+
+        nlines = 3
+        assert batch_result.total_lines == nlines
+        assert batch_result.completed_lines == nlines
+        assert batch_result.start_time < batch_result.end_time
+        assert batch_result.system_metrics.duration > 0
+
+        outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
+        assert len(outputs) == nlines
+        for i, output in enumerate(outputs):
+            assert isinstance(output, dict)
+            assert "line_number" in output, f"line_number is not in {i}th output {output}"
+            assert "conversation_history" in output, f"conversation_history is not in {i}th output {output}"
+            assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
+            # "line_number is the first pair in the dict, conversation_history is the last pair in the dict"
+            assert len(output) == max_turn + 2
+            for j, line in enumerate(output):
+                if "line_number" not in output:
+                    assert "role" in line, f"role is not in {i}th output {j}th line {line}"
+
+        assert len(mem_run_storage._flow_runs) == nlines
+        assert all(flow_run_info.status == Status.Completed for flow_run_info in mem_run_storage._flow_runs.values())
+        assert all(node_run_info.status == Status.Completed for node_run_info in mem_run_storage._node_runs.values())
+
+    @pytest.mark.parametrize(
+        "simulation_flow, copilot_flow, max_turn, input_file_name",
+        [
+            ("chat_group/cloud_batch_runs/chat_group_simulation_stop_signal",
+             "chat_group/cloud_batch_runs/chat_group_copilot",
+             5,
+             "inputs.json")
+        ],
+    )
+    @pytest.mark.asyncio
+    async def test_chat_group_batch_run_stop_signal(
+            self,
+            simulation_flow,
+            copilot_flow,
+            max_turn,
+            input_file_name,
+            dev_connections):
+        simulation_role = ChatRole(
+            flow=get_yaml_file(simulation_flow),
+            role="user",
+            name="simulator",
+            stop_signal="[STOP]",
+            working_dir=get_flow_folder(simulation_flow),
+            connections=dev_connections,
+            inputs_mapping={
+                "topic": "${data.topic}",
+                "ground_truth": "${data.ground_truth}",
+                "history": "${parent.conversation_history}"
+            }
+        )
+        copilot_role = ChatRole(
+            flow=get_yaml_file(copilot_flow),
+            role="assistant",
+            name="copilot",
+            stop_signal="[STOP]",
+            working_dir=get_flow_folder(copilot_flow),
+            connections=dev_connections,
+            inputs_mapping={
+                "question": "${data.question}",
+                "conversation_history": "${parent.conversation_history}"
+            }
+        )
+        input_dirs = {"data": get_flow_inputs_file("chat_group/cloud_batch_runs", file_name=input_file_name)}
+        output_dir = Path(mkdtemp())
+        mem_run_storage = MemoryRunStorage()
+
+        # register python proxy since current python proxy cannot execute single line
+        ProxyFactory.register_executor("python", SingleLinePythonExecutorProxy)
+        chat_group_orchestrator_proxy = await ChatGroupOrchestratorProxy.create(
+            flow_file="",
+            chat_group_roles=[simulation_role, copilot_role],
+            max_turn=max_turn)
+        batchEngine = BatchEngine(
+            flow_file=None,
+            working_dir=get_flow_folder("chat_group"),
+            storage=mem_run_storage)
+        batch_result = batchEngine.run(input_dirs, {}, output_dir, executor_proxy=chat_group_orchestrator_proxy)
+
+        nlines = 3
+        assert batch_result.total_lines == nlines
+        assert batch_result.completed_lines == nlines
+        assert batch_result.start_time < batch_result.end_time
+        assert batch_result.system_metrics.duration > 0
+
+        outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
+        assert len(outputs) == nlines
+        for i, output in enumerate(outputs):
+            assert isinstance(output, dict)
+            assert "line_number" in output, f"line_number is not in {i}th output {output}"
+            assert "conversation_history" in output, f"conversation_history is not in {i}th output {output}"
+            assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
+            # hit stop signal. It only has line number conversation history and simulation run output
+            assert len(output) == 3
+            for j, line in enumerate(output):
+                if "line_number" not in output:
+                    assert "role" in line, f"role is not in {i}th output {j}th line {line}"
+
+        assert len(mem_run_storage._flow_runs) == nlines
+        assert all(flow_run_info.status == Status.Completed for flow_run_info in mem_run_storage._flow_runs.values())
+        assert all(node_run_info.status == Status.Completed for node_run_info in mem_run_storage._node_runs.values())

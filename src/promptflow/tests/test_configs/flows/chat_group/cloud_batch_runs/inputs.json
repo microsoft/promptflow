@@ -1,0 +1,20 @@
+[
+  {
+    "question": "Do you like apple",
+    "topic":  "fruit",
+    "ground_truth": "Yes",
+    "conversation_history": []
+  },
+  {
+    "question": "Do you like basketball",
+    "topic":  "sport",
+    "ground_truth": "No",
+    "conversation_history": []
+  },
+  {
+    "question": "What's the weather today",
+    "topic":  "weather",
+    "ground_truth": "Sunny",
+    "conversation_history": []
+  }
+]

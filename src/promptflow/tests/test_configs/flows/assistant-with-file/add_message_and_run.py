@@ -2,13 +2,9 @@ import asyncio
 import json
 from contextvars import ContextVar
 from typing import Union, List
-
-
 from openai.types.beta.threads.runs.code_interpreter_tool_call import CodeInterpreterOutput
 from opentelemetry.trace import get_current_span
-
 from openai.types.beta.threads import TextContentBlock, ImageFileContentBlock, Message
-
 from promptflow.core import tool
 from promptflow.connections import OpenAIConnection, AzureOpenAIConnection
 from promptflow.contracts.multimedia import Image

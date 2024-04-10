@@ -199,6 +199,24 @@ class DownloadInternalError(SDKInternalError):
     pass
 
 
+class UploadInternalError(SDKInternalError):
+    """Exception raised if upload internal error."""
+
+    pass
+
+
+class UploadUserError(SDKError):
+    """Exception raised if upload user error."""
+
+    pass
+
+
+class UserAuthenticationError(SDKError):
+    """Exception raised when user authentication failed"""
+
+    pass
+
+
 class ExperimentNodeRunFailedError(SDKError):
     """Orchestrator raised if node run failed."""
 
@@ -231,5 +249,11 @@ class ChatRoleError(SDKError):
 
 class UnexpectedAttributeError(SDKError):
     """Exception raised if unexpected attribute is found."""
+
+    pass
+
+
+class LineRunNotFoundError(SDKError):
+    """Exception raised if line run cannot be found."""
 
     pass

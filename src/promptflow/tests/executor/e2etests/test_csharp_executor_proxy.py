@@ -9,9 +9,9 @@ import pytest
 
 from promptflow._constants import FlowLanguage
 from promptflow._proxy import ProxyFactory
+from promptflow._proxy._csharp_executor_proxy import CSharpExecutorProxy
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow.batch._batch_engine import BatchEngine
-from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, ValidationException

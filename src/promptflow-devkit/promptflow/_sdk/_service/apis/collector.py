@@ -7,25 +7,22 @@
 # https://opentelemetry.io/docs/specs/otlp/#otlphttp-request
 # to provide OTLP/HTTP endpoint as OTEL collector
 
+import copy
 import json
 import logging
 import traceback
 from datetime import datetime
-from typing import Callable, Optional
+from typing import Callable, List, Optional
 
 from flask import request
 from google.protobuf.json_format import MessageToJson
 from opentelemetry.proto.collector.trace.v1.trace_service_pb2 import ExportTraceServiceRequest
 
-from promptflow._constants import (
-    CosmosDBContainerName,
-    SpanFieldName,
-    SpanResourceAttributesFieldName,
-    SpanResourceFieldName,
-)
-from promptflow._sdk._constants import TRACE_DEFAULT_SESSION_ID
+from promptflow._constants import CosmosDBContainerName, SpanResourceAttributesFieldName, SpanResourceFieldName
+from promptflow._sdk._constants import TRACE_DEFAULT_COLLECTION
 from promptflow._sdk._utils import parse_kv_from_pb_attribute
 from promptflow._sdk.entities._trace import Span
+from promptflow._sdk.operations._trace_operations import TraceOperations
 from promptflow._utils.thread_utils import ThreadWithContextVars
 
 
@@ -61,8 +58,8 @@ def trace_collector(
                 attribute_dict = json.loads(MessageToJson(attribute))
                 attr_key, attr_value = parse_kv_from_pb_attribute(attribute_dict)
                 resource_attributes[attr_key] = attr_value
-            if SpanResourceAttributesFieldName.SESSION_ID not in resource_attributes:
-                resource_attributes[SpanResourceAttributesFieldName.SESSION_ID] = TRACE_DEFAULT_SESSION_ID
+            if SpanResourceAttributesFieldName.COLLECTION not in resource_attributes:
+                resource_attributes[SpanResourceAttributesFieldName.COLLECTION] = TRACE_DEFAULT_COLLECTION
             resource = {
                 SpanResourceFieldName.ATTRIBUTES: resource_attributes,
                 SpanResourceFieldName.SCHEMA_URL: resource_span.schema_url,
@@ -70,10 +67,13 @@ def trace_collector(
             for scope_span in resource_span.scope_spans:
                 for span in scope_span.spans:
                     # TODO: persist with batch
-                    span = Span._from_protobuf_object(span, resource=resource)
+                    span: Span = TraceOperations._parse_protobuf_span(span, resource=resource, logger=logger)
                     if not cloud_trace_only:
+                        all_spans.append(copy.deepcopy(span))
                         span._persist()
-                    all_spans.append(span)
+                        logger.debug("Persisted trace id: %s, span id: %s", span.trace_id, span.span_id)
+                    else:
+                        all_spans.append(span)
 
         if cloud_trace_only:
             # If we only trace to cloud, we should make sure the data writing is success before return.
@@ -94,7 +94,7 @@ def trace_collector(
 
 
 def _try_write_trace_to_cosmosdb(
-    all_spans,
+    all_spans: List[Span],
     get_created_by_info_with_cache: Callable,
     logger: logging.Logger,
     credential: Optional[object] = None,
@@ -104,7 +104,7 @@ def _try_write_trace_to_cosmosdb(
         return
     try:
         first_span = all_spans[0]
-        span_resource = first_span._content.get(SpanFieldName.RESOURCE, {})
+        span_resource = first_span.resource
         resource_attributes = span_resource.get(SpanResourceFieldName.ATTRIBUTES, {})
         subscription_id = resource_attributes.get(SpanResourceAttributesFieldName.SUBSCRIPTION_ID, None)
         resource_group_name = resource_attributes.get(SpanResourceAttributesFieldName.RESOURCE_GROUP_NAME, None)
@@ -115,12 +115,13 @@ def _try_write_trace_to_cosmosdb(
 
         logger.info(f"Start writing trace to cosmosdb, total spans count: {len(all_spans)}.")
         start_time = datetime.now()
+
         from promptflow.azure._storage.cosmosdb.client import get_client
         from promptflow.azure._storage.cosmosdb.collection import CollectionCosmosDB
         from promptflow.azure._storage.cosmosdb.span import Span as SpanCosmosDB
         from promptflow.azure._storage.cosmosdb.summary import Summary
 
-        # Load span and summary clients first time may slow.
+        # Load span, collection and summary clients first time may slow.
         # So, we load clients in parallel for warm up.
         span_client_thread = ThreadWithContextVars(
             target=get_client,
@@ -134,31 +135,51 @@ def _try_write_trace_to_cosmosdb(
         )
         collection_client_thread.start()
 
+        line_summary_client_thread = ThreadWithContextVars(
+            target=get_client,
+            args=(CosmosDBContainerName.LINE_SUMMARY, subscription_id, resource_group_name, workspace_name, credential),
+        )
+        line_summary_client_thread.start()
+
         # Load created_by info first time may slow. So, we load it in parallel for warm up.
         created_by_thread = ThreadWithContextVars(target=get_created_by_info_with_cache)
         created_by_thread.start()
 
-        get_client(CosmosDBContainerName.LINE_SUMMARY, subscription_id, resource_group_name, workspace_name, credential)
+        # Get default blob may be slow. So, we have a cache for default datastore.
+        from promptflow.azure._storage.blob.client import get_datastore_container_client
+
+        blob_container_client, blob_base_uri = get_datastore_container_client(
+            logger=logger,
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+            credential=credential,
+        )
 
         span_client_thread.join()
-        created_by_thread.join()
         collection_client_thread.join()
+        line_summary_client_thread.join()
+        created_by_thread.join()
 
         created_by = get_created_by_info_with_cache()
-
         collection_client = get_client(
             CosmosDBContainerName.COLLECTION, subscription_id, resource_group_name, workspace_name, credential
         )
 
         collection_db = CollectionCosmosDB(first_span, is_cloud_trace, created_by)
         collection_db.create_collection_if_not_exist(collection_client)
+        # For runtime, collection id is flow id for test, batch run id for batch run.
+        # For local, collection id is collection name + user id for non batch run, batch run id for batch run.
+        # We assign it to LineSummary and Span and use it as partition key.
         collection_id = collection_db.collection_id
 
         for span in all_spans:
             span_client = get_client(
                 CosmosDBContainerName.SPAN, subscription_id, resource_group_name, workspace_name, credential
             )
-            result = SpanCosmosDB(span, collection_id, created_by).persist(span_client)
+            result = SpanCosmosDB(span, collection_id, created_by).persist(
+                span_client, blob_container_client, blob_base_uri
+            )
             # None means the span already exists, then we don't need to persist the summary also.
             if result is not None:
                 line_summary_client = get_client(

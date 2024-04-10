@@ -1,4 +1,5 @@
 import tempfile
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -6,13 +7,18 @@ from azure.ai.ml import ManagedIdentityConfiguration
 from azure.ai.ml.entities import IdentityConfiguration
 from pytest_mock import MockerFixture
 
-from promptflow._sdk._errors import RunOperationParameterError
+from promptflow._sdk._errors import RunOperationParameterError, UploadUserError, UserAuthenticationError
+from promptflow._sdk._utils import parse_otel_span_status_code
 from promptflow._sdk.entities import Run
+from promptflow._sdk.operations._run_operations import RunOperations
+from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow.azure import PFClient
+from promptflow.azure.operations._async_run_uploader import AsyncRunUploader
 from promptflow.exceptions import UserErrorException
 
 FLOWS_DIR = "./tests/test_configs/flows"
 DATAS_DIR = "./tests/test_configs/datas"
+EAGER_FLOWS_DIR = "./tests/test_configs/eager_flows"
 
 
 @pytest.mark.unittest
@@ -81,6 +87,18 @@ class TestRunOperations:
                 pf.runs._resolve_identity(run)
             assert error_msg in str(e)
 
+    def test_flex_flow_with_imported_func(self, pf: PFClient):
+        # TODO(3017093): won't support this for now
+        with pytest.raises(UserErrorException) as e:
+            pf.run(
+                flow=parse_otel_span_status_code,
+                data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+                # set code folder to avoid snapshot too big
+                code=f"{EAGER_FLOWS_DIR}/multiple_entries",
+                column_mapping={"value": "${data.input_val}"},
+            )
+        assert "not supported" in str(e)
+
     def test_wrong_workspace_type(
         self, mocker: MockerFixture, subscription_id: str, resource_group_name: str, workspace_name: str
     ):
@@ -104,3 +122,52 @@ class TestRunOperations:
         with pytest.raises(RunOperationParameterError, match="Failed to get default workspace datastore"):
             datastore = pf.runs._workspace_default_datastore
             assert datastore
+
+    @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
+    def test_upload_run_with_invalid_workspace_datastore(self, pf: PFClient, mocker: MockerFixture):
+        # test download with invalid workspace datastore
+        from promptflow._sdk.operations import RunOperations
+
+        mocked = mocker.patch.object(RunOperations, "get")
+        mocked.return_value.status = "Completed"
+        mocker.patch.object(pf.runs, "_workspace_default_datastore", "test")
+        with pytest.raises(UserErrorException, match="workspace default datastore is not supported"):
+            pf.runs._upload(run="fake_run_name")
+
+    def test_upload_run_with_running_status(self, pf: PFClient):
+        # test upload run with running status
+        with patch.object(RunOperations, "get") as mock_get:
+            mock_get.return_value.status = "Running"
+            with pytest.raises(UserErrorException, match="Can only upload the run with status"):
+                pf.runs._upload(run="fake_run_name")
+
+    @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
+    def test_upload_run_with_authentication_error(self, pf: PFClient, mocker: MockerFixture):
+        # test upload run with authentication error
+        from azure.core.exceptions import HttpResponseError
+
+        random_data = Path(DATAS_DIR, "numbers.jsonl")
+        response = MagicMock()
+        response.status_code = 403
+        blob_client = MagicMock()
+        blob_client.upload_blob.side_effect = HttpResponseError(response=response)
+
+        mocker.patch.object(AsyncRunUploader, "_get_datastore_with_secrets")
+        run_uploader = AsyncRunUploader._from_run_operations(run=MagicMock(), run_ops=pf.runs)
+        with pytest.raises(UserAuthenticationError, match="User does not have permission"):
+            async_run_allowing_running_loop(run_uploader._upload_single_blob, blob_client, random_data)
+
+    @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
+    def test_upload_run_with_run_exist(
+        self,
+        pf: PFClient,
+        mocker: MockerFixture,
+    ):
+        # test upload run with run exist
+        mocker.patch.object(AsyncRunUploader, "_get_datastore_with_secrets")
+        mocker.patch.object(pf.runs, "get")
+        run_uploader = AsyncRunUploader._from_run_operations(run=MagicMock(), run_ops=pf.runs)
+        mocker.patch.object(run_uploader, "overwrite", False)
+
+        with pytest.raises(UploadUserError, match="cannot upload the run record"):
+            run_uploader._check_run_exists()

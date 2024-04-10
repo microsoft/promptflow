@@ -6,8 +6,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from promptflow._constants import FlowLanguage
-from promptflow._proxy import ProxyFactory
-from promptflow.batch import AbstractExecutorProxy, PythonExecutorProxy
+from promptflow._proxy import AbstractExecutorProxy, ProxyFactory
+from promptflow._proxy._python_executor_proxy import PythonExecutorProxy
 from promptflow.contracts.run_info import Status
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.executor._service.app import app
@@ -38,6 +38,7 @@ class TestBatchServer:
 
 class MockPythonAPIBasedExecutorProxy(AbstractExecutorProxy):
     def __init__(self, *, executor_client: TestClient):
+        super().__init__()
         self._executor_client = executor_client
 
     @classmethod

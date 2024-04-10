@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Mapping, Optional
 
 from promptflow._constants import OutputsFolderName
-from promptflow._utils.multimedia_utils import process_multimedia_in_run_info
+from promptflow._utils.logger_utils import LogContext
 from promptflow.executor import FlowExecutor
 from promptflow.executor._line_execution_process_pool import LineExecutionProcessPool
 from promptflow.executor._service._errors import UninitializedError
@@ -28,12 +28,16 @@ class BatchCoordinator:
         working_dir: Path,
         flow_file: Path,
         output_dir: Path,
+        flow_name: str = None,
         connections: Optional[Mapping[str, Any]] = None,
         worker_count: Optional[int] = None,
         line_timeout_sec: Optional[int] = None,
     ):
         if self._init:
             return
+        # Save log context for close method
+        self._log_context = LogContext.get_current()
+
         # Init flow executor and validate flow
         self._output_dir = output_dir
 
@@ -43,7 +47,7 @@ class BatchCoordinator:
         # So we pass DummyRunStorage to FlowExecutor because we don't need to
         # persist the run infos during execution in server mode.
         self._flow_executor = FlowExecutor.create(
-            flow_file, connections, working_dir, storage=DummyRunStorage(), raise_ex=False
+            flow_file, connections, working_dir, storage=DummyRunStorage(), raise_ex=False, name=flow_name
         )
 
         # Init line execution process pool and set serialize_multimedia_during_execution to True
@@ -65,6 +69,9 @@ class BatchCoordinator:
             )
         return cls._instance
 
+    def get_log_context(self):
+        return self._log_context
+
     def start(self):
         """Start the process pool."""
         self._process_pool.start()
@@ -82,7 +89,7 @@ class BatchCoordinator:
             # Serialize the multimedia data of the node run infos under the mode artifacts folder.
             for node_run_info in aggregation_result.node_run_infos.values():
                 base_dir = self._output_dir / OutputsFolderName.NODE_ARTIFACTS / node_run_info.node
-                process_multimedia_in_run_info(node_run_info, base_dir)
+                self._flow_executor._multimedia_processor.process_multimedia_in_run_info(node_run_info, base_dir)
         return aggregation_result
 
     def close(self):

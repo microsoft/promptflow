@@ -28,10 +28,10 @@ from promptflow._sdk._constants import (
     PF_SERVICE_PORT_FILE,
 )
 from promptflow._sdk._errors import ConnectionNotFoundError, RunNotFoundError
-from promptflow._sdk._utils import get_promptflow_sdk_version, read_write_by_user
+from promptflow._sdk._utils import get_promptflow_devkit_version, get_promptflow_sdk_version, read_write_by_user
+from promptflow._sdk._version import VERSION
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
-from promptflow._version import VERSION
 from promptflow.exceptions import PromptflowException, UserErrorException
 
 logger = get_cli_sdk_logger()
@@ -155,6 +155,16 @@ def make_response_no_content():
     return make_response("", 204)
 
 
+def get_pfs_version():
+    """Promptflow service show promptflow version if installed from root, else devkit version"""
+    version_promptflow = get_promptflow_sdk_version()
+    if version_promptflow:
+        return version_promptflow
+    else:
+        version_devkit = get_promptflow_devkit_version()
+        return version_devkit
+
+
 def is_pfs_service_healthy(pfs_port) -> bool:
     """Check if pfs service is running and pfs version matches pf version."""
     try:
@@ -164,15 +174,16 @@ def is_pfs_service_healthy(pfs_port) -> bool:
             match = re.search(r'"promptflow":"(.*?)"', response.text)
             if match:
                 version = match.group(1)
-                is_healthy = version == get_promptflow_sdk_version()
+                local_version = get_pfs_version()
+                is_healthy = version == local_version
                 if not is_healthy:
                     logger.warning(
                         f"Promptflow service is running on port {pfs_port}, but the version is not the same as "
-                        f"promptflow sdk version {get_promptflow_sdk_version()}. The service version is {version}."
+                        f"local sdk version {local_version}. The service version is {version}."
                     )
             else:
                 is_healthy = False
-                logger.warning("/heartbeat response doesn't contain current pfs version.")
+                logger.warning("/heartbeat response doesn't contain current promptflow service version.")
             return is_healthy
     except Exception:  # pylint: disable=broad-except
         pass
@@ -182,16 +193,16 @@ def is_pfs_service_healthy(pfs_port) -> bool:
     return False
 
 
-def check_pfs_service_status(pfs_port, time_delay=1, time_threshold=20) -> bool:
-    wait_time = time_delay
+def check_pfs_service_status(pfs_port, time_delay=1, count_threshold=20) -> bool:
+    cnt = 1
     time.sleep(time_delay)
     is_healthy = is_pfs_service_healthy(pfs_port)
-    while is_healthy is False and time_threshold > wait_time:
+    while is_healthy is False and count_threshold > cnt:
         logger.info(
-            f"Promptflow service is not ready. It has been waited for {wait_time}s, will wait for at most "
-            f"{time_threshold}s."
+            f"Promptflow service is not ready. It has been tried for {cnt} times, will try at most {count_threshold} "
+            f"times."
         )
-        wait_time += time_delay
+        cnt += 1
         time.sleep(time_delay)
         is_healthy = is_pfs_service_healthy(pfs_port)
     return is_healthy
@@ -278,7 +289,9 @@ def is_run_from_built_binary():
 
     Allow customer to use environment variable to control the triggering.
     """
-    return sys.executable.endswith("pfcli.exe") or os.environ.get(PF_RUN_AS_BUILT_BINARY, "").lower() == "true"
+    return (not sys.executable.endswith("python.exe") and not sys.executable.endswith("python")) or os.environ.get(
+        PF_RUN_AS_BUILT_BINARY, ""
+    ).lower() == "true"
 
 
 def encrypt_flow_path(flow_path):

@@ -1,7 +1,6 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-import asyncio
 import concurrent
 import copy
 import hashlib
@@ -46,12 +45,7 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import InvalidRunStatusError, RunNotFoundError, RunOperationParameterError
 from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, monitor_operation
-from promptflow._sdk._utils import (
-    incremental_print,
-    is_multi_container_enabled,
-    is_remote_uri,
-    print_red_error,
-)
+from promptflow._sdk._utils import incremental_print, is_multi_container_enabled, is_remote_uri, print_red_error
 from promptflow._sdk.entities import Run
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.logger_utils import get_cli_sdk_logger
@@ -59,7 +53,7 @@ from promptflow._utils.utils import in_jupyter_notebook
 from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME, AUTOMATIC_RUNTIME_NAME, CLOUD_RUNS_PAGE_SIZE
 from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
-from promptflow.azure._utils.general import get_authorization, get_user_alias_from_credential
+from promptflow.azure._utils.general import get_authorization, get_user_alias_from_credential, set_event_loop_policy
 from promptflow.azure.operations._flow_operations import FlowOperations
 from promptflow.exceptions import UserErrorException
 
@@ -924,22 +918,58 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         :return: The run directory path
         :rtype: str
         """
-        import platform
-
         from promptflow.azure.operations._async_run_downloader import AsyncRunDownloader
 
         run = Run._validate_and_return_run_name(run)
         run_folder = self._validate_for_run_download(run=run, output=output, overwrite=overwrite)
         run_downloader = AsyncRunDownloader._from_run_operations(run_ops=self, run=run, output_folder=run_folder)
-        if platform.system().lower() == "windows":
-            # Reference: https://stackoverflow.com/questions/45600579/asyncio-event-loop-is-closed-when-getting-loop
-            # On Windows seems to be a problem with EventLoopPolicy, use this snippet to work around it
-            asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-
+        set_event_loop_policy()
         async_run_allowing_running_loop(run_downloader.download)
         result_path = run_folder.resolve().as_posix()
         logger.info(f"Successfully downloaded run {run!r} to {result_path!r}.")
         return result_path
+
+    def _upload(self, run: Union[str, Run]):
+        from promptflow._sdk._pf_client import PFClient
+        from promptflow.azure.operations._async_run_uploader import AsyncRunUploader
+
+        # always get run object from db, since the passed in run object may not have all latest info
+        pf = PFClient()
+        run = pf.runs.get(run)
+
+        # check if the run is in terminated status
+        terminated_statuses = RunStatus.get_terminated_statuses()
+        if run.status not in terminated_statuses:
+            raise UserErrorException(
+                f"Can only upload the run with status {terminated_statuses!r} "
+                f"while {run.name!r}'s status is {run.status!r}."
+            )
+        set_event_loop_policy()
+
+        # upload local run details to cloud
+        run_uploader = AsyncRunUploader._from_run_operations(run=run, run_ops=self)
+        result_dict = async_run_allowing_running_loop(run_uploader.upload)
+        # patch details about the uploaded run
+        run._local_to_cloud_info = result_dict
+        logger.debug(f"Successfully uploaded run details of {run!r} to cloud.")
+
+        # registry the run in the cloud
+        self._registry_existing_bulk_run(run=run)
+
+        # print portal url when executing in jupyter notebook
+        if in_jupyter_notebook():
+            print(f"Portal url: {self._get_run_portal_url(run_id=run.name)}")
+
+    def _registry_existing_bulk_run(self, run: Run):
+        # register the run in the cloud
+        rest_obj = run._to_rest_object()
+        self._service_caller.create_existing_bulk_run(
+            subscription_id=self._operation_scope.subscription_id,
+            resource_group_name=self._operation_scope.resource_group_name,
+            workspace_name=self._operation_scope.workspace_name,
+            body=rest_obj,
+        )
+        logger.info(f"Successfully registered run {run!r} to cloud.")
 
     def _validate_for_run_download(self, run: Union[str, Run], output: Optional[Union[str, Path]], overwrite):
         """Validate the run download parameters."""
@@ -1024,7 +1054,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
     @monitor_operation(activity_name="pfazure.runs.resume", activity_type=ActivityType.PUBLICAPI)
     def _create_by_resume_from(self, resume_from: str, **kwargs):
         """Create a run by specify resume_from to an existing run."""
-        stream = kwargs.get("stream", False)
+        stream = kwargs.pop("stream", False)
         run_name = self._service_caller.resume_bulk_run(
             subscription_id=self._operation_scope.subscription_id,
             resource_group_name=self._operation_scope.resource_group_name,

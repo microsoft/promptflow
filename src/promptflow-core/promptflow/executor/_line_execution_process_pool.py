@@ -29,7 +29,6 @@ from promptflow._core.run_tracker import RunTracker
 from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import bulk_logger
-from promptflow._utils.multimedia_utils import convert_multimedia_data_to_string, persist_multimedia_data
 from promptflow._utils.process_utils import (
     get_available_max_worker_count,
     get_manager_process_log_path,
@@ -124,19 +123,24 @@ class LineExecutionProcessPool:
         # Initialize some fields from flow_executor and construct flow_create_kwargs
         self._flow_id = flow_executor._flow_id
         self._log_interval = flow_executor._log_interval
-        if isinstance(flow_executor, ScriptExecutor):
-            self._storage = flow_executor._storage
-        else:
-            self._storage = flow_executor._run_tracker._storage
         self._flow_create_kwargs = {
             "flow_file": flow_executor._flow_file,
             "connections": flow_executor._connections,
             "working_dir": flow_executor._working_dir,
             "line_timeout_sec": self._line_timeout_sec,
             "raise_ex": False,
+            # only script executor has init
+            "init_kwargs": getattr(flow_executor, "_init_kwargs", None),
         }
+        if isinstance(flow_executor, ScriptExecutor):
+            self._storage = flow_executor._storage
+        else:
+            self._storage = flow_executor._run_tracker._storage
+            # ScriptExecutor does not have _flow attribute.
+            self._flow_create_kwargs.update({"name": flow_executor._flow.name})
         # Will set to True if the batch run is timeouted.
         self._is_timeout = False
+        self._multimedia_processor = flow_executor._multimedia_processor
 
     def __enter__(self):
         self.start()
@@ -281,17 +285,15 @@ class LineExecutionProcessPool:
                         )
                     )
                 # Wait for batch run to complete or timeout
-                completed_line = 0
+                last_log_count = 0
                 while not self._batch_timeout_expired(self._batch_start_time):
                     # Print the progress logs of the batch run.
-                    log_progress(
+                    last_log_count = log_progress(
                         run_start_time=self._batch_start_time,
-                        logger=bulk_logger,
-                        count=len(self._result_dict),
                         total_count=self._nlines,
-                        last_log_count=completed_line,
+                        current_count=len(self._result_dict),
+                        last_log_count=last_log_count,
                     )
-                    completed_line = len(self._result_dict)
                     # If the batch run is completed, break the loop.
                     if self._is_batch_run_completed():
                         break
@@ -608,19 +610,19 @@ class LineExecutionProcessPool:
         # Persist multimedia data in the aggregation_inputs of line result to output_dir
         # if _serialize_multimedia_during_execution is True.
         if self._serialize_multimedia_during_execution:
-            result.aggregation_inputs = persist_multimedia_data(
+            result.aggregation_inputs = self._multimedia_processor.persist_multimedia_data(
                 result.aggregation_inputs, Path(mkdtemp()), use_absolute_path=True
             )
         # Persist multimedia data in the outputs of line result to output_dir
-        result.output = persist_multimedia_data(result.output, self._output_dir)
+        result.output = self._multimedia_processor.persist_multimedia_data(result.output, self._output_dir)
         return result
 
     def _serialize_multimedia(self, run_info: Union[FlowRunInfo, NodeRunInfo]):
         if run_info.inputs:
-            run_info.inputs = convert_multimedia_data_to_string(run_info.inputs)
+            run_info.inputs = self._multimedia_processor.convert_multimedia_data_to_string(run_info.inputs)
 
         if run_info.output:
-            serialized_output = convert_multimedia_data_to_string(run_info.output)
+            serialized_output = self._multimedia_processor.convert_multimedia_data_to_string(run_info.output)
             run_info.output = serialized_output
             run_info.result = None
 
@@ -629,7 +631,9 @@ class LineExecutionProcessPool:
         # consumed. It is crucial to process the api_calls list in place to avoid losing the reference to the list that
         # holds the generator items, which is essential for tracing generator execution.
         if run_info.api_calls:
-            run_info.api_calls = convert_multimedia_data_to_string(run_info.api_calls, inplace=True)
+            run_info.api_calls = self._multimedia_processor.convert_multimedia_data_to_string(
+                run_info.api_calls, inplace=True
+            )
 
     def _generate_line_result_for_exception(
         self,
@@ -746,7 +750,9 @@ def _exec_line_for_queue(
                         # Meet span missing issue when end process normally (even add wait() when end it).
                         # Shutdown the tracer provider to flush the remaining spans.
                         # The tracer provider is created for each process, so it's ok to shutdown it here.
-                        otel_trace.get_tracer_provider().shutdown()
+                        tracer_provider = otel_trace.get_tracer_provider()
+                        if hasattr(tracer_provider, "shutdown"):
+                            tracer_provider.shutdown()
                     except Exception as e:
                         bulk_logger.warning(f"Error occurred while shutting down tracer provider: {e}")
 
@@ -797,13 +803,14 @@ def _exec_line(
         bulk_logger.error(f"Line {index}, Process {os.getpid()} failed with exception: {e}")
         flow_id = executor._flow_id
         line_run_id = run_id if index is None else f"{run_id}_{index}"
+        message_format = executor._message_format
         # If line execution failed before start, there is no flow information in the run_tracker.
         # So we call start_flow_run before handling exception to make sure the run_tracker has flow info.
         if isinstance(executor, ScriptExecutor):
             run_tracker = RunTracker(executor._storage)
         else:
             run_tracker = executor._run_tracker
-        run_tracker.start_flow_run(flow_id, run_id, line_run_id, run_id, index=index)
+        run_tracker.start_flow_run(flow_id, run_id, line_run_id, run_id, index=index, message_format=message_format)
         run_info = run_tracker.end_run(f"{run_id}_{index}", ex=e)
         output_queue.put(run_info)
         result = LineResult(

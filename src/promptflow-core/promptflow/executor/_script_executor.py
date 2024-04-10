@@ -6,44 +6,59 @@ import uuid
 from dataclasses import is_dataclass
 from pathlib import Path
 from types import GeneratorType
-from typing import Any, Callable, Mapping, Optional
+from typing import Any, Callable, Dict, Mapping, Optional, Union
 
-from promptflow._constants import LINE_NUMBER_KEY
+from promptflow._constants import LINE_NUMBER_KEY, MessageFormatType
+from promptflow._core.log_manager import NodeLogManager
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool_meta_generator import PythonLoadError
 from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
 from promptflow._utils.logger_utils import logger
+from promptflow._utils.multimedia_utils import BasicMultimediaProcessor
 from promptflow._utils.tool_utils import function_to_interface
 from promptflow._utils.yaml_utils import load_yaml
+from promptflow.connections import ConnectionProvider
 from promptflow.contracts.flow import Flow
+from promptflow.contracts.tool import ConnectionType
 from promptflow.executor._result import LineResult
 from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DefaultRunStorage
 from promptflow.tracing._trace import _traced
 from promptflow.tracing._tracer import Tracer
 
+from ._errors import FlowEntryInitializationError
 from .flow_executor import FlowExecutor
 
 
 class ScriptExecutor(FlowExecutor):
     def __init__(
         self,
-        flow_file: Path,
+        flow_file: Union[Path, str, Callable],
         connections: Optional[dict] = None,
         working_dir: Optional[Path] = None,
         *,
         storage: Optional[AbstractRunStorage] = None,
+        init_kwargs: Optional[Dict[str, Any]] = None,
     ):
         logger.debug(f"Start initializing the executor with {flow_file}.")
+        logger.debug(f"Init params for script executor: {init_kwargs}")
 
         self._flow_file = flow_file
-        self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
+        entry = flow_file  # Entry could be both a path or a callable
+        self._entry = entry
+        self._init_kwargs = init_kwargs or {}
+        if isinstance(entry, (str, Path)):
+            self._working_dir = Flow._resolve_working_dir(entry, working_dir)
+        else:
+            self._working_dir = working_dir or Path.cwd()
         self._initialize_function()
         self._connections = connections
         self._storage = storage or DefaultRunStorage()
         self._flow_id = "default_flow_id"
         self._log_interval = 60
         self._line_timeout_sec = 600
+        self._message_format = MessageFormatType.BASIC
+        self._multimedia_processor = BasicMultimediaProcessor()
 
     def exec_line(
         self,
@@ -54,7 +69,11 @@ class ScriptExecutor(FlowExecutor):
         **kwargs,
     ) -> LineResult:
         run_id = run_id or str(uuid.uuid4())
-        with self._update_operation_context(run_id, index):
+        # TODO: refactor NodeLogManager, for script executor, we don't have node concept.
+        log_manager = NodeLogManager()
+        # No need to clear node context, log_manger will be cleared after the with block.
+        log_manager.set_node_context(run_id, "Flex", index)
+        with log_manager, self._update_operation_context(run_id, index):
             return self._exec_line(inputs, index, run_id, allow_generator_output=allow_generator_output)
 
     def _exec_line(
@@ -74,6 +93,7 @@ class ScriptExecutor(FlowExecutor):
             parent_run_id=run_id,
             inputs=inputs,
             index=index,
+            message_format=self._message_format,
         )
         # Executor will add line_number to batch inputs if there is no line_number in the original inputs,
         # which should be removed, so, we only preserve the inputs that are contained in self._inputs.
@@ -125,16 +145,68 @@ class ScriptExecutor(FlowExecutor):
     def get_inputs_definition(self):
         return self._inputs
 
-    def _initialize_function(self):
-        module_name, func_name = self._parse_flow_file()
-        module = importlib.import_module(module_name)
-        func = getattr(module, func_name, None)
-        if func is None or not inspect.isfunction(func):
+    def _resolve_init_kwargs(self, c: type, init_kwargs: dict):
+        """Resolve init kwargs, the connection names will be resolved to connection objects."""
+        sig = inspect.signature(c.__init__)
+        connection_params = []
+        for key, param in sig.parameters.items():
+            if ConnectionType.is_connection_class_name(param.annotation.__name__):
+                connection_params.append(key)
+        if not connection_params:
+            return init_kwargs
+        resolved_init_kwargs = {k: v for k, v in init_kwargs.items()}
+        provider = ConnectionProvider.get_instance()
+        for key in connection_params:
+            resolved_init_kwargs[key] = provider.get(init_kwargs[key])
+        return resolved_init_kwargs
+
+    @property
+    def is_function_entry(self):
+        return hasattr(self._entry, "__call__") or inspect.isfunction(self._entry)
+
+    def _parse_entry_func(self):
+        if self.is_function_entry:
+            if inspect.isfunction(self._entry):
+                return self._entry
+            return self._entry.__call__
+        try:
+            module_name, func_name = self._parse_flow_file()
+            module = importlib.import_module(module_name)
+        except Exception as e:
             raise PythonLoadError(
-                message_format="Failed to load python function '{func_name}' from file '{module_name}'.",
+                message_format="Failed to load python module for {entry_file}",
+                entry_file=self._flow_file,
+            ) from e
+        func = getattr(module, func_name, None)
+        # check if func is a callable class
+        if inspect.isclass(func):
+            if hasattr(func, "__call__"):
+                logger.debug(
+                    f"Python class entry '{func_name}' has __call__ method, initializing it with {self._init_kwargs}"
+                )
+                try:
+                    resolved_init_kwargs = self._resolve_init_kwargs(func, self._init_kwargs)
+                    obj = func(**resolved_init_kwargs)
+                except Exception as e:
+                    raise FlowEntryInitializationError(init_kwargs=self._init_kwargs, ex=e) from e
+                func = getattr(obj, "__call__")
+            else:
+                raise PythonLoadError(
+                    message_format="Python class entry '{func_name}' does not have __call__ method.",
+                    func_name=func_name,
+                    module_name=module_name,
+                )
+        elif func is None or not inspect.isfunction(func):
+            raise PythonLoadError(
+                message_format="Failed to load python function '{func_name}' from file '{module_name}', got {func}.",
                 func_name=func_name,
                 module_name=module_name,
+                func=func,
             )
+        return func
+
+    def _initialize_function(self):
+        func = self._parse_entry_func()
         # If the function is not decorated with trace, add trace for it.
         if not hasattr(func, "__original_function"):
             func = _traced(func)

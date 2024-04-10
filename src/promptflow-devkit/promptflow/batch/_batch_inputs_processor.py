@@ -5,12 +5,12 @@
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
-from promptflow._constants import LINE_NUMBER_KEY
+from promptflow._constants import LINE_NUMBER_KEY, MessageFormatType
 from promptflow._core._errors import UnexpectedError
 from promptflow._utils.inputs_mapping_utils import apply_inputs_mapping
 from promptflow._utils.load_data import load_data
 from promptflow._utils.logger_utils import logger
-from promptflow._utils.multimedia_utils import resolve_multimedia_data_recursively
+from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow._utils.utils import resolve_dir_to_absolute
 from promptflow.batch._errors import EmptyInputsData, InputMappingError
 from promptflow.contracts.flow import FlowInputDefinition
@@ -22,13 +22,20 @@ class BatchInputsProcessor:
         working_dir: Path,
         flow_inputs: Mapping[str, FlowInputDefinition],
         max_lines_count: Optional[int] = None,
+        message_format: str = MessageFormatType.BASIC,
     ):
         self._working_dir = working_dir
         self._max_lines_count = max_lines_count
         self._flow_inputs = flow_inputs
-        self._default_inputs_mapping = {key: f"${{data.{key}}}" for key in flow_inputs}
+        self._default_inputs_mapping = {key: f"${{data.{key}}}" for key in flow_inputs}\
+            if flow_inputs is not None else None
+        self._multimedia_processor = MultimediaProcessor.create(message_format)
 
     def process_batch_inputs(self, input_dirs: Dict[str, str], inputs_mapping: Dict[str, str]):
+        input_dicts = self._resolve_input_data_and_check(input_dirs)
+        return self._validate_and_apply_inputs_mapping(input_dicts, inputs_mapping)
+
+    def _resolve_input_data_and_check(self, input_dirs: Dict[str, str]):
         input_dicts = self._resolve_input_data(input_dirs)
         no_input_data = all(len(data) == 0 for data in input_dicts.values())
         if no_input_data:
@@ -38,7 +45,30 @@ class BatchInputsProcessor:
                 "and consider resubmitting.\n{input_dirs}"
             )
             raise EmptyInputsData(message_format=message_format, input_dirs=input_dirs_str)
-        return self._validate_and_apply_inputs_mapping(input_dicts, inputs_mapping)
+        return input_dicts
+
+    def process_batch_inputs_without_inputs_mapping(self, input_dirs: Dict[str, str]):
+        input_dicts = self._resolve_input_data_and_check(input_dirs)
+        merged_list = self._merge_input_dicts_by_line(input_dicts)
+        if len(merged_list) == 0:
+            raise InputMappingError(
+                message_format=(
+                    "The input for batch run is incorrect. Could not find one complete line on the provided input. "
+                    "Please ensure that you supply data on the same line to resolve this issue."
+                )
+            )
+
+        return merged_list
+
+    def _process_batch_inputs_line(self, inputs: Dict[str, Any], inputs_mapping: Dict[str, str]):
+        if not inputs_mapping:
+            logger.warning(
+                msg=(
+                    "Starting run without column mapping may lead to unexpected results. "
+                    "Please consult the following documentation for more information: https://aka.ms/pf/column-mapping"
+                )
+            )
+        return apply_inputs_mapping(inputs, inputs_mapping)
 
     def _resolve_input_data(self, input_dirs: Dict[str, str]):
         """Resolve input data from input dirs"""
@@ -53,7 +83,7 @@ class BatchInputsProcessor:
         result = []
         if input_path.is_file():
             result.extend(
-                resolve_multimedia_data_recursively(
+                self._multimedia_processor.resolve_multimedia_data_recursively(
                     input_path.parent, load_data(local_path=input_path, max_rows_count=self._max_lines_count)
                 )
             )
@@ -61,7 +91,7 @@ class BatchInputsProcessor:
             for input_file in input_path.rglob("*"):
                 if input_file.is_file():
                     result.extend(
-                        resolve_multimedia_data_recursively(
+                        self._multimedia_processor.resolve_multimedia_data_recursively(
                             input_file.parent, load_data(local_path=input_file, max_rows_count=self._max_lines_count)
                         )
                     )

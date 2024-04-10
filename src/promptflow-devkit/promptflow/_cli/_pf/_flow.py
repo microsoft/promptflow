@@ -20,6 +20,7 @@ from promptflow._cli._params import (
     add_param_environment_variables,
     add_param_flow_display_name,
     add_param_function,
+    add_param_init,
     add_param_inputs,
     add_param_prompt_template,
     add_param_source,
@@ -32,6 +33,7 @@ from promptflow._cli._pf._init_entry_generators import (
     ChatFlowDAGGenerator,
     FlowDAGGenerator,
     OpenAIConnectionGenerator,
+    StreamlitFileReplicator,
     ToolMetaGenerator,
     ToolPyGenerator,
     copy_extra_files,
@@ -56,10 +58,11 @@ def add_flow_parser(subparsers):
     flow_parser = subparsers.add_parser(
         "flow",
         description="Manage flows for promptflow.",
-        help="pf flow",
+        help="Manage flows.",
     )
     flow_subparsers = flow_parser.add_subparsers()
     add_parser_init_flow(flow_subparsers)
+    add_parser_save_flow(flow_subparsers)
     add_parser_test_flow(flow_subparsers)
     add_parser_serve_flow(flow_subparsers)
     add_parser_build(flow_subparsers, "flow")
@@ -78,6 +81,8 @@ def dispatch_flow_commands(args: argparse.Namespace):
         build_flow(args)
     elif args.sub_action == "validate":
         validate_flow(args)
+    elif args.sub_action == "save":
+        save_flow(args)
 
 
 def add_parser_init_flow(subparsers):
@@ -127,6 +132,48 @@ pf flow init --flow intent_copilot --entry intent.py --function extract_intent -
     )
 
 
+def add_parser_save_flow(subparsers):
+    """Add flow save parser to the pf flow subparsers."""
+    epilog = """
+Examples:
+
+# Creating a flex flow folder in a specific path.
+# There should be a src/intent.py file with extract_intent function defined.
+# After running this command, all content in the src folder will be copied to my-awesome-flow folder;
+# and a flow.flex.yaml will be created in my-awesome-flow folder.
+pf flow save --path my-awesome-flow --entry intent:extract_intent --code src
+# Creating a flow.flex.yaml under current folder with intent:extract_intent as entry.
+pf flow save --entry intent:extract_intent
+"""  # noqa: E501
+    add_params = [
+        lambda parser: parser.add_argument(
+            "--entry",
+            type=str,
+            help="The entry to be saved as a flex flow, should be relative to code.",
+            required=True,
+        ),
+        lambda parser: parser.add_argument(
+            "--code",
+            type=str,
+            help="The folder or file containing the snapshot for the flex flow. Default to current folder.",
+        ),
+        lambda parser: parser.add_argument(
+            "--path",
+            type=str,
+            help="The path to save the flow. Will create flow.flex.yaml under code if not specified.",
+        ),
+    ] + base_params
+    activate_action(
+        name="save",
+        description="Creating a flex flow with a specific callable class or a specific function as entry.",
+        epilog=epilog,
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="Save a callable class or a function as a flex flow.",
+        action_param_name="sub_action",
+    )
+
+
 def add_parser_serve_flow(subparsers):
     """Add flow serve parser to the pf flow subparsers."""
     epilog = """
@@ -163,6 +210,7 @@ pf flow serve --source <path_to_flow> --skip-open-browser
             add_param_environment_variables,
             add_param_config,
             add_param_skip_browser,
+            add_param_init,
         ]
         + base_params,
         subparsers=subparsers,
@@ -394,7 +442,7 @@ def test_flow(args):
         _test_flow_experiment(args, pf_client, inputs, environment_variables)
         return
     if args.multi_modal or args.ui:
-        _test_flow_multi_modal(args)
+        _test_flow_multi_modal(args, pf_client)
         return
     if args.interactive:
         _test_flow_interactive(args, pf_client, inputs, environment_variables)
@@ -421,23 +469,43 @@ def _build_inputs_for_flow_test(args):
     return inputs
 
 
-def _test_flow_multi_modal(args):
+def _test_flow_multi_modal(args, pf_client):
     """Test flow with multi modality mode."""
     from promptflow._sdk._load_functions import load_flow
-    from promptflow._sdk._tracing import _invoke_pf_svc
 
-    # Todo: use base64 encode for now, will consider whether need use encryption or use db to store flow path info
-    def generate_url(flow_path, port):
-        encrypted_flow_path = encrypt_flow_path(flow_path)
-        query_params = urlencode({"flow": encrypted_flow_path})
-        return urlunparse(("http", f"127.0.0.1:{port}", "/v1.0/ui/chat", "", query_params, ""))
+    if Configuration.get_instance().is_internal_features_enabled():
+        from promptflow._sdk._tracing import _invoke_pf_svc
 
-    pfs_port = _invoke_pf_svc()
-    flow = load_flow(args.flow)
-    flow_dir = os.path.abspath(flow.code)
-    chat_page_url = generate_url(flow_dir, pfs_port)
-    print(f"You can begin chat flow on {chat_page_url}")
-    webbrowser.open(chat_page_url)
+        # Todo: use base64 encode for now, will consider whether need use encryption or use db to store flow path info
+        def generate_url(flow_path, port):
+            encrypted_flow_path = encrypt_flow_path(flow_path)
+            query_params = urlencode({"flow": encrypted_flow_path})
+            return urlunparse(("http", f"127.0.0.1:{port}", "/v1.0/ui/chat", "", query_params, ""))
+
+        pfs_port = _invoke_pf_svc()
+        flow = load_flow(args.flow)
+        flow_dir = os.path.abspath(flow.code)
+        chat_page_url = generate_url(flow_dir, pfs_port)
+        print(f"You can begin chat flow on {chat_page_url}")
+        if not args.skip_open_browser:
+            webbrowser.open(chat_page_url)
+    else:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            flow = load_flow(args.flow)
+
+            script_path = [
+                os.path.join(temp_dir, "main.py"),
+                os.path.join(temp_dir, "utils.py"),
+                os.path.join(temp_dir, "logo.png"),
+            ]
+            for script in script_path:
+                StreamlitFileReplicator(
+                    flow_name=flow.display_name if flow.display_name else flow.name,
+                    flow_dag_path=flow.flow_dag_path,
+                ).generate_to_file(script)
+            main_script_path = os.path.join(temp_dir, "main.py")
+            logger.info("Start streamlit with main script generated at: %s", main_script_path)
+            pf_client.flows._chat_with_ui(script=main_script_path, skip_open_browser=args.skip_open_browser)
 
 
 def _test_flow_interactive(args, pf_client, inputs, environment_variables):
@@ -510,7 +578,7 @@ def serve_flow(args):
 
 
 def serve_flow_csharp(args, source):
-    from promptflow.batch._csharp_executor_proxy import EXECUTOR_SERVICE_DLL
+    from promptflow._proxy._csharp_executor_proxy import EXECUTOR_SERVICE_DLL
 
     try:
         # Change working directory to model dir
@@ -572,6 +640,7 @@ def serve_flow_python(args, source):
         static_folder=static_folder,
         environment_variables=list_of_dict_to_dict(args.environment_variables),
         connection_provider=connection_provider,
+        inits=list_of_dict_to_dict(args.inits),
     )
     if not args.skip_open_browser:
         target = f"http://{args.host}:{args.port}"
@@ -625,3 +694,14 @@ def validate_flow(args):
         sys.exit(1)
     else:
         sys.exit(0)
+
+
+def save_flow(args):
+    pf_client = PFClient()
+
+    pf_client.flows.save(
+        entry=args.entry,
+        code=args.code or os.curdir,
+        path=args.path,
+    )
+    print(f"Saved flow to {Path(args.path or args.code or os.curdir).absolute().as_posix()}.")
