@@ -4,6 +4,8 @@
 
 import pytest
 
+from promptflow._sdk.entities import AzureOpenAIConnection, CustomConnection
+
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
 
 
@@ -19,11 +21,13 @@ class TestArmConnectionOperations:
     def test_get_connection(self, connection_ops):
         # Note: Secrets will be returned by arm api
         result = connection_ops.get(name="azure_open_ai_connection")
+        assert isinstance(result, AzureOpenAIConnection)
         assert result.name == "azure_open_ai_connection"
         assert result.api_type == "azure"
         assert result.module == "promptflow.connections"
 
         result = connection_ops.get(name="custom_connection")
+        assert isinstance(result, CustomConnection)
         assert result.name == "custom_connection"
         assert result.configs == {}
         assert result.module == "promptflow.connections"

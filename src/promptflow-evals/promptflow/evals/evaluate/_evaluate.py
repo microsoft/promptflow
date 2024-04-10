@@ -1,10 +1,13 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from typing import Optional, Dict, Callable
+from typing import Callable, Dict, Optional
+
 import pandas as pd
-from ._flow_run_wrapper import FlowRunWrapper
+
 from promptflow.client import PFClient
+
+from ._flow_run_wrapper import FlowRunWrapper
 
 
 def _calculate_mean(df) -> Dict[str, float]:
@@ -42,15 +45,15 @@ def _validation(target, data, evaluators, output_path, tracking_uri, evaluation_
 
 
 def evaluate(
-        *,
-        evaluation_name: Optional[str] = None,
-        target: Optional[Callable] = None,
-        data: Optional[str] = None,
-        evaluators: Optional[Dict[str, Callable]] = None,
-        evaluator_config: Optional[Dict[str, Dict[str, str]]] = {},
-        tracking_uri: Optional[str] = None,
-        output_path: Optional[str] = None,
-        **kwargs,
+    *,
+    evaluation_name: Optional[str] = None,
+    target: Optional[Callable] = None,
+    data: Optional[str] = None,
+    evaluators: Optional[Dict[str, Callable]] = None,
+    evaluator_config: Optional[Dict[str, Dict[str, str]]] = {},
+    tracking_uri: Optional[str] = None,
+    output_path: Optional[str] = None,
+    **kwargs,
 ):
     """Evaluates target or data with built-in evaluation metrics
 
@@ -77,14 +80,17 @@ def evaluate(
     pf_client = PFClient()
 
     for evaluator_name, evaluator in evaluators.items():
-        evaluator_run_list.append(FlowRunWrapper(pf_client.run(
-            flow=evaluator,
-            column_mapping=evaluator_config.get(evaluator_name, evaluator_config.get("default", None)),
-            data=data,
-            stream=True
-        ),
-            prefix=evaluator_name
-        ))
+        evaluator_run_list.append(
+            FlowRunWrapper(
+                pf_client.run(
+                    flow=evaluator,
+                    column_mapping=evaluator_config.get(evaluator_name, evaluator_config.get("default", None)),
+                    data=data,
+                    stream=True,
+                ),
+                prefix=evaluator_name,
+            )
+        )
 
     result_df = None
     for eval_run in evaluator_run_list:
@@ -94,7 +100,7 @@ def evaluate(
             result_df = pd.concat(
                 [eval_run.get_result_df(all_results=True, exclude_inputs=True), result_df],
                 axis=1,
-                verify_integrity=True
+                verify_integrity=True,
             )
 
     input_data_df = pd.read_json(data, lines=True)
@@ -102,8 +108,4 @@ def evaluate(
 
     row_results = pd.concat([input_data_df, result_df], axis=1, verify_integrity=True)
 
-    return {
-        "rows": row_results.to_dict("records"),
-        "metrics": _calculate_mean(result_df),
-        "traces": {}
-    }
+    return {"rows": row_results.to_dict("records"), "metrics": _calculate_mean(result_df), "traces": {}}

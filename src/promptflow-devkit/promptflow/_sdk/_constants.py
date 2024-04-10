@@ -489,6 +489,21 @@ class OSType:
     LINUX = "Linux"
 
 
+class SignatureValueType(str, Enum):
+    STRING = "string"
+    NUMBER = "number"
+    INT = "integer"
+    OBJECT = "object"
+    ARRAY = "array"
+    BOOL = "boolean"
+    # null will be controlled by required field
+    # NULL = "null"
+
+
+class RunMode:
+    EAGER = "Eager"
+
+
 # Note: Keep these for backward compatibility
 CustomStrongTypeConnectionConfigs = CustomStrongTypeConnectionConfigs
 ConnectionType = ConnectionType

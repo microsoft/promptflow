@@ -28,6 +28,7 @@ class BatchCoordinator:
         working_dir: Path,
         flow_file: Path,
         output_dir: Path,
+        flow_name: str = None,
         connections: Optional[Mapping[str, Any]] = None,
         worker_count: Optional[int] = None,
         line_timeout_sec: Optional[int] = None,
@@ -46,7 +47,7 @@ class BatchCoordinator:
         # So we pass DummyRunStorage to FlowExecutor because we don't need to
         # persist the run infos during execution in server mode.
         self._flow_executor = FlowExecutor.create(
-            flow_file, connections, working_dir, storage=DummyRunStorage(), raise_ex=False
+            flow_file, connections, working_dir, storage=DummyRunStorage(), raise_ex=False, name=flow_name
         )
 
         # Init line execution process pool and set serialize_multimedia_during_execution to True

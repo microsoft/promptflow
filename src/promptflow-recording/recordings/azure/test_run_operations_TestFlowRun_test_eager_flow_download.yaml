@@ -451,7 +451,7 @@ interactions:
       message: The specified blob does not exist.
 - request:
     body: '{"flowDefinitionDataStoreName": "workspaceblobstore", "flowDefinitionBlobPath":
-      "LocalUpload/000000000000000000000000000000000000/simple_with_req/flow.dag.yaml",
+      "LocalUpload/000000000000000000000000000000000000/simple_with_req/flow.flex.yaml",
       "runId": "name", "runDisplayName": "name", "runExperimentName": "", "sessionId":
       "000000000000000000000000000000000000000000000000", "sessionSetupMode": "SystemWait",
       "flowLineageId": "0000000000000000000000000000000000000000000000000000000000000000",
@@ -1246,7 +1246,7 @@ interactions:
         "flowRunType": "FlowRun", "flowType": "Default", "runtimeName": "automatic",
         "inputsMapping": {}, "outputDatastoreName": "workspaceblobstore", "childRunBasePath":
         "promptflow/PromptFlowArtifacts/name/flow_artifacts", "flowDagFileRelativePath":
-        "flow.dag.yaml", "flowSnapshotId": "0f86c4dc-c659-4341-9393-52c10b1b4fb4",
+        "flow.flex.yaml", "flowSnapshotId": "0f86c4dc-c659-4341-9393-52c10b1b4fb4",
         "studioPortalEndpoint": "https://ml.azure.com/runs/name?wsid=/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}'
     headers:
       connection:
@@ -1290,7 +1290,7 @@ interactions:
         "flowRunType": "FlowRun", "flowType": "Default", "runtimeName": "automatic",
         "inputsMapping": {}, "outputDatastoreName": "workspaceblobstore", "childRunBasePath":
         "promptflow/PromptFlowArtifacts/name/flow_artifacts", "flowDagFileRelativePath":
-        "flow.dag.yaml", "flowSnapshotId": "0f86c4dc-c659-4341-9393-52c10b1b4fb4",
+        "flow.flex.yaml", "flowSnapshotId": "0f86c4dc-c659-4341-9393-52c10b1b4fb4",
         "studioPortalEndpoint": "https://ml.azure.com/runs/name?wsid=/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}'
     headers:
       connection:
@@ -1334,7 +1334,7 @@ interactions:
         "flowRunType": "FlowRun", "flowType": "Default", "runtimeName": "automatic",
         "inputsMapping": {}, "outputDatastoreName": "workspaceblobstore", "childRunBasePath":
         "promptflow/PromptFlowArtifacts/name/flow_artifacts", "flowDagFileRelativePath":
-        "flow.dag.yaml", "flowSnapshotId": "0f86c4dc-c659-4341-9393-52c10b1b4fb4",
+        "flow.flex.yaml", "flowSnapshotId": "0f86c4dc-c659-4341-9393-52c10b1b4fb4",
         "studioPortalEndpoint": "https://ml.azure.com/runs/name?wsid=/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}'
     headers:
       connection:
@@ -1378,7 +1378,7 @@ interactions:
         "flowRunType": "FlowRun", "flowType": "Default", "runtimeName": "automatic",
         "inputsMapping": {}, "outputDatastoreName": "workspaceblobstore", "childRunBasePath":
         "promptflow/PromptFlowArtifacts/name/flow_artifacts", "flowDagFileRelativePath":
-        "flow.dag.yaml", "flowSnapshotId": "0f86c4dc-c659-4341-9393-52c10b1b4fb4",
+        "flow.flex.yaml", "flowSnapshotId": "0f86c4dc-c659-4341-9393-52c10b1b4fb4",
         "studioPortalEndpoint": "https://ml.azure.com/runs/name?wsid=/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}'
     headers:
       connection:
@@ -1422,7 +1422,7 @@ interactions:
         "flowRunType": "FlowRun", "flowType": "Default", "runtimeName": "automatic",
         "inputsMapping": {}, "outputDatastoreName": "workspaceblobstore", "childRunBasePath":
         "promptflow/PromptFlowArtifacts/name/flow_artifacts", "flowDagFileRelativePath":
-        "flow.dag.yaml", "flowSnapshotId": "0f86c4dc-c659-4341-9393-52c10b1b4fb4",
+        "flow.flex.yaml", "flowSnapshotId": "0f86c4dc-c659-4341-9393-52c10b1b4fb4",
         "studioPortalEndpoint": "https://ml.azure.com/runs/name?wsid=/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}'
     headers:
       connection:
@@ -1466,7 +1466,7 @@ interactions:
         "flowRunType": "FlowRun", "flowType": "Default", "runtimeName": "automatic",
         "inputsMapping": {}, "outputDatastoreName": "workspaceblobstore", "childRunBasePath":
         "promptflow/PromptFlowArtifacts/name/flow_artifacts", "flowDagFileRelativePath":
-        "flow.dag.yaml", "flowSnapshotId": "0f86c4dc-c659-4341-9393-52c10b1b4fb4",
+        "flow.flex.yaml", "flowSnapshotId": "0f86c4dc-c659-4341-9393-52c10b1b4fb4",
         "studioPortalEndpoint": "https://ml.azure.com/runs/name?wsid=/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}'
     headers:
       connection:
@@ -1510,7 +1510,7 @@ interactions:
         "flowRunType": "FlowRun", "flowType": "Default", "runtimeName": "automatic",
         "inputsMapping": {}, "outputDatastoreName": "workspaceblobstore", "childRunBasePath":
         "promptflow/PromptFlowArtifacts/name/flow_artifacts", "flowDagFileRelativePath":
-        "flow.dag.yaml", "flowSnapshotId": "0f86c4dc-c659-4341-9393-52c10b1b4fb4",
+        "flow.flex.yaml", "flowSnapshotId": "0f86c4dc-c659-4341-9393-52c10b1b4fb4",
         "studioPortalEndpoint": "https://ml.azure.com/runs/name?wsid=/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}'
     headers:
       connection:
@@ -1603,7 +1603,7 @@ interactions:
         "flowRunType": "FlowRun", "flowType": "Default", "runtimeName": "automatic",
         "inputsMapping": {}, "outputDatastoreName": "workspaceblobstore", "childRunBasePath":
         "promptflow/PromptFlowArtifacts/name/flow_artifacts", "flowDagFileRelativePath":
-        "flow.dag.yaml", "flowSnapshotId": "0f86c4dc-c659-4341-9393-52c10b1b4fb4",
+        "flow.flex.yaml", "flowSnapshotId": "0f86c4dc-c659-4341-9393-52c10b1b4fb4",
         "studioPortalEndpoint": "https://ml.azure.com/runs/name?wsid=/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}'
     headers:
       connection:
@@ -1709,10 +1709,10 @@ interactions:
       "hash": "6DFD06DC5FDE36064EF143DF19E6D251", "type": "File", "timestamp": "0001-01-01T00:00:00+00:00",
       "sasUrl": "https://promptfloweast4063704120.blob.core.windows.net/azureml-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/runs/name/entry.py?sv=2019-07-07&sr=b&sig=J0w5QvbmEUXMF4CWXzduecbqQZuujDaYk3eIjnrfCSQ%3D&st=2024-02-26T08%3A10%3A09Z&se=2024-02-26T16%3A20%3A09Z&sp=r&rscd=filename%3Dentry.py",
       "absoluteUrl": "https://promptfloweast4063704120.blob.core.windows.net/azureml-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/runs/name/entry.py",
-      "sizeBytes": 331, "sizeSet": true, "children": {}}, "flow.dag.yaml": {"name":
-      "flow.dag.yaml", "hash": "177136ADA115CB237F123C40190282C3", "type": "File",
-      "timestamp": "0001-01-01T00:00:00+00:00", "sasUrl": "https://promptfloweast4063704120.blob.core.windows.net/azureml-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/runs/name/flow.dag.yaml?sv=2019-07-07&sr=b&sig=YE9uxO9ae%2FwV854X1zjYHM7Hz%2FvTq0t4k%2BmB%2BiG3kQ0%3D&st=2024-02-26T08%3A10%3A09Z&se=2024-02-26T16%3A20%3A09Z&sp=r&rscd=filename%3Dflow.dag.yaml",
-      "absoluteUrl": "https://promptfloweast4063704120.blob.core.windows.net/azureml-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/runs/name/flow.dag.yaml",
+      "sizeBytes": 331, "sizeSet": true, "children": {}}, "flow.flex.yaml": {"name":
+      "flow.flex.yaml", "hash": "177136ADA115CB237F123C40190282C3", "type": "File",
+      "timestamp": "0001-01-01T00:00:00+00:00", "sasUrl": "https://promptfloweast4063704120.blob.core.windows.net/azureml-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/runs/name/flow.flex.yaml?sv=2019-07-07&sr=b&sig=YE9uxO9ae%2FwV854X1zjYHM7Hz%2FvTq0t4k%2BmB%2BiG3kQ0%3D&st=2024-02-26T08%3A10%3A09Z&se=2024-02-26T16%3A20%3A09Z&sp=r&rscd=filename%3Dflow.flex.yaml",
+      "absoluteUrl": "https://promptfloweast4063704120.blob.core.windows.net/azureml-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/runs/name/flow.flex.yaml",
       "sizeBytes": 81, "sizeSet": true, "children": {}}, "requirements.txt": {"name":
       "requirements.txt", "hash": "334496741E114FD0302607C4BB190C0B", "type": "File",
       "timestamp": "0001-01-01T00:00:00+00:00", "sasUrl": "https://promptfloweast4063704120.blob.core.windows.net/azureml-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/runs/name/requirements.txt?sv=2019-07-07&sr=b&sig=S9TQ8QZLTRaglavbGYtJZ2k5AcqSvTI%2F1ah7NQR02Lk%3D&st=2024-02-26T08%3A10%3A09Z&se=2024-02-26T16%3A20%3A09Z&sp=r&rscd=filename%3Drequirements.txt",
@@ -1806,7 +1806,7 @@ interactions:
       x-ms-version:
       - '2023-11-03'
     method: GET
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/runs/name/flow.dag.yaml
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/runs/name/flow.flex.yaml
   response:
     body:
       string: "entry: entry:my_flow\r\nenvironment:\r\n    python_requirements_txt:
@@ -1837,7 +1837,7 @@ interactions:
       x-ms-copy-progress:
       - 81/81
       x-ms-copy-source:
-      - https://promptfloweast4063704120.blob.core.windows.net/azureml-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/LocalUpload/04fb3968ecbfe07a7863a5e7b50c77b2/simple_with_req/flow.dag.yaml
+      - https://promptfloweast4063704120.blob.core.windows.net/azureml-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/LocalUpload/04fb3968ecbfe07a7863a5e7b50c77b2/simple_with_req/flow.flex.yaml
       x-ms-copy-status:
       - success
       x-ms-creation-time:
@@ -2254,9 +2254,9 @@ interactions:
       false, "runType": "azureml.promptflow.FlowRun", "runTypeV2": {"orchestrator":
       null, "traits": [], "attribution": "PromptFlow", "computeType": null}, "properties":
       {"azureml.promptflow.runtime_name": "automatic", "azureml.promptflow.runtime_version":
-      "20240222.v3", "azureml.promptflow.definition_file_name": "flow.dag.yaml", "azureml.promptflow.flow_lineage_id":
+      "20240222.v3", "azureml.promptflow.definition_file_name": "flow.flex.yaml", "azureml.promptflow.flow_lineage_id":
       "94ab5362cbd26c749a23e09d1b20c3a00e6759dc84a714e2af2410da682966e9", "azureml.promptflow.flow_definition_datastore_name":
-      "workspaceblobstore", "azureml.promptflow.flow_definition_blob_path": "LocalUpload/04fb3968ecbfe07a7863a5e7b50c77b2/simple_with_req/flow.dag.yaml",
+      "workspaceblobstore", "azureml.promptflow.flow_definition_blob_path": "LocalUpload/04fb3968ecbfe07a7863a5e7b50c77b2/simple_with_req/flow.flex.yaml",
       "azureml.promptflow.input_data": "azureml://datastores/workspaceblobstore/paths/LocalUpload/e62bc4d5a164939b21d42dd420469da7/simple_eager_flow_data.jsonl",
       "_azureml.evaluation_run": "promptflow.BatchRun", "azureml.promptflow.session_id":
       "80f1ea533b26b97788133586785a4c878c673526c4794aa1", "azureml.promptflow.snapshot_id":
@@ -2312,7 +2312,7 @@ interactions:
         Receiving v2 bulk run request 26ff04fc-f04b-47d2-acde-94225be90857: {\"flow_id\":
         \"name\", \"flow_run_id\": \"name\", \"flow_source\": {\"flow_source_type\":
         1, \"flow_source_info\": {\"snapshot_id\": \"0f86c4dc-c659-4341-9393-52c10b1b4fb4\"},
-        \"flow_dag_file\": \"flow.dag.yaml\"}, \"log_path\": \"https://promptfloweast4063704120.blob.core.windows.net/azureml/ExperimentRun/dcid.name/logs/azureml/executionlogs.txt?sv=2019-07-07&sr=b&sig=**data_scrubbed**&skoid=55b92eba-d7c7-4afd-ab76-7bb1cd345283&sktid=00000000-0000-0000-0000-000000000000&skt=2024-02-26T03%3A35%3A20Z&ske=2024-02-27T11%3A45%3A20Z&sks=b&skv=2019-07-07&st=2024-02-26T08%3A09%3A08Z&se=2024-02-26T16%3A19%3A08Z&sp=rcw\",
+        \"flow_dag_file\": \"flow.flex.yaml\"}, \"log_path\": \"https://promptfloweast4063704120.blob.core.windows.net/azureml/ExperimentRun/dcid.name/logs/azureml/executionlogs.txt?sv=2019-07-07&sr=b&sig=**data_scrubbed**&skoid=55b92eba-d7c7-4afd-ab76-7bb1cd345283&sktid=00000000-0000-0000-0000-000000000000&skt=2024-02-26T03%3A35%3A20Z&ske=2024-02-27T11%3A45%3A20Z&sks=b&skv=2019-07-07&st=2024-02-26T08%3A09%3A08Z&se=2024-02-26T16%3A19%3A08Z&sp=rcw\",
         \"app_insights_instrumentation_key\": \"InstrumentationKey=**data_scrubbed**;IngestionEndpoint=https://eastus-6.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/\",
         \"batch_timeout_sec\": 36000, \"data_inputs\": {\"data\": \"azureml://datastores/workspaceblobstore/paths/LocalUpload/e62bc4d5a164939b21d42dd420469da7/simple_eager_flow_data.jsonl\"},
         \"azure_storage_setting\": {\"azure_storage_mode\": 1, \"storage_account_name\":
