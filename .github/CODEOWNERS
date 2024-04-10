@@ -29,6 +29,7 @@
 /src/promptflow-core/promptflow/executor/ @microsoft/promptflow-execution
 /src/promptflow-core/promptflow/integrations/ @microsoft/promptflow-execution
 /src/promptflow-core/promptflow/storage/ @microsoft/promptflow-execution
+/src/promptflow-devkit/promptflow/_sdk/_mlflow.py @brynn-code
 /src/promptflow-devkit/promptflow/_internal/ @microsoft/promptflow-execution
 /src/promptflow-devkit/promptflow/batch/ @microsoft/promptflow-execution
 /src/promptflow/tests/executor/ @microsoft/promptflow-execution
