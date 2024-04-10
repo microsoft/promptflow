@@ -183,11 +183,10 @@ def start_service(args):
         # Start a pfs process using detach mode. It will start a new process and create a new app. So we use environment
         # variable to pass the debug mode, since it will inherit parent process environment variable.
         if platform.system() == "Windows":
-            _start_detach_service_in_win(str(port))
+            _start_detach_service_in_win(port)
         else:
-            print("test_linux")
-            _start_detach_service_in_unix(str(port))
-        is_healthy = check_pfs_service_status(str(port))
+            _start_detach_service_in_unix(port)
+        is_healthy = check_pfs_service_status(port)
         if is_healthy:
             message = f"Start Promptflow Service on port {port}, version: {get_pfs_version()}."
             print(message)
@@ -275,6 +274,9 @@ def _start_detach_service_in_win(port):
 
 def _start_detach_service_in_unix(port):
     # Set host to localhost, only allow request from localhost.
+    print(port)
+    print(type(port))
+    print(f"--listen=127.0.0.1:{port}")
     cmd = [
         "waitress-serve",
         f"--listen=127.0.0.1:{port}",
