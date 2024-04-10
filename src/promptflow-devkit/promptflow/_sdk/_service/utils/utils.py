@@ -38,15 +38,15 @@ from promptflow.exceptions import PromptflowException, UserErrorException
 logger = get_cli_sdk_logger()
 
 hint_stop_message = (
-    f"You can stop the Prompt flow Tracing Server with the following command:'\033[1mpf service stop\033[0m'.\n"
+    f"You can stop the prompt flow tracing server with the following command:'\033[1mpf service stop\033[0m'.\n"
     f"Alternatively, if no requests are made within {PF_SERVICE_HOUR_TIMEOUT} "
     f"hours, it will automatically stop."
 )
 hint_stop_before_upgrade = (
-    "Before upgrading the PromptFlow package, kindly ensure to run "
+    "Before upgrading the promptflow package, kindly ensure to run "
     "'\033[1mpf service stop\033[0m'. Alternatively, you may run "
     "'\033[1mpf upgrade\033[0m' to proceed with the upgrade process for "
-    "the PromptFlow package."
+    "the promptflow package."
 )
 
 
