@@ -58,6 +58,7 @@ def get_ws_tracing_base_url(ws_triad: AzureMLWorkspaceTriad) -> str:
 
 
 def _is_azure_ext_installed() -> bool:
+    return False
     try:
         importlib.metadata.version("promptflow-azure")
         return True
@@ -230,7 +231,7 @@ def start_trace_with_devkit(
         warning_msg = (
             "`trace.provider` is configured in prompt flow config, while Azure extension is not installed; "
             "in this case, traces will not be exported to cloud. If you expect to export traces to cloud, "
-            "please install the Azure extension with command `pip install promptflow-azure`, "
+            "please install the Azure extension with command `pip install promptflow[azure]`, "
             "and manually restart prompt flow service with command `pf service restart` to make it take effect."
         )
         logger.warning(warning_msg)
