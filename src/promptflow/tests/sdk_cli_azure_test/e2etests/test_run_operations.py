@@ -82,7 +82,7 @@ class TestFlowRun:
 
     def test_run_resume(self, pf: PFClient, randstr: Callable[[str], str]):
         # Note: Use fixed run name here to ensure resume call has same body then can be recorded.
-        name = "resume_from_run_using_automatic_runtime"
+        name = "resume_from_run_using_automatic_runtime04081530"
         try:
             run = pf.runs.get(run=name)
         except RunNotFoundError:
@@ -103,19 +103,26 @@ class TestFlowRun:
         assert run2.name == name2
         assert run2._resume_from == run.name
 
-    def test_run_resume_token(self, pf: PFClient, randstr: Callable[[str], str]):
-        name = "resume_from_run_token"
-        original_run = pf.run(
-            flow=f"{FLOWS_DIR}/web_classification_random_fail",
-            data=f"{FLOWS_DIR}/web_classification_random_fail/data.jsonl",
-            column_mapping={"url": "${data.url}"},
-            variant="${summarize_text_content.variant_0}",
-            name=name,
-        )
+    def test_run_resume_token(self, pf: PFClient, randstr: Callable[[str], str], capfd: pytest.CaptureFixture):
+        name = "resume_from_run_with_llm_and_token"
+        try:
+            original_run = pf.runs.get(run=name)
+        except RunNotFoundError:
+            original_run = pf.run(
+                flow=f"{FLOWS_DIR}/web_classification_random_fail",
+                data=f"{FLOWS_DIR}/web_classification_random_fail/data.jsonl",
+                column_mapping={"url": "${data.url}"},
+                variant="${summarize_text_content.variant_0}",
+                name=name,
+            )
         original_run = pf.runs.stream(run=name)
         assert isinstance(original_run, Run)
         assert original_run.name == name
         original_token = original_run.properties["azureml.promptflow.total_tokens"]
+        assert original_run.status == "Completed"
+        # Since the data have 15 lines, we can assume the original run has succeeded lines in over 99% cases
+        original_details = pf.get_details(original_run)
+        original_success_count = len(original_details[original_details["outputs.category"].notnull()])
 
         resume_name = randstr("name")
         resume_run = pf.run(resume_from=original_run, name=resume_name)
@@ -126,18 +133,30 @@ class TestFlowRun:
         resume_token = resume_run.properties["azureml.promptflow.total_tokens"]
         assert int(original_token) < int(resume_token)
 
-    def test_run_resume_with_image_aggregation(self, pf: PFClient, randstr: Callable[[str], str]):
-        name = "resume_from_run_with_image_aggregation"
+        # assert skip in the log
+        out, _ = capfd.readouterr()
+        assert f"Skipped the execution of {original_success_count} existing results." in out
+
+    def test_run_resume_with_image_aggregation(
+        self, pf: PFClient, randstr: Callable[[str], str], capfd: pytest.CaptureFixture
+    ):
+        name = "resume_from_run_with_image_and_aggregation04101726"
+        # try:
+        #     original_run = pf.runs.get(run=name)
+        # except RunNotFoundError:
         original_run = pf.run(
             flow=f"{FLOWS_DIR}/eval_flow_with_image_resume_random_fail",
-            data=f"{FLOWS_DIR}/eval_flow_with_image_resume_random_fail/data.jsonl",
-            column_mapping={"url": "${data.url}"},
-            variant="${summarize_text_content.variant_0}",
+            data=f"{FLOWS_DIR}/eval_flow_with_image_resume_random_fail/input_data",
+            column_mapping={"input_image": "${data.input_image}"},
             name=name,
         )
         original_run = pf.runs.stream(run=name)
         assert isinstance(original_run, Run)
         assert original_run.name == name
+        assert original_run.status == "Completed"
+        # Since the data have 15 lines, we can assume the original run has succeeded lines in over 99% cases
+        original_details = pf.get_details(original_run)
+        original_success_count = len(original_details[original_details["outputs.output_image"].notnull()])
 
         resume_name = randstr("name")
         resume_run = pf.run(resume_from=original_run, name=resume_name)
@@ -149,6 +168,10 @@ class TestFlowRun:
         original_metrics = pf.runs.get_metrics(run=name)
         resume_metrics = pf.runs.get_metrics(run=resume_name)
         assert original_metrics["image_count"] < resume_metrics["image_count"]
+
+        # assert skip in the log
+        out, _ = capfd.readouterr()
+        assert f"Skipped the execution of {original_success_count} existing results." in out
 
     def test_run_bulk_from_yaml(self, pf, runtime: str, randstr: Callable[[str], str]):
         run_id = randstr("run_id")
