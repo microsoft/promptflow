@@ -971,6 +971,15 @@ class TestFlowRun:
         assert run.status == "Completed"
         assert "error" not in run._to_dict()
 
+    def test_openai_vision_image_flow_bulk_run(self, pf, local_client) -> None:
+        image_flow_path = f"{FLOWS_DIR}/python_tool_with_openai_vision_image"
+        data_path = f"{image_flow_path}/inputs.jsonl"
+
+        result = pf.run(flow=image_flow_path, data=data_path, column_mapping={"image": "${data.image}"})
+        run = local_client.runs.get(name=result.name)
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict()
+
     def test_python_tool_with_composite_image(self, pf) -> None:
         image_flow_path = f"{FLOWS_DIR}/python_tool_with_composite_image"
         data_path = f"{image_flow_path}/inputs.jsonl"
@@ -1271,7 +1280,7 @@ class TestFlowRun:
         local_storage = LocalStorageOperations(run=run)
         assert local_storage._dag_path.exists()
         # the YAML file will not exist in user's folder
-        assert not Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/flow.dag.yaml").exists()
+        assert not Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/flow.flex.yaml").exists()
 
     def test_eager_flow_yaml_override(self, pf):
         run = pf.run(
@@ -1285,7 +1294,7 @@ class TestFlowRun:
         local_storage = LocalStorageOperations(run=run)
         assert local_storage._dag_path.exists()
         # original YAMl content not changed
-        original_dict = load_yaml(f"{EAGER_FLOWS_DIR}/multiple_entries/flow.dag.yaml")
+        original_dict = load_yaml(f"{EAGER_FLOWS_DIR}/multiple_entries/flow.flex.yaml")
         assert original_dict["entry"] == "entry1:my_flow1"
 
         # actual result will be entry2:my_flow2
@@ -1384,7 +1393,7 @@ class TestFlowRun:
         local_storage = LocalStorageOperations(run=run)
         assert local_storage._dag_path.exists()
         # original YAMl content not changed
-        original_dict = load_yaml(f"{EAGER_FLOWS_DIR}/multiple_entries/flow.dag.yaml")
+        original_dict = load_yaml(f"{EAGER_FLOWS_DIR}/multiple_entries/flow.flex.yaml")
         assert original_dict["entry"] == "entry1:my_flow1"
 
         # actual result will be entry2:my_flow2

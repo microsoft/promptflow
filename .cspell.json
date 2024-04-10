@@ -41,7 +41,8 @@
     "scripts/installer/windows/**",
     ".github/workflows/**",
     ".github/actions/**",
-    ".github/pipelines/**"
+    ".github/pipelines/**",
+    ".github/CODEOWNERS"
   ],
   "words": [
     "aoai",
@@ -209,7 +210,9 @@
     "tparam",
     "ncols",
     "wohdjewodhfjevwdjfywlemfhe",
-    "dontcare"
+    "dontcare",
+    "evals",
+    "dcid"
   ],
   "flagWords": [
     "Prompt Flow"

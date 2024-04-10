@@ -11,11 +11,11 @@ from promptflow._sdk.entities._connection import _Connection
 from promptflow._utils.credential_utils import get_default_azure_credential
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.core._connection_provider._utils import (
-    extract_workspace,
     interactive_credential_disabled,
     is_from_cli,
     is_github_codespaces,
 )
+from promptflow.core._utils import extract_workspace
 
 logger = get_cli_sdk_logger()
 

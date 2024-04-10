@@ -8,6 +8,7 @@ import sys
 import time
 import uuid
 from functools import wraps, cached_property
+from typing import Optional, Any, Union
 
 import pydash
 
@@ -717,6 +718,25 @@ class FlowServiceCaller(RequestTelemetryMixin):
             acquire_write=acquire_write,
             headers=headers,
             **kwargs,
+        )
+
+    @_request_wrapper()
+    def create_existing_bulk_run(
+        self,
+        subscription_id,  # type: str
+        resource_group_name,  # type: str
+        workspace_name,  # type: str
+        body,  # type: Optional["_models.CreateExistingBulkRunRequest"]
+        **kwargs,  # type: Any
+    ):
+        """Register local run."""
+        headers = self._get_headers()
+        return self.caller.bulk_runs.create_existing_bulk_run(
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+            headers=headers,
+            body=body,
         )
 
     @_request_wrapper()

@@ -10,6 +10,7 @@ on:
       - src/promptflow-tracing/**
       - scripts/building/**
       - .github/workflows/promptflow-sdk-cli-test.yml
+      - src/promptflow-recording/**
   workflow_dispatch:
 env:
   packageSetupType: promptflow_with_extra
