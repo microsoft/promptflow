@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import uuid
+from pathlib import Path
 
 import pytest
 from opentelemetry import trace
@@ -17,6 +18,7 @@ from promptflow.tracing._constants import (
     RESOURCE_ATTRIBUTES_SERVICE_NAME,
     ResourceAttributesFieldName,
 )
+from promptflow.tracing._start_trace import _get_collection_from_cwd
 
 
 @pytest.fixture
@@ -68,3 +70,8 @@ class TestStartTrace:
         # no environ, should call local setup once
         start_trace()
         assert spy.call_count == 1
+
+    def test_get_collection_from_cwd(self, tmpdir) -> None:
+        with tmpdir.as_cwd():
+            collection = _get_collection_from_cwd()
+            assert collection == Path(tmpdir).resolve().name

@@ -203,6 +203,7 @@ def start_trace_with_devkit(
     collection: typing.Optional[str],
     attrs: typing.Optional[typing.Dict[str, str]] = None,
     run: typing.Optional[str] = None,
+    **kwargs: typing.Any,
 ) -> None:
     # honor and set attributes if user has specified
     if isinstance(attrs, dict):
