@@ -14,6 +14,7 @@ from promptflow._sdk._utils import extract_workspace_triad_from_trace_provider
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure import PFClient
 from promptflow.azure._restclient.flow_service_caller import FlowRequestException
+from promptflow.azure._utils.general import is_hub
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 _logger = get_cli_sdk_logger()
@@ -67,19 +68,20 @@ def _init_workspace_cosmos_db(init_cosmos_func: typing.Callable) -> None:
 def validate_trace_provider(value: str) -> None:
     """Validate `trace.provider` in pf config.
 
-    1. the value is a valid ARM resource ID for Azure ML workspace
-    2. the workspace exists
+    1. the value is a valid ARM resource ID for workspace/project
+    2. the resource exists
+    3. the resource is an Azure ML workspace or AI project
     3. the workspace Cosmos DB is initialized
     """
-    # valid Azure ML workspace ARM resource ID; otherwise, a ValueError will be raised
+    # valid workspace/project ARM resource ID; otherwise, a ValueError will be raised
     _logger.debug("Validating trace provider value...")
     try:
         workspace_triad = extract_workspace_triad_from_trace_provider(value)
     except ValueError as e:
         raise _create_trace_provider_value_user_error(str(e))
 
-    # the workspace exists
-    _logger.debug("Validating Azure ML workspace...")
+    # the resource exists
+    _logger.debug("Validating resource exists...")
     ml_client = MLClient(
         credential=_get_credential(),
         subscription_id=workspace_triad.subscription_id,
@@ -87,10 +89,20 @@ def validate_trace_provider(value: str) -> None:
         workspace_name=workspace_triad.workspace_name,
     )
     try:
-        ml_client.workspaces.get(name=workspace_triad.workspace_name)
+        workspace = ml_client.workspaces.get(name=workspace_triad.workspace_name)
     except ResourceNotFoundError as e:
         raise _create_trace_provider_value_user_error(str(e))
-    _logger.debug("Azure ML workspace is valid.")
+    _logger.debug("Resource exists.")
+
+    # Azure ML workspace or AI project
+    _logger.debug("Validating resource type...")
+    if is_hub(workspace):
+        error_msg = (
+            f"{workspace.name!r} is an Azure AI hub, which is not a valid type. "
+            "Currently we support Azure ML workspace and AI project as trace provider."
+        )
+        raise _create_trace_provider_value_user_error(error_msg)
+    _logger.debug("Resource type is valid.")
 
     # the workspace Cosmos DB is initialized
     # try to retrieve the token from PFS; if failed, call PFS init API and start polling
