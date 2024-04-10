@@ -45,7 +45,7 @@ from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._service.utils.utils import encrypt_flow_path
 from promptflow._sdk.operations._flow_operations import FlowOperations
-from promptflow._utils.flow_utils import resolve_flow_path
+from promptflow._utils.flow_utils import is_flex_flow, resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
@@ -446,6 +446,13 @@ def _test_flow_multi_modal(args, pf_client):
         if not args.skip_open_browser:
             webbrowser.open(chat_page_url)
     else:
+        if is_flex_flow(file_path=args.flow):
+            error = ValueError("Only support dag yaml in streamlit ui.")
+            raise UserErrorException(
+                target=ErrorTarget.CONTROL_PLANE_SDK,
+                message=str(error),
+                error=error,
+            )
         with tempfile.TemporaryDirectory() as temp_dir:
             flow = load_flow(args.flow)
 
