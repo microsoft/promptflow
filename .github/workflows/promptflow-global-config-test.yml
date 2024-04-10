@@ -55,6 +55,7 @@ jobs:
         python-version: ${{ steps.display_env.outputs.pyVersion }}
     - uses: snok/install-poetry@v1
     - name: install test dependency group
+      working-directory: ${{ env.WORKING_DIRECTORY }}
       run: |
         set -xe
         poetry install --only test
