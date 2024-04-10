@@ -146,9 +146,9 @@ class TestSpan:
                 end_time=datetime.datetime.fromisoformat("2022-01-01T00:01:00"),
                 status={},
                 attributes={
-                    "attr1": "a" * 1024 * 500,  # 0.5MB
-                    "attr2": "b" * 1024 * 500,  # 0.5MB
-                    "attr3": "c" * 1024 * 500,  # 0.5MB
+                    "attr1": "a" * 1024 * 5,
+                    "attr2": "b" * 1024 * 5,
+                    "attr3": "c" * 1024 * 5,
                 },
                 events=[],
                 resource={"collection": "test_session_id"},
@@ -167,7 +167,7 @@ class TestSpan:
 
         # Check that the attribute values have not been truncated
         for value in item["attributes"].values():
-            assert len(value) == 1024 * 500
+            assert len(value) == 1024 * 5
 
     def test_event_path(self):
         span = Span(

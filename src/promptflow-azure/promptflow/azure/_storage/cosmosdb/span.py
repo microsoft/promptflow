@@ -79,20 +79,11 @@ class Span:
         """
         item = self.to_dict()  # use to_dict method to get a dictionary representation of the object
 
-        # Serialize the dictionary to a JSON string using separators (",", ":").
-        # This is done to align with the serialization method used by the CosmosDB Python SDK.
-        json_dumped = json.dumps(item, separators=(",", ":"))
-
-        item_size = len(json_dumped.encode("utf-8"))
-        max_size_in_bytes = 2 * 1024 * 1024  # 2MB in bytes
-
-        if item_size > max_size_in_bytes:
-            attributes = item.get("attributes")
-            if attributes:
-                item["attributes"] = {
-                    k: (v if not isinstance(v, str) else v[:attr_value_truncation_length])
-                    for k, v in attributes.items()
-                }
+        attributes = item.get("attributes")
+        if attributes:
+            item["attributes"] = {
+                k: (v[:attr_value_truncation_length] if isinstance(v, str) else v) for k, v in attributes.items()
+            }
         return item
 
     def _persist_events(self, blob_container_client: ContainerClient, blob_base_uri: str):
