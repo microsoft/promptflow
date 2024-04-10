@@ -136,7 +136,8 @@ class TestPrompty:
     def test_prompty_batch_run(self, pf: PFClient):
         run = pf.run(flow=f"{PROMPTY_DIR}/prompty_example.prompty", data=f"{DATA_DIR}/prompty_inputs.jsonl")
         assert run.status == "Completed"
-        assert "error" not in run._to_dict()
+        run_dict = run._to_dict()
+        assert not run_dict.get("error", None), f"error in run_dict {run_dict['error']}"
 
         output_data = Path(run.properties["output_path"]) / "flow_outputs" / "output.jsonl"
         with open(output_data, "r") as f:
