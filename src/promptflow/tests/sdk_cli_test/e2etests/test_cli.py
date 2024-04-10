@@ -2324,11 +2324,6 @@ class TestCli:
                         "type": "string",
                     }
                 },
-                "outputs": {
-                    "output": {
-                        "type": "string",
-                    }
-                },
             }
             os.unlink(Path(temp_dir) / FLOW_FLEX_YAML)
             run_pf_command(

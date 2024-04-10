@@ -543,7 +543,7 @@ def generate_flow_meta_dict_by_object(f, cls):
         raise BadFunctionInterface(
             message_format=(
                 "Parse interface for '{entry}' failed: "
-                "The return annotation of the entry function must be dataclass, TypedDict, string or no return, "
+                "The return annotation of the entry function must be dataclass, TypedDict or string, "
                 "but got {t}."
             ),
             entry=cls.__name__ if cls else f.__name__,
