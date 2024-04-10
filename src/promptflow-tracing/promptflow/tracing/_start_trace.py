@@ -2,6 +2,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import importlib
+import importlib.metadata
 import os
 import typing
 
@@ -78,32 +80,22 @@ def _skip_tracing_local_setup() -> bool:
     return str(os.getenv(PF_TRACING_SKIP_LOCAL_SETUP_ENVIRON, "false")).lower() == "true"
 
 
-def _is_tracer_provider_set() -> bool:
-    return isinstance(trace.get_tracer_provider(), TracerProvider)
-
-
-def _force_set_tracer_provider(tracer_provider: TracerProvider) -> None:
-    from opentelemetry.trace import _TRACER_PROVIDER_SET_ONCE
-
-    with _TRACER_PROVIDER_SET_ONCE._lock:
-        _TRACER_PROVIDER_SET_ONCE._done = False
-
-    trace.set_tracer_provider(tracer_provider)
-
-
 def _set_tracer_provider(res_attrs: typing.Dict[str, str]) -> None:
     res = Resource(attributes=res_attrs)
     tracer_provider = TracerProvider(resource=res)
-    if _is_tracer_provider_set():
-        _force_set_tracer_provider(tracer_provider)
+
+    cur_tracer_provider = trace.get_tracer_provider()
+    if isinstance(cur_tracer_provider, TracerProvider):
+        cur_res = cur_tracer_provider.resource
+        new_res = cur_res.merge(res)
+        cur_tracer_provider._resource = new_res
     else:
         trace.set_tracer_provider(tracer_provider)
 
 
 def _is_devkit_installed() -> bool:
     try:
-        from promptflow._sdk._tracing import setup_exporter_to_pfs, start_trace_with_devkit  # noqa: F401
-
+        importlib.metadata.version("promptflow-devkit")
         return True
-    except ImportError:
+    except importlib.metadata.PackageNotFoundError:
         return False
