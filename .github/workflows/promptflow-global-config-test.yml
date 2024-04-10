@@ -76,6 +76,11 @@ jobs:
       uses: azure/login@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
+    - name: Install Azure Login items
+      working-directory: ${{ env.WORKING_DIRECTORY }}
+      run: |
+        pip install azure-identity
+        pip install azure-keyvault
     - name: Generate Configs
       uses: "./.github/actions/step_generate_configs"
       with:
