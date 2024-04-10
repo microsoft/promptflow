@@ -4,7 +4,7 @@
 import os
 import re
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import Dict, Optional, Tuple
 
 from jinja2 import Template
 
@@ -158,14 +158,17 @@ def extract_workspace(provider_config) -> Tuple[str, str, str]:
     return subscription_id, resource_group, workspace_name
 
 
-def get_workspace_from_resource_id(resource_id: str, credential):
+def get_workspace_from_resource_id(resource_id: str, credential, pkg_name: Optional[str] = None):
     # check azure extension first
     try:
         from azure.ai.ml import MLClient
     except ImportError as e:
-        error_msg = (
-            "Please install Azure extension (e.g. `pip install promptflow-azure`) to use Azure related features."
-        )
+        if pkg_name is not None:
+            error_msg = f"Please install '{pkg_name}' to use Azure related features."
+        else:
+            error_msg = (
+                "Please install Azure extension (e.g. `pip install promptflow-azure`) to use Azure related features."
+            )
         raise MissingRequiredPackage(message=error_msg) from e
     # extract workspace triad and get from Azure
     subscription_id, resource_group_name, workspace_name = extract_workspace(resource_id)
