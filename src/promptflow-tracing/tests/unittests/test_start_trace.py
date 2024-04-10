@@ -18,7 +18,7 @@ from promptflow.tracing._constants import (
     RESOURCE_ATTRIBUTES_SERVICE_NAME,
     ResourceAttributesFieldName,
 )
-from promptflow.tracing._start_trace import _get_collection_from_cwd
+from promptflow.tracing._start_trace import _get_collection_from_cwd, _kwargs_in_func
 
 
 @pytest.fixture
@@ -75,3 +75,29 @@ class TestStartTrace:
         with tmpdir.as_cwd():
             collection = _get_collection_from_cwd()
             assert collection == Path(tmpdir).resolve().name
+
+    def test_kwargs_in_func(self) -> None:
+        def func_with_kwargs1(**kwargs):
+            ...
+
+        def func_with_kwargs2(param1, param2, **kwargs):
+            ...
+
+        def func_without_kwargs1():
+            ...
+
+        def func_without_kwargs2(param1, param2):
+            ...
+
+        def func_without_kwargs3(param1, param2, *args):
+            ...
+
+        def func_without_kwargs4(param1, param2, *, keyword_param1, keyword_param2):
+            ...
+
+        assert _kwargs_in_func(func_with_kwargs1) is True
+        assert _kwargs_in_func(func_with_kwargs2) is True
+        assert _kwargs_in_func(func_without_kwargs1) is False
+        assert _kwargs_in_func(func_without_kwargs2) is False
+        assert _kwargs_in_func(func_without_kwargs3) is False
+        assert _kwargs_in_func(func_without_kwargs4) is False

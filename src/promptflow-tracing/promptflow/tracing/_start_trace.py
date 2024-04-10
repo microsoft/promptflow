@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import importlib.metadata
+import inspect
 import logging
 import os
 import typing
@@ -64,10 +65,29 @@ def start_trace(
     if _is_devkit_installed():
         from promptflow._sdk._tracing import start_trace_with_devkit
 
-        logging.debug("promptflow-devkit is installed, will continue local setup...")
-        logging.debug("collection: %s", collection)
-        logging.debug("kwargs: %s", kwargs)
-        start_trace_with_devkit(collection=collection, **kwargs)
+        logging.debug("promptflow-devkit is installed.")
+
+        # in promptflow-devkit<=1.8.0, `start_trace_with_devkit` cannot accept `**kwargs`
+        # so we need to handle this with function signature check, and warn user on this
+        if _kwargs_in_func(start_trace_with_devkit):
+            logging.debug("compatible promptflow-devkit version, will pass `collection` and `kwargs`...")
+            logging.debug("collection: %s", collection)
+            logging.debug("kwargs: %s", kwargs)
+            start_trace_with_devkit(collection=collection, **kwargs)
+        else:
+            warning_msg = (
+                "incompatible `promptflow-devkit` version installed, which may lead to unexpected behavior; "
+                "it is recommended to use 'promptflow-devkit>=1.9.0' for better trace experience."
+            )
+            logging.warning(warning_msg)
+            print(warning_msg)
+            logging.debug("will pass `collection`, `attributes`, and `run`...")
+            _attributes = kwargs.get("attributes", None)
+            _run = kwargs.get("run", None)
+            logging.debug("collection: %s", collection)
+            logging.debug("attributes: %s", _attributes)
+            logging.debug("run: %s", _run)
+            start_trace_with_devkit(collection=collection, attributes=_attributes, run=_run)
 
 
 def setup_exporter_from_environ() -> None:
@@ -130,3 +150,9 @@ def _is_devkit_installed() -> bool:
         return True
     except importlib.metadata.PackageNotFoundError:
         return False
+
+
+def _kwargs_in_func(func: typing.Callable) -> bool:
+    signature = inspect.signature(func)
+    params = signature.parameters.values()
+    return any(param.kind == param.VAR_KEYWORD for param in params)
