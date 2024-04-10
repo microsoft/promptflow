@@ -9,7 +9,6 @@ import platform
 import subprocess
 import sys
 import typing
-import urllib.parse
 
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
@@ -18,8 +17,10 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
+from promptflow._cli._utils import get_credentials_for_cli
 from promptflow._constants import (
     OTEL_RESOURCE_SERVICE_NAME,
+    AzureWorkspaceKind,
     SpanAttributeFieldName,
     SpanResourceAttributesFieldName,
     TraceEnvironmentVariableName,
@@ -48,22 +49,24 @@ _logger = get_cli_sdk_logger()
 TRACER_PROVIDER_PFS_EXPORTER_SET_ATTR = "_pfs_exporter_set"
 
 
-def get_ws_tracing_base_url(ws_triad: AzureMLWorkspaceTriad) -> str:
-    return (
-        "https://int.ml.azure.com/prompts/trace/list"
-        f"?wsid=/subscriptions/{ws_triad.subscription_id}"
-        f"/resourceGroups/{ws_triad.resource_group_name}"
-        "/providers/Microsoft.MachineLearningServices"
-        f"/workspaces/{ws_triad.workspace_name}"
-    )
-
-
 def _is_azure_ext_installed() -> bool:
     try:
         importlib.metadata.version("promptflow-azure")
         return True
     except importlib.metadata.PackageNotFoundError:
         return False
+
+
+def _get_collection_id(collection: str) -> str:
+    """{collection}_{object_id}"""
+    import jwt
+
+    from promptflow.azure._utils.general import get_arm_token
+
+    token = get_arm_token(credential=get_credentials_for_cli())
+    decoded_token = jwt.decode(token, options={"verify_signature": False})
+    object_id = decoded_token["oid"]
+    return f"{collection}_{object_id}"
 
 
 def _inject_attrs_to_op_ctx(attrs: typing.Dict[str, str]) -> None:
@@ -136,38 +139,64 @@ def _print_tracing_url_from_local(
 
 
 def _print_tracing_url_from_azure_portal(
-    ws_triad: typing.Optional[AzureMLWorkspaceTriad],
-    collection: typing.Optional[str],
-    exp: typing.Optional[str] = None,
+    ws_triad: AzureMLWorkspaceTriad,
+    collection: str,
+    exp: typing.Optional[str] = None,  # pylint: disable=unused-argument
     run: typing.Optional[str] = None,
 ) -> None:
-    if ws_triad is None:
+    # as this there is an if condition for azure extension, we can assume the extension is installed
+    from azure.ai.ml import MLClient
+
+    # we have different url for Azure ML workspace and AI project
+    # so we need to distinguish them
+    ml_client = MLClient(
+        credential=get_credentials_for_cli(),
+        subscription_id=ws_triad.subscription_id,
+        resource_group_name=ws_triad.resource_group_name,
+        workspace_name=ws_triad.workspace_name,
+    )
+    workspace = ml_client.workspaces.get(name=ws_triad.workspace_name)
+
+    url = (
+        "https://int.ml.azure.com/{query}?"
+        f"wsid=/subscriptions/{ws_triad.subscription_id}"
+        f"/resourceGroups/{ws_triad.resource_group_name}"
+        "/providers/Microsoft.MachineLearningServices"
+        f"/workspaces/{ws_triad.workspace_name}"
+        "&flight=PFTrace,PFNewRunDetail"
+    )
+
+    if run is None:
+        _logger.debug("run is not specified, need to concat `collection_id` for query")
+        collection_id = _get_collection_id(collection=collection)
+    if AzureWorkspaceKind.is_workspace(workspace):
+        _logger.debug(f"{ws_triad.workspace_name!r} is an Azure ML workspace.")
+        if run is None:
+            query = f"trace/collection/{collection_id}"
+        else:
+            query = f"prompts/trace/run/{run}"
+    elif AzureWorkspaceKind.is_project(workspace):
+        _logger.debug(f"{ws_triad.workspace_name!r} is an Azure AI project.")
+        if run is None:
+            query = f"projecttrace/collection/{collection_id}"
+        else:
+            query = f"projectflows/trace/run/{run}"
+    else:
+        _logger.error(f"the workspace type of {ws_triad.workspace_name!r} is not supported.")
         return
-    url = get_ws_tracing_base_url(ws_triad)
-    query = None
-    if run is not None:
-        query = '{"batchRunId":"' + run + '"}'
-    elif exp is not None:
-        # not consider experiment for now
-        pass
-    elif collection is not None:
-        # will update this once portal finalize the url
-        query = '{"sessionId":"' + collection + '"}'
-    # urllib.parse.quote to encode the query parameter
-    if query is not None:
-        url += f"&searchText={urllib.parse.quote(query)}"
+
+    url = url.format(query=query)
     print(f"You can view the traces in cloud from Azure portal: {url}")
 
 
 def _inject_res_attrs_to_environ(
     pfs_port: str,
-    collection: typing.Optional[str],
+    collection: str,
     exp: typing.Optional[str] = None,
     ws_triad: typing.Optional[AzureMLWorkspaceTriad] = None,
 ) -> None:
-    if collection is not None:
-        _logger.debug("set collection to environ: %s", collection)
-        os.environ[TraceEnvironmentVariableName.COLLECTION] = collection
+    _logger.debug("set collection to environ: %s", collection)
+    os.environ[TraceEnvironmentVariableName.COLLECTION] = collection
     if exp is not None:
         _logger.debug("set experiment to environ: %s", exp)
         os.environ[TraceEnvironmentVariableName.EXPERIMENT] = exp
@@ -209,7 +238,7 @@ def _create_res(
     return Resource(attributes=res_attrs)
 
 
-def start_trace_with_devkit(collection: typing.Optional[str], **kwargs: typing.Any) -> None:
+def start_trace_with_devkit(collection: str, **kwargs: typing.Any) -> None:
     _logger.debug("collection: %s", collection)
     _logger.debug("kwargs: %s", kwargs)
     attrs = kwargs.get("attributes", None)
@@ -240,7 +269,8 @@ def start_trace_with_devkit(collection: typing.Optional[str], **kwargs: typing.A
 
     # local to cloud feature
     ws_triad = _get_ws_triad_from_pf_config()
-    if ws_triad is not None and not _is_azure_ext_installed():
+    is_azure_ext_installed = _is_azure_ext_installed()
+    if ws_triad is not None and not is_azure_ext_installed:
         warning_msg = (
             "Azure extension is not installed, though export to cloud is configured, "
             "traces cannot be exported to cloud. To fix this, please run `pip install promptflow-azure` "
@@ -257,7 +287,8 @@ def start_trace_with_devkit(collection: typing.Optional[str], **kwargs: typing.A
     setup_exporter_to_pfs()
     # print tracing url(s)
     _print_tracing_url_from_local(pfs_port=pfs_port, collection=collection, exp=exp, run=run)
-    _print_tracing_url_from_azure_portal(ws_triad=ws_triad, collection=collection, exp=exp, run=run)
+    if ws_triad is not None and is_azure_ext_installed:
+        _print_tracing_url_from_azure_portal(ws_triad=ws_triad, collection=collection, exp=exp, run=run)
 
 
 def setup_exporter_to_pfs() -> None:
