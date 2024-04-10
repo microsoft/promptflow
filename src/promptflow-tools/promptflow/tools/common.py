@@ -12,7 +12,6 @@ from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, L
     ExceedMaxRetryTimes, ChatAPIInvalidFunctions, FunctionCallNotSupportedInStreamMode, \
     ChatAPIFunctionRoleInvalidFormat, InvalidConnectionType, ListDeploymentsError, ParseConnectionError
 
-from promptflow._cli._utils import get_workspace_triad_from_local
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 from promptflow.exceptions import SystemErrorException, UserErrorException
 
@@ -248,11 +247,9 @@ def get_workspace_triad():
             and 'AZUREML_ARM_WORKSPACE_NAME' in os.environ:
         return os.environ["AZUREML_ARM_SUBSCRIPTION"], os.environ["AZUREML_ARM_RESOURCEGROUP"], \
                os.environ["AZUREML_ARM_WORKSPACE_NAME"]
-    else:
-        # If flow is submitted from local, it will get workspace triad from your azure cloud config file
-        # If this config file isn't set up, it will return None.
-        workspace_triad = get_workspace_triad_from_local()
-        return workspace_triad.subscription_id, workspace_triad.resource_group_name, workspace_triad.workspace_name
+
+    # Return a tuple of Nones if flow is not submitted from cloud
+    return "", "", ""
 
 
 def list_deployment_connections(
