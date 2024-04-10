@@ -19,6 +19,7 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import RunNotFoundError, UploadInternalError, UploadUserError, UserAuthenticationError
 from promptflow._sdk.entities import Run
+from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure._storage.blob.client import _get_datastore_credential
 from promptflow.exceptions import UserErrorException
@@ -172,12 +173,15 @@ class AsyncRunUploader:
         """Upload run snapshot to cloud."""
         logger.debug(f"Uploading snapshot for run {self.run.name!r}.")
         local_folder = self.run_output_path / LocalStorageFilenames.SNAPSHOT_FOLDER
+        # for some types of flex flow, even there is no flow.flex.yaml in the original flow folder,
+        # it will be generated in the snapshot folder in the .runs folder, so we can upload it to cloud as well.
+        _, flow_file = resolve_flow_path(local_folder)
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_local_folder = Path(temp_dir) / self.run.name
             shutil.copytree(local_folder, temp_local_folder)
             remote_folder = f"{Local2Cloud.BLOB_ROOT_RUNS}"
             await self._upload_local_folder_to_blob(temp_local_folder, remote_folder)
-        return f"{remote_folder}/{self.run.name}"
+        return f"{remote_folder}/{self.run.name}/{flow_file}"
 
     async def _upload_metrics(self) -> None:
         """Upload run metrics to cloud."""

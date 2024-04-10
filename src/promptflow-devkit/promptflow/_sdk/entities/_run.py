@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from dateutil import parser as date_parser
 
-from promptflow._constants import FLOW_DAG_YAML, OutputsFolderName
+from promptflow._constants import FlowType, OutputsFolderName
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
@@ -642,8 +642,7 @@ class Run(YAMLTranslatableMixin):
             flow_artifact_path = local_to_cloud_info[OutputsFolderName.FLOW_ARTIFACTS]
             flow_artifact_root_path = Path(flow_artifact_path).parent.as_posix()
             log_file_relative_path = local_to_cloud_info[LocalStorageFilenames.LOG]
-            snapshot_folder = local_to_cloud_info[LocalStorageFilenames.SNAPSHOT_FOLDER]
-            snapshot_file_path = f"{snapshot_folder}/{FLOW_DAG_YAML}"
+            snapshot_file_path = local_to_cloud_info[LocalStorageFilenames.SNAPSHOT_FOLDER]
 
             # get the start and end time. Plus "Z" to specify the timezone is UTC, otherwise there will be warning
             # when sending the request to the server.
@@ -800,7 +799,6 @@ class Run(YAMLTranslatableMixin):
     def _flow_type(self) -> str:
         """Get flow type of run."""
 
-        from promptflow._constants import FlowType
         from promptflow._sdk._load_functions import load_flow
         from promptflow._sdk.entities._flows import FlexFlow
 
