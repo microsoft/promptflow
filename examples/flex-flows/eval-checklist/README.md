@@ -27,6 +27,5 @@ python check_list.py
 
 - Test flow
 ```bash
-# TODO support this
-# pf flow test --flow . --inputs sample.json
+pf flow test --flow . --inputs sample.json
 ```
