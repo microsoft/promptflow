@@ -8,8 +8,8 @@ from typing import Dict, Optional, Union
 import yaml  # type: ignore[import]
 from packaging import version
 
-from promptflow.index.resources import EmbeddingsModelConfig, AzureAISearchConfig, AzureAISearchSource, LocalSource
-from promptflow.index._utils._open_ai_utils import build_open_ai_protocol
+from promptflow.rag.resources import EmbeddingsModelConfig, AzureAISearchConfig, AzureAISearchSource, LocalSource
+from promptflow.rag._utils._open_ai_utils import build_open_ai_protocol
 
 
 def build_index(

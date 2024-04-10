@@ -1,6 +1,6 @@
-# Prompflow-index
+# Prompflow-rag
 
-The promptflow-index package is part of the Promptflow sdk and contains functionality for building indexes locally
+The promptflow-rag package is part of the Promptflow sdk and contains functionality for building indexes locally
 
 ## Getting started
 
@@ -16,7 +16,7 @@ The promptflow-index package is part of the Promptflow sdk and contains function
 Install the Azure AI generative package for Python with pip:
 
 ```
-pip install prompflow-index
+pip install prompflow-rag
 ```
 
 ## Usage
@@ -26,8 +26,8 @@ pip install prompflow-index
 Users can create an index on their local machine from local source files using the `build_index` method. Given below is a sample.
 
 ```python
-from promptflow.index.resources import LocalSource, AzureAISearchConfig, EmbeddingsModelConfig
-from promptflow.index import build_index
+from promptflow.rag.resources import LocalSource, AzureAISearchConfig, EmbeddingsModelConfig
+from promptflow.rag import build_index
 
 # build the index
 ai_search_index_path=build_index(

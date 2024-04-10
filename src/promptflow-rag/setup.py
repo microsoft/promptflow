@@ -9,7 +9,7 @@ from typing import Any, List, Match, cast
 
 from setuptools import find_namespace_packages, setup
 
-PACKAGE_NAME = "promptflow-index"
+PACKAGE_NAME = "promptflow-rag"
 PACKAGE_FOLDER_PATH = "promptflow"
 
 
