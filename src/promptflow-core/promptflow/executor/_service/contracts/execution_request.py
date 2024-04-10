@@ -20,6 +20,7 @@ class BaseExecutionRequest(BaseRequest):
     log_path: Optional[str] = None
     connections: Optional[Mapping[str, Any]] = None
     environment_variables: Optional[Mapping[str, Any]] = None
+    flow_name: str = None
 
     def get_run_mode(self):
         raise NotImplementedError(f"Request type {self.__class__.__name__} is not implemented.")
