@@ -22,6 +22,13 @@ from promptflow.tracing._start_trace import _get_collection_from_cwd, _kwargs_in
 
 
 @pytest.fixture
+def mock_devkit_not_installed(mocker: MockerFixture):
+    """Mock environment without promptflow-devkit installed."""
+    with mocker.patch("promptflow.tracing._start_trace._is_devkit_installed", return_value=False):
+        yield
+
+
+@pytest.fixture
 def reset_tracer_provider():
     from opentelemetry.trace import _TRACER_PROVIDER_SET_ONCE
 
@@ -32,7 +39,7 @@ def reset_tracer_provider():
 
 
 @pytest.mark.unittest
-@pytest.mark.usefixtures("reset_tracer_provider")
+@pytest.mark.usefixtures("mock_devkit_not_installed", "reset_tracer_provider")
 class TestStartTrace:
     def test_tracer_provider_after_start_trace(self) -> None:
         start_trace()
@@ -40,7 +47,7 @@ class TestStartTrace:
         assert isinstance(tracer_provider, TracerProvider)
         attrs = tracer_provider.resource.attributes
         assert attrs[ResourceAttributesFieldName.SERVICE_NAME] == RESOURCE_ATTRIBUTES_SERVICE_NAME
-        assert ResourceAttributesFieldName.COLLECTION not in attrs
+        assert ResourceAttributesFieldName.COLLECTION in attrs
 
     def test_tracer_provider_resource_attributes(self) -> None:
         collection = str(uuid.uuid4())
@@ -59,6 +66,18 @@ class TestStartTrace:
         tracer_provider: TracerProvider = trace.get_tracer_provider()
         assert "existing_attr" in tracer_provider.resource.attributes
         assert ResourceAttributesFieldName.SERVICE_NAME in tracer_provider.resource.attributes
+
+    def test_tracer_provider_collection_overwrite(self) -> None:
+        old_collection = str(uuid.uuid4())
+        existing_res = {ResourceAttributesFieldName.COLLECTION: old_collection}
+        trace.set_tracer_provider(TracerProvider(resource=Resource(existing_res)))
+        tracer_provider: TracerProvider = trace.get_tracer_provider()
+        assert tracer_provider.resource.attributes[ResourceAttributesFieldName.COLLECTION] == old_collection
+        # specify `collection` with `start_trace`
+        new_collection = str(uuid.uuid4())
+        start_trace(collection=new_collection)
+        tracer_provider: TracerProvider = trace.get_tracer_provider()
+        assert tracer_provider.resource.attributes[ResourceAttributesFieldName.COLLECTION] == new_collection
 
     def test_skip_tracing_local_setup(self, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
         spy = mocker.spy(promptflow.tracing._start_trace, "_is_devkit_installed")
