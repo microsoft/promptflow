@@ -104,7 +104,7 @@ class TestSimulator:
         conv_history = [ct1, ct2]
         simulate_conversation_mock.return_value = ("conversation_id", conv_history)
 
-        simulator = Simulator(simulator_connection=mock_config, ai_client=None, simulate_callback=async_callback)
+        simulator = Simulator(simulator_connection=mock_config, ml_client=None, simulate_callback=async_callback)
 
         st = SimulatorTemplates()
         conv_params = st.get_template_parameters(CONVERSATION)
@@ -246,7 +246,7 @@ class TestSimulator:
     def test_simulator_throws_expected_error_from_incorrect_template_type(
         self, mock_config, task_parameters, async_callback
     ):
-        simulator = Simulator(simulator_connection=mock_config, ai_client=None, simulate_callback=async_callback)
+        simulator = Simulator(simulator_connection=mock_config, ml_client=None, simulate_callback=async_callback)
         with pytest.raises(ValueError) as exc_info:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
@@ -260,21 +260,21 @@ class TestSimulator:
 
     def test_simulator_throws_expected_error_from_sync_callback(self, mock_config):
         with pytest.raises(ValueError) as exc_info:
-            simulator = Simulator(simulator_connection=mock_config, ai_client=None, simulate_callback=lambda x: x)
+            simulator = Simulator(simulator_connection=mock_config, ml_client=None, simulate_callback=lambda x: x)
 
         assert str(exc_info.value).startswith("Callback has to be an async function.")
 
     def test_simulator_throws_expected_error_from_unset_ai_client_or_connection(self):
         with pytest.raises(ValueError) as all_none_exc_info:
-            simulator = Simulator(simulator_connection=None, ai_client=None, simulate_callback=lambda x: x)
+            simulator = Simulator(simulator_connection=None, ml_client=None, simulate_callback=lambda x: x)
         with pytest.raises(ValueError) as all_set_exc_info:
             simulator = Simulator(
-                simulator_connection="some value", ai_client="some value", simulate_callback=lambda x: x
+                simulator_connection="some value", ml_client="some value", simulate_callback=lambda x: x
             )
 
         assert str(all_none_exc_info.value).startswith(
-            "One and only one of the parameters [ai_client, simulator_connection]"
+            "One and only one of the parameters [ml_client, simulator_connection]"
         )
         assert str(all_set_exc_info.value).startswith(
-            "One and only one of the parameters [ai_client, simulator_connection]"
+            "One and only one of the parameters [ml_client, simulator_connection]"
         )

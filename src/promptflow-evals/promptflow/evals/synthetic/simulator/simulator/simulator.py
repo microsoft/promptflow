@@ -40,7 +40,6 @@ class Simulator:
     def __init__(
         self,
         simulator_connection: "AzureOpenAIModelConfiguration" = None,  # type: ignore[name-defined]
-        ai_client: "AIClient" = None,  # type: ignore[name-defined]
         ml_client: "MLClient" = None,  # type: ignore[name-defined]
         simulate_callback: Optional[Callable[[Dict], Dict]] = None,
     ):
@@ -50,24 +49,18 @@ class Simulator:
         :keyword simulator_connection: An instance of AzureOpenAIModelConfiguration representing the connection
             for simulating user response. Defaults to None.
         :paramtype simulator_connection: Optional[AzureOpenAIModelConfiguration]
-        :keyword ai_client: An instance of AIClient for interacting with the AI service. Defaults to None.
-        :paramtype ai_client: Optional[AIClient]
         :keyword ml_client: An instance of MLClient for interacting with the AI service. Defaults to None.
         :paramtype ml_client: Optional[MLClient]
         :keyword simulate_callback: A callback function that takes a dictionary as input and returns a dictionary.
             This function is called to simulate the assistant response. Defaults to None.
         :paramtype simulate_callback: Optional[Callable[[Dict], Dict]]
 
-        :raises ValueError: If `simulator_connection`, `ai_client` and `ml_client` are not provided (i.e., they are None).
+        :raises ValueError: If `simulator_connection` and `ml_client` are not provided (i.e., they are None).
         """
-        if (
-            (ai_client is None and simulator_connection is None and ml_client is None)
-            or (ml_client is not None and simulator_connection is not None)
-            or (ai_client is not None and simulator_connection is not None)
+        if (simulator_connection is None and ml_client is None) or (
+            ml_client is not None and simulator_connection is not None
         ):
-            raise ValueError(
-                "One and only one of the parameters [ai_client, simulator_connection, ml_client] has to be set."
-            )
+            raise ValueError("One and only one of the parameters [simulator_connection, ml_client] has to be set.")
 
         if simulate_callback is None:
             raise ValueError("Callback cannot be None.")
@@ -75,18 +68,10 @@ class Simulator:
         if not asyncio.iscoroutinefunction(simulate_callback):
             raise ValueError("Callback has to be an async function.")
 
-        self.ai_client = ai_client
         self.simulator_connection = self._to_openai_chat_completion_model(simulator_connection)
         self.adversarial = False
         self.rai_client = None
-        if ai_client:
-            self.ml_client = ai_client._ml_client
-            self.token_manager = ManagedIdentityAPITokenManager(
-                token_scope=TokenScope.DEFAULT_AZURE_MANAGEMENT,
-                logger=logging.getLogger("managed identity token manager"),
-            )
-            self.rai_client = RAIClient(self.ml_client, self.token_manager)
-        else:
+        if ml_client:
             self.ml_client = ml_client
             self.token_manager = ManagedIdentityAPITokenManager(
                 token_scope=TokenScope.DEFAULT_AZURE_MANAGEMENT,
@@ -541,7 +526,6 @@ class Simulator:
     def from_fn(
         fn: Callable[[Any], dict],
         simulator_connection: "AzureOpenAIModelConfiguration" = None,  # type: ignore[name-defined]
-        ai_client: "AIClient" = None,  # type: ignore[name-defined]
         ml_client: "MLClient" = None,  # type: ignore[name-defined]
         **kwargs,
     ):
@@ -554,13 +538,11 @@ class Simulator:
         :type fn: Callable[[Any], dict]
         :param simulator_connection: Configuration for the connection to the simulation service, if any.
         :type simulator_connection: AzureOpenAIModelConfiguration, optional
-        :param ai_client: The AI client to be used for interacting with AI services.
-        :type ai_client: AIClient, optional
         :keyword ml_client: An instance of MLClient for interacting with the AI service. Defaults to None.
         :paramtype ml_client: Optional[MLClient]
         :return: An instance of simulator configured with the specified function, simulation connection, and AI client.
         :rtype: Simulator
-        :raises ValueError: If both `simulator_connection` and `ai_client` are not provided (i.e., both are None).
+        :raises ValueError: If both `simulator_connection` and `ml_client` are not provided (i.e., both are None).
 
         Any additional keyword arguments (`**kwargs`) will be passed directly to the function `fn`.
         """
@@ -568,21 +550,17 @@ class Simulator:
             func_module = fn.__wrapped__.__module__
             func_name = fn.__wrapped__.__name__
             if func_module == "openai.resources.chat.completions" and func_name == "create":
-                return Simulator._from_openai_chat_completions(fn, simulator_connection, ai_client, ml_client, **kwargs)
+                return Simulator._from_openai_chat_completions(fn, simulator_connection, ml_client, **kwargs)
         return Simulator(
             simulator_connection=simulator_connection,
-            ai_client=ai_client,
             ml_client=ml_client,
             simulate_callback=fn,
         )
 
     @staticmethod
-    def _from_openai_chat_completions(
-        fn: Callable[[Any], dict], simulator_connection=None, ai_client=None, ml_client=None, **kwargs
-    ):
+    def _from_openai_chat_completions(fn: Callable[[Any], dict], simulator_connection=None, ml_client=None, **kwargs):
         return Simulator(
             simulator_connection=simulator_connection,
-            ai_client=ai_client,
             ml_client=ml_client,
             simulate_callback=Simulator._wrap_openai_chat_completion(fn, **kwargs),
         )
@@ -606,7 +584,6 @@ class Simulator:
     def from_pf_path(  # pylint: disable=unused-argument
         pf_path: str,
         simulator_connection: "AzureOpenAIModelConfiguration" = None,  # type: ignore[name-defined]
-        ai_client: "AIClient" = None,  # type: ignore[name-defined]
         ml_client: "MLClient" = None,  # type: ignore[name-defined]
         **kwargs,
     ):
@@ -617,8 +594,6 @@ class Simulator:
         :type pf_path: str
         :param simulator_connection: Configuration for the connection to the simulation service, if any.
         :type simulator_connection: AzureOpenAIModelConfiguration, optional
-        :param ai_client: The AI client to be used for interacting with AI services.
-        :type ai_client: AIClient, optional
         :keyword ml_client: An instance of MLClient for interacting with the AI service. Defaults to None.
         :paramtype ml_client: Optional[MLClient]
         :return: An instance of the class configured with the specified policy file,
@@ -626,7 +601,7 @@ class Simulator:
         :rtype: The class which this static method is part of.
         :return: An instance of simulator configured with the specified function, simulation connection, and AI client.
         :rtype: Simulator
-        :raises ValueError: If both `simulator_connection` and `ai_client` are not provided (i.e., both are None).
+        :raises ValueError: If both `simulator_connection` and `ml_client` are not provided (i.e., both are None).
 
         Any additional keyword arguments (`**kwargs`) will be passed to the underlying configuration
         or initialization methods.
@@ -640,7 +615,6 @@ class Simulator:
         flow = load_flow(pf_path)
         return Simulator(
             simulator_connection=simulator_connection,
-            ai_client=ai_client,
             ml_client=ml_client,
             simulate_callback=Simulator._wrap_pf(flow),
         )
