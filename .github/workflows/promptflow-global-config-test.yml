@@ -4,16 +4,21 @@ on:
     - cron: "40 18 * * *" # Every day starting at 2:40 BJT
   pull_request_target:
     paths:
-      - src/promptflow-core/*
+      - src/promptflow-core/**
+      - src/promptflow-devkit/**
+      - src/promptflow-tracing/**
       - src/promptflow/**
       - scripts/building/**
       - .github/workflows/promptflow-global-config-test.yml
   workflow_dispatch:
 env:
-  packageSetupType: promptflow_with_extra
-  testWorkingDirectory: ${{ github.workspace }}/src/promptflow
-  PYTHONPATH: ${{ github.workspace }}/src/promptflow
   IS_IN_CI_PIPELINE: "true"
+  RECORD_DIRECTORY: ${{ github.workspace }}/src/promptflow-recording
+  TRACING_DIRECTORY: ${{ github.workspace }}/src/promptflow-tracing
+  CORE_DIRECTORY: ${{ github.workspace }}/src/promptflow-core
+  WORKING_DIRECTORY: ${{ github.workspace }}/src/promptflow-devkit
+  PROMPTFLOW_DIRECTORY: ${{ github.workspace }}/src/promptflow
+  TOOL_DIRECTORY: ${{ github.workspace }}/src/promptflow-tools
 jobs:
   authorize:
     environment:
@@ -41,39 +46,31 @@ jobs:
       uses: "./.github/actions/step_merge_main"
     - name: Display and Set Environment Variables
       run: |
-        if [ "ubuntu-latest" == "${{ matrix.os }}" ]; then
-          export pyVersion="3.9";
-        elif [ "macos-latest" == "${{ matrix.os }}" ]; then
-          export pyVersion="3.10";
-        else
-          echo "Unsupported OS: ${{ matrix.os }}";
-          exit 1;
-        fi
+        export pyVersion="3.9"
         env | sort >> $GITHUB_OUTPUT
       id: display_env
       shell: bash -el {0}
-    - name: Python Setup - ${{ matrix.os }} - Python Version ${{ steps.display_env.outputs.pyVersion }}
-      uses: "./.github/actions/step_create_python_environment"
+    - uses: actions/setup-python@v5
       with:
-        pythonVersion: ${{ steps.display_env.outputs.pyVersion }}
-    - name: Build wheel
-      uses: "./.github/actions/step_sdk_setup"
-      with:
-        setupType: ${{ env.packageSetupType }}
-        scriptPath: ${{ env.testWorkingDirectory }}
-    - name: Install dependency
-      shell: pwsh
+        python-version: ${{ steps.display_env.outputs.pyVersion }}
+    - uses: snok/install-poetry@v1
+    - name: install test dependency group
       run: |
-        pip uninstall -y promptflow-tracing
-        pip install ${{ github.workspace }}/src/promptflow-tracing
-        echo "Installed promptflow-tracing"
-        pip uninstall -y promptflow-core
-        pip install ${{ github.workspace }}/src/promptflow-core
-        pip uninstall -y promptflow-devkit
-        pip install ${{ github.workspace }}/src/promptflow-devkit
-        pip uninstall -y promptflow-azure
-        pip install ${{ github.workspace }}/src/promptflow-azure
-        pip freeze
+        set -xe
+        poetry install --only test
+        poetry run pip install ${{ env.TRACING_DIRECTORY }}
+        poetry run pip install ${{ env.CORE_DIRECTORY }}[azureml-serving]
+        poetry run pip install -e ${{ env.WORKING_DIRECTORY }}[pyarrow]
+
+        echo "Need to install promptflow to avoid tool dependency issue"
+        poetry run pip install ${{ env.PROMPTFLOW_DIRECTORY }}
+        poetry run pip install ${{ env.TOOL_DIRECTORY }}
+        poetry run pip install -e ${{ env.RECORD_DIRECTORY }}
+
+        poetry run pip show promptflow-tracing
+        poetry run pip show promptflow-core
+        poetry run pip show promptflow-devkit
+        poetry run pip show promptflow-tools
     - name: Azure Login
       uses: azure/login@v1
       with:
@@ -81,30 +78,20 @@ jobs:
     - name: Generate Configs
       uses: "./.github/actions/step_generate_configs"
       with:
-        targetFolder: ${{ env.testWorkingDirectory }}
-    - name: Get number of CPU cores
-      uses: SimenB/github-actions-cpu-cores@v1
-      id: cpu-cores
-    - name: Run Test
-      shell: pwsh
-      working-directory: ${{ env.testWorkingDirectory }}
+        targetFolder: ${{ env.PROMPTFLOW_DIRECTORY }}
+    - name: run devkit tests
       run: |
-        gci env:* | sort-object name
-        az account show
-        python "../../scripts/building/run_coverage_tests.py" `
-          -p promptflow `
-          -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_global_config_test `
-          -l eastus `
-          -m "unittest or e2etest" `
-          -n ${{ steps.cpu-cores.outputs.count }} `
+        poetry run pytest ./tests/sdk_cli_global_config_test -p promptflow --cov=promptflow --cov-config=pyproject.toml \
+        --cov-report=term --cov-report=html --cov-report=xml -n auto -m "unittest or e2etest"
+      working-directory: ${{ env.WORKING_DIRECTORY }}
     - name: Upload Test Results
       if: always()
       uses: actions/upload-artifact@v3
       with:
         name: Test Results (Python ${{ steps.display_env.outputs.pyVersion }}) (OS ${{ matrix.os }})
         path: |
-          ${{ env.testWorkingDirectory }}/*.xml
-          ${{ env.testWorkingDirectory }}/htmlcov/
+          ${{ env.WORKING_DIRECTORY }}/*.xml
+          ${{ env.WORKING_DIRECTORY }}/htmlcov/
   publish-test-results-global-config-test:
     needs: sdk_cli_global_config_tests
     runs-on: ubuntu-latest
@@ -117,7 +104,7 @@ jobs:
 
     steps:
     - name: checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         ref: ${{ github.event.pull_request.head.sha || github.ref }}
     - name: Publish Test Results
