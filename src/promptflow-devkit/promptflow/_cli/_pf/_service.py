@@ -29,6 +29,7 @@ from promptflow._sdk._service.utils.utils import (
     get_pfs_version,
     get_port_from_config,
     get_started_service_info,
+    hint_stop_before_upgrade,
     is_port_in_use,
     is_run_from_built_binary,
     kill_exist_service,
@@ -258,7 +259,7 @@ def start_service(args):
             print(message)
             logger.info(message)
         else:
-            logger.warning(f"Promptflow service start failed in {port}.")
+            logger.warning(f"Promptflow service start failed in {port}. {hint_stop_before_upgrade}")
 
 
 def stop_service():

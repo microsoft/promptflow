@@ -24,6 +24,7 @@ from promptflow._constants import PF_RUN_AS_BUILT_BINARY
 from promptflow._sdk._constants import (
     DEFAULT_ENCODING,
     HOME_PROMPT_FLOW_DIR,
+    PF_SERVICE_HOUR_TIMEOUT,
     PF_SERVICE_PORT_DIT_NAME,
     PF_SERVICE_PORT_FILE,
 )
@@ -35,6 +36,18 @@ from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.exceptions import PromptflowException, UserErrorException
 
 logger = get_cli_sdk_logger()
+
+hint_stop_message = (
+    f"You can stop the Prompt flow Tracing Server with the following command:'\033[1mpf service stop\033[0m'.\n"
+    f"Alternatively, if no requests are made within {PF_SERVICE_HOUR_TIMEOUT} "
+    f"hours, it will automatically stop."
+)
+hint_stop_before_upgrade = (
+    "Before upgrading the PromptFlow package, kindly ensure to run "
+    "'\033[1mpf service stop\033[0m'. Alternatively, you may run "
+    "'\033[1mpf upgrade\033[0m' to proceed with the upgrade process for "
+    "the PromptFlow package."
+)
 
 
 def local_user_only(func):
@@ -298,6 +311,7 @@ def is_run_from_built_binary():
     return (
         sys.executable.endswith("pfcli.exe")
         or sys.executable.endswith("app.exe")
+        or sys.executable.endswith("app")
         or os.environ.get(PF_RUN_AS_BUILT_BINARY, "").lower() == "true"
     )
 
