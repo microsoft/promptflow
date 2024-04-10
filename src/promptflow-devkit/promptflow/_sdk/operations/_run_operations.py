@@ -16,6 +16,7 @@ from promptflow._sdk._constants import (
     FlowRunProperties,
     ListViewType,
     RunInfoSources,
+    RunMode,
     RunStatus,
 )
 from promptflow._sdk._errors import InvalidRunStatusError, RunExistsError, RunNotFoundError, RunOperationParameterError
@@ -360,7 +361,7 @@ class RunOperations(TelemetryMixin):
                 metrics=local_storage.load_metrics(parse_const_as_str=True),
                 dag=local_storage.load_dag_as_string(),
                 flow_tools_json=local_storage.load_flow_tools_json(),
-                mode="eager" if local_storage.eager_mode else "",
+                mode=RunMode.EAGER.lower() if local_storage.eager_mode else "",
             )
             details.append(copy.deepcopy(detail))
             metadatas.append(asdict(metadata))
