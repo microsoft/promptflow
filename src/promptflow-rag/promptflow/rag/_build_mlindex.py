@@ -8,6 +8,7 @@ from typing import Dict, Optional, Union
 import yaml  # type: ignore[import]
 from packaging import version
 
+from promptflow.rag.constants._common import AZURE_AI_SEARCH_API_VERSION
 from promptflow.rag.resources import EmbeddingsModelConfig, AzureAISearchConfig, AzureAISearchSource, LocalSource
 from promptflow.rag._utils._open_ai_utils import build_open_ai_protocol
 
@@ -149,7 +150,7 @@ def build_index(
                     "endpoint": os.getenv("AZURE_AI_SEARCH_ENDPOINT")
                     if "AZURE_AI_SEARCH_ENDPOINT" in os.environ
                     else os.getenv("AZURE_COGNITIVE_SEARCH_TARGET"),
-                    "api_version": "2023-07-01-preview",
+                    "api_version": AZURE_AI_SEARCH_API_VERSION,
                 },
             }
             connection_args = {"connection_type": "environment", "connection": {"key": "AZURE_AI_SEARCH_KEY"}}
@@ -161,7 +162,7 @@ def build_index(
                     "endpoint": ai_search_connection["properties"]["target"],
                     "api_version": ai_search_connection["properties"]
                     .get("metadata", {})
-                    .get("apiVersion", "2023-07-01-preview"),
+                    .get("apiVersion", AZURE_AI_SEARCH_API_VERSION),
                 },
             }
             connection_args = {
@@ -217,7 +218,7 @@ def _create_mlindex_from_existing_ai_search(
         "kind": "acs",
         "engine": "azure-sdk",
         "index": ai_search_config.ai_search_index_name,
-        "api_version": "2023-07-01-preview",
+        "api_version": AZURE_AI_SEARCH_API_VERSION,
         "field_mapping": {
             "content": ai_search_config.ai_search_content_key,
             "embedding": ai_search_config.ai_search_embedding_key,
