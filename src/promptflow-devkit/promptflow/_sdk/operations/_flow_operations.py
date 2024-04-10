@@ -19,7 +19,7 @@ from typing import Callable, Dict, Iterable, List, NoReturn, Tuple, Union
 
 import pydash
 
-from promptflow._constants import FLOW_DAG_YAML, LANGUAGE_KEY, PROMPT_FLOW_DIR_NAME, FlowLanguage
+from promptflow._constants import FLOW_FLEX_YAML, LANGUAGE_KEY, PROMPT_FLOW_DIR_NAME, FlowLanguage
 from promptflow._proxy import ProxyFactory
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
@@ -1109,7 +1109,7 @@ class FlowOperations(TelemetryMixin):
         if LANGUAGE_KEY in kwargs:
             data[LANGUAGE_KEY] = language
 
-        target_flow_file = target_flow_directory / FLOW_DAG_YAML
+        target_flow_file = target_flow_directory / FLOW_FLEX_YAML
         # schema validation, here target_flow_file doesn't exist actually
         FlexFlow(path=target_flow_file, code=code, data=data, entry=data["entry"])._validate(raise_error=True)
 

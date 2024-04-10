@@ -227,6 +227,15 @@ Supported types are as follows:
 
 For example, with `OPENAI_API_KEY` set to environment, an `OpenAIConnection` object can be loaded with `OpenAIConnection.from_env()`.
 
+## Authenticate with Microsoft Entra ID
+[Microsoft Entra ID](https://learn.microsoft.com/entra/fundamentals/whatis) is a cloud-based identity and access management service that enables your employees access external resources.
+
+Some promptflow connection types supports connection authentication with Microsoft Entra ID.
+
+| Connection Type       | Yaml Field | Value     | Package Requirements                                          | VS Code Extension |
+| --------------------- |------------|-----------|---------------------------------------------------------------|------------------|
+| AzureOpenAIConnection | auth_mode  | meid_token | `promptflow[azureml-serving]>=1.7.0, promptflow-tools>=1.4.0` | 1.20.0           |
+
 
 ## Next steps
 - Reach more detail about [connection concepts](../../concepts/concept-connections.md).

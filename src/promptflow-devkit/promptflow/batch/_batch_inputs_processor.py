@@ -27,10 +27,15 @@ class BatchInputsProcessor:
         self._working_dir = working_dir
         self._max_lines_count = max_lines_count
         self._flow_inputs = flow_inputs
-        self._default_inputs_mapping = {key: f"${{data.{key}}}" for key in flow_inputs}
+        self._default_inputs_mapping = {key: f"${{data.{key}}}" for key in flow_inputs}\
+            if flow_inputs is not None else None
         self._multimedia_processor = MultimediaProcessor.create(message_format)
 
     def process_batch_inputs(self, input_dirs: Dict[str, str], inputs_mapping: Dict[str, str]):
+        input_dicts = self._resolve_input_data_and_check(input_dirs)
+        return self._validate_and_apply_inputs_mapping(input_dicts, inputs_mapping)
+
+    def _resolve_input_data_and_check(self, input_dirs: Dict[str, str]):
         input_dicts = self._resolve_input_data(input_dirs)
         no_input_data = all(len(data) == 0 for data in input_dicts.values())
         if no_input_data:
@@ -40,7 +45,30 @@ class BatchInputsProcessor:
                 "and consider resubmitting.\n{input_dirs}"
             )
             raise EmptyInputsData(message_format=message_format, input_dirs=input_dirs_str)
-        return self._validate_and_apply_inputs_mapping(input_dicts, inputs_mapping)
+        return input_dicts
+
+    def process_batch_inputs_without_inputs_mapping(self, input_dirs: Dict[str, str]):
+        input_dicts = self._resolve_input_data_and_check(input_dirs)
+        merged_list = self._merge_input_dicts_by_line(input_dicts)
+        if len(merged_list) == 0:
+            raise InputMappingError(
+                message_format=(
+                    "The input for batch run is incorrect. Could not find one complete line on the provided input. "
+                    "Please ensure that you supply data on the same line to resolve this issue."
+                )
+            )
+
+        return merged_list
+
+    def _process_batch_inputs_line(self, inputs: Dict[str, Any], inputs_mapping: Dict[str, str]):
+        if not inputs_mapping:
+            logger.warning(
+                msg=(
+                    "Starting run without column mapping may lead to unexpected results. "
+                    "Please consult the following documentation for more information: https://aka.ms/pf/column-mapping"
+                )
+            )
+        return apply_inputs_mapping(inputs, inputs_mapping)
 
     def _resolve_input_data(self, input_dirs: Dict[str, str]):
         """Resolve input data from input dirs"""

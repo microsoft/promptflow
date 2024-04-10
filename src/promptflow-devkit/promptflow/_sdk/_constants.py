@@ -489,6 +489,10 @@ class OSType:
     LINUX = "Linux"
 
 
+class RunMode:
+    EAGER = "Eager"
+
+
 # Note: Keep these for backward compatibility
 CustomStrongTypeConnectionConfigs = CustomStrongTypeConnectionConfigs
 ConnectionType = ConnectionType
