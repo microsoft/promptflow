@@ -420,3 +420,32 @@ class TestFlowTest:
         assert is_dataclass(result.output)
         assert result.output.output1 == "0123456789"
         assert result.output.output2 == "0123456789"
+
+    def test_eager_flow_with_assistant(self):
+        clear_module_cache("entry")
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/assistant_script/").absolute()
+        addon_tools = [
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_y",
+                    "description": "Return Y value based on input X value",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {"x": {"description": "The X value", "type": "number"}},
+                        "required": ["x"],
+                    },
+                },
+            }
+        ]
+        inputs = {
+            "assistant_name": "Math Tutor",
+            "instruction": "You are a personal math tutor. Write and run code to answer math questions.",
+            "model": "gpt-4",
+            "question": (
+                "I need to solve the equation `3x + 11 = 14`. What is the result of x+y? " "Please use get_y function."
+            ),
+            "tools": addon_tools,
+        }
+        result = _client._flows._test(flow=flow_path, inputs=inputs)
+        assert result.run_info.status.value == "Completed"
