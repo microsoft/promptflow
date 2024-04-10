@@ -7,8 +7,8 @@ from typing import List
 
 from promptflow._constants import ConnectionProviderConfig
 from promptflow.core._connection import _Connection
-from promptflow.core._connection_provider._utils import extract_workspace
 from promptflow.core._errors import MissingRequiredPackage, UnsupportedConnectionProviderConfig
+from promptflow.core._utils import extract_workspace
 
 
 class ConnectionProvider(ABC):
