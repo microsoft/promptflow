@@ -1329,6 +1329,7 @@ class TestFlowRun:
 
 
 def assert_batch_run_result(run: Run, pf: PFClient, assert_func):
+    run = pf.runs.stream(run)
     assert run.status == RunStatus.COMPLETED
     assert "error" not in run._to_dict(), run._to_dict()["error"]
     details = pf.get_details(run.name)
