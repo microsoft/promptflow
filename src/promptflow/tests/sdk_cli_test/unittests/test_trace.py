@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import base64
+import datetime
 import json
 import logging
 import os
@@ -23,11 +24,18 @@ from promptflow._constants import (
     SpanResourceFieldName,
     TraceEnvironmentVariableName,
 )
-from promptflow._sdk._constants import PF_TRACE_CONTEXT, PF_TRACE_CONTEXT_ATTR, ContextAttributeKey
+from promptflow._sdk._constants import (
+    PF_TRACE_CONTEXT,
+    PF_TRACE_CONTEXT_ATTR,
+    TRACE_DEFAULT_COLLECTION,
+    ContextAttributeKey,
+)
 from promptflow._sdk._tracing import start_trace_with_devkit
-from promptflow._sdk.entities._trace import Span
+from promptflow._sdk.operations._trace_operations import TraceOperations
+from promptflow.client import PFClient
+from promptflow.exceptions import UserErrorException
 from promptflow.tracing._operation_context import OperationContext
-from promptflow.tracing._start_trace import _is_tracer_provider_set, setup_exporter_from_environ, start_trace
+from promptflow.tracing._start_trace import setup_exporter_from_environ, start_trace
 
 MOCK_PROMPTFLOW_SERVICE_PORT = "23333"
 
@@ -63,10 +71,25 @@ def mock_promptflow_service_invocation():
 
 @pytest.mark.sdk_test
 @pytest.mark.unittest
+class TestImports:
+    def test_imports_in_tracing(self):
+        # promptflow-tracing has imports from promptflow-devkit
+        # this test guards against breaking changes in imports
+        from promptflow._sdk._tracing import setup_exporter_to_pfs, start_trace_with_devkit
+
+        assert callable(setup_exporter_to_pfs)
+        assert callable(start_trace_with_devkit)
+
+
+@pytest.mark.sdk_test
+@pytest.mark.unittest
 class TestStartTrace:
     @pytest.mark.usefixtures("reset_tracer_provider")
     def test_setup_exporter_from_environ(self) -> None:
-        assert not _is_tracer_provider_set()
+        def is_tracer_provider_set() -> bool:
+            return isinstance(trace.get_tracer_provider(), TracerProvider)
+
+        assert not is_tracer_provider_set()
 
         # set some required environment variables
         endpoint = "http://localhost:23333/v1/traces"
@@ -83,7 +106,7 @@ class TestStartTrace:
         ):
             setup_exporter_from_environ()
 
-        assert _is_tracer_provider_set()
+        assert is_tracer_provider_set()
         tracer_provider: TracerProvider = trace.get_tracer_provider()
         assert collection == tracer_provider._resource.attributes[SpanResourceAttributesFieldName.COLLECTION]
         assert experiment == tracer_provider._resource.attributes[SpanResourceAttributesFieldName.EXPERIMENT_NAME]
@@ -120,7 +143,7 @@ class TestStartTrace:
         pb_span.parent_span_id = base64.b64decode("C+++WS+OuxI=")
         pb_span.kind = PBSpan.SpanKind.SPAN_KIND_INTERNAL
         # below line should execute successfully
-        span = Span._from_protobuf_object(pb_span, resource=mock_resource, logger=logging.getLogger(__name__))
+        span = TraceOperations._parse_protobuf_span(pb_span, resource=mock_resource, logger=logging.getLogger(__name__))
         # as the above span do not have any attributes, so the parsed span should not have any attributes
         assert isinstance(span.attributes, dict)
         assert len(span.attributes) == 0
@@ -159,7 +182,9 @@ class TestStartTrace:
             # Assert the provider without exporter is not the one with exporter
             assert original_proivder == new_provider
 
-    def test_setup_exporter_in_executor_with_preview_flag(self, mock_promptflow_service_invocation):
+    def test_setup_exporter_in_executor_with_preview_flag(
+        self, reset_tracer_provider, mock_promptflow_service_invocation
+    ):
         with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
             mock_func.return_value = True
 
@@ -171,3 +196,22 @@ class TestStartTrace:
                 tracer_provider._active_span_processor._span_processors[0].span_exporter._endpoint
                 == f"http://localhost:{MOCK_PROMPTFLOW_SERVICE_PORT}/v1/traces"
             )
+
+
+@pytest.mark.unittest
+@pytest.mark.sdk_test
+class TestTraceOperations:
+    def test_validate_delete_query_params(self, pf: PFClient) -> None:
+        expected_error_message = (
+            'Valid delete queries: 1) specify `run`; 2) specify `collection` (not "default"); '
+            "3) specify `collection` and `started_before` (ISO 8601)."
+        )
+
+        def _validate_invalid_params(kwargs: Dict):
+            with pytest.raises(UserErrorException) as e:
+                pf.traces._validate_delete_query_params(**kwargs)
+            assert expected_error_message in str(e)
+
+        _validate_invalid_params({"run": str(uuid.uuid4()), "started_before": datetime.datetime.now().isoformat()})
+        _validate_invalid_params({"collection": TRACE_DEFAULT_COLLECTION})
+        _validate_invalid_params({"collection": str(uuid.uuid4()), "started_before": "invalid isoformat"})

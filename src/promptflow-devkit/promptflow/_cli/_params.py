@@ -3,7 +3,9 @@
 # ---------------------------------------------------------
 
 import argparse
+from pathlib import Path
 
+from promptflow._cli._completers._param_completers import run_name_completer
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME, PROMPT_FLOW_RUNS_DIR_NAME, CLIListOutputFormat, FlowType
 
 # TODO: avoid azure dependency here
@@ -33,9 +35,14 @@ class FlowTestInputAction(AppendToDictAction):  # pylint: disable=protected-acce
         if len(values) == 1 and "=" not in values[0]:
             from promptflow._utils.load_data import load_data
 
-            if not values[0].endswith(".jsonl"):
-                raise ValueError("Only support jsonl file as input.")
-            return load_data(local_path=values[0])[0]
+            if not Path(values[0]).exists():
+                raise ValueError(f"Cannot find inputs file {values[0]}")
+            if values[0].endswith(".jsonl"):
+                return load_data(local_path=values[0])[0]
+            elif values[0].endswith(".json"):
+                return load_data(local_path=values[0])
+            else:
+                raise ValueError("Only support jsonl or json file as input.")
         else:
             return super().get_action(values, option_string)
 
@@ -176,7 +183,9 @@ def add_param_source(parser):
 
 
 def add_param_run_name(parser):
-    parser.add_argument("-n", "--name", required=True, type=str, help="Name of the run.")
+    parser.add_argument(
+        "-n", "--name", required=True, type=str, help="Name of the run.", metavar="PROTOCOL"
+    ).completer = run_name_completer
 
 
 def add_param_connection_name(parser):
@@ -333,4 +342,15 @@ def add_param_flow_name(parser):
         type=str,
         required=True,
         help="The name of the flow.",
+    )
+
+
+def add_param_init(parser):
+    parser.add_argument(
+        "--init",
+        action=FlowTestInputAction,
+        help="Callable class initialization params. "
+        "Only valid when provided flow is a flex flow with callable class entry. "
+        "Example: --init param1=val1 param2=val2",
+        nargs="+",
     )

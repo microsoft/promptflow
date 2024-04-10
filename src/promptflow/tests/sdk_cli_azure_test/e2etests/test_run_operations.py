@@ -19,7 +19,9 @@ import pytest
 from azure.ai.ml import ManagedIdentityConfiguration
 from azure.ai.ml.entities import IdentityConfiguration
 
-from promptflow._sdk._constants import DAG_FILE_NAME, DownloadedRun, RunStatus
+from promptflow._constants import FLOW_FLEX_YAML
+from promptflow._sdk._configuration import Configuration
+from promptflow._sdk._constants import DownloadedRun, RunStatus
 from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, RunNotFoundError
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk.entities import Run
@@ -915,6 +917,55 @@ class TestFlowRun:
             for file in expected_files:
                 assert Path(tmp_dir, created_batch_run_without_llm.name, file).exists()
 
+    @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore", "mock_get_azure_pf_client")
+    def test_upload_run(
+        self,
+        pf: PFClient,
+        randstr: Callable[[str], str],
+        subscription_id: str,
+        resource_group_name: str,
+        workspace_name: str,
+    ):
+        from promptflow._sdk._pf_client import PFClient as LocalPFClient
+
+        trace_provider = (
+            f"azureml://subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/"
+            f"providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}"
+        )
+        with patch.object(Configuration, "get_trace_provider", return_value=trace_provider):
+            name = randstr("batch_run_name")
+            local_pf = LocalPFClient()
+
+            # in replay mode, `randstr` will always return the parameter
+            # this will lead to run already exists error for local run
+            # so add a try delete to avoid this error
+            try:
+                local_pf.runs.delete(name=name)
+            except RunNotFoundError:
+                pass
+
+            local_pf.run(
+                flow=f"{FLOWS_DIR}/simple_hello_world",
+                data=f"{DATAS_DIR}/webClassification3.jsonl",
+                column_mapping={"name": "${data.url}"},
+                name=name,
+                display_name="sdk-cli-test-run-local-to-cloud",
+                tags={"sdk-cli-test": "true"},
+                description="test sdk local to cloud",
+            )
+            run = local_pf.runs.stream(name)
+            assert run.status == RunStatus.COMPLETED
+
+        # check if local run is uploaded
+        cloud_run = pf.runs.get(run.name)
+        assert cloud_run.display_name == run.display_name
+        assert cloud_run.description == run.description
+        assert cloud_run.tags == run.tags
+        assert cloud_run.status == run.status
+        assert cloud_run._start_time and cloud_run._end_time
+        assert cloud_run.properties["azureml.promptflow.local_to_cloud"] == "true"
+        assert cloud_run.properties["azureml.promptflow.snapshot_id"]
+
     def test_request_id_when_making_http_requests(self, pf, runtime: str, randstr: Callable[[str], str]):
         from azure.core.exceptions import HttpResponseError
 
@@ -972,6 +1023,11 @@ class TestFlowRun:
             assert len(request_ids) == 1
             # request id should be included in FlowRequestException
             assert f"request id: {pf.runs._service_caller._request_id}" in str(e.value)
+
+            inner_exception = e.value.inner_exception
+            assert inner_exception is not None
+            assert isinstance(inner_exception, HttpResponseError)
+            assert inner_exception.message == "customized error message."
 
     # it is a known issue that executor/runtime might write duplicate storage for line records,
     # this will lead to the lines that assert line count (`len(detail)`) fails.
@@ -1097,7 +1153,7 @@ class TestFlowRun:
             DownloadedRun.RUN_METADATA_FILE_NAME,
             DownloadedRun.LOGS_FILE_NAME,
             DownloadedRun.METRICS_FILE_NAME,
-            f"{DownloadedRun.SNAPSHOT_FOLDER}/flow.dag.yaml",
+            f"{DownloadedRun.SNAPSHOT_FOLDER}/flow.flex.yaml",
         ]
 
         # test download
@@ -1311,7 +1367,7 @@ class TestFlowRun:
 
         # test YAML is generated
         expected_files = [
-            f"{DownloadedRun.SNAPSHOT_FOLDER}/{DAG_FILE_NAME}",
+            f"{DownloadedRun.SNAPSHOT_FOLDER}/{FLOW_FLEX_YAML}",
         ]
         with TemporaryDirectory() as tmp_dir:
             pf.runs.download(run=run.name, output=tmp_dir)
@@ -1319,4 +1375,4 @@ class TestFlowRun:
                 assert Path(tmp_dir, run.name, file).exists()
 
         # the YAML file will not exist in user's folder
-        assert not Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/flow.dag.yaml").exists()
+        assert not Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/flow.flex.yaml").exists()

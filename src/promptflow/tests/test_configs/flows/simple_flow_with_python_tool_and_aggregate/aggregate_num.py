@@ -1,7 +1,7 @@
 import statistics
 from typing import List
 
-from promptflow import tool
+from promptflow.core import tool
 
 
 @tool

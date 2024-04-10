@@ -37,6 +37,16 @@ class TestSummary:
             events=[{"name": "event1", "time": "2022-01-01T00:00:30"}],
             links=[{"trace_id": "0987654321", "span_id": "1234567890"}],
         )
+        test_span.events = [
+            {
+                "name": "promptflow.function.inputs",
+                "attributes": {"payload": '{"input_key": "input_value"}'},
+            },
+            {
+                "name": "promptflow.function.output",
+                "attributes": {"payload": '{"output_key": "output_value"}'},
+            },
+        ]
         self.summary = Summary(test_span, self.FAKE_COLLECTION_ID, self.FAKE_CREATED_BY, self.FAKE_LOGGER)
 
     def test_non_root_span_does_not_persist(self):
@@ -46,11 +56,13 @@ class TestSummary:
         with mock.patch.multiple(
             self.summary,
             _persist_running_item=mock.DEFAULT,
+            _parse_inputs_outputs_from_events=mock.DEFAULT,
             _persist_line_run=mock.DEFAULT,
             _insert_evaluation_with_retry=mock.DEFAULT,
         ) as values:
             self.summary.persist(mock_client)
             values["_persist_running_item"].assert_called_once()
+            values["_parse_inputs_outputs_from_events"].assert_not_called()
             values["_persist_line_run"].assert_not_called()
             values["_insert_evaluation_with_retry"].assert_not_called()
 
@@ -63,11 +75,13 @@ class TestSummary:
         with mock.patch.multiple(
             self.summary,
             _persist_running_item=mock.DEFAULT,
+            _parse_inputs_outputs_from_events=mock.DEFAULT,
             _persist_line_run=mock.DEFAULT,
             _insert_evaluation_with_retry=mock.DEFAULT,
         ) as values:
             self.summary.persist(mock_client)
             values["_persist_running_item"].assert_not_called()
+            values["_parse_inputs_outputs_from_events"].assert_called_once()
             values["_persist_line_run"].assert_called_once()
             values["_insert_evaluation_with_retry"].assert_not_called()
 
@@ -79,11 +93,13 @@ class TestSummary:
         with mock.patch.multiple(
             self.summary,
             _persist_running_item=mock.DEFAULT,
+            _parse_inputs_outputs_from_events=mock.DEFAULT,
             _persist_line_run=mock.DEFAULT,
             _insert_evaluation_with_retry=mock.DEFAULT,
         ) as values:
             self.summary.persist(mock_client)
             values["_persist_running_item"].assert_not_called()
+            values["_parse_inputs_outputs_from_events"].assert_called_once()
             values["_persist_line_run"].assert_called_once()
             values["_insert_evaluation_with_retry"].assert_called_once()
 
@@ -92,7 +108,6 @@ class TestSummary:
         self.summary.span.attributes = {
             SpanAttributeFieldName.REFERENCED_LINE_RUN_ID: "referenced_line_run_id",
             SpanAttributeFieldName.LINE_RUN_ID: "line_run_id",
-            SpanAttributeFieldName.OUTPUT: '{"output_key": "output_value"}',
         }
 
         client.query_items.return_value = []
@@ -106,7 +121,6 @@ class TestSummary:
         self.summary.span.attributes = {
             SpanAttributeFieldName.REFERENCED_LINE_RUN_ID: "referenced_line_run_id",
             SpanAttributeFieldName.LINE_RUN_ID: "line_run_id",
-            SpanAttributeFieldName.OUTPUT: '{"output_key": "output_value"}',
         }
 
         client.query_items.return_value = [{"id": "main_id"}]
@@ -115,43 +129,11 @@ class TestSummary:
         client.query_items.assert_called_once()
         client.patch_item.assert_not_called()
 
-    def test_insert_evaluation_normal(self):
-        client = mock.Mock()
-        self.summary.span.attributes = {
-            SpanAttributeFieldName.REFERENCED_LINE_RUN_ID: "referenced_line_run_id",
-            SpanAttributeFieldName.LINE_RUN_ID: "line_run_id",
-            SpanAttributeFieldName.OUTPUT: '{"output_key": "output_value"}',
-        }
-        expected_item = LineEvaluation(
-            line_run_id="line_run_id",
-            collection_id=self.FAKE_COLLECTION_ID,
-            trace_id=self.summary.span.trace_id,
-            root_span_id=self.summary.span.span_id,
-            outputs={"output_key": "output_value"},
-            name=self.summary.span.name,
-            created_by=self.FAKE_CREATED_BY,
-        )
-        expected_patch_operations = [
-            {"op": "add", "path": f"/evaluations/{self.summary.span.name}", "value": asdict(expected_item)}
-        ]
-
-        client.query_items.return_value = [
-            {"id": "main_id", "partition_key": "test_main_partition_key", "status": OK_LINE_RUN_STATUS}
-        ]
-        self.summary._insert_evaluation(client)
-        client.query_items.assert_called_once()
-        client.patch_item.assert_called_once_with(
-            item="main_id",
-            partition_key="test_main_partition_key",
-            patch_operations=expected_patch_operations,
-        )
-
     def test_insert_evaluation_query_line(self):
         client = mock.Mock()
         self.summary.span.attributes = {
             SpanAttributeFieldName.REFERENCED_LINE_RUN_ID: "referenced_line_run_id",
             SpanAttributeFieldName.LINE_RUN_ID: "line_run_id",
-            SpanAttributeFieldName.OUTPUT: '{"output_key": "output_value"}',
         }
         client.query_items.return_value = [
             {"id": "main_id", "partition_key": "test_main_partition_key", "status": OK_LINE_RUN_STATUS}
@@ -175,7 +157,7 @@ class TestSummary:
             collection_id=self.FAKE_COLLECTION_ID,
             trace_id=self.summary.span.trace_id,
             root_span_id=self.summary.span.span_id,
-            outputs={"output_key": "output_value"},
+            outputs=None,
             name=self.summary.span.name,
             created_by=self.FAKE_CREATED_BY,
         )
@@ -194,7 +176,6 @@ class TestSummary:
             SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID: "referenced_batch_run_id",
             SpanAttributeFieldName.BATCH_RUN_ID: "batch_run_id",
             SpanAttributeFieldName.LINE_NUMBER: 1,
-            SpanAttributeFieldName.OUTPUT: '{"output_key": "output_value"}',
         }
         client.query_items.return_value = [
             {"id": "main_id", "partition_key": "test_main_partition_key", "status": OK_LINE_RUN_STATUS}
@@ -220,13 +201,11 @@ class TestSummary:
             line_number=1,
             trace_id=self.summary.span.trace_id,
             root_span_id=self.summary.span.span_id,
-            outputs={"output_key": "output_value"},
+            outputs=None,
             name=self.summary.span.name,
             created_by=self.FAKE_CREATED_BY,
         )
-        expected_patch_operations = [
-            {"op": "add", "path": f"/evaluations/{self.summary.span.name}", "value": asdict(expected_item)}
-        ]
+        expected_patch_operations = [{"op": "add", "path": "/evaluations/batch_run_id", "value": asdict(expected_item)}]
         client.patch_item.assert_called_once_with(
             item="main_id",
             partition_key="test_main_partition_key",
@@ -238,8 +217,6 @@ class TestSummary:
         self.summary.span.attributes.update(
             {
                 SpanAttributeFieldName.LINE_RUN_ID: "line_run_id",
-                SpanAttributeFieldName.INPUTS: '{"input_key": "input_value"}',
-                SpanAttributeFieldName.OUTPUT: '{"output_key": "output_value"}',
                 SpanAttributeFieldName.SPAN_TYPE: "promptflow.TraceType.Flow",
                 SpanAttributeFieldName.COMPLETION_TOKEN_COUNT: 10,
                 SpanAttributeFieldName.PROMPT_TOKEN_COUNT: 5,
@@ -254,8 +231,8 @@ class TestSummary:
             line_run_id="line_run_id",
             trace_id=self.summary.span.trace_id,
             root_span_id=self.summary.span.span_id,
-            inputs={"input_key": "input_value"},
-            outputs={"output_key": "output_value"},
+            inputs=None,
+            outputs=None,
             start_time="2022-01-01T00:00:00",
             end_time="2022-01-01T00:01:00",
             status=OK_LINE_RUN_STATUS,
@@ -279,8 +256,6 @@ class TestSummary:
             {
                 SpanAttributeFieldName.BATCH_RUN_ID: "batch_run_id",
                 SpanAttributeFieldName.LINE_NUMBER: "1",
-                SpanAttributeFieldName.INPUTS: '{"input_key": "input_value"}',
-                SpanAttributeFieldName.OUTPUT: '{"output_key": "output_value"}',
                 SpanAttributeFieldName.SPAN_TYPE: "promptflow.TraceType.Flow",
                 SpanAttributeFieldName.COMPLETION_TOKEN_COUNT: 10,
                 SpanAttributeFieldName.PROMPT_TOKEN_COUNT: 5,
@@ -296,8 +271,8 @@ class TestSummary:
             line_number="1",
             trace_id=self.summary.span.trace_id,
             root_span_id=self.summary.span.span_id,
-            inputs={"input_key": "input_value"},
-            outputs={"output_key": "output_value"},
+            inputs=None,
+            outputs=None,
             start_time="2022-01-01T00:00:00",
             end_time="2022-01-01T00:01:00",
             status=OK_LINE_RUN_STATUS,
@@ -344,3 +319,86 @@ class TestSummary:
         with mock.patch("promptflow.azure._storage.cosmosdb.summary.safe_create_cosmosdb_item") as mock_safe_write:
             self.summary._persist_running_item(client)
             mock_safe_write.assert_called_once()
+
+    @pytest.mark.parametrize(
+        "content, expected_result",
+        [
+            [
+                {
+                    "short_text": "Hello promptflow",
+                    "numbers_list": [1, 2, 3, 4, 5],
+                    "nested_dict": {"nested_key": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."},
+                    "integer_value": 123,
+                    "float_value": 3.14,
+                    "boolean_value": True,
+                },
+                {
+                    "short_text": "Hello promptflow",
+                    "numbers_list": "[...]",
+                    "nested_dict": "{...}",
+                    "integer_value": 123,
+                    "float_value": 3.14,
+                    "boolean_value": True,
+                },
+            ],
+            ["a" * 600, "a" * 500],
+            ["Hello promptflow", "Hello promptflow"],
+            [[1, 2, 3, 4, 5], "[...]"],
+            [{}, {}],
+            [123, 123],
+            [3.14, 3.14],
+            [True, True],
+            [None, None],
+        ],
+    )
+    def test_truncate_and_replace_content(self, content, expected_result):
+
+        truncated_content = self.summary._truncate_and_replace_content(content)
+
+        assert truncated_content == expected_result
+
+    @pytest.mark.parametrize(
+        "events, expected_inputs, expected_outputs",
+        [
+            [[], None, None],
+            [
+                [
+                    {
+                        "name": "promptflow.function.inputs",
+                        "attributes": {},  # No payload will not take effect
+                    },
+                    {
+                        "name": "promptflow.function.output",
+                        "attributes": {},  # No payload will not take effect
+                    },
+                    {
+                        "name": "wrong name should not take effect",
+                        "attributes": {"payload": '"wrong name should not take effect"'},
+                    },
+                    {
+                        "name": "promptflow.function.inputs",
+                        "attributes": {"payload": '"show first input"'},
+                    },
+                    {
+                        "name": "promptflow.function.inputs",
+                        "attributes": {"payload": '"second input"'},
+                    },
+                    {
+                        "name": "promptflow.function.output",
+                        "attributes": {"payload": '"show first output"'},
+                    },
+                    {
+                        "name": "promptflow.function.output",
+                        "attributes": {"payload": '"second  output"'},
+                    },
+                ],
+                "show first input",
+                "show first output",
+            ],
+        ],
+    )
+    def test_parse_inputs_outputs(self, events, expected_inputs, expected_outputs):
+        self.summary.span.events = events
+        self.summary._parse_inputs_outputs_from_events()
+        assert self.summary.inputs == expected_inputs
+        assert self.summary.outputs == expected_outputs

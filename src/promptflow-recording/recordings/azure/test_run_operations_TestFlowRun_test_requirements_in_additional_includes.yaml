@@ -3141,7 +3141,7 @@ interactions:
     uri: https://fake_account_name.blob.core.windows.net/fake-container-name/runs/name/print_env.py
   response:
     body:
-      string: "import os\r\n\r\nfrom promptflow import tool\r\n\r\n\r\n@tool\r\ndef
+      string: "import os\r\n\r\nfrom promptflow.core import tool\r\n\r\n\r\n@tool\r\ndef
         get_env_var(key: str):\r\n    from tensorflow import __version__\r\n\r\n    print(__version__)\r\n
         \   print(os.environ.get(key))\r\n\r\n    # get from env var\r\n    return
         {\"value\": os.environ.get(key)}\r\n"

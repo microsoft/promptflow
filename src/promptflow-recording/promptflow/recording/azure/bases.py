@@ -82,6 +82,11 @@ class PFAzureIntegrationTestRecording:
     def _get_recording_file(self) -> Path:
         test_file_path = Path(inspect.getfile(self.test_class)).resolve()
         recording_dir = (Path(__file__).parent / "../../../recordings/azure").resolve()
+        # when promptflow-recording is installed as a package (not editable mode)
+        # __file__ will direct to the installed package path (with "site-packages" in it)
+        # where the recording is not there, so we need to leverage test class to find the recording in repo
+        if "site-packages" in recording_dir.as_posix():
+            recording_dir = test_file_path.parent.parent.parent.parent.parent / "promptflow-recording/recordings/azure"
         recording_dir.mkdir(exist_ok=True)
 
         test_file_name = test_file_path.stem
@@ -312,7 +317,28 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
                     body1 = json.dumps(body_dict)
                     _r1.body = body1.encode("utf-8")
                     return matchers.body(_r1, r2)
+                # for upload local run to cloud scenario, SDK will call PFS API to "create" a run
+                # this API response contains "startTimeUtc" and "endTimeUtc" fields, which will change
+                # across requests, resulting in mismatch; so add a hard equal logic to handle this case
+                # corresponding test: `test_upload_run`
+                elif "startTimeUtc" in body_dict and "endTimeUtc" in body_dict:
+                    try:
+                        body2_dict = json.loads(r2.body.decode("utf-8"))
+                        body_dict["startTimeUtc"] = body2_dict["startTimeUtc"]
+                        body_dict["endTimeUtc"] = body2_dict["endTimeUtc"]
+                    except (AttributeError, json.JSONDecodeError, KeyError):
+                        return False
+                    body1 = json.dumps(body_dict)
+                    _r1.body = body1.encode("utf-8")
+                    return matchers.body(_r1, r2)
                 else:
                     return False
         else:
+            # for upload local run to cloud scenario, SDK will upload some local artifacts
+            # these requests body contains time-various content, which will result in mismatch;
+            # so simple return True for such requests
+            # corresponding test: `test_upload_run`
+            if r1.method == "PUT":
+                if "PromptFlowArtifacts/batch_run_name" in r1.path or "ExperimentRun/dcid.batch_run_name" in r1.path:
+                    return True
             return matchers.body(r1, r2)

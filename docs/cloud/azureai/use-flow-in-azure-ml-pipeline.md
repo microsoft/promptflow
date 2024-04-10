@@ -1,6 +1,7 @@
 # Use flow in Azure ML pipeline job
+In practical scenarios, flows fulfill various functions. For example, consider an offline flow specifically designed to assess the relevance score for communication sessions between humans and agents. This flow is triggered nightly and processes a substantial amount of session data. In such a context, Parallel component and AzureML pipeline emerge as the optimal choices for handling large-scale, highly resilient, and efficient offline batch requirements. 
 
-After you have developed and tested the flow in [init and test a flow](../../how-to-guides/init-and-test-a-flow.md), this guide will help you learn how to use a flow as a parallel component in a pipeline job on AzureML, so that you can integrate the created flow with existing pipelines and process a large amount of data.
+Once you’ve developed and thoroughly tested your flow using the guidelines in the [init and test a flow](../../how-to-guides/init-and-test-a-flow.md) section, this guide will walk you through utilizing your flow as a parallel component within an AzureML pipeline job.
 
 :::{admonition} Pre-requirements
 To enable this feature, customer need to:
@@ -15,6 +16,8 @@ To enable this feature, customer need to:
     2. customer may update the file via `pf flow validate --file <my-flow-directory>`.
 
 :::
+
+To explore an executable end-to-end example of running sample flow within Azure ML workspace, you can refer to this tutorial notebook: [run flow with pipeline](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/run-flow-with-pipeline/pipeline.ipynb)
 
 For more information about AzureML and component:
 - [What is Azure CLI](https://learn.microsoft.com/en-us/cli/azure/what-is-azure-cli)

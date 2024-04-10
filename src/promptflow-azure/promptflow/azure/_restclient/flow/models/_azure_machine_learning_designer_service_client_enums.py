@@ -539,6 +539,7 @@ class ConnectionCategory(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     REDIS = "Redis"
     API_KEY = "ApiKey"
     AZURE_OPEN_AI = "AzureOpenAI"
+    AI_SERVICES = "AIServices"
     COGNITIVE_SEARCH = "CognitiveSearch"
     COGNITIVE_SERVICE = "CognitiveService"
     CUSTOM_KEYS = "CustomKeys"
@@ -883,6 +884,11 @@ class FlowLanguage(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     TYPE_SCRIPT = "TypeScript"
     JAVA_SCRIPT = "JavaScript"
 
+class FlowMessageFormatType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
+
+    BASIC = "basic"
+    OPENAI_VISION = "openai-vision"
+
 class FlowPatchOperationType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
     ARCHIVE_FLOW = "ArchiveFlow"
@@ -899,6 +905,8 @@ class FlowRunMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     PAIRWISE_EVAL = "PairwiseEval"
     EXPERIMENT_TEST = "ExperimentTest"
     EXPERIMENT_EVAL = "ExperimentEval"
+    CHAT_GROUP = "ChatGroup"
+    CHAT_GROUP_ROLE = "ChatGroupRole"
 
 class FlowRunStatusEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
@@ -926,6 +934,7 @@ class FlowRunTypeEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     PAIRWISE_EVALUATION_RUN = "PairwiseEvaluationRun"
     SINGLE_NODE_RUN = "SingleNodeRun"
     FROM_NODE_RUN = "FromNodeRun"
+    CHAT_GROUP_RUN = "ChatGroupRun"
 
 class FlowTestMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
@@ -1402,6 +1411,12 @@ class PromptflowEngineType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     FAST_ENGINE = "FastEngine"
     SCALABLE_ENGINE = "ScalableEngine"
 
+class PromptFlowInputFileFormat(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
+
+    JSONL = "Jsonl"
+    CSV = "Csv"
+    TSV = "Tsv"
+
 class ProvisioningState(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
     UNKNOWN = "Unknown"
@@ -1514,6 +1529,7 @@ class RuntimeType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     MANAGED_ONLINE_ENDPOINT = "ManagedOnlineEndpoint"
     COMPUTE_INSTANCE = "ComputeInstance"
     TRAINING_SESSION = "TrainingSession"
+    LOCAL = "Local"
 
 class RunType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 

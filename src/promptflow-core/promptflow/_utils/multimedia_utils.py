@@ -209,7 +209,7 @@ class MultimediaProcessor(ABC):
         return image_reference
 
     def get_file_reference_encoder(
-        self, folder_path: Path, relative_path: Path = None, *, use_absolute_path=False
+        self, folder_path: Path, relative_path: Path = None, use_absolute_path=False
     ) -> Callable:
         def pfbytes_file_reference_encoder(obj):
             """Dumps PFBytes to a file and returns its reference."""
@@ -253,11 +253,9 @@ class MultimediaProcessor(ABC):
             for check_func, process_func in process_funcs.items():
                 if check_func(value):
                     return process_func(value)
-                else:
-                    return {
-                        k: MultimediaProcessor._process_multimedia_dict_recursively(v, process_funcs)
-                        for k, v in value.items()
-                    }
+            return {
+                k: MultimediaProcessor._process_multimedia_dict_recursively(v, process_funcs) for k, v in value.items()
+            }
         else:
             return value
 
@@ -489,11 +487,19 @@ class OpenaiVisionMultimediaProcessor(MultimediaProcessor):
 
 # TODO：Runtime relies on these old interfaces and will be removed in the future.
 def persist_multimedia_data(
-    value: Any, base_dir: Path, sub_dir: Path = None, multimedia_processor: MultimediaProcessor = None
+    value: Any,
+    base_dir: Path,
+    sub_dir: Path = None,
+    use_absolute_path=False,
+    multimedia_processor: MultimediaProcessor = None,
 ):
     if multimedia_processor:
-        return multimedia_processor.persist_multimedia_data(value, base_dir, sub_dir)
-    return BasicMultimediaProcessor().persist_multimedia_data(value, base_dir, sub_dir)
+        return multimedia_processor.persist_multimedia_data(
+            value, base_dir, sub_dir, use_absolute_path=use_absolute_path
+        )
+    return BasicMultimediaProcessor().persist_multimedia_data(
+        value, base_dir, sub_dir, use_absolute_path=use_absolute_path
+    )
 
 
 def load_multimedia_data_recursively(value: Any, multimedia_processor: MultimediaProcessor = None):

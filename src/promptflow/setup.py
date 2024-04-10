@@ -64,8 +64,8 @@ setup(
             "promptflow-core[executor-service]",  # used to build web executor server
         ],
     },
+    scripts=["pf.autocomplete.sh"],
     packages=find_packages(),
-    scripts=["pf.bat"],
     include_package_data=True,
     project_urls={
         "Bug Reports": "https://github.com/microsoft/promptflow/issues",

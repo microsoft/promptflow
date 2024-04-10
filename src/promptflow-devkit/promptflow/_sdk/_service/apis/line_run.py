@@ -86,7 +86,7 @@ class LineRuns(Resource):
     def get(self):
         client: PFClient = get_client_from_request()
         args = ListLineRunParser.from_request()
-        line_runs: typing.List[LineRunEntity] = client._traces.list_line_runs(
+        line_runs: typing.List[LineRunEntity] = client.traces.list_line_runs(
             collection=args.collection,
             runs=args.runs,
             experiments=args.experiments,
