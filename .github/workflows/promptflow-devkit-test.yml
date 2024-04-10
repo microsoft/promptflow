@@ -46,7 +46,7 @@ jobs:
           poetry install --only test
           poetry run pip install ${{ env.TRACING_DIRECTORY }}
           poetry run pip install ${{ env.CORE_DIRECTORY }}[azureml-serving]
-          poetry run pip install ${{ env.WORKING_DIRECTORY }}
+          poetry run pip install -e ${{ env.WORKING_DIRECTORY }}
 
           echo "Need to install promptflow to avoid tool dependency issue"
           poetry run pip install ${{ env.PROMPTFLOW_DIRECTORY }}
@@ -57,7 +57,7 @@ jobs:
           poetry run pip show promptflow-core
           poetry run pip show promptflow-devkit
           poetry run pip show promptflow-tools
-        working-directory: ${{ env.TRACING_DIRECTORY }}
+        working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: Azure login (non pull_request workflow)
         if: github.event_name != 'pull_request'
         uses: azure/login@v1

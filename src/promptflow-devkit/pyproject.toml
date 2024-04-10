@@ -42,6 +42,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = ">=3.8,<3.9.7 || >3.9.7,<3.13"
+docutils = "<0.21.post1 || >0.21.post1"
 promptflow-core = "<2.0.0"
 httpx = ">=0.25.1"  # used to send http requests asynchronously
 sqlalchemy = ">=1.4.48,<3.0.0"  # sqlite requirements
