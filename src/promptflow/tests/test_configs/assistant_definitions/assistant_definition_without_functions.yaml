@@ -1,0 +1,6 @@
+model: mock_model
+instructions: mock_instructions
+tools:
+    - type: code_interpreter
+    - type: retrieval
+
