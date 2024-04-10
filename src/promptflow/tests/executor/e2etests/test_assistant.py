@@ -4,10 +4,11 @@ from pathlib import Path
 
 import pytest
 
+from promptflow._sdk._pf_client import PFClient
 from promptflow.contracts.run_info import Status
 from promptflow.executor import FlowExecutor
 
-from ..utils import get_flow_folder, get_flow_package_tool_definition, get_yaml_file
+from ..utils import EAGER_FLOWS_ROOT, get_flow_folder, get_flow_package_tool_definition, get_yaml_file
 
 PACKAGE_TOOL_BASE = Path(__file__).parent.parent / "package_tools"
 PACKAGE_TOOL_ENTRY = "promptflow._core.tools_manager.collect_package_tools"
@@ -69,3 +70,38 @@ class TestAssistant:
             executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections, raise_ex=True)
             flow_result = executor.exec_line({})
             assert flow_result.run_info.status == Status.Completed
+
+
+_client = PFClient()
+
+
+@pytest.mark.usefixtures("dev_connections", "recording_injection")
+@pytest.mark.e2etest
+class TestAssistantEagerFlow:
+    def test_eager_flow_with_assistant(self):
+        flow_path = get_flow_folder("assistant_script", EAGER_FLOWS_ROOT).absolute()
+        addon_tools = [
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_y",
+                    "description": "Return Y value based on input X value",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {"x": {"description": "The X value", "type": "number"}},
+                        "required": ["x"],
+                    },
+                },
+            }
+        ]
+        inputs = {
+            "assistant_name": "Math Tutor",
+            "instruction": "You are a personal math tutor. Write and run code to answer math questions.",
+            "model": "gpt-4",
+            "question": (
+                "I need to solve the equation `3x + 11 = 14`. What is the result of x+y? " "Please use get_y function."
+            ),
+            "tools": addon_tools,
+        }
+        result = _client._flows._test(flow=flow_path, inputs=inputs)
+        assert result.run_info.status.value == "Completed"
