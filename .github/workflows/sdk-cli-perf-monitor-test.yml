@@ -64,21 +64,20 @@ jobs:
         with:
           virtualenvs-create: true
           virtualenvs-in-project: true
-
-      - name: Load cached venv
-        id: cached-pip-wheels
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache
-          key: venv-${{ runner.os }}-${{ steps.display_env.outputs.pyVersion }}
       - name: install test dependency group
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: |
-          poetry install --only test --no-interaction --no-root
-          poetry install --only test --no-interaction
+          poetry install --with test
       - run: |
-          source $VENV
+          source .venv/scripts/activate
           pytest --version
+        if: runner.os == 'Windows'
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+      - run: |
+          source .venv/bin/activate
+          pytest --version
+        if: runner.os != 'Windows'
+        working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: install promptflow dependencies
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: |
