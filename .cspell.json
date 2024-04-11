@@ -203,6 +203,7 @@
     "rcts",
     "Chunker",
     "mpnet",
+    "wargs",
     "dcid"
   ],
   "flagWords": [
