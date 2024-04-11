@@ -138,9 +138,7 @@ class TestPrompty:
         run = pf.run(flow=f"{PROMPTY_DIR}/prompty_example.prompty", data=f"{DATA_DIR}/prompty_inputs.jsonl")
         assert run.status == "Completed"
         run_dict = run._to_dict()
-        with open(Path(run_dict["properties"]["output_path"]) / "error.json", "r") as f:
-            content = f.read()
-        assert not run_dict.get("error", None), f"error in run_dict {run_dict['error']} \n {content}"
+        assert not run_dict.get("error", None), f"error in run_dict {run_dict['error']}"
 
         output_data = Path(run.properties["output_path"]) / "flow_outputs" / "output.jsonl"
         with open(output_data, "r") as f:
