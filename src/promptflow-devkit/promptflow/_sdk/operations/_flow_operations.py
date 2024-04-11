@@ -988,7 +988,9 @@ class FlowOperations(TelemetryMixin):
             if key in extracted:
                 signature[key] = extracted[key]
             elif key in signature_overrides:
-                raise UserErrorException(f"Provided signature for {key}, which is not found in the entry.")
+                raise UserErrorException(
+                    f"Provided signature for {key}, which can't be overridden according to the entry."
+                )
 
             if key not in signature_overrides:
                 continue
