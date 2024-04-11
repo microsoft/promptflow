@@ -420,6 +420,22 @@ class TestFlowSave:
             },
         }
 
+    def test_pf_infer_signature_include_primitive_output(self):
+        pf = PFClient()
+        flow_meta, _, _ = pf.flows._infer_signature(entry=global_hello, include_primitive_output=True)
+        assert flow_meta == {
+            "inputs": {
+                "text": {
+                    "type": "string",
+                }
+            },
+            "outputs": {
+                "output": {
+                    "type": "string",
+                }
+            },
+        }
+
     def test_pf_save_callable_function(self):
         pf = PFClient()
         target_path = f"{FLOWS_DIR}/saved/hello_callable"

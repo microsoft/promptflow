@@ -1020,6 +1020,7 @@ class FlowOperations(TelemetryMixin):
         keep_entry: bool = False,
         validate: bool = True,
         language: str = FlowLanguage.Python,
+        include_primitive_output: bool = False,
     ) -> Tuple[dict, Path, List[str]]:
         """Infer signature of a flow entry.
 
@@ -1087,6 +1088,14 @@ class FlowOperations(TelemetryMixin):
             # this path is actually not used
             flow = FlexFlow(path=code / FLOW_FLEX_YAML, code=code, data=flow_meta, entry=flow_meta["entry"])
             flow._validate(raise_error=True)
+
+        if include_primitive_output and "outputs" not in flow_meta:
+            flow_meta["outputs"] = {
+                "output": {
+                    "type": "string",
+                }
+            }
+
         if not keep_entry:
             flow_meta.pop("entry", None)
         return flow_meta, code, snapshot_list
