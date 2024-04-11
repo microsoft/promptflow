@@ -100,7 +100,10 @@ omit = [
   "*/promptflow/tracing/*",
   "*/promptflow/tools/*",
   "*/promptflow/executor/*",
-  "*/promptflow/core/*"
+  "*/promptflow/core/*",
+  "*/promptflow/_sdk/_service/*",
+  "*/promptflow/_orchestrator/*",
+  "*/promptflow/_cli/*",
 ]
 
 [tool.black]
