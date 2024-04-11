@@ -30,7 +30,6 @@ from promptflow._sdk._constants import (
     AzureMLWorkspaceTriad,
     ContextAttributeKey,
 )
-from promptflow._sdk._errors import PromptFlowServiceInvokeError
 from promptflow._sdk._service.utils.utils import (
     add_executable_script_to_env_path,
     get_port_from_config,
@@ -263,10 +262,14 @@ def start_trace_with_devkit(
 
     # invoke prompt flow service
     pfs_port = _invoke_pf_svc()
-    if not is_pfs_service_healthy(pfs_port):
-        error_msg = "prompt flow service is not healthy, please check the logs for more details."
-        logger.error(error_msg)
-        raise PromptFlowServiceInvokeError(error_msg)
+    is_pfs_healthy = is_pfs_service_healthy(pfs_port)
+    if not is_pfs_healthy:
+        warning_msg = (
+            "Prompt flow service is not healthy, please check the logs for more details; "
+            "traces might not be exported correctly."
+        )
+        logger.warning(warning_msg)
+        return
 
     _inject_res_attrs_to_environ(pfs_port=pfs_port, collection=collection, exp=exp, ws_triad=ws_triad)
     # instrument openai and setup exporter to pfs here for flex mode
