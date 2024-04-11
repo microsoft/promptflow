@@ -1,5 +1,5 @@
 # Basic standard flow
-A basic standard flow calls Azure OpenAI with connection info stored in environment variables.
+A basic standard flow define using function entry that calls Azure OpenAI with connection info stored in environment variables.
 
 ## Prerequisites
 

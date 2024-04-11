@@ -1,5 +1,5 @@
 # Eval Check List
-A example flow shows how to evaluate the answer pass user specified check list.
+A example flow defined using class entry which demos how to evaluate the answer pass user specified check list.
 
 ## Prerequisites
 

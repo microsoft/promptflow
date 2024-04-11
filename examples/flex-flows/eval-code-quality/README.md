@@ -1,5 +1,5 @@
 # Eval Code Quality
-A example flow shows how to evaluate the quality of code snippet.
+A example flow defined using function entry which shows how to evaluate the quality of code snippet.
 
 ## Prerequisites
 

@@ -27,34 +27,41 @@ class Result:
 
 
 @trace
-def flow_entry(question: str = "What is ChatGPT?", chat_history: list = []) -> Result:
-    """Flow entry function."""
+class ChatFlow:
 
-    prompt = load_prompt("chat.jinja2", question, chat_history)
+    def __init__(self):
+        if "AZURE_OPENAI_API_KEY" not in os.environ:
+            # load environment variables from .env file
+            load_dotenv()
 
-    if "AZURE_OPENAI_API_KEY" not in os.environ:
-        # load environment variables from .env file
-        load_dotenv()
+        if "AZURE_OPENAI_API_KEY" not in os.environ:
+            raise Exception(
+                "Please specify environment variables: AZURE_OPENAI_API_KEY"
+            )
 
-    if "AZURE_OPENAI_API_KEY" not in os.environ:
-        raise Exception("Please specify environment variables: AZURE_OPENAI_API_KEY")
+        self.connection = AzureOpenAIConnection.from_env()
 
-    connection = AzureOpenAIConnection.from_env()
+    def __call__(
+        self, question: str = "What is ChatGPT?", chat_history: list = []
+    ) -> Result:
+        """Flow entry function."""
 
-    output = chat(
-        connection=connection,
-        prompt=prompt,
-        deployment_name="gpt-35-turbo",
-        max_tokens=256,
-        temperature=0.7,
-    )
-    return Result(answer=output)
+        prompt = load_prompt("chat.jinja2", question, chat_history)
+
+        output = chat(
+            connection=self.connection,
+            prompt=prompt,
+            deployment_name="gpt-35-turbo",
+            max_tokens=256,
+            temperature=0.7,
+        )
+        return Result(answer=output)
 
 
 if __name__ == "__main__":
     from promptflow.tracing import start_trace
 
     start_trace()
-
-    result = flow_entry("What's Azure Machine Learning?", [])
+    flow = ChatFlow()
+    result = flow("What's Azure Machine Learning?", [])
     print(result)

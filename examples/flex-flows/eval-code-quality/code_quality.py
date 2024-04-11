@@ -65,6 +65,7 @@ def eval_code(code: str) -> Result:
 
 if __name__ == "__main__":
     from promptflow.tracing import start_trace
+
     start_trace()
 
     result = eval_code('print("Hello, world!")')

@@ -13,25 +13,14 @@ BASE_DIR = Path(__file__).absolute().parent
 
 
 @trace
-def load_prompt(jinja2_template: str, answer: str, statement: str, examples: list) -> str:
+def load_prompt(
+    jinja2_template: str, answer: str, statement: str, examples: list
+) -> str:
     """Load prompt function."""
     with open(BASE_DIR / jinja2_template, "r", encoding="utf-8") as f:
         tmpl = Template(f.read(), trim_blocks=True, keep_trailing_newline=True)
         prompt = tmpl.render(answer=answer, statement=statement, examples=examples)
         return prompt
-
-
-@trace
-def check_list(answer: str, statements: dict):
-    """Check the answer applies for a collection of check statement."""
-    if isinstance(statements, str):
-        statements = json.loads(statements)
-
-    results = {}
-    for key, statement in statements.items():
-        r = check(answer=answer, statement=statement)
-        results[key] = r
-    return results
 
 
 @trace
@@ -68,6 +57,20 @@ def check(answer: str, statement: str):
     return output
 
 
+@trace
+class EvalFlow:
+    def __call__(self, answer: str, statements: dict):
+        """Check the answer applies for a collection of check statement."""
+        if isinstance(statements, str):
+            statements = json.loads(statements)
+
+        results = {}
+        for key, statement in statements.items():
+            r = check(answer=answer, statement=statement)
+            results[key] = r
+        return results
+
+
 if __name__ == "__main__":
     from promptflow.tracing import start_trace
 
@@ -84,8 +87,9 @@ if __name__ == "__main__":
         "correctness": "It contains a detailed explanation of ChatGPT.",
         "consise": "It is a consise statement.",
     }
+    flow = EvalFlow()
 
-    result = check_list(
+    result = flow(
         answer=answer,
         statements=statements,
     )
