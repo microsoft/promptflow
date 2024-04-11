@@ -70,7 +70,11 @@ def global_hello_int_return(text: str) -> int:
 
 
 def global_hello_strong_return(text: str) -> GlobalHello:
-    return len(text)
+    return GlobalHello(AzureOpenAIConnection("test"))
+
+
+def global_hello_kwargs(text: str, **kwargs) -> str:
+    return f"Hello {text}!"
 
 
 @pytest.mark.usefixtures(
@@ -162,7 +166,7 @@ class TestFlowSave:
                             "type": "string",
                         },
                         "length": {
-                            "type": "integer",
+                            "type": "int",
                         },
                     },
                 },
@@ -200,16 +204,16 @@ class TestFlowSave:
                             "type": "string",
                         },
                         "i": {
-                            "type": "integer",
+                            "type": "int",
                         },
                         "f": {
-                            "type": "number",
+                            "type": "double",
                         },
                         "b": {
-                            "type": "boolean",
+                            "type": "bool",
                         },
                         "li": {
-                            "type": "array",
+                            "type": "list",
                         },
                         "d": {
                             "type": "object",
@@ -220,16 +224,16 @@ class TestFlowSave:
                             "type": "string",
                         },
                         "i": {
-                            "type": "integer",
+                            "type": "int",
                         },
                         "f": {
-                            "type": "number",
+                            "type": "double",
                         },
                         "b": {
-                            "type": "boolean",
+                            "type": "bool",
                         },
                         "li": {
-                            "type": "array",
+                            "type": "list",
                         },
                         "d": {
                             "type": "object",
@@ -240,16 +244,16 @@ class TestFlowSave:
                             "type": "string",
                         },
                         "i": {
-                            "type": "integer",
+                            "type": "int",
                         },
                         "f": {
-                            "type": "number",
+                            "type": "double",
                         },
                         "b": {
-                            "type": "boolean",
+                            "type": "bool",
                         },
                         "l": {
-                            "type": "array",
+                            "type": "list",
                         },
                         "d": {
                             "type": "object",
@@ -489,6 +493,17 @@ class TestFlowSave:
                     },
                 },
                 id="inherited_typed_dict_output",
+            ),
+            pytest.param(
+                global_hello_kwargs,
+                {
+                    "inputs": {
+                        "text": {
+                            "type": "string",
+                        }
+                    },
+                },
+                id="kwargs",
             ),
         ],
     )
