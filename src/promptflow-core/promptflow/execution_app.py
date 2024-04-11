@@ -91,7 +91,6 @@ def get_run_mode() -> str:
 def start_server():
     """Start promptflow server based on run mode."""
 
-    service_logger.info(f"The build info of image: {os.getenv('BUILD_INFO')}")
     run_mode = get_run_mode()
     process = None
     if run_mode == RunMode.SERVING:
