@@ -59,7 +59,7 @@ def _is_azure_ext_installed() -> bool:
         return False
 
 
-def _get_collection_id(collection: str) -> str:
+def _get_collection_id_for_azure(collection: str) -> str:
     """{collection}_{object_id}"""
     import jwt
 
@@ -180,7 +180,7 @@ def _print_tracing_url_from_azure_portal(
 
     if run is None:
         _logger.debug("run is not specified, need to concat `collection_id` for query")
-        collection_id = _get_collection_id(collection=collection)
+        collection_id = _get_collection_id_for_azure(collection=collection)
     if AzureWorkspaceKind.is_workspace(workspace):
         _logger.debug(f"{ws_triad.workspace_name!r} is an Azure ML workspace.")
         if run is None:
