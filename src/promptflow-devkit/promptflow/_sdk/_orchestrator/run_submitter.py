@@ -85,10 +85,19 @@ class RunSubmitter:
             run._resume_from = self._ensure_run_completed(run._resume_from)
         # Start trace
         if self._config.is_internal_features_enabled():
-            from promptflow.tracing._start_trace import start_trace
+            from promptflow.tracing._start_trace import is_collection_writeable, start_trace
 
-            logger.debug("Starting trace for flow run...")
-            start_trace(session=kwargs.get("session", None), attributes=attributes, run=run.name)
+            logger.debug("start trace for flow run...")
+            if is_collection_writeable():
+                logger.debug("trace collection is writeable, will use flow name as collection...")
+                collection_for_run = run.flow.name
+                logger.debug("collection for run: %s", collection_for_run)
+                # pass with internal parameter `_collection`
+                start_trace(attributes=attributes, run=run.name, _collection=collection_for_run)
+            else:
+                logger.debug("trace collection is protected, will honor existing collection.")
+                start_trace(attributes=attributes, run=run.name)
+
         self._validate_inputs(run=run)
 
         local_storage = LocalStorageOperations(run, stream=stream, run_mode=RunMode.Batch)

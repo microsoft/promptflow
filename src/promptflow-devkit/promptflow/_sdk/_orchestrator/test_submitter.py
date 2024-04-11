@@ -28,6 +28,7 @@ from promptflow.contracts.run_info import RunInfo, Status
 from promptflow.exceptions import UserErrorException
 from promptflow.executor._result import LineResult
 from promptflow.storage._run_storage import DefaultRunStorage
+from promptflow.tracing._start_trace import is_collection_writeable, start_trace
 
 from .._configuration import Configuration
 from ..entities._flows import FlexFlow
@@ -211,8 +212,6 @@ class TestSubmitter:
         :return: TestSubmitter instance.
         :rtype: TestSubmitter
         """
-        from promptflow.tracing._start_trace import start_trace
-
         with self._resolve_variant():
             # temp flow is generated, will use self.flow instead of self._origin_flow in the following context
             self._within_init_context = True
@@ -239,8 +238,16 @@ class TestSubmitter:
 
             # do not enable trace when test single node, as we have not determined this behavior
             if target_node is None and Configuration(overrides=self._client._config).is_internal_features_enabled():
-                logger.debug("Starting trace for flow test...")
-                start_trace(session=session)
+                logger.debug("start trace for flow test...")
+                if is_collection_writeable():
+                    logger.debug("trace collection is writeable, will use flow name as collection...")
+                    collection_for_run = self._origin_flow.name
+                    logger.debug("collection for run: %s", collection_for_run)
+                    # pass with internal parameter `_collection`
+                    start_trace(session=session, _collection=collection_for_run)
+                else:
+                    logger.debug("trace collection is protected, will honor existing collection.")
+                    start_trace(session=session)
 
             self._output_base, log_path, output_sub = self._resolve_output_path(
                 output_base=output_path,
