@@ -31,10 +31,10 @@ from promptflow._sdk._errors import (
 from promptflow._sdk._load_functions import load_flow, load_run
 from promptflow._sdk._orchestrator.utils import SubmitterHelper
 from promptflow._sdk._run_functions import create_yaml_run
-from promptflow._sdk._utils import _get_additional_includes
+from promptflow._sdk._utils import _get_additional_includes, parse_otel_span_status_code
 from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
-from promptflow._utils.context_utils import _change_working_dir
+from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.exceptions import UserErrorException
@@ -48,6 +48,14 @@ FLOWS_DIR = "./tests/test_configs/flows"
 EAGER_FLOWS_DIR = "./tests/test_configs/eager_flows"
 RUNS_DIR = "./tests/test_configs/runs"
 DATAS_DIR = "./tests/test_configs/datas"
+
+
+def my_entry(input1: str):
+    return input1
+
+
+async def my_async_entry(input2: str):
+    return input2
 
 
 def create_run_against_multi_line_data(client) -> Run:
@@ -963,6 +971,15 @@ class TestFlowRun:
         assert run.status == "Completed"
         assert "error" not in run._to_dict()
 
+    def test_openai_vision_image_flow_bulk_run(self, pf, local_client) -> None:
+        image_flow_path = f"{FLOWS_DIR}/python_tool_with_openai_vision_image"
+        data_path = f"{image_flow_path}/inputs.jsonl"
+
+        result = pf.run(flow=image_flow_path, data=data_path, column_mapping={"image": "${data.image}"})
+        run = local_client.runs.get(name=result.name)
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict()
+
     def test_python_tool_with_composite_image(self, pf) -> None:
         image_flow_path = f"{FLOWS_DIR}/python_tool_with_composite_image"
         data_path = f"{image_flow_path}/inputs.jsonl"
@@ -1263,7 +1280,7 @@ class TestFlowRun:
         local_storage = LocalStorageOperations(run=run)
         assert local_storage._dag_path.exists()
         # the YAML file will not exist in user's folder
-        assert not Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/flow.dag.yaml").exists()
+        assert not Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/flow.flex.yaml").exists()
 
     def test_eager_flow_yaml_override(self, pf):
         run = pf.run(
@@ -1277,7 +1294,7 @@ class TestFlowRun:
         local_storage = LocalStorageOperations(run=run)
         assert local_storage._dag_path.exists()
         # original YAMl content not changed
-        original_dict = load_yaml(f"{EAGER_FLOWS_DIR}/multiple_entries/flow.dag.yaml")
+        original_dict = load_yaml(f"{EAGER_FLOWS_DIR}/multiple_entries/flow.flex.yaml")
         assert original_dict["entry"] == "entry1:my_flow1"
 
         # actual result will be entry2:my_flow2
@@ -1285,6 +1302,82 @@ class TestFlowRun:
         # convert DataFrame to dict
         details_dict = details.to_dict(orient="list")
         assert details_dict == {"inputs.line_number": [0], "outputs.output": ["entry2flow2"]}
+
+    def test_flex_flow_with_func(self, pf):
+        run = pf.run(
+            flow=my_entry,
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+            # set code folder to avoid snapshot too big
+            code=f"{EAGER_FLOWS_DIR}/multiple_entries",
+            column_mapping={"input1": "${data.input_val}"},
+        )
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict()
+
+        # actual result will be entry2:my_flow2
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {"inputs.input1": ["input1"], "inputs.line_number": [0], "outputs.output": ["input1"]}
+
+        run = pf.run(
+            flow=my_async_entry,
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+            # set code folder to avoid snapshot too big
+            code=f"{EAGER_FLOWS_DIR}/multiple_entries",
+            column_mapping={"input2": "${data.input_val}"},
+        )
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict()
+
+        # actual result will be entry2:my_flow2
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {"inputs.input2": ["input1"], "inputs.line_number": [0], "outputs.output": ["input1"]}
+
+    def test_flex_flow_with_local_imported_func(self, pf):
+        # run eager flow against a function from local file
+        with inject_sys_path(f"{EAGER_FLOWS_DIR}/multiple_entries"):
+            from entry2 import my_flow2
+
+            run = pf.run(
+                flow=my_flow2,
+                data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+                # set code folder to avoid snapshot too big
+                code=f"{EAGER_FLOWS_DIR}/multiple_entries",
+                column_mapping={"input1": "${data.input_val}"},
+            )
+            assert run.status == "Completed"
+            assert "error" not in run._to_dict()
+
+            # actual result will be entry2:my_flow2
+            details = pf.get_details(run.name)
+            # convert DataFrame to dict
+            details_dict = details.to_dict(orient="list")
+            assert details_dict == {
+                "inputs.input1": ["input1"],
+                "inputs.line_number": [0],
+                "outputs.output": ["entry2flow2"],
+            }
+
+    def test_flex_flow_with_imported_func(self, pf):
+        # run eager flow against a function from module
+        run = pf.run(
+            flow=parse_otel_span_status_code,
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+            # set code folder to avoid snapshot too big
+            code=f"{EAGER_FLOWS_DIR}/multiple_entries",
+            column_mapping={"value": "${data.input_val}"},
+        )
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict()
+
+        # actual result will be entry2:my_flow2
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {"inputs.line_number": [0], "inputs.value": ["input1"], "outputs.output": ["Error"]}
 
     def test_eager_flow_run_in_working_dir(self, pf):
         working_dir = f"{EAGER_FLOWS_DIR}/multiple_entries"
@@ -1300,7 +1393,7 @@ class TestFlowRun:
         local_storage = LocalStorageOperations(run=run)
         assert local_storage._dag_path.exists()
         # original YAMl content not changed
-        original_dict = load_yaml(f"{EAGER_FLOWS_DIR}/multiple_entries/flow.dag.yaml")
+        original_dict = load_yaml(f"{EAGER_FLOWS_DIR}/multiple_entries/flow.flex.yaml")
         assert original_dict["entry"] == "entry1:my_flow1"
 
         # actual result will be entry2:my_flow2
@@ -1597,6 +1690,30 @@ class TestFlowRun:
         )
         run = pf.runs.create_or_update(run=run)
         assert_batch_run_result(run, pf, assert_func)
+
+    def test_run_with_init_class(self, pf):
+        def assert_func(details_dict):
+            return details_dict["outputs.func_input"] == [
+                "func_input",
+                "func_input",
+                "func_input",
+                "func_input",
+            ] and details_dict["outputs.obj_input"] == ["val", "val", "val", "val"]
+
+        with inject_sys_path(f"{EAGER_FLOWS_DIR}/basic_callable_class"):
+            from simple_callable_class import MyFlow
+
+            run = pf.run(
+                flow=MyFlow,
+                data=f"{EAGER_FLOWS_DIR}/basic_callable_class/inputs.jsonl",
+                init={"obj_input": "val"},
+                # set code folder to avoid snapshot too big
+                code=f"{EAGER_FLOWS_DIR}/basic_callable_class",
+            )
+            assert run.status == "Completed"
+            assert "error" not in run._to_dict()
+
+            assert_batch_run_result(run, pf, assert_func)
 
 
 def assert_batch_run_result(run: Run, pf: PFClient, assert_func):

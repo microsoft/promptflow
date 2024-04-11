@@ -19,7 +19,7 @@ import mock
 import pytest
 
 from promptflow._cli._pf.entry import main
-from promptflow._constants import LINE_NUMBER_KEY, PF_USER_AGENT
+from promptflow._constants import FLOW_FLEX_YAML, LINE_NUMBER_KEY, PF_USER_AGENT
 from promptflow._sdk._constants import LOGGER_NAME, SCRUBBED_VALUE, ExperimentStatus
 from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
@@ -37,6 +37,7 @@ RUNS_DIR = "./tests/test_configs/runs"
 CONNECTIONS_DIR = "./tests/test_configs/connections"
 DATAS_DIR = "./tests/test_configs/datas"
 TOOL_ROOT = "./tests/test_configs/tools"
+PROMPTY_DIR = "./tests/test_configs/prompty"
 
 TARGET_URL = "https://www.youtube.com/watch?v=o5ZQyXaAv1g"
 
@@ -68,7 +69,7 @@ class TestCli:
     def test_pf_version(self, capfd):
         run_pf_command("--version")
         out, _ = capfd.readouterr()
-        assert "0.0.1\n" in out
+        assert "0.0.1" in out
 
     def test_basic_flow_run(self, capfd) -> None:
         # fetch std out
@@ -297,6 +298,54 @@ class TestCli:
         with open(log_path, "r") as f:
             log_content = f.read()
         assert previous_log_content not in log_content
+
+        # Test flow test with simple input file
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/web_classification",
+            "--inputs",
+            f"{DATAS_DIR}/webClassification1.jsonl",
+        )
+        output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.output.json"
+        assert output_path.exists()
+
+        # Test flow test with simple input file
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/web_classification",
+            "--inputs",
+            f"{DATAS_DIR}/webClassification.json",
+        )
+        output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.output.json"
+        assert output_path.exists()
+
+        # Test flow test with invalid simple input file
+        with pytest.raises(ValueError) as ex:
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{FLOWS_DIR}/web_classification",
+                "--inputs",
+                f"{DATAS_DIR}/invalid_path.json",
+            )
+        assert "Cannot find inputs file" in ex.value.args[0]
+
+        # Test flow test with invalid file extension
+        with pytest.raises(ValueError) as ex:
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{FLOWS_DIR}/web_classification",
+                "--inputs",
+                f"{DATAS_DIR}/logo.jpg",
+            )
+        assert "Only support jsonl or json file as input" in ex.value.args[0]
 
     def test_flow_with_aad_connection(self):
         run_pf_command("flow", "test", "--flow", f"{FLOWS_DIR}/flow_with_aad_connection")
@@ -1548,7 +1597,7 @@ class TestCli:
         with pytest.raises(SystemExit):
             run_pf_command("tool", "list", "--flow", "invalid_flow_folder")
         outerr = capsys.readouterr()
-        assert "invalid_flow_folder does not exist" in outerr.out
+        assert "invalid_flow_folder does not exist." in outerr.out
 
     def test_tool_validate(self):
         # Test validate tool script
@@ -1593,6 +1642,18 @@ class TestCli:
         output_path = Path(FLOWS_DIR) / "python_tool_with_composite_image" / ".promptflow" / "output"
         assert output_path.exists()
         image_path = Path(FLOWS_DIR) / "python_tool_with_composite_image" / ".promptflow" / "intermediate"
+        assert image_path.exists()
+
+    def test_flow_test_with_openai_vision_image_input_and_output(self):
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/python_tool_with_openai_vision_image",
+        )
+        output_path = Path(FLOWS_DIR) / "python_tool_with_openai_vision_image" / ".promptflow" / "output"
+        assert output_path.exists()
+        image_path = Path(FLOWS_DIR) / "python_tool_with_openai_vision_image" / ".promptflow" / "intermediate"
         assert image_path.exists()
 
     def test_run_file_with_set(self, pf) -> None:
@@ -2022,6 +2083,20 @@ class TestCli:
                 path = Path(tmpdir) / node_name / filename
                 assert path.is_file()
 
+    @pytest.mark.usefixtures("setup_experiment_table", "recording_injection")
+    def test_experiment_direct_test(self, monkeypatch, capfd, local_client, tmpdir):
+        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+            mock_func.return_value = True
+            run_pf_command(
+                "experiment",
+                "test",
+                "--template",
+                f"{EXPERIMENT_DIR}/basic-no-script-template/basic.exp.yaml",
+            )
+            out, _ = capfd.readouterr()
+            assert "main" in out
+            assert "eval" in out
+
     def test_run_list(self, local_client):
         from promptflow._sdk.entities import Run
 
@@ -2200,8 +2275,32 @@ class TestCli:
         detail_path = Path(flow_dir) / ".promptflow" / "chat.detail.json"
         assert detail_path.exists()
 
-    def test_pf_run_with_init(self, pf):
+    def test_flow_test_prompty(self):
+        prompty_path = Path(PROMPTY_DIR) / "prompty_example.prompty"
+        run_pf_command("flow", "test", "--flow", prompty_path.as_posix(), "--inputs", 'question="who are you"')
+        output_path = Path(prompty_path).parent / ".promptflow" / "prompty_example"
+        assert output_path.exists()
+        assert (output_path / "flow.log").exists()
+        assert (output_path / "flow.detail.json").exists()
+        assert (output_path / "flow.output.json").exists()
 
+    def test_flow_run_prompty(self, capfd):
+        prompty_path = Path(PROMPTY_DIR) / "prompty_example.prompty"
+
+        run_pf_command(
+            "run",
+            "create",
+            "--flow",
+            prompty_path.as_posix(),
+            "--data",
+            f"{DATAS_DIR}/prompty_inputs.jsonl",
+            "--name",
+            str(uuid.uuid4()),
+        )
+        out, _ = capfd.readouterr()
+        assert "Completed" in out
+
+    def test_pf_run_with_init(self, pf):
         run_id = str(uuid.uuid4())
         run_pf_command(
             "run",
@@ -2227,6 +2326,41 @@ class TestCli:
         # check run results
         run = pf.runs.get(run_id)
         assert_batch_run_result(run, pf, assert_func)
+
+    def test_pf_flow_save(self, pf):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            run_pf_command(
+                "flow",
+                "save",
+                "--path",
+                temp_dir,
+                "--entry",
+                "hello:hello_world",
+                "--code",
+                f"{EAGER_FLOWS_DIR}/../functions/hello_world",
+            )
+            assert os.listdir(temp_dir) == [FLOW_FLEX_YAML, "hello.py"]
+            content = load_yaml(Path(temp_dir) / FLOW_FLEX_YAML)
+            assert content == {
+                "entry": "hello:hello_world",
+                "inputs": {
+                    "text": {
+                        "type": "string",
+                    }
+                },
+            }
+            os.unlink(Path(temp_dir) / FLOW_FLEX_YAML)
+            run_pf_command(
+                "flow",
+                "save",
+                "--entry",
+                "hello:hello_world",
+                cwd=temp_dir,
+            )
+            # __pycache__ will be created when inspecting the module
+            assert os.listdir(temp_dir) == [FLOW_FLEX_YAML, "hello.py", "__pycache__"]
+            new_content = load_yaml(Path(temp_dir) / FLOW_FLEX_YAML)
+            assert new_content == content
 
 
 def assert_batch_run_result(run, pf, assert_func):

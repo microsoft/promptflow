@@ -180,7 +180,7 @@ def remote_client(subscription_id: str, resource_group_name: str, workspace_name
             resource_group_name=resource_group_name,
             workspace_name=workspace_name,
         )
-    assert "promptflow-sdk" in ClientUserAgentUtil.get_user_agent()
+    assert "promptflow-azure-sdk" in ClientUserAgentUtil.get_user_agent()
     assert "promptflow-test" not in ClientUserAgentUtil.get_user_agent()
     yield client
 
@@ -419,6 +419,10 @@ def mock_get_azure_pf_client(mocker: MockerFixture, remote_client) -> None:
         )
         mocker.patch(
             "promptflow.azure._cli._flow._get_azure_pf_client",
+            return_value=remote_client,
+        )
+        mocker.patch(
+            "promptflow.azure._cli._utils._get_azure_pf_client",
             return_value=remote_client,
         )
     yield

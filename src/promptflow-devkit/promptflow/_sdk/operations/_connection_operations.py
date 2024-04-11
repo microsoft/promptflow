@@ -80,7 +80,7 @@ class ConnectionOperations(TelemetryMixin):
         if sdk_conn_cls is None:
             raise ConnectionClassNotFoundError(
                 f"Correspond sdk connection type not found for core connection type: {core_conn.type!r}, "
-                f"please install the latest 'promptflow-devkit' and 'promptflow-core'."
+                f"please re-install the 'promptflow' package."
             )
         common_args = {
             "name": core_conn.name,

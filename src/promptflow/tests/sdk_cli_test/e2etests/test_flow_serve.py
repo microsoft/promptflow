@@ -9,8 +9,10 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
+from promptflow._utils.multimedia_utils import OpenaiVisionMultimediaProcessor
 from promptflow.core._serving.constants import FEEDBACK_TRACE_FIELD_NAME
 from promptflow.core._serving.utils import load_feedback_swagger
+from promptflow.exceptions import UserErrorException
 from promptflow.tracing._operation_context import OperationContext
 
 
@@ -401,6 +403,18 @@ def test_list_image_flow(serving_client_composite_image_flow, sample_image):
     ), f"data:image/jpg;base64 not in output list {response['output']}"
 
 
+@pytest.mark.usefixtures("serving_client_openai_vision_image_flow", "recording_injection", "setup_local_connection")
+@pytest.mark.e2etest
+def test_openai_vision_image_flow(serving_client_openai_vision_image_flow, sample_image):
+    response = serving_client_openai_vision_image_flow.post("/score", data=json.dumps({"image": sample_image}))
+    assert (
+        response.status_code == 200
+    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
+    response = json.loads(response.data.decode())
+    assert {"output"} == response.keys()
+    assert OpenaiVisionMultimediaProcessor.is_multimedia_dict(response["output"])
+
+
 @pytest.mark.usefixtures("serving_client_with_environment_variables")
 @pytest.mark.e2etest
 def test_flow_with_environment_variables(serving_client_with_environment_variables):
@@ -464,7 +478,7 @@ def test_eager_flow_swagger(simple_eager_flow):
                             "content": {
                                 "application/json": {
                                     "schema": {
-                                        "properties": {"output": {"additionalProperties": {}, "type": "object"}},
+                                        "properties": {"output": {"type": "string"}},
                                         "type": "object",
                                     }
                                 }
@@ -522,11 +536,7 @@ def test_eager_flow_primitive_output_swagger(simple_eager_flow_primitive_output)
                     },
                     "responses": {
                         "200": {
-                            "content": {
-                                "application/json": {
-                                    "schema": {"properties": {"output": {"type": "string"}}, "type": "object"}
-                                }
-                            },
+                            "content": {"application/json": {"schema": {"type": "object"}}},
                             "description": "successful " "operation",
                         },
                         "400": {"description": "Invalid " "input"},
@@ -557,20 +567,18 @@ def test_eager_flow_serve_dataclass_output(simple_eager_flow_dataclass_output):
 
 
 @pytest.mark.e2etest
-def test_eager_flow_serve_non_json_serializable_output(non_json_serializable_output):
-    response = non_json_serializable_output.post("/score", data=json.dumps({}))
-    assert (
-        response.status_code == 400
-    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
-    response = json.loads(response.data.decode())
-    assert response == {
-        "error": {
-            "code": "UserError",
-            "message": "The output 'output' for flow is incorrect. The output value is not JSON serializable. "
-            "JSON dump failed: (TypeError) Object of type Output is not JSON serializable. "
-            "Please verify your flow output and make sure the value serializable.",
-        }
-    }
+def test_eager_flow_serve_non_json_serializable_output(mocker):
+    with pytest.raises(UserErrorException, match="Parse interface for 'my_flow' failed:"):
+        # instead of giving 400 response for all requests, we raise user error on serving now
+        from pathlib import Path
+
+        from ..conftest import create_client_by_model
+
+        create_client_by_model(
+            "non_json_serializable_output",
+            mocker,
+            model_root=Path(__file__).parent.parent.parent / "test_configs" / "eager_flows",
+        )
 
 
 @pytest.mark.e2etest

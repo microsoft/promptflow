@@ -29,7 +29,7 @@ promptflow.tools.aoai_gpt4v.AzureOpenAI.chat:
         func_path: promptflow.tools.aoai_gpt4v.list_deployment_names
         func_kwargs:
         - name: connection
-          type: 
+          type:
           - AzureOpenAIConnection
           reference: ${inputs.connection}
       allow_manual_entry: true
@@ -62,3 +62,11 @@ promptflow.tools.aoai_gpt4v.AzureOpenAI.chat:
       default: ""
       type:
         - int
+    detail:
+      enum:
+      - low
+      - high
+      - auto
+      type:
+        - string
+      default: auto

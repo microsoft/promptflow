@@ -1,12 +1,12 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-import re
 
 from marshmallow import ValidationError, fields, validate, validates_schema
 
-from promptflow._constants import LANGUAGE_KEY, FlowEntryRegex, FlowLanguage
-from promptflow._sdk._constants import FlowType
+from promptflow._constants import LANGUAGE_KEY, ConnectionType, FlowLanguage
+from promptflow._proxy import ProxyFactory
+from promptflow._sdk._constants import FlowType, SignatureValueType
 from promptflow._sdk.schemas._base import PatchedSchemaMeta, YamlFileSchema
 from promptflow._sdk.schemas._fields import NestedField
 
@@ -60,21 +60,55 @@ class FlowSchema(BaseFlowSchema):
     node_variants = fields.Dict(keys=fields.Str(), values=fields.Dict())
 
 
-class EagerFlowSchema(BaseFlowSchema):
+class FlexFlowInputSchema(FlowInputSchema):
+    type = fields.Str(
+        required=True,
+        # TODO 3062609: Flex flow GPT-V support
+        validate=validate.OneOf(list(map(lambda x: x.value, SignatureValueType))),
+    )
+
+
+class FlexFlowInitSchema(FlowInputSchema):
+    type = fields.Str(
+        required=True,
+        validate=validate.OneOf(
+            list(map(lambda x: x.value, SignatureValueType))
+            + list(
+                map(lambda x: f"{x.value}Connection", filter(lambda x: x != ConnectionType._NOT_SET, ConnectionType))
+            )
+        ),
+    )
+
+
+class FlexFlowOutputSchema(FlowOutputSchema):
+    type = fields.Str(
+        required=True,
+        validate=validate.OneOf(list(map(lambda x: x.value, SignatureValueType))),
+    )
+
+
+class FlexFlowSchema(BaseFlowSchema):
     """Schema for eager flow."""
 
     # entry point for eager flow
     entry = fields.Str(required=True)
+    inputs = fields.Dict(keys=fields.Str(), values=NestedField(FlexFlowInputSchema), required=False)
+    outputs = fields.Dict(keys=fields.Str(), values=NestedField(FlexFlowOutputSchema), required=False)
+    init = fields.Dict(keys=fields.Str(), values=NestedField(FlexFlowInitSchema), required=False)
+    sample = fields.Str()
 
     @validates_schema(skip_on_field_errors=False)
     def validate_entry(self, data, **kwargs):
         """Validate entry."""
+        # the match of entry and input/output ports will be checked in entity._custom_validate instead of here
         language = data.get(LANGUAGE_KEY, FlowLanguage.Python)
-        entry_regex = None
-        if language == FlowLanguage.CSharp:
-            entry_regex = FlowEntryRegex.CSharp
-        elif language == FlowLanguage.Python:
-            entry_regex = FlowEntryRegex.Python
-
-        if entry_regex is not None and not re.match(entry_regex, data["entry"]):
+        inspector_proxy = ProxyFactory().create_inspector_proxy(language=language)
+        if not inspector_proxy.is_flex_flow_entry(data.get("entry", None)):
             raise ValidationError(field_name="entry", message=f"Entry function {data['entry']} is not valid.")
+
+
+class PromptySchema(BaseFlowSchema):
+    """Schema for prompty."""
+
+    model = fields.Dict()
+    inputs = fields.Dict()

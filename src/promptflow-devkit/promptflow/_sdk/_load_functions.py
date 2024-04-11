@@ -15,7 +15,7 @@ from ._errors import MultipleExperimentTemplateError, NoExperimentTemplateError
 from .entities import Run
 from .entities._connection import CustomConnection, _Connection
 from .entities._experiment import Experiment, ExperimentTemplate
-from .entities._flow import Flow
+from .entities._flows import Flow
 
 logger = get_cli_sdk_logger()
 
@@ -79,7 +79,7 @@ def load_flow(
         An exception is raised if the file does not exist.
     :type source: Union[PathLike, str]
     :return: A Flow object
-    :rtype: ~promptflow._sdk.entities._flow.Flow
+    :rtype: ~promptflow._sdk.entities._flows.Flow
     """
     return Flow.load(source, **kwargs)
 

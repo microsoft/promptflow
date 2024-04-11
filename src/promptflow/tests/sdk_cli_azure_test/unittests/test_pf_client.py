@@ -7,8 +7,8 @@ import pytest
 from promptflow import PFClient
 from promptflow._sdk.operations._connection_operations import ConnectionOperations
 from promptflow._sdk.operations._local_azure_connection_operations import LocalAzureConnectionOperations
-from promptflow.core._connection_provider._utils import extract_workspace
 from promptflow.core._errors import MalformedConnectionProviderConfig
+from promptflow.core._utils import extract_workspace
 from promptflow.exceptions import UserErrorException
 
 AZUREML_RESOURCE_PROVIDER = "Microsoft.MachineLearningServices"

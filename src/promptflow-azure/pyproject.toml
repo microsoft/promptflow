@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "promptflow-azure"
-version = "1.0.0.dev0"
+version = "1.9.0.dev0"
 description = "Prompt flow azure"
 include = [
   "promptflow/azure/resources/*"

@@ -14,7 +14,7 @@ import pytest
 from promptflow import load_flow
 from promptflow._sdk._errors import ConnectionNotFoundError, InvalidFlowError
 from promptflow._sdk.entities import CustomConnection
-from promptflow._sdk.entities._flow._flow_context_resolver import FlowContextResolver
+from promptflow._sdk.entities._flows._flow_context_resolver import FlowContextResolver
 from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag
 from promptflow.entities import FlowContext
 from promptflow.exceptions import UserErrorException
@@ -326,3 +326,17 @@ class TestFlowAsFunc:
         )
         # function can successfully run with connection override
         f(url="https://www.youtube.com/watch?v=o5ZQyXaAv1g")
+
+    def test_flow_with_connection_override(self, azure_open_ai_connection):
+        f = load_flow(f"{FLOWS_DIR}/llm_tool_non_existing_connection")
+        with pytest.raises(ConnectionNotFoundError):
+            f(joke="joke")
+        f.context = FlowContext(
+            connections={
+                "joke": {"connection": azure_open_ai_connection},
+            }
+        )
+        # function can successfully run with connection override
+        f(topic="joke")
+        # This should work on subsequent call not just first
+        f(topic="joke")

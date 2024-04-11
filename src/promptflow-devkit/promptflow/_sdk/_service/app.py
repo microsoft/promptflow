@@ -6,8 +6,9 @@ import threading
 import time
 from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
+from pathlib import WindowsPath
 
-from flask import Blueprint, Flask, current_app, g, jsonify, request
+from flask import Blueprint, Flask, current_app, g, jsonify, redirect, request, url_for
 from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
 
@@ -32,19 +33,24 @@ from promptflow._sdk._service.apis.ui import serve_trace_ui
 from promptflow._sdk._service.utils.utils import (
     FormattedException,
     get_current_env_pfs_file,
+    get_pfs_version,
     get_port_from_config,
     is_run_from_built_binary,
     kill_exist_service,
 )
-from promptflow._sdk._utils import get_promptflow_sdk_version, overwrite_null_std_logger, read_write_by_user
+from promptflow._sdk._utils import overwrite_null_std_logger, read_write_by_user
 from promptflow._utils.thread_utils import ThreadWithContextVars
 
 overwrite_null_std_logger()
 
 
 def heartbeat():
-    response = {"promptflow": get_promptflow_sdk_version()}
+    response = {"promptflow": get_pfs_version()}
     return jsonify(response)
+
+
+def root():
+    return redirect(url_for("serve_trace_ui"))
 
 
 def create_app():
@@ -55,6 +61,7 @@ def create_app():
     # as there might be different ports in that scenario
     CORS(app)
 
+    app.add_url_rule("/", view_func=root)
     app.add_url_rule("/heartbeat", view_func=heartbeat)
     app.add_url_rule(
         "/v1/traces", view_func=lambda: trace_collector(get_created_by_info_with_cache, app.logger), methods=["POST"]
@@ -104,8 +111,19 @@ def create_app():
                 return asdict(FormattedException(e), dict_factory=lambda x: {k: v for (k, v) in x if v}), e.code
             app.logger.error(e, exc_info=True, stack_info=True)
             formatted_exception = FormattedException(e)
+
+            def handle_windows_path(obj):
+                if isinstance(obj, WindowsPath):
+                    return str(obj)
+                elif isinstance(obj, dict):
+                    return {k: handle_windows_path(v) for k, v in obj.items()}
+                elif isinstance(obj, list):
+                    return [handle_windows_path(v) for v in obj]
+                else:
+                    return obj
+
             return (
-                asdict(formatted_exception, dict_factory=lambda x: {k: v for (k, v) in x if v}),
+                handle_windows_path(asdict(formatted_exception, dict_factory=lambda x: {k: v for (k, v) in x if v})),
                 formatted_exception.status_code,
             )
 

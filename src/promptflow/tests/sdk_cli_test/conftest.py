@@ -220,6 +220,11 @@ def serving_client_composite_image_flow(mocker: MockerFixture):
 
 
 @pytest.fixture
+def serving_client_openai_vision_image_flow(mocker: MockerFixture):
+    return create_client_by_model("python_tool_with_openai_vision_image", mocker)
+
+
+@pytest.fixture
 def serving_client_with_environment_variables(mocker: MockerFixture):
     return create_client_by_model(
         "flow_with_environment_variables",
@@ -376,6 +381,7 @@ def setup_recording_injection_if_enabled():
             "promptflow._core.tool.tool": mocked_tool,
             "promptflow._internal.tool": mocked_tool,
             "promptflow.tool": mocked_tool,
+            "promptflow.core.tool": mocked_tool,
             "promptflow.tracing._integrations._openai_injector.inject_sync": inject_sync_with_recording,
             "promptflow.tracing._integrations._openai_injector.inject_async": inject_async_with_recording,
         }

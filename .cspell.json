@@ -33,6 +33,7 @@
     "src/promptflow/tests/**",
     "src/promptflow-recording/**",
     "src/promptflow-tools/tests/**",
+    "src/promptflow-devkit/promptflow/_sdk/_service/static/index.html",
     "**/flow.dag.yaml",
     "**/pyproject.toml",
     "**/setup.py",
@@ -40,7 +41,8 @@
     "scripts/installer/windows/**",
     ".github/workflows/**",
     ".github/actions/**",
-    ".github/pipelines/**"
+    ".github/pipelines/**",
+    ".github/CODEOWNERS"
   ],
   "words": [
     "aoai",
@@ -188,7 +190,16 @@
     "pywin",
     "STARTF",
     "mltable",
-    "setenv"
+    "prompty",
+    "Prompty",
+    "setenv",
+    "cscript",
+    "nologo",
+    "wscript",
+    "raisvc",
+    "evals",
+    "wargs",
+    "dcid"
   ],
   "flagWords": [
     "Prompt Flow"

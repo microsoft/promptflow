@@ -123,10 +123,6 @@ class LineExecutionProcessPool:
         # Initialize some fields from flow_executor and construct flow_create_kwargs
         self._flow_id = flow_executor._flow_id
         self._log_interval = flow_executor._log_interval
-        if isinstance(flow_executor, ScriptExecutor):
-            self._storage = flow_executor._storage
-        else:
-            self._storage = flow_executor._run_tracker._storage
         self._flow_create_kwargs = {
             "flow_file": flow_executor._flow_file,
             "connections": flow_executor._connections,
@@ -136,6 +132,12 @@ class LineExecutionProcessPool:
             # only script executor has init
             "init_kwargs": getattr(flow_executor, "_init_kwargs", None),
         }
+        if isinstance(flow_executor, ScriptExecutor):
+            self._storage = flow_executor._storage
+        else:
+            self._storage = flow_executor._run_tracker._storage
+            # ScriptExecutor does not have _flow attribute.
+            self._flow_create_kwargs.update({"name": flow_executor._flow.name})
         # Will set to True if the batch run is timeouted.
         self._is_timeout = False
         self._multimedia_processor = flow_executor._multimedia_processor
@@ -748,7 +750,9 @@ def _exec_line_for_queue(
                         # Meet span missing issue when end process normally (even add wait() when end it).
                         # Shutdown the tracer provider to flush the remaining spans.
                         # The tracer provider is created for each process, so it's ok to shutdown it here.
-                        otel_trace.get_tracer_provider().shutdown()
+                        tracer_provider = otel_trace.get_tracer_provider()
+                        if hasattr(tracer_provider, "shutdown"):
+                            tracer_provider.shutdown()
                     except Exception as e:
                         bulk_logger.warning(f"Error occurred while shutting down tracer provider: {e}")
 

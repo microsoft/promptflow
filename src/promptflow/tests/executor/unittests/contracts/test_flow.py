@@ -67,6 +67,20 @@ class TestFlowContract:
         assert flow.get_connection_input_names_for_node("not_exist") == []
 
     @pytest.mark.parametrize(
+        "file_name, name_from_payload, expected_name",
+        [
+            ("yaml_with_name.yaml", "name_from_payload", "name_from_payload"),
+            ("yaml_with_name.yaml", None, "name_from_yaml"),
+            ("yaml_without_name.yaml", "name_from_payload", "name_from_payload"),
+            ("yaml_without_name.yaml", None, "flow_name"),
+        ],
+    )
+    def test_flow_name(self, file_name: str, name_from_payload: str, expected_name: str):
+        flow_folder = get_flow_folder("flow_name")
+        flow = Flow.from_yaml(flow_file=file_name, working_dir=flow_folder, name=name_from_payload)
+        assert flow.name == expected_name
+
+    @pytest.mark.parametrize(
         "flow_folder_name, environment_variables_overrides, except_environment_variables",
         [
             pytest.param(

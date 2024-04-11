@@ -11,11 +11,13 @@ import os
 import signal
 import threading
 import uuid
+from contextlib import contextmanager
 from pathlib import Path
 from threading import current_thread
 from types import GeneratorType
-from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
+from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 
+import opentelemetry.trace as otel_trace
 from opentelemetry.trace.status import StatusCode
 
 from promptflow._constants import LINE_NUMBER_KEY
@@ -33,15 +35,17 @@ from promptflow._utils.execution_utils import (
     extract_aggregation_inputs,
     get_aggregation_inputs_properties,
 )
-from promptflow._utils.flow_utils import is_flex_flow
+from promptflow._utils.flow_utils import is_flex_flow, is_prompty_flow
 from promptflow._utils.logger_utils import flow_logger, logger
 from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow._utils.user_agent_utils import append_promptflow_package_ua
 from promptflow._utils.utils import get_int_env_var, transpose
 from promptflow._utils.yaml_utils import load_yaml
+from promptflow.connections import ConnectionProvider
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
+from promptflow.core._connection_provider._dict_connection_provider import DictConnectionProvider
 from promptflow.exceptions import PromptflowException
 from promptflow.executor import _input_assignment_parser
 from promptflow.executor._async_nodes_scheduler import AsyncNodesScheduler
@@ -96,7 +100,7 @@ class FlowExecutor:
     def __init__(
         self,
         flow: Flow,
-        connections: dict,
+        connections: ConnectionProvider,
         run_tracker: RunTracker,
         cache_manager: AbstractCacheManager,
         loaded_tools: Mapping[str, Callable],
@@ -111,7 +115,7 @@ class FlowExecutor:
         :param flow: The Flow object to execute.
         :type flow: ~promptflow.contracts.flow.Flow
         :param connections: The connections between nodes in the Flow.
-        :type connections: dict
+        :type connections: Union[dict, ConnectionProvider]
         :param run_tracker: The RunTracker object to track the execution of the Flow.
         :type run_tracker: ~promptflow._core.run_tracker.RunTracker
         :param cache_manager: The AbstractCacheManager object to manage caching of results.
@@ -168,7 +172,7 @@ class FlowExecutor:
     def create(
         cls,
         flow_file: Path,
-        connections: dict,
+        connections: Union[dict, ConnectionProvider],
         working_dir: Optional[Path] = None,
         *,
         entry: Optional[str] = None,
@@ -177,13 +181,14 @@ class FlowExecutor:
         node_override: Optional[Dict[str, Dict[str, Any]]] = None,
         line_timeout_sec: Optional[int] = None,
         init_kwargs: Optional[Dict[str, Any]] = None,
+        **kwargs,
     ) -> "FlowExecutor":
         """Create a new instance of FlowExecutor.
 
         :param flow_file: The path to the flow file.
         :type flow_file: Path
         :param connections: The connections to be used for the flow.
-        :type connections: dict
+        :type connections: Union[dict, ConnectionProvider]
         :param working_dir: The working directory to be used for the flow. Default is None.
         :type working_dir: Optional[str]
         :param func: The function to be used for the flow if .py is provided. Default is None.
@@ -202,16 +207,32 @@ class FlowExecutor:
         :rtype: ~promptflow.executor.flow_executor.FlowExecutor
         """
         setup_exporter_from_environ()
-        if is_flex_flow(file_path=flow_file, working_dir=working_dir):
+        if hasattr(flow_file, "__call__") or inspect.isfunction(flow_file):
+            from ._script_executor import ScriptExecutor
+
+            return ScriptExecutor(flow_file, storage=storage)
+        if not isinstance(flow_file, (Path, str)):
+            raise NotImplementedError("Only support Path or str for flow_file.")
+        if is_flex_flow(flow_path=flow_file, working_dir=working_dir):
             from ._script_executor import ScriptExecutor
 
             return ScriptExecutor(
                 flow_file=Path(flow_file), working_dir=working_dir, storage=storage, init_kwargs=init_kwargs
             )
+        elif is_prompty_flow(file_path=flow_file):
+            from ._prompty_executor import PromptyExecutor
+
+            return PromptyExecutor(
+                flow_file=Path(flow_file),
+                working_dir=working_dir,
+                storage=storage,
+            )
         else:
             if init_kwargs:
                 logger.warning(f"Got unexpected init args {init_kwargs} for non-script flow. Ignoring them.")
-            flow = Flow.from_yaml(flow_file, working_dir=working_dir)
+
+            name = kwargs.get("name", None)
+            flow = Flow.from_yaml(flow_file, working_dir=working_dir, name=name)
             return cls._create_from_flow(
                 flow_file=flow_file,
                 flow=flow,
@@ -227,7 +248,7 @@ class FlowExecutor:
     def _create_from_flow(
         cls,
         flow: Flow,
-        connections: dict,
+        connections: Union[dict, ConnectionProvider],
         working_dir: Optional[Path],
         *,
         flow_file: Optional[Path] = None,
@@ -243,6 +264,8 @@ class FlowExecutor:
         flow = flow._apply_default_node_variants()
 
         package_tool_keys = [node.source.tool for node in flow.nodes if node.source and node.source.tool]
+        if isinstance(connections, dict):
+            connections = DictConnectionProvider(connections)
         tool_resolver = ToolResolver(working_dir, connections, package_tool_keys, message_format=flow.message_format)
 
         with _change_working_dir(working_dir):
@@ -374,6 +397,8 @@ class FlowExecutor:
         inputs = multimedia_processor.load_multimedia_data(node_referenced_flow_inputs, converted_flow_inputs_for_node)
         dependency_nodes_outputs = multimedia_processor.load_multimedia_data_recursively(dependency_nodes_outputs)
         package_tool_keys = [node.source.tool] if node.source and node.source.tool else []
+        if isinstance(connections, dict):
+            connections = DictConnectionProvider(connections)
         tool_resolver = ToolResolver(working_dir, connections, package_tool_keys, message_format=flow.message_format)
         resolved_node = tool_resolver.resolve_tool_by_node(node)
 
@@ -1335,7 +1360,7 @@ def execute_flow(
     """
     flow_executor = FlowExecutor.create(flow_file, connections, working_dir, raise_ex=False, **kwargs)
     flow_executor.enable_streaming_for_llm_flow(lambda: enable_stream_output)
-    with _change_working_dir(working_dir):
+    with _change_working_dir(working_dir), _force_flush_tracer_provider():
         # Execute nodes in the flow except the aggregation nodes
         # TODO: remove index=0 after UX no longer requires a run id similar to batch runs
         # (run_id_index, eg. xxx_0) for displaying the interface
@@ -1361,6 +1386,20 @@ def execute_flow(
             # remove line_number from output
             line_result.output.pop(LINE_NUMBER_KEY, None)
         return line_result
+
+
+@contextmanager
+def _force_flush_tracer_provider():
+    try:
+        yield
+    finally:
+        try:
+            # Force flush the tracer provider to ensure all spans are exported before the process exits.
+            tracer_provider = otel_trace.get_tracer_provider()
+            if hasattr(tracer_provider, "force_flush"):
+                tracer_provider.force_flush()
+        except Exception as e:
+            flow_logger.warning(f"Error occurred while force flush tracer provider: {e}")
 
 
 def signal_handler(sig, frame):
