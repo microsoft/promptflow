@@ -44,25 +44,36 @@ def start_trace(
         logging.info("skip tracing local setup as the environment variable is set.")
         return
 
-    collection_specified = collection is not None
-    if not collection_specified:
-        logging.debug("collection is not specified, trying to get from current working directory...")
-        collection = _get_collection_from_cwd()
-    logging.info("collection: %s", collection)
-
     # prepare resource.attributes and set tracer provider
-    res_attrs = {
-        ResourceAttributesFieldName.SERVICE_NAME: RESOURCE_ATTRIBUTES_SERVICE_NAME,
-        ResourceAttributesFieldName.COLLECTION: collection,
-    }
+    res_attrs = {ResourceAttributesFieldName.SERVICE_NAME: RESOURCE_ATTRIBUTES_SERVICE_NAME}
     if isinstance(resource_attributes, dict):
         logging.debug("specified resource attributes: %s", resource_attributes)
         for attr_key, attr_value in resource_attributes.items():
             res_attrs[attr_key] = attr_value
+
+    # determine collection
+    collection_user_specified = collection is not None
+    if not collection_user_specified:
+        logging.debug("collection is not user specified")
+        if is_collection_writeable():
+            # internal parameter for devkit call
+            _collection = kwargs.get("_collection", None)
+            if _collection is not None:
+                logging.debug("received internal parameter _collection: %s, will use this", _collection)
+                collection = _collection
+            else:
+                logging.debug("trying to get from current working directory...")
+                collection = _get_collection_from_cwd()
+        else:
+            logging.debug("collection is protected, will directly use that...")
+            tracer_provider: TracerProvider = trace.get_tracer_provider()
+            collection = tracer_provider.resource.attributes[ResourceAttributesFieldName.COLLECTION]
+    logging.info("collection: %s", collection)
+    res_attrs[ResourceAttributesFieldName.COLLECTION] = collection
     logging.info("resource attributes: %s", res_attrs)
 
     # if user specifies collection, we will add a flag on tracer provider to avoid override
-    _set_tracer_provider(res_attrs, protected_collection=collection_specified)
+    _set_tracer_provider(res_attrs, protected_collection=collection_user_specified)
 
     if _is_devkit_installed():
         from promptflow._sdk._tracing import start_trace_with_devkit

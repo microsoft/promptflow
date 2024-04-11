@@ -79,6 +79,27 @@ class TestStartTrace:
         tracer_provider: TracerProvider = trace.get_tracer_provider()
         assert tracer_provider.resource.attributes[ResourceAttributesFieldName.COLLECTION] == new_collection
 
+    def test_collection_override(self) -> None:
+        def get_collection_from_tracer_provider() -> str:
+            tracer_provider: TracerProvider = trace.get_tracer_provider()
+            return tracer_provider.resource.attributes[ResourceAttributesFieldName.COLLECTION]
+
+        start_trace()
+        collection_from_cwd = get_collection_from_tracer_provider()
+        user_specified_collection1 = str(uuid.uuid4())
+        # user specifies, will override
+        start_trace(collection=user_specified_collection1)
+        assert get_collection_from_tracer_provider() != collection_from_cwd
+        assert get_collection_from_tracer_provider() == user_specified_collection1
+        # user does not specify, collection will not change
+        start_trace()
+        assert get_collection_from_tracer_provider() == user_specified_collection1
+        user_specified_collection2 = str(uuid.uuid4())
+        # user specifies another, will override
+        start_trace(collection=user_specified_collection2)
+        assert get_collection_from_tracer_provider() != user_specified_collection1
+        assert get_collection_from_tracer_provider() == user_specified_collection2
+
     def test_skip_tracing_local_setup(self, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
         spy = mocker.spy(promptflow.tracing._start_trace, "_is_devkit_installed")
         # configured environ to skip local setup
