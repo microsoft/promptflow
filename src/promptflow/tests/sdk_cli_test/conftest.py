@@ -408,3 +408,12 @@ def _mock_process_wrapper(*args, **kwargs):
 def _mock_create_spawned_fork_process_manager(*args, **kwargs):
     setup_recording_injection_if_enabled()
     return create_spawned_fork_process_manager(*args, **kwargs)
+
+
+@pytest.fixture
+def reset_tracer_provider():
+    """Force reset tracer provider."""
+    with patch("opentelemetry.trace._TRACER_PROVIDER", None), patch(
+        "opentelemetry.trace._TRACER_PROVIDER_SET_ONCE._done", False
+    ):
+        yield
