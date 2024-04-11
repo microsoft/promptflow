@@ -43,7 +43,6 @@ promptflow-tools = "<2.0.0"
 aiohttp_retry = ">=2.8.3"
 websocket-client = ">=1.2.0"
 jsonpath_ng = ">=1.5.0"
-azure-keyvault-secrets = ">=4.2.0"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "*"
