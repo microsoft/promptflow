@@ -104,9 +104,13 @@ testpaths = ["tests"]
 
 [tool.coverage.run]
 concurrency = ["multiprocessing"]
-source = ["promptflow"]
+source = [
+  "*/promptflow/*"
+]
 omit = [
-  "__init__.py",
+  "*/__init__.py",
+  "*/promptflow/core/_connection_provider/_models/*",
+  "*/promptflow/tracing/*"
 ]
 
 [tool.black]
