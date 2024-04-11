@@ -111,5 +111,3 @@ if __name__ == "__main__":
         # Iterate over dictionary items
         for key, val in data.items():
             f.write(f'{key}={val}\n')
-
-

@@ -110,3 +110,14 @@ class TestAssistantEagerFlow:
         }
         result = _client._flows._test(flow=flow_path, inputs=inputs)
         assert result.run_info.status.value == "Completed"
+
+    def test_eager_flow_with_two_assistants(self):
+        # Need to create .env file for the flow.
+        # > python generate_connection_config.py --target_folder <flow_folder>
+        flow_path = get_flow_folder("story_assistant", EAGER_FLOWS_ROOT).absolute()
+        # Load .env file as env variables
+        load_dotenv(dotenv_path=f"{flow_path}/.env")
+
+        inputs = {}
+        result = _client._flows._test(flow=flow_path, inputs=inputs)
+        assert result.run_info.status.value == "Completed"
