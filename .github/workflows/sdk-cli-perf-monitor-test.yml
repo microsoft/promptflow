@@ -72,7 +72,6 @@ jobs:
           set -xe
           source .venv/scripts/activate
           pytest --version
-          cd ..
           poetry run pip install ..\promptflow-tracing
           poetry run pip install ..\promptflow-core[azureml-serving]
           poetry run pip install ..\promptflow-devkit[pyarrow]
