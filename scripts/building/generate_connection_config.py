@@ -7,6 +7,7 @@ from azure.identity import ClientSecretCredential, DefaultAzureCredential
 
 
 CONNECTION_FILE_NAME = "connections.json"
+ENV_FILE_NAME = ".env"
 CONNECTION_TPL_FILE_PATH = Path(".") / "src/promptflow" / "dev-connections.json.example"
 
 
@@ -95,3 +96,21 @@ if __name__ == "__main__":
 
     with open(file_path, "w") as f:
         json.dump(template_dict, f)
+
+    # generate .env file locally for testing with env variable dependencies
+    env_file_path = (
+            (Path(".") / args.target_folder / ENV_FILE_NAME)
+            .resolve()
+            .absolute()
+            .as_posix()
+        )
+    print(f"env_file_path: {env_file_path}")
+
+    # Open the file for writing
+    with open(env_file_path, 'w') as f:
+        # Iterate over dictionary items
+        for key, value in data.items():
+            # Write each item as 'key=value\n'
+            f.write(f'{key}={value}\n')
+
+

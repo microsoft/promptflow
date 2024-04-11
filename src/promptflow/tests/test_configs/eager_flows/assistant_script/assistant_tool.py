@@ -91,9 +91,9 @@ async def get_tool_calls_outputs(run):
     return tool_outputs
 
 async def get_client():
-    api_key = os.environ.get("AZURE_OPENAI_API_KEY")
-    api_base = os.environ.get("AZURE_OPENAI_ENDPOINT")
-    api_version = os.environ.get("OPENAI_API_VERSION")
+    api_key = os.environ.get("aoai-api-key-eastus2")
+    api_base = os.environ.get("aoai-api-endpoint-eastus2")
+    api_version = os.environ.get("aoai-api-endpoint", "2024-02-15-preview")
     client = AsyncAzureOpenAI(
             api_key=api_key,
             api_version=api_version,
