@@ -485,7 +485,7 @@ def _test_flow_multi_modal(args, pf_client):
 
         pfs_port = _invoke_pf_svc()
         flow_path_dir, flow_path_file = resolve_flow_path(args.flow)
-        flow_path = (flow_path_dir / flow_path_file).as_posix()
+        flow_path = str(flow_path_dir / flow_path_file)
         chat_page_url = generate_url(flow_path, pfs_port)
         print(f"You can begin chat flow on {chat_page_url}")
         if not args.skip_open_browser:

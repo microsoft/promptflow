@@ -7,7 +7,7 @@ import json
 import os
 from pathlib import Path
 
-from flask import Response, current_app, make_response, render_template, send_from_directory, url_for
+from flask import Response, current_app, make_response, send_from_directory
 from ruamel.yaml import YAMLError
 from werkzeug.utils import safe_join
 
@@ -65,15 +65,6 @@ yaml_get_parser = create_parser(flow_arg, experiment_arg)
 yaml_post_parser = create_parser(flow_arg, experiment_arg, inputs_arg)
 flow_ux_input_get_parser = create_parser(flow_arg)
 flow_ux_input_post_parser = create_parser(flow_arg, ux_inputs_arg)
-
-
-@api.route("/chat")
-class ChatUI(Resource):
-    def get(self):
-        return Response(
-            render_template("chat-window/index.html", url_for=url_for),
-            mimetype="text/html",
-        )
 
 
 def save_image(directory, base64_data, extension):
@@ -232,6 +223,20 @@ class FlowUxInputs(Resource):
 def serve_trace_ui(path):
     # trace ui static folder: static/trace/
     static_folder = os.path.join(current_app.static_folder, "trace")
+    if path != "" and os.path.exists(os.path.join(static_folder, path)):
+        # explicitly set mimetype for js files since flask auto-detection is not reliable
+        _, ext = os.path.splitext(path)
+        if ext.lower() == ".js":
+            mimetype = "application/javascript"
+        else:
+            mimetype = None
+        return send_from_directory(static_folder, path, mimetype=mimetype)
+    return send_from_directory(static_folder, "index.html")
+
+
+def serve_chat_ui(path):
+    # chat ui static folder: static/chat-window/
+    static_folder = os.path.join(current_app.static_folder, "chat-window")
     if path != "" and os.path.exists(os.path.join(static_folder, path)):
         # explicitly set mimetype for js files since flask auto-detection is not reliable
         _, ext = os.path.splitext(path)
