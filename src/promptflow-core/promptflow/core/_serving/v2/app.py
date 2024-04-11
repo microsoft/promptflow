@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
-from promptflow.core._serving.app_base import PromptflowServingAppBasic, logger
+from promptflow.core._serving.app_base import PromptflowServingAppBasic
 from promptflow.core._serving.v2.middleware import middleware
 from promptflow.core._serving.v2.routers import feedback, general, score, staticweb
 
@@ -22,10 +22,10 @@ class PromptFlowServingAppV2(FastAPI, PromptflowServingAppBasic):
         static_folder = self.extension.static_folder if hasattr(self.extension, "static_folder") else None
         if static_folder:
             self.mount("/static", StaticFiles(directory=static_folder), name="static")
-        self.include_router(score.get_score_router(logger))
+        self.include_router(score.get_score_router(self.logger))
         self.include_router(general.get_general_router(self.swagger))
-        self.include_router(feedback.get_feedback_router(logger))
-        self.include_router(staticweb.get_staticweb_router(logger, static_folder))
+        self.include_router(feedback.get_feedback_router(self.logger))
+        self.include_router(staticweb.get_staticweb_router(self.logger, static_folder))
         self.add_exception_handler(404, not_found_exception_handler)
         self.add_middleware(
             CORSMiddleware,

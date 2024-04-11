@@ -2,14 +2,15 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from promptflow.core._serving.v1.app import PromptflowServingApp, logger
+from promptflow._utils.logger_utils import LoggerFactory
+from promptflow.core._serving.v1.app import PromptflowServingApp
 from promptflow.core._serving.v2.app import PromptFlowServingAppV2
 
 
 def create_app(**kwargs):
-    logger.info(f"create_app kwargs: {kwargs}")
     engine = kwargs.pop("engine", "flask")
     if engine == "flask":
+        logger = LoggerFactory.get_logger("pfserving-app", target_stdout=True)
         app = PromptflowServingApp(__name__)
         # enable CORS
         try:
@@ -28,10 +29,11 @@ def create_app(**kwargs):
         if __name__ != "__main__":
             app.logger.handlers = logger.handlers
             app.logger.setLevel(logger.level)
-        app.init(**kwargs)
+        app.init(logger=logger, **kwargs)
         return app
     elif engine == "fastapi":
-        app = PromptFlowServingAppV2(docs_url=None, redoc_url=None, **kwargs)  # type: ignore
+        logger = LoggerFactory.get_logger("pfserving-app-v2", target_stdout=True)
+        app = PromptFlowServingAppV2(docs_url=None, redoc_url=None, logger=logger, **kwargs)  # type: ignore
         return app
     else:
         raise ValueError(f"Unsupported engine: {engine}")

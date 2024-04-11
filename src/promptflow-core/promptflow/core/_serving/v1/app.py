@@ -12,7 +12,7 @@ from opentelemetry.trace.span import INVALID_SPAN
 
 from promptflow._utils.exception_utils import ErrorResponse
 from promptflow.contracts.run_info import Status
-from promptflow.core._serving.app_base import PromptflowServingAppBasic, logger
+from promptflow.core._serving.app_base import PromptflowServingAppBasic
 from promptflow.core._serving.constants import FEEDBACK_TRACE_FIELD_NAME, FEEDBACK_TRACE_SPAN_NAME
 from promptflow.core._serving.utils import (
     enable_monitoring,
@@ -47,6 +47,8 @@ class PromptflowServingApp(Flask, PromptflowServingAppBasic):
 
 
 def add_default_routes(app: PromptflowServingApp):
+    logger = app.logger
+
     @app.errorhandler(Exception)
     def handle_error(e):
         err_resp, resp_code = handle_error_to_response(e, logger)

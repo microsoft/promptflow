@@ -19,11 +19,13 @@ from promptflow.storage._run_storage import DummyRunStorage
 
 from .swagger import generate_swagger
 
-logger = LoggerFactory.get_logger("pfserving-app", target_stdout=True)
-
 
 class PromptflowServingAppBasic(ABC):
     def init_app(self, **kwargs):
+        logger = kwargs.pop("logger", None)
+        if logger is None:
+            logger = LoggerFactory.get_logger("pfserving-app", target_stdout=True)
+        self.logger = logger
         # default to local, can be override when creating the app
         self.extension = ExtensionFactory.create_extension(logger, **kwargs)
 
@@ -78,7 +80,7 @@ class PromptflowServingAppBasic(ABC):
     def init_invoker_if_not_exist(self):
         if self.flow_invoker:
             return
-        logger.info("Promptflow executor starts initializing...")
+        self.logger.info("Promptflow executor starts initializing...")
         self.flow_invoker = AsyncFlowInvoker(
             flow=Flow.load(source=self.project_path),
             connection_provider=self.connection_provider,
@@ -95,11 +97,11 @@ class PromptflowServingAppBasic(ABC):
         self.flow = self.flow_invoker.flow
         # Set the flow name as folder name
         self.flow.name = self.flow_name
-        self.response_fields_to_remove = get_output_fields_to_remove(self.flow, logger)
-        logger.info("Promptflow executor initializing succeed!")
+        self.response_fields_to_remove = get_output_fields_to_remove(self.flow, self.logger)
+        self.logger.info("Promptflow executor initializing succeed!")
 
     def init_swagger(self):
-        self.response_fields_to_remove = get_output_fields_to_remove(self.flow, logger)
+        self.response_fields_to_remove = get_output_fields_to_remove(self.flow, self.logger)
         self.swagger = generate_swagger(self.flow, self.sample, self.response_fields_to_remove)
         data = load_feedback_swagger()
         self.swagger["paths"]["/feedback"] = data
