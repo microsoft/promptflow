@@ -15,7 +15,6 @@ class AzureOpenAIModelConfiguration(ModelConfiguration):
     azure_endpoint: str = None
     api_version: str = None
     api_key: str = None
-    azure_ad_token_provider: Callable = None  # AzureADTokenProvider is a callable object to retrieve token
     organization: str = None
     # connection and model configs are exclusive.
     connection: str = None
