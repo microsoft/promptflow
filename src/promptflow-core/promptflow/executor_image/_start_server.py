@@ -3,6 +3,8 @@ import os
 import subprocess
 from pathlib import Path
 
+from promptflow._utils.logger_utils import service_logger
+
 
 class RunMode:
     COMPUTE = "compute"
@@ -17,13 +19,15 @@ def get_process_num() -> int:
     cpu_core_num = multiprocessing.cpu_count()
     try:
         if worker_num is None:
-            print(f"The promptflow worker number not set, setting {worker_num_env} to CPU core number: {cpu_core_num}")
+            service_logger.info(
+                f"The promptflow worker number not set, setting {worker_num_env} to CPU core number: {cpu_core_num}"
+            )
             return cpu_core_num
         else:
             worker_num = int(worker_num)
             max_process = cpu_core_num * 2
             if worker_num > max_process:
-                print(
+                service_logger.info(
                     "The promptflow worker number is too large, "
                     f"setting {worker_num_env} to (2 * the number of cores) = {max_process}"
                 )
@@ -31,7 +35,7 @@ def get_process_num() -> int:
             else:
                 return worker_num
     except Exception as e:
-        print(f"Invalid value for {worker_num_env}. It must be an integer. Error: {e}")
+        service_logger.error(f"Invalid value for {worker_num_env}. It must be an integer. Error: {e}")
         return cpu_core_num
 
 
@@ -47,7 +51,7 @@ def get_run_mode() -> str:
 
     run_mode = os.getenv("PROMPTFLOW_RUN_MODE")
     if not run_mode:
-        print("Detecting promptflow run mode...")
+        service_logger.info("Detecting promptflow run mode...")
         model_dir = os.getenv("AZUREML_MODEL_DIR")
         pf_project_path = os.getenv("PROMPTFLOW_PROJECT_PATH")
         if not model_dir and not pf_project_path:
@@ -67,20 +71,20 @@ def get_run_mode() -> str:
             # If PROMPTFLOW_PROJECT_PATH is set, this is a serving environment
             run_mode = RunMode.SERVING
 
-    print(f"Promptflow run mode: {run_mode}")
+    service_logger.info(f"Promptflow run mode: {run_mode}")
     return run_mode
 
 
 def start_server():
     """Start promptflow server based on run mode."""
 
-    print(f"The build info of image: {os.getenv('BUILD_INFO')}")
+    service_logger.info(f"The build info of image: {os.getenv('BUILD_INFO')}")
     run_mode = get_run_mode()
     if run_mode == RunMode.SERVING:
         worker_num = str(get_process_num())
         worker_threads = os.getenv("PROMPTFLOW_WORKER_THREADS", "1")
         gunicorn_app = "promptflow.core._serving.app:create_app(extension_type='azureml')"
-        print(
+        service_logger.info(
             f"Start promptflow serving server with worker_num: {worker_num}, "
             f"worker_threads: {worker_threads}, app: {gunicorn_app}"
         )
@@ -102,5 +106,5 @@ def start_server():
         host = os.getenv("HOST", "0.0.0.0")
         port = os.getenv("PORT", "8000")
         uvicorn_app = "promptflow.executor._service.app:app"
-        print(f"Start promptflow python server with app: {uvicorn_app}")
+        service_logger.info(f"Start promptflow python server with app: {uvicorn_app}")
         subprocess.run(["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "-b", f"{host}:{port}", uvicorn_app])
