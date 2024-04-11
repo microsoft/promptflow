@@ -949,6 +949,7 @@ class TestFlowRun:
         # check the run is uploaded to cloud
         Local2CloudTestHelper.check_local_to_cloud_run(pf, run)
 
+    @pytest.mark.skipif(condition=not pytest.is_live, reason="Bug - 3089145 Replay failed for test 'test_upload_run'")
     @pytest.mark.usefixtures(
         "mock_isinstance_for_mock_datastore", "mock_get_azure_pf_client", "mock_trace_provider_to_cloud"
     )
