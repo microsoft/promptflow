@@ -24,7 +24,6 @@ from promptflow._constants import (
     SpanResourceAttributesFieldName,
     TraceEnvironmentVariableName,
 )
-from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
     PF_TRACE_CONTEXT,
     PF_TRACE_CONTEXT_ATTR,
@@ -52,6 +51,8 @@ TRACER_PROVIDER_PFS_EXPORTER_SET_ATTR = "_pfs_exporter_set"
 
 
 def is_trace_feature_disabled() -> bool:
+    from promptflow._sdk._configuration import Configuration
+
     return Configuration.get_instance().get_trace_provider().lower() == PF_CONFIG_TRACE_FEATURE_DISABLE
 
 
@@ -130,6 +131,8 @@ def _invoke_pf_svc() -> str:
 
 
 def _get_ws_triad_from_pf_config() -> typing.Optional[AzureMLWorkspaceTriad]:
+    from promptflow._sdk._configuration import Configuration
+
     ws_arm_id = Configuration.get_instance().get_trace_provider()
     return extract_workspace_triad_from_trace_provider(ws_arm_id) if ws_arm_id is not None else None
 
