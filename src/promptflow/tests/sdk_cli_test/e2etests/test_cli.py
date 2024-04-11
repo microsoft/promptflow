@@ -313,6 +313,18 @@ class TestCli:
         output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.output.json"
         assert output_path.exists()
 
+        # Test flow test with simple input file
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/web_classification",
+            "--inputs",
+            f"{DATAS_DIR}/webClassification.json",
+        )
+        output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.output.json"
+        assert output_path.exists()
+
         # Test flow test with invalid simple input file
         with pytest.raises(ValueError) as ex:
             run_pf_command(
@@ -2335,11 +2347,6 @@ class TestCli:
                 "entry": "hello:hello_world",
                 "inputs": {
                     "text": {
-                        "type": "string",
-                    }
-                },
-                "outputs": {
-                    "output": {
                         "type": "string",
                     }
                 },

@@ -647,7 +647,7 @@ def serve_flow_python(args, source):
         static_folder=static_folder,
         environment_variables=list_of_dict_to_dict(args.environment_variables),
         connection_provider=connection_provider,
-        inits=list_of_dict_to_dict(args.inits),
+        init=list_of_dict_to_dict(args.init),
     )
     if not args.skip_open_browser:
         target = f"http://{args.host}:{args.port}"

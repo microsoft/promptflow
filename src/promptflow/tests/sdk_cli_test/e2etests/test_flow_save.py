@@ -5,6 +5,7 @@ import shutil
 import sys
 import tempfile
 from pathlib import Path
+from typing import Callable, TypedDict
 
 import pytest
 
@@ -41,7 +42,7 @@ class GlobalHello:
 
 
 class GlobalHelloWithInvalidInit:
-    def __init__(self, connection: AzureOpenAIConnection, words: list):
+    def __init__(self, connection: AzureOpenAIConnection, words: GlobalHello):
         self.connection = connection
 
     def __call__(self, text: str) -> str:
@@ -56,6 +57,26 @@ def global_hello_no_hint(text) -> str:
     return f"Hello {text}!"
 
 
+def global_hello_typed_dict(text: str) -> TypedDict("TypedOutput", {"text": str}):
+    return {"text": text}
+
+
+class TypedOutput(TypedDict):
+    text: str
+
+
+def global_hello_inherited_typed_dict(text: str) -> TypedOutput:
+    return TypedOutput(text=text)
+
+
+def global_hello_int_return(text: str) -> int:
+    return len(text)
+
+
+def global_hello_strong_return(text: str) -> GlobalHello:
+    return len(text)
+
+
 @pytest.mark.usefixtures(
     "use_secrets_config_file", "recording_injection", "setup_local_connection", "install_custom_tool_pkg"
 )
@@ -68,19 +89,13 @@ class TestFlowSave:
             pytest.param(
                 {
                     "entry": "hello:hello_world",
-                    "python_requirements": f"{TEST_ROOT}/test_configs/functions/requirements",
+                    "python_requirements_txt": f"{TEST_ROOT}/test_configs/functions/requirements",
                     "image": "python:3.8-slim",
                     "signature": {
                         "inputs": {
                             "text": {
                                 "type": "string",
                                 "description": "The text to be printed",
-                            }
-                        },
-                        "outputs": {
-                            "output": {
-                                "type": "string",
-                                "description": "The answer",
                             }
                         },
                     },
@@ -93,11 +108,9 @@ class TestFlowSave:
                             "description": "The text to be printed",
                         }
                     },
-                    "outputs": {
-                        "output": {
-                            "type": "string",
-                            "description": "The answer",
-                        }
+                    "environment": {
+                        "image": "python:3.8-slim",
+                        "python_requirements_txt": "requirements",
                     },
                     "sample": "sample.json",
                 },
@@ -122,11 +135,6 @@ class TestFlowSave:
                             "description": "The text to be printed",
                         }
                     },
-                    "outputs": {
-                        "output": {
-                            "type": "string",
-                        }
-                    },
                 },
                 id="hello_world.partially_generate_signature",
             ),
@@ -137,11 +145,6 @@ class TestFlowSave:
                 {
                     "inputs": {
                         "text": {
-                            "type": "string",
-                        }
-                    },
-                    "outputs": {
-                        "output": {
                             "type": "string",
                         }
                     },
@@ -185,11 +188,6 @@ class TestFlowSave:
                             "type": "string",
                         }
                     },
-                    "outputs": {
-                        "output": {
-                            "type": "string",
-                        },
-                    },
                 },
                 id="class_init",
             ),
@@ -213,6 +211,12 @@ class TestFlowSave:
                         },
                         "b": {
                             "type": "boolean",
+                        },
+                        "li": {
+                            "type": "array",
+                        },
+                        "d": {
+                            "type": "object",
                         },
                     },
                     "inputs": {
@@ -281,8 +285,9 @@ class TestFlowSave:
         pf.flows._save(**save_args)
 
         flow = load_flow(target_path)
-        for key, value in expected_signature.items():
-            assert flow._data[key] == value, f"key: {key}, expected value: {value}, flow._data[key]: {flow._data[key]}"
+        data = flow._data
+        data.pop("entry", None)
+        assert flow._data == expected_signature
 
         # will we support flow as function for flex flow?
         # TODO: invoke is also not supported for flex flow for now
@@ -329,7 +334,7 @@ class TestFlowSave:
                     },
                 },
                 UserErrorException,
-                r"Ports from signature: non-exist",
+                r"Provided signature for outputs, which can't be overridden according to the entry.",
                 id="hello_world.outputs_mismatch",
             ),
             pytest.param(
@@ -337,8 +342,8 @@ class TestFlowSave:
                     "entry": "hello:Hello",
                 },
                 UserErrorException,
-                r"Schema validation failed: {'init.words.type'",
-                id="class_init_with_list_init",
+                r"The input 'words' is of a complex python type. Please use a dict instead",
+                id="class_init_with_entity_init",
             ),
             pytest.param(
                 {
@@ -353,7 +358,7 @@ class TestFlowSave:
                     "entry": "hello:Hello",
                 },
                 UserErrorException,
-                r"The output 'output' is of a complex python type. Please use a dict instead",
+                r"The return annotation of the entry function must be",
                 id="class_init_with_entity_outputs",
             ),
             pytest.param(
@@ -409,11 +414,6 @@ class TestFlowSave:
                     "type": "string",
                 }
             },
-            "outputs": {
-                "output": {
-                    "type": "string",
-                },
-            },
         }
 
     def test_pf_save_callable_function(self):
@@ -434,61 +434,85 @@ class TestFlowSave:
                     "type": "string",
                 }
             },
-            "outputs": {
-                "output": {
-                    "type": "string",
-                },
-            },
         }
 
-    def test_infer_signature(self):
+    @pytest.mark.parametrize(
+        "target_function, expected_signature",
+        [
+            pytest.param(
+                global_hello,
+                {
+                    "inputs": {
+                        "text": {
+                            "type": "string",
+                        }
+                    },
+                },
+                id="simple",
+            ),
+            pytest.param(
+                global_hello_typed_dict,
+                {
+                    "inputs": {
+                        "text": {
+                            "type": "string",
+                        }
+                    },
+                    "outputs": {
+                        "text": {
+                            "type": "string",
+                        },
+                    },
+                },
+                id="typed_dict_output",
+            ),
+            pytest.param(
+                global_hello_inherited_typed_dict,
+                {
+                    "inputs": {
+                        "text": {
+                            "type": "string",
+                        }
+                    },
+                    "outputs": {
+                        "text": {
+                            "type": "string",
+                        },
+                    },
+                },
+                id="inherited_typed_dict_output",
+            ),
+            pytest.param(
+                global_hello_no_hint,
+                {
+                    "inputs": {
+                        "text": {
+                            # port without type hint will be treated as a dict
+                            "type": "object",
+                        }
+                    },
+                },
+                id="inherited_typed_dict_output",
+            ),
+        ],
+    )
+    def test_infer_signature(
+        self, target_function: Callable, expected_signature: TypedDict("Signature", {"inputs": dict, "outputs": dict})
+    ):
         pf = PFClient()
-        flow_meta = pf.flows.infer_signature(entry=global_hello)
-        assert flow_meta == {
-            "inputs": {
-                "text": {
-                    "type": "string",
-                }
-            },
-            "outputs": {
-                "output": {
-                    "type": "string",
-                },
-            },
-        }
+        flow_meta = pf.flows.infer_signature(entry=target_function)
+        assert flow_meta == expected_signature
 
-        with pytest.raises(UserErrorException, match="Schema validation failed: {'init.words.type'"):
+    def test_infer_signature_failed(self):
+        pf = PFClient()
+        with pytest.raises(UserErrorException, match="The input 'words' is of a complex python type"):
             pf.flows.infer_signature(entry=GlobalHelloWithInvalidInit)
 
-        flow_meta = pf.flows.infer_signature(entry=global_hello_no_hint)
-        assert flow_meta == {
-            "inputs": {
-                "text": {
-                    # port without type hint will be treated as a dict
-                    "type": "object",
-                }
-            },
-            "outputs": {
-                "output": {
-                    "type": "string",
-                },
-            },
-        }
+        with pytest.raises(UserErrorException, match="Parse interface for 'global_hello_strong_return' failed"):
+            pf.flows.infer_signature(entry=global_hello_strong_return)
 
-    def test_public_infer_signature(self):
-        pf = PFClient()
-        assert pf.flows.infer_signature(entry=global_hello) == {
-            "inputs": {
-                "text": {
-                    "type": "string",
-                }
-            },
-            "outputs": {
-                "output": {
-                    "type": "string",
-                },
-            },
-        }
+        with pytest.raises(UserErrorException, match="Parse interface for 'global_hello_int_return' failed"):
+            pf.flows.infer_signature(entry=global_hello_int_return)
 
     def test_public_save(self):
         pf = PFClient()
@@ -500,11 +524,6 @@ class TestFlowSave:
                     "text": {
                         "type": "string",
                     }
-                },
-                "outputs": {
-                    "output": {
-                        "type": "string",
-                    },
                 },
             }
 
@@ -526,11 +545,6 @@ class TestFlowSave:
                         "type": "string",
                     }
                 },
-                "outputs": {
-                    "output": {
-                        "type": "string",
-                    },
-                },
                 "sample": "sample.json",
             }
 
@@ -547,11 +561,6 @@ class TestFlowSave:
                 "entry": "hello:hello_world",
                 "inputs": {
                     "text": {
-                        "type": "string",
-                    }
-                },
-                "outputs": {
-                    "output": {
                         "type": "string",
                     }
                 },
