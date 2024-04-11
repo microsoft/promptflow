@@ -417,3 +417,13 @@ class TestFlowTest:
         assert is_dataclass(result.output)
         assert result.output.output1 == "0123456789"
         assert result.output.output2 == "0123456789"
+
+    def test_flex_flow_with_init(self, pf):
+
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_callable_class")
+        result1 = pf.test(flow=flow_path, inputs={"func_input": "input"}, init={"obj_input": "val"})
+        assert result1["func_input"] == "input"
+
+        result2 = pf.test(flow=flow_path, inputs={"func_input": "input"}, init={"obj_input": "val"})
+        assert result2["func_input"] == "input"
+        assert result1["obj_id"] != result2["obj_id"]

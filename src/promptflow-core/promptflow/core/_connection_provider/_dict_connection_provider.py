@@ -6,6 +6,7 @@ from typing import Any, Mapping
 
 from promptflow._constants import CONNECTION_NAME_PROPERTY, CONNECTION_SECRET_KEYS, CustomStrongTypeConnectionConfigs
 from promptflow._utils.utils import try_import
+from promptflow.contracts.tool import ConnectionType
 from promptflow.contracts.types import Secret
 
 from ._connection_provider import ConnectionProvider
@@ -47,7 +48,7 @@ class DictConnectionProvider(ConnectionProvider):
             secret_keys = connection_dict.get("secret_keys", [])
             secrets = {k: v for k, v in value.items() if k in secret_keys}
             configs = {k: v for k, v in value.items() if k not in secrets}
-            connection_value = connection_class(configs=configs, secrets=secrets, name=key)
+            connection_value = connection_class(configs=configs, secrets=secrets, name=name)
             if CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY in configs:
                 connection_value.custom_type = configs[CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY]
         else:
@@ -85,7 +86,7 @@ class DictConnectionProvider(ConnectionProvider):
     def import_requisites(cls, _dict: Mapping[str, dict]):
         """Import connection required modules."""
         modules = set()
-        for key, connection_dict in _dict.items():
+        for _, connection_dict in _dict.items():
             module = connection_dict.get("module")
             if module:
                 modules.add(module)
@@ -96,5 +97,9 @@ class DictConnectionProvider(ConnectionProvider):
     def list(self):
         return [c for c in self._connections.values()]
 
-    def get(self, name: str, **kwargs) -> Any:
-        return self._connections.get(name)
+    def get(self, name: str) -> Any:
+        if isinstance(name, str):
+            return self._connections.get(name)
+        elif ConnectionType.is_connection_value(name):
+            return name
+        return None
