@@ -6,10 +6,11 @@ import pytest
 from openai.types.chat import ChatCompletion
 
 from promptflow._sdk._pf_client import PFClient
-from promptflow.connections import AzureOpenAIConnection
 from promptflow.core import Flow
-from promptflow.core._errors import MissingRequiredInputError
+from promptflow.core._errors import InvalidConnectionError, MissingRequiredInputError
 from promptflow.core._flow import AsyncPrompty, Prompty
+from promptflow.core._model_configuration import AzureOpenAIModelConfiguration
+from promptflow.core._prompty_utils import convert_model_configuration_to_connection
 
 TEST_ROOT = Path(__file__).parent.parent.parent
 DATA_DIR = TEST_ROOT / "test_configs/datas"
@@ -18,6 +19,9 @@ FLOW_DIR = TEST_ROOT / "test_configs/flows"
 EAGER_FLOW_DIR = TEST_ROOT / "test_configs/eager_flows"
 
 
+@pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection", "recording_injection")
+@pytest.mark.sdk_test
+@pytest.mark.e2etest
 class TestPrompty:
     def test_load_prompty(self):
         expect_data = {
@@ -25,8 +29,11 @@ class TestPrompty:
             "description": "A basic prompt that uses the GPT-3 chat API to answer questions",
             "model": {
                 "api": "chat",
-                "connection": "azure_open_ai_connection",
-                "configuration": {"azure_deployment": "gpt-35-turbo", "type": "azure_openai"},
+                "configuration": {
+                    "connection": "azure_open_ai_connection",
+                    "azure_deployment": "gpt-35-turbo",
+                    "type": "azure_openai",
+                },
                 "parameters": {"max_tokens": 128, "temperature": 0.2},
             },
             "inputs": {
@@ -56,8 +63,11 @@ class TestPrompty:
             "description": "A basic prompt that uses the GPT-3 chat API to answer questions",
             "model": {
                 "api": "chat",
-                "connection": "mock_connection_name",
-                "configuration": {"azure_deployment": "gpt-35-turbo", "type": "azure_openai"},
+                "configuration": {
+                    "connection": "mock_connection_name",
+                    "azure_deployment": "gpt-35-turbo",
+                    "type": "azure_openai",
+                },
                 "parameters": {"max_tokens": 64, "temperature": 0.2, "mock_key": "mock_value"},
             },
             "inputs": {
@@ -68,7 +78,7 @@ class TestPrompty:
         }
         params_override = {
             "api": "chat",
-            "connection": "mock_connection_name",
+            "configuration": {"connection": "mock_connection_name"},
             "parameters": {"mock_key": "mock_value", "max_tokens": 64},
         }
         # load prompty by flow
@@ -95,7 +105,7 @@ class TestPrompty:
         assert "2" in result
 
         # Test connection with dict
-        connection = prompty._model.connection
+        connection = convert_model_configuration_to_connection(prompty._model.configuration)
         model_dict = {
             "configuration": {
                 "type": "azure_openai",
@@ -103,21 +113,55 @@ class TestPrompty:
                 "api_key": connection.api_key,
                 "api_version": connection.api_version,
                 "azure_endpoint": connection.api_base,
+                "connection": None,
             },
-            "connection": None,
         }
         prompty = Flow.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", model=model_dict)
         result = prompty(question="what is the result of 1+1?")
         assert "2" in result
 
-        # Test using connection object
-        connection_obj = AzureOpenAIConnection(
-            api_base=connection.api_base,
+        # Test using model configuration
+        connection_obj = AzureOpenAIModelConfiguration(
+            azure_endpoint=connection.api_base,
+            azure_deployment="gpt-35-turbo",
             api_key=connection.api_key,
+            api_version=connection.api_version,
         )
-        prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", model={"connection": connection_obj})
+        prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", model={"configuration": connection_obj})
         result = prompty(question="what is the result of 1+1?")
         assert "2" in result
+
+        connection_obj = AzureOpenAIModelConfiguration(
+            connection="azure_open_ai_connection",
+            azure_deployment="gpt-35-turbo",
+        )
+        prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", model={"configuration": connection_obj})
+        result = prompty(question="what is the result of 1+1?")
+        assert "2" in result
+
+        with pytest.raises(InvalidConnectionError) as ex:
+            AzureOpenAIModelConfiguration(
+                azure_endpoint=connection.api_base,
+                azure_deployment="gpt-35-turbo",
+                api_key=connection.api_key,
+                api_version=connection.api_version,
+                connection="azure_open_ai_connection",
+            )
+        assert "Cannot configure model config and connection at the same time." in ex.value.message
+
+        with pytest.raises(InvalidConnectionError) as ex:
+            model_dict = {
+                "configuration": {
+                    "type": "azure_openai",
+                    "azure_deployment": "gpt-35-turbo",
+                    "api_key": connection.api_key,
+                    "api_version": connection.api_version,
+                    "azure_endpoint": connection.api_base,
+                    "connection": "azure_open_ai_connection",
+                },
+            }
+            Prompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", model=model_dict)
+        assert "Cannot configure model config and connection" in ex.value.message
 
         # Test format is raw
         prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", format="raw")

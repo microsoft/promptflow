@@ -3,10 +3,10 @@ name: Basic Prompt
 description: A basic prompt that uses the GPT-3 chat API to answer questions
 model:
     api: chat
-    connection: azure_open_ai_connection
     configuration:
       type: azure_openai
       azure_deployment: gpt-35-turbo
+      connection: azure_open_ai_connection
     parameters:
       max_tokens: 128
       temperature: 0.2

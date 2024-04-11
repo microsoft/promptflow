@@ -2,50 +2,28 @@ import copy
 import json
 import os
 import re
-from dataclasses import InitVar, dataclass
-from typing import List, Mapping, Union
+from dataclasses import asdict
+from typing import List, Mapping
 
 from promptflow.core._connection import AzureOpenAIConnection, OpenAIConnection, _Connection
 from promptflow.core._errors import (
     ChatAPIFunctionRoleInvalidFormatError,
     ChatAPIInvalidRoleError,
     CoreError,
-    InvalidConnectionError,
     UnknownConnectionType,
 )
+from promptflow.core._model_configuration import ModelConfiguration
 from promptflow.core._utils import render_jinja_template_content
-
-
-@dataclass
-class PromptyModelConfiguration:
-    api: str
-    configuration: dict
-    parameters: dict
-    response: str = "first"
-    connection: InitVar[Union[str, _Connection]] = None
-
-    def __post_init__(self, connection=None):
-        if connection:
-            self._connection_config = connection
-        else:
-            self._connection_config = copy.copy(self.configuration)
-            if self._connection_config.get("type", None) == "azure_openai":
-                self._connection_config["api_base"] = self._connection_config.get("azure_endpoint", None)
-
-    def get_connection(self):
-        if not hasattr(self, "_connection"):
-            self._connection = get_connection(self._connection_config)
-        return self._connection
 
 
 def update_dict_recursively(origin_dict, overwrite_dict):
     updated_dict = {}
-    for k, v in origin_dict.items():
-        if isinstance(v, dict):
-            updated_dict[k] = update_dict_recursively(v, overwrite_dict.get(k, {}))
-        else:
-            updated_dict[k] = overwrite_dict.get(k, v)
     for k, v in overwrite_dict.items():
+        if isinstance(v, dict):
+            updated_dict[k] = update_dict_recursively(origin_dict.get(k, {}), v)
+        else:
+            updated_dict[k] = v
+    for k, v in origin_dict.items():
         if k not in updated_dict:
             updated_dict[k] = v
     return updated_dict
@@ -53,6 +31,8 @@ def update_dict_recursively(origin_dict, overwrite_dict):
 
 def parse_environment_variable(value):
     """Get environment variable from ${env:ENV_NAME}. If not found, return original value."""
+    if not isinstance(value, str):
+        return value
     pattern = r"^\$\{env:(.*)\}$"
     result = re.match(pattern, value)
     if result:
@@ -62,31 +42,44 @@ def parse_environment_variable(value):
         return value
 
 
-def get_connection(connection):
-    if not isinstance(connection, (str, dict, _Connection)):
-        error_message = (
-            "Illegal definition of connection, only support connection name or dict of connection info. "
-            "You can refer to https://microsoft.github.io/promptflow/how-to-guides/"
-            "manage-connections.html#create-a-connection for more details about connection."
-        )
-        raise InvalidConnectionError(message=error_message)
-    if isinstance(connection, str):
-        # Get connection by name
-        try:
-            from promptflow._sdk._pf_client import PFClient
-        except ImportError as ex:
-            raise CoreError(f"Please try 'pip install promptflow-devkit' to install dependency, {ex.msg}")
-        client = PFClient()
-        connection_obj = client.connections.get(connection, with_secrets=True)
-        connection = connection_obj._to_execution_connection_dict()["value"]
-        connection_type = connection_obj.TYPE
-    elif isinstance(connection, dict):
-        connection_type = connection.pop("type", None)
-        # Get value from environment
-        connection = {k: parse_environment_variable(v) for k, v in connection.items()}
-    else:
-        return connection
+def get_connection_by_name(connection_name):
+    try:
+        from promptflow._sdk._pf_client import PFClient
+    except ImportError as ex:
+        raise CoreError(f"Please try 'pip install promptflow-devkit' to install dependency, {ex.msg}")
+    client = PFClient()
+    connection_obj = client.connections.get(connection_name, with_secrets=True)
+    connection = connection_obj._to_execution_connection_dict()["value"]
+    connection_type = connection_obj.TYPE
+    return connection, connection_type
+
+
+def convert_model_configuration_to_connection(model_configuration):
+    if isinstance(model_configuration, dict):
+        # Get connection from connection field
+        connection = model_configuration.get("connection", None)
+        if connection:
+            if isinstance(connection, str):
+                # Get connection by name
+                connection, connection_type = get_connection_by_name(connection)
+            elif isinstance(connection, _Connection):
+                return connection
+        else:
+            connection_dict = copy.copy(model_configuration)
+            connection_type = connection_dict.pop("type", None)
+            # Get value from environment
+            connection = {k: parse_environment_variable(v) for k, v in connection_dict.items()}
+    elif isinstance(model_configuration, ModelConfiguration):
+        # Get connection from model configuration
+        connection_type = model_configuration._type
+        if model_configuration.connection:
+            connection, _ = get_connection_by_name(model_configuration.connection)
+        else:
+            connection = {k: parse_environment_variable(v) for k, v in asdict(model_configuration).items()}
+
     if connection_type in [AzureOpenAIConnection.TYPE, "azure_openai"]:
+        if "api_base" not in connection:
+            connection["api_base"] = connection.get("azure_endpoint", None)
         return AzureOpenAIConnection(**connection)
     elif connection_type in [OpenAIConnection.TYPE, "openai"]:
         return OpenAIConnection(**connection)
@@ -112,14 +105,12 @@ def convert_prompt_template(template, inputs, api):
         return parse_chat(rendered_prompt, list(referenced_images))
 
 
-def prepare_open_ai_request_params(model_config, template):
+def prepare_open_ai_request_params(model_config, template, connection):
     # TODO validate function in params
     params = copy.copy(model_config.parameters)
-    if isinstance(model_config.get_connection(), AzureOpenAIConnection):
-        params["model"] = model_config.configuration.get("azure_deployment")
+    if isinstance(connection, AzureOpenAIConnection):
         params["extra_headers"] = {"ms-azure-ai-promptflow-called-from": "promptflow-core"}
-    else:
-        params["model"] = model_config.configuration.get("model")
+    params["model"] = model_config._model
 
     if model_config.api == "completion":
         params["prompt"] = template
