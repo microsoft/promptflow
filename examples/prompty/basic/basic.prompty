@@ -1,0 +1,30 @@
+---
+name: Basic Prompt
+description: A basic prompt that uses the chat API to answer questions
+model:
+    api: chat
+    connection: open_ai_connection
+    parameters:
+      deployment_name: gpt-35-turbo
+      max_tokens: 128
+      temperature: 0.2
+inputs:
+  firstName:
+    type: string
+  lastName: 
+    type: string
+  question:
+    type: string
+sample: sample.json
+---
+system:
+You are an AI assistant who helps people find information.
+As the assistant, you answer questions briefly, succinctly. Your structured response. Only accepts JSON format, likes below:
+{"name": customer_name, "answer": the answer content}
+
+# Customer
+You are helping {{firstName}} {{lastName}} to find answers to their questions.
+Use their name to address them in your responses.
+
+user:
+{{question}}
