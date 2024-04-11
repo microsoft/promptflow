@@ -256,6 +256,8 @@ pf flow test --flow my-awesome-flow --variant ${node_name.variant_name}
 pf flow test --flow my-awesome-flow --node node_name
 # Chat in the flow:
 pf flow test --flow my-awesome-flow --node node_name --interactive
+# Test a flow with init kwargs:
+pf flow test --flow my-awesome-flow --init key1=value1 key2=value2
 """  # noqa: E501
     add_param_flow = lambda parser: parser.add_argument(  # noqa: E731
         "--flow", type=str, required=True, help="the flow directory to test."
@@ -297,6 +299,7 @@ pf flow test --flow my-awesome-flow --node node_name --interactive
         add_param_config,
         add_param_detail,
         add_param_skip_browser,
+        add_param_init,
     ] + base_params
 
     if Configuration.get_instance().is_internal_features_enabled():
@@ -531,6 +534,7 @@ def _test_flow_standard(args, pf_client, inputs, environment_variables):
         stream_output=False,
         dump_test_result=True,
         output_path=args.detail,
+        init=list_of_dict_to_dict(args.init),
     )
     # Print flow/node test result
     if isinstance(result, dict):
