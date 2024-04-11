@@ -43,19 +43,27 @@ special_care = {
 # Copy from original yaml pipelines
 checks = {
     "sdk_cli_tests": [
+        "src/promptflow-core/**",
+        "src/promptflow-devkit/**",
         "src/promptflow/**",
+        "src/promptflow-tracing/**",
         "scripts/building/**",
         ".github/workflows/promptflow-sdk-cli-test.yml",
+        "src/promptflow-recording/**",
     ],
-    "sdk_cli_global_config_tests": [
-        "src/promptflow/**",
-        "scripts/building/**",
-        ".github/workflows/promptflow-global-config-test.yml",
-    ],
+    # "sdk_cli_global_config_tests": [
+    #     "src/promptflow/**",
+    #     "scripts/building/**",
+    #     ".github/workflows/promptflow-global-config-test.yml",
+    # ],
     "sdk_cli_azure_test_replay": [
         "src/promptflow/**",
         "scripts/building/**",
-        ".github/workflows/promptflow-sdk-cli-azure-test-pull-request.yml",
+        ".github/workflows/sdk-cli-azure-test-pull-request.yml",
+        "src/promptflow-tracing/**",
+        "src/promptflow-core/**",
+        "src/promptflow-devkit/**",
+        "src/promptflow-azure/**",
     ],
 }
 

@@ -5,6 +5,7 @@ import sys
 from typing import List
 
 from promptflow._sdk._constants import MAX_LIST_CLI_RESULTS
+from promptflow._sdk._errors import MissingAzurePackage
 from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, monitor_operation
 from promptflow._sdk._utils import print_red_error
 from promptflow._sdk.entities._connection import _Connection
@@ -37,7 +38,10 @@ class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
     @property
     def _client(self):
         if self._pfazure_client is None:
-            from promptflow.azure._pf_client import PFClient as PFAzureClient
+            try:
+                from promptflow.azure._pf_client import PFClient as PFAzureClient
+            except ImportError:
+                raise MissingAzurePackage()
 
             self._pfazure_client = PFAzureClient(
                 # TODO: disable interactive credential when starting as a service
@@ -51,9 +55,12 @@ class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
 
     @classmethod
     def _get_credential(cls):
-        from azure.identity import DefaultAzureCredential, DeviceCodeCredential
+        try:
+            from azure.identity import DefaultAzureCredential, DeviceCodeCredential
 
-        from promptflow.azure._utils.general import get_arm_token
+            from promptflow.azure._utils.general import get_arm_token
+        except ImportError:
+            raise MissingAzurePackage()
 
         if is_from_cli():
             try:
@@ -105,7 +112,10 @@ class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
         if with_secrets:
             # Do not use pfazure_client here as it requires workspace read permission
             # Get secrets from arm only requires workspace listsecrets permission
-            from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
+            try:
+                from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
+            except ImportError:
+                raise MissingAzurePackage()
 
             return ArmConnectionOperations._direct_get(
                 name, self._subscription_id, self._resource_group, self._workspace_name, self._credential

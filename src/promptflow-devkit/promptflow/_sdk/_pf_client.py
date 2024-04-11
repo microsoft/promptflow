@@ -317,6 +317,7 @@ class PFClient:
         variant: str = None,
         node: str = None,
         environment_variables: dict = None,
+        init: Optional[dict] = None,
     ) -> dict:
         """Test flow or node.
 
@@ -334,6 +335,8 @@ class PFClient:
             The value reference to connection keys will be resolved to the actual value,
             and all environment variables specified will be set into os.environ.
         :type environment_variables: dict
+        :param init: Initialization parameters for flex flow, only supported when flow is callable class.
+        :type init: dict
         :return: The result of flow or node
         :rtype: dict
         """
@@ -351,7 +354,7 @@ class PFClient:
 
                 inputs = load_data(local_path=inputs)[0]
         return self.flows.test(
-            flow=flow, inputs=inputs, variant=variant, environment_variables=environment_variables, node=node
+            flow=flow, inputs=inputs, variant=variant, environment_variables=environment_variables, node=node, init=init
         )
 
     @property
