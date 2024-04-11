@@ -33,9 +33,7 @@ class TestUIAPIs:
         )
 
     def test_get_eager_flow_yaml(self, pfs_op: PFSOperations) -> None:
-        with check_activity_end_telemetry(
-            expected_activities=[{"activity_name": "pf.flows._generate_flow_meta", "activity_type": "InternalCall"}]
-        ):
+        with check_activity_end_telemetry(expected_activities=[]):
             flow_yaml_from_pfs = pfs_op.get_flow_yaml(flow_path=str(EAGER_FLOW_ROOT / "builtin_llm")).data.decode(
                 "utf-8"
             )
