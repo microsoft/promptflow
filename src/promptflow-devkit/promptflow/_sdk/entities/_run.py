@@ -515,7 +515,7 @@ class Run(YAMLTranslatableMixin):
 
     def _get_flow_dir(self) -> Path:
         if not self._use_remote_flow:
-            flow = Path(self.flow)
+            flow = Path(str(self.flow)).resolve().absolute()
             if flow.is_dir():
                 return flow
             return flow.parent
