@@ -29,7 +29,6 @@ from promptflow._sdk._constants import (
     FLOW_TOOLS_JSON_GEN_TIMEOUT,
     LOCAL_MGMT_DB_PATH,
     SERVE_SAMPLE_JSON_PATH,
-    SignatureValueType,
 )
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._orchestrator import TestSubmitter
@@ -55,7 +54,6 @@ from promptflow._utils.flow_utils import (
     parse_variant,
 )
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
-from promptflow.contracts.tool import ValueType
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 
@@ -1071,11 +1069,12 @@ class FlowOperations(TelemetryMixin):
             raise UserErrorException("Entry must be a function or a class.")
 
         # signature is language irrelevant, so we apply json type system
+        # TODO: enable this mapping after service supports more types
         value_type_map = {
-            ValueType.INT.value: SignatureValueType.INT.value,
-            ValueType.DOUBLE.value: SignatureValueType.NUMBER.value,
-            ValueType.LIST.value: SignatureValueType.ARRAY.value,
-            ValueType.BOOL.value: SignatureValueType.BOOL.value,
+            # ValueType.INT.value: SignatureValueType.INT.value,
+            # ValueType.DOUBLE.value: SignatureValueType.NUMBER.value,
+            # ValueType.LIST.value: SignatureValueType.ARRAY.value,
+            # ValueType.BOOL.value: SignatureValueType.BOOL.value,
         }
         for port_type in ["inputs", "outputs", "init"]:
             if port_type not in flow_meta:
