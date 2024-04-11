@@ -898,3 +898,11 @@ Upgrade prompt flow without prompt and run non-interactively.
 ```bash
 pf upgrade --yes
 ```
+
+## Autocomplete
+
+To activate autocomplete features for the pf CLI you need to add the following snippet to your ~/.bashrc or ~/.zshrc:
+
+```
+    source <promptflow_package_install_root>/pf.completion.sh
+```
