@@ -235,3 +235,12 @@ def resource_group_name() -> str:
 @pytest.fixture
 def workspace_name() -> str:
     return os.getenv("PROMPT_FLOW_WORKSPACE_NAME", DEFAULT_WORKSPACE_NAME)
+
+
+@pytest.fixture
+def reset_tracer_provider():
+    """Force reset tracer provider."""
+    with patch("opentelemetry.trace._TRACER_PROVIDER", None), patch(
+        "opentelemetry.trace._TRACER_PROVIDER_SET_ONCE._done", False
+    ):
+        yield
