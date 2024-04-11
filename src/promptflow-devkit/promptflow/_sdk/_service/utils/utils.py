@@ -204,7 +204,7 @@ def is_pfs_service_healthy(pfs_port) -> bool:
             return is_healthy
     except Exception:  # pylint: disable=broad-except
         pass
-    logger.debug(f"Promptflow service can't call /heartbeat on port {pfs_port}")
+    logger.debug(f"Failed to call prompt flow service api /heartbeat on port {pfs_port}.")
     return False
 
 
@@ -214,8 +214,8 @@ def check_pfs_service_status(pfs_port, time_delay=1, count_threshold=10) -> bool
     is_healthy = is_pfs_service_healthy(pfs_port)
     while is_healthy is False and count_threshold > cnt:
         message = (
-            f"Promptflow service is not healthy. It has been tried for {cnt} times, will try at most "
-            f"{count_threshold} times."
+            f"Waiting for the Promptflow service status to become healthy... It has been tried for {cnt} times, will "
+            f"try at most {count_threshold} times."
         )
         if cnt >= 3:
             logger.warning(message)
