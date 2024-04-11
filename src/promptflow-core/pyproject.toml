@@ -51,16 +51,19 @@ flask = ">=2.2.3,<4.0.0"  # Serving endpoint requirements
 python-dateutil = ">=2.1.0,<3.0.0"  # Contracts RunInfo
 # ========executor-service dependencies========
 fastapi = ">=0.109.0,<1.0.0" # used to build web executor server
+uvicorn = ">=0.27.0,<1.0.0" # used to run web executor server
 # ========azureml-serving dependencies========
 # AzureML connection dependencies
 azure-identity = ">=1.12.0,<2.0.0"
 azure-ai-ml = ">=1.14.0,<2.0.0"
 # MDC dependencies for monitoring
 azureml-ai-monitoring = ">=0.1.0b3,<1.0.0"
+# Serving app dependencies
+gunicorn = ">=21.2.0,<22.0.0" # used to run serving app server
 
 [tool.poetry.extras]
-executor-service = ["fastapi"]
-azureml-serving = ["azure-identity", "azure-ai-ml", "azureml-ai-monitoring"]
+executor-service = ["fastapi", "uvicorn"]
+azureml-serving = ["azure-identity", "azure-ai-ml", "azureml-ai-monitoring", "gunicorn"]
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "*"
