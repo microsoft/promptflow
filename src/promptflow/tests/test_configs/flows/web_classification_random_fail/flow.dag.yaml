@@ -16,7 +16,7 @@ nodes:
     type: code
     path: fetch_text_content_from_url.py
   inputs:
-    url: ${inputs.url}
+    url: ${random_fail.output}
 - name: summarize_text_content
   type: llm
   source:
@@ -66,3 +66,10 @@ nodes:
     path: convert_to_dict.py
   inputs:
     input_str: ${classify_with_llm.output}
+- name: random_fail
+  type: python
+  source:
+    type: code
+    path: random_fail.py
+  inputs:
+    url: ${inputs.url}

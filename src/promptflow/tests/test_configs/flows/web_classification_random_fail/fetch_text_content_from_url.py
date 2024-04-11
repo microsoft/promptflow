@@ -6,8 +6,6 @@ from promptflow import tool
 
 @tool
 def fetch_text_content_from_url(url: str):
-    if random.random() < 0.5:
-        raise ValueError("Random failure")
     # Send a request to the URL
     try:
         headers = {
