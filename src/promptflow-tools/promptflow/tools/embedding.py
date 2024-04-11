@@ -7,7 +7,15 @@ from promptflow.tools.exception import InvalidConnectionType
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
 # since the code here is in promptflow namespace as well
 from promptflow._internal import tool
-from promptflow.connections import AzureOpenAIConnection, OpenAIConnection, ServerlessConnection
+from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
+
+
+def is_serverless_connection(connection):
+    try:
+        from promptflow.connections import ServerlessConnection
+        return isinstance(connection, ServerlessConnection)
+    except ImportError:
+        return False
 
 
 class EmbeddingModel(str, Enum):
@@ -19,7 +27,7 @@ class EmbeddingModel(str, Enum):
 @tool
 @handle_openai_error()
 def embedding(
-    connection: Union[AzureOpenAIConnection, OpenAIConnection, ServerlessConnection],
+    connection: Union[AzureOpenAIConnection, OpenAIConnection],
     input: str,
     deployment_name: str = "",
     model: EmbeddingModel = EmbeddingModel.TEXT_EMBEDDING_ADA_002
@@ -37,7 +45,7 @@ def embedding(
             input=input,
             model=model
         ).data[0].embedding
-    elif isinstance(connection, ServerlessConnection):
+    elif is_serverless_connection(connection):
         client = init_openai_client(connection)
         return client.embeddings.create(
             input=[input],
