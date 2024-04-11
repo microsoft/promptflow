@@ -189,6 +189,7 @@ class TestSubmitter:
         stream_log: bool = True,
         output_path: Optional[str] = None,
         session: Optional[str] = None,
+        collection: Optional[str] = None,
         stream_output: bool = True,
     ):
         """
@@ -207,6 +208,8 @@ class TestSubmitter:
         :type output_path: str
         :param session: session id. If None, a new session id will be generated with _provision_session.
         :type session: str
+        :param collection: collection.
+        :type collection: str
         :param stream_output: whether to return a generator for streaming output.
         :type stream_output: bool
         :return: TestSubmitter instance.
@@ -239,15 +242,19 @@ class TestSubmitter:
             # do not enable trace when test single node, as we have not determined this behavior
             if target_node is None and Configuration(overrides=self._client._config).is_internal_features_enabled():
                 logger.debug("start trace for flow test...")
-                if is_collection_writeable():
-                    logger.debug("trace collection is writeable, will use flow name as collection...")
-                    collection_for_run = self._origin_flow.name
-                    logger.debug("collection for run: %s", collection_for_run)
-                    # pass with internal parameter `_collection`
-                    start_trace(session=session, _collection=collection_for_run)
+                if collection is not None:
+                    logger.debug("collection is user specified: %s, will use it...", collection)
+                    start_trace(collection=collection, session=session)
                 else:
-                    logger.debug("trace collection is protected, will honor existing collection.")
-                    start_trace(session=session)
+                    if is_collection_writeable():
+                        logger.debug("trace collection is writeable, will use flow name as collection...")
+                        collection_for_test = self._origin_flow.name
+                        logger.debug("collection for test: %s", collection_for_test)
+                        # pass with internal parameter `_collection`
+                        start_trace(session=session, _collection=collection_for_test)
+                    else:
+                        logger.debug("trace collection is protected, will honor existing collection.")
+                        start_trace(session=session)
 
             self._output_base, log_path, output_sub = self._resolve_output_path(
                 output_base=output_path,

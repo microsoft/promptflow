@@ -258,6 +258,7 @@ class FlowOperations(TelemetryMixin):
         inputs = inputs or {}
         output_path = kwargs.get("output_path", None)
         session = kwargs.pop("session", None)
+        collection = kwargs.pop("collection", None)
         # Run id will be set in operation context and used for session
         run_id = kwargs.get("run_id", str(uuid.uuid4()))
         flow = load_flow(flow)
@@ -275,6 +276,7 @@ class FlowOperations(TelemetryMixin):
             output_path=output_path,
             stream_output=stream_output,
             session=session,
+            collection=collection,
         ) as submitter:
             if isinstance(flow, FlexFlow) or isinstance(flow, Prompty):
                 # TODO(2897153): support chat eager flow
@@ -326,6 +328,7 @@ class FlowOperations(TelemetryMixin):
         with TestSubmitter(flow=flow, flow_context=flow.context, client=self._client).init(
             environment_variables=environment_variables,
             stream_log=False,  # no need to stream log in chat mode
+            collection=kwargs.get("collection", None),
         ) as submitter:
             is_chat_flow, chat_history_input_name, error_msg = is_executable_chat_flow(submitter.dataplane_flow)
             if not is_chat_flow:
