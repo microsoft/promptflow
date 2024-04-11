@@ -13,8 +13,8 @@ from promptflow.evals.synthetic.simulator import _template_dir as template_dir
 from promptflow.evals.synthetic.simulator._conversation import ConversationRole
 from promptflow.evals.synthetic.simulator._conversation.conversation_turn import ConversationTurn
 from promptflow.evals.synthetic.simulator.simulator import Simulator
+from promptflow.evals.synthetic.simulator.templates._simulator_templates import SimulatorTemplates
 from promptflow.evals.synthetic.simulator.templates._templates import CONVERSATION
-from promptflow.evals.synthetic.simulator.templates.simulator_templates import SimulatorTemplates
 
 
 @pytest.fixture()

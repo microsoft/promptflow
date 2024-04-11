@@ -9,8 +9,8 @@ from unittest.mock import Mock, patch
 import pytest
 
 from promptflow.evals.synthetic.simulator import _template_dir as template_dir
+from promptflow.evals.synthetic.simulator.templates._simulator_templates import SimulatorTemplates
 from promptflow.evals.synthetic.simulator.templates._templates import SUMMARIZATION, SUMMARIZATION_PATH
-from promptflow.evals.synthetic.simulator.templates.simulator_templates import SimulatorTemplates
 
 
 @pytest.mark.unittest

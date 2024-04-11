@@ -30,7 +30,7 @@ from promptflow.evals.synthetic.simulator.simulator._callback_conversation_bot i
 from promptflow.evals.synthetic.simulator.simulator._proxy_completion_model import ProxyChatCompletionsModel
 from promptflow.evals.synthetic.simulator.simulator._token_manager import PlainTokenManager, TokenScope
 from promptflow.evals.synthetic.simulator.simulator._utils import JsonLineList
-from promptflow.evals.synthetic.simulator.templates.simulator_templates import SimulatorTemplates, Template
+from promptflow.evals.synthetic.simulator.templates._simulator_templates import SimulatorTemplates, Template
 
 BASIC_MD = os.path.join(template_dir, "basic.md")  # type: ignore[has-type]
 USER_MD = os.path.join(template_dir, "user.md")  # type: ignore[has-type]
@@ -74,6 +74,9 @@ class Simulator:
         self.rai_client = None
         if ml_client:
             self.ml_client = ml_client
+            import pdb
+
+            pdb.set_trace()
             self.token_manager = ManagedIdentityAPITokenManager(
                 token_scope=TokenScope.DEFAULT_AZURE_MANAGEMENT,
                 logger=logging.getLogger("managed identity token manager"),
