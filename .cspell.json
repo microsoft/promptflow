@@ -41,7 +41,8 @@
     "scripts/installer/windows/**",
     ".github/workflows/**",
     ".github/actions/**",
-    ".github/pipelines/**"
+    ".github/pipelines/**",
+    ".github/CODEOWNERS"
   ],
   "words": [
     "aoai",
@@ -196,7 +197,8 @@
     "nologo",
     "wscript",
     "raisvc",
-    "evals"
+    "evals",
+    "dcid"
   ],
   "flagWords": [
     "Prompt Flow"

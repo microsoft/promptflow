@@ -13,6 +13,7 @@ from promptflow._constants import (
     CHAT_HISTORY,
     DEFAULT_ENCODING,
     FLOW_DAG_YAML,
+    FLOW_FILE_SUFFIX,
     FLOW_FLEX_YAML,
     PROMPT_FLOW_DIR_NAME,
     PROMPTY_EXTENSION,
@@ -95,12 +96,18 @@ def resolve_flow_path(
                 f"Please specify a file or remove the extra YAML.",
                 privacy_info=[str(flow_path)],
             )
-    elif flow_path.is_file() or flow_path.suffix in (".yaml", ".yml"):
+    elif flow_path.is_file() or flow_path.suffix.lower() in FLOW_FILE_SUFFIX:
         flow_folder = flow_path.parent
         flow_file = flow_path.name
     else:  # flow_path doesn't exist
         flow_folder = flow_path
         flow_file = FLOW_DAG_YAML
+
+    file_path = flow_folder / flow_file
+    if file_path.suffix.lower() not in FLOW_FILE_SUFFIX:
+        raise UserErrorException(
+            error_format=f"The flow file suffix must be yaml or yml, " f"and cannot be {file_path.suffix}"
+        )
 
     if not check_flow_exist:
         return flow_folder.resolve().absolute(), flow_file
@@ -111,10 +118,10 @@ def resolve_flow_path(
             privacy_info=[flow_path.absolute().as_posix()],
         )
 
-    if not (flow_folder / flow_file).is_file():
+    if not file_path.is_file():
         raise UserErrorException(
-            f"Can't find file {flow_file}, " f"in the flow path {flow_folder.absolute().as_posix()}.",
-            privacy_info=[flow_folder.absolute().as_posix()],
+            f"Flow file {file_path.absolute().as_posix()} does not exist.",
+            privacy_info=[file_path.absolute().as_posix()],
         )
 
     return flow_folder.resolve().absolute(), flow_file
@@ -141,20 +148,25 @@ def dump_flow_dag(flow_dag: dict, flow_path: Path):
 
 
 def is_flex_flow(
-    *, file_path: Union[str, Path, None] = None, yaml_dict: Optional[dict] = None, working_dir: Optional[Path] = None
+    *,
+    flow_path: Union[str, Path, PathLike, None] = None,
+    yaml_dict: Optional[dict] = None,
+    working_dir: Union[str, Path, PathLike, None] = None,
+    check_flow_exist=True,
 ):
     """Check if the flow is a flex flow."""
-    if file_path is None and yaml_dict is None:
+    if flow_path is None and yaml_dict is None:
         raise UserErrorException("Either file_path or yaml_dict should be provided.")
-    if file_path is not None and yaml_dict is not None:
+    if flow_path is not None and yaml_dict is not None:
         raise UserErrorException("Only one of file_path and yaml_dict should be provided.")
-    if file_path is not None:
-        file_path = Path(file_path)
-        if working_dir is not None and not file_path.is_absolute():
-            file_path = working_dir / file_path
-        if file_path.suffix.lower() not in [".yaml", ".yml"]:
-            return False
-        yaml_dict = load_yaml(file_path)
+    if flow_path is not None:
+        flow_path, flow_file = resolve_flow_path(flow_path, base_path=working_dir, check_flow_exist=False)
+        file_path = flow_path / flow_file
+        if file_path.is_file() and file_path.suffix.lower() in (".yaml", ".yml"):
+            yaml_dict = load_yaml(file_path)
+        elif not check_flow_exist:
+            return flow_file == FLOW_FLEX_YAML
+
     return isinstance(yaml_dict, dict) and "entry" in yaml_dict
 
 

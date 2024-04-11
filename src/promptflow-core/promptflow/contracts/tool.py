@@ -8,7 +8,7 @@ from dataclasses import asdict, dataclass
 from enum import Enum
 from typing import Any, Dict, List, Optional, Type, TypeVar
 
-from promptflow._constants import CONNECTION_NAME_PROPERTY, CONNECTION_DATA_CLASS_KEY
+from promptflow._constants import CONNECTION_DATA_CLASS_KEY, CONNECTION_NAME_PROPERTY
 
 from .multimedia import Image
 from .types import AssistantDefinition, FilePath, PromptTemplate, Secret

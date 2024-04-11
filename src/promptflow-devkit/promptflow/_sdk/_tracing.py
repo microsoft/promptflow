@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import importlib.metadata
 import json
 import os
 import platform
@@ -41,9 +42,10 @@ from promptflow._sdk._utils import extract_workspace_triad_from_trace_provider
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
 from promptflow.tracing._operation_context import OperationContext
-from promptflow.tracing._start_trace import _force_set_tracer_provider, _is_tracer_provider_set
 
 logger = get_cli_sdk_logger()
+
+TRACER_PROVIDER_PFS_EXPORTER_SET_ATTR = "_pfs_exporter_set"
 
 
 def get_ws_tracing_base_url(ws_triad: AzureMLWorkspaceTriad) -> str:
@@ -54,6 +56,14 @@ def get_ws_tracing_base_url(ws_triad: AzureMLWorkspaceTriad) -> str:
         "/providers/Microsoft.MachineLearningServices"
         f"/workspaces/{ws_triad.workspace_name}"
     )
+
+
+def _is_azure_ext_installed() -> bool:
+    try:
+        importlib.metadata.version("promptflow-azure")
+        return True
+    except importlib.metadata.PackageNotFoundError:
+        return False
 
 
 def _inject_attrs_to_op_ctx(attrs: typing.Dict[str, str]) -> None:
@@ -168,7 +178,7 @@ def _inject_res_attrs_to_environ(
         os.environ[OTEL_EXPORTER_OTLP_ENDPOINT] = f"http://localhost:{pfs_port}/v1/traces"
 
 
-def _create_or_merge_res(
+def _create_res(
     collection: typing.Optional[str],
     collection_id: typing.Optional[str] = None,
     exp: typing.Optional[str] = None,
@@ -179,10 +189,6 @@ def _create_or_merge_res(
         res_attrs[SpanResourceAttributesFieldName.COLLECTION] = collection
     if collection_id is not None:
         res_attrs[SpanResourceAttributesFieldName.COLLECTION_ID] = collection_id
-    if _is_tracer_provider_set():
-        tracer_provider: TracerProvider = trace.get_tracer_provider()
-        for attr_key, attr_value in tracer_provider.resource.attributes.items():
-            res_attrs[attr_key] = attr_value
     res_attrs[SpanResourceAttributesFieldName.SERVICE_NAME] = OTEL_RESOURCE_SERVICE_NAME
     if exp is not None:
         res_attrs[SpanResourceAttributesFieldName.EXPERIMENT_NAME] = exp
@@ -217,6 +223,14 @@ def start_trace_with_devkit(
 
     # local to cloud feature
     ws_triad = _get_ws_triad_from_pf_config()
+    if ws_triad is not None and not _is_azure_ext_installed():
+        warning_msg = (
+            "Azure extension is not installed, though export to cloud is configured, "
+            "traces cannot be exported to cloud. To fix this, please run `pip install promptflow-azure` "
+            "and restart prompt flow service."
+        )
+        logger.warning(warning_msg)
+
     # invoke prompt flow service
     pfs_port = _invoke_pf_svc()
 
@@ -248,17 +262,24 @@ def setup_exporter_to_pfs() -> None:
             resource_group_name=resource_group_name,
             workspace_name=workspace_name,
         )
-    # create resource, or merge to existing resource
-    res = _create_or_merge_res(collection=collection, collection_id=collection_id, exp=exp, ws_triad=workspace_triad)
-    tracer_provider = TracerProvider(resource=res)
+    # tracer provider
+    # create resource & tracer provider, or merge resource
+    res = _create_res(collection=collection, collection_id=collection_id, exp=exp, ws_triad=workspace_triad)
+    cur_tracer_provider = trace.get_tracer_provider()
+    if isinstance(cur_tracer_provider, TracerProvider):
+        cur_res: Resource = cur_tracer_provider.resource
+        new_res = cur_res.merge(res)
+        cur_tracer_provider._resource = new_res
+    else:
+        tracer_provider = TracerProvider(resource=res)
+        trace.set_tracer_provider(tracer_provider)
+    # set exporter to PFS
     # get OTLP endpoint from environment
     endpoint = os.getenv(OTEL_EXPORTER_OTLP_ENDPOINT)
     if endpoint is not None:
         # create OTLP span exporter if endpoint is set
         otlp_span_exporter = OTLPSpanExporter(endpoint=endpoint)
-        tracer_provider.add_span_processor(BatchSpanProcessor(otlp_span_exporter))
-    # set tracer provider
-    if _is_tracer_provider_set():
-        _force_set_tracer_provider(tracer_provider)
-    else:
-        trace.set_tracer_provider(tracer_provider)
+        tracer_provider: TracerProvider = trace.get_tracer_provider()
+        if not getattr(tracer_provider, TRACER_PROVIDER_PFS_EXPORTER_SET_ATTR, False):
+            tracer_provider.add_span_processor(BatchSpanProcessor(otlp_span_exporter))
+            setattr(tracer_provider, TRACER_PROVIDER_PFS_EXPORTER_SET_ATTR, True)

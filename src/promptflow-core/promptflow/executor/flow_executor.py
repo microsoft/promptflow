@@ -211,7 +211,7 @@ class FlowExecutor:
             return ScriptExecutor(flow_file, storage=storage)
         if not isinstance(flow_file, (Path, str)):
             raise NotImplementedError("Only support Path or str for flow_file.")
-        if is_flex_flow(file_path=flow_file, working_dir=working_dir):
+        if is_flex_flow(flow_path=flow_file, working_dir=working_dir):
             from ._script_executor import ScriptExecutor
 
             return ScriptExecutor(

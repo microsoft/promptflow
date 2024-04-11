@@ -27,6 +27,7 @@ USER_AGENT_OVERRIDE_KEY = "user_agent_override"
 FLOW_DAG_YAML = "flow.dag.yaml"
 FLOW_FLEX_YAML = "flow.flex.yaml"
 PROMPTY_EXTENSION = ".prompty"
+FLOW_FILE_SUFFIX = (".yaml", ".yml", PROMPTY_EXTENSION)
 
 CHAT_HISTORY = "chat_history"
 
@@ -236,6 +237,13 @@ class ConnectionType(str, Enum):
 class ConnectionAuthMode:
     KEY = "key"
     MEID_TOKEN = "meid_token"  # Microsoft Entra ID
+
+
+class ConnectionDefaultApiVersion:
+    AZURE_OPEN_AI = "2024-02-01"
+    COGNITIVE_SEARCH = "2023-11-01"
+    AZURE_CONTENT_SAFETY = "2023-10-01"
+    FORM_RECOGNIZER = "2023-07-31"
 
 
 class CustomStrongTypeConnectionConfigs:
