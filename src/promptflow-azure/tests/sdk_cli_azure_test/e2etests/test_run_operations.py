@@ -1056,6 +1056,7 @@ class TestFlowRun:
         # run_data = pf.runs._get_run_from_run_history(run_id, original_form=True)[run_meta_data]
         # assert run_data[hidden] is False
 
+    @pytest.mark.skipif(not is_live(), reason="Content change in submission time which lead to recording issue.")
     def test_eager_flow_cancel(self, pf: PFClient, randstr: Callable[[str], str]):
         """Test cancel eager flow."""
         # create a run
