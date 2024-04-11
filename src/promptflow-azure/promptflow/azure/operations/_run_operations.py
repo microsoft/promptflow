@@ -27,7 +27,7 @@ from azure.ai.ml.entities import Workspace
 from azure.ai.ml.operations import DataOperations
 from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
 
-from promptflow._constants import LANGUAGE_KEY, FlowLanguage
+from promptflow._constants import LANGUAGE_KEY, AzureWorkspaceKind, FlowLanguage
 from promptflow._sdk._constants import (
     HOME_PROMPT_FLOW_DIR,
     LINE_NUMBER,
@@ -122,7 +122,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         kind = self._workspace._kind
         # for a normal workspace the kind is "default", for an ai project it's "project". Except these two values, it
         # can also be "hub" which is not a supported workspace type to get default datastore.
-        if kind not in ["default", "project"]:
+        if kind not in [AzureWorkspaceKind.DEFAULT, AzureWorkspaceKind.PROJECT]:
             raise RunOperationParameterError(
                 "Failed to get default workspace datastore. Please make sure you are using the right workspace which "
                 f"is either an azure machine learning studio workspace or an azure ai project. Got {kind!r} instead."
