@@ -12,7 +12,6 @@ from pytest_mock import MockerFixture
 
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
 from promptflow._core.connection_manager import ConnectionManager
-from promptflow._sdk._tracing import PF_CONFIG_TRACE_FEATURE_DISABLE
 from promptflow._sdk.entities._connection import AzureOpenAIConnection
 from promptflow._utils.context_utils import _change_working_dir
 
@@ -79,6 +78,6 @@ def enable_logger_propagate():
 @pytest.fixture(autouse=True)
 def disable_trace_feature():
     """Azure test should not require trace feature."""
-    with mock.patch("promptflow._sdk._configuration.Configuration.get_trace_provider") as mock_func:
-        mock_func.return_value = PF_CONFIG_TRACE_FEATURE_DISABLE
+    with mock.patch("promptflow._sdk._tracing.is_trace_feature_disabled") as mock_func:
+        mock_func.return_value = True
         yield
