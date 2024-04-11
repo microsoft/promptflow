@@ -69,18 +69,19 @@ jobs:
         run: |
           poetry install --with test
       - run: |
+          set -xe
           source .venv/scripts/activate
           pytest --version
           cd ..
-          poetry run pip install .\promptflow-tracing
-          poetry run pip install .\promptflow-core[azureml-serving]
-          poetry run pip install .\promptflow-devkit[pyarrow]
-          poetry run pip install .\promptflow-azure
+          poetry run pip install ..\promptflow-tracing
+          poetry run pip install ..\promptflow-core[azureml-serving]
+          poetry run pip install ..\promptflow-devkit[pyarrow]
+          poetry run pip install ..\promptflow-azure
 
           echo "Need to install promptflow to avoid tool dependency issue"
-          poetry run pip install .\promptflow
-          poetry run pip install .\promptflow-tools
-          poetry run pip install .\promptflow-recording
+          poetry run pip install ..\promptflow
+          poetry run pip install ..\promptflow-tools
+          poetry run pip install ..\promptflow-recording
 
           poetry run pip show promptflow-tracing
           poetry run pip show promptflow-core
@@ -90,18 +91,18 @@ jobs:
         if: runner.os == 'Windows'
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - run: |
+          set -xe
           source .venv/bin/activate
           pytest --version
-          cd ..
-          poetry run pip install ./promptflow-tracing
-          poetry run pip install ./promptflow-core[azureml-serving]
-          poetry run pip install ./promptflow-devkit[pyarrow]
-          poetry run pip install ./promptflow-azure
+          poetry run pip install ../promptflow-tracing
+          poetry run pip install ../promptflow-core[azureml-serving]
+          poetry run pip install ../promptflow-devkit[pyarrow]
+          poetry run pip install ../promptflow-azure
 
           echo "Need to install promptflow to avoid tool dependency issue"
-          poetry run pip install ./promptflow
-          poetry run pip install ./promptflow-tools
-          poetry run pip install ./promptflow-recording
+          poetry run pip install ../promptflow
+          poetry run pip install ../promptflow-tools
+          poetry run pip install ../promptflow-recording
 
           poetry run pip show promptflow-tracing
           poetry run pip show promptflow-core
