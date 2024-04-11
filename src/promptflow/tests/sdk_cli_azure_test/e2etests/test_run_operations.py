@@ -953,7 +953,11 @@ class TestFlowRun:
     def test_upload_prompty_run(self, pf: PFClient, randstr: Callable[[str], str]):
         # currently prompty run is skipped for upload, this test should be finished without error
         local_pf, name = Local2CloudTestHelper.get_local_pf_and_run_name(randstr)
-        run = pf.run(flow=f"{PROMPTY_DIR}/prompty_example.prompty", data=f"{DATAS_DIR}/prompty_inputs.jsonl")
+        run = local_pf.run(
+            flow=f"{PROMPTY_DIR}/prompty_example.prompty",
+            data=f"{DATAS_DIR}/prompty_inputs.jsonl",
+            name=name,
+        )
         assert run.status == "Completed"
         assert "error" not in run._to_dict()
 
