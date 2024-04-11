@@ -12,7 +12,7 @@ import sys
 
 import waitress
 
-from promptflow._cli._params import base_params
+from promptflow._cli._params import add_param_ua, add_param_verbose, base_params
 from promptflow._cli._utils import activate_action
 from promptflow._constants import PF_NO_INTERACTIVE_LOGIN
 from promptflow._sdk._constants import (
@@ -98,6 +98,13 @@ def add_parser_start_service(subparsers):
         action="store_true",
         help="If the port is used, the existing service will be terminated and restart a new service.",
     )
+    add_param_debug = lambda parser: parser.add_argument(  # noqa: E731
+        "-d",
+        "--debug",
+        action="store_true",
+        help="The debug mode flag for the promptflow service activates foreground operation, displaying debug level "
+        "logs directly in the terminal.",
+    )
     activate_action(
         name="start",
         description="Start prompt flow service.",
@@ -105,8 +112,9 @@ def add_parser_start_service(subparsers):
         add_params=[
             add_param_port,
             add_param_force,
+            add_param_debug,
         ]
-        + base_params,
+        + [add_param_ua, add_param_verbose],
         subparsers=subparsers,
         help_message="Start prompt flow service.",
         action_param_name="sub_action",
