@@ -96,12 +96,6 @@ jobs:
 
       - name: Run Test
         working-directory: ${{ env.WORKING_DIRECTORY }}
-        if: runner.os != 'Windows'
         run: |
           poetry run pytest ./tests/sdk_cli_azure_test ../promptflow-azure/tests/sdk_cli_azure_test -n auto -m "perf_monitor_test"
-      - name: Run Test (Windows)
-        working-directory: ${{ env.WORKING_DIRECTORY }}
-        if: runner.os == 'Windows'
-        run: |
-          poetry run pytest .\tests\sdk_cli_azure_test ..\promptflow-azure\tests\sdk_cli_azure_test -n auto -m "perf_monitor_test"
 
