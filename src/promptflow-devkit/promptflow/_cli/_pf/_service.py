@@ -85,13 +85,13 @@ def add_parser_start_service(subparsers):
 
     # Start prompt flow service:
     pf service start
-    # Force restart promptflow service:
+    # Force restart prompt flow service:
     pf service start --force
-    # Start promptflow service with specific port:
+    # Start prompt flow service with specific port:
     pf service start --port 65553
     """  # noqa: E501
     add_param_port = lambda parser: parser.add_argument(  # noqa: E731
-        "-p", "--port", type=int, help="port of the promptflow service"
+        "-p", "--port", type=int, help="port of the prompt flow service"
     )
     add_param_force = lambda parser: parser.add_argument(  # noqa: E731
         "--force",
@@ -102,7 +102,7 @@ def add_parser_start_service(subparsers):
         "-d",
         "--debug",
         action="store_true",
-        help="Start the promptflow service in foreground, displaying debug level logs directly in the terminal.",
+        help="Start the prompt flow service in foreground, displaying debug level logs directly in the terminal.",
     )
     activate_action(
         name="start",
@@ -188,11 +188,11 @@ def start_service(args):
                 _start_background_service_on_unix(port)
             is_healthy = check_pfs_service_status(port)
             if is_healthy:
-                message = f"Start Promptflow Service on port {port}, version: {get_pfs_version()}."
+                message = f"Start prompt flow service on port {port}, version: {get_pfs_version()}."
                 print(message)
                 logger.info(message)
             else:
-                logger.warning(f"Promptflow service start failed in {port}. {hint_stop_before_upgrade}")
+                logger.warning(f"Prompt flow service start failed in {port}. {hint_stop_before_upgrade}")
 
 
 def validate_port(port, force_start):
@@ -247,7 +247,7 @@ def _prepare_app_for_foreground_service(port, force_start):
         app.logger.setLevel(logging.DEBUG)
     else:
         app.logger.setLevel(logging.INFO)
-    message = f"Starting Prompt Flow Service on {port}, version: {get_pfs_version()}."
+    message = f"Starting prompt flow Service on {port}, version: {get_pfs_version()}."
     app.logger.info(message)
     print(message)
     return port
@@ -267,7 +267,7 @@ def _start_background_service_on_windows(port):
         f"waitress-serve --listen=127.0.0.1:{port} --threads={PF_SERVICE_WORKER_NUM} "
         "promptflow._cli._pf._service:get_app"
     )
-    logger.debug(f"Start Promptflow Service in Windows: {command}")
+    logger.debug(f"Start prompt flow service in Windows: {command}")
     startupinfo = win32process.STARTUPINFO()
     startupinfo.dwFlags |= win32process.STARTF_USESHOWWINDOW
     startupinfo.wShowWindow = win32con.SW_HIDE
@@ -301,7 +301,7 @@ def _start_background_service_on_unix(port):
         f"--threads={PF_SERVICE_WORKER_NUM}",
         "promptflow._cli._pf._service:get_app",
     ]
-    logger.debug(f"Start Promptflow Service in Unix: {cmd}")
+    logger.debug(f"Start prompt flow service in Unix: {cmd}")
     subprocess.Popen(cmd, stdout=subprocess.DEVNULL, start_new_session=True)
 
 
@@ -309,9 +309,9 @@ def stop_service():
     port = get_port_from_config()
     if port is not None and is_port_in_use(port):
         kill_exist_service(port)
-        message = f"Promptflow service stop in {port}."
+        message = f"Prompt flow service stop in {port}."
     else:
-        message = "Promptflow service is not started."
+        message = "Prompt flow service is not started."
     logger.debug(message)
     print(message)
 
@@ -330,7 +330,7 @@ def show_service():
         return
     else:
         logger.warning(
-            f"Promptflow service is not started. The promptflow service log is located at {log_file.as_posix()} "
-            f"and promptflow version is {get_pfs_version()}."
+            f"Prompt flow service is not started. The prompt flow service log is located at {log_file.as_posix()} "
+            f"and prompt flow version is {get_pfs_version()}."
         )
         sys.exit(1)
