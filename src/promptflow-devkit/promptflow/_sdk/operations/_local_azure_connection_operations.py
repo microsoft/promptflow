@@ -15,6 +15,7 @@ from promptflow.core._connection_provider._utils import (
     is_from_cli,
     is_github_codespaces,
 )
+from promptflow.core._errors import MissingRequiredPackage
 from promptflow.core._utils import extract_workspace
 
 logger = get_cli_sdk_logger()
@@ -22,6 +23,13 @@ logger = get_cli_sdk_logger()
 
 class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
     def __init__(self, connection_provider, **kwargs):
+        try:
+            import promptflow.azure  # noqa: F401
+        except ImportError as e:
+            error_msg = (
+                "Please install Azure extension (e.g. `pip install promptflow-azure`) to use Azure related features."
+            )
+            raise MissingRequiredPackage(message=error_msg) from e
         self._subscription_id, self._resource_group, self._workspace_name = extract_workspace(connection_provider)
         self._credential = kwargs.pop("credential", None) or self._get_credential()
         super().__init__(

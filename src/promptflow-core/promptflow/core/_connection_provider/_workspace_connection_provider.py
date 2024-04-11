@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Union
 
 import requests
 
-from promptflow._constants import ConnectionAuthMode
+from promptflow._constants import AML_CONNECTION_PROVIDER_TEMPLATE, ConnectionAuthMode
 from promptflow._utils.retry_utils import http_retry_wrapper
 from promptflow.core._connection import CustomConnection, _Connection
 from promptflow.core._errors import (
@@ -16,6 +16,7 @@ from promptflow.core._errors import (
     MissingRequiredPackage,
     OpenURLFailed,
     OpenURLFailedUserError,
+    OpenURLNotFoundError,
     OpenURLUserAuthenticationError,
     UnknownConnectionType,
     UnsupportedConnectionAuthType,
@@ -24,7 +25,12 @@ from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorEx
 
 from ..._utils.credential_utils import get_default_azure_credential
 from ._connection_provider import ConnectionProvider
-from ._utils import interactive_credential_disabled, is_from_cli, is_github_codespaces
+from ._utils import (
+    check_connection_provider_resource,
+    interactive_credential_disabled,
+    is_from_cli,
+    is_github_codespaces,
+)
 
 GET_CONNECTION_URL = (
     "/subscriptions/{sub}/resourcegroups/{rg}/providers/Microsoft.MachineLearningServices"
@@ -76,6 +82,10 @@ class WorkspaceConnectionProvider(ConnectionProvider):
         self.subscription_id = subscription_id
         self.resource_group_name = resource_group_name
         self.workspace_name = workspace_name
+        self.resource_id = AML_CONNECTION_PROVIDER_TEMPLATE.format(
+            self.subscription_id, self.resource_group_name, self.workspace_name
+        )
+        self._workspace_checked = False
 
     @property
     def credential(self):
@@ -131,7 +141,13 @@ class WorkspaceConnectionProvider(ConnectionProvider):
             f"Open url {{url}} failed with status code: {response.status_code}, action: {action}, reason: {{reason}}"
         )
         if response.status_code == 403:
-            raise AccessDeniedError(operation=url, target=ErrorTarget.RUNTIME)
+            raise AccessDeniedError(operation=url, target=ErrorTarget.CORE)
+        elif response.status_code == 404:
+            raise OpenURLNotFoundError(
+                message_format=message_format,
+                url=url,
+                reason=response.reason,
+            )
         elif 400 <= response.status_code < 500:
             raise OpenURLFailedUserError(
                 message_format=message_format,
@@ -404,6 +420,8 @@ class WorkspaceConnectionProvider(ConnectionProvider):
             raise OpenURLUserAuthenticationError(message=auth_error_message)
         except ClientAuthenticationError as e:
             raise UserErrorException(target=ErrorTarget.CORE, message=str(e), error=e) from e
+        except UserErrorException:
+            raise
         except Exception as e:
             raise SystemErrorException(target=ErrorTarget.CORE, message=str(e), error=e) from e
 
@@ -417,6 +435,12 @@ class WorkspaceConnectionProvider(ConnectionProvider):
         return rest_list_connection_dict
 
     def list(self) -> List[_Connection]:
+        if not self._workspace_checked:
+            # Check workspace not 'hub'
+            check_connection_provider_resource(
+                resource_id=self.resource_id, credential=self.credential, pkg_name="promptflow-core[azureml-serving]"
+            )
+            self._workspace_checked = True
         rest_list_connection_dict = self._build_list_connection_dict(
             subscription_id=self.subscription_id,
             resource_group_name=self.resource_group_name,
@@ -432,6 +456,12 @@ class WorkspaceConnectionProvider(ConnectionProvider):
         return connection_list
 
     def get(self, name: str, **kwargs) -> _Connection:
+        if not self._workspace_checked:
+            # Check workspace not 'hub'
+            check_connection_provider_resource(
+                resource_id=self.resource_id, credential=self.credential, pkg_name="promptflow-core[azureml-serving]"
+            )
+            self._workspace_checked = True
         connection_dict = self._build_connection_dict(
             name,
             subscription_id=self.subscription_id,

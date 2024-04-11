@@ -7,6 +7,7 @@ import os
 import re
 from typing import Any, Tuple
 
+from promptflow._constants import AML_CONNECTION_PROVIDER_TEMPLATE
 from promptflow._utils.retry_utils import retry
 from promptflow.contracts.flow import Flow
 from promptflow.core._serving._errors import InvalidConnectionData, MissingConnectionProvider
@@ -18,7 +19,6 @@ from promptflow.core._version import __version__
 
 USER_AGENT = f"promptflow-cloud-serving/{__version__}"
 AML_DEPLOYMENT_RESOURCE_ID_REGEX = "/subscriptions/(.*)/resourceGroups/(.*)/providers/Microsoft.MachineLearningServices/workspaces/(.*)/onlineEndpoints/(.*)/deployments/(.*)"  # noqa: E501
-AML_CONNECTION_PROVIDER_TEMPLATE = "azureml://subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}"  # noqa: E501
 
 
 class AzureMLExtension(AppExtension):
