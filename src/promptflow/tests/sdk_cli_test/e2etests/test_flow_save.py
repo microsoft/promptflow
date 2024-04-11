@@ -74,7 +74,11 @@ def global_hello_int_return(text: str) -> int:
 
 
 def global_hello_strong_return(text: str) -> GlobalHello:
-    return len(text)
+    return GlobalHello(AzureOpenAIConnection("test"))
+
+
+def global_hello_kwargs(text: str, **kwargs) -> str:
+    return f"Hello {text}!"
 
 
 @pytest.mark.usefixtures(
@@ -166,7 +170,7 @@ class TestFlowSave:
                             "type": "string",
                         },
                         "length": {
-                            "type": "integer",
+                            "type": "int",
                         },
                     },
                 },
@@ -204,16 +208,16 @@ class TestFlowSave:
                             "type": "string",
                         },
                         "i": {
-                            "type": "integer",
+                            "type": "int",
                         },
                         "f": {
-                            "type": "number",
+                            "type": "double",
                         },
                         "b": {
-                            "type": "boolean",
+                            "type": "bool",
                         },
                         "li": {
-                            "type": "array",
+                            "type": "list",
                         },
                         "d": {
                             "type": "object",
@@ -224,16 +228,16 @@ class TestFlowSave:
                             "type": "string",
                         },
                         "i": {
-                            "type": "integer",
+                            "type": "int",
                         },
                         "f": {
-                            "type": "number",
+                            "type": "double",
                         },
                         "b": {
-                            "type": "boolean",
+                            "type": "bool",
                         },
                         "li": {
-                            "type": "array",
+                            "type": "list",
                         },
                         "d": {
                             "type": "object",
@@ -244,16 +248,16 @@ class TestFlowSave:
                             "type": "string",
                         },
                         "i": {
-                            "type": "integer",
+                            "type": "int",
                         },
                         "f": {
-                            "type": "number",
+                            "type": "double",
                         },
                         "b": {
-                            "type": "boolean",
+                            "type": "bool",
                         },
                         "l": {
-                            "type": "array",
+                            "type": "list",
                         },
                         "d": {
                             "type": "object",
@@ -416,6 +420,22 @@ class TestFlowSave:
             },
         }
 
+    def test_pf_infer_signature_include_primitive_output(self):
+        pf = PFClient()
+        flow_meta, _, _ = pf.flows._infer_signature(entry=global_hello, include_primitive_output=True)
+        assert flow_meta == {
+            "inputs": {
+                "text": {
+                    "type": "string",
+                }
+            },
+            "outputs": {
+                "output": {
+                    "type": "string",
+                }
+            },
+        }
+
     def test_pf_save_callable_function(self):
         pf = PFClient()
         target_path = f"{FLOWS_DIR}/saved/hello_callable"
@@ -493,6 +513,17 @@ class TestFlowSave:
                     },
                 },
                 id="inherited_typed_dict_output",
+            ),
+            pytest.param(
+                global_hello_kwargs,
+                {
+                    "inputs": {
+                        "text": {
+                            "type": "string",
+                        }
+                    },
+                },
+                id="kwargs",
             ),
         ],
     )
