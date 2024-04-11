@@ -72,7 +72,7 @@ class FlexFlowInitSchema(FlowInputSchema):
     type = fields.Str(
         required=True,
         validate=validate.OneOf(
-            [SignatureValueType.NUMBER, SignatureValueType.BOOL, SignatureValueType.INT, SignatureValueType.STRING]
+            list(map(lambda x: x.value, SignatureValueType))
             + list(
                 map(lambda x: f"{x.value}Connection", filter(lambda x: x != ConnectionType._NOT_SET, ConnectionType))
             )

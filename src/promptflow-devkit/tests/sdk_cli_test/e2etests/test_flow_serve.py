@@ -481,7 +481,7 @@ def test_eager_flow_swagger(simple_eager_flow):
                             "content": {
                                 "application/json": {
                                     "schema": {
-                                        "properties": {"output": {"additionalProperties": {}, "type": "object"}},
+                                        "properties": {"output": {"type": "string"}},
                                         "type": "object",
                                     }
                                 }
@@ -539,11 +539,7 @@ def test_eager_flow_primitive_output_swagger(simple_eager_flow_primitive_output)
                     },
                     "responses": {
                         "200": {
-                            "content": {
-                                "application/json": {
-                                    "schema": {"properties": {"output": {"type": "string"}}, "type": "object"}
-                                }
-                            },
+                            "content": {"application/json": {"schema": {"type": "object"}}},
                             "description": "successful " "operation",
                         },
                         "400": {"description": "Invalid " "input"},
@@ -575,7 +571,7 @@ def test_eager_flow_serve_dataclass_output(simple_eager_flow_dataclass_output):
 
 @pytest.mark.e2etest
 def test_eager_flow_serve_non_json_serializable_output(mocker):
-    with pytest.raises(UserErrorException, match="Parse interface for tool 'my_flow' failed:"):
+    with pytest.raises(UserErrorException, match="Parse interface for 'my_flow' failed:"):
         # instead of giving 400 response for all requests, we raise user error on serving now
 
         from ..conftest import create_client_by_model

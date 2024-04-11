@@ -5,7 +5,6 @@
 """
 This file can generate a meta file for the given prompt template or a python file.
 """
-import dataclasses
 import importlib.util
 import inspect
 import json
@@ -45,6 +44,7 @@ from promptflow._utils.tool_utils import (
     function_to_interface,
     get_inputs_for_prompt_template,
     resolve_annotation,
+    resolve_complicated_type,
 )
 from promptflow.contracts.tool import InputDefinition, Tool, ToolType, ValueType
 from promptflow.exceptions import ErrorTarget, UserErrorException
@@ -536,24 +536,37 @@ def generate_flow_meta_dict_by_object(f, cls):
 
     # validate output
     return_type = resolve_annotation(signature.return_annotation)
-    if dataclasses.is_dataclass(return_type):
-        output_fields = {x.name: x.type for x in dataclasses.fields(return_type)}
-    else:
-        output_fields = {"output": return_type}
-    validate_interface(tool.outputs, output_fields, tool.name, "output")
+    output_fields, composed_output = resolve_complicated_type(return_type)
+    if composed_output:
+        validate_interface(tool.outputs, output_fields, tool.name, "output")
+    elif return_type not in [str, inspect.Signature.empty]:
+        raise BadFunctionInterface(
+            message_format=(
+                "Parse interface for '{entry}' failed: "
+                "The return annotation of the entry function must be dataclass, TypedDict or string, "
+                "but got {t}."
+            ),
+            entry=cls.__name__ if cls else f.__name__,
+            t=str(return_type),
+        )
 
     # Include data in generated meta to avoid flow definition's fields(e.g. environment variable) missing.
     flow_meta = {}
     if cls:
         init_tool = _parse_tool_from_function(cls.__init__, include_outputs=False)
         init_inputs = init_tool.inputs
-        # no need to validate init as dict is not allowed in init for now.
+        validate_interface(
+            init_inputs,
+            {k: v.annotation for k, v in inspect.signature(cls.__init__).parameters.items()},
+            tool.name,
+            "input",
+        )
     else:
         init_inputs = None
 
     for ports, meta_key in [
         (tool.inputs, "inputs"),
-        (tool.outputs, "outputs"),
+        (tool.outputs if composed_output else None, "outputs"),
         (init_inputs, "init"),
     ]:
         if not ports:
