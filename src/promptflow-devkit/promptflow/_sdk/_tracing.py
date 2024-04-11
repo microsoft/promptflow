@@ -225,6 +225,10 @@ def start_trace_with_devkit(
     attrs: typing.Optional[typing.Dict[str, str]] = None,
     run: typing.Optional[str] = None,
 ) -> None:
+    if is_trace_feature_disabled():
+        logger.info("trace feature is disabled in config, skip setup exporter to PFS.")
+        return
+
     # honor and set attributes if user has specified
     if isinstance(attrs, dict):
         _inject_attrs_to_op_ctx(attrs)
