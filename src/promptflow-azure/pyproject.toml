@@ -71,6 +71,7 @@ pfazure = "promptflow.azure._cli.entry:main"
 [tool.pytest.ini_options]
 markers = [
   "unittest",
+  "e2etest"
 ]
 # junit - analyse and publish test results (https://github.com/EnricoMi/publish-unit-test-result-action)
 # durations - list the slowest test durations
@@ -87,8 +88,13 @@ addopts = """
 testpaths = ["tests"]
 
 [tool.coverage.run]
+source = [
+  "*/promptflow/azure/*"
+]
 omit = [
-  "__init__.py",
+  "*/__init__.py",
+  "*/promptflow/azure/_restclient/*",
+  "*/promptflow/azure/_models/*",
 ]
 
 [tool.black]

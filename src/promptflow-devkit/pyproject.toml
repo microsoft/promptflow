@@ -125,8 +125,16 @@ addopts = """
 testpaths = ["tests"]
 
 [tool.coverage.run]
+source = [
+  "*/promptflow/_cli/**",
+  "*/promptflow/_orchestrator/**",
+  "*/promptflow/_proxy/**",
+  "*/promptflow/_sdk/**",
+  "*/promptflow/batch/**",
+]
 omit = [
-  "__init__.py",
+  "*/__init__.py",
+  "*/promptflow/_sdk/_serving/*",
 ]
 
 [tool.black]
