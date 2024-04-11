@@ -946,7 +946,7 @@ class TestFlowRun:
         assert run.status == "Completed"
         assert "error" not in run._to_dict()
 
-        # check the run is uploaded to cloud
+        # check the run is uploaded to cloud.
         Local2CloudTestHelper.check_local_to_cloud_run(pf, run)
 
     @pytest.mark.skipif(condition=not pytest.is_live, reason="Bug - 3089145 Replay failed for test 'test_upload_run'")
