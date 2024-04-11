@@ -95,6 +95,12 @@ omit = [
   "*/__init__.py",
   "*/promptflow/azure/_restclient/*",
   "*/promptflow/azure/_models/*",
+  "*/promptflow/azure/_cli/*",
+  "*/promptflow/recording/*",
+  "*/promptflow/tracing/*",
+  "*/promptflow/tools/*",
+  "*/promptflow/executor/*",
+  "*/promptflow/core/*"
 ]
 
 [tool.black]
