@@ -39,7 +39,7 @@ from promptflow._sdk._constants import (
     RunStatus,
     RunTypes,
 )
-from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError
+from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, MissingAzurePackage
 from promptflow._sdk._orm import RunInfo as ORMRun
 from promptflow._sdk._utils import (
     _sanitize_python_variable_name,
@@ -515,7 +515,7 @@ class Run(YAMLTranslatableMixin):
 
     def _get_flow_dir(self) -> Path:
         if not self._use_remote_flow:
-            flow = Path(self.flow)
+            flow = Path(str(self.flow)).resolve().absolute()
             if flow.is_dir():
                 return flow
             return flow.parent
@@ -526,15 +526,18 @@ class Run(YAMLTranslatableMixin):
         return RunSchema
 
     def _to_rest_object(self):
-        from azure.ai.ml._utils._storage_utils import AzureMLDatastorePathUri
+        try:
+            from azure.ai.ml._utils._storage_utils import AzureMLDatastorePathUri
 
-        from promptflow.azure._restclient.flow.models import (
-            BatchDataInput,
-            CreateExistingBulkRunRequest,
-            RunDisplayNameGenerationType,
-            SessionSetupModeEnum,
-            SubmitBulkRunRequest,
-        )
+            from promptflow.azure._restclient.flow.models import (
+                BatchDataInput,
+                CreateExistingBulkRunRequest,
+                RunDisplayNameGenerationType,
+                SessionSetupModeEnum,
+                SubmitBulkRunRequest,
+            )
+        except ImportError:
+            raise MissingAzurePackage()
 
         if self.run is not None:
             if isinstance(self.run, Run):

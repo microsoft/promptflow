@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
 from pathlib import WindowsPath
 
-from flask import Blueprint, Flask, current_app, g, jsonify, request
+from flask import Blueprint, Flask, current_app, g, jsonify, redirect, request, url_for
 from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
 
@@ -19,6 +19,7 @@ from promptflow._sdk._constants import (
     PF_SERVICE_MONITOR_SECOND,
     CreatedByFieldName,
 )
+from promptflow._sdk._errors import MissingAzurePackage
 from promptflow._sdk._service import Api
 from promptflow._sdk._service.apis.collector import trace_collector
 from promptflow._sdk._service.apis.connection import api as connection_api
@@ -49,6 +50,10 @@ def heartbeat():
     return jsonify(response)
 
 
+def root():
+    return redirect(url_for("serve_trace_ui"))
+
+
 def create_app():
     app = Flask(__name__)
 
@@ -57,6 +62,7 @@ def create_app():
     # as there might be different ports in that scenario
     CORS(app)
 
+    app.add_url_rule("/", view_func=root)
     app.add_url_rule("/heartbeat", view_func=heartbeat)
     app.add_url_rule(
         "/v1/traces", view_func=lambda: trace_collector(get_created_by_info_with_cache, app.logger), methods=["POST"]
@@ -204,6 +210,8 @@ def get_created_by_info_with_cache():
                     CreatedByFieldName.NAME: decoded_token.get("name", decoded_token.get("appid", "")),
                 }
             )
+        except ImportError:
+            raise MissingAzurePackage()
         except Exception as e:
             # This function is only target to be used in Flask app.
             current_app.logger.error(f"Failed to get created_by info, stop writing span. Exception: {e}")

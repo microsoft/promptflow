@@ -189,6 +189,7 @@ class TestSubmitter:
         output_path: Optional[str] = None,
         session: Optional[str] = None,
         stream_output: bool = True,
+        init_kwargs: Optional[dict] = None,
     ):
         """
         Create/Occupy dependent resources to execute the test within the context.
@@ -208,6 +209,8 @@ class TestSubmitter:
         :type session: str
         :param stream_output: whether to return a generator for streaming output.
         :type stream_output: bool
+        :param init_kwargs: Initialization parameters for flex flow, only supported when flow is callable class.
+        :type init: init_kwargs
         :return: TestSubmitter instance.
         :rtype: TestSubmitter
         """
@@ -275,6 +278,7 @@ class TestSubmitter:
                     log_path=log_path,
                     enable_stream_output=stream_output,
                     language=self.flow.language,
+                    init_kwargs=init_kwargs,
                 )
 
                 try:
@@ -389,6 +393,7 @@ class TestSubmitter:
         inputs: Mapping[str, Any],
         allow_generator_output: bool = False,  # TODO: remove this
         run_id: str = None,
+        init_kwargs: Optional[dict] = None,
     ) -> LineResult:
         """
         Submit a flow test.
@@ -406,6 +411,8 @@ class TestSubmitter:
         :type stream_output: bool
         :param run_id: Run id will be set in operation context and used for session
         :type run_id: str
+        :param init_kwargs: Initialization parameters for flex flow, only supported when flow is callable class.
+        :type init_kwargs: dict
         """
         self._raise_if_not_within_init_context()
         if self.target_node:
@@ -426,6 +433,7 @@ class TestSubmitter:
                 entry=self.entry,
                 storage=self._storage,
                 run_id=run_id,
+                init_kwargs=init_kwargs,
             )
         else:
             from promptflow._utils.multimedia_utils import BasicMultimediaProcessor
