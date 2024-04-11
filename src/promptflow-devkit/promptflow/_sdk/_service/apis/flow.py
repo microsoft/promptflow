@@ -93,7 +93,7 @@ class FlowTest(Resource):
 class FlowInferSignature(Resource):
     @api.response(code=200, description="Flow infer signature", model=dict_field)
     @api.doc(description="Flow infer signature")
-    @api.expect(flow_path_parser)
+    @api.expect(flow_infer_signature_parser)
     def post(self):
         args = flow_infer_signature_parser.parse_args()
         flow = load_flow(source=args.source)

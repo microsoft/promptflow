@@ -59,24 +59,6 @@
                     "type": "string"
                 }
             ],
-            "delete": {
-                "responses": {
-                    "204": {
-                        "description": "Delete connection",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
-                    },
-                    "403": {
-                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
-                    }
-                },
-                "description": "Delete connection",
-                "operationId": "delete_connection",
-                "tags": [
-                    "Connections"
-                ]
-            },
             "get": {
                 "responses": {
                     "200": {
@@ -126,6 +108,24 @@
                         }
                     }
                 ],
+                "tags": [
+                    "Connections"
+                ]
+            },
+            "delete": {
+                "responses": {
+                    "204": {
+                        "description": "Delete connection",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    },
+                    "403": {
+                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
+                    }
+                },
+                "description": "Delete connection",
+                "operationId": "delete_connection",
                 "tags": [
                     "Connections"
                 ]
@@ -324,38 +324,13 @@
                 "operationId": "post_flow_infer_signature",
                 "parameters": [
                     {
-                        "name": "flow",
-                        "in": "query",
-                        "type": "string",
-                        "required": true,
-                        "description": "Path to flow directory."
-                    },
-                    {
                         "name": "payload",
                         "required": true,
                         "in": "body",
                         "schema": {
                             "type": "object",
                             "properties": {
-                                "node": {
-                                    "type": "string"
-                                },
-                                "variant": {
-                                    "type": "string"
-                                },
-                                "output_path": {
-                                    "type": "string"
-                                },
-                                "experiment": {
-                                    "type": "string"
-                                },
-                                "inputs": {
-                                    "type": "string"
-                                },
-                                "environment_variables": {
-                                    "type": "string"
-                                },
-                                "session": {
+                                "source": {
                                     "type": "string"
                                 }
                             }
