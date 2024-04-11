@@ -1335,6 +1335,7 @@ def execute_flow(
     run_aggregation: bool = True,
     enable_stream_output: bool = False,
     allow_generator_output: bool = False,  # TODO: remove this
+    init_kwargs: Optional[dict] = None,
     **kwargs,
 ) -> LineResult:
     """Execute the flow, including aggregation nodes.
@@ -1353,12 +1354,16 @@ def execute_flow(
     :type enable_stream_output: Optional[bool]
     :param run_id: Run id will be set in operation context and used for session.
     :type run_id: Optional[str]
+    :param init_kwargs: Initialization parameters for flex flow, only supported when flow is callable class.
+    :type init_kwargs: dict
     :param kwargs: Other keyword arguments to create flow executor.
     :type kwargs: Any
     :return: The line result of executing the flow.
     :rtype: ~promptflow.executor._result.LineResult
     """
-    flow_executor = FlowExecutor.create(flow_file, connections, working_dir, raise_ex=False, **kwargs)
+    flow_executor = FlowExecutor.create(
+        flow_file, connections, working_dir, raise_ex=False, init_kwargs=init_kwargs, **kwargs
+    )
     flow_executor.enable_streaming_for_llm_flow(lambda: enable_stream_output)
     with _change_working_dir(working_dir), _force_flush_tracer_provider():
         # Execute nodes in the flow except the aggregation nodes
