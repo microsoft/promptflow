@@ -36,6 +36,31 @@ EXECUTOR_UNHEALTHY_MESSAGE = "The executor service is currently not in a healthy
 
 
 class AbstractExecutorProxy:
+
+    def __init__(self):
+        self._should_apply_inputs_mapping = True
+        self._allow_aggregation = True
+
+    @property
+    def should_apply_inputs_mapping(self):
+        """should apply inputs mapping when process batch inputs.
+        For normal batch runs, proxy should apply column mapping right after process batch inputs
+        For chat group batch runs, proxy only resolve inputs to a list
+        and inputs mapping will be applied in orchestrator
+        :return: _description_
+        :rtype: _type_
+        """
+        return self._should_apply_inputs_mapping
+
+    @property
+    def allow_aggregation(self):
+        """whether allow to run aggregation.
+        Chat group batch runs do not support aggregation
+        :return: _description_
+        :rtype: _type_
+        """
+        return self._allow_aggregation
+
     @classmethod
     def dump_metadata(cls, flow_file: Path, working_dir: Path) -> NoReturn:
         """Generate metadata for a specific flow."""
@@ -127,6 +152,14 @@ class AbstractExecutorProxy:
         connections: Optional[dict] = None,
         storage: Optional[AbstractRunStorage] = None,
         init_kwargs: Optional[Dict[str, Any]] = None,
+        # below parameters are added for multi-container
+        # executor_client is provided by runtime PythonExecutorClient class
+        executor_client: Optional[Any] = None,
+        environment_variables: dict = None,
+        log_path: Optional[Path] = None,
+        output_dir: Optional[Path] = None,
+        worker_count: Optional[int] = None,
+        line_timeout_sec: Optional[int] = None,
         **kwargs,
     ) -> "AbstractExecutorProxy":
         """Create a new executor"""
@@ -177,6 +210,7 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
                 where we can find metadata under .promptflow. Will use current working directory if not provided.
         :type working_dir: Path
         """
+        super().__init__()
         self._working_dir = working_dir or Path.cwd()
         self._enable_stream_output = enable_stream_output
 

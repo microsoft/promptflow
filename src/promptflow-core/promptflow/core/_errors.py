@@ -100,6 +100,11 @@ class OpenURLFailedUserError(UserErrorException):
         super().__init__(target=ErrorTarget.CORE, **kwargs)
 
 
+class OpenURLNotFoundError(UserErrorException):
+    def __init__(self, **kwargs):
+        super().__init__(target=ErrorTarget.CORE, **kwargs)
+
+
 class UnknownConnectionType(UserErrorException):
     def __init__(self, **kwargs):
         super().__init__(target=ErrorTarget.CORE, **kwargs)
@@ -119,9 +124,18 @@ class MalformedConnectionProviderConfig(UserErrorException):
     """Exception raised when connection provider config is malformed."""
 
     def __init__(self, provider_config, **kwargs):
-        message = "Malformed connection provider config, expected azureml://subscriptions/<subscription_id>/"
-        "resourceGroups/<resource_group>/providers/Microsoft.MachineLearningServices/"
-        f"workspaces/<workspace_name>, got {provider_config}"
+        message = (
+            "Malformed connection provider config, expected azureml://subscriptions/<subscription_id>/"
+            "resourceGroups/<resource_group>/providers/Microsoft.MachineLearningServices/"
+            f"workspaces/<workspace_name>, got {provider_config}"
+        )
+        super().__init__(target=ErrorTarget.CORE, message=message, **kwargs)
+
+
+class UnsupportedWorkspaceKind(UserErrorException):
+    """Exception raised when workspace kind is not supported."""
+
+    def __init__(self, message, **kwargs):
         super().__init__(target=ErrorTarget.CORE, message=message, **kwargs)
 
 

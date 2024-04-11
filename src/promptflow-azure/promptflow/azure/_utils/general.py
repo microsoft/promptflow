@@ -37,3 +37,13 @@ def get_user_alias_from_credential(credential):
     except Exception:
         # use oid when failed to get upn, e.g. service principal
         return decode_json["oid"]
+
+
+def set_event_loop_policy():
+    import asyncio
+    import platform
+
+    if platform.system().lower() == "windows":
+        # Reference: https://stackoverflow.com/questions/45600579/asyncio-event-loop-is-closed-when-getting-loop
+        # On Windows seems to be a problem with EventLoopPolicy, use this snippet to work around it
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())

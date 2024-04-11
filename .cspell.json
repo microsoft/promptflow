@@ -31,6 +31,8 @@
     "src/promptflow-azure/tests/**",
     "src/promptflow-core/promptflow/core/_connection_provider/_models/**",
     "src/promptflow/tests/**",
+    "src/promptflow-devkit/tests/**",
+    "src/promptflow-azure/tests/**",
     "src/promptflow-recording/**",
     "src/promptflow-tools/tests/**",
     "src/promptflow-devkit/promptflow/_sdk/_service/static/index.html",
@@ -41,7 +43,8 @@
     "scripts/installer/windows/**",
     ".github/workflows/**",
     ".github/actions/**",
-    ".github/pipelines/**"
+    ".github/pipelines/**",
+    ".github/CODEOWNERS"
   ],
   "words": [
     "aoai",
@@ -198,7 +201,9 @@
     "raisvc",
     "evals",
     "redoc",
-    "starlette"
+    "starlette",
+    "wargs",
+    "dcid"
   ],
   "flagWords": [
     "Prompt Flow"
