@@ -102,8 +102,7 @@ def add_parser_start_service(subparsers):
         "-d",
         "--debug",
         action="store_true",
-        help="The debug mode flag for the promptflow service activates foreground operation, displaying debug level "
-        "logs directly in the terminal.",
+        help="Start the promptflow service in foreground, displaying debug level logs directly in the terminal.",
     )
     activate_action(
         name="start",
