@@ -71,13 +71,13 @@ class TestRun:
         with pytest.raises(ValidationException) as e:
             load_flow(EAGER_FLOWS_DIR / "multiple_flow_yaml")
 
-        assert "Both flow.dag.yaml/flow.dag.yml and flow.flex.yaml/flow.flex.yml exist in " in str(e.value)
+        assert "Multiple files flow.dag.yaml, flow.flex.yaml exist in " in str(e.value)
 
     def test_multiple_flex_load(self):
         with pytest.raises(ValidationException) as e:
             load_flow(EAGER_FLOWS_DIR / "multiple_flex_yaml")
 
-        assert "Both flow.dag.yaml/flow.dag.yml and flow.flex.yaml/flow.flex.yml exist in " in str(e.value)
+        assert "Multiple files flow.flex.yaml, flow.flex.yml exist in " in str(e.value)
 
     def test_specify_flow_load(self):
         load_flow(EAGER_FLOWS_DIR / "multiple_flow_yaml" / "flow.dag.yaml")

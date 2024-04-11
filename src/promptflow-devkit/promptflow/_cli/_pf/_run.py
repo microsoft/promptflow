@@ -43,9 +43,9 @@ logger = get_cli_sdk_logger()
 
 
 def add_run_parser(subparsers):
-    run_parser = subparsers.add_parser("run",
-                                       description="A CLI tool to manage runs for prompt flow.",
-                                       help="Manage runs.")
+    run_parser = subparsers.add_parser(
+        "run", description="A CLI tool to manage runs for prompt flow.", help="Manage runs."
+    )
     subparsers = run_parser.add_subparsers()
     add_run_create(subparsers)
     # add_run_cancel(subparsers)

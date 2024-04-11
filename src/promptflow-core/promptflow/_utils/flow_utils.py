@@ -89,18 +89,18 @@ def resolve_flow_path(
     if flow_path.is_dir():
         flow_folder = flow_path
         flow_file = FLOW_DAG_YAML
-        flow_file_num = 0
+        flow_file_list = []
         for flow_name, suffix in itertools.product([FLOW_DAG_YAML, FLOW_FLEX_YAML], [".yaml", ".yml"]):
             flow_file_name = flow_name.replace(".yaml", suffix)
             if (flow_folder / flow_file_name).is_file():
-                flow_file_num += 1
-                flow_file = flow_file_name
+                flow_file_list.append(flow_file_name)
 
-        if flow_file_num > 1:
+        if len(flow_file_list) == 1:
+            flow_file = flow_file_list[0]
+        elif len(flow_file_list) > 1:
             raise ValidationException(
-                f"Both {FLOW_DAG_YAML}/{FLOW_DAG_YAML.replace('.yaml', '.yml')} "
-                f"and {FLOW_FLEX_YAML}/{FLOW_FLEX_YAML.replace('.yaml', '.yml')} exist in {flow_path}. "
-                f"Please specify a file or remove the extra YAML/YML.",
+                f"Multiple files {', '.join(flow_file_list)} exist in {flow_path}. "
+                f"Please specify a file or remove the extra YAML and YML.",
                 privacy_info=[str(flow_path)],
             )
     elif flow_path.is_file() or flow_path.suffix.lower() in FLOW_FILE_SUFFIX:
