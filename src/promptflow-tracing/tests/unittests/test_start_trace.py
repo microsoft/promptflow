@@ -31,11 +31,10 @@ def mock_devkit_not_installed(mocker: MockerFixture):
 
 @pytest.fixture
 def reset_tracer_provider():
-    from opentelemetry.trace import _TRACER_PROVIDER_SET_ONCE
-
-    with patch("opentelemetry.trace._TRACER_PROVIDER", None):
-        with _TRACER_PROVIDER_SET_ONCE._lock:
-            _TRACER_PROVIDER_SET_ONCE._done = False
+    """Force reset tracer provider."""
+    with patch("opentelemetry.trace._TRACER_PROVIDER", None), patch(
+        "opentelemetry.trace._TRACER_PROVIDER_SET_ONCE._done", False
+    ):
         yield
 
 
