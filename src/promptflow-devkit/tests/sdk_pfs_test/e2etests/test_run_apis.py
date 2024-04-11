@@ -24,7 +24,7 @@ def create_run_against_multi_line_data(client: PFClient) -> Run:
     return client.run(flow=FLOW_PATH, data=DATA_PATH)
 
 
-@pytest.mark.usefixtures("use_secrets_config_file", "disable_trace_feature")
+@pytest.mark.usefixtures("use_secrets_config_file")
 @pytest.mark.e2etest
 class TestRunAPIs:
     @pytest.fixture(autouse=True)
