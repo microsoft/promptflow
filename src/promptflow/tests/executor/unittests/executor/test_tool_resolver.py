@@ -622,7 +622,7 @@ class TestToolResolver:
                 "value": {"api_key": "mock", "api_base": "mock"},
             }
         }
-        tool_resolver = ToolResolver(working_dir=Path(ASSISTANT_DEFINITION_ROOT), connection_provider=connections)
+        tool_resolver = ToolResolver(working_dir=Path(ASSISTANT_DEFINITION_ROOT), connections=connections)
         assistant_definition = tool_resolver._convert_to_assistant_definition(
             assistant_definition_path=path, input_name="input_name", node_name="dummy_node"
         )
@@ -650,7 +650,7 @@ class TestToolResolver:
 
     @pytest.mark.parametrize("path", ["assistant_definition_without_functions.yaml"])
     def test_code_interpreter_and_retrieval_tool_resolve(self, path):
-        tool_resolver = ToolResolver(working_dir=Path(ASSISTANT_DEFINITION_ROOT), connection_provider={})
+        tool_resolver = ToolResolver(working_dir=Path(ASSISTANT_DEFINITION_ROOT), connections={})
         assistant_definition = tool_resolver._convert_to_assistant_definition(
             assistant_definition_path=path, input_name="input_name", node_name="dummy_node"
         )
@@ -679,7 +679,7 @@ class TestToolResolver:
                 "value": {"api_key": "mock", "api_base": "mock"},
             }
         }
-        tool_resolver = ToolResolver(working_dir=Path(ASSISTANT_DEFINITION_ROOT), connection_provider=connections)
+        tool_resolver = ToolResolver(working_dir=Path(ASSISTANT_DEFINITION_ROOT), connections=connections)
         assistant_definition = tool_resolver._convert_to_assistant_definition(
             assistant_definition_path=path, input_name="input_name", node_name="dummy_node"
         )
@@ -716,7 +716,7 @@ class TestToolResolver:
                 "value": {"api_key": "mock", "api_base": "mock"},
             }
         }
-        tool_resolver = ToolResolver(working_dir=Path(ASSISTANT_DEFINITION_ROOT), connection_provider=connections)
+        tool_resolver = ToolResolver(working_dir=Path(ASSISTANT_DEFINITION_ROOT), connections=connections)
         assistant_definition = tool_resolver._convert_to_assistant_definition(
             assistant_definition_path=path, input_name="input_name", node_name="dummy_node"
         )
@@ -773,7 +773,7 @@ class TestToolResolver:
                 "value": {"api_key": "mock", "api_base": "mock"},
             }
         }
-        tool_resolver = ToolResolver(working_dir=Path(ASSISTANT_DEFINITION_ROOT), connection_provider=connections)
+        tool_resolver = ToolResolver(working_dir=Path(ASSISTANT_DEFINITION_ROOT), connections=connections)
         with pytest.raises(InvalidSource) as e:
             tool_resolver._convert_to_assistant_definition(
                 assistant_definition_path=path, input_name="input_name", node_name="dummy_node"
