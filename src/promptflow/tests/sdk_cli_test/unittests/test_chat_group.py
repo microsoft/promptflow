@@ -60,3 +60,12 @@ class TestChatGroup:
             ChatGroup(roles=[copilot, simulation], max_tokens="1000")
         with pytest.raises(ChatGroupError, match="should be an integer"):
             ChatGroup(roles=[copilot, simulation], max_time="1000")
+
+    def test_chat_role_flow_dag_file(self):
+        copilot = ChatRole(
+            flow="flow.dag.yaml",
+            role="assistant",
+            name="copilot",
+            working_dir=FLOWS_DIR / "chat_group_copilot",
+        )
+        assert copilot._flow_definition is not None
