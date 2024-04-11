@@ -1029,8 +1029,10 @@ def can_accept_kwargs(func):
 
 def callable_to_entry_string(callable_obj: Callable) -> str:
     """Convert callable object to entry string."""
-    if not isfunction(callable_obj):
-        raise UserErrorException(f"{callable_obj} is not function, only function is supported.")
+    if not isfunction(callable_obj) and not hasattr(callable_obj, "__call__"):
+        raise UserErrorException(
+            f"{callable_obj} is not function or callable object, only function or callable object are supported."
+        )
 
     try:
         module_str = callable_obj.__module__

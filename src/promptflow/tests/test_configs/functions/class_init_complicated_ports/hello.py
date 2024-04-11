@@ -21,6 +21,8 @@ class Hello:
         i: int,
         f: float,
         b: bool,
+        li: list,
+        d: dict,
     ) -> None:
         pass
 
