@@ -259,21 +259,21 @@ class TestTraceEntitiesAndOperations:
 @pytest.mark.sdk_test
 class TestTraceWithDevKit:
     def test_flow_test_trace_enabled(self, pf: PFClient) -> None:
-        import promptflow.tracing._start_trace
+        import promptflow._sdk._orchestrator.test_submitter
 
         with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
             mock_func.return_value = True
-            with patch.object(promptflow.tracing._start_trace, "start_trace") as mock_start_trace:
+            with patch.object(promptflow._sdk._orchestrator.test_submitter, "start_trace") as mock_start_trace:
                 inputs = {"url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g", "answer": "Channel", "evidence": "Url"}
                 pf.test(flow=Path(f"{FLOWS_DIR}/web_classification").absolute(), inputs=inputs)
                 assert mock_start_trace.call_count == 1
 
     def test_flow_test_single_node_trace_not_enabled(self, pf: PFClient) -> None:
-        import promptflow.tracing._start_trace
+        import promptflow._sdk._orchestrator.test_submitter
 
         with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
             mock_func.return_value = True
-            with patch.object(promptflow.tracing._start_trace, "start_trace") as mock_start_trace:
+            with patch.object(promptflow._sdk._orchestrator.test_submitter, "start_trace") as mock_start_trace:
                 pf.test(
                     flow=Path(f"{FLOWS_DIR}/web_classification").absolute(),
                     inputs={"fetch_url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g"},
