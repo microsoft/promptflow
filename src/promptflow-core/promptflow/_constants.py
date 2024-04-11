@@ -75,6 +75,7 @@ class FlowType:
 
     DAG_FLOW = "dag"
     FLEX_FLOW = "flex"
+    PROMPTY = "prompty"
 
 
 class AvailableIDE:

@@ -49,7 +49,7 @@ from promptflow._sdk._utils import (
 )
 from promptflow._sdk.entities._yaml_translatable import YAMLTranslatableMixin
 from promptflow._sdk.schemas._run import RunSchema
-from promptflow._utils.flow_utils import get_flow_lineage_id, parse_variant
+from promptflow._utils.flow_utils import get_flow_lineage_id, is_prompty_flow, parse_variant
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import UserErrorException
 
@@ -802,6 +802,8 @@ class Run(YAMLTranslatableMixin):
         from promptflow._sdk._load_functions import load_flow
         from promptflow._sdk.entities._flows import FlexFlow
 
+        if is_prompty_flow(self.flow):
+            return FlowType.PROMPTY
         flow_obj = load_flow(source=self.flow)
         if isinstance(flow_obj, FlexFlow):
             return FlowType.FLEX_FLOW

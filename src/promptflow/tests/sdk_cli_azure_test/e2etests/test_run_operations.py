@@ -47,6 +47,7 @@ MODEL_ROOT = TEST_ROOT / "test_configs/e2e_samples"
 CONNECTION_FILE = (PROMOTFLOW_ROOT / "connections.json").resolve().absolute().as_posix()
 FLOWS_DIR = "./tests/test_configs/flows"
 EAGER_FLOWS_DIR = "./tests/test_configs/eager_flows"
+PROMPTY_DIR = TEST_ROOT / "test_configs/prompty"
 RUNS_DIR = "./tests/test_configs/runs"
 DATAS_DIR = "./tests/test_configs/datas"
 
@@ -903,18 +904,18 @@ class TestFlowRun:
         # check the run is uploaded to cloud
         Local2CloudTestHelper.check_local_to_cloud_run(pf, run)
 
-    @pytest.mark.skip(reason="PFS not supported yet")
+    @pytest.mark.skipif(condition=not pytest.is_live, reason="Bug - 3089145 Replay failed for test 'test_upload_run'")
     @pytest.mark.usefixtures(
         "mock_isinstance_for_mock_datastore", "mock_get_azure_pf_client", "mock_trace_provider_to_cloud"
     )
-    def upload_flex_flow_run_with_yaml(self, pf: PFClient, randstr: Callable[[str], str]):
+    def test_upload_flex_flow_run_with_yaml(self, pf: PFClient, randstr: Callable[[str], str]):
         local_pf, name = Local2CloudTestHelper.get_local_pf_and_run_name(randstr)
         # submit a local flex run
         run = local_pf.run(
             flow=Path(f"{EAGER_FLOWS_DIR}/simple_with_yaml"),
             data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
             name=name,
-            display_name="sdk-cli-test-run-local-to-cloud-flex",
+            display_name="sdk-cli-test-run-local-to-cloud-flex-with-yaml",
             tags={"sdk-cli-test-flex": "true"},
             description="test sdk local to cloud",
         )
@@ -924,11 +925,11 @@ class TestFlowRun:
         # check the run is uploaded to cloud
         Local2CloudTestHelper.check_local_to_cloud_run(pf, run)
 
-    @pytest.mark.skip(reason="PFS not supported yet")
+    @pytest.mark.skipif(condition=not pytest.is_live, reason="Bug - 3089145 Replay failed for test 'test_upload_run'")
     @pytest.mark.usefixtures(
         "mock_isinstance_for_mock_datastore", "mock_get_azure_pf_client", "mock_trace_provider_to_cloud"
     )
-    def upload_flex_flow_run_without_yaml(self, pf: PFClient, randstr: Callable[[str], str]):
+    def test_upload_flex_flow_run_without_yaml(self, pf: PFClient, randstr: Callable[[str], str]):
         local_pf, name = Local2CloudTestHelper.get_local_pf_and_run_name(randstr)
         # submit a local flex run
         run = local_pf.run(
@@ -936,7 +937,7 @@ class TestFlowRun:
             code=f"{EAGER_FLOWS_DIR}/simple_without_yaml",
             data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
             name=name,
-            display_name="sdk-cli-test-run-local-to-cloud-flex",
+            display_name="sdk-cli-test-run-local-to-cloud-flex-without-yaml",
             tags={"sdk-cli-test-flex": "true"},
             description="test sdk local to cloud",
         )
@@ -945,6 +946,16 @@ class TestFlowRun:
 
         # check the run is uploaded to cloud
         Local2CloudTestHelper.check_local_to_cloud_run(pf, run)
+
+    @pytest.mark.usefixtures(
+        "mock_isinstance_for_mock_datastore", "mock_get_azure_pf_client", "mock_trace_provider_to_cloud"
+    )
+    def test_upload_prompty_run(self, pf: PFClient, randstr: Callable[[str], str]):
+        # currently prompty run is skipped for upload, this test should be finished without error
+        local_pf, name = Local2CloudTestHelper.get_local_pf_and_run_name(randstr)
+        run = pf.run(flow=f"{PROMPTY_DIR}/prompty_example.prompty", data=f"{DATAS_DIR}/prompty_inputs.jsonl")
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict()
 
     def test_request_id_when_making_http_requests(self, pf, runtime: str, randstr: Callable[[str], str]):
         from azure.core.exceptions import HttpResponseError
