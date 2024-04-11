@@ -28,6 +28,7 @@ from promptflow.contracts.run_info import RunInfo, Status
 from promptflow.exceptions import UserErrorException
 from promptflow.executor._result import LineResult
 from promptflow.storage._run_storage import DefaultRunStorage
+from promptflow.tracing._start_trace import start_trace
 
 from ..entities._flows import FlexFlow
 from .utils import (
@@ -213,8 +214,6 @@ class TestSubmitter:
         :return: TestSubmitter instance.
         :rtype: TestSubmitter
         """
-        from promptflow.tracing._start_trace import start_trace
-
         with self._resolve_variant():
             # temp flow is generated, will use self.flow instead of self._origin_flow in the following context
             self._within_init_context = True
@@ -239,8 +238,10 @@ class TestSubmitter:
                 or {},
             )
 
-            logger.debug("Starting trace for flow test...")
-            start_trace(session=session)
+            # do not enable trace when test single node, as we have not determined this behavior
+            if self._target_node is None:
+                logger.debug("Starting trace for flow test...")
+                start_trace(session=session)
 
             self._output_base, log_path, output_sub = self._resolve_output_path(
                 output_base=output_path,

@@ -62,7 +62,11 @@ def run_pf_command(*args, cwd=None):
 
 
 @pytest.mark.usefixtures(
-    "use_secrets_config_file", "recording_injection", "setup_local_connection", "install_custom_tool_pkg"
+    "use_secrets_config_file",
+    "recording_injection",
+    "setup_local_connection",
+    "install_custom_tool_pkg",
+    "disable_trace_feature",
 )
 @pytest.mark.cli_test
 @pytest.mark.e2etest
