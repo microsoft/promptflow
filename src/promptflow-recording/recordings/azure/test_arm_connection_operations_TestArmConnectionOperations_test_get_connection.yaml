@@ -12,7 +12,7 @@ interactions:
       - promptflow-azure-sdk/0.1.0b1 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
         Python/3.9.19 (Windows-10-10.0.22631-SP0)
     method: GET
-    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/api-version=2023-08-01-preview
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000?api-version=2023-08-01-preview
   response:
     body:
       string: '{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000",
@@ -39,7 +39,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.022'
+      - '0.019'
     status:
       code: 200
       message: OK
@@ -56,7 +56,7 @@ interactions:
       - azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0 Python/3.9.19
         (Windows-10-10.0.22631-SP0)
     method: GET
-    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/api-version=2023-08-01-preview
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000?api-version=2023-08-01-preview
   response:
     body:
       string: '{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000",
@@ -83,7 +83,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.017'
+      - '0.020'
     status:
       code: 200
       message: OK
@@ -137,7 +137,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.649'
+      - '0.772'
     status:
       code: 200
       message: OK
@@ -189,7 +189,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.094'
+      - '0.090'
     status:
       code: 200
       message: OK
