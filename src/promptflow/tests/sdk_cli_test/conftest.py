@@ -220,6 +220,11 @@ def serving_client_composite_image_flow(mocker: MockerFixture):
 
 
 @pytest.fixture
+def serving_client_openai_vision_image_flow(mocker: MockerFixture):
+    return create_client_by_model("python_tool_with_openai_vision_image", mocker)
+
+
+@pytest.fixture
 def serving_client_with_environment_variables(mocker: MockerFixture):
     return create_client_by_model(
         "flow_with_environment_variables",

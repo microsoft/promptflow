@@ -6,10 +6,9 @@ from marshmallow import ValidationError, fields, validate, validates_schema
 
 from promptflow._constants import LANGUAGE_KEY, ConnectionType, FlowLanguage
 from promptflow._proxy import ProxyFactory
-from promptflow._sdk._constants import FlowType
+from promptflow._sdk._constants import FlowType, SignatureValueType
 from promptflow._sdk.schemas._base import PatchedSchemaMeta, YamlFileSchema
 from promptflow._sdk.schemas._fields import NestedField
-from promptflow.contracts.tool import ValueType
 
 
 class FlowInputSchema(metaclass=PatchedSchemaMeta):
@@ -64,17 +63,8 @@ class FlowSchema(BaseFlowSchema):
 class FlexFlowInputSchema(FlowInputSchema):
     type = fields.Str(
         required=True,
-        validate=validate.OneOf(
-            [
-                ValueType.DOUBLE,
-                ValueType.BOOL,
-                ValueType.INT,
-                ValueType.STRING,
-                ValueType.LIST,
-                ValueType.OBJECT
-                # TODO 3062609: Flex flow GPT-V support
-            ]
-        ),
+        # TODO 3062609: Flex flow GPT-V support
+        validate=validate.OneOf(list(map(lambda x: x.value, SignatureValueType))),
     )
 
 
@@ -82,7 +72,7 @@ class FlexFlowInitSchema(FlowInputSchema):
     type = fields.Str(
         required=True,
         validate=validate.OneOf(
-            [ValueType.DOUBLE, ValueType.BOOL, ValueType.INT, ValueType.STRING]
+            list(map(lambda x: x.value, SignatureValueType))
             + list(
                 map(lambda x: f"{x.value}Connection", filter(lambda x: x != ConnectionType._NOT_SET, ConnectionType))
             )
@@ -93,9 +83,7 @@ class FlexFlowInitSchema(FlowInputSchema):
 class FlexFlowOutputSchema(FlowOutputSchema):
     type = fields.Str(
         required=True,
-        validate=validate.OneOf(
-            [ValueType.DOUBLE, ValueType.BOOL, ValueType.INT, ValueType.STRING, ValueType.LIST, ValueType.OBJECT]
-        ),
+        validate=validate.OneOf(list(map(lambda x: x.value, SignatureValueType))),
     )
 
 
@@ -107,6 +95,7 @@ class FlexFlowSchema(BaseFlowSchema):
     inputs = fields.Dict(keys=fields.Str(), values=NestedField(FlexFlowInputSchema), required=False)
     outputs = fields.Dict(keys=fields.Str(), values=NestedField(FlexFlowOutputSchema), required=False)
     init = fields.Dict(keys=fields.Str(), values=NestedField(FlexFlowInitSchema), required=False)
+    sample = fields.Str()
 
     @validates_schema(skip_on_field_errors=False)
     def validate_entry(self, data, **kwargs):
