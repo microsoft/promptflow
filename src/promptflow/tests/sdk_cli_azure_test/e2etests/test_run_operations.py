@@ -37,6 +37,7 @@ from promptflow.azure._constants._flow import (
 from promptflow.azure._entities._flow import Flow
 from promptflow.azure._load_functions import load_flow
 from promptflow.exceptions import UserErrorException
+from promptflow.recording.record_mode import is_live
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
 
@@ -1132,6 +1133,7 @@ class TestFlowRun:
         run = pf.stream(run)
         assert run.status == RunStatus.COMPLETED
 
+    @pytest.skipif(not is_live(), reason="Content change in submission time which lead to recording issue.")
     @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
     def test_eager_flow_meta_generation(self, pf: PFClient, randstr: Callable[[str], str]):
         run = pf.run(
@@ -1282,6 +1284,7 @@ class TestFlowRun:
                 )
                 pf.runs.create_or_update(run=run)
 
+    @pytest.skipif(not is_live(), reason="Content change in submission time which lead to recording issue.")
     @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
     def test_eager_flow_run_without_yaml(self, pf: PFClient, randstr: Callable[[str], str]):
         run = pf.run(
