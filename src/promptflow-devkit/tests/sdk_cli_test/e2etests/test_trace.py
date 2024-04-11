@@ -254,12 +254,7 @@ class TestTraceEntitiesAndOperations:
         assert num_traces == 1
 
 
-@pytest.mark.usefixtures(
-    "use_secrets_config_file",
-    "recording_injection",
-    "setup_local_connection",
-    "disable_trace_feature",
-)
+@pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
 @pytest.mark.e2etest
 @pytest.mark.sdk_test
 class TestTraceWithDevKit:

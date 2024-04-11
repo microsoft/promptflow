@@ -7,7 +7,6 @@ import pytest
 from _constants import CONNECTION_FILE, PROMPTFLOW_ROOT
 from _pytest.monkeypatch import MonkeyPatch
 from dotenv import load_dotenv
-from mock import mock
 from pytest_mock import MockerFixture
 
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
@@ -73,11 +72,3 @@ def enable_logger_propagate():
     logger.propagate = True
     yield
     logger.propagate = original_value
-
-
-@pytest.fixture(autouse=True)
-def disable_trace_feature():
-    """Azure test should not require trace feature."""
-    with mock.patch("promptflow._sdk._tracing.is_trace_feature_disabled") as mock_func:
-        mock_func.return_value = True
-        yield

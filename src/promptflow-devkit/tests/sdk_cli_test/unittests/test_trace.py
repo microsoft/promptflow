@@ -30,7 +30,6 @@ from promptflow._sdk._constants import (
     TRACE_DEFAULT_COLLECTION,
     ContextAttributeKey,
 )
-from promptflow._sdk._errors import PromptFlowServiceInvokeError
 from promptflow._sdk._tracing import start_trace_with_devkit
 from promptflow._sdk.operations._trace_operations import TraceOperations
 from promptflow.client import PFClient
@@ -66,12 +65,6 @@ def mock_resource() -> Dict:
 def mock_promptflow_service_invocation():
     """Mock `_invoke_pf_svc` as we don't expect to invoke PFS during unit test."""
     with mock.patch("promptflow._sdk._tracing._invoke_pf_svc", return_value=MOCK_PROMPTFLOW_SERVICE_PORT):
-        yield
-
-
-@pytest.fixture
-def mock_promptflow_service_healthy():
-    with mock.patch("promptflow._sdk._tracing.is_pfs_service_healthy", return_value=True):
         yield
 
 
@@ -154,7 +147,7 @@ class TestStartTrace:
         assert isinstance(span.attributes, dict)
         assert len(span.attributes) == 0
 
-    @pytest.mark.usefixtures("mock_promptflow_service_healthy", "mock_promptflow_service_invocation")
+    @pytest.mark.usefixtures("mock_promptflow_service_invocation")
     def test_experiment_test_lineage(self, monkeypatch: pytest.MonkeyPatch) -> None:
         # experiment orchestrator will help set this context in environment
         referenced_line_run_id = str(uuid.uuid4())
@@ -167,7 +160,7 @@ class TestStartTrace:
             otel_attrs = op_ctx._get_otel_attributes()
             assert otel_attrs[SpanAttributeFieldName.REFERENCED_LINE_RUN_ID] == referenced_line_run_id
 
-    @pytest.mark.usefixtures("mock_promptflow_service_healthy", "mock_promptflow_service_invocation")
+    @pytest.mark.usefixtures("mock_promptflow_service_invocation")
     def test_experiment_test_lineage_cleanup(self, monkeypatch: pytest.MonkeyPatch) -> None:
         # in previous code, context may be set with lineage
         op_ctx = OperationContext.get_instance()
@@ -191,9 +184,9 @@ class TestStartTrace:
     def test_pfs_invocation_failed_in_start_trace(self):
         with mock.patch("promptflow._sdk._tracing._invoke_pf_svc"), mock.patch(
             "promptflow._sdk._tracing.is_pfs_service_healthy", return_value=False
-        ):
-            with pytest.raises(PromptFlowServiceInvokeError):
-                start_trace_with_devkit(collection=str(uuid.uuid4()))
+        ), mock.patch("promptflow._sdk._tracing._inject_res_attrs_to_environ") as monitor_func:
+            start_trace_with_devkit(collection=str(uuid.uuid4()))
+            assert monitor_func.call_count == 0
 
 
 @pytest.mark.unittest

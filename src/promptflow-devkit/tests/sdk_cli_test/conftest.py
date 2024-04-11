@@ -405,11 +405,3 @@ def _mock_process_wrapper(*args, **kwargs):
 def _mock_create_spawned_fork_process_manager(*args, **kwargs):
     setup_recording_injection_if_enabled()
     return create_spawned_fork_process_manager(*args, **kwargs)
-
-
-@pytest.fixture
-def disable_trace_feature():
-    """Azure test should not require trace feature."""
-    with mock.patch("promptflow._sdk._tracing.is_trace_feature_disabled") as mock_func:
-        mock_func.return_value = True
-        yield
