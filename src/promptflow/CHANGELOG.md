@@ -3,7 +3,10 @@
 ## 1.9.0 (Upcoming)
 
 ### Features Added
-- [CLI]: Added autocomplete feature.
+- [promptflow-devkit]: Added autocomplete feature for linux, reach [here](https://microsoft.github.io/promptflow/reference/pf-command-reference.html#autocomplete) for more details.
+
+### Bugs Fixed
+- [promptflow-devkit] Fix run name missing directory name in some scenario of `pf.run`.
 
 ### Others
 - [promptflow-core] Connection default api version changed:
