@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "promptflow-devkit"
-version = "1.8.0.dev0"
+version = "1.9.0.dev0"
 description = "Prompt flow devkit"
 include = [
   "promptflow/_sdk/_service/static/*",
@@ -96,6 +96,7 @@ mock = "*"
 ipykernel = ">=6.27.1"
 papermill = ">=2.5.0"
 keyrings-alt = "*"
+bs4 = "*"
 
 [build-system]
 requires = ["poetry-core>=1.5.0"]
@@ -107,6 +108,7 @@ pf = "promptflow._cli.pf:main"
 [tool.pytest.ini_options]
 markers = [
   "unittest",
+  "e2etest"
 ]
 # junit - analyse and publish test results (https://github.com/EnricoMi/publish-unit-test-result-action)
 # durations - list the slowest test durations
@@ -123,8 +125,16 @@ addopts = """
 testpaths = ["tests"]
 
 [tool.coverage.run]
+source = [
+  "*/promptflow/_cli/**",
+  "*/promptflow/_orchestrator/**",
+  "*/promptflow/_proxy/**",
+  "*/promptflow/_sdk/**",
+  "*/promptflow/batch/**",
+]
 omit = [
-  "__init__.py",
+  "*/__init__.py",
+  "*/promptflow/_sdk/_serving/*",
 ]
 
 [tool.black]

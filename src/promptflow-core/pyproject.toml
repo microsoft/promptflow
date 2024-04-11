@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "promptflow-core"
-version = "1.1.0.dev0"
+version = "1.9.0.dev0"
 description = "Prompt flow core"
 include = [
   "promptflow/core/_serving/static/*",
@@ -98,9 +98,13 @@ testpaths = ["tests"]
 
 [tool.coverage.run]
 concurrency = ["multiprocessing"]
-source = ["promptflow"]
+source = [
+  "*/promptflow/*"
+]
 omit = [
-  "__init__.py",
+  "*/__init__.py",
+  "*/promptflow/core/_connection_provider/_models/*",
+  "*/promptflow/tracing/*"
 ]
 
 [tool.black]
