@@ -109,6 +109,7 @@ jobs:
           scriptPath: ${{ env.testWorkingDirectory }}
 
       - name: Setup and Install dev promptflow
+        if: ${{ github.event.inputs.version == null || github.event.inputs.version == '' }}
         shell: pwsh
         run: |
           Set-PSDebug -Trace 1
