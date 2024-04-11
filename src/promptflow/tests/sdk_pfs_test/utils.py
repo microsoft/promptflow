@@ -74,6 +74,9 @@ class PFSOperations:
     def heartbeat(self):
         return self._client.get("/heartbeat")
 
+    def root_page(self):
+        return self._client.get("/")
+
     # connection APIs
     def connection_operation_with_invalid_user(self, status_code=None):
         response = self._client.get(f"{self.CONNECTION_URL_PREFIX}/", headers={"X-Remote-User": "invalid_user"})

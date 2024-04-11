@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import argparse
+import contextlib
 import logging
 import os
 import platform
@@ -22,12 +23,14 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._service.app import create_app
 from promptflow._sdk._service.utils.utils import (
+    add_executable_script_to_env_path,
     check_pfs_service_status,
     dump_port_to_config,
     get_current_env_pfs_file,
     get_pfs_version,
     get_port_from_config,
     get_started_service_info,
+    hint_stop_before_upgrade,
     is_port_in_use,
     is_run_from_built_binary,
     kill_exist_service,
@@ -155,37 +158,13 @@ def start_service(args):
     if args.debug:
         os.environ[PF_SERVICE_DEBUG] = "true"
 
-    def validate_port(port, force_start):
-        if is_port_in_use(port):
-            if force_start:
-                message = f"Force restart the service on the port {port}."
-                print(message)
-                logger.warning(message)
-                kill_exist_service(port)
-            else:
-                logger.warning(f"Service port {port} is used.")
-                raise UserErrorException(f"Service port {port} is used.")
-
     if is_run_from_built_binary():
-        # For msi installer, use vbs to start pfs in a hidden window. But it doesn't support redirect output in the
-        # hidden window to terminal. So we redirect output to a file. And then print the file content to terminal in
-        # pfs.bat.
-        old_stdout = sys.stdout
-        old_stderr = sys.stderr
+        # For msi installer/executable, use sdk api to start pfs since it's not supported to invoke waitress by cli
+        # directly after packaged by Pyinstaller.
         parent_dir = os.path.dirname(sys.executable)
-        sys.stdout = open(os.path.join(parent_dir, "output.txt"), "w")
-        sys.stderr = sys.stdout
-    if port:
-        dump_port_to_config(port)
-        validate_port(port, args.force)
-    else:
-        port = get_port_from_config(create_if_not_exists=True)
-        validate_port(port, args.force)
-
-    if is_run_from_built_binary():
-        # For msi installer, use sdk api to start pfs since it's not supported to invoke waitress by cli directly
-        # after packaged by Pyinstaller.
-        try:
+        output_path = os.path.join(parent_dir, "output.txt")
+        with redirect_stdout_to_file(output_path):
+            port = validate_port(port, args.force)
             global app
             if app is None:
                 app, _ = create_app()
@@ -193,77 +172,122 @@ def start_service(args):
                 app.logger.setLevel(logging.DEBUG)
             else:
                 app.logger.setLevel(logging.INFO)
-            message = f"Start Prompt Flow Service on {port}, version: {get_pfs_version()}."
+            message = f"Starting Prompt Flow Service on {port}, version: {get_pfs_version()}."
             app.logger.info(message)
             print(message)
             sys.stdout.flush()
-            waitress.serve(app, host="127.0.0.1", port=port, threads=PF_SERVICE_WORKER_NUM)
-        finally:
-            sys.stdout = old_stdout
-            sys.stderr = old_stderr
+        waitress.serve(app, host="127.0.0.1", port=port, threads=PF_SERVICE_WORKER_NUM)
     else:
-        # Add executable script dir to PATH to make sure the subprocess can find the executable, especially in notebook
-        # environment which won't add it to system path automatically.
-        python_dir = os.path.dirname(sys.executable)
-        executable_dir = os.path.join(python_dir, "Scripts") if platform.system() == "Windows" else python_dir
-        if executable_dir not in os.environ["PATH"].split(os.pathsep):
-            os.environ["PATH"] = executable_dir + os.pathsep + os.environ["PATH"]
-
+        port = validate_port(port, args.force)
+        add_executable_script_to_env_path()
         # Start a pfs process using detach mode. It will start a new process and create a new app. So we use environment
         # variable to pass the debug mode, since it will inherit parent process environment variable.
         if platform.system() == "Windows":
-            try:
-                import win32api
-                import win32con
-                import win32process
-            except ImportError as ex:
-                raise UserErrorException(
-                    f"Please install pywin32 by 'pip install pywin32' and retry. prompt flow "
-                    f"service start depends on pywin32.. {ex}"
-                )
-            command = (
-                f"waitress-serve --listen=127.0.0.1:{port} --threads={PF_SERVICE_WORKER_NUM} "
-                "promptflow._cli._pf._service:get_app"
-            )
-            startupinfo = win32process.STARTUPINFO()
-            startupinfo.dwFlags |= win32process.STARTF_USESHOWWINDOW
-            startupinfo.wShowWindow = win32con.SW_HIDE
-            process_attributes = None
-            thread_attributes = None
-            inherit_handles = False
-            creation_flags = win32con.CREATE_NEW_PROCESS_GROUP | win32con.DETACHED_PROCESS
-            environment = None
-            current_directory = None
-            process_handle, thread_handle, process_id, thread_id = win32process.CreateProcess(
-                None,
-                command,
-                process_attributes,
-                thread_attributes,
-                inherit_handles,
-                creation_flags,
-                environment,
-                current_directory,
-                startupinfo,
-            )
-
-            win32api.CloseHandle(process_handle)
-            win32api.CloseHandle(thread_handle)
+            _start_background_service_on_windows(port)
         else:
-            # Set host to localhost, only allow request from localhost.
-            cmd = [
-                "waitress-serve",
-                f"--listen=127.0.0.1:{port}",
-                f"--threads={PF_SERVICE_WORKER_NUM}",
-                "promptflow._cli._pf._service:get_app",
-            ]
-            subprocess.Popen(cmd, stdout=subprocess.DEVNULL, start_new_session=True)
+            _start_background_service_on_unix(port)
         is_healthy = check_pfs_service_status(port)
         if is_healthy:
             message = f"Start Promptflow Service on port {port}, version: {get_pfs_version()}."
             print(message)
             logger.info(message)
         else:
-            logger.warning(f"Promptflow service start failed in {port}.")
+            logger.warning(f"Promptflow service start failed in {port}. {hint_stop_before_upgrade}")
+
+
+def validate_port(port, force_start):
+    if port:
+        dump_port_to_config(port)
+        _validate_port(port, force_start)
+    else:
+        port = get_port_from_config(create_if_not_exists=True)
+        _validate_port(port, force_start)
+    return port
+
+
+def _validate_port(port, force_start):
+    if is_port_in_use(port):
+        if force_start:
+            message = f"Force restart the service on the port {port}."
+            if is_run_from_built_binary():
+                print(message)
+            logger.warning(message)
+            kill_exist_service(port)
+        else:
+            message = f"Service port {port} is used."
+            if is_run_from_built_binary():
+                print(message)
+            logger.warning(message)
+            raise UserErrorException(f"Service port {port} is used.")
+
+
+@contextlib.contextmanager
+def redirect_stdout_to_file(path):
+    # For msi installer, use vbs to start pfs in a hidden window. But it doesn't support redirect output in the
+    # hidden window to terminal. So we redirect output to a file. And then print the file content to terminal in
+    # pfs.bat.
+    old_stdout = sys.stdout
+    old_stderr = sys.stderr
+    try:
+        with open(path, "w") as file:
+            sys.stdout = file
+            sys.stderr = file
+            yield
+    finally:
+        sys.stdout = old_stdout
+        sys.stderr = old_stderr
+
+
+def _start_background_service_on_windows(port):
+    try:
+        import win32api
+        import win32con
+        import win32process
+    except ImportError as ex:
+        raise UserErrorException(
+            f"Please install pywin32 by 'pip install pywin32' and retry. prompt flow "
+            f"service start depends on pywin32.. {ex}"
+        )
+    command = (
+        f"waitress-serve --listen=127.0.0.1:{port} --threads={PF_SERVICE_WORKER_NUM} "
+        "promptflow._cli._pf._service:get_app"
+    )
+    logger.debug(f"Start Promptflow Service in Windows: {command}")
+    startupinfo = win32process.STARTUPINFO()
+    startupinfo.dwFlags |= win32process.STARTF_USESHOWWINDOW
+    startupinfo.wShowWindow = win32con.SW_HIDE
+    process_attributes = None
+    thread_attributes = None
+    inherit_handles = False
+    creation_flags = win32con.CREATE_NEW_PROCESS_GROUP | win32con.DETACHED_PROCESS
+    environment = None
+    current_directory = None
+    process_handle, thread_handle, process_id, thread_id = win32process.CreateProcess(
+        None,
+        command,
+        process_attributes,
+        thread_attributes,
+        inherit_handles,
+        creation_flags,
+        environment,
+        current_directory,
+        startupinfo,
+    )
+
+    win32api.CloseHandle(process_handle)
+    win32api.CloseHandle(thread_handle)
+
+
+def _start_background_service_on_unix(port):
+    # Set host to localhost, only allow request from localhost.
+    cmd = [
+        "waitress-serve",
+        f"--listen=127.0.0.1:{port}",
+        f"--threads={PF_SERVICE_WORKER_NUM}",
+        "promptflow._cli._pf._service:get_app",
+    ]
+    logger.debug(f"Start Promptflow Service in Unix: {cmd}")
+    subprocess.Popen(cmd, stdout=subprocess.DEVNULL, start_new_session=True)
 
 
 def stop_service():
@@ -285,9 +309,13 @@ def show_service():
     else:
         log_file = get_current_env_pfs_file(PF_SERVICE_LOG_FILE)
     if status:
-        status.update({"log_file": log_file.as_posix()})
+        extra_info = {"log_file": log_file.as_posix(), "version": get_pfs_version()}
+        status.update(extra_info)
         print(status)
         return
     else:
-        logger.warning(f"Promptflow service is not started. log_file: {log_file.as_posix()}")
+        logger.warning(
+            f"Promptflow service is not started. The promptflow service log is located at {log_file.as_posix()} "
+            f"and promptflow version is {get_pfs_version()}."
+        )
         sys.exit(1)
