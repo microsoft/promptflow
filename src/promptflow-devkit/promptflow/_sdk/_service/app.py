@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
 from pathlib import WindowsPath
 
-from flask import Blueprint, Flask, current_app, g, jsonify, request
+from flask import Blueprint, Flask, current_app, g, jsonify, redirect, request, url_for
 from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
 
@@ -50,6 +50,10 @@ def heartbeat():
     return jsonify(response)
 
 
+def root():
+    return redirect(url_for("serve_trace_ui"))
+
+
 def create_app():
     app = Flask(__name__)
 
@@ -58,6 +62,7 @@ def create_app():
     # as there might be different ports in that scenario
     CORS(app)
 
+    app.add_url_rule("/", view_func=root)
     app.add_url_rule("/heartbeat", view_func=heartbeat)
     app.add_url_rule(
         "/v1/traces", view_func=lambda: trace_collector(get_created_by_info_with_cache, app.logger), methods=["POST"]

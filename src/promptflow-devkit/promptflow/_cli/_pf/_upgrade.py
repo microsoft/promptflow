@@ -1,6 +1,7 @@
 import os
 
 from promptflow._cli._params import add_param_yes, base_params
+from promptflow._cli._pf._service import stop_service
 from promptflow._cli._utils import activate_action, get_cli_sdk_logger
 from promptflow._utils.utils import prompt_y_n
 from promptflow.exceptions import UserErrorException
@@ -73,6 +74,8 @@ def upgrade_version(args):
         if not confirmation:
             logger.debug("Upgrade stopped by user")
             return
+    # try to stop the service before upgrade
+    stop_service()
 
     if installer == "MSI":
         _upgrade_on_windows(yes)

@@ -2365,6 +2365,21 @@ class TestCli:
             new_content = load_yaml(Path(temp_dir) / FLOW_FLEX_YAML)
             assert new_content == content
 
+    def test_flow_test_with_init(self, pf, capsys):
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{EAGER_FLOWS_DIR}/basic_callable_class",
+            "--inputs",
+            "func_input=input",
+            "--init",
+            "obj_input=val",
+        )
+        stdout, _ = capsys.readouterr()
+        assert "obj_input" in stdout
+        assert "func_input" in stdout
+
 
 def assert_batch_run_result(run, pf, assert_func):
     assert run.status == "Completed"
