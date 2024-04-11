@@ -95,7 +95,7 @@ async def get_client():
     load_dotenv()
     api_key = os.environ.get("aoai-api-key-eastus2")
     api_base = os.environ.get("aoai-api-endpoint-eastus2")
-    api_version = os.environ.get("aoai-api-endpoint", "2024-02-15-preview")
+    api_version = os.environ.get("aoai-api-version", "2024-02-15-preview")
     client = AsyncAzureOpenAI(
             api_key=api_key,
             api_version=api_version,
