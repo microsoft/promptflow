@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import importlib.metadata
 import json
 import os
 import platform
@@ -25,14 +26,16 @@ from promptflow._constants import (
 )
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
-    PF_SERVICE_HOUR_TIMEOUT,
     PF_TRACE_CONTEXT,
     PF_TRACE_CONTEXT_ATTR,
     AzureMLWorkspaceTriad,
     ContextAttributeKey,
 )
 from promptflow._sdk._service.utils.utils import (
+    add_executable_script_to_env_path,
     get_port_from_config,
+    hint_stop_before_upgrade,
+    hint_stop_message,
     is_pfs_service_healthy,
     is_port_in_use,
     is_run_from_built_binary,
@@ -57,6 +60,14 @@ def get_ws_tracing_base_url(ws_triad: AzureMLWorkspaceTriad) -> str:
     )
 
 
+def _is_azure_ext_installed() -> bool:
+    try:
+        importlib.metadata.version("promptflow-azure")
+        return True
+    except importlib.metadata.PackageNotFoundError:
+        return False
+
+
 def _inject_attrs_to_op_ctx(attrs: typing.Dict[str, str]) -> None:
     if len(attrs) == 0:
         return
@@ -72,33 +83,44 @@ def _invoke_pf_svc() -> str:
     if is_run_from_built_binary():
         interpreter_path = os.path.abspath(sys.executable)
         pf_path = os.path.join(os.path.dirname(interpreter_path), "pf")
-        if platform.system() == "Windows":
-            cmd_args = [pf_path, "service", "start", "--port", port]
-        else:
-            cmd_args = f"{pf_path} service start --port {port}"
+        cmd_args = [pf_path, "service", "start", "--port", port]
     else:
-        if platform.system() == "Windows":
-            cmd_args = ["pf", "service", "start", "--port", port]
-        else:
-            cmd_args = f"pf service start --port {port}"
-    hint_stop_message = (
-        f"You can stop the Prompt flow Tracing Server with the following command:'\033[1mpf service stop\033[0m'.\n"
-        f"Alternatively, if no requests are made within {PF_SERVICE_HOUR_TIMEOUT} "
-        f"hours, it will automatically stop."
-    )
+        cmd_args = ["pf", "service", "start", "--port", port]
+
     if is_port_in_use(int(port)):
         if not is_pfs_service_healthy(port):
             cmd_args.append("--force")
+            logger.debug("Prompt flow service is not healthy, force to start...")
         else:
             print("Prompt flow Tracing Server has started...")
             print(hint_stop_message)
             return port
-    print("Starting Prompt flow Tracing Server...")
-    start_pfs = subprocess.Popen(cmd_args, shell=True)
-    # Wait for service to be started
-    start_pfs.wait()
-    logger.debug("Prompt flow service is serving on port %s", port)
-    print(hint_stop_message)
+
+    add_executable_script_to_env_path()
+    print("Starting prompt flow Tracing Server...")
+    start_pfs = None
+    try:
+        start_pfs = subprocess.Popen(cmd_args, shell=platform.system() == "Windows", stderr=subprocess.PIPE)
+        # Wait for service to be started
+        start_pfs.wait(timeout=20)
+    except subprocess.TimeoutExpired:
+        logger.warning(
+            f"The starting prompt flow process did not finish within the timeout period. {hint_stop_before_upgrade}"
+        )
+    except Exception as e:
+        logger.warning(f"An error occurred when starting prompt flow process: {e}. {hint_stop_before_upgrade}")
+
+    # Check if there were any errors
+    if start_pfs is not None and start_pfs.returncode is not None and start_pfs.returncode != 0:
+        error_message = start_pfs.stderr.read().decode()
+        message = f"The starting prompt flow process returned an error: {error_message}. "
+        logger.warning(message)
+    elif not is_pfs_service_healthy(port):
+        # this branch is to check if the service is healthy for msi installer
+        logger.warning(f"Prompt flow service is not healthy. {hint_stop_before_upgrade}")
+    else:
+        logger.debug("Prompt flow service is serving on port %s", port)
+        print(hint_stop_message)
     return port
 
 
@@ -214,6 +236,14 @@ def start_trace_with_devkit(
 
     # local to cloud feature
     ws_triad = _get_ws_triad_from_pf_config()
+    if ws_triad is not None and not _is_azure_ext_installed():
+        warning_msg = (
+            "Azure extension is not installed, though export to cloud is configured, "
+            "traces cannot be exported to cloud. To fix this, please run `pip install promptflow-azure` "
+            "and restart prompt flow service."
+        )
+        logger.warning(warning_msg)
+
     # invoke prompt flow service
     pfs_port = _invoke_pf_svc()
 

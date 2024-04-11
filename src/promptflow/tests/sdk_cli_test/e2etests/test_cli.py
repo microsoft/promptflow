@@ -311,6 +311,18 @@ class TestCli:
         output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.output.json"
         assert output_path.exists()
 
+        # Test flow test with simple input file
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/web_classification",
+            "--inputs",
+            f"{DATAS_DIR}/webClassification.json",
+        )
+        output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.output.json"
+        assert output_path.exists()
+
         # Test flow test with invalid simple input file
         with pytest.raises(ValueError) as ex:
             run_pf_command(
@@ -1632,6 +1644,18 @@ class TestCli:
         image_path = Path(FLOWS_DIR) / "python_tool_with_composite_image" / ".promptflow" / "intermediate"
         assert image_path.exists()
 
+    def test_flow_test_with_openai_vision_image_input_and_output(self):
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/python_tool_with_openai_vision_image",
+        )
+        output_path = Path(FLOWS_DIR) / "python_tool_with_openai_vision_image" / ".promptflow" / "output"
+        assert output_path.exists()
+        image_path = Path(FLOWS_DIR) / "python_tool_with_openai_vision_image" / ".promptflow" / "intermediate"
+        assert image_path.exists()
+
     def test_run_file_with_set(self, pf) -> None:
         name = str(uuid.uuid4())
         run_pf_command(
@@ -2324,11 +2348,6 @@ class TestCli:
                         "type": "string",
                     }
                 },
-                "outputs": {
-                    "output": {
-                        "type": "string",
-                    }
-                },
             }
             os.unlink(Path(temp_dir) / FLOW_FLEX_YAML)
             run_pf_command(
@@ -2342,6 +2361,21 @@ class TestCli:
             assert os.listdir(temp_dir) == [FLOW_FLEX_YAML, "hello.py", "__pycache__"]
             new_content = load_yaml(Path(temp_dir) / FLOW_FLEX_YAML)
             assert new_content == content
+
+    def test_flow_test_with_init(self, pf, capsys):
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{EAGER_FLOWS_DIR}/basic_callable_class",
+            "--inputs",
+            "func_input=input",
+            "--init",
+            "obj_input=val",
+        )
+        stdout, _ = capsys.readouterr()
+        assert "obj_input" in stdout
+        assert "func_input" in stdout
 
 
 def assert_batch_run_result(run, pf, assert_func):

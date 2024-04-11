@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import copy
 import tempfile
 from functools import lru_cache
 from os import PathLike
@@ -82,7 +83,7 @@ class FlowContextResolver:
 
         overwrite_connections(
             flow_dag=self.flow_dag,
-            connections=flow_context.connections,
+            connections=copy.deepcopy(flow_context.connections),
             working_dir=self.working_dir,
         )
         return self

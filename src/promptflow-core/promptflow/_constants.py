@@ -278,3 +278,21 @@ AZURE_WORKSPACE_REGEX_FORMAT = (
     "(/providers/Microsoft.MachineLearningServices)?/workspaces/([^/]+)$"
 )
 CONNECTION_DATA_CLASS_KEY = "DATA_CLASS"
+
+
+class AzureWorkspaceKind:
+    DEFAULT = "default"
+    HUB = "hub"
+    PROJECT = "project"
+
+    @staticmethod
+    def is_workspace(obj) -> bool:
+        return obj._kind == AzureWorkspaceKind.DEFAULT
+
+    @staticmethod
+    def is_hub(obj) -> bool:
+        return obj._kind == AzureWorkspaceKind.HUB
+
+    @staticmethod
+    def is_project(obj) -> bool:
+        return obj._kind == AzureWorkspaceKind.PROJECT

@@ -13,7 +13,6 @@ from typing import Callable, List, Optional
 
 from promptflow._constants import MessageFormatType
 from promptflow._core._errors import InvalidSource
-from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping
 from promptflow._utils.multimedia_utils import MultimediaProcessor
@@ -23,6 +22,7 @@ from promptflow._utils.tool_utils import (
     get_prompt_param_name_from_func,
 )
 from promptflow._utils.yaml_utils import load_yaml
+from promptflow.connections import ConnectionProvider
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
 from promptflow.contracts.types import AssistantDefinition, PromptTemplate
@@ -60,7 +60,7 @@ class ToolResolver:
     def __init__(
         self,
         working_dir: Path,
-        connections: Optional[dict] = None,
+        connection_provider: Optional[ConnectionProvider] = None,
         package_tool_keys: Optional[List[str]] = None,
         message_format: str = MessageFormatType.BASIC,
     ):
@@ -71,7 +71,7 @@ class ToolResolver:
             pass
         self._tool_loader = ToolLoader(working_dir, package_tool_keys=package_tool_keys)
         self._working_dir = working_dir
-        self._connection_manager = ConnectionManager(connections)
+        self._connection_provider = connection_provider
         self._multimedia_processor = MultimediaProcessor.create(message_format)
 
     @classmethod
@@ -83,7 +83,7 @@ class ToolResolver:
         return resolver
 
     def _convert_to_connection_value(self, k: str, v: InputAssignment, node_name: str, conn_types: List[ValueType]):
-        connection_value = self._connection_manager.get(v.value)
+        connection_value = self._connection_provider.get(v.value)
         if not connection_value:
             raise ConnectionNotFound(f"Connection {v.value} not found for node {node_name!r} input {k!r}.")
         # Check if type matched
@@ -108,7 +108,7 @@ class ToolResolver:
         if not conn_types:
             msg = f"Input '{k}' for node '{node_name}' has invalid types: {conn_types}."
             raise NodeInputValidationError(message=msg)
-        connection_value = self._connection_manager.get(v.value)
+        connection_value = self._connection_provider.get(v.value)
         if not connection_value:
             raise ConnectionNotFound(f"Connection {v.value} not found for node {node_name!r} input {k!r}.")
 
@@ -476,7 +476,7 @@ class ToolResolver:
                 del node_inputs[k]
 
     def _get_llm_node_connection(self, node: Node):
-        connection = self._connection_manager.get(node.connection)
+        connection = self._connection_provider.get(node.connection)
         if connection is None:
             raise ConnectionNotFound(
                 message_format="Connection '{connection}' of LLM node '{node_name}' is not found.",
