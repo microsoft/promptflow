@@ -54,7 +54,11 @@ TRACER_PROVIDER_PFS_EXPORTER_SET_ATTR = "_pfs_exporter_set"
 def is_trace_feature_disabled() -> bool:
     from promptflow._sdk._configuration import Configuration
 
-    return Configuration.get_instance().get_trace_provider().lower() == PF_CONFIG_TRACE_FEATURE_DISABLE
+    trace_provider = Configuration.get_instance().get_trace_provider()
+    if isinstance(trace_provider, str):
+        return Configuration.get_instance().get_trace_provider().lower() == PF_CONFIG_TRACE_FEATURE_DISABLE
+    else:
+        return False
 
 
 def get_ws_tracing_base_url(ws_triad: AzureMLWorkspaceTriad) -> str:
