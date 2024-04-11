@@ -329,7 +329,7 @@ class TestFlowAsFunc:
 
     def test_flow_with_connection_override(self, azure_open_ai_connection):
         f = load_flow(f"{FLOWS_DIR}/llm_tool_non_existing_connection")
-        with pytest.raises(ConnectionNotFoundError) as e:
+        with pytest.raises(ConnectionNotFoundError):
             f(joke="joke")
         f.context = FlowContext(
             connections={
