@@ -12,7 +12,7 @@ import stat
 import subprocess
 import sys
 import uuid
-from dataclasses import asdict
+from dataclasses import MISSING, asdict, fields
 from importlib.metadata import version
 from os import PathLike
 from pathlib import Path
@@ -38,8 +38,9 @@ from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_ope
 from promptflow._sdk._utils import (
     _get_additional_includes,
     _merge_local_code_and_additional_includes,
-    convert_to_signature_type,
     copy_tree_respect_template_and_ignore_file,
+    entry_string_to_callable,
+    format_signature_type,
     generate_flow_tools_json,
     generate_random_string,
     json_load,
@@ -1060,10 +1061,7 @@ class FlowOperations(TelemetryMixin):
         else:
             raise UserErrorException("Entry must be a function or a class.")
 
-        for port_type in ["inputs", "outputs", "init"]:
-            if port_type not in flow_meta:
-                continue
-            convert_to_signature_type(flow_meta[port_type])
+        format_signature_type(flow_meta)
 
         if validate:
             # this path is actually not used
@@ -1100,7 +1098,16 @@ class FlowOperations(TelemetryMixin):
         """
         # TODO: should we support string entry? If so, we should also add a parameter to specify the working directory
         if isinstance(entry, Prompty):
-            flow_meta = {}
+            from promptflow.core._model_configuration import PromptyModelConfiguration
+
+            flow_meta = {"inputs": entry._data.get("inputs", {}), "outputs": entry._data.get("outputs", {})}
+            init_dict = {}
+            for field in fields(PromptyModelConfiguration):
+                init_dict[field.name] = {"type": type(field.type).__name__}
+                if field.default != MISSING:
+                    init_dict[field.name]["default"] = field.default
+            flow_meta["init"] = init_dict
+            format_signature_type(flow_meta)
         elif isinstance(entry, Flow):
             # Get dag flow infer signature
             executable_flow = entry._init_executable()
@@ -1114,15 +1121,12 @@ class FlowOperations(TelemetryMixin):
                     v, dict_factory=lambda x: {k: v for (k, v) in x if v and k in expect_item}
                 )
                 flow_meta["outputs"][k]["type"] = flow_meta["outputs"][k]["type"].value
-
+            format_signature_type(flow_meta)
         elif isinstance(entry, FlexFlow):
+            entry = entry_string_to_callable(entry.entry_file, entry.entry)
             flow_meta, _, _ = self._infer_signature_flex_flow(entry=entry)
         else:
             flow_meta, _, _ = self._infer_signature_flex_flow(entry=entry)
-        for port_type in ["inputs", "outputs", "init"]:
-            if port_type not in flow_meta:
-                continue
-            convert_to_signature_type(flow_meta[port_type])
         return flow_meta
 
     def _save(

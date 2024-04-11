@@ -574,7 +574,28 @@ class TestFlowSave:
         # Prompty
         prompty = load_flow(source=Path(PROMPTY_DIR) / "prompty_example.prompty")
         meta = pf.flows.infer_signature(entry=prompty)
-
+        assert meta == {
+            "inputs": {
+                "firstName": {"type": "string", "default": "John"},
+                "lastName": {"type": "string", "default": "Doh"},
+                "question": {"type": "string"},
+            },
+            "outputs": {},
+            "init": {
+                "configuration": {"type": "object"},
+                "parameters": {"type": "object"},
+                "api": {"type": "object", "default": "chat"},
+                "response": {"type": "object", "default": "first"},
+            },
+        }
         # Flex flow
-        flex_flow = load_flow(source=Path(EAGER_FLOWS_DIR) / "basic_callable_class")
+        flex_flow = load_flow(source=Path(EAGER_FLOWS_DIR) / "builtin_llm")
         meta = pf.flows.infer_signature(entry=flex_flow)
+        assert meta == {
+            "inputs": {
+                "chat_history": {"default": "[]", "type": "array"},
+                "question": {"default": "What is ChatGPT?", "type": "string"},
+                "stream": {"default": "False", "type": "boolean"},
+            },
+            "outputs": {"output": {"type": "string"}},
+        }

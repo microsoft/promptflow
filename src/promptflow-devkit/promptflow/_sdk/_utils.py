@@ -65,6 +65,7 @@ from promptflow._sdk._errors import (
     UnsecureConnectionError,
 )
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
+from promptflow._utils.context_utils import inject_sys_path
 from promptflow._utils.flow_utils import is_flex_flow, resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
@@ -1052,6 +1053,19 @@ def callable_to_entry_string(callable_obj: Callable) -> str:
     return f"{module_str}:{func_str}"
 
 
+def entry_string_to_callable(entry_file, entry) -> Callable:
+    with inject_sys_path(Path(entry_file).parent):
+        try:
+            module_name, func_name = entry.split(":")
+            module = importlib.import_module(module_name)
+        except Exception as e:
+            raise UserErrorException(
+                message_format="Failed to load python module for {entry_file}",
+                entry_file=entry_file,
+            ) from e
+        return getattr(module, func_name, None)
+
+
 def is_flex_run(run: "Run") -> bool:
     if run._run_source == RunInfoSources.LOCAL:
         try:
@@ -1068,18 +1082,25 @@ def is_flex_run(run: "Run") -> bool:
     return False
 
 
-def convert_to_signature_type(meta_dict):
-    # signature is language irrelevant, so we apply json type system
-    value_type_map = {
-        ValueType.INT.value: SignatureValueType.INT.value,
-        ValueType.DOUBLE.value: SignatureValueType.NUMBER.value,
-        ValueType.LIST.value: SignatureValueType.ARRAY.value,
-        ValueType.BOOL.value: SignatureValueType.BOOL.value,
-    }
+def format_signature_type(flow_meta):
+    for port_type in ["inputs", "outputs", "init"]:
+        if port_type not in flow_meta:
+            continue
 
-    for port_name, port in meta_dict.items():
-        if port["type"] in value_type_map:
-            port["type"] = value_type_map[port["type"]]
+        # signature is language irrelevant, so we apply json type system
+        value_type_map = {
+            ValueType.INT.value: SignatureValueType.INT.value,
+            ValueType.DOUBLE.value: SignatureValueType.NUMBER.value,
+            ValueType.LIST.value: SignatureValueType.ARRAY.value,
+            ValueType.BOOL.value: SignatureValueType.BOOL.value,
+            ValueType.STRING.value: SignatureValueType.STRING.value,
+        }
+
+        for port_name, port in flow_meta[port_type].items():
+            if port["type"] in value_type_map:
+                port["type"] = value_type_map[port["type"]]
+            else:
+                port["type"] = SignatureValueType.OBJECT.value
 
 
 generate_flow_meta = _generate_flow_meta
