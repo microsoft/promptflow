@@ -17,11 +17,12 @@ from promptflow._sdk._constants import (
     HOME_PROMPT_FLOW_DIR,
     SERVICE_CONFIG_FILE,
 )
+from promptflow._sdk._errors import MissingAzurePackage
 from promptflow._sdk._tracing import PF_CONFIG_TRACE_FEATURE_DISABLE
 from promptflow._sdk._utils import call_from_extension, gen_uuid_by_compute_info, read_write_by_user
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
-from promptflow.exceptions import ErrorTarget, UserErrorException, ValidationException
+from promptflow.exceptions import ErrorTarget, ValidationException
 
 logger = get_cli_sdk_logger()
 
@@ -227,15 +228,7 @@ class Configuration(object):
 
                 validate_trace_provider(value)
             except ImportError:
-                msg = (
-                    '"promptflow[azure]" is required to validate trace provider, '
-                    'please install it by running "pip install promptflow[azure]" with your version.'
-                )
-                raise UserErrorException(
-                    message=msg,
-                    target=ErrorTarget.CONTROL_PLANE_SDK,
-                    no_personal_data_message=msg,
-                )
+                raise MissingAzurePackage()
         return
 
     def get_user_agent(self) -> Optional[str]:
