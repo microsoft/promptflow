@@ -608,6 +608,7 @@ class Run(YAMLTranslatableMixin):
             compute_name=compute_name,
             identity=identity_resource_id,
             enable_multi_container=is_multi_container_enabled(),
+            init_k_wargs=self.init,
         )
 
         # use when uploading a local existing run to cloud

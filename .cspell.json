@@ -200,6 +200,7 @@
     "wscript",
     "raisvc",
     "evals",
+    "wargs",
     "dcid"
   ],
   "flagWords": [
