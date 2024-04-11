@@ -100,7 +100,7 @@ def resolve_flow_path(
         elif len(flow_file_list) > 1:
             raise ValidationException(
                 f"Multiple files {', '.join(flow_file_list)} exist in {flow_path}. "
-                f"Please specify a file or remove the extra YAML and YML.",
+                f"Please specify a file or remove the extra YAML file.",
                 privacy_info=[str(flow_path)],
             )
     elif flow_path.is_file() or flow_path.suffix.lower() in FLOW_FILE_SUFFIX:
