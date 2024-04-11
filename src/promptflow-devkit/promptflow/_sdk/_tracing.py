@@ -47,7 +47,12 @@ from promptflow.tracing._operation_context import OperationContext
 
 logger = get_cli_sdk_logger()
 
+PF_CONFIG_TRACE_FEATURE_DISABLE = "none"
 TRACER_PROVIDER_PFS_EXPORTER_SET_ATTR = "_pfs_exporter_set"
+
+
+def is_trace_feature_disabled() -> bool:
+    return Configuration.get_instance().get_trace_provider().lower() == PF_CONFIG_TRACE_FEATURE_DISABLE
 
 
 def get_ws_tracing_base_url(ws_triad: AzureMLWorkspaceTriad) -> str:
@@ -257,6 +262,10 @@ def start_trace_with_devkit(
 
 
 def setup_exporter_to_pfs() -> None:
+    if is_trace_feature_disabled():
+        logger.info("trace feature is disabled in config, skip setup exporter to PFS.")
+        return
+
     # get resource attributes from environment
     # For local trace, collection is the only identifier for name and id
     # For cloud trace, we use collection here as name and collection_id for id
