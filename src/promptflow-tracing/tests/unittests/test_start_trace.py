@@ -4,6 +4,7 @@
 
 import uuid
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 from opentelemetry import trace
@@ -18,7 +19,7 @@ from promptflow.tracing._constants import (
     RESOURCE_ATTRIBUTES_SERVICE_NAME,
     ResourceAttributesFieldName,
 )
-from promptflow.tracing._start_trace import _get_collection_from_cwd, _kwargs_in_func
+from promptflow.tracing._start_trace import _get_collection_from_cwd, _kwargs_in_func, is_collection_writeable
 
 
 @pytest.fixture
@@ -32,10 +33,10 @@ def mock_devkit_not_installed(mocker: MockerFixture):
 def reset_tracer_provider():
     from opentelemetry.trace import _TRACER_PROVIDER_SET_ONCE
 
-    with _TRACER_PROVIDER_SET_ONCE._lock:
-        _TRACER_PROVIDER_SET_ONCE._done = False
-
-    yield
+    with patch("opentelemetry.trace._TRACER_PROVIDER", None):
+        with _TRACER_PROVIDER_SET_ONCE._lock:
+            _TRACER_PROVIDER_SET_ONCE._done = False
+        yield
 
 
 @pytest.mark.unittest
@@ -120,3 +121,11 @@ class TestStartTrace:
         assert _kwargs_in_func(func_without_kwargs2) is False
         assert _kwargs_in_func(func_without_kwargs3) is False
         assert _kwargs_in_func(func_without_kwargs4) is False
+
+    def test_protected_collection(self) -> None:
+        start_trace(collection=str(uuid.uuid4()))
+        assert is_collection_writeable() is False
+
+    def test_writeable_collection(self) -> None:
+        start_trace()
+        assert is_collection_writeable() is True

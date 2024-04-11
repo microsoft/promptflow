@@ -21,6 +21,8 @@ from ._constants import (
 )
 from ._integrations._openai_injector import inject_openai_api
 
+TRACER_PROVIDER_PROTECTED_COLLECTION_ATTR = "_protected_collection"
+
 
 def start_trace(
     *,
@@ -42,7 +44,8 @@ def start_trace(
         logging.info("skip tracing local setup as the environment variable is set.")
         return
 
-    if collection is None:
+    collection_specified = collection is not None
+    if not collection_specified:
         logging.debug("collection is not specified, trying to get from current working directory...")
         collection = _get_collection_from_cwd()
     logging.info("collection: %s", collection)
@@ -58,7 +61,8 @@ def start_trace(
             res_attrs[attr_key] = attr_value
     logging.info("resource attributes: %s", res_attrs)
 
-    _set_tracer_provider(res_attrs)
+    # if user specifies collection, we will add a flag on tracer provider to avoid override
+    _set_tracer_provider(res_attrs, protected_collection=collection_specified)
 
     if _is_devkit_installed():
         from promptflow._sdk._tracing import start_trace_with_devkit
@@ -125,7 +129,7 @@ def _get_collection_from_cwd() -> str:
     return collection
 
 
-def _set_tracer_provider(res_attrs: typing.Dict[str, str]) -> None:
+def _set_tracer_provider(res_attrs: typing.Dict[str, str], protected_collection: bool) -> None:
     res = Resource(attributes=res_attrs)
     tracer_provider = TracerProvider(resource=res)
 
@@ -140,6 +144,14 @@ def _set_tracer_provider(res_attrs: typing.Dict[str, str]) -> None:
     else:
         trace.set_tracer_provider(tracer_provider)
         logging.info("tracer provider is set with resource attributes: %s", res.attributes)
+
+    if protected_collection:
+        logging.info("user specifies collection, will add a flag on tracer provider to avoid override...")
+        setattr(trace.get_tracer_provider(), TRACER_PROVIDER_PROTECTED_COLLECTION_ATTR, True)
+
+
+def is_collection_writeable() -> bool:
+    return not getattr(trace.get_tracer_provider(), TRACER_PROVIDER_PROTECTED_COLLECTION_ATTR, False)
 
 
 def _is_devkit_installed() -> bool:
