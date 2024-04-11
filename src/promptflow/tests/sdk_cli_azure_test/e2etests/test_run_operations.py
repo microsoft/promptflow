@@ -1133,7 +1133,7 @@ class TestFlowRun:
         run = pf.stream(run)
         assert run.status == RunStatus.COMPLETED
 
-    @pytest.skipif(not is_live(), reason="Content change in submission time which lead to recording issue.")
+    @pytest.mark.skipif(not is_live(), reason="Content change in submission time which lead to recording issue.")
     @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
     def test_eager_flow_meta_generation(self, pf: PFClient, randstr: Callable[[str], str]):
         run = pf.run(
@@ -1284,7 +1284,7 @@ class TestFlowRun:
                 )
                 pf.runs.create_or_update(run=run)
 
-    @pytest.skipif(not is_live(), reason="Content change in submission time which lead to recording issue.")
+    @pytest.mark.skipif(not is_live(), reason="Content change in submission time which lead to recording issue.")
     @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
     def test_eager_flow_run_without_yaml(self, pf: PFClient, randstr: Callable[[str], str]):
         run = pf.run(
