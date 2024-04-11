@@ -64,20 +64,19 @@ def create_registry_run(name: str, registry_name: str, runtime: str, pf: PFClien
 
 class Local2CloudTestHelper:
     @staticmethod
-    def get_local_pf_and_run_name(randstr: Callable[[str], str]) -> tuple[LocalPFClient, str]:
-        """For local to cloud test cases, need a local client and a run name."""
+    def get_local_pf(run_name: str) -> LocalPFClient:
+        """For local to cloud test cases, need a local client."""
         local_pf = LocalPFClient()
-        name = randstr("batch_run_name")
 
         # in replay mode, `randstr` will always return the parameter
         # this will lead to run already exists error for local run
         # so add a try delete to avoid this error
         try:
-            local_pf.runs.delete(name)
+            local_pf.runs.delete(run_name)
         except RunNotFoundError:
             pass
 
-        return local_pf, name
+        return local_pf
 
     @staticmethod
     def check_local_to_cloud_run(pf: PFClient, run: Run):
@@ -887,7 +886,8 @@ class TestFlowRun:
         pf: PFClient,
         randstr: Callable[[str], str],
     ):
-        local_pf, name = Local2CloudTestHelper.get_local_pf_and_run_name(randstr)
+        name = randstr("batch_run_name_for_upload")
+        local_pf = Local2CloudTestHelper.get_local_pf(name)
         # submit a local batch run
         run = local_pf.run(
             flow=f"{FLOWS_DIR}/simple_hello_world",
@@ -909,7 +909,8 @@ class TestFlowRun:
         "mock_isinstance_for_mock_datastore", "mock_get_azure_pf_client", "mock_trace_provider_to_cloud"
     )
     def test_upload_flex_flow_run_with_yaml(self, pf: PFClient, randstr: Callable[[str], str]):
-        local_pf, name = Local2CloudTestHelper.get_local_pf_and_run_name(randstr)
+        name = randstr("flex_run_name_with_yaml_for_upload")
+        local_pf = Local2CloudTestHelper.get_local_pf(name)
         # submit a local flex run
         run = local_pf.run(
             flow=Path(f"{EAGER_FLOWS_DIR}/simple_with_yaml"),
@@ -930,7 +931,8 @@ class TestFlowRun:
         "mock_isinstance_for_mock_datastore", "mock_get_azure_pf_client", "mock_trace_provider_to_cloud"
     )
     def test_upload_flex_flow_run_without_yaml(self, pf: PFClient, randstr: Callable[[str], str]):
-        local_pf, name = Local2CloudTestHelper.get_local_pf_and_run_name(randstr)
+        name = randstr("flex_run_name_without_yaml_for_upload")
+        local_pf = Local2CloudTestHelper.get_local_pf(name)
         # submit a local flex run
         run = local_pf.run(
             flow="entry:my_flow",
@@ -952,7 +954,8 @@ class TestFlowRun:
     )
     def test_upload_prompty_run(self, pf: PFClient, randstr: Callable[[str], str]):
         # currently prompty run is skipped for upload, this test should be finished without error
-        local_pf, name = Local2CloudTestHelper.get_local_pf_and_run_name(randstr)
+        name = randstr("prompty_run_name_for_upload")
+        local_pf = Local2CloudTestHelper.get_local_pf(name)
         run = local_pf.run(
             flow=f"{PROMPTY_DIR}/prompty_example.prompty",
             data=f"{DATAS_DIR}/prompty_inputs.jsonl",
