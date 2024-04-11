@@ -104,6 +104,3 @@ def start_server():
         uvicorn_app = "promptflow.executor._service.app:app"
         print(f"Start promptflow python server with app: {uvicorn_app}")
         subprocess.run(["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "-b", f"{host}:{port}", uvicorn_app])
-
-
-start_server()
