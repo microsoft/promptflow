@@ -30,6 +30,9 @@ env:
   TOOL_DIRECTORY: ${{ github.workspace }}/src/promptflow-tools
   RECORD_DIRECTORY: ${{ github.workspace }}/src/promptflow-recording
 
+defaults:
+  run:
+    shell: bash
 
 
 jobs:
@@ -55,16 +58,31 @@ jobs:
           export pyVersion="3.9";
           env | sort >> $GITHUB_OUTPUT
         id: display_env
-        shell: bash -el {0}
 
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ steps.display_env.outputs.pyVersion }}
       - uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Load cached venv
+        id: cached-pip-wheels
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache
+          key: venv-${{ runner.os }}-${{ steps.display_env.outputs.pyVersion }}-${{ hashFiles('**/poetry.lock') }}
       - name: install test dependency group
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: |
-          poetry install --only test
+          poetry install --only test --no-interaction --no-root
+      - run: |
+          source $VENV
+          pytest --version
+      - name: install promptflow dependencies
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: |
           poetry run pip install ${{ env.TRACING_DIRECTORY }}
           poetry run pip install ${{ env.CORE_DIRECTORY }}[azureml-serving]
           poetry run pip install ${{ env.DEVKIT_DIRECTORY }}[pyarrow]
@@ -82,14 +100,11 @@ jobs:
           poetry run pip show promptflow-tools
 
       - name: Generate (mock) connections.json
-        shell: pwsh
         working-directory: ${{ env.PROMPTFLOW_DIRECTORY }}
         run: cp ${{ github.workspace }}/src/promptflow/dev-connections.json.example ${{ github.workspace }}/src/promptflow/connections.json
 
       - name: Run Test
-        shell: pwsh
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: |
-          gci env:* | sort-object name
           poetry run pytest ./tests/sdk_cli_azure_test ../promptflow-azure/tests/sdk_cli_azure_test -n auto -m "perf_monitor_test"
 
