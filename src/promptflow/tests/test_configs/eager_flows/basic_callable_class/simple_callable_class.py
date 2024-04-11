@@ -1,10 +1,9 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-import dataclasses
+from typing import TypedDict
 
-@dataclasses.dataclass
-class FlowOutput:
+class FlowOutput(TypedDict):
     obj_input: str
     func_input: str
     obj_id: str
