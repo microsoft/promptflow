@@ -275,7 +275,7 @@ class TestFlowTest:
 
     def test_eager_flow_test_with_yaml(self):
         clear_module_cache("entry")
-        flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_with_yml/").absolute()
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_with_yaml/").absolute()
         result = _client._flows._test(flow=flow_path, inputs={"input_val": "val1"})
         assert result.run_info.status.value == "Completed"
 
