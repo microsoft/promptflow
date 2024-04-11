@@ -18,5 +18,6 @@ manage-runs
 set-global-configs
 develop-a-tool/index
 process-image-in-flow
+tracing
 faq
 ```
