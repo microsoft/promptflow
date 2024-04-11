@@ -108,7 +108,7 @@ jobs:
           setupType: promptflow_with_extra
           scriptPath: ${{ env.testWorkingDirectory }}
 
-      - name: Setup and Install dev promptflow
+      - name: Setup and Install separate dev promptflow
         if: ${{ github.event.inputs.version == null || github.event.inputs.version == '' }}
         shell: pwsh
         run: |
