@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable, Union
+from typing import Union
 
 from promptflow._constants import ConnectionType
 from promptflow.core._errors import InvalidConnectionError
