@@ -80,8 +80,10 @@ _client = PFClient()
 @pytest.mark.e2etest
 class TestAssistantEagerFlow:
     def test_eager_flow_with_assistant(self):
+        # Need to create .env file for the flow.
+        # > python generate_connection_config.py --target_folder <flow_folder>
         flow_path = get_flow_folder("assistant_script", EAGER_FLOWS_ROOT).absolute()
-        # This used to load .env file as env variables
+        # Load .env file as env variables
         load_dotenv(dotenv_path=f"{flow_path}/.env")
         addon_tools = [
             {
