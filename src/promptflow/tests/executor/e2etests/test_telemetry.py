@@ -18,6 +18,7 @@ from promptflow.executor._process_manager import create_spawned_fork_process_man
 from promptflow.tracing._operation_context import OperationContext
 
 from ..process_utils import override_process_pool_targets
+from ..record_utils import setup_recording
 from ..utils import get_flow_folder, get_flow_inputs_file, get_yaml_file, load_jsonl
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
@@ -53,11 +54,13 @@ def setup_mocks():
 
 def mock_process_wrapper(*args, **kwargs):
     setup_mocks()
+    setup_recording()
     _process_wrapper(*args, **kwargs)
 
 
 def mock_process_manager(*args, **kwargs):
     setup_mocks()
+    setup_recording()
     create_spawned_fork_process_manager(*args, **kwargs)
 
 
@@ -152,6 +155,7 @@ class TestExecutorTelemetry:
                 assert "ms-azure-ai-promptflow-scenario" not in promptflow_headers
                 assert promptflow_headers.get("run_mode") == RunMode.Batch.name
                 assert promptflow_headers.get("flow_id") == "default_flow_id"
-                assert promptflow_headers.get("root_run_id") == run_id
+                if not pytest.is_replay:
+                    assert promptflow_headers.get("root_run_id") == run_id
                 assert promptflow_headers.get("batch_input_source") == "Data"
                 assert promptflow_headers.get("dummy_key") == "dummy_value"

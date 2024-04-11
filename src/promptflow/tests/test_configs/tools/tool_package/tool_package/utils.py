@@ -1,6 +1,6 @@
 from pathlib import Path
 import importlib.util
-from promptflow import PFClient
+from promptflow.client import PFClient
 
 
 package_name = "tool_package"

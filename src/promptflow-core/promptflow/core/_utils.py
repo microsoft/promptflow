@@ -4,14 +4,16 @@
 import os
 import re
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional, Tuple
 
 from jinja2 import Template
 
+from promptflow._constants import AZURE_WORKSPACE_REGEX_FORMAT
 from promptflow._utils.flow_utils import is_flex_flow, resolve_entry_file, resolve_flow_path
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.utils import _match_reference
 from promptflow._utils.yaml_utils import load_yaml
+from promptflow.core._errors import MalformedConnectionProviderConfig, MissingRequiredPackage
 from promptflow.exceptions import UserErrorException
 
 logger = LoggerFactory.get_logger(name=__name__)
@@ -36,7 +38,7 @@ def init_executable(*, flow_dag: dict = None, flow_path: Path = None, working_di
         if not working_dir:
             working_dir = flow_dir
 
-    from promptflow.contracts.flow import EagerFlow as ExecutableEagerFlow
+    from promptflow.contracts.flow import FlexFlow as ExecutableEagerFlow
     from promptflow.contracts.flow import Flow as ExecutableFlow
 
     if is_flex_flow(yaml_dict=flow_dag):
@@ -144,3 +146,36 @@ def get_used_connection_names_from_dict(connection_dict: dict):
             connection_names.add(connection_name)
 
     return connection_names
+
+
+def extract_workspace(provider_config) -> Tuple[str, str, str]:
+    match = re.match(AZURE_WORKSPACE_REGEX_FORMAT, provider_config)
+    if not match or len(match.groups()) != 5:
+        raise MalformedConnectionProviderConfig(provider_config=provider_config)
+    subscription_id = match.group(1)
+    resource_group = match.group(3)
+    workspace_name = match.group(5)
+    return subscription_id, resource_group, workspace_name
+
+
+def get_workspace_from_resource_id(resource_id: str, credential, pkg_name: Optional[str] = None):
+    # check azure extension first
+    try:
+        from azure.ai.ml import MLClient
+    except ImportError as e:
+        if pkg_name is not None:
+            error_msg = f"Please install '{pkg_name}' to use Azure related features."
+        else:
+            error_msg = (
+                "Please install Azure extension (e.g. `pip install promptflow-azure`) to use Azure related features."
+            )
+        raise MissingRequiredPackage(message=error_msg) from e
+    # extract workspace triad and get from Azure
+    subscription_id, resource_group_name, workspace_name = extract_workspace(resource_id)
+    ml_client = MLClient(
+        credential=credential,
+        subscription_id=subscription_id,
+        resource_group_name=resource_group_name,
+        workspace_name=workspace_name,
+    )
+    return ml_client.workspaces.get(name=workspace_name)

@@ -62,6 +62,7 @@ def add_flow_parser(subparsers):
     )
     flow_subparsers = flow_parser.add_subparsers()
     add_parser_init_flow(flow_subparsers)
+    add_parser_save_flow(flow_subparsers)
     add_parser_test_flow(flow_subparsers)
     add_parser_serve_flow(flow_subparsers)
     add_parser_build(flow_subparsers, "flow")
@@ -80,6 +81,8 @@ def dispatch_flow_commands(args: argparse.Namespace):
         build_flow(args)
     elif args.sub_action == "validate":
         validate_flow(args)
+    elif args.sub_action == "save":
+        save_flow(args)
 
 
 def add_parser_init_flow(subparsers):
@@ -125,6 +128,48 @@ pf flow init --flow intent_copilot --entry intent.py --function extract_intent -
         add_params=add_params,
         subparsers=subparsers,
         help_message="Initialize a prompt flow directory.",
+        action_param_name="sub_action",
+    )
+
+
+def add_parser_save_flow(subparsers):
+    """Add flow save parser to the pf flow subparsers."""
+    epilog = """
+Examples:
+
+# Creating a flex flow folder in a specific path.
+# There should be a src/intent.py file with extract_intent function defined.
+# After running this command, all content in the src folder will be copied to my-awesome-flow folder;
+# and a flow.flex.yaml will be created in my-awesome-flow folder.
+pf flow save --path my-awesome-flow --entry intent:extract_intent --code src
+# Creating a flow.flex.yaml under current folder with intent:extract_intent as entry.
+pf flow save --entry intent:extract_intent
+"""  # noqa: E501
+    add_params = [
+        lambda parser: parser.add_argument(
+            "--entry",
+            type=str,
+            help="The entry to be saved as a flex flow, should be relative to code.",
+            required=True,
+        ),
+        lambda parser: parser.add_argument(
+            "--code",
+            type=str,
+            help="The folder or file containing the snapshot for the flex flow. Default to current folder.",
+        ),
+        lambda parser: parser.add_argument(
+            "--path",
+            type=str,
+            help="The path to save the flow. Will create flow.flex.yaml under code if not specified.",
+        ),
+    ] + base_params
+    activate_action(
+        name="save",
+        description="Creating a flex flow with a specific callable class or a specific function as entry.",
+        epilog=epilog,
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="Save a callable class or a function as a flex flow.",
         action_param_name="sub_action",
     )
 
@@ -595,7 +640,7 @@ def serve_flow_python(args, source):
         static_folder=static_folder,
         environment_variables=list_of_dict_to_dict(args.environment_variables),
         connection_provider=connection_provider,
-        inits=list_of_dict_to_dict(args.inits),
+        init=list_of_dict_to_dict(args.init),
     )
     if not args.skip_open_browser:
         target = f"http://{args.host}:{args.port}"
@@ -649,3 +694,14 @@ def validate_flow(args):
         sys.exit(1)
     else:
         sys.exit(0)
+
+
+def save_flow(args):
+    pf_client = PFClient()
+
+    pf_client.flows.save(
+        entry=args.entry,
+        code=args.code or os.curdir,
+        path=args.path,
+    )
+    print(f"Saved flow to {Path(args.path or args.code or os.curdir).absolute().as_posix()}.")

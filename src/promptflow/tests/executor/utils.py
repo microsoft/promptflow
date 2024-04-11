@@ -9,6 +9,7 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
+from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.batch import BatchEngine
 from promptflow.contracts.flow import Flow
@@ -19,6 +20,7 @@ from promptflow.storage import AbstractRunStorage
 TEST_ROOT = Path(__file__).parent.parent
 DATA_ROOT = TEST_ROOT / "test_configs/datas"
 FLOW_ROOT = TEST_ROOT / "test_configs/flows"
+ASSISTANT_DEFINITION_ROOT = TEST_ROOT / "test_configs/assistant_definitions"
 EAGER_FLOW_ROOT = TEST_ROOT / "test_configs/eager_flows"
 WRONG_FLOW_ROOT = TEST_ROOT / "test_configs/wrong_flows"
 EAGER_FLOWS_ROOT = TEST_ROOT / "test_configs/eager_flows"
@@ -29,8 +31,13 @@ def get_flow_folder(folder_name, root: str = FLOW_ROOT) -> Path:
     return flow_folder_path
 
 
-def get_yaml_file(folder_name, root: str = FLOW_ROOT, file_name: str = "flow.dag.yaml") -> Path:
-    yaml_file = get_flow_folder(folder_name, root) / file_name
+def get_yaml_file(folder_name, root: str = FLOW_ROOT, file_name: str = None) -> Path:
+    if file_name is None:
+        flow_path, flow_file = resolve_flow_path(get_flow_folder(folder_name, root), check_flow_exist=False)
+        yaml_file = flow_path / flow_file
+    else:
+        yaml_file = get_flow_folder(folder_name, root) / file_name
+
     return yaml_file
 
 

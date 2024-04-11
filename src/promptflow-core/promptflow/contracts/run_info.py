@@ -236,8 +236,9 @@ class FlowRunInfo:
 
     @staticmethod
     def create_with_error(start_time, inputs, index, run_id, error):
+        line_run_id = run_id if index is None else f"{run_id}_{index}"
         return FlowRunInfo(
-            run_id=run_id,
+            run_id=line_run_id,
             status=Status.Failed,
             error=error,
             inputs=inputs,
