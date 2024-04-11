@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 # poetry
 [tool.poetry]
 name = "promptflow-evals"
-version = "0.1.0.dev0"
+version = "0.1.0rc7"
 description = "Prompt flow evals"
 license = "MIT"
 authors = [
@@ -37,8 +37,8 @@ packages = [
 [tool.poetry.dependencies]
 python = "<4.0,>=3.8"
 azure-ai-ml = ">=1.14.0"
-promptflow-devkit = "<2.0.0"
-promptflow-core = "<2.0.0"
+promptflow-devkit = ">=1.9.0rc9,<2.0.0"
+promptflow-core = ">=1.9.0rc9,<2.0.0"
 promptflow-tools = "<2.0.0"
 
 [tool.poetry.group.dev.dependencies]
