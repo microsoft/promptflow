@@ -19,6 +19,7 @@ from promptflow._sdk._constants import (
     PF_SERVICE_MONITOR_SECOND,
     CreatedByFieldName,
 )
+from promptflow._sdk._errors import MissingAzurePackage
 from promptflow._sdk._service import Api
 from promptflow._sdk._service.apis.collector import trace_collector
 from promptflow._sdk._service.apis.connection import api as connection_api
@@ -211,6 +212,8 @@ def get_created_by_info_with_cache():
                     CreatedByFieldName.NAME: decoded_token.get("name", decoded_token.get("appid", "")),
                 }
             )
+        except ImportError:
+            raise MissingAzurePackage()
         except Exception as e:
             # This function is only target to be used in Flask app.
             current_app.logger.error(f"Failed to get created_by info, stop writing span. Exception: {e}")
