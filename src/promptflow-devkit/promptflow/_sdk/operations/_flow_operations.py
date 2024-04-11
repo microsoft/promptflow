@@ -12,6 +12,7 @@ import stat
 import subprocess
 import sys
 import uuid
+from dataclasses import asdict
 from importlib.metadata import version
 from os import PathLike
 from pathlib import Path
@@ -29,7 +30,6 @@ from promptflow._sdk._constants import (
     FLOW_TOOLS_JSON_GEN_TIMEOUT,
     LOCAL_MGMT_DB_PATH,
     SERVE_SAMPLE_JSON_PATH,
-    SignatureValueType,
 )
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._orchestrator import TestSubmitter
@@ -38,6 +38,7 @@ from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_ope
 from promptflow._sdk._utils import (
     _get_additional_includes,
     _merge_local_code_and_additional_includes,
+    convert_to_signature_type,
     copy_tree_respect_template_and_ignore_file,
     generate_flow_tools_json,
     generate_random_string,
@@ -55,7 +56,6 @@ from promptflow._utils.flow_utils import (
     parse_variant,
 )
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
-from promptflow.contracts.tool import ValueType
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 
@@ -1005,7 +1005,7 @@ class FlowOperations(TelemetryMixin):
         return signature
 
     @staticmethod
-    def _infer_signature(
+    def _infer_signature_flex_flow(
         entry: Union[Callable, str],
         *,
         code: str = None,
@@ -1060,19 +1060,10 @@ class FlowOperations(TelemetryMixin):
         else:
             raise UserErrorException("Entry must be a function or a class.")
 
-        # signature is language irrelevant, so we apply json type system
-        value_type_map = {
-            ValueType.INT.value: SignatureValueType.INT.value,
-            ValueType.DOUBLE.value: SignatureValueType.NUMBER.value,
-            ValueType.LIST.value: SignatureValueType.ARRAY.value,
-            ValueType.BOOL.value: SignatureValueType.BOOL.value,
-        }
         for port_type in ["inputs", "outputs", "init"]:
             if port_type not in flow_meta:
                 continue
-            for port_name, port in flow_meta[port_type].items():
-                if port["type"] in value_type_map:
-                    port["type"] = value_type_map[port["type"]]
+            convert_to_signature_type(flow_meta[port_type])
 
         if validate:
             # this path is actually not used
@@ -1083,12 +1074,20 @@ class FlowOperations(TelemetryMixin):
         return flow_meta, code, snapshot_list
 
     @monitor_operation(activity_name="pf.flows.infer_signature", activity_type=ActivityType.PUBLICAPI)
-    def infer_signature(self, entry: Callable) -> dict:
-        """Extract signature for a callable class or a function. Signature indicates the ports of a flex flow using
-        the callable as entry.
+    def infer_signature(self, entry: Union[Callable, FlexFlow, Flow, Prompty]) -> dict:
+        """Extract signature for a callable class or a function or a flow. Signature indicates the ports of a flex flow
+        using the callable as entry.
 
-        If entry is a callable function, the signature includes inputs and outputs.
-        If entry is a callable class, the signature includes inputs, outputs, and init.
+        For flex flow:
+            If entry is a callable function, the signature includes inputs and outputs.
+            If entry is a callable class, the signature includes inputs, outputs, and init.
+
+        For prompty flow:
+            The signature includes inputs, outputs, and init. Init refers to PromptyModelConfiguration.
+
+        For dag flow:
+            The signature includes inputs and outputs.
+
         Type of each port is inferred from the type hints of the callable and follows type system of json schema.
         Given flow accepts json input in batch run and serve, we support only a part of types for those ports.
         Complicated types must be decorated with dataclasses.dataclass.
@@ -1100,7 +1099,30 @@ class FlowOperations(TelemetryMixin):
         :rtype: dict
         """
         # TODO: should we support string entry? If so, we should also add a parameter to specify the working directory
-        flow_meta, _, _ = self._infer_signature(entry=entry)
+        if isinstance(entry, Prompty):
+            flow_meta = {}
+        elif isinstance(entry, Flow):
+            # Get dag flow infer signature
+            executable_flow = entry._init_executable()
+            flow_meta = {"inputs": {}, "outputs": {}}
+            for k, v in executable_flow.inputs.items():
+                flow_meta["inputs"][k] = asdict(v, dict_factory=lambda x: {k: v for (k, v) in x if v})
+                flow_meta["inputs"][k]["type"] = flow_meta["inputs"][k]["type"].value
+            expect_item = ["type", "is_chat_output"]
+            for k, v in executable_flow.outputs.items():
+                flow_meta["outputs"][k] = asdict(
+                    v, dict_factory=lambda x: {k: v for (k, v) in x if v and k in expect_item}
+                )
+                flow_meta["outputs"][k]["type"] = flow_meta["outputs"][k]["type"].value
+
+        elif isinstance(entry, FlexFlow):
+            flow_meta, _, _ = self._infer_signature_flex_flow(entry=entry)
+        else:
+            flow_meta, _, _ = self._infer_signature_flex_flow(entry=entry)
+        for port_type in ["inputs", "outputs", "init"]:
+            if port_type not in flow_meta:
+                continue
+            convert_to_signature_type(flow_meta[port_type])
         return flow_meta
 
     def _save(
@@ -1118,7 +1140,7 @@ class FlowOperations(TelemetryMixin):
         # hide the language field before csharp support go public
         language: str = kwargs.get(LANGUAGE_KEY, FlowLanguage.Python)
 
-        entry_meta, code, snapshot_list = self._infer_signature(
+        entry_meta, code, snapshot_list = self._infer_signature_flex_flow(
             entry, code=code, keep_entry=True, validate=False, language=language
         )
 

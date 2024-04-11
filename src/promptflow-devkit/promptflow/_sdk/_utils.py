@@ -56,6 +56,7 @@ from promptflow._sdk._constants import (
     CommonYamlFields,
     RunInfoSources,
     RunMode,
+    SignatureValueType,
 )
 from promptflow._sdk._errors import (
     DecryptConnectionError,
@@ -68,7 +69,7 @@ from promptflow._utils.flow_utils import is_flex_flow, resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
-from promptflow.contracts.tool import ToolType
+from promptflow.contracts.tool import ToolType, ValueType
 from promptflow.core._utils import (
     get_used_connection_names_from_dict,
     render_jinja_template_content,
@@ -1065,6 +1066,20 @@ def is_flex_run(run: "Run") -> bool:
         return run._properties.get("azureml.promptflow.run_mode") == RunMode.EAGER
     # TODO(2901279): support eager mode for run created from run folder
     return False
+
+
+def convert_to_signature_type(meta_dict):
+    # signature is language irrelevant, so we apply json type system
+    value_type_map = {
+        ValueType.INT.value: SignatureValueType.INT.value,
+        ValueType.DOUBLE.value: SignatureValueType.NUMBER.value,
+        ValueType.LIST.value: SignatureValueType.ARRAY.value,
+        ValueType.BOOL.value: SignatureValueType.BOOL.value,
+    }
+
+    for port_name, port in meta_dict.items():
+        if port["type"] in value_type_map:
+            port["type"] = value_type_map[port["type"]]
 
 
 generate_flow_meta = _generate_flow_meta

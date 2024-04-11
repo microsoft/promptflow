@@ -21,6 +21,7 @@ CONNECTION_FILE = (PROMOTFLOW_ROOT / "connections.json").resolve().absolute().as
 FLOWS_DIR = (TEST_ROOT / "test_configs/flows").resolve().absolute().as_posix()
 EAGER_FLOWS_DIR = (TEST_ROOT / "test_configs/eager_flows").resolve().absolute().as_posix()
 FLOW_RESULT_KEYS = ["category", "evidence"]
+PROMPTY_DIR = (TEST_ROOT / "test_configs/prompty").resolve().absolute().as_posix()
 
 _client = PFClient()
 
@@ -557,3 +558,23 @@ class TestFlowSave:
                 },
             }
             assert os.listdir(temp_dir) == ["flow.flex.yaml", "hello.py"]
+
+    def test_flow_infer_signature(self):
+        pf = PFClient()
+        # Dag flow
+        flow = load_flow(source=Path(FLOWS_DIR) / "chat_flow")
+        meta = pf.flows.infer_signature(entry=flow)
+        assert meta == {
+            "inputs": {
+                "chat_history": {"type": "array"},
+                "question": {"default": "What is ChatGPT?", "is_chat_input": True, "type": "string"},
+            },
+            "outputs": {"answer": {"is_chat_output": True, "type": "string"}},
+        }
+        # Prompty
+        prompty = load_flow(source=Path(PROMPTY_DIR) / "prompty_example.prompty")
+        meta = pf.flows.infer_signature(entry=prompty)
+
+        # Flex flow
+        flex_flow = load_flow(source=Path(EAGER_FLOWS_DIR) / "basic_callable_class")
+        meta = pf.flows.infer_signature(entry=flex_flow)
