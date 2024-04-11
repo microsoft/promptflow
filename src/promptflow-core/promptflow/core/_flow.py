@@ -12,8 +12,9 @@ from promptflow._constants import DEFAULT_ENCODING, LANGUAGE_KEY, PROMPTY_EXTENS
 from promptflow._utils.flow_utils import is_flex_flow, is_prompty_flow, resolve_flow_path
 from promptflow._utils.yaml_utils import load_yaml_string
 from promptflow.core._errors import MissingRequiredInputError
+from promptflow.core._model_configuration import PromptyModelConfiguration
 from promptflow.core._prompty_utils import (
-    PromptyModelConfiguration,
+    convert_model_configuration_to_connection,
     convert_prompt_template,
     format_llm_response,
     get_open_ai_client_by_connection,
@@ -230,6 +231,55 @@ class Prompty(FlowBase):
         prompty = Prompty.load(source="path/to/prompty.prompty")
         result = prompty(input_a=1, input_b=2)
 
+        # Override model config with dict
+        model_config = {
+            "api": "chat",
+            "configuration": {
+                "type": "azure_openai",
+                "azure_deployment": "gpt-35-turbo",
+                "api_key": ${env:AZURE_OPENAI_API_KEY},
+                "api_version": ${env:AZURE_OPENAI_API_VERSION},
+                "azure_endpoint": ${env:AZURE_OPENAI_ENDPOINT},
+            },
+            "parameters": {
+                max_token: 512
+            }
+        }
+        prompty = Prompty.load(source="path/to/prompty.prompty", model=model_config)
+        result = prompty(input_a=1, input_b=2)
+
+        # Override model config with configuration
+        from promptflow.core._model_configuration import AzureOpenAIModelConfiguration
+        model_config = {
+            "api": "chat",
+            "configuration": AzureOpenAIModelConfiguration(
+                azure_deployment="gpt-35-turbo",
+                api_key="${env:AZURE_OPENAI_API_KEY}",
+                api_version=${env:AZURE_OPENAI_API_VERSION}",
+                azure_endpoint="${env:AZURE_OPENAI_ENDPOINT}",
+            ),
+            "parameters": {
+                max_token: 512
+            }
+        }
+        prompty = Prompty.load(source="path/to/prompty.prompty", model=model_config)
+        result = prompty(input_a=1, input_b=2)
+
+        # Override model config with created connection
+        from promptflow.core._model_configuration import AzureOpenAIModelConfiguration
+        model_config = {
+            "api": "chat",
+            "configuration": AzureOpenAIModelConfiguration(
+                connection="azure_open_ai_connection",
+                azure_deployment="gpt-35-turbo",
+            ),
+            "parameters": {
+                max_token: 512
+            }
+        }
+        prompty = Prompty.load(source="path/to/prompty.prompty", model=model_config)
+        result = prompty(input_a=1, input_b=2)
+
     """
 
     def __init__(
@@ -326,16 +376,19 @@ class Prompty(FlowBase):
         if args:
             raise UserErrorException("Prompty can only be called with keyword arguments.")
 
-        # 1.deal with prompt
+        # 1. Get connection
+        connection = convert_model_configuration_to_connection(self._model.configuration)
+
+        # 2.deal with prompt
         inputs = self._validate_inputs(kwargs)
         traced_convert_prompt_template = _traced(func=convert_prompt_template, args_to_ignore=["api"])
         template = traced_convert_prompt_template(self._template, inputs, self._model.api)
 
-        # 2. prepare params
-        params = prepare_open_ai_request_params(self._model, template)
+        # 3. prepare params
+        params = prepare_open_ai_request_params(self._model, template, connection)
 
-        # 3. send request to open ai
-        api_client = get_open_ai_client_by_connection(connection=self._model.get_connection())
+        # 4. send request to open ai
+        api_client = get_open_ai_client_by_connection(connection=connection)
 
         traced_llm_call = _traced(send_request_to_llm)
         response = traced_llm_call(api_client, self._model.api, params)
@@ -375,15 +428,19 @@ class AsyncPrompty(Prompty):
         if args:
             raise UserErrorException("Prompty can only be called with keyword arguments.")
 
-        # 1.deal with prompt
+        # 1. Get connection
+        connection = convert_model_configuration_to_connection(self._model.configuration)
+
+        # 2.deal with prompt
         inputs = self._validate_inputs(kwargs)
-        template = convert_prompt_template(self._template, inputs, self._model.api)
+        traced_convert_prompt_template = _traced(func=convert_prompt_template, args_to_ignore=["api"])
+        template = traced_convert_prompt_template(self._template, inputs, self._model.api)
 
-        # 2. prepare params
-        params = prepare_open_ai_request_params(self._model, template)
+        # 3. prepare params
+        params = prepare_open_ai_request_params(self._model, template, connection)
 
-        # 3. send request to open ai
-        api_client = get_open_ai_client_by_connection(connection=self._model.get_connection(), is_async=True)
+        # 4. send request to open ai
+        api_client = get_open_ai_client_by_connection(connection=connection, is_async=True)
 
         traced_llm_call = _traced(send_request_to_llm)
         response = await traced_llm_call(api_client, self._model.api, params)
