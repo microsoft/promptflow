@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 
 import pytest
+from dotenv import load_dotenv
 
 from promptflow._sdk._pf_client import PFClient
 from promptflow.contracts.run_info import Status
@@ -80,6 +81,8 @@ _client = PFClient()
 class TestAssistantEagerFlow:
     def test_eager_flow_with_assistant(self):
         flow_path = get_flow_folder("assistant_script", EAGER_FLOWS_ROOT).absolute()
+        # This used to load .env file as env variables
+        load_dotenv(dotenv_path=f"{flow_path}/.env")
         addon_tools = [
             {
                 "type": "function",

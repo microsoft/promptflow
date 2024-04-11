@@ -109,8 +109,7 @@ if __name__ == "__main__":
     # Open the file for writing
     with open(env_file_path, 'w') as f:
         # Iterate over dictionary items
-        for key, value in data.items():
-            # Write each item as 'key=value\n'
-            f.write(f'{key}={value}\n')
+        for key, val in data.items():
+            f.write(f'{key}={val}\n')
 
 
