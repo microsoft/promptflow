@@ -1073,6 +1073,7 @@ class TestFlowRun:
         # the run status might still be cancel requested, but it should be canceled eventually
         assert run.status in [RunStatus.CANCELED, RunStatus.CANCEL_REQUESTED]
 
+    @pytest.mark.skipif(not is_live(), reason="Content change in submission time which lead to recording issue.")
     @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
     def test_eager_flow_download(self, pf: PFClient, simple_eager_run: Run):
         run = simple_eager_run
