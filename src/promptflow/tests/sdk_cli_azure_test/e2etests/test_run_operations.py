@@ -37,7 +37,6 @@ from promptflow.azure._constants._flow import (
 from promptflow.azure._entities._flow import Flow
 from promptflow.azure._load_functions import load_flow
 from promptflow.exceptions import UserErrorException
-from promptflow.recording.record_mode import is_live
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
 
@@ -1037,7 +1036,6 @@ class TestFlowRun:
             pf.runs.download(run=run.name, output=temp)
             assert Path(temp, run.name, "snapshot/requirements").exists()
 
-    @pytest.mark.skipif(not is_live(), reason="unknown reason for failing in replay mode")
     def test_eager_flow_crud(self, pf: PFClient, randstr: Callable[[str], str], simple_eager_run: Run):
         run = simple_eager_run
         run = pf.runs.get(run)
@@ -1062,7 +1060,6 @@ class TestFlowRun:
         # run_data = pf.runs._get_run_from_run_history(run_id, original_form=True)[run_meta_data]
         # assert run_data[hidden] is False
 
-    @pytest.mark.skipif(not is_live(), reason="unknown reason for failing in replay mode")
     def test_eager_flow_cancel(self, pf: PFClient, randstr: Callable[[str], str]):
         """Test cancel eager flow."""
         # create a run
@@ -1079,7 +1076,6 @@ class TestFlowRun:
         # the run status might still be cancel requested, but it should be canceled eventually
         assert run.status in [RunStatus.CANCELED, RunStatus.CANCEL_REQUESTED]
 
-    @pytest.mark.skipif(not is_live(), reason="unknown reason for failing in replay mode")
     @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
     def test_eager_flow_download(self, pf: PFClient, simple_eager_run: Run):
         run = simple_eager_run
@@ -1136,7 +1132,6 @@ class TestFlowRun:
         run = pf.stream(run)
         assert run.status == RunStatus.COMPLETED
 
-    @pytest.mark.skip(reason="no flow.json for python anymore. Need to check flow.flex.yaml instead")
     @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
     def test_eager_flow_meta_generation(self, pf: PFClient, randstr: Callable[[str], str]):
         run = pf.run(
@@ -1150,12 +1145,12 @@ class TestFlowRun:
 
         # download the run and check flow's signature
         with TemporaryDirectory() as tmp_dir:
-            file = f"{DownloadedRun.SNAPSHOT_FOLDER}/.promptflow/flow.flex.yaml"
+            file = f"{DownloadedRun.SNAPSHOT_FOLDER}/flow.flex.yaml"
             pf.runs.download(run=run.name, output=tmp_dir)
             flow_file = Path(tmp_dir) / run.name / file
             assert flow_file.exists()
             flow_data = load_yaml(flow_file)
-            assert flow_data["inputs"] == {}
+            assert flow_data["inputs"] == {"input_val": {"type": "object"}}
 
     def test_session_id_with_different_env(self, pf: PFClient, randstr: Callable[[str], str]):
         run = pf.run(
@@ -1287,7 +1282,6 @@ class TestFlowRun:
                 )
                 pf.runs.create_or_update(run=run)
 
-    @pytest.mark.skipif(not is_live(), reason="unknown reason for failing in replay mode")
     @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
     def test_eager_flow_run_without_yaml(self, pf: PFClient, randstr: Callable[[str], str]):
         run = pf.run(
@@ -1311,7 +1305,6 @@ class TestFlowRun:
         # the YAML file will not exist in user's folder
         assert not Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/flow.flex.yaml").exists()
 
-    @pytest.mark.skipif(not is_live(), reason="unknown reason for failing in replay mode")
     def test_flex_flow_run(self, pf: PFClient, randstr: Callable[[str], str]):
         def assert_func(details_dict):
             return details_dict["outputs.func_input"] == [

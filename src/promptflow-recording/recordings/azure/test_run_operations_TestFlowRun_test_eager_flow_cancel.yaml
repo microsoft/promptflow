@@ -9,8 +9,8 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-azure-sdk/1.8.0.dev0 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.11.5 (Windows-10-10.0.22621-SP0)
+      - promptflow-azure-sdk/1.9.0.dev0 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.11.5 (Windows-10-10.0.22631-SP0)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000
   response:
@@ -39,7 +39,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.037'
+      - '0.035'
     status:
       code: 200
       message: OK
@@ -53,8 +53,8 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-azure-sdk/1.8.0.dev0 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.11.5 (Windows-10-10.0.22621-SP0)
+      - promptflow-azure-sdk/1.9.0.dev0 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.11.5 (Windows-10-10.0.22631-SP0)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores?count=30&isDefault=true&orderByAsc=false
   response:
@@ -91,7 +91,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.061'
+      - '0.075'
     status:
       code: 200
       message: OK
@@ -105,8 +105,8 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-azure-sdk/1.8.0.dev0 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.11.5 (Windows-10-10.0.22621-SP0)
+      - promptflow-azure-sdk/1.9.0.dev0 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.11.5 (Windows-10-10.0.22631-SP0)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore
   response:
@@ -143,7 +143,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.093'
+      - '0.084'
     status:
       code: 200
       message: OK
@@ -159,8 +159,8 @@ interactions:
       Content-Length:
       - '0'
       User-Agent:
-      - promptflow-azure-sdk/1.8.0.dev0 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.11.5 (Windows-10-10.0.22621-SP0)
+      - promptflow-azure-sdk/1.9.0.dev0 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.11.5 (Windows-10-10.0.22631-SP0)
     method: POST
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore/listSecrets
   response:
@@ -184,7 +184,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.081'
+      - '0.084'
     status:
       code: 200
       message: OK
@@ -198,9 +198,9 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - azsdk-python-storage-blob/12.19.0 Python/3.11.5 (Windows-10-10.0.22621-SP0)
+      - azsdk-python-storage-blob/12.19.0 Python/3.11.5 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Thu, 11 Apr 2024 06:40:07 GMT
+      - Thu, 11 Apr 2024 07:58:15 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -248,9 +248,9 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - azsdk-python-storage-blob/12.19.0 Python/3.11.5 (Windows-10-10.0.22621-SP0)
+      - azsdk-python-storage-blob/12.19.0 Python/3.11.5 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Thu, 11 Apr 2024 06:40:10 GMT
+      - Thu, 11 Apr 2024 07:58:16 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -282,8 +282,8 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-azure-sdk/1.8.0.dev0 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.11.5 (Windows-10-10.0.22621-SP0)
+      - promptflow-azure-sdk/1.9.0.dev0 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.11.5 (Windows-10-10.0.22631-SP0)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore
   response:
@@ -320,7 +320,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.081'
+      - '0.089'
     status:
       code: 200
       message: OK
@@ -336,8 +336,8 @@ interactions:
       Content-Length:
       - '0'
       User-Agent:
-      - promptflow-azure-sdk/1.8.0.dev0 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.11.5 (Windows-10-10.0.22621-SP0)
+      - promptflow-azure-sdk/1.9.0.dev0 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.11.5 (Windows-10-10.0.22631-SP0)
     method: POST
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore/listSecrets
   response:
@@ -361,7 +361,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.100'
+      - '0.095'
     status:
       code: 200
       message: OK
@@ -375,63 +375,13 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - azsdk-python-storage-blob/12.19.0 Python/3.11.5 (Windows-10-10.0.22621-SP0)
+      - azsdk-python-storage-blob/12.19.0 Python/3.11.5 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Thu, 11 Apr 2024 06:40:21 GMT
+      - Thu, 11 Apr 2024 07:58:22 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
     uri: https://fake_account_name.blob.core.windows.net/fake-container-name/LocalUpload/000000000000000000000000000000000000/long_running/.promptflow/flow.json
-  response:
-    body:
-      string: ''
-    headers:
-      accept-ranges:
-      - bytes
-      content-length:
-      - '240'
-      content-md5:
-      - Jhufs0AcW3EVYVA2x2i49w==
-      content-type:
-      - application/octet-stream
-      last-modified:
-      - Thu, 11 Apr 2024 06:34:19 GMT
-      server:
-      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
-      vary:
-      - Origin
-      x-ms-blob-type:
-      - BlockBlob
-      x-ms-creation-time:
-      - Thu, 11 Apr 2024 06:34:18 GMT
-      x-ms-meta-name:
-      - a59c90d8-5b8d-48cb-b37f-0c2735b7dadf
-      x-ms-meta-upload_status:
-      - completed
-      x-ms-meta-version:
-      - '1'
-      x-ms-version:
-      - '2023-11-03'
-    status:
-      code: 200
-      message: OK
-- request:
-    body: null
-    headers:
-      Accept:
-      - application/xml
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      User-Agent:
-      - azsdk-python-storage-blob/12.19.0 Python/3.11.5 (Windows-10-10.0.22621-SP0)
-      x-ms-date:
-      - Thu, 11 Apr 2024 06:40:25 GMT
-      x-ms-version:
-      - '2023-11-03'
-    method: HEAD
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/az-ml-artifacts/000000000000000000000000000000000000/long_running/.promptflow/flow.json
   response:
     body:
       string: ''
@@ -449,6 +399,96 @@ interactions:
     status:
       code: 404
       message: The specified blob does not exist.
+- request:
+    body: "entry: entry:my_flow\r\ninputs:\r\n  input_val:\r\n    type: object\r\n"
+    headers:
+      Accept:
+      - application/xml
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '63'
+      Content-MD5:
+      - UCeqylwUAghbnocA8h9+DQ==
+      Content-Type:
+      - application/octet-stream
+      If-None-Match:
+      - '*'
+      User-Agent:
+      - azsdk-python-storage-blob/12.19.0 Python/3.11.5 (Windows-10-10.0.22631-SP0)
+      x-ms-blob-type:
+      - BlockBlob
+      x-ms-date:
+      - Thu, 11 Apr 2024 07:58:23 GMT
+      x-ms-version:
+      - '2023-11-03'
+    method: PUT
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/LocalUpload/000000000000000000000000000000000000/long_running/flow.flex.yaml
+  response:
+    body:
+      string: ''
+    headers:
+      content-length:
+      - '0'
+      content-md5:
+      - UCeqylwUAghbnocA8h9+DQ==
+      last-modified:
+      - Thu, 11 Apr 2024 07:58:23 GMT
+      server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      x-ms-content-crc64:
+      - SykVdNuXWT8=
+      x-ms-request-server-encrypted:
+      - 'true'
+      x-ms-version:
+      - '2023-11-03'
+    status:
+      code: 201
+      message: Created
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/xml
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '0'
+      User-Agent:
+      - azsdk-python-storage-blob/12.19.0 Python/3.11.5 (Windows-10-10.0.22631-SP0)
+      x-ms-date:
+      - Thu, 11 Apr 2024 07:58:23 GMT
+      x-ms-meta-name:
+      - 0b957e31-65e7-4154-a5a7-e0fbb2fbe93f
+      x-ms-meta-upload_status:
+      - completed
+      x-ms-meta-version:
+      - '1'
+      x-ms-version:
+      - '2023-11-03'
+    method: PUT
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/LocalUpload/000000000000000000000000000000000000/long_running/.promptflow/flow.json?comp=metadata
+  response:
+    body:
+      string: ''
+    headers:
+      content-length:
+      - '0'
+      last-modified:
+      - Thu, 11 Apr 2024 07:58:24 GMT
+      server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      x-ms-request-server-encrypted:
+      - 'true'
+      x-ms-version:
+      - '2023-11-03'
+    status:
+      code: 200
+      message: OK
 - request:
     body: '{"flowDefinitionDataStoreName": "workspaceblobstore", "flowDefinitionBlobPath":
       "LocalUpload/000000000000000000000000000000000000/long_running/flow.flex.yaml",
@@ -471,8 +511,8 @@ interactions:
       Content-Type:
       - application/json
       User-Agent:
-      - promptflow-azure-sdk/1.8.0.dev0 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
-        Python/3.11.5 (Windows-10-10.0.22621-SP0)
+      - promptflow-azure-sdk/1.9.0.dev0 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
+        Python/3.11.5 (Windows-10-10.0.22631-SP0)
     method: POST
     uri: https://eastus.api.azureml.ms/flow/api/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/BulkRuns/submit
   response:
@@ -490,7 +530,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '6.237'
+      - '4.366'
     status:
       code: 200
       message: OK
@@ -504,8 +544,8 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-azure-sdk/1.8.0.dev0 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
-        Python/3.11.5 (Windows-10-10.0.22621-SP0)
+      - promptflow-azure-sdk/1.9.0.dev0 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
+        Python/3.11.5 (Windows-10-10.0.22631-SP0)
     method: GET
     uri: https://eastus.api.azureml.ms/flow/api/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/BulkRuns/name
   response:
@@ -515,15 +555,13 @@ interactions:
         "azureml://datastores/workspaceblobstore/paths/LocalUpload/e62bc4d5a164939b21d42dd420469da7/simple_eager_flow_data.jsonl"},
         "flowRunType": "FlowRun", "flowType": "Default", "runtimeName": "automatic",
         "inputsMapping": {}, "outputDatastoreName": "workspaceblobstore", "childRunBasePath":
-        "promptflow/PromptFlowArtifacts/name/flow_artifacts", "flowDagFileRelativePath":
-        "flow.flex.yaml", "flowSnapshotId": "e2008d2e-5d6b-4741-9fa6-717989cf5ed8",
-        "sessionId": "c75bbbb618ca32e1f22623bb99d6e011fd329b5c46498a2c", "studioPortalEndpoint":
-        "https://ml.azure.com/runs/name?wsid=/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}'
+        "promptflow/PromptFlowArtifacts/name/flow_artifacts", "sessionId": "9a2e4673eb0f4764ea75922a188f94ce17a4dd4a36ad1dbe",
+        "studioPortalEndpoint": "https://ml.azure.com/runs/name?wsid=/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}'
     headers:
       connection:
       - keep-alive
       content-length:
-      - '1092'
+      - '993'
       content-type:
       - application/json; charset=utf-8
       strict-transport-security:
@@ -535,7 +573,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.327'
+      - '0.239'
     status:
       code: 200
       message: OK
@@ -551,8 +589,8 @@ interactions:
       Content-Length:
       - '0'
       User-Agent:
-      - promptflow-azure-sdk/1.8.0.dev0 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
-        Python/3.11.5 (Windows-10-10.0.22621-SP0)
+      - promptflow-azure-sdk/1.9.0.dev0 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
+        Python/3.11.5 (Windows-10-10.0.22631-SP0)
     method: POST
     uri: https://eastus.api.azureml.ms/flow/api/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/BulkRuns/name/cancel
   response:
@@ -568,7 +606,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.292'
+      - '0.464'
     status:
       code: 200
       message: OK
@@ -582,8 +620,8 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-azure-sdk/1.8.0.dev0 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
-        Python/3.11.5 (Windows-10-10.0.22621-SP0)
+      - promptflow-azure-sdk/1.9.0.dev0 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
+        Python/3.11.5 (Windows-10-10.0.22631-SP0)
     method: GET
     uri: https://eastus.api.azureml.ms/flow/api/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/BulkRuns/name
   response:
@@ -593,15 +631,13 @@ interactions:
         "azureml://datastores/workspaceblobstore/paths/LocalUpload/e62bc4d5a164939b21d42dd420469da7/simple_eager_flow_data.jsonl"},
         "flowRunType": "FlowRun", "flowType": "Default", "runtimeName": "automatic",
         "inputsMapping": {}, "outputDatastoreName": "workspaceblobstore", "childRunBasePath":
-        "promptflow/PromptFlowArtifacts/name/flow_artifacts", "flowDagFileRelativePath":
-        "flow.flex.yaml", "flowSnapshotId": "e2008d2e-5d6b-4741-9fa6-717989cf5ed8",
-        "sessionId": "c75bbbb618ca32e1f22623bb99d6e011fd329b5c46498a2c", "studioPortalEndpoint":
-        "https://ml.azure.com/runs/name?wsid=/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}'
+        "promptflow/PromptFlowArtifacts/name/flow_artifacts", "sessionId": "9a2e4673eb0f4764ea75922a188f94ce17a4dd4a36ad1dbe",
+        "studioPortalEndpoint": "https://ml.azure.com/runs/name?wsid=/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}'
     headers:
       connection:
       - keep-alive
       content-length:
-      - '1092'
+      - '993'
       content-type:
       - application/json; charset=utf-8
       strict-transport-security:
@@ -613,7 +649,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.214'
+      - '0.155'
     status:
       code: 200
       message: OK
@@ -637,51 +673,46 @@ interactions:
     uri: https://eastus.api.azureml.ms/history/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/rundata
   response:
     body:
-      string: '{"runMetadata": {"runNumber": 1712817638, "rootRunId": "name", "createdUtc":
-        "2024-04-11T06:40:38.0531804+00:00", "createdBy": {"userObjectId": "00000000-0000-0000-0000-000000000000",
+      string: '{"runMetadata": {"runNumber": 1712822309, "rootRunId": "name", "createdUtc":
+        "2024-04-11T07:58:29.0277246+00:00", "createdBy": {"userObjectId": "00000000-0000-0000-0000-000000000000",
         "userPuId": "100320005227D154", "userIdp": null, "userAltSecId": null, "userIss":
         "https://sts.windows.net/00000000-0000-0000-0000-000000000000/", "userTenantId":
         "00000000-0000-0000-0000-000000000000", "userName": "Han Wang", "upn": null},
         "userId": "00000000-0000-0000-0000-000000000000", "token": null, "tokenExpiryTimeUtc":
-        null, "error": null, "warnings": null, "revision": 6, "statusRevision": 4,
-        "runUuid": "a0685303-47e8-43bf-bd06-c71a3dda690a", "parentRunUuid": null,
-        "rootRunUuid": "a0685303-47e8-43bf-bd06-c71a3dda690a", "lastStartTimeUtc":
-        null, "currentComputeTime": null, "computeDuration": "00:00:12.7607051", "effectiveStartTimeUtc":
+        null, "error": null, "warnings": null, "revision": 2, "statusRevision": 1,
+        "runUuid": "a981cb8e-0dcf-45cd-a81b-b621cc3a0153", "parentRunUuid": null,
+        "rootRunUuid": "a981cb8e-0dcf-45cd-a81b-b621cc3a0153", "lastStartTimeUtc":
+        null, "currentComputeTime": null, "computeDuration": "00:00:00", "effectiveStartTimeUtc":
         null, "lastModifiedBy": {"userObjectId": "00000000-0000-0000-0000-000000000000",
         "userPuId": "100320005227D154", "userIdp": null, "userAltSecId": null, "userIss":
         "https://sts.windows.net/00000000-0000-0000-0000-000000000000/", "userTenantId":
         "00000000-0000-0000-0000-000000000000", "userName": "Han Wang", "upn": null},
-        "lastModifiedUtc": "2024-04-11T06:40:40.2073637+00:00", "duration": "00:00:12.7607051",
+        "lastModifiedUtc": "2024-04-11T07:58:29.0277246+00:00", "duration": "00:00:00",
         "cancelationReason": null, "currentAttemptId": 1, "runId": "name", "parentRunId":
         null, "experimentId": "b0eb6a8a-ae84-4bfe-9741-689a08e793d8", "status": "Canceled",
-        "startTimeUtc": "2024-04-11T06:40:49.927912+00:00", "endTimeUtc": "2024-04-11T06:41:02.6886171+00:00",
+        "startTimeUtc": "2024-04-11T07:58:37.7965153+00:00", "endTimeUtc": "2024-04-11T07:58:37.7965153+00:00",
         "scheduleId": null, "displayName": "name", "name": null, "dataContainerId":
         "dcid.name", "description": null, "hidden": false, "runType": "azureml.promptflow.FlowRun",
         "runTypeV2": {"orchestrator": null, "traits": [], "attribution": "PromptFlow",
         "computeType": null}, "properties": {"azureml.promptflow.runtime_name": "automatic",
         "azureml.promptflow.input_data": "azureml://datastores/workspaceblobstore/paths/LocalUpload/e62bc4d5a164939b21d42dd420469da7/simple_eager_flow_data.jsonl",
-        "azureml.promptflow.session_id": "c75bbbb618ca32e1f22623bb99d6e011fd329b5c46498a2c",
+        "azureml.promptflow.session_id": "9a2e4673eb0f4764ea75922a188f94ce17a4dd4a36ad1dbe",
         "azureml.promptflow.definition_file_name": "flow.flex.yaml", "azureml.promptflow.flow_lineage_id":
-        "5ea4d8ed1431bf7fbc26f2c74ba16e38e8927ed93ec75ff608f8e86712ef17c2", "azureml.promptflow.flow_definition_datastore_name":
-        "workspaceblobstore", "azureml.promptflow.flow_definition_blob_path": "LocalUpload/6298c89a42d9aaedd7ef3847b60da060/long_running/flow.flex.yaml",
-        "_azureml.evaluation_run": "promptflow.BatchRun", "azureml.promptflow.snapshot_id":
-        "e2008d2e-5d6b-4741-9fa6-717989cf5ed8", "azureml.promptflow.run_mode": "Eager",
-        "azureml.promptflow.runtime_version": ""}, "parameters": {}, "actionUris":
+        "1e36c74ec53bc4d84e2453315d1b9c448587c1dc5af0f39c65e6c4c9f3ce8034", "azureml.promptflow.flow_definition_datastore_name":
+        "workspaceblobstore", "azureml.promptflow.flow_definition_blob_path": "LocalUpload/fa9f9a5af654fd199cc790608633401c/long_running/flow.flex.yaml",
+        "_azureml.evaluation_run": "promptflow.BatchRun"}, "parameters": {}, "actionUris":
         {}, "scriptName": null, "target": null, "uniqueChildRunComputeTargets": [],
         "tags": {}, "settings": {}, "services": {}, "inputDatasets": [], "outputDatasets":
         [], "runDefinition": null, "jobSpecification": null, "primaryMetricName":
         null, "createdFrom": null, "cancelUri": null, "completeUri": null, "diagnosticsUri":
         null, "computeRequest": null, "compute": null, "retainForLifetimeOfWorkspace":
-        false, "queueingInfo": null, "inputs": null, "outputs": {"debug_info": {"assetId":
-        "azureml://locations/eastus/workspaces/00000/data/azureml_name_output_data_debug_info/versions/1",
-        "type": "UriFolder"}, "flow_outputs": {"assetId": "azureml://locations/eastus/workspaces/00000/data/azureml_name_output_data_flow_outputs/versions/1",
-        "type": "UriFolder"}}}, "runDefinition": null, "jobSpecification": null, "systemSettings":
-        null}'
+        false, "queueingInfo": null, "inputs": null, "outputs": null}, "runDefinition":
+        null, "jobSpecification": null, "systemSettings": null}'
     headers:
       connection:
       - keep-alive
       content-length:
-      - '4305'
+      - '3630'
       content-type:
       - application/json; charset=utf-8
       strict-transport-security:
@@ -693,7 +724,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.048'
+      - '0.036'
     status:
       code: 200
       message: OK
