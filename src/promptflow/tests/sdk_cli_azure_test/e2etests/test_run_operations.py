@@ -1134,8 +1134,6 @@ class TestFlowRun:
 
     @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
     def test_eager_flow_meta_generation(self, pf: PFClient, randstr: Callable[[str], str]):
-        # delete the .promptflow/ folder
-        shutil.rmtree(f"{EAGER_FLOWS_DIR}/simple_with_req/.promptflow", ignore_errors=True)
         run = pf.run(
             flow=f"{EAGER_FLOWS_DIR}/simple_with_req",
             data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
@@ -1145,14 +1143,14 @@ class TestFlowRun:
         run = pf.runs.get(run)
         assert run.status == RunStatus.COMPLETED
 
-        # download the run and check .promptflow/flow.json
-        expected_files = [
-            f"{DownloadedRun.SNAPSHOT_FOLDER}/.promptflow/flow.json",
-        ]
+        # download the run and check flow's signature
         with TemporaryDirectory() as tmp_dir:
+            file = (f"{DownloadedRun.SNAPSHOT_FOLDER}/.promptflow/flow.flex.yaml",)
             pf.runs.download(run=run.name, output=tmp_dir)
-            for file in expected_files:
-                assert Path(tmp_dir, run.name, file).exists()
+            flow_file = Path(tmp_dir, run.name, file)
+            assert flow_file.exists()
+            flow_data = load_yaml(flow_file)
+            assert flow_data["inputs"] == {}
 
     def test_session_id_with_different_env(self, pf: PFClient, randstr: Callable[[str], str]):
         run = pf.run(
