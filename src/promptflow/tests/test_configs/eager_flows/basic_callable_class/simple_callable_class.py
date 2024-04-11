@@ -1,12 +1,20 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import dataclasses
+
+@dataclasses.dataclass
+class FlowOutput:
+    obj_input: str
+    func_input: str
+    obj_id: str
+
 
 class MyFlow:
     def __init__(self, obj_input: str):
         self.obj_input = obj_input
 
-    def __call__(self, func_input: str) -> dict:
+    def __call__(self, func_input: str) -> FlowOutput:
         return {
             "obj_input": self.obj_input,
             "func_input": func_input,
