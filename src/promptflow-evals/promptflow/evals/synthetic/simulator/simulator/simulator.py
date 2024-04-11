@@ -39,6 +39,7 @@ USER_MD = os.path.join(template_dir, "user.md")  # type: ignore[has-type]
 class Simulator:
     def __init__(
         self,
+        *,
         simulator_connection: "AzureOpenAIModelConfiguration" = None,  # type: ignore[name-defined]
         ml_client: "MLClient" = None,  # type: ignore[name-defined]
         simulate_callback: Optional[Callable[[Dict], Dict]] = None,
@@ -184,6 +185,7 @@ class Simulator:
 
     async def simulate_async(
         self,
+        *,
         template: "Template",
         max_conversation_turns: int = 1,
         parameters: Optional[List[dict]] = None,
@@ -280,6 +282,7 @@ class Simulator:
                             max_conversation_turns=max_conversation_turns,
                             api_call_retry_limit=api_call_retry_limit,
                             api_call_delay_sec=api_call_delay_sec,
+                            api_call_retry_sleep_sec=api_call_retry_sleep_sec,
                             sem=semaphore,
                         )
                     )
@@ -305,6 +308,7 @@ class Simulator:
 
     async def _simulate_async(
         self,
+        *,
         template: "Template",
         max_conversation_turns: int,
         parameters: Optional[dict] = None,
@@ -524,6 +528,7 @@ class Simulator:
 
     @staticmethod
     def from_fn(
+        *,
         fn: Callable[[Any], dict],
         simulator_connection: "AzureOpenAIModelConfiguration" = None,  # type: ignore[name-defined]
         ml_client: "MLClient" = None,  # type: ignore[name-defined]
@@ -582,6 +587,7 @@ class Simulator:
 
     @staticmethod
     def from_pf_path(  # pylint: disable=unused-argument
+        *,
         pf_path: str,
         simulator_connection: "AzureOpenAIModelConfiguration" = None,  # type: ignore[name-defined]
         ml_client: "MLClient" = None,  # type: ignore[name-defined]
