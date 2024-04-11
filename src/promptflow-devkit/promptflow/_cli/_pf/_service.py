@@ -157,42 +157,35 @@ def start_service(args):
     port = args.port
     if args.debug:
         os.environ[PF_SERVICE_DEBUG] = "true"
-
-    if is_run_from_built_binary():
-        # For msi installer/executable, use sdk api to start pfs since it's not supported to invoke waitress by cli
-        # directly after packaged by Pyinstaller.
-        parent_dir = os.path.dirname(sys.executable)
-        output_path = os.path.join(parent_dir, "output.txt")
-        with redirect_stdout_to_file(output_path):
-            port = validate_port(port, args.force)
-            global app
-            if app is None:
-                app, _ = create_app()
-            if os.environ.get(PF_SERVICE_DEBUG) == "true":
-                app.logger.setLevel(logging.DEBUG)
-            else:
-                app.logger.setLevel(logging.INFO)
-            message = f"Starting Prompt Flow Service on {port}, version: {get_pfs_version()}."
-            app.logger.info(message)
-            print(message)
-            sys.stdout.flush()
+        if not is_run_from_built_binary():
+            add_executable_script_to_env_path()
+        port = _prepare_app_for_foreground_service(port, args.force)
         waitress.serve(app, host="127.0.0.1", port=port, threads=PF_SERVICE_WORKER_NUM)
     else:
-        port = validate_port(port, args.force)
-        add_executable_script_to_env_path()
-        # Start a pfs process using detach mode. It will start a new process and create a new app. So we use environment
-        # variable to pass the debug mode, since it will inherit parent process environment variable.
-        if platform.system() == "Windows":
-            _start_background_service_on_windows(port)
+        if is_run_from_built_binary():
+            # For msi installer/executable, use sdk api to start pfs since it's not supported to invoke waitress by cli
+            # directly after packaged by Pyinstaller.
+            parent_dir = os.path.dirname(sys.executable)
+            output_path = os.path.join(parent_dir, "output.txt")
+            with redirect_stdout_to_file(output_path):
+                port = _prepare_app_for_foreground_service(port, args.force)
+            waitress.serve(app, host="127.0.0.1", port=port, threads=PF_SERVICE_WORKER_NUM)
         else:
-            _start_background_service_on_unix(port)
-        is_healthy = check_pfs_service_status(port)
-        if is_healthy:
-            message = f"Start Promptflow Service on port {port}, version: {get_pfs_version()}."
-            print(message)
-            logger.info(message)
-        else:
-            logger.warning(f"Promptflow service start failed in {port}. {hint_stop_before_upgrade}")
+            port = validate_port(port, args.force)
+            add_executable_script_to_env_path()
+            # Start a pfs process using detach mode. It will start a new process and create a new app. So we use
+            # environment variable to pass the debug mode, since it will inherit parent process environment variable.
+            if platform.system() == "Windows":
+                _start_background_service_on_windows(port)
+            else:
+                _start_background_service_on_unix(port)
+            is_healthy = check_pfs_service_status(port)
+            if is_healthy:
+                message = f"Start Promptflow Service on port {port}, version: {get_pfs_version()}."
+                print(message)
+                logger.info(message)
+            else:
+                logger.warning(f"Promptflow service start failed in {port}. {hint_stop_before_upgrade}")
 
 
 def validate_port(port, force_start):
@@ -236,6 +229,21 @@ def redirect_stdout_to_file(path):
     finally:
         sys.stdout = old_stdout
         sys.stderr = old_stderr
+
+
+def _prepare_app_for_foreground_service(port, force_start):
+    port = validate_port(port, force_start)
+    global app
+    if app is None:
+        app, _ = create_app()
+    if os.environ.get(PF_SERVICE_DEBUG) == "true":
+        app.logger.setLevel(logging.DEBUG)
+    else:
+        app.logger.setLevel(logging.INFO)
+    message = f"Starting Prompt Flow Service on {port}, version: {get_pfs_version()}."
+    app.logger.info(message)
+    print(message)
+    return port
 
 
 def _start_background_service_on_windows(port):
