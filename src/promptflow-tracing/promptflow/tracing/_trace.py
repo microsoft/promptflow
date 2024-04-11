@@ -149,8 +149,6 @@ def enrich_span_with_trace_type(span, inputs, output, trace_type):
 def traced_generator(original_span: ReadableSpan, inputs, generator):
     context = original_span.get_span_context()
     link = Link(context)
-    generator_proxy = GeneratorProxy(generator)
-    yield from generator_proxy
     # If start_trace is not called, the name of the original_span will be empty.
     with open_telemetry_tracer.start_as_current_span(
         f"Iterated({original_span.name})",
@@ -160,6 +158,8 @@ def traced_generator(original_span: ReadableSpan, inputs, generator):
         # Enrich the new span with input before generator iteration to prevent loss of input information.
         # The input is as an event within this span.
         enrich_span_with_input(span, inputs)
+        generator_proxy = GeneratorProxy(generator)
+        yield from generator_proxy
         generator_output = generator_proxy.items
 
         # Enrich LLM span for OpenAI streaming output

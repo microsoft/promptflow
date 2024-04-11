@@ -2,7 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-import asyncio
 import logging
 
 from fastapi import APIRouter, Request
@@ -51,8 +50,19 @@ def get_score_router(logger):
         else:
             ctx = None
 
-        flow_result = await asyncio.to_thread(execute, ctx, data, run_id, disable_data_logging, app)
-        _request_ctx_var.get()["flow_result"] = flow_result
+        token = context.attach(ctx) if ctx else None
+        try:
+            if run_id:
+                OperationContext.get_instance()._add_otel_attributes("request_id", run_id)
+            flow_result = await app.flow_invoker.invoke_async(
+                data, run_id=run_id, disable_input_output_logging=disable_data_logging
+            )  # noqa
+            # return flow_result
+            _request_ctx_var.get()["flow_result"] = flow_result
+        finally:
+            # detach trace context if exist
+            if token:
+                context.detach(token)
 
         # check flow result, if failed, return error response
         if flow_result.run_info.status != Status.Completed:
@@ -78,19 +88,5 @@ def get_score_router(logger):
         _request_ctx_var.get()["streaming"] = response_creator.has_stream_field and response_creator.accept_event_stream
         app.flow_monitor.setup_streaming_monitor_if_needed(response_creator)
         return response_creator.create_response()
-
-    def execute(ctx, data, run_id, disable_data_logging, app):
-        token = context.attach(ctx) if ctx else None
-        try:
-            if run_id:
-                OperationContext.get_instance()._add_otel_attributes("request_id", run_id)
-            flow_result = app.flow_invoker.invoke(
-                data, run_id=run_id, disable_input_output_logging=disable_data_logging
-            )  # noqa
-            return flow_result
-        finally:
-            # detach trace context if exist
-            if token:
-                context.detach(token)
 
     return router

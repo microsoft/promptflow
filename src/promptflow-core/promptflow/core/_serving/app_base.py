@@ -12,7 +12,7 @@ from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.user_agent_utils import setup_user_agent_to_operation_context
 from promptflow.core import Flow
 from promptflow.core._serving.extension.extension_factory import ExtensionFactory
-from promptflow.core._serving.flow_invoker import FlowInvoker
+from promptflow.core._serving.flow_invoker import AsyncFlowInvoker
 from promptflow.core._serving.utils import get_output_fields_to_remove, get_sample_json, load_feedback_swagger
 from promptflow.core._utils import init_executable
 from promptflow.storage._run_storage import DummyRunStorage
@@ -27,7 +27,7 @@ class PromptflowServingAppBasic(ABC):
         # default to local, can be override when creating the app
         self.extension = ExtensionFactory.create_extension(logger, **kwargs)
 
-        self.flow_invoker: FlowInvoker = None
+        self.flow_invoker: AsyncFlowInvoker = None
         # parse promptflow project path
         self.project_path = self.extension.get_flow_project_path()
         logger.info(f"Project path: {self.project_path}")
@@ -79,7 +79,7 @@ class PromptflowServingAppBasic(ABC):
         if self.flow_invoker:
             return
         logger.info("Promptflow executor starts initializing...")
-        self.flow_invoker = FlowInvoker(
+        self.flow_invoker = AsyncFlowInvoker(
             flow=Flow.load(source=self.project_path),
             connection_provider=self.connection_provider,
             streaming=self.streaming_response_required,
