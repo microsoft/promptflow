@@ -81,7 +81,7 @@ requires = [
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-pfapp = "promptflow.execution_app:main"
+pfapp = "promptflow.execution_app:start_server"
 
 [tool.pytest.ini_options]
 markers = [

@@ -1,27 +1,14 @@
 import multiprocessing
 import os
-import signal
 import subprocess
-import sys
 from pathlib import Path
 
 from promptflow._utils.logger_utils import service_logger
-
-# Global variable to store the server process
-server_process: subprocess.Popen = None
 
 
 class RunMode:
     COMPUTE = "compute"
     SERVING = "serving"
-
-
-def signal_handler(signal, frame):
-    service_logger.info("Received termination signal, terminating the server...")
-    if server_process is not None:
-        server_process.terminate()
-        server_process.wait()
-    sys.exit(0)
 
 
 def get_process_num() -> int:
@@ -92,7 +79,6 @@ def start_server():
     """Start promptflow server based on run mode."""
 
     run_mode = get_run_mode()
-    process = None
     if run_mode == RunMode.SERVING:
         worker_num = str(get_process_num())
         worker_threads = os.getenv("PROMPTFLOW_WORKER_THREADS", "1")
@@ -101,7 +87,7 @@ def start_server():
             f"Start promptflow serving server with worker_num: {worker_num}, "
             f"worker_threads: {worker_threads}, app: {gunicorn_app}"
         )
-        process = subprocess.Popen(
+        subprocess.run(
             [
                 "gunicorn",
                 "-w",
@@ -120,17 +106,4 @@ def start_server():
         port = os.getenv("PORT", "8000")
         uvicorn_app = "promptflow.executor._service.app:app"
         service_logger.info(f"Start promptflow python server with app: {uvicorn_app}")
-        process = subprocess.Popen(
-            ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "-b", f"{host}:{port}", uvicorn_app]
-        )
-    return process
-
-
-def main():
-    # Register signal handler
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
-
-    # Start the server and wait for it to finish
-    server_process = start_server()
-    server_process.wait()
+        subprocess.run(["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "-b", f"{host}:{port}", uvicorn_app])
