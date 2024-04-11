@@ -17,7 +17,6 @@ from aiohttp.web import HTTPException
 from aiohttp_retry import RandomRetry, RetryClient
 
 from .identity_manager import APITokenManager
-from .images import format_multimodal_prompt, replace_prompt_captions
 
 MIN_ERRORS_TO_FAIL = 3
 MAX_TIME_TAKEN_RECORDS = 20_000

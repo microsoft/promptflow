@@ -271,10 +271,9 @@ class TestSimulator:
             simulator = Simulator(
                 simulator_connection="some value", ml_client="some value", simulate_callback=lambda x: x
             )
-
         assert str(all_none_exc_info.value).startswith(
-            "One and only one of the parameters [ml_client, simulator_connection]"
+            "One and only one of the parameters [simulator_connection, ml_client]"
         )
         assert str(all_set_exc_info.value).startswith(
-            "One and only one of the parameters [ml_client, simulator_connection]"
+            "One and only one of the parameters [simulator_connection, ml_client]"
         )

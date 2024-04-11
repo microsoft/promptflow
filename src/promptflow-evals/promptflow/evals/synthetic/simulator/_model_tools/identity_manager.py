@@ -9,10 +9,8 @@ import time
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Optional
-from urllib.parse import urlparse
 
 from azure.identity import AzureCliCredential, ManagedIdentityCredential
-from azure.keyvault.secrets import SecretClient
 from msal import ConfidentialClientApplication
 
 http_logger = logging.getLogger("azure.core.pipeline.policies.http_logging_policy")
@@ -34,15 +32,6 @@ def build_token_manager(
 ):
     authorization_header = "Bearer"
 
-    # Define authorization token manager
-    if authorization_type == "key_vault_secret":
-        if endpoint_type != "openai_api":
-            authorization_header = "api-key"
-        return KeyVaultAPITokenManager(
-            secret_identifier=keyvault_secret_identifier,
-            auth_header=authorization_header,
-            logger=logger,
-        )
     if authorization_type == "managed_identity":
         if endpoint_type == "azure_endpoint":
             token_scope = TokenScope.AZURE_ENDPOINT
@@ -105,26 +94,6 @@ class ManagedIdentityAPITokenManager(APITokenManager):
                 self.token = self.credential.get_token(self.token_scope.value).token
                 self.logger.info("Refreshed Azure endpoint token.")
 
-        return self.token
-
-
-class KeyVaultAPITokenManager(APITokenManager):
-    def __init__(self, secret_identifier, logger, **kwargs):
-        super().__init__(logger, **kwargs)
-
-        # Parse secret identifier to get Key Vault URL and secret name
-        parsed_uri = urlparse(secret_identifier)
-        keyvault_url = "{uri.scheme}://{uri.netloc}/".format(uri=parsed_uri)
-        secret_name = parsed_uri.path.split("/")[2]
-
-        # Get Open AI API key from Key Vault and set it
-        secret_client = SecretClient(vault_url=keyvault_url, credential=self.credential)
-        openai_api_secret = secret_client.get_secret(secret_name)
-        logger.info(f"Retrieved API key: {openai_api_secret.name} from Azure Key Vault")
-
-        self.token = openai_api_secret.value
-
-    async def get_token(self):
         return self.token
 
 
