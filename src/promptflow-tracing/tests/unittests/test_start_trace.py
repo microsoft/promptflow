@@ -38,6 +38,11 @@ def reset_tracer_provider():
         yield
 
 
+def get_collection_from_tracer_provider() -> str:
+    tracer_provider: TracerProvider = trace.get_tracer_provider()
+    return tracer_provider.resource.attributes[ResourceAttributesFieldName.COLLECTION]
+
+
 @pytest.mark.unittest
 @pytest.mark.usefixtures("mock_devkit_not_installed", "reset_tracer_provider")
 class TestStartTrace:
@@ -80,10 +85,6 @@ class TestStartTrace:
         assert tracer_provider.resource.attributes[ResourceAttributesFieldName.COLLECTION] == new_collection
 
     def test_collection_override(self) -> None:
-        def get_collection_from_tracer_provider() -> str:
-            tracer_provider: TracerProvider = trace.get_tracer_provider()
-            return tracer_provider.resource.attributes[ResourceAttributesFieldName.COLLECTION]
-
         start_trace()
         collection_from_cwd = get_collection_from_tracer_provider()
         user_specified_collection1 = str(uuid.uuid4())
@@ -99,6 +100,20 @@ class TestStartTrace:
         start_trace(collection=user_specified_collection2)
         assert get_collection_from_tracer_provider() != user_specified_collection1
         assert get_collection_from_tracer_provider() == user_specified_collection2
+
+    def test_collection_internal_override(self) -> None:
+        start_trace()
+        # internal collection can override when no user specified
+        internal_collection = str(uuid.uuid4())
+        start_trace(_collection=internal_collection)
+        assert get_collection_from_tracer_provider() == internal_collection
+        # user specified will override internal collection
+        user_specified_collection = str(uuid.uuid4())
+        start_trace(collection=user_specified_collection)
+        assert get_collection_from_tracer_provider() == user_specified_collection
+        # internal collection cannot override user specified
+        start_trace(_collection=internal_collection)
+        assert get_collection_from_tracer_provider() == user_specified_collection
 
     def test_skip_tracing_local_setup(self, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
         spy = mocker.spy(promptflow.tracing._start_trace, "_is_devkit_installed")
