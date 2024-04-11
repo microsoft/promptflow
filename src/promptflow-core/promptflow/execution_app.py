@@ -1,6 +1,7 @@
 import multiprocessing
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 from promptflow._utils.logger_utils import service_logger
@@ -99,11 +100,17 @@ def start_server():
                 "--timeout",
                 "300",
                 gunicorn_app,
-            ]
+            ],
+            stdout=sys.stdout,
+            stderr=sys.stderr,
         )
     else:
         host = os.getenv("HOST", "0.0.0.0")
         port = os.getenv("PORT", "8000")
         uvicorn_app = "promptflow.executor._service.app:app"
         service_logger.info(f"Start promptflow python server with app: {uvicorn_app}")
-        subprocess.run(["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "-b", f"{host}:{port}", uvicorn_app])
+        subprocess.run(
+            ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "-b", f"{host}:{port}", uvicorn_app],
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+        )
