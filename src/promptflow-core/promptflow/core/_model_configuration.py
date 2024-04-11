@@ -21,10 +21,7 @@ class AzureOpenAIModelConfiguration(ModelConfiguration):
 
     def __post_init__(self):
         self._type = ConnectionType.AZURE_OPEN_AI
-        if (
-            any([self.azure_endpoint, self.api_key, self.api_version, self.azure_ad_token_provider, self.organization])
-            and self.connection
-        ):
+        if any([self.azure_endpoint, self.api_key, self.api_version, self.organization]) and self.connection:
             raise InvalidConnectionError("Cannot configure model config and connection at the same time.")
 
 
