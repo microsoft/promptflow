@@ -18,3 +18,7 @@ class TestGeneralAPIs:
         assert isinstance(response_json, dict)
         assert "promptflow" in response_json
         assert response_json["promptflow"] == get_pfs_version()
+
+    def test_rootpage_redirect(self, pfs_op: PFSOperations) -> None:
+        response = pfs_op.root_page()
+        assert response.status_code == 302
