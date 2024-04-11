@@ -81,15 +81,16 @@ jobs:
       - name: install promptflow dependencies
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: |
-          poetry run pip install ${{ env.TRACING_DIRECTORY }}
-          poetry run pip install ${{ env.CORE_DIRECTORY }}[azureml-serving]
-          poetry run pip install ${{ env.DEVKIT_DIRECTORY }}[pyarrow]
-          poetry run pip install ${{ env.WORKING_DIRECTORY }}
+          cd ..
+          poetry run pip install ./promptflow-tracing
+          poetry run pip install ./promptflow-core[azureml-serving]
+          poetry run pip install ./promptflow-devkit[pyarrow]
+          poetry run pip install ./promptflow-azure
 
           echo "Need to install promptflow to avoid tool dependency issue"
-          poetry run pip install ${{ env.PROMPTFLOW_DIRECTORY }}
-          poetry run pip install ${{ env.TOOL_DIRECTORY }}
-          poetry run pip install ${{ env.RECORD_DIRECTORY }}
+          poetry run pip install ./promptflow
+          poetry run pip install ./promptflow-tools
+          poetry run pip install ./promptflow-recording
 
           poetry run pip show promptflow-tracing
           poetry run pip show promptflow-core
@@ -98,11 +99,18 @@ jobs:
           poetry run pip show promptflow-tools
 
       - name: Generate (mock) connections.json
+        shell: pwsh
         working-directory: ${{ env.PROMPTFLOW_DIRECTORY }}
         run: cp ${{ github.workspace }}/src/promptflow/dev-connections.json.example ${{ github.workspace }}/src/promptflow/connections.json
 
       - name: Run Test
         working-directory: ${{ env.WORKING_DIRECTORY }}
+        if: runner.os != 'Windows'
         run: |
           poetry run pytest ./tests/sdk_cli_azure_test ../promptflow-azure/tests/sdk_cli_azure_test -n auto -m "perf_monitor_test"
+      - name: Run Test (Windows)
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        if: runner.os == 'Windows'
+        run: |
+          poetry run pytest .\tests\sdk_cli_azure_test ..\promptflow-azure\tests\sdk_cli_azure_test -n auto -m "perf_monitor_test"
 
