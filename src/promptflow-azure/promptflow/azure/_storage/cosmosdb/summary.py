@@ -1,4 +1,3 @@
-import datetime
 import logging
 import time
 import typing
@@ -36,15 +35,15 @@ class SummaryLine:
     session_id: str
     trace_id: str
     collection_id: str
-    root_span_id: str = ""
+    root_span_id: str = None
     inputs: typing.Dict = field(default_factory=dict)
     outputs: typing.Dict = field(default_factory=dict)
-    start_time: str = ""
-    end_time: str = ""
-    status: str = ""
+    start_time: str = None
+    end_time: str = None
+    status: str = None
     latency: float = 0.0
-    name: str = ""
-    kind: str = ""
+    name: str = None
+    kind: str = None
     created_by: typing.Dict = field(default_factory=dict)
     cumulative_token_count: typing.Optional[typing.Dict[str, int]] = field(default_factory=dict)
     evaluations: typing.Dict = field(default_factory=dict)
@@ -198,9 +197,7 @@ class Summary:
 
         # Span's original format don't include latency, so we need to calculate it.
         # Convert ISO 8601 formatted strings to datetime objects
-        start_time_date = datetime.datetime.fromisoformat(start_time.replace("Z", "+00:00"))
-        end_time_date = datetime.datetime.fromisoformat(end_time.replace("Z", "+00:00"))
-        latency = (end_time_date - start_time_date).total_seconds()
+        latency = (self.span.end_time - self.span.start_time).total_seconds()
         # calculate `cumulative_token_count`
         completion_token_count = int(attributes.get(SpanAttributeFieldName.COMPLETION_TOKEN_COUNT, 0))
         prompt_token_count = int(attributes.get(SpanAttributeFieldName.PROMPT_TOKEN_COUNT, 0))
@@ -228,7 +225,7 @@ class Summary:
             status=self.span.status[SpanStatusFieldName.STATUS_CODE],
             latency=latency,
             name=self.span.name,
-            kind=attributes[SpanAttributeFieldName.SPAN_TYPE],
+            kind=attributes.get(SpanAttributeFieldName.SPAN_TYPE, None),
             cumulative_token_count=cumulative_token_count,
             created_by=self.created_by,
         )
