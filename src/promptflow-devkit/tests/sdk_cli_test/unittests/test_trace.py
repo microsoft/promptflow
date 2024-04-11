@@ -30,6 +30,7 @@ from promptflow._sdk._constants import (
     TRACE_DEFAULT_COLLECTION,
     ContextAttributeKey,
 )
+from promptflow._sdk._errors import PromptFlowServiceInvokeError
 from promptflow._sdk._tracing import start_trace_with_devkit
 from promptflow._sdk.operations._trace_operations import TraceOperations
 from promptflow.client import PFClient
@@ -196,6 +197,13 @@ class TestStartTrace:
                 tracer_provider._active_span_processor._span_processors[0].span_exporter._endpoint
                 == f"http://localhost:{MOCK_PROMPTFLOW_SERVICE_PORT}/v1/traces"
             )
+
+    def test_pfs_invocation_failed_in_start_trace(self):
+        with mock.patch("promptflow._sdk._tracing._invoke_pf_svc"), mock.patch(
+            "promptflow._sdk._tracing.is_pfs_service_healthy", return_value=False
+        ):
+            with pytest.raises(PromptFlowServiceInvokeError):
+                start_trace_with_devkit(collection=str(uuid.uuid4()))
 
 
 @pytest.mark.unittest
