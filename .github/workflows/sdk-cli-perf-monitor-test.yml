@@ -71,16 +71,27 @@ jobs:
       - run: |
           source .venv/scripts/activate
           pytest --version
+          cd ..
+          poetry run pip install .\promptflow-tracing
+          poetry run pip install .\promptflow-core[azureml-serving]
+          poetry run pip install .\promptflow-devkit[pyarrow]
+          poetry run pip install .\promptflow-azure
+
+          echo "Need to install promptflow to avoid tool dependency issue"
+          poetry run pip install .\promptflow
+          poetry run pip install .\promptflow-tools
+          poetry run pip install .\promptflow-recording
+
+          poetry run pip show promptflow-tracing
+          poetry run pip show promptflow-core
+          poetry run pip show promptflow-devkit
+          poetry run pip show promptflow-azure
+          poetry run pip show promptflow-tools
         if: runner.os == 'Windows'
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - run: |
           source .venv/bin/activate
           pytest --version
-        if: runner.os != 'Windows'
-        working-directory: ${{ env.WORKING_DIRECTORY }}
-      - name: install promptflow dependencies
-        working-directory: ${{ env.WORKING_DIRECTORY }}
-        run: |
           cd ..
           poetry run pip install ./promptflow-tracing
           poetry run pip install ./promptflow-core[azureml-serving]
@@ -97,6 +108,8 @@ jobs:
           poetry run pip show promptflow-devkit
           poetry run pip show promptflow-azure
           poetry run pip show promptflow-tools
+        if: runner.os != 'Windows'
+        working-directory: ${{ env.WORKING_DIRECTORY }}
 
       - name: Generate (mock) connections.json
         shell: pwsh
