@@ -326,3 +326,17 @@ class TestFlowAsFunc:
         )
         # function can successfully run with connection override
         f(url="https://www.youtube.com/watch?v=o5ZQyXaAv1g")
+
+    def test_flow_with_connection_override(self, azure_open_ai_connection):
+        f = load_flow(f"{FLOWS_DIR}/llm_tool_non_existing_connection")
+        with pytest.raises(ConnectionNotFoundError) as e:
+            f(joke="joke")
+        f.context = FlowContext(
+            connections={
+                "joke": {"connection": azure_open_ai_connection},
+            }
+        )
+        # function can successfully run with connection override
+        f(topic="joke")
+        # This should work on subsequent call not just first
+        f(topic="joke")
