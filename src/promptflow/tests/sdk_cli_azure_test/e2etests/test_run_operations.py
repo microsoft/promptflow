@@ -1150,9 +1150,9 @@ class TestFlowRun:
 
         # download the run and check flow's signature
         with TemporaryDirectory() as tmp_dir:
-            file = (f"{DownloadedRun.SNAPSHOT_FOLDER}/.promptflow/flow.flex.yaml",)
+            file = f"{DownloadedRun.SNAPSHOT_FOLDER}/.promptflow/flow.flex.yaml"
             pf.runs.download(run=run.name, output=tmp_dir)
-            flow_file = Path(tmp_dir, run.name, file)
+            flow_file = Path(tmp_dir) / run.name / file
             assert flow_file.exists()
             flow_data = load_yaml(flow_file)
             assert flow_data["inputs"] == {}
