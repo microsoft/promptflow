@@ -29,7 +29,6 @@ from promptflow.exceptions import UserErrorException
 from promptflow.executor._result import LineResult
 from promptflow.storage._run_storage import DefaultRunStorage
 
-from .._configuration import Configuration
 from ..entities._flows import FlexFlow
 from .utils import (
     SubmitterHelper,
@@ -240,10 +239,8 @@ class TestSubmitter:
                 or {},
             )
 
-            # do not enable trace when test single node, as we have not determined this behavior
-            if target_node is None and Configuration(overrides=self._client._config).is_internal_features_enabled():
-                logger.debug("Starting trace for flow test...")
-                start_trace(session=session)
+            logger.debug("Starting trace for flow test...")
+            start_trace(session=session)
 
             self._output_base, log_path, output_sub = self._resolve_output_path(
                 output_base=output_path,
