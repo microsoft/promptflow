@@ -1246,5 +1246,9 @@ class FlowOperations(TelemetryMixin):
         signatures, _, _ = self._infer_signature(entry=entry, code=code)
         merged_signatures = self._merge_signature(extracted=signatures, signature_overrides=data)
         FlexFlow(path=code / FLOW_FLEX_YAML, code=code, data=data, entry=entry)._validate()
+        updated = False
+        for field in ["inputs", "outputs", "init"]:
+            if merged_signatures.get(field) != data.get(field):
+                updated = True
         data.update(merged_signatures)
-        return True
+        return updated
