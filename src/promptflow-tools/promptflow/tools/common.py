@@ -5,6 +5,7 @@ import re
 import sys
 import time
 from typing import List, Mapping
+import uuid
 
 from jinja2 import Template
 from openai import APIConnectionError, APIStatusError, OpenAIError, RateLimitError, APITimeoutError, BadRequestError
@@ -18,6 +19,7 @@ from promptflow.exceptions import SystemErrorException, UserErrorException
 
 
 GPT4V_VERSION = "vision-preview"
+VALID_ROLES = ["assistant", "function", "user", "system"]
 
 
 class Deployment:
@@ -440,6 +442,54 @@ def render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, 
         error_message = f"Failed to render jinja template: {type(e).__name__}: {str(e)}. " \
                         + "Please modify your prompt to fix the issue."
         raise JinjaTemplateError(message=error_message) from e
+
+
+def render_jinja_template_wrapper(prompt, trim_blocks=True, keep_trailing_newline=True, **kwargs):
+    # Use this dict to store the user written roles in case sensitive and its escaped value.
+    # We need this dict to unescape the role after the chat string is parsed.
+    escape_dict = {}
+    updated_kwargs = {key: escape_roles(value, escape_dict) for key, value in kwargs.items()}
+    return (
+        render_jinja_template(
+            prompt,
+            trim_blocks=trim_blocks,
+            keep_trailing_newline=keep_trailing_newline,
+            **updated_kwargs,
+        ),
+        escape_dict,
+    )
+
+
+def escape_roles(val, escape_dict: dict):
+    """
+    Escape the roles in the prompt inputs to avoid the input string with pattern '# role' get parsed.
+    """
+    if not isinstance(val, str):
+        return val
+
+    pattern = r"(?i)^\s*#?\s*(" + "|".join(VALID_ROLES) + r")\s*:\s*\n"
+    roles = re.findall(pattern, val, flags=re.MULTILINE)
+    for role in roles:
+        if role not in escape_dict:
+            escape_dict[role] = str(uuid.uuid4())
+
+    for role, encoded_role in escape_dict.items():
+        val = re.sub(role, encoded_role, val, flags=re.MULTILINE | re.IGNORECASE)
+    return val
+
+
+def unescape_roles(messages, escape_dict: dict):
+    """
+    Unescape the roles in the parsed chat messages to restore the original role names.
+    """
+    if escape_dict and isinstance(messages, list):
+        for message in messages:
+            if not isinstance(message, dict):
+                continue
+            for role, guid in escape_dict.items():
+                for key, val in message.items():
+                    if isinstance(val, str):
+                        message[key] = val.replace(guid, role)
 
 
 def process_function_call(function_call):
