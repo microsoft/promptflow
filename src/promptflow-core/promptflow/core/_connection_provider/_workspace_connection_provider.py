@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Union
 
 import requests
 
-from promptflow._constants import AML_CONNECTION_PROVIDER_TEMPLATE, ConnectionAuthMode
+from promptflow._constants import AML_WORKSPACE_TEMPLATE, ConnectionAuthMode
 from promptflow._utils.retry_utils import http_retry_wrapper
 from promptflow.core._connection import CustomConnection, _Connection
 from promptflow.core._errors import (
@@ -82,7 +82,7 @@ class WorkspaceConnectionProvider(ConnectionProvider):
         self.subscription_id = subscription_id
         self.resource_group_name = resource_group_name
         self.workspace_name = workspace_name
-        self.resource_id = AML_CONNECTION_PROVIDER_TEMPLATE.format(
+        self.resource_id = AML_WORKSPACE_TEMPLATE.format(
             self.subscription_id, self.resource_group_name, self.workspace_name
         )
         self._workspace_checked = False
