@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable, Union
+from typing import Union
 
 from promptflow._constants import ConnectionType
 from promptflow.core._errors import InvalidConnectionError
@@ -15,7 +15,6 @@ class AzureOpenAIModelConfiguration(ModelConfiguration):
     azure_endpoint: str = None
     api_version: str = None
     api_key: str = None
-    azure_ad_token_provider: Callable = None  # AzureADTokenProvider is a callable object to retrieve token
     organization: str = None
     # connection and model configs are exclusive.
     connection: str = None
