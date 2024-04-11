@@ -74,7 +74,7 @@ def dispatch_service_commands(args: argparse.Namespace):
         start_service(args)
     elif args.sub_action == "stop":
         stop_service()
-    elif args.sub_action == "show-status":
+    elif args.sub_action == "status":
         show_service()
 
 
@@ -145,10 +145,10 @@ def add_parser_show_service(subparsers):
     Examples:
 
     # Display the started prompt flow service info.:
-    pf service show-status
+    pf service status
     """  # noqa: E501
     activate_action(
-        name="show-status",
+        name="status",
         description="Show the started prompt flow service status.",
         epilog=epilog,
         add_params=base_params,
