@@ -43,10 +43,13 @@ hint_stop_message = (
     f"hours, it will automatically stop."
 )
 hint_stop_before_upgrade = (
-    "Before upgrading the promptflow package, kindly ensure to run "
-    "'\033[1mpf service stop\033[0m'. Alternatively, you may run "
-    "'\033[1mpf upgrade\033[0m' to proceed with the upgrade process for "
-    "the promptflow package."
+    "Kindly reminder: If you have previously upgraded the promptflow package , please "
+    "double-confirm that you have run '\033[1mpf service stop\033[0m' to stop the promptflow"
+    "service before proceeding with the upgrade. Otherwise, you may encounter unexpected "
+    "environmental issues or inconsistencies between the version of running promptflow service "
+    "and the local promptflow version. Alternatively, you can use the "
+    "'\033[1mpf upgrade\033[0m' command to proceed with the upgrade process for the promptflow "
+    "package."
 )
 
 

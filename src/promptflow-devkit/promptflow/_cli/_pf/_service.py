@@ -308,11 +308,14 @@ def show_service():
         log_file = HOME_PROMPT_FLOW_DIR / PF_SERVICE_LOG_FILE
     else:
         log_file = get_current_env_pfs_file(PF_SERVICE_LOG_FILE)
-    extra_info = {"log_file": log_file.as_posix(), "local_promptflow_version": get_pfs_version()}
     if status:
+        extra_info = {"log_file": log_file.as_posix(), "version": get_pfs_version()}
         status.update(extra_info)
         print(status)
         return
     else:
-        logger.warning(f"Promptflow service is not started. {extra_info}")
+        logger.warning(
+            f"Promptflow service is not started. The promptflow service log is located at {log_file.as_posix()} "
+            f"and promptflow version is {get_pfs_version()}."
+        )
         sys.exit(1)
