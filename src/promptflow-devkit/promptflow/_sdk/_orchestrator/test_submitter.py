@@ -15,6 +15,7 @@ from promptflow._core._errors import NotSupported
 from promptflow._internal import ConnectionManager
 from promptflow._proxy import ProxyFactory
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
+from promptflow._sdk._utils import get_flow_name
 from promptflow._sdk.entities._flows import Flow, FlowContext
 from promptflow._sdk.operations._local_storage_operations import LoggerOperations
 from promptflow._utils.async_utils import async_run_allowing_running_loop
@@ -248,7 +249,7 @@ class TestSubmitter:
                 else:
                     if is_collection_writeable():
                         logger.debug("trace collection is writeable, will use flow name as collection...")
-                        collection_for_test = self._origin_flow.name
+                        collection_for_test = get_flow_name(self._origin_flow)
                         logger.debug("collection for test: %s", collection_for_test)
                         # pass with internal parameter `_collection`
                         start_trace(session=session, _collection=collection_for_test)
