@@ -69,9 +69,15 @@ jobs:
         run: |
           poetry install --with test
       - run: |
-          set -xe
           source .venv/scripts/activate
           pytest --version
+        if: runner.os == 'Windows'
+      - run: |
+          source .venv/bin/activate
+          pytest --version
+        if: runner.os != 'Windows'
+      - run: |
+          set -xe
           poetry run pip install ../promptflow-tracing
           poetry run pip install ../promptflow-core[azureml-serving]
           poetry run pip install ../promptflow-devkit[pyarrow]
