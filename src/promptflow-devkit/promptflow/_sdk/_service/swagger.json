@@ -59,6 +59,24 @@
                     "type": "string"
                 }
             ],
+            "delete": {
+                "responses": {
+                    "204": {
+                        "description": "Delete connection",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    },
+                    "403": {
+                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
+                    }
+                },
+                "description": "Delete connection",
+                "operationId": "delete_connection",
+                "tags": [
+                    "Connections"
+                ]
+            },
             "get": {
                 "responses": {
                     "200": {
@@ -78,34 +96,6 @@
                         "name": "working_directory",
                         "in": "query",
                         "type": "string"
-                    }
-                ],
-                "tags": [
-                    "Connections"
-                ]
-            },
-            "put": {
-                "responses": {
-                    "200": {
-                        "description": "Connection details",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
-                    },
-                    "403": {
-                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
-                    }
-                },
-                "description": "Update connection",
-                "operationId": "put_connection",
-                "parameters": [
-                    {
-                        "name": "payload",
-                        "required": true,
-                        "in": "body",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
                     }
                 ],
                 "tags": [
@@ -140,10 +130,10 @@
                     "Connections"
                 ]
             },
-            "delete": {
+            "put": {
                 "responses": {
-                    "204": {
-                        "description": "Delete connection",
+                    "200": {
+                        "description": "Connection details",
                         "schema": {
                             "$ref": "#/definitions/ConnectionDict"
                         }
@@ -152,8 +142,18 @@
                         "description": "This service is available for local user only, please specify X-Remote-User in headers."
                     }
                 },
-                "description": "Delete connection",
-                "operationId": "delete_connection",
+                "description": "Update connection",
+                "operationId": "put_connection",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    }
+                ],
                 "tags": [
                     "Connections"
                 ]
@@ -310,6 +310,63 @@
                 ]
             }
         },
+        "/Flows/infer_signature": {
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Flow infer signature",
+                        "schema": {
+                            "$ref": "#/definitions/FlowDict"
+                        }
+                    }
+                },
+                "description": "Flow infer signature",
+                "operationId": "post_flow_infer_signature",
+                "parameters": [
+                    {
+                        "name": "flow",
+                        "in": "query",
+                        "type": "string",
+                        "required": true,
+                        "description": "Path to flow directory."
+                    },
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "node": {
+                                    "type": "string"
+                                },
+                                "variant": {
+                                    "type": "string"
+                                },
+                                "output_path": {
+                                    "type": "string"
+                                },
+                                "experiment": {
+                                    "type": "string"
+                                },
+                                "inputs": {
+                                    "type": "string"
+                                },
+                                "environment_variables": {
+                                    "type": "string"
+                                },
+                                "session": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "tags": [
+                    "Flows"
+                ]
+            }
+        },
         "/Flows/test": {
             "post": {
                 "responses": {
@@ -455,6 +512,21 @@
                     "Runs"
                 ]
             },
+            "delete": {
+                "responses": {
+                    "204": {
+                        "description": "Delete run",
+                        "schema": {
+                            "$ref": "#/definitions/RunDict"
+                        }
+                    }
+                },
+                "description": "Delete run",
+                "operationId": "delete_run",
+                "tags": [
+                    "Runs"
+                ]
+            },
             "put": {
                 "responses": {
                     "200": {
@@ -487,21 +559,6 @@
                     "application/x-www-form-urlencoded",
                     "multipart/form-data"
                 ],
-                "tags": [
-                    "Runs"
-                ]
-            },
-            "delete": {
-                "responses": {
-                    "204": {
-                        "description": "Delete run",
-                        "schema": {
-                            "$ref": "#/definitions/RunDict"
-                        }
-                    }
-                },
-                "description": "Delete run",
-                "operationId": "delete_run",
                 "tags": [
                     "Runs"
                 ]

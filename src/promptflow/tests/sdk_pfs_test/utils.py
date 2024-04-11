@@ -283,6 +283,13 @@ class PFSOperations:
             assert status_code == response.status_code, response.text
         return response
 
+    def test_flow_infer_signature(self, flow_path, status_code=None):
+        request_body = {"source": flow_path}
+        response = self._client.post(f"{self.Flow_URL_PREFIX}/infer_signature", json=request_body)
+        if status_code:
+            assert status_code == response.status_code, response.text
+        return response
+
     def get_flow_ux_inputs(self, flow_path: str, status_code=None):
         flow_path = encrypt_flow_path(flow_path)
         query_string = {"flow": flow_path}
