@@ -4,6 +4,7 @@ import re
 import shutil
 import sys
 import tempfile
+from pathlib import Path
 from typing import Callable, TypedDict
 
 import pytest
@@ -602,7 +603,7 @@ class TestFlowSave:
         meta = pf.flows.infer_signature(entry=flow)
         assert meta == {
             "inputs": {
-                "chat_history": {"type": "array"},
+                "chat_history": {"type": "list"},
                 "question": {"default": "What is ChatGPT?", "is_chat_input": True, "type": "string"},
             },
             "outputs": {"answer": {"is_chat_output": True, "type": "string"}},
