@@ -31,7 +31,6 @@ from promptflow.executor._result import LineResult
 from promptflow.storage._run_storage import DefaultRunStorage
 from promptflow.tracing._start_trace import is_collection_writeable, start_trace
 
-from .._configuration import Configuration
 from ..entities._flows import FlexFlow
 from .utils import (
     SubmitterHelper,
@@ -244,7 +243,7 @@ class TestSubmitter:
             )
 
             # do not enable trace when test single node, as we have not determined this behavior
-            if target_node is None and Configuration(overrides=self._client._config).is_internal_features_enabled():
+            if target_node is None:
                 logger.debug("start trace for flow test...")
                 if collection is not None:
                     logger.debug("collection is user specified: %s, will use it...", collection)
