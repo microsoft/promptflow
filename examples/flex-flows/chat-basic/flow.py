@@ -34,9 +34,7 @@ class ChatFlow:
             load_dotenv()
 
         if "AZURE_OPENAI_API_KEY" not in os.environ:
-            raise Exception(
-                "Please specify environment variables: AZURE_OPENAI_API_KEY"
-            )
+            raise ValueError("Please specify environment variables: AZURE_OPENAI_API_KEY")
 
         self.connection = AzureOpenAIConnection.from_env()
 
@@ -44,6 +42,8 @@ class ChatFlow:
         self, question: str = "What is ChatGPT?", chat_history: list = None
     ) -> Result:
         """Flow entry function."""
+
+        chat_history = chat_history or []
 
         prompt = load_prompt("chat.jinja2", question, chat_history)
 
