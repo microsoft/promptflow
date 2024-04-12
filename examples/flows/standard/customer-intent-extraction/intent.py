@@ -19,7 +19,7 @@ def extract_intent(chat_prompt: str):
         load_dotenv()
 
     chat = AzureChatOpenAI(
-        deployment_name=os.environ["CHAT_DEPLOYMENT_NAME"],
+        deployment_name=os.environ.get("CHAT_DEPLOYMENT_NAME", "gpt-35-turbo"),
         openai_api_key=os.environ["AZURE_OPENAI_API_KEY"],
         openai_api_base=os.environ["AZURE_OPENAI_API_BASE"],
         openai_api_type="azure",

@@ -27,7 +27,7 @@ def get_client():
     else:
         from openai import AzureOpenAI as Client
         conn.update(
-            azure_endpoint=os.environ["AZURE_OPENAI_API_BASE"],
+            azure_endpoint=os.environ.get("AZURE_OPENAI_API_BASE", "azure"),
             api_version=os.environ.get("OPENAI_API_VERSION", "2023-07-01-preview"),
         )
     return Client(**conn)
