@@ -1,6 +1,8 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import platform
+import signal
 import socket
 import subprocess
 import uuid
@@ -8,6 +10,7 @@ from pathlib import Path
 from typing import NoReturn, Optional
 
 from promptflow._core._errors import UnexpectedError
+from promptflow._sdk._constants import OSType
 from promptflow._utils.flow_utils import is_flex_flow
 from promptflow.storage._run_storage import AbstractRunStorage
 
@@ -120,7 +123,8 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
                     log_path=log_path,
                     error_file_path=init_error_file,
                     yaml_path=flow_file.as_posix(),
-                )
+                ),
+                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
             )
         else:
             # if port is provided, assume the execution service is already started
@@ -172,7 +176,12 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
         # process is not None, it means the executor service is started by the current executor proxy
         # and should be terminated when the executor proxy is destroyed if the service is still active
         if self._process and self._is_executor_active():
-            self._process.terminate()
+            if platform.system() == OSType.WINDOWS:
+                # send CTRL_C_EVENT to the process to gracefully terminate the service
+                self._process.send_signal(signal.CTRL_BREAK_EVENT)
+            else:
+                # for Linux and MacOS, Popen.terminate() will send SIGTERM to the process
+                self._process.terminate()
             try:
                 self._process.wait(timeout=5)
             except subprocess.TimeoutExpired:
