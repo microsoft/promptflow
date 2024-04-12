@@ -1,18 +1,19 @@
 # Basic chat
-A basic chat flow defined using class entry. It demonstrates how to create a chatbot that can remember previous interactions and use the conversation history to generate next message.
+A basic prompt that uses the chat API to answer questions with chat history.
+
 
 ## Prerequisites
 
-Install promptflow sdk and other dependencies in this folder:
+Install `promptflow-devkit`:
 ```bash
-pip install -r requirements.txt
+pip install promptflow-devkit
 ```
 
 ## What you will learn
 
 In this flow, you will learn
 - how to compose a chat flow.
-- prompt template format of LLM tool chat api. Message delimiter is a separate line containing role name and colon: "system:", "user:", "assistant:".
+- prompt template format of chat api. Message delimiter is a separate line containing role name and colon: "system:", "user:", "assistant:".
 See <a href="https://platform.openai.com/docs/api-reference/chat/create#chat/create-role" target="_blank">OpenAI Chat</a> for more about message role.
     ```jinja
     system:
@@ -24,10 +25,8 @@ See <a href="https://platform.openai.com/docs/api-reference/chat/create#chat/cre
 - how to consume chat history in prompt.
     ```jinja
     {% for item in chat_history %}
-    user:
-    {{item.inputs.question}}
-    assistant:
-    {{item.outputs.answer}}
+    {{item.role}}:
+    {{item.content}}
     {% endfor %}
     ```
 
@@ -52,8 +51,6 @@ pf flow test --flow chat.prompty
 
 # run chat flow with new question
 pf flow test --flow chat.prompty --inputs question="What's Azure Machine Learning?"
-
-pf flow test --flow chat.prompty --inputs question="What is ChatGPT? Please explain with consise statement."
 ```
 
 - Create run with multiple lines data
@@ -115,18 +112,3 @@ pf run create --file run.yml --stream
 name=$(pf run list -r 10 | jq '.[] | select(.name | contains("chat_basic_")) | .name'| head -n 1 | tr -d '"')
 pf run show-details --name $name
 ```
-
-## Run flow in cloud with connection
-- Assume we already have a connection named `open_ai_connection` in workspace.
-```bash
-# set default workspace
-az account set -s <your_subscription_id>
-az configure --defaults group=<your_resource_group_name> workspace=<your_workspace_name>
-```
-
-- Create run
-```bash
-# run with environment variable reference connection in azureml workspace
-pfazure run create --flow . --data ./data.jsonl --environment-variables AZURE_OPENAI_API_KEY='${open_ai_connection.api_key}' AZURE_OPENAI_ENDPOINT='${open_ai_connection.api_base}' --column-mapping question='${data.question}' --stream
-# run using yaml file
-pfazure run create --file run.yml --stream

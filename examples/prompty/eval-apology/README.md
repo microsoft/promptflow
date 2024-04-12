@@ -1,11 +1,11 @@
-# Eval Code Quality
-A example flow defined using function entry which shows how to evaluate the quality of code snippet.
+# Apology
+A prompt that determines whether a chat conversation contains an apology from the assistant.
 
 ## Prerequisites
 
-Install promptflow sdk and other dependencies:
+Install `promptflow-devkit`:
 ```bash
-pip install -r requirements.txt
+pip install promptflow-devkit
 ```
 
 ## Run flow
@@ -22,9 +22,6 @@ cat ../.env
 
 - Test flow
 ```bash
-# correct
-pf flow test --flow eval.prompty --inputs code='print(\"Hello, world!\")'
-
-# incorrect
-pf flow test --flow eval.prompty --inputs code='print("Hello, world!")'
+# sample.json contains messages field which contains the chat conversation.
+pf flow test --flow eval.prompty --inputs sample.json
 ```

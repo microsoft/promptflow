@@ -1,11 +1,11 @@
 # Basic prompty
-A basic prompty.
+A basic prompt that uses the chat API to answer questions.
 
 ## Prerequisites
 
-Install promptflow sdk and other dependencies:
+Install `promptflow-devkit`:
 ```bash
-pip install -r requirements.txt
+pip install promptflow-devkit
 ```
 
 ## Run flow
@@ -26,15 +26,15 @@ cat ../.env
 # pf flow test --flow basic.prompty
 
 # test with flow inputs
-pf flow test --flow basic.prompty --inputs firstName="John" lastName="Doe" question="What is the meaning of life?" 
+pf flow test --flow basic.prompty --inputs firstName="John" lastName="Doe" question="What is the meaning of life?"
 
-# test with another sample data (TODO)
+# test with another sample data
 pf flow test --flow basic.prompty --inputs sample.json
 ```
 
 - Create run with multiple lines data
 ```bash
-# using environment from .env file (loaded in user code: hello.py)
+# using environment from .env file
 pf run create --flow basic.prompty --data ./data.jsonl --column-mapping text='${data.text}' --stream
 ```
 
@@ -91,38 +91,3 @@ pf run create --file run.yml --stream
 name=$(pf run list -r 10 | jq '.[] | select(.name | contains("basic_")) | .name'| head -n 1 | tr -d '"')
 pf run show-details --name $name
 ```
-
-## Run flow in cloud with connection
-- Assume we already have a connection named `open_ai_connection` in workspace.
-```bash
-# set default workspace
-az account set -s <your_subscription_id>
-az configure --defaults group=<your_resource_group_name> workspace=<your_workspace_name>
-```
-
-- Create run
-```bash
-# run with environment variable reference connection in azureml workspace
-pfazure run create --flow . --data ./data.jsonl --environment-variables AZURE_OPENAI_API_KEY='${open_ai_connection.api_key}' AZURE_OPENAI_ENDPOINT='${open_ai_connection.api_base}' --column-mapping text='${data.text}' --stream
-# run using yaml file
-pfazure run create --file run.yml --stream
-```
-
-- List and show run meta
-```bash
-# list created run
-pfazure run list -r 3
-
-# get a sample run name
-name=$(pfazure run list -r 100 | jq '.[] | select(.name | contains("basic_")) | .name'| head -n 1 | tr -d '"')
-
-# show specific run detail
-pfazure run show --name $name
-
-# show output
-pfazure run show-details --name $name
-
-# visualize run in browser
-pfazure run visualize --name $name
-```
-
