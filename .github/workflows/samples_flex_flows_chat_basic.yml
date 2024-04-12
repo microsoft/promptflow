@@ -41,8 +41,11 @@ jobs:
         working-directory: examples/flex-flows/chat-basic
         run: |
           AOAI_API_KEY=${{ secrets.AOAI_API_KEY_TEST }}
+          AZURE_OPENAI_API_KEY=${{ secrets.AOAI_API_KEY_TEST }}
           AOAI_API_ENDPOINT=${{ secrets.AOAI_API_ENDPOINT_TEST }}
           AOAI_API_ENDPOINT=$(echo ${AOAI_API_ENDPOINT//\//\\/})
+          AZURE_OPENAI_ENDPOINT=${{ secrets.AOAI_API_ENDPOINT_TEST }}
+          AZURE_OPENAI_ENDPOINT=$(echo ${AZURE_OPENAI_ENDPOINT//\//\\/})
           if [[ -e .env.example ]]; then
             echo "env replacement"
             sed -i -e "s/<your_AOAI_key>/$AOAI_API_KEY/g" -e "s/<your_AOAI_endpoint>/$AOAI_API_ENDPOINT/g" .env.example
