@@ -392,7 +392,7 @@ def handle_openai_error(tries: int = 100, conn_error_tries: int = 10):
                         raise WrappedOpenAIError(e)
 
                     # Retriable errors.
-                    # A separate retry policy for APIConnectionError.
+                    # To fix issue #2296, retry on api connection error, but with a separate retry policy.
                     if isinstance(e, APIConnectionError):
                         consecutive_conn_error_count += 1
                     else:
