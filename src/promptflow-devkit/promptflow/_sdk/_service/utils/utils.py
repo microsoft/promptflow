@@ -38,17 +38,17 @@ from promptflow.exceptions import PromptflowException, UserErrorException
 logger = get_cli_sdk_logger()
 
 hint_stop_message = (
-    f"You can stop the prompt flow tracing server with the following command:'\033[1mpf service stop\033[0m'.\n"
+    f"You can stop the prompt flow service with the following command:'\033[1mpf service stop\033[0m'.\n"
     f"Alternatively, if no requests are made within {PF_SERVICE_HOUR_TIMEOUT} "
     f"hours, it will automatically stop."
 )
 hint_stop_before_upgrade = (
-    "Kindly reminder: If you have previously upgraded the promptflow package , please "
-    "double-confirm that you have run '\033[1mpf service stop\033[0m' to stop the promptflow"
+    "Kindly reminder: If you have previously upgraded the prompt flow package , please "
+    "double-confirm that you have run '\033[1mpf service stop\033[0m' to stop the prompt flow"
     "service before proceeding with the upgrade. Otherwise, you may encounter unexpected "
-    "environmental issues or inconsistencies between the version of running promptflow service "
-    "and the local promptflow version. Alternatively, you can use the "
-    "'\033[1mpf upgrade\033[0m' command to proceed with the upgrade process for the promptflow "
+    "environmental issues or inconsistencies between the version of running prompt flow service "
+    "and the local prompt flow version. Alternatively, you can use the "
+    "'\033[1mpf upgrade\033[0m' command to proceed with the upgrade process for the prompt flow "
     "package."
 )
 
@@ -176,7 +176,7 @@ def make_response_no_content():
 
 
 def get_pfs_version():
-    """Promptflow service show promptflow version if installed from root, else devkit version"""
+    """Prompt flow service show promptflow version if installed from root, else devkit version"""
     version_promptflow = get_promptflow_sdk_version()
     if version_promptflow:
         return version_promptflow
@@ -190,7 +190,7 @@ def is_pfs_service_healthy(pfs_port) -> bool:
     try:
         response = requests.get("http://localhost:{}/heartbeat".format(pfs_port))
         if response.status_code == 200:
-            logger.debug(f"Promptflow service is already running on port {pfs_port}, {response.text}")
+            logger.debug(f"Prompt flow service is already running on port {pfs_port}, {response.text}")
             match = re.search(r'"promptflow":"(.*?)"', response.text)
             if match:
                 version = match.group(1)
@@ -198,12 +198,12 @@ def is_pfs_service_healthy(pfs_port) -> bool:
                 is_healthy = version == local_version
                 if not is_healthy:
                     logger.warning(
-                        f"Promptflow service is running on port {pfs_port}, but the version is not the same as "
+                        f"Prompt flow service is running on port {pfs_port}, but the version is not the same as "
                         f"local sdk version {local_version}. The service version is {version}."
                     )
             else:
                 is_healthy = False
-                logger.warning("/heartbeat response doesn't contain current promptflow service version.")
+                logger.warning("/heartbeat response doesn't contain current prompt flow service version.")
             return is_healthy
     except Exception:  # pylint: disable=broad-except
         pass
@@ -217,7 +217,7 @@ def check_pfs_service_status(pfs_port, time_delay=1, count_threshold=10) -> bool
     is_healthy = is_pfs_service_healthy(pfs_port)
     while is_healthy is False and count_threshold > cnt:
         message = (
-            f"Waiting for the Promptflow service status to become healthy... It has been tried for {cnt} times, will "
+            f"Waiting for the prompt flow service status to become healthy... It has been tried for {cnt} times, will "
             f"try at most {count_threshold} times."
         )
         if cnt >= 3:
@@ -308,7 +308,7 @@ def get_client_from_request(*, connection_provider=None) -> "PFClient":
 
 def is_run_from_built_binary():
     """
-    Use this function to trigger behavior difference between calling from promptflow sdk/cli and built binary.
+    Use this function to trigger behavior difference between calling from prompt flow sdk/cli and built binary.
 
     Allow customer to use environment variable to control the triggering.
     """
