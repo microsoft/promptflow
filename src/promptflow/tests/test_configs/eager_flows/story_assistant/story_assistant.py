@@ -14,7 +14,6 @@ from openai import AzureOpenAI, NOT_GIVEN
 
 setup_trace()
 
-
 # This is a new span event for message_creation
 @trace
 def Message_creation(thread_id, message_id):
@@ -231,7 +230,7 @@ def get_or_create_assistant_2(assistant_id):
 
 
 @trace
-def two_assistants_flow(topic="Basketball."):
+def two_assistants_flow(topic: str):
 
     thread = client.beta.threads.create()
 

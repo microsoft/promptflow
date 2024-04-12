@@ -17,3 +17,5 @@ def setup_trace():
         openai.resources.beta.threads.messages.messages.Messages.list)
     openai.resources.beta.threads.runs.runs.Runs.submit_tool_outputs = trace(
         openai.resources.beta.threads.runs.runs.Runs.submit_tool_outputs)
+    openai.resources.beta.threads.runs.runs.Runs.submit_tool_outputs_and_poll = trace(
+        openai.resources.beta.threads.runs.runs.Runs.submit_tool_outputs_and_poll)
