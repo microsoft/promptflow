@@ -64,6 +64,8 @@ from promptflow._sdk._errors import (
     UnsecureConnectionError,
 )
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
+from promptflow._sdk.entities._flows.base import FlowBase
+from promptflow._sdk.entities._flows.dag import Flow as DAGFlow
 from promptflow._utils.flow_utils import is_flex_flow, resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
@@ -1029,8 +1031,10 @@ def can_accept_kwargs(func):
 
 def callable_to_entry_string(callable_obj: Callable) -> str:
     """Convert callable object to entry string."""
-    if not isfunction(callable_obj):
-        raise UserErrorException(f"{callable_obj} is not function, only function is supported.")
+    if not isfunction(callable_obj) and not hasattr(callable_obj, "__call__"):
+        raise UserErrorException(
+            f"{callable_obj} is not function or callable object, only function or callable object are supported."
+        )
 
     try:
         module_str = callable_obj.__module__
@@ -1071,3 +1075,12 @@ generate_flow_meta = _generate_flow_meta
 # DO NOT remove the following line, it's used by the runtime imports from _sdk/_utils directly
 get_used_connection_names_from_dict = get_used_connection_names_from_dict
 update_dict_value_with_connections = update_dict_value_with_connections
+
+
+def get_flow_name(flow: Union[FlowBase, Path]) -> str:
+    if isinstance(flow, Path):
+        return flow.resolve().name
+    if isinstance(flow, DAGFlow):
+        return flow.name
+    # others: flex flow, prompty, etc.
+    return flow.code.name

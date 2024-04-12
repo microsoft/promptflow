@@ -234,7 +234,7 @@ def monitor_operation(
         @functools.wraps(f)
         def wrapper(self, *args, **kwargs):
             from promptflow._sdk._telemetry.telemetry import get_telemetry_logger
-            from promptflow._utils.version_hint_utils import HINT_ACTIVITY_NAME, check_latest_version, hint_for_update
+            from promptflow._sdk._version_hint_utils import HINT_ACTIVITY_NAME, check_latest_version, hint_for_update
 
             logger = get_telemetry_logger()
 
