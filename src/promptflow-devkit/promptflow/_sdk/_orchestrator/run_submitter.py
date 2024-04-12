@@ -20,6 +20,7 @@ from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException, ValidationException
 from promptflow.tracing._operation_context import OperationContext
+from promptflow.tracing._start_trace import is_collection_writeable, start_trace
 
 from .._configuration import Configuration
 from .._load_functions import load_flow
@@ -83,20 +84,17 @@ class RunSubmitter:
         if run._resume_from is not None:
             logger.debug(f"Resume from run {run._resume_from!r}...")
             run._resume_from = self._ensure_run_completed(run._resume_from)
-        # Start trace
-        if self._config.is_internal_features_enabled():
-            from promptflow.tracing._start_trace import is_collection_writeable, start_trace
-
-            logger.debug("start trace for flow run...")
-            if is_collection_writeable():
-                logger.debug("trace collection is writeable, will use flow name as collection...")
-                collection_for_run = run._flow_name
-                logger.debug("collection for run: %s", collection_for_run)
-                # pass with internal parameter `_collection`
-                start_trace(attributes=attributes, run=run.name, _collection=collection_for_run)
-            else:
-                logger.debug("trace collection is protected, will honor existing collection.")
-                start_trace(attributes=attributes, run=run.name)
+        # start trace
+        logger.debug("start trace for flow run...")
+        if is_collection_writeable():
+            logger.debug("trace collection is writeable, will use flow name as collection...")
+            collection_for_run = run._flow_name
+            logger.debug("collection for run: %s", collection_for_run)
+            # pass with internal parameter `_collection`
+            start_trace(attributes=attributes, run=run.name, _collection=collection_for_run)
+        else:
+            logger.debug("trace collection is protected, will honor existing collection.")
+            start_trace(attributes=attributes, run=run.name)
 
         self._validate_inputs(run=run)
 
