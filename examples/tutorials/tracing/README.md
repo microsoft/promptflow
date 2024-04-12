@@ -1,5 +1,5 @@
 ---
-resources: examples/tutorials/trace/
+resources: examples/tutorials/tracing/
 ---
 
 ## Traces
