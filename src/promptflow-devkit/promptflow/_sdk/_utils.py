@@ -56,7 +56,6 @@ from promptflow._sdk._constants import (
     CommonYamlFields,
     RunInfoSources,
     RunMode,
-    SignatureValueType,
 )
 from promptflow._sdk._errors import (
     DecryptConnectionError,
@@ -65,12 +64,14 @@ from promptflow._sdk._errors import (
     UnsecureConnectionError,
 )
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
+from promptflow._sdk.entities._flows.base import FlowBase
+from promptflow._sdk.entities._flows.dag import Flow as DAGFlow
 from promptflow._utils.context_utils import inject_sys_path
 from promptflow._utils.flow_utils import is_flex_flow, resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
-from promptflow.contracts.tool import ToolType, ValueType
+from promptflow.contracts.tool import ToolType
 from promptflow.core._utils import (
     get_used_connection_names_from_dict,
     render_jinja_template_content,
@@ -1085,27 +1086,30 @@ def is_flex_run(run: "Run") -> bool:
 
 
 def format_signature_type(flow_meta):
+    # signature is language irrelevant, so we apply json type system
+    # TODO: enable this mapping after service supports more types
+    value_type_map = {
+        # ValueType.INT.value: SignatureValueType.INT.value,
+        # ValueType.DOUBLE.value: SignatureValueType.NUMBER.value,
+        # ValueType.LIST.value: SignatureValueType.ARRAY.value,
+        # ValueType.BOOL.value: SignatureValueType.BOOL.value,
+    }
     for port_type in ["inputs", "outputs", "init"]:
         if port_type not in flow_meta:
             continue
-
-        # signature is language irrelevant, so we apply json type system
-        value_type_map = {
-            ValueType.INT.value: SignatureValueType.INT.value,
-            ValueType.DOUBLE.value: SignatureValueType.NUMBER.value,
-            ValueType.LIST.value: SignatureValueType.ARRAY.value,
-            ValueType.BOOL.value: SignatureValueType.BOOL.value,
-            ValueType.STRING.value: SignatureValueType.STRING.value,
-        }
-
         for port_name, port in flow_meta[port_type].items():
             if port["type"] in value_type_map:
                 port["type"] = value_type_map[port["type"]]
-            else:
-                port["type"] = SignatureValueType.OBJECT.value
 
 
 generate_flow_meta = _generate_flow_meta
 # DO NOT remove the following line, it's used by the runtime imports from _sdk/_utils directly
 get_used_connection_names_from_dict = get_used_connection_names_from_dict
 update_dict_value_with_connections = update_dict_value_with_connections
+
+
+def get_flow_name(flow: FlowBase) -> str:
+    if isinstance(flow, DAGFlow):
+        return flow.name
+    # others: flex flow, prompty, etc.
+    return flow.code.name

@@ -56,8 +56,7 @@ class FlowTest(Resource):
     @api.expect(flow_path_parser)
     def post(self):
         args = flow_path_parser.parse_args()
-        flow = args.flow
-        flow = decrypt_flow_path(flow)
+        flow = decrypt_flow_path(args.flow)
         flow, _ = resolve_flow_path(flow)
         inputs = args.inputs
         environment_variables = args.environment_variables

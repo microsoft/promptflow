@@ -16,7 +16,7 @@ from dataclasses import MISSING, asdict, fields
 from importlib.metadata import version
 from os import PathLike
 from pathlib import Path
-from typing import Callable, Dict, Iterable, List, NoReturn, Tuple, Union
+from typing import Callable, Dict, Iterable, List, NoReturn, Optional, Tuple, Union
 
 import pydash
 
@@ -76,7 +76,7 @@ class FlowOperations(TelemetryMixin):
         variant: str = None,
         node: str = None,
         environment_variables: dict = None,
-        entry: str = None,
+        init: Optional[dict] = None,
         **kwargs,
     ) -> dict:
         """Test flow or node.
@@ -95,6 +95,8 @@ class FlowOperations(TelemetryMixin):
            The value reference to connection keys will be resolved to the actual value,
            and all environment variables specified will be set into os.environ.
         :type environment_variables: dict
+        :param init: Initialization parameters for flex flow, only supported when flow is callable class.
+        :type init: dict
         :return: The result of flow or node
         :rtype: dict
         """
@@ -112,6 +114,7 @@ class FlowOperations(TelemetryMixin):
                 inputs=inputs,
                 environment_variables=environment_variables,
                 experiment=experiment,
+                init=init,
                 **kwargs,
             )
         elif is_prompty_flow(flow):
@@ -127,6 +130,7 @@ class FlowOperations(TelemetryMixin):
             variant=variant,
             node=node,
             environment_variables=environment_variables,
+            init=init,
             **kwargs,
         )
         dump_test_result = kwargs.get("dump_test_result", False)
@@ -238,6 +242,7 @@ class FlowOperations(TelemetryMixin):
         stream_log: bool = True,
         stream_output: bool = True,
         allow_generator_output: bool = True,
+        init: Optional[dict] = None,
         **kwargs,
     ):
         """Test flow or node.
@@ -254,11 +259,13 @@ class FlowOperations(TelemetryMixin):
         :param stream_log: Whether streaming the log.
         :param stream_output: Whether streaming the outputs.
         :param allow_generator_output: Whether return streaming output when flow has streaming output.
+        :param init: Initialization parameters for flex flow, only supported when flow is callable class.
         :return: Executor result
         """
         inputs = inputs or {}
         output_path = kwargs.get("output_path", None)
         session = kwargs.pop("session", None)
+        collection = kwargs.pop("collection", None)
         # Run id will be set in operation context and used for session
         run_id = kwargs.get("run_id", str(uuid.uuid4()))
         flow = load_flow(flow)
@@ -276,6 +283,8 @@ class FlowOperations(TelemetryMixin):
             output_path=output_path,
             stream_output=stream_output,
             session=session,
+            init_kwargs=init,
+            collection=collection,
         ) as submitter:
             if isinstance(flow, FlexFlow) or isinstance(flow, Prompty):
                 # TODO(2897153): support chat eager flow
@@ -298,6 +307,7 @@ class FlowOperations(TelemetryMixin):
                     inputs=flow_inputs,
                     allow_generator_output=allow_generator_output and is_chat_flow,
                     run_id=run_id,
+                    init_kwargs=init,
                 )
 
     @monitor_operation(activity_name="pf.flows._chat", activity_type=ActivityType.INTERNALCALL)
@@ -327,6 +337,7 @@ class FlowOperations(TelemetryMixin):
         with TestSubmitter(flow=flow, flow_context=flow.context, client=self._client).init(
             environment_variables=environment_variables,
             stream_log=False,  # no need to stream log in chat mode
+            collection=kwargs.get("collection", None),
         ) as submitter:
             is_chat_flow, chat_history_input_name, error_msg = is_executable_chat_flow(submitter.dataplane_flow)
             if not is_chat_flow:
@@ -1015,6 +1026,7 @@ class FlowOperations(TelemetryMixin):
         keep_entry: bool = False,
         validate: bool = True,
         language: str = FlowLanguage.Python,
+        include_primitive_output: bool = False,
     ) -> Tuple[dict, Path, List[str]]:
         """Infer signature of a flow entry.
 
@@ -1069,6 +1081,14 @@ class FlowOperations(TelemetryMixin):
             # this path is actually not used
             flow = FlexFlow(path=code / FLOW_FLEX_YAML, code=code, data=flow_meta, entry=flow_meta["entry"])
             flow._validate(raise_error=True)
+
+        if include_primitive_output and "outputs" not in flow_meta:
+            flow_meta["outputs"] = {
+                "output": {
+                    "type": "string",
+                }
+            }
+
         if not keep_entry:
             flow_meta.pop("entry", None)
         return flow_meta, code, snapshot_list
@@ -1263,3 +1283,18 @@ class FlowOperations(TelemetryMixin):
             sample=sample,
             **kwargs,
         )
+
+    def _update_signatures(self, code: Path, data: dict) -> bool:
+        """Update signatures for flex flow. Raise validation error if signature is not valid."""
+        if not is_flex_flow(yaml_dict=data):
+            return False
+        entry = data.get("entry")
+        signatures, _, _ = self._infer_signature(entry=entry, code=code)
+        merged_signatures = self._merge_signature(extracted=signatures, signature_overrides=data)
+        FlexFlow(path=code / FLOW_FLEX_YAML, code=code, data=data, entry=entry)._validate()
+        updated = False
+        for field in ["inputs", "outputs", "init"]:
+            if merged_signatures.get(field) != data.get(field):
+                updated = True
+        data.update(merged_signatures)
+        return updated
