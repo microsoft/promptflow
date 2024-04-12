@@ -903,6 +903,6 @@ pf upgrade --yes
 
 To activate autocomplete features for the pf CLI you need to add the following snippet to your ~/.bashrc or ~/.zshrc:
 
-```
-    source <promptflow_package_install_root>/pf.completion.sh
+```bash
+source <promptflow_package_install_root>/pf.completion.sh
 ```
