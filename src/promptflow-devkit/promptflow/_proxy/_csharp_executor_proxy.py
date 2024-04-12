@@ -124,7 +124,7 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
                     error_file_path=init_error_file,
                     yaml_path=flow_file.as_posix(),
                 ),
-                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
+                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if platform.system() == OSType.WINDOWS else 0,
             )
         else:
             # if port is provided, assume the execution service is already started
