@@ -1,6 +1,23 @@
 {
   "firstName": "Jane",
   "lastName": "Doe",
-  "question": "What is the meaning of life?",
-  "chat_history": []
+  "question": "How many question the user asked?",
+  "chat_history": [
+    {
+      "role": "user",
+      "content": "where is the nearest coffee shop?"
+    },
+    {
+      "role": "system",
+      "content": "I'm sorry, I don't know that. Would you like me to look it up for you?"
+    },
+    {
+      "role": "user",
+      "content": "what's the capital of France?"
+    },
+    {
+      "role": "system",
+      "content": "Paris"
+    }
+  ]
 }

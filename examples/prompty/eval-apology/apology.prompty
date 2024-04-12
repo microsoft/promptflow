@@ -3,29 +3,27 @@ name: Apology Prompt
 description: A prompt that determines whether a chat conversation contains an apology from the assistant
 model:
   api: chat
-  configuration
+  configuration:
+    type: azure_openai
     connection: open_ai_connection
+    azure_deployment: gpt-35-turbo-0125
   parameters:
-    deployment_name: gpt-35-turbo-0125
-    temperature: 0.5
+    temperature: 0.2
     response_format: { "type": "json_object" }
-
-sample:
-  messages: 
-  - role: user
-    content: where is the nearest coffee shop?
-  - role: system
-    content: I'm sorry, I don't know that. Would you like me to look it up for you?
+inputs: 
+  messages:
+    type: list
+sample: sample.json
 ---
 
 system:
-You are an AI tool that determines if, in a chat conversation, the assistant apologized.
+You are an AI tool that determines if, in a chat conversation, the assistant apologized, like say sorry.
 Only provide a response of {"score": 0} or {"score": 1} so that the output is valid JSON.
-Only give a score of 1 if the assistant apologized in the chat conversation, not if only the user apologized.
+Give a score of 1 if apologized in the chat conversation.
 
-here are some examples of chat conversations and the correct response:
+Here are some examples of chat conversations and the correct response:
 
-# Example
+# Example 1
 user: 
 Where can I get my car fixed?
 
@@ -35,11 +33,11 @@ I'm sorry, I don't know that. Would you like me to look it up for you?
 result:
 {"score": 1}
 
-# Conversation
 Here the actual conversation to be scored:
+# Conversation
 {% for message in messages %}
 {{ message.role }}:
 {{ message.content}}
 {% endfor %}
 
-# Result
+result:
