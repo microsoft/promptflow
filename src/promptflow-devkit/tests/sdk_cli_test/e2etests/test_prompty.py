@@ -8,7 +8,7 @@ from openai.types.chat import ChatCompletion
 
 from promptflow._sdk._pf_client import PFClient
 from promptflow.core import Flow
-from promptflow.core._errors import InvalidConnectionError, MissingRequiredInputError
+from promptflow.core._errors import InvalidConnectionError, InvalidOutputKeyError, MissingRequiredInputError
 from promptflow.core._flow import AsyncPrompty, Prompty
 from promptflow.core._model_configuration import AzureOpenAIModelConfiguration
 from promptflow.core._prompty_utils import convert_model_configuration_to_connection
@@ -164,11 +164,6 @@ class TestPrompty:
             Prompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", model=model_dict)
         assert "Cannot configure model config and connection" in ex.value.message
 
-        # Test format is raw
-        prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", format="raw")
-        result = prompty(question="what is the result of 1+1?")
-        assert isinstance(result, ChatCompletion)
-
     def test_prompty_async_call(self):
         async_prompty = AsyncPrompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty")
         with pytest.raises(MissingRequiredInputError) as e:
@@ -177,8 +172,8 @@ class TestPrompty:
         result = asyncio.run(async_prompty(question="what is the result of 1+1?"))
         assert "2" in result
 
-        # Test format is raw
-        async_prompty = AsyncPrompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", format="raw")
+        # Test return all choices
+        async_prompty = AsyncPrompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", model={"response": "all"})
         result = asyncio.run(async_prompty(question="what is the result of 1+1?"))
         assert isinstance(result, ChatCompletion)
 
@@ -186,7 +181,8 @@ class TestPrompty:
     def test_prompty_batch_run(self, pf: PFClient):
         run = pf.run(flow=f"{PROMPTY_DIR}/prompty_example.prompty", data=f"{DATA_DIR}/prompty_inputs.jsonl")
         assert run.status == "Completed"
-        assert "error" not in run._to_dict()
+        run_dict = run._to_dict()
+        assert not run_dict.get("error", None), f"error in run_dict {run_dict['error']}"
 
         output_data = Path(run.properties["output_path"]) / "flow_outputs" / "output.jsonl"
         with open(output_data, "r") as f:
@@ -204,3 +200,45 @@ class TestPrompty:
             flow=f"{PROMPTY_DIR}/prompty_example.prompty", inputs={"question": "what is the result of 1+1?"}
         )
         assert "2" in result
+
+    def test_prompty_format_output(self, pf: PFClient):
+        # Test json_object format
+        prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example_with_json_format.prompty")
+        result = prompty(question="what is the result of 1+1?")
+        assert isinstance(result, dict)
+        assert 2 == result["answer"]
+        assert "John" == result["name"]
+
+        # Test json_object format with specified output
+        prompty = Prompty.load(
+            source=f"{PROMPTY_DIR}/prompty_example_with_json_format.prompty", outputs={"answer": {"type": "number"}}
+        )
+        result = prompty(question="what is the result of 1+1?")
+        assert isinstance(result, dict)
+        assert 2 == result["answer"]
+        assert "name" not in result
+
+        # Test json_object format with invalid output
+        prompty = Prompty.load(
+            source=f"{PROMPTY_DIR}/prompty_example_with_json_format.prompty",
+            outputs={"invalid_output": {"type": "number"}},
+        )
+        with pytest.raises(InvalidOutputKeyError) as ex:
+            prompty(question="what is the result of 1+1?")
+        assert "Cannot find invalid_output in response ['name', 'answer']" in ex.value.message
+
+        # Test stream output
+        prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", model={"parameters": {"stream": True}})
+        result = prompty(question="what is the result of 1+1?")
+        result_content = ""
+        for item in result:
+            if len(item.choices) > 0 and item.choices[0].delta.content:
+                result_content += item.choices[0].delta.content
+        assert "2" in result_content
+
+        # Test return all choices
+        prompty = Prompty.load(
+            source=f"{PROMPTY_DIR}/prompty_example.prompty", model={"parameters": {"n": 2}, "response": "all"}
+        )
+        result = prompty(question="what is the result of 1+1?")
+        assert isinstance(result, ChatCompletion)
