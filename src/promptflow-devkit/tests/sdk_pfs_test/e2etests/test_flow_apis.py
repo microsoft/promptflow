@@ -3,6 +3,8 @@
 # ---------------------------------------------------------
 
 
+from pathlib import Path
+
 import pytest
 from _constants import PROMPTFLOW_ROOT
 
