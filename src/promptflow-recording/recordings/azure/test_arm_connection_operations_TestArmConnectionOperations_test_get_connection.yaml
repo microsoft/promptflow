@@ -9,21 +9,21 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - promptflow-azure-sdk/0.1.0b1 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.9.19 (Windows-10-10.0.22631-SP0)
     method: GET
-    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/api-version=2023-08-01-preview
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000?api-version=2023-08-01-preview
   response:
     body:
       string: '{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000",
         "name": "00000", "type": "Microsoft.MachineLearningServices/workspaces", "location":
-        "eastus", "tags": {}, "etag": null, "kind": "Default", "sku": {"name": "Basic",
-        "tier": "Basic"}, "properties": {"discoveryUrl": "https://eastus.api.azureml.ms/discovery"}}'
+        "eastus2euap", "tags": {}, "etag": null, "kind": "Default", "sku": {"name":
+        "Basic", "tier": "Basic"}, "properties": {"discoveryUrl": "https://eastus.api.azureml.ms/discovery"}}'
     headers:
       cache-control:
       - no-cache
       content-length:
-      - '3630'
+      - '3697'
       content-type:
       - application/json; charset=utf-8
       expires:
@@ -39,7 +39,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.017'
+      - '0.019'
     status:
       code: 200
       message: OK
@@ -53,29 +53,21 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0 Python/3.9.19
+        (Windows-10-10.0.22631-SP0)
     method: GET
-    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores?api-version=2023-04-01-preview&count=30&isDefault=true&orderByAsc=false
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000?api-version=2023-08-01-preview
   response:
     body:
-      string: '{"value": [{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore",
-        "name": "workspaceblobstore", "type": "Microsoft.MachineLearningServices/workspaces/datastores",
-        "properties": {"description": null, "tags": null, "properties": null, "isDefault":
-        true, "credentials": {"credentialsType": "AccountKey"}, "intellectualProperty":
-        null, "subscriptionId": "00000000-0000-0000-0000-000000000000", "resourceGroup":
-        "00000", "datastoreType": "AzureBlob", "accountName": "fake_account_name",
-        "containerName": "fake-container-name", "endpoint": "core.windows.net", "protocol":
-        "https", "serviceDataAccessAuthIdentity": "WorkspaceSystemAssignedIdentity"},
-        "systemData": {"createdAt": "2023-04-08T02:53:06.5886442+00:00", "createdBy":
-        "779301c0-18b2-4cdc-801b-a0a3368fee0a", "createdByType": "Application", "lastModifiedAt":
-        "2023-04-08T02:53:07.521127+00:00", "lastModifiedBy": "779301c0-18b2-4cdc-801b-a0a3368fee0a",
-        "lastModifiedByType": "Application"}}]}'
+      string: '{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000",
+        "name": "00000", "type": "Microsoft.MachineLearningServices/workspaces", "location":
+        "eastus2euap", "tags": {}, "etag": null, "kind": "Default", "sku": {"name":
+        "Basic", "tier": "Basic"}, "properties": {"discoveryUrl": "https://eastus.api.azureml.ms/discovery"}}'
     headers:
       cache-control:
       - no-cache
       content-length:
-      - '1372'
+      - '3697'
       content-type:
       - application/json; charset=utf-8
       expires:
@@ -91,7 +83,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.070'
+      - '0.020'
     status:
       code: 200
       message: OK
@@ -116,18 +108,20 @@ interactions:
         "name": "azure_open_ai_connection", "type": "Microsoft.MachineLearningServices/workspaces/connections",
         "properties": {"authType": "ApiKey", "credentials": {"key": "_"}, "group":
         "AzureAI", "category": "AzureOpenAI", "expiryTime": null, "target": "_", "createdByWorkspaceArmId":
-        null, "isSharedToAll": false, "sharedUserList": [], "metadata": {"azureml.flow.connection_type":
-        "AzureOpenAI", "azureml.flow.module": "promptflow.connections", "ApiType":
-        "azure", "ApiVersion": "2023-07-01-preview", "ResourceId": null, "DeploymentApiVersion":
-        "2023-10-01-preview"}}, "systemData": {"createdAt": "2023-08-22T10:15:34.5762053Z",
-        "createdBy": "username@microsoft.com", "createdByType": "User", "lastModifiedAt":
-        "2023-08-22T10:15:34.5762053Z", "lastModifiedBy": "username@microsoft.com",
-        "lastModifiedByType": "User"}}'
+        "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus2euap",
+        "useWorkspaceManagedIdentity": false, "isSharedToAll": false, "sharedUserList":
+        [], "metadata": {"azureml.flow.connection_type": "AzureOpenAI", "azureml.flow.module":
+        "promptflow.connections", "ApiType": "azure", "ApiVersion": "2023-07-01-preview",
+        "ResourceId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.CognitiveServices/accounts/gpt-test-eus",
+        "DeploymentApiVersion": "2023-10-01-preview"}}, "systemData": {"createdAt":
+        "2024-03-22T14:56:56.0857069Z", "createdBy": "username@microsoft.com", "createdByType":
+        "User", "lastModifiedAt": "2024-03-22T14:56:56.0857069Z", "lastModifiedBy":
+        "username@microsoft.com", "lastModifiedByType": "User"}}'
     headers:
       cache-control:
       - no-cache
       content-length:
-      - '1246'
+      - '1579'
       content-type:
       - application/json; charset=utf-8
       expires:
@@ -143,7 +137,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.072'
+      - '0.772'
     status:
       code: 200
       message: OK
@@ -168,16 +162,18 @@ interactions:
         "name": "custom_connection", "type": "Microsoft.MachineLearningServices/workspaces/connections",
         "properties": {"authType": "CustomKeys", "credentials": {"keys": {}}, "group":
         "AzureAI", "category": "CustomKeys", "expiryTime": null, "target": "_", "createdByWorkspaceArmId":
-        null, "isSharedToAll": false, "sharedUserList": [], "metadata": {"azureml.flow.connection_type":
-        "Custom", "azureml.flow.module": "promptflow.connections"}}, "systemData":
-        {"createdAt": "2023-06-19T20:56:12.0353964Z", "createdBy": "username@microsoft.com",
-        "createdByType": "User", "lastModifiedAt": "2023-06-19T20:56:12.0353964Z",
-        "lastModifiedBy": "username@microsoft.com", "lastModifiedByType": "User"}}'
+        "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus2euap",
+        "useWorkspaceManagedIdentity": false, "isSharedToAll": false, "sharedUserList":
+        [], "metadata": {"azureml.flow.connection_type": "Custom", "azureml.flow.module":
+        "promptflow.connections"}}, "systemData": {"createdAt": "2023-12-18T09:44:22.1118582Z",
+        "createdBy": "username@microsoft.com", "createdByType": "User", "lastModifiedAt":
+        "2023-12-18T09:44:22.1118582Z", "lastModifiedBy": "username@microsoft.com",
+        "lastModifiedByType": "User"}}'
     headers:
       cache-control:
       - no-cache
       content-length:
-      - '1275'
+      - '1254'
       content-type:
       - application/json; charset=utf-8
       expires:
@@ -193,7 +189,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.075'
+      - '0.090'
     status:
       code: 200
       message: OK

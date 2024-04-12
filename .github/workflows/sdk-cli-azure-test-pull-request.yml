@@ -6,56 +6,29 @@ name: sdk-cli-azure-test-pull-request
 on:
   pull_request:
     paths:
-      - src/promptflow-core/**
-      - src/promptflow-devkit/**
       - src/promptflow/**
       - scripts/building/**
-      - src/promptflow-tracing/**
       - .github/workflows/sdk-cli-azure-test-pull-request.yml
+      - src/promptflow-tracing/**
+      - src/promptflow-core/**
+      - src/promptflow-devkit/**
+      - src/promptflow-azure/**
 
 
 env:
-  packageSetupType: promptflow_with_extra
-  testWorkingDirectory: ${{ github.workspace }}/src/promptflow
-  PYTHONPATH: ${{ github.workspace }}/src/promptflow
   IS_IN_CI_PIPELINE: "true"
   PROMPT_FLOW_TEST_MODE: "replay"
+  TRACING_DIRECTORY: ${{ github.workspace }}/src/promptflow-tracing
+  WORKING_DIRECTORY: ${{ github.workspace }}/src/promptflow-azure
+  CORE_DIRECTORY: ${{ github.workspace }}/src/promptflow-core
+  DEVKIT_DIRECTORY: ${{ github.workspace }}/src/promptflow-devkit
+  PROMPTFLOW_DIRECTORY: ${{ github.workspace }}/src/promptflow
+  TOOL_DIRECTORY: ${{ github.workspace }}/src/promptflow-tools
   RECORD_DIRECTORY: ${{ github.workspace }}/src/promptflow-recording
 
 
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-    runs-on: ubuntu-latest
-    steps:
-    - name: checkout
-      uses: actions/checkout@v4
-    - name: Display and Set Environment Variables
-      run: |
-        env | sort >> $GITHUB_OUTPUT
-      id: display_env
-      shell: bash -el {0}
-    - name: Python Setup - ubuntu-latest - Python Version 3.9
-      uses: "./.github/actions/step_create_python_environment"
-      with:
-        pythonVersion: 3.9
-    - name: Build wheel
-      uses: "./.github/actions/step_sdk_setup"
-      with:
-        setupType: promptflow_with_extra
-        scriptPath: ${{ env.testWorkingDirectory }}
-    - name: Upload Wheel
-      if: always()
-      uses: actions/upload-artifact@v3
-      with:
-        name: wheel
-        path: |
-          ${{ github.workspace }}/src/promptflow/dist/*.whl
-          ${{ github.workspace }}/src/promptflow-tools/dist/*.whl
-
   sdk_cli_azure_test_replay:
-    needs: build
     strategy:
       fail-fast: false
       matrix:
@@ -71,47 +44,42 @@ jobs:
       - name: Display and Set Environment Variables
         run: env | sort >> $GITHUB_OUTPUT
 
-      - name: Python Setup - ${{ matrix.os }} - Python Version ${{ matrix.pythonVersion }}
-        uses: "./.github/actions/step_create_python_environment"
+      - uses: actions/setup-python@v5
         with:
-          pythonVersion: ${{ matrix.pythonVersion }}
-
-      - name: Download Artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: wheel
-          path: artifacts
-
-      - name: Install wheel
-        shell: pwsh
-        working-directory: artifacts
+          python-version: ${{ matrix.pythonVersion }}
+      - uses: snok/install-poetry@v1
+      - name: install test dependency group
         run: |
-          Set-PSDebug -Trace 1
-          pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
-          pip install ${{ github.workspace }}/src/promptflow-tracing
-          pip install ${{ github.workspace }}/src/promptflow-core
-          pip install ${{ github.workspace }}/src/promptflow-devkit
-          pip install ${{ github.workspace }}/src/promptflow-azure
-          gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[azure]"}}
-          gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
-          pip freeze
+          set -xe
+          poetry install --only test
+          poetry run pip install ${{ env.TRACING_DIRECTORY }}
+          poetry run pip install ${{ env.CORE_DIRECTORY }}[azureml-serving]
+          poetry run pip install ${{ env.DEVKIT_DIRECTORY }}[pyarrow]
+          poetry run pip install -e ${{ env.WORKING_DIRECTORY }}
 
-      - name: install recording
+          echo "Need to install promptflow to avoid tool dependency issue"
+          poetry run pip install ${{ env.PROMPTFLOW_DIRECTORY }}
+          poetry run pip install ${{ env.TOOL_DIRECTORY }}
+          poetry run pip install -e ${{ env.RECORD_DIRECTORY }}
+
+          poetry run pip show promptflow-tracing
+          poetry run pip show promptflow-core
+          poetry run pip show promptflow-devkit
+          poetry run pip show promptflow-azure
+          poetry run pip show promptflow-tools
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+
+      - name: generate live test resources
+        working-directory: ${{ env.PROMPTFLOW_DIRECTORY }}
         run: |
-          pip install vcrpy
-          pip install -e .
-        working-directory: ${{ env.RECORD_DIRECTORY }}
+          cp ${{ github.workspace }}/src/promptflow/dev-connections.json.example ${{ github.workspace }}/src/promptflow/connections.json
 
       - name: Run SDK CLI Azure Test (replay mode)
         shell: pwsh
-        working-directory: ${{ env.testWorkingDirectory }}
+        working-directory: ${{ env.WORKING_DIRECTORY }}
         run: |
-          python "../../scripts/building/run_coverage_tests.py" `
-            -p promptflow `
-            -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_azure_test `
-            -l eastus `
-            -m "unittest or e2etest" `
-            --coverage-config ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test/.coveragerc
+          poetry run pytest ./tests/sdk_cli_azure_test -p promptflow --cov=promptflow --cov-config=pyproject.toml `
+          --cov-report=term --cov-report=html --cov-report=xml -n auto -m "unittest or e2etest"
 
       - name: Upload Test Results
         if: always()
@@ -119,8 +87,8 @@ jobs:
         with:
           name: Test Results (Python ${{ matrix.pythonVersion }}) (OS ${{ matrix.os }})
           path: |
-            ${{ env.testWorkingDirectory }}/*.xml
-            ${{ env.testWorkingDirectory }}/htmlcov/
+            ${{ env.WORKING_DIRECTORY }}/*.xml
+            ${{ env.WORKING_DIRECTORY }}/htmlcov/
 
   publish-test-results-sdk-cli-azure-test:
     needs: sdk_cli_azure_test_replay
