@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 
 import pytest
+from _constants import PROMPTFLOW_ROOT
 from openai.types.chat import ChatCompletion
 
 from promptflow._sdk._pf_client import PFClient
@@ -12,7 +13,7 @@ from promptflow.core._flow import AsyncPrompty, Prompty
 from promptflow.core._model_configuration import AzureOpenAIModelConfiguration
 from promptflow.core._prompty_utils import convert_model_configuration_to_connection
 
-TEST_ROOT = Path(__file__).parent.parent.parent
+TEST_ROOT = PROMPTFLOW_ROOT / "tests"
 DATA_DIR = TEST_ROOT / "test_configs/datas"
 PROMPTY_DIR = TEST_ROOT / "test_configs/prompty"
 FLOW_DIR = TEST_ROOT / "test_configs/flows"
