@@ -1,5 +1,5 @@
 # Basic Eval
-A prompt that determines whether a answer is correct.
+Basic evaluator prompt for QA scenario
 
 ## Prerequisites
 
@@ -22,6 +22,5 @@ cat ../.env
 
 - Test flow
 ```bash
-# sample.json contains messages field which contains the chat conversation.
-pf flow test --flow apology.prompty --inputs sample.json
+pf flow test --flow eval.prompty --inputs sample.json
 ```

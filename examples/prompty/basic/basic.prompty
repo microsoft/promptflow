@@ -3,13 +3,14 @@ name: Basic Prompt
 description: A basic prompt that uses the chat API to answer questions
 model:
     api: chat
-    connection: open_ai_connection
+    configuration:
+        connection: open_ai_connection
+        azure_deployment: gpt-4
     parameters:
-        deployment_name: gpt-4
         max_tokens: 128
         temperature: 0.2
-    response_format:
-        type: json_object
+        response_format:
+            type: json_object
 inputs:
     firstName:
         type: string

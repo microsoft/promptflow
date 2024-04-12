@@ -3,7 +3,8 @@ name: Apology Prompt
 description: A prompt that determines whether a chat conversation contains an apology from the assistant
 model:
   api: chat
-  connection: open_ai_connection
+  configuration
+    connection: open_ai_connection
   parameters:
     deployment_name: gpt-4
     temperature: 0.5

@@ -1,6 +1,6 @@
 {
   "firstName": "Jane",
   "lastName": "Doe",
-  "input": "What is the meaning of life?",
+  "question": "What is the meaning of life?",
   "chat_history": []
 }

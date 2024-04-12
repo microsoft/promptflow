@@ -43,16 +43,19 @@ Ensure you have put your azure open ai endpoint key in [.env](../.env) file. You
 cat ../.env
 ```
 
-- Test flow
-
+- Test flow: single turn 
 ```bash
-# run chat flow with default question in flow.flex.yaml
-pf flow test --flow chat.prompty
+# run chat flow with default question in flow.flex.yaml TODO
+# pf flow test --flow chat.prompty
 
 # run chat flow with new question
 pf flow test --flow chat.prompty --inputs question="What's Azure Machine Learning?"
+
+# run chat flow with sample.json
+pf flow test --flow chat.prompty --inputs sample.json
 ```
 
+- Test flow: multi turn
 ```powershell
 # start test in interactive terminal (TODO)
 pf flow test --flow chat.prompty --interactive

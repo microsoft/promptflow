@@ -1,0 +1,39 @@
+---
+name: basic evaluate 
+description: basic evaluator for QA scenario
+model:
+  api: chat
+  configuration:
+    connection: open_ai_connection
+    azure_deployment: gpt-4
+  parameters:
+    temperature: 0.2
+    max_tokens: 200
+    top_p: 1.0
+
+inputs: 
+  question:
+    type: string
+  answer:
+    type: string
+  ground_truth:
+    type: string
+
+---
+system:
+You are an AI assistant. 
+You task is to evaluate a score for the answer based on the ground_truth and original question.
+This score value should always be an integer between 1 and 5. So the score produced should be 1 or 2 or 3 or 4 or 5.
+
+# Example
+question: "What is the capital of France?"
+answer: "Paris"
+ground_truth: "Paris"
+output:
+{"score": "5", "explanation":"paris is the capital of France"}
+
+user: 
+question: {{question}}
+answer: {{answer}}
+statement: {{statement}}
+output:
