@@ -16,7 +16,7 @@ from promptflow._internal import ConnectionManager
 from promptflow._proxy import ProxyFactory
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._utils import get_flow_name
-from promptflow._sdk.entities._flows import Flow, FlowContext
+from promptflow._sdk.entities._flows import Flow, FlowContext, Prompty
 from promptflow._sdk.operations._local_storage_operations import LoggerOperations
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.context_utils import _change_working_dir
@@ -25,6 +25,7 @@ from promptflow._utils.exception_utils import ErrorResponse
 from promptflow._utils.flow_utils import dump_flow_result, parse_variant
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.contracts.flow import Flow as ExecutableFlow
+from promptflow.contracts.flow import PromptyFlow as ExecutablePromptyFlow
 from promptflow.contracts.run_info import RunInfo, Status
 from promptflow.exceptions import UserErrorException
 from promptflow.executor._result import LineResult
@@ -111,6 +112,8 @@ class TestSubmitter:
     @property
     def dataplane_flow(self):
         # TODO: test submitter shouldn't interact with dataplane flow directly
+        if isinstance(self.flow, Prompty):
+            self._dataplane_flow = ExecutablePromptyFlow.deserialize(self.flow._data)
         if not self._dataplane_flow:
             self._dataplane_flow = ExecutableFlow.from_yaml(flow_file=self.flow.path, working_dir=self.flow.code)
         return self._dataplane_flow
@@ -517,7 +520,8 @@ class TestSubmitter:
             logger.setLevel(origin_level)
 
         init(autoreset=True)
-        chat_history = []
+        default_chat_history = list(self.dataplane_flow.inputs.get(chat_history_name).default or [])
+        chat_history = inputs.get[chat_history_name] if chat_history_name in inputs else default_chat_history
         # TODO: test submitter should not interact with dataplane flow directly
         input_name = next(
             filter(lambda key: self.dataplane_flow.inputs[key].is_chat_input, self.dataplane_flow.inputs.keys())
@@ -526,7 +530,8 @@ class TestSubmitter:
             filter(
                 lambda key: self.dataplane_flow.outputs[key].is_chat_output,
                 self.dataplane_flow.outputs.keys(),
-            )
+            ),
+            None,
         )
 
         while True:
@@ -554,15 +559,17 @@ class TestSubmitter:
             show_node_log_and_output(flow_result.node_run_infos, show_step_output, generator_record)
 
             print(f"{Fore.YELLOW}Bot: ", end="")
+            # For prompty flow, if outputs are not specified, prompty output will be treated as chat output.
+            chat_output = flow_result.output[output_name] if output_name else flow_result.output
             print_chat_output(
-                flow_result.output[output_name],
+                chat_output,
                 generator_record,
-                generator_key=f"run.outputs.{output_name}",
+                generator_key=f"run.outputs.{output_name or 'output'}",
             )
             flow_result = resolve_generator(flow_result, generator_record)
-            flow_outputs = {k: v for k, v in flow_result.output.items()}
-            history = {"inputs": {input_name: input_value}, "outputs": flow_outputs}
-            chat_history.append(history)
+            # flow_outputs = {k: v for k, v in flow_result.output.items()}
+            history = [{"role": "user", "content": input_value}, {"role": "assistant", "content": chat_output}]
+            chat_history.extend(history)
             dump_flow_result(flow_folder=self._origin_flow.code, flow_result=flow_result, prefix="chat")
 
     @staticmethod

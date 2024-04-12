@@ -288,9 +288,12 @@ def is_executable_chat_flow(flow: ExecutableFlow):
     if len(chat_inputs) != 1:
         _is_chat_flow = False
         error_msg = "chat flow does not support multiple chat inputs"
-    elif len(chat_outputs) != 1:
+    elif len(chat_outputs) > 1:
         _is_chat_flow = False
         error_msg = "chat flow does not support multiple chat outputs"
+    elif not chat_outputs and len(flow.outputs.values()) > 0:
+        _is_chat_flow = False
+        error_msg = "chat output is not configured"
     elif not chat_history_input_name:
         _is_chat_flow = False
         error_msg = "chat_history is required in the inputs of chat flow"

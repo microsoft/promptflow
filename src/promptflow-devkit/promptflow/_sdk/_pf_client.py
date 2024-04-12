@@ -60,6 +60,7 @@ class PFClient:
             ClientUserAgentUtil.append_user_agent(kwargs["user_agent"])
         self._traces = TraceOperations()
         setup_user_agent_to_operation_context(USER_AGENT)
+        self._kwargs = kwargs
 
     def run(
         self,

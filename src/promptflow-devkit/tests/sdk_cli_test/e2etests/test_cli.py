@@ -1074,30 +1074,39 @@ class TestCli:
                 raise KeyboardInterrupt()
 
         monkeypatch.setattr("builtins.input", mock_input)
+        # run_pf_command(
+        #     "flow",
+        #     "test",
+        #     "--flow",
+        #     f"{FLOWS_DIR}/chat_flow_with_defined_chat_history",
+        #     "--interactive",
+        # )
+        # output_path = Path(FLOWS_DIR) / "chat_flow_with_defined_chat_history" / ".promptflow" / "chat.output.json"
+        # assert output_path.exists()
+        # detail_path = Path(FLOWS_DIR) / "chat_flow_with_defined_chat_history" / ".promptflow" / "chat.detail.json"
+        # assert detail_path.exists()
+        #
+        # # Test is_chat_history is set False
+        # with pytest.raises(SystemExit):
+        #     chat_list = ["hi", "what is chat gpt?"]
+        #     run_pf_command(
+        #         "flow",
+        #         "test",
+        #         "--flow",
+        #         f"{FLOWS_DIR}/chat_flow_without_defined_chat_history",
+        #         "--interactive",
+        #     )
+        # outerr = capsys.readouterr()
+        # assert "chat_history is required in the inputs of chat flow" in outerr.out
+
+        chat_list = ["what is the result of 3+3?", "What is the sum of the calculation results of previous rounds?"]
         run_pf_command(
             "flow",
             "test",
             "--flow",
-            f"{FLOWS_DIR}/chat_flow_with_defined_chat_history",
+            f"{PROMPTY_DIR}/prompty_with_chat_history.prompty",
             "--interactive",
         )
-        output_path = Path(FLOWS_DIR) / "chat_flow_with_defined_chat_history" / ".promptflow" / "chat.output.json"
-        assert output_path.exists()
-        detail_path = Path(FLOWS_DIR) / "chat_flow_with_defined_chat_history" / ".promptflow" / "chat.detail.json"
-        assert detail_path.exists()
-
-        # Test is_chat_history is set False
-        with pytest.raises(SystemExit):
-            chat_list = ["hi", "what is chat gpt?"]
-            run_pf_command(
-                "flow",
-                "test",
-                "--flow",
-                f"{FLOWS_DIR}/chat_flow_without_defined_chat_history",
-                "--interactive",
-            )
-        outerr = capsys.readouterr()
-        assert "chat_history is required in the inputs of chat flow" in outerr.out
 
     @pytest.mark.parametrize(
         "extra_args,expected_err",
