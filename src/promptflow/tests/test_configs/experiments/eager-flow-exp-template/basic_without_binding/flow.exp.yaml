@@ -1,0 +1,24 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Experiment.schema.json
+
+description: Eager flow experiment
+
+data:
+  - name: my_data
+    path: ../../../eager_flows/flow_with_dataclass_output/inputs.jsonl
+
+nodes:
+  - name: main
+    type: flow
+    path: ../../../eager_flows/flow_with_dataclass_output/flow.flex.yaml
+
+  - name: main2
+    type: flow
+    path: ../../../eager_flows/primitive_output/flow.flex.yaml
+    inputs:
+      input_val: ${main.outputs.text}  # dataclass reference
+
+  - name: main3
+    type: flow
+    path: ../../../eager_flows/required_inputs/flow.flex.yaml
+    inputs:
+      input_val: ${main2.outputs.output}  # primitive reference

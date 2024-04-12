@@ -493,7 +493,7 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
 
             # generate .promptflow/flow.json for eager flow and .promptflow/flow.dag.yaml for non-eager flow
             flow_directory, flow_file = resolve_flow_path(code.path)
-            ProxyFactory().get_executor_proxy_cls(flow.language).dump_metadata(
+            ProxyFactory().get_executor_proxy_cls(flow.language).generate_flow_tools_json(
                 flow_file=flow_directory / flow_file,
                 working_dir=flow_directory,
             )

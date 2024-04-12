@@ -131,6 +131,14 @@ class Flow(AdditionalIncludesMixin):
         flow_dag.pop(ADDITIONAL_INCLUDES, None)
         return True
 
+    @classmethod
+    def _resolve_signature(cls, code: Path, data: dict):
+        """Resolve signature for flex flow. Return True if resolved."""
+        from promptflow import PFClient
+
+        pf = PFClient()
+        return pf.flows._update_signatures(code=code, data=data)
+
     # region AdditionalIncludesMixin
     @contextmanager
     def _try_build_local_code(self) -> Optional[Code]:
@@ -152,6 +160,7 @@ class Flow(AdditionalIncludesMixin):
                 # promptflow snapshot will always be uploaded to default storage
                 code.datastore = DEFAULT_STORAGE
                 dag_updated = self._resolve_requirements(flow_dir, flow_dag) or dag_updated
+                dag_updated = self._resolve_signature(flow_dir, flow_dag) or dag_updated
                 self._environment = self._resolve_environment(flow_dir, flow_dag)
                 if dag_updated:
                     dump_flow_dag(flow_dag, flow_dir)
