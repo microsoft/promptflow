@@ -7,19 +7,9 @@ from _constants import PROMPTFLOW_ROOT
 from promptflow._cli._pf.entry import main
 from promptflow._sdk._constants import SCRUBBED_VALUE
 
-FLOWS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/flows"
-EAGER_FLOWS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/eager_flows"
-EXPERIMENT_DIR = PROMPTFLOW_ROOT / "tests/test_configs/experiments"
-RUNS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/runs"
 CONNECTIONS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/connections"
-DATAS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/datas"
-TOOL_ROOT = PROMPTFLOW_ROOT / "tests/test_configs/tools"
-PROMPTY_DIR = PROMPTFLOW_ROOT / "tests/test_configs/prompty"
-
-TARGET_URL = "https://www.youtube.com/watch?v=o5ZQyXaAv1g"
 
 
-# TODO: move this to a shared utility module
 def run_pf_command(*args, cwd=None):
     """Run a pf command with the given arguments and working directory.
 
