@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 import pytest
 from _constants import PROMPTFLOW_ROOT
+from mock import mock
 
 from promptflow._constants import (
     RUNNING_LINE_RUN_STATUS,
