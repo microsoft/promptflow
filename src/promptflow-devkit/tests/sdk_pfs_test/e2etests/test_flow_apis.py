@@ -68,11 +68,10 @@ class TestFlowAPIs:
             ).json
         assert response == {
             "inputs": {
-                "chat_history": {"default": "[]", "type": "array"},
+                "chat_history": {"default": "[]", "type": "list"},
                 "question": {"default": "What is ChatGPT?", "type": "string"},
-                "stream": {"default": "False", "type": "boolean"},
+                "stream": {"default": "False", "type": "bool"},
             },
-            "outputs": {"output": {"type": "string"}},
         }
 
     def test_eager_flow_test_with_yaml(self, pfs_op: PFSOperations) -> None:

@@ -1120,12 +1120,15 @@ class FlowOperations(TelemetryMixin):
         """
         # TODO: should we support string entry? If so, we should also add a parameter to specify the working directory
         if isinstance(entry, Prompty):
+            from promptflow._sdk.schemas._flow import ALLOWED_TYPES
+            from promptflow.contracts.tool import ValueType
             from promptflow.core._model_configuration import PromptyModelConfiguration
 
             flow_meta = {"inputs": entry._data.get("inputs", {}), "outputs": entry._data.get("outputs", {})}
             init_dict = {}
             for field in fields(PromptyModelConfiguration):
-                init_dict[field.name] = {"type": type(field.type).__name__}
+                filed_type = type(field.type).__name__
+                init_dict[field.name] = {"type": filed_type if filed_type in ALLOWED_TYPES else ValueType.OBJECT.value}
                 if field.default != MISSING:
                     init_dict[field.name]["default"] = field.default
             flow_meta["init"] = init_dict
@@ -1147,8 +1150,10 @@ class FlowOperations(TelemetryMixin):
         elif isinstance(entry, FlexFlow):
             entry = entry_string_to_callable(entry.entry_file, entry.entry)
             flow_meta, _, _ = self._infer_signature_flex_flow(entry=entry)
-        else:
+        elif inspect.isclass(entry) or inspect.isfunction(entry):
             flow_meta, _, _ = self._infer_signature_flex_flow(entry=entry)
+        else:
+            raise UserErrorException(f"Invalid entry {type(entry).__name__}, only support callable object or flow.")
         return flow_meta
 
     def _save(

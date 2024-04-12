@@ -287,8 +287,9 @@ class PFSOperations:
         return response
 
     def test_flow_infer_signature(self, flow_path, status_code=None):
-        request_body = {"source": flow_path}
-        response = self._client.post(f"{self.Flow_URL_PREFIX}/infer_signature", json=request_body)
+        flow_path = encrypt_flow_path(flow_path)
+        query_string = {"source": flow_path}
+        response = self._client.post(f"{self.Flow_URL_PREFIX}/infer_signature", query_string=query_string)
         if status_code:
             assert status_code == response.status_code, response.text
         return response

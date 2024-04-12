@@ -45,7 +45,7 @@ flow_path_parser.add_argument("session", type=str, required=False, location="jso
 
 flow_infer_signature_parser = api.parser()
 flow_infer_signature_parser.add_argument(
-    "source", type=str, required=True, location="json", help="Path to flow or prompty."
+    "source", type=str, required=True, location="args", help="Path to flow or prompty."
 )
 
 
@@ -95,6 +95,7 @@ class FlowInferSignature(Resource):
     @api.expect(flow_infer_signature_parser)
     def post(self):
         args = flow_infer_signature_parser.parse_args()
-        flow = load_flow(source=args.source)
+        flow_path = decrypt_flow_path(args.source)
+        flow = load_flow(source=flow_path)
         infer_signature = get_client_from_request().flows.infer_signature(entry=flow)
         return jsonify(infer_signature)

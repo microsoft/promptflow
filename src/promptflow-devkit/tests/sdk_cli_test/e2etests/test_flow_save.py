@@ -630,9 +630,12 @@ class TestFlowSave:
         meta = pf.flows.infer_signature(entry=flex_flow)
         assert meta == {
             "inputs": {
-                "chat_history": {"default": "[]", "type": "array"},
+                "chat_history": {"default": "[]", "type": "list"},
                 "question": {"default": "What is ChatGPT?", "type": "string"},
-                "stream": {"default": "False", "type": "boolean"},
+                "stream": {"default": "False", "type": "bool"},
             },
-            "outputs": {"output": {"type": "string"}},
         }
+
+        with pytest.raises(UserErrorException) as ex:
+            pf.flows.infer_signature(entry="invalid_entry")
+        assert "only support callable object or flow" in ex.value.message
