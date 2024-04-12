@@ -207,7 +207,7 @@ class FlowOperations(TelemetryMixin):
                 return_output[key] = {
                     "detail": detail_content,
                     "log": log_content,
-                    "output_path": (output_path / key).as_posix(),
+                    "output_path": str(output_path / key),
                 }
         else:
             if node:
@@ -223,9 +223,7 @@ class FlowOperations(TelemetryMixin):
             detail_content = json_load(detail_path)
             with open(log_path, "r") as file:
                 log_content = file.read()
-            return_output = {
-                "flow": {"detail": detail_content, "log": log_content, "output_path": output_path.as_posix()}
-            }
+            return_output = {"flow": {"detail": detail_content, "log": log_content, "output_path": str(output_path)}}
         return return_output
 
     def _test(

@@ -27,6 +27,7 @@ base_experiment.add_argument(
 )
 base_experiment.add_argument("output_path", type=str, location="json", required=False)
 base_experiment.add_argument("session", type=str, required=False, location="json")
+base_experiment.add_argument("init", type=dict, required=False, location="json")
 
 # Define start experiments request parsing
 test_experiment = base_experiment.copy()
@@ -77,6 +78,7 @@ class ExperimentTest(Resource):
         environment_variables = args.environment_variables
         output_path = args.output_path
         session = args.session
+        init = args.init
         context = None
         if inputs and override_flow_path:
             flow_path_dir, flow_path_file = resolve_flow_path(override_flow_path)
@@ -97,6 +99,7 @@ class ExperimentTest(Resource):
             environment_variables=environment_variables,
             session=session,
             context=context,
+            init=init,
         )
         # Todo : remove output_path when exit executor which is registered in pfs
         return result
@@ -115,6 +118,7 @@ class ExperimentSkipTest(Resource):
         environment_variables = args.environment_variables
         output_path = args.output_path
         session = args.session
+        init = args.init
         skip_flow = args.skip_flow
         if skip_flow:
             flow_path_dir, flow_path_file = resolve_flow_path(skip_flow)
@@ -138,6 +142,7 @@ class ExperimentSkipTest(Resource):
             environment_variables=environment_variables,
             session=session,
             context=context,
+            init=init,
         )
         # Todo : remove output_path when exit executor which is registered in pfs
         return result

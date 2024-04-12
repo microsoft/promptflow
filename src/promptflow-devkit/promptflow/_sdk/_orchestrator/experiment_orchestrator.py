@@ -140,6 +140,7 @@ class ExperimentOrchestrator:
             environment_variables=environment_variables,
             output_path=kwargs.get("output_path"),
             session=kwargs.get("session"),
+            init=kwargs.get("init"),
         )
 
         for node in nodes_to_test:
@@ -186,6 +187,7 @@ class ExperimentOrchestrator:
             environment_variables=environment_variables,
             output_path=kwargs.get("output_path"),
             session=kwargs.get("session"),
+            init=kwargs.get("init"),
             context_run_id=context_run_id,
             skip_node_name=skip_node_name,
         )
@@ -244,6 +246,7 @@ class ExperimentOrchestrator:
             stream_output=False,
             run_id=test_context.node_name_to_id[node.name],
             session=test_context.session,
+            init=test_context.init,
         )
 
     def _test_command_node(self, *args, **kwargs):
@@ -837,6 +840,7 @@ class ExperimentTemplateTestContext(ExperimentTemplateContext):
         environment_variables=None,
         output_path=None,
         session=None,
+        init=None,
         **kwargs,
     ):
         """
@@ -852,6 +856,7 @@ class ExperimentTemplateTestContext(ExperimentTemplateContext):
         self.node_inputs = {}  # E.g. {'main': {'url': 'https://abc'}}
         self.test_data = ExperimentHelper.prepare_test_data(inputs, template)
         self.test_inputs = {input.name: input.default for input in template.inputs}
+        self.init = init
         # TODO: Update session part after test session is supported
         if output_path:
             self.output_path = Path(output_path)

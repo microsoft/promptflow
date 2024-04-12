@@ -37,3 +37,12 @@ class TestFlowAPIs:
                 status_code=200,
             ).json
         assert len(response) >= 1
+
+    def test_eager_flow_test_with_init(self, pfs_op: PFSOperations) -> None:
+        with check_activity_end_telemetry(activity_name="pf.flows.test"):
+            response = pfs_op.test_flow(
+                flow_path=Path(f"{EAGER_FLOW_ROOT}/basic_callable_class/").absolute().as_posix(),
+                request_body={"inputs": {"func_input": "input"}, "init": {"obj_input": "val"}},
+                status_code=200,
+            ).json
+        assert len(response) >= 1

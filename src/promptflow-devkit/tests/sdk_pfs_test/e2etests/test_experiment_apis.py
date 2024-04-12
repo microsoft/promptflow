@@ -55,6 +55,27 @@ class TestExperimentAPIs:
         assert "main2" in experiment
         assert "main3" in experiment
 
+    def test_experiment_eager_flow_with_init(self, pfs_op: PFSOperations) -> None:
+        with check_activity_end_telemetry(
+            expected_activities=[
+                {"activity_name": "pf.flows.test", "first_call": False},
+                {"activity_name": "pf.flows.test", "first_call": False},
+                {"activity_name": "pf.experiment.test"},
+            ]
+        ):
+            experiment = pfs_op.experiment_test(
+                body={
+                    "experiment_template": (
+                        EXPERIMENT_ROOT / "class-based-eager-flow-exp-template/flow.exp.yaml"
+                    ).as_posix(),
+                    "init": {"obj_input": "val"},
+                }
+            ).json
+        assert "main" in experiment and experiment["main"]["detail"]["flow_runs"][0]["inputs"] == {
+            "func_input": "val1",
+        }
+        assert "main2" in experiment
+
     def test_experiment_test_with_override_input(self, pfs_op: PFSOperations) -> None:
         with check_activity_end_telemetry(
             expected_activities=[
