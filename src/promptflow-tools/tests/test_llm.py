@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pytest
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 from promptflow.tools.exception import WrappedOpenAIError
-from promptflow.tools.llm import llm, list_apis
+from promptflow.tools.llm import llm
 
 from tests.utils import AttrDict
 
@@ -375,19 +375,6 @@ class TestLLM:
             logit_bias={}
         )
         assert "hello" in result.lower() or "you" in result.lower()
-
-    def test_list_apis(self):
-        with patch('promptflow.tools.llm.get_local_connection') as mock_dict:
-            mock_dict.return_value = {
-                "type": "AzureOpenAIConnection",
-            }
-
-            res = list_apis("sub", "rg", "ws", "con")
-            assert len(res) == 2
-            assert res[0].get("value") == "chat"
-            assert res[0].get("display_value") == "chat"
-            assert res[1].get("value") == "completion"
-            assert res[1].get("display_value") == "completion"
 
     # the test is to verify the tool can support serving streaming functionality.
     def test_streaming_option_parameter_is_set(self):

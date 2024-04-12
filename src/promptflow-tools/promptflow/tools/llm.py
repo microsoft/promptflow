@@ -1,6 +1,4 @@
-from typing import List, Dict
-
-from promptflow.tools.common import handle_openai_error, _get_credential
+from promptflow.tools.common import handle_openai_error
 from promptflow.tools.exception import InvalidConnectionType
 from promptflow.contracts.types import PromptTemplate
 from promptflow.tools.aoai import AzureOpenAI
@@ -17,65 +15,6 @@ except ImportError:
     # ServerlessConnection was introduced in pf version 1.6.0.
     class ServerlessConnection:
         pass
-
-
-def get_cloud_connection(connection_name, subscription_id, resource_group_name, workspace_name):
-    try:
-        # TODO: remove pf-azure dependencies by using ConnectionProvider.get_instance() method.
-        credential = _get_credential()
-        from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
-
-        return ArmConnectionOperations._build_connection_dict(
-            name=connection_name,
-            subscription_id=subscription_id,
-            resource_group_name=resource_group_name,
-            workspace_name=workspace_name,
-            credential=credential
-        )
-    except Exception as e:
-        print(f"Error getting cloud connection: {e}")
-        return None
-
-
-def get_local_connection(connection_name):
-    try:
-        # TODO: remove pf-devkit dependencies by using ConnectionProvider.get_instance() method.
-        from promptflow import PFClient
-
-        pf = PFClient()
-        return pf.connections.get(connection_name)
-    except Exception as e:
-        print(f"Error getting local connection: {e}")
-        return None
-
-
-# api needs dynamic list because we do not offer "completion" api for serverless connection.
-def list_apis(
-    subscription_id=None,
-    resource_group_name=None,
-    workspace_name=None,
-    connection_name=""
-) -> List[Dict[str, str]]:
-    if not connection_name:
-        return []
-
-    connection = get_local_connection(connection_name)
-    if connection is None:
-        connection = get_cloud_connection(connection_name, subscription_id, resource_group_name, workspace_name)
-
-    if connection is None:
-        return []
-
-    if (isinstance(connection, dict) and connection["type"] in {"AzureOpenAIConnection", "OpenAIConnection"}) or \
-       isinstance(connection, (AzureOpenAIConnection, OpenAIConnection)):
-        return [
-            {"value": "chat", "display_value": "chat"},
-            {"value": "completion", "display_value": "completion"},
-        ]
-    else:
-        return [
-            {"value": "chat", "display_value": "chat"},
-        ]
 
 
 # need to set metadata "streaming_option_parameter" to support serving streaming functionality.
