@@ -39,6 +39,7 @@ from promptflow.azure._constants._flow import (
 from promptflow.azure._entities._flow import Flow
 from promptflow.azure._load_functions import load_flow
 from promptflow.exceptions import UserErrorException
+from promptflow.recording.record_mode import is_live
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
 
@@ -1194,6 +1195,7 @@ class TestFlowRun:
         # run_data = pf.runs._get_run_from_run_history(run_id, original_form=True)[run_meta_data]
         # assert run_data[hidden] is False
 
+    @pytest.mark.skipif(not is_live(), reason="Content change in submission time which lead to recording issue.")
     def test_eager_flow_cancel(self, pf: PFClient, randstr: Callable[[str], str]):
         """Test cancel eager flow."""
         # create a run
@@ -1210,6 +1212,7 @@ class TestFlowRun:
         # the run status might still be cancel requested, but it should be canceled eventually
         assert run.status in [RunStatus.CANCELED, RunStatus.CANCEL_REQUESTED]
 
+    @pytest.mark.skipif(not is_live(), reason="Content change in submission time which lead to recording issue.")
     @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
     def test_eager_flow_download(self, pf: PFClient, simple_eager_run: Run):
         run = simple_eager_run
@@ -1266,10 +1269,9 @@ class TestFlowRun:
         run = pf.stream(run)
         assert run.status == RunStatus.COMPLETED
 
+    @pytest.mark.skipif(not is_live(), reason="Content change in submission time which lead to recording issue.")
     @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
     def test_eager_flow_meta_generation(self, pf: PFClient, randstr: Callable[[str], str]):
-        # delete the .promptflow/ folder
-        shutil.rmtree(f"{EAGER_FLOWS_DIR}/simple_with_req/.promptflow", ignore_errors=True)
         run = pf.run(
             flow=f"{EAGER_FLOWS_DIR}/simple_with_req",
             data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
@@ -1279,14 +1281,14 @@ class TestFlowRun:
         run = pf.runs.get(run)
         assert run.status == RunStatus.COMPLETED
 
-        # download the run and check .promptflow/flow.json
-        expected_files = [
-            f"{DownloadedRun.SNAPSHOT_FOLDER}/.promptflow/flow.json",
-        ]
+        # download the run and check flow's signature
         with TemporaryDirectory() as tmp_dir:
+            file = f"{DownloadedRun.SNAPSHOT_FOLDER}/flow.flex.yaml"
             pf.runs.download(run=run.name, output=tmp_dir)
-            for file in expected_files:
-                assert Path(tmp_dir, run.name, file).exists()
+            flow_file = Path(tmp_dir) / run.name / file
+            assert flow_file.exists()
+            flow_data = load_yaml(flow_file)
+            assert flow_data["inputs"] == {"input_val": {"type": "object"}}
 
     def test_session_id_with_different_env(self, pf: PFClient, randstr: Callable[[str], str]):
         run = pf.run(
@@ -1418,6 +1420,7 @@ class TestFlowRun:
                 )
                 pf.runs.create_or_update(run=run)
 
+    @pytest.mark.skipif(not is_live(), reason="Content change in submission time which lead to recording issue.")
     @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
     def test_eager_flow_run_without_yaml(self, pf: PFClient, randstr: Callable[[str], str]):
         run = pf.run(
