@@ -4,6 +4,7 @@
 
 ### Features Added
 - Add "detail" to "Azure OpenAI GPT-4 Turbo with Vision" and "OpenAI GPT-4V" tool inputs.
+- Address the prompt injection issue by roles escape and unescape.
 
 ## 1.4.0 (2024.03.26)
 
