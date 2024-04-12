@@ -18,6 +18,8 @@ from unittest.mock import patch
 import mock
 import pytest
 from _constants import PROMPTFLOW_ROOT
+from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
 
 from promptflow._cli._pf.entry import main
 from promptflow._constants import FLOW_FLEX_YAML, LINE_NUMBER_KEY, PF_USER_AGENT
@@ -2381,6 +2383,26 @@ class TestCli:
         stdout, _ = capsys.readouterr()
         assert "obj_input" in stdout
         assert "func_input" in stdout
+
+    @pytest.mark.usefixtures("reset_tracer_provider")
+    def test_pf_flow_test_with_collection(self):
+        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+            mock_func.return_value = True
+            collection = str(uuid.uuid4())
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{FLOWS_DIR}/web_classification",
+                "--inputs",
+                "url=https://www.youtube.com/watch?v=o5ZQyXaAv1g",
+                "answer=Channel",
+                "evidence=Url",
+                "--collection",
+                collection,
+            )
+            tracer_provider: TracerProvider = trace.get_tracer_provider()
+            assert tracer_provider.resource.attributes["collection"] == collection
 
 
 def assert_batch_run_result(run, pf, assert_func):

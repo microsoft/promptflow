@@ -15,6 +15,7 @@ from promptflow._core._errors import NotSupported
 from promptflow._internal import ConnectionManager
 from promptflow._proxy import ProxyFactory
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
+from promptflow._sdk._utils import get_flow_name
 from promptflow._sdk.entities._flows import Flow, FlowContext
 from promptflow._sdk.operations._local_storage_operations import LoggerOperations
 from promptflow._utils.async_utils import async_run_allowing_running_loop
@@ -28,7 +29,7 @@ from promptflow.contracts.run_info import RunInfo, Status
 from promptflow.exceptions import UserErrorException
 from promptflow.executor._result import LineResult
 from promptflow.storage._run_storage import DefaultRunStorage
-from promptflow.tracing._start_trace import start_trace
+from promptflow.tracing._start_trace import is_collection_writeable, start_trace
 
 from ..entities._flows import FlexFlow
 from .utils import (
@@ -188,6 +189,7 @@ class TestSubmitter:
         stream_log: bool = True,
         output_path: Optional[str] = None,
         session: Optional[str] = None,
+        collection: Optional[str] = None,
         stream_output: bool = True,
         init_kwargs: Optional[dict] = None,
     ):
@@ -207,6 +209,8 @@ class TestSubmitter:
         :type output_path: str
         :param session: session id. If None, a new session id will be generated with _provision_session.
         :type session: str
+        :param collection: collection.
+        :type collection: str
         :param stream_output: whether to return a generator for streaming output.
         :type stream_output: bool
         :param init_kwargs: Initialization parameters for flex flow, only supported when flow is callable class.
@@ -239,9 +243,21 @@ class TestSubmitter:
             )
 
             # do not enable trace when test single node, as we have not determined this behavior
-            if self._target_node is None:
-                logger.debug("Starting trace for flow test...")
-                start_trace(session=session)
+            if target_node is None:
+                logger.debug("start trace for flow test...")
+                if collection is not None:
+                    logger.debug("collection is user specified: %s, will use it...", collection)
+                    start_trace(collection=collection, session=session)
+                else:
+                    if is_collection_writeable():
+                        logger.debug("trace collection is writeable, will use flow name as collection...")
+                        collection_for_test = get_flow_name(self._origin_flow)
+                        logger.debug("collection for test: %s", collection_for_test)
+                        # pass with internal parameter `_collection`
+                        start_trace(session=session, _collection=collection_for_test)
+                    else:
+                        logger.debug("trace collection is protected, will honor existing collection.")
+                        start_trace(session=session)
 
             self._output_base, log_path, output_sub = self._resolve_output_path(
                 output_base=output_path,
