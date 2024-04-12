@@ -43,6 +43,12 @@ class TestEagerFlow:
                 lambda x: x["func_input"] == "func_input",
                 {"obj_input": "obj_input"},
             ),
+            (
+                "callable_with_decorator",
+                {"func_input": "func_input"},
+                lambda x: x["func_input"] == "func_input",
+                {"obj_input": "obj_input"},
+            ),
         ],
     )
     def test_flow_run(self, flow_folder, inputs, ensure_output, init_kwargs):

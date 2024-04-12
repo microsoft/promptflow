@@ -178,6 +178,7 @@ class ScriptExecutor(FlowExecutor):
                 entry_file=self._flow_file,
             ) from e
         func = getattr(module, func_name, None)
+        func = getattr(func, "__original_function", func)
         # check if func is a callable class
         if inspect.isclass(func):
             if hasattr(func, "__call__"):
