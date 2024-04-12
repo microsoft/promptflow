@@ -5,10 +5,12 @@ model:
     api: chat
     configuration:
         connection: open_ai_connection
-        azure_deployment: gpt-4
+        azure_deployment: gpt-35-turbo-0125
     parameters:
         max_tokens: 256
         temperature: 0.2
+        response_format:
+            type: json_object
 inputs:
     firstName:
         type: string

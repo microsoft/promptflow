@@ -6,7 +6,7 @@ model:
   configuration
     connection: open_ai_connection
   parameters:
-    deployment_name: gpt-4
+    deployment_name: gpt-35-turbo-0125
     temperature: 0.5
     response_format: { "type": "json_object" }
 
