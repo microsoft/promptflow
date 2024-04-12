@@ -49,7 +49,6 @@ from promptflow._sdk._service.utils.utils import (
     is_run_from_built_binary,
 )
 from promptflow._sdk._utils import extract_workspace_triad_from_trace_provider, parse_kv_from_pb_attribute
-from promptflow._sdk.entities._trace import Span
 from promptflow._sdk.operations._trace_operations import TraceOperations
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.thread_utils import ThreadWithContextVars
@@ -422,6 +421,8 @@ def process_otlp_trace_request(
     :param credential: The credential object used to authenticate with cosmosdb. Default is None.
     :type credential: Optional[object]
     """
+    from promptflow._sdk.entities._trace import Span
+
     all_spans = []
     for resource_span in trace_request.resource_spans:
         resource_attributes = dict()
@@ -460,7 +461,7 @@ def process_otlp_trace_request(
 
 
 def _try_write_trace_to_cosmosdb(
-    all_spans: typing.List[Span],
+    all_spans: typing.List,
     get_created_by_info_with_cache: typing.Callable,
     logger: logging.Logger,
     credential: typing.Optional[object] = None,
