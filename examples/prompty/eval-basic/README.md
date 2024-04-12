@@ -1,5 +1,5 @@
-# Apology
-A prompt that determines whether a chat conversation contains an apology from the assistant.
+# Basic Eval
+A prompt that determines whether a answer is correct.
 
 ## Prerequisites
 

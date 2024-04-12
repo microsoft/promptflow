@@ -1,5 +1,5 @@
 # Basic chat
-A basic prompt that uses the chat API to answer questions with chat history.
+A prompt that uses the chat API to answer questions with chat history, leveraging promptflow connection.
 
 
 ## Prerequisites
@@ -31,7 +31,7 @@ See <a href="https://platform.openai.com/docs/api-reference/chat/create#chat/cre
     ```
 
 
-## Run flow
+## Run prompty
 
 - Prepare your Azure Open AI resource follow this [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal) and get your `api_key` if you don't have one.
 
@@ -51,6 +51,14 @@ pf flow test --flow chat.prompty
 
 # run chat flow with new question
 pf flow test --flow chat.prompty --inputs question="What's Azure Machine Learning?"
+```
+
+```powershell
+# start test in interactive terminal (TODO)
+pf flow test --flow chat.prompty --interactive
+
+# start test in chat ui (TODO)
+pf flow test --flow chat.prompty --ui
 ```
 
 - Create run with multiple lines data
@@ -80,7 +88,7 @@ pf run show-details --name $name
 pf run visualize --name $name
 ```
 
-## Run flow with connection
+## Run prompty with connection
 Storing connection info in .env with plaintext is not safe. We recommend to use `pf connection` to guard secrets like `api_key` from leak.
 
 - Show or create `open_ai_connection`
