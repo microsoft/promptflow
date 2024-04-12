@@ -248,7 +248,7 @@ class Simulator:
         else:
             template.template_parameters = parameters
             templates = [template]
-
+        concurrent_async_task = min(concurrent_async_task, 1000)
         semaphore = asyncio.Semaphore(concurrent_async_task)
         sim_results = []
         tasks = []
@@ -616,7 +616,7 @@ class Simulator:
         or initialization methods.
         """
         try:
-            from promptflow import load_flow
+            from promptflow.client import load_flow
         except EnvironmentError as env_err:
             raise EnvironmentError(
                 "Unable to import from promptflow. Have you installed promptflow in the python environment?"
