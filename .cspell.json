@@ -201,6 +201,11 @@
     "wscript",
     "raisvc",
     "evals",
+    "mlindex",
+    "redef",
+    "rcts",
+    "Chunker",
+    "mpnet",
     "wargs",
     "dcid"
   ],
