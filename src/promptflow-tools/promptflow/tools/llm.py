@@ -49,35 +49,6 @@ def get_local_connection(connection_name):
         return None
 
 
-# api needs dynamic list because we do not offer "completion" api for serverless connection.
-def list_apis(
-    subscription_id=None,
-    resource_group_name=None,
-    workspace_name=None,
-    connection_name=""
-) -> List[Dict[str, str]]:
-    if not connection_name:
-        return []
-
-    connection = get_local_connection(connection_name)
-    if connection is None:
-        connection = get_cloud_connection(connection_name, subscription_id, resource_group_name, workspace_name)
-
-    if connection is None:
-        return []
-
-    if (isinstance(connection, dict) and connection["type"] in {"AzureOpenAIConnection", "OpenAIConnection"}) or \
-       isinstance(connection, (AzureOpenAIConnection, OpenAIConnection)):
-        return [
-            {"value": "chat", "display_value": "chat"},
-            {"value": "completion", "display_value": "completion"},
-        ]
-    else:
-        return [
-            {"value": "chat", "display_value": "chat"},
-        ]
-
-
 # need to set metadata "streaming_option_parameter" to support serving streaming functionality.
 @tool(streaming_option_parameter="stream")
 @handle_openai_error()
