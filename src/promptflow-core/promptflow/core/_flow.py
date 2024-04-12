@@ -297,6 +297,8 @@ class Prompty(FlowBase):
         self._model = PromptyModelConfiguration(**configs["model"])
         self._inputs = configs.get("inputs", {})
         self._outputs = configs.get("outputs", {})
+        self._name = configs.get("name", path.stem)
+
         # TODO support more templating engine
         self._template_engine = configs.get("template", "jinja2")
         super().__init__(code=path.parent, path=path, data=configs, content_hash=None, **kwargs)
@@ -395,8 +397,10 @@ class Prompty(FlowBase):
         return format_llm_response(
             response=response,
             api=self._model.api,
-            response_format=params.get("response_format", None),
-            raw=self._data.get("format", None) == "raw",
+            response_format=params.get("response_format", {}),
+            is_first_choice=self._data.get("model", {}).get("response", None) != "all",
+            streaming=params.get("stream", False),
+            outputs=self._outputs,
         )
 
 
@@ -447,6 +451,8 @@ class AsyncPrompty(Prompty):
         return format_llm_response(
             response=response,
             api=self._model.api,
-            response_format=params.get("response_format", None),
-            raw=self._data.get("format", None) == "raw",
+            response_format=params.get("response_format", {}),
+            is_first_choice=self._data.get("model", {}).get("response", None) != "all",
+            streaming=params.get("stream", False),
+            outputs=self._outputs,
         )

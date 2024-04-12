@@ -34,12 +34,11 @@ class PromptyExecutor(ScriptExecutor):
         as executor input.
         """
         # If the function is not decorated with trace, add trace for it.
-        func = _traced(self.prompty)
-        self._func = self.prompty
+        self._func = _traced(self.prompty, name=self.prompty._name)
         inputs = {
             input_name: InputDefinition(type=[input_value["type"]], default=input_value.get("default", None))
             for input_name, input_value in self.prompty._data.get("inputs", {}).items()
         }
         self._inputs = {k: v.to_flow_input_definition() for k, v in inputs.items()}
         self._is_async = False
-        return func
+        return self._func

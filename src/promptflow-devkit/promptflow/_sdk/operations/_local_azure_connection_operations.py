@@ -130,8 +130,8 @@ class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
         :type name: str
         """
         raise NotImplementedError(
-            "Delete workspace connection is not supported in promptflow, "
-            "please manage it in workspace portal, az ml cli or AzureML SDK."
+            "Delete Azure AI connection is not supported in promptflow, "
+            "please manage it in Azure AI/machine learning studio, az ml cli or AzureML SDK."
         )
 
     @monitor_operation(activity_name="pf.connections.azure.create_or_update", activity_type=ActivityType.PUBLICAPI)
@@ -142,6 +142,6 @@ class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
         :type connection: ~promptflow.sdk.entities._connection._Connection
         """
         raise NotImplementedError(
-            "Create or update workspace connection is not supported in promptflow, "
-            "please manage it in workspace portal, az ml cli or AzureML SDK."
+            "Create or update Azure AI connection is not supported in promptflow, "
+            "please manage it in Azure AI/machine learning studio, az ml cli or AzureML SDK."
         )
