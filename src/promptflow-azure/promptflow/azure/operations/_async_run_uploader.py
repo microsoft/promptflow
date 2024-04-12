@@ -19,6 +19,7 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import RunNotFoundError, UploadInternalError, UploadUserError, UserAuthenticationError
 from promptflow._sdk.entities import Run
+from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure._storage.blob.client import _get_datastore_credential
 from promptflow.exceptions import UserErrorException
@@ -116,7 +117,7 @@ class AsyncRunUploader:
             raise UploadInternalError(f"{error_msg_prefix}. Error: {e}") from e
 
     async def _upload_flow_artifacts(self) -> str:
-        """Upload run artifacts to cloud."""
+        """Upload run artifacts to cloud. Return the cloud relative path of flow artifacts folder."""
         logger.debug(f"Uploading flow artifacts for run {self.run.name!r}.")
         # need to merge jsonl files before uploading
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -133,7 +134,10 @@ class AsyncRunUploader:
         return f"{remote_folder}/{OutputsFolderName.FLOW_ARTIFACTS}"
 
     async def _upload_meta_json(self, temp_dir: Path):
-        """Upload meta.json to cloud, the content should be updated to align with cloud run meta.json."""
+        """
+        Upload meta.json to cloud, the content should be updated to align with cloud run meta.json.
+        Return the cloud relative path of meta.json file.
+        """
         content = {"batch_size": 25}
         local_temp_file = temp_dir / LocalStorageFilenames.META
         with open(local_temp_file, "w", encoding=DEFAULT_ENCODING) as f:
@@ -146,6 +150,7 @@ class AsyncRunUploader:
         return remote_file
 
     async def _upload_node_artifacts(self) -> str:
+        """Upload node artifacts to cloud. Return the cloud relative path of node artifacts folder."""
         logger.debug(f"Uploading node artifacts for run {self.run.name!r}.")
         local_folder = self.run_output_path / f"{OutputsFolderName.NODE_ARTIFACTS}"
         remote_folder = f"{Local2Cloud.BLOB_ROOT_PROMPTFLOW}/{Local2Cloud.BLOB_ARTIFACTS}/{self.run.name}"
@@ -153,7 +158,7 @@ class AsyncRunUploader:
         return f"{remote_folder}/{OutputsFolderName.NODE_ARTIFACTS}"
 
     async def _upload_run_outputs(self) -> str:
-        """Upload run outputs to cloud."""
+        """Upload run outputs to cloud. Return the cloud relative path of run outputs folder."""
         logger.debug(f"Uploading run outputs for run {self.run.name!r}.")
         local_folder = self.run_output_path / f"{OutputsFolderName.FLOW_OUTPUTS}"
         remote_folder = f"{Local2Cloud.BLOB_ROOT_PROMPTFLOW}/{Local2Cloud.BLOB_ARTIFACTS}/{self.run.name}"
@@ -161,23 +166,26 @@ class AsyncRunUploader:
         return f"{remote_folder}/{OutputsFolderName.FLOW_OUTPUTS}"
 
     async def _upload_logs(self) -> str:
-        """Upload logs to cloud."""
+        """Upload logs to cloud. Return the cloud relative path of logs file"""
         logger.debug(f"Uploading logs for run {self.run.name!r}.")
-        local_folder = self.run_output_path / "logs.txt"
+        local_file = self.run_output_path / "logs.txt"
         remote_file = f"{Local2Cloud.BLOB_EXPERIMENT_RUN}/dcid.{self.run.name}/{Local2Cloud.EXECUTION_LOG}"
-        await self._upload_local_file_to_blob(local_folder, remote_file, target_datastore=CloudDatastore.ARTIFACT)
+        await self._upload_local_file_to_blob(local_file, remote_file, target_datastore=CloudDatastore.ARTIFACT)
         return remote_file
 
     async def _upload_snapshot(self) -> str:
-        """Upload run snapshot to cloud."""
+        """Upload run snapshot to cloud. Return the cloud relative path of flow definition file."""
         logger.debug(f"Uploading snapshot for run {self.run.name!r}.")
         local_folder = self.run_output_path / LocalStorageFilenames.SNAPSHOT_FOLDER
+        # for some types of flex flow, even there is no flow.flex.yaml in the original flow folder,
+        # it will be generated in the snapshot folder in the .runs folder, so we can upload it to cloud as well.
+        _, flow_file = resolve_flow_path(local_folder)
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_local_folder = Path(temp_dir) / self.run.name
             shutil.copytree(local_folder, temp_local_folder)
             remote_folder = f"{Local2Cloud.BLOB_ROOT_RUNS}"
             await self._upload_local_folder_to_blob(temp_local_folder, remote_folder)
-        return f"{remote_folder}/{self.run.name}"
+        return f"{remote_folder}/{self.run.name}/{flow_file}"
 
     async def _upload_metrics(self) -> None:
         """Upload run metrics to cloud."""
