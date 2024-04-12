@@ -1,0 +1,2 @@
+azureml-rag[cognitive_search,document_parsing]
+openai

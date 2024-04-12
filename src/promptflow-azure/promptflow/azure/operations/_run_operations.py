@@ -125,7 +125,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         if kind not in [AzureWorkspaceKind.DEFAULT, AzureWorkspaceKind.PROJECT]:
             raise RunOperationParameterError(
                 "Failed to get default workspace datastore. Please make sure you are using the right workspace which "
-                f"is either an azure machine learning studio workspace or an azure ai project. Got {kind!r} instead."
+                f"is either an azure machine learning workspace or an azure ai project. Got {kind!r} instead."
             )
         return self._datastore_operations.get_default()
 

@@ -12,6 +12,8 @@ runs:
     shell: pwsh
     run: |
       pip list
+      pip install azure-identity
+      pip install azure-keyvault
       echo "Generating connection config file..."
       python ./scripts/building/generate_connection_config.py `
           --target_folder ${{ inputs.targetFolder }}

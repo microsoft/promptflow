@@ -75,6 +75,7 @@ class FlowType:
 
     DAG_FLOW = "dag"
     FLEX_FLOW = "flex"
+    PROMPTY = "prompty"
 
 
 class AvailableIDE:
@@ -277,6 +278,7 @@ AZURE_WORKSPACE_REGEX_FORMAT = (
     "(/providers/Microsoft.MachineLearningServices)?/workspaces/([^/]+)$"
 )
 CONNECTION_DATA_CLASS_KEY = "DATA_CLASS"
+AML_WORKSPACE_TEMPLATE = "azureml://subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}"  # noqa: E501
 
 
 class AzureWorkspaceKind:

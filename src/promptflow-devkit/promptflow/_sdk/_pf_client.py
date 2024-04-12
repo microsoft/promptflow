@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import inspect
 import json
 import os
 from os import PathLike
@@ -172,6 +173,13 @@ class PFClient:
             raise FileNotFoundError(f"data path {data} does not exist")
         if not run and not data:
             raise ValueError("at least one of data or run must be provided")
+
+        if callable(flow) and not inspect.isclass(flow) and not inspect.isfunction(flow):
+            dynamic_callable = flow
+            flow = flow.__class__
+        else:
+            dynamic_callable = None
+
         with generate_yaml_entry(entry=flow, code=code) as flow:
             # load flow object for validation and early failure
             flow_obj = load_flow(source=flow)
@@ -193,6 +201,7 @@ class PFClient:
                 environment_variables=environment_variables,
                 config=Configuration(overrides=self._config),
                 init=init,
+                dynamic_callable=dynamic_callable,
             )
             return self.runs.create_or_update(run=run, **kwargs)
 
@@ -317,6 +326,7 @@ class PFClient:
         variant: str = None,
         node: str = None,
         environment_variables: dict = None,
+        init: Optional[dict] = None,
     ) -> dict:
         """Test flow or node.
 
@@ -334,6 +344,8 @@ class PFClient:
             The value reference to connection keys will be resolved to the actual value,
             and all environment variables specified will be set into os.environ.
         :type environment_variables: dict
+        :param init: Initialization parameters for flex flow, only supported when flow is callable class.
+        :type init: dict
         :return: The result of flow or node
         :rtype: dict
         """
@@ -351,7 +363,7 @@ class PFClient:
 
                 inputs = load_data(local_path=inputs)[0]
         return self.flows.test(
-            flow=flow, inputs=inputs, variant=variant, environment_variables=environment_variables, node=node
+            flow=flow, inputs=inputs, variant=variant, environment_variables=environment_variables, node=node, init=init
         )
 
     @property
