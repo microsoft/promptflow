@@ -57,8 +57,11 @@ def check(answer: str, statement: str):
     return output
 
 
-@trace
 class EvalFlow:
+    
+    def __init__(self) -> None:
+        pass
+
     def __call__(self, answer: str, statements: dict):
         """Check the answer applies for a collection of check statement."""
         if isinstance(statements, str):

@@ -103,9 +103,6 @@ pf run show --name $name
 
 # show output
 pf run show-details --name $name
-
-# visualize run in browser
-pf run visualize --name $name
 ```
 
 ## Run prompty with connection
