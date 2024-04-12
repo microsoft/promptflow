@@ -153,7 +153,7 @@ class RunSubmitter:
         )
         try:
             batch_engine = BatchEngine(
-                flow.path,
+                run._dynamic_callable or flow.path,
                 flow.code,
                 connections=connections,
                 entry=flow.entry if isinstance(flow, FlexFlow) else None,
