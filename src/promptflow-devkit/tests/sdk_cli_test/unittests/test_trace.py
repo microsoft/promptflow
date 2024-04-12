@@ -79,6 +79,11 @@ class TestImports:
         assert callable(setup_exporter_to_pfs)
         assert callable(start_trace_with_devkit)
 
+    def test_process_otlp_trace_request(self):
+        from promptflow._sdk._tracing import process_otlp_trace_request
+
+        assert callable(process_otlp_trace_request)
+
 
 @pytest.mark.sdk_test
 @pytest.mark.unittest
