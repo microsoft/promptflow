@@ -1,6 +1,6 @@
 # Prompty
 
-This folder contains prompty examples. 
+You can learn more on Prompty with examples in this folder.
 
 ## SDK examples
 
