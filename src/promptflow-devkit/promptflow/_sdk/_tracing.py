@@ -17,7 +17,6 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-from promptflow._cli._utils import get_credentials_for_cli
 from promptflow._constants import (
     OTEL_RESOURCE_SERVICE_NAME,
     AzureWorkspaceKind,
@@ -73,6 +72,7 @@ def _get_collection_id_for_azure(collection: str) -> str:
     """{collection}_{object_id}"""
     import jwt
 
+    from promptflow._cli._utils import get_credentials_for_cli
     from promptflow.azure._utils.general import get_arm_token
 
     token = get_arm_token(credential=get_credentials_for_cli())
@@ -103,7 +103,7 @@ def _invoke_pf_svc() -> str:
     if is_port_in_use(int(port)):
         if not is_pfs_service_healthy(port):
             cmd_args.append("--force")
-            logger.debug("Prompt flow service is not healthy, force to start...")
+            _logger.debug("Prompt flow service is not healthy, force to start...")
         else:
             print("Prompt flow Tracing Server has started...")
             print(hint_stop_message)
@@ -314,7 +314,7 @@ def start_trace_with_devkit(collection: str, **kwargs: typing.Any) -> None:
             "Prompt flow service is not healthy, please check the logs for more details; "
             "traces might not be exported correctly."
         )
-        logger.warning(warning_msg)
+        _logger.warning(warning_msg)
         return
 
     _inject_res_attrs_to_environ(pfs_port=pfs_port, collection=collection, exp=exp, ws_triad=ws_triad)
