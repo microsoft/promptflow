@@ -26,7 +26,6 @@ class Result:
     answer: str
 
 
-@trace
 class ChatFlow:
 
     def __init__(self):
@@ -42,7 +41,7 @@ class ChatFlow:
         self.connection = AzureOpenAIConnection.from_env()
 
     def __call__(
-        self, question: str = "What is ChatGPT?", chat_history: list = []
+        self, question: str = "What is ChatGPT?", chat_history: list = None
     ) -> Result:
         """Flow entry function."""
 
