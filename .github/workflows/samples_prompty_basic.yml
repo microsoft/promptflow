@@ -41,11 +41,8 @@ jobs:
         working-directory: examples/prompty/basic
         run: |
           AOAI_API_KEY=${{ secrets.AOAI_API_KEY_TEST }}
-          AZURE_OPENAI_API_KEY=${{ secrets.AOAI_API_KEY_TEST }}
           AOAI_API_ENDPOINT=${{ secrets.AOAI_API_ENDPOINT_TEST }}
           AOAI_API_ENDPOINT=$(echo ${AOAI_API_ENDPOINT//\//\\/})
-          AZURE_OPENAI_ENDPOINT=${{ secrets.AOAI_API_ENDPOINT_TEST }}
-          AZURE_OPENAI_ENDPOINT=$(echo ${AZURE_OPENAI_ENDPOINT//\//\\/})
           if [[ -e .env.example ]]; then
             echo "env replacement"
             sed -i -e "s/<your_AOAI_key>/$AOAI_API_KEY/g" -e "s/<your_AOAI_endpoint>/$AOAI_API_ENDPOINT/g" .env.example
@@ -82,6 +79,8 @@ jobs:
         run: |
           export aoai_api_key=${{secrets.AOAI_API_KEY_TEST }}
           export aoai_api_endpoint=${{ secrets.AOAI_API_ENDPOINT_TEST }}
+          export AZURE_OPENAI_API_KEY=${{secrets.AOAI_API_KEY_TEST }}
+          export AZURE_OPENAI_ENDPOINT=${{ secrets.AOAI_API_ENDPOINT_TEST }}
           export test_workspace_sub_id=${{ secrets.TEST_WORKSPACE_SUB_ID }}
           export test_workspace_rg=${{ secrets.TEST_WORKSPACE_RG }}
           export test_workspace_name=${{ secrets.TEST_WORKSPACE_NAME_CANARY }}
@@ -92,6 +91,8 @@ jobs:
         run: |
           export aoai_api_key=${{secrets.AOAI_API_KEY_TEST }}
           export aoai_api_endpoint=${{ secrets.AOAI_API_ENDPOINT_TEST }}
+          export AZURE_OPENAI_API_KEY=${{secrets.AOAI_API_KEY_TEST }}
+          export AZURE_OPENAI_ENDPOINT=${{ secrets.AOAI_API_ENDPOINT_TEST }}
           export test_workspace_sub_id=${{ secrets.TEST_WORKSPACE_SUB_ID }}
           export test_workspace_rg=${{ secrets.TEST_WORKSPACE_RG }}
           export test_workspace_name=${{ secrets.TEST_WORKSPACE_NAME_PROD }}
