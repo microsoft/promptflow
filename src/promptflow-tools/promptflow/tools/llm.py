@@ -1,5 +1,3 @@
-from typing import List, Dict
-
 from promptflow.tools.common import handle_openai_error, _get_credential
 from promptflow.tools.exception import InvalidConnectionType
 from promptflow.contracts.types import PromptTemplate
