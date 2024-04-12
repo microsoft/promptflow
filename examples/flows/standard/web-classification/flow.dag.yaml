@@ -56,29 +56,33 @@ node_variants:
     variants:
       variant_0:
         node:
-          type: llm
+          name: summarize_text_content
+          type: custom_llm
           source:
-            type: code
+            type: package_with_prompt
             path: summarize_text_content.jinja2
+            tool: promptflow.tools.llm.llm
           inputs:
+            connection: open_ai_connection
+            api: chat
             deployment_name: gpt-35-turbo
             model: gpt-3.5-turbo
             max_tokens: 128
             temperature: 0.2
             text: ${fetch_text_content_from_url.output}
-          connection: open_ai_connection
-          api: chat
       variant_1:
         node:
-          type: llm
+          name: summarize_text_content
+          type: custom_llm
           source:
-            type: code
+            type: package_with_prompt
             path: summarize_text_content__variant_1.jinja2
+            tool: promptflow.tools.llm.llm
           inputs:
+            connection: open_ai_connection
+            api: chat
             deployment_name: gpt-35-turbo
             model: gpt-3.5-turbo
             max_tokens: 256
             temperature: 0.3
             text: ${fetch_text_content_from_url.output}
-          connection: open_ai_connection
-          api: chat
