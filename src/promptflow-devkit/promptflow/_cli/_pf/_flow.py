@@ -282,6 +282,9 @@ pf flow test --flow my-awesome-flow --init key1=value1 key2=value2
     add_param_experiment = lambda parser: parser.add_argument(  # noqa: E731
         "--experiment", type=str, help="the experiment template path of flow."
     )
+    add_param_collection = lambda parser: parser.add_argument(  # noqa: E731
+        "--collection", type=str, help="the collection of flow test trace."
+    )
     add_param_skip_browser = lambda parser: parser.add_argument(  # noqa: E731
         "--skip-open-browser", action="store_true", help=argparse.SUPPRESS
     )
@@ -298,6 +301,7 @@ pf flow test --flow my-awesome-flow --init key1=value1 key2=value2
         add_param_ui,
         add_param_config,
         add_param_detail,
+        add_param_collection,
         add_param_skip_browser,
         add_param_init,
     ] + base_params
@@ -519,6 +523,7 @@ def _test_flow_interactive(args, pf_client, inputs, environment_variables):
         environment_variables=environment_variables,
         variant=args.variant,
         show_step_output=args.verbose,
+        collection=args.collection,
     )
 
 
@@ -535,6 +540,7 @@ def _test_flow_standard(args, pf_client, inputs, environment_variables):
         dump_test_result=True,
         output_path=args.detail,
         init=list_of_dict_to_dict(args.init),
+        collection=args.collection,
     )
     # Print flow/node test result
     if isinstance(result, dict):
@@ -558,6 +564,7 @@ def _test_flow_experiment(args, pf_client, inputs, environment_variables):
         environment_variables=environment_variables,
         experiment=args.experiment,
         output_path=args.detail,
+        collection=args.collection,
     )
     print(json.dumps(node_results, indent=4, ensure_ascii=False))
 
