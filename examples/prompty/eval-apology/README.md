@@ -15,7 +15,7 @@ Currently, there are two connection types supported by LLM tool: "AzureOpenAI" a
 
 ```bash
 # Override keys with --set to avoid yaml file changes
-pf connection create --file ../../../connections/azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base> --name open_ai_connection
+pf connection create --file ../../connections/azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base>
 ```
 
 Note in [apology.prompty](apology.prompty) we are using connection named `open_ai_connection`.
