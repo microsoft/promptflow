@@ -36,13 +36,11 @@ promptflow.tools.llm.llm:
       - string
       default: chat
       # api needs dynamic list because we do not offer "completion" api for serverless connection.
-      dynamic_list:
-        func_path: promptflow.tools.llm.list_apis
-        func_kwargs:
-        - name: connection_name
-          type: 
-          - string
-          reference: ${inputs.connection}
+      enabled_by: connection
+      enabled_by_type: [AzureOpenAIConnection, OpenAIConnection]
+      enum:
+        - chat
+        - completion
       allow_manual_entry: true
       ui_hints:
         text_box_size: sm
