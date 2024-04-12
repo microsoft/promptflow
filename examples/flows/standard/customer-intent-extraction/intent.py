@@ -18,6 +18,8 @@ def extract_intent(chat_prompt: str):
 
         load_dotenv()
 
+    # AZURE_OPENAI_ENDPOINT conflict with AZURE_OPENAI_API_BASE when use with langchain 
+    os.environ["AZURE_OPENAI_ENDPOINT"]=""
     chat = AzureChatOpenAI(
         deployment_name=os.environ.get("CHAT_DEPLOYMENT_NAME", "gpt-35-turbo"),
         openai_api_key=os.environ["AZURE_OPENAI_API_KEY"],
