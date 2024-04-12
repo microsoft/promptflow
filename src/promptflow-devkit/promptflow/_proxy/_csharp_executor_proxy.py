@@ -182,6 +182,9 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
             else:
                 # for Linux and MacOS, Popen.terminate() will send SIGTERM to the process
                 self._process.terminate()
+
+            # TODO: there is a potential issue that, graceful shutdown won't work for streaming chat flow for now
+            #  because response will not be fully consumed before we destroy the executor proxy
             try:
                 self._process.wait(timeout=5)
             except subprocess.TimeoutExpired:
