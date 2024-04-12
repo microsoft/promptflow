@@ -53,7 +53,7 @@ def my_python_tool(
     user: str = "",
     **kwargs,
 ) -> str:
-    if "AZURE_OPENAI_API_KEY" not in os.environ:
+    if "AZURE_OPENAI_API_KEY" not in os.environ or "AZURE_OPENAI_API_BASE" not in os.environ:
         # load environment variables from .env file
         load_dotenv()
 

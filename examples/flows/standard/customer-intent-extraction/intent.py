@@ -7,7 +7,7 @@ from langchain.schema import HumanMessage
 
 
 def extract_intent(chat_prompt: str):
-    if "AZURE_OPENAI_API_KEY" not in os.environ:
+    if "AZURE_OPENAI_API_KEY" not in os.environ or "AZURE_OPENAI_API_BASE" not in os.environ:
         # load environment variables from .env file
         try:
             from dotenv import load_dotenv
