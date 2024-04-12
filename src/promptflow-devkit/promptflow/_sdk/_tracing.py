@@ -93,7 +93,6 @@ def _invoke_pf_svc() -> str:
             logger.debug("Prompt flow service is not healthy, force to start...")
         else:
             print("Prompt flow service has started...")
-            print(hint_stop_message)
             return port
 
     add_executable_script_to_env_path()
