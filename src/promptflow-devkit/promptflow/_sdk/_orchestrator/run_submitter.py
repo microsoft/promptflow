@@ -7,7 +7,7 @@ import datetime
 from pathlib import Path
 from typing import Union
 
-from promptflow._constants import FlowLanguage
+from promptflow._constants import FlowLanguage, FlowType
 from promptflow._sdk._constants import REMOTE_URI_PREFIX, ContextAttributeKey, FlowRunProperties
 from promptflow._sdk.entities._flows import Flow, Prompty
 from promptflow._sdk.entities._run import Run
@@ -20,6 +20,7 @@ from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException, ValidationException
 from promptflow.tracing._operation_context import OperationContext
+from promptflow.tracing._start_trace import is_collection_writeable, start_trace
 
 from .._configuration import Configuration
 from .._load_functions import load_flow
@@ -83,12 +84,18 @@ class RunSubmitter:
         if run._resume_from is not None:
             logger.debug(f"Resume from run {run._resume_from!r}...")
             run._resume_from = self._ensure_run_completed(run._resume_from)
-        # Start trace
-        if self._config.is_internal_features_enabled():
-            from promptflow.tracing._start_trace import start_trace
+        # start trace
+        logger.debug("start trace for flow run...")
+        if is_collection_writeable():
+            logger.debug("trace collection is writeable, will use flow name as collection...")
+            collection_for_run = run._flow_name
+            logger.debug("collection for run: %s", collection_for_run)
+            # pass with internal parameter `_collection`
+            start_trace(attributes=attributes, run=run.name, _collection=collection_for_run)
+        else:
+            logger.debug("trace collection is protected, will honor existing collection.")
+            start_trace(attributes=attributes, run=run.name)
 
-            logger.debug("Starting trace for flow run...")
-            start_trace(session=kwargs.get("session", None), attributes=attributes, run=run.name)
         self._validate_inputs(run=run)
 
         local_storage = LocalStorageOperations(run, stream=stream, run_mode=RunMode.Batch)
@@ -146,7 +153,7 @@ class RunSubmitter:
         )
         try:
             batch_engine = BatchEngine(
-                flow.path,
+                run._dynamic_callable or flow.path,
                 flow.code,
                 connections=connections,
                 entry=flow.entry if isinstance(flow, FlexFlow) else None,
@@ -245,6 +252,11 @@ class RunSubmitter:
 
     @classmethod
     def _upload_run_to_cloud(cls, run: Run):
+        # skip prompty run for now
+        if run._flow_type == FlowType.PROMPTY:
+            logger.warn("Prompty run is not supported for local to cloud run upload yet, skipped.")
+            return
+
         error_msg_prefix = f"Failed to upload run {run.name!r} to cloud."
         try:
             from promptflow._sdk._tracing import _get_ws_triad_from_pf_config

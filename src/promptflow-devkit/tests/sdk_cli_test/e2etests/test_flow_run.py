@@ -1713,6 +1713,17 @@ class TestFlowRun:
 
             assert_batch_run_result(run, pf, assert_func)
 
+            run = pf.run(
+                flow=MyFlow(obj_input="val"),
+                data=f"{EAGER_FLOWS_DIR}/basic_callable_class/inputs.jsonl",
+                # set code folder to avoid snapshot too big
+                code=f"{EAGER_FLOWS_DIR}/basic_callable_class",
+            )
+            assert run.status == "Completed"
+            assert "error" not in run._to_dict()
+
+            assert_batch_run_result(run, pf, assert_func)
+
 
 def assert_batch_run_result(run: Run, pf: PFClient, assert_func):
     assert run.status == "Completed"
