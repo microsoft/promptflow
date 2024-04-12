@@ -35,7 +35,7 @@ from promptflow._sdk.operations._trace_operations import TraceOperations
 from promptflow.client import PFClient
 from promptflow.exceptions import UserErrorException
 from promptflow.tracing._operation_context import OperationContext
-from promptflow.tracing._start_trace import setup_exporter_from_environ, start_trace
+from promptflow.tracing._start_trace import setup_exporter_from_environ
 
 MOCK_PROMPTFLOW_SERVICE_PORT = "23333"
 
@@ -64,8 +64,7 @@ def mock_resource() -> Dict:
 @pytest.fixture
 def mock_promptflow_service_invocation():
     """Mock `_invoke_pf_svc` as we don't expect to invoke PFS during unit test."""
-    with mock.patch("promptflow._sdk._tracing._invoke_pf_svc") as mock_func:
-        mock_func.return_value = MOCK_PROMPTFLOW_SERVICE_PORT
+    with mock.patch("promptflow._sdk._tracing._invoke_pf_svc", return_value=MOCK_PROMPTFLOW_SERVICE_PORT):
         yield
 
 
@@ -148,7 +147,8 @@ class TestStartTrace:
         assert isinstance(span.attributes, dict)
         assert len(span.attributes) == 0
 
-    def test_experiment_test_lineage(self, monkeypatch: pytest.MonkeyPatch, mock_promptflow_service_invocation) -> None:
+    @pytest.mark.usefixtures("mock_promptflow_service_invocation")
+    def test_experiment_test_lineage(self, monkeypatch: pytest.MonkeyPatch) -> None:
         # experiment orchestrator will help set this context in environment
         referenced_line_run_id = str(uuid.uuid4())
         ctx = {PF_TRACE_CONTEXT_ATTR: {ContextAttributeKey.REFERENCED_LINE_RUN_ID: referenced_line_run_id}}
@@ -160,9 +160,8 @@ class TestStartTrace:
             otel_attrs = op_ctx._get_otel_attributes()
             assert otel_attrs[SpanAttributeFieldName.REFERENCED_LINE_RUN_ID] == referenced_line_run_id
 
-    def test_experiment_test_lineage_cleanup(
-        self, monkeypatch: pytest.MonkeyPatch, mock_promptflow_service_invocation
-    ) -> None:
+    @pytest.mark.usefixtures("mock_promptflow_service_invocation")
+    def test_experiment_test_lineage_cleanup(self, monkeypatch: pytest.MonkeyPatch) -> None:
         # in previous code, context may be set with lineage
         op_ctx = OperationContext.get_instance()
         op_ctx._add_otel_attributes(SpanAttributeFieldName.REFERENCED_LINE_RUN_ID, str(uuid.uuid4()))
@@ -182,20 +181,12 @@ class TestStartTrace:
             # Assert the provider without exporter is not the one with exporter
             assert original_proivder == new_provider
 
-    def test_setup_exporter_in_executor_with_preview_flag(
-        self, reset_tracer_provider, mock_promptflow_service_invocation
-    ):
-        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
-            mock_func.return_value = True
-
-            start_trace()
-            setup_exporter_from_environ()
-            tracer_provider: TracerProvider = trace.get_tracer_provider()
-            assert len(tracer_provider._active_span_processor._span_processors) == 1
-            assert (
-                tracer_provider._active_span_processor._span_processors[0].span_exporter._endpoint
-                == f"http://localhost:{MOCK_PROMPTFLOW_SERVICE_PORT}/v1/traces"
-            )
+    def test_pfs_invocation_failed_in_start_trace(self):
+        with mock.patch("promptflow._sdk._tracing._invoke_pf_svc"), mock.patch(
+            "promptflow._sdk._tracing.is_pfs_service_healthy", return_value=False
+        ), mock.patch("promptflow._sdk._tracing._inject_res_attrs_to_environ") as monitor_func:
+            start_trace_with_devkit(collection=str(uuid.uuid4()))
+            assert monitor_func.call_count == 0
 
 
 @pytest.mark.unittest

@@ -17,7 +17,6 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-from promptflow._cli._utils import get_credentials_for_cli
 from promptflow._constants import (
     OTEL_RESOURCE_SERVICE_NAME,
     AzureWorkspaceKind,
@@ -25,7 +24,6 @@ from promptflow._constants import (
     SpanResourceAttributesFieldName,
     TraceEnvironmentVariableName,
 )
-from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
     PF_TRACE_CONTEXT,
     PF_TRACE_CONTEXT_ATTR,
@@ -48,7 +46,18 @@ from promptflow.tracing._operation_context import OperationContext
 
 _logger = get_cli_sdk_logger()
 
+PF_CONFIG_TRACE_FEATURE_DISABLE = "none"
 TRACER_PROVIDER_PFS_EXPORTER_SET_ATTR = "_pfs_exporter_set"
+
+
+def is_trace_feature_disabled() -> bool:
+    from promptflow._sdk._configuration import Configuration
+
+    trace_provider = Configuration.get_instance().get_trace_provider()
+    if isinstance(trace_provider, str):
+        return Configuration.get_instance().get_trace_provider().lower() == PF_CONFIG_TRACE_FEATURE_DISABLE
+    else:
+        return False
 
 
 def _is_azure_ext_installed() -> bool:
@@ -63,6 +72,7 @@ def _get_collection_id_for_azure(collection: str) -> str:
     """{collection}_{object_id}"""
     import jwt
 
+    from promptflow._cli._utils import get_credentials_for_cli
     from promptflow.azure._utils.general import get_arm_token
 
     token = get_arm_token(credential=get_credentials_for_cli())
@@ -93,14 +103,13 @@ def _invoke_pf_svc() -> str:
     if is_port_in_use(int(port)):
         if not is_pfs_service_healthy(port):
             cmd_args.append("--force")
-            logger.debug("Prompt flow service is not healthy, force to start...")
+            _logger.debug("Prompt flow service is not healthy, force to start...")
         else:
-            print("Prompt flow Tracing Server has started...")
-            print(hint_stop_message)
+            print("Prompt flow service has started...")
             return port
 
     add_executable_script_to_env_path()
-    print("Starting prompt flow Tracing Server...")
+    print("Starting prompt flow service...")
     start_pfs = None
     try:
         start_pfs = subprocess.Popen(cmd_args, shell=platform.system() == "Windows", stderr=subprocess.PIPE)
@@ -128,6 +137,8 @@ def _invoke_pf_svc() -> str:
 
 
 def _get_ws_triad_from_pf_config() -> typing.Optional[AzureMLWorkspaceTriad]:
+    from promptflow._sdk._configuration import Configuration
+
     ws_arm_id = Configuration.get_instance().get_trace_provider()
     return extract_workspace_triad_from_trace_provider(ws_arm_id) if ws_arm_id is not None else None
 
@@ -159,6 +170,8 @@ def _print_tracing_url_from_azure_portal(
     # as this there is an if condition for azure extension, we can assume the extension is installed
     from azure.ai.ml import MLClient
 
+    from promptflow._cli._utils import get_credentials_for_cli
+
     # we have different url for Azure ML workspace and AI project
     # so we need to distinguish them
     ml_client = MLClient(
@@ -184,15 +197,15 @@ def _print_tracing_url_from_azure_portal(
     if AzureWorkspaceKind.is_workspace(workspace):
         _logger.debug(f"{ws_triad.workspace_name!r} is an Azure ML workspace.")
         if run is None:
-            query = f"trace/collection/{collection_id}"
+            query = f"trace/collection/{collection_id}/list"
         else:
-            query = f"prompts/trace/run/{run}"
+            query = f"prompts/trace/run/{run}/details"
     elif AzureWorkspaceKind.is_project(workspace):
         _logger.debug(f"{ws_triad.workspace_name!r} is an Azure AI project.")
         if run is None:
-            query = f"projecttrace/collection/{collection_id}"
+            query = f"projecttrace/collection/{collection_id}/list"
         else:
-            query = f"projectflows/trace/run/{run}"
+            query = f"projectflows/trace/run/{run}/details"
     else:
         _logger.error(f"the workspace type of {ws_triad.workspace_name!r} is not supported.")
         return
@@ -251,6 +264,10 @@ def _create_res(
 
 
 def start_trace_with_devkit(collection: str, **kwargs: typing.Any) -> None:
+    if is_trace_feature_disabled():
+        _logger.info("trace feature is disabled in config, skip setup exporter to PFS.")
+        return
+
     _logger.debug("collection: %s", collection)
     _logger.debug("kwargs: %s", kwargs)
     attrs = kwargs.get("attributes", None)
@@ -292,6 +309,14 @@ def start_trace_with_devkit(collection: str, **kwargs: typing.Any) -> None:
 
     # invoke prompt flow service
     pfs_port = _invoke_pf_svc()
+    is_pfs_healthy = is_pfs_service_healthy(pfs_port)
+    if not is_pfs_healthy:
+        warning_msg = (
+            "Prompt flow service is not healthy, please check the logs for more details; "
+            "traces might not be exported correctly."
+        )
+        _logger.warning(warning_msg)
+        return
 
     _inject_res_attrs_to_environ(pfs_port=pfs_port, collection=collection, exp=exp, ws_triad=ws_triad)
     # instrument openai and setup exporter to pfs here for flex mode
@@ -304,6 +329,10 @@ def start_trace_with_devkit(collection: str, **kwargs: typing.Any) -> None:
 
 
 def setup_exporter_to_pfs() -> None:
+    if is_trace_feature_disabled():
+        _logger.info("trace feature is disabled in config, skip setup exporter to PFS.")
+        return
+
     _logger.debug("start setup exporter to prompt flow service...")
     # get resource attributes from environment
     # For local trace, collection is the only identifier for name and id

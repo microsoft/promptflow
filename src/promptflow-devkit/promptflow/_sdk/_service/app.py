@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import logging
+import os
 import threading
 import time
 from datetime import datetime, timedelta
@@ -14,6 +15,7 @@ from werkzeug.exceptions import HTTPException
 
 from promptflow._sdk._constants import (
     HOME_PROMPT_FLOW_DIR,
+    PF_SERVICE_DEBUG,
     PF_SERVICE_HOUR_TIMEOUT,
     PF_SERVICE_LOG_FILE,
     PF_SERVICE_MONITOR_SECOND,
@@ -101,8 +103,19 @@ def create_app():
         handler = RotatingFileHandler(filename=log_file, maxBytes=1_000_000, backupCount=1)
         formatter = logging.Formatter("[%(asctime)s][%(name)s][%(levelname)s] - %(message)s")
         handler.setFormatter(formatter)
+
+        # Create a stream handler to output logs to the terminal
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(formatter)
+
         # Set app logger to the only one RotatingFileHandler to avoid duplicate logs
         app.logger.handlers = [handler]
+        if os.environ.get(PF_SERVICE_DEBUG) == "true":
+            # Set app logger to use both the rotating file handler and the stream handler in debug mode
+            app.logger.handlers.append(stream_handler)
+
+        # Prevent logs from being handled by the root logger
+        app.logger.propagate = False
 
         # Basic error handler
         @api.errorhandler(Exception)
