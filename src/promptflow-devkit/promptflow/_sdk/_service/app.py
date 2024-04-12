@@ -30,7 +30,7 @@ from promptflow._sdk._service.apis.run import api as run_api
 from promptflow._sdk._service.apis.span import api as span_api
 from promptflow._sdk._service.apis.telemetry import api as telemetry_api
 from promptflow._sdk._service.apis.ui import api as ui_api
-from promptflow._sdk._service.apis.ui import serve_trace_ui
+from promptflow._sdk._service.apis.ui import serve_chat_ui, serve_trace_ui
 from promptflow._sdk._service.utils.utils import (
     FormattedException,
     get_current_env_pfs_file,
@@ -69,6 +69,8 @@ def create_app():
     )
     app.add_url_rule("/v1.0/ui/traces/", defaults={"path": ""}, view_func=serve_trace_ui, methods=["GET"])
     app.add_url_rule("/v1.0/ui/traces/<path:path>", view_func=serve_trace_ui, methods=["GET"])
+    app.add_url_rule("/v1.0/ui/chat/", defaults={"path": ""}, view_func=serve_chat_ui, methods=["GET"])
+    app.add_url_rule("/v1.0/ui/chat/<path:path>", view_func=serve_chat_ui, methods=["GET"])
     with app.app_context():
         api_v1 = Blueprint("Prompt Flow Service", __name__, url_prefix="/v1.0", template_folder="static")
 
