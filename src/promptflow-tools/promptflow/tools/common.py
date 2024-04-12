@@ -474,7 +474,7 @@ def escape_roles(val, escape_dict: dict):
             escape_dict[role] = str(uuid.uuid4())
 
     for role, encoded_role in escape_dict.items():
-        val = re.sub(role, encoded_role, val, flags=re.MULTILINE | re.IGNORECASE)
+        val = re.sub(role, encoded_role, val, flags=re.MULTILINE)
     return val
 
 
@@ -486,10 +486,10 @@ def unescape_roles(messages, escape_dict: dict):
         for message in messages:
             if not isinstance(message, dict):
                 continue
-            for role, guid in escape_dict.items():
+            for role, uuid_str in escape_dict.items():
                 for key, val in message.items():
                     if isinstance(val, str):
-                        message[key] = val.replace(guid, role)
+                        message[key] = val.replace(uuid_str, role)
 
 
 def process_function_call(function_call):
