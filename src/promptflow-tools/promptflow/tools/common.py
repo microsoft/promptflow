@@ -346,11 +346,12 @@ def handle_openai_error(tries: int = 100, conn_error_tries: int = 10):
 
     For retriable errors, the decorator uses the following parameters to control its retry behavior:
     `tries`: max times for the function invocation, type is int
-    `conn_error_tries`: max times for the function invocation when connection error occurs, type is int
+    `conn_error_tries`: max times for the function invocation when consecutive connection error occurs,
+                        type is int
 
     Note:
     - The retry policy for APIConnectionError is different because retrying may not be beneficial
-      if there is a genuine connection issue.
+      if there is a genuine connection issue. So small threshold and requiring consecutive errors.
     """
     def decorator(func):
         @functools.wraps(func)

@@ -136,20 +136,6 @@ class TestHandleOpenAIError:
             ]
             mock_sleep.assert_has_calls(expected_calls)
 
-    def test_retriable_api_connection_error(self, mocker: MockerFixture):
-        # for below exception sequence, consecutive_conn_error_count changes 0 -> 1 -> 0 -> 1 -> 2.
-        api_connection_error = APIConnectionError(request=httpx.Request('GET', 'https://www.example.com'))
-        api_timeout_error = APITimeoutError(request=httpx.Request('GET', 'https://www.example.com'))
-        retriable_error = RateLimitError(request=httpx.Request('GET', 'https://www.example.com'))
-        exception_sequence = [api_connection_error, retriable_error, api_timeout_error, api_connection_error]
-        # Patch the test_method to throw the desired exception
-        patched_test_method = mocker.patch("promptflow.tools.aoai.AzureOpenAI.chat", side_effect=exception_sequence)
-        # Apply the retry decorator to the patched test_method
-        decorated_test_method = handle_openai_error(conn_error_tries=2)(patched_test_method)
-        with pytest.raises(ExceedMaxRetryTimes):
-            decorated_test_method()
-        assert patched_test_method.call_count == 4
-
     @pytest.mark.parametrize(
         "dummyExceptionList",
         [
@@ -194,6 +180,22 @@ class TestHandleOpenAIError:
             ]
             mock_sleep.assert_has_calls(expected_calls)
 
+    def test_retriable_api_connection_error(self, mocker: MockerFixture):
+        api_connection_error = APIConnectionError(request=httpx.Request('GET', 'https://www.example.com'))
+        api_timeout_error = APITimeoutError(request=httpx.Request('GET', 'https://www.example.com'))
+        retriable_error = RateLimitError("Something went wrong", response=httpx.Response(
+            429, request=httpx.Request('GET', 'https://www.example.com'), headers={"retry-after": "0.3"}),
+            body=None)
+        # for below exception sequence, "consecutive_conn_error_count" changes: 0 -> 1 -> 0 -> 1 -> 2.
+        # timeout error is subclass of connection error, so it will be treated as connection error.
+        exception_sequence = [api_connection_error, retriable_error, api_timeout_error, api_connection_error]
+        patched_test_method = mocker.patch("promptflow.tools.aoai.AzureOpenAI.chat", side_effect=exception_sequence)
+        # limit api connection error retry threshold to 2.
+        decorated_test_method = handle_openai_error(conn_error_tries=2)(patched_test_method)
+        with pytest.raises(ExceedMaxRetryTimes):
+            decorated_test_method()
+        assert patched_test_method.call_count == 4
+
     @pytest.mark.parametrize(
         "dummyExceptionList",
         [
@@ -203,8 +205,6 @@ class TestHandleOpenAIError:
                                         body=None),
                     BadRequestError("Something went wrong", response=httpx.get('https://www.example.com'),
                                     body=None),
-                    APIConnectionError(message="Something went wrong",
-                                       request=httpx.Request('GET', 'https://www.example.com')),
                 ]
             ),
         ],
