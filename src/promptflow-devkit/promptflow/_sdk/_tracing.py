@@ -49,7 +49,6 @@ from promptflow._sdk._service.utils.utils import (
     is_run_from_built_binary,
 )
 from promptflow._sdk._utils import extract_workspace_triad_from_trace_provider, parse_kv_from_pb_attribute
-from promptflow._sdk.operations._trace_operations import TraceOperations
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.thread_utils import ThreadWithContextVars
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
@@ -422,6 +421,7 @@ def process_otlp_trace_request(
     :type credential: Optional[object]
     """
     from promptflow._sdk.entities._trace import Span
+    from promptflow._sdk.operations._trace_operations import TraceOperations
 
     all_spans = []
     for resource_span in trace_request.resource_spans:
