@@ -30,6 +30,23 @@ See <a href="https://platform.openai.com/docs/api-reference/chat/create#chat/cre
     {% endfor %}
     ```
 
+## Getting started
+
+### Create connection for prompty to use
+Go to "Prompt flow" "Connections" tab. Click on "Create" button, select one of LLM tool supported connection types and fill in the configurations.
+
+Currently, there are two connection types supported by LLM tool: "AzureOpenAI" and "OpenAI". If you want to use "AzureOpenAI" connection type, you need to create an Azure OpenAI service first. Please refer to [Azure OpenAI Service](https://azure.microsoft.com/en-us/products/cognitive-services/openai-service/) for more details. If you want to use "OpenAI" connection type, you need to create an OpenAI account first. Please refer to [OpenAI](https://platform.openai.com/) for more details.
+
+```bash
+# Override keys with --set to avoid yaml file changes
+pf connection create --file ../../../connections/azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base> --name open_ai_connection
+```
+
+Note in [chat.prompty](chat.prompty) we are using connection named `open_ai_connection`.
+```bash
+# show registered connection
+pf connection show --name open_ai_connection
+```
 
 ## Run prompty
 
@@ -43,7 +60,7 @@ Ensure you have put your azure open ai endpoint key in [.env](../.env) file. You
 cat ../.env
 ```
 
-- Test flow: single turn 
+- Test flow: single turn
 ```bash
 # run chat flow with default question in flow.flex.yaml TODO
 # pf flow test --flow chat.prompty
@@ -93,16 +110,6 @@ pf run visualize --name $name
 
 ## Run prompty with connection
 Storing connection info in .env with plaintext is not safe. We recommend to use `pf connection` to guard secrets like `api_key` from leak.
-
-- Show or create `open_ai_connection`
-```bash
-# create connection from `azure_openai.yml` file
-# Override keys with --set to avoid yaml file changes
-pf connection create --file ../../connections/azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base>
-
-# check if connection exists
-pf connection show -n open_ai_connection
-```
 
 - Test using connection secret specified in environment variables
 **Note**: we used `'` to wrap value since it supports raw value without escape in powershell & bash. For windows command prompt, you may remove the `'` to avoid it become part of the value.
