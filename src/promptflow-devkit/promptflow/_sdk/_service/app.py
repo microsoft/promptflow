@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import logging
+import os
 import threading
 import time
 from datetime import datetime, timedelta
@@ -14,6 +15,7 @@ from werkzeug.exceptions import HTTPException
 
 from promptflow._sdk._constants import (
     HOME_PROMPT_FLOW_DIR,
+    PF_SERVICE_DEBUG,
     PF_SERVICE_HOUR_TIMEOUT,
     PF_SERVICE_LOG_FILE,
     PF_SERVICE_MONITOR_SECOND,
@@ -30,7 +32,7 @@ from promptflow._sdk._service.apis.run import api as run_api
 from promptflow._sdk._service.apis.span import api as span_api
 from promptflow._sdk._service.apis.telemetry import api as telemetry_api
 from promptflow._sdk._service.apis.ui import api as ui_api
-from promptflow._sdk._service.apis.ui import serve_trace_ui
+from promptflow._sdk._service.apis.ui import serve_chat_ui, serve_trace_ui
 from promptflow._sdk._service.utils.utils import (
     FormattedException,
     get_current_env_pfs_file,
@@ -69,6 +71,8 @@ def create_app():
     )
     app.add_url_rule("/v1.0/ui/traces/", defaults={"path": ""}, view_func=serve_trace_ui, methods=["GET"])
     app.add_url_rule("/v1.0/ui/traces/<path:path>", view_func=serve_trace_ui, methods=["GET"])
+    app.add_url_rule("/v1.0/ui/chat/", defaults={"path": ""}, view_func=serve_chat_ui, methods=["GET"])
+    app.add_url_rule("/v1.0/ui/chat/<path:path>", view_func=serve_chat_ui, methods=["GET"])
     with app.app_context():
         api_v1 = Blueprint("Prompt Flow Service", __name__, url_prefix="/v1.0", template_folder="static")
 
@@ -99,8 +103,19 @@ def create_app():
         handler = RotatingFileHandler(filename=log_file, maxBytes=1_000_000, backupCount=1)
         formatter = logging.Formatter("[%(asctime)s][%(name)s][%(levelname)s] - %(message)s")
         handler.setFormatter(formatter)
+
+        # Create a stream handler to output logs to the terminal
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(formatter)
+
         # Set app logger to the only one RotatingFileHandler to avoid duplicate logs
         app.logger.handlers = [handler]
+        if os.environ.get(PF_SERVICE_DEBUG) == "true":
+            # Set app logger to use both the rotating file handler and the stream handler in debug mode
+            app.logger.handlers.append(stream_handler)
+
+        # Prevent logs from being handled by the root logger
+        app.logger.propagate = False
 
         # Basic error handler
         @api.errorhandler(Exception)

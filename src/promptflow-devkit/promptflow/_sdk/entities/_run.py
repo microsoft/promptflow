@@ -178,7 +178,10 @@ class Run(YAMLTranslatableMixin):
             self._output_path = Path(
                 kwargs.get("output_path", self._generate_output_path(config=kwargs.get("config", None)))
             )
-            self._flow_name = flow_dir.name
+            if is_prompty_flow(self.flow):
+                self._flow_name = Path(self.flow).stem
+            else:
+                self._flow_name = flow_dir.name
         elif self._run_source == RunInfoSources.INDEX_SERVICE:
             self._metrics = kwargs.get("metrics", {})
             self._experiment_name = experiment_name
