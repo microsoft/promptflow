@@ -196,15 +196,15 @@ def _print_tracing_url_from_azure_portal(
     if AzureWorkspaceKind.is_workspace(workspace):
         _logger.debug(f"{ws_triad.workspace_name!r} is an Azure ML workspace.")
         if run is None:
-            query = f"trace/collection/{collection_id}"
+            query = f"trace/collection/{collection_id}/list"
         else:
-            query = f"prompts/trace/run/{run}"
+            query = f"prompts/trace/run/{run}/details"
     elif AzureWorkspaceKind.is_project(workspace):
         _logger.debug(f"{ws_triad.workspace_name!r} is an Azure AI project.")
         if run is None:
-            query = f"projecttrace/collection/{collection_id}"
+            query = f"projecttrace/collection/{collection_id}/list"
         else:
-            query = f"projectflows/trace/run/{run}"
+            query = f"projectflows/trace/run/{run}/details"
     else:
         _logger.error(f"the workspace type of {ws_triad.workspace_name!r} is not supported.")
         return
