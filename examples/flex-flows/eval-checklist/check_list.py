@@ -58,7 +58,7 @@ def check(answer: str, statement: str):
 
 
 class EvalFlow:
-    
+
     def __init__(self) -> None:
         pass
 

@@ -59,7 +59,7 @@ def code_gen(client: AzureOpenAI, question: str) -> str:
         "Make sure only reply the executable code, no other words."
     )
     completion = client.chat.completions.create(
-        model=os.getenv("CHAT_DEPLOYMENT_NAME"),
+        model=os.getenv("CHAT_DEPLOYMENT_NAME", "gpt-35-turbo"),
         messages=[
             {
                 "role": "system",

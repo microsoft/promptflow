@@ -104,26 +104,3 @@ pf run show --name $name
 # show output
 pf run show-details --name $name
 ```
-
-## Run prompty with connection
-Storing connection info in .env with plaintext is not safe. We recommend to use `pf connection` to guard secrets like `api_key` from leak.
-
-- Test using connection secret specified in environment variables
-**Note**: we used `'` to wrap value since it supports raw value without escape in powershell & bash. For windows command prompt, you may remove the `'` to avoid it become part of the value.
-
-```bash
-# test with default input value in flow.flex.yaml
-pf flow test --flow . --environment-variables AZURE_OPENAI_API_KEY='${open_ai_connection.api_key}' AZURE_OPENAI_ENDPOINT='${open_ai_connection.api_base}'
-```
-
-- Create run using connection secret binding specified in environment variables, see [run.yml](run.yml)
-```bash
-# create run
-pf run create --flow . --data ./data.jsonl --stream --environment-variables AZURE_OPENAI_API_KEY='${open_ai_connection.api_key}' AZURE_OPENAI_ENDPOINT='${open_ai_connection.api_base}' --column-mapping question='${data.question}'
-# create run using yaml file
-pf run create --file run.yml --stream
-
-# show outputs
-name=$(pf run list -r 10 | jq '.[] | select(.name | contains("chat_basic_")) | .name'| head -n 1 | tr -d '"')
-pf run show-details --name $name
-```
