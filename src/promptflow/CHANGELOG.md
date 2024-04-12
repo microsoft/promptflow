@@ -7,6 +7,7 @@
 
 ### Bugs Fixed
 - [promptflow-devkit] Fix run name missing directory name in some scenario of `pf.run`.
+- [promptflow-devkit] Raise not supported instead of 404 when trying to create Azure AI connection.
 
 ### Others
 - [promptflow-core] Connection default api version changed:
