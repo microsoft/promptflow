@@ -78,6 +78,10 @@ def write_readme(workflow_telemetries, readme_telemetries):
         "readmes": [],
         "notebooks": [],
     }
+    prompty = {
+        "readmes": [],
+        "notebooks": [],
+    }
     flows = {
         "readmes": [],
         "notebooks": [],
@@ -172,6 +176,16 @@ def write_readme(workflow_telemetries, readme_telemetries):
             )
         elif gh_working_dir.startswith("examples/flex-flows"):
             flex_flows["notebooks"].append(
+                {
+                    "name": notebook_name,
+                    "path": notebook_path,
+                    "pipeline_name": pipeline_name,
+                    "yaml_name": yaml_name,
+                    "description": description,
+                }
+            )
+        elif gh_working_dir.startswith("examples/prompty"):
+            prompty["notebooks"].append(
                 {
                     "name": notebook_name,
                     "path": notebook_path,
@@ -281,6 +295,16 @@ def write_readme(workflow_telemetries, readme_telemetries):
                     "description": description,
                 }
             )
+        elif readme_folder.startswith("examples/prompty"):
+            prompty["readmes"].append(
+                {
+                    "name": notebook_name,
+                    "path": notebook_path,
+                    "pipeline_name": pipeline_name,
+                    "yaml_name": yaml_name,
+                    "description": description,
+                }
+            )
         elif readme_folder.startswith("examples/tools/use-cases"):
             toolusecases["readmes"].append(
                 {
@@ -303,6 +327,7 @@ def write_readme(workflow_telemetries, readme_telemetries):
         "branch": BRANCH,
         "tutorials": tutorials,
         "flex_flows": flex_flows,
+        "prompty": prompty,
         "flows": flows,
         "evaluations": evaluations,
         "chats": chats,
@@ -336,6 +361,7 @@ def main(check):
     input_glob_readme = [
         "examples/flows/**/README.md",
         "examples/flex-flows/**/README.md",
+        "examples/prompty/**/README.md",
         "examples/connections/**/README.md",
         "examples/tutorials/e2e-development/*.md",
         "examples/tutorials/flow-fine-tuning-evaluation/*.md",
