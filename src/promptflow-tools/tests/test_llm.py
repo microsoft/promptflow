@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pytest
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 from promptflow.tools.exception import WrappedOpenAIError
-from promptflow.tools.llm import llm, list_apis
+from promptflow.tools.llm import llm
 
 from tests.utils import AttrDict
 
