@@ -3,9 +3,9 @@
 # ---------------------------------------------------------
 import os
 
-from promptflow._constants import PF_NO_INTERACTIVE_LOGIN
+from promptflow._constants import PF_NO_INTERACTIVE_LOGIN, AzureWorkspaceKind
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
-from promptflow.core._errors import MissingRequiredPackage
+from promptflow.core._errors import MissingRequiredPackage, UnsupportedWorkspaceKind
 from promptflow.exceptions import ValidationException
 
 
@@ -15,7 +15,7 @@ def check_required_packages():
         import azure.identity  # noqa: F401
     except ImportError as e:
         raise MissingRequiredPackage(
-            message="Please install 'promptflow-core[azureml-serving]' to use workspace related features."
+            message="Please install 'promptflow-core[azureml-serving]' to use Azure related features."
         ) from e
 
 
@@ -67,3 +67,14 @@ def interactive_credential_disabled():
 def is_from_cli():
     """Check if the current execution is from promptflow-cli."""
     return "promptflow-cli" in ClientUserAgentUtil.get_user_agent()
+
+
+def check_connection_provider_resource(resource_id: str, credential, pkg_name):
+    from .._utils import get_workspace_from_resource_id
+
+    workspace = get_workspace_from_resource_id(resource_id, credential, pkg_name)
+    if workspace._kind not in [AzureWorkspaceKind.DEFAULT, AzureWorkspaceKind.PROJECT]:
+        raise UnsupportedWorkspaceKind(
+            message=f"Workspace kind {workspace._kind!r} is not supported. "
+            f"Please use either an azure machine learning workspace or an azure ai project."
+        )

@@ -59,59 +59,6 @@
                     "type": "string"
                 }
             ],
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "Connection details",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
-                    },
-                    "403": {
-                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
-                    }
-                },
-                "description": "Get connection",
-                "operationId": "get_connection",
-                "parameters": [
-                    {
-                        "name": "working_directory",
-                        "in": "query",
-                        "type": "string"
-                    }
-                ],
-                "tags": [
-                    "Connections"
-                ]
-            },
-            "put": {
-                "responses": {
-                    "200": {
-                        "description": "Connection details",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
-                    },
-                    "403": {
-                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
-                    }
-                },
-                "description": "Update connection",
-                "operationId": "put_connection",
-                "parameters": [
-                    {
-                        "name": "payload",
-                        "required": true,
-                        "in": "body",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
-                    }
-                ],
-                "tags": [
-                    "Connections"
-                ]
-            },
             "post": {
                 "responses": {
                     "200": {
@@ -140,6 +87,31 @@
                     "Connections"
                 ]
             },
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Connection details",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    },
+                    "403": {
+                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
+                    }
+                },
+                "description": "Get connection",
+                "operationId": "get_connection",
+                "parameters": [
+                    {
+                        "name": "working_directory",
+                        "in": "query",
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "Connections"
+                ]
+            },
             "delete": {
                 "responses": {
                     "204": {
@@ -154,6 +126,34 @@
                 },
                 "description": "Delete connection",
                 "operationId": "delete_connection",
+                "tags": [
+                    "Connections"
+                ]
+            },
+            "put": {
+                "responses": {
+                    "200": {
+                        "description": "Connection details",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    },
+                    "403": {
+                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
+                    }
+                },
+                "description": "Update connection",
+                "operationId": "put_connection",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    }
+                ],
                 "tags": [
                     "Connections"
                 ]
@@ -455,6 +455,21 @@
                     "Runs"
                 ]
             },
+            "delete": {
+                "responses": {
+                    "204": {
+                        "description": "Delete run",
+                        "schema": {
+                            "$ref": "#/definitions/RunDict"
+                        }
+                    }
+                },
+                "description": "Delete run",
+                "operationId": "delete_run",
+                "tags": [
+                    "Runs"
+                ]
+            },
             "put": {
                 "responses": {
                     "200": {
@@ -487,21 +502,6 @@
                     "application/x-www-form-urlencoded",
                     "multipart/form-data"
                 ],
-                "tags": [
-                    "Runs"
-                ]
-            },
-            "delete": {
-                "responses": {
-                    "204": {
-                        "description": "Delete run",
-                        "schema": {
-                            "$ref": "#/definitions/RunDict"
-                        }
-                    }
-                },
-                "description": "Delete run",
-                "operationId": "delete_run",
                 "tags": [
                     "Runs"
                 ]
@@ -803,19 +803,6 @@
                 ]
             }
         },
-        "/ui/chat": {
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "Success"
-                    }
-                },
-                "operationId": "get_chat_ui",
-                "tags": [
-                    "ui"
-                ]
-            }
-        },
         "/ui/media": {
             "get": {
                 "responses": {
@@ -876,21 +863,6 @@
             }
         },
         "/ui/ux_inputs": {
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "Get the file content of file UX_INPUTS_JSON",
-                        "schema": {
-                            "$ref": "#/definitions/UIDict"
-                        }
-                    }
-                },
-                "description": "Get the file content of file UX_INPUTS_JSON",
-                "operationId": "get_flow_ux_inputs",
-                "tags": [
-                    "ui"
-                ]
-            },
             "post": {
                 "responses": {
                     "200": {
@@ -924,24 +896,24 @@
                 "tags": [
                     "ui"
                 ]
-            }
-        },
-        "/ui/yaml": {
+            },
             "get": {
                 "responses": {
                     "200": {
-                        "description": "Return flow yam"
+                        "description": "Get the file content of file UX_INPUTS_JSON",
+                        "schema": {
+                            "$ref": "#/definitions/UIDict"
+                        }
                     }
                 },
-                "description": "Return flow yaml as json",
-                "operationId": "get_yaml_edit",
-                "produces": [
-                    "text/yaml"
-                ],
+                "description": "Get the file content of file UX_INPUTS_JSON",
+                "operationId": "get_flow_ux_inputs",
                 "tags": [
                     "ui"
                 ]
-            },
+            }
+        },
+        "/ui/yaml": {
             "post": {
                 "responses": {
                     "200": {
@@ -977,6 +949,21 @@
                             }
                         }
                     }
+                ],
+                "tags": [
+                    "ui"
+                ]
+            },
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Return flow yam"
+                    }
+                },
+                "description": "Return flow yaml as json",
+                "operationId": "get_yaml_edit",
+                "produces": [
+                    "text/yaml"
                 ],
                 "tags": [
                     "ui"
