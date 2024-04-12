@@ -1023,6 +1023,7 @@ class FlowOperations(TelemetryMixin):
         keep_entry: bool = False,
         validate: bool = True,
         language: str = FlowLanguage.Python,
+        include_primitive_output: bool = False,
     ) -> Tuple[dict, Path, List[str]]:
         """Infer signature of a flow entry.
 
@@ -1090,6 +1091,14 @@ class FlowOperations(TelemetryMixin):
             # this path is actually not used
             flow = FlexFlow(path=code / FLOW_FLEX_YAML, code=code, data=flow_meta, entry=flow_meta["entry"])
             flow._validate(raise_error=True)
+
+        if include_primitive_output and "outputs" not in flow_meta:
+            flow_meta["outputs"] = {
+                "output": {
+                    "type": "string",
+                }
+            }
+
         if not keep_entry:
             flow_meta.pop("entry", None)
         return flow_meta, code, snapshot_list
@@ -1247,3 +1256,18 @@ class FlowOperations(TelemetryMixin):
             sample=sample,
             **kwargs,
         )
+
+    def _update_signatures(self, code: Path, data: dict) -> bool:
+        """Update signatures for flex flow. Raise validation error if signature is not valid."""
+        if not is_flex_flow(yaml_dict=data):
+            return False
+        entry = data.get("entry")
+        signatures, _, _ = self._infer_signature(entry=entry, code=code)
+        merged_signatures = self._merge_signature(extracted=signatures, signature_overrides=data)
+        FlexFlow(path=code / FLOW_FLEX_YAML, code=code, data=data, entry=entry)._validate()
+        updated = False
+        for field in ["inputs", "outputs", "init"]:
+            if merged_signatures.get(field) != data.get(field):
+                updated = True
+        data.update(merged_signatures)
+        return updated

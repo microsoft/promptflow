@@ -95,12 +95,11 @@ def _invoke_pf_svc() -> str:
             cmd_args.append("--force")
             logger.debug("Prompt flow service is not healthy, force to start...")
         else:
-            print("Prompt flow Tracing Server has started...")
-            print(hint_stop_message)
+            print("Prompt flow service has started...")
             return port
 
     add_executable_script_to_env_path()
-    print("Starting prompt flow Tracing Server...")
+    print("Starting prompt flow service...")
     start_pfs = None
     try:
         start_pfs = subprocess.Popen(cmd_args, shell=platform.system() == "Windows", stderr=subprocess.PIPE)
