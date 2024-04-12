@@ -49,7 +49,7 @@ class ChatInputList(list):
 
 def validate_role(role: str, valid_roles: List[str] = None):
     if not valid_roles:
-        valid_roles = ["assistant", "function", "user", "system"]
+        valid_roles = VALID_ROLES
 
     if role not in valid_roles:
         valid_roles_str = ','.join([f'\'{role}:\\n\'' for role in valid_roles])
@@ -127,7 +127,7 @@ def try_parse_name_and_content(role_prompt):
 
 def parse_chat(chat_str, images: List = None, valid_roles: List[str] = None, image_detail: str = 'auto'):
     if not valid_roles:
-        valid_roles = ["system", "user", "assistant", "function"]
+        valid_roles = VALID_ROLES
 
     # openai chat api only supports below roles.
     # customer can add single # in front of role name for markdown highlight.
@@ -448,7 +448,8 @@ def render_jinja_template_wrapper(prompt, trim_blocks=True, keep_trailing_newlin
     # Use this dict to store the user written roles in case sensitive and its escaped value.
     # We need this dict to unescape the role after the chat string is parsed.
     escape_dict = {}
-    updated_kwargs = {key: escape_roles(value, escape_dict) for key, value in kwargs.items()}
+    if isinstance(kwargs, dict):
+        updated_kwargs = {key: escape_roles(value, escape_dict) for key, value in kwargs.items()}
     return (
         render_jinja_template(
             prompt,
