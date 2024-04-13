@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import logging
 import platform
 from datetime import datetime
 
@@ -12,6 +13,22 @@ from promptflow.core._serving.extension.extension_type import ExtensionType
 from promptflow.core._serving.extension.otel_exporter_provider_factory import OTelExporterProviderFactory
 from promptflow.core._serving.monitor.metrics import MetricsRecorder
 from promptflow.core._utils import LoggerFactory
+
+
+def get_logger(name: str, verbosity: int = logging.INFO, target_stdout: bool = False):
+    logger = logging.getLogger(name)
+    logger.propagate = True
+    # Set default logger level to debug, we are using handler level to control log by default
+    logger.setLevel(logging.DEBUG)
+    # Use env var at first, then use verbosity
+    verbosity = logging.WARNING
+    if not LoggerFactory._find_handler(logger, logging.StreamHandler):
+        LoggerFactory._add_handler(logger, verbosity, target_stdout)
+    # TODO: Find a more elegant way to set the logging level for azure.core.pipeline.policies._universal
+    azure_logger = logging.getLogger("azure.core.pipeline.policies._universal")
+    azure_logger.setLevel(logging.DEBUG)
+    LoggerFactory._add_handler(azure_logger, logging.DEBUG, target_stdout)
+    return logger
 
 
 @pytest.mark.unittest
@@ -53,8 +70,7 @@ class TestMetrics:
         ],
     )
     def test_metrics_recorder(self, caplog, flow_run, node_run):
-        logger = LoggerFactory.get_logger(__name__)
-        logger.propagate = True
+        logger = get_logger("test_metrics_recorder")
 
         caplog.set_level("WARNING")
         metric_exporters = OTelExporterProviderFactory.get_metrics_exporters(
@@ -72,5 +88,5 @@ class TestMetrics:
                 "installation_id": "test_installation_id",
             },
         )
-        metrics_recorder.record_tracing_metrics(flow_run, {"run1:": node_run})
+        metrics_recorder.record_tracing_metrics(flow_run, {"run1": node_run})
         assert "failed to record metrics:" not in caplog.text
