@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from dateutil import parser as date_parser
 
-from promptflow._constants import FLOW_DAG_YAML, OutputsFolderName
+from promptflow._constants import FlowType, OutputsFolderName
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
@@ -49,7 +49,7 @@ from promptflow._sdk._utils import (
 )
 from promptflow._sdk.entities._yaml_translatable import YAMLTranslatableMixin
 from promptflow._sdk.schemas._run import RunSchema
-from promptflow._utils.flow_utils import get_flow_lineage_id, parse_variant
+from promptflow._utils.flow_utils import get_flow_lineage_id, is_prompty_flow, parse_variant
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import UserErrorException
 
@@ -178,7 +178,10 @@ class Run(YAMLTranslatableMixin):
             self._output_path = Path(
                 kwargs.get("output_path", self._generate_output_path(config=kwargs.get("config", None)))
             )
-            self._flow_name = flow_dir.name
+            if is_prompty_flow(self.flow):
+                self._flow_name = Path(self.flow).stem
+            else:
+                self._flow_name = flow_dir.name
         elif self._run_source == RunInfoSources.INDEX_SERVICE:
             self._metrics = kwargs.get("metrics", {})
             self._experiment_name = experiment_name
@@ -193,6 +196,9 @@ class Run(YAMLTranslatableMixin):
         self._identity = kwargs.get("identity", {})
         self._outputs = kwargs.get("outputs", None)
         self._command = kwargs.get("command", None)
+        # To support `pf.run` for dynamic callable, we need to create a run whose target function is a dynamic callable.
+        # TODO: such run is not resumable, not sure if we need specific error message for this case.
+        self._dynamic_callable = kwargs.get("dynamic_callable", None)
         if init:
             self._properties[FlowRunProperties.INIT_KWARGS] = init
 
@@ -646,8 +652,7 @@ class Run(YAMLTranslatableMixin):
             flow_artifact_path = local_to_cloud_info[OutputsFolderName.FLOW_ARTIFACTS]
             flow_artifact_root_path = Path(flow_artifact_path).parent.as_posix()
             log_file_relative_path = local_to_cloud_info[LocalStorageFilenames.LOG]
-            snapshot_folder = local_to_cloud_info[LocalStorageFilenames.SNAPSHOT_FOLDER]
-            snapshot_file_path = f"{snapshot_folder}/{FLOW_DAG_YAML}"
+            snapshot_file_path = local_to_cloud_info[LocalStorageFilenames.SNAPSHOT_FOLDER]
 
             # get the start and end time. Plus "Z" to specify the timezone is UTC, otherwise there will be warning
             # when sending the request to the server.
@@ -804,10 +809,11 @@ class Run(YAMLTranslatableMixin):
     def _flow_type(self) -> str:
         """Get flow type of run."""
 
-        from promptflow._constants import FlowType
         from promptflow._sdk._load_functions import load_flow
         from promptflow._sdk.entities._flows import FlexFlow
 
+        if is_prompty_flow(self.flow):
+            return FlowType.PROMPTY
         flow_obj = load_flow(source=self.flow)
         if isinstance(flow_obj, FlexFlow):
             return FlowType.FLEX_FLOW

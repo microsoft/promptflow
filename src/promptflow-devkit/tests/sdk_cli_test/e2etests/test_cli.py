@@ -18,9 +18,12 @@ from unittest.mock import patch
 import mock
 import pytest
 from _constants import PROMPTFLOW_ROOT
+from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
 
 from promptflow._cli._pf.entry import main
 from promptflow._constants import FLOW_FLEX_YAML, LINE_NUMBER_KEY, PF_USER_AGENT
+from promptflow._core.metric_logger import add_metric_logger
 from promptflow._sdk._constants import LOGGER_NAME, SCRUBBED_VALUE, ExperimentStatus
 from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
@@ -356,21 +359,23 @@ class TestCli:
         assert output["result"] == "meid_token"
 
     def test_pf_flow_test_with_non_english_input_output(self, capsys):
-        question = "什么是 chat gpt"
-        run_pf_command("flow", "test", "--flow", f"{FLOWS_DIR}/chat_flow", "--inputs", f'question="{question}"')
-        stdout, _ = capsys.readouterr()
-        output_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "flow.output.json"
-        assert output_path.exists()
-        with open(output_path, "r", encoding="utf-8") as f:
-            outputs = json.load(f)
-            assert outputs["answer"] in json.loads(stdout)["answer"]
+        # disable trace to not invoke prompt flow service, which will print unexpected content to stdout
+        with mock.patch("promptflow._sdk._tracing.is_trace_feature_disabled", return_value=True):
+            question = "什么是 chat gpt"
+            run_pf_command("flow", "test", "--flow", f"{FLOWS_DIR}/chat_flow", "--inputs", f'question="{question}"')
+            stdout, _ = capsys.readouterr()
+            output_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "flow.output.json"
+            assert output_path.exists()
+            with open(output_path, "r", encoding="utf-8") as f:
+                outputs = json.load(f)
+                assert outputs["answer"] in json.loads(stdout)["answer"]
 
-        detail_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "flow.detail.json"
-        assert detail_path.exists()
-        with open(detail_path, "r", encoding="utf-8") as f:
-            detail = json.load(f)
-            assert detail["flow_runs"][0]["inputs"]["question"] == question
-            assert detail["flow_runs"][0]["output"]["answer"] == outputs["answer"]
+            detail_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "flow.detail.json"
+            assert detail_path.exists()
+            with open(detail_path, "r", encoding="utf-8") as f:
+                detail = json.load(f)
+                assert detail["flow_runs"][0]["inputs"]["question"] == question
+                assert detail["flow_runs"][0]["output"]["answer"] == outputs["answer"]
 
     def test_pf_flow_with_variant(self, capsys):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -2157,7 +2162,7 @@ class TestCli:
             path = Path(tmpdir) / filename
             assert path.is_file()
 
-    def test_flow_run_resume_from(self, capfd, local_client) -> None:
+    def test_flow_run_resume_from(self, local_client) -> None:
         run_id = str(uuid.uuid4())
         # fetch std out
         run_pf_command(
@@ -2170,8 +2175,13 @@ class TestCli:
             "--name",
             run_id,
         )
-        out, _ = capfd.readouterr()
-        assert "Completed" in out
+        original_run = local_client.runs.get(name=run_id)
+        assert original_run.status == "Completed"
+        output_path = os.path.join(original_run.properties["output_path"], "flow_outputs", "output.jsonl")
+        with open(output_path, "r") as file:
+            original_output = [json.loads(line) for line in file]
+        # Since the data have 15 lines, we can assume the original run has succeeded lines in over 99% cases
+        original_success_count = len(original_output)
 
         new_run_id = str(uuid.uuid4())
         display_name = "test"
@@ -2189,12 +2199,22 @@ class TestCli:
             "tags.A=A",
             "tags.B=B",
         )
-        run = local_client.runs.get(name=new_run_id)
-        assert run.name == new_run_id
-        assert run.display_name == display_name
-        assert run.description == description
-        assert run.tags == {"A": "A", "B": "B"}
-        assert run._resume_from == run_id
+        resume_run = local_client.runs.get(name=new_run_id)
+        assert resume_run.name == new_run_id
+        assert resume_run.display_name == display_name
+        assert resume_run.description == description
+        assert resume_run.tags == {"A": "A", "B": "B"}
+        assert resume_run._resume_from == run_id
+        # assert new run resume from the original run
+        output_path = os.path.join(resume_run.properties["output_path"], "flow_outputs", "output.jsonl")
+        with open(output_path, "r") as file:
+            resume_output = [json.loads(line) for line in file]
+        assert len(resume_output) == len(original_output)
+
+        log_path = os.path.join(resume_run.properties["output_path"], "logs.txt")
+        with open(log_path, "r") as file:
+            log_text = file.read()
+        assert f"Skipped the execution of {original_success_count} existing results." in log_text
 
     def test_flow_run_resume_partially_failed_run(self, capfd, local_client) -> None:
         run_id = str(uuid.uuid4())
@@ -2238,6 +2258,137 @@ class TestCli:
                 new_run_id,
             )
             run_id = new_run_id
+
+    def test_flow_run_resume_from_token(self, local_client) -> None:
+        run_id = str(uuid.uuid4())
+        # fetch std out
+        run_pf_command(
+            "run",
+            "create",
+            "--flow",
+            f"{FLOWS_DIR}/web_classification_random_fail",
+            "--data",
+            f"{FLOWS_DIR}/web_classification_random_fail/data.jsonl",
+            "--column-mapping",
+            "url='${data.url}'",
+            "--name",
+            run_id,
+        )
+        original_run = local_client.runs.get(name=run_id)
+        assert original_run.status == "Completed"
+        output_path = os.path.join(original_run.properties["output_path"], "flow_outputs", "output.jsonl")
+        with open(output_path, "r") as file:
+            original_output = [json.loads(line) for line in file]
+        # Since the data have 15 lines, we can assume the original run has succeeded lines in over 99% cases
+        original_success_count = len(original_output)
+
+        new_run_id = str(uuid.uuid4())
+        display_name = "test"
+        description = "new description"
+        run_pf_command(
+            "run",
+            "create",
+            "--resume-from",
+            run_id,
+            "--name",
+            new_run_id,
+            "--set",
+            f"display_name={display_name}",
+            f"description={description}",
+            "tags.A=A",
+            "tags.B=B",
+        )
+        resume_run = local_client.runs.get(name=new_run_id)
+        assert resume_run.name == new_run_id
+        assert resume_run.display_name == display_name
+        assert resume_run.description == description
+        assert resume_run.tags == {"A": "A", "B": "B"}
+        assert resume_run._resume_from == run_id
+
+        # assert new run resume from the original run
+        output_path = os.path.join(resume_run.properties["output_path"], "flow_outputs", "output.jsonl")
+        with open(output_path, "r") as file:
+            resume_output = [json.loads(line) for line in file]
+        assert len(resume_output) > len(original_output)
+
+        log_path = os.path.join(resume_run.properties["output_path"], "logs.txt")
+        with open(log_path, "r") as file:
+            log_text = file.read()
+        assert f"Skipped the execution of {original_success_count} existing results." in log_text
+
+        # assert new run consumes more token than the original run
+        assert (
+            original_run.properties["system_metrics"]["total_tokens"]
+            < resume_run.properties["system_metrics"]["total_tokens"]
+        )
+
+    def test_flow_run_resume_with_image_aggregation(self, local_client) -> None:
+        metrics = {}
+
+        def test_metric_logger(key, value):
+            metrics[key] = value
+
+        add_metric_logger(test_metric_logger)
+
+        run_id = str(uuid.uuid4())
+        # fetch std out
+        run_pf_command(
+            "run",
+            "create",
+            "--flow",
+            f"{FLOWS_DIR}/eval_flow_with_image_resume_random_fail",
+            "--data",
+            f"{FLOWS_DIR}/eval_flow_with_image_resume_random_fail/data.jsonl",
+            "--column-mapping",
+            "input_image='${data.input_image}'",
+            "--name",
+            run_id,
+        )
+        original_run = local_client.runs.get(name=run_id)
+        assert original_run.status == "Completed"
+        output_path = os.path.join(original_run.properties["output_path"], "flow_outputs", "output.jsonl")
+        with open(output_path, "r") as file:
+            original_output = [json.loads(line) for line in file]
+        original_success_count = len(original_output)
+        original_image_count = metrics.get("image_count", None)
+
+        new_run_id = str(uuid.uuid4())
+        display_name = "test"
+        description = "new description"
+        run_pf_command(
+            "run",
+            "create",
+            "--resume-from",
+            run_id,
+            "--name",
+            new_run_id,
+            "--set",
+            f"display_name={display_name}",
+            f"description={description}",
+            "tags.A=A",
+            "tags.B=B",
+        )
+        resume_run = local_client.runs.get(name=new_run_id)
+        resume_image_count = metrics.get("image_count", None)
+        assert resume_run.name == new_run_id
+        assert resume_run.display_name == display_name
+        assert resume_run.description == description
+        assert resume_run.tags == {"A": "A", "B": "B"}
+        assert resume_run._resume_from == run_id
+
+        # assert new run resume from the original run
+        output_path = os.path.join(resume_run.properties["output_path"], "flow_outputs", "output.jsonl")
+        with open(output_path, "r") as file:
+            resume_output = [json.loads(line) for line in file]
+        assert len(resume_output) > len(original_output)
+
+        log_path = os.path.join(resume_run.properties["output_path"], "logs.txt")
+        with open(log_path, "r") as file:
+            log_text = file.read()
+        assert f"Skipped the execution of {original_success_count} existing results." in log_text
+
+        # assert aggregation node works
+        assert original_image_count < resume_image_count
 
     def test_flow_run_exclusive_param(self, capfd) -> None:
         # fetch std out
@@ -2379,6 +2530,26 @@ class TestCli:
         stdout, _ = capsys.readouterr()
         assert "obj_input" in stdout
         assert "func_input" in stdout
+
+    @pytest.mark.usefixtures("reset_tracer_provider")
+    def test_pf_flow_test_with_collection(self):
+        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+            mock_func.return_value = True
+            collection = str(uuid.uuid4())
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{FLOWS_DIR}/web_classification",
+                "--inputs",
+                "url=https://www.youtube.com/watch?v=o5ZQyXaAv1g",
+                "answer=Channel",
+                "evidence=Url",
+                "--collection",
+                collection,
+            )
+            tracer_provider: TracerProvider = trace.get_tracer_provider()
+            assert tracer_provider.resource.attributes["collection"] == collection
 
 
 def assert_batch_run_result(run, pf, assert_func):

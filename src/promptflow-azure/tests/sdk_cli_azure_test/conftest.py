@@ -495,7 +495,7 @@ def created_batch_run_without_llm(pf: PFClient, randstr: Callable[[str], str], r
 def simple_eager_run(pf: PFClient, randstr: Callable[[str], str]) -> Run:
     """Create a simple eager run."""
     run = pf.run(
-        flow=f"{EAGER_FLOWS_DIR}/simple_with_req",
+        flow=f"{EAGER_FLOWS_DIR}/simple_with_signature",
         data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
         name=randstr("name"),
     )
@@ -610,4 +610,19 @@ def mock_check_latest_version() -> None:
     and this will hit many unknown issue with vcrpy.
     """
     with patch("promptflow._sdk._version_hint_utils.check_latest_version", new=lambda: None):
+        yield
+
+
+@pytest.fixture
+def mock_trace_provider_to_cloud(
+    subscription_id: str,
+    resource_group_name: str,
+    workspace_name: str,
+) -> None:
+    """Mock trace provider to cloud."""
+    trace_provider = (
+        f"azureml://subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/"
+        f"providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}"
+    )
+    with patch("promptflow._sdk._configuration.Configuration.get_trace_provider", return_value=trace_provider):
         yield

@@ -11,8 +11,8 @@
 /src/promptflow-devkit/ @microsoft/promptflow-sdk
 /src/promptflow-azure/ @microsoft/promptflow-sdk
 /src/promptflow-recording/ @microsoft/promptflow-sdk
-
 /src/promptflow-evals/ @microsoft/pf-eval-team-contributor
+/src/promptflow-rag/ @microsoft/promptflow-rag
 
 /scripts/docs/ @microsoft/promptflow-sdk
 /scripts/installer/ @microsoft/promptflow-sdk
