@@ -9,6 +9,7 @@ from typing import Union
 from promptflow._constants import DEFAULT_ENCODING, FLOW_FILE_SUFFIX
 from promptflow._sdk.entities._validation import SchemaValidatableMixin
 from promptflow._utils.flow_utils import is_flex_flow, is_prompty_flow, resolve_flow_path
+from promptflow._utils.logger_utils import update_logger_levels
 from promptflow._utils.yaml_utils import load_yaml_string
 from promptflow.core._flow import AbstractFlowBase
 from promptflow.exceptions import UserErrorException
@@ -145,6 +146,7 @@ class Flow(FlowBase):
         **kwargs,
     ):
         self.variant = kwargs.pop("variant", None) or {}
+        self._log_level = kwargs.pop("log_level", None)
         super().__init__(data=dag, code=code, path=path, **kwargs)
 
     @property
@@ -236,6 +238,8 @@ class Flow(FlowBase):
         if args:
             raise UserErrorException("Flow can only be called with keyword arguments.")
 
+        if self._log_level:
+            update_logger_levels(self._log_level)
         result = self.invoke(inputs=kwargs)
         return result.output
 
@@ -243,7 +247,7 @@ class Flow(FlowBase):
         """Invoke a flow and get a LineResult object."""
         from promptflow._sdk.entities._flows._flow_context_resolver import FlowContextResolver
 
-        invoker = FlowContextResolver.resolve(flow=self)
+        invoker = FlowContextResolver.resolve(flow=self, log_level=self._log_level)
         result = invoker._invoke(
             data=inputs,
         )

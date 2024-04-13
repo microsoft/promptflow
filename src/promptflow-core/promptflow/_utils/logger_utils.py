@@ -182,7 +182,7 @@ def get_pf_logging_level(default=logging.INFO):
 
 def get_logger(name: str) -> logging.Logger:
     """Get logger used during execution."""
-    logger = logging.Logger(name)
+    logger = logging.getLogger(name)
     logger.setLevel(get_pf_logging_level())
     logger.addHandler(FileHandlerConcurrentWrapper())
     stdout_handler = logging.StreamHandler(sys.stdout)
@@ -205,6 +205,19 @@ logger = get_logger("execution")
 
 # Logs by service_logger will be shown in executor service mode.
 service_logger = get_logger("execution.service")
+
+
+def update_logger_levels(log_level: Optional[str] = None) -> None:
+    """
+    Update the logger levels.
+
+    :param log_level: The new logging level. If it is None,
+                      logging level will be taken from
+                      using get_pf_logging_level.
+    :type log_level: Optional[str]
+    """
+    for log in [flow_logger, bulk_logger, logger, service_logger]:
+        log.setLevel(log_level or get_pf_logging_level())
 
 
 logger_contexts = []

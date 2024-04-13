@@ -4,13 +4,16 @@
 
 __path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
 
+from typing import Optional
+
 from promptflow.entities import AzureOpenAIConnection
 from promptflow.evals.evaluators import GroundednessEvaluator, RelevanceEvaluator, \
     CoherenceEvaluator, FluencyEvaluator, SimilarityEvaluator, F1ScoreEvaluator
 
 
 class QAEvaluator:
-    def __init__(self, model_config: AzureOpenAIConnection, deployment_name: str):
+    def __init__(self, model_config: AzureOpenAIConnection, deployment_name: str,
+                 log_level: Optional[int] = None):
         """
         Initialize an evaluator configured for a specific Azure OpenAI model.
 
@@ -20,6 +23,8 @@ class QAEvaluator:
         :type deployment_name: AzureOpenAIConnection
         :return: A function that evaluates and generates metrics for "question-answering" scenario.
         :rtype: function
+        :param log_level: The logging level.
+        :type log_level: Optional[int]
 
         **Usage**
 
@@ -34,12 +39,12 @@ class QAEvaluator:
         )
         """
         self._evaluators = [
-            GroundednessEvaluator(model_config, deployment_name=deployment_name),
-            RelevanceEvaluator(model_config, deployment_name=deployment_name),
-            CoherenceEvaluator(model_config, deployment_name=deployment_name),
-            FluencyEvaluator(model_config, deployment_name=deployment_name),
-            SimilarityEvaluator(model_config, deployment_name=deployment_name),
-            F1ScoreEvaluator(),
+            GroundednessEvaluator(model_config, deployment_name=deployment_name, log_level=log_level),
+            RelevanceEvaluator(model_config, deployment_name=deployment_name, log_level=log_level),
+            CoherenceEvaluator(model_config, deployment_name=deployment_name, log_level=log_level),
+            FluencyEvaluator(model_config, deployment_name=deployment_name, log_level=log_level),
+            SimilarityEvaluator(model_config, deployment_name=deployment_name, log_level=log_level),
+            F1ScoreEvaluator(log_level=log_level),
         ]
 
     def __call__(self, *, question: str, answer: str, context: str, ground_truth: str, **kwargs):

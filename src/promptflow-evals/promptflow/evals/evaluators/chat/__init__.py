@@ -6,7 +6,7 @@ __path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
 
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.evals.evaluators import GroundednessEvaluator, RelevanceEvaluator, CoherenceEvaluator, FluencyEvaluator
-from typing import List, Dict
+from typing import Any, Dict, List
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import logging
@@ -170,8 +170,8 @@ class ChatEvaluator:
             return {}
 
     def _aggregate_results(self, per_turn_results: List[Dict]):
-        scores = {}
-        reasons = {}
+        scores: Dict[str, Any] = {}
+        reasons: Dict[str, Any] = {}
 
         for turn in per_turn_results:
             for metric, value in turn.items():
@@ -184,7 +184,7 @@ class ChatEvaluator:
                         scores[metric] = []
                     scores[metric].append(value)
 
-        aggregated = {}
+        aggregated: Dict[str, Any] = {}
         evaluation_per_turn = {}
 
         for metric, values in scores.items():

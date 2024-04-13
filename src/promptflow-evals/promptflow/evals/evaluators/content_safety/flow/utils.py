@@ -1,8 +1,10 @@
 import constants
 import numpy as np
 
+from typing import Union
 
-def get_harm_severity_level(harm_score: int) -> str:
+
+def get_harm_severity_level(harm_score: int) -> Union[str, float]:
     HARM_SEVERITY_LEVEL_MAPPING = {constants.HarmSeverityLevel.Safe: [0, 1],
                                    constants.HarmSeverityLevel.Low: [2, 3],
                                    constants.HarmSeverityLevel.Medium: [4, 5],

@@ -4,14 +4,19 @@
 
 __path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
 
+from typing import Optional
+
 from promptflow.client import load_flow
 from pathlib import Path
 
 
 class F1ScoreEvaluator:
-    def __init__(self):
+    def __init__(self, log_level: Optional[int] = None) -> None:
         """
         Initialize an evaluator for calculating F1 score.
+
+        :param log_level: The logging level.
+        :type log_level: Optional[int]
 
         **Usage**
 
@@ -27,7 +32,7 @@ class F1ScoreEvaluator:
         # Load the flow as function
         current_dir = Path(__file__).resolve().parent
         flow_dir = current_dir / "flow"
-        self._flow = load_flow(source=flow_dir)
+        self._flow = load_flow(source=flow_dir, log_level=log_level)
 
     def __call__(self, *, answer: str, ground_truth: str, **kwargs):
         """Evaluate F1 score.

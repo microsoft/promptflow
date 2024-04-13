@@ -3,7 +3,7 @@ from collections import Counter
 
 
 @tool
-def compute_f1_score(answer: str, ground_truth: str) -> str:
+def compute_f1_score(answer: str, ground_truth: str) -> float:
     import string
     import re
 

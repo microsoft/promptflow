@@ -31,7 +31,7 @@ try:
     if openai_version >= pkg_resources.parse_version("1.0.0"):
         _RETRY_ERRORS: Tuple = (openai.APIConnectionError, openai.APIError, openai.APIStatusError)
     else:
-        _RETRY_ERRORS: Tuple = (
+        _RETRY_ERRORS = (
             openai.error.ServiceUnavailableError,  # pylint: disable=no-member
             openai.error.APIError,  # pylint: disable=no-member
             openai.error.RateLimitError,  # pylint: disable=no-member

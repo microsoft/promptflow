@@ -3,7 +3,7 @@
 # ---------------------------------------------------------
 import inspect
 from types import FunctionType
-from typing import Callable, Dict, Optional
+from typing import Callable, Dict, Optional, Union, cast
 
 import pandas as pd
 
@@ -103,23 +103,27 @@ def evaluate(
     code_client = CodeClient()
 
     evaluator_info = {}
+    if evaluator_config is None:
+        evaluator_config = {}
 
-    for evaluator_name, evaluator in evaluators.items():
-        if isinstance(evaluator, FunctionType):
-            evaluator_info.update({evaluator_name: {"client": pf_client, "evaluator": evaluator}})
-        else:
-            evaluator_info.update({evaluator_name: {"client": code_client, "evaluator": evaluator}})
+    if evaluators:
+        for evaluator_name, evaluator in evaluators.items():
+            if isinstance(evaluator, FunctionType):
+                evaluator_info.update({evaluator_name: {"client": pf_client, "evaluator": evaluator}})
+            else:
+                evaluator_info.update({evaluator_name: {"client": code_client, "evaluator": evaluator}})
 
-        evaluator_info[evaluator_name]["run"] = evaluator_info[evaluator_name]["client"].run(
-            flow=evaluator,
-            column_mapping=evaluator_config.get(evaluator_name, evaluator_config.get("default", None)),
-            data=data,
-            stream=True,
-        )
+            evaluator_info[evaluator_name]["run"] = evaluator_info[evaluator_name]["client"].run(
+                flow=evaluator,
+                column_mapping=evaluator_config.get(evaluator_name, evaluator_config.get("default", None)),
+                data=data,
+                stream=True,
+            )
 
     evaluators_result_df = None
     for evaluator_name, evaluator_info in evaluator_info.items():
-        evaluator_result_df = evaluator_info["client"].get_details(evaluator_info["run"], all_results=True)
+        evaluator_result_df = cast(
+            Union[PFClient, CodeClient], evaluator_info["client"]).get_details(evaluator_info["run"], all_results=True)
 
         # drop input columns
         evaluator_result_df = evaluator_result_df.drop(

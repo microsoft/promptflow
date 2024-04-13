@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import dataclasses
+import logging
 import os
 from pathlib import Path
 from typing import Callable, Union
@@ -59,7 +60,10 @@ class FlowInvoker:
         init_kwargs: dict = None,
         **kwargs,
     ):
-        self.logger = kwargs.get("logger", LoggerFactory.get_logger("flowinvoker"))
+        self.logger = kwargs.get(
+            "logger",
+            LoggerFactory.get_logger("flowinvoker",
+                                     verbosity=kwargs.get('log_level') or logging.INFO))
         self._init_kwargs = init_kwargs or {}
         self.logger.debug(f"Init flow invoker with init kwargs: {self._init_kwargs}")
         # TODO: avoid to use private attribute after we finalize the inheritance
@@ -123,7 +127,8 @@ class FlowInvoker:
                 connection_names=self.flow.get_connection_names(
                     environment_variables_overrides=os.environ,
                 ),
-                provider=ConnectionProvider.init_from_provider_config(connection_provider, credential=self._credential),
+                provider=ConnectionProvider.init_from_provider_config(
+                    connection_provider, credential=self._credential),
                 connections_to_ignore=connections_to_ignore,
                 # fetch connections with name override
                 connections_to_add=list(self.connections_name_overrides.values()),

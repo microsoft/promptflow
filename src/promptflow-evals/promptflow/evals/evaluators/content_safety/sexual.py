@@ -6,7 +6,8 @@ from typing import Optional
 
 
 class SexualEvaluator:
-    def __init__(self, project_scope: dict, credential: Optional[TokenCredential] = None):
+    def __init__(self, project_scope: dict, credential: Optional[TokenCredential] = None,
+                 log_level: Optional[int] = None):
         """
         Initialize an evaluator for sexual score.
 
@@ -15,6 +16,8 @@ class SexualEvaluator:
         :type project_scope: dict
         :param credential: The credential for connecting to Azure AI project.
         :type credential: TokenCredential
+        :param log_level: The logging level.
+        :type log_level: Optional[int]
 
         **Usage**
 
@@ -30,7 +33,7 @@ class SexualEvaluator:
         # Load the flow as function
         current_dir = Path(__file__).resolve().parent
         flow_dir = current_dir / "flow"
-        self._flow = load_flow(source=flow_dir)
+        self._flow = load_flow(source=flow_dir, log_level=log_level)
 
     def __call__(self, *, question: str, answer: str, **kwargs):
         """Evaluates sexual content.

@@ -6,7 +6,7 @@ import tempfile
 from functools import lru_cache
 from os import PathLike
 from pathlib import Path
-from typing import Dict, Union
+from typing import Dict, Optional, Union
 
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import NODES
@@ -37,19 +37,20 @@ class FlowContextResolver:
 
     @classmethod
     @lru_cache
-    def resolve(cls, flow: Flow) -> "FlowInvoker":
+    def resolve(cls, flow: Flow, log_level: Optional[int] = None) -> "FlowInvoker":
         """Resolve flow to flow invoker."""
         resolver = cls(flow_path=flow.path)
         resolver._resolve(flow_context=flow.context)
-        return resolver._create_invoker(flow_context=flow.context)
+        return resolver._create_invoker(flow_context=flow.context, log_level=log_level)
 
     @classmethod
     @lru_cache
-    def resolve_async_invoker(cls, flow: Flow) -> "AsyncFlowInvoker":
+    def resolve_async_invoker(cls, flow: Flow, log_level: Optional[int] = None) -> "AsyncFlowInvoker":
         """Resolve flow to flow invoker."""
         resolver = cls(flow_path=flow.path)
         resolver._resolve(flow_context=flow.context)
-        return resolver._create_invoker(flow_context=flow.context, is_async_call=True)
+        return resolver._create_invoker(flow_context=flow.context, is_async_call=True,
+                                        log_level=log_level)
 
     def _resolve(self, flow_context: FlowContext):
         """Resolve flow context."""
@@ -113,7 +114,8 @@ class FlowContextResolver:
         return connections
 
     def _create_invoker(
-        self, flow_context: FlowContext, is_async_call=False
+        self, flow_context: FlowContext, is_async_call=False,
+        log_level: Optional[int] = None
     ) -> Union["FlowInvoker", "AsyncFlowInvoker"]:
         from promptflow.core._serving.flow_invoker import AsyncFlowInvoker, FlowInvoker
 
@@ -132,6 +134,7 @@ class FlowContextResolver:
                     flow=resolved_flow,
                     connections=connections,
                     streaming=flow_context.streaming,
+                    log_level=log_level,
                 )
             else:
                 return FlowInvoker(
@@ -139,4 +142,5 @@ class FlowContextResolver:
                     connections=connections,
                     streaming=flow_context.streaming,
                     connection_provider=Configuration.get_instance().get_connection_provider(),
+                    log_level=log_level,
                 )

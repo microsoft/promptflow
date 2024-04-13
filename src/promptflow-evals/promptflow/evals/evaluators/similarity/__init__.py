@@ -4,13 +4,16 @@
 
 __path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
 
+from typing import Optional
+
 from promptflow.client import load_flow
 from promptflow.entities import AzureOpenAIConnection
 from pathlib import Path
 
 
 class SimilarityEvaluator:
-    def __init__(self, model_config: AzureOpenAIConnection, deployment_name: str):
+    def __init__(self, model_config: AzureOpenAIConnection, deployment_name: str,
+                 log_level: Optional[int] = None):
         """
         Initialize an evaluator configured for a specific Azure OpenAI model.
 
@@ -18,6 +21,8 @@ class SimilarityEvaluator:
         :type model_config: AzureOpenAIConnection
         :param deployment_name: Deployment to be used which has Azure OpenAI model.
         :type deployment_name: AzureOpenAIConnection
+        :param log_level: The logging level.
+        :type log_level: Optional[int]
 
         **Usage**
 
@@ -33,7 +38,7 @@ class SimilarityEvaluator:
         # Load the flow as function
         current_dir = Path(__file__).resolve().parent
         flow_dir = current_dir / "flow"
-        self._flow = load_flow(source=flow_dir)
+        self._flow = load_flow(source=flow_dir, log_level=log_level)
 
         # Override the connection
         self._flow.context.connections = {

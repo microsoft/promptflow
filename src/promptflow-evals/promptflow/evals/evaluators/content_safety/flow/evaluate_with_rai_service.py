@@ -1,7 +1,7 @@
 from promptflow.core import tool
 import time
 from constants import RAIService, Tasks
-from typing import List
+from typing import Any, Dict, List
 import numpy as np
 import re
 from utils import get_harm_severity_level
@@ -68,7 +68,7 @@ def fetch_result(operation_id: str, rai_svc_url: str, credential: TokenCredentia
         time.sleep(sleep_time)
 
 
-def parse_response(batch_response: List[dict], metric_name: str) -> List[List[dict]]:
+def parse_response(batch_response: List[dict], metric_name: str) -> Dict[str, Any]:
     # Fix the metric name if it's "hate_fairness"
     # Eventually we will remove this fix once the RAI service is updated
     key = metric_name

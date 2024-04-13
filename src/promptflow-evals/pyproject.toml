@@ -95,3 +95,12 @@ name = "Contract forbidden modules"
 type = "forbidden"
 source_modules = ["promptflow.evals"]
 forbidden_modules = []
+
+[tool.mypy]
+exclude = [
+    "tests/evals"
+]
+warn_unused_configs = true 
+follow_imports = "skip"
+ignore_missing_imports = true
+follow_imports_for_stubs = false
