@@ -448,8 +448,10 @@ def render_jinja_template_wrapper(prompt, trim_blocks=True, keep_trailing_newlin
     # Use this dict to store the user written roles in case sensitive and its escaped value.
     # We need this dict to unescape the role after the chat string is parsed.
     escape_dict = {}
-    if isinstance(kwargs, dict):
-        updated_kwargs = {key: escape_roles(value, escape_dict) for key, value in kwargs.items()}
+    for _, value in kwargs.items():
+        escape_dict = build_escape_dict(value, escape_dict)
+    updated_kwargs = {key: escape_roles(value, escape_dict) for key, value in kwargs.items()}
+
     return (
         render_jinja_template(
             prompt,
@@ -461,18 +463,28 @@ def render_jinja_template_wrapper(prompt, trim_blocks=True, keep_trailing_newlin
     )
 
 
-def escape_roles(val, escape_dict: dict):
+def build_escape_dict(val, escape_dict: dict):
     """
-    Escape the roles in the prompt inputs to avoid the input string with pattern '# role' get parsed.
+    Build escape dictionary with roles as keys and uuids as values.
     """
     if not isinstance(val, str):
-        return val
+        return escape_dict
 
     pattern = r"(?i)^\s*#?\s*(" + "|".join(VALID_ROLES) + r")\s*:\s*\n"
     roles = re.findall(pattern, val, flags=re.MULTILINE)
     for role in roles:
         if role not in escape_dict:
             escape_dict[role] = str(uuid.uuid4())
+
+    return escape_dict
+
+
+def escape_roles(val, escape_dict: dict):
+    """
+    Escape the roles in the prompt inputs to avoid the input string with pattern '# role' get parsed.
+    """
+    if not isinstance(val, str):
+        return val
 
     for role, encoded_role in escape_dict.items():
         val = re.sub(role, encoded_role, val, flags=re.MULTILINE)

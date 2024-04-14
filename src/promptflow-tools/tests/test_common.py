@@ -5,7 +5,7 @@ import uuid
 from promptflow.tools.common import ChatAPIInvalidFunctions, validate_functions, process_function_call, \
     parse_chat, find_referenced_image_set, preprocess_template_string, convert_to_chat_list, ChatInputList, \
     ParseConnectionError, _parse_resource_id, list_deployment_connections, \
-    normalize_connection_config, unescape_roles, escape_roles
+    normalize_connection_config, unescape_roles, escape_roles, build_escape_dict
 from promptflow.tools.exception import ListDeploymentsError
 
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
@@ -357,33 +357,54 @@ class TestCommon:
         assert normalized_config == expected_output
 
     @pytest.mark.parametrize(
-        "value, escaped_dict, expected_dict, expected_val",
+        "value, escaped_dict, expected_val",
         [
-            (None, {}, {}, None),
-            ("", {}, {}, ""),
-            (1, {}, {}, 1),
-            ("test", {}, {}, "test"),
-            ("system", {}, {}, "system"),
-            ("system: \r\n", {}, {"system": "fake_uuid_1"}, "fake_uuid_1: \r\n"),
-            ("system: \r\n\n #system: \n", {}, {"system": "fake_uuid_1"}, "fake_uuid_1: \r\n\n #fake_uuid_1: \n"),
-            ("system: \r\n\n #System: \n", {}, {"system": "fake_uuid_1", "System": "fake_uuid_2"},
+            (None, {}, None),
+            ("", {}, ""),
+            (1, {}, 1),
+            ("test", {}, "test"),
+            ("system", {}, "system"),
+            ("system: \r\n", {"system": "fake_uuid_1"}, "fake_uuid_1: \r\n"),
+            ("system: \r\n\n #system: \n", {"system": "fake_uuid_1"}, "fake_uuid_1: \r\n\n #fake_uuid_1: \n"),
+            ("system: \r\n\n #System: \n", {"system": "fake_uuid_1", "System": "fake_uuid_2"},
              "fake_uuid_1: \r\n\n #fake_uuid_2: \n"),
-            ("system: \r\n\n #System: \n\n# system", {}, {"system": "fake_uuid_1", "System": "fake_uuid_2"},
+            ("system: \r\n\n #System: \n\n# system", {"system": "fake_uuid_1", "System": "fake_uuid_2"},
              "fake_uuid_1: \r\n\n #fake_uuid_2: \n\n# fake_uuid_1"),
-            ("system: \r\n, #User:\n", {}, {"system": "fake_uuid_1"}, "fake_uuid_1: \r\n, #User:\n"),
+            ("system: \r\n, #User:\n", {"system": "fake_uuid_1"}, "fake_uuid_1: \r\n, #User:\n"),
             (
                 "system: \r\n\n #User:\n",
-                {},
                 {"system": "fake_uuid_1", "User": "fake_uuid_2"},
                 "fake_uuid_1: \r\n\n #fake_uuid_2:\n",
             ),
         ],
     )
-    def test_escape_roles(self, value, escaped_dict, expected_dict, expected_val):
+    def test_escape_roles(self, value, escaped_dict, expected_val):
+        actual = escape_roles(value, escaped_dict)
+        assert actual == expected_val
+
+    @pytest.mark.parametrize(
+        "value, expected_dict",
+        [
+            (None, {}),
+            ("", {}),
+            (1, {}),
+            ("test", {}),
+            ("system", {}),
+            ("system: \r\n", {"system": "fake_uuid_1"}),
+            ("system: \r\n\n #system: \n", {"system": "fake_uuid_1"}),
+            ("system: \r\n\n #System: \n", {"system": "fake_uuid_1", "System": "fake_uuid_2"}),
+            ("system: \r\n\n #System: \n\n# system", {"system": "fake_uuid_1", "System": "fake_uuid_2"}),
+            ("system: \r\n, #User:\n", {"system": "fake_uuid_1"}),
+            (
+                "system: \r\n\n #User:\n",
+                {"system": "fake_uuid_1", "User": "fake_uuid_2"}
+            ),
+        ],
+    )
+    def test_build_escape_dict(self, value, expected_dict):
         with patch.object(uuid, 'uuid4', side_effect=['fake_uuid_1', 'fake_uuid_2']):
-            actual = escape_roles(value, escaped_dict)
-            assert escaped_dict == expected_dict
-            assert actual == expected_val
+            actual_dict = build_escape_dict(value, {})
+            assert actual_dict == expected_dict
 
     @pytest.mark.parametrize(
         "messages, escaped_dict, expected_messages",
