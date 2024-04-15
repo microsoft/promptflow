@@ -199,6 +199,31 @@ class TestWorkspaceConnectionProvider:
         }
         build_from_data_and_assert(data, expected)
 
+    def test_build_strong_type_custom_connection_from_rest_object(self):
+        # Test on CustomKeys type without meta
+        data = {
+            "id": "mock_id",
+            "name": "custom_connection",
+            "type": "Microsoft.MachineLearningServices/workspaces/connections",
+            "properties": {
+                "authType": "CustomKeys",
+                "credentials": {"keys": {"my_key1": "***", "my_key2": "***"}},
+                "category": "CustomKeys",
+                "target": "<api-base>",
+                "metadata": {
+                    "general_key": "general_value",
+                },
+            },
+        }
+        expected = {
+            "type": "CustomConnection",
+            "module": "promptflow.connections",
+            "name": "custom_connection",
+            "value": {"my_key1": "***", "my_key2": "***", "general_key": "general_value"},
+            "secret_keys": ["my_key1", "my_key2"],
+        }
+        build_from_data_and_assert(data, expected)
+
     def test_build_cognitive_search_connection_from_rest_object(self):
         # Test on ApiKey type with CognitiveSearch category
         data = {
