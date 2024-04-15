@@ -74,9 +74,6 @@ class Simulator:
         self.rai_client = None
         if ml_client:
             self.ml_client = ml_client
-            import pdb
-
-            pdb.set_trace()
             self.token_manager = ManagedIdentityAPITokenManager(
                 token_scope=TokenScope.DEFAULT_AZURE_MANAGEMENT,
                 logger=logging.getLogger("managed identity token manager"),
