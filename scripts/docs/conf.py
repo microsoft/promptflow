@@ -55,6 +55,8 @@ linkcheck_ignore = [
     "deploy-using-docker.html",
     "deploy-using-kubernetes.html",
     "https://portal.azure.com/#create/Microsoft.CognitiveServicesTextAnalytics",  # sphinx recognizes #create as an anchor while it's not. # noqa: E501
+    r"https://github\.com/microsoft/promptflow/tree/main/examples/flex-flows",  # remove when sample PR merged
+    r"https://github\.com/microsoft/promptflow/tree/main/examples/tutorials/tracing",  # remove when sample PR merged
 ]
 
 linkcheck_exclude_documents = ["contributing"]

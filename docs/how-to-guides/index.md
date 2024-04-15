@@ -5,6 +5,7 @@ Simple and short articles grouped by topics, each introduces a core feature of p
 ```{toctree}
 :maxdepth: 1
 
+tracing/index
 develop-a-flow/index
 init-and-test-a-flow
 add-conditional-control-to-a-flow
@@ -18,6 +19,5 @@ manage-runs
 set-global-configs
 develop-a-tool/index
 process-image-in-flow
-tracing
 faq
 ```
