@@ -105,5 +105,5 @@ jobs:
       - name: Run Test
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: |
-          poetry run pytest ./tests/sdk_cli_azure_test ../promptflow-azure/tests/sdk_cli_azure_test -n auto -m "perf_monitor_test"
+          poetry run pytest ./tests/sdk_cli_azure_test ../promptflow-azure/tests/sdk_cli_azure_test -m "perf_monitor_test"
 

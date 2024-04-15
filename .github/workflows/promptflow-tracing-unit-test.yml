@@ -28,7 +28,7 @@ jobs:
         name: promptflow-tracing
         path: ${{ env.WORKING_DIRECTORY }}/dist/promptflow_tracing-*.whl
 
-  test:
+  tracing-unit-test:
     needs: build
     strategy:
       matrix:
@@ -72,7 +72,7 @@ jobs:
             ${{ env.WORKING_DIRECTORY }}/htmlcov/
 
   report:
-    needs: test
+    needs: tracing-unit-test
     runs-on: ubuntu-latest
     permissions:
       checks: write
