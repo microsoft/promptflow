@@ -99,6 +99,8 @@ from promptflow._utils.utils import (
     set_context,
     transpose,
 )
+from promptflow.core._connection_provider._workspace_connection_provider import WorkspaceConnectionProvider
+from promptflow.core._errors import OpenURLNotFoundError
 from promptflow.core._serving.response_creator import ResponseCreator
 from promptflow.core._serving.swagger import generate_swagger
 from promptflow.core._serving.utils import (
