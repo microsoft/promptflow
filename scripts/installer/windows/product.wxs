@@ -92,7 +92,7 @@
         <CustomAction Id="StopPromptFlowService"
             Directory="APPLICATIONFOLDER"
             Execute="immediate"
-            ExeCommand="[SystemFolder]cmd.exe /C pfcli.exe pf service stop"
+            ExeCommand="[SystemFolder]cmd.exe /C start /B pfcli.exe pf service stop"
             Return="ignore" />
         <InstallExecuteSequence>
             <Custom Action="StopPromptFlowService" Before="InstallInitialize">Installed</Custom>
