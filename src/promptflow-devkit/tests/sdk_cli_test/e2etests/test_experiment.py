@@ -54,8 +54,12 @@ class TestExperiment:
         gen_data_snapshot_path = experiment._output_dir / "snapshots" / "gen_data"
         echo_snapshot_path = experiment._output_dir / "snapshots" / "echo"
         expected["nodes"][0]["code"] = gen_data_snapshot_path.absolute().as_posix()
+        expected["nodes"][0]["outputs"]["output_path"] = {}
         expected["nodes"][3]["code"] = echo_snapshot_path.absolute().as_posix()
         expected["nodes"][3]["environment_variables"] = {}
+        expected["nodes"][3]["outputs"]["output_path"]["path"] = (
+            (Path(template_path).parent / "echo_output").absolute().as_posix()
+        )
         assert experiment_dict["nodes"][0].items() == expected["nodes"][0].items()
         assert experiment_dict["nodes"][3].items() == expected["nodes"][3].items()
         # Assert snapshots
