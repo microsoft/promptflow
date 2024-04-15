@@ -39,7 +39,7 @@ class OpenAI(ToolProvider):
         escape_dict = build_escape_dict(converted_kwargs)
         updated_kwargs = {key: escape_roles(value, escape_dict) for key, value in converted_kwargs.items()}
         # keep_trailing_newline=True is to keep the last \n in the prompt to avoid converting "user:\t\n" to "user:".
-        chat_str, escape_dict = render_jinja_template(
+        chat_str = render_jinja_template(
             prompt, trim_blocks=True, keep_trailing_newline=True, **updated_kwargs
         )
         messages = parse_chat(
