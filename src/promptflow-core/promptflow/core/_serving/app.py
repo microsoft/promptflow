@@ -34,6 +34,13 @@ def create_app(**kwargs):
     elif engine == "fastapi":
         logger = LoggerFactory.get_logger("pfserving-app-v2", target_stdout=True)
         app = PromptFlowServingAppV2(docs_url=None, redoc_url=None, logger=logger, **kwargs)  # type: ignore
+        # enable auto-instrumentation if customer installed opentelemetry-instrumentation-fastapi
+        try:
+            from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+
+            FastAPIInstrumentor.instrument_app(app, excluded_urls="/swagger.json,/health,/version")
+        except ImportError:
+            logger.info("opentelemetry-instrumentation-flask is not installed, auto-instrumentation is not enabled.")
         return app
     else:
         raise ValueError(f"Unsupported engine: {engine}")

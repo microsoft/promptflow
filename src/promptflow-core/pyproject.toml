@@ -49,7 +49,8 @@ jsonschema = ">=4.0.0,<5.0.0"  # used to validate tool
 filetype = ">=1.2.0"  # used to detect the mime type for multi-media input
 flask = ">=2.2.3,<4.0.0"  # Serving endpoint requirements
 python-dateutil = ">=2.1.0,<3.0.0"  # Contracts RunInfo
-# ========executor-service dependencies========
+# ========fastapi server dependencies========
+uvicorn = ">=0.27.0,<1.0.0"  # used for fastapi server
 fastapi = ">=0.109.0,<1.0.0" # used to build web executor server
 # ========azureml-serving dependencies========
 # AzureML connection dependencies
@@ -59,7 +60,7 @@ azure-ai-ml = ">=1.14.0,<2.0.0"
 azureml-ai-monitoring = ">=0.1.0b3,<1.0.0"
 
 [tool.poetry.extras]
-executor-service = ["fastapi"]
+executor-service = []
 azureml-serving = ["azure-identity", "azure-ai-ml", "azureml-ai-monitoring"]
 
 [tool.poetry.group.dev.dependencies]
