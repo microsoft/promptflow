@@ -1029,7 +1029,7 @@ class TestFlowRun:
             name=name,
         )
         assert run.status == "Completed"
-        assert "error" not in run._to_dict()
+        assert "error" not in str(run._to_dict())
 
     def test_request_id_when_making_http_requests(self, pf, runtime: str, randstr: Callable[[str], str]):
         from azure.core.exceptions import HttpResponseError
