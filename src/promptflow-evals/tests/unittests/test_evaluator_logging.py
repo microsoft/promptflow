@@ -1,8 +1,7 @@
-'''
-Created on Apr 12, 2024
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
 
-@author: nirovins
-'''
 import pytest
 import logging
 
@@ -11,7 +10,7 @@ from unittest.mock import patch
 from promptflow.evals.evaluators.f1_score import F1ScoreEvaluator
 
 
-class TestF1ScoreEvaluator:
+class TestEvaluatorLogging:
 
     @pytest.mark.parametrize(
         "log_level,expected",
@@ -19,7 +18,7 @@ class TestF1ScoreEvaluator:
             (logging.INFO, set(['flowinvoker', 'execution.flow'])),
             (logging.WARNING, set()),
         ])
-    def test_f1_scre_evaluator_logs(self, caplog, log_level, expected):
+    def test_f1_score_evaluator_logs(self, caplog, log_level, expected):
         """Test logging with f1 score_evaluator."""
         def mock_get(name: str, verbosity: int = logging.INFO, target_stdout: bool = False):
             logger = logging.getLogger(name)

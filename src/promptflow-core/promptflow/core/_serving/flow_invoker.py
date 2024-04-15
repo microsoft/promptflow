@@ -2,14 +2,13 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import dataclasses
-import logging
 import os
 from pathlib import Path
 from typing import Callable, Union
 
 from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
 from promptflow._utils.flow_utils import dump_flow_result, is_executable_chat_flow
-from promptflow._utils.logger_utils import LoggerFactory
+from promptflow._utils.logger_utils import LoggerFactory, get_pf_logging_level
 from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow.core._connection import _Connection
 from promptflow.core._connection_provider._connection_provider import ConnectionProvider
@@ -63,7 +62,7 @@ class FlowInvoker:
         self.logger = kwargs.get(
             "logger",
             LoggerFactory.get_logger("flowinvoker",
-                                     verbosity=kwargs.get('log_level') or logging.INFO))
+                                     verbosity=kwargs.get('log_level') or get_pf_logging_level()))
         self._init_kwargs = init_kwargs or {}
         self.logger.debug(f"Init flow invoker with init kwargs: {self._init_kwargs}")
         # TODO: avoid to use private attribute after we finalize the inheritance

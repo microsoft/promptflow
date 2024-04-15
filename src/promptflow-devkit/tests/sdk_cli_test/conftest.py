@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 import pytest
 from _constants import CONNECTION_FILE, PROMPTFLOW_ROOT
-from mock import mock
+from unittest import mock
 from pytest_mock import MockerFixture
 from sqlalchemy import create_engine
 

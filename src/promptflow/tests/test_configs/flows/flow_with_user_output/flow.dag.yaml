@@ -4,7 +4,7 @@ inputs:
 outputs:
   output:
     type: string
-    reference: ${print_val.output.value}
+    reference: ${print_val.output}
 nodes:
 - name: print_val
   type: python
