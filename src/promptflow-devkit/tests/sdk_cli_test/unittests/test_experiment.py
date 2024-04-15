@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 from _constants import PROMPTFLOW_ROOT
 from ruamel.yaml import YAML
@@ -5,7 +7,14 @@ from ruamel.yaml import YAML
 from promptflow._sdk._errors import MultipleExperimentTemplateError, NoExperimentTemplateError
 from promptflow._sdk._load_functions import _load_experiment_template
 from promptflow._sdk._orchestrator.experiment_orchestrator import ExperimentTemplateTestContext
-from promptflow._sdk.entities._experiment import Experiment, ExperimentData, ExperimentInput, FlowNode
+from promptflow._sdk.entities._experiment import (
+    CommandNode,
+    CommandNodeOutput,
+    Experiment,
+    ExperimentData,
+    ExperimentInput,
+    FlowNode,
+)
 
 TEST_ROOT = PROMPTFLOW_ROOT / "tests"
 EXP_ROOT = TEST_ROOT / "test_configs/experiments"
@@ -52,6 +61,21 @@ class TestExperiment:
         assert experiment_dict["nodes"][0].items() == expected["nodes"][0].items()
         assert experiment_dict["nodes"][1].items() == expected["nodes"][1].items()
         assert experiment_dict.items() >= expected.items()
+
+    def test_script_node_experiment_template(self):
+        template_path = EXP_ROOT / "basic-script-template" / "basic-script.exp.yaml"
+        # Load template and create experiment
+        # Test override output path resolve correctly
+        template = _load_experiment_template(
+            source=template_path, params_overrides=[{"nodes[3].outputs.output_path.path": "mock_output"}]
+        )
+        experiment = Experiment.from_template(template)
+        # Assert command node output resolved
+        assert isinstance(experiment.nodes[0], CommandNode)
+        assert all(isinstance(v, CommandNodeOutput) for v in experiment.nodes[0].outputs.values())
+        assert isinstance(experiment.nodes[3], CommandNode)
+        assert all(isinstance(v, CommandNodeOutput) for v in experiment.nodes[3].outputs.values())
+        assert experiment.nodes[3].outputs["output_path"].path == Path(template_path).parent / "echo_output"
 
     def test_flow_referenced_id_calculation(self):
         template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"

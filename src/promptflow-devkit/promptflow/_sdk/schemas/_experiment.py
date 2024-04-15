@@ -15,6 +15,14 @@ from promptflow._sdk.schemas._fields import (
 from promptflow._sdk.schemas._run import ManagedIdentitySchema, ResourcesSchema, RunSchema, UserIdentitySchema
 
 
+class CommandNodeOutputSchema(metaclass=PatchedSchemaMeta):
+    path = LocalPathField(allow_none=True, check_exists=False)
+    # Align to v2, used for register output
+    name = fields.Str()
+    version = fields.Str()
+    # Mark: Discuss whether to expose 'type' afterwards, all types are 'uri_folder' in local scenario
+
+
 class CommandNodeSchema(YamlFileSchema):
     # TODO: Not finalized now. Need to revisit.
     name = fields.Str(required=True)
@@ -23,7 +31,7 @@ class CommandNodeSchema(YamlFileSchema):
     code = LocalPathField()
     command = fields.Str(required=True)
     inputs = fields.Dict(keys=fields.Str)
-    outputs = fields.Dict(keys=fields.Str, values=LocalPathField(allow_none=True))
+    outputs = fields.Dict(keys=fields.Str, values=NestedField(CommandNodeOutputSchema, allow_none=True))
     environment_variables = fields.Dict(keys=fields.Str, values=fields.Str)
     # runtime field, only available for cloud run
     runtime = fields.Str()
