@@ -572,9 +572,21 @@ class TestSubmitter:
                 generator_key=f"run.outputs.{output_name or 'output'}",
             )
             flow_result = resolve_generator(flow_result, generator_record)
-            resolved_chat_output = flow_result.output[output_name] if output_name else flow_result.output
-            history = [{"role": "user", "content": input_value}, {"role": "assistant", "content": resolved_chat_output}]
-            chat_history.extend(history)
+            if isinstance(self.flow, (Prompty, FlexFlow)):
+                # For prompty and flex flow, the format of chat history is consistent with openai.
+                # [{"role": "role_name", "content": "content_vale"}]
+                resolved_chat_output = flow_result.output[output_name] if output_name else flow_result.output
+                history = [
+                    {"role": "user", "content": input_value},
+                    {"role": "assistant", "content": resolved_chat_output},
+                ]
+                chat_history.extend(history)
+            else:
+                # TODO: In order not to break the original dag flow, the original chat history format is maintained.
+                # Compatibility with older format will be done in the future.
+                flow_outputs = {k: v for k, v in flow_result.output.items()}
+                history = {"inputs": {input_name: input_value}, "outputs": flow_outputs}
+                chat_history.append(history)
             dump_flow_result(flow_folder=self._origin_flow.code, flow_result=flow_result, prefix="chat")
 
     @staticmethod
