@@ -1,6 +1,6 @@
 # execute tests in src/promptflow/tests/sdk_cli_azure_test with live mode
 
-name: sdk-cli-azure-test-anypath
+name: sdk-cli-azure-test-production
 
 on:
   schedule:
