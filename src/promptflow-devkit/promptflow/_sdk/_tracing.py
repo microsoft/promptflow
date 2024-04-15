@@ -202,6 +202,7 @@ def _print_tracing_url_from_azure_portal(
             query = f"prompts/trace/run/{run}/details"
     elif AzureWorkspaceKind.is_project(workspace):
         _logger.debug(f"{ws_triad.workspace_name!r} is an Azure AI project.")
+        url = url.replace("int.ml.azure.com", "int.ai.azure.com")
         if run is None:
             query = f"projecttrace/collection/{collection_id}/list"
         else:
