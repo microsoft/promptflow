@@ -70,7 +70,7 @@ async def execute_run(thread_id, assistant_id):
         )
         print(f"run status={run.status}")
         if run.status == "requires_action":
-            await handle_require_actions(client, run)
+            await handle_require_actions(run)
         elif run.status in {"failed", "cancelled", "expired"}:
             if run.last_error is not None:
                 error_message = f"The run {run.id} is in '{run.status}' status. " \
