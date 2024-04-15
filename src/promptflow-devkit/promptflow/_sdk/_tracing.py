@@ -72,7 +72,7 @@ def _get_collection_id_for_azure(collection: str) -> str:
     """{collection}_{object_id}"""
     import jwt
 
-    from promptflow._cli._utils import get_credentials_for_cli
+    from promptflow.azure._cli._utils import get_credentials_for_cli
     from promptflow.azure._utils.general import get_arm_token
 
     token = get_arm_token(credential=get_credentials_for_cli())
@@ -170,7 +170,7 @@ def _print_tracing_url_from_azure_portal(
     # as this there is an if condition for azure extension, we can assume the extension is installed
     from azure.ai.ml import MLClient
 
-    from promptflow._cli._utils import get_credentials_for_cli
+    from promptflow.azure._cli._utils import get_credentials_for_cli
 
     # we have different url for Azure ML workspace and AI project
     # so we need to distinguish them
