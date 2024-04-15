@@ -6,9 +6,9 @@ This is an experimental feature, and may change at any time. Learn [more](../faq
 
 Prompt flow provides the trace feature to capture and visualize the internal execution details for all flows.
 
-For `DAG flow` user can track and visualize node level inputs/outputs of flow execution, it provides critical insights for developer to understand the internal details of execution. 
+For `DAG flow`, user can track and visualize node level inputs/outputs of flow execution, it provides critical insights for developer to understand the internal details of execution. 
 
-For `Flex flow` developers, which might use different frameworks (langchain, semantic kernel, OpenAI, kinds of agents) to create LLM based applications, we allow user to instrument their code in a [OpenTelemetry](https://opentelemetry.io/) compatible way, and visualize using UI provided by promptflow devkit.
+For `Flex flow` developers, who might use different frameworks (langchain, semantic kernel, OpenAI, kinds of agents) to create LLM based applications, prompt flow allow user to instrument their code in a [OpenTelemetry](https://opentelemetry.io/) compatible way, and visualize using UI provided by promptflow devkit.
 
 ## Instrumenting user's code
 
