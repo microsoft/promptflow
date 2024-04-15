@@ -196,6 +196,9 @@ class Run(YAMLTranslatableMixin):
         self._identity = kwargs.get("identity", {})
         self._outputs = kwargs.get("outputs", None)
         self._command = kwargs.get("command", None)
+        # To support `pf.run` for dynamic callable, we need to create a run whose target function is a dynamic callable.
+        # TODO: such run is not resumable, not sure if we need specific error message for this case.
+        self._dynamic_callable = kwargs.get("dynamic_callable", None)
         if init:
             self._properties[FlowRunProperties.INIT_KWARGS] = init
 
