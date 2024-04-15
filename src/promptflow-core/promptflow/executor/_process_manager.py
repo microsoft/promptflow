@@ -20,6 +20,7 @@ from promptflow.executor._errors import (
     ProcessTerminatedTimeout,
     SpawnedForkProcessManagerStartFailure,
 )
+from promptflow.executor._prompty_executor import PromptyExecutor
 from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import FlowExecutor
 from promptflow.storage import AbstractRunStorage
@@ -509,6 +510,13 @@ def create_spawned_fork_process_manager(
 
 
 def _create_executor_fork(*, flow_executor: FlowExecutor, storage: AbstractRunStorage):
+    if isinstance(flow_executor, PromptyExecutor):
+        return PromptyExecutor(
+            flow_file=flow_executor._flow_file,
+            connections=flow_executor._connections,
+            working_dir=flow_executor._working_dir,
+            storage=storage,
+        )
     if isinstance(flow_executor, ScriptExecutor):
         return ScriptExecutor(
             flow_file=flow_executor._flow_file,
