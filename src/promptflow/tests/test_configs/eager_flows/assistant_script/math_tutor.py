@@ -56,7 +56,7 @@ async def get_or_create_thread(thread_id=None):
     return await client.beta.threads.create()
 
 @trace
-async def run_execution(thread_id, assistant_id):
+async def execute_run(thread_id, assistant_id):
     run = await client.beta.threads.runs.create(
         thread_id=thread_id,
         assistant_id=assistant_id,
@@ -79,10 +79,10 @@ async def run_execution(thread_id, assistant_id):
                 error_message = f"The run {run.id} is in '{run.status}' status without a specific error message."
             raise Exception(error_message)
         elif run.status in {"completed"}:
-            # Run completed
-            break
+            # Expect the terminated run to show up in trace
+            return run
         else:
-            raise Exception(f"Unexpected run status: {run.status}")
+            raise Exception(f"Unsupported run status: {run.status}")
 
 
 async def math_tutor(question: str, thread_id=None, assistant_id=None):
@@ -98,18 +98,21 @@ async def math_tutor(question: str, thread_id=None, assistant_id=None):
         content=question
     )
 
-    await run_execution(thread.id, assistant.id)
+    await execute_run(thread.id, assistant.id)
 
+    return get_message(thread.id)
+
+
+
+async def get_message(thread_id):
     messages = await client.beta.threads.messages.list(
-        thread_id=thread.id
+        thread_id=thread_id
     )
     return [content.dict() for content in messages.data[0].content]
 
-
-
-async def handle_require_actions(cli, run):
+async def handle_require_actions(run):
     tool_outputs = await tool_calls(run)
-    await cli.beta.threads.runs.submit_tool_outputs(thread_id=run.thread_id, run_id=run.id, tool_outputs=tool_outputs)
+    await client.beta.threads.runs.submit_tool_outputs(thread_id=run.thread_id, run_id=run.id, tool_outputs=tool_outputs)
 
 @trace
 async def tool_calls(run):
