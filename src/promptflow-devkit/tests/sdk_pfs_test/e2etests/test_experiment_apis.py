@@ -68,7 +68,6 @@ class TestExperimentAPIs:
                     "experiment_template": (
                         EXPERIMENT_ROOT / "class-based-eager-flow-exp-template/flow.exp.yaml"
                     ).as_posix(),
-                    "init": {"obj_input": "val"},
                 }
             ).json
         assert "main" in experiment and experiment["main"]["detail"]["flow_runs"][0]["inputs"] == {
