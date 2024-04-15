@@ -67,6 +67,10 @@ class TestEagerFlow:
         assert isinstance(line_result, LineResult)
         assert ensure_output(line_result.output)
 
+        if executor.has_aggregation_node:
+            aggr_result = executor.exec_aggregation(inputs=[line_result.output])
+            assert aggr_result.metrics == {"length": 1}
+
         # Test submitting eager flow to flow executor
         executor = FlowExecutor.create(flow_file=flow_file, connections={}, init_kwargs=init_kwargs)
         line_result1 = executor.exec_line(inputs=inputs, index=0)
