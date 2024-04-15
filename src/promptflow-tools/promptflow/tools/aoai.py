@@ -1,7 +1,7 @@
 import json
-from promptflow.tools.common import render_jinja_template, handle_openai_error, parse_chat, to_bool, \
+from promptflow.tools.common import render_jinja_template, handle_openai_error, to_bool, \
     validate_functions, process_function_call, post_process_chat_api_response, init_azure_openai_client, \
-    build_escape_dict, escape_roles, unescape_roles
+    build_messages
 
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
 # since the code here is in promptflow namespace as well
@@ -118,13 +118,7 @@ class AzureOpenAI(ToolProvider):
         seed: int = None,
         **kwargs,
     ) -> [str, dict]:
-        # Use escape/unescape to avoid unintended parsing of role in user inputs.
-        escape_dict = build_escape_dict(kwargs)
-        updated_kwargs = {key: escape_roles(value, escape_dict) for key, value in kwargs.items()}
-        # keep_trailing_newline=True is to keep the last \n in the prompt to avoid converting "user:\t\n" to "user:".
-        chat_str = render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, **updated_kwargs)
-        messages = parse_chat(chat_str)
-        unescape_roles(messages, escape_dict)
+        messages = build_messages(prompt, **kwargs)
         # TODO: remove below type conversion after client can pass json rather than string.
         stream = to_bool(stream)
         params = {

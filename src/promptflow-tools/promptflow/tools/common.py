@@ -16,6 +16,7 @@ from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, L
 from promptflow._cli._utils import get_workspace_triad_from_local
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 from promptflow.exceptions import SystemErrorException, UserErrorException
+from promptflow.contracts.types import PromptTemplate
 
 
 GPT4V_VERSION = "vision-preview"
@@ -479,38 +480,67 @@ def escape_roles(val, escape_dict: dict):
         return ChatInputList([escape_roles(item, escape_dict) for item in val])
     elif isinstance(val, str):
         for role, encoded_role in escape_dict.items():
-            val = re.sub(role, encoded_role, val, flags=re.MULTILINE)
+            val = val.replace(role, encoded_role)
         return val
     else:
         return val
 
 
-def unescape_roles(messages, escape_dict: dict):
+def unescape_roles(val, escape_dict: dict):
     """
     Unescape the roles in the parsed chat messages to restore the original role names.
 
-    Besides the case: 'content': 'some text. escaped_roles (i.e. fake uuids)'
-    We also need to handle the vision case that the content is converted to list. For example:
-        'content': [{
-                        'type': 'text',
-                        'text': 'some text. fake_uuid'
-                    }, {
-                        'type': 'image_url',
-                        'image_url': {}
-                    }]
+    Besides the case that value is: 'some text. escaped_roles (i.e. fake uuids)'
+    We also need to handle the vision case that the content is converted to list.
+    For example:
+        [{
+            'type': 'text',
+            'text': 'some text. fake_uuid'
+        }, {
+            'type': 'image_url',
+            'image_url': {}
+        }]
     """
+    if isinstance(val, str):
+        for role, encoded_role in escape_dict.items():
+            val = val.replace(encoded_role, role)
+        return val
+    elif isinstance(val, list):
+        for index, item in enumerate(val):
+            if isinstance(item, dict) and "text" in item:
+                for role, encoded_role in escape_dict.items():
+                    val[index]["text"] = item["text"].replace(encoded_role, role)
+        return val
+    else:
+        return val
+
+
+def build_messages(
+    prompt: PromptTemplate,
+    images: list = None,
+    image_detail: str = 'auto',
+    **kwargs,
+):
+    # Use escape/unescape to avoid unintended parsing of role in user inputs.
+    escape_dict = build_escape_dict(kwargs)
+    updated_kwargs = {
+        key: escape_roles(value, escape_dict) for key, value in kwargs.items()
+    }
+
+    # keep_trailing_newline=True is to keep the last \n in the prompt to avoid converting "user:\t\n" to "user:".
+    chat_str = render_jinja_template(
+        prompt, trim_blocks=True, keep_trailing_newline=True, **updated_kwargs
+    )
+    messages = parse_chat(chat_str, images=images, image_detail=image_detail)
+
     if escape_dict and isinstance(messages, list):
         for message in messages:
             if not isinstance(message, dict):
                 continue
-            for role, uuid_str in escape_dict.items():
-                for key, val in message.items():
-                    if isinstance(val, str):
-                        message[key] = val.replace(uuid_str, role)
-                    elif isinstance(val, list):
-                        for item in val:
-                            if isinstance(item, dict) and "text" in item:
-                                item["text"] = item["text"].replace(uuid_str, role)
+            for key, val in message.items():
+                message[key] = unescape_roles(val, escape_dict)
+
+    return messages
 
 
 def process_function_call(function_call):
