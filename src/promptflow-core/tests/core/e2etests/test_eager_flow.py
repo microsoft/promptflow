@@ -68,7 +68,7 @@ class TestEagerFlow:
         assert ensure_output(line_result.output)
 
         if executor.has_aggregation_node:
-            aggr_result = executor.exec_aggregation(inputs=[line_result.output])
+            aggr_result = executor._exec_aggregation(inputs=[line_result.output])
             assert aggr_result.metrics == {"length": 1}
 
         # Test submitting eager flow to flow executor
