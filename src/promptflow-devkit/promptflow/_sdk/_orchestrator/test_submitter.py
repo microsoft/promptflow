@@ -567,7 +567,6 @@ class TestSubmitter:
                 generator_key=f"run.outputs.{output_name or 'output'}",
             )
             flow_result = resolve_generator(flow_result, generator_record)
-            # flow_outputs = {k: v for k, v in flow_result.output.items()}
             history = [{"role": "user", "content": input_value}, {"role": "assistant", "content": chat_output}]
             chat_history.extend(history)
             dump_flow_result(flow_folder=self._origin_flow.code, flow_result=flow_result, prefix="chat")
