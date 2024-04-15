@@ -1,6 +1,7 @@
 from pathlib import Path
-from typing import Optional
+from typing import Any, Dict, Optional
 
+from promptflow._utils.logger_utils import logger
 from promptflow.contracts.tool import InputDefinition
 from promptflow.core._flow import Prompty
 from promptflow.storage import AbstractRunStorage
@@ -22,8 +23,11 @@ class PromptyExecutor(ScriptExecutor):
         working_dir: Optional[Path] = None,
         *,
         storage: Optional[AbstractRunStorage] = None,
+        init_kwargs: Optional[Dict[str, Any]] = None,
     ):
-        self.prompty = Prompty.load(source=flow_file)
+        init_kwargs = init_kwargs or {}
+        logger.debug(f"Init params for prompty executor: {init_kwargs}")
+        self.prompty = Prompty.load(source=flow_file, **init_kwargs)
         super().__init__(flow_file=flow_file, connections=connections, working_dir=working_dir, storage=storage)
 
     def _initialize_function(self):

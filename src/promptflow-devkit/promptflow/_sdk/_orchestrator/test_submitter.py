@@ -551,9 +551,14 @@ class TestSubmitter:
             with change_logger_level(level=logging.WARNING):
                 chat_inputs, _ = self.resolve_data(inputs=inputs)
 
+            init_kwargs = None
+            if isinstance(self.flow, Prompty):
+                # Override prompt output format configuration and only return first choice in interactive mode.
+                init_kwargs = {"model": {"parameters": {"stream": False}, "response": "first"}}
             flow_result = self.flow_test(
                 inputs=chat_inputs,
                 allow_generator_output=True,
+                init_kwargs=init_kwargs,
             )
             self._raise_error_when_test_failed(flow_result, show_trace=True)
             show_node_log_and_output(flow_result.node_run_infos, show_step_output, generator_record)
@@ -567,7 +572,8 @@ class TestSubmitter:
                 generator_key=f"run.outputs.{output_name or 'output'}",
             )
             flow_result = resolve_generator(flow_result, generator_record)
-            history = [{"role": "user", "content": input_value}, {"role": "assistant", "content": chat_output}]
+            resolved_chat_output = flow_result.output[output_name] if output_name else flow_result.output
+            history = [{"role": "user", "content": input_value}, {"role": "assistant", "content": resolved_chat_output}]
             chat_history.extend(history)
             dump_flow_result(flow_folder=self._origin_flow.code, flow_result=flow_result, prefix="chat")
 

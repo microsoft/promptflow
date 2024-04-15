@@ -1045,6 +1045,19 @@ class TestCli:
         outerr = capsys.readouterr()
         assert "chat flow does not support multiple chat outputs" in outerr.out
 
+        # Test prompty with stream output
+        chat_list = ["What is the sum of the calculation results of previous rounds?", "what is the result of 3+3?"]
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{PROMPTY_DIR}/prompty_with_chat_history_and_stream_output.prompty",
+            "--interactive",
+        )
+        outerr = capsys.readouterr()
+        assert "6" in outerr.out
+        assert "12" in outerr.out
+
     def test_flow_test_with_default_chat_history(self):
         run_pf_command(
             "flow",
