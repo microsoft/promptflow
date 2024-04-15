@@ -31,7 +31,6 @@ See <a href="https://platform.openai.com/docs/api-reference/chat/create#chat/cre
     {% endfor %}
     ```
 
-
 ## Run flow
 
 - Prepare your Azure Open AI resource follow this [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal) and get your `api_key` if you don't have one.
@@ -60,6 +59,7 @@ python flow.py
 ```
 
 - Test flow
+You'll need to write flow entry `flow.flex.yaml` to test with prompt flow.
 
 ```bash
 # run chat flow with default question in flow.flex.yaml
