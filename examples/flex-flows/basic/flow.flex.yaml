@@ -1,5 +1,10 @@
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 entry: flow:flow_entry
 environment:
-  image: mcr.microsoft.com/azureml/promptflow/promptflow-python
+  image: promptflow.azurecr.io/promptflow-runtime:pr-1316971-v19
   python_requirements_txt: requirements.txt
+environment_variables:
+  # environment variables from connection
+  AZURE_OPENAI_API_KEY: ${open_ai_connection.api_key}
+  AZURE_OPENAI_ENDPOINT: ${open_ai_connection.api_base}
+  AZURE_OPENAI_API_TYPE: azure
