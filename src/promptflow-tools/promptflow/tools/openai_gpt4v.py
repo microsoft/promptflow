@@ -1,9 +1,10 @@
 from promptflow.connections import OpenAIConnection
 from promptflow.contracts.types import PromptTemplate
 from promptflow._internal import ToolProvider, tool
-from promptflow.tools.common import render_jinja_template_wrapper, handle_openai_error, \
+from promptflow.tools.common import render_jinja_template, handle_openai_error, \
     parse_chat, post_process_chat_api_response, preprocess_template_string, \
-    find_referenced_image_set, convert_to_chat_list, init_openai_client, unescape_roles
+    find_referenced_image_set, convert_to_chat_list, init_openai_client, unescape_roles, \
+    escape_roles, build_escape_dict
 
 
 class OpenAI(ToolProvider):
@@ -29,14 +30,17 @@ class OpenAI(ToolProvider):
         detail: str = 'auto',
         **kwargs,
     ) -> [str, dict]:
-        # keep_trailing_newline=True is to keep the last \n in the prompt to avoid converting "user:\t\n" to "user:".
         prompt = preprocess_template_string(prompt)
         referenced_images = find_referenced_image_set(kwargs)
 
         # convert list type into ChatInputList type
         converted_kwargs = convert_to_chat_list(kwargs)
-        chat_str, escape_dict = render_jinja_template_wrapper(
-            prompt, trim_blocks=True, keep_trailing_newline=True, **converted_kwargs
+        # Use escape/unescape to avoid unintended parsing of role in user inputs.
+        escape_dict = build_escape_dict(converted_kwargs)
+        updated_kwargs = {key: escape_roles(value, escape_dict) for key, value in converted_kwargs.items()}
+        # keep_trailing_newline=True is to keep the last \n in the prompt to avoid converting "user:\t\n" to "user:".
+        chat_str, escape_dict = render_jinja_template(
+            prompt, trim_blocks=True, keep_trailing_newline=True, **updated_kwargs
         )
         messages = parse_chat(
             chat_str=chat_str,

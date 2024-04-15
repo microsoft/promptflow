@@ -444,37 +444,29 @@ def render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, 
         raise JinjaTemplateError(message=error_message) from e
 
 
-def render_jinja_template_wrapper(prompt, trim_blocks=True, keep_trailing_newline=True, **kwargs):
-    # Use this dict to store the user written roles in case sensitive and its escaped value.
-    # We need this dict to unescape the role after the chat string is parsed.
+def build_escape_dict(kwargs: dict):
     escape_dict = {}
     for _, value in kwargs.items():
-        escape_dict = build_escape_dict(value, escape_dict)
-    updated_kwargs = {key: escape_roles(value, escape_dict) for key, value in kwargs.items()}
-
-    return (
-        render_jinja_template(
-            prompt,
-            trim_blocks=trim_blocks,
-            keep_trailing_newline=keep_trailing_newline,
-            **updated_kwargs,
-        ),
-        escape_dict,
-    )
+        escape_dict = _build_escape_dict(value, escape_dict)
+    return escape_dict
 
 
-def build_escape_dict(val, escape_dict: dict):
+def _build_escape_dict(val, escape_dict: dict):
     """
     Build escape dictionary with roles as keys and uuids as values.
     """
-    if not isinstance(val, str):
-        return escape_dict
-
-    pattern = r"(?i)^\s*#?\s*(" + "|".join(VALID_ROLES) + r")\s*:\s*\n"
-    roles = re.findall(pattern, val, flags=re.MULTILINE)
-    for role in roles:
-        if role not in escape_dict:
-            escape_dict[role] = str(uuid.uuid4())
+    if isinstance(val, ChatInputList):
+        for item in val:
+            _build_escape_dict(item, escape_dict)
+    elif isinstance(val, str):
+        pattern = r"(?i)^\s*#?\s*(" + "|".join(VALID_ROLES) + r")\s*:\s*\n"
+        roles = re.findall(pattern, val, flags=re.MULTILINE)
+        for role in roles:
+            if role not in escape_dict:
+                # We cannot use a hard-coded hash str for each role, as the same role might be in various case formats.
+                # For example, the 'system' role may vary in input as 'system', 'System', 'SysteM','SYSTEM', etc.
+                # To convert the escaped roles back to the original str, we need to use different uuids for each case.
+                escape_dict[role] = str(uuid.uuid4())
 
     return escape_dict
 
@@ -483,17 +475,29 @@ def escape_roles(val, escape_dict: dict):
     """
     Escape the roles in the prompt inputs to avoid the input string with pattern '# role' get parsed.
     """
-    if not isinstance(val, str):
+    if isinstance(val, ChatInputList):
+        return ChatInputList([escape_roles(item, escape_dict) for item in val])
+    elif isinstance(val, str):
+        for role, encoded_role in escape_dict.items():
+            val = re.sub(role, encoded_role, val, flags=re.MULTILINE)
         return val
-
-    for role, encoded_role in escape_dict.items():
-        val = re.sub(role, encoded_role, val, flags=re.MULTILINE)
-    return val
+    else:
+        return val
 
 
 def unescape_roles(messages, escape_dict: dict):
     """
     Unescape the roles in the parsed chat messages to restore the original role names.
+
+    Besides the case: 'content': 'some text. escaped_roles (i.e. fake uuids)'
+    We also need to handle the vision case that the content is converted to list. For example:
+        'content': [{
+                        'type': 'text',
+                        'text': 'some text. fake_uuid'
+                    }, {
+                        'type': 'image_url',
+                        'image_url': {}
+                    }]
     """
     if escape_dict and isinstance(messages, list):
         for message in messages:
@@ -503,6 +507,10 @@ def unescape_roles(messages, escape_dict: dict):
                 for key, val in message.items():
                     if isinstance(val, str):
                         message[key] = val.replace(uuid_str, role)
+                    elif isinstance(val, list):
+                        for item in val:
+                            if isinstance(item, dict) and "text" in item:
+                                item["text"] = item["text"].replace(uuid_str, role)
 
 
 def process_function_call(function_call):

@@ -1,9 +1,9 @@
 from typing import List, Dict
 
-from promptflow.tools.common import render_jinja_template_wrapper, handle_openai_error, parse_chat, \
+from promptflow.tools.common import render_jinja_template, handle_openai_error, parse_chat, \
     preprocess_template_string, find_referenced_image_set, convert_to_chat_list, init_azure_openai_client, \
     post_process_chat_api_response, list_deployment_connections, build_deployment_dict, GPT4V_VERSION, \
-    unescape_roles
+    unescape_roles, escape_roles, build_escape_dict
 
 from promptflow._internal import ToolProvider, tool
 from promptflow.connections import AzureOpenAIConnection
@@ -63,9 +63,11 @@ class AzureOpenAI(ToolProvider):
 
         # convert list type into ChatInputList type
         converted_kwargs = convert_to_chat_list(kwargs)
-        chat_str, escape_dict = render_jinja_template_wrapper(
-            prompt, trim_blocks=True, keep_trailing_newline=True, **converted_kwargs
-        )
+        # Use escape/unescape to avoid unintended parsing of role in user inputs.
+        escape_dict = build_escape_dict(converted_kwargs)
+        updated_kwargs = {key: escape_roles(value, escape_dict) for key, value in converted_kwargs.items()}
+
+        chat_str = render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, **updated_kwargs)
         messages = parse_chat(
             chat_str=chat_str,
             images=list(referenced_images),

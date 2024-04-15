@@ -1,7 +1,7 @@
 from enum import Enum
 from promptflow.tools.common import render_jinja_template, handle_openai_error, \
     parse_chat, to_bool, validate_functions, process_function_call, \
-    post_process_chat_api_response, init_openai_client, render_jinja_template_wrapper, unescape_roles
+    post_process_chat_api_response, init_openai_client, build_escape_dict, escape_roles, unescape_roles
 
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
 # since the code here is in promptflow namespace as well
@@ -111,9 +111,10 @@ class OpenAI(ToolProvider):
         seed: int = None,
         **kwargs
     ) -> [str, dict]:
-        chat_str, escape_dict = render_jinja_template_wrapper(
-            prompt, trim_blocks=True, keep_trailing_newline=True, **kwargs
-        )
+        # Use escape/unescape to avoid unintended parsing of role in user inputs.
+        escape_dict = build_escape_dict(kwargs)
+        updated_kwargs = {key: escape_roles(value, escape_dict) for key, value in kwargs.items()}
+        chat_str = render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, **updated_kwargs)
         messages = parse_chat(chat_str)
         unescape_roles(messages, escape_dict)
         # TODO: remove below type conversion after client can pass json rather than string.
