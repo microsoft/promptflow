@@ -40,6 +40,7 @@ flow_path_parser.add_argument("inputs", type=dict, required=False, location="jso
 flow_path_parser.add_argument("environment_variables", type=dict, required=False, location="json")
 flow_path_parser.add_argument("session", type=str, required=False, location="json")
 flow_path_parser.add_argument("init", type=dict, required=False, location="json")
+flow_path_parser.add_argument("run_id", type=str, required=False, location="json")
 
 
 @api.route("/test")
@@ -59,6 +60,7 @@ class FlowTest(Resource):
         output_path = args.output_path
         session = args.session
         init = args.init
+        run_id = args.run_id
 
         if output_path is None:
             filename = str(uuid.uuid4())
@@ -75,6 +77,7 @@ class FlowTest(Resource):
             experiment=experiment,
             session=session,
             init=init,
+            run_id=run_id,
             allow_generator_output=False,
             stream_output=False,
             dump_test_result=True,
