@@ -1,12 +1,5 @@
 {
-  "messages": [
-    {
-      "role": "user",
-      "content": "where is the nearest coffee shop?"
-    },
-    {
-      "role": "system",
-      "content": "It's at the end of the street."
-    }
-  ]
+  "messages": [],
+  "question": "where is the nearest coffee shop?",
+  "answer": "It's at the end of the street."
 }

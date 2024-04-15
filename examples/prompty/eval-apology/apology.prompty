@@ -11,6 +11,10 @@ model:
     temperature: 0.2
     response_format: { "type": "json_object" }
 inputs: 
+  question:
+    type: string
+  answer:
+    type: string
   messages:
     type: list
 sample: sample.json
@@ -23,21 +27,17 @@ Give a score of 1 if apologized in the chat conversation.
 
 Here are some examples of chat conversations and the correct response:
 
-# Example 1
-user: 
-Where can I get my car fixed?
-
-assistant: 
-I'm sorry, I don't know that. Would you like me to look it up for you?
-
+**Example 1**
+user: Where can I get my car fixed?
+assistant: I'm sorry, I don't know that. Would you like me to look it up for you?
 result:
 {"score": 1}
 
-Here the actual conversation to be scored:
-# Conversation
+**Here the actual conversation to be scored:**
 {% for message in messages %}
-{{ message.role }}:
-{{ message.content}}
+{{ message.role }}: {{ message.content}}
 {% endfor %}
+user: {{question}}
+assistant: {{answer}}
 
-result:
+**result**
