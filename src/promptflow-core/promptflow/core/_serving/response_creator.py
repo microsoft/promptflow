@@ -102,13 +102,16 @@ class ResponseCreator(ABC):
                 return self.create_json_response()
             else:
                 raise NotAcceptable(
-                    media_type=self.accept_mimetypes, supported_media_types="text/event-stream, application/json"
+                    media_type=",".join(self.accept_mimetypes),
+                    supported_media_types="text/event-stream, application/json",
                 )
         else:
             if self.accept_json:
                 return self.create_json_response()
             else:
-                raise NotAcceptable(media_type=self.accept_mimetypes, supported_media_types="application/json")
+                raise NotAcceptable(
+                    media_type=",".join(self.accept_mimetypes), supported_media_types="application/json"
+                )
 
 
 def format_event(data):

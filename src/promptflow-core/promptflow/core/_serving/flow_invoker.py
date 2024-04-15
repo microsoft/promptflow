@@ -23,6 +23,7 @@ from promptflow.core._utils import (
     update_environment_variables_with_connections,
 )
 from promptflow.executor import FlowExecutor
+from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.storage._run_storage import DefaultRunStorage
 
 
@@ -239,6 +240,9 @@ class FlowInvoker:
             )
 
             dump_flow_result(flow_folder=self._dump_to, flow_result=invoke_result, prefix=self._dump_file_prefix)
+
+    def is_flex_flow_executor(self):
+        return isinstance(self.executor, ScriptExecutor)
 
 
 class AsyncFlowInvoker(FlowInvoker):

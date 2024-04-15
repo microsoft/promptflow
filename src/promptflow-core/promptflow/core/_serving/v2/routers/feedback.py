@@ -16,15 +16,15 @@ def get_feedback_router(logger):
 
     @router.post("/feedback")
     async def feedback(request: Request):
-        ctx = try_extract_trace_context(request.headers)
+        ctx = try_extract_trace_context(logger, request.headers)
         open_telemetry_tracer = trace.get_tracer_provider().get_tracer("promptflow")
         token = context.attach(ctx) if ctx else None
         try:
             with open_telemetry_tracer.start_as_current_span(FEEDBACK_TRACE_SPAN_NAME) as span:
-                data = request.body()
+                data = await request.body()
                 if data:
                     data = data.decode(errors="replace")
-                should_flatten = request.query_params().get("flatten", "false").lower() == "true"
+                should_flatten = request.query_params.get("flatten", "false").lower() == "true"
                 if should_flatten:
                     try:
                         # try flatten the data to avoid data too big issue (especially for app insights scenario)
