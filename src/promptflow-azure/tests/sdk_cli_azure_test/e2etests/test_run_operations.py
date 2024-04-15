@@ -987,7 +987,7 @@ class TestFlowRun:
             description="test sdk local to cloud",
         )
         assert run.status == "Completed"
-        assert "error" not in run._to_dict()
+        assert "error" not in str(run._to_dict())
 
         # check the run is uploaded to cloud
         Local2CloudTestHelper.check_local_to_cloud_run(pf, run)

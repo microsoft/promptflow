@@ -64,8 +64,6 @@ from promptflow._sdk._errors import (
     UnsecureConnectionError,
 )
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
-from promptflow._sdk.entities._flows.base import FlowBase
-from promptflow._sdk.entities._flows.dag import Flow as DAGFlow
 from promptflow._utils.flow_utils import is_flex_flow, resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
@@ -1077,9 +1075,12 @@ get_used_connection_names_from_dict = get_used_connection_names_from_dict
 update_dict_value_with_connections = update_dict_value_with_connections
 
 
-def get_flow_name(flow: Union[FlowBase, Path]) -> str:
+def get_flow_name(flow) -> str:
     if isinstance(flow, Path):
         return flow.resolve().name
+
+    from promptflow._sdk.entities._flows.dag import Flow as DAGFlow
+
     if isinstance(flow, DAGFlow):
         return flow.name
     # others: flex flow, prompty, etc.
