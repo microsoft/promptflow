@@ -22,7 +22,7 @@ cat ../.env
 
 - Run/Debug as normal Python file
 ```bash
-python flow.py
+python programmer.py
 ```
 
 - Test flow
