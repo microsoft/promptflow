@@ -170,7 +170,7 @@ def _print_tracing_url_from_azure_portal(
     # as this there is an if condition for azure extension, we can assume the extension is installed
     from azure.ai.ml import MLClient
 
-    from promptflow._cli._utils import get_credentials_for_cli
+    from promptflow.azure._cli._utils import get_credentials_for_cli
 
     # we have different url for Azure ML workspace and AI project
     # so we need to distinguish them
@@ -202,6 +202,7 @@ def _print_tracing_url_from_azure_portal(
             query = f"prompts/trace/run/{run}/details"
     elif AzureWorkspaceKind.is_project(workspace):
         _logger.debug(f"{ws_triad.workspace_name!r} is an Azure AI project.")
+        url = url.replace("int.ml.azure.com", "int.ai.azure.com")
         if run is None:
             query = f"projecttrace/collection/{collection_id}/list"
         else:
