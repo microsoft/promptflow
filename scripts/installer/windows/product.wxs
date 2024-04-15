@@ -92,7 +92,6 @@
         <Property Id="StopPromptFlowService"
           Value="&quot;[SystemFolder]cmd.exe&quot; /C start /B &quot;[APPLICATIONFOLDER]pfcli.exe&quot; pf service stop" />
         <CustomAction Id="StopPromptFlowService"
-              Directory="APPLICATIONFOLDER"
               Execute="immediate"
               Return="ignore"
               BinaryKey="WixCA"
