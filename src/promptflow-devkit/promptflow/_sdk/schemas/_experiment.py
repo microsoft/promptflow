@@ -1,7 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from marshmallow import ValidationError, fields, post_load, pre_load
+from marshmallow import RAISE, ValidationError, fields, post_load, pre_load
 
 from promptflow._sdk._constants import ExperimentNodeType
 from promptflow._sdk.schemas._base import PatchedSchemaMeta, YamlFileSchema
@@ -12,7 +12,7 @@ from promptflow._sdk.schemas._fields import (
     StringTransformedEnum,
     UnionField,
 )
-from promptflow._sdk.schemas._run import RunSchema
+from promptflow._sdk.schemas._run import ManagedIdentitySchema, ResourcesSchema, RunSchema, UserIdentitySchema
 
 
 class CommandNodeSchema(YamlFileSchema):
@@ -26,7 +26,16 @@ class CommandNodeSchema(YamlFileSchema):
     outputs = fields.Dict(keys=fields.Str, values=LocalPathField(allow_none=True))
     environment_variables = fields.Dict(keys=fields.Str, values=fields.Str)
     # runtime field, only available for cloud run
-    runtime = fields.Str()  # TODO: Revisit the required fields
+    runtime = fields.Str()
+    # raise unknown exception for unknown fields in resources
+    resources = NestedField(ResourcesSchema, unknown=RAISE)
+    # raise unknown exception for unknown fields in identity
+    identity = UnionField(
+        [
+            NestedField(ManagedIdentitySchema, unknown=RAISE),
+            NestedField(UserIdentitySchema, unknown=RAISE),
+        ]
+    )
 
 
 class FlowNodeSchema(RunSchema):
