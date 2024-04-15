@@ -1057,6 +1057,14 @@ class TestCli:
         outerr = capsys.readouterr()
         assert "6" in outerr.out
         assert "12" in outerr.out
+        output_path = (
+            Path(FLOWS_DIR) / "prompty_with_chat_history_and_stream_output" / ".promptflow" / "chat.output.json"
+        )
+        assert output_path.exists()
+        detail_path = (
+            Path(FLOWS_DIR) / "prompty_with_chat_history_and_stream_output" / ".promptflow" / "chat.detail.json"
+        )
+        assert detail_path.exists()
 
     def test_flow_test_with_default_chat_history(self):
         run_pf_command(
