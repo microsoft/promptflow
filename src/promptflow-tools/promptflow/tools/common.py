@@ -517,7 +517,7 @@ def unescape_roles(val, escape_dict: dict):
 
 def build_messages(
     prompt: PromptTemplate,
-    images: list = None,
+    images: List = None,
     image_detail: str = 'auto',
     **kwargs,
 ):
