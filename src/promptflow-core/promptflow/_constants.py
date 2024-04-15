@@ -167,6 +167,7 @@ class SpanAttributeFieldName:
     BATCH_RUN_ID = "batch_run_id"
     LINE_NUMBER = "line_number"
     REFERENCED_BATCH_RUN_ID = "referenced.batch_run_id"
+    IS_AGGREGATION = "is_aggregation"
     COMPLETION_TOKEN_COUNT = "__computed__.cumulative_token_count.completion"
     PROMPT_TOKEN_COUNT = "__computed__.cumulative_token_count.prompt"
     TOTAL_TOKEN_COUNT = "__computed__.cumulative_token_count.total"

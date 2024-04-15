@@ -83,7 +83,7 @@ class BatchCoordinator:
     def exec_aggregation(self, request: AggregationRequest):
         """Execute aggregation nodes for the batch run."""
         with self._flow_executor._run_tracker.node_log_manager:
-            aggregation_result = self._flow_executor._exec_aggregation(
+            aggregation_result = self._flow_executor.exec_aggregation(
                 request.batch_inputs, request.aggregation_inputs, request.run_id
             )
             # Serialize the multimedia data of the node run infos under the mode artifacts folder.

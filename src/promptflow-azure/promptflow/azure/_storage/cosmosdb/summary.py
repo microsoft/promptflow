@@ -86,6 +86,9 @@ class Summary:
         self.outputs = None
 
     def persist(self, client: ContainerProxy):
+        if self.span.attributes.get(SpanAttributeFieldName.IS_AGGREGATION, False):
+            # Ignore aggregation node for now, we don't expect customer to use it.
+            return
         if self.span.parent_id:
             # For non root span, write a placeholder item to LineSummary table.
             self._persist_running_item(client)
