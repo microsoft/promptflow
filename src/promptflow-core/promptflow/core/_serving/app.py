@@ -40,7 +40,7 @@ def create_app(**kwargs):
 
             FastAPIInstrumentor.instrument_app(app, excluded_urls="/swagger.json,/health,/version")
         except ImportError:
-            logger.info("opentelemetry-instrumentation-flask is not installed, auto-instrumentation is not enabled.")
+            logger.info("opentelemetry-instrumentation-fastapi is not installed, auto-instrumentation is not enabled.")
         return app
     else:
         raise ValueError(f"Unsupported engine: {engine}")
