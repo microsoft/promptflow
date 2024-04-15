@@ -52,8 +52,11 @@ class ChatFlow:
 
 if __name__ == "__main__":
     from promptflow.tracing import start_trace
+    from promptflow.client import PFClient
 
     start_trace()
-    flow = ChatFlow()
+    pf = PFClient()
+    connection = pf.connections.get("open_ai_connection", with_secrets=True)
+    flow = ChatFlow(connection=connection)
     result = flow("What's Azure Machine Learning?", [])
     print(result)

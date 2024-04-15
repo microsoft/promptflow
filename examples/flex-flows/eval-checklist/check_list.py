@@ -67,6 +67,7 @@ class EvalFlow:
 
 if __name__ == "__main__":
     from promptflow.tracing import start_trace
+    from promptflow.client import PFClient
 
     start_trace()
 
@@ -81,7 +82,10 @@ if __name__ == "__main__":
         "correctness": "It contains a detailed explanation of ChatGPT.",
         "consise": "It is a consise statement.",
     }
-    flow = EvalFlow()
+
+    pf = PFClient()
+    connection = pf.connections.get("open_ai_connection", with_secrets=True)
+    flow = EvalFlow(connection=connection)
 
     result = flow(
         answer=answer,
