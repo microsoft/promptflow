@@ -28,15 +28,8 @@ class Result:
 
 class ChatFlow:
 
-    def __init__(self):
-        if "AZURE_OPENAI_API_KEY" not in os.environ:
-            # load environment variables from .env file
-            load_dotenv()
-
-        if "AZURE_OPENAI_API_KEY" not in os.environ:
-            raise ValueError("Please specify environment variables: AZURE_OPENAI_API_KEY")
-
-        self.connection = AzureOpenAIConnection.from_env()
+    def __init__(self, connection: AzureOpenAIConnection):
+        self.connection = connection
 
     def __call__(
         self, question: str = "What is ChatGPT?", chat_history: list = None
