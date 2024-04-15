@@ -89,15 +89,13 @@
             Execute="deferred"
             ExeCommand="wscript.exe promptflow_service.vbs"
             Return="asyncNoWait" />
-        <Property Id="StopPromptFlowService"
-          Value="&quot;[SystemFolder]cmd.exe&quot; /C start /B &quot;[APPLICATIONFOLDER]pfcli.exe&quot; pf service stop" />
+
+        <Property Id="WixQuietExecCmdLine" Value="&quot;[SystemFolder]cmd.exe&quot; /C start /B &quot;[APPLICATIONFOLDER]pfcli.exe&quot; pf service stop" Hidden="yes"/>
         <CustomAction Id="StopPromptFlowService"
               Execute="immediate"
               Return="ignore"
               BinaryKey="WixCA"
-              DllEntry="WixQuietExec"
-              HideTarget="no"
-              SuppressModularization="yes" />
+              DllEntry="WixQuietExec"/>
 <!--         <CustomAction Id="StopPromptFlowService" -->
 <!--             Directory="APPLICATIONFOLDER" -->
 <!--             Execute="immediate" -->
