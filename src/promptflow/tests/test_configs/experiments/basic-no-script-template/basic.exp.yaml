@@ -20,6 +20,7 @@ nodes:
     variant: ${summarize_text_content.variant_0}
     environment_variables: {}
     connections: {}
+    init: {}
 
   - name: eval
     type: flow
@@ -29,3 +30,4 @@ nodes:
       prediction: ${main.outputs.category}
     environment_variables: {}
     connections: {}
+    init: {}
