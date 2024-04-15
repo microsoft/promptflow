@@ -182,7 +182,7 @@ def get_pf_logging_level(default=logging.INFO):
 
 def get_logger(name: str) -> logging.Logger:
     """Get logger used during execution."""
-    logger = logging.getLogger(name)
+    logger = logging.Logger(name)
     logger.setLevel(get_pf_logging_level())
     logger.addHandler(FileHandlerConcurrentWrapper())
     stdout_handler = logging.StreamHandler(sys.stdout)
