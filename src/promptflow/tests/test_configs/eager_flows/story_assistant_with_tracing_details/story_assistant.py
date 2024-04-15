@@ -1,3 +1,4 @@
+import asyncio
 import json
 import random
 import time
@@ -15,45 +16,6 @@ from openai import AzureOpenAI, NOT_GIVEN
 
 
 setup_trace()
-
-# This is a new span event for message_creation
-@trace
-def Message_creation(thread_id, message_id):
-    return client.beta.threads.messages.retrieve(
-        thread_id=thread_id,
-        message_id=message_id
-    )
-
-
-@trace
-def Code_interpreter(detail):
-    pass
-
-
-# This is an injected action to dump the run steps
-# last_run_step_id should be managed in a session context or something like that.
-last_run_step_id = NOT_GIVEN
-def dump_run_steps(run):
-    global last_run_step_id
-
-    steps = client.beta.threads.runs.steps.list(run_id=run.id, thread_id=run.thread_id, order='asc', after=last_run_step_id)
-    for step in steps:
-        last_run_step_id = step.id
-        if step.type == 'message_creation':
-            message = Message_creation(
-                thread_id=run.thread_id,
-                message_id=step.step_details.message_creation.message_id
-            )
-            print(message)
-        elif step.type == 'tool_calls':
-            for tool_call in step.step_details.tool_calls:
-                if tool_call.type == "code_interpreter":
-                    Code_interpreter(tool_call.code_interpreter)
-
-
-
-
-
 
 
 ############################################################################################################
@@ -79,14 +41,14 @@ async def execute_run(thread_id, assistant_id):
     )
 
     while True:
-        time.sleep(1)  # Wait for 1 second
+        await asyncio.sleep(1)  # Wait for 1 second
         run = await client.beta.threads.runs.poll(
             thread_id=thread_id,
             run_id=run.id
         )
         print(f"run status={run.status}")
         if run.status == "requires_action":
-            await handle_require_actions(client, run)
+            await handle_require_actions(run)
         elif run.status in {"failed", "cancelled", "expired"}:
             if run.last_error is not None:
                 error_message = f"The run {run.id} is in '{run.status}' status. " \
@@ -96,15 +58,15 @@ async def execute_run(thread_id, assistant_id):
             raise Exception(error_message)
         elif run.status in {"completed"}:
             # Expect the terminated run to show up in trace
-            return run
+            return run.dict()
         else:
             raise Exception(f"Unsupported run status: {run.status}")
 
 
 
-async def handle_require_actions(cli, run):
+async def handle_require_actions(run):
     tool_outputs = await tool_calls(run)
-    await cli.beta.threads.runs.submit_tool_outputs(thread_id=run.thread_id, run_id=run.id, tool_outputs=tool_outputs)
+    await client.beta.threads.runs.submit_tool_outputs(thread_id=run.thread_id, run_id=run.id, tool_outputs=tool_outputs)
 
 @trace
 async def tool_calls(run):
@@ -217,14 +179,14 @@ async def two_assistants_flow(topic: str):
         content=topic,
     )
 
-    assistant_1 = await get_or_create_assistant_1(assistant_id="asst_3goNzF29uyirYXTPBL86xmq6")
+    assistant_1 = await get_or_create_assistant_1()
 
     await execute_run(thread.id, assistant_1.id)
     msg_id, story = await get_message(thread.id)
 
     print("The first run is terminated")
 
-    assistant_2 = await get_or_create_assistant_2(assistant_id="asst_GDAxTOkSn2mVFxXD1RdArEZl")
+    assistant_2 = await get_or_create_assistant_2()
 
     await execute_run(thread.id, assistant_2.id)
     msg_id, evaluation = await get_message(thread.id, msg_id)

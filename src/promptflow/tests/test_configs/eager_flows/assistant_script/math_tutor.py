@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 
@@ -63,7 +64,7 @@ async def execute_run(thread_id, assistant_id):
     )
 
     while True:
-        time.sleep(1)  # Wait for 1 second
+        await asyncio.sleep(1)  # Wait for 1 second
         run = await client.beta.threads.runs.poll(
             thread_id=thread_id,
             run_id=run.id

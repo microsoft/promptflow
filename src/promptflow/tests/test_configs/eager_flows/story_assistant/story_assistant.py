@@ -167,7 +167,7 @@ def get_story_length(character_counts: int):
     return random.randint(50, 100)
 
 
-def get_or_create_assistant_1(assistant_id):
+def get_or_create_assistant_1(assistant_id=None):
     if assistant_id is None:
         return client.beta.assistants.create(
             name="Test assistant 1",
@@ -212,7 +212,7 @@ def get_or_create_assistant_1(assistant_id):
         return client.beta.assistants.retrieve(assistant_id=assistant_id)
 
 
-def get_or_create_assistant_2(assistant_id):
+def get_or_create_assistant_2(assistant_id=None):
     if assistant_id is None:
         return client.beta.assistants.create(
         name="Test assistant 2",
@@ -240,19 +240,19 @@ def two_assistants_flow(topic: str):
         content=topic,
     )
 
-    assistant_1 = get_or_create_assistant_1(assistant_id="asst_3goNzF29uyirYXTPBL86xmq6")
+    assistant_1 = get_or_create_assistant_1()
 
     output_message = Run_execute(thread.id, assistant_1.id)
     story = [m.content[0].text.value for m in output_message]
 
-    print("The first run complete")
+    print(f"The first run complete")
 
-    assistant_2 = get_or_create_assistant_2(assistant_id="asst_GDAxTOkSn2mVFxXD1RdArEZl")
+    assistant_2 = get_or_create_assistant_2()
 
     output_message = Run_execute(thread.id, assistant_2.id)
     evaluation = [m.content[0].text.value for m in output_message]
 
-    print("The second run complete")
+    print(f"The second run complete")
 
     return {
         "story": story,
