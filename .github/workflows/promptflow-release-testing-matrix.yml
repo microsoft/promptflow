@@ -323,7 +323,7 @@ jobs:
         uses: "./.github/actions/step_generate_configs"
         with:
           targetFolder: ${{ env.PROMPTFLOW_DIRECTORY }}
-      - name: install promptflow-azure from wheel
+      - name: install promptflow-devkit from wheel
         # wildcard expansion (*) does not work in Windows, so leverage python to find and install
         run: |
           poetry run pip install $(python -c "import glob; print(glob.glob('**/promptflow_tracing-*.whl', recursive=True)[0])")
