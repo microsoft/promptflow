@@ -98,7 +98,6 @@
             <Custom Action="StopPromptFlowService" Before="InstallInitialize">Installed</Custom>
             <Custom Action="StartPromptFlowService" Before="InstallFinalize">NOT Installed OR WIX_UPGRADE_DETECTED</Custom>
         </InstallExecuteSequence>
-
     </Product>
 
     <Fragment>
