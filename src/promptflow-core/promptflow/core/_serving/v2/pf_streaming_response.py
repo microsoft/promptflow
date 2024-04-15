@@ -11,6 +11,13 @@ from starlette.responses import ContentStream
 
 
 class PromptflowStreamingResponse(StreamingResponse):
+    """StreamingResponse with support for synchronous iterators.
+
+    This class is to fix the opentelemetry issue in streaming case where the span creation and close
+    runs in different threads with different context.
+    For more details, please refer to: https://github.com/open-telemetry/opentelemetry-python/issues/2606
+    """
+
     def __init__(
         self,
         content: ContentStream,
@@ -34,13 +41,8 @@ async def iterate_in_threadpool(
 ) -> typing.AsyncIterator[T]:
     as_iterator = iter(iterator)
     ctx = contextvars.copy_context()
-    print(len(ctx))
     func_call = functools.partial(ctx.run, _next, as_iterator)
     while True:
-        cx = contextvars.copy_context()
-        for k, v in cx.items():
-            if k.name == "current_context":
-                print(f"cx: {k} {v}")
         try:
             yield await asyncio.get_running_loop().run_in_executor(None, func_call)
         except _StopIteration:
