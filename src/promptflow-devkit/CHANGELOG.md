@@ -7,3 +7,4 @@
 
 ### Bugs Fixed
 - Fix run name missing directory name in some scenario of `pf.run`.
+- Raise not supported instead of 404 when trying to create Azure AI connection.

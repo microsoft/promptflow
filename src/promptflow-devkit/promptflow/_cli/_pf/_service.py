@@ -12,7 +12,7 @@ import sys
 
 import waitress
 
-from promptflow._cli._params import base_params
+from promptflow._cli._params import add_param_ua, add_param_verbose, base_params
 from promptflow._cli._utils import activate_action
 from promptflow._constants import PF_NO_INTERACTIVE_LOGIN
 from promptflow._sdk._constants import (
@@ -74,7 +74,7 @@ def dispatch_service_commands(args: argparse.Namespace):
         start_service(args)
     elif args.sub_action == "stop":
         stop_service()
-    elif args.sub_action == "show-status":
+    elif args.sub_action == "status":
         show_service()
 
 
@@ -85,18 +85,24 @@ def add_parser_start_service(subparsers):
 
     # Start prompt flow service:
     pf service start
-    # Force restart promptflow service:
+    # Force restart prompt flow service:
     pf service start --force
-    # Start promptflow service with specific port:
+    # Start prompt flow service with specific port:
     pf service start --port 65553
     """  # noqa: E501
     add_param_port = lambda parser: parser.add_argument(  # noqa: E731
-        "-p", "--port", type=int, help="port of the promptflow service"
+        "-p", "--port", type=int, help="port of the prompt flow service"
     )
     add_param_force = lambda parser: parser.add_argument(  # noqa: E731
         "--force",
         action="store_true",
         help="If the port is used, the existing service will be terminated and restart a new service.",
+    )
+    add_param_debug = lambda parser: parser.add_argument(  # noqa: E731
+        "-d",
+        "--debug",
+        action="store_true",
+        help="Start the prompt flow service in foreground, displaying debug level logs directly in the terminal.",
     )
     activate_action(
         name="start",
@@ -105,8 +111,9 @@ def add_parser_start_service(subparsers):
         add_params=[
             add_param_port,
             add_param_force,
+            add_param_debug,
         ]
-        + base_params,
+        + [add_param_ua, add_param_verbose],
         subparsers=subparsers,
         help_message="Start prompt flow service.",
         action_param_name="sub_action",
@@ -138,10 +145,10 @@ def add_parser_show_service(subparsers):
     Examples:
 
     # Display the started prompt flow service info.:
-    pf service show-status
+    pf service status
     """  # noqa: E501
     activate_action(
-        name="show-status",
+        name="status",
         description="Show the started prompt flow service status.",
         epilog=epilog,
         add_params=base_params,
@@ -157,42 +164,35 @@ def start_service(args):
     port = args.port
     if args.debug:
         os.environ[PF_SERVICE_DEBUG] = "true"
-
-    if is_run_from_built_binary():
-        # For msi installer/executable, use sdk api to start pfs since it's not supported to invoke waitress by cli
-        # directly after packaged by Pyinstaller.
-        parent_dir = os.path.dirname(sys.executable)
-        output_path = os.path.join(parent_dir, "output.txt")
-        with redirect_stdout_to_file(output_path):
-            port = validate_port(port, args.force)
-            global app
-            if app is None:
-                app, _ = create_app()
-            if os.environ.get(PF_SERVICE_DEBUG) == "true":
-                app.logger.setLevel(logging.DEBUG)
-            else:
-                app.logger.setLevel(logging.INFO)
-            message = f"Starting Prompt Flow Service on {port}, version: {get_pfs_version()}."
-            app.logger.info(message)
-            print(message)
-            sys.stdout.flush()
+        if not is_run_from_built_binary():
+            add_executable_script_to_env_path()
+        port = _prepare_app_for_foreground_service(port, args.force)
         waitress.serve(app, host="127.0.0.1", port=port, threads=PF_SERVICE_WORKER_NUM)
     else:
-        port = validate_port(port, args.force)
-        add_executable_script_to_env_path()
-        # Start a pfs process using detach mode. It will start a new process and create a new app. So we use environment
-        # variable to pass the debug mode, since it will inherit parent process environment variable.
-        if platform.system() == "Windows":
-            _start_background_service_on_windows(port)
+        if is_run_from_built_binary():
+            # For msi installer/executable, use sdk api to start pfs since it's not supported to invoke waitress by cli
+            # directly after packaged by Pyinstaller.
+            parent_dir = os.path.dirname(sys.executable)
+            output_path = os.path.join(parent_dir, "output.txt")
+            with redirect_stdout_to_file(output_path):
+                port = _prepare_app_for_foreground_service(port, args.force)
+            waitress.serve(app, host="127.0.0.1", port=port, threads=PF_SERVICE_WORKER_NUM)
         else:
-            _start_background_service_on_unix(port)
-        is_healthy = check_pfs_service_status(port)
-        if is_healthy:
-            message = f"Start Promptflow Service on port {port}, version: {get_pfs_version()}."
-            print(message)
-            logger.info(message)
-        else:
-            logger.warning(f"Promptflow service start failed in {port}. {hint_stop_before_upgrade}")
+            port = validate_port(port, args.force)
+            add_executable_script_to_env_path()
+            # Start a pfs process using detach mode. It will start a new process and create a new app. So we use
+            # environment variable to pass the debug mode, since it will inherit parent process environment variable.
+            if platform.system() == "Windows":
+                _start_background_service_on_windows(port)
+            else:
+                _start_background_service_on_unix(port)
+            is_healthy = check_pfs_service_status(port)
+            if is_healthy:
+                message = f"Start prompt flow service on port {port}, version: {get_pfs_version()}."
+                print(message)
+                logger.info(message)
+            else:
+                logger.warning(f"Prompt flow service start failed in {port}. {hint_stop_before_upgrade}")
 
 
 def validate_port(port, force_start):
@@ -238,6 +238,21 @@ def redirect_stdout_to_file(path):
         sys.stderr = old_stderr
 
 
+def _prepare_app_for_foreground_service(port, force_start):
+    port = validate_port(port, force_start)
+    global app
+    if app is None:
+        app, _ = create_app()
+    if os.environ.get(PF_SERVICE_DEBUG) == "true":
+        app.logger.setLevel(logging.DEBUG)
+    else:
+        app.logger.setLevel(logging.INFO)
+    message = f"Starting prompt flow Service on port {port}, version: {get_pfs_version()}."
+    app.logger.info(message)
+    print(message)
+    return port
+
+
 def _start_background_service_on_windows(port):
     try:
         import win32api
@@ -252,7 +267,7 @@ def _start_background_service_on_windows(port):
         f"waitress-serve --listen=127.0.0.1:{port} --threads={PF_SERVICE_WORKER_NUM} "
         "promptflow._cli._pf._service:get_app"
     )
-    logger.debug(f"Start Promptflow Service in Windows: {command}")
+    logger.debug(f"Start prompt flow service in Windows: {command}")
     startupinfo = win32process.STARTUPINFO()
     startupinfo.dwFlags |= win32process.STARTF_USESHOWWINDOW
     startupinfo.wShowWindow = win32con.SW_HIDE
@@ -286,7 +301,7 @@ def _start_background_service_on_unix(port):
         f"--threads={PF_SERVICE_WORKER_NUM}",
         "promptflow._cli._pf._service:get_app",
     ]
-    logger.debug(f"Start Promptflow Service in Unix: {cmd}")
+    logger.debug(f"Start prompt flow service in Unix: {cmd}")
     subprocess.Popen(cmd, stdout=subprocess.DEVNULL, start_new_session=True)
 
 
@@ -294,9 +309,9 @@ def stop_service():
     port = get_port_from_config()
     if port is not None and is_port_in_use(port):
         kill_exist_service(port)
-        message = f"Promptflow service stop in {port}."
+        message = f"Prompt flow service stop in {port}."
     else:
-        message = "Promptflow service is not started."
+        message = "Prompt flow service is not started."
     logger.debug(message)
     print(message)
 
@@ -315,7 +330,7 @@ def show_service():
         return
     else:
         logger.warning(
-            f"Promptflow service is not started. The promptflow service log is located at {log_file.as_posix()} "
-            f"and promptflow version is {get_pfs_version()}."
+            f"Prompt flow service is not started. The prompt flow service log is located at {log_file.as_posix()} "
+            f"and prompt flow version is {get_pfs_version()}."
         )
         sys.exit(1)

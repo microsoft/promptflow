@@ -137,7 +137,13 @@ class Tracer(ThreadLocalSingleton):
 
 
 def _create_trace_from_function_call(
-    f, *, args=None, kwargs=None, args_to_ignore: Optional[List[str]] = None, trace_type=TraceType.FUNCTION, name=None,
+    f,
+    *,
+    args=None,
+    kwargs=None,
+    args_to_ignore: Optional[List[str]] = None,
+    trace_type=TraceType.FUNCTION,
+    name=None,
 ):
     """
     Creates a trace object from a function call.
@@ -177,7 +183,11 @@ def _create_trace_from_function_call(
     for key in args_to_ignore:
         all_kwargs.pop(key, None)
 
-    function = f.__qualname__
+    if hasattr(f, "__qualname__"):
+        function = f.__qualname__
+    else:
+        # Get __qualname__ from callable class
+        function = f.__call__.__qualname__
     if trace_type in [TraceType.LLM, TraceType.EMBEDDING] and f.__module__:
         function = f"{f.__module__}.{function}"
 
