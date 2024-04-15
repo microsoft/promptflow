@@ -11,10 +11,10 @@ class FlowOutput(TypedDict):
 
 
 class MyFlow:
-    def __init__(self, obj_input: str):
+    def __init__(self, obj_input: object):
         self.obj_input = obj_input
 
-    def __call__(self, func_input: object) -> FlowOutput:
+    def __call__(self, func_input: str) -> FlowOutput:
         pass
 
 
