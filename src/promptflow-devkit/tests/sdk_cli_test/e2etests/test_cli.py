@@ -1058,11 +1058,11 @@ class TestCli:
         assert "6" in outerr.out
         assert "12" in outerr.out
         output_path = (
-            Path(FLOWS_DIR) / "prompty_with_chat_history_and_stream_output" / ".promptflow" / "chat.output.json"
+            Path(FLOWS_DIR) / ".promptflow" / "prompty_with_chat_history_and_stream_output" / "chat.output.json"
         )
         assert output_path.exists()
         detail_path = (
-            Path(FLOWS_DIR) / "prompty_with_chat_history_and_stream_output" / ".promptflow" / "chat.detail.json"
+            Path(FLOWS_DIR) / ".promptflow" / "prompty_with_chat_history_and_stream_output" / "chat.detail.json"
         )
         assert detail_path.exists()
 
