@@ -72,7 +72,7 @@ def _get_collection_id_for_azure(collection: str) -> str:
     """{collection}_{object_id}"""
     import jwt
 
-    from promptflow._cli._utils import get_credentials_for_cli
+    from promptflow.azure._cli._utils import get_credentials_for_cli
     from promptflow.azure._utils.general import get_arm_token
 
     token = get_arm_token(credential=get_credentials_for_cli())
