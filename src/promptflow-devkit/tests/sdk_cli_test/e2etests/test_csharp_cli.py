@@ -144,3 +144,21 @@ class TestCSharpCli:
 
     def test_flow_run_from_resume(self):
         run_pf_command("run", "create", "--resume-from", "net6_0_variant_0_20240326_163600_356909")
+
+    def test_flow_class_init(self):
+        """Note that this test won't pass. Instead, it will hang and pop up a web page for user input.
+        Leave it here for debugging purpose.
+        """
+        # The test need to interact with user input in ui
+        flow_dir = f"{get_repo_base_path()}\\src\\PromptflowCSharp\\FlexFlowClassInit\\bin\\Debug\\net6.0"
+
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            flow_dir,
+            "--inputs",
+            "topic=aklhdfqwejk",
+            "--init",
+            "name=world",
+        )

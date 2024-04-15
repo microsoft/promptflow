@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import json
 import platform
 import signal
 import socket
@@ -107,11 +108,17 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
         **kwargs,
     ) -> "CSharpExecutorProxy":
         """Create a new executor"""
-        # TODO: support init_kwargs in csharp executor
         port = kwargs.get("port", None)
         log_path = kwargs.get("log_path", "")
-        init_error_file = Path(working_dir) / f"init_error_{str(uuid.uuid4())}.json"
+        target_uuid = str(uuid.uuid4())
+        init_error_file = Path(working_dir) / f"init_error_{target_uuid}.json"
         init_error_file.touch()
+        if init_kwargs:
+            init_kwargs_path = Path(working_dir) / f"init_kwargs_{target_uuid}.json"
+            # TODO: complicated init_kwargs handling
+            init_kwargs_path.write_text(json.dumps(init_kwargs))
+        else:
+            init_kwargs_path = None
 
         if port is None:
             # if port is not provided, find an available port and start a new execution service
@@ -123,6 +130,7 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
                     log_path=log_path,
                     error_file_path=init_error_file,
                     yaml_path=flow_file.as_posix(),
+                    init_kwargs_path=init_kwargs_path.absolute().as_posix(),
                 ),
                 creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if platform.system() == OSType.WINDOWS else 0,
             )
@@ -150,6 +158,8 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
             await executor_proxy.ensure_executor_startup(init_error_file)
         finally:
             Path(init_error_file).unlink()
+            if init_kwargs_path:
+                init_kwargs_path.unlink()
         return executor_proxy
 
     async def destroy(self):
@@ -165,14 +175,6 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
         On the other hand, the subprocess for execution service is not started in detach mode;
         it wll exit when parent process exit. So we simply skip the destruction here.
         """
-
-        # TODO 3033484: update this after executor service support graceful shutdown
-        if not await self._all_generators_exhausted():
-            raise UnexpectedError(
-                message_format="The executor service is still handling a stream request "
-                "whose response is not fully consumed yet."
-            )
-
         # process is not None, it means the executor service is started by the current executor proxy
         # and should be terminated when the executor proxy is destroyed if the service is still active
         if self._process and self._is_executor_active():
@@ -183,12 +185,16 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
                 # for Linux and MacOS, Popen.terminate() will send SIGTERM to the process
                 self._process.terminate()
 
-            # TODO: there is a potential issue that, graceful shutdown won't work for streaming chat flow for now
-            #  because response will not be fully consumed before we destroy the executor proxy
             try:
                 self._process.wait(timeout=5)
             except subprocess.TimeoutExpired:
                 self._process.kill()
+                # TODO: pf.test won't work for streaming. Response will be fully consumed outside TestSubmitter context.
+                if not await self._all_generators_exhausted():
+                    raise UnexpectedError(
+                        message_format="The executor service is still handling a stream request "
+                        "whose response is not fully consumed yet."
+                    )
 
     def _is_executor_active(self):
         """Check if the process is still running and return False if it has exited"""
