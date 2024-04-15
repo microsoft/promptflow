@@ -25,9 +25,9 @@ class PromptyExecutor(ScriptExecutor):
         storage: Optional[AbstractRunStorage] = None,
         init_kwargs: Optional[Dict[str, Any]] = None,
     ):
-        init_kwargs = init_kwargs or {}
+        self._init_kwargs = init_kwargs or {}
         logger.debug(f"Init params for prompty executor: {init_kwargs}")
-        self.prompty = Prompty.load(source=flow_file, **init_kwargs)
+        self.prompty = Prompty.load(source=flow_file, **self._init_kwargs)
         super().__init__(flow_file=flow_file, connections=connections, working_dir=working_dir, storage=storage)
 
     def _initialize_function(self):
