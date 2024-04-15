@@ -1,5 +1,6 @@
 import json
 import multiprocessing
+import os
 from pathlib import Path
 from unittest.mock import patch
 
@@ -65,7 +66,7 @@ def model_config() -> dict:
 @pytest.fixture
 def deployment_name() -> str:
     # TODO: move to config file or environment variable
-    return "gpt-4"
+    return os.environ.get("AZUREML_DEPLOYMENT_NAME", "GPT-4-Prod")
 
 
 # ==================== Recording injection ====================

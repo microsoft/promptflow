@@ -75,6 +75,7 @@ class FlowType:
 
     DAG_FLOW = "dag"
     FLEX_FLOW = "flex"
+    PROMPTY = "prompty"
 
 
 class AvailableIDE:
@@ -277,3 +278,22 @@ AZURE_WORKSPACE_REGEX_FORMAT = (
     "(/providers/Microsoft.MachineLearningServices)?/workspaces/([^/]+)$"
 )
 CONNECTION_DATA_CLASS_KEY = "DATA_CLASS"
+AML_WORKSPACE_TEMPLATE = "azureml://subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}"  # noqa: E501
+
+
+class AzureWorkspaceKind:
+    DEFAULT = "default"
+    HUB = "hub"
+    PROJECT = "project"
+
+    @staticmethod
+    def is_workspace(obj) -> bool:
+        return obj._kind == AzureWorkspaceKind.DEFAULT
+
+    @staticmethod
+    def is_hub(obj) -> bool:
+        return obj._kind == AzureWorkspaceKind.HUB
+
+    @staticmethod
+    def is_project(obj) -> bool:
+        return obj._kind == AzureWorkspaceKind.PROJECT

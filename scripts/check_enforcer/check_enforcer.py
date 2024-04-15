@@ -37,17 +37,30 @@ github_workspace = os.path.expanduser("~/promptflow/")
 special_care = {
     "sdk_cli_tests": 4,
     "sdk_cli_azure_test_replay": 4,
+    "sdk_cli_global_config_tests": 1,
+    "tracing-e2e-test": 12,
+    "tracing-unit-test": 12,
+    "core_test": 4,
+    "azureml_serving_test": 4,
     # "samples_connections_connection": 0,
 }
 
 # Copy from original yaml pipelines
 checks = {
     "sdk_cli_tests": [
+        "src/promptflow-core/**",
+        "src/promptflow-devkit/**",
         "src/promptflow/**",
+        "src/promptflow-tracing/**",
         "scripts/building/**",
         ".github/workflows/promptflow-sdk-cli-test.yml",
+        "src/promptflow-recording/**",
     ],
     "sdk_cli_global_config_tests": [
+        "src/promptflow-core/**",
+        "src/promptflow-devkit/**",
+        "src/promptflow-tracing/**",
+        "src/promptflow-azure/**",
         "src/promptflow/**",
         "scripts/building/**",
         ".github/workflows/promptflow-global-config-test.yml",
@@ -55,7 +68,29 @@ checks = {
     "sdk_cli_azure_test_replay": [
         "src/promptflow/**",
         "scripts/building/**",
-        ".github/workflows/promptflow-sdk-cli-azure-test-pull-request.yml",
+        ".github/workflows/sdk-cli-azure-test-pull-request.yml",
+        "src/promptflow-tracing/**",
+        "src/promptflow-core/**",
+        "src/promptflow-devkit/**",
+        "src/promptflow-azure/**",
+    ],
+    "tracing-e2e-test": [
+        "src/promptflow-tracing/**",
+        ".github/workflows/promptflow-tracing-e2e-test.yml",
+    ],
+    "tracing-unit-test": [
+        "src/promptflow-tracing/**",
+        ".github/workflows/promptflow-tracing-unit-test.yml",
+    ],
+    "core_test": [
+        "src/promptflow-tracing/**",
+        "src/promptflow-core/**",
+        ".github/workflows/promptflow-core-test.yml"
+    ],
+    "azureml_serving_test": [
+        "src/promptflow-tracing/**",
+        "src/promptflow-core/**",
+        ".github/workflows/promptflow-core-test.yml"
     ],
 }
 

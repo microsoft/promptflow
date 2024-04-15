@@ -2,13 +2,28 @@
 
 ## 1.9.0 (Upcoming)
 
+### Features Added
+- [promptflow-devkit]: Added autocomplete feature for linux, reach [here](https://microsoft.github.io/promptflow/reference/pf-command-reference.html#autocomplete) for more details.
+
+### Bugs Fixed
+- [promptflow-devkit] Fix run name missing directory name in some scenario of `pf.run`.
+- [promptflow-devkit] Raise not supported instead of 404 when trying to create Azure AI connection.
+
 ### Others
 - [promptflow-core] Connection default api version changed:
   - AzureOpenAIConnection: 2023-07-01-preview -> 2024-02-01
   - CognitiveSearchConnection: 2023-07-01-preview -> 2023-11-01
 
 
-## 1.8.0 (Upcoming)
+## 1.8.0 (2024.04.10)
+
+### NOTICES
+- `promptflow` package has been split into multiple packages. When installing `promptflow`, you will get the following packages:
+  - `promptflow`:
+    - `promptflow-tracing`: Tracing capability for promptflow.
+    - `promptflow-core`: Core functionality to run flow.
+    - `promptflow-devkit`: Development kit for promptflow.
+    - `promptflow-azure`: Azure extra requires(`promptflow[azure]`) for promptflow to integrate with Azure.
 
 ### Features Added
 - [SDK/CLI] Create a run with `resume_from`, note that only run created with `promptflow>=1.8.0` can be used as the value of `resume_from`:
@@ -17,7 +32,6 @@
 - [SDK/CLI][azure] Create a run with `resume_from`.
   - CLI: Support `pfazure run create --resume-from <original-run-name>` to create a run resume from another run.
   - SDK: Support `p.run(resume_from=<original-run-name>)` to create a run resume from another run.
-
 
 ## 1.7.0 (2024.03.25)
 

@@ -282,7 +282,7 @@ def serialize_attribute(value):
 
 
 def _traced(
-    func: Callable = None, *, args_to_ignore: Optional[List[str]] = None, trace_type=TraceType.FUNCTION
+    func: Callable = None, *, args_to_ignore: Optional[List[str]] = None, trace_type=TraceType.FUNCTION, name=None
 ) -> Callable:
     """
     Decorator that adds tracing to a function.
@@ -297,7 +297,7 @@ def _traced(
         Callable: The traced function.
     """
     wrapped_method = _traced_async if inspect.iscoroutinefunction(func) else _traced_sync
-    return wrapped_method(func, args_to_ignore=args_to_ignore, trace_type=trace_type)
+    return wrapped_method(func, args_to_ignore=args_to_ignore, trace_type=trace_type, name=name)
 
 
 def _traced_async(

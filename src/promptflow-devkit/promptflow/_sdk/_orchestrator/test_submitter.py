@@ -15,6 +15,7 @@ from promptflow._core._errors import NotSupported
 from promptflow._internal import ConnectionManager
 from promptflow._proxy import ProxyFactory
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
+from promptflow._sdk._utils import get_flow_name
 from promptflow._sdk.entities._flows import Flow, FlowContext
 from promptflow._sdk.operations._local_storage_operations import LoggerOperations
 from promptflow._utils.async_utils import async_run_allowing_running_loop
@@ -28,8 +29,8 @@ from promptflow.contracts.run_info import RunInfo, Status
 from promptflow.exceptions import UserErrorException
 from promptflow.executor._result import LineResult
 from promptflow.storage._run_storage import DefaultRunStorage
+from promptflow.tracing._start_trace import is_collection_writeable, start_trace
 
-from .._configuration import Configuration
 from ..entities._flows import FlexFlow
 from .utils import (
     SubmitterHelper,
@@ -188,7 +189,9 @@ class TestSubmitter:
         stream_log: bool = True,
         output_path: Optional[str] = None,
         session: Optional[str] = None,
+        collection: Optional[str] = None,
         stream_output: bool = True,
+        init_kwargs: Optional[dict] = None,
     ):
         """
         Create/Occupy dependent resources to execute the test within the context.
@@ -206,13 +209,15 @@ class TestSubmitter:
         :type output_path: str
         :param session: session id. If None, a new session id will be generated with _provision_session.
         :type session: str
+        :param collection: collection.
+        :type collection: str
         :param stream_output: whether to return a generator for streaming output.
         :type stream_output: bool
+        :param init_kwargs: Initialization parameters for flex flow, only supported when flow is callable class.
+        :type init: init_kwargs
         :return: TestSubmitter instance.
         :rtype: TestSubmitter
         """
-        from promptflow.tracing._start_trace import start_trace
-
         with self._resolve_variant():
             # temp flow is generated, will use self.flow instead of self._origin_flow in the following context
             self._within_init_context = True
@@ -238,9 +243,21 @@ class TestSubmitter:
             )
 
             # do not enable trace when test single node, as we have not determined this behavior
-            if target_node is None and Configuration(overrides=self._client._config).is_internal_features_enabled():
-                logger.debug("Starting trace for flow test...")
-                start_trace(session=session)
+            if target_node is None:
+                logger.debug("start trace for flow test...")
+                if collection is not None:
+                    logger.debug("collection is user specified: %s, will use it...", collection)
+                    start_trace(collection=collection, session=session)
+                else:
+                    if is_collection_writeable():
+                        logger.debug("trace collection is writeable, will use flow name as collection...")
+                        collection_for_test = get_flow_name(self._origin_flow)
+                        logger.debug("collection for test: %s", collection_for_test)
+                        # pass with internal parameter `_collection`
+                        start_trace(session=session, _collection=collection_for_test)
+                    else:
+                        logger.debug("trace collection is protected, will honor existing collection.")
+                        start_trace(session=session)
 
             self._output_base, log_path, output_sub = self._resolve_output_path(
                 output_base=output_path,
@@ -275,6 +292,7 @@ class TestSubmitter:
                     log_path=log_path,
                     enable_stream_output=stream_output,
                     language=self.flow.language,
+                    init_kwargs=init_kwargs,
                 )
 
                 try:
@@ -389,6 +407,7 @@ class TestSubmitter:
         inputs: Mapping[str, Any],
         allow_generator_output: bool = False,  # TODO: remove this
         run_id: str = None,
+        init_kwargs: Optional[dict] = None,
     ) -> LineResult:
         """
         Submit a flow test.
@@ -406,6 +425,8 @@ class TestSubmitter:
         :type stream_output: bool
         :param run_id: Run id will be set in operation context and used for session
         :type run_id: str
+        :param init_kwargs: Initialization parameters for flex flow, only supported when flow is callable class.
+        :type init_kwargs: dict
         """
         self._raise_if_not_within_init_context()
         if self.target_node:
@@ -426,6 +447,7 @@ class TestSubmitter:
                 entry=self.entry,
                 storage=self._storage,
                 run_id=run_id,
+                init_kwargs=init_kwargs,
             )
         else:
             from promptflow._utils.multimedia_utils import BasicMultimediaProcessor

@@ -12,6 +12,7 @@ from promptflow.executor._service.contracts.base_request import BaseRequest
 
 
 class BaseExecutionRequest(BaseRequest):
+    # Use Optional for new fields to avoid breaking existing clients
     """Base request model for execution."""
 
     working_dir: Path
@@ -20,7 +21,8 @@ class BaseExecutionRequest(BaseRequest):
     log_path: Optional[str] = None
     connections: Optional[Mapping[str, Any]] = None
     environment_variables: Optional[Mapping[str, Any]] = None
-    flow_name: str = None
+    flow_name: Optional[str] = None
+    flow_logs_folder: Optional[str] = None
 
     def get_run_mode(self):
         raise NotImplementedError(f"Request type {self.__class__.__name__} is not implemented.")

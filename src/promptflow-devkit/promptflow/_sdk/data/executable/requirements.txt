@@ -37,3 +37,4 @@ streamlit
 streamlit-quill
 bs4
 pywin32
+argcomplete

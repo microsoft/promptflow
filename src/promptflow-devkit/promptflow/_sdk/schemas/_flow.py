@@ -61,20 +61,21 @@ class FlowSchema(BaseFlowSchema):
     node_variants = fields.Dict(keys=fields.Str(), values=fields.Dict())
 
 
+ALLOWED_TYPES = [
+    ValueType.STRING.value,
+    ValueType.INT.value,
+    ValueType.DOUBLE.value,
+    ValueType.BOOL.value,
+    ValueType.LIST.value,
+    ValueType.OBJECT.value,
+]
+
+
 class FlexFlowInputSchema(FlowInputSchema):
     type = fields.Str(
         required=True,
-        validate=validate.OneOf(
-            [
-                ValueType.DOUBLE,
-                ValueType.BOOL,
-                ValueType.INT,
-                ValueType.STRING,
-                ValueType.LIST,
-                ValueType.OBJECT
-                # TODO 3062609: Flex flow GPT-V support
-            ]
-        ),
+        # TODO 3062609: Flex flow GPT-V support
+        validate=validate.OneOf(ALLOWED_TYPES),
     )
 
 
@@ -82,7 +83,7 @@ class FlexFlowInitSchema(FlowInputSchema):
     type = fields.Str(
         required=True,
         validate=validate.OneOf(
-            [ValueType.DOUBLE, ValueType.BOOL, ValueType.INT, ValueType.STRING]
+            ALLOWED_TYPES
             + list(
                 map(lambda x: f"{x.value}Connection", filter(lambda x: x != ConnectionType._NOT_SET, ConnectionType))
             )
@@ -93,9 +94,7 @@ class FlexFlowInitSchema(FlowInputSchema):
 class FlexFlowOutputSchema(FlowOutputSchema):
     type = fields.Str(
         required=True,
-        validate=validate.OneOf(
-            [ValueType.DOUBLE, ValueType.BOOL, ValueType.INT, ValueType.STRING, ValueType.LIST, ValueType.OBJECT]
-        ),
+        validate=validate.OneOf(ALLOWED_TYPES),
     )
 
 
@@ -107,6 +106,7 @@ class FlexFlowSchema(BaseFlowSchema):
     inputs = fields.Dict(keys=fields.Str(), values=NestedField(FlexFlowInputSchema), required=False)
     outputs = fields.Dict(keys=fields.Str(), values=NestedField(FlexFlowOutputSchema), required=False)
     init = fields.Dict(keys=fields.Str(), values=NestedField(FlexFlowInitSchema), required=False)
+    sample = fields.Str()
 
     @validates_schema(skip_on_field_errors=False)
     def validate_entry(self, data, **kwargs):
