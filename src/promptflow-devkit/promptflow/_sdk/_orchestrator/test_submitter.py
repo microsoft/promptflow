@@ -572,6 +572,7 @@ class TestSubmitter:
                 generator_key=f"run.outputs.{output_name or 'output'}",
             )
             flow_result = resolve_generator(flow_result, generator_record)
+            custom_path = None
             if isinstance(self.flow, (Prompty, FlexFlow)):
                 # For prompty and flex flow, the format of chat history is consistent with openai.
                 # [{"role": "role_name", "content": "content_vale"}]
@@ -581,13 +582,19 @@ class TestSubmitter:
                     {"role": "assistant", "content": resolved_chat_output},
                 ]
                 chat_history.extend(history)
+                if isinstance(self.flow, Prompty):
+                    custom_path = (
+                        Path(self._origin_flow.code) / PROMPT_FLOW_DIR_NAME / Path(self._origin_flow.path).stem
+                    )
             else:
                 # TODO: In order not to break the original dag flow, the original chat history format is maintained.
                 # Compatibility with older format will be done in the future.
                 flow_outputs = {k: v for k, v in flow_result.output.items()}
                 history = {"inputs": {input_name: input_value}, "outputs": flow_outputs}
                 chat_history.append(history)
-            dump_flow_result(flow_folder=self._origin_flow.code, flow_result=flow_result, prefix="chat")
+            dump_flow_result(
+                flow_folder=self._origin_flow.code, flow_result=flow_result, prefix="chat", custom_path=custom_path
+            )
 
     @staticmethod
     def _raise_error_when_test_failed(test_result, show_trace=False):
