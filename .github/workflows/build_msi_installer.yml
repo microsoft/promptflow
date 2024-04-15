@@ -60,6 +60,8 @@ jobs:
         if: ${{ github.event.inputs.version != null && github.event.inputs.version != '' }}
         run: |
           pip install "promptflow[azure,executable,azureml-serving,executor-service]==$env:INPUT_VERSION" promptflow-tools
+          echo "There's no promptflow-evals in pypi for now, we need to install it from source for now"
+          pip install ${{ github.workspace }}/src/promptflow-evals
         env:
           INPUT_VERSION: ${{ github.event.inputs.version }}
         shell: pwsh
@@ -118,6 +120,7 @@ jobs:
           pip install ${{ github.workspace }}/src/promptflow-core[executor-service,azureml-serving]
           pip install ${{ github.workspace }}/src/promptflow-devkit[pyarrow,executable]
           pip install ${{ github.workspace }}/src/promptflow-azure
+          pip install ${{ github.workspace }}/src/promptflow-evals
           echo "Should fix this after pf-core could install this dependency"
           pip install azureml-ai-monitoring
           pip freeze

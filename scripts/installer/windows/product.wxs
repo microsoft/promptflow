@@ -89,9 +89,16 @@
             Execute="deferred"
             ExeCommand="wscript.exe promptflow_service.vbs"
             Return="asyncNoWait" />
+        <CustomAction Id="StopPromptFlowService"
+            Directory="APPLICATIONFOLDER"
+            Execute="immediate"
+            ExeCommand="pfcli.exe pf service stop"
+            Return="ignore" />
         <InstallExecuteSequence>
+            <Custom Action="StopPromptFlowService" Before="InstallInitialize">Installed</Custom>
             <Custom Action="StartPromptFlowService" Before="InstallFinalize">NOT Installed OR WIX_UPGRADE_DETECTED</Custom>
         </InstallExecuteSequence>
+
     </Product>
 
     <Fragment>
