@@ -50,8 +50,7 @@ filetype = ">=1.2.0"  # used to detect the mime type for multi-media input
 flask = ">=2.2.3,<4.0.0"  # Serving endpoint requirements
 python-dateutil = ">=2.1.0,<3.0.0"  # Contracts RunInfo
 # ========fastapi server dependencies========
-uvicorn = ">=0.27.0,<1.0.0"  # used for fastapi server
-fastapi = ">=0.109.0,<1.0.0" # used to build web executor server
+fastapi = ">=0.109.0,<1.0.0" # used to build fastapi server
 # ========azureml-serving dependencies========
 # AzureML connection dependencies
 azure-identity = ">=1.12.0,<2.0.0"
