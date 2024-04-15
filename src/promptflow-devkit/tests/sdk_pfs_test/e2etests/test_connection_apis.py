@@ -12,7 +12,6 @@ import pytest
 from promptflow._sdk._version import VERSION
 from promptflow._sdk.entities import CustomConnection
 from promptflow.client import PFClient
-from promptflow.recording.record_mode import is_replay
 
 from ..utils import PFSOperations, check_activity_end_telemetry
 
@@ -86,11 +85,14 @@ class TestConnectionAPIs:
             specs = pfs_op.get_connection_specs(status_code=200).json
         assert len(specs) > 1
 
-    @pytest.mark.skipif(is_replay(), reason="connection provider test, skip in non-live mode.")
+    @pytest.mark.skipif(pytest.is_replay, reason="connection provider test, skip in non-live mode.")
     def test_get_connection_by_provicer(self, pfs_op, subscription_id, resource_group_name, workspace_name):
         target = "promptflow._sdk._pf_client.Configuration.get_connection_provider"
-        with mock.patch(target) as mocked_config:
+        provider_url_target = "promptflow.core._utils.extract_workspace"
+        mock_provider_url = (subscription_id, resource_group_name, workspace_name)
+        with mock.patch(target) as mocked_config, mock.patch(provider_url_target) as mocked_provider_url:
             mocked_config.return_value = "azureml"
+            mocked_provider_url.return_value = mock_provider_url
             connections = pfs_op.list_connections(status_code=200).json
             assert len(connections) > 0
 
