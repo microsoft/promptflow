@@ -6,14 +6,15 @@ This is an experimental feature, and may change at any time. Learn [more](../how
 
 Manage prompt flow resources with the prompt flow CLI.
 
-| Command                         | Description                     |
-|---------------------------------|---------------------------------|
-| [pf flow](#pf-flow)             | Manage flows.                   |
-| [pf connection](#pf-connection) | Manage connections.             |
-| [pf run](#pf-run)               | Manage runs.                    |
-| [pf tool](#pf-tool)             | Init or list tools.             |
+| Command                         | Description                    |
+|---------------------------------|--------------------------------|
+| [pf flow](#pf-flow)             | Manage flows.                  |
+| [pf connection](#pf-connection) | Manage connections.            |
+| [pf run](#pf-run)               | Manage runs.                   |
+| [pf tool](#pf-tool)             | Init or list tools.            |
 | [pf config](#pf-config)         | Manage config for current user. |
-| [pf upgrade](#pf-upgrade)       | Upgrade prompt flow CLI.        |
+| [pf service](#pf-service)       | Manage prompt flow service. |
+| [pf upgrade](#pf-upgrade)       | Upgrade prompt flow CLI.       |
 
 ## pf flow
 
@@ -882,6 +883,94 @@ Show prompt flow for current user.
 ```bash
 pf config show
 ```
+
+## pf service
+
+Manage prompt flow service.
+
+| Command                                 | Description                                   |
+|-----------------------------------------|-----------------------------------------------|
+| [pf service start](#pf-service-start)   | Start prompt flow service.                    |
+| [pf service stop](#pf-service-stop)     | Stop prompt flow service.                     |
+| [pf service status](#pf-service-status) | Display the started prompt flow service info. |
+
+### pf service start
+
+Start prompt flow service.
+
+```bash
+pf service start [--port]
+                 [--force]
+                 [--debug]
+```
+
+#### Examples
+Start prompt flow service.
+```bash
+pf service start
+```
+
+Force restart promptflow service.
+```bash
+pf service start --force
+```
+
+Start promptflow service with specific port.
+```bash
+pf service start --port 65553
+```
+
+Start prompt flow service in foreground, displaying debug level logs directly in the terminal.
+```bash
+pf service start --debug
+```
+
+#### Optional Parameters
+
+`--port -p`
+
+Port of the promptflow service.
+
+`--force`
+
+Force restart the existing service if the port is used.
+
+`--debug`
+
+Start prompt flow service in foreground, displaying debug level logs directly in the terminal.
+
+
+
+### pf service stop
+
+Stop prompt flow service.
+
+```bash
+pf service stop [--debug]
+```
+
+#### Example
+
+Stop prompt flow service.
+
+```bash
+pf service stop
+```
+
+#### Optional Parameter
+
+`--debug`
+
+The flag to turn on debug mode for cli.
+
+### pf service status
+
+Display the started prompt flow service info.
+
+```bash
+pf service status
+```
+
 
 ## pf upgrade
 

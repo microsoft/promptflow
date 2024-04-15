@@ -25,7 +25,19 @@ from promptflow._core.connection_manager import ConnectionManager
 from promptflow._sdk.entities._connection import AzureOpenAIConnection
 from promptflow._utils.context_utils import _change_working_dir
 
+try:
+    from promptflow.recording.record_mode import is_replay
+except ImportError:
+    # Run test in empty mode if promptflow-recording is not installed
+    def is_replay():
+        return False
+
+
 load_dotenv()
+
+
+def pytest_configure():
+    pytest.is_replay = is_replay()
 
 
 @pytest.fixture(scope="session", autouse=True)
