@@ -1,7 +1,4 @@
 # Distribute flow as executable app
-:::{admonition} Experimental feature
-This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
-:::
 
 We are going to use the [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification/) as
 an example to show how to distribute flow as executable app with [Pyinstaller](https://pyinstaller.org/en/stable/requirements.html#).
