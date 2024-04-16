@@ -207,7 +207,9 @@
     "Chunker",
     "mpnet",
     "wargs",
-    "dcid"
+    "dcid",
+    "piezo",
+    "Piezo"
   ],
   "flagWords": [
     "Prompt Flow"
