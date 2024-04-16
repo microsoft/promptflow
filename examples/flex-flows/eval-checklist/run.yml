@@ -1,5 +1,6 @@
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/Run.schema.json
 flow: .
 data: data.jsonl
-column_mapping:
-  text: ${data.text}
+init:
+  connection: open_ai_connection
+

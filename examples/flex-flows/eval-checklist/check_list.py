@@ -24,7 +24,7 @@ def load_prompt(
 
 
 @trace
-def check(answer: str, statement: str):
+def check(answer: str, statement: str, connection: AzureOpenAIConnection):
     """Check the answer applies for the check statement."""
     examples = [
         {
@@ -36,15 +36,6 @@ def check(answer: str, statement: str):
     ]
 
     prompt = load_prompt("prompt.md", answer, statement, examples)
-
-    if "AZURE_OPENAI_API_KEY" not in os.environ:
-        # load environment variables from .env file
-        load_dotenv()
-
-    if "AZURE_OPENAI_API_KEY" not in os.environ:
-        raise Exception("Please specify environment variables: AZURE_OPENAI_API_KEY")
-
-    connection = AzureOpenAIConnection.from_env()
 
     output = chat(
         connection=connection,
@@ -59,8 +50,8 @@ def check(answer: str, statement: str):
 
 class EvalFlow:
 
-    def __init__(self) -> None:
-        pass
+    def __init__(self, connection: AzureOpenAIConnection):
+        self.connection = connection
 
     def __call__(self, answer: str, statements: dict):
         """Check the answer applies for a collection of check statement."""
@@ -69,13 +60,14 @@ class EvalFlow:
 
         results = {}
         for key, statement in statements.items():
-            r = check(answer=answer, statement=statement)
+            r = check(answer=answer, statement=statement, connection=self.connection)
             results[key] = r
         return results
 
 
 if __name__ == "__main__":
     from promptflow.tracing import start_trace
+    from promptflow.client import PFClient
 
     start_trace()
 
@@ -90,7 +82,10 @@ if __name__ == "__main__":
         "correctness": "It contains a detailed explanation of ChatGPT.",
         "consise": "It is a consise statement.",
     }
-    flow = EvalFlow()
+
+    pf = PFClient()
+    connection = pf.connections.get("open_ai_connection", with_secrets=True)
+    flow = EvalFlow(connection=connection)
 
     result = flow(
         answer=answer,

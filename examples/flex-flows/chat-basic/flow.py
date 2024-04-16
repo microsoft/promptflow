@@ -28,15 +28,8 @@ class Result:
 
 class ChatFlow:
 
-    def __init__(self):
-        if "AZURE_OPENAI_API_KEY" not in os.environ:
-            # load environment variables from .env file
-            load_dotenv()
-
-        if "AZURE_OPENAI_API_KEY" not in os.environ:
-            raise ValueError("Please specify environment variables: AZURE_OPENAI_API_KEY")
-
-        self.connection = AzureOpenAIConnection.from_env()
+    def __init__(self, connection: AzureOpenAIConnection):
+        self.connection = connection
 
     def __call__(
         self, question: str = "What is ChatGPT?", chat_history: list = None
@@ -59,8 +52,11 @@ class ChatFlow:
 
 if __name__ == "__main__":
     from promptflow.tracing import start_trace
+    from promptflow.client import PFClient
 
     start_trace()
-    flow = ChatFlow()
+    pf = PFClient()
+    connection = pf.connections.get("open_ai_connection", with_secrets=True)
+    flow = ChatFlow(connection=connection)
     result = flow("What's Azure Machine Learning?", [])
     print(result)
