@@ -2,33 +2,40 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import copy
 import importlib.metadata
 import json
+import logging
 import os
 import platform
 import subprocess
 import sys
+import traceback
 import typing
+from datetime import datetime
 
+from google.protobuf.json_format import MessageToJson
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.proto.collector.trace.v1.trace_service_pb2 import ExportTraceServiceRequest
 from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_ENDPOINT
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-from promptflow._cli._utils import get_credentials_for_cli
 from promptflow._constants import (
     OTEL_RESOURCE_SERVICE_NAME,
     AzureWorkspaceKind,
+    CosmosDBContainerName,
     SpanAttributeFieldName,
     SpanResourceAttributesFieldName,
+    SpanResourceFieldName,
     TraceEnvironmentVariableName,
 )
-from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
     PF_TRACE_CONTEXT,
     PF_TRACE_CONTEXT_ATTR,
+    TRACE_DEFAULT_COLLECTION,
     AzureMLWorkspaceTriad,
     ContextAttributeKey,
 )
@@ -41,14 +48,26 @@ from promptflow._sdk._service.utils.utils import (
     is_port_in_use,
     is_run_from_built_binary,
 )
-from promptflow._sdk._utils import extract_workspace_triad_from_trace_provider
+from promptflow._sdk._utils import extract_workspace_triad_from_trace_provider, parse_kv_from_pb_attribute
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow._utils.thread_utils import ThreadWithContextVars
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
 from promptflow.tracing._operation_context import OperationContext
 
 _logger = get_cli_sdk_logger()
 
+PF_CONFIG_TRACE_FEATURE_DISABLE = "none"
 TRACER_PROVIDER_PFS_EXPORTER_SET_ATTR = "_pfs_exporter_set"
+
+
+def is_trace_feature_disabled() -> bool:
+    from promptflow._sdk._configuration import Configuration
+
+    trace_provider = Configuration.get_instance().get_trace_provider()
+    if isinstance(trace_provider, str):
+        return Configuration.get_instance().get_trace_provider().lower() == PF_CONFIG_TRACE_FEATURE_DISABLE
+    else:
+        return False
 
 
 def _is_azure_ext_installed() -> bool:
@@ -63,6 +82,7 @@ def _get_collection_id_for_azure(collection: str) -> str:
     """{collection}_{object_id}"""
     import jwt
 
+    from promptflow.azure._cli._utils import get_credentials_for_cli
     from promptflow.azure._utils.general import get_arm_token
 
     token = get_arm_token(credential=get_credentials_for_cli())
@@ -93,7 +113,7 @@ def _invoke_pf_svc() -> str:
     if is_port_in_use(int(port)):
         if not is_pfs_service_healthy(port):
             cmd_args.append("--force")
-            logger.debug("Prompt flow service is not healthy, force to start...")
+            _logger.debug("Prompt flow service is not healthy, force to start...")
         else:
             print("Prompt flow service has started...")
             return port
@@ -127,6 +147,8 @@ def _invoke_pf_svc() -> str:
 
 
 def _get_ws_triad_from_pf_config() -> typing.Optional[AzureMLWorkspaceTriad]:
+    from promptflow._sdk._configuration import Configuration
+
     ws_arm_id = Configuration.get_instance().get_trace_provider()
     return extract_workspace_triad_from_trace_provider(ws_arm_id) if ws_arm_id is not None else None
 
@@ -158,6 +180,8 @@ def _print_tracing_url_from_azure_portal(
     # as this there is an if condition for azure extension, we can assume the extension is installed
     from azure.ai.ml import MLClient
 
+    from promptflow.azure._cli._utils import get_credentials_for_cli
+
     # we have different url for Azure ML workspace and AI project
     # so we need to distinguish them
     ml_client = MLClient(
@@ -183,15 +207,16 @@ def _print_tracing_url_from_azure_portal(
     if AzureWorkspaceKind.is_workspace(workspace):
         _logger.debug(f"{ws_triad.workspace_name!r} is an Azure ML workspace.")
         if run is None:
-            query = f"trace/collection/{collection_id}"
+            query = f"trace/collection/{collection_id}/list"
         else:
-            query = f"prompts/trace/run/{run}"
+            query = f"prompts/trace/run/{run}/details"
     elif AzureWorkspaceKind.is_project(workspace):
         _logger.debug(f"{ws_triad.workspace_name!r} is an Azure AI project.")
+        url = url.replace("int.ml.azure.com", "int.ai.azure.com")
         if run is None:
-            query = f"projecttrace/collection/{collection_id}"
+            query = f"projecttrace/collection/{collection_id}/list"
         else:
-            query = f"projectflows/trace/run/{run}"
+            query = f"projectflows/trace/run/{run}/details"
     else:
         _logger.error(f"the workspace type of {ws_triad.workspace_name!r} is not supported.")
         return
@@ -250,6 +275,10 @@ def _create_res(
 
 
 def start_trace_with_devkit(collection: str, **kwargs: typing.Any) -> None:
+    if is_trace_feature_disabled():
+        _logger.info("trace feature is disabled in config, skip setup exporter to PFS.")
+        return
+
     _logger.debug("collection: %s", collection)
     _logger.debug("kwargs: %s", kwargs)
     attrs = kwargs.get("attributes", None)
@@ -291,6 +320,14 @@ def start_trace_with_devkit(collection: str, **kwargs: typing.Any) -> None:
 
     # invoke prompt flow service
     pfs_port = _invoke_pf_svc()
+    is_pfs_healthy = is_pfs_service_healthy(pfs_port)
+    if not is_pfs_healthy:
+        warning_msg = (
+            "Prompt flow service is not healthy, please check the logs for more details; "
+            "traces might not be exported correctly."
+        )
+        _logger.warning(warning_msg)
+        return
 
     _inject_res_attrs_to_environ(pfs_port=pfs_port, collection=collection, exp=exp, ws_triad=ws_triad)
     # instrument openai and setup exporter to pfs here for flex mode
@@ -303,6 +340,10 @@ def start_trace_with_devkit(collection: str, **kwargs: typing.Any) -> None:
 
 
 def setup_exporter_to_pfs() -> None:
+    if is_trace_feature_disabled():
+        _logger.info("trace feature is disabled in config, skip setup exporter to PFS.")
+        return
+
     _logger.debug("start setup exporter to prompt flow service...")
     # get resource attributes from environment
     # For local trace, collection is the only identifier for name and id
@@ -356,3 +397,176 @@ def setup_exporter_to_pfs() -> None:
         else:
             _logger.info("exporter to prompt flow service is already set, no action needed.")
     _logger.debug("finish setup exporter to prompt flow service.")
+
+
+def process_otlp_trace_request(
+    trace_request: ExportTraceServiceRequest,
+    get_created_by_info_with_cache: typing.Callable,
+    logger: logging.Logger,
+    cloud_trace_only: bool = False,
+    credential: typing.Optional[object] = None,
+):
+    """Process ExportTraceServiceRequest and write data to local/remote storage.
+
+    This function is not a flask request handler and can be used as normal function.
+
+    :param trace_request: Trace request content parsed from OTLP/HTTP trace request.
+    :type trace_request: ExportTraceServiceRequest
+    :param get_created_by_info_with_cache: A function that retrieves information about the creator of the trace.
+    :type get_created_by_info_with_cache: Callable
+    :param logger: The logger object used for logging.
+    :type logger: logging.Logger
+    :param cloud_trace_only: If True, only write trace to cosmosdb and skip local trace. Default is False.
+    :type cloud_trace_only: bool
+    :param credential: The credential object used to authenticate with cosmosdb. Default is None.
+    :type credential: Optional[object]
+    """
+    from promptflow._sdk.entities._trace import Span
+    from promptflow._sdk.operations._trace_operations import TraceOperations
+
+    all_spans = []
+    for resource_span in trace_request.resource_spans:
+        resource_attributes = dict()
+        for attribute in resource_span.resource.attributes:
+            attribute_dict = json.loads(MessageToJson(attribute))
+            attr_key, attr_value = parse_kv_from_pb_attribute(attribute_dict)
+            resource_attributes[attr_key] = attr_value
+        if SpanResourceAttributesFieldName.COLLECTION not in resource_attributes:
+            resource_attributes[SpanResourceAttributesFieldName.COLLECTION] = TRACE_DEFAULT_COLLECTION
+        resource = {
+            SpanResourceFieldName.ATTRIBUTES: resource_attributes,
+            SpanResourceFieldName.SCHEMA_URL: resource_span.schema_url,
+        }
+        for scope_span in resource_span.scope_spans:
+            for span in scope_span.spans:
+                # TODO: persist with batch
+                span: Span = TraceOperations._parse_protobuf_span(span, resource=resource, logger=logger)
+                if not cloud_trace_only:
+                    all_spans.append(copy.deepcopy(span))
+                    span._persist()
+                    logger.debug("Persisted trace id: %s, span id: %s", span.trace_id, span.span_id)
+                else:
+                    all_spans.append(span)
+
+    if cloud_trace_only:
+        # If we only trace to cloud, we should make sure the data writing is success before return.
+        _try_write_trace_to_cosmosdb(all_spans, get_created_by_info_with_cache, logger, credential, is_cloud_trace=True)
+    else:
+        # Create a new thread to write trace to cosmosdb to avoid blocking the main thread
+        ThreadWithContextVars(
+            target=_try_write_trace_to_cosmosdb,
+            args=(all_spans, get_created_by_info_with_cache, logger, credential, False),
+        ).start()
+
+    return
+
+
+def _try_write_trace_to_cosmosdb(
+    all_spans: typing.List,
+    get_created_by_info_with_cache: typing.Callable,
+    logger: logging.Logger,
+    credential: typing.Optional[object] = None,
+    is_cloud_trace: bool = False,
+):
+    if not all_spans:
+        return
+    try:
+        first_span = all_spans[0]
+        span_resource = first_span.resource
+        resource_attributes = span_resource.get(SpanResourceFieldName.ATTRIBUTES, {})
+        subscription_id = resource_attributes.get(SpanResourceAttributesFieldName.SUBSCRIPTION_ID, None)
+        resource_group_name = resource_attributes.get(SpanResourceAttributesFieldName.RESOURCE_GROUP_NAME, None)
+        workspace_name = resource_attributes.get(SpanResourceAttributesFieldName.WORKSPACE_NAME, None)
+        if subscription_id is None or resource_group_name is None or workspace_name is None:
+            logger.debug("Cannot find workspace info in span resource, skip writing trace to cosmosdb.")
+            return
+
+        logger.info(f"Start writing trace to cosmosdb, total spans count: {len(all_spans)}.")
+        start_time = datetime.now()
+
+        from promptflow.azure._storage.cosmosdb.client import get_client
+        from promptflow.azure._storage.cosmosdb.collection import CollectionCosmosDB
+        from promptflow.azure._storage.cosmosdb.span import Span as SpanCosmosDB
+        from promptflow.azure._storage.cosmosdb.summary import Summary
+
+        # Load span, collection and summary clients first time may slow.
+        # So, we load clients in parallel for warm up.
+        span_client_thread = ThreadWithContextVars(
+            target=get_client,
+            args=(CosmosDBContainerName.SPAN, subscription_id, resource_group_name, workspace_name, credential),
+        )
+        span_client_thread.start()
+
+        collection_client_thread = ThreadWithContextVars(
+            target=get_client,
+            args=(CosmosDBContainerName.COLLECTION, subscription_id, resource_group_name, workspace_name, credential),
+        )
+        collection_client_thread.start()
+
+        line_summary_client_thread = ThreadWithContextVars(
+            target=get_client,
+            args=(CosmosDBContainerName.LINE_SUMMARY, subscription_id, resource_group_name, workspace_name, credential),
+        )
+        line_summary_client_thread.start()
+
+        # Load created_by info first time may slow. So, we load it in parallel for warm up.
+        created_by_thread = ThreadWithContextVars(target=get_created_by_info_with_cache)
+        created_by_thread.start()
+
+        # Get default blob may be slow. So, we have a cache for default datastore.
+        from promptflow.azure._storage.blob.client import get_datastore_container_client
+
+        blob_container_client, blob_base_uri = get_datastore_container_client(
+            logger=logger,
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+            credential=credential,
+        )
+
+        span_client_thread.join()
+        collection_client_thread.join()
+        line_summary_client_thread.join()
+        created_by_thread.join()
+
+        created_by = get_created_by_info_with_cache()
+        collection_client = get_client(
+            CosmosDBContainerName.COLLECTION, subscription_id, resource_group_name, workspace_name, credential
+        )
+
+        collection_db = CollectionCosmosDB(first_span, is_cloud_trace, created_by)
+        collection_db.create_collection_if_not_exist(collection_client)
+        # For runtime, collection id is flow id for test, batch run id for batch run.
+        # For local, collection id is collection name + user id for non batch run, batch run id for batch run.
+        # We assign it to LineSummary and Span and use it as partition key.
+        collection_id = collection_db.collection_id
+
+        for span in all_spans:
+            span_client = get_client(
+                CosmosDBContainerName.SPAN, subscription_id, resource_group_name, workspace_name, credential
+            )
+            result = SpanCosmosDB(span, collection_id, created_by).persist(
+                span_client, blob_container_client, blob_base_uri
+            )
+            # None means the span already exists, then we don't need to persist the summary also.
+            if result is not None:
+                line_summary_client = get_client(
+                    CosmosDBContainerName.LINE_SUMMARY,
+                    subscription_id,
+                    resource_group_name,
+                    workspace_name,
+                    credential,
+                )
+                Summary(span, collection_id, created_by, logger).persist(line_summary_client)
+        collection_db.update_collection_updated_at_info(collection_client)
+        logger.info(
+            (
+                f"Finish writing trace to cosmosdb, total spans count: {len(all_spans)}."
+                f" Duration {datetime.now() - start_time}."
+            )
+        )
+
+    except Exception as e:
+        stack_trace = traceback.format_exc()
+        logger.error(f"Failed to write trace to cosmosdb: {e}, stack trace is {stack_trace}")
+        return

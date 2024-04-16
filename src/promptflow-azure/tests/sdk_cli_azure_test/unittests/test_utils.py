@@ -44,8 +44,8 @@ class TestUtils:
     def test_user_specified_azure_cli_credential(self):
         from azure.identity import AzureCliCredential
 
-        from promptflow._cli._utils import get_credentials_for_cli
         from promptflow._sdk._constants import EnvironmentVariables
+        from promptflow.azure._cli._utils import get_credentials_for_cli
 
         with patch.dict("os.environ", {EnvironmentVariables.PF_USE_AZURE_CLI_CREDENTIAL: "true"}):
             cred = get_credentials_for_cli()

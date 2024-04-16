@@ -359,21 +359,23 @@ class TestCli:
         assert output["result"] == "meid_token"
 
     def test_pf_flow_test_with_non_english_input_output(self, capsys):
-        question = "什么是 chat gpt"
-        run_pf_command("flow", "test", "--flow", f"{FLOWS_DIR}/chat_flow", "--inputs", f'question="{question}"')
-        stdout, _ = capsys.readouterr()
-        output_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "flow.output.json"
-        assert output_path.exists()
-        with open(output_path, "r", encoding="utf-8") as f:
-            outputs = json.load(f)
-            assert outputs["answer"] in json.loads(stdout)["answer"]
+        # disable trace to not invoke prompt flow service, which will print unexpected content to stdout
+        with mock.patch("promptflow._sdk._tracing.is_trace_feature_disabled", return_value=True):
+            question = "什么是 chat gpt"
+            run_pf_command("flow", "test", "--flow", f"{FLOWS_DIR}/chat_flow", "--inputs", f'question="{question}"')
+            stdout, _ = capsys.readouterr()
+            output_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "flow.output.json"
+            assert output_path.exists()
+            with open(output_path, "r", encoding="utf-8") as f:
+                outputs = json.load(f)
+                assert outputs["answer"] in json.loads(stdout)["answer"]
 
-        detail_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "flow.detail.json"
-        assert detail_path.exists()
-        with open(detail_path, "r", encoding="utf-8") as f:
-            detail = json.load(f)
-            assert detail["flow_runs"][0]["inputs"]["question"] == question
-            assert detail["flow_runs"][0]["output"]["answer"] == outputs["answer"]
+            detail_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "flow.detail.json"
+            assert detail_path.exists()
+            with open(detail_path, "r", encoding="utf-8") as f:
+                detail = json.load(f)
+                assert detail["flow_runs"][0]["inputs"]["question"] == question
+                assert detail["flow_runs"][0]["output"]["answer"] == outputs["answer"]
 
     def test_pf_flow_with_variant(self, capsys):
         with tempfile.TemporaryDirectory() as temp_dir:

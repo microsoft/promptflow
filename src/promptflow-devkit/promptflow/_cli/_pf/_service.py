@@ -247,7 +247,7 @@ def _prepare_app_for_foreground_service(port, force_start):
         app.logger.setLevel(logging.DEBUG)
     else:
         app.logger.setLevel(logging.INFO)
-    message = f"Starting prompt flow Service on {port}, version: {get_pfs_version()}."
+    message = f"Starting prompt flow Service on port {port}, version: {get_pfs_version()}."
     app.logger.info(message)
     print(message)
     return port

@@ -50,6 +50,7 @@ class Span:
         self.id = span.span_id
         self.created_by = created_by
         self.external_event_data_uris = []
+        self.span_json_uri = None
 
     def persist(self, cosmos_client: ContainerProxy, blob_container_client: ContainerClient, blob_base_uri: str):
         if self.id is None or self.partition_key is None or self.resource is None:
@@ -58,6 +59,9 @@ class Span:
         resource_attributes = self.resource.get(SpanFieldName.ATTRIBUTES, None)
         if resource_attributes is None:
             return
+
+        if blob_container_client is not None and blob_base_uri is not None:
+            self._persist_span_json(blob_container_client, blob_base_uri)
 
         if self.events and blob_container_client is not None and blob_base_uri is not None:
             self._persist_events(blob_container_client, blob_base_uri)
@@ -86,7 +90,25 @@ class Span:
             }
         return item
 
+    def _persist_span_json(self, blob_container_client: ContainerClient, blob_base_uri: str):
+        """
+        Persist the span data as a JSON string in a blob.
+        """
+        # check if span_json_uri is already set
+        if self.span_json_uri is not None:
+            return
+
+        # persist the span as a json string in a blob
+        span_data = json.dumps(self.to_dict())
+        blob_path = self._generate_blob_path(file_name="span.json")
+        blob_client = blob_container_client.get_blob_client(blob_path)
+        blob_client.upload_blob(span_data)
+        self.span_json_uri = f"{blob_base_uri}{blob_path}"
+
     def _persist_events(self, blob_container_client: ContainerClient, blob_base_uri: str):
+        """
+        Persist the event data as a JSON string in a blob.
+        """
         for idx, event in enumerate(self.events):
             event_data = json.dumps(event)
             blob_client = blob_container_client.get_blob_client(self._event_path(idx))
@@ -95,8 +117,14 @@ class Span:
             event[SpanEventFieldName.ATTRIBUTES] = {}
             self.external_event_data_uris.append(f"{blob_base_uri}{self._event_path(idx)}")
 
-    EVENT_PATH_PREFIX = ".promptflow/.trace"
+    TRACE_PATH_PREFIX = ".promptflow/.trace"
 
     def _event_path(self, idx: int) -> str:
+        return self._generate_blob_path(file_name=f"{idx}")
+
+    def _generate_blob_path(self, file_name: str):
+        """
+        Generate the blob path for the given file name.
+        """
         trace_id = self.context[SpanContextFieldName.TRACE_ID]
-        return f"{self.EVENT_PATH_PREFIX}/{self.collection_id}/{trace_id}/{self.id}/{idx}"
+        return f"{self.TRACE_PATH_PREFIX}/{self.collection_id}/{trace_id}/{self.id}/{file_name}"

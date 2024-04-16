@@ -1108,7 +1108,9 @@ get_used_connection_names_from_dict = get_used_connection_names_from_dict
 update_dict_value_with_connections = update_dict_value_with_connections
 
 
-def get_flow_name(flow: FlowBase) -> str:
+def get_flow_name(flow: Union[FlowBase, Path]) -> str:
+    if isinstance(flow, Path):
+        return flow.resolve().name
     if isinstance(flow, DAGFlow):
         return flow.name
     # others: flex flow, prompty, etc.

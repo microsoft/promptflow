@@ -56,6 +56,33 @@ class TestWorkspaceConnectionProvider:
         }
         build_from_data_and_assert(data, expected)
 
+    def test_build_legacy_openai_connection_from_rest_object(self):
+        # Legacy OpenAI connection with type in metadata
+        # Test this not convert to CustomConnection
+        data = {
+            "id": "mock_id",
+            "name": "legacy_open_ai",
+            "type": "Microsoft.MachineLearningServices/workspaces/connections",
+            "properties": {
+                "authType": "CustomKeys",
+                "credentials": {"keys": {"api_key": "***"}},
+                "category": "CustomKeys",
+                "target": "<api-base>",
+                "metadata": {
+                    "azureml.flow.connection_type": "OpenAI",
+                    "azureml.flow.module": "promptflow.connections",
+                    "organization": "mock",
+                },
+            },
+        }
+        expected = {
+            "type": "OpenAIConnection",
+            "module": "promptflow.connections",
+            "name": "legacy_open_ai",
+            "value": {"api_key": "***", "organization": "mock"},
+        }
+        build_from_data_and_assert(data, expected)
+
     def test_build_strong_type_openai_connection_from_rest_object(self):
         data = {
             "id": "mock_id",
@@ -186,6 +213,31 @@ class TestWorkspaceConnectionProvider:
                 "metadata": {
                     "azureml.flow.connection_type": "Custom",
                     "azureml.flow.module": "promptflow.connections",
+                    "general_key": "general_value",
+                },
+            },
+        }
+        expected = {
+            "type": "CustomConnection",
+            "module": "promptflow.connections",
+            "name": "custom_connection",
+            "value": {"my_key1": "***", "my_key2": "***", "general_key": "general_value"},
+            "secret_keys": ["my_key1", "my_key2"],
+        }
+        build_from_data_and_assert(data, expected)
+
+    def test_build_strong_type_custom_connection_from_rest_object(self):
+        # Test on CustomKeys type without meta
+        data = {
+            "id": "mock_id",
+            "name": "custom_connection",
+            "type": "Microsoft.MachineLearningServices/workspaces/connections",
+            "properties": {
+                "authType": "CustomKeys",
+                "credentials": {"keys": {"my_key1": "***", "my_key2": "***"}},
+                "category": "CustomKeys",
+                "target": "<api-base>",
+                "metadata": {
                     "general_key": "general_value",
                 },
             },
