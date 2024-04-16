@@ -1,18 +1,12 @@
 import pytest
 
-from promptflow.entities import AzureOpenAIConnection
 from promptflow.evals.evaluators import ChatEvaluator
 
 
+@pytest.mark.usefixtures("mock_model_config")
 @pytest.mark.unittest
 class TestChatEvaluator:
-    def test_conversation_validation_normal(self):
-        model_config = AzureOpenAIConnection(
-            api_base="mocked_endpoint",
-            api_key="mocked_key",
-            api_type="azure",
-        )
-
+    def test_conversation_validation_normal(self, mock_model_config):
         conversation = [
             {"role": "user", "content": "What is the value of 2 + 2?"},
             {
@@ -39,25 +33,19 @@ class TestChatEvaluator:
             },
         ]
 
-        chat_eval = ChatEvaluator(model_config=model_config, deployment_name="gpt-4")
+        chat_eval = ChatEvaluator(model_config=mock_model_config)
         chat_eval._non_rag_evaluators = []
         chat_eval._rag_evaluators = []
 
         chat_eval(conversation=conversation)
 
-    def test_conversation_validation_missing_role(self):
-        model_config = AzureOpenAIConnection(
-            api_base="mocked_endpoint",
-            api_key="mocked_key",
-            api_type="azure",
-        )
-
+    def test_conversation_validation_missing_role(self, mock_model_config):
         conversation = [
             {"role": "user", "content": "question 1"},
             {"content": "answer 1"},
         ]
 
-        chat_eval = ChatEvaluator(model_config=model_config, deployment_name="gpt-4")
+        chat_eval = ChatEvaluator(model_config=mock_model_config)
         chat_eval._non_rag_evaluators = []
         chat_eval._rag_evaluators = []
 
@@ -65,20 +53,14 @@ class TestChatEvaluator:
             chat_eval(conversation=conversation)
         assert str(e.value) == "Each turn in 'conversation' must have 'role' and 'content' keys. Turn number: 2"
 
-    def test_conversation_validation_question_answer_not_paired(self):
-        model_config = AzureOpenAIConnection(
-            api_base="mocked_endpoint",
-            api_key="mocked_key",
-            api_type="azure",
-        )
-
+    def test_conversation_validation_question_answer_not_paired(self, mock_model_config):
         conversation = [
             {"role": "user", "content": "question 1"},
             {"role": "assistant", "content": "answer 1"},
             {"role": "assistant", "content": "answer 2"},
         ]
 
-        chat_eval = ChatEvaluator(model_config=model_config, deployment_name="gpt-4")
+        chat_eval = ChatEvaluator(model_config=mock_model_config)
         chat_eval._non_rag_evaluators = []
         chat_eval._rag_evaluators = []
 
@@ -86,19 +68,13 @@ class TestChatEvaluator:
             chat_eval(conversation=conversation)
         assert str(e.value) == "Expected role user but got assistant. Turn number: 3"
 
-    def test_conversation_validation_invalid_citations(self):
-        model_config = AzureOpenAIConnection(
-            api_base="mocked_endpoint",
-            api_key="mocked_key",
-            api_type="azure",
-        )
-
+    def test_conversation_validation_invalid_citations(self, mock_model_config):
         conversation = [
             {"role": "user", "content": "question 1"},
             {"role": "assistant", "content": "answer 1", "context": {"citations": "invalid"}},
         ]
 
-        chat_eval = ChatEvaluator(model_config=model_config, deployment_name="gpt-4")
+        chat_eval = ChatEvaluator(model_config=mock_model_config)
         chat_eval._non_rag_evaluators = []
         chat_eval._rag_evaluators = []
 
@@ -106,13 +82,8 @@ class TestChatEvaluator:
             chat_eval(conversation=conversation)
         assert str(e.value) == "'citations' in context must be a list. Turn number: 2"
 
-    def test_per_turn_results_aggregation(self):
-        model_config = AzureOpenAIConnection(
-            api_base="mocked_endpoint",
-            api_key="mocked_key",
-            api_type="azure",
-        )
-        chat_eval = ChatEvaluator(model_config=model_config, deployment_name="gpt-4")
+    def test_per_turn_results_aggregation(self, mock_model_config):
+        chat_eval = ChatEvaluator(model_config=mock_model_config)
 
         per_turn_results = [
             {
