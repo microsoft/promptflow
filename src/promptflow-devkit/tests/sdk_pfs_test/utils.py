@@ -247,6 +247,7 @@ class PFSOperations:
         collection: Optional[str] = None,
         runs: Optional[List[str]] = None,
         trace_ids: Optional[List[str]] = None,
+        session_id: Optional[str] = None,
     ):
         query_string = {}
         if collection is not None:
@@ -255,6 +256,8 @@ class PFSOperations:
             query_string["run"] = ",".join(runs)
         if trace_ids is not None:
             query_string["trace_ids"] = ",".join(trace_ids)
+        if session_id is not None:
+            query_string["session"] = session_id
         response = self._client.get(
             f"{self.LINE_RUNS_PREFIX}/list",
             query_string=query_string,
