@@ -109,8 +109,6 @@ class OpenaiVisionMultimediaFormatAdapter(AbstractMultimediaFormatAdapter):
     Base64 format example: {"type": "image_url", "image_url": {"url": "data:image/jpg;base64, some_b64_string"}}
     """
 
-    MIME_PATTERN = re.compile(r"^data:(.*);(path|base64|url)$")
-
     def is_valid_format(self, original_data: Any):
         return isinstance(original_data, dict) and OpenaiVisionMultimediaProcessor.is_multimedia_dict(original_data)
 
