@@ -20,7 +20,7 @@ from promptflow._sdk._constants import (
     SCRUBBED_VALUE_USER_INPUT,
     ConfigValueType,
 )
-from promptflow._sdk._errors import SDKError, UnsecureConnectionError
+from promptflow._sdk._errors import ConnectionClassNotFoundError, SDKError, UnsecureConnectionError
 from promptflow._sdk._orm.connection import Connection as ORMConnection
 from promptflow._sdk._utils import (
     decrypt_secret_value,
@@ -142,6 +142,29 @@ class _Connection(_CoreConnection, YAMLTranslatableMixin):
         type_cls, _ = cls._resolve_cls_and_type(data={"type": mt_rest_obj.connection_type})
         obj = type_cls._from_mt_rest_object(mt_rest_obj)
         return obj
+
+    @classmethod
+    def _from_core_connection(cls, core_conn) -> "_Connection":
+        if isinstance(core_conn, _Connection):
+            # Already a sdk connection, return.
+            return core_conn
+        sdk_conn_mapping = _Connection.SUPPORTED_TYPES
+        sdk_conn_cls = sdk_conn_mapping.get(core_conn.type)
+        if sdk_conn_cls is None:
+            raise ConnectionClassNotFoundError(
+                f"Correspond sdk connection type not found for core connection type: {core_conn.type!r}, "
+                f"please re-install the 'promptflow' package."
+            )
+        common_args = {
+            "name": core_conn.name,
+            "module": core_conn.module,
+            "expiry_time": core_conn.expiry_time,
+            "created_date": core_conn.created_date,
+            "last_modified_date": core_conn.last_modified_date,
+        }
+        if sdk_conn_cls is CustomConnection:
+            return sdk_conn_cls(configs=core_conn.configs, secrets=core_conn.secrets, **common_args)
+        return sdk_conn_cls(**dict(core_conn), **common_args)
 
     @classmethod
     def _from_orm_object_with_secrets(cls, orm_object: ORMConnection):
