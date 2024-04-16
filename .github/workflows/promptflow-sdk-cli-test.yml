@@ -12,6 +12,17 @@ on:
       - .github/workflows/promptflow-sdk-cli-test.yml
       - src/promptflow-recording/**
   workflow_dispatch:
+    inputs:
+      # can leave empty when trigger manually
+      # GitHub Actions API for trigger does not return workflow run id
+      # there we reference below Stack Overflow solution:
+      # https://stackoverflow.com/a/69500478
+      # which adds an identifier in workflow run jobs and can be used for filter
+      filepath:
+        description: file or paths you want to trigger a test
+        required: true
+        default: "./tests/sdk_cli_test ./tests/sdk_pfs_test"
+        type: string
 env:
   IS_IN_CI_PIPELINE: "true"
   RECORD_DIRECTORY: ${{ github.workspace }}/src/promptflow-recording
@@ -63,7 +74,7 @@ jobs:
         cp ${{ github.workspace }}/src/promptflow/dev-connections.json.example ${{ github.workspace }}/src/promptflow/connections.json
     - name: run devkit tests
       run: |
-        poetry run pytest ./tests/sdk_cli_test ./tests/sdk_pfs_test -p promptflow --cov=promptflow --cov-config=pyproject.toml \
+        poetry run pytest ${{ inputs.filepath }} -p promptflow --cov=promptflow --cov-config=pyproject.toml \
         --cov-report=term --cov-report=html --cov-report=xml -n auto -m "unittest or e2etest" \
         --ignore-glob ./tests/sdk_cli_test/e2etests/test_executable.py
       working-directory: ${{ env.WORKING_DIRECTORY }}
