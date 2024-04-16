@@ -39,15 +39,7 @@ jobs:
     - name: install test dependency group
       run: |
         set -xe
-        poetry install --only test
-        poetry run pip install ${{ env.TRACING_DIRECTORY }}
-        poetry run pip install ${{ env.CORE_DIRECTORY }}[azureml-serving]
-        poetry run pip install -e ${{ env.WORKING_DIRECTORY }}[pyarrow]
-
-        echo "Need to install promptflow to avoid tool dependency issue"
-        poetry run pip install ${{ env.PROMPTFLOW_DIRECTORY }}
-        poetry run pip install ${{ env.TOOL_DIRECTORY }}
-        poetry run pip install -e ${{ env.RECORD_DIRECTORY }}
+        poetry install -E pyarrow --with ci,test
 
         poetry run pip show promptflow-tracing
         poetry run pip show promptflow-core
