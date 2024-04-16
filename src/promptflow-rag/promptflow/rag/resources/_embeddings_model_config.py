@@ -8,22 +8,23 @@
 # Defines stuff related to the resulting created index, like the index type.
 
 from typing import Optional
+from ._connection_config import ConnectionConfig
 
 
 class EmbeddingsModelConfig:
-    """Config class for a embedding model in AOAI.
+    """Config class for a embedding model.
 
-    :param embeddings_model: The name of the Azure Cognitive Services index.
+    :param embeddings_model: The name of the embedding model.
     :type embeddings_model: Optional[str]
-    :param aoai_connection_id: The Azure Cognitive Services connection ID.
-    :type aoai_connection_id: Optional[str]
+    :param connection_config: The connection configuration for the embedding model.
+    :type connection_config: Optional[ConnectionConfig]
     """
 
     def __init__(
         self,
         *,
         embeddings_model: Optional[str] = None,
-        aoai_connection_id: Optional[str] = None,
+        connection_config: Optional[ConnectionConfig] = None,
     ) -> None:
         self.embeddings_model = embeddings_model
-        self.aoai_connection_id = aoai_connection_id
+        self.connection_config = connection_config
