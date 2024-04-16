@@ -4,6 +4,8 @@
 This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
 :::
 
+{bdg-success-line}`New in version 1.9.0`
+
 Prompt flow provides the trace feature to capture and visualize the internal execution details for all flows.
 
 For `DAG flow`, user can track and visualize node level inputs/outputs of flow execution, it provides critical insights for developer to understand the internal details of execution. 
