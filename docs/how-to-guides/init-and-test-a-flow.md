@@ -296,4 +296,4 @@ Break points and debugging functionalities for the Python steps in your flow. Ju
 
 ## Next steps
 
-- [Add conditional control to a flow](./add-conditional-control-to-a-flow.md)
+- [Add conditional control to a flow](./develop-a-flow/add-conditional-control-to-a-flow.md)

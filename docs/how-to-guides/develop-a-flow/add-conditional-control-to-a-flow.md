@@ -62,15 +62,15 @@ activate:
 
     (1) If a node has activate config and the value of `activate.when` is not equals to `activate.is`, it will be bypassed. If you want to fore a node to always be executed, you can set the activate config to `when dummy is dummy` which always meets the activate condition.
 
-    ![activate_condition_always_met](../media/how-to-guides/conditional-flow-with-activate/activate_condition_always_met.png)
+    ![activate_condition_always_met](../../media/how-to-guides/conditional-flow-with-activate/activate_condition_always_met.png)
 
     (2) If a node has activate config and the node pointed to by `activate.when` is bypassed, it will be bypassed.
 
-    ![activate_when_bypassed](../media/how-to-guides/conditional-flow-with-activate/activate_when_bypassed.png)
+    ![activate_when_bypassed](../../media/how-to-guides/conditional-flow-with-activate/activate_when_bypassed.png)
 
     (3) If a node does not have activate config but depends on other nodes that have been bypassed, it will be bypassed.
 
-    ![dependencies_bypassed](../media/how-to-guides/conditional-flow-with-activate/dependencies_bypassed.png)
+    ![dependencies_bypassed](../../media/how-to-guides/conditional-flow-with-activate/dependencies_bypassed.png)
 
 
 

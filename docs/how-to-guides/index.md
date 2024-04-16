@@ -10,10 +10,25 @@ init-and-test-a-flow
 run-and-evaluate-a-flow/index
 tune-prompts-with-variants
 execute-flow-as-a-function
+```
+
+```{toctree}
+:caption: Tool
+:maxdepth: 1
+develop-a-tool/index
+```
+
+```{toctree}
+:caption: Deployment
+:maxdepth: 1
 deploy-a-flow/index
 enable-streaming-mode
-manage-connections
-set-global-configs
-develop-a-tool/index
+```
+
+```{toctree}
+:caption: FAQ
+:maxdepth: 1
 faq
+set-global-configs
+manage-connections
 ```

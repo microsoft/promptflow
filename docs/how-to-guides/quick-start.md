@@ -295,7 +295,7 @@ See more details of this topic in [Initialize and test a flow](./init-and-test-a
 Learn more on how to:
 - [Develop a flow](./develop-a-flow/index.md): details on how to develop a flow by writing a flow yaml from scratch.
 - [Initialize and test a flow](./init-and-test-a-flow.md): details on how develop a flow from scratch or existing code.
-- [Add conditional control to a flow](./add-conditional-control-to-a-flow.md): how to use activate config to add conditional control to a flow.
+- [Add conditional control to a flow](./develop-a-flow/add-conditional-control-to-a-flow.md): how to use activate config to add conditional control to a flow.
 - [Run and evaluate a flow](./run-and-evaluate-a-flow/index.md): run and evaluate the flow using multi line data file.
 - [Deploy a flow](./deploy-a-flow/index.md): how to deploy the flow as a web app.
 - [Manage connections](./manage-connections.md): how to manage the endpoints/secrets information to access external services including LLMs.
