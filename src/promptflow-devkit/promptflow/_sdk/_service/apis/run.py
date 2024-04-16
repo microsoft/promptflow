@@ -188,12 +188,8 @@ class Metrics(Resource):
     def get(self, name: str):
         run = get_client_from_request().runs.get(name=name)
         local_storage_op = LocalStorageOperations(run=run)
-        try:
-            metrics = local_storage_op.load_metrics()
-            return jsonify(metrics)
-        except Exception as e:
-            api.logger.warning(f"Get {name} metrics failed with {e}")
-            return jsonify({})
+        metrics = local_storage_op.load_metrics()
+        return jsonify(metrics)
 
 
 @api.route("/<string:name>/visualize")
