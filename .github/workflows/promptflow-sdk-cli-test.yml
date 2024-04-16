@@ -13,11 +13,6 @@ on:
       - src/promptflow-recording/**
   workflow_dispatch:
     inputs:
-      # can leave empty when trigger manually
-      # GitHub Actions API for trigger does not return workflow run id
-      # there we reference below Stack Overflow solution:
-      # https://stackoverflow.com/a/69500478
-      # which adds an identifier in workflow run jobs and can be used for filter
       filepath:
         description: file or paths you want to trigger a test
         required: true
