@@ -50,6 +50,7 @@ from promptflow._proxy._base_executor_proxy import APIBasedExecutorProxy
 from promptflow._proxy._csharp_executor_proxy import CSharpBaseExecutorProxy
 from promptflow._sdk._constants import LOCAL_MGMT_DB_PATH, CreatedByFieldName
 from promptflow._sdk._service.apis.collector import trace_collector
+from promptflow._sdk._tracing import process_otlp_trace_request
 from promptflow._sdk._version import VERSION
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.credential_scrubber import CredentialScrubber
@@ -99,6 +100,8 @@ from promptflow._utils.utils import (
     set_context,
     transpose,
 )
+from promptflow.core._connection_provider._workspace_connection_provider import WorkspaceConnectionProvider
+from promptflow.core._errors import OpenURLNotFoundError
 from promptflow.core._serving.response_creator import ResponseCreator
 from promptflow.core._serving.swagger import generate_swagger
 from promptflow.core._serving.utils import (

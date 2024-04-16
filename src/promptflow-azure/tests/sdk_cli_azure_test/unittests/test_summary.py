@@ -49,6 +49,23 @@ class TestSummary:
         ]
         self.summary = Summary(test_span, self.FAKE_COLLECTION_ID, self.FAKE_CREATED_BY, self.FAKE_LOGGER)
 
+    def test_aggregate_node_span_does_not_persist(self):
+        mock_client = mock.Mock()
+        self.summary.span.attributes.update({SpanAttributeFieldName.IS_AGGREGATION: True})
+
+        with mock.patch.multiple(
+            self.summary,
+            _persist_running_item=mock.DEFAULT,
+            _parse_inputs_outputs_from_events=mock.DEFAULT,
+            _persist_line_run=mock.DEFAULT,
+            _insert_evaluation_with_retry=mock.DEFAULT,
+        ) as values:
+            self.summary.persist(mock_client)
+            values["_persist_running_item"].assert_not_called()
+            values["_parse_inputs_outputs_from_events"].assert_not_called()
+            values["_persist_line_run"].assert_not_called()
+            values["_insert_evaluation_with_retry"].assert_not_called()
+
     def test_non_root_span_does_not_persist(self):
         mock_client = mock.Mock()
         self.summary.span.parent_id = "parent_span_id"

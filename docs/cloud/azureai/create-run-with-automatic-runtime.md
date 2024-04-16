@@ -1,5 +1,9 @@
 # Create run with automatic runtime
 
+:::{admonition} Experimental feature
+This is an experimental feature, and may change at any time. Learn [more](../../how-to-guides/faq.md#stable-vs-experimental).
+:::
+
 A prompt flow runtime provides computing resources that are required for the application to run, including a Docker image that contains all necessary dependency packages. This reliable and scalable runtime environment enables prompt flow to efficiently execute its tasks and functions for a seamless user experience.
 
 If you're a new user, we recommend that you use the automatic runtime (preview). You can easily customize the environment by adding packages in the requirements.txt file in flow.dag.yaml in the flow folder.
@@ -54,7 +58,7 @@ environment:
 ...
 ```
 
-Reference [Flow YAML Schema](../../../reference/flow-yaml-schema-reference.md) for details.
+Reference [Flow YAML Schema](../../reference/flow-yaml-schema-reference.md) for details.
 
 ## Customize automatic runtime
 

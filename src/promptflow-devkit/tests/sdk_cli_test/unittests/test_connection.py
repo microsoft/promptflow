@@ -25,7 +25,6 @@ from promptflow._sdk.entities._connection import (
     WeaviateConnection,
     _Connection,
 )
-from promptflow._sdk.operations._connection_operations import ConnectionOperations
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.core._connection import RequiredEnvironmentVariablesNotSetError
 from promptflow.exceptions import UserErrorException
@@ -484,7 +483,7 @@ secrets:
             "api_version": "2023-07-01-preview",
         }
         connection = CoreAzureOpenAIConnection(**connection_args)
-        sdk_connection = ConnectionOperations._convert_core_connection_to_sdk_connection(connection)
+        sdk_connection = _Connection._from_core_connection(connection)
         assert isinstance(sdk_connection, AzureOpenAIConnection)
         assert sdk_connection._to_dict() == {
             "module": "promptflow.connections",
@@ -501,7 +500,7 @@ secrets:
             "secrets": {"b": "2"},
         }
         connection = CoreCustomConnection(**connection_args)
-        sdk_connection = ConnectionOperations._convert_core_connection_to_sdk_connection(connection)
+        sdk_connection = _Connection._from_core_connection(connection)
         assert isinstance(sdk_connection, CustomConnection)
         assert sdk_connection._to_dict() == {"module": "promptflow.connections", "type": "custom", **connection_args}
 
@@ -509,4 +508,4 @@ secrets:
         connection = CoreCustomConnection(**connection_args)
         connection.type = "unknown"
         with pytest.raises(ConnectionClassNotFoundError):
-            ConnectionOperations._convert_core_connection_to_sdk_connection(connection)
+            _Connection._from_core_connection(connection)
