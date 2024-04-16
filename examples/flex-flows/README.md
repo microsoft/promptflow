@@ -7,6 +7,7 @@ You can learn more on flex flow with examples in this folder.
 | path | status | description |
 ------|--------|-------------
 | [flex-flow-quickstart.ipynb](./basic/flex-flow-quickstart.ipynb) | [![samples_flexflows_basic_flexflowquickstart](https://github.com/microsoft/promptflow/actions/workflows/samples_flexflows_basic_flexflowquickstart.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flexflows_basic_flexflowquickstart.yml) | A quickstart tutorial to run a flex flow and evaluate it. |
+| [flex-flow-quickstart-azure.ipynb](./basic/flex-flow-quickstart-azure.ipynb) | [![samples_flexflows_basic_flexflowquickstartazure](https://github.com/microsoft/promptflow/actions/workflows/samples_flexflows_basic_flexflowquickstartazure.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flexflows_basic_flexflowquickstartazure.yml) | A quickstart tutorial to run a flex flow and evaluate it in azure. |
 
 ## CLI examples
 | path | status | description |
