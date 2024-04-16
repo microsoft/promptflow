@@ -22,7 +22,7 @@ cat ../.env
 
 - Run/Debug as normal Python file
 ```bash
-python flow.py
+python programmer.py
 ```
 
 - Test flow
@@ -106,7 +106,6 @@ az configure --defaults group=<your_resource_group_name> workspace=<your_workspa
 - Create run
 ```bash
 # run with environment variable reference connection in azureml workspace
-export PF_ENABLE_MULTI_CONTAINER="true" # enable multi container # TODO: remove this
 pfazure run create --flow . --data ./data.jsonl --environment-variables AZURE_OPENAI_API_KEY='${open_ai_connection.api_key}' AZURE_OPENAI_ENDPOINT='${open_ai_connection.api_base}' --column-mapping text='${data.text}' --stream
 # run using yaml file
 pfazure run create --file run.yml --stream

@@ -24,19 +24,17 @@ def load_prompt(jinja2_template: str, text: str) -> str:
 
 
 @trace
-def flow_entry(text: str = "Hello World!") -> Result:
-    """Flow entry function."""
+def write_simple_program(
+    text: str = "Hello World!", deployment_name="gpt-35-turbo"
+) -> Result:
+    """Ask LLM to write a simple program."""
     prompt = load_prompt("hello.jinja2", text)
-    output = my_llm_tool(
-        prompt=prompt, deployment_name="text-davinci-003", max_tokens=120
-    )
+    output = my_llm_tool(prompt=prompt, deployment_name=deployment_name, max_tokens=120)
     return Result(output=output)
 
 
 if __name__ == "__main__":
     from promptflow.tracing import start_trace
-
     start_trace()
-
-    result = flow_entry("Hello, world!")
+    result = write_simple_program("Hello, world!", "gpt-35-turbo")
     print(result)

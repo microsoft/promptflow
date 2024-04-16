@@ -1,7 +1,7 @@
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
-entry: flow:flow_entry
+entry: programmer:write_simple_program
 environment:
-  image: promptflow.azurecr.io/promptflow-runtime:pr-1316971-v19
+  # image: mcr.microsoft.com/azureml/promptflow/promptflow-python
   python_requirements_txt: requirements.txt
 environment_variables:
   # environment variables from connection

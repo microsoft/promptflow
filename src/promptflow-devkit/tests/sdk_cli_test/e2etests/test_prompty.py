@@ -177,7 +177,6 @@ class TestPrompty:
         result = asyncio.run(async_prompty(question="what is the result of 1+1?"))
         assert isinstance(result, ChatCompletion)
 
-    @pytest.mark.skip(reason="Failed in CI pipeline, fix it in next PR.")
     def test_prompty_batch_run(self, pf: PFClient):
         run = pf.run(flow=f"{PROMPTY_DIR}/prompty_example.prompty", data=f"{DATA_DIR}/prompty_inputs.jsonl")
         assert run.status == "Completed"

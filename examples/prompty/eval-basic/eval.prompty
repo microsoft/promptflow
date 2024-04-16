@@ -12,6 +12,8 @@ model:
     temperature: 0.2
     max_tokens: 200
     top_p: 1.0
+    response_format:
+      type: json_object
 
 inputs: 
   question:
@@ -26,8 +28,9 @@ system:
 You are an AI assistant. 
 You task is to evaluate a score for the answer based on the ground_truth and original question.
 This score value should always be an integer between 1 and 5. So the score produced should be 1 or 2 or 3 or 4 or 5.
+The output should be valid JSON.
 
-# Example
+**Example**
 question: "What is the capital of France?"
 answer: "Paris"
 ground_truth: "Paris"

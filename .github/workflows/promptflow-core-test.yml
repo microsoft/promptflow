@@ -5,6 +5,7 @@ on:
     - cron: "40 18 * * *" # 2:40 Beijing Time (GMT+8) every day
   pull_request:
     paths:
+      - src/promptflow-tracing/**
       - src/promptflow-core/**
       - .github/workflows/promptflow-core-test.yml
   workflow_dispatch:

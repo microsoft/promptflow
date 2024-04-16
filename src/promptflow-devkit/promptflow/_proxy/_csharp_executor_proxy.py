@@ -123,7 +123,8 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
                     log_path=log_path,
                     error_file_path=init_error_file,
                     yaml_path=flow_file.as_posix(),
-                )
+                ),
+                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if platform.system() == OSType.WINDOWS else 0,
             )
         else:
             # if port is provided, assume the execution service is already started
@@ -177,10 +178,13 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
         if self._process and self._is_executor_active():
             if platform.system() == OSType.WINDOWS:
                 # send CTRL_C_EVENT to the process to gracefully terminate the service
-                self._process.send_signal(signal.CTRL_C_EVENT)
+                self._process.send_signal(signal.CTRL_BREAK_EVENT)
             else:
                 # for Linux and MacOS, Popen.terminate() will send SIGTERM to the process
                 self._process.terminate()
+
+            # TODO: there is a potential issue that, graceful shutdown won't work for streaming chat flow for now
+            #  because response will not be fully consumed before we destroy the executor proxy
             try:
                 self._process.wait(timeout=5)
             except subprocess.TimeoutExpired:
