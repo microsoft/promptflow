@@ -420,7 +420,7 @@ class TestFlowSave:
 
     def test_pf_infer_signature_include_primitive_output(self):
         pf = PFClient()
-        flow_meta, _, _ = pf.flows._infer_signature(entry=global_hello, include_primitive_output=True)
+        flow_meta = pf.flows.infer_signature(entry=global_hello)
         assert flow_meta == {
             "inputs": {
                 "text": {

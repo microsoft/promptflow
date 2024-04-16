@@ -1149,9 +1149,11 @@ class FlowOperations(TelemetryMixin):
             format_signature_type(flow_meta)
         elif isinstance(entry, FlexFlow):
             entry = entry_string_to_callable(entry.entry_file, entry.entry)
-            flow_meta, _, _ = self._infer_signature_flex_flow(entry=entry)
+            flow_meta, _, _ = self._infer_signature_flex_flow(
+                entry=entry, language=entry.language, include_primitive_output=True
+            )
         elif inspect.isclass(entry) or inspect.isfunction(entry):
-            flow_meta, _, _ = self._infer_signature_flex_flow(entry=entry)
+            flow_meta, _, _ = self._infer_signature_flex_flow(entry=entry, include_primitive_output=True)
         else:
             raise UserErrorException(f"Invalid entry {type(entry).__name__}, only support callable object or flow.")
         return flow_meta
@@ -1294,7 +1296,7 @@ class FlowOperations(TelemetryMixin):
         if not is_flex_flow(yaml_dict=data):
             return False
         entry = data.get("entry")
-        signatures, _, _ = self._infer_signature(entry=entry, code=code)
+        signatures, _, _ = self._infer_signature_flex_flow(entry=entry, code=code)
         merged_signatures = self._merge_signature(extracted=signatures, signature_overrides=data)
         FlexFlow(path=code / FLOW_FLEX_YAML, code=code, data=data, entry=entry)._validate()
         updated = False
