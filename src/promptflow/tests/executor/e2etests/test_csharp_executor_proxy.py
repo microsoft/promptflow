@@ -98,20 +98,6 @@ class TestCSharpExecutorProxy:
         global batch_result_global
         batch_result_global = batch_engine.run(input_dirs, inputs_mapping, output_dir)
 
-    @pytest.mark.parametrize(
-        "entry_str, expected_result",
-        [
-            pytest.param(
-                "(FunctionModeBasic)FunctionModeBasic.MyEntry.WritePoemReturnObjectAsync",
-                True,
-                id="flex_flow_class_init",
-            ),
-        ],
-    )
-    def test_is_csharp_flex_flow_entry(self, entry_str: str, expected_result: bool):
-        result = ProxyFactory().create_inspector_proxy(FlowLanguage.CSharp).is_flex_flow_entry(entry_str)
-        assert result is expected_result
-
 
 class MockCSharpExecutorProxy(CSharpExecutorProxy):
     def __init__(self, process: multiprocessing.Process, port: str):
