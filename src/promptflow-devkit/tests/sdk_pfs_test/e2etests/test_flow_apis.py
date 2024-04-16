@@ -34,6 +34,7 @@ class TestFlowAPIs:
         # prompty
         response = pfs_op.test_flow_infer_signature(
             flow_path=(Path(PROMPTY_ROOT) / "prompty_example.prompty").absolute().as_posix(),
+            include_primitive_output=True,
             status_code=200,
         ).json
         assert response == {
@@ -54,6 +55,7 @@ class TestFlowAPIs:
         # flex flow
         response = pfs_op.test_flow_infer_signature(
             flow_path=(Path(EAGER_FLOW_ROOT) / "builtin_llm").absolute().as_posix(),
+            include_primitive_output=True,
             status_code=200,
         ).json
         assert response == {

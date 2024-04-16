@@ -5,7 +5,7 @@ import os
 import uuid
 from pathlib import Path
 
-from flask import jsonify
+from flask import jsonify, request
 
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._service import Namespace, Resource
@@ -97,5 +97,9 @@ class FlowInferSignature(Resource):
         args = flow_infer_signature_parser.parse_args()
         flow_path = decrypt_flow_path(args.source)
         flow = load_flow(source=flow_path)
-        infer_signature = get_client_from_request().flows._infer_signature(entry=flow)
+        include_primitive_output = request.args.get("include_primitive_output", default=False, type=bool)
+
+        infer_signature = get_client_from_request().flows._infer_signature(
+            entry=flow, include_primitive_output=include_primitive_output
+        )
         return jsonify(infer_signature)

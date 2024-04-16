@@ -1019,16 +1019,17 @@ class FlowOperations(TelemetryMixin):
         return signature
 
     @staticmethod
-    def _infer_signature(entry: Union[Callable, FlexFlow, Flow, Prompty]):
+    def _infer_signature(entry: Union[Callable, FlexFlow, Flow, Prompty], include_primitive_output: bool = False):
         if isinstance(entry, Prompty):
             from promptflow._sdk.schemas._flow import ALLOWED_TYPES
             from promptflow.contracts.tool import ValueType
             from promptflow.core._model_configuration import PromptyModelConfiguration
 
-            flow_meta = {
-                "inputs": entry._data.get("inputs", {}),
-                "outputs": entry._data.get("outputs", {"output": {"type": "string"}}),
-            }
+            flow_meta = {"inputs": entry._data.get("inputs", {})}
+            if "outputs" in entry._data:
+                flow_meta["outputs"] = entry._data.get("outputs")
+            elif include_primitive_output:
+                flow_meta["outputs"] = {"output": {"type": "string"}}
             init_dict = {}
             for field in fields(PromptyModelConfiguration):
                 filed_type = type(field.type).__name__
@@ -1040,10 +1041,12 @@ class FlowOperations(TelemetryMixin):
         elif isinstance(entry, FlexFlow):
             entry_func = entry_string_to_callable(entry.entry_file, entry.entry)
             flow_meta, _, _ = FlowOperations._infer_signature_flex_flow(
-                entry=entry_func, language=entry.language, include_primitive_output=True
+                entry=entry_func, language=entry.language, include_primitive_output=include_primitive_output
             )
         elif inspect.isclass(entry) or inspect.isfunction(entry):
-            flow_meta, _, _ = FlowOperations._infer_signature_flex_flow(entry=entry, include_primitive_output=True)
+            flow_meta, _, _ = FlowOperations._infer_signature_flex_flow(
+                entry=entry, include_primitive_output=include_primitive_output
+            )
         else:
             # TODO support to get infer signature of dag flow
             raise UserErrorException(f"Invalid entry {type(entry).__name__}, only support callable object or prompty.")
@@ -1125,7 +1128,7 @@ class FlowOperations(TelemetryMixin):
         return flow_meta, code, snapshot_list
 
     @monitor_operation(activity_name="pf.flows.infer_signature", activity_type=ActivityType.PUBLICAPI)
-    def infer_signature(self, entry: Union[Callable, FlexFlow, Flow, Prompty]) -> dict:
+    def infer_signature(self, entry: Union[Callable, FlexFlow, Flow, Prompty], **kwargs) -> dict:
         """Extract signature for a callable class or a function or a flow. Signature indicates the ports of a flex flow
         using the callable as entry.
 
@@ -1150,7 +1153,8 @@ class FlowOperations(TelemetryMixin):
         :rtype: dict
         """
         # TODO: should we support string entry? If so, we should also add a parameter to specify the working directory
-        flow_meta = self._infer_signature(entry=entry)
+        include_primitive_output = kwargs.get("include_primitive_output", False)
+        flow_meta = self._infer_signature(entry=entry, include_primitive_output=include_primitive_output)
         return flow_meta
 
     def _save(

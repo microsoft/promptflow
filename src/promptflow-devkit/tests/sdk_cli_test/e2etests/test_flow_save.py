@@ -420,7 +420,7 @@ class TestFlowSave:
 
     def test_pf_infer_signature_include_primitive_output(self):
         pf = PFClient()
-        flow_meta = pf.flows.infer_signature(entry=global_hello)
+        flow_meta = pf.flows._infer_signature(entry=global_hello, include_primitive_output=True)
         assert flow_meta == {
             "inputs": {
                 "text": {
@@ -464,11 +464,6 @@ class TestFlowSave:
                         "text": {
                             "type": "string",
                         }
-                    },
-                    "outputs": {
-                        "output": {
-                            "type": "string",
-                        },
                     },
                 },
                 id="simple",
@@ -514,11 +509,6 @@ class TestFlowSave:
                             "type": "object",
                         }
                     },
-                    "outputs": {
-                        "output": {
-                            "type": "string",
-                        },
-                    },
                 },
                 id="inherited_typed_dict_output",
             ),
@@ -529,11 +519,6 @@ class TestFlowSave:
                         "text": {
                             "type": "string",
                         }
-                    },
-                    "outputs": {
-                        "output": {
-                            "type": "string",
-                        },
                     },
                 },
                 id="kwargs",
@@ -615,7 +600,7 @@ class TestFlowSave:
         pf = PFClient()
         # Prompty
         prompty = load_flow(source=Path(PROMPTY_DIR) / "prompty_example.prompty")
-        meta = pf.flows.infer_signature(entry=prompty)
+        meta = pf.flows.infer_signature(entry=prompty, include_primitive_output=True)
         assert meta == {
             "inputs": {
                 "firstName": {"type": "string", "default": "John"},
@@ -630,9 +615,24 @@ class TestFlowSave:
                 "response": {"type": "object", "default": "first"},
             },
         }
+
+        meta = pf.flows.infer_signature(entry=prompty)
+        assert meta == {
+            "inputs": {
+                "firstName": {"type": "string", "default": "John"},
+                "lastName": {"type": "string", "default": "Doh"},
+                "question": {"type": "string"},
+            },
+            "init": {
+                "configuration": {"type": "object"},
+                "parameters": {"type": "object"},
+                "api": {"type": "object", "default": "chat"},
+                "response": {"type": "object", "default": "first"},
+            },
+        }
         # Flex flow
         flex_flow = load_flow(source=Path(EAGER_FLOWS_DIR) / "builtin_llm")
-        meta = pf.flows.infer_signature(entry=flex_flow)
+        meta = pf.flows.infer_signature(entry=flex_flow, include_primitive_output=True)
         assert meta == {
             "inputs": {
                 "chat_history": {"default": "[]", "type": "list"},
@@ -640,6 +640,15 @@ class TestFlowSave:
                 "stream": {"default": "False", "type": "bool"},
             },
             "outputs": {"output": {"type": "string"}},
+        }
+
+        meta = pf.flows.infer_signature(entry=flex_flow)
+        assert meta == {
+            "inputs": {
+                "chat_history": {"default": "[]", "type": "list"},
+                "question": {"default": "What is ChatGPT?", "type": "string"},
+                "stream": {"default": "False", "type": "bool"},
+            },
         }
 
         with pytest.raises(UserErrorException) as ex:
