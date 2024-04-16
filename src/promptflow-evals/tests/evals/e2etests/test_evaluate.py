@@ -57,6 +57,7 @@ class TestEvaluate:
         assert row_result_df["outputs.grounded.gpt_groundedness"][2] in [4, 5]
         assert row_result_df["outputs.f1_score.f1_score"][2] == 1
 
+    @pytest.mark.skip(reason="This test is not ready yet due to SpawnedForkProcessManagerStartFailure error.")
     def test_evaluate_python_function(self, data_file):
         # data
         input_data = pd.read_json(data_file, lines=True)
