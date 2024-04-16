@@ -1150,7 +1150,7 @@ class FlowOperations(TelemetryMixin):
         :rtype: dict
         """
         # TODO: should we support string entry? If so, we should also add a parameter to specify the working directory
-        flow_meta, _, _ = self._infer_signature(entry=entry)
+        flow_meta = self._infer_signature(entry=entry)
         return flow_meta
 
     def _save(

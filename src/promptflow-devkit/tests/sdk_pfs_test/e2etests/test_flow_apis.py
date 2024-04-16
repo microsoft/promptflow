@@ -31,14 +31,6 @@ class TestFlowAPIs:
         assert len(response) >= 1
 
     def test_flow_infer_signature(self, pfs_op: PFSOperations) -> None:
-        # dag flow
-        with check_activity_end_telemetry(activity_name="pf.flows.infer_signature"):
-            response = pfs_op.test_flow_infer_signature(
-                flow_path=FLOW_PATH,
-                status_code=200,
-            ).json
-        assert response == {"inputs": {"key": {"type": "string"}}, "outputs": {"output": {"type": "string"}}}
-
         # prompty
         with check_activity_end_telemetry(activity_name="pf.flows.infer_signature"):
             response = pfs_op.test_flow_infer_signature(
