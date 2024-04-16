@@ -1,4 +1,3 @@
-from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
@@ -12,15 +11,28 @@ from promptflow._utils.multimedia_data_converter import (
     ResourceType,
 )
 
-from ...utils import DATA_ROOT
+from ...utils import DATA_ROOT, FLOW_ROOT
 
 TEST_IMAGE_PATH = DATA_ROOT / "logo.jpg"
 
 
 @pytest.mark.unittest
 class TestMultimediaConverter:
+    @pytest.mark.parametrize(
+        "flow_file, converter_class",
+        [
+            (FLOW_ROOT / "chat_flow_with_openai_vision_image" / "flow.dag.yaml", OpenaiVisionMultimediaFormatAdapter),
+            (FLOW_ROOT / "chat_flow_with_image" / "flow.dag.yaml", BasicMultimediaFormatAdapter),
+            (FLOW_ROOT / "chat_flow_with_openai_vision_image" / "mock_chat.py", BasicMultimediaFormatAdapter),
+            (None, BasicMultimediaFormatAdapter),
+        ],
+    )
+    def test_create_converter(self, flow_file, converter_class):
+        converter = MultimediaConverter(flow_file)
+        assert isinstance(converter.format_adapter, converter_class)
+
     def test_convert_content_recursively(self):
-        converter = MultimediaConverter(Path(""))
+        converter = MultimediaConverter(flow_file=None)
 
         # Don't convert anything.
         content = {
