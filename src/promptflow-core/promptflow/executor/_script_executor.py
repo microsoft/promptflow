@@ -132,7 +132,9 @@ class ScriptExecutor(FlowExecutor):
             # Should convert output to dict before storing it to run info, since we will add key 'line_number' to it,
             # so it must be a dict.
             output_dict = convert_eager_flow_output_to_dict(output)
-            run_tracker.end_run(line_run_id, result=output_dict, traces=traces)
+            run_info.api_calls = traces
+            run_tracker.set_openai_metrics(line_run_id)
+            run_tracker.end_run(line_run_id, result=output_dict)
         except Exception as e:
             if not traces:
                 traces = Tracer.end_tracing(line_run_id)
@@ -184,7 +186,9 @@ class ScriptExecutor(FlowExecutor):
             output = self._stringify_generator_output(output) if not allow_generator_output else output
             traces = Tracer.end_tracing(line_run_id)
             output_dict = convert_eager_flow_output_to_dict(output)
-            run_tracker.end_run(line_run_id, result=output_dict, traces=traces)
+            run_info.api_calls = traces
+            run_tracker.set_openai_metrics(line_run_id)
+            run_tracker.end_run(line_run_id, result=output_dict)
         except Exception as e:
             if not traces:
                 traces = Tracer.end_tracing(line_run_id)
