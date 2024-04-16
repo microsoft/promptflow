@@ -5,7 +5,7 @@ from promptflow.core import tool
 def create_document(text: str, language: str, id: int) -> dict:
     """
     This tool creates a document input for document-based
-    language skills
+    language skills.
 
     :param text: document text.
     :param language: document language.
