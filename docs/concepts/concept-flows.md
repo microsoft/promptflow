@@ -2,9 +2,7 @@ While how LLMs work may be elusive to many developers, how LLM apps work is not 
 
 # Flows
 
-## Flex flows
-
-{bdg-success-line}`New in version 1.9.0`
+## Flex flow
 
 You can create LLM apps using a Python function or class as the entry point, which encapsulating your app logic. You can directly test or run these with pure code experience. Or you can define a `flow.flex.yaml` that points to these entries, which enables testing, running, or viewing traces via the [Promptflow VS Code Extension](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow).
 
