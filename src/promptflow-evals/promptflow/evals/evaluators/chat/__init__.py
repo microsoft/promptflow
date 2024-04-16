@@ -7,7 +7,7 @@ __path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
 import json
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Dict, List
+from typing import Dict, List, Union
 
 import numpy as np
 
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 class ChatEvaluator:
     def __init__(
-        self, model_config: AzureOpenAIModelConfiguration, eval_last_turn: bool = False, parallel: bool = True
+        self, model_config: Union[Dict, AzureOpenAIModelConfiguration], eval_last_turn: bool = False, parallel: bool = True
     ):
         """
         Initialize an evaluator configured for a specific Azure OpenAI model.
