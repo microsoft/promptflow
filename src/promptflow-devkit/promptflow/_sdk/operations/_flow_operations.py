@@ -1262,7 +1262,7 @@ class FlowOperations(TelemetryMixin):
         if not is_flex_flow(yaml_dict=data):
             return False
         entry = data.get("entry")
-        signatures, _, _ = self._infer_signature(entry=entry, code=code)
+        signatures, _, _ = self._infer_signature(entry=entry, code=code, include_primitive_output=True)
         merged_signatures = self._merge_signature(extracted=signatures, signature_overrides=data)
         FlexFlow(path=code / FLOW_FLEX_YAML, code=code, data=data, entry=entry)._validate(raise_error=True)
         updated = False
