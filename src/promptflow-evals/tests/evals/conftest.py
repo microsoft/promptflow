@@ -45,6 +45,16 @@ def pytest_configure():
 
 
 @pytest.fixture
+def mock_model_config() -> dict:
+    return AzureOpenAIModelConfiguration(
+        azure_endpoint="aoai-api-endpoint",
+        api_key="aoai-api-key",
+        api_version="2023-07-01-preview",
+        azure_deployment="aoai-deployment",
+    )
+
+
+@pytest.fixture
 def model_config() -> dict:
     conn_name = "azure_openai_model_config"
 
