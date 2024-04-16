@@ -97,7 +97,7 @@
             ExeCommand="wscript.exe stop_service.vbs"
             Return="ignore" />
         <InstallExecuteSequence>
-            <Custom Action="StopPromptFlowService" Before="InstallInitialize">Installed</Custom>
+            <Custom Action="StopPromptFlowService" Before="InstallInitialize">Installed OR WIX_UPGRADE_DETECTED</Custom>
             <Custom Action="StartPromptFlowService" Before="InstallFinalize">NOT Installed OR WIX_UPGRADE_DETECTED</Custom>
         </InstallExecuteSequence>
     </Product>
