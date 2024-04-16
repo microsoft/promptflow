@@ -2,8 +2,11 @@ import os
 from typing import Optional
 
 from promptflow._constants import PF_USER_AGENT, USER_AGENT
+from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.core._version import __version__
 from promptflow.tracing._operation_context import OperationContext
+
+logger = LoggerFactory.get_logger(__name__)
 
 
 class ClientUserAgentUtil:
@@ -36,12 +39,17 @@ class ClientUserAgentUtil:
     @classmethod
     def update_user_agent_from_config(cls):
         """Update user agent from config. 1p customer will set it. We'll add PFCustomer_ as prefix."""
-        from promptflow._sdk._configuration import Configuration
+        try:
+            from promptflow._sdk._configuration import Configuration
 
-        config = Configuration.get_instance()
-        user_agent = config.get_user_agent()
-        if user_agent:
-            cls.append_user_agent(user_agent)
+            config = Configuration.get_instance()
+            user_agent = config.get_user_agent()
+            if user_agent:
+                cls.append_user_agent(user_agent)
+        except ImportError:
+            # Ignore if promptflow-devkit not installed, then config is not available.
+            logger.debug("promptflow-devkit not installed, skip update_user_agent_from_config.")
+            pass
 
 
 def setup_user_agent_to_operation_context(user_agent):
