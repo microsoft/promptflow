@@ -46,7 +46,7 @@ Or use CLI to create connection:
 pf connection create --file ../../../connections/azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base> --name open_ai_connection
 ```
 
-Note in [flow.dag.yaml](flow.dag.yaml) we are using connection named `open_ai_connection`.
+Note in [flow.flex.yaml](flow.flex.yaml) we are using connection named `open_ai_connection`.
 ```bash
 # show registered connection
 pf connection show --name open_ai_connection
