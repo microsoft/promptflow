@@ -4,6 +4,8 @@
 
 __path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
 
+from typing import Optional
+
 from pathlib import Path
 
 from promptflow.client import load_flow
@@ -12,12 +14,15 @@ from promptflow.core._prompty_utils import convert_model_configuration_to_connec
 
 
 class CoherenceEvaluator:
-    def __init__(self, model_config: AzureOpenAIModelConfiguration):
+    def __init__(self, model_config: AzureOpenAIModelConfiguration,
+                 log_level: Optional[int] = None):
         """
         Initialize an evaluator configured for a specific Azure OpenAI model.
 
         :param model_config: Configuration for the Azure OpenAI model.
         :type model_config: AzureOpenAIModelConfiguration
+        :param log_level: The logging level.
+        :type log_level: Optional[int]
 
         **Usage**
 
@@ -32,7 +37,7 @@ class CoherenceEvaluator:
         # Load the flow as function
         current_dir = Path(__file__).resolve().parent
         flow_dir = current_dir / "flow"
-        self._flow = load_flow(source=flow_dir)
+        self._flow = load_flow(source=flow_dir, log_level=log_level)
 
         # Override the connection
         connection = convert_model_configuration_to_connection(model_config)
