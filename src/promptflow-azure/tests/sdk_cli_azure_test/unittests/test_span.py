@@ -197,3 +197,32 @@ class TestSpan:
             span._event_path(1)
             == f".promptflow/.trace/{self.FAKE_COLLECTION_ID}/{self.FAKE_TRACE_ID}/{self.FAKE_SPAN_ID}/1"
         )
+
+    def test_generate_blob_path(self):
+        span = Span(
+            SpanEntity(
+                name="test",
+                trace_id=self.FAKE_TRACE_ID,
+                span_id=self.FAKE_SPAN_ID,
+                context={
+                    "trace_id": self.FAKE_TRACE_ID,
+                    "span_id": self.FAKE_SPAN_ID,
+                },
+                kind="test",
+                parent_id="test",
+                start_time=datetime.datetime.fromisoformat("2022-01-01T00:00:00"),
+                end_time=datetime.datetime.fromisoformat("2022-01-01T00:01:00"),
+                status={},
+                attributes={},
+                events=[],
+                links=[],
+                resource={},
+            ),
+            collection_id=self.FAKE_COLLECTION_ID,
+            created_by=self.FAKE_CREATED_BY,
+        )
+
+        assert (
+            span._generate_blob_path("span.json")
+            == f".promptflow/.trace/{self.FAKE_COLLECTION_ID}/{self.FAKE_TRACE_ID}/{self.FAKE_SPAN_ID}/span.json"
+        )

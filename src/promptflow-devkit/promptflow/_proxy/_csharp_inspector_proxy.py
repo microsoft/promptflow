@@ -11,7 +11,7 @@ import pydash
 from promptflow._constants import FlowEntryRegex
 from promptflow._core._errors import UnexpectedError
 from promptflow._sdk._constants import ALL_CONNECTION_TYPES, FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
-from promptflow._utils.flow_utils import read_json_content
+from promptflow._utils.flow_utils import is_flex_flow, read_json_content
 from promptflow._utils.yaml_utils import load_yaml
 
 from ._base_inspector_proxy import AbstractInspectorProxy
@@ -26,6 +26,9 @@ class CSharpInspectorProxy(AbstractInspectorProxy):
     def get_used_connection_names(
         self, flow_file: Path, working_dir: Path, environment_variables_overrides: Dict[str, str] = None
     ) -> List[str]:
+        if is_flex_flow(flow_path=flow_file):
+            # in flex mode, csharp will always directly get connections from local pfs
+            return []
         # TODO: support environment_variables_overrides
         flow_tools_json_path = working_dir / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
         tools_meta = read_json_content(flow_tools_json_path, "meta of tools")

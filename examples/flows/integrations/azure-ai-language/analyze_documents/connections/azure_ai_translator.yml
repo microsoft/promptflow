@@ -1,0 +1,8 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/CustomConnection.schema.json
+name: azure_ai_translator_connection
+type: custom
+configs:
+  endpoint: "<azure-translator-resource-endpoint>"
+  region: "<azure-translator-resource-region>"
+secrets: 
+  api_key: "<to-be-replaced>"

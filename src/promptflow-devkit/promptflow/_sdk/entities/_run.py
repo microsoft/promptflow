@@ -178,7 +178,10 @@ class Run(YAMLTranslatableMixin):
             self._output_path = Path(
                 kwargs.get("output_path", self._generate_output_path(config=kwargs.get("config", None)))
             )
-            self._flow_name = flow_dir.name
+            if is_prompty_flow(self.flow):
+                self._flow_name = Path(self.flow).stem
+            else:
+                self._flow_name = flow_dir.name
         elif self._run_source == RunInfoSources.INDEX_SERVICE:
             self._metrics = kwargs.get("metrics", {})
             self._experiment_name = experiment_name
@@ -193,6 +196,9 @@ class Run(YAMLTranslatableMixin):
         self._identity = kwargs.get("identity", {})
         self._outputs = kwargs.get("outputs", None)
         self._command = kwargs.get("command", None)
+        # To support `pf.run` for dynamic callable, we need to create a run whose target function is a dynamic callable.
+        # TODO: such run is not resumable, not sure if we need specific error message for this case.
+        self._dynamic_callable = kwargs.get("dynamic_callable", None)
         if init:
             self._properties[FlowRunProperties.INIT_KWARGS] = init
 

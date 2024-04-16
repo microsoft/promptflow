@@ -495,7 +495,7 @@ def created_batch_run_without_llm(pf: PFClient, randstr: Callable[[str], str], r
 def simple_eager_run(pf: PFClient, randstr: Callable[[str], str]) -> Run:
     """Create a simple eager run."""
     run = pf.run(
-        flow=f"{EAGER_FLOWS_DIR}/simple_with_req",
+        flow=f"{EAGER_FLOWS_DIR}/simple_with_signature",
         data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
         name=randstr("name"),
     )
