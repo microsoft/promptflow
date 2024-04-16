@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
-<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
 
     <?define ProductVersion="$(env.CLI_VERSION)" ?>
 
@@ -89,12 +89,13 @@
             Execute="deferred"
             ExeCommand="wscript.exe promptflow_service.vbs"
             Return="asyncNoWait" />
-        <Property Id="WixQuietExec64CmdLine" Value="&quot;cmd.exe /C start /B 'echo Hello, World!'&quot;" Hidden="yes"/>
+        <Property Id="WixQuietExec64CmdLine" Value="&quot;cmd.exe /C start /B 'echo Hello, World!'&quot;"/>
         <CustomAction Id="StopPromptFlowService"
               Execute="immediate"
               Return="ignore"
               BinaryKey="WixCA"
-              DllEntry="WixQuietExec64"/>
+              DllEntry="WixQuietExec64"
+              Impersonate="yes"/>
 <!--         <CustomAction Id="StopPromptFlowService" -->
 <!--             Directory="APPLICATIONFOLDER" -->
 <!--             Execute="immediate" -->
