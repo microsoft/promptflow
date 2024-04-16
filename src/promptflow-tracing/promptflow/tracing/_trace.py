@@ -104,26 +104,14 @@ def enrich_span_with_trace(span, trace: Trace):
 
 def enrich_span_with_prompt_info(span, func, kwargs):
     try:
-        from promptflow.core._flow import Prompty
-
-        # Get prompt template from prompty
-        if isinstance(func, Prompty):
-            prompt_tpl = func._template
+        # Assume there is only one prompt template parameter in the function,
+        # we use the first one by default if there are multiple.
+        prompt_tpl_param_name = get_prompt_param_name_from_func(func)
+        if prompt_tpl_param_name is not None:
+            prompt_tpl = kwargs.get(prompt_tpl_param_name)
             prompt_vars = {
                 name: kwargs.get(name) for name in get_input_names_for_prompt_template(prompt_tpl) if name in kwargs
             }
-        else:
-            # Assume there is only one prompt template parameter in the function,
-            # we use the first one by default if there are multiple.
-            prompt_tpl_param_name = get_prompt_param_name_from_func(func)
-            if prompt_tpl_param_name is not None:
-                prompt_tpl = kwargs.get(prompt_tpl_param_name)
-                prompt_vars = {
-                    name: kwargs.get(name) for name in get_input_names_for_prompt_template(prompt_tpl) if name in kwargs
-                }
-            else:
-                prompt_tpl, prompt_vars = None, None
-        if prompt_tpl:
             prompt_info = {"prompt.template": prompt_tpl, "prompt.variables": serialize_attribute(prompt_vars)}
             span.set_attributes(prompt_info)
             span.add_event("promptflow.prompt.template", {"payload": serialize_attribute(prompt_info)})
