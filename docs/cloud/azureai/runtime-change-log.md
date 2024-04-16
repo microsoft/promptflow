@@ -20,7 +20,6 @@ Default runtime image is continuously updated, and here we record the new featur
 #### New features
 NA
 
-
 #### Bugs fixed
 NA
 
