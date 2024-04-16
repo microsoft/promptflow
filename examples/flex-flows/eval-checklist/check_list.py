@@ -1,8 +1,6 @@
 import json
-import os
 from pathlib import Path
 
-from dotenv import load_dotenv
 from jinja2 import Template
 
 from promptflow.tracing import trace
@@ -49,7 +47,6 @@ def check(answer: str, statement: str, connection: AzureOpenAIConnection):
 
 
 class EvalFlow:
-
     def __init__(self, connection: AzureOpenAIConnection):
         self.connection = connection
 

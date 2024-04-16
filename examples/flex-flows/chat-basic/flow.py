@@ -1,8 +1,6 @@
-import os
 from dataclasses import dataclass
 from pathlib import Path
 
-from dotenv import load_dotenv
 from jinja2 import Template
 
 from promptflow.tracing import trace
@@ -27,7 +25,6 @@ class Result:
 
 
 class ChatFlow:
-
     def __init__(self, connection: AzureOpenAIConnection):
         self.connection = connection
 
