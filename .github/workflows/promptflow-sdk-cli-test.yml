@@ -76,7 +76,7 @@ jobs:
           ${{ env.WORKING_DIRECTORY }}/*.xml
           ${{ env.WORKING_DIRECTORY }}/htmlcov/
           ${{ env.WORKING_DIRECTORY }}/tests/sdk_cli_test/count.json
-    - run: poetry run pip install -e ${{ env.WORKING_DIRECTORY }}[executable]
+    - run: poetry install -E executable
       working-directory: ${{ env.WORKING_DIRECTORY }}
     - name: run devkit executable tests
       run: |
