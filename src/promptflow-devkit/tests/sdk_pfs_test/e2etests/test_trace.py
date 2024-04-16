@@ -192,3 +192,10 @@ class TestTrace:
         persist_a_span(collection=mock_collection, custom_attributes=custom_attributes)
         line_runs = pfs_op.list_line_runs(session_id=mock_session_id).json
         assert len(line_runs) == 1
+
+    def test_list_line_run_with_line_run_id(self, pfs_op: PFSOperations, mock_collection: str) -> None:
+        mock_line_run_id = str(uuid.uuid4())
+        custom_attributes = {SpanAttributeFieldName.LINE_RUN_ID: mock_line_run_id}
+        persist_a_span(collection=mock_collection, custom_attributes=custom_attributes)
+        line_runs = pfs_op.list_line_runs(line_run_ids=[mock_line_run_id]).json
+        assert len(line_runs) == 1
