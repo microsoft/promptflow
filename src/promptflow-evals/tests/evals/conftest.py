@@ -1,13 +1,12 @@
 import json
 import multiprocessing
-import os
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 from pytest_mock import MockerFixture
 
-from promptflow.connections import AzureOpenAIConnection
+from promptflow.core import AzureOpenAIModelConfiguration
 from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
@@ -47,7 +46,7 @@ def pytest_configure():
 
 @pytest.fixture
 def model_config() -> dict:
-    conn_name = "azure_open_ai_connection"
+    conn_name = "azure_openai_model_config"
 
     with open(
         file=CONNECTION_FILE,
@@ -58,15 +57,9 @@ def model_config() -> dict:
     if conn_name not in dev_connections:
         raise ValueError(f"Connection '{conn_name}' not found in dev connections.")
 
-    model_config = AzureOpenAIConnection(**dev_connections[conn_name]["value"])
+    model_config = AzureOpenAIModelConfiguration(**dev_connections[conn_name]["value"])
 
     return model_config
-
-
-@pytest.fixture
-def deployment_name() -> str:
-    # TODO: move to config file or environment variable
-    return os.environ.get("AZUREML_DEPLOYMENT_NAME", "GPT-4-Prod")
 
 
 # ==================== Recording injection ====================

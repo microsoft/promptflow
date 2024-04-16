@@ -4,20 +4,24 @@
 
 __path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
 
-from promptflow.entities import AzureOpenAIConnection
-from promptflow.evals.evaluators import GroundednessEvaluator, RelevanceEvaluator, \
-    CoherenceEvaluator, FluencyEvaluator, SimilarityEvaluator, F1ScoreEvaluator
+from promptflow.core import AzureOpenAIModelConfiguration
+from promptflow.evals.evaluators import (
+    CoherenceEvaluator,
+    F1ScoreEvaluator,
+    FluencyEvaluator,
+    GroundednessEvaluator,
+    RelevanceEvaluator,
+    SimilarityEvaluator,
+)
 
 
 class QAEvaluator:
-    def __init__(self, model_config: AzureOpenAIConnection, deployment_name: str):
+    def __init__(self, model_config: AzureOpenAIModelConfiguration):
         """
         Initialize an evaluator configured for a specific Azure OpenAI model.
 
         :param model_config: Configuration for the Azure OpenAI model.
-        :type model_config: AzureOpenAIConnection
-        :param deployment_name: Deployment to be used which has Azure OpenAI model.
-        :type deployment_name: AzureOpenAIConnection
+        :type model_config: AzureOpenAIModelConfiguration
         :return: A function that evaluates and generates metrics for "question-answering" scenario.
         :rtype: function
 
@@ -25,7 +29,7 @@ class QAEvaluator:
 
         .. code-block:: python
 
-            eval_fn = QAEvaluator(model_config, deployment_name="gpt-4")
+            eval_fn = QAEvaluator(model_config)
             result = qa_eval(
                 question="Tokyo is the capital of which country?",
                 answer="Japan",
@@ -34,11 +38,11 @@ class QAEvaluator:
         )
         """
         self._evaluators = [
-            GroundednessEvaluator(model_config, deployment_name=deployment_name),
-            RelevanceEvaluator(model_config, deployment_name=deployment_name),
-            CoherenceEvaluator(model_config, deployment_name=deployment_name),
-            FluencyEvaluator(model_config, deployment_name=deployment_name),
-            SimilarityEvaluator(model_config, deployment_name=deployment_name),
+            GroundednessEvaluator(model_config),
+            RelevanceEvaluator(model_config),
+            CoherenceEvaluator(model_config),
+            FluencyEvaluator(model_config),
+            SimilarityEvaluator(model_config),
             F1ScoreEvaluator(),
         ]
 
@@ -59,8 +63,10 @@ class QAEvaluator:
         # TODO: How to parallelize metrics calculation
 
         return {
-            k: v for d in
-            [evaluator(answer=answer, context=context, ground_truth=ground_truth, question=question) for evaluator in
-             self._evaluators]
+            k: v
+            for d in [
+                evaluator(answer=answer, context=context, ground_truth=ground_truth, question=question)
+                for evaluator in self._evaluators
+            ]
             for k, v in d.items()
         }
