@@ -5,6 +5,7 @@ We provide guides on how to develop a flow by writing a flow yaml from scratch i
 :maxdepth: 1
 :hidden:
 
+init-and-test-a-flow
 develop-standard-flow
 develop-chat-flow
 develop-evaluation-flow

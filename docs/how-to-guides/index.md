@@ -6,9 +6,7 @@ Simple and short articles grouped by topics, each introduces a core feature of p
 :caption: Flow
 :maxdepth: 1
 develop-a-flow/index
-init-and-test-a-flow
 run-and-evaluate-a-flow/index
-tune-prompts-with-variants
 execute-flow-as-a-function
 ```
 
@@ -31,4 +29,5 @@ enable-streaming-mode
 faq
 set-global-configs
 manage-connections
+tune-prompts-with-variants
 ```
