@@ -34,5 +34,9 @@ class ConnectionConfig:
     def build_connection_id(self) -> str:
         """Construct connection id from connection config"""
 
-        return CONNECTION_ID_TEMPLATE.format(self.subscription, self.resource_group, self.workspace, self.connection_name)
-
+        return CONNECTION_ID_TEMPLATE.format(
+            self.subscription,
+            self.resource_group,
+            self.workspace,
+            self.connection_name
+        )

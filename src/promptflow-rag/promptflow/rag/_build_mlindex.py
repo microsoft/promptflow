@@ -74,10 +74,12 @@ def build_index(
 
     if not embeddings_model_config.embeddings_model:
         raise ValueError("Please specify embeddings_model_config.embeddings_model")
-    
+
     if "cohere" in embeddings_model_config.embeddings_model:
         # If model uri is None, it is *considered* as a serverless endpoint for now.
-        # TODO: depends on azureml.rag.Embeddings.from_uri to finalize a scheme for different embeddings - serverless, openai, huggingface, etc.
+        # TODO: depends on azureml.rag.Embeddings.from_uri to finalize a scheme for different embeddings
+        if not embeddings_model_config.connection_config:
+            raise ValueError("Please specify embeddings_model_config.connection_config to use cohere embedding models")
         embeddings_model_uri = None
     else:
         embeddings_model_uri = build_open_ai_protocol(embeddings_model_config.embeddings_model)
@@ -121,7 +123,8 @@ def build_index(
                 "endpoint": aoai_connection["properties"]["target"],
             }
         else:
-            import openai, os
+            import openai
+            import os
 
             api_key = "OPENAI_API_KEY"
             api_base = "OPENAI_API_BASE"
