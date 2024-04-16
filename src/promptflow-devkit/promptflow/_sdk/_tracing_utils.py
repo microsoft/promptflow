@@ -59,7 +59,6 @@ class WorkspaceKindLocalCache:
         return time_delta.days > WORKSPACE_KIND_LOCAL_CACHE_EXPIRE_DAYS
 
     def get_kind(self) -> str:
-        _logger.debug(f"local cache timestamp: {self.timestamp.isoformat()}")
         if not self.is_cache_exists or self.is_expired:
             _logger.debug(f"refreshing local cache for resource {self.workspace_name}...")
             self._refresh()
