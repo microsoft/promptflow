@@ -46,7 +46,7 @@ EAGER_FLOW_ROOT = Path(PROMPTFLOW_ROOT / "tests/test_configs/eager_flows")
 MODEL_ROOT = Path(PROMPTFLOW_ROOT / "tests/test_configs/flows")
 
 RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "../promptflow-recording/recordings/local").resolve()
-COUNTER_FILE = Path(__file__) / "../count.json"
+COUNTER_FILE = (Path(__file__) / "../count.json").resolve()
 
 
 def pytest_configure():
