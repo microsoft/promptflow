@@ -1,4 +1,9 @@
 # Process image in flow
+
+:::{admonition} Experimental feature
+This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
+:::
+
 PromptFlow defines a contract to represent image data.
 
 ## Data class
