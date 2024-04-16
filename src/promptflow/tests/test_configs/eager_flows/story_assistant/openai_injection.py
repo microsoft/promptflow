@@ -9,7 +9,7 @@ def setup_trace():
         openai.resources.beta.assistants.assistants.Assistants.retrieve)
     openai.resources.beta.threads.threads.Threads.create = trace(
         openai.resources.beta.threads.threads.Threads.create)
-    openai.resources.beta.threads.messages.messages.Messages.create = message(
+    openai.resources.beta.threads.messages.messages.Messages.create = trace(
         openai.resources.beta.threads.messages.messages.Messages.create)
     openai.resources.beta.threads.runs.runs.Runs.create = trace(
         openai.resources.beta.threads.runs.runs.Runs.create)

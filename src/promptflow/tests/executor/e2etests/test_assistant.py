@@ -87,7 +87,6 @@ def clear_module_cache(module_name):
 @pytest.mark.e2etest
 class TestAssistantEagerFlow:
     def test_eager_flow_with_assistant(self):
-        clear_module_cache("entry")
         # Need to create .env file for the flow.
         # > python generate_connection_config.py --target_folder <flow_folder>
         flow_path = get_flow_folder("math_tutor", EAGER_FLOWS_ROOT).absolute()
@@ -96,7 +95,8 @@ class TestAssistantEagerFlow:
         inputs = {
             "question": (
                 "I need to solve the equation `3x + 11 = 14`. What is the result of x+y? " "Please use get_y function."
-            )
+            ),
+            "assistant_id": "asst_0338THvtgeRnQxCehbI18Kcc",
         }
         result = _client._flows._test(flow=flow_path, inputs=inputs)
         assert result.run_info.status.value == "Completed"
@@ -108,7 +108,11 @@ class TestAssistantEagerFlow:
         # Load .env file as env variables
         load_dotenv(dotenv_path=f"{flow_path}/.env")
 
-        inputs = {"topic": "Basketball."}
+        inputs = {
+            "topic": "Basketball.",
+            "assistant_1": "asst_QL6GNvHgl5KYaTskQ9CyEzBn",
+            "assistant_2": "asst_JXWJGNMrDyXu9nUfqRct7mVe",
+        }
         result = _client._flows._test(flow=flow_path, inputs=inputs)
         assert result.run_info.status.value == "Completed"
 

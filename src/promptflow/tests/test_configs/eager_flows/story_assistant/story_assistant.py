@@ -249,7 +249,7 @@ def get_or_create_assistant_2(assistant_id=None):
 
 
 @trace
-def two_assistants_flow(topic: str):
+def two_assistants_flow(topic: str, assistant_1=None, assistant_2=None):
 
     thread = client.beta.threads.create()
 
@@ -259,14 +259,14 @@ def two_assistants_flow(topic: str):
         content=topic,
     )
 
-    assistant_1 = get_or_create_assistant_1()
+    assistant_1 = get_or_create_assistant_1(assistant_1)
 
     Run_execute(thread.id, assistant_1.id)
     msg_id, story = get_message(thread.id)
 
     print(f"The first run complete")
 
-    assistant_2 = get_or_create_assistant_2()
+    assistant_2 = get_or_create_assistant_2(assistant_2)
 
     Run_execute(thread.id, assistant_2.id)
     msg_id, evaluation = get_message(thread.id, msg_id)

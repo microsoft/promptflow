@@ -10,7 +10,7 @@ import time
 from promptflow.tracing import trace, start_trace
 
 from get_y import get_y
-from tests.test_configs.eager_flows.assistant_script.openai_injection import setup_trace
+from openai_injection import setup_trace
 
 setup_trace()
 
@@ -102,7 +102,7 @@ async def math_tutor(question: str, thread_id=None, assistant_id=None):
 
     await execute_run(thread.id, assistant.id)
 
-    return get_message(thread.id)
+    return await get_message(thread.id)
 
 
 
