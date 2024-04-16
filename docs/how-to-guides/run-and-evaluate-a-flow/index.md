@@ -1,6 +1,6 @@
 # Run and evaluate a flow
 
-After you have developed and tested the flow in [init and test a flow](../init-and-test-a-flow.md), this guide will help you learn how to run a flow with a larger dataset and then evaluate the flow you have created.
+After you have developed and tested the flow in [init and test a flow](../develop-a-flow/init-and-test-a-flow.md), this guide will help you learn how to run a flow with a larger dataset and then evaluate the flow you have created.
 
 ## Create a batch run
 
