@@ -12,6 +12,7 @@ from openai import APIConnectionError, APIStatusError, APITimeoutError, BadReque
 
 from promptflow._cli._utils import get_workspace_triad_from_local
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
+from promptflow.contracts.types import PromptTemplate
 from promptflow.exceptions import SystemErrorException, UserErrorException
 from promptflow.tools.exception import (
     ToolValidationError,
