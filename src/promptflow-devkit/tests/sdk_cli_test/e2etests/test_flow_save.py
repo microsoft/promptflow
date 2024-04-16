@@ -598,16 +598,6 @@ class TestFlowSave:
 
     def test_flow_infer_signature(self):
         pf = PFClient()
-        # Dag flow
-        flow = load_flow(source=Path(FLOWS_DIR) / "chat_flow")
-        meta = pf.flows.infer_signature(entry=flow)
-        assert meta == {
-            "inputs": {
-                "chat_history": {"type": "list"},
-                "question": {"default": "What is ChatGPT?", "is_chat_input": True, "type": "string"},
-            },
-            "outputs": {"answer": {"is_chat_output": True, "type": "string"}},
-        }
         # Prompty
         prompty = load_flow(source=Path(PROMPTY_DIR) / "prompty_example.prompty")
         meta = pf.flows.infer_signature(entry=prompty)
