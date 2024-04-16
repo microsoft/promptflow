@@ -38,7 +38,7 @@ nodes:
     type: package
     tool: language_tools.tools.translator.get_translation
   inputs:
-    connection: azure_ai_translator_connection
+    connection: azure_ai_translator
     text: ${Read_File.output}
     translate_to:
     - en
@@ -66,7 +66,7 @@ nodes:
     type: package
     tool: language_tools.tools.pii_entity_recognition.get_pii_entity_recognition
   inputs:
-    connection: azure_ai_language_connection
+    connection: azure_ai_language
     parse_response: true
     document: ${Create_PII_Doc.output}
 - name: Parse_PII
@@ -92,7 +92,7 @@ nodes:
     type: package
     tool: language_tools.tools.entity_recognition.get_entity_recognition
   inputs:
-    connection: azure_ai_language_connection
+    connection: azure_ai_language
     parse_response: true
     document: ${Create_Redacted_Doc.output}
 - name: Extractive_Summarization
@@ -101,7 +101,7 @@ nodes:
     type: package
     tool: language_tools.tools.extractive_summarization.get_extractive_summarization
   inputs:
-    connection: azure_ai_language_connection
+    connection: azure_ai_language
     query: Cloud AI
     parse_response: true
     document: ${Create_Redacted_Doc.output}
@@ -111,7 +111,7 @@ nodes:
     type: package
     tool: language_tools.tools.abstractive_summarization.get_abstractive_summarization
   inputs:
-    connection: azure_ai_language_connection
+    connection: azure_ai_language
     parse_response: true
     query: quarterly results
     summary_length: medium
@@ -139,6 +139,6 @@ nodes:
     type: package
     tool: language_tools.tools.sentiment_analysis.get_sentiment_analysis
   inputs:
-    connection: azure_ai_language_connection
+    connection: azure_ai_language
     parse_response: true
     document: ${Create_Summary_Doc.output}
