@@ -31,6 +31,7 @@ class ListLineRunParser:
     runs: typing.Optional[typing.List[str]] = None
     experiments: typing.Optional[typing.List[str]] = None
     trace_ids: typing.Optional[typing.List[str]] = None
+    session_id: typing.Optional[str] = None
 
     @staticmethod
     def _parse_string_list(value: typing.Optional[str]) -> typing.Optional[typing.List[str]]:
@@ -42,10 +43,11 @@ class ListLineRunParser:
     def from_request() -> "ListLineRunParser":
         args = list_line_run_parser.parse_args()
         return ListLineRunParser(
-            collection=args.collection or args.session,
+            collection=args.collection,
             runs=ListLineRunParser._parse_string_list(args.run),
             experiments=ListLineRunParser._parse_string_list(args.experiment),
             trace_ids=ListLineRunParser._parse_string_list(args.trace_ids),
+            session_id=args.session,
         )
 
 
@@ -91,5 +93,6 @@ class LineRuns(Resource):
             runs=args.runs,
             experiments=args.experiments,
             trace_ids=args.trace_ids,
+            session_id=args.session_id,
         )
         return [line_run._to_rest_object() for line_run in line_runs]

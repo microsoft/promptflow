@@ -189,6 +189,7 @@ class LineRun(Base):
         runs: typing.Optional[typing.List[str]] = None,
         experiments: typing.Optional[typing.List[str]] = None,
         trace_ids: typing.Optional[typing.List[str]] = None,
+        session_id: typing.Optional[str] = None,
     ) -> typing.List["LineRun"]:
         with trace_mgmt_db_session() as session:
             query = session.query(LineRun)
@@ -200,6 +201,8 @@ class LineRun(Base):
                 query = query.filter(LineRun.experiment.in_(experiments))
             elif trace_ids is not None:
                 query = query.filter(LineRun.trace_id.in_(trace_ids))
+            elif session_id is not None:
+                query = query.filter(LineRun.session_id == session_id)
             query = query.order_by(LineRun.start_time.desc())
             if collection is not None:
                 query = query.limit(TRACE_LIST_DEFAULT_LIMIT)

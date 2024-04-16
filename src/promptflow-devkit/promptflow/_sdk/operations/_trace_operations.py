@@ -161,6 +161,7 @@ class TraceOperations:
         runs: typing.Optional[typing.Union[str, typing.List[str]]] = None,
         experiments: typing.Optional[typing.Union[str, typing.List[str]]] = None,
         trace_ids: typing.Optional[typing.Union[str, typing.List[str]]] = None,
+        session_id: typing.Optional[str] = None,
     ) -> typing.List[LineRun]:
         # ensure runs, experiments, and trace_ids are list of string
         if isinstance(runs, str):
@@ -178,6 +179,7 @@ class TraceOperations:
             runs=runs,
             experiments=experiments,
             trace_ids=trace_ids,
+            session_id=session_id,
         )
         line_runs = []
         for obj in orm_line_runs:
