@@ -113,8 +113,9 @@ class BatchEngine:
         if is_function_entry:
             self._working_dir = working_dir or Path.cwd()
         else:
-            self._working_dir = self._working_dir = Flow._resolve_working_dir(flow_file, working_dir) \
-                if flow_file is not None else working_dir
+            self._working_dir = self._working_dir = (
+                Flow._resolve_working_dir(flow_file, working_dir) if flow_file is not None else working_dir
+            )
 
         # Chat group doesn't pass flow_file
         if self._flow_file is not None:
@@ -229,8 +230,9 @@ class BatchEngine:
                         # set batch input source from input mapping
                         set_batch_input_source_from_inputs_mapping(inputs_mapping)
                         # if using eager flow, the self._flow is none, so we need to get inputs definition from executor
-                        inputs = self._executor_proxy.get_inputs_definition() \
-                            if self._is_eager_flow else self._flow.inputs
+                        inputs = (
+                            self._executor_proxy.get_inputs_definition() if self._is_eager_flow else self._flow.inputs
+                        )
 
                         # resolve input data from input dirs and apply inputs mapping
                         batch_input_processor = BatchInputsProcessor(
@@ -473,7 +475,7 @@ class BatchEngine:
             line_results.extend(results)
         else:
             # TODO: Enable batch timeout for other api based executor proxy
-            await self._exec_batch(line_results, batch_inputs, run_id)
+            await self._exec_batch(line_results, inputs_to_run, run_id)
         handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
         # persist outputs to output dir
         outputs = [
