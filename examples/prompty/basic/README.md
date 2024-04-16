@@ -26,7 +26,7 @@ cat ../.env
 # pf flow test --flow basic.prompty
 
 # test with flow inputs
-pf flow test --flow basic.prompty --inputs firstName="John" lastName="Doe" question="What is the meaning of life?"
+pf flow test --flow basic.prompty --inputs first_name="John" last_name="Doe" question="What is the meaning of life?"
 
 # test with another sample data
 pf flow test --flow basic.prompty --inputs sample.json

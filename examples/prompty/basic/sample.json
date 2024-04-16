@@ -1,5 +1,5 @@
 {
-  "firstName": "John",
-  "lastName": "Doe",
+  "first_name": "John",
+  "last_name": "Doe",
   "question": "Who is the most famous person in the world?"
 }

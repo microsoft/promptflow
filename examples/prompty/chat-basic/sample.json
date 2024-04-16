@@ -1,6 +1,6 @@
 {
-  "firstName": "Jane",
-  "lastName": "Doe",
+  "first_name": "Jane",
+  "last_name": "Doe",
   "question": "How many questions did the user ask?",
   "chat_history": [
     {
