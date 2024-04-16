@@ -113,8 +113,9 @@ class BatchEngine:
         if is_function_entry:
             self._working_dir = working_dir or Path.cwd()
         else:
-            self._working_dir = self._working_dir = Flow._resolve_working_dir(flow_file, working_dir) \
-                if flow_file is not None else working_dir
+            self._working_dir = self._working_dir = (
+                Flow._resolve_working_dir(flow_file, working_dir) if flow_file is not None else working_dir
+            )
 
         # Chat group doesn't pass flow_file
         if self._flow_file is not None:
@@ -229,8 +230,9 @@ class BatchEngine:
                         # set batch input source from input mapping
                         set_batch_input_source_from_inputs_mapping(inputs_mapping)
                         # if using eager flow, the self._flow is none, so we need to get inputs definition from executor
-                        inputs = self._executor_proxy.get_inputs_definition() \
-                            if self._is_eager_flow else self._flow.inputs
+                        inputs = (
+                            self._executor_proxy.get_inputs_definition() if self._is_eager_flow else self._flow.inputs
+                        )
 
                         # resolve input data from input dirs and apply inputs mapping
                         batch_input_processor = BatchInputsProcessor(
@@ -579,36 +581,19 @@ class BatchEngine:
         if not self._should_exec_aggregation():
             return AggregationResult({}, {}, {})
 
-        bulk_logger.info("Executing aggregation nodes...")
-
-        inputs, aggregation_inputs = self._get_aggregation_inputs(batch_inputs, line_results)
-
-        if self._is_eager_flow:
-            try:
-                aggr_result = await self._executor_proxy.exec_aggregation_async(aggregation_inputs, {}, run_id=run_id)
-                bulk_logger.info("Finish executing aggregation function.")
-                return aggr_result
-            except PromptflowException as e:
-                # for PromptflowException, we already do classification, so throw directly.
-                raise e
-            except Exception as e:
-                error_type_and_message = f"({e.__class__.__name__}) {e}"
-                raise UnexpectedError(
-                    message_format=(
-                        "Unexpected error occurred while executing the aggregation function. "
-                        "Please fix or contact support for assistance. The error details: {error_type_and_message}."
-                    ),
-                    error_type_and_message=error_type_and_message,
-                ) from e
+        name = "function" if self._is_eager_flow else "node"
+        bulk_logger.info(f"Executing aggregation {name}...")
 
         try:
+            inputs, aggregation_inputs = self._get_aggregation_inputs(batch_inputs, line_results)
             aggr_result = await self._executor_proxy.exec_aggregation_async(inputs, aggregation_inputs, run_id)
             # if the flow language is python, we have already persisted node run infos during execution.
             # so we should persist node run infos in aggr_result for other languages.
             if not isinstance(self._executor_proxy, PythonExecutorProxy):
-                for node_run in aggr_result.node_run_infos.values():
-                    self._storage.persist_node_run(node_run)
-            bulk_logger.info("Finish executing aggregation nodes.")
+                if not self._is_eager_flow:
+                    for node_run in aggr_result.node_run_infos.values():
+                        self._storage.persist_node_run(node_run)
+            bulk_logger.info(f"Finish executing aggregation {name}.")
             return aggr_result
         except PromptflowException as e:
             # for PromptflowException, we already do classification, so throw directly.

@@ -14,6 +14,7 @@ from promptflow._constants import LINE_NUMBER_KEY, MessageFormatType
 from promptflow._core.log_manager import NodeLogManager
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool_meta_generator import PythonLoadError
+from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
 from promptflow._utils.logger_utils import logger
 from promptflow._utils.multimedia_utils import BasicMultimediaProcessor
@@ -164,20 +165,17 @@ class ScriptExecutor(FlowExecutor):
         run_id = f"{run_id}_reduce" or f"{str(uuid.uuid4())}_reduce"
 
         output = None
-        traces = []
         try:
-            Tracer.start_tracing(run_id)
-            if self._is_async:
-                output = asyncio.run(self._aggr_func(**{self._aggr_input_name: inputs}))
+            if inspect.iscoroutinefunction(self._aggr_func):
+                output = async_run_allowing_running_loop(self._aggr_func, **{self._aggr_input_name: inputs})
             else:
                 output = self._aggr_func(**{self._aggr_input_name: inputs})
             if not isinstance(output, dict):
                 output = {"metric": output}
-            log_metric(output)
-            traces = Tracer.end_tracing(run_id)
+            for k, v in output.items():
+                log_metric(k, v)
         except Exception:
-            if not traces:
-                traces = Tracer.end_tracing(run_id)
+            pass
         return AggregationResult({}, output, {})
 
     async def exec_line_async(
