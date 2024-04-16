@@ -1027,7 +1027,7 @@ class FlowOperations(TelemetryMixin):
 
             flow_meta = {
                 "inputs": entry._data.get("inputs", {}),
-                "outputs": entry._data.get("outputs", {"output": "string"}),
+                "outputs": entry._data.get("outputs", {"output": {"type": "string"}}),
             }
             init_dict = {}
             for field in fields(PromptyModelConfiguration):
@@ -1038,9 +1038,9 @@ class FlowOperations(TelemetryMixin):
             flow_meta["init"] = init_dict
             format_signature_type(flow_meta)
         elif isinstance(entry, FlexFlow):
-            entry = entry_string_to_callable(entry.entry_file, entry.entry)
+            entry_func = entry_string_to_callable(entry.entry_file, entry.entry)
             flow_meta, _, _ = FlowOperations._infer_signature_flex_flow(
-                entry=entry, language=entry.language, include_primitive_output=True
+                entry=entry_func, language=entry.language, include_primitive_output=True
             )
         elif inspect.isclass(entry) or inspect.isfunction(entry):
             flow_meta, _, _ = FlowOperations._infer_signature_flex_flow(entry=entry, include_primitive_output=True)

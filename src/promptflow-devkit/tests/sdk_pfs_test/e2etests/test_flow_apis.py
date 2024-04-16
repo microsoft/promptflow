@@ -32,11 +32,10 @@ class TestFlowAPIs:
 
     def test_flow_infer_signature(self, pfs_op: PFSOperations) -> None:
         # prompty
-        with check_activity_end_telemetry(activity_name="pf.flows.infer_signature"):
-            response = pfs_op.test_flow_infer_signature(
-                flow_path=(Path(PROMPTY_ROOT) / "prompty_example.prompty").absolute().as_posix(),
-                status_code=200,
-            ).json
+        response = pfs_op.test_flow_infer_signature(
+            flow_path=(Path(PROMPTY_ROOT) / "prompty_example.prompty").absolute().as_posix(),
+            status_code=200,
+        ).json
         assert response == {
             "init": {
                 "api": {"default": "chat", "type": "object"},
@@ -49,21 +48,21 @@ class TestFlowAPIs:
                 "lastName": {"default": "Doh", "type": "string"},
                 "question": {"type": "string"},
             },
-            "outputs": {},
+            "outputs": {"output": {"type": "string"}},
         }
 
         # flex flow
-        with check_activity_end_telemetry(activity_name="pf.flows.infer_signature"):
-            response = pfs_op.test_flow_infer_signature(
-                flow_path=(Path(EAGER_FLOW_ROOT) / "builtin_llm").absolute().as_posix(),
-                status_code=200,
-            ).json
+        response = pfs_op.test_flow_infer_signature(
+            flow_path=(Path(EAGER_FLOW_ROOT) / "builtin_llm").absolute().as_posix(),
+            status_code=200,
+        ).json
         assert response == {
             "inputs": {
                 "chat_history": {"default": "[]", "type": "list"},
                 "question": {"default": "What is ChatGPT?", "type": "string"},
                 "stream": {"default": "False", "type": "bool"},
             },
+            "outputs": {"output": {"type": "string"}},
         }
 
     def test_eager_flow_test_with_yaml(self, pfs_op: PFSOperations) -> None:

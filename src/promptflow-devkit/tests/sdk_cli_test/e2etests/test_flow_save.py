@@ -465,6 +465,11 @@ class TestFlowSave:
                             "type": "string",
                         }
                     },
+                    "outputs": {
+                        "output": {
+                            "type": "string",
+                        },
+                    },
                 },
                 id="simple",
             ),
@@ -509,6 +514,11 @@ class TestFlowSave:
                             "type": "object",
                         }
                     },
+                    "outputs": {
+                        "output": {
+                            "type": "string",
+                        },
+                    },
                 },
                 id="inherited_typed_dict_output",
             ),
@@ -519,6 +529,11 @@ class TestFlowSave:
                         "text": {
                             "type": "string",
                         }
+                    },
+                    "outputs": {
+                        "output": {
+                            "type": "string",
+                        },
                     },
                 },
                 id="kwargs",
@@ -624,8 +639,9 @@ class TestFlowSave:
                 "question": {"default": "What is ChatGPT?", "type": "string"},
                 "stream": {"default": "False", "type": "bool"},
             },
+            "outputs": {"output": {"type": "string"}},
         }
 
         with pytest.raises(UserErrorException) as ex:
             pf.flows.infer_signature(entry="invalid_entry")
-        assert "only support callable object or flow" in ex.value.message
+        assert "only support callable object or prompty" in ex.value.message
