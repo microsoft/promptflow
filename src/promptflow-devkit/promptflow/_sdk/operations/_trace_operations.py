@@ -161,6 +161,8 @@ class TraceOperations:
         runs: typing.Optional[typing.Union[str, typing.List[str]]] = None,
         experiments: typing.Optional[typing.Union[str, typing.List[str]]] = None,
         trace_ids: typing.Optional[typing.Union[str, typing.List[str]]] = None,
+        session_id: typing.Optional[str] = None,
+        line_run_ids: typing.Optional[typing.Union[str, typing.List[str]]] = None,
     ) -> typing.List[LineRun]:
         # ensure runs, experiments, and trace_ids are list of string
         if isinstance(runs, str):
@@ -169,6 +171,8 @@ class TraceOperations:
             experiments = [experiments]
         if isinstance(trace_ids, str):
             trace_ids = [trace_ids]
+        if isinstance(line_run_ids, str):
+            line_run_ids = [line_run_ids]
 
         # currently we list parent line runs first, and query children for each
         # this will query SQLite for N+1 times (N is the number of parent line runs)
@@ -178,6 +182,8 @@ class TraceOperations:
             runs=runs,
             experiments=experiments,
             trace_ids=trace_ids,
+            session_id=session_id,
+            line_run_ids=line_run_ids,
         )
         line_runs = []
         for obj in orm_line_runs:
