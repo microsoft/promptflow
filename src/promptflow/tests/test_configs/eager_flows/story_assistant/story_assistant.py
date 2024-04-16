@@ -1,5 +1,6 @@
 import json
 import random
+import time
 
 from promptflow.tracing import trace
 import os
@@ -94,6 +95,19 @@ def get_messages_in_run(run):
     return messages_in_run
 
 
+def get_message(thread_id, last_message_id: str=None):
+    messages = client.beta.threads.messages.list(
+        thread_id=thread_id,
+        after=last_message_id
+    )
+    return messages.data[0].id, [content.dict() for content in messages.data[0].content]
+
+
+def  list_all_steps(run, thread_id):
+    steps = client.beta.threads.runs.steps.list(run.id, thread_id=thread_id)
+    for step in steps:
+        print(step.dict())
+
 ############################################################################################################
 # User code starts
 ############################################################################################################
@@ -114,20 +128,25 @@ def Run_execute(thread_id, assistant_id):
         assistant_id=assistant_id
     )
 
-    while run.status == "requires_action":
-        tool_outputs = Tool_calls(required_tool_calls = run.required_action.submit_tool_outputs.tool_calls)
-        run = submit_tool_outputs_and_poll_run(thread_id=run.thread_id, run_id=run.id, tool_outputs=tool_outputs)
-
-    if run.status == "completed":
-        print(run)
-        return get_messages_in_run(run)
-    else:
-        if run.last_error is not None:
-            error_message = f"The run {run.id} is in '{run.status}' status. " \
-                            f"Error code: {run.last_error.code}. Message: {run.last_error.message}"
+    while True:
+        print(f"run status={run.status}")
+        if run.status == "requires_action":
+            tool_outputs = Tool_calls(required_tool_calls=run.required_action.submit_tool_outputs.tool_calls)
+            run = submit_tool_outputs_and_poll_run(thread_id=run.thread_id, run_id=run.id, tool_outputs=tool_outputs)
+        elif run.status in {"failed", "cancelled", "expired"}:
+            if run.last_error is not None:
+                error_message = f"The run {run.id} is in '{run.status}' status. " \
+                                f"Error code: {run.last_error.code}. Message: {run.last_error.message}"
+            else:
+                error_message = f"The run {run.id} is in '{run.status}' status without a specific error message."
+            raise Exception(error_message)
+        elif run.status in {"completed"}:
+            # Expect the terminated run to show up in trace
+            # To delete: list all steps
+            list_all_steps(run, thread_id)
+            return run.dict()
         else:
-            error_message = f"The run {run.id} is in '{run.status}' status without a specific error message."
-        raise Exception(error_message)
+            raise Exception(f"Unsupported run status: {run.status}")
 
 
 # We may want to introduce a decorator and span type for tool_calls here.
@@ -242,15 +261,15 @@ def two_assistants_flow(topic: str):
 
     assistant_1 = get_or_create_assistant_1()
 
-    output_message = Run_execute(thread.id, assistant_1.id)
-    story = [m.content[0].text.value for m in output_message]
+    Run_execute(thread.id, assistant_1.id)
+    msg_id, story = get_message(thread.id)
 
     print(f"The first run complete")
 
     assistant_2 = get_or_create_assistant_2()
 
-    output_message = Run_execute(thread.id, assistant_2.id)
-    evaluation = [m.content[0].text.value for m in output_message]
+    Run_execute(thread.id, assistant_2.id)
+    msg_id, evaluation = get_message(thread.id, msg_id)
 
     print(f"The second run complete")
 

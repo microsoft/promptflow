@@ -76,13 +76,21 @@ class TestAssistant:
 _client = PFClient()
 
 
+def clear_module_cache(module_name):
+    try:
+        del sys.modules[module_name]
+    except Exception:
+        pass
+
+
 @pytest.mark.usefixtures("dev_connections", "recording_injection")
 @pytest.mark.e2etest
 class TestAssistantEagerFlow:
     def test_eager_flow_with_assistant(self):
+        clear_module_cache("entry")
         # Need to create .env file for the flow.
         # > python generate_connection_config.py --target_folder <flow_folder>
-        flow_path = get_flow_folder("assistant_script", EAGER_FLOWS_ROOT).absolute()
+        flow_path = get_flow_folder("math_tutor", EAGER_FLOWS_ROOT).absolute()
         # Load .env file as env variables
         load_dotenv(dotenv_path=f"{flow_path}/.env")
         inputs = {
