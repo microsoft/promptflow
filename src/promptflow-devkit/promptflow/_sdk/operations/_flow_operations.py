@@ -1112,9 +1112,11 @@ class FlowOperations(TelemetryMixin):
         format_signature_type(flow_meta)
 
         if validate:
+            flow_meta["language"] = language
             # this path is actually not used
             flow = FlexFlow(path=code / FLOW_FLEX_YAML, code=code, data=flow_meta, entry=flow_meta["entry"])
             flow._validate(raise_error=True)
+            flow_meta.pop("language", None)
 
         if include_primitive_output and "outputs" not in flow_meta:
             flow_meta["outputs"] = {
@@ -1295,7 +1297,7 @@ class FlowOperations(TelemetryMixin):
         if not is_flex_flow(yaml_dict=data):
             return False
         entry = data.get("entry")
-        signatures, _, _ = self._infer_signature_flex_flow(entry=entry, code=code)
+        signatures, _, _ = self._infer_signature_flex_flow(entry=entry, code=code, language=data.get(LANGUAGE_KEY, "python"))
         merged_signatures = self._merge_signature(extracted=signatures, signature_overrides=data)
         FlexFlow(path=code / FLOW_FLEX_YAML, code=code, data=data, entry=entry)._validate()
         updated = False

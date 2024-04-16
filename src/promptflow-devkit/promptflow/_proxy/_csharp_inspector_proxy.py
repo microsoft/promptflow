@@ -1,7 +1,8 @@
-import json
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
+
 import re
-import subprocess
-import tempfile
 from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List
@@ -9,10 +10,10 @@ from typing import Dict, List
 import pydash
 
 from promptflow._constants import FlowEntryRegex
-from promptflow._core._errors import UnexpectedError
 from promptflow._sdk._constants import ALL_CONNECTION_TYPES, FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
 from promptflow._utils.flow_utils import is_flex_flow, read_json_content
 from promptflow._utils.yaml_utils import load_yaml
+from promptflow.exceptions import UserErrorException
 
 from ._base_inspector_proxy import AbstractInspectorProxy
 
@@ -55,7 +56,7 @@ class CSharpInspectorProxy(AbstractInspectorProxy):
 
     def is_flex_flow_entry(self, entry: str) -> bool:
         """Check if the flow is a flex flow entry."""
-        return isinstance(entry, str) and re.match(FlowEntryRegex.CSharp, entry)
+        return isinstance(entry, str) and re.match(FlowEntryRegex.CSharp, entry) is not None
 
     def get_entry_meta(
         self,
@@ -63,39 +64,16 @@ class CSharpInspectorProxy(AbstractInspectorProxy):
         working_dir: Path,
         **kwargs,
     ) -> Dict[str, str]:
-        """In csharp, we need to generate metadata based on a dotnet command for now and the metadata will
-        always be dumped.
-        """
-        # TODO: add tests for this
-        with tempfile.TemporaryDirectory() as temp_dir:
-            flow_file = Path(temp_dir) / "flow.dag.yaml"
-            flow_file.write_text(json.dumps({"entry": entry}))
-
-            # TODO: enable cache?
-            command = [
-                "dotnet",
-                EXECUTOR_SERVICE_DLL,
-                "--flow_meta",
-                "--yaml_path",
-                flow_file.absolute().as_posix(),
-                "--assembly_folder",
-                ".",
-            ]
-            try:
-                subprocess.check_output(
-                    command,
-                    cwd=working_dir,
-                )
-            except subprocess.CalledProcessError as e:
-                raise UnexpectedError(
-                    message_format="Failed to generate flow meta for csharp flow.\n"
-                    "Command: {command}\n"
-                    "Working directory: {working_directory}\n"
-                    "Return code: {return_code}\n"
-                    "Output: {output}",
-                    command=" ".join(command),
-                    working_directory=working_dir.as_posix(),
-                    return_code=e.returncode,
-                    output=e.output,
-                )
-        return json.loads((working_dir / PROMPT_FLOW_DIR_NAME / "flow.json").read_text())
+        """In csharp, the metadata will always be dumped at the beginning of each local run."""
+        target_path = working_dir / PROMPT_FLOW_DIR_NAME / "flow.json"
+        if target_path.is_file():
+            entry_meta = read_json_content(target_path, "flow metadata")
+            for key in ["inputs", "outputs", "init"]:
+                if key not in entry_meta:
+                    continue
+                for port_name, port in entry_meta[key].items():
+                    if "type" in port and isinstance(port["type"], list) and len(port["type"]) == 1:
+                        port["type"] = port["type"][0]
+            entry_meta.pop("framework", None)
+            return entry_meta
+        raise UserErrorException("Flow metadata not found.")
