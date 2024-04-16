@@ -154,7 +154,7 @@ class TestTracing:
             # Extract the root span and validate the prompt template value is correctly set.
             root_span = next(span for span in span_list if span.parent is None)
             events = self.load_builtin_events(root_span)
-            assert PROMPT_TEMPLATE_EVENT in events, f"Expected '{PROMPT_TEMPLATE_EVENT}' in events"
+            assert PROMPT_TEMPLATE_EVENT in events, f"Expected '{PROMPT_TEMPLATE_EVENT}' in {events}"
             assert events[PROMPT_TEMPLATE_EVENT][PROMPT_TEMPLATE] == inputs["prompt_tpl"], "Mismatch in prompt template"
             prompt_variables = json.loads(events[PROMPT_TEMPLATE_EVENT][PROMPT_VARIABLES])
             assert all(item in inputs.items() for item in prompt_variables.items()), "Mismatch in prompt variables"
