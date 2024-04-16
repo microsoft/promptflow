@@ -46,9 +46,9 @@ class ClientUserAgentUtil:
             user_agent = config.get_user_agent()
             if user_agent:
                 cls.append_user_agent(user_agent)
-        except ImportError:
+        except ImportError as e:
             # Ignore if promptflow-devkit not installed, then config is not available.
-            logger.debug("promptflow-devkit not installed, skip update_user_agent_from_config.")
+            logger.debug(f"promptflow-devkit not installed, skip update_user_agent_from_config. Exception {e}")
             pass
 
 
