@@ -23,7 +23,6 @@ from promptflow.core._prompty_utils import (
     update_dict_recursively,
 )
 from promptflow.exceptions import UserErrorException
-from promptflow.tracing import trace
 from promptflow.tracing._trace import _traced
 
 
@@ -364,7 +363,6 @@ class Prompty(FlowBase):
             raise MissingRequiredInputError(f"Missing required inputs: {missing_inputs}")
         return resolved_inputs
 
-    @trace
     def __call__(self, *args, **kwargs):
         """Calling flow as a function, the inputs should be provided with key word arguments.
         Returns the output of the prompty.
@@ -392,8 +390,7 @@ class Prompty(FlowBase):
         # 4. send request to open ai
         api_client = get_open_ai_client_by_connection(connection=connection)
 
-        traced_llm_call = _traced(send_request_to_llm)
-        response = traced_llm_call(api_client, self._model.api, params)
+        response = send_request_to_llm(api_client, self._model.api, params)
         return format_llm_response(
             response=response,
             api=self._model.api,
@@ -418,7 +415,6 @@ class AsyncPrompty(Prompty):
 
     """
 
-    @trace
     async def __call__(self, *args, **kwargs) -> Mapping[str, Any]:
         """Calling prompty as a function in async, the inputs should be provided with key word arguments.
         Returns the output of the prompty.
@@ -446,8 +442,7 @@ class AsyncPrompty(Prompty):
         # 4. send request to open ai
         api_client = get_open_ai_client_by_connection(connection=connection, is_async=True)
 
-        traced_llm_call = _traced(send_request_to_llm)
-        response = await traced_llm_call(api_client, self._model.api, params)
+        response = await send_request_to_llm(api_client, self._model.api, params)
         return format_llm_response(
             response=response,
             api=self._model.api,
