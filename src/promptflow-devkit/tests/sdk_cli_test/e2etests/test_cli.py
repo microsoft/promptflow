@@ -990,9 +990,13 @@ class TestCli:
             f"{FLOWS_DIR}/chat_flow_with_python_node_streaming_output",
             "--interactive",
         )
-        output_path = Path(FLOWS_DIR) / "chat_flow_with_stream_output" / ".promptflow" / "chat.output.json"
+        output_path = (
+            Path(FLOWS_DIR) / "chat_flow_with_python_node_streaming_output" / ".promptflow" / "chat.output.json"
+        )
         assert output_path.exists()
-        detail_path = Path(FLOWS_DIR) / "chat_flow_with_stream_output" / ".promptflow" / "chat.detail.json"
+        detail_path = (
+            Path(FLOWS_DIR) / "chat_flow_with_python_node_streaming_output" / ".promptflow" / "chat.detail.json"
+        )
         assert detail_path.exists()
 
         # Validate terminal output
