@@ -1124,7 +1124,10 @@ class FlowOperations(TelemetryMixin):
             from promptflow.contracts.tool import ValueType
             from promptflow.core._model_configuration import PromptyModelConfiguration
 
-            flow_meta = {"inputs": entry._data.get("inputs", {}), "outputs": entry._data.get("outputs", {})}
+            flow_meta = {
+                "inputs": entry._data.get("inputs", {}),
+                "outputs": entry._data.get("outputs", {"output": "string"}),
+            }
             init_dict = {}
             for field in fields(PromptyModelConfiguration):
                 filed_type = type(field.type).__name__

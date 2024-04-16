@@ -617,7 +617,7 @@ class TestFlowSave:
                 "lastName": {"type": "string", "default": "Doh"},
                 "question": {"type": "string"},
             },
-            "outputs": {},
+            "outputs": {"output": {"type": "string"}},
             "init": {
                 "configuration": {"type": "object"},
                 "parameters": {"type": "object"},
