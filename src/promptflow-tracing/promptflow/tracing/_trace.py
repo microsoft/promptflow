@@ -9,7 +9,7 @@ import logging
 from collections.abc import Iterator
 from importlib.metadata import version
 from threading import Lock
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Union
 
 import opentelemetry.trace as otel_trace
 from opentelemetry.sdk.trace import ReadableSpan
@@ -368,7 +368,7 @@ def _traced_sync(
     *,
     args_to_ignore: Optional[List[str]] = None,
     trace_type=TraceType.FUNCTION,
-    name: Optional[str] = None,
+    name: Optional[Union[str, Callable]] = None,
 ) -> Callable:
     """
     Decorator that adds tracing to a synchronous function.

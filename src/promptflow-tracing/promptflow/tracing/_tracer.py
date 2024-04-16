@@ -5,7 +5,7 @@ import uuid
 from collections.abc import Iterator
 from contextvars import ContextVar
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Union
 
 from ._thread_local_singleton import ThreadLocalSingleton
 from ._utils import serialize
@@ -143,7 +143,7 @@ def _create_trace_from_function_call(
     kwargs=None,
     args_to_ignore: Optional[List[str]] = None,
     trace_type=TraceType.FUNCTION,
-    name=None,
+    name: Optional[Union[str, Callable]] = None,
 ):
     """
     Creates a trace object from a function call.
@@ -190,9 +190,14 @@ def _create_trace_from_function_call(
         function = f.__call__.__qualname__
     if trace_type in [TraceType.LLM, TraceType.EMBEDDING] and f.__module__:
         function = f"{f.__module__}.{function}"
-
+    if isinstance(name, str):
+        trace_name = name
+    elif isinstance(name, Callable):
+        trace_name = name(f, *args, **kwargs)
+    else:
+        trace_name = function
     return Trace(
-        name=name or function,  # Use the function name as the trace name if not provided
+        name=trace_name,
         type=trace_type,
         start_time=datetime.utcnow().timestamp(),
         inputs=all_kwargs,
