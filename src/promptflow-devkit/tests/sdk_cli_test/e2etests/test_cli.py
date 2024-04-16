@@ -982,20 +982,6 @@ class TestCli:
         detail_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "chat.detail.json"
         assert detail_path.exists()
 
-        # Test streaming output
-        chat_list = ["hi", "what is chat gpt?"]
-        run_pf_command(
-            "flow",
-            "test",
-            "--flow",
-            f"{FLOWS_DIR}/chat_flow_with_stream_output",
-            "--interactive",
-        )
-        output_path = Path(FLOWS_DIR) / "chat_flow_with_stream_output" / ".promptflow" / "chat.output.json"
-        assert output_path.exists()
-        detail_path = Path(FLOWS_DIR) / "chat_flow_with_stream_output" / ".promptflow" / "chat.detail.json"
-        assert detail_path.exists()
-
         chat_list = ["hi", "what is chat gpt?"]
         run_pf_command(
             "flow",
@@ -1017,6 +1003,15 @@ class TestCli:
         assert "chat_node:" in outerr.out
         assert "show_answer:" in outerr.out
         assert "[show_answer]: print:" in outerr.out
+
+    def test_invalid_chat_flow(self, monkeypatch, capsys):
+        def mock_input(*args, **kwargs):
+            if chat_list:
+                return chat_list.pop()
+            else:
+                raise KeyboardInterrupt()
+
+        monkeypatch.setattr("builtins.input", mock_input)
 
         chat_list = ["hi", "what is chat gpt?"]
         with pytest.raises(SystemExit):
@@ -1044,6 +1039,53 @@ class TestCli:
             )
         outerr = capsys.readouterr()
         assert "chat flow does not support multiple chat outputs" in outerr.out
+
+        with pytest.raises(SystemExit):
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{FLOWS_DIR}/chat_flow_with_multi_input_invalid",
+                "--interactive",
+            )
+        outerr = capsys.readouterr()
+        assert "chat flow does not support multiple chat inputs" in outerr.out
+
+        with pytest.raises(SystemExit):
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{FLOWS_DIR}/chat_flow_with_invalid_output",
+                "--interactive",
+            )
+        outerr = capsys.readouterr()
+        assert "chat output is not configured" in outerr.out
+
+    def test_chat_with_stream_output(self, monkeypatch, capsys):
+        chat_list = ["hi", "what is chat gpt?"]
+
+        def mock_input(*args, **kwargs):
+            if chat_list:
+                return chat_list.pop()
+            else:
+                raise KeyboardInterrupt()
+
+        monkeypatch.setattr("builtins.input", mock_input)
+
+        # Test streaming output
+        chat_list = ["hi", "what is chat gpt?"]
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/chat_flow_with_stream_output",
+            "--interactive",
+        )
+        output_path = Path(FLOWS_DIR) / "chat_flow_with_stream_output" / ".promptflow" / "chat.output.json"
+        assert output_path.exists()
+        detail_path = Path(FLOWS_DIR) / "chat_flow_with_stream_output" / ".promptflow" / "chat.detail.json"
+        assert detail_path.exists()
 
         # Test prompty with stream output
         chat_list = ["What is the sum of the calculation results of previous rounds?", "what is the result of 3+3?"]
