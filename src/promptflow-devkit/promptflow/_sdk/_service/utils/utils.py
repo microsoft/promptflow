@@ -80,16 +80,12 @@ def get_current_env_pfs_file(file_name):
 
 
 def get_port_from_config(create_if_not_exists=False):
-    if is_run_from_built_binary():
-        port_file_path = HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE
-        port_file_path.touch(mode=read_write_by_user(), exist_ok=True)
-    else:
-        port_file_path = get_current_env_pfs_file(PF_SERVICE_PORT_FILE)
+    port_file_path = get_port_file_location()
     with open(port_file_path, "r+", encoding=DEFAULT_ENCODING) as f:
         service_config = load_yaml(f) or {}
         port = service_config.get("service", {}).get("port", None)
         if not port and create_if_not_exists:
-            port = get_random_port()
+            port = get_pfs_port()
             service_config["service"] = service_config.get("service", {})
             service_config["service"]["port"] = port
             logger.debug(f"Set port {port} to file {port_file_path}")
@@ -99,13 +95,18 @@ def get_port_from_config(create_if_not_exists=False):
     return port
 
 
-def dump_port_to_config(port):
+def get_port_file_location():
     if is_run_from_built_binary():
         port_file_path = HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE
         port_file_path.touch(mode=read_write_by_user(), exist_ok=True)
     else:
-        # Set port to ~/.promptflow/pfs/**_pf.port, if already have a port in file , will overwrite it.
         port_file_path = get_current_env_pfs_file(PF_SERVICE_PORT_FILE)
+    return port_file_path
+
+
+def dump_port_to_config(port):
+    port_file_path = get_port_file_location()
+    # Set port to ~/.promptflow/pfs/**_pf.port, if already have a port in file , will not write again.
     with open(port_file_path, "r+", encoding=DEFAULT_ENCODING) as f:
         service_config = load_yaml(f) or {}
         service_config["service"] = service_config.get("service", {})
@@ -125,10 +126,15 @@ def is_port_in_use(port: int):
         return s.connect_ex(("localhost", port)) == 0
 
 
-def get_random_port():
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(("localhost", 0))
-        return s.getsockname()[1]
+def get_pfs_port():
+    port = 23333
+    while True:
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.bind(("localhost", port))
+                return s.getsockname()[1]
+        except OSError:
+            port += 1
 
 
 def _get_process_by_port(port):
@@ -153,7 +159,7 @@ def _get_process_by_port(port):
 
 
 def kill_exist_service(port):
-    proc = _get_process_by_port(port)
+    proc = _get_process_by_port(port) if port else None
     if proc:
         proc.terminate()
         proc.wait(10)
@@ -161,7 +167,7 @@ def kill_exist_service(port):
 
 def get_started_service_info(port):
     service_info = {}
-    proc = _get_process_by_port(port)
+    proc = _get_process_by_port(port) if port else None
     if proc:
         create_time = proc.create_time()
         process_uptime = datetime.now() - datetime.fromtimestamp(create_time)
