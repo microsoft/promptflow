@@ -1,7 +1,7 @@
 from enum import Enum
 from promptflow.tools.common import render_jinja_template, handle_openai_error, \
-    parse_chat, to_bool, validate_functions, process_function_call, \
-    post_process_chat_api_response, init_openai_client
+    to_bool, validate_functions, process_function_call, \
+    post_process_chat_api_response, init_openai_client, build_messages
 
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
 # since the code here is in promptflow namespace as well
@@ -111,8 +111,7 @@ class OpenAI(ToolProvider):
         seed: int = None,
         **kwargs
     ) -> [str, dict]:
-        chat_str = render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, **kwargs)
-        messages = parse_chat(chat_str)
+        messages = build_messages(prompt, **kwargs)
         # TODO: remove below type conversion after client can pass json rather than string.
         stream = to_bool(stream)
         params = {
