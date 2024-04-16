@@ -28,7 +28,6 @@ In prompt flow, You can develop your flow locally and then seamlessly transition
 For more resources on Azure AI, visit the cloud documentation site: [Build AI solutions with prompt flow](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/get-started-prompt-flow?view=azureml-api-2).
 
 ```{toctree}
-:caption: AzureAI
 :maxdepth: 2
 azureai/quick-start/index
 azureai/manage-flows

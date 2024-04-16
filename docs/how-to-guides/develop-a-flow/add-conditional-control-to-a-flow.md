@@ -1,7 +1,7 @@
 # Add conditional control to a flow
 
 :::{admonition} Experimental feature
-This is an experimental feature, and may change at any time. Learn [more](faq.md#stable-vs-experimental).
+This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
 :::
 
 In prompt flow, we support control logic by activate config, like if-else, switch. Activate config enables conditional execution of nodes within your flow, ensuring that specific actions are taken only when the specified conditions are met.
@@ -37,10 +37,10 @@ activate:
 :sync: VS Code Extension
 
 - Click `Visual editor` in the flow.dag.yaml to enter the flow interface.
-![visual_editor](../media/how-to-guides/conditional-flow-with-activate/visual_editor.png)
+![visual_editor](../../media/how-to-guides/conditional-flow-with-activate/visual_editor.png)
 
 - Click on the `Activation config` section in the node you want to add and fill in the values for "when" and "is".
-![activate_config](../media/how-to-guides/conditional-flow-with-activate/activate_config.png)
+![activate_config](../../media/how-to-guides/conditional-flow-with-activate/activate_config.png)
 
 :::
 
@@ -49,15 +49,15 @@ activate:
 ### Further details and important notes
 1. If the node using the python tool has an input that references a node that may be bypassed, please provide a default value for this input whenever possible. If there is no default value for input, the output of the bypassed node will be set to None.
 
-    ![provide_default_value](../media/how-to-guides/conditional-flow-with-activate/provide_default_value.png)
+    ![provide_default_value](../../media/how-to-guides/conditional-flow-with-activate/provide_default_value.png)
 
 2. It is not recommended to directly connect nodes that might be bypassed to the flow's outputs. If it is connected, the output will be None and a warning will be raised.
 
-    ![output_bypassed](../media/how-to-guides/conditional-flow-with-activate/output_bypassed.png)
+    ![output_bypassed](../../media/how-to-guides/conditional-flow-with-activate/output_bypassed.png)
 
-3. In a conditional flow, if a node has activate config, we will always use this config to determine whether the node should be bypassed. If a node is bypassed, its status will be marked as "Bypassed", as shown in the figure below Show. There are three situations in which a node is bypassed.
+3. In a conditional flow, if a node has an activate config, we will always use this config to determine whether the node should be bypassed. If a node is bypassed, its status will be marked as "Bypassed", as shown in the figure below Show. There are three situations in which a node is bypassed.
 
-    ![bypassed_nodes](../media/how-to-guides/conditional-flow-with-activate/bypassed_nodes.png)
+    ![bypassed_nodes](../../media/how-to-guides/conditional-flow-with-activate/bypassed_nodes.png)
 
 
     (1) If a node has activate config and the value of `activate.when` is not equals to `activate.is`, it will be bypassed. If you want to fore a node to always be executed, you can set the activate config to `when dummy is dummy` which always meets the activate condition.
@@ -84,4 +84,4 @@ Let's illustrate how to use activate config with practical examples.
 
 ## Next steps
 
-- [Run and evaluate a flow](./run-and-evaluate-a-flow/index.md)
+- [Run and evaluate a flow](../run-and-evaluate-a-flow/index.md)
