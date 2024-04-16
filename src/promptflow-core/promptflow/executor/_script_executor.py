@@ -1,11 +1,11 @@
 import asyncio
 import contextlib
 import dataclasses
-import functools
 import importlib
 import inspect
 import uuid
 from dataclasses import is_dataclass
+from functools import partial
 from pathlib import Path
 from types import GeneratorType
 from typing import Any, Callable, Dict, Mapping, Optional, Union
@@ -27,6 +27,7 @@ from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DefaultRunStorage
 from promptflow.tracing._trace import _traced
 from promptflow.tracing._tracer import Tracer
+from promptflow.tracing.contracts.trace import TraceType
 
 from ._errors import FlowEntryInitializationError
 from .flow_executor import FlowExecutor
@@ -179,7 +180,7 @@ class ScriptExecutor(FlowExecutor):
             if self._is_async:
                 output = await self._func(**inputs)
             else:
-                partial_func = functools.partial(self._func, **inputs)
+                partial_func = partial(self._func, **inputs)
                 output = await asyncio.get_event_loop().run_in_executor(None, partial_func)
             output = self._stringify_generator_output(output) if not allow_generator_output else output
             traces = Tracer.end_tracing(line_run_id)
@@ -278,7 +279,7 @@ class ScriptExecutor(FlowExecutor):
         func = self._parse_entry_func()
         # If the function is not decorated with trace, add trace for it.
         if not hasattr(func, "__original_function"):
-            func = _traced(func)
+            func = _traced(func, trace_type=TraceType.FLOW)
         self._func = func
         inputs, _, _, _ = function_to_interface(self._func)
         self._inputs = {k: v.to_flow_input_definition() for k, v in inputs.items()}
