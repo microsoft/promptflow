@@ -104,14 +104,14 @@ def enrich_span_with_trace(span, trace: Trace):
 
 def enrich_span_with_prompt_info(span, func, kwargs):
     try:
-        from promptflow.core._flow import Prompty
-
-        # Get prompt template from prompty
-        if isinstance(func, Prompty):
-            prompt_tpl = func._template
-            prompt_vars = {
-                name: kwargs.get(name) for name in get_input_names_for_prompt_template(prompt_tpl) if name in kwargs
-            }
+        prompt_tpl, prompt_vars = None, None
+        if not inspect.isfunction(func):
+            if type(func).__name__ == "Prompty":
+                # Get prompt template from prompty
+                prompt_tpl = getattr(func, "_template")
+                prompt_vars = {
+                    name: kwargs.get(name) for name in get_input_names_for_prompt_template(prompt_tpl) if name in kwargs
+                }
         else:
             # Assume there is only one prompt template parameter in the function,
             # we use the first one by default if there are multiple.
@@ -121,8 +121,7 @@ def enrich_span_with_prompt_info(span, func, kwargs):
                 prompt_vars = {
                     name: kwargs.get(name) for name in get_input_names_for_prompt_template(prompt_tpl) if name in kwargs
                 }
-            else:
-                prompt_tpl, prompt_vars = None, None
+
         if prompt_tpl:
             prompt_info = {"prompt.template": prompt_tpl, "prompt.variables": serialize_attribute(prompt_vars)}
             span.set_attributes(prompt_info)
