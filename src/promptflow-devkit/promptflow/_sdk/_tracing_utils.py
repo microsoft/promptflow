@@ -15,9 +15,6 @@ from promptflow.core._errors import MissingRequiredPackage
 
 _logger = get_cli_sdk_logger()
 
-PF_DIR_TRACING = "tracing"
-WORKSPACE_KIND_LOCAL_CACHE_EXPIRE_DAYS = 1
-
 
 @dataclass
 class WorkspaceKindLocalCache:
@@ -32,6 +29,9 @@ class WorkspaceKindLocalCache:
     WORKSPACE_NAME = "workspace_name"
     KIND = "kind"
     TIMESTAMP = "timestamp"
+    # class-related constants
+    PF_DIR_TRACING = "tracing"
+    WORKSPACE_KIND_LOCAL_CACHE_EXPIRE_DAYS = 1
 
     def __post_init__(self):
         if self.is_cache_exists:
@@ -41,7 +41,7 @@ class WorkspaceKindLocalCache:
 
     @property
     def cache_path(self) -> Path:
-        tracing_dir = HOME_PROMPT_FLOW_DIR / PF_DIR_TRACING
+        tracing_dir = HOME_PROMPT_FLOW_DIR / self.PF_DIR_TRACING
         if not tracing_dir.exists():
             tracing_dir.mkdir(parents=True)
         filename = f"{self.subscription_id}_{self.resource_group_name}_{self.workspace_name}.json"
@@ -56,7 +56,7 @@ class WorkspaceKindLocalCache:
         if not self.is_cache_exists:
             return True
         time_delta = datetime.datetime.now() - self.timestamp
-        return time_delta.days > WORKSPACE_KIND_LOCAL_CACHE_EXPIRE_DAYS
+        return time_delta.days > self.WORKSPACE_KIND_LOCAL_CACHE_EXPIRE_DAYS
 
     def get_kind(self) -> str:
         if not self.is_cache_exists or self.is_expired:
