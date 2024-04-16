@@ -1,7 +1,7 @@
 # Use flow in Azure ML pipeline job
 In practical scenarios, flows fulfill various functions. For example, consider an offline flow specifically designed to assess the relevance score for communication sessions between humans and agents. This flow is triggered nightly and processes a substantial amount of session data. In such a context, Parallel component and AzureML pipeline emerge as the optimal choices for handling large-scale, highly resilient, and efficient offline batch requirements. 
 
-Once you’ve developed and thoroughly tested your flow using the guidelines in the [init and test a flow](../../how-to-guides/init-and-test-a-flow.md) section, this guide will walk you through utilizing your flow as a parallel component within an AzureML pipeline job.
+Once you’ve developed and thoroughly tested your flow using the guidelines in the [init and test a flow](../../how-to-guides/develop-a-flow/init-and-test-a-flow.md) section, this guide will walk you through utilizing your flow as a parallel component within an AzureML pipeline job.
 
 :::{admonition} Pre-requirements
 To enable this feature, customer need to:
