@@ -1141,11 +1141,13 @@ class ExperimentCommandSubmitter:
         resolved_outputs = {}
         for name, value in run._outputs.items():
             # Set default output path if user doesn't set it
-            if not value.path:
+            if not value:
                 # Create default output path if user doesn't set it
-                value.path = run._output_path / name
-                value.path.mkdir(parents=True, exist_ok=True)
-                value.path = value.path.resolve().absolute().as_posix()
+                value = run._output_path / name
+                value.mkdir(parents=True, exist_ok=True)
+                value = value.resolve().absolute().as_posix()
+                # Update default to run
+                run._outputs[name] = value
             # Note: We will do nothing if user config the value, as we don't know it's a file or folder
             resolved_outputs[name] = value
         logger.debug(f"Resolved node {run.node.name} outputs {resolved_outputs}.")

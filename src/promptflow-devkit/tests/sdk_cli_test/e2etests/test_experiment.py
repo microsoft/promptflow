@@ -54,12 +54,9 @@ class TestExperiment:
         gen_data_snapshot_path = experiment._output_dir / "snapshots" / "gen_data"
         echo_snapshot_path = experiment._output_dir / "snapshots" / "echo"
         expected["nodes"][0]["code"] = gen_data_snapshot_path.absolute().as_posix()
-        expected["nodes"][0]["outputs"]["output_path"] = {}
         expected["nodes"][3]["code"] = echo_snapshot_path.absolute().as_posix()
         expected["nodes"][3]["environment_variables"] = {}
-        expected["nodes"][3]["outputs"]["output_path"]["path"] = (
-            (Path(template_path).parent / "echo_output").absolute().as_posix()
-        )
+        expected["nodes"][3]["outputs"]["output_path"] = Path(template_path).parent.absolute().as_posix()
         assert experiment_dict["nodes"][0].items() == expected["nodes"][0].items()
         assert experiment_dict["nodes"][3].items() == expected["nodes"][3].items()
         # Assert snapshots
@@ -132,7 +129,7 @@ class TestExperiment:
         exp = client._experiments.start(exp)
         exp = self.wait_for_experiment_terminated(client, exp)
         for name, runs in exp.node_runs.items():
-            assert all([run["status"] == RunStatus.COMPLETED] for run in runs)
+            assert all(run["status"] == RunStatus.COMPLETED for run in runs)
         assert (Path(exp._output_dir) / "logs" / "exp.attempt_1.log").exists()
 
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
@@ -181,8 +178,9 @@ class TestExperiment:
         # Assert record log in experiment folder
         assert (Path(exp._output_dir) / "logs" / "exp.attempt_0.log").exists()
         assert exp.status == ExperimentStatus.TERMINATED
+        assert len(exp.node_runs) > 0
         for name, runs in exp.node_runs.items():
-            assert all([run["status"] == RunStatus.COMPLETED] for run in runs)
+            assert all(run["status"] == RunStatus.COMPLETED for run in runs)
 
     @pytest.mark.skipif(condition=not pytest.is_live, reason="Injection cannot passed to detach process.")
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
@@ -203,7 +201,7 @@ class TestExperiment:
         assert exp.status == ExperimentStatus.TERMINATED
         assert len(exp.node_runs) == 4
         for key, val in exp.node_runs.items():
-            assert all([item["status"] == RunStatus.COMPLETED for item in val]), f"Node {key} run failed"
+            assert all(item["status"] == RunStatus.COMPLETED for item in val), f"Node {key} run failed"
         assert len(exp.node_runs["main"]) == 2
         assert len(exp.node_runs["eval"]) == 2
         assert len(exp.node_runs["echo"]) == 2
@@ -215,7 +213,7 @@ class TestExperiment:
         assert exp.status == ExperimentStatus.TERMINATED
         assert len(exp.node_runs) == 4
         for key, val in exp.node_runs.items():
-            assert all([item["status"] == RunStatus.COMPLETED for item in val]), f"Node {key} run failed"
+            assert all(item["status"] == RunStatus.COMPLETED for item in val), f"Node {key} run failed"
         assert len(exp.node_runs["main"]) == 3
         assert len(exp.node_runs["echo"]) == 2
 

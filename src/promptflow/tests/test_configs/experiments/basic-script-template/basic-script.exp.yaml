@@ -48,5 +48,4 @@ nodes:
     inputs:
       input_path: ${main.outputs}
     outputs:
-      output_path:
-        path: echo_output
+      output_path: .

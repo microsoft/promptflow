@@ -7,14 +7,7 @@ from ruamel.yaml import YAML
 from promptflow._sdk._errors import MultipleExperimentTemplateError, NoExperimentTemplateError
 from promptflow._sdk._load_functions import _load_experiment_template
 from promptflow._sdk._orchestrator.experiment_orchestrator import ExperimentTemplateTestContext
-from promptflow._sdk.entities._experiment import (
-    CommandNode,
-    CommandNodeOutput,
-    Experiment,
-    ExperimentData,
-    ExperimentInput,
-    FlowNode,
-)
+from promptflow._sdk.entities._experiment import CommandNode, Experiment, ExperimentData, ExperimentInput, FlowNode
 
 TEST_ROOT = PROMPTFLOW_ROOT / "tests"
 EXP_ROOT = TEST_ROOT / "test_configs/experiments"
@@ -72,10 +65,8 @@ class TestExperiment:
         experiment = Experiment.from_template(template)
         # Assert command node output resolved
         assert isinstance(experiment.nodes[0], CommandNode)
-        assert all(isinstance(v, CommandNodeOutput) for v in experiment.nodes[0].outputs.values())
         assert isinstance(experiment.nodes[3], CommandNode)
-        assert all(isinstance(v, CommandNodeOutput) for v in experiment.nodes[3].outputs.values())
-        assert experiment.nodes[3].outputs["output_path"].path == Path(template_path).parent / "echo_output"
+        assert experiment.nodes[3].outputs["output_path"].path == Path(template_path).parent
 
     def test_flow_referenced_id_calculation(self):
         template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"

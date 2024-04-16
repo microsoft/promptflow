@@ -28,7 +28,6 @@ from promptflow._sdk.entities._validation import MutableValidationResult, Schema
 from promptflow._sdk.entities._yaml_translatable import YAMLTranslatableMixin
 from promptflow._sdk.schemas._experiment import (
     ChatGroupSchema,
-    CommandNodeOutputSchema,
     CommandNodeSchema,
     ExperimentDataSchema,
     ExperimentInputSchema,
@@ -148,17 +147,6 @@ class FlowNode(YAMLTranslatableMixin):
         self.path = saved_flow_path.resolve().absolute().as_posix()
 
 
-class CommandNodeOutput(YAMLTranslatableMixin):
-    def __init__(self, path=None, **kwargs):
-        self.path = Path(path) if path else None  # Convert to 'uri' in rest object
-        self.name = kwargs.get("name", None)
-        self.version = kwargs.get("version", None)
-
-    @classmethod
-    def _get_schema_cls(cls):
-        return CommandNodeOutputSchema
-
-
 class CommandNode(YAMLTranslatableMixin):
     def __init__(
         self,
@@ -180,7 +168,7 @@ class CommandNode(YAMLTranslatableMixin):
         self.code = code
         self.command = command
         self.inputs = inputs or {}
-        self.outputs = self._resolve_outputs(outputs)
+        self.outputs = outputs or {}
         self.runtime = runtime
         self.resources = resources
         self.identity = identity
@@ -189,16 +177,6 @@ class CommandNode(YAMLTranslatableMixin):
     @classmethod
     def _get_schema_cls(cls):
         return CommandNodeSchema
-
-    def _resolve_outputs(self, outputs):
-        """Resolve outputs to CommandNodeOutput class object."""
-        resolved_outputs = {}
-        for name, value in outputs.items():
-            if isinstance(value, CommandNodeOutput):
-                resolved_outputs[name] = value
-                continue
-            resolved_outputs[name] = CommandNodeOutput(**(value or {}))
-        return resolved_outputs
 
     def _save_snapshot(self, target):
         """Save command source to experiment snapshot."""
