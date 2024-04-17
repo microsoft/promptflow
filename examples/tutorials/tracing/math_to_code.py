@@ -1,9 +1,10 @@
-from dotenv import load_dotenv
-from openai import AzureOpenAI
-from promptflow.tracing import trace, start_trace
-
 import ast
 import os
+
+from dotenv import load_dotenv
+from openai import AzureOpenAI
+
+from promptflow.tracing import start_trace, trace
 
 
 @trace
@@ -54,7 +55,7 @@ def code_refine(original_code: str) -> str:
 @trace
 def code_gen(client: AzureOpenAI, question: str) -> str:
     sys_prompt = (
-        "I want you to act as a Math expert specializing in Algebra, Geometry, and Calculus. "
+        "I want you to act as a math expert specializing in Algebra, Geometry, and Calculus. "
         "Given the question, develop python code to model the user's question. "
         "Make sure only reply the executable code, no other words."
     )
