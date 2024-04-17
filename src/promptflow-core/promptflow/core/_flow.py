@@ -23,6 +23,7 @@ from promptflow.core._prompty_utils import (
     update_dict_recursively,
 )
 from promptflow.exceptions import UserErrorException
+from promptflow.tracing._experimental import enrich_prompt_template
 from promptflow.tracing._trace import _traced
 
 
@@ -375,6 +376,7 @@ class Prompty(FlowBase):
         """
         if args:
             raise UserErrorException("Prompty can only be called with keyword arguments.")
+        enrich_prompt_template(self._template, variables=kwargs)
 
         # 1. Get connection
         connection = convert_model_configuration_to_connection(self._model.configuration)
@@ -427,6 +429,7 @@ class AsyncPrompty(Prompty):
         """
         if args:
             raise UserErrorException("Prompty can only be called with keyword arguments.")
+        enrich_prompt_template(self._template, variables=kwargs)
 
         # 1. Get connection
         connection = convert_model_configuration_to_connection(self._model.configuration)

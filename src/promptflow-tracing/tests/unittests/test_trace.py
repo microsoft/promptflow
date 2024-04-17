@@ -174,12 +174,9 @@ def test_enrich_span_with_prompt_info(caplog):
             "prompt.variables": '{\n  "input_1": "value_1",\n  "input_2": "value_2"\n}',
         }
 
-        def mock_func():
-            pass
-
         # Normal case
         span = MockSpan(MockSpanContext(1))
-        enrich_span_with_prompt_info(span, mock_func, test_prompt_args)
+        enrich_span_with_prompt_info(span, None, test_prompt_args)
 
         assert span.attributes == expected_prompt_info
         assert span.events[0].name == "promptflow.prompt.template"
@@ -187,7 +184,7 @@ def test_enrich_span_with_prompt_info(caplog):
 
         # Raise exception when update attributes
         span = MockSpan(MockSpanContext(1), raise_exception_for_attr=True)
-        enrich_span_with_prompt_info(span, mock_func, test_prompt_args)
+        enrich_span_with_prompt_info(span, None, test_prompt_args)
 
         assert caplog.records[0].levelname == "WARNING"
         assert "Failed to enrich span with prompt info" in caplog.text
