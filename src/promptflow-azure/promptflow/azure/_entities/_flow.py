@@ -13,7 +13,7 @@ import pydash
 from promptflow._constants import FlowLanguage
 from promptflow._sdk._constants import SERVICE_FLOW_TYPE_2_CLIENT_FLOW_TYPE, AzureFlowSource, FlowType
 from promptflow._sdk._utils import PromptflowIgnoreFile, load_yaml, remove_empty_element_from_dict
-from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag, resolve_flow_path
+from promptflow._utils.flow_utils import dump_flow_dag, is_prompty_flow, load_flow_dag, resolve_flow_path
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.azure._ml import AdditionalIncludesMixin, Code
 
@@ -50,6 +50,7 @@ class Flow(AdditionalIncludesMixin):
         self.flow_portal_url = kwargs.get("flow_portal_url", None)
         # flow's environment, used to calculate session id, value will be set after flow is resolved to code.
         self._environment = {}
+        self._is_prompty_flow = is_prompty_flow(path)
 
         if self._flow_source == AzureFlowSource.LOCAL:
             absolute_path = self._validate_flow_from_source(path)
@@ -57,7 +58,12 @@ class Flow(AdditionalIncludesMixin):
             self.code = absolute_path.parent.as_posix()
             self._code_uploaded = False
             self.path = absolute_path.name
-            self._flow_dict = self._load_flow_yaml(absolute_path)
+            if self._is_prompty_flow:
+                from promptflow.core._flow import Prompty
+
+                self._flow_dict = Prompty.load(source=absolute_path)._data
+            else:
+                self._flow_dict = self._load_flow_yaml(absolute_path)
             self.display_name = self.display_name or absolute_path.parent.name
             self.description = description or self._flow_dict.get("description", None)
             self.tags = tags or self._flow_dict.get("tags", None)
@@ -150,7 +156,10 @@ class Flow(AdditionalIncludesMixin):
             dag_updated = False
             if isinstance(code, Code):
                 flow_dir = Path(code.path)
-                _, flow_dag = load_flow_dag(flow_path=flow_dir)
+                if self._is_prompty_flow:
+                    flow_dag = self._flow_dict
+                else:
+                    _, flow_dag = load_flow_dag(flow_path=flow_dir)
                 original_flow_dag = copy.deepcopy(flow_dag)
                 if self._get_all_additional_includes_configs():
                     # Remove additional include in the flow yaml.
@@ -162,12 +171,12 @@ class Flow(AdditionalIncludesMixin):
                 dag_updated = self._resolve_requirements(flow_dir, flow_dag) or dag_updated
                 dag_updated = self._resolve_signature(flow_dir, flow_dag) or dag_updated
                 self._environment = self._resolve_environment(flow_dir, flow_dag)
-                if dag_updated:
+                if dag_updated and not self._is_prompty_flow:
                     dump_flow_dag(flow_dag, flow_dir)
             try:
                 yield code
             finally:
-                if dag_updated:
+                if dag_updated and not self._is_prompty_flow:
                     dump_flow_dag(original_flow_dag, flow_dir)
 
     def _get_base_path_for_code(self) -> Path:

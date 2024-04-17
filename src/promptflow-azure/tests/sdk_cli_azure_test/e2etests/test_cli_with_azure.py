@@ -22,6 +22,7 @@ from promptflow.tracing._operation_context import OperationContext
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
 
 RUNS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/runs"
+PROMPTY_DIR = PROMPTFLOW_ROOT / "tests/test_configs/prompty"
 
 
 # TODO: move this to a shared utility module
@@ -73,7 +74,7 @@ class TestCliWithAzure:
             "--name",
             name,
             pf=pf,
-            runtime=runtime,
+            # runtime=runtime,
         )
         run = pf.runs.get(run=name)
         assert isinstance(run, Run)
@@ -205,3 +206,44 @@ class TestCliWithAzure:
                 if "obj must be an instance or subtype of type" in str(e):
                     pass
                 raise
+
+    def test_azure_run_prompty(self, pf, runtime: str, randstr: Callable[[str], str]) -> None:
+        name = randstr("name")
+        run_pf_command(
+            "run",
+            "create",
+            "--flow",
+            f"{PROMPTY_DIR}/prompty_example.prompty",
+            "--data",
+            f"{DATAS_DIR}/prompty_inputs.jsonl",
+            "--name",
+            name,
+            "--subscription",
+            "96aede12-2f73-41cb-b983-6d11a904839b",
+            "-g",
+            "promptflow",
+            "-w",
+            "promptflow-canary",
+            pf=pf,
+            # runtime=runtime,
+        )
+        run = pf.runs.get(run=name)
+        assert isinstance(run, Run)
+
+    def test_flex_flow_run_bulk(self, pf, runtime: str, randstr: Callable[[str], str]) -> None:
+        FLEX_DIR = PROMPTFLOW_ROOT / "tests/test_configs/eager_flows"
+
+        name = randstr("name")
+        run_pf_command(
+            "run",
+            "create",
+            "--flow",
+            f"{FLEX_DIR}/builtin_llm",
+            "--data",
+            f"{FLEX_DIR}/builtin_llm/data.jsonl",
+            "--name",
+            name,
+            pf=pf,
+        )
+        run = pf.runs.get(run=name)
+        assert isinstance(run, Run)
