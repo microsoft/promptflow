@@ -594,7 +594,7 @@ class TestFlowSave:
                     }
                 },
             }
-            assert os.listdir(temp_dir) == ["flow.flex.yaml", "hello.py"]
+            assert set(os.listdir(temp_dir)) == {"flow.flex.yaml", "hello.py"}
 
     def test_flow_infer_signature(self):
         pf = PFClient()

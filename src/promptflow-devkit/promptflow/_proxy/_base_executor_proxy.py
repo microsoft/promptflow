@@ -269,28 +269,30 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         # for cloud, they will assume that metadata has already been dumped into the flow directory so do nothing here
         return
 
-    def _get_signatures(self):
+    def _get_type_of_ports(self):
         """
-        Get the signatures of current flow.
+        Get type of ports of a flow.
 
-        This implementation always works for dag flow
-        For flex flow, this implementation works for cloud as we will update signatures in flow file before upload.
-        Local executor proxies should override this method as we will not update the local flow file for now.
+        For dag flow, we can directly get type of ports from yaml.
+        For flex flow, we can also get type of ports from yaml in cloud as SDK will update the flow file before upload.
+        For local flex flow, python will infer type of ports from the function signature;
+        csharp depends on a flow.json generated with a dotnet command.
         """
-        # read signatures from flow file; works for cloud as we will update signatures in flow file before upload
         _, flow_file = resolve_flow_path(flow_path=self.working_dir, check_flow_exist=False)
-        signatures = load_yaml(flow_file)
-        for key in set(signatures.keys()) - {"inputs", "outputs", "init"}:
-            signatures.pop(key)
-        return signatures
+        flow_data = load_yaml(flow_file)
+        port_definitions = {}
+        for key in ["inputs", "outputs", "init"]:
+            if key in flow_data:
+                port_definitions[key] = flow_data[key]
+        return port_definitions
 
     def get_inputs_definition(self):
         """Get the inputs definition of an eager flow"""
         from promptflow.contracts.flow import FlowInputDefinition
 
-        signatures = self._get_signatures()
+        input_definitions = self._get_type_of_ports().get("inputs", {})
         inputs = {}
-        for key, value in signatures.get("inputs", {}).items():
+        for key, value in input_definitions.items():
             # TODO: update this after we determine whether to accept list here or now
             _type = value.get("type")
             if isinstance(_type, list):
@@ -335,8 +337,7 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
     @property
     def chat_output_name(self) -> Optional[str]:
         """The name of the chat output in the line result. Return None if the bonded flow is not a chat flow."""
-        signatures = self._get_signatures()
-        outputs = signatures.get("outputs", {})
+        outputs = self._get_type_of_ports().get("outputs", {})
         for key, value in outputs.items():
             if value.get("is_chat_output", False):
                 return key

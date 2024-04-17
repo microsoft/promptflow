@@ -80,9 +80,9 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
                 output=e.output,
             )
 
-    def _get_signatures(self):
+    def _get_type_of_ports(self):
         if not self._is_flex_flow:
-            return super()._get_signatures()
+            return super()._get_type_of_ports()
         flow_json_path = self.working_dir / PROMPT_FLOW_DIR_NAME / FLOW_META_JSON
         signatures = read_json_content(flow_json_path, "meta of tools")
         for key in set(signatures.keys()) - {"inputs", "outputs", "init"}:
