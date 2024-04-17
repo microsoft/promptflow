@@ -14,7 +14,7 @@ from promptflow.core._prompty_utils import convert_model_configuration_to_connec
 
 
 class RelevanceEvaluator:
-    def __init__(self, model_config: Union[Dict, AzureOpenAIModelConfiguration]):
+    def __init__(self, model_config):
         """
         Initialize an evaluator configured for a specific Azure OpenAI model.
 

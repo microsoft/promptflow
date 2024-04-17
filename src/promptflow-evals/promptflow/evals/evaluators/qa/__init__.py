@@ -16,7 +16,7 @@ from promptflow.evals.evaluators import (
 
 
 class QAEvaluator:
-    def __init__(self, model_config: AzureOpenAIModelConfiguration):
+    def __init__(self, model_config):
         """
         Initialize an evaluator configured for a specific Azure OpenAI model.
 
