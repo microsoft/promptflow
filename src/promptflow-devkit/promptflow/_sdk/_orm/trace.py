@@ -372,6 +372,7 @@ class SearchTranslator(ast.NodeVisitor):
         if field not in self._json_fields:
             return field
         parent_field = self._json_fields[field]
+        # we need to record which JSON field(s) queried as we need to apply a final not null
         self._searched_json_fields.add(parent_field)
         return f"json_extract({parent_field}, '$.{field}')"
 
