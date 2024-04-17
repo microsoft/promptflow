@@ -36,7 +36,7 @@ Flex flow [examples](https://github.com/microsoft/promptflow/tree/main/examples/
 DAG flow [examples](https://github.com/microsoft/promptflow/tree/main/examples/flows):
 - [basic](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/basic)
 - [chat-basic](https://github.com/microsoft/promptflow/tree/main/examples/flows/chat/chat-basic)
-- [eval-basic](https://github.com/microsoft/promptflow/tree/main/examples/flows/evaluation/eval-basic)
+- [eval-code-quality](https://github.com/microsoft/promptflow/tree/main/examples/flex-flows/eval-code-quality)
 
 
 ## Next steps
