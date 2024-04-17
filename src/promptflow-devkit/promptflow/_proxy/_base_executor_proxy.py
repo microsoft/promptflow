@@ -62,12 +62,6 @@ class AbstractExecutorProxy:
         return self._allow_aggregation
 
     @classmethod
-    def dump_metadata(cls, flow_file: Path, working_dir: Path) -> NoReturn:
-        """Generate metadata for a specific flow."""
-        cls.generate_flow_tools_json(flow_file, working_dir, dump=True)
-        cls.generate_flow_json(flow_file, working_dir, dump=True)
-
-    @classmethod
     def generate_flow_tools_json(
         cls,
         flow_file: Path,

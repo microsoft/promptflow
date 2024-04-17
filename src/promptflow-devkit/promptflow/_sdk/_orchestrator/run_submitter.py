@@ -7,7 +7,8 @@ import datetime
 from pathlib import Path
 from typing import Union
 
-from promptflow._constants import FlowLanguage, FlowType
+from promptflow._constants import FlowType
+from promptflow._proxy import ProxyFactory
 from promptflow._sdk._constants import REMOTE_URI_PREFIX, ContextAttributeKey, FlowRunProperties
 from promptflow._sdk.entities._flows import Flow, Prompty
 from promptflow._sdk.entities._run import Run
@@ -115,14 +116,10 @@ class RunSubmitter:
     ) -> dict:
         logger.info(f"Submitting run {run.name}, log path: {local_storage.logger.file_path}")
         run_id = run.name
-        # for python, we can get metadata in-memory, so no need to dump them first
-        if flow.language != FlowLanguage.Python:
-            from promptflow._proxy import ProxyFactory
-
-            # variants are resolved in the context, so we can't move this logic to Operations for now
-            ProxyFactory().get_executor_proxy_cls(flow.language).dump_metadata(
-                flow_file=Path(flow.path), working_dir=Path(flow.code)
-            )
+        # variants are resolved in the context, so we can't move this logic to Operations for now
+        ProxyFactory().create_inspector_proxy(flow.language).prepare_metadata(
+            flow_file=Path(flow.path), working_dir=Path(flow.code)
+        )
 
         with _change_working_dir(flow.code):
             # resolve connections with environment variables overrides to avoid getting unused connections

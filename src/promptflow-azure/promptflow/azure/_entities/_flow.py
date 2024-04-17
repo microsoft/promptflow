@@ -164,10 +164,9 @@ class Flow(AdditionalIncludesMixin):
 
                 # generate .promptflow/flow.json for csharp flow as it's required to infer signature for csharp flow
                 flow_directory, flow_file = resolve_flow_path(code.path)
-                executor_proxy = ProxyFactory().get_executor_proxy_cls(self.language)
-                # TODO: unify logic for csharp and python
-                if self.language == FlowLanguage.CSharp:
-                    executor_proxy.dump_metadata(flow_file=flow_directory / flow_file, working_dir=flow_directory)
+                ProxyFactory().create_inspector_proxy(self.language).prepare_metadata(
+                    flow_file=flow_directory / flow_file, working_dir=flow_directory
+                )
                 dag_updated = self._resolve_signature(flow_dir, flow_dag) or dag_updated
                 self._environment = self._resolve_environment(flow_dir, flow_dag)
                 if dag_updated:

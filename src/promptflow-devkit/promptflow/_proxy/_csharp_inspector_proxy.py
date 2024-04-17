@@ -78,3 +78,36 @@ class CSharpInspectorProxy(AbstractInspectorProxy):
             entry_meta.pop("framework", None)
             return entry_meta
         raise UserErrorException("Flow metadata not found.")
+
+    def prepare_metadata(
+        self,
+        flow_file: Path,
+        working_dir: Path,
+        **kwargs,
+    ) -> None:
+        command = [
+            "dotnet",
+            EXECUTOR_SERVICE_DLL,
+            "--flow_meta",
+            "--yaml_path",
+            flow_file.absolute().as_posix(),
+            "--assembly_folder",
+            ".",
+        ]
+        try:
+            subprocess.check_output(
+                command,
+                cwd=working_dir,
+            )
+        except subprocess.CalledProcessError as e:
+            raise UnexpectedError(
+                message_format="Failed to generate flow meta for csharp flow.\n"
+                "Command: {command}\n"
+                "Working directory: {working_directory}\n"
+                "Return code: {return_code}\n"
+                "Output: {output}",
+                command=" ".join(command),
+                working_directory=working_dir.as_posix(),
+                return_code=e.returncode,
+                output=e.output,
+            )
