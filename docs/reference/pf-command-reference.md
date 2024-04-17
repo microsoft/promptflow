@@ -905,7 +905,8 @@ pf service start [--port]
 ```
 
 #### Examples
-Start prompt flow service.
+Start prompt flow service. We endeavor to start the service on the default port 23333. And if it's already taken, we will sequentially probe new ports, incrementing by one each time.
+
 ```bash
 pf service start
 ```
