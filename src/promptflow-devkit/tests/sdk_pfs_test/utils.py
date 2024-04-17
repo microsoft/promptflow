@@ -292,6 +292,14 @@ class PFSOperations:
             assert status_code == response.status_code, response.text
         return response
 
+    def test_flow_infer_signature(self, flow_path, include_primitive_output, status_code=None):
+        flow_path = encrypt_flow_path(flow_path)
+        query_string = {"source": flow_path, "include_primitive_output": include_primitive_output}
+        response = self._client.post(f"{self.Flow_URL_PREFIX}/infer_signature", query_string=query_string)
+        if status_code:
+            assert status_code == response.status_code, response.text
+        return response
+
     def get_flow_ux_inputs(self, flow_path: str, status_code=None):
         flow_path = encrypt_flow_path(flow_path)
         query_string = {"flow": flow_path}
