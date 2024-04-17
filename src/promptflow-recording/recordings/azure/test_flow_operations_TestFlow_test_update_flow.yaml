@@ -692,12 +692,12 @@ interactions:
       code: 201
       message: Created
 - request:
-    body: "{\r\n    \"code\": {\r\n        \"hello_world.py\": {\r\n            \"type\":
-      \"python\",\r\n            \"inputs\": {\r\n                \"name\": {\r\n
-      \                   \"type\": [\r\n                        \"string\"\r\n                    ]\r\n
-      \               }\r\n            },\r\n            \"source\": \"hello_world.py\",\r\n
-      \           \"function\": \"hello_world\"\r\n        }\r\n    },\r\n    \"package\":
-      {}\r\n}"
+    body: "{\n    \"code\": {\n        \"hello_world.py\": {\n            \"type\":
+      \"python\",\n            \"inputs\": {\n                \"name\": {\n
+      \                   \"type\": [\n                        \"string\"\n                    ]\n
+      \               }\n            },\n            \"source\": \"hello_world.py\",\n
+      \           \"function\": \"hello_world\"\n        }\n    },\n    \"package\":
+      {}\n}"
     headers:
       Accept:
       - application/xml
