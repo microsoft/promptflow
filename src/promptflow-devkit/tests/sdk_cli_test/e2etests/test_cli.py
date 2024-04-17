@@ -2493,7 +2493,7 @@ class TestCli:
                 "--code",
                 f"{EAGER_FLOWS_DIR}/../functions/hello_world",
             )
-            assert os.listdir(temp_dir) == [FLOW_FLEX_YAML, "hello.py"]
+            assert set(os.listdir(temp_dir)) == {FLOW_FLEX_YAML, "hello.py"}
             content = load_yaml(Path(temp_dir) / FLOW_FLEX_YAML)
             assert content == {
                 "entry": "hello:hello_world",
@@ -2512,7 +2512,7 @@ class TestCli:
                 cwd=temp_dir,
             )
             # __pycache__ will be created when inspecting the module
-            assert os.listdir(temp_dir) == [FLOW_FLEX_YAML, "hello.py", "__pycache__"]
+            assert set(os.listdir(temp_dir)) == {FLOW_FLEX_YAML, "hello.py", "__pycache__"}
             new_content = load_yaml(Path(temp_dir) / FLOW_FLEX_YAML)
             assert new_content == content
 
