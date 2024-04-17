@@ -23,6 +23,8 @@ from promptflow.connections import ConnectionProvider
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.tool import ConnectionType
 from promptflow.core._model_configuration import MODEL_CONFIG_NAMES
+from promptflow.exceptions import ErrorTarget
+from promptflow.executor._errors import InvalidFlexFlowEntry
 from promptflow.executor._result import LineResult
 from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DefaultRunStorage
@@ -256,8 +258,8 @@ class ScriptExecutor(FlowExecutor):
             if inspect.isfunction(self._entry):
                 return self._entry
             return self._entry.__call__
+        module_name, func_name = self._parse_flow_file()
         try:
-            module_name, func_name = self._parse_flow_file()
             module = importlib.import_module(module_name)
         except Exception as e:
             raise PythonLoadError(
@@ -308,5 +310,12 @@ class ScriptExecutor(FlowExecutor):
         with open(self._working_dir / self._flow_file, "r", encoding="utf-8") as fin:
             flow_dag = load_yaml(fin)
         entry = flow_dag.get("entry", "")
-        module_name, func_name = entry.split(":")
+        try:
+            module_name, func_name = entry.split(":")
+        except Exception as e:
+            raise InvalidFlexFlowEntry(
+                message_format="Invalid entry '{entry}'.The entry should be in the format of '<module>:<function>'.",
+                entry=entry,
+                target=ErrorTarget.EXECUTOR,
+            ) from e
         return module_name, func_name
