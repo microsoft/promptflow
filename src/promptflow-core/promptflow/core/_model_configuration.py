@@ -1,12 +1,17 @@
+import abc
 from dataclasses import dataclass
 from typing import Union
 
 from promptflow._constants import ConnectionType
+from promptflow.core._connection import AzureOpenAIConnection, OpenAIConnection
 from promptflow.core._errors import InvalidConnectionError
 
 
 class ModelConfiguration:
-    pass
+    @classmethod
+    @abc.abstractmethod
+    def from_connection(cls, connection, **kwargs):
+        pass
 
 
 @dataclass
@@ -24,6 +29,18 @@ class AzureOpenAIModelConfiguration(ModelConfiguration):
         if any([self.azure_endpoint, self.api_key, self.api_version, self.organization]) and self.connection:
             raise InvalidConnectionError("Cannot configure model config and connection at the same time.")
 
+    @classmethod
+    def from_connection(
+        cls, connection: AzureOpenAIConnection, azure_deployment: str, organization: str = None, **kwargs
+    ):
+        return cls(
+            azure_deployment=azure_deployment,
+            azure_endpoint=connection.api_base,
+            api_version=connection.api_version,
+            api_key=connection.api_key,
+            organization=organization,
+        )
+
 
 @dataclass
 class OpenAIModelConfiguration(ModelConfiguration):
@@ -36,8 +53,17 @@ class OpenAIModelConfiguration(ModelConfiguration):
 
     def __post_init__(self):
         self._type = ConnectionType.OPEN_AI
-        if any([self.base_url, self.api_key, self.api_version, self.organization]) and self.connection:
+        if any([self.base_url, self.api_key, self.organization]) and self.connection:
             raise InvalidConnectionError("Cannot configure model config and connection at the same time.")
+
+    @classmethod
+    def from_connection(cls, connection: OpenAIConnection, model: str, organization: str = None, **kwargs):
+        return cls(
+            model=model,
+            base_url=connection.base_url,
+            api_key=connection.api_key,
+            organization=organization,
+        )
 
 
 @dataclass
@@ -77,3 +103,6 @@ class PromptyModelConfiguration:
             self._model = self.configuration.model
         elif isinstance(self.configuration, AzureOpenAIModelConfiguration):
             self._model = self.configuration.azure_deployment
+
+
+MODEL_CONFIG_NAMES = [AzureOpenAIModelConfiguration.__name__, OpenAIModelConfiguration.__name__]
