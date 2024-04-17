@@ -42,7 +42,13 @@ flow_path_parser.add_argument(
 flow_path_parser.add_argument("inputs", type=dict, required=False, location="json")
 flow_path_parser.add_argument("environment_variables", type=dict, required=False, location="json")
 flow_path_parser.add_argument("session", type=str, required=False, location="json")
-flow_path_parser.add_argument("init", type=dict, required=False, location="json")
+flow_path_parser.add_argument(
+    "init",
+    type=dict,
+    required=False,
+    location="json",
+    help="Initialization parameters for flex flow, only supported when flow is callable class.",
+)
 flow_path_parser.add_argument("run_id", type=str, required=False, location="json", help="Designated run id of flow")
 
 flow_infer_signature_parser = api.parser()

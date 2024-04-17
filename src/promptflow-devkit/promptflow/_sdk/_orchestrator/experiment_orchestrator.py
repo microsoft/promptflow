@@ -179,12 +179,8 @@ class ExperimentOrchestrator:
                         skip_node_name = node.name
                     else:
                         override_node_name = node.name
+                        main_node_name = node.name if context_run_id else None
                     break
-        if skip_node_name is None and context_run_id:
-            for node in start_nodes:
-                # Assume designated run id is the first start node in experiment
-                main_node_name = node.name
-                break
 
         # If inputs, use the inputs as experiment data, else read the first line in template data
         test_context = ExperimentTemplateTestContext(
@@ -205,6 +201,7 @@ class ExperimentOrchestrator:
             if node in start_nodes:
                 if override_node_name and override_node_name == node.name:
                     node.inputs = {**node.inputs, **{k: v for k, v in context.get("inputs", {}).items()}}
+                    node.init = {**node.init, **{k: v for k, v in context.get("init", {}).items()}}
                 else:
                     # Start nodes inputs should be updated, as original value could be a constant without data
                     # reference. Filter unknown key out to avoid warning (case: user input with eval key to override

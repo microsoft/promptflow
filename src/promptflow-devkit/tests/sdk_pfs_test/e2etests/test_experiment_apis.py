@@ -49,6 +49,7 @@ class TestExperimentAPIs:
                     "experiment_template": (
                         EXPERIMENT_ROOT / "dummy-basic-no-script-template/basic.exp.yaml"
                     ).as_posix(),
+                    "override_flow_path": (FLOW_ROOT / "dummy_web_classification" / "flow.dag.yaml").as_posix(),
                     "main_flow_run_id": "123",
                 }
             ).json
@@ -90,11 +91,14 @@ class TestExperimentAPIs:
                     "experiment_template": (
                         EXPERIMENT_ROOT / "class-based-eager-flow-exp-template/flow.exp.yaml"
                     ).as_posix(),
+                    "override_flow_path": (EAGER_FLOWS_DIR / "basic_callable_class" / "flow.flex.yaml").as_posix(),
+                    "init": {"obj_input": "val3"},
                 }
             ).json
         assert "main" in experiment and experiment["main"]["detail"]["flow_runs"][0]["inputs"] == {
             "func_input": "val1",
         }
+        assert "main" in experiment and experiment["main"]["detail"]["flow_runs"][0]["output"]["obj_input"] == "val3"
         assert "main2" in experiment
 
     def test_experiment_test_with_override_input(self, pfs_op: PFSOperations) -> None:

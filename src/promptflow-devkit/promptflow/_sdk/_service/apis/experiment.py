@@ -39,6 +39,13 @@ test_experiment.add_argument(
 test_experiment.add_argument(
     "main_flow_run_id", type=str, required=False, location="json", help="Designated run id of main flow node"
 )
+test_experiment.add_argument(
+    "init",
+    type=dict,
+    required=False,
+    location="json",
+    help="Initialization parameters for main flex flow, only supported when flow is callable class.",
+)
 
 # Define skip test experiments request parsing
 skip_test_experiment = base_experiment.copy()
@@ -75,18 +82,20 @@ class ExperimentTest(Resource):
         args = test_experiment.parse_args()
         client = get_client_from_request()
         experiment_template = args.experiment_template
-        inputs = args.inputs
+        inputs = args.inputs or {}
         override_flow_path = args.override_flow_path
         environment_variables = args.environment_variables
         output_path = args.output_path
         session = args.session
         main_flow_run_id = args.main_flow_run_id
+        init = args.init or {}
 
-        context = {"run_id": main_flow_run_id}
-        if inputs and override_flow_path:
+        context = None
+        if override_flow_path:
             flow_path_dir, flow_path_file = resolve_flow_path(override_flow_path)
             override_flow_path = (flow_path_dir / flow_path_file).as_posix()
-            context.update({"inputs": inputs, "node": override_flow_path})
+            context = {"inputs": inputs, "node": override_flow_path, "run_id": main_flow_run_id, "init": init}
+
         if output_path is None:
             filename = str(uuid.uuid4())
             if os.path.isdir(experiment_template):
