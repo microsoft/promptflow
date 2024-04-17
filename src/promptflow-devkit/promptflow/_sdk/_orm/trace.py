@@ -2,11 +2,13 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import ast
+import copy
 import datetime
 import typing
 
 from sqlalchemy import INTEGER, JSON, REAL, TEXT, TIMESTAMP, Column, Index
-from sqlalchemy.orm import Mapped, declarative_base
+from sqlalchemy.orm import Mapped, Query, Session, declarative_base
 
 from promptflow._sdk._constants import EVENT_TABLENAME, LINE_RUN_TABLENAME, SPAN_TABLENAME, TRACE_LIST_DEFAULT_LIMIT
 from promptflow._sdk._errors import LineRunNotFoundError
@@ -234,3 +236,51 @@ class LineRun(Base):
         with trace_mgmt_db_session() as session:
             line_runs = session.query(LineRun).filter(LineRun.parent_id == line_run_id).all()
             return line_runs
+
+
+LINE_RUN_SEARCHABLE_FIELDS = [
+    "name",
+    "kind",
+    "status",
+    "start_time",
+    # tokens -> cumulative_token_count
+    "total",
+    "prompt",
+    "completion",
+]
+LINE_RUN_JSON_FIELDS = {
+    "total": "cumulative_token_count",
+    "prompt": "cumulative_token_count",
+    "completion": "cumulative_token_count",
+}
+
+
+class SearchTranslator(ast.NodeVisitor):
+    """Translate line run search to SQLite query."""
+
+    def __init__(
+        self,
+        model,
+        searchable_fields: typing.List[str],
+        json_fields: typing.Dict[str, str],
+    ):
+        self._model = model
+        self._searchable_fields = copy.deepcopy(searchable_fields)
+        self._json_fields = copy.deepcopy(json_fields)
+
+    def translate(self, expression: str, session: Session) -> Query:
+        # parse expression to AST
+        try:
+            tree = ast.parse(expression, mode="eval")
+        except SyntaxError:
+            ...
+        # traverse the AST and validate the fields are searchable
+        # leveraging `ast.NodeVisitor.visit`
+        self.visit(tree.body)
+
+    # override visit BoolOp and Compare methods
+    def visit_BoolOp(self, node: ast.BoolOp):
+        pass
+
+    def visit_Compare(self, node: ast.Compare):
+        pass

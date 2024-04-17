@@ -6,10 +6,11 @@ import uuid
 
 import pytest
 from sqlalchemy import TEXT, Column, create_engine, inspect, text
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR
 from promptflow._sdk._orm.session import create_or_update_table, support_transaction
+from promptflow._sdk._orm.trace import LINE_RUN_JSON_FIELDS, LINE_RUN_SEARCHABLE_FIELDS, LineRun, SearchTranslator
 
 TABLENAME = "orm_entity"
 
@@ -224,3 +225,25 @@ class TestTransaction:
         except Exception:
             pass
         assert not inspect(engine).has_table(tablename)
+
+
+@pytest.fixture
+def memory_session() -> Session:
+    engine = create_engine("sqlite:///:memory:")
+    return sessionmaker(bind=engine)()
+
+
+@pytest.fixture
+def search_trans() -> SearchTranslator:
+    return SearchTranslator(
+        model=LineRun,
+        searchable_fields=LINE_RUN_SEARCHABLE_FIELDS,
+        json_fields=LINE_RUN_JSON_FIELDS,
+    )
+
+
+@pytest.mark.unittest
+@pytest.mark.sdk_test
+class TestTraceSearchTrans:
+    def test_basic_search(self, memory_session: Session, search_trans: SearchTranslator):
+        ...
