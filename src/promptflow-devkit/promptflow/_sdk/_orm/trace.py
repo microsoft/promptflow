@@ -332,11 +332,9 @@ class SearchTranslator(ast.NodeVisitor):
     def visit_Compare(self, node: ast.Compare) -> None:
         # for compare
         #   1. translate compare to SQL condition
-        #   2. pop from the stack, append the SQL condition to top item;
-        #      if the stack is empty, which means the compare node is the root,
-        #      directly apply filter to the query
-        #   3.1. if not match the expected length, push back;
-        #   3.2. if match, push back if the stack is empty; otherwise, push back
+        #   2. append SQL condition to top item of the stack
+        #   3. while the top item is full, pop it, translate to ORM condition and push back
+        #   4. apply ORM condition to the query if the stack is empty
         sql_condition = self._translate_compare_to_sql(node)
         sql_condition = sqlalchemy.text(sql_condition)
         if len(self._stack) == 0:
