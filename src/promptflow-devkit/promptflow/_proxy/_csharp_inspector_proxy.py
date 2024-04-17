@@ -1,9 +1,10 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
+import json
 import re
 import subprocess
+import uuid
 from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List
@@ -86,6 +87,7 @@ class CSharpInspectorProxy(AbstractInspectorProxy):
         working_dir: Path,
         **kwargs,
     ) -> None:
+        init_kwargs = kwargs.get("init_kwargs", {})
         command = [
             "dotnet",
             EXECUTOR_SERVICE_DLL,
@@ -95,6 +97,15 @@ class CSharpInspectorProxy(AbstractInspectorProxy):
             "--assembly_folder",
             ".",
         ]
+        # csharp depends on init_kwargs to identify the target constructor
+        if init_kwargs:
+            temp_init_kwargs_file = working_dir / PROMPT_FLOW_DIR_NAME / f"init-{uuid.uuid4()}.json"
+            temp_init = {k: None for k in init_kwargs}
+            temp_init_kwargs_file.write_text(json.dumps(temp_init))
+            command.extend(["--init", temp_init_kwargs_file.as_posix()])
+        else:
+            temp_init_kwargs_file = None
+
         try:
             subprocess.check_output(
                 command,
@@ -112,3 +123,6 @@ class CSharpInspectorProxy(AbstractInspectorProxy):
                 return_code=e.returncode,
                 output=e.output,
             )
+        finally:
+            if temp_init_kwargs_file:
+                temp_init_kwargs_file.unlink()

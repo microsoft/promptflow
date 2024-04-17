@@ -161,4 +161,5 @@ class TestCSharpCli:
             "topic=aklhdfqwejk",
             "--init",
             "name=world",
+            "connection=azure_open_ai_connection",
         )

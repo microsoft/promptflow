@@ -116,10 +116,12 @@ class RunSubmitter:
     ) -> dict:
         logger.info(f"Submitting run {run.name}, log path: {local_storage.logger.file_path}")
         run_id = run.name
-        # variants are resolved in the context, so we can't move this logic to Operations for now
-        ProxyFactory().create_inspector_proxy(flow.language).prepare_metadata(
-            flow_file=Path(flow.path), working_dir=Path(flow.code)
-        )
+        # TODO: unify the logic for prompty and other flows
+        if not isinstance(flow, Prompty):
+            # variants are resolved in the context, so we can't move this logic to Operations for now
+            ProxyFactory().create_inspector_proxy(flow.language).prepare_metadata(
+                flow_file=Path(flow.path), working_dir=Path(flow.code), init_kwargs=run.init
+            )
 
         with _change_working_dir(flow.code):
             # resolve connections with environment variables overrides to avoid getting unused connections
