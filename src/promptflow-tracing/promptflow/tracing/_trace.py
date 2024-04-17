@@ -154,6 +154,7 @@ def traced_generator(original_span: ReadableSpan, inputs, generator):
     context = original_span.get_span_context()
     link = Link(context)
     # If start_trace is not called, the name of the original_span will be empty.
+    # need to get everytime to ensure tracer is latest
     otel_tracer = otel_trace.get_tracer("promptflow")
     with otel_tracer.start_as_current_span(
         f"Iterated({original_span.name})",
@@ -341,6 +342,7 @@ def _traced_async(
         trace = create_trace(func, args, kwargs)
         # For node span we set the span name to node name, otherwise we use the function name.
         span_name = get_node_name_from_context(used_for_span_name=True) or trace.name
+        # need to get everytime to ensure tracer is latest
         otel_tracer = otel_trace.get_tracer("promptflow")
         with otel_tracer.start_as_current_span(span_name) as span:
             # Store otel trace id in context for correlation
@@ -406,6 +408,7 @@ def _traced_sync(
         trace = create_trace(func, args, kwargs)
         # For node span we set the span name to node name, otherwise we use the function name.
         span_name = get_node_name_from_context(used_for_span_name=True) or trace.name
+        # need to get everytime to ensure tracer is latest
         otel_tracer = otel_trace.get_tracer("promptflow")
         with otel_tracer.start_as_current_span(span_name) as span:
             # Store otel trace id in context for correlation

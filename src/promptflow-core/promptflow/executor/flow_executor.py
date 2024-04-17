@@ -844,6 +844,7 @@ class FlowExecutor:
         validate_inputs=False,
         allow_generator_output=False,
     ):
+        # need to get everytime to ensure tracer is latest
         otel_tracer = otel_trace.get_tracer("promptflow")
         with otel_tracer.start_as_current_span(self._flow.name) as span:
             # Store otel trace id in context for correlation
