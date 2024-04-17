@@ -1,9 +1,10 @@
 # Release History
 
-## 1.9.0 (Upcoming)
+## 1.9.0 (2024.04.17)
 
 ### Features Added
 - [promptflow-devkit]: Added autocomplete feature for linux, reach [here](https://microsoft.github.io/promptflow/reference/pf-command-reference.html#autocomplete) for more details.
+- [promptflow-devkit]: Support trace experience in flow test and batch run. See [here](https://microsoft.github.io/promptflow/how-to-guides/tracing/index.html) for more details.
 
 ### Bugs Fixed
 - [promptflow-devkit] Fix run name missing directory name in some scenario of `pf.run`.

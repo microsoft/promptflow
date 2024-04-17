@@ -1,6 +1,6 @@
 # Release History
 
-## 1.9.0 (Upcoming)
+## 1.9.0 (2024.04.17)
 
 ### Others
 - Connection default api version changed:
