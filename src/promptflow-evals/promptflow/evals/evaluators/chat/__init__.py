@@ -63,7 +63,7 @@ class ChatEvaluator:
             FluencyEvaluator(model_config),
         ]
 
-    def __call__(self, *, conversation: List[Dict], **kwargs):
+    def __call__(self, *, conversation, **kwargs):
         """Evaluates chat scenario.
 
         :param conversation: The conversation to be evaluated. Each turn should have "role" and "content" keys.

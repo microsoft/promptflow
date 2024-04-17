@@ -6,6 +6,7 @@ from unittest.mock import patch
 import pytest
 from pytest_mock import MockerFixture
 
+from promptflow.client import PFClient
 from promptflow.core import AzureOpenAIModelConfiguration
 from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
@@ -70,6 +71,12 @@ def model_config() -> dict:
     model_config = AzureOpenAIModelConfiguration(**dev_connections[conn_name]["value"])
 
     return model_config
+
+
+@pytest.fixture
+def pf_client() -> PFClient:
+    """The fixture, returning PRClient"""
+    return PFClient()
 
 
 # ==================== Recording injection ====================

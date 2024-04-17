@@ -1,42 +1,38 @@
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Type
 
 import inspect
 import os
-import tempfile
-import unittest
-from promptflow.client import PFClient
+import pytest
+
 from promptflow.evals import evaluators
 from promptflow.evals.evaluators import content_safety
 
 
-class TestSaveEval(unittest.TestCase):
+@pytest.mark.unittest
+class TestSaveEval:
     """Test saving evaluators."""
 
-    def setUp(self) -> None:
-        self.pf = PFClient()
-        unittest.TestCase.setUp(self)
-
-    def _do_test_saving(self,
-                        namespace: Any,
-                        exceptions: Optional[List[str]] = None) -> None:
-        """Do the actual test on saving evaluators."""
+    @staticmethod
+    def get_evaluators_from_module(namespace: Any, exceptions: Optional[List[str]] = None) -> List[Type]:
+        evaluators = []
         for name, obj in inspect.getmembers(namespace):
             if inspect.isclass(obj):
                 if exceptions and name in exceptions:
                     continue
-                with tempfile.TemporaryDirectory() as d:
-                    self.pf.flows.save(obj, path=d)
-                    self.assertTrue(os.path.isfile(os.path.join(d, 'flow.flex.yaml')))
+                evaluators.append(obj)
+        return evaluators
 
-    def test_save_evaluators(self) -> None:
+    EVALUATORS = get_evaluators_from_module(evaluators)
+    RAI_EVALUATORS = get_evaluators_from_module(content_safety)
+
+    @pytest.mark.parametrize('evaluator', EVALUATORS)
+    def test_save_evaluators(self, tmpdir, pf_client, evaluator) -> None:
         """Test regular evaluator saving."""
-        self._do_test_saving(evaluators, ['ChatEvaluator'])
+        pf_client.flows.save(evaluator, path=tmpdir)
+        assert os.path.isfile(os.path.join(tmpdir, 'flow.flex.yaml'))
 
-    @unittest.skip('RAI models constructor contains credentials, which is not supported.')
-    def test_save_rai_evaluators(self):
+    @pytest.mark.parametrize('rai_evaluator', RAI_EVALUATORS)
+    def test_save_rai_evaluators(self, tmpdir, pf_client, rai_evaluator):
         """Test saving of RAI evaluators"""
-        self._do_test_saving(content_safety)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        pf_client.flows.save(rai_evaluator, path=tmpdir)
+        assert os.path.isfile(os.path.join(tmpdir, 'flow.flex.yaml'))

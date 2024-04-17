@@ -1,9 +1,0 @@
-inputs:
-  question:
-    type: string
-  answer:
-    type: string
-init:
-  model_config:
-    type: object
-entry: __init__:CoherenceEvaluator
