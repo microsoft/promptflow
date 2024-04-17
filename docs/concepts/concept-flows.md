@@ -31,12 +31,12 @@ Prompt flow examples organize flows by three categories:
 Flex flow [examples](https://github.com/microsoft/promptflow/tree/main/examples/flex-flows):
 - [basic](https://github.com/microsoft/promptflow/tree/main/examples/flex-flows/basic)
 - [chat-basic](https://github.com/microsoft/promptflow/tree/main/examples/flex-flows/chat-basic)
-- [eval-basic](https://github.com/microsoft/promptflow/tree/main/examples/flex-flows/eval-basic)
+- [eval-code-quality](https://github.com/microsoft/promptflow/tree/main/examples/flex-flows/eval-code-quality)
 
 DAG flow [examples](https://github.com/microsoft/promptflow/tree/main/examples/flows):
 - [basic](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/basic)
 - [chat-basic](https://github.com/microsoft/promptflow/tree/main/examples/flows/chat/chat-basic)
-- [eval-code-quality](https://github.com/microsoft/promptflow/tree/main/examples/flex-flows/eval-code-quality)
+- [eval-basic](https://github.com/microsoft/promptflow/tree/main/examples/flex-flows/eval-basic)
 
 
 ## Next steps
