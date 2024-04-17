@@ -6,12 +6,14 @@ from pathlib import Path
 from types import GeneratorType
 
 import papermill
+import pydash
 import pytest
 from _constants import PROMPTFLOW_ROOT
 from marshmallow import ValidationError
 
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._pf_client import PFClient
+from promptflow.core import AzureOpenAIModelConfiguration, OpenAIModelConfiguration
 from promptflow.core._utils import init_executable
 from promptflow.exceptions import UserErrorException
 
@@ -430,4 +432,41 @@ class TestFlowTest:
 
         result2 = pf.test(flow=flow_path, inputs={"func_input": "input"}, init={"obj_input": "val"})
         assert result2["func_input"] == "input"
+        assert result1["obj_id"] != result2["obj_id"]
+
+    def test_flex_flow_with_model_config(self, pf):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_model_config")
+        config1 = AzureOpenAIModelConfiguration(azure_deployment="my_deployment", azure_endpoint="fake_endpoint")
+        config2 = OpenAIModelConfiguration(model="my_model", base_url="fake_base_url")
+        result1 = pf.test(
+            flow=flow_path,
+            inputs={"func_input": "input"},
+            init={"azure_open_ai_model_config": config1, "open_ai_model_config": config2},
+        )
+        assert pydash.omit(result1, "obj_id") == {
+            "azure_open_ai_model_config_azure_endpoint": "fake_endpoint",
+            "azure_open_ai_model_config_connection": None,
+            "azure_open_ai_model_config_deployment": "my_deployment",
+            "func_input": "input",
+            "open_ai_model_config_base_url": "fake_base_url",
+            "open_ai_model_config_connection": None,
+            "open_ai_model_config_model": "my_model",
+        }
+
+        config1 = AzureOpenAIModelConfiguration(azure_deployment="my_deployment", connection="open_ai_connection")
+        config2 = OpenAIModelConfiguration(model="my_model", base_url="fake_base_url")
+        result2 = pf.test(
+            flow=flow_path,
+            inputs={"func_input": "input"},
+            init={"azure_open_ai_model_config": config1, "open_ai_model_config": config2},
+        )
+        assert pydash.omit(result1, "obj_id") == {
+            "azure_open_ai_model_config_azure_endpoint": "fake_endpoint",
+            "azure_open_ai_model_config_connection": None,
+            "azure_open_ai_model_config_deployment": "my_deployment",
+            "func_input": "input",
+            "open_ai_model_config_base_url": "fake_base_url",
+            "open_ai_model_config_connection": None,
+            "open_ai_model_config_model": "my_model",
+        }
         assert result1["obj_id"] != result2["obj_id"]
