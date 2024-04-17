@@ -275,6 +275,7 @@ class ScriptExecutor(FlowExecutor):
                     resolved_init_kwargs = self._resolve_init_kwargs(func, self._init_kwargs)
                     obj = func(**resolved_init_kwargs)
                 except Exception as e:
+                    # TODO: scrub secrets in init kwarg values
                     raise FlowEntryInitializationError(init_kwargs=self._init_kwargs, ex=e) from e
                 func = getattr(obj, "__call__")
             else:

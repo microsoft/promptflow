@@ -16,6 +16,7 @@ from promptflow._sdk._pf_client import PFClient
 from promptflow.core import AzureOpenAIModelConfiguration, OpenAIModelConfiguration
 from promptflow.core._utils import init_executable
 from promptflow.exceptions import UserErrorException
+from promptflow.executor._errors import FlowEntryInitializationError
 
 TEST_ROOT = PROMPTFLOW_ROOT / "tests"
 CONNECTION_FILE = (PROMPTFLOW_ROOT / "connections.json").resolve().absolute().as_posix()
@@ -470,3 +471,16 @@ class TestFlowTest:
             "open_ai_model_config_model": "my_model",
         }
         assert result1["obj_id"] != result2["obj_id"]
+
+    def test_model_config_wrong_connection_type(self, pf):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_model_config")
+        config1 = AzureOpenAIModelConfiguration(azure_deployment="my_deployment", azure_endpoint="fake_endpoint")
+        # using azure open ai connection to initialize open ai model config
+        config2 = OpenAIModelConfiguration(model="my_model", connection="azure_open_ai_connection")
+        with pytest.raises(FlowEntryInitializationError) as e:
+            pf.test(
+                flow=flow_path,
+                inputs={"func_input": "input"},
+                init={"azure_open_ai_model_config": config1, "open_ai_model_config": config2},
+            )
+        assert "'AzureOpenAIConnection' object has no attribute 'base_url'" in str(e.value)
