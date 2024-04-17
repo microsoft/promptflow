@@ -1,5 +1,5 @@
 ---
-typora-root-url: ./screenshots
+
 ---
 
 # user pain points
