@@ -8,7 +8,12 @@ from openai.types.chat import ChatCompletion
 
 from promptflow._sdk._pf_client import PFClient
 from promptflow.core import Flow
-from promptflow.core._errors import InvalidConnectionError, InvalidOutputKeyError, MissingRequiredInputError
+from promptflow.core._errors import (
+    InvalidConnectionError,
+    InvalidOutputKeyError,
+    InvalidSampleError,
+    MissingRequiredInputError,
+)
 from promptflow.core._flow import AsyncPrompty, Prompty
 from promptflow.core._model_configuration import AzureOpenAIModelConfiguration
 from promptflow.core._prompty_utils import convert_model_configuration_to_connection
@@ -251,3 +256,28 @@ class TestPrompty:
         events = [pf.traces.get_event(item["attributes"]["event.id"]) for item in prompty_span.events]
         assert any(["prompt.template" in event["attributes"]["payload"] for event in events])
         assert any(["prompt.variables" in event["attributes"]["payload"] for event in events])
+
+    def test_prompty_with_sample(self, pf: PFClient):
+        prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example_with_sample.prompty")
+        result = prompty()
+        assert "2" in result
+
+        prompty = Prompty.load(
+            source=f"{PROMPTY_DIR}/prompty_example_with_sample.prompty", sample=f"{DATA_DIR}/prompty_inputs.json"
+        )
+        result = prompty()
+        assert "2" in result
+
+        with pytest.raises(InvalidSampleError) as ex:
+            prompty = Prompty.load(
+                source=f"{PROMPTY_DIR}/prompty_example_with_sample.prompty", sample=f"{DATA_DIR}/invalid_path.json"
+            )
+            prompty()
+        assert "Cannot find sample file" in ex.value.message
+
+        with pytest.raises(InvalidSampleError) as ex:
+            prompty = Prompty.load(
+                source=f"{PROMPTY_DIR}/prompty_example_with_sample.prompty", sample=f"{DATA_DIR}/prompty_inputs.jsonl"
+            )
+            prompty()
+        assert "Only dict and json file are supported as sample in prompty" in ex.value.message
