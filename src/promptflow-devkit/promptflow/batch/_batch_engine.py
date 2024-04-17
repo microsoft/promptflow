@@ -288,63 +288,83 @@ class BatchEngine:
         """Duplicate the previous debug_info from resume_from_run_storage to the storage of new run,
         return the list of previous line results for the usage of aggregation and summarization.
         """
-        previous_run_results = []
-        aggregation_nodes = set()
-
-        if not self._is_eager_flow:
-            aggregation_nodes = {node.name for node in self._flow.nodes if node.aggregation}
-
-        for i, _ in enumerate(batch_inputs):
-            try:
+        try:
+            previous_run_results = []
+            if not self._is_eager_flow:
+                aggregation_nodes = {node.name for node in self._flow.nodes if node.aggregation}
+            for i, _ in enumerate(batch_inputs):
                 previous_run_info: FlowRunInfo = resume_from_run_storage.load_flow_run_info(i)
 
                 if not previous_run_info or previous_run_info.status != Status.Completed:
                     continue
 
+                # UI uses root_run_id  to link the base path in datastore with the run_info of line.
+                # Thus the root_run_id needs to be the current batch run id.
                 previous_run_info.root_run_id = run_id
                 previous_run_info.parent_run_id = run_id
 
                 previous_node_run_infos = []
-                if not self._is_eager_flow:
-                    previous_node_run_infos = resume_from_run_storage.load_node_run_info_for_line(i)
-                    previous_node_run_infos = [
-                        run_info for run_info in previous_node_run_infos if run_info.node not in aggregation_nodes
-                    ]
-
                 aggregation_inputs = {}
-                if not self._is_eager_flow:
-                    previous_node_run_outputs = {
-                        node_info.node: node_info.output for node_info in previous_node_run_infos
-                    }
-                    aggregation_inputs = extract_aggregation_inputs(self._flow, previous_node_run_outputs)
 
+                # Deepcopy to avoid modifying the original object when serializing image
                 self._storage.persist_flow_run(previous_run_info)
-                for node_run_info in previous_node_run_infos:
-                    self._storage.persist_node_run(node_run_info)
-
                 previous_run_output = deepcopy(previous_run_info.output)
                 previous_run_output_in_line_result = self._multimedia_processor.persist_multimedia_data(
                     previous_run_output, output_dir
                 )
 
-                previous_line_result = LineResult(
-                    output=previous_run_output_in_line_result,
-                    aggregation_inputs=aggregation_inputs
-                    if not self._is_eager_flow
-                    else previous_run_output_in_line_result,
-                    run_info=previous_run_info,
-                    node_run_infos={node_run.node: node_run for node_run in previous_node_run_infos},
-                )
+                if not self._is_eager_flow:
+                    # Load previous node run info
+                    previous_node_run_infos = resume_from_run_storage.load_node_run_info_for_line(i)
+                    # In storage, aggregation nodes are persisted with filenames similar to regular nodes.
+                    # Currently we read regular node run records by filename in the node artifacts folder,
+                    # which may lead to load records of aggregation nodes at the same time, which is not intended.
+                    # E.g, aggregation-node/000000000.jsonl will be treated as the node_run_info of the first line:
+                    # node_artifacts/
+                    # ├─ non-aggregation-node/
+                    # │  ├─ 000000000.jsonl
+                    # │  ├─ 000000001.jsonl
+                    # │  ├─ 000000002.jsonl
+                    # ├─ aggregation-node/
+                    # │  ├─ 000000000.jsonl
+                    # So we filter out aggregation nodes since line records should not contain any info about them.
+                    previous_node_run_infos = [
+                        run_info for run_info in previous_node_run_infos if run_info.node not in aggregation_nodes
+                    ]
+                    previous_node_run_infos_dict = {node_run.node: node_run for node_run in previous_node_run_infos}
+                    previous_node_run_outputs = {
+                        node_info.node: node_info.output for node_info in previous_node_run_infos
+                    }
+                    # Extract aggregation inputs for flow with aggregation node
+                    aggregation_inputs = extract_aggregation_inputs(self._flow, previous_node_run_outputs)
+
+                    # Persist node run info to storage
+                    for node_run_info in previous_node_run_infos:
+                        self._storage.persist_node_run(node_run_info)
+
+                    previous_line_result = LineResult(
+                        output=previous_run_output_in_line_result,
+                        aggregation_inputs=aggregation_inputs,
+                        run_info=previous_run_info,
+                        node_run_infos=previous_node_run_infos_dict,
+                    )
+                else:
+                    previous_line_result = LineResult(
+                        output=previous_run_output_in_line_result,
+                        aggregation_inputs=previous_run_output_in_line_result,
+                        run_info=previous_run_info,
+                        node_run_infos={},
+                    )
 
                 previous_run_results.append(previous_line_result)
 
-            except Exception as e:
-                bulk_logger.error(f"Error occurred while copying previous run result. Exception: {str(e)}")
-                raise ResumeCopyError(
-                    target=ErrorTarget.BATCH,
-                    message_format="Failed to copy results when resuming the run. Error: {error_type_and_message}.",
-                    error_type_and_message=f"({e.__class__.__name__}) {e}",
-                ) from e
+        except Exception as e:
+            bulk_logger.error(f"Error occurred while copying previous run result. Exception: {str(e)}")
+            raise ResumeCopyError(
+                target=ErrorTarget.BATCH,
+                message_format="Failed to copy results when resuming the run. Error: {error_type_and_message}.",
+                error_type_and_message=f"({e.__class__.__name__}) {e}",
+            ) from e
 
         return previous_run_results
 
