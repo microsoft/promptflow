@@ -36,7 +36,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - name: set test mode
-      run: echo "PROMPT_FLOW_TEST_MODE=$(if [[ "${{ github.event_name }}" == "pull_request" ]]; then echo replay; else echo live; fi)" >> $GITHUB_ENV
+      run: |
+        echo "PROMPT_FLOW_TEST_MODE=$(if [[ "${{ github.event_name }}" == "pull_request" ]]; then echo replay; else echo live; fi)" >> $GITHUB_ENV
+        echo "FILE_PATHS=$(if [[ "${{ inputs.filepath }}" == "" ]]; then echo "./tests/sdk_cli_test ./tests/sdk_pfs_test"; else echo ${{ inputs.filepath }}; fi)" >> $GITHUB_ENV
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
       with:
@@ -69,7 +71,7 @@ jobs:
         cp ${{ github.workspace }}/src/promptflow/dev-connections.json.example ${{ github.workspace }}/src/promptflow/connections.json
     - name: run devkit tests
       run: |
-        poetry run pytest ${{ inputs.filepath }} -p promptflow --cov=promptflow --cov-config=pyproject.toml \
+        poetry run pytest ${{ env.FILE_PATHS }} -p promptflow --cov=promptflow --cov-config=pyproject.toml \
         --cov-report=term --cov-report=html --cov-report=xml -n auto -m "unittest or e2etest" \
         --ignore-glob ./tests/sdk_cli_test/e2etests/test_executable.py
       working-directory: ${{ env.WORKING_DIRECTORY }}
