@@ -4,20 +4,16 @@ from promptflow.tools.common import handle_openai_error, build_messages, \
     preprocess_template_string, find_referenced_image_set, convert_to_chat_list, init_azure_openai_client, \
     post_process_chat_api_response, list_deployment_connections, build_deployment_dict, GPT4V_VERSION \
 
-from promptflow._internal import ToolProvider, tool
+from promptflow._core.tool import ToolProvider, tool
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.contracts.types import PromptTemplate
 
 
 def list_deployment_names(
-    subscription_id=None,
-    resource_group_name=None,
-    workspace_name=None,
     connection=""
 ) -> List[Dict[str, str]]:
     res = []
-    deployment_collection = list_deployment_connections(subscription_id, resource_group_name, workspace_name,
-                                                        connection)
+    deployment_collection = list_deployment_connections(connection)
     if not deployment_collection:
         return res
 

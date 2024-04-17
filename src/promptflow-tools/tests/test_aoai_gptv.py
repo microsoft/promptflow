@@ -62,7 +62,7 @@ class TestAzureOpenAIGPT4V:
                 Deployment("deployment2", "model2", "version2")
             }
 
-            res = list_deployment_names("sub", "rg", "ws", "con")
+            res = list_deployment_names("con")
             assert len(res) == 1
             assert res[0].get("value") == "deployment1"
             assert res[0].get("display_value") == "deployment1"

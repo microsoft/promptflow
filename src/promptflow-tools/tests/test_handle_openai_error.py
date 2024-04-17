@@ -317,12 +317,11 @@ class TestHandleOpenAIError:
         assert exc_info.value.error_codes == error_codes.split("/")
 
     def test_aoai_with_vision_model_extra_fields_error(self, azure_open_ai_connection):
+        # test azure environment
         with (
-            patch('promptflow.tools.common.get_workspace_triad') as mock_get,
             patch('promptflow.tools.common.list_deployment_connections') as mock_list,
             pytest.raises(LLMError) as exc_info
         ):
-            mock_get.return_value = ("sub", "rg", "ws")
             mock_list.return_value = {
                 Deployment("gpt-4v", "model1", "vision-preview"),
                 Deployment("deployment2", "model2", "version2")
@@ -333,3 +332,13 @@ class TestHandleOpenAIError:
 
         assert "extra fields not permitted" in exc_info.value.message
         assert "Please kindly avoid using vision model in LLM tool" in exc_info.value.message
+
+        # test local environment
+        with (
+            pytest.raises(WrappedOpenAIError) as exc_info
+        ):
+            chat(connection=azure_open_ai_connection, prompt="user:\nhello", deployment_name="gpt-4v",
+                 response_format={"type": "text"})
+
+        assert "extra fields not permitted" in exc_info.value.message
+        assert "Please kindly avoid using vision model in LLM tool" not in exc_info.value.message

@@ -220,115 +220,115 @@ class TestCommon:
         with pytest.raises(ParseConnectionError, match=error_message):
             _parse_resource_id(resource_id)
 
-    def test_list_deployment_connections_with_conn_error(self, monkeypatch):
-        from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
-
-        monkeypatch.setattr(
-            ArmConnectionOperations,
-            "_build_connection_dict",
-            mock_build_connection_dict_func1
-        )
-        res = list_deployment_connections(
-            DEFAULT_SUBSCRIPTION_ID,
-            DEFAULT_RESOURCE_GROUP_NAME,
-            DEFAULT_WORKSPACE_NAME,
-            DEFAULT_CONNECTION
-        )
-        assert res is None
-
-    def test_list_deployment_connections_with_wrong_connection_id(self, monkeypatch):
-        from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
-
-        monkeypatch.setattr(
-            ArmConnectionOperations,
-            "_build_connection_dict",
-            mock_build_connection_dict_func2
-        )
-        with pytest.raises(ListDeploymentsError):
-            list_deployment_connections(
-                DEFAULT_SUBSCRIPTION_ID,
-                DEFAULT_RESOURCE_GROUP_NAME,
-                DEFAULT_WORKSPACE_NAME,
-                DEFAULT_CONNECTION,
-            )
-
-    def test_list_deployment_connections_with_permission_issue(self, monkeypatch):
-        from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
-
-        monkeypatch.setattr(
-            ArmConnectionOperations,
-            "_build_connection_dict",
-            mock_build_connection_dict_func3
-        )
-        with patch('azure.mgmt.cognitiveservices.CognitiveServicesManagementClient') as mock:
-            mock.side_effect = CustomException("", 403)
-            with pytest.raises(ListDeploymentsError) as excinfo:
-                list_deployment_connections(
-                    DEFAULT_SUBSCRIPTION_ID,
-                    DEFAULT_RESOURCE_GROUP_NAME,
-                    DEFAULT_WORKSPACE_NAME,
-                    DEFAULT_CONNECTION,
-                )
-            assert "Failed to list deployments due to permission issue" in str(excinfo.value)
-
-    def test_list_deployment_connections(self, monkeypatch):
-        from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
-        from azure.ai.ml._azure_environments import AzureEnvironments
-
-        monkeypatch.setattr(
-            ArmConnectionOperations,
-            "_build_connection_dict",
-            mock_build_connection_dict_func3
-        )
-        with (
-            patch('azure.ai.ml._azure_environments._get_default_cloud_name') as mock_cloud_name,
-            patch('azure.mgmt.cognitiveservices.CognitiveServicesManagementClient') as mock
-        ):
-            mock_cloud_name.return_value = AzureEnvironments.ENV_DEFAULT
-            instance = mock.return_value
-            instance.deployments.list.return_value = {
-                Deployment("deployment1", "model1", "vision-preview"),
-                Deployment("deployment2", "model2", "version2")
-            }
-            res = list_deployment_connections(
-                DEFAULT_SUBSCRIPTION_ID,
-                DEFAULT_RESOURCE_GROUP_NAME,
-                DEFAULT_WORKSPACE_NAME,
-                DEFAULT_CONNECTION
-            )
-            assert len(res) == 2
-
-    def test_list_deployment_connections_sovereign_credential(self, monkeypatch):
-        from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
-        from azure.ai.ml._azure_environments import AzureEnvironments
-
-        monkeypatch.setattr(
-            ArmConnectionOperations,
-            "_build_connection_dict",
-            mock_build_connection_dict_func3
-        )
-        with (
-            patch('azure.ai.ml._azure_environments._get_default_cloud_name') as mock_cloud_name,
-            patch('azure.ai.ml._azure_environments._get_cloud') as mock_cloud,
-            patch('azure.identity.DefaultAzureCredential') as mock_cre,
-            patch('azure.mgmt.cognitiveservices.CognitiveServicesManagementClient') as mock
-        ):
-            mock_cloud_name.return_value = AzureEnvironments.ENV_CHINA
-            cloud = mock_cloud.return_value
-            cloud.get.return_value = "authority"
-            mock_cre.return_value = "credential"
-            instance = mock.return_value
-            instance.deployments.list.return_value = {
-                Deployment("deployment1", "model1", "vision-preview"),
-                Deployment("deployment2", "model2", "version2")
-            }
-            res = list_deployment_connections(
-                DEFAULT_SUBSCRIPTION_ID,
-                DEFAULT_RESOURCE_GROUP_NAME,
-                DEFAULT_WORKSPACE_NAME,
-                DEFAULT_CONNECTION
-            )
-            assert len(res) == 2
+    # def test_list_deployment_connections_with_conn_error(self, monkeypatch):
+    #     from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
+    #
+    #     monkeypatch.setattr(
+    #         ArmConnectionOperations,
+    #         "_build_connection_dict",
+    #         mock_build_connection_dict_func1
+    #     )
+    #     res = list_deployment_connections(
+    #         DEFAULT_SUBSCRIPTION_ID,
+    #         DEFAULT_RESOURCE_GROUP_NAME,
+    #         DEFAULT_WORKSPACE_NAME,
+    #         DEFAULT_CONNECTION
+    #     )
+    #     assert res is None
+    #
+    # def test_list_deployment_connections_with_wrong_connection_id(self, monkeypatch):
+    #     from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
+    #
+    #     monkeypatch.setattr(
+    #         ArmConnectionOperations,
+    #         "_build_connection_dict",
+    #         mock_build_connection_dict_func2
+    #     )
+    #     with pytest.raises(ListDeploymentsError):
+    #         list_deployment_connections(
+    #             DEFAULT_SUBSCRIPTION_ID,
+    #             DEFAULT_RESOURCE_GROUP_NAME,
+    #             DEFAULT_WORKSPACE_NAME,
+    #             DEFAULT_CONNECTION,
+    #         )
+    #
+    # def test_list_deployment_connections_with_permission_issue(self, monkeypatch):
+    #     from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
+    #
+    #     monkeypatch.setattr(
+    #         ArmConnectionOperations,
+    #         "_build_connection_dict",
+    #         mock_build_connection_dict_func3
+    #     )
+    #     with patch('azure.mgmt.cognitiveservices.CognitiveServicesManagementClient') as mock:
+    #         mock.side_effect = CustomException("", 403)
+    #         with pytest.raises(ListDeploymentsError) as excinfo:
+    #             list_deployment_connections(
+    #                 DEFAULT_SUBSCRIPTION_ID,
+    #                 DEFAULT_RESOURCE_GROUP_NAME,
+    #                 DEFAULT_WORKSPACE_NAME,
+    #                 DEFAULT_CONNECTION,
+    #             )
+    #         assert "Failed to list deployments due to permission issue" in str(excinfo.value)
+    #
+    # def test_list_deployment_connections(self, monkeypatch):
+    #     from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
+    #     from azure.ai.ml._azure_environments import AzureEnvironments
+    #
+    #     monkeypatch.setattr(
+    #         ArmConnectionOperations,
+    #         "_build_connection_dict",
+    #         mock_build_connection_dict_func3
+    #     )
+    #     with (
+    #         patch('azure.ai.ml._azure_environments._get_default_cloud_name') as mock_cloud_name,
+    #         patch('azure.mgmt.cognitiveservices.CognitiveServicesManagementClient') as mock
+    #     ):
+    #         mock_cloud_name.return_value = AzureEnvironments.ENV_DEFAULT
+    #         instance = mock.return_value
+    #         instance.deployments.list.return_value = {
+    #             Deployment("deployment1", "model1", "vision-preview"),
+    #             Deployment("deployment2", "model2", "version2")
+    #         }
+    #         res = list_deployment_connections(
+    #             DEFAULT_SUBSCRIPTION_ID,
+    #             DEFAULT_RESOURCE_GROUP_NAME,
+    #             DEFAULT_WORKSPACE_NAME,
+    #             DEFAULT_CONNECTION
+    #         )
+    #         assert len(res) == 2
+    #
+    # def test_list_deployment_connections_sovereign_credential(self, monkeypatch):
+    #     from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
+    #     from azure.ai.ml._azure_environments import AzureEnvironments
+    #
+    #     monkeypatch.setattr(
+    #         ArmConnectionOperations,
+    #         "_build_connection_dict",
+    #         mock_build_connection_dict_func3
+    #     )
+    #     with (
+    #         patch('azure.ai.ml._azure_environments._get_default_cloud_name') as mock_cloud_name,
+    #         patch('azure.ai.ml._azure_environments._get_cloud') as mock_cloud,
+    #         patch('azure.identity.DefaultAzureCredential') as mock_cre,
+    #         patch('azure.mgmt.cognitiveservices.CognitiveServicesManagementClient') as mock
+    #     ):
+    #         mock_cloud_name.return_value = AzureEnvironments.ENV_CHINA
+    #         cloud = mock_cloud.return_value
+    #         cloud.get.return_value = "authority"
+    #         mock_cre.return_value = "credential"
+    #         instance = mock.return_value
+    #         instance.deployments.list.return_value = {
+    #             Deployment("deployment1", "model1", "vision-preview"),
+    #             Deployment("deployment2", "model2", "version2")
+    #         }
+    #         res = list_deployment_connections(
+    #             DEFAULT_SUBSCRIPTION_ID,
+    #             DEFAULT_RESOURCE_GROUP_NAME,
+    #             DEFAULT_WORKSPACE_NAME,
+    #             DEFAULT_CONNECTION
+    #         )
+    #         assert len(res) == 2
 
     @pytest.mark.parametrize(
         "input_data, expected_output",

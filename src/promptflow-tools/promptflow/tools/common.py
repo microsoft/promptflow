@@ -1,6 +1,5 @@
 import functools
 import json
-import os
 import re
 import sys
 import time
@@ -13,7 +12,6 @@ from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, L
     ExceedMaxRetryTimes, ChatAPIInvalidFunctions, FunctionCallNotSupportedInStreamMode, \
     ChatAPIFunctionRoleInvalidFormat, InvalidConnectionType, ListDeploymentsError, ParseConnectionError
 
-from promptflow._cli._utils import get_workspace_triad_from_local
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 from promptflow.exceptions import SystemErrorException, UserErrorException
 from promptflow.contracts.types import PromptTemplate
@@ -245,52 +243,27 @@ def _get_credential():
     return credential
 
 
-def get_workspace_triad():
-    # If flow is submitted from cloud, runtime will save the workspace triad to environment
-    if 'AZUREML_ARM_SUBSCRIPTION' in os.environ and 'AZUREML_ARM_RESOURCEGROUP' in os.environ \
-            and 'AZUREML_ARM_WORKSPACE_NAME' in os.environ:
-        return os.environ["AZUREML_ARM_SUBSCRIPTION"], os.environ["AZUREML_ARM_RESOURCEGROUP"], \
-               os.environ["AZUREML_ARM_WORKSPACE_NAME"]
-    else:
-        # If flow is submitted from local, it will get workspace triad from your azure cloud config file
-        # If this config file isn't set up, it will return None.
-        workspace_triad = get_workspace_triad_from_local()
-        return workspace_triad.subscription_id, workspace_triad.resource_group_name, workspace_triad.workspace_name
-
-
-def list_deployment_connections(
-    subscription_id=None,
-    resource_group_name=None,
-    workspace_name=None,
-    connection="",
-):
+def list_deployment_connections(connection=""):
     try:
         # Do not support dynamic list if azure packages are not installed.
         from azure.mgmt.cognitiveservices import CognitiveServicesManagementClient
-        from promptflow.azure.operations._arm_connection_operations import \
-            ArmConnectionOperations, OpenURLFailedUserError
+        from promptflow.core._errors import OpenURLFailedUserError
+        from promptflow.core._connection_provider._connection_provider import ConnectionProvider
+        from promptflow.core._connection_provider._workspace_connection_provider import WorkspaceConnectionProvider
     except ImportError:
-        return None
-
-    # Do not support dynamic list if the workspace triple is set in the local.
-    if not subscription_id or not resource_group_name or not workspace_name:
         return None
 
     try:
         credential = _get_credential()
         try:
-            # Currently, the param 'connection' is str, not AzureOpenAIConnection type.
-            conn = ArmConnectionOperations._build_connection_dict(
-                name=connection,
-                subscription_id=subscription_id,
-                resource_group_name=resource_group_name,
-                workspace_name=workspace_name,
-                credential=credential
-            )
-            resource_id = conn.get("value").get('resource_id', "")
-            if not resource_id:
-                return None
-            conn_sub, conn_rg, conn_account = _parse_resource_id(resource_id)
+            connection_provider = ConnectionProvider.get_instance()
+            conn_sub, conn_rg, conn_account = "", "", ""
+            if isinstance(connection_provider, WorkspaceConnectionProvider):
+                conn = dict(connection_provider.get(connection))
+                resource_id = conn.get("value").get('resource_id', "")
+                if not resource_id:
+                    return None
+                conn_sub, conn_rg, conn_account = _parse_resource_id(resource_id)
         except OpenURLFailedUserError:
             return None
         except ListDeploymentsError as e:
@@ -299,14 +272,16 @@ def list_deployment_connections(
             msg = f"Parsing connection with exception: {e}"
             raise ListDeploymentsError(msg=msg) from e
 
-        client = CognitiveServicesManagementClient(
-            credential=credential,
-            subscription_id=conn_sub,
-        )
-        return client.deployments.list(
-            resource_group_name=conn_rg,
-            account_name=conn_account,
-        )
+        if conn_sub:
+            client = CognitiveServicesManagementClient(
+                credential=credential,
+                subscription_id=conn_sub,
+            )
+            return client.deployments.list(
+                resource_group_name=conn_rg,
+                account_name=conn_account,
+            )
+        return None
     except Exception as e:
         if hasattr(e, 'status_code') and e.status_code == 403:
             msg = f"Failed to list deployments due to permission issue: {e}"
@@ -323,14 +298,11 @@ def refine_extra_fields_not_permitted_error(connection, deployment_name, model):
           "or 'OpenAI GPT-4V' for vision model."
     try:
         if isinstance(connection, AzureOpenAIConnection):
-            subscription_id, resource_group, workspace_name = get_workspace_triad()
-            if subscription_id and resource_group and workspace_name:
-                deployment_collection = list_deployment_connections(subscription_id, resource_group, workspace_name,
-                                                                    connection.name)
-                for item in deployment_collection:
-                    if deployment_name == item.name:
-                        if item.properties.model.version in [GPT4V_VERSION]:
-                            return tsg
+            deployment_collection = list_deployment_connections(connection.name)
+            for item in deployment_collection:
+                if deployment_name == item.name:
+                    if item.properties.model.version in [GPT4V_VERSION]:
+                        return tsg
         elif isinstance(connection, OpenAIConnection) and model in ["gpt-4-vision-preview"]:
             return tsg
     except Exception as e:
