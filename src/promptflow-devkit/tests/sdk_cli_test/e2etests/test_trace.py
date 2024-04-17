@@ -266,6 +266,26 @@ class TestTraceEntitiesAndOperations:
         line_runs = pf.traces._search_line_runs(expression=expr)
         assert len(line_runs) == 1
 
+    def test_search_line_runs_with_tokens(self, pf: PFClient) -> None:
+        num_line_runs = 5
+        trace_ids = list()
+        name = str(uuid.uuid4())
+        for _ in range(num_line_runs):
+            trace_id = str(uuid.uuid4())
+            span_id = str(uuid.uuid4())
+            line_run_id = str(uuid.uuid4())
+            span = mock_span(trace_id=trace_id, span_id=span_id, parent_id=None, line_run_id=line_run_id)
+            span.name = name
+            span.attributes.update({"__computed__.cumulative_token_count.total": "42"})
+            span._persist()
+            trace_ids.append(trace_id)
+        expr = f"name == '{name}' and total < 100"
+        line_runs = pf.traces._search_line_runs(expression=expr)
+        assert len(line_runs) == num_line_runs
+        # assert these line runs are exactly the ones we just persisted
+        line_run_trace_ids = {line_run.trace_id for line_run in line_runs}
+        assert len(set(trace_ids) & line_run_trace_ids) == num_line_runs
+
 
 @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
 @pytest.mark.e2etest
