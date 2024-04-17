@@ -277,8 +277,19 @@ class TestTraceSearchTrans:
         assert expected_sql == str(query)
 
     def test_search_with_bool(self, memory_session: Session, search_trans: SearchTranslator):
-        basic_expr = "name == 'web-classification' and kind == 'LLM'"
-        query = search_trans.translate(session=memory_session, expression=basic_expr)
+        expr = "name == 'web-classification' and kind == 'LLM'"
+        query = search_trans.translate(session=memory_session, expression=expr)
         expected_condition = "name = 'web-classification' AND kind = 'LLM'"
+        expected_sql = self._build_expected_sql(expected_condition)
+        assert expected_sql == str(query)
+
+    def test_search_with_multiple_bool(self, memory_session: Session, search_trans: SearchTranslator):
+        expr = "name == 'web-classification' and total > 2000 and kind != 'Function'"
+        query = search_trans.translate(session=memory_session, expression=expr)
+        expected_condition = (
+            "name = 'web-classification' "
+            "AND json_extract(cumulative_token_count, '$.total') > 2000 "
+            "AND kind != 'Function'"
+        )
         expected_sql = self._build_expected_sql(expected_condition)
         assert expected_sql == str(query)
