@@ -287,14 +287,21 @@ class AzureWorkspaceKind:
     HUB = "hub"
     PROJECT = "project"
 
+    # obj can be string or azure.ai.ml.entities.Workspace
     @staticmethod
     def is_workspace(obj) -> bool:
+        if isinstance(obj, str):
+            return obj == AzureWorkspaceKind.DEFAULT
         return obj._kind == AzureWorkspaceKind.DEFAULT
 
     @staticmethod
     def is_hub(obj) -> bool:
+        if isinstance(obj, str):
+            return obj == AzureWorkspaceKind.HUB
         return obj._kind == AzureWorkspaceKind.HUB
 
     @staticmethod
     def is_project(obj) -> bool:
+        if isinstance(obj, str):
+            return obj == AzureWorkspaceKind.PROJECT
         return obj._kind == AzureWorkspaceKind.PROJECT
