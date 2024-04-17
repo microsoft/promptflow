@@ -9,7 +9,7 @@ import logging
 from collections.abc import Iterator
 from importlib.metadata import version
 from threading import Lock
-from typing import Callable, List, Optional
+from typing import Callable, Dict, List, Optional
 
 import opentelemetry.trace as otel_trace
 from opentelemetry.sdk.trace import ReadableSpan
@@ -112,11 +112,17 @@ def enrich_span_with_prompt_info(span, func, kwargs):
             prompt_vars = {
                 name: kwargs.get(name) for name in get_input_names_for_prompt_template(prompt_tpl) if name in kwargs
             }
-            prompt_info = {"prompt.template": prompt_tpl, "prompt.variables": serialize_attribute(prompt_vars)}
-            span.set_attributes(prompt_info)
-            span.add_event("promptflow.prompt.template", {"payload": serialize_attribute(prompt_info)})
+            enrich_prompt_template(template=prompt_tpl, variables=prompt_vars, span=span)
     except Exception as e:
         logging.warning(f"Failed to enrich span with prompt info: {e}")
+
+
+def enrich_prompt_template(template: str, variables: Dict[str, object], span=None):
+    if not span:
+        span = trace.get_current_span()
+    prompt_info = {"prompt.template": template, "prompt.variables": serialize_attribute(variables)}
+    span.set_attributes(prompt_info)
+    span.add_event("promptflow.prompt.template", {"payload": serialize_attribute(prompt_info)})
 
 
 def enrich_span_with_input(span, input):
