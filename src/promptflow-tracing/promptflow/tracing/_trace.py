@@ -119,7 +119,7 @@ def enrich_span_with_prompt_info(span, func, kwargs):
 
 def enrich_prompt_template(template: str, variables: Dict[str, object], span=None):
     if not span:
-        span = trace.get_current_span()
+        span = otel_trace.get_current_span()
     prompt_info = {"prompt.template": template, "prompt.variables": serialize_attribute(variables)}
     span.set_attributes(prompt_info)
     span.add_event("promptflow.prompt.template", {"payload": serialize_attribute(prompt_info)})
