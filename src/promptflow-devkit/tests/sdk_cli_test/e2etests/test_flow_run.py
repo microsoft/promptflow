@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 import sys
@@ -1408,6 +1409,38 @@ class TestFlowRun:
         )
         assert run.status == "Completed"
         assert "error" not in run._to_dict()
+
+    def test_eager_flow_run_batch_resume(self, pf):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_with_random_fail")
+        original_name = str(uuid.uuid4())
+        original_run = pf.run(
+            flow=flow_path,
+            data=f"{EAGER_FLOWS_DIR}/simple_with_random_fail/inputs.jsonl",
+            name=original_name,
+        )
+        assert original_run.status == "Completed"
+        output_path = os.path.join(original_run.properties["output_path"], "flow_outputs", "output.jsonl")
+        with open(output_path, "r") as file:
+            original_output = [json.loads(line) for line in file]
+        original_success_count = len(original_output)
+
+        resume_name = str(uuid.uuid4())
+        resume_run = pf.run(
+            resume_from=original_run,
+            name=resume_name,
+        )
+        assert resume_run.name == resume_name
+        assert resume_run._resume_from == original_name
+        # assert new run resume from the original run
+        output_path = os.path.join(resume_run.properties["output_path"], "flow_outputs", "output.jsonl")
+        with open(output_path, "r") as file:
+            resume_output = [json.loads(line) for line in file]
+        assert len(original_output) < len(resume_output)
+
+        log_path = os.path.join(resume_run.properties["output_path"], "logs.txt")
+        with open(log_path, "r") as file:
+            log_text = file.read()
+        assert f"Skipped the execution of {original_success_count} existing results." in log_text
 
     def test_eager_flow_test_invalid_cases(self, pf):
         # incorrect entry provided
