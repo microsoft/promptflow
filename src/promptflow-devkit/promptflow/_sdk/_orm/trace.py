@@ -294,8 +294,10 @@ class SearchTranslator(ast.NodeVisitor):
 
     def _build_query(self, session: Session) -> Query:
         query = session.query(self._model)
+        # if no JSON field is queried, directly build the query
         if len(self._searched_json_fields) == 0:
             return query.filter(self._orm_condition_from_ast)
+        # otherwise, manually append "IS NOT NULL"
         orm_conditions = [self._orm_condition_from_ast]
         for field in self._searched_json_fields:
             orm_conditions.append(sqlalchemy.text(f"{field} IS NOT NULL"))
