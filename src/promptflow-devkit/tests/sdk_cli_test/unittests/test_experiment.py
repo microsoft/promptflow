@@ -59,14 +59,12 @@ class TestExperiment:
         template_path = EXP_ROOT / "basic-script-template" / "basic-script.exp.yaml"
         # Load template and create experiment
         # Test override output path resolve correctly
-        template = _load_experiment_template(
-            source=template_path, params_overrides=[{"nodes[3].outputs.output_path.path": "mock_output"}]
-        )
+        template = _load_experiment_template(source=template_path)
         experiment = Experiment.from_template(template)
         # Assert command node output resolved
         assert isinstance(experiment.nodes[0], CommandNode)
         assert isinstance(experiment.nodes[3], CommandNode)
-        assert experiment.nodes[3].outputs["output_path"].path == Path(template_path).parent
+        assert experiment.nodes[3].outputs["output_path"] == Path(template_path).parent.as_posix()
 
     def test_flow_referenced_id_calculation(self):
         template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"
