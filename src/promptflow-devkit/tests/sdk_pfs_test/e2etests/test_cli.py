@@ -11,7 +11,7 @@ import pytest
 import requests
 
 from promptflow._cli._pf.entry import main
-from promptflow._sdk._service.utils.utils import get_port_from_config, get_random_port, kill_exist_service
+from promptflow._sdk._service.utils.utils import get_pfs_port, get_port_from_config, kill_exist_service
 
 
 @pytest.mark.e2etest
@@ -47,7 +47,7 @@ class TestPromptflowServiceCLI:
             # start pfs by pf.yaml
             self._test_start_service()
             # Start pfs by specified port
-            random_port = get_random_port()
+            random_port = get_pfs_port()
             self._test_start_service(port=random_port, force=True)
 
             # start pfs
