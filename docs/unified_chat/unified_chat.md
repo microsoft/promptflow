@@ -454,8 +454,8 @@ html(lang="en")
                         foo: "bar"
                     })
                 	.position("left")
-                	.paddingLeft("80px")
             )
+	        .withChildIndent(80)
         	.build()
     )
     
@@ -463,4 +463,91 @@ html(lang="en")
 
 await chat.start();
 ```
+
+
+
+## Advanced - nested message
+
+![image-20240417182031399](./image-20240417182031399.png)
+
+```python
+from promptflow.devkit import start_chat, Chat
+
+my_chat = start_chat()
+
+def handle_message(message: Chat.Message):
+    error_message = new Chat.TextMessage(text="Opps! An error occurred", intent="error", serverity="high")
+    error_detail_message = new Chat.JadeTemplateMessage(template="./error_page.jade", parameters={ "error_detail": "Internal error." })
+    # Nested message
+    error_message.append_child(child=error_detail_message, indent=80)
+    bot.send(error_message)
+        
+my_chat.on_message(handle_message)
+```
+
+```typescript
+import { 
+    Chat,
+    ChatProfile,
+    MessageServerity,
+    MessageIntent,
+    TextMessage,
+    HTMLMessage
+} from "@promptflow/chat";
+import { botIcon, viewIcon } from "some_awesome_icon_lib"
+
+const bot = new ChatProfile({ 
+    name: "Bot",
+    icon: botIcon,
+    tags: ["The assistant champion", "Your helpful friend"]
+});
+const myChat = new Chat()
+  .onMessage((message: ChatMessage) => {    
+    // builder pattern for message
+    bot.send(
+        TextMessage.builder
+        	.withContent("Opps, an error occurred!")
+    		.withServerity(MessageServerity.High) // Big red sign signal !
+            .withIntent(MessageIntent.Error) // message with red background
+        	.withChild(
+            	HTMLMessage.builder
+                	.withJadeTemplate(```
+!!! 5
+html(lang="en")
+  head
+    title= pageTitle(car insurance montana)
+    :javascript
+      | if (foo) {
+      |    bar()
+      | }
+  body
+    h1 Jade - node template engine 
+    #container
+      - if (youAreUsingJade)
+         You are amazing
+      - else
+         Get on it!
+         Get on it!
+         Get on it!
+         Get on it!
+                	```)
+                	.withParameters({
+                        foo: "bar"
+                    })
+                	.position("left")
+            )
+	        .withChildIndent(80)
+        	.build()
+    )
+    
+  });
+
+await chat.start();
+```
+
+
+
+## Advanced - Resend message
+
+
 
