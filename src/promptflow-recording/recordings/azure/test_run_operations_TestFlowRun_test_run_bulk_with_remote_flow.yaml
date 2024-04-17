@@ -9,7 +9,7 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-azure-sdk/1.8.0.dev0 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+      - promptflow-azure-sdk/0.1.0b1 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
         Python/3.11.8 (Windows-10-10.0.22631-SP0)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000
@@ -39,7 +39,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.035'
+      - '0.029'
     status:
       code: 200
       message: OK
@@ -53,7 +53,7 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-azure-sdk/1.8.0.dev0 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+      - promptflow-azure-sdk/0.1.0b1 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
         Python/3.11.8 (Windows-10-10.0.22631-SP0)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceworkingdirectory
@@ -91,7 +91,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.117'
+      - '0.098'
     status:
       code: 200
       message: OK
@@ -107,7 +107,7 @@ interactions:
       Content-Length:
       - '0'
       User-Agent:
-      - promptflow-azure-sdk/1.8.0.dev0 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+      - promptflow-azure-sdk/0.1.0b1 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
         Python/3.11.8 (Windows-10-10.0.22631-SP0)
     method: POST
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceworkingdirectory/listSecrets
@@ -132,7 +132,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.093'
+      - '0.108'
     status:
       code: 200
       message: OK
@@ -150,7 +150,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-file-share/12.15.0 Python/3.11.8 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Wed, 17 Apr 2024 09:17:59 GMT
+      - Wed, 17 Apr 2024 10:12:26 GMT
       x-ms-file-attributes:
       - none
       x-ms-file-creation-time:
@@ -166,7 +166,7 @@ interactions:
   response:
     body:
       string: "\uFEFF<?xml version=\"1.0\" encoding=\"utf-8\"?><Error><Code>ResourceAlreadyExists</Code><Message>The
-        specified resource already exists.\nRequestId:ba6044f9-001a-0117-52a8-905a8a000000\nTime:2024-04-17T09:18:00.7660620Z</Message></Error>"
+        specified resource already exists.\nRequestId:8c817558-001a-0008-1caf-901783000000\nTime:2024-04-17T10:12:28.0620199Z</Message></Error>"
     headers:
       content-length:
       - '228'
@@ -195,7 +195,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-file-share/12.15.0 Python/3.11.8 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Wed, 17 Apr 2024 09:18:02 GMT
+      - Wed, 17 Apr 2024 10:12:29 GMT
       x-ms-file-attributes:
       - none
       x-ms-file-creation-time:
@@ -211,7 +211,7 @@ interactions:
   response:
     body:
       string: "\uFEFF<?xml version=\"1.0\" encoding=\"utf-8\"?><Error><Code>ResourceAlreadyExists</Code><Message>The
-        specified resource already exists.\nRequestId:88b8fdfa-c01a-0091-4ea8-90683e000000\nTime:2024-04-17T09:18:03.7003087Z</Message></Error>"
+        specified resource already exists.\nRequestId:47b72a16-101a-0059-34af-908a0f000000\nTime:2024-04-17T10:12:30.4614907Z</Message></Error>"
     headers:
       content-length:
       - '228'
@@ -240,7 +240,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-file-share/12.15.0 Python/3.11.8 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Wed, 17 Apr 2024 09:18:03 GMT
+      - Wed, 17 Apr 2024 10:12:30 GMT
       x-ms-file-attributes:
       - none
       x-ms-file-creation-time:
@@ -256,7 +256,7 @@ interactions:
   response:
     body:
       string: "\uFEFF<?xml version=\"1.0\" encoding=\"utf-8\"?><Error><Code>ResourceAlreadyExists</Code><Message>The
-        specified resource already exists.\nRequestId:0a08fa2d-801a-0074-0aa8-90397c000000\nTime:2024-04-17T09:18:05.2169502Z</Message></Error>"
+        specified resource already exists.\nRequestId:36faa221-701a-00bb-18af-90b72e000000\nTime:2024-04-17T10:12:31.5159611Z</Message></Error>"
     headers:
       content-length:
       - '228'
@@ -285,7 +285,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-file-share/12.15.0 Python/3.11.8 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Wed, 17 Apr 2024 09:18:05 GMT
+      - Wed, 17 Apr 2024 10:12:31 GMT
       x-ms-file-attributes:
       - none
       x-ms-file-creation-time:
@@ -301,7 +301,7 @@ interactions:
   response:
     body:
       string: "\uFEFF<?xml version=\"1.0\" encoding=\"utf-8\"?><Error><Code>ResourceAlreadyExists</Code><Message>The
-        specified resource already exists.\nRequestId:52e3d899-301a-0061-28a8-902ecf000000\nTime:2024-04-17T09:18:06.6520338Z</Message></Error>"
+        specified resource already exists.\nRequestId:12b24c17-401a-0019-1baf-908d37000000\nTime:2024-04-17T10:12:32.5730168Z</Message></Error>"
     headers:
       content-length:
       - '228'
@@ -328,7 +328,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-file-share/12.15.0 Python/3.11.8 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Wed, 17 Apr 2024 09:18:06 GMT
+      - Wed, 17 Apr 2024 10:12:32 GMT
       x-ms-version:
       - '2023-11-03'
     method: GET
@@ -336,7 +336,7 @@ interactions:
   response:
     body:
       string: "\uFEFF<?xml version=\"1.0\" encoding=\"utf-8\"?><Error><Code>ResourceNotFound</Code><Message>The
-        specified resource does not exist.\nRequestId:ddd5ea65-d01a-00a2-76a8-903795000000\nTime:2024-04-17T09:18:07.9348708Z</Message></Error>"
+        specified resource does not exist.\nRequestId:1ced2c08-901a-0105-32af-90215a000000\nTime:2024-04-17T10:12:33.6731538Z</Message></Error>"
     headers:
       content-length:
       - '223'
@@ -367,7 +367,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-file-share/12.15.0 Python/3.11.8 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Wed, 17 Apr 2024 09:18:08 GMT
+      - Wed, 17 Apr 2024 10:12:33 GMT
       x-ms-file-attributes:
       - none
       x-ms-file-creation-time:
@@ -387,21 +387,21 @@ interactions:
       content-length:
       - '0'
       last-modified:
-      - Wed, 17 Apr 2024 09:18:09 GMT
+      - Wed, 17 Apr 2024 10:12:34 GMT
       server:
       - Windows-Azure-File/1.0 Microsoft-HTTPAPI/2.0
       x-ms-file-attributes:
       - Directory
       x-ms-file-change-time:
-      - '2024-04-17T09:18:09.2366061Z'
+      - '2024-04-17T10:12:34.7705466Z'
       x-ms-file-creation-time:
-      - '2024-04-17T09:18:09.2366061Z'
+      - '2024-04-17T10:12:34.7705466Z'
       x-ms-file-id:
-      - '13835108516852924416'
+      - '13835084327597113344'
       x-ms-file-last-write-time:
-      - '2024-04-17T09:18:09.2366061Z'
+      - '2024-04-17T10:12:34.7705466Z'
       x-ms-file-parent-id:
-      - '16141035093245296640'
+      - '10088082484072808448'
       x-ms-request-server-encrypted:
       - 'true'
       x-ms-version:
@@ -423,7 +423,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-file-share/12.15.0 Python/3.11.8 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Wed, 17 Apr 2024 09:18:09 GMT
+      - Wed, 17 Apr 2024 10:12:34 GMT
       x-ms-file-attributes:
       - none
       x-ms-file-creation-time:
@@ -443,21 +443,21 @@ interactions:
       content-length:
       - '0'
       last-modified:
-      - Wed, 17 Apr 2024 09:18:10 GMT
+      - Wed, 17 Apr 2024 10:12:35 GMT
       server:
       - Windows-Azure-File/1.0 Microsoft-HTTPAPI/2.0
       x-ms-file-attributes:
       - Directory
       x-ms-file-change-time:
-      - '2024-04-17T09:18:10.6115615Z'
+      - '2024-04-17T10:12:35.8408422Z'
       x-ms-file-creation-time:
-      - '2024-04-17T09:18:10.6115615Z'
+      - '2024-04-17T10:12:35.8408422Z'
       x-ms-file-id:
-      - '13835178885597102080'
+      - '13835154696341291008'
       x-ms-file-last-write-time:
-      - '2024-04-17T09:18:10.6115615Z'
+      - '2024-04-17T10:12:35.8408422Z'
       x-ms-file-parent-id:
-      - '13835108516852924416'
+      - '13835084327597113344'
       x-ms-request-server-encrypted:
       - 'true'
       x-ms-version:
@@ -479,7 +479,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-file-share/12.15.0 Python/3.11.8 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Wed, 17 Apr 2024 09:18:10 GMT
+      - Wed, 17 Apr 2024 10:12:35 GMT
       x-ms-file-attributes:
       - none
       x-ms-file-creation-time:
@@ -499,21 +499,21 @@ interactions:
       content-length:
       - '0'
       last-modified:
-      - Wed, 17 Apr 2024 09:18:11 GMT
+      - Wed, 17 Apr 2024 10:12:36 GMT
       server:
       - Windows-Azure-File/1.0 Microsoft-HTTPAPI/2.0
       x-ms-file-attributes:
       - Directory
       x-ms-file-change-time:
-      - '2024-04-17T09:18:11.9357392Z'
+      - '2024-04-17T10:12:36.8991889Z'
       x-ms-file-creation-time:
-      - '2024-04-17T09:18:11.9357392Z'
+      - '2024-04-17T10:12:36.8991889Z'
       x-ms-file-id:
-      - '11529335876383408128'
+      - '11529236920336908288'
       x-ms-file-last-write-time:
-      - '2024-04-17T09:18:11.9357392Z'
+      - '2024-04-17T10:12:36.8991889Z'
       x-ms-file-parent-id:
-      - '13835108516852924416'
+      - '13835084327597113344'
       x-ms-request-server-encrypted:
       - 'true'
       x-ms-version:
@@ -537,7 +537,7 @@ interactions:
       x-ms-content-length:
       - '14'
       x-ms-date:
-      - Wed, 17 Apr 2024 09:18:12 GMT
+      - Wed, 17 Apr 2024 10:12:36 GMT
       x-ms-file-attributes:
       - none
       x-ms-file-creation-time:
@@ -559,21 +559,21 @@ interactions:
       content-length:
       - '0'
       last-modified:
-      - Wed, 17 Apr 2024 09:18:13 GMT
+      - Wed, 17 Apr 2024 10:12:37 GMT
       server:
       - Windows-Azure-File/1.0 Microsoft-HTTPAPI/2.0
       x-ms-file-attributes:
       - Archive
       x-ms-file-change-time:
-      - '2024-04-17T09:18:13.2419965Z'
+      - '2024-04-17T10:12:37.9515620Z'
       x-ms-file-creation-time:
-      - '2024-04-17T09:18:13.2419965Z'
+      - '2024-04-17T10:12:37.9515620Z'
       x-ms-file-id:
-      - '16140920739741040640'
+      - '13835119511969202176'
       x-ms-file-last-write-time:
-      - '2024-04-17T09:18:13.2419965Z'
+      - '2024-04-17T10:12:37.9515620Z'
       x-ms-file-parent-id:
-      - '13835108516852924416'
+      - '13835084327597113344'
       x-ms-request-server-encrypted:
       - 'true'
       x-ms-version:
@@ -601,7 +601,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-file-share/12.15.0 Python/3.11.8 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Wed, 17 Apr 2024 09:18:13 GMT
+      - Wed, 17 Apr 2024 10:12:38 GMT
       x-ms-range:
       - bytes=0-13
       x-ms-version:
@@ -619,11 +619,11 @@ interactions:
       content-md5:
       - nYmkCopuDuFj82431amzZw==
       last-modified:
-      - Wed, 17 Apr 2024 09:18:14 GMT
+      - Wed, 17 Apr 2024 10:12:39 GMT
       server:
       - Windows-Azure-File/1.0 Microsoft-HTTPAPI/2.0
       x-ms-file-last-write-time:
-      - '2024-04-17T09:18:14.5183866Z'
+      - '2024-04-17T10:12:39.0059268Z'
       x-ms-request-server-encrypted:
       - 'true'
       x-ms-version:
@@ -647,7 +647,7 @@ interactions:
       x-ms-content-length:
       - '372'
       x-ms-date:
-      - Wed, 17 Apr 2024 09:18:14 GMT
+      - Wed, 17 Apr 2024 10:12:39 GMT
       x-ms-file-attributes:
       - none
       x-ms-file-creation-time:
@@ -669,21 +669,21 @@ interactions:
       content-length:
       - '0'
       last-modified:
-      - Wed, 17 Apr 2024 09:18:15 GMT
+      - Wed, 17 Apr 2024 10:12:40 GMT
       server:
       - Windows-Azure-File/1.0 Microsoft-HTTPAPI/2.0
       x-ms-file-attributes:
       - Archive
       x-ms-file-change-time:
-      - '2024-04-17T09:18:15.9232088Z'
+      - '2024-04-17T10:12:40.0602916Z'
       x-ms-file-creation-time:
-      - '2024-04-17T09:18:15.9232088Z'
+      - '2024-04-17T10:12:40.0602916Z'
       x-ms-file-id:
-      - '13835090924666880000'
+      - '16141008700671262720'
       x-ms-file-last-write-time:
-      - '2024-04-17T09:18:15.9232088Z'
+      - '2024-04-17T10:12:40.0602916Z'
       x-ms-file-parent-id:
-      - '13835178885597102080'
+      - '13835154696341291008'
       x-ms-request-server-encrypted:
       - 'true'
       x-ms-version:
@@ -714,7 +714,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-file-share/12.15.0 Python/3.11.8 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Wed, 17 Apr 2024 09:18:16 GMT
+      - Wed, 17 Apr 2024 10:12:40 GMT
       x-ms-range:
       - bytes=0-371
       x-ms-version:
@@ -732,11 +732,11 @@ interactions:
       content-md5:
       - B9SwRStI08UJ7Rj8H6ST1A==
       last-modified:
-      - Wed, 17 Apr 2024 09:18:17 GMT
+      - Wed, 17 Apr 2024 10:12:41 GMT
       server:
       - Windows-Azure-File/1.0 Microsoft-HTTPAPI/2.0
       x-ms-file-last-write-time:
-      - '2024-04-17T09:18:17.2055720Z'
+      - '2024-04-17T10:12:41.2510565Z'
       x-ms-request-server-encrypted:
       - 'true'
       x-ms-version:
@@ -760,7 +760,7 @@ interactions:
       x-ms-content-length:
       - '250'
       x-ms-date:
-      - Wed, 17 Apr 2024 09:18:17 GMT
+      - Wed, 17 Apr 2024 10:12:41 GMT
       x-ms-file-attributes:
       - none
       x-ms-file-creation-time:
@@ -782,21 +782,21 @@ interactions:
       content-length:
       - '0'
       last-modified:
-      - Wed, 17 Apr 2024 09:18:18 GMT
+      - Wed, 17 Apr 2024 10:12:42 GMT
       server:
       - Windows-Azure-File/1.0 Microsoft-HTTPAPI/2.0
       x-ms-file-attributes:
       - Archive
       x-ms-file-change-time:
-      - '2024-04-17T09:18:18.5655927Z'
+      - '2024-04-17T10:12:42.3253354Z'
       x-ms-file-creation-time:
-      - '2024-04-17T09:18:18.5655927Z'
+      - '2024-04-17T10:12:42.3253354Z'
       x-ms-file-id:
-      - '13835161293411057664'
+      - '10376414371776561152'
       x-ms-file-last-write-time:
-      - '2024-04-17T09:18:18.5655927Z'
+      - '2024-04-17T10:12:42.3253354Z'
       x-ms-file-parent-id:
-      - '13835108516852924416'
+      - '13835084327597113344'
       x-ms-request-server-encrypted:
       - 'true'
       x-ms-version:
@@ -825,7 +825,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-file-share/12.15.0 Python/3.11.8 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Wed, 17 Apr 2024 09:18:18 GMT
+      - Wed, 17 Apr 2024 10:12:42 GMT
       x-ms-range:
       - bytes=0-249
       x-ms-version:
@@ -843,11 +843,11 @@ interactions:
       content-md5:
       - CT1FTZp5JScB8fq+HjnINw==
       last-modified:
-      - Wed, 17 Apr 2024 09:18:19 GMT
+      - Wed, 17 Apr 2024 10:12:43 GMT
       server:
       - Windows-Azure-File/1.0 Microsoft-HTTPAPI/2.0
       x-ms-file-last-write-time:
-      - '2024-04-17T09:18:19.8479566Z'
+      - '2024-04-17T10:12:43.3896552Z'
       x-ms-request-server-encrypted:
       - 'true'
       x-ms-version:
@@ -871,7 +871,7 @@ interactions:
       x-ms-content-length:
       - '110'
       x-ms-date:
-      - Wed, 17 Apr 2024 09:18:19 GMT
+      - Wed, 17 Apr 2024 10:12:43 GMT
       x-ms-file-attributes:
       - none
       x-ms-file-creation-time:
@@ -893,21 +893,21 @@ interactions:
       content-length:
       - '0'
       last-modified:
-      - Wed, 17 Apr 2024 09:18:21 GMT
+      - Wed, 17 Apr 2024 10:12:44 GMT
       server:
       - Windows-Azure-File/1.0 Microsoft-HTTPAPI/2.0
       x-ms-file-attributes:
       - Archive
       x-ms-file-change-time:
-      - '2024-04-17T09:18:21.3115208Z'
+      - '2024-04-17T10:12:44.4529803Z'
       x-ms-file-creation-time:
-      - '2024-04-17T09:18:21.3115208Z'
+      - '2024-04-17T10:12:44.4529803Z'
       x-ms-file-id:
-      - '13835126109038968832'
+      - '13835189880713379840'
       x-ms-file-last-write-time:
-      - '2024-04-17T09:18:21.3115208Z'
+      - '2024-04-17T10:12:44.4529803Z'
       x-ms-file-parent-id:
-      - '13835108516852924416'
+      - '13835084327597113344'
       x-ms-request-server-encrypted:
       - 'true'
       x-ms-version:
@@ -934,7 +934,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-file-share/12.15.0 Python/3.11.8 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Wed, 17 Apr 2024 09:18:21 GMT
+      - Wed, 17 Apr 2024 10:12:44 GMT
       x-ms-range:
       - bytes=0-109
       x-ms-version:
@@ -952,11 +952,11 @@ interactions:
       content-md5:
       - 3CPKwiOwfwiEOJC0UpjR0Q==
       last-modified:
-      - Wed, 17 Apr 2024 09:18:22 GMT
+      - Wed, 17 Apr 2024 10:12:45 GMT
       server:
       - Windows-Azure-File/1.0 Microsoft-HTTPAPI/2.0
       x-ms-file-last-write-time:
-      - '2024-04-17T09:18:22.6356997Z'
+      - '2024-04-17T10:12:45.5332316Z'
       x-ms-request-server-encrypted:
       - 'true'
       x-ms-version:
@@ -976,31 +976,31 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '258'
+      - '282'
       Content-Type:
       - application/json
       User-Agent:
-      - promptflow-azure-sdk/1.8.0.dev0 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
+      - promptflow-azure-sdk/0.1.0b1 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
         Python/3.11.8 (Windows-10-10.0.22631-SP0)
     method: POST
     uri: https://eastus.api.azureml.ms/flow/api/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/Flows
   response:
     body:
-      string: '{"eTag": {}, "studioPortalEndpoint": "https://ml.azure.com/prompts/flow/3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/2145e655-00d6-402b-a808-5d3efdf11911/details?wsid=/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000",
-        "flowId": "2145e655-00d6-402b-a808-5d3efdf11911", "flowName": "flow_display_name",
+      string: '{"eTag": {}, "studioPortalEndpoint": "https://ml.azure.com/prompts/flow/3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/8f768c0e-02f1-4275-98af-b94916325306/details?wsid=/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000",
+        "flowId": "8f768c0e-02f1-4275-98af-b94916325306", "flowName": "flow_display_name",
         "description": "test flow description", "tags": {"owner": "sdk-test"}, "flowType":
         "Default", "experimentId": "00000000-0000-0000-0000-000000000000", "createdDate":
-        "2024-04-17T09:18:25.8556671Z", "lastModifiedDate": "2024-04-17T09:18:25.8556671Z",
+        "2024-04-17T10:12:47.836358Z", "lastModifiedDate": "2024-04-17T10:12:47.8363837Z",
         "owner": {"userObjectId": "00000000-0000-0000-0000-000000000000", "userTenantId":
-        "00000000-0000-0000-0000-000000000000", "userName": "Xingzhi Zhang"}, "flowResourceId":
-        "azureml://locations/eastus/workspaces/00000/flows/2145e655-00d6-402b-a808-5d3efdf11911",
+        "00000000-0000-0000-0000-000000000000", "userName": "4cbd0e2e-aae4-4099-b4ba-94d3a4910587"},
+        "flowResourceId": "azureml://locations/eastus/workspaces/00000/flows/8f768c0e-02f1-4275-98af-b94916325306",
         "isArchived": false, "flowDefinitionFilePath": "Users/unknown_user/promptflow/flow_name/flow.dag.yaml",
         "enableMultiContainer": false}'
     headers:
       connection:
       - keep-alive
       content-length:
-      - '1082'
+      - '1128'
       content-type:
       - application/json; charset=utf-8
       strict-transport-security:
@@ -1012,7 +1012,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.244'
+      - '0.494'
     status:
       code: 200
       message: OK
@@ -1028,7 +1028,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-file-share/12.15.0 Python/3.11.8 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Wed, 17 Apr 2024 09:18:26 GMT
+      - Wed, 17 Apr 2024 10:12:48 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -1042,7 +1042,7 @@ interactions:
       content-type:
       - application/octet-stream
       last-modified:
-      - Wed, 17 Apr 2024 09:18:19 GMT
+      - Wed, 17 Apr 2024 10:12:43 GMT
       server:
       - Windows-Azure-File/1.0 Microsoft-HTTPAPI/2.0
       vary:
@@ -1050,15 +1050,15 @@ interactions:
       x-ms-file-attributes:
       - Archive
       x-ms-file-change-time:
-      - '2024-04-17T09:18:19.8479566Z'
+      - '2024-04-17T10:12:43.3896552Z'
       x-ms-file-creation-time:
-      - '2024-04-17T09:18:18.5655927Z'
+      - '2024-04-17T10:12:42.3253354Z'
       x-ms-file-id:
-      - '13835161293411057664'
+      - '10376414371776561152'
       x-ms-file-last-write-time:
-      - '2024-04-17T09:18:19.8479566Z'
+      - '2024-04-17T10:12:43.3896552Z'
       x-ms-file-parent-id:
-      - '13835108516852924416'
+      - '13835084327597113344'
       x-ms-type:
       - File
       x-ms-version:
@@ -1076,7 +1076,7 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-azure-sdk/1.8.0.dev0 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+      - promptflow-azure-sdk/0.1.0b1 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
         Python/3.11.8 (Windows-10-10.0.22631-SP0)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores?count=30&isDefault=true&orderByAsc=false
@@ -1114,7 +1114,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.367'
+      - '0.057'
     status:
       code: 200
       message: OK
@@ -1128,7 +1128,7 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-azure-sdk/1.8.0.dev0 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+      - promptflow-azure-sdk/0.1.0b1 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
         Python/3.11.8 (Windows-10-10.0.22631-SP0)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore
@@ -1166,7 +1166,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.075'
+      - '0.069'
     status:
       code: 200
       message: OK
@@ -1182,7 +1182,7 @@ interactions:
       Content-Length:
       - '0'
       User-Agent:
-      - promptflow-azure-sdk/1.8.0.dev0 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+      - promptflow-azure-sdk/0.1.0b1 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
         Python/3.11.8 (Windows-10-10.0.22631-SP0)
     method: POST
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore/listSecrets
@@ -1207,7 +1207,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.172'
+      - '0.098'
     status:
       code: 200
       message: OK
@@ -1223,7 +1223,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.19.1 Python/3.11.8 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Wed, 17 Apr 2024 09:18:31 GMT
+      - Wed, 17 Apr 2024 10:12:52 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -1273,7 +1273,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.19.1 Python/3.11.8 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Wed, 17 Apr 2024 09:18:33 GMT
+      - Wed, 17 Apr 2024 10:12:53 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -1315,99 +1315,70 @@ interactions:
       Content-Type:
       - application/json
       User-Agent:
-      - promptflow-azure-sdk/1.8.0.dev0 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
+      - promptflow-azure-sdk/0.1.0b1 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
         Python/3.11.8 (Windows-10-10.0.22631-SP0)
     method: POST
     uri: https://eastus.api.azureml.ms/flow/api/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/BulkRuns/submit
   response:
     body:
-      string: '{"error": {"code": "UserError", "severity": null, "message": "Flow
-        Runtime operation failed with Forbidden: User with objectId(00000000-0000-0000-0000-000000000000)
-        is not authorized to invoke this runtime as the runtime compute instance ci-lin-cpu-sp-eastus
-        is assigned to 4e60fbf3-0338-41a8-bed5-fc341be556f8.", "messageFormat": "Flow
-        Runtime operation failed with Forbidden: {details}.", "messageParameters":
-        {"details": "User with objectId(00000000-0000-0000-0000-000000000000) is not
-        authorized to invoke this runtime as the runtime compute instance ci-lin-cpu-sp-eastus
-        is assigned to 4e60fbf3-0338-41a8-bed5-fc341be556f8"}, "referenceCode": null,
-        "detailsUri": null, "target": null, "details": [], "innerError": {"code":
-        "Auth", "innerError": {"code": "Authorization", "innerError": {"code": "FlowRuntimeOperationForbidden",
-        "innerError": null}}}, "debugInfo": {"type": "Microsoft.MachineLearning.Common.Core.Exceptions.BaseException",
-        "message": "Flow Runtime operation failed with Forbidden: User with objectId(00000000-0000-0000-0000-000000000000)
-        is not authorized to invoke this runtime as the runtime compute instance ci-lin-cpu-sp-eastus
-        is assigned to 4e60fbf3-0338-41a8-bed5-fc341be556f8.", "stackTrace": "   at
-        Microsoft.MachineLearning.Studio.MiddleTier.Utilities.PromptFlow.FlowBulkRunHelper.ProcessSubmissionExceptionAndOrchestratorRequest(Exception
-        ex, FlowRunRecordsEntity flowRunRecordsEntity, SubmitBulkRunToOrchestratorRequest
-        submitToOrchestratorRequest, Func`3 markRunAsFailedAction) in /mnt/vss/_work/1/s/src/azureml-api/src/Designer/src/MiddleTier/MiddleTier/Utilities/PromptFlow/FlowBulkRunHelper.cs:line
-        96\n   at Microsoft.MachineLearning.Studio.MiddleTier.Services.PromptFlow.FlowsManagement.SubmitBulkRun(SubmitBulkRunRequest
-        submitBulkRunRequest) in /mnt/vss/_work/1/s/src/azureml-api/src/Designer/src/MiddleTier/MiddleTier/Services/PromptFlow/FlowsManagement.cs:line
-        1070\n   at Microsoft.MachineLearning.Studio.MiddleTier.Services.PromptFlow.FlowsManagement.SubmitBulkRun(SubmitBulkRunRequest
-        submitBulkRunRequest) in /mnt/vss/_work/1/s/src/azureml-api/src/Designer/src/MiddleTier/MiddleTier/Services/PromptFlow/FlowsManagement.cs:line
-        1070\n   at Microsoft.MachineLearning.Studio.MiddleTier.Controllers.PromptFlow.BulkRunsController.SubmitBulkRun(String
-        subscriptionId, String resourceGroupName, String workspaceName, SubmitBulkRunRequest
-        submitBulkRunRequest) in /mnt/vss/_work/1/s/src/azureml-api/src/Designer/src/MiddleTier/MiddleTier/Controllers/PromptFlow/BulkRunsController.cs:line
-        53\n   at lambda_method381621(Closure , Object )\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ActionMethodExecutor.AwaitableObjectResultExecutor.Execute(IActionResultTypeMapper
-        mapper, ObjectMethodExecutor executor, Object controller, Object[] arguments)\n   at
-        Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeActionMethodAsync>g__Logged|12_1(ControllerActionInvoker
-        invoker)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeNextActionFilterAsync>g__Awaited|10_0(ControllerActionInvoker
-        invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)\n   at
-        Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Rethrow(ActionExecutedContextSealed
-        context)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Next(State&
-        next, Scope& scope, Object& state, Boolean& isCompleted)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeInnerFilterAsync>g__Awaited|13_0(ControllerActionInvoker
-        invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)\n   at
-        Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeNextResourceFilter>g__Awaited|25_0(ResourceInvoker
-        invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)\n   at
-        Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.Rethrow(ResourceExecutedContextSealed
-        context)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.Next(State&
-        next, Scope& scope, Object& state, Boolean& isCompleted)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeFilterPipelineAsync>g__Awaited|20_0(ResourceInvoker
-        invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)\n   at
-        Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker
-        invoker)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker
-        invoker)\n   at Microsoft.AspNetCore.Builder.RouterMiddleware.Invoke(HttpContext
-        httpContext)\n   at Common.WebApi.ActivityExtensions.JwtUserInformationExtraction.Invoke(HttpContext
-        context) in /mnt/vss/_work/1/s/src/azureml-api/src/Common/WebApi/ActivityExtensions/JwtUserInformationExtraction.cs:line
-        102\n   at Microsoft.MachineLearning.Studio.MiddleTier.Middleware.WebApiClientHandler.Invoke(HttpContext
-        context) in /mnt/vss/_work/1/s/src/azureml-api/src/Designer/src/MiddleTier/MiddleTier/Middleware/WebApiClientHandler.cs:line
-        436\n   at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext
-        context)\n   at Microsoft.MachineLearning.Studio.MiddleTierCommon.Middlerware.ApiTelemetryHandler.Invoke(HttpContext
-        context) in /mnt/vss/_work/1/s/src/azureml-api/src/Designer/src/MiddleTier/MiddleTierCommon/Middleware/ApiTelemetryHandler.cs:line
-        83\n   at Microsoft.MachineLearning.Studio.MiddleTierCommon.Middlerware.ExternalApiTelemetryHandler.Invoke(HttpContext
-        context) in /mnt/vss/_work/1/s/src/azureml-api/src/Designer/src/MiddleTier/MiddleTierCommon/Middleware/ExternalApiTelemetryHandler.cs:line
-        32\n   at Microsoft.MachineLearning.Studio.MiddleTierCommon.Middleware.TracingContextHandler.Invoke(HttpContext
-        context) in /mnt/vss/_work/1/s/src/azureml-api/src/Designer/src/MiddleTier/MiddleTierCommon/Middleware/TracingContextHandler.cs:line
-        39\n   at Swashbuckle.AspNetCore.Swagger.SwaggerMiddleware.Invoke(HttpContext
-        httpContext, ISwaggerProvider swaggerProvider)\n   at Microsoft.MachineLearning.Common.WebApi.Throttling.InMemoryThrottlingMiddleware.Invoke(HttpContext
-        context) in /mnt/vss/_work/1/s/src/azureml-api/src/Common/WebApi.Throttling/InMemoryThrottlingMiddleware.cs:line
-        113\n   at Microsoft.MachineLearning.Common.WebApi.ErrorHandling.Capture.ProactiveRequestTimeOutMiddleWare.Invoke(HttpContext
-        context) in /mnt/vss/_work/1/s/src/azureml-api/src/Common/WebApi/ErrorHandling/Capture/ProactiveRequestTimeOutMiddleWare.cs:line
-        54\n   at Microsoft.MachineLearning.Common.WebApi.Swagger.SwaggerTransformerMiddleware.Invoke(HttpContext
-        httpContext) in /mnt/vss/_work/1/s/src/azureml-api/src/Common/WebApi.Swagger/SwaggerTransformerMiddleware.cs:line
-        52\n   at Microsoft.MachineLearning.Common.WebApi.Logging.RequestLoggingMiddleware.Invoke(HttpContext
-        context) in /mnt/vss/_work/1/s/src/azureml-api/src/Common/WebApi/Logging/RequestLoggingMiddleware.cs:line
-        33\n   at Microsoft.MachineLearning.Common.WebApi.AppInsights.OperationContextMiddleware.Invoke(HttpContext
-        context) in /mnt/vss/_work/1/s/src/azureml-api/src/Common/WebApi/AppInsights/OperationContextMiddleware.cs:line
-        31\n   at Microsoft.MachineLearning.Common.WebApi.ErrorHandling.ErrorResponseMiddleware.Invoke(HttpContext
-        context) in /mnt/vss/_work/1/s/src/azureml-api/src/Common/WebApi/ErrorHandling/Capture/ErrorResponseMiddleware.cs:line
-        92", "innerException": null, "data": {"BaseError": {"Definition": {"MessageFormat":
-        "Flow Runtime operation failed with Forbidden: {details}.", "DetailsUri":
-        null, "IsTransient": null, "CodesHierarchy": ["UserError", "Auth", "Authorization",
-        "FlowRuntimeOperationForbidden"], "Code": "FlowRuntimeOperationForbidden"},
-        "Message": "Flow Runtime operation failed with Forbidden: User with objectId(00000000-0000-0000-0000-000000000000)
-        is not authorized to invoke this runtime as the runtime compute instance ci-lin-cpu-sp-eastus
-        is assigned to 4e60fbf3-0338-41a8-bed5-fc341be556f8.", "MessageParameters":
-        {"details": "User with objectId(00000000-0000-0000-0000-000000000000) is not
-        authorized to invoke this runtime as the runtime compute instance ci-lin-cpu-sp-eastus
-        is assigned to 4e60fbf3-0338-41a8-bed5-fc341be556f8"}, "Target": null, "RetryAfterSeconds":
-        null}}, "errorResponse": null}, "additionalInfo": null}, "correlation": {"operation":
-        "f2cba05a2db4d7abc2f4bd66101b6cdb", "request": "58ab56563238a612"}, "environment":
-        "eastus", "location": "eastus", "time": "2024-04-17T09:18:43.8732854+00:00",
-        "componentName": "PromptFlowService", "statusCode": 403}'
+      string: '"name"'
     headers:
       connection:
       - keep-alive
       content-length:
-      - '8959'
+      - '38'
       content-type:
+      - application/json; charset=utf-8
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '3.956'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
       - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - promptflow-azure-sdk/0.1.0b1 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
+        Python/3.11.8 (Windows-10-10.0.22631-SP0)
+    method: GET
+    uri: https://eastus.api.azureml.ms/flow/api/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/BulkRuns/name
+  response:
+    body:
+      string: '{"flowGraph": {"nodes": [{"name": "hello_world", "type": "python",
+        "source": {"type": "code", "path": "hello_world.py"}, "inputs": {"name": "${inputs.name}"},
+        "tool": "hello_world.py", "reduce": false}], "tools": [{"name": "hello_world.py",
+        "type": "python", "inputs": {"name": {"type": ["string"], "allow_manual_entry":
+        false, "is_multi_select": false, "input_type": "default"}}, "source": "hello_world.py",
+        "function": "hello_world", "is_builtin": false, "enable_kwargs": false, "tool_state":
+        "stable"}], "inputs": {"name": {"type": "string", "default": "hod", "is_chat_input":
+        false}}, "outputs": {"result": {"type": "string", "reference": "${hello_world.output}",
+        "evaluation_only": false, "is_chat_output": false}}}, "flowRunResourceId":
+        "azureml://locations/eastus/workspaces/00000/flows/8f768c0e-02f1-4275-98af-b94916325306/flowRuns/name",
+        "flowRunId": "name", "flowRunDisplayName": "name", "batchDataInput": {"dataUri":
+        "azureml://datastores/workspaceblobstore/paths/LocalUpload/79f088fae0e502653c43146c9682f425/simple_hello_world.jsonl"},
+        "flowRunType": "FlowRun", "flowType": "Default", "runtimeName": "test-runtime-ci",
+        "inputsMapping": {"name": "${data.name}"}, "outputDatastoreName": "workspaceblobstore",
+        "childRunBasePath": "promptflow/PromptFlowArtifacts/8f768c0e-02f1-4275-98af-b94916325306/name/flow_artifacts",
+        "flowDagFileRelativePath": "flow.dag.yaml", "flowSnapshotId": "ab544c0b-e058-4afe-88e6-9d21c47db86e",
+        "sessionId": "8f768c0e-02f1-4275-98af-b94916325306", "studioPortalEndpoint":
+        "https://ml.azure.com/runs/name?wsid=/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '1799'
+      content-type:
+      - application/json; charset=utf-8
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       transfer-encoding:
@@ -1417,8 +1388,84 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '6.439'
+      - '0.156'
     status:
-      code: 403
-      message: 'Flow Runtime operation failed with Forbidden: User with objectId(5722ac88-ce2c-4b12-b30d-6a19472a2a8'
+      code: 200
+      message: OK
+- request:
+    body: '{"runId": "name", "selectRunMetadata": true, "selectRunDefinition": true,
+      "selectJobSpecification": true}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '137'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.31.0
+    method: POST
+    uri: https://eastus.api.azureml.ms/history/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/rundata
+  response:
+    body:
+      string: '{"runMetadata": {"runNumber": 1713348778, "rootRunId": "name", "createdUtc":
+        "2024-04-17T10:12:58.4780888+00:00", "createdBy": {"userObjectId": "00000000-0000-0000-0000-000000000000",
+        "userPuId": null, "userIdp": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
+        "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
+        "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "4cbd0e2e-aae4-4099-b4ba-94d3a4910587",
+        "upn": null}, "userId": "00000000-0000-0000-0000-000000000000", "token": null,
+        "tokenExpiryTimeUtc": null, "error": null, "warnings": null, "revision": 3,
+        "statusRevision": 1, "runUuid": "4f761bd6-abdd-43c3-ac58-8b40b61a0e3d", "parentRunUuid":
+        null, "rootRunUuid": "4f761bd6-abdd-43c3-ac58-8b40b61a0e3d", "lastStartTimeUtc":
+        null, "currentComputeTime": "00:00:00", "computeDuration": null, "effectiveStartTimeUtc":
+        null, "lastModifiedBy": {"userObjectId": "00000000-0000-0000-0000-000000000000",
+        "userPuId": null, "userIdp": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
+        "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
+        "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "4cbd0e2e-aae4-4099-b4ba-94d3a4910587",
+        "upn": null}, "lastModifiedUtc": "2024-04-17T10:13:00.4682656+00:00", "duration":
+        null, "cancelationReason": null, "currentAttemptId": 1, "runId": "name", "parentRunId":
+        null, "experimentId": "c37563af-f0b0-4358-bf15-3f6847f3772d", "status": "Preparing",
+        "startTimeUtc": null, "endTimeUtc": null, "scheduleId": null, "displayName":
+        "name", "name": null, "dataContainerId": "dcid.name", "description": null,
+        "hidden": false, "runType": "azureml.promptflow.FlowRun", "runTypeV2": {"orchestrator":
+        null, "traits": [], "attribution": "PromptFlow", "computeType": "AmlcDsi"},
+        "properties": {"azureml.promptflow.runtime_name": "test-runtime-ci", "azureml.promptflow.runtime_version":
+        "20240411.v4", "azureml.promptflow.input_data": "azureml://datastores/workspaceblobstore/paths/LocalUpload/79f088fae0e502653c43146c9682f425/simple_hello_world.jsonl",
+        "azureml.promptflow.inputs_mapping": "{\"name\":\"${data.name}\"}", "azureml.promptflow.disable_trace":
+        "false", "azureml.promptflow.definition_file_name": "flow.dag.yaml", "azureml.promptflow.flow_lineage_id":
+        "8f768c0e-02f1-4275-98af-b94916325306", "azureml.promptflow.flow_definition_resource_id":
+        "azureml://locations/eastus/workspaces/00000/flows/8f768c0e-02f1-4275-98af-b94916325306",
+        "azureml.promptflow.flow_id": "8f768c0e-02f1-4275-98af-b94916325306", "_azureml.evaluation_run":
+        "promptflow.BatchRun", "azureml.promptflow.snapshot_id": "ab544c0b-e058-4afe-88e6-9d21c47db86e"},
+        "parameters": {}, "actionUris": {}, "scriptName": null, "target": null, "uniqueChildRunComputeTargets":
+        [], "tags": {}, "settings": {}, "services": {}, "inputDatasets": [], "outputDatasets":
+        [], "runDefinition": null, "jobSpecification": null, "primaryMetricName":
+        null, "createdFrom": null, "cancelUri": null, "completeUri": null, "diagnosticsUri":
+        null, "computeRequest": null, "compute": null, "retainForLifetimeOfWorkspace":
+        false, "queueingInfo": null, "inputs": null, "outputs": null}, "runDefinition":
+        null, "jobSpecification": null, "systemSettings": null}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '3902'
+      content-type:
+      - application/json; charset=utf-8
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.043'
+    status:
+      code: 200
+      message: OK
 version: 1
