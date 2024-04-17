@@ -1,7 +1,3 @@
----
-
----
-
 # user pain points
 
 - have to wrap my code to a flex flow 
@@ -58,7 +54,7 @@ await myChat.start();
 
 **What is "name"?**
 
-![image-20240417121603115](/image-20240417121603115-1713347505413-6.png)
+![image-20240417121603115](./image-20240417121603115-1713347505413-6.png)
 
 With prompt flow integration:
 
@@ -80,7 +76,7 @@ With prompt flow integration:
 
 - User can click the "x" on the chat of the left pane
 
-  ![image-20240417133257081](/image-20240417133257081-1713347505413-7.png)
+  ![image-20240417133257081](./image-20240417133257081-1713347505413-7.png)
 
 - Users can programmatically terminate the chat.
 
@@ -122,7 +118,7 @@ With prompt flow integration:
 
 ## Basic - receive a message from the Chat window, and send replies.
 
-​      ![image-20240417151149267](/image-20240417151149267-1713347505414-8.png)  
+​      ![image-20240417151149267](./image-20240417151149267-1713347505414-8.png)  
 
 Handle message in code:
 
@@ -201,7 +197,7 @@ const myChat = new Chat({ port: 8001 })
 
 ## Advanced - Right panel on the Chat UI
 
-![image-20240417155638617](/image-20240417155638617-1713347505414-9.png)
+![image-20240417155638617](./image-20240417155638617-1713347505414-9.png)
 
 ```py
 from promptflow.devkit import start_chat, Chat
@@ -315,7 +311,7 @@ const myChat = new Chat()
 
 ## Advanced - Commands
 
-![image-20240417162527158](/image-20240417162527158-1713347505414-10.png)
+![image-20240417162527158](./image-20240417162527158-1713347505414-10.png)
 
 User can enable the command features.
 
