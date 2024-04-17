@@ -1,5 +1,6 @@
 import asyncio
 import json
+import uuid
 from unittest.mock import patch
 
 import pytest
@@ -221,6 +222,22 @@ class TestTracing:
 
     def test_otel_trace_with_multiple_functions(self):
         execute_function_in_subprocess(self.assert_otel_traces_with_multiple_functions)
+
+    def test_otel_tracer_refreshed_after_start_trace(self):
+        from promptflow.tracing import start_trace
+
+        memory_exporter = prepare_memory_exporter()
+        collection1 = str(uuid.uuid4())
+        start_trace(collection=collection1)
+        span_list = memory_exporter.get_finished_spans()
+        for span in span_list:
+            assert span.resource.attributes["collection"] == collection1
+        # resource.attributes.collection should be refreshed after start_trace
+        collection2 = str(uuid.uuid4())
+        start_trace(collection=collection2)
+        new_span_list = memory_exporter.get_finished_spans()
+        for span in new_span_list:
+            assert span.resource.attributes["collection"] == collection2
 
     def assert_otel_traces_with_multiple_functions(self):
         memory_exporter = prepare_memory_exporter()
