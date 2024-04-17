@@ -35,6 +35,7 @@ def write_simple_program(
 
 if __name__ == "__main__":
     from promptflow.tracing import start_trace
+
     start_trace()
     result = write_simple_program("Hello, world!", "gpt-35-turbo")
     print(result)
