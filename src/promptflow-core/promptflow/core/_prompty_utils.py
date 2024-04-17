@@ -87,12 +87,12 @@ def convert_model_configuration_to_connection(model_configuration):
     if connection_type in [AzureOpenAIConnection.TYPE, "azure_openai"]:
         if "api_base" not in connection:
             connection["api_base"] = connection.get("azure_endpoint", None)
-        if is_empty_connection_config(connection_dict):
+        if is_empty_connection_config(connection):
             return AzureOpenAIConnection.from_env()
         else:
             return AzureOpenAIConnection(**connection)
     elif connection_type in [OpenAIConnection.TYPE, "openai"]:
-        if is_empty_connection_config(connection_dict):
+        if is_empty_connection_config(connection):
             return OpenAIConnection.from_env()
         else:
             return OpenAIConnection(**connection)
