@@ -13,7 +13,7 @@ class TestSaveEval:
     """Test saving evaluators."""
 
     @staticmethod
-    def get_evaluators_from_module(namespace: Any, exceptions: Optional[List[str]] = None) -> List[Type]:
+    def _get_evaluators_from_module(namespace: Any, exceptions: Optional[List[str]] = None) -> List[Type]:
         evaluators = []
         for name, obj in inspect.getmembers(namespace):
             if inspect.isclass(obj):
@@ -22,8 +22,8 @@ class TestSaveEval:
                 evaluators.append(obj)
         return evaluators
 
-    EVALUATORS = get_evaluators_from_module(evaluators)
-    RAI_EVALUATORS = get_evaluators_from_module(content_safety)
+    EVALUATORS = _get_evaluators_from_module(evaluators)
+    RAI_EVALUATORS = _get_evaluators_from_module(content_safety)
 
     @pytest.mark.parametrize('evaluator', EVALUATORS)
     def test_save_evaluators(self, tmpdir, pf_client, evaluator) -> None:
