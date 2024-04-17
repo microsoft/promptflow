@@ -35,7 +35,7 @@ from promptflow.devkit import start_chat
 
 my_chat = start_chat()
 # optional arguments 
-my_chat = start_chat(port=8001, name="my_chat", browser="~/Library/Application Support/Google/Chrome")
+my_chat = start_chat(port=8001, window="my_chat", browser="~/Library/Application Support/Google/Chrome")
 ```
 
 Vanilla TypeScript
@@ -45,16 +45,14 @@ import { Chat } from "@promptflow/chat";
 
 const myChat = new Chat({
     port: 8001, // optional
-    name: "my_chat", // optional
+    window: "my_chat", // optional
     browser: "~/Library/Application Support/Google/Chrome" // optional
 });
 
 await myChat.start();
 ```
 
-**What is "name"?**
 
-![image-20240417121603115](./image-20240417121603115-1713347505413-6.png)
 
 With prompt flow integration:
 
@@ -130,7 +128,7 @@ my_chat = start_chat()
 def handle_message(message: Chat.Message):
     bot = new Chat.Profile(name="Bot")
     # simple message
-    bot.send(f"received message: {message.content} from: {message.from.name} at: {message.created_at}")
+    my_chat.send(message=f"received message: {message.content} from: {message.from.name} at: {message.created_at}", from=bot)
         
 my_chat.on_message(handle_message)
 ```
@@ -139,21 +137,26 @@ my_chat.on_message(handle_message)
 import { Chat, ChatMessage, ChatProfile, MessageServerity, MessageIntent } from "@promptflow/chat";
 import { botIcon } from "some_awesome_icon_lib"
 
-const bot = new ChatProfile({ 
+const bot: ChatProfile = { 
     name: "Bot",
     icon: botIcon,
     tags: ["The assistant champion", "Your helpful friend"]
-});
+};
 const myChat = new Chat()
-  .onMessage((message: ChatMessage) => {
-    bot.send(`Hello ${message.from.name}! We received your message: ${message.content}`);    
+  .onMessage(async (message: ChatMessage) => {
+    await myChat.send(
+      {
+        message: `Hello ${message.from.name}! We received your message: ${message.content}`, 
+        from: bot
+      }
+    );    
   });
 
 await chat.start();
 
 ```
 
-Please refer to the advanced - rich content message section for more complex messages
+Please refer to the advanced - rich content message section for more complex messages.
 
 ## Advanced - Chat life cycle
 
@@ -167,7 +170,7 @@ import json
 my_chat = start_chat()
 
 def on_chat_start(options)
-	print("Chat starts")
+	  print("Chat starts")
     print(json.dump(opsions))
 
 def on_terminate_chat(reason: str):
@@ -338,7 +341,29 @@ my_chat.enable_commands([eval_command, eval_last_command])
 
 ```
 
-###### 
+```typescript
+import { Chat, ChatCommand } from "@promptflow/chat";
+
+const myChat = new Chat();
+const commands: Array<ChatCommand> = [
+  {
+    key: "eval",
+    exactMatches: "eval",
+    handler: () => console.log("handling \/eval command");
+  },
+  {
+    key: "eval_last",
+    exactMatches: "eval_last",
+    handler: args => consle.log(`handling /eval_last, ${args}`);
+  }
+]
+
+myChat.enableCommands()
+
+await myChat.start();
+```
+
+
 
 ## Advanced - rich content messages
 
@@ -350,27 +375,50 @@ my_chat = start_chat()
 def handle_message(message: Chat.Message):
     bot = new Chat.Profile(name="Bot")
     # simple message
-    bot.send(f"received message: {message.content} from: {message.from.name} at: {message.created_at}")
+    my_chat.send(message=f"received message: {message.content} from: {message.from.name} at: {message.created_at}", from=bot)
     
     # additional links
-    bot.send(new Chat.TextMessage(text=f"Hello! {message.from.name}", links=[{ label: "Visit our doc site": url: "xxx" }]))
+    doc_site_link = new Chat.message_link(
+    	label="visit our doc site",
+      url="https://microsoft.github.io/promptflow",
+      open_new_tab=true
+    )
+    my_chat.send(
+      messsage=new Chat.TextMessage(text=f"Hello! {message.from.name}", links=[doc_site_link]),
+    	from=bot
+    )
     
-    # additional links with action
-    @Chat.Action(label="view trace", icon="./view-trace-icon.png")
+    # additional action
     def view_trace():
-        bot.send(new Chat.HTMLMessage(file=".trace_detail.html", position="center"))
+        my_chat.send(
+          	message=new Chat.HTMLMessage(file=".trace_detail.html", position="center")
+        		from=bot
+        )
     
-    bot.send(new Chat.TextMessage(text=f"Hello! {message.from.name}", links=[view_trace]))
+    view_trace_action = new Chat.message_action(
+    		label: "view_trace",
+      	icon: "trace.png",
+        appearance: "link",
+        posistion: "bottom",
+        handler: view_trace
+    )
+    my_chat.send(
+      	message=new Chat.TextMessage(text=f"Hello! {message.from.name}", actions=[view_trace_action])
+    		from=bot
+    )
     try:
         # do some dangerous things
     except:
-        # intent: normal, error, congrats, serverity: normal, low, high
+        # intent: normal(default, no effects), error(red background), congrats(fireworks animation), serverity: normal, low, high
         error_message = new Chat.TextMessage(text="Opps! An error occurred", intent="error", serverity="high")
         # using HTML template engine to build complex reply message
         error_detail_message = new Chat.JadeTemplateMessage(template="./error_page.jade", parameters={ "error_detail": "Internal error." })
         # Nested message
         error_message.append_child(child=error_detail_message, indent=80)
-        bot.send(error_message)
+        my_chat.send(
+          	message=error_message
+          	from=bot
+        )
         
 
 my_chat.on_message(handle_message)
@@ -387,47 +435,61 @@ import {
 } from "@promptflow/chat";
 import { botIcon, viewIcon } from "some_awesome_icon_lib"
 
-const bot = new ChatProfile({ 
+const bot: ChatProfile =  
     name: "Bot",
     icon: botIcon,
     tags: ["The assistant champion", "Your helpful friend"]
-});
+};
+
 const myChat = new Chat()
-  .onMessage((message: ChatMessage) => {
-    bot.send(`Hello ${message.from.name}! We received your message: ${message.content}`);
+  .onMessage(async (message: ChatMessage) => {
+    await myChat.send(
+      {
+        message: `Hello ${message.from.name}! We received your message: ${message.content}`,
+        from: bot
+      }
+    );
     
     // construct complex message
-    bot.send(new TextMessage({
-        text: `Hello ${message.from.name}! We received your message: ${message.content}`,
-        links: [
-            {
-                label: "visit doc site",
-                url: "https://microsoft.github.io/promptflow/"
-            }
-        ],
-        actions: [
-            {
-                label: "view trace",
-                icon: viewIcon,
-                onClick: () => {
-                    bot.send(new HTMLMessage({
-                        html: `<html>contents</html>`,
-                        position: "center"
-                    }))
-                }
-            }
-        ]
-    }));
+    await myChat.send(
+      {
+        message: {
+          text: `Hello ${message.from.name}! We received your message: ${message.content}`,
+          links: [
+              {
+                  label: "visit doc site",
+                  url: "https://microsoft.github.io/promptflow/"
+              }
+          ],
+          actions: [
+              {
+                  label: "view trace",
+                  icon: viewIcon,
+                  as: "icon",
+                  onClick: async () => {
+                      await bot.send({
+                          html: `<html>contents</html>`,
+                          position: "center"
+                      } satisfies HTMLMessage
+                      );
+                  }
+              }
+          ]
+    	 } satisfies TextMessage,
+       from: bot
+    );
       
     // shorthands for intent
-    bot.sendCongrats("Your first chat app works as a charm"); // fireworks on the screen :)
+    await myChat.sendCongrats({
+        message: "Your first chat app works as a charm",
+        from: bot
+    }); // fireworks on the screen :)
       
     // builder pattern for message
-    bot.send(
-        TextMessage.builder
+    const nestedMessage = TextMessage.builder
         	.withContent("Opps, an error occurred!")
-    		.withServerity(MessageServerity.High) // Big red sign signal !
-            .withIntent(MessageIntent.Error) // message with red background
+    			.withServerity(MessageServerity.High) // Big red sign signal !
+          .withIntent(MessageIntent.Error) // message with red background
         	.withChild(
             	HTMLMessage.builder
                 	.withJadeTemplate(```
@@ -456,13 +518,49 @@ html(lang="en")
                 	.position("left")
             )
 	        .withChildIndent(80)
-        	.build()
-    )
+        	.build();
     
+    await myChat.send({
+      	message: nestedMessage,
+      	from: bot
+    });  
   });
 
 await chat.start();
 ```
+
+## Advanced - message actions and user feedback
+
+```python
+from promptflow.devkit import start_chat, Chat
+
+my_chat = start_chat()
+bot = new Chat.Profile(name="bot")
+
+def user_thumb_up():
+    print("user loves it!")
+    
+thumb_up_action = new Chat.message_action(
+  label="like", # REQUIRED! if appearance is "icon-only", will apply the label to tooltips and aria-label for screen releases
+  apperance="icon-only", # icon-only, link, button
+  icon="thumbup.png",
+  position="bottom-right,
+	handler=user_thumb_up
+)
+
+message_with_user_feedback = new Chat.text_message(
+	text="This is a test message",
+  actions=[thumb_up_action]
+)
+
+my_chat.send(
+		message=message_with_user_feedback
+  	from=bot
+)
+
+```
+
+
 
 
 
@@ -480,7 +578,7 @@ def handle_message(message: Chat.Message):
     error_detail_message = new Chat.JadeTemplateMessage(template="./error_page.jade", parameters={ "error_detail": "Internal error." })
     # Nested message
     error_message.append_child(child=error_detail_message, indent=80)
-    bot.send(error_message)
+    my_chat.send(message=error_message)
         
 my_chat.on_message(handle_message)
 ```
@@ -496,19 +594,20 @@ import {
 } from "@promptflow/chat";
 import { botIcon, viewIcon } from "some_awesome_icon_lib"
 
-const bot = new ChatProfile({ 
+const bot: ChatProfile = { 
     name: "Bot",
     icon: botIcon,
     tags: ["The assistant champion", "Your helpful friend"]
-});
+};
 const myChat = new Chat()
-  .onMessage((message: ChatMessage) => {    
+  .onMessage(async (message: ChatMessage) => {    
     // builder pattern for message
-    bot.send(
-        TextMessage.builder
+    await myChat.send(
+      {
+        message: TextMessage.builder
         	.withContent("Opps, an error occurred!")
-    		.withServerity(MessageServerity.High) // Big red sign signal !
-            .withIntent(MessageIntent.Error) // message with red background
+    			.withServerity(MessageServerity.High) // Big red sign signal !
+          .withIntent(MessageIntent.Error) // message with red background
         	.withChild(
             	HTMLMessage.builder
                 	.withJadeTemplate(```
@@ -537,7 +636,9 @@ html(lang="en")
                 	.position("left")
             )
 	        .withChildIndent(80)
-        	.build()
+        	.build(),
+        from: bot
+      }    
     )
     
   });
@@ -549,5 +650,115 @@ await chat.start();
 
 ## Advanced - Resend message
 
+![image-20240417202602226](image-20240417202602226.png)
 
+```python
+from promptflow.devkit import start_chat, Chat
+
+my_chat = start_chat()
+bot = new Chat.Profile(name="bot")
+message_ref = bot.send("This is message 1")
+bot.resend(message="This is regenerated message", append_to=message_ref)
+```
+
+```typescript
+import { Chat, ChatProfile } from "@promptflow/chat";
+
+const myChat = new Chat();
+const bot = new ChatProfile();
+
+const messageRef = await myChat.send({
+  message: "This is message 1",
+  from: bot
+});
+await myChat.resend({
+  message: "This is regenerated message", 
+  from: bot,
+  messageRef
+});
+
+
+```
+
+## Advanced - A/B testing
+
+![OpenAI Doing A-B testing? : r/ChatGPT](https://preview.redd.it/openai-doing-a-b-testing-v0-1g9duct0t8ob1.png?width=640&crop=smart&auto=webp&s=0c5c2f6c1c0abb3b5099d8f654f4a3749f9af16e)
+
+```python
+from promtpflow.devkit import start_chat, Chat
+
+my_chat = start_chat()
+bot = new Chat.Profile()
+
+test_ref = my_chat.send_ab_testing_message(message_a = "Candidate 1", message_b = new Chat.HTMLMessage(html="xxx"), from: bot)
+
+def handle_user_vote(preferred: str):
+  	print(preferred); # A
+
+test_ref.on_select(handle_user_vote)
+
+```
+
+```typescript
+import { Chat, ChatProfile, ChatMessage } from "@promptflow/chat";
+
+const myChat = new Chat();
+const bot: ChatProfile = {
+  name: "bot"
+};
+
+await myChat.sendABTestingMessage({
+  messages: [
+  	"Candidate message A",
+    "Candidate messasge B" 
+  ] satisfies Array<string | ChatMessage>,
+  from: bot,
+  onVote: preferred => console.log(preferred)
+})
+
+await myChat.start();
+
+
+```
+
+## Advanced - Streaming
+
+```python
+from typing_extensions import override
+from openai import AssistantEventHandler
+from promptflow.devkit import start_chat, Chat
+
+my_chat = start_chat()
+assistant = new Chat.Profile(name="assistant") 
+# First, we create a EventHandler class to define
+# how we want to handle the events in the response stream.
+ 
+class EventHandler(AssistantEventHandler):    
+  @override
+  def on_text_created(self, text) -> None:
+    my_chat.create_message_stream(id="xxx", from=assistant)
+      
+  @override
+  def on_text_delta(self, delta, snapshot):
+    stream = my_chat.retrieve_message_stream(id="xxx")
+    stream.append(delta)
+  
+  @override
+  def on_complete(self):
+    stream = my_chat.retrieve_message_strem(id="xxx")
+    stream.complete()
+    
+  @override
+  def on_cancel(self):
+    stream = my_chat.retrieve_message_strem(id="xxx")
+    stream.abort(reason="cancelled!")
+ 
+with client.beta.threads.runs.stream(
+  thread_id=thread.id,
+  assistant_id=assistant.id,
+  instructions="Please address the user as Jane Doe. The user has a premium account.",
+  event_handler=EventHandler(),
+) as stream:
+  stream.until_done()
+```
 
