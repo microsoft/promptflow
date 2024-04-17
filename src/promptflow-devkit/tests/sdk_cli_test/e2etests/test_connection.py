@@ -6,11 +6,11 @@ import pytest
 from _constants import PROMPTFLOW_ROOT
 from mock import mock
 
-from promptflow._constants import ConnectionDefaultApiVersion
 from promptflow._sdk._constants import SCRUBBED_VALUE
 from promptflow._sdk._errors import ConnectionNameNotSetError
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk.entities import AzureOpenAIConnection, CustomConnection, OpenAIConnection
+from promptflow.constants import ConnectionDefaultApiVersion
 
 TEST_ROOT = PROMPTFLOW_ROOT / "tests"
 CONNECTION_ROOT = TEST_ROOT / "test_configs/connections"
