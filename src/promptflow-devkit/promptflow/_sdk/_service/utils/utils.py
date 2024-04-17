@@ -11,6 +11,7 @@ import socket
 import subprocess
 import sys
 import time
+import traceback
 from dataclasses import InitVar, dataclass, field
 from datetime import datetime
 from functools import wraps
@@ -25,6 +26,7 @@ from promptflow._sdk._constants import (
     DEFAULT_ENCODING,
     HOME_PROMPT_FLOW_DIR,
     PF_SERVICE_HOUR_TIMEOUT,
+    PF_SERVICE_LOG_FILE,
     PF_SERVICE_PORT_DIT_NAME,
     PF_SERVICE_PORT_FILE,
 )
@@ -129,6 +131,16 @@ def get_random_port():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("localhost", 0))
         return s.getsockname()[1]
+
+
+def get_log_file_location():
+    # each env will have its own log file
+    if is_run_from_built_binary():
+        log_file = HOME_PROMPT_FLOW_DIR / PF_SERVICE_LOG_FILE
+        log_file.touch(mode=read_write_by_user(), exist_ok=True)
+    else:
+        log_file = get_current_env_pfs_file(PF_SERVICE_LOG_FILE)
+    return log_file
 
 
 def _get_process_by_port(port):
@@ -253,7 +265,6 @@ class ErrorInfo:
             self.message = exception.message
             self.message_format = exception.message_format
             self.message_parameters = {k: str(v) for k, v in exception.message_parameters.items()}
-            self.message_parameters = exception.message_parameters
             self.target = exception.target
             self.module = exception.module
             self.reference_code = exception.reference_code
@@ -272,6 +283,7 @@ class FormattedException:
 
     error: ErrorInfo = field(init=False)
     time: str = field(init=False)
+    stack_info: str = field(init=False)
 
     def __post_init__(self, exception, status_code):
         self.status_code = status_code
@@ -279,6 +291,7 @@ class FormattedException:
             self.status_code = 404
         self.error = ErrorInfo(exception)
         self.time = datetime.now().isoformat()
+        self.stack_info = traceback.format_exc()
 
 
 def build_pfs_user_agent():

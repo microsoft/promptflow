@@ -170,15 +170,22 @@ class ExperimentOrchestrator:
 
         skip_node_name = None
         override_node_name = None
+        main_node_name = None
         if context_flow:
             for node in nodes_to_test:
                 # only support skip/override the first flow node which matches the ux passed flow path for now.
                 if Path(context_flow).as_posix() == Path(node.path).as_posix():
-                    if context_run_id:
+                    if "outputs" in context:
                         skip_node_name = node.name
                     else:
                         override_node_name = node.name
                     break
+        if skip_node_name is None and context_run_id:
+            for node in start_nodes:
+                # Assume designated run id is the first start node in experiment
+                main_node_name = node.name
+                break
+
         # If inputs, use the inputs as experiment data, else read the first line in template data
         test_context = ExperimentTemplateTestContext(
             template,
@@ -187,7 +194,7 @@ class ExperimentOrchestrator:
             output_path=kwargs.get("output_path"),
             session=kwargs.get("session"),
             context_run_id=context_run_id,
-            skip_node_name=skip_node_name,
+            context_node_name=skip_node_name if skip_node_name else main_node_name,
         )
 
         for node in nodes_to_test:
@@ -763,10 +770,10 @@ class ExperimentTemplateContext:
         # Generate line run id for node
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
         self.node_name_to_id = {node.name: f"{node.name}_attempt{timestamp}" for node in template.nodes}
-        skip_node_name = kwargs.get("skip_node_name", None)
+        context_node_name = kwargs.get("context_node_name", None)
         context_run_id = kwargs.get("context_run_id", None)
-        if context_run_id and skip_node_name:
-            self.node_name_to_id[skip_node_name] = context_run_id
+        if context_run_id and context_node_name:
+            self.node_name_to_id[context_node_name] = context_run_id
         self.node_name_to_referenced_id = self._prepare_referenced_ids()
         # All run/line run in experiment should use same session
         self.session = session or str(uuid.uuid4())

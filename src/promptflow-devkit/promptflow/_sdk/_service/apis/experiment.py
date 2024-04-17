@@ -36,6 +36,9 @@ test_experiment.add_argument(
 test_experiment.add_argument(
     "inputs", type=dict, location="json", required=False, help="Input parameters for experiment"
 )
+test_experiment.add_argument(
+    "main_flow_run_id", type=str, required=False, location="json", help="Designated run id of main flow node"
+)
 
 # Define skip test experiments request parsing
 skip_test_experiment = base_experiment.copy()
@@ -77,11 +80,13 @@ class ExperimentTest(Resource):
         environment_variables = args.environment_variables
         output_path = args.output_path
         session = args.session
-        context = None
+        main_flow_run_id = args.main_flow_run_id
+
+        context = {"run_id": main_flow_run_id}
         if inputs and override_flow_path:
             flow_path_dir, flow_path_file = resolve_flow_path(override_flow_path)
             override_flow_path = (flow_path_dir / flow_path_file).as_posix()
-            context = {"inputs": inputs, "node": override_flow_path}
+            context.update({"inputs": inputs, "node": override_flow_path})
         if output_path is None:
             filename = str(uuid.uuid4())
             if os.path.isdir(experiment_template):

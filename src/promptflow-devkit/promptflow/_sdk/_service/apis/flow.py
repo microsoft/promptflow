@@ -40,7 +40,7 @@ flow_path_parser.add_argument("inputs", type=dict, required=False, location="jso
 flow_path_parser.add_argument("environment_variables", type=dict, required=False, location="json")
 flow_path_parser.add_argument("session", type=str, required=False, location="json")
 flow_path_parser.add_argument("init", type=dict, required=False, location="json")
-flow_path_parser.add_argument("run_id", type=str, required=False, location="json")
+flow_path_parser.add_argument("run_id", type=str, required=False, location="json", help="Designated run id of flow")
 
 
 @api.route("/test")
