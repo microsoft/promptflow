@@ -295,7 +295,8 @@ class TestTraceSearchTrans:
         expected_condition = (
             "name = 'web-classification' "
             "AND json_extract(cumulative_token_count, '$.total') > 2000 "
-            "AND kind != 'Function'"
+            "AND kind != 'Function' "
+            "AND cumulative_token_count IS NOT NULL"
         )
         expected_sql = self._build_expected_sql(expected_condition)
         assert expected_sql == str(query)
@@ -305,7 +306,8 @@ class TestTraceSearchTrans:
         query = search_trans.translate(session=memory_session, expression=expr)
         expected_condition = (
             "json_extract(cumulative_token_count, '$.completion') <= 200 "
-            "AND (name = 'web-classification' OR kind != 'Flow')"
+            "AND (name = 'web-classification' OR kind != 'Flow') "
+            "AND cumulative_token_count IS NOT NULL"
         )
         expected_sql = self._build_expected_sql(expected_condition)
         assert expected_sql == str(query)

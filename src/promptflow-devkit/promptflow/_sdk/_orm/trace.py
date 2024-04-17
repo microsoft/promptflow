@@ -288,15 +288,18 @@ class SearchTranslator(ast.NodeVisitor):
         self._searchable_fields = copy.deepcopy(searchable_fields)
         self._json_fields = copy.deepcopy(json_fields)
         # for query build during AST traversal
-        self._query: typing.Optional[Query] = None
         self._stack: typing.List[SearchTransStackItem] = list()
+        self._orm_condition_from_ast = None
+        self._searched_json_fields = set()
 
-    def _start_build_query(self, session: Session):
-        self._query = session.query(self._model)
-
-    def _end_build_query(self) -> Query:
-        query, self._query = self._query, None
-        return query
+    def _build_query(self, session: Session) -> Query:
+        query = session.query(self._model)
+        if len(self._searched_json_fields) == 0:
+            return query.filter(self._orm_condition_from_ast)
+        orm_conditions = [self._orm_condition_from_ast]
+        for field in self._searched_json_fields:
+            orm_conditions.append(sqlalchemy.text(f"{field} IS NOT NULL"))
+        return query.filter(sqlalchemy.and_(*orm_conditions))
 
     def translate(self, session: Session, expression: str) -> Query:
         # parse expression to AST
@@ -305,12 +308,10 @@ class SearchTranslator(ast.NodeVisitor):
         except SyntaxError:
             ...
 
-        self._start_build_query(session=session)
         # traverse the AST and validate the fields are searchable
         # leveraging `ast.NodeVisitor.visit`
         self.visit(tree.body)
-        query = self._end_build_query()
-        return query
+        return self._build_query(session=session)
 
     # override visit BoolOp and Compare methods
     def visit_BoolOp(self, node: ast.BoolOp) -> None:
@@ -338,14 +339,14 @@ class SearchTranslator(ast.NodeVisitor):
         sql_condition = self._translate_compare_to_sql(node)
         sql_condition = sqlalchemy.text(sql_condition)
         if len(self._stack) == 0:
-            self._query = self._query.filter(sql_condition)
+            self._orm_condition_from_ast = sql_condition
             self.generic_visit(node)
             return
         self._stack[-1].append_condition(sql_condition)
         while len(self._stack) > 0 and self._stack[-1].is_full:
             top_item = self._stack.pop()
             if len(self._stack) == 0:
-                self._query = self._query.filter(top_item.orm_condition)
+                self._orm_condition_from_ast = top_item.orm_condition
             else:
                 self._stack[-1].append_condition(top_item.orm_condition)
         self.generic_visit(node)
@@ -371,6 +372,7 @@ class SearchTranslator(ast.NodeVisitor):
         if field not in self._json_fields:
             return field
         parent_field = self._json_fields[field]
+        self._searched_json_fields.add(parent_field)
         return f"json_extract({parent_field}, '$.{field}')"
 
     @staticmethod
