@@ -2551,6 +2551,72 @@ class TestCli:
             tracer_provider: TracerProvider = trace.get_tracer_provider()
             assert tracer_provider.resource.attributes["collection"] == collection
 
+    def test_prompty_test_with_sample_file(self, capsys):
+
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{PROMPTY_DIR}/prompty_example_with_sample.prompty",
+        )
+        outerr = capsys.readouterr()
+        assert "2" in outerr.out
+
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{PROMPTY_DIR}/prompty_example.prompty",
+            "--inputs",
+            f"{DATAS_DIR}/prompty_inputs.json",
+        )
+        outerr = capsys.readouterr()
+        assert "2" in outerr.out
+
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{PROMPTY_DIR}/prompty_example.prompty",
+            "--inputs",
+            f"{DATAS_DIR}/prompty_inputs.jsonl",
+        )
+        outerr = capsys.readouterr()
+        assert "2" in outerr.out
+
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{PROMPTY_DIR}/prompty_example.prompty",
+            "--inputs",
+            'question="what is the result of 1+1?"',
+        )
+        outerr = capsys.readouterr()
+        assert "2" in outerr.out
+
+        with pytest.raises(ValueError) as ex:
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{PROMPTY_DIR}/prompty_example.prompty",
+                "--inputs",
+                f"{DATAS_DIR}/invalid_path.json",
+            )
+        assert "Cannot find inputs file" in ex.value.args[0]
+
+        with pytest.raises(ValueError) as ex:
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{PROMPTY_DIR}/prompty_example.prompty",
+                "--inputs",
+                f"{DATAS_DIR}/logo.jpg",
+            )
+        assert "Only support jsonl or json file as input" in ex.value.args[0]
+
 
 def assert_batch_run_result(run, pf, assert_func):
     assert run.status == "Completed"

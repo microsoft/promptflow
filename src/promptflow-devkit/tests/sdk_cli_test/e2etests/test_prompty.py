@@ -258,25 +258,25 @@ class TestPrompty:
         assert any(["prompt.variables" in event["attributes"]["payload"] for event in events])
 
     def test_prompty_with_sample(self, pf: PFClient):
-        prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example_with_sample.prompty")
+        prompty = Flow.load(source=f"{PROMPTY_DIR}/prompty_example_with_sample.prompty")
         result = prompty()
         assert "2" in result
 
-        prompty = Prompty.load(
+        prompty = Flow.load(
             source=f"{PROMPTY_DIR}/prompty_example_with_sample.prompty", sample=f"{DATA_DIR}/prompty_inputs.json"
         )
         result = prompty()
         assert "2" in result
 
         with pytest.raises(InvalidSampleError) as ex:
-            prompty = Prompty.load(
+            prompty = Flow.load(
                 source=f"{PROMPTY_DIR}/prompty_example_with_sample.prompty", sample=f"{DATA_DIR}/invalid_path.json"
             )
             prompty()
         assert "Cannot find sample file" in ex.value.message
 
         with pytest.raises(InvalidSampleError) as ex:
-            prompty = Prompty.load(
+            prompty = Flow.load(
                 source=f"{PROMPTY_DIR}/prompty_example_with_sample.prompty", sample=f"{DATA_DIR}/prompty_inputs.jsonl"
             )
             prompty()
