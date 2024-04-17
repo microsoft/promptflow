@@ -6,7 +6,7 @@ import ast
 import copy
 import datetime
 import typing
-from collections import namedtuple
+from dataclasses import dataclass
 
 import sqlalchemy
 from sqlalchemy import INTEGER, JSON, REAL, TEXT, TIMESTAMP, Column, Index
@@ -256,8 +256,23 @@ LINE_RUN_JSON_FIELDS = {
     "completion": "cumulative_token_count",
 }
 
-# use namedtuple here to clarify the stack item structure
-SearchTransStackItem = namedtuple("SearchTransStackItem", ["orm_op", "expected_length", "values"])
+
+@dataclass
+class SearchTransStackItem:
+    orm_op: typing.Union[sqlalchemy.and_, sqlalchemy.or_]
+    expected_length: int
+    conditions: typing.List[sqlalchemy.text]
+
+    def append_condition(self, condition: sqlalchemy.text) -> None:
+        self.conditions.append(condition)
+
+    @property
+    def is_full(self) -> bool:
+        return len(self.conditions) == self.expected_length
+
+    @property
+    def orm_condition(self):
+        return self.orm_op(*self.conditions)
 
 
 class SearchTranslator(ast.NodeVisitor):
@@ -310,12 +325,9 @@ class SearchTranslator(ast.NodeVisitor):
         else:
             # TODO: raise exception
             pass
-        stack_item = SearchTransStackItem(
-            orm_op=orm_op,
-            expected_length=len(node.values),
-            values=list(),
-        )
+        stack_item = SearchTransStackItem(orm_op=orm_op, expected_length=len(node.values), conditions=list())
         self._stack.append(stack_item)
+        self.generic_visit(node)
 
     def visit_Compare(self, node: ast.Compare) -> None:
         # for compare
@@ -326,10 +338,20 @@ class SearchTranslator(ast.NodeVisitor):
         #   3.1. if not match the expected length, push back;
         #   3.2. if match, push back if the stack is empty; otherwise, push back
         sql_condition = self._translate_compare_to_sql(node)
+        sql_condition = sqlalchemy.text(sql_condition)
         if len(self._stack) == 0:
-            self._query = self._query.filter(sqlalchemy.text(sql_condition))
+            self._query = self._query.filter(sql_condition)
+            self.generic_visit(node)
             return
-        ...
+        self._stack[-1].append_condition(sql_condition)
+        while len(self._stack) > 0 and self._stack[-1].is_full:
+            top_item = self._stack.pop()
+            if len(self._stack) == 0:
+                self._query = self._query.filter(top_item.orm_condition)
+            else:
+                self._stack[-1].append_condition(top_item.orm_condition)
+        self.generic_visit(node)
+        return
 
     def _resolve_ast_node(self, node: typing.Union[ast.Constant, ast.Name]) -> str:
         if isinstance(node, ast.Constant):

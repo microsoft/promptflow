@@ -275,3 +275,10 @@ class TestTraceSearchTrans:
         expected_condition = "name = 'web-classification'"
         expected_sql = self._build_expected_sql(expected_condition)
         assert expected_sql == str(query)
+
+    def test_search_with_bool(self, memory_session: Session, search_trans: SearchTranslator):
+        basic_expr = "name == 'web-classification' and kind == 'LLM'"
+        query = search_trans.translate(session=memory_session, expression=basic_expr)
+        expected_condition = "name = 'web-classification' AND kind = 'LLM'"
+        expected_sql = self._build_expected_sql(expected_condition)
+        assert expected_sql == str(query)
