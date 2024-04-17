@@ -10,7 +10,7 @@ from typing import Dict, List
 import pydash
 
 from promptflow._constants import FlowEntryRegex
-from promptflow._sdk._constants import ALL_CONNECTION_TYPES, FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
+from promptflow._sdk._constants import ALL_CONNECTION_TYPES, FLOW_META_JSON, FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
 from promptflow._utils.flow_utils import is_flex_flow, read_json_content
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.exceptions import UserErrorException
@@ -65,7 +65,8 @@ class CSharpInspectorProxy(AbstractInspectorProxy):
         **kwargs,
     ) -> Dict[str, str]:
         """In csharp, the metadata will always be dumped at the beginning of each local run."""
-        target_path = working_dir / PROMPT_FLOW_DIR_NAME / "flow.json"
+        target_path = working_dir / PROMPT_FLOW_DIR_NAME / FLOW_META_JSON
+
         if target_path.is_file():
             entry_meta = read_json_content(target_path, "flow metadata")
             for key in ["inputs", "outputs", "init"]:
