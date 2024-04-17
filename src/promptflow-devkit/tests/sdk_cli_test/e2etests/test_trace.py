@@ -254,6 +254,18 @@ class TestTraceEntitiesAndOperations:
         num_traces = pf.traces.delete(run=mock_run, dry_run=True)
         assert num_traces == 1
 
+    def test_basic_search_line_runs(self, pf: PFClient) -> None:
+        trace_id = str(uuid.uuid4())
+        span_id = str(uuid.uuid4())
+        line_run_id = str(uuid.uuid4())
+        span = mock_span(trace_id=trace_id, span_id=span_id, parent_id=None, line_run_id=line_run_id)
+        name = str(uuid.uuid4())
+        span.name = name
+        span._persist()
+        expr = f"name == '{name}'"
+        line_runs = pf.traces._search_line_runs(expression=expr)
+        assert len(line_runs) == 1
+
 
 @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
 @pytest.mark.e2etest

@@ -155,6 +155,16 @@ class TraceOperations:
         line_run._append_evaluations(eval_line_runs)
         return line_run
 
+    def _parse_line_runs_from_orm(self, orm_line_runs: typing.List[ORMLineRun]) -> typing.List[LineRun]:
+        line_runs = []
+        for obj in orm_line_runs:
+            line_run = LineRun._from_orm_object(obj)
+            orm_eval_line_runs = ORMLineRun._get_children(line_run_id=line_run.line_run_id)
+            eval_line_runs = [LineRun._from_orm_object(obj) for obj in orm_eval_line_runs]
+            line_run._append_evaluations(eval_line_runs)
+            line_runs.append(line_run)
+        return line_runs
+
     def list_line_runs(
         self,
         collection: typing.Optional[str] = None,
@@ -185,14 +195,11 @@ class TraceOperations:
             session_id=session_id,
             line_run_ids=line_run_ids,
         )
-        line_runs = []
-        for obj in orm_line_runs:
-            line_run = LineRun._from_orm_object(obj)
-            orm_eval_line_runs = ORMLineRun._get_children(line_run_id=line_run.line_run_id)
-            eval_line_runs = [LineRun._from_orm_object(obj) for obj in orm_eval_line_runs]
-            line_run._append_evaluations(eval_line_runs)
-            line_runs.append(line_run)
-        return line_runs
+        return self._parse_line_runs_from_orm(orm_line_runs)
+
+    def _search_line_runs(self, expression: str) -> typing.List[LineRun]:
+        orm_line_runs = ORMLineRun.search(expression)
+        return self._parse_line_runs_from_orm(orm_line_runs)
 
     @monitor_operation(activity_name="pf.traces.delete", activity_type=ActivityType.PUBLICAPI)
     def delete(

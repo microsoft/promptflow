@@ -215,6 +215,18 @@ class LineRun(Base):
                 query = query.limit(TRACE_LIST_DEFAULT_LIMIT)
             return query.all()
 
+    @staticmethod
+    @sqlite_retry
+    def search(expression: str) -> typing.List["LineRun"]:
+        with trace_mgmt_db_session() as session:
+            translator = SearchTranslator(
+                model=LineRun,
+                searchable_fields=LINE_RUN_SEARCHABLE_FIELDS,
+                json_fields=LINE_RUN_JSON_FIELDS,
+            )
+            query = translator.translate(session, expression)
+            return query.all()
+
     @sqlite_retry
     def _update(self) -> None:
         update_dict = {
