@@ -26,6 +26,6 @@ Our examples should also give you an idea when to use what:
 ## Next steps
 
 - [Quick start](../how-to-guides/quick-start.md)
-- [Initialize and test a flow](../how-to-guides/init-and-test-a-flow.md)
+- [Initialize and test a flow](../how-to-guides/develop-a-flow/init-and-test-a-flow.md)
 - [Run and evaluate a flow](../how-to-guides/run-and-evaluate-a-flow/index.md)
 - [Tune prompts using variants](../how-to-guides/tune-prompts-with-variants.md)

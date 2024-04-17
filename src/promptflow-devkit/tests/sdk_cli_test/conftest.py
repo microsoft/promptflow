@@ -47,6 +47,7 @@ EAGER_FLOW_ROOT = Path(PROMPTFLOW_ROOT / "tests/test_configs/eager_flows")
 MODEL_ROOT = Path(PROMPTFLOW_ROOT / "tests/test_configs/flows")
 
 RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "../promptflow-recording/recordings/local").resolve()
+COUNTER_FILE = (Path(__file__) / "../count.json").resolve()
 
 
 def pytest_configure():
@@ -489,9 +490,10 @@ def recording_injection(mocker: MockerFixture):
 
             RecordStorage.get_instance().delete_lock_file()
         if is_live():
-            from promptflow.recording.local import delete_count_lock_file
+            from promptflow.recording.local import Counter
 
-            delete_count_lock_file()
+            Counter.set_file(COUNTER_FILE)
+            Counter.delete_count_lock_file()
         recording_array_reset()
 
         multiprocessing.get_context("spawn").Process = original_process_class
@@ -538,8 +540,9 @@ def setup_recording_injection_if_enabled():
         start_patches(patch_targets)
 
     if is_live() and is_in_ci_pipeline():
-        from promptflow.recording.local import inject_async_with_recording, inject_sync_with_recording
+        from promptflow.recording.local import Counter, inject_async_with_recording, inject_sync_with_recording
 
+        Counter.set_file(COUNTER_FILE)
         patch_targets = {
             "promptflow.tracing._integrations._openai_injector.inject_sync": inject_sync_with_recording,
             "promptflow.tracing._integrations._openai_injector.inject_async": inject_async_with_recording,

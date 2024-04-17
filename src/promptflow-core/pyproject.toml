@@ -53,10 +53,10 @@ python-dateutil = ">=2.1.0,<3.0.0"  # Contracts RunInfo
 fastapi = ">=0.109.0,<1.0.0" # used to build fastapi server
 # ========azureml-serving dependencies========
 # AzureML connection dependencies
-azure-identity = ">=1.12.0,<2.0.0"
-azure-ai-ml = ">=1.14.0,<2.0.0"
+azure-identity = { version = ">=1.12.0,<2.0.0", optional = true }
+azure-ai-ml = { version = ">=1.14.0,<2.0.0", optional = true }
 # MDC dependencies for monitoring
-azureml-ai-monitoring = ">=0.1.0b3,<1.0.0"
+azureml-ai-monitoring = { version = ">=0.1.0b3,<1.0.0", optional = true }
 
 [tool.poetry.extras]
 executor-service = []
@@ -65,6 +65,13 @@ azureml-serving = ["azure-identity", "azure-ai-ml", "azureml-ai-monitoring"]
 [tool.poetry.group.dev.dependencies]
 pre-commit = "*"
 import-linter = "*"
+promptflow-tracing = {path = "../promptflow-tracing", develop = true}
+promptflow-recording = {path = "../promptflow-recording", develop = true}
+
+[tool.poetry.group.ci.dependencies]
+import-linter = "*"
+promptflow-tracing = {path = "../promptflow-tracing"}
+promptflow-recording = {path = "../promptflow-recording"}
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"

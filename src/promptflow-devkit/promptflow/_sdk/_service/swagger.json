@@ -59,10 +59,10 @@
                     "type": "string"
                 }
             ],
-            "post": {
+            "delete": {
                 "responses": {
-                    "200": {
-                        "description": "Connection details",
+                    "204": {
+                        "description": "Delete connection",
                         "schema": {
                             "$ref": "#/definitions/ConnectionDict"
                         }
@@ -71,18 +71,8 @@
                         "description": "This service is available for local user only, please specify X-Remote-User in headers."
                     }
                 },
-                "description": "Create connection",
-                "operationId": "post_connection",
-                "parameters": [
-                    {
-                        "name": "payload",
-                        "required": true,
-                        "in": "body",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
-                    }
-                ],
+                "description": "Delete connection",
+                "operationId": "delete_connection",
                 "tags": [
                     "Connections"
                 ]
@@ -112,10 +102,10 @@
                     "Connections"
                 ]
             },
-            "delete": {
+            "post": {
                 "responses": {
-                    "204": {
-                        "description": "Delete connection",
+                    "200": {
+                        "description": "Connection details",
                         "schema": {
                             "$ref": "#/definitions/ConnectionDict"
                         }
@@ -124,8 +114,18 @@
                         "description": "This service is available for local user only, please specify X-Remote-User in headers."
                     }
                 },
-                "description": "Delete connection",
-                "operationId": "delete_connection",
+                "description": "Create connection",
+                "operationId": "post_connection",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    }
+                ],
                 "tags": [
                     "Connections"
                 ]
@@ -307,6 +307,32 @@
                 ],
                 "tags": [
                     "Experiments"
+                ]
+            }
+        },
+        "/Flows/infer_signature": {
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Flow infer signature",
+                        "schema": {
+                            "$ref": "#/definitions/FlowDict"
+                        }
+                    }
+                },
+                "description": "Flow infer signature",
+                "operationId": "post_flow_infer_signature",
+                "parameters": [
+                    {
+                        "name": "source",
+                        "in": "query",
+                        "type": "string",
+                        "required": true,
+                        "description": "Path to flow or prompty."
+                    }
+                ],
+                "tags": [
+                    "Flows"
                 ]
             }
         },
@@ -863,6 +889,21 @@
             }
         },
         "/ui/ux_inputs": {
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Get the file content of file UX_INPUTS_JSON",
+                        "schema": {
+                            "$ref": "#/definitions/UIDict"
+                        }
+                    }
+                },
+                "description": "Get the file content of file UX_INPUTS_JSON",
+                "operationId": "get_flow_ux_inputs",
+                "tags": [
+                    "ui"
+                ]
+            },
             "post": {
                 "responses": {
                     "200": {
@@ -896,24 +937,24 @@
                 "tags": [
                     "ui"
                 ]
-            },
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "Get the file content of file UX_INPUTS_JSON",
-                        "schema": {
-                            "$ref": "#/definitions/UIDict"
-                        }
-                    }
-                },
-                "description": "Get the file content of file UX_INPUTS_JSON",
-                "operationId": "get_flow_ux_inputs",
-                "tags": [
-                    "ui"
-                ]
             }
         },
         "/ui/yaml": {
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Return flow yam"
+                    }
+                },
+                "description": "Return flow yaml as json",
+                "operationId": "get_yaml_edit",
+                "produces": [
+                    "text/yaml"
+                ],
+                "tags": [
+                    "ui"
+                ]
+            },
             "post": {
                 "responses": {
                     "200": {
@@ -949,21 +990,6 @@
                             }
                         }
                     }
-                ],
-                "tags": [
-                    "ui"
-                ]
-            },
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "Return flow yam"
-                    }
-                },
-                "description": "Return flow yaml as json",
-                "operationId": "get_yaml_edit",
-                "produces": [
-                    "text/yaml"
                 ],
                 "tags": [
                     "ui"

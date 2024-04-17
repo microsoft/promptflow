@@ -1,14 +1,10 @@
 # Manage runs
 
-:::{admonition} Experimental feature
-This is an experimental feature, and may change at any time. Learn [more](faq.md#stable-vs-experimental).
-:::
-
 This documentation will walk you through how to manage your runs with CLI, SDK and VS Code Extension.
 
 In general:
 - For `CLI`, you can run `pf/pfazure run --help` in terminal to see the help messages.
-- For `SDK`, you can refer to [Promptflow Python Library Reference](../reference/python-library-reference/promptflow-devkit/promptflow.rst) and check `PFClient.runs` for more run operations.
+- For `SDK`, you can refer to [Promptflow Python Library Reference](../../reference/python-library-reference/promptflow-devkit/promptflow.rst) and check `PFClient.runs` for more run operations.
 
 Let's take a look at the following topics:
 
@@ -53,7 +49,7 @@ run: <existing-flow-run-name>
 ```
 
 Reference [here](https://aka.ms/pf/column-mapping) for detailed information for column mapping.
-You can find additional information about flow yaml schema in [Run YAML Schema](../reference/run-yaml-schema-reference.md).
+You can find additional information about flow yaml schema in [Run YAML Schema](../../reference/run-yaml-schema-reference.md).
 
 After preparing the yaml file, use the CLI command below to create them:
 
@@ -67,7 +63,7 @@ pf run create -f <path-to-flow-run> --stream
 
 The expected result is as follows if the run is created successfully.
 
-![img](../media/how-to-guides/run_create.png)
+![img](../../media/how-to-guides/run_create.png)
 :::
 
 
@@ -104,8 +100,8 @@ print(result)
 
 You can click on the actions on the top of the default yaml editor or the visual editor for the flow.dag.yaml files to trigger flow batch runs.
 
-![img](../media/how-to-guides/vscode_batch_run_yaml.png)
-![img](../media/how-to-guides/vscode_batch_run_visual.png)
+![img](../../media/how-to-guides/vscode_batch_run_yaml.png)
+![img](../../media/how-to-guides/vscode_batch_run_visual.png)
 :::
 ::::
 
@@ -121,7 +117,7 @@ Get a run in CLI with JSON format.
 pf run show --name <run-name>
 ```
 
-![img](../media/how-to-guides/run_show.png)
+![img](../../media/how-to-guides/run_show.png)
 
 :::
 
@@ -141,7 +137,7 @@ print(run)
 
 :::{tab-item} VS Code Extension
 :sync: VSC
-![img](../media/how-to-guides/vscode_run_detail.png)
+![img](../../media/how-to-guides/vscode_run_detail.png)
 :::
 ::::
 
@@ -157,7 +153,7 @@ Get run details with TABLE format.
 pf run show-details --name <run-name>
 ```
 
-![img](../media/how-to-guides/run_show_details.png)
+![img](../../media/how-to-guides/run_show_details.png)
 
 :::
 
@@ -179,7 +175,7 @@ print(tabulate(details.head(max_results), headers="keys", tablefmt="grid"))
 
 :::{tab-item} VS Code Extension
 :sync: VSC
-![img](../media/how-to-guides/vscode_run_detail.png)
+![img](../../media/how-to-guides/vscode_run_detail.png)
 :::
 ::::
 
@@ -195,7 +191,7 @@ Get run metrics with JSON format.
 pf run show-metrics --name <run-name>
 ```
 
-![img](../media/how-to-guides/run_show_metrics.png)
+![img](../../media/how-to-guides/run_show_metrics.png)
 
 :::
 
@@ -231,7 +227,7 @@ pf run visualize --names <run-name>
 
 A browser will open and display run outputs.
 
-![img](../media/how-to-guides/run_visualize.png)
+![img](../../media/how-to-guides/run_visualize.png)
 
 :::
 
@@ -254,7 +250,7 @@ client.runs.visualize(runs="<run-name>")
 
 On the VS Code primary sidebar > the prompt flow pane, there is a run list. It will list all the runs on your machine. Select one or more items and click the "visualize" button on the top-right to visualize the local runs.
 
-![img](../media/how-to-guides/vscode_run_actions.png)
+![img](../../media/how-to-guides/vscode_run_actions.png)
 :::
 ::::
 
@@ -271,7 +267,7 @@ List runs with JSON format.
 pf run list
 ```
 
-![img](../media/how-to-guides/run_list.png)
+![img](../../media/how-to-guides/run_list.png)
 
 :::
 
@@ -294,7 +290,7 @@ print(runs)
 :sync: VSC
 
 On the VS Code primary sidebar > the prompt flow pane, there is a run list. It will list all the runs on your machine. Hover on it to view more details.
-![img](../media/how-to-guides/vscode_list_runs.png)
+![img](../../media/how-to-guides/vscode_list_runs.png)
 :::
 ::::
 
@@ -357,7 +353,7 @@ client.runs.archive(name="<run-name>")
 
 :::{tab-item} VS Code Extension
 :sync: VSC
-![img](../media/how-to-guides/vscode_run_actions.png)
+![img](../../media/how-to-guides/vscode_run_actions.png)
 :::
 ::::
 

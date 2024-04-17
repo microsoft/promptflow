@@ -167,6 +167,7 @@ class SpanAttributeFieldName:
     BATCH_RUN_ID = "batch_run_id"
     LINE_NUMBER = "line_number"
     REFERENCED_BATCH_RUN_ID = "referenced.batch_run_id"
+    IS_AGGREGATION = "is_aggregation"
     COMPLETION_TOKEN_COUNT = "__computed__.cumulative_token_count.completion"
     PROMPT_TOKEN_COUNT = "__computed__.cumulative_token_count.prompt"
     TOTAL_TOKEN_COUNT = "__computed__.cumulative_token_count.total"
@@ -286,14 +287,21 @@ class AzureWorkspaceKind:
     HUB = "hub"
     PROJECT = "project"
 
+    # obj can be string or azure.ai.ml.entities.Workspace
     @staticmethod
     def is_workspace(obj) -> bool:
+        if isinstance(obj, str):
+            return obj == AzureWorkspaceKind.DEFAULT
         return obj._kind == AzureWorkspaceKind.DEFAULT
 
     @staticmethod
     def is_hub(obj) -> bool:
+        if isinstance(obj, str):
+            return obj == AzureWorkspaceKind.HUB
         return obj._kind == AzureWorkspaceKind.HUB
 
     @staticmethod
     def is_project(obj) -> bool:
+        if isinstance(obj, str):
+            return obj == AzureWorkspaceKind.PROJECT
         return obj._kind == AzureWorkspaceKind.PROJECT

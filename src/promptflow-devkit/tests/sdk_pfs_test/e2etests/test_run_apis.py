@@ -7,6 +7,7 @@ import uuid
 from dataclasses import fields
 from pathlib import Path
 
+import mock
 import pytest
 
 from promptflow._sdk.entities import Run
@@ -140,6 +141,13 @@ class TestRunAPIs:
         with check_activity_end_telemetry(activity_name="pf.runs.get"):
             metrics = pfs_op.get_run_metrics(name=self.run.name, status_code=200).json
         assert metrics is not None
+
+        with check_activity_end_telemetry(activity_name="pf.runs.get"), mock.patch(
+            "promptflow._sdk.operations._local_storage_operations.LocalStorageOperations.load_metrics"
+        ) as mock_load_metrics:
+            mock_load_metrics.side_effect = Exception("Not found metrics json")
+            metrics = pfs_op.get_run_metrics(name=self.run.name, status_code=200).json
+        assert metrics == {}
 
     def test_get_run_metadata(self, pfs_op: PFSOperations) -> None:
         with check_activity_end_telemetry(activity_name="pf.runs.get"):

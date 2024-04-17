@@ -14,7 +14,6 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.schema import CreateTable
 
-from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
     CONNECTION_TABLE_NAME,
     EVENT_TABLENAME,
@@ -90,6 +89,7 @@ def mgmt_db_session() -> Session:
         engine = create_engine(f"sqlite:///{str(LOCAL_MGMT_DB_PATH)}?check_same_thread=False", future=True)
         engine = support_transaction(engine)
 
+        from promptflow._sdk._configuration import Configuration
         from promptflow._sdk._orm import Connection, Experiment, ExperimentNodeRun, Orchestrator, RunInfo
 
         create_or_update_table(engine, orm_class=RunInfo, tablename=RUN_INFO_TABLENAME)
