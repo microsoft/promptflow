@@ -13,7 +13,7 @@ from enum import Enum
 from typing import Any, Dict, List, Tuple, Optional, Union
 
 from promptflow._core.tool import ToolProvider, tool
-from promptflow._sdk._constants import ConnectionType
+from promptflow._constants import ConnectionType
 from promptflow.connections import CustomConnection
 from promptflow.contracts.types import PromptTemplate
 from promptflow.tools.common import render_jinja_template, validate_role
@@ -243,19 +243,22 @@ class CustomConnectionsContainer:
 
         result = []
         try:
-            from promptflow.azure import PFClient as AzurePFClient
-            azure_pf_client = AzurePFClient(
-                credential=credential,
-                subscription_id=subscription_id,
-                resource_group_name=resource_group_name,
-                workspace_name=workspace_name)
+            from promptflow.core._connection_provider._connection_provider import ConnectionProvider
+            connection_provider = ConnectionProvider.get_instance()
+            # from promptflow.azure import PFClient as AzurePFClient
+            # azure_pf_client = AzurePFClient(
+            #     credential=credential,
+            #     subscription_id=subscription_id,
+            #     resource_group_name=resource_group_name,
+            #     workspace_name=workspace_name)
         except Exception:
             message = "Skipping Azure PFClient. To connect, please ensure the following environment variables are set: "
             message += ",".join(ENDPOINT_REQUIRED_ENV_VARS)
             print(message, file=sys.stderr)
             return result
 
-        connections = azure_pf_client._connections.list()
+        # connections = azure_pf_client._connections.list()
+        connections = connection_provider.list()
         for c in connections:
             if c.type == ConnectionType.CUSTOM and "model_family" in c.configs:
                 try:
@@ -278,13 +281,16 @@ class CustomConnectionsContainer:
                                           ) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
         result = []
         try:
-            from promptflow import PFClient as LocalPFClient
+            # from promptflow import PFClient as LocalPFClient
+            from promptflow.core._connection_provider._connection_provider import ConnectionProvider
+            connection_provider = ConnectionProvider.get_instance()
         except Exception as e:
             print(f"Skipping Local PFClient. Exception: {e}", file=sys.stderr)
             return result
 
-        pf = LocalPFClient()
-        connections = pf.connections.list()
+        # pf = LocalPFClient()
+        # connections = pf.connections.list()
+        connections = connection_provider.list()
         for c in connections:
             if c.type == ConnectionType.CUSTOM and "model_family" in c.configs:
                 try:
@@ -304,10 +310,13 @@ class CustomConnectionsContainer:
         return result
 
     def get_endpoint_from_local_custom_connection(self, connection_name) -> Tuple[str, str, str]:
-        from promptflow import PFClient as LocalPFClient
-        pf = LocalPFClient()
-
-        connection = pf.connections.get(connection_name, with_secrets=True)
+        # from promptflow import PFClient as LocalPFClient
+        # pf = LocalPFClient()
+        #
+        # connection = pf.connections.get(connection_name, with_secrets=True)
+        from promptflow.core._connection_provider._connection_provider import ConnectionProvider
+        connection_provider = ConnectionProvider.get_instance()
+        connection = connection_provider.get(connection_name)
 
         return self.get_endpoint_from_custom_connection(connection)
 
@@ -317,15 +326,18 @@ class CustomConnectionsContainer:
                                                   resource_group_name,
                                                   workspace_name,
                                                   connection_name) -> Tuple[str, str, str]:
-        from promptflow.azure import PFClient as AzurePFClient
-
-        azure_pf_client = AzurePFClient(
-                credential=credential,
-                subscription_id=subscription_id,
-                resource_group_name=resource_group_name,
-                workspace_name=workspace_name)
-
-        connection = azure_pf_client._arm_connections.get(connection_name)
+        # from promptflow.azure import PFClient as AzurePFClient
+        #
+        # azure_pf_client = AzurePFClient(
+        #         credential=credential,
+        #         subscription_id=subscription_id,
+        #         resource_group_name=resource_group_name,
+        #         workspace_name=workspace_name)
+        #
+        # connection = azure_pf_client._arm_connections.get(connection_name)
+        from promptflow.core._connection_provider._connection_provider import ConnectionProvider
+        connection_provider = ConnectionProvider.get_instance()
+        connection = connection_provider.get(connection_name)
 
         return self.get_endpoint_from_custom_connection(connection)
 
