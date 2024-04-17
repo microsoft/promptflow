@@ -7,16 +7,11 @@ import types
 from typing import Dict, List
 
 from promptflow._constants import CONNECTION_SCRUBBED_VALUE as SCRUBBED_VALUE
-from promptflow._constants import (
-    CONNECTION_SCRUBBED_VALUE_NO_CHANGE,
-    ConnectionAuthMode,
-    ConnectionDefaultApiVersion,
-    ConnectionType,
-    CustomStrongTypeConnectionConfigs,
-)
+from promptflow._constants import CONNECTION_SCRUBBED_VALUE_NO_CHANGE, ConnectionType, CustomStrongTypeConnectionConfigs
 from promptflow._core.token_provider import AzureTokenProvider
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.utils import in_jupyter_notebook
+from promptflow.constants import ConnectionAuthMode, ConnectionDefaultApiVersion
 from promptflow.contracts.types import Secret
 from promptflow.core._errors import RequiredEnvironmentVariablesNotSetError
 from promptflow.exceptions import UserErrorException, ValidationException
@@ -156,9 +151,9 @@ class AzureOpenAIConnection(_StrongTypeConnection):
     :type api_base: str
     :param api_type: The api type, default "azure".
     :type api_type: str
-    :param api_version: The api version, default ${ConnectionDefaultApiVersion.AZURE_OPEN_AI}.
+    :param api_version: The api version, default see: :obj:`~.constants.ConnectionDefaultApiVersion.AZURE_OPEN_AI`
     :type api_version: str
-    :param auth_mode: The auth mode, supported value ["key", "meid_token"].
+    :param auth_mode: The auth mode, supported values see: :class:`~.constants.ConnectionAuthMode`.
     :type auth_mode: str
     :param name: Connection name.
     :type name: str
@@ -238,9 +233,12 @@ class AzureOpenAIConnection(_StrongTypeConnection):
         Build connection from environment variables.
 
         Relevant environment variables:
-        - AZURE_OPENAI_ENDPOINT: The api base.
-        - AZURE_OPENAI_API_KEY: The api key.
-        - OPENAI_API_VERSION: Optional. The api version, default ${ConnectionDefaultApiVersion.AZURE_OPEN_AI}.
+         - AZURE_OPENAI_ENDPOINT: The api base.
+         - AZURE_OPENAI_API_KEY: The api key.
+         - OPENAI_API_VERSION: Optional.
+
+         The api version default to :obj:`~.constants.ConnectionDefaultApiVersion.AZURE_OPEN_AI`.
+
         """
         # Env var name reference: https://github.com/openai/openai-python/blob/main/src/openai/lib/azure.py#L160
         api_base = os.getenv("AZURE_OPENAI_ENDPOINT")
@@ -458,7 +456,8 @@ class AzureContentSafetyConnection(_StrongTypeConnection):
     :type api_key: str
     :param endpoint: The api endpoint.
     :type endpoint: str
-    :param api_version: The api version, default ${ConnectionDefaultApiVersion.AZURE_CONTENT_SAFETY}.
+    :param api_version: The api version,
+        default see: :obj:`~.constants.ConnectionDefaultApiVersion.AZURE_CONTENT_SAFETY`.
     :type api_version: str
     :param api_type: The api type, default "Content Safety".
     :type api_type: str
@@ -518,7 +517,7 @@ class FormRecognizerConnection(AzureContentSafetyConnection):
     :type api_key: str
     :param endpoint: The api endpoint.
     :type endpoint: str
-    :param api_version: The api version, default ${ConnectionDefaultApiVersion.FORM_RECOGNIZER}.
+    :param api_version: The api version, default see: :obj:`~.constants.ConnectionDefaultApiVersion.FORM_RECOGNIZER`.
     :type api_version: str
     :param api_type: The api type, default "Form Recognizer".
     :type api_type: str
