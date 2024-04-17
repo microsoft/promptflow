@@ -32,9 +32,9 @@ except ImportError:
         return False
 
 
-PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
-CONNECTION_FILE = (PROMOTFLOW_ROOT / "promptflow-evals/connections.json").resolve().absolute().as_posix()
-RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMOTFLOW_ROOT / "promptflow-recording/recordings/local").resolve()
+PROMPTFLOW_ROOT = Path(__file__) / "../../../.."
+CONNECTION_FILE = (PROMPTFLOW_ROOT / "promptflow-evals/connections.json").resolve().absolute().as_posix()
+RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "promptflow-recording/recordings/local").resolve()
 
 
 def pytest_configure():
