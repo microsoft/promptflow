@@ -47,8 +47,8 @@ class TestPromptflowServiceCLI:
             # start pfs by pf.yaml
             self._test_start_service()
             # Start pfs by specified port
-            random_port = get_pfs_port()
-            self._test_start_service(port=random_port, force=True)
+            port = get_pfs_port()
+            self._test_start_service(port=port, force=True)
 
             # start pfs
             start_pfs = subprocess.Popen("pf service start", shell=True)
@@ -72,9 +72,10 @@ class TestPromptflowServiceCLI:
         # Wait for service to be started
         start_pfs.wait()
         assert self._is_service_healthy()
+        port = get_port_from_config()
         self._run_pfs_command("status")
         output, _ = capsys.readouterr()
-        assert str(get_port_from_config()) in output
+        assert str(port) in output
         self._run_pfs_command("stop")
         output, _ = capsys.readouterr()
-        assert str(get_port_from_config()) in output
+        assert str(port) in output
