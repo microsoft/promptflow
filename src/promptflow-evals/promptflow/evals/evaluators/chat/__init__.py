@@ -7,11 +7,10 @@ __path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
 import json
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Dict, List, Union
+from typing import Dict, List
 
 import numpy as np
 
-from promptflow.core import AzureOpenAIModelConfiguration
 from promptflow.evals.evaluators import CoherenceEvaluator, FluencyEvaluator, GroundednessEvaluator, RelevanceEvaluator
 
 logger = logging.getLogger(__name__)

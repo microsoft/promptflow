@@ -4,12 +4,9 @@
 
 __path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
 
-from typing import Union, Dict
-
 from pathlib import Path
 
 from promptflow.client import load_flow
-from promptflow.core import AzureOpenAIModelConfiguration
 from promptflow.core._prompty_utils import convert_model_configuration_to_connection
 
 

@@ -11,6 +11,7 @@ from promptflow.evals.evaluators import content_safety
 
 class TestSaveEval(unittest.TestCase):
     """Test saving evaluators."""
+
     def setUp(self) -> None:
         self.pf = PFClient()
         unittest.TestCase.setUp(self)
@@ -24,7 +25,7 @@ class TestSaveEval(unittest.TestCase):
                 if exceptions and name in exceptions:
                     continue
                 with tempfile.TemporaryDirectory() as d:
-                    self.pf.flows.save(obj)
+                    self.pf.flows.save(obj, path=d)
                     self.assertTrue(os.path.isfile(os.path.join(d, 'flow.flex.yaml')))
 
     def test_save_evaluators(self) -> None:

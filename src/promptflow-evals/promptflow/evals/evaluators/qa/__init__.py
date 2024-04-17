@@ -4,7 +4,6 @@
 
 __path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
 
-from promptflow.core import AzureOpenAIModelConfiguration
 from promptflow.evals.evaluators import (
     CoherenceEvaluator,
     F1ScoreEvaluator,
