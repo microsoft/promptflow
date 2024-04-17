@@ -227,16 +227,21 @@ class TestTracing:
         from promptflow.tracing import start_trace
 
         memory_exporter = prepare_memory_exporter()
+        inputs = {"user_id": 1}
         collection1 = str(uuid.uuid4())
         start_trace(collection=collection1)
+        self.run_func(greetings, inputs)
         span_list = memory_exporter.get_finished_spans()
+        assert len(span_list) > 0
         for span in span_list:
             assert span.resource.attributes["collection"] == collection1
         # resource.attributes.collection should be refreshed after start_trace
         collection2 = str(uuid.uuid4())
         start_trace(collection=collection2)
+        self.run_func(greetings, inputs)
         new_span_list = memory_exporter.get_finished_spans()
-        for span in new_span_list:
+        assert len(new_span_list) > 0
+        for span in new_span_list[len(span_list) :]:
             assert span.resource.attributes["collection"] == collection2
 
     def assert_otel_traces_with_multiple_functions(self):
