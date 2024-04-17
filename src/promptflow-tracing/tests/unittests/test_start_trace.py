@@ -20,6 +20,7 @@ from promptflow.tracing._constants import (
     ResourceAttributesFieldName,
 )
 from promptflow.tracing._start_trace import _get_collection_from_cwd, _kwargs_in_func, is_collection_writeable
+from promptflow.tracing._trace import open_telemetry_tracer
 
 
 @pytest.fixture
@@ -164,3 +165,14 @@ class TestStartTrace:
     def test_writeable_collection(self) -> None:
         start_trace()
         assert is_collection_writeable() is True
+
+    def test_tracer_with_multiple_start_trace(self) -> None:
+        collection1 = str(uuid.uuid4())
+        start_trace(collection=collection1)
+        assert open_telemetry_tracer().resource.attributes[ResourceAttributesFieldName.COLLECTION] == collection1
+        collection2 = str(uuid.uuid4())
+        start_trace(collection=collection2)
+        assert open_telemetry_tracer().resource.attributes[ResourceAttributesFieldName.COLLECTION] == collection2
+        collection3 = str(uuid.uuid4())
+        start_trace(collection=collection3)
+        assert open_telemetry_tracer().resource.attributes[ResourceAttributesFieldName.COLLECTION] == collection3
