@@ -6,7 +6,9 @@ import ast
 import copy
 import datetime
 import typing
+from collections import namedtuple
 
+import sqlalchemy
 from sqlalchemy import INTEGER, JSON, REAL, TEXT, TIMESTAMP, Column, Index
 from sqlalchemy.orm import Mapped, Query, Session, declarative_base
 
@@ -254,6 +256,9 @@ LINE_RUN_JSON_FIELDS = {
     "completion": "cumulative_token_count",
 }
 
+# use namedtuple here to clarify the stack item structure
+SearchTransStackItem = namedtuple("SearchTransStackItem", ["orm_op", "expected_length", "values"])
+
 
 class SearchTranslator(ast.NodeVisitor):
     """Translate line run search to SQLite query."""
@@ -267,20 +272,110 @@ class SearchTranslator(ast.NodeVisitor):
         self._model = model
         self._searchable_fields = copy.deepcopy(searchable_fields)
         self._json_fields = copy.deepcopy(json_fields)
+        # for query build during AST traversal
+        self._query: typing.Optional[Query] = None
+        self._stack: typing.List[SearchTransStackItem] = list()
 
-    def translate(self, expression: str, session: Session) -> Query:
+    def _start_build_query(self, session: Session):
+        self._query = session.query(self._model)
+
+    def _end_build_query(self) -> Query:
+        query, self._query = self._query, None
+        return query
+
+    def translate(self, session: Session, expression: str) -> Query:
         # parse expression to AST
         try:
             tree = ast.parse(expression, mode="eval")
         except SyntaxError:
             ...
+
+        self._start_build_query(session=session)
         # traverse the AST and validate the fields are searchable
         # leveraging `ast.NodeVisitor.visit`
         self.visit(tree.body)
+        query = self._end_build_query()
+        return query
 
     # override visit BoolOp and Compare methods
-    def visit_BoolOp(self, node: ast.BoolOp):
-        pass
+    def visit_BoolOp(self, node: ast.BoolOp) -> None:
+        # for bool op:
+        #   1. translate op to ORM op
+        #   2. push ORM op, #values and an empty list to the stack
+        # currently we support `and` and `or`
+        if isinstance(node.op, ast.And):
+            orm_op = sqlalchemy.and_
+        elif isinstance(node.op, ast.Or):
+            orm_op = sqlalchemy.or_
+        else:
+            # TODO: raise exception
+            pass
+        stack_item = SearchTransStackItem(
+            orm_op=orm_op,
+            expected_length=len(node.values),
+            values=list(),
+        )
+        self._stack.append(stack_item)
 
-    def visit_Compare(self, node: ast.Compare):
-        pass
+    def visit_Compare(self, node: ast.Compare) -> None:
+        # for compare
+        #   1. translate compare to SQL condition
+        #   2. pop from the stack, append the SQL condition to top item;
+        #      if the stack is empty, which means the compare node is the root,
+        #      directly apply filter to the query
+        #   3.1. if not match the expected length, push back;
+        #   3.2. if match, push back if the stack is empty; otherwise, push back
+        sql_condition = self._translate_compare_to_sql(node)
+        if len(self._stack) == 0:
+            self._query = self._query.filter(sqlalchemy.text(sql_condition))
+            return
+        ...
+
+    def _resolve_ast_node(self, node: typing.Union[ast.Constant, ast.Name]) -> str:
+        if isinstance(node, ast.Constant):
+            return self._resolve_ast_constant(node)
+        elif isinstance(node, ast.Name):
+            return self._resolve_ast_name(node)
+        else:
+            # TODO: refine error message
+            raise Exception("_resolve_ast_node")
+
+    def _resolve_ast_constant(self, node: ast.Constant) -> str:
+        value = node.value
+        return f"'{value}'" if isinstance(value, str) else value
+
+    def _resolve_ast_name(self, node: ast.Name) -> str:
+        field = node.id
+        if field not in self._searchable_fields:
+            raise Exception(f"field {field!r} is not searchable")
+        if field not in self._json_fields:
+            return field
+        parent_field = self._json_fields[field]
+        return f"json_extract({parent_field}, '$.{field}')"
+
+    @staticmethod
+    def _resolve_ast_op(ast_op: ast.cmpop) -> str:
+        if isinstance(ast_op, ast.Eq):
+            return "="
+        elif isinstance(ast_op, ast.NotEq):
+            return "!="
+        elif isinstance(ast_op, ast.Lt):
+            return "<"
+        elif isinstance(ast_op, ast.LtE):
+            return "<="
+        elif isinstance(ast_op, ast.Gt):
+            return ">"
+        elif isinstance(ast_op, ast.GtE):
+            return ">="
+        else:
+            # TODO: refine error message
+            raise Exception("_resolve_ast_op")
+
+    def _translate_compare_to_sql(self, node: ast.Compare) -> str:
+        sql = self._resolve_ast_node(node.left)
+        for i in range(len(node.ops)):
+            ast_op, ast_comparator = node.ops[i], node.comparators[i]
+            sql_op = self._resolve_ast_op(ast_op)
+            sql_comparator = self._resolve_ast_node(ast_comparator)
+            sql += f" {sql_op} {sql_comparator}"
+        return sql

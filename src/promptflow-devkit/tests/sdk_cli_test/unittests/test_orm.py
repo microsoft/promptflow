@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import ast
 import uuid
 
 import pytest
@@ -245,5 +246,32 @@ def search_trans() -> SearchTranslator:
 @pytest.mark.unittest
 @pytest.mark.sdk_test
 class TestTraceSearchTrans:
+    SEARCH_SQL_PREFIX = "SELECT line_runs.line_run_id AS line_runs_line_run_id, line_runs.trace_id AS line_runs_trace_id, line_runs.root_span_id AS line_runs_root_span_id, line_runs.inputs AS line_runs_inputs, line_runs.outputs AS line_runs_outputs, line_runs.start_time AS line_runs_start_time, line_runs.end_time AS line_runs_end_time, line_runs.status AS line_runs_status, line_runs.duration AS line_runs_duration, line_runs.name AS line_runs_name, line_runs.kind AS line_runs_kind, line_runs.cumulative_token_count AS line_runs_cumulative_token_count, line_runs.parent_id AS line_runs_parent_id, line_runs.run AS line_runs_run, line_runs.line_number AS line_runs_line_number, line_runs.experiment AS line_runs_experiment, line_runs.session_id AS line_runs_session_id, line_runs.collection AS line_runs_collection \nFROM line_runs"  # noqa: E501
+
+    def _build_expected_sql(self, condition: str) -> str:
+        return f"{self.SEARCH_SQL_PREFIX} \nWHERE {condition}"
+
+    def test_translate_compare_str_to_sql(self, search_trans: SearchTranslator):
+        compare_expr = "name == 'web-classification'"
+        ast_compare = ast.parse(compare_expr, mode="eval").body
+        sql_condition = search_trans._translate_compare_to_sql(ast_compare)
+        assert sql_condition == "name = 'web-classification'"
+
+    def test_translate_compare_num_to_sql(self, search_trans: SearchTranslator):
+        compare_expr = "name >= 42"  # note that this is only for test, name should be a string
+        ast_compare = ast.parse(compare_expr, mode="eval").body
+        sql_condition = search_trans._translate_compare_to_sql(ast_compare)
+        assert sql_condition == "name >= 42"
+
+    def test_translate_compare_field_in_json_to_sql(self, search_trans: SearchTranslator):
+        compare_expr = "total > 2000"
+        ast_compare = ast.parse(compare_expr, mode="eval").body
+        sql_condition = search_trans._translate_compare_to_sql(ast_compare)
+        assert sql_condition == "json_extract(cumulative_token_count, '$.total') > 2000"
+
     def test_basic_search(self, memory_session: Session, search_trans: SearchTranslator):
-        ...
+        basic_expr = "name == 'web-classification'"
+        query = search_trans.translate(session=memory_session, expression=basic_expr)
+        expected_condition = "name = 'web-classification'"
+        expected_sql = self._build_expected_sql(expected_condition)
+        assert expected_sql == str(query)
