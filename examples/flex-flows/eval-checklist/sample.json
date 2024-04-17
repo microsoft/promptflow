@@ -1,0 +1,4 @@
+{
+    "answer": "ChatGPT is a conversational AI model developed by OpenAI. It is based on the GPT-3 architecture and is designed to generate human-like responses to text inputs. ChatGPT is capable of understanding and responding to a wide range of topics and can be used for tasks such as answering questions, generating creative content, and providing assistance with various tasks. The model has been trained on a diverse range of internet text and is constantly being updated to improve its performance and capabilities. ChatGPT is available through the OpenAI API and can be accessed by developers and researchers to build applications and tools that leverage its capabilities.",
+    "statements": { "correctness": "It contains a detailed explanation of ChatGPT." }
+}
