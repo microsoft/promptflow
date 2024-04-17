@@ -4,8 +4,6 @@
 # pylint: disable=wrong-import-position
 import time
 
-import argcomplete
-
 from promptflow._cli._pf.help import show_privacy_statement, show_welcome_message
 from promptflow._cli._utils import _get_cli_activity_name, cli_exception_and_telemetry_handler, get_client_info_for_cli
 from promptflow.azure._cli._user_agent import USER_AGENT
@@ -81,7 +79,6 @@ def get_parser_args(argv):
     add_parser_run(subparsers)
     add_parser_flow(subparsers)
 
-    argcomplete.autocomplete(parser)
     return parser.prog, parser.parse_args(argv)
 
 
