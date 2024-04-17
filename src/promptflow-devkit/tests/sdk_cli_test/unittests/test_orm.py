@@ -295,11 +295,11 @@ class TestTraceSearchTrans:
         assert expected_sql == str(query)
 
     def test_search_with_bracket(self, memory_session: Session, search_trans: SearchTranslator):
-        expr = "completion <= 200 and (name == 'web-classification' or kind == 'Flow')"
+        expr = "completion <= 200 and (name == 'web-classification' or kind != 'Flow')"
         query = search_trans.translate(session=memory_session, expression=expr)
         expected_condition = (
             "json_extract(cumulative_token_count, '$.completion') <= 200 "
-            "AND (name = 'web-classification' OR kind = 'Flow')"
+            "AND (name = 'web-classification' OR kind != 'Flow')"
         )
         expected_sql = self._build_expected_sql(expected_condition)
         assert expected_sql == str(query)
