@@ -240,7 +240,7 @@ class TestTracing:
         start_trace(collection=collection2)
         self.run_func(greetings, inputs)
         new_span_list = memory_exporter.get_finished_spans()
-        assert len(new_span_list) > 0
+        assert len(new_span_list) > len(span_list)
         for span in new_span_list[len(span_list) :]:
             assert span.resource.attributes["collection"] == collection2
 
