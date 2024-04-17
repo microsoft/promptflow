@@ -319,6 +319,10 @@ class TestTraceSearchTrans:
             ("name = 1", "Invalid search expression, currently support Python syntax for search."),
             ("name == '<name>' AND", "Invalid search expression, currently support Python syntax for search."),
             (
+                "name in ('<name1>', '<name2>')",
+                "Unsupported compare operator, currently support: '==', '!=', '<', '<=', '>' and '>='.",
+            ),
+            (
                 "name is '<name>'",
                 "Unsupported compare operator, currently support: '==', '!=', '<', '<=', '>' and '>='.",
             ),
