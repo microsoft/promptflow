@@ -13,7 +13,7 @@ from sqlalchemy import INTEGER, JSON, REAL, TEXT, TIMESTAMP, Column, Index
 from sqlalchemy.orm import Mapped, Query, Session, declarative_base
 
 from promptflow._sdk._constants import EVENT_TABLENAME, LINE_RUN_TABLENAME, SPAN_TABLENAME, TRACE_LIST_DEFAULT_LIMIT
-from promptflow._sdk._errors import LineRunNotFoundError
+from promptflow._sdk._errors import LineRunNotFoundError, WrongTraceSearchExpressionError
 
 from .retry import sqlite_retry
 from .session import trace_mgmt_db_session
@@ -307,9 +307,11 @@ class SearchTranslator(ast.NodeVisitor):
         # parse expression to AST
         try:
             tree = ast.parse(expression, mode="eval")
-        except SyntaxError:
-            ...
-
+            # expression like "name" is not valid
+            assert isinstance(tree.body, (ast.Compare, ast.BoolOp))
+        except (SyntaxError, AssertionError):
+            error_message = "Invalid search expression, currently support Python syntax for search."
+            raise WrongTraceSearchExpressionError(error_message)
         # traverse the AST and validate the fields are searchable
         # leveraging `ast.NodeVisitor.visit`
         self.visit(tree.body)
@@ -326,8 +328,8 @@ class SearchTranslator(ast.NodeVisitor):
         elif isinstance(node.op, ast.Or):
             orm_op = sqlalchemy.or_
         else:
-            # TODO: raise exception
-            pass
+            error_message = "Unsupported bool operator, currently support: 'and', 'or'."
+            raise WrongTraceSearchExpressionError(error_message)
         stack_item = SearchTransStackItem(orm_op=orm_op, expected_length=len(node.values), conditions=list())
         self._stack.append(stack_item)
         self.generic_visit(node)
@@ -360,8 +362,11 @@ class SearchTranslator(ast.NodeVisitor):
         elif isinstance(node, ast.Name):
             return self._resolve_ast_name(node)
         else:
-            # TODO: refine error message
-            raise Exception("_resolve_ast_node")
+            error_message = (
+                "Currently only support simple compare expression, e.g., 'name == \"my_llm\"', "
+                "or combined with 'and' and 'or', e.g., 'name == \"my_llm\" and 100 < total <= 200'."
+            )
+            raise WrongTraceSearchExpressionError(error_message)
 
     def _resolve_ast_constant(self, node: ast.Constant) -> str:
         value = node.value
@@ -393,8 +398,8 @@ class SearchTranslator(ast.NodeVisitor):
         elif isinstance(ast_op, ast.GtE):
             return ">="
         else:
-            # TODO: refine error message
-            raise Exception("_resolve_ast_op")
+            error_message = "Unsupported compare operator, currently support: '==', '!=', '<', '<=', '>' and '>='."
+            raise WrongTraceSearchExpressionError(error_message)
 
     def _translate_compare_to_sql(self, node: ast.Compare) -> str:
         sql = self._resolve_ast_node(node.left)

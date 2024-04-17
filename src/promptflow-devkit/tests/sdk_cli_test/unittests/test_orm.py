@@ -10,6 +10,7 @@ from sqlalchemy import TEXT, Column, create_engine, inspect, text
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR
+from promptflow._sdk._errors import WrongTraceSearchExpressionError
 from promptflow._sdk._orm.session import create_or_update_table, support_transaction
 from promptflow._sdk._orm.trace import LINE_RUN_JSON_FIELDS, LINE_RUN_SEARCHABLE_FIELDS, LineRun, SearchTranslator
 
@@ -311,3 +312,18 @@ class TestTraceSearchTrans:
         )
         expected_sql = self._build_expected_sql(expected_condition)
         assert expected_sql == str(query)
+
+    def test_search_with_wrong_expr(self, memory_session: Session, search_trans: SearchTranslator):
+        test_cases = [
+            ("name", "Invalid search expression, currently support Python syntax for search."),
+            ("name = 1", "Invalid search expression, currently support Python syntax for search."),
+            ("name == '<name>' AND", "Invalid search expression, currently support Python syntax for search."),
+            (
+                "name is '<name>'",
+                "Unsupported compare operator, currently support: '==', '!=', '<', '<=', '>' and '>='.",
+            ),
+        ]
+        for expr, error_msg in test_cases:
+            with pytest.raises(WrongTraceSearchExpressionError) as e:
+                search_trans.translate(session=memory_session, expression=expr)
+            assert error_msg in str(e)
