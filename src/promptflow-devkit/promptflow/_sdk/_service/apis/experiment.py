@@ -7,7 +7,7 @@ from pathlib import Path
 
 from flask import jsonify, request
 
-from promptflow._sdk._constants import get_list_view_type
+from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME, get_list_view_type
 from promptflow._sdk._service import Namespace, Resource
 from promptflow._sdk._service.utils.utils import get_client_from_request
 from promptflow._utils.flow_utils import resolve_flow_path
@@ -90,9 +90,9 @@ class ExperimentTest(Resource):
         if output_path is None:
             filename = str(uuid.uuid4())
             if os.path.isdir(experiment_template):
-                output_path = Path(experiment_template) / filename
+                output_path = Path(experiment_template) / PROMPT_FLOW_DIR_NAME / filename
             else:
-                output_path = Path(os.path.dirname(experiment_template)) / filename
+                output_path = Path(os.path.dirname(experiment_template)) / PROMPT_FLOW_DIR_NAME / filename
             os.makedirs(output_path, exist_ok=True)
         output_path = Path(output_path).resolve()
 
@@ -131,9 +131,9 @@ class ExperimentSkipTest(Resource):
         if output_path is None:
             filename = str(uuid.uuid4())
             if os.path.isdir(experiment_template):
-                output_path = Path(experiment_template) / filename
+                output_path = Path(experiment_template) / PROMPT_FLOW_DIR_NAME / filename
             else:
-                output_path = Path(os.path.dirname(experiment_template)) / filename
+                output_path = Path(os.path.dirname(experiment_template)) / PROMPT_FLOW_DIR_NAME / filename
             os.makedirs(output_path, exist_ok=True)
         output_path = Path(output_path).resolve()
 
