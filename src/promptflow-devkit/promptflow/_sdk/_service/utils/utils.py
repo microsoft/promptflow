@@ -11,7 +11,6 @@ import socket
 import subprocess
 import sys
 import time
-import traceback
 from dataclasses import InitVar, dataclass, field
 from datetime import datetime
 from functools import wraps
@@ -283,7 +282,6 @@ class FormattedException:
 
     error: ErrorInfo = field(init=False)
     time: str = field(init=False)
-    stack_info: str = field(init=False)
 
     def __post_init__(self, exception, status_code):
         self.status_code = status_code
@@ -291,7 +289,6 @@ class FormattedException:
             self.status_code = 404
         self.error = ErrorInfo(exception)
         self.time = datetime.now().isoformat()
-        self.stack_info = traceback.format_exc()
 
 
 def build_pfs_user_agent():
