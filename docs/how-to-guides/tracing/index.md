@@ -12,7 +12,7 @@ For `Flex flow` developers, who might use different frameworks (langchain, seman
 
 ## Instrumenting user's code
 
-### **`start_trace()` to enable trace for LLM calls**
+### `start_trace()` to enable trace for LLM calls
 Let's start with the simplest example, add single line code to enable trace for LLM calls in your application.
 ```python
 from openai import OpenAI
@@ -57,7 +57,7 @@ Promptflow tracing works for more frameworks like `autogen` and `langchain`:
 
 ![langchain-trace-detail](../../media/trace/langchain-trace-detail.png)
 
-### **`@trace` to trace on any function**
+### `@trace` to trace on any function
 A more common scenario is the application has complicated code structure, and developer would like to add trace on critical path that they would like to debug and monitor. 
 
 See the **[math_to_code](https://github.com/microsoft/promptflow/tree/main/examples/tutorials/tracing/math_to_code.py)** example. Execute below command will get an URL to display the trace records and trace details of each test.
