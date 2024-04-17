@@ -263,9 +263,9 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         # for cloud, they will assume that metadata has already been dumped into the flow directory so do nothing here
         return
 
-    def _get_type_of_ports(self):
+    def _get_interface_definition(self):
         """
-        Get type of ports of a flow.
+        Get type of interfaces of a flow.
 
         For dag flow, we can directly get type of ports from yaml.
         For flex flow, we can also get type of ports from yaml in cloud as SDK will update the flow file before upload.
@@ -284,7 +284,7 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         """Get the inputs definition of an eager flow"""
         from promptflow.contracts.flow import FlowInputDefinition
 
-        input_definitions = self._get_type_of_ports().get("inputs", {})
+        input_definitions = self._get_interface_definition().get("inputs", {})
         inputs = {}
         for key, value in input_definitions.items():
             # TODO: update this after we determine whether to accept list here or now
@@ -331,7 +331,7 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
     @property
     def chat_output_name(self) -> Optional[str]:
         """The name of the chat output in the line result. Return None if the bonded flow is not a chat flow."""
-        outputs = self._get_type_of_ports().get("outputs", {})
+        outputs = self._get_interface_definition().get("outputs", {})
         for key, value in outputs.items():
             if value.get("is_chat_output", False):
                 return key
