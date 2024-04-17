@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import re
+import subprocess
 from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List
@@ -100,7 +101,7 @@ class CSharpInspectorProxy(AbstractInspectorProxy):
                 cwd=working_dir,
             )
         except subprocess.CalledProcessError as e:
-            raise UnexpectedError(
+            raise UserErrorException(
                 message_format="Failed to generate flow meta for csharp flow.\n"
                 "Command: {command}\n"
                 "Working directory: {working_directory}\n"
