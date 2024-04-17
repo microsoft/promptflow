@@ -4,18 +4,17 @@
 import inspect
 import string
 import traceback
-from enum import Enum
 from functools import cached_property
 from typing import Dict, List
 
 
-class ErrorCategory(str, Enum):
+class ErrorCategory(object):
     USER_ERROR = "UserError"
     SYSTEM_ERROR = "SystemError"
     UNKNOWN = "Unknown"
 
 
-class ErrorTarget(str, Enum):
+class ErrorTarget(object):
     """The target of the error, indicates which part of the system the error occurs."""
 
     EXECUTOR = "Executor"
@@ -55,7 +54,7 @@ class PromptflowException(Exception):
         self,
         message="",
         message_format="",
-        target: ErrorTarget = ErrorTarget.UNKNOWN,
+        target: str = ErrorTarget.UNKNOWN,
         module=None,
         privacy_info: List[str] = None,
         **kwargs,
