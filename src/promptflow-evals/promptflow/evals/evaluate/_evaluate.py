@@ -66,6 +66,7 @@ def _validation(target, data, evaluators, output_path, tracking_uri, evaluation_
     for evaluator_name, evaluator in evaluators.items():
         _validate_input_data_for_evaluator(evaluator, evaluator_name, data_df)
 
+def _is_chat_format():
 
 def evaluate(
     *,
@@ -98,6 +99,9 @@ def evaluate(
     """
 
     _validation(target, data, evaluators, output_path, tracking_uri, evaluation_name)
+    
+    if data is not None and target is not None:
+        # 
 
     pf_client = PFClient()
     code_client = CodeClient()
