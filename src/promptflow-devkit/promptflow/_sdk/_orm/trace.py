@@ -362,7 +362,7 @@ class SearchTranslator(ast.NodeVisitor):
 
     def _resolve_ast_constant(self, node: ast.Constant) -> str:
         value = node.value
-        return f"'{value}'" if isinstance(value, str) else value
+        return f"'{value}'" if isinstance(value, str) else str(value)
 
     def _resolve_ast_name(self, node: ast.Name) -> str:
         field = node.id

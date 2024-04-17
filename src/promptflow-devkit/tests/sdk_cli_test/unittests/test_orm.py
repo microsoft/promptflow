@@ -269,6 +269,12 @@ class TestTraceSearchTrans:
         sql_condition = search_trans._translate_compare_to_sql(ast_compare)
         assert sql_condition == "json_extract(cumulative_token_count, '$.total') > 2000"
 
+    def test_translate_compare_with_multiple_comparator_to_sql(self, search_trans: SearchTranslator):
+        compare_expr = "100 < prompt <= 2000"
+        ast_compare = ast.parse(compare_expr, mode="eval").body
+        sql_condition = search_trans._translate_compare_to_sql(ast_compare)
+        assert sql_condition == "100 < json_extract(cumulative_token_count, '$.prompt') <= 2000"
+
     def test_basic_search(self, memory_session: Session, search_trans: SearchTranslator):
         basic_expr = "name == 'web-classification'"
         query = search_trans.translate(session=memory_session, expression=basic_expr)
