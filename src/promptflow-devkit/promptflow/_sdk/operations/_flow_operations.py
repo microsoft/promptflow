@@ -1301,10 +1301,14 @@ class FlowOperations(TelemetryMixin):
             return False
         entry = data.get("entry")
         signatures, _, _ = self._infer_signature_flex_flow(
-            entry=entry, code=code, language=data.get(LANGUAGE_KEY, "python")
+            entry=entry,
+            code=code,
+            language=data.get(LANGUAGE_KEY, "python"),
+            validate=False,
+            include_primitive_output=True,
         )
         merged_signatures = self._merge_signature(extracted=signatures, signature_overrides=data)
-        FlexFlow(path=code / FLOW_FLEX_YAML, code=code, data=data, entry=entry)._validate()
+        FlexFlow(path=code / FLOW_FLEX_YAML, code=code, data=data, entry=entry)._validate(raise_error=True)
         updated = False
         for field in ["inputs", "outputs", "init"]:
             if merged_signatures.get(field) != data.get(field):

@@ -135,7 +135,7 @@ class Flow(AdditionalIncludesMixin):
     @classmethod
     def _resolve_signature(cls, code: Path, data: dict):
         """Resolve signature for flex flow. Return True if resolved."""
-        from promptflow import PFClient
+        from promptflow.client import PFClient
 
         pf = PFClient()
         return pf.flows._update_signatures(code=code, data=data)
