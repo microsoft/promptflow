@@ -110,13 +110,13 @@ Test the flow.
 pf flow test --flow <path-to-flow-directory>
 ```
 
-Test the flow from json file.
+Test the flow from `json` file.
 
 ```bash
 pf flow test --flow <path-to-flow-directory> --inputs inputs.json
 ```
 
-Test the flow with first line from input file.
+Test the flow with first line from `jsonl` file.
 
 ```bash
 pf flow test --flow <path-to-flow-directory> --inputs inputs.jsonl
