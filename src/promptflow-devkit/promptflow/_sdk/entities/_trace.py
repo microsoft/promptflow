@@ -179,17 +179,22 @@ class Span:
 
     def to_dict(self) -> typing.Dict:
         """Return a dictionary that follows OpenTelemetry span spec."""
+        events = copy.deepcopy(self.events)
+        for event in events:
+            event[SpanEventFieldName.TIMESTAMP] = datetime.datetime.fromisoformat(
+                event[SpanEventFieldName.TIMESTAMP]
+            ).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         # manually build this dict, referring to `ReadableSpan.to_json` in OTel Python SDK
         return {
             "name": self.name,
             "context": copy.deepcopy(self.context),
             "kind": self.kind,
             "parent_id": self.parent_id,
-            "start_time": self.start_time.isoformat(),
-            "end_time": self.end_time.isoformat(),
+            "start_time": self.start_time.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+            "end_time": self.end_time.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
             "status": copy.deepcopy(self.status),
             "attributes": copy.deepcopy(self.attributes),
-            "events": copy.deepcopy(self.events),
+            "events": events,
             "links": copy.deepcopy(self.links),
             "resource": copy.deepcopy(self.resource),
         }
