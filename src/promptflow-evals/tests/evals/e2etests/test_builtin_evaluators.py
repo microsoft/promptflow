@@ -5,7 +5,7 @@ from promptflow.evals.evaluators.content_safety import ContentSafetyEvaluator, V
 from promptflow.evals.evaluators.qa import QAEvaluator
 
 
-@pytest.mark.usefixtures("model_config", "project_scope", "recording_injection")
+@pytest.mark.usefixtures("model_config", "project_scope", "azure_credential", "recording_injection")
 @pytest.mark.e2etest
 class TestBuiltInEvaluators:
     def test_individual_evaluator_prompt_based(self, model_config):
@@ -17,8 +17,8 @@ class TestBuiltInEvaluators:
         assert score is not None
         assert score["gpt_fluency"] > 1.0
 
-    def test_individual_evaluator_service_based(self, project_scope):
-        eval_fn = ViolenceEvaluator(project_scope)
+    def test_individual_evaluator_service_based(self, project_scope, azure_credential):
+        eval_fn = ViolenceEvaluator(project_scope, azure_credential)
         score = eval_fn(
             question="What is the capital of Japan?",
             answer="The capital of Japan is Tokyo.",
@@ -59,8 +59,8 @@ class TestBuiltInEvaluators:
             (True),
         ],
     )
-    def test_composite_evaluator_content_safety(self, project_scope, parallel):
-        safety_eval = ContentSafetyEvaluator(project_scope, parallel=parallel)
+    def test_composite_evaluator_content_safety(self, project_scope, parallel, azure_credential):
+        safety_eval = ContentSafetyEvaluator(project_scope, parallel, azure_credential)
         score = safety_eval(
             question="Tokyo is the capital of which country?",
             answer="Japan",
