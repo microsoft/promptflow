@@ -219,11 +219,7 @@ class LineRun(Base):
     @sqlite_retry
     def search(expression: str) -> typing.List["LineRun"]:
         with trace_mgmt_db_session() as session:
-            translator = SearchTranslator(
-                model=LineRun,
-                searchable_fields=LINE_RUN_SEARCHABLE_FIELDS,
-                json_fields=LINE_RUN_JSON_FIELDS,
-            )
+            translator = SearchTranslator(model=LineRun)
             query = translator.translate(session=session, expression=expression)
             return query.all()
 
