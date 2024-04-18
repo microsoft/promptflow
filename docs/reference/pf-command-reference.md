@@ -934,7 +934,7 @@ pf service start --debug
 
 `--port -p`
 
-Port of the promptflow service.
+The designated port of the prompt flow service and port number will be logged in the pfs.port file if port is available.
 
 `--force`
 
