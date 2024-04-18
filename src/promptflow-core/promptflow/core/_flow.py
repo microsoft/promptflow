@@ -203,7 +203,7 @@ class AsyncFlow(FlowBase):
 class Prompty(FlowBase):
     """A prompty is a prompt with predefined metadata like inputs, and can be executed directly like a flow.
     A prompty is represented as a templated markdown file with a modified front matter.
-    The front matter is a yaml file that contains meta fields like connection, parameters, inputs, etc..
+    The front matter is a yaml file that contains meta fields like model configuration, inputs, etc..
 
     Prompty example:
     .. code-block:: yaml
@@ -213,9 +213,13 @@ class Prompty(FlowBase):
         description: A basic prompt
         model:
             api: chat
-            connection: connection_name
+            configuration:
+              type: azure_openai
+              azure_deployment: gpt-35-turbo
+              api_key="${env:AZURE_OPENAI_API_KEY}",
+              api_version=${env:AZURE_OPENAI_API_VERSION}",
+              azure_endpoint="${env:AZURE_OPENAI_ENDPOINT}",
             parameters:
-              deployment_name: gpt-35-turbo
               max_tokens: 128
               temperature: 0.2
         inputs:
@@ -250,7 +254,7 @@ class Prompty(FlowBase):
         result = prompty(input_a=1, input_b=2)
 
         # Override model config with configuration
-        from promptflow.core._model_configuration import AzureOpenAIModelConfiguration
+        from promptflow.core import AzureOpenAIModelConfiguration
         model_config = {
             "api": "chat",
             "configuration": AzureOpenAIModelConfiguration(
@@ -419,7 +423,7 @@ class AsyncPrompty(Prompty):
         import asyncio
         from promptflow.core import AsyncPrompty
         prompty = AsyncPrompty.load(source="path/prompty.prompty")
-        result = asyncio.run(prompty(input_a=1, input_b=2))
+        result = await prompty(input_a=1, input_b=2)
 
     """
 
