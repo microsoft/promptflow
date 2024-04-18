@@ -206,6 +206,8 @@
     "wscript",
     "raisvc",
     "evals",
+    "redoc",
+    "starlette",
     "mlindex",
     "redef",
     "rcts",
