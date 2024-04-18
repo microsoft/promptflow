@@ -8,6 +8,8 @@ on:
       - src/promptflow-tracing/**
       - src/promptflow-core/**
       - .github/workflows/promptflow-core-test.yml
+    paths-ignore:
+      - '**/*.md'
   workflow_dispatch:
 
 env:
@@ -34,18 +36,12 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - uses: snok/install-poetry@v1
-      - name: install promptflow-tracing
-        run: poetry install
-        working-directory: ${{ env.TRACING_DIRECTORY }}
-      - name: install promptflow-core
-        run: poetry install
-        working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: install test dependency group
-        run: poetry install --only test
+        run: |
+          poetry install -E executor-service --with ci,test
+          poetry run pip show promptflow-tracing
+          poetry run pip show promptflow-core
         working-directory: ${{ env.WORKING_DIRECTORY }}
-      - name: install recording
-        run: poetry install
-        working-directory: ${{ env.RECORD_DIRECTORY }}
       - name: run core tests
         run: poetry run pytest ./tests/core --cov=promptflow --cov-config=pyproject.toml --cov-report=term --cov-report=html --cov-report=xml
         working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -74,18 +70,12 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - uses: snok/install-poetry@v1
-      - name: install promptflow-tracing
-        run: poetry install
-        working-directory: ${{ env.TRACING_DIRECTORY }}
-      - name: install promptflow-core[azureml-serving]
-        run: poetry install -E azureml-serving
-        working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: install test dependency group
-        run: poetry install --only test
+        run: |
+          poetry install -E azureml-serving --with ci,test
+          poetry run pip show promptflow-tracing
+          poetry run pip show promptflow-core
         working-directory: ${{ env.WORKING_DIRECTORY }}
-      - name: install recording
-        run: poetry install
-        working-directory: ${{ env.RECORD_DIRECTORY }}
       - name: run azureml-serving tests
         run: poetry run pytest ./tests/azureml-serving --cov=promptflow --cov-config=pyproject.toml --cov-report=term --cov-report=html --cov-report=xml
         working-directory: ${{ env.WORKING_DIRECTORY }}

@@ -1,0 +1,43 @@
+name: $(BuildDefinitionName)_$(Date:yyyyMMdd)$(Rev:.r) # Configure run or build numbers
+
+variables:
+  - group: promptflow-csharp
+  - name: buildConfiguration
+    value: 'Release'
+  - name: currentRepoPath
+    value: "PromptflowCS"
+  - name: cliRepoPath
+    value: "promptflow"
+  - name: flowProjectRelativePath
+    value: '$(currentRepoPath)/src/PromptflowCSharp/Sample'
+  - name: system.debug
+    value: 'true'
+  - name: cliInstallationPath
+    value: '$(cliRepoPath)/src/promptflow'
+
+trigger:
+  - main
+  - releases/*
+
+parameters:
+  - name: githubPromptflowBranch
+    displayName: "Github Promptflow Branch Name"
+    type: string
+    default: main
+
+
+jobs:
+- job: linux
+  pool:
+    vmImage: 'ubuntu-latest'
+  steps:
+    - task: Bash@3
+      displayName: 'Set environment variables'
+      inputs:
+        targetType: inline
+        script: |
+          export AOAI_CONNECTION=$(AOAI_CONNECTION)
+          export OPENAI_CONNECTION=$(OPENAI_CONNECTION)
+          export SERP_CONNECTION=$(SERP_CONNECTION)
+          export ACS_CONNECTION=$(ACS_CONNECTION)
+          export IS_IN_CI_PIPELINE=true

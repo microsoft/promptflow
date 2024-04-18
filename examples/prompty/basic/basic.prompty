@@ -1,0 +1,34 @@
+---
+name: Basic Prompt
+description: A basic prompt that uses the chat API to answer questions
+model:
+    api: chat
+    configuration:
+        type: azure_openai
+        azure_deployment: gpt-35-turbo-0125
+        api_key: ${env:AZURE_OPENAI_API_KEY}
+        azure_endpoint: ${env:AZURE_OPENAI_ENDPOINT}
+    parameters:
+        max_tokens: 128
+        temperature: 0.2
+        response_format:
+            type: json_object
+inputs:
+    first_name:
+        type: string
+    last_name: 
+        type: string
+    question:
+        type: string
+sample: sample.json
+---
+system:
+You are an AI assistant who helps people find information.
+As the assistant, you answer questions briefly, succinctly. Your structured response. Only accepts JSON format, likes below:
+{"name": customer_name, "answer": the answer content}
+
+You are helping {{first_name}} {{last_name}} to find answers to their questions.
+Use their name to address them in your responses.
+
+user:
+{{question}}

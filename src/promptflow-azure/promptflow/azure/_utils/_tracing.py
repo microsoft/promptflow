@@ -9,6 +9,7 @@ from azure.ai.ml import MLClient
 from azure.core.exceptions import ResourceNotFoundError
 
 from promptflow._constants import AzureWorkspaceKind, CosmosDBContainerName
+from promptflow._sdk._tracing import PF_CONFIG_TRACE_LOCAL
 from promptflow._sdk._utils import extract_workspace_triad_from_trace_provider
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure import PFClient
@@ -63,6 +64,10 @@ def validate_trace_provider(value: str) -> None:
     3. the resource is an Azure ML workspace or AI project
     4. the workspace Cosmos DB is initialized
     """
+    if value.lower() == PF_CONFIG_TRACE_LOCAL:
+        _logger.debug(f"trace.provider is set to {PF_CONFIG_TRACE_LOCAL!r}, it's valid and no need to validate.")
+        return
+
     # valid workspace/project ARM resource ID; otherwise, a ValueError will be raised
     _logger.debug("Validating trace provider value...")
     try:
