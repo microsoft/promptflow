@@ -72,6 +72,22 @@ def model_config() -> dict:
     return model_config
 
 
+@pytest.fixture
+def project_scope() -> dict:
+    conn_name = "azure_ai_project_scope"
+
+    with open(
+        file=CONNECTION_FILE,
+        mode="r",
+    ) as f:
+        dev_connections = json.load(f)
+
+    if conn_name not in dev_connections:
+        raise ValueError(f"Connection '{conn_name}' not found in dev connections.")
+
+    return dev_connections[conn_name]["value"]
+
+
 # ==================== Recording injection ====================
 # To inject patches in subprocesses, add new mock method in setup_recording_injection_if_enabled
 # in fork mode, this is automatically enabled.
