@@ -467,8 +467,6 @@ class LineRunFieldName:
 
 
 class Local2Cloud:
-    EXPERIMENT_NAME = "local_to_cloud"
-    PROPERTY_KEY = "azureml.promptflow.local_to_cloud"
     BLOB_ROOT_PROMPTFLOW = "promptflow"
     BLOB_ROOT_RUNS = "runs"
     BLOB_ARTIFACTS = "PromptFlowArtifacts"
@@ -476,6 +474,12 @@ class Local2Cloud:
     ASSET_NAME_DEBUG_INFO = "debug_info"
     ASSET_NAME_FLOW_OUTPUTS = "flow_outputs"
     EXECUTION_LOG = "logs/azureml/executionlogs.txt"
+
+
+class Local2CloudProperties:
+    TOTAL_TOKENS = "azureml.promptflow.total_tokens"
+    EVAL_RUN = "_azureml.evaluation_run"
+    EVAL_ARTIFACTS = "_azureml.evaluate_artifacts"
 
 
 class CloudDatastore:

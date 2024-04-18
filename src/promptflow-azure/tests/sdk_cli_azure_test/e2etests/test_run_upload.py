@@ -9,7 +9,7 @@ import pytest
 from _constants import PROMPTFLOW_ROOT
 from sdk_cli_azure_test.conftest import DATAS_DIR, FLOWS_DIR
 
-from promptflow._sdk._constants import RunStatus
+from promptflow._sdk._constants import Local2CloudProperties, RunStatus
 from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk._pf_client import PFClient as LocalPFClient
 from promptflow._sdk.entities import Run
@@ -49,6 +49,7 @@ class Local2CloudTestHelper:
         assert cloud_run._start_time and cloud_run._end_time
         assert cloud_run.properties["azureml.promptflow.local_to_cloud"] == "true"
         assert cloud_run.properties["azureml.promptflow.snapshot_id"]
+        return cloud_run
 
 
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
@@ -151,5 +152,31 @@ class TestFlowRunUpload:
     @pytest.mark.usefixtures(
         "mock_isinstance_for_mock_datastore", "mock_get_azure_pf_client", "mock_trace_provider_to_cloud"
     )
-    def test_upload_run_with_customized_run_properties(self):
-        pass
+    def test_upload_run_with_customized_run_properties(self, pf: PFClient, randstr: Callable[[str], str]):
+        name = randstr("batch_run_name_for_upload_with_customized_properties")
+        local_pf = Local2CloudTestHelper.get_local_pf(name)
+
+        eval_run = "promptflow.BatchRun"
+        eval_artifacts = '[{"path": "instance_results.jsonl", "type": "table"}]'
+
+        # submit a local batch run
+        run = local_pf._run(
+            flow=f"{FLOWS_DIR}/simple_hello_world",
+            data=f"{DATAS_DIR}/webClassification3.jsonl",
+            name=name,
+            column_mapping={"name": "${data.url}"},
+            display_name="sdk-cli-test-run-local-to-cloud-with-properties",
+            tags={"sdk-cli-test": "true"},
+            description="test sdk local to cloud",
+            properties={
+                Local2CloudProperties.EVAL_RUN: eval_run,
+                Local2CloudProperties.EVAL_ARTIFACTS: eval_artifacts,
+            },
+        )
+        run = local_pf.runs.stream(run.name)
+        assert run.status == RunStatus.COMPLETED
+
+        # check the run is uploaded to cloud, and the properties are set correctly
+        cloud_run = Local2CloudTestHelper.check_local_to_cloud_run(pf, run)
+        assert cloud_run.properties[Local2CloudProperties.EVAL_RUN] == eval_run
+        assert cloud_run.properties[Local2CloudProperties.EVAL_ARTIFACTS] == eval_artifacts
