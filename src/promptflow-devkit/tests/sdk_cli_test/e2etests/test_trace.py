@@ -102,6 +102,28 @@ def assert_span_equals(span: Span, expected_span_dict: typing.Dict) -> None:
 @pytest.mark.e2etest
 @pytest.mark.sdk_test
 class TestTraceEntitiesAndOperations:
+    def test_span_to_otel_dict(self) -> None:
+        # this should be the groundtruth as OpenTelemetry span spec
+        otel_span_path = TEST_ROOT / "test_configs/traces/large-data-span-example.json"
+        with open(otel_span_path, mode="r", encoding="utf-8") as f:
+            span_dict = json.load(f)
+        span_entity = Span(
+            name=span_dict["name"],
+            trace_id=span_dict["context"]["trace_id"],
+            span_id=span_dict["context"]["span_id"],
+            parent_id=span_dict["parent_id"],
+            context=span_dict["context"],
+            kind=span_dict["kind"],
+            start_time=datetime.datetime.fromisoformat(span_dict["start_time"]),
+            end_time=datetime.datetime.fromisoformat(span_dict["end_time"]),
+            status=span_dict["status"],
+            attributes=span_dict["attributes"],
+            links=span_dict["links"],
+            events=span_dict["events"],
+            resource=span_dict["resource"],
+        )
+        assert span_entity._to_otel_dict() == span_dict
+
     def test_span_persist_and_gets(self, pf: PFClient) -> None:
         trace_id = str(uuid.uuid4())
         span_id = str(uuid.uuid4())

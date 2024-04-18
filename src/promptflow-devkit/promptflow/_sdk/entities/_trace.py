@@ -177,7 +177,7 @@ class Span:
             "external_event_data_uris": rest_external_event_data_uris,
         }
 
-    def to_otel_dict(self) -> typing.Dict:
+    def _to_otel_dict(self) -> typing.Dict:
         """Return a dictionary that follows OpenTelemetry span spec."""
         # manually build this dict, referring to `ReadableSpan.to_json` in OTel Python SDK
         return {
