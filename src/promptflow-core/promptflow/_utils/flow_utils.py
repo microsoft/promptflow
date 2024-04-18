@@ -128,7 +128,8 @@ def resolve_flow_path(
     if not file_path.is_file():
         if flow_folder == flow_path:
             raise UserErrorException(
-                f"Flow path {flow_path.absolute().as_posix()} " f"must have either {FLOW_DAG_YAML} or {FLOW_FLEX_YAML}",
+                f"Flow path {flow_path.absolute().as_posix()} "
+                f"must have postfix either {FLOW_DAG_YAML} or {FLOW_FLEX_YAML}",
                 privacy_info=[flow_path.absolute().as_posix()],
             )
         else:
