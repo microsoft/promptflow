@@ -5,7 +5,7 @@ from typing import Any, Dict, List
 from promptflow._constants import FlowEntryRegex
 from promptflow._core.entry_meta_generator import _generate_flow_meta
 from promptflow._sdk._constants import FLOW_META_JSON_GEN_TIMEOUT
-from promptflow._utils.flow_utils import resolve_entry_file
+from promptflow._utils.flow_utils import is_flex_flow, resolve_entry_file
 
 from ._base_inspector_proxy import AbstractInspectorProxy
 
@@ -46,3 +46,18 @@ class PythonInspectorProxy(AbstractInspectorProxy):
             timeout=timeout,
             load_in_subprocess=load_in_subprocess,
         )
+
+    def prepare_metadata(
+        self,
+        flow_file: Path,
+        working_dir: Path,
+        **kwargs,
+    ) -> None:
+        if not is_flex_flow(flow_path=flow_file, working_dir=working_dir):
+            from promptflow._sdk._utils import generate_flow_tools_json
+
+            generate_flow_tools_json(
+                flow_directory=working_dir,
+                dump=True,
+                used_packages_only=True,
+            )
