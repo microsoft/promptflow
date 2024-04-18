@@ -71,9 +71,16 @@ def run_pf_command(*args, cwd=None):
 @pytest.mark.e2etest
 class TestCli:
     def test_pf_version(self, capfd):
+        import re
+
+        from pkg_resources import parse_version
+
         run_pf_command("--version")
-        out, _ = capfd.readouterr()
-        assert "0.0.1" in out
+        out, err = capfd.readouterr()
+
+        pf_versions = re.findall(r'"\S+":\s+"(\S+)"', out)
+        for pf_version in pf_versions:
+            assert parse_version(pf_version)
 
     def test_basic_flow_run(self, capfd) -> None:
         # fetch std out
