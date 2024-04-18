@@ -5,7 +5,7 @@
 [![SDK](https://img.shields.io/badge/SDK-reference-blue)](https://microsoft.github.io/promptflow/reference/python-library-reference/promptflow-core/promptflow.html)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/promptflow-core)](https://pypi.org/project/promptflow-core/)
 
-## Introduction 
+## Introduction
 
 The `promptflow-core` package provides the essential features needed to execute a `flow` in prompt flow.
 
@@ -13,8 +13,6 @@ For those seeking a **minimal** dependency to execute a flow in serving or cloud
 
 However, if you require the full capabilities of the `devkit` to simplify the usage of flow, connection, and run in local development lifecycle, please install the complete package using `pip install promptflow`.
 
-# Release History
+## ChangeLog
 
-## 0.1.0b1 (Upcoming)
-
-- Stub version in PyPI.
+Reach the full change log [here](https://microsoft.github.io/promptflow/reference/changelog/promptflow-core.html).

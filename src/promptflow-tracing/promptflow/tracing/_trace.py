@@ -9,7 +9,7 @@ import logging
 from collections.abc import AsyncIterator, Iterator
 from importlib.metadata import version
 from threading import Lock
-from typing import Callable, List, Optional
+from typing import Callable, Dict, List, Optional
 
 import opentelemetry.trace as otel_trace
 from opentelemetry.sdk.trace import ReadableSpan
@@ -25,8 +25,6 @@ from .contracts.generator_proxy import AsyncGeneratorProxy, GeneratorProxy
 from .contracts.trace import Trace, TraceType
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
-
-open_telemetry_tracer = otel_trace.get_tracer("promptflow")
 
 
 class TokenCollector:
@@ -112,11 +110,17 @@ def enrich_span_with_prompt_info(span, func, kwargs):
             prompt_vars = {
                 name: kwargs.get(name) for name in get_input_names_for_prompt_template(prompt_tpl) if name in kwargs
             }
-            prompt_info = {"prompt.template": prompt_tpl, "prompt.variables": serialize_attribute(prompt_vars)}
-            span.set_attributes(prompt_info)
-            span.add_event("promptflow.prompt.template", {"payload": serialize_attribute(prompt_info)})
+            enrich_prompt_template(template=prompt_tpl, variables=prompt_vars, span=span)
     except Exception as e:
         logging.warning(f"Failed to enrich span with prompt info: {e}")
+
+
+def enrich_prompt_template(template: str, variables: Dict[str, object], span=None):
+    if not span:
+        span = otel_trace.get_current_span()
+    prompt_info = {"prompt.template": template, "prompt.variables": serialize_attribute(variables)}
+    span.set_attributes(prompt_info)
+    span.add_event("promptflow.prompt.template", {"payload": serialize_attribute(prompt_info)})
 
 
 def enrich_span_with_input(span, input):
@@ -166,7 +170,9 @@ def traced_generator(original_span: ReadableSpan, inputs, generator):
     context = original_span.get_span_context()
     link = Link(context)
     # If start_trace is not called, the name of the original_span will be empty.
-    with open_telemetry_tracer.start_as_current_span(
+    # need to get everytime to ensure tracer is latest
+    otel_tracer = otel_trace.get_tracer("promptflow")
+    with otel_tracer.start_as_current_span(
         f"Iterated({original_span.name})",
         links=[link],
     ) as span:
@@ -366,7 +372,9 @@ def _traced_async(
         trace = create_trace(func, args, kwargs)
         # For node span we set the span name to node name, otherwise we use the function name.
         span_name = get_node_name_from_context(used_for_span_name=True) or trace.name
-        with open_telemetry_tracer.start_as_current_span(span_name) as span:
+        # need to get everytime to ensure tracer is latest
+        otel_tracer = otel_trace.get_tracer("promptflow")
+        with otel_tracer.start_as_current_span(span_name) as span:
             # Store otel trace id in context for correlation
             OperationContext.get_instance()["otel_trace_id"] = f"{span.get_span_context().trace_id:032x}"
             enrich_span_with_trace(span, trace)
@@ -430,7 +438,9 @@ def _traced_sync(
         trace = create_trace(func, args, kwargs)
         # For node span we set the span name to node name, otherwise we use the function name.
         span_name = get_node_name_from_context(used_for_span_name=True) or trace.name
-        with open_telemetry_tracer.start_as_current_span(span_name) as span:
+        # need to get everytime to ensure tracer is latest
+        otel_tracer = otel_trace.get_tracer("promptflow")
+        with otel_tracer.start_as_current_span(span_name) as span:
             # Store otel trace id in context for correlation
             OperationContext.get_instance()["otel_trace_id"] = f"{span.get_span_context().trace_id:032x}"
             enrich_span_with_trace(span, trace)

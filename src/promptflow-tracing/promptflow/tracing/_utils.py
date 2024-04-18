@@ -85,6 +85,8 @@ def get_prompt_param_name_from_func(f):
     try:
         from promptflow.contracts.types import PromptTemplate
 
-        return next((k for k, annotation in f.__annotations__.items() if annotation == PromptTemplate), None)
+        return next(
+            (k for k, annotation in getattr(f, "__annotations__", {}).items() if annotation == PromptTemplate), None
+        )
     except ImportError:
         return None
