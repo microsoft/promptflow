@@ -1,4 +1,4 @@
-# Release History
+# promptflow-core package
 
 ## 1.9.0 (Upcoming)
 

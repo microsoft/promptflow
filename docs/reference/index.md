@@ -32,8 +32,15 @@ pfazure-command-reference.md
 ```
 
 ```{toctree}
+:caption: ChangeLog
+:maxdepth: 1
+
+changelog/promptflow
+```
+
+```{toctree}
 :caption: Python Library Reference
-:maxdepth: 4
+:maxdepth: 1
 
 python-library-reference/promptflow-tracing/promptflow
 python-library-reference/promptflow-core/promptflow
