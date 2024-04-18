@@ -15,9 +15,26 @@ variables:
   - name: cliInstallationPath
     value: '$(cliRepoPath)/src/promptflow'
 
-trigger:
-  - main
-  - releases/*
+schedules:
+  - cron: "40 18 * * *" # Every day starting at 2:40 BJT
+    branches:
+      include:
+        - main
+
+pr:
+  branches:
+    include:
+      - main
+      - releases/*
+  paths:
+    include:
+    - src/promptflow-core/**
+    - src/promptflow-devkit/**
+    - src/promptflow/**
+    - src/promptflow-tracing/**
+    - scripts/building/**
+    - .github/pipelines/promptflow-csharp-e2e-test.yml
+    - src/promptflow-recording/**
 
 parameters:
   - name: githubPromptflowBranch
