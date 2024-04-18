@@ -1,7 +1,4 @@
 # Deploy a flow using Kubernetes
-:::{admonition} Experimental feature
-This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
-:::
 
 There are four steps to deploy a flow using Kubernetes:
 1. Build the flow as docker format.

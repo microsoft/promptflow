@@ -6,8 +6,9 @@ from typing import Any, Dict, List, Union
 
 import requests
 
-from promptflow._constants import AML_WORKSPACE_TEMPLATE, ConnectionAuthMode
+from promptflow._constants import AML_WORKSPACE_TEMPLATE
 from promptflow._utils.retry_utils import http_retry_wrapper
+from promptflow.constants import ConnectionAuthMode
 from promptflow.core._connection import CustomConnection, _Connection
 from promptflow.core._errors import (
     AccessDeniedError,
@@ -167,10 +168,11 @@ class WorkspaceConnectionProvider(ConnectionProvider):
 
     @classmethod
     def validate_and_fallback_connection_type(cls, name, type_name, category, metadata):
+        # Note: Legacy CustomKeys may store different connection types, e.g. openai, serp.
+        # In this case, type name will not be None.
         if type_name:
             return type_name
         # Below category has corresponding connection type in PromptFlow, so we can fall back directly.
-        # Note: CustomKeys may store different connection types for now, e.g. openai, serp.
         if category in [
             ConnectionCategory.AzureOpenAI,
             ConnectionCategory.OpenAI,
@@ -179,6 +181,8 @@ class WorkspaceConnectionProvider(ConnectionProvider):
             ConnectionCategory.Serverless,
         ]:
             return category
+        if category == ConnectionCategory.CustomKeys:
+            return CustomConnection.__name__
         if category == ConnectionCategory.CognitiveService:
             kind = get_case_insensitive_key(metadata, "Kind")
             if kind == "Content Safety":
@@ -343,6 +347,8 @@ class WorkspaceConnectionProvider(ConnectionProvider):
             raise OpenURLUserAuthenticationError(message=auth_error_message)
         except ClientAuthenticationError as e:
             raise UserErrorException(target=ErrorTarget.CORE, message=str(e), error=e)
+        except UserErrorException:
+            raise
         except Exception as e:
             raise SystemErrorException(target=ErrorTarget.CORE, message=str(e), error=e)
 

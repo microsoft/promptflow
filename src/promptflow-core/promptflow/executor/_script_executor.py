@@ -1,5 +1,7 @@
 import asyncio
+import contextlib
 import dataclasses
+import functools
 import importlib
 import inspect
 import uuid
@@ -20,6 +22,8 @@ from promptflow._utils.yaml_utils import load_yaml
 from promptflow.connections import ConnectionProvider
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.tool import ConnectionType
+from promptflow.exceptions import ErrorTarget
+from promptflow.executor._errors import InvalidFlexFlowEntry
 from promptflow.executor._result import LineResult
 from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DefaultRunStorage
@@ -60,6 +64,15 @@ class ScriptExecutor(FlowExecutor):
         self._message_format = MessageFormatType.BASIC
         self._multimedia_processor = BasicMultimediaProcessor()
 
+    @contextlib.contextmanager
+    def _exec_line_context(self, run_id, line_number):
+        # TODO: refactor NodeLogManager, for script executor, we don't have node concept.
+        log_manager = NodeLogManager()
+        # No need to clear node context, log_manger will be cleared after the with block.
+        log_manager.set_node_context(run_id, "Flex", line_number)
+        with log_manager, self._update_operation_context(run_id, line_number):
+            yield
+
     def exec_line(
         self,
         inputs: Mapping[str, Any],
@@ -69,20 +82,16 @@ class ScriptExecutor(FlowExecutor):
         **kwargs,
     ) -> LineResult:
         run_id = run_id or str(uuid.uuid4())
-        # TODO: refactor NodeLogManager, for script executor, we don't have node concept.
-        log_manager = NodeLogManager()
-        # No need to clear node context, log_manger will be cleared after the with block.
-        log_manager.set_node_context(run_id, "Flex", index)
-        with log_manager, self._update_operation_context(run_id, index):
+        with self._exec_line_context(run_id, index):
             return self._exec_line(inputs, index, run_id, allow_generator_output=allow_generator_output)
 
-    def _exec_line(
+    def _exec_line_preprocess(
         self,
         inputs: Mapping[str, Any],
         index: Optional[int] = None,
         run_id: Optional[str] = None,
         allow_generator_output: bool = False,
-    ) -> LineResult:
+    ):
         line_run_id = run_id if index is None else f"{run_id}_{index}"
         run_tracker = RunTracker(self._storage)
         run_tracker.allow_generator_types = allow_generator_output
@@ -98,8 +107,22 @@ class ScriptExecutor(FlowExecutor):
         # Executor will add line_number to batch inputs if there is no line_number in the original inputs,
         # which should be removed, so, we only preserve the inputs that are contained in self._inputs.
         inputs = {k: inputs[k] for k in self._inputs if k in inputs}
-        output = None
-        traces = []
+        return run_info, inputs, run_tracker, None, []
+
+    def _exec_line(
+        self,
+        inputs: Mapping[str, Any],
+        index: Optional[int] = None,
+        run_id: Optional[str] = None,
+        allow_generator_output: bool = False,
+    ) -> LineResult:
+        run_info, inputs, run_tracker, output, traces = self._exec_line_preprocess(
+            inputs,
+            index,
+            run_id,
+            allow_generator_output,
+        )
+        line_run_id = run_info.run_id
         try:
             Tracer.start_tracing(line_run_id)
             if self._is_async:
@@ -118,11 +141,59 @@ class ScriptExecutor(FlowExecutor):
             run_tracker.end_run(line_run_id, ex=e, traces=traces)
         finally:
             run_tracker.persist_flow_run(run_info)
+        return self._construct_line_result(output, run_info)
+
+    def _construct_line_result(self, output, run_info):
         line_result = LineResult(output, {}, run_info, {})
         #  Return line result with index
-        if index is not None and isinstance(line_result.output, dict):
-            line_result.output[LINE_NUMBER_KEY] = index
+        if run_info.index is not None and isinstance(line_result.output, dict):
+            line_result.output[LINE_NUMBER_KEY] = run_info.index
         return line_result
+
+    async def exec_line_async(
+        self,
+        inputs: Mapping[str, Any],
+        index: Optional[int] = None,
+        run_id: Optional[str] = None,
+        allow_generator_output: bool = False,
+        **kwargs,
+    ) -> LineResult:
+        run_id = run_id or str(uuid.uuid4())
+        with self._exec_line_context(run_id, index):
+            return await self._exec_line_async(inputs, index, run_id, allow_generator_output=allow_generator_output)
+
+    async def _exec_line_async(
+        self,
+        inputs: Mapping[str, Any],
+        index: Optional[int] = None,
+        run_id: Optional[str] = None,
+        allow_generator_output: bool = False,
+    ) -> LineResult:
+        run_info, inputs, run_tracker, output, traces = self._exec_line_preprocess(
+            inputs,
+            index,
+            run_id,
+            allow_generator_output,
+        )
+        line_run_id = run_info.run_id
+        try:
+            Tracer.start_tracing(line_run_id)
+            if self._is_async:
+                output = await self._func(**inputs)
+            else:
+                partial_func = functools.partial(self._func, **inputs)
+                output = await asyncio.get_event_loop().run_in_executor(None, partial_func)
+            output = self._stringify_generator_output(output) if not allow_generator_output else output
+            traces = Tracer.end_tracing(line_run_id)
+            output_dict = convert_eager_flow_output_to_dict(output)
+            run_tracker.end_run(line_run_id, result=output_dict, traces=traces)
+        except Exception as e:
+            if not traces:
+                traces = Tracer.end_tracing(line_run_id)
+            run_tracker.end_run(line_run_id, ex=e, traces=traces)
+        finally:
+            run_tracker.persist_flow_run(run_info)
+        return self._construct_line_result(output, run_info)
 
     def _stringify_generator_output(self, output):
         if isinstance(output, dict):
@@ -169,8 +240,8 @@ class ScriptExecutor(FlowExecutor):
             if inspect.isfunction(self._entry):
                 return self._entry
             return self._entry.__call__
+        module_name, func_name = self._parse_flow_file()
         try:
-            module_name, func_name = self._parse_flow_file()
             module = importlib.import_module(module_name)
         except Exception as e:
             raise PythonLoadError(
@@ -220,5 +291,12 @@ class ScriptExecutor(FlowExecutor):
         with open(self._working_dir / self._flow_file, "r", encoding="utf-8") as fin:
             flow_dag = load_yaml(fin)
         entry = flow_dag.get("entry", "")
-        module_name, func_name = entry.split(":")
+        try:
+            module_name, func_name = entry.split(":")
+        except Exception as e:
+            raise InvalidFlexFlowEntry(
+                message_format="Invalid entry '{entry}'.The entry should be in the format of '<module>:<function>'.",
+                entry=entry,
+                target=ErrorTarget.EXECUTOR,
+            ) from e
         return module_name, func_name

@@ -11,6 +11,7 @@ from promptflow.tracing.contracts.trace import TraceType
 from ..utils import execute_function_in_subprocess, prepare_memory_exporter
 from .simple_functions import (
     dummy_llm_tasks_async,
+    dummy_llm_tasks_threadpool,
     greetings,
     openai_chat,
     openai_completion,
@@ -94,6 +95,7 @@ class TestTracing:
         [
             (greetings, {"user_id": 1}, 4),
             (dummy_llm_tasks_async, {"prompt": "Hello", "models": ["model_1", "model_1"]}, 3),
+            (dummy_llm_tasks_threadpool, {"prompt": "Hello", "models": ["model_1", "model_1"]}, 5),
         ],
     )
     def test_otel_trace(self, func, inputs, expected_span_length):
@@ -345,7 +347,9 @@ class TestTracing:
             len(span_list) == expected_span_length
         ), f"Expected {expected_span_length} spans, but got {len(span_list)}."
         root_spans = [span for span in span_list if span.parent is None]
-        assert len(root_spans) == 1, "Expected exactly one root span."
+        names = ",".join([span.name for span in span_list])
+        msg = f"Expected exactly one root span but got {len(root_spans)}: {names}."
+        assert len(root_spans) == 1, msg
         root_span = root_spans[0]
         for span in span_list:
             assert span.status.status_code == StatusCode.OK, "Expected status code to be OK."

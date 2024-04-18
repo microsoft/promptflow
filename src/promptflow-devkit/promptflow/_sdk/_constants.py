@@ -12,10 +12,10 @@ from promptflow._constants import (
     CONNECTION_SCRUBBED_VALUE,
     CONNECTION_SCRUBBED_VALUE_NO_CHANGE,
     PROMPT_FLOW_DIR_NAME,
-    ConnectionAuthMode,
     ConnectionType,
     CustomStrongTypeConnectionConfigs,
 )
+from promptflow.constants import ConnectionAuthMode
 
 LOGGER_NAME = "promptflow"
 

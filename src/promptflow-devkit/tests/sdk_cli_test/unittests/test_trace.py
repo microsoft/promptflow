@@ -25,12 +25,14 @@ from promptflow._constants import (
     TraceEnvironmentVariableName,
 )
 from promptflow._sdk._constants import (
+    HOME_PROMPT_FLOW_DIR,
     PF_TRACE_CONTEXT,
     PF_TRACE_CONTEXT_ATTR,
     TRACE_DEFAULT_COLLECTION,
     ContextAttributeKey,
 )
 from promptflow._sdk._tracing import start_trace_with_devkit
+from promptflow._sdk._tracing_utils import WorkspaceKindLocalCache
 from promptflow._sdk.operations._trace_operations import TraceOperations
 from promptflow.client import PFClient
 from promptflow.exceptions import UserErrorException
@@ -78,6 +80,11 @@ class TestImports:
 
         assert callable(setup_exporter_to_pfs)
         assert callable(start_trace_with_devkit)
+
+    def test_process_otlp_trace_request(self):
+        from promptflow._internal import process_otlp_trace_request
+
+        assert callable(process_otlp_trace_request)
 
 
 @pytest.mark.sdk_test
@@ -206,3 +213,61 @@ class TestTraceOperations:
         _validate_invalid_params({"run": str(uuid.uuid4()), "started_before": datetime.datetime.now().isoformat()})
         _validate_invalid_params({"collection": TRACE_DEFAULT_COLLECTION})
         _validate_invalid_params({"collection": str(uuid.uuid4()), "started_before": "invalid isoformat"})
+
+
+@pytest.mark.unittest
+@pytest.mark.sdk_test
+class TestWorkspaceKindLocalCache:
+    def test_no_cache(self):
+        sub, rg, ws = str(uuid.uuid4()), str(uuid.uuid4()), str(uuid.uuid4())
+        ws_local_cache = WorkspaceKindLocalCache(subscription_id=sub, resource_group_name=rg, workspace_name=ws)
+        assert not ws_local_cache.is_cache_exists
+        # mock `WorkspaceKindLocalCache._get_workspace_kind_from_azure`
+        mock_kind = str(uuid.uuid4())
+        with patch(
+            "promptflow._sdk._tracing_utils.WorkspaceKindLocalCache._get_workspace_kind_from_azure"
+        ) as mock_get_kind:
+            mock_get_kind.return_value = mock_kind
+            assert ws_local_cache.get_kind() == mock_kind
+
+    def test_valid_cache(self):
+        sub, rg, ws = str(uuid.uuid4()), str(uuid.uuid4()), str(uuid.uuid4())
+        # manually create a valid local cache
+        kind = str(uuid.uuid4())
+        with open(HOME_PROMPT_FLOW_DIR / WorkspaceKindLocalCache.PF_DIR_TRACING / f"{sub}_{rg}_{ws}.json", "w") as f:
+            cache = {
+                WorkspaceKindLocalCache.SUBSCRIPTION_ID: sub,
+                WorkspaceKindLocalCache.RESOURCE_GROUP_NAME: rg,
+                WorkspaceKindLocalCache.WORKSPACE_NAME: ws,
+                WorkspaceKindLocalCache.KIND: kind,
+                WorkspaceKindLocalCache.TIMESTAMP: datetime.datetime.now().isoformat(),
+            }
+            f.write(json.dumps(cache))
+        ws_local_cache = WorkspaceKindLocalCache(subscription_id=sub, resource_group_name=rg, workspace_name=ws)
+        assert ws_local_cache.is_cache_exists is True
+        assert not ws_local_cache.is_expired
+        assert ws_local_cache.get_kind() == kind
+
+    def test_expired_cache(self):
+        sub, rg, ws = str(uuid.uuid4()), str(uuid.uuid4()), str(uuid.uuid4())
+        # manually create an expired local cache
+        with open(HOME_PROMPT_FLOW_DIR / WorkspaceKindLocalCache.PF_DIR_TRACING / f"{sub}_{rg}_{ws}.json", "w") as f:
+            cache = {
+                WorkspaceKindLocalCache.SUBSCRIPTION_ID: sub,
+                WorkspaceKindLocalCache.RESOURCE_GROUP_NAME: rg,
+                WorkspaceKindLocalCache.WORKSPACE_NAME: ws,
+                WorkspaceKindLocalCache.KIND: str(uuid.uuid4()),  # this value is not important as it will be refreshed
+                WorkspaceKindLocalCache.TIMESTAMP: (datetime.datetime.now() - datetime.timedelta(days=7)).isoformat(),
+            }
+            f.write(json.dumps(cache))
+        ws_local_cache = WorkspaceKindLocalCache(subscription_id=sub, resource_group_name=rg, workspace_name=ws)
+        assert ws_local_cache.is_cache_exists is True
+        assert ws_local_cache.is_expired is True
+        # mock `WorkspaceKindLocalCache._get_workspace_kind_from_azure`
+        kind = str(uuid.uuid4())
+        with patch(
+            "promptflow._sdk._tracing_utils.WorkspaceKindLocalCache._get_workspace_kind_from_azure"
+        ) as mock_get_kind:
+            mock_get_kind.return_value = kind
+            assert ws_local_cache.get_kind() == kind
+        assert not ws_local_cache.is_expired

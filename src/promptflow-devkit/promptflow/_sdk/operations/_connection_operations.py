@@ -5,11 +5,11 @@ from datetime import datetime
 from typing import List, Type, TypeVar
 
 from promptflow._sdk._constants import MAX_LIST_CLI_RESULTS
-from promptflow._sdk._errors import ConnectionClassNotFoundError, ConnectionNameNotSetError
+from promptflow._sdk._errors import ConnectionNameNotSetError
 from promptflow._sdk._orm import Connection as ORMConnection
 from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_operation
 from promptflow._sdk._utils import safe_parse_object_list
-from promptflow._sdk.entities._connection import CustomConnection, _Connection
+from promptflow._sdk.entities._connection import _Connection
 from promptflow.connections import _Connection as _CoreConnection
 
 T = TypeVar("T", bound="_Connection")
@@ -73,26 +73,6 @@ class ConnectionOperations(TelemetryMixin):
         """
         ORMConnection.delete(name)
 
-    @classmethod
-    def _convert_core_connection_to_sdk_connection(cls, core_conn):
-        sdk_conn_mapping = _Connection.SUPPORTED_TYPES
-        sdk_conn_cls = sdk_conn_mapping.get(core_conn.type)
-        if sdk_conn_cls is None:
-            raise ConnectionClassNotFoundError(
-                f"Correspond sdk connection type not found for core connection type: {core_conn.type!r}, "
-                f"please re-install the 'promptflow' package."
-            )
-        common_args = {
-            "name": core_conn.name,
-            "module": core_conn.module,
-            "expiry_time": core_conn.expiry_time,
-            "created_date": core_conn.created_date,
-            "last_modified_date": core_conn.last_modified_date,
-        }
-        if sdk_conn_cls is CustomConnection:
-            return sdk_conn_cls(configs=core_conn.configs, secrets=core_conn.secrets, **common_args)
-        return sdk_conn_cls(**dict(core_conn), **common_args)
-
     @monitor_operation(activity_name="pf.connections.create_or_update", activity_type=ActivityType.PUBLICAPI)
     def create_or_update(self, connection: Type[_Connection], **kwargs):
         """Create or update a connection.
@@ -103,7 +83,7 @@ class ConnectionOperations(TelemetryMixin):
         if not connection.name:
             raise ConnectionNameNotSetError("Name is required to create or update connection.")
         if isinstance(connection, _CoreConnection) and not isinstance(connection, _Connection):
-            connection = self._convert_core_connection_to_sdk_connection(connection)
+            connection = _Connection._from_core_connection(connection)
         orm_object = connection._to_orm_object()
         now = datetime.now().isoformat()
         if orm_object.createdDate is None:
