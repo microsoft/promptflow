@@ -2,6 +2,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+from logging.config import dictConfig
+
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
@@ -11,6 +13,31 @@ from promptflow.executor._service.apis.execution import router as execution_rout
 from promptflow.executor._service.apis.tool import router as tool_router
 from promptflow.executor._service.utils.service_utils import generate_error_response
 
+log_config = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "default": {
+            "()": "uvicorn.logging.DefaultFormatter",
+            "fmt": "%(levelprefix)s %(asctime)s %(message)s",
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+        },
+    },
+    "handlers": {
+        "default": {
+            "formatter": "default",
+            "class": "logging.StreamHandler",
+            "stream": "ext://sys.stdout",
+        },
+    },
+    "loggers": {
+        "uvicorn": {"handlers": ["default"], "level": "INFO"},
+        "uvicorn.error": {"handlers": ["default"], "level": "INFO"},
+        "uvicorn.access": {"handlers": ["default"], "level": "INFO"},
+    },
+}
+
+dictConfig(log_config)
 app = FastAPI()
 
 app.include_router(common_router)
