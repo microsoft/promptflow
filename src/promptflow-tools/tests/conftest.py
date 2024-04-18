@@ -142,7 +142,7 @@ def example_prompt_template_with_function() -> str:
 
 @pytest.fixture
 def example_prompt_template_with_tool() -> str:
-    with open(PROMOTFLOW_ROOT / "tests/test_configs/prompt_templates/prompt_with_tool.jinja2") as f:
+    with open(PROMPTFLOW_ROOT / "tests/test_configs/prompt_templates/prompt_with_tool.jinja2") as f:
         prompt_template = f.read()
     return prompt_template
 
