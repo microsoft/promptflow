@@ -74,12 +74,6 @@ class TestConnectionAPIs:
         len_connections_after = len(pfs_op.list_connections().json)
         assert len_connections_after == len_connections
 
-    def test_list_connection_with_invalid_user(self, pfs_op: PFSOperations) -> None:
-        # TODO: should we record telemetry for this case?
-        with check_activity_end_telemetry(expected_activities=[]):
-            conn_from_pfs = pfs_op.connection_operation_with_invalid_user()
-        assert conn_from_pfs.status_code == 403
-
     def test_get_connection_specs(self, pfs_op: PFSOperations) -> None:
         with check_activity_end_telemetry(expected_activities=[]):
             specs = pfs_op.get_connection_specs(status_code=200).json
