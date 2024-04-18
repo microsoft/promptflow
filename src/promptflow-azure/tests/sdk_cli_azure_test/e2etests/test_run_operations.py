@@ -1465,6 +1465,7 @@ class TestFlowRun:
 
         assert_batch_run_result(run, pf, assert_func)
 
+    @pytest.mark.skipif(not is_live(), reason="Content change in submission time which lead to recording issue.")
     def test_model_config_obj_in_init(self, pf):
         def assert_func(details_dict):
             return details_dict["outputs.azure_open_ai_model_config_azure_endpoint"] == [
@@ -1484,6 +1485,7 @@ class TestFlowRun:
         assert "azure_open_ai_model_config" in run.properties["azureml.promptflow.init_kwargs"]
         assert_batch_run_result(run, pf, assert_func)
 
+    @pytest.mark.skipif(not is_live(), reason="Content change in submission time which lead to recording issue.")
     def test_model_config_dict_in_init(self, pf):
         def assert_func(details_dict):
             return details_dict["outputs.azure_open_ai_model_config_azure_endpoint"] == [
