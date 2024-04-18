@@ -475,8 +475,6 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
 
     @classmethod
     def _try_resolve_code_for_flow(cls, flow: Flow, ops: OperationOrchestrator, ignore_tools_json=False) -> None:
-        from promptflow._proxy import ProxyFactory
-
         if flow.path:
             # remote path
             if flow.path.startswith("azureml://datastores"):
@@ -490,13 +488,6 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                 return
             if flow._code_uploaded:
                 return
-
-            # generate .promptflow/flow.json for eager flow and .promptflow/flow.dag.yaml for non-eager flow
-            flow_directory, flow_file = resolve_flow_path(code.path)
-            ProxyFactory().get_executor_proxy_cls(flow.language).generate_flow_tools_json(
-                flow_file=flow_directory / flow_file,
-                working_dir=flow_directory,
-            )
 
             if ignore_tools_json:
                 ignore_file = code._ignore_file

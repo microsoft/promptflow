@@ -55,6 +55,7 @@ from promptflow._utils.flow_utils import (
     is_flex_flow,
     is_prompty_flow,
     parse_variant,
+    resolve_entry_file,
 )
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.exceptions import ErrorTarget, UserErrorException
@@ -1039,7 +1040,9 @@ class FlowOperations(TelemetryMixin):
             flow_meta["init"] = init_dict
             format_signature_type(flow_meta)
         elif isinstance(entry, FlexFlow):
-            entry_func = entry_string_to_callable(entry.entry_file, entry.entry)
+            # TODO: this part will fail for csharp
+            entry_file = resolve_entry_file(entry=entry.entry, working_dir=entry.code)
+            entry_func = entry_string_to_callable(entry_file, entry.entry)
             flow_meta, _, _ = FlowOperations._infer_signature_flex_flow(
                 entry=entry_func, language=entry.language, include_primitive_output=include_primitive_output
             )
@@ -1112,9 +1115,11 @@ class FlowOperations(TelemetryMixin):
         format_signature_type(flow_meta)
 
         if validate:
+            flow_meta["language"] = language
             # this path is actually not used
             flow = FlexFlow(path=code / FLOW_FLEX_YAML, code=code, data=flow_meta, entry=flow_meta["entry"])
             flow._validate(raise_error=True)
+            flow_meta.pop("language", None)
 
         if include_primitive_output and "outputs" not in flow_meta:
             flow_meta["outputs"] = {
@@ -1295,9 +1300,15 @@ class FlowOperations(TelemetryMixin):
         if not is_flex_flow(yaml_dict=data):
             return False
         entry = data.get("entry")
-        signatures, _, _ = self._infer_signature_flex_flow(entry=entry, code=code)
+        signatures, _, _ = self._infer_signature_flex_flow(
+            entry=entry,
+            code=code,
+            language=data.get(LANGUAGE_KEY, "python"),
+            validate=False,
+            include_primitive_output=True,
+        )
         merged_signatures = self._merge_signature(extracted=signatures, signature_overrides=data)
-        FlexFlow(path=code / FLOW_FLEX_YAML, code=code, data=data, entry=entry)._validate()
+        FlexFlow(path=code / FLOW_FLEX_YAML, code=code, data=data, entry=entry)._validate(raise_error=True)
         updated = False
         for field in ["inputs", "outputs", "init"]:
             if merged_signatures.get(field) != data.get(field):

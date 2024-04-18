@@ -1,0 +1,25 @@
+# system:
+Don't make assumptions about what values to plug into functions.
+
+# user:
+What's the weather like in San Francisco, Tokyo, and Paris?
+
+# assistant:
+## tool_calls:
+[{'id': 'call_001', 'function': {'arguments': '{"location": {"city": "San Francisco", "country": "USA"}, "unit": "metric"}', 'name': 'get_current_weather_py'}, 'type': 'function'}, {'id': 'call_002', 'function': {'arguments': '{"location": {"city": "Tokyo", "country": "Japan"}, "unit": "metric"}', 'name': 'get_current_weather_py'}, 'type': 'function'}, {'id': 'call_003', 'function': {'arguments': '{"location": {"city": "Paris", "country": "France"}, "unit": "metric"}', 'name': 'get_current_weather_py'}, 'type': 'function'}]
+
+# tool:
+## tool_call_id:
+call_001
+## content:
+{"location": "San Francisco, CA", "temperature": "72", "unit": null}
+# tool:
+## tool_call_id:
+call_002
+## content:
+{"location": "Tokyo", "temperature": "72", "unit": null}
+# tool:
+## tool_call_id:
+call_003
+## content:
+{"location": "Paris", "temperature": "72", "unit": null}
