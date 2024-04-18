@@ -219,12 +219,26 @@ class TestTraceOperations:
         expr = append_conditions(
             expression=orig_expr,
             collection="test-collection",
+            runs="run",
+            session_id="test-session-id",
+        )
+        expected_expr = (
+            "name == 'web_classification' and collection == 'test-collection' and "
+            "run == 'run' and session_id == 'test-session-id'"
+        )
+        assert expr == expected_expr
+
+    def test_append_conditions_multiple_runs(self) -> None:
+        orig_expr = "name == 'web_classification'"
+        expr = append_conditions(
+            expression=orig_expr,
+            collection="test-collection",
             runs=["run1", "run2"],
             session_id="test-session-id",
         )
         expected_expr = (
             "name == 'web_classification' and collection == 'test-collection' and "
-            "run in ('run1', 'run2') and session_id == 'test-session-id'"
+            "(run == 'run1' or run == 'run2') and session_id == 'test-session-id'"
         )
         assert expr == expected_expr
 

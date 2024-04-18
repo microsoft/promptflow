@@ -131,8 +131,11 @@ def append_conditions(
         expression += f" and collection == '{collection}'"
     if runs is not None:
         logger.debug("received search parameter runs: %s", runs)
-        runs_expr = ", ".join([f"'{run}'" for run in runs])
-        expression += f" and run in ({runs_expr})"
+        if isinstance(runs, str):
+            expression += f" and run == '{runs}'"
+        else:
+            runs_expr = " or ".join([f"run == '{run}'" for run in runs])
+            expression += f" and ({runs_expr})"
     if session_id is not None:
         logger.debug("received search parameter session_id: %s", session_id)
         expression += f" and session_id == '{session_id}'"
