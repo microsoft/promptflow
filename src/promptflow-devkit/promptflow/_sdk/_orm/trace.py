@@ -261,6 +261,10 @@ LINE_RUN_SEARCHABLE_FIELDS = [
     "total",
     "prompt",
     "completion",
+    # filter
+    "collection",
+    "run",
+    "session_id",
 ]
 LINE_RUN_JSON_FIELDS = {
     "total": "cumulative_token_count",
