@@ -28,7 +28,7 @@ import sys
 github_repository = "microsoft/promptflow"
 snippet_debug = os.getenv("SNIPPET_DEBUG", 0)
 merge_commit = ""
-loop_times = 30
+loop_times = 60  # 60 * 30 seconds = 30 minutes
 github_workspace = os.path.expanduser("~/promptflow/")
 
 # Special cases for pipelines that need to be triggered more or less than default value 1.
