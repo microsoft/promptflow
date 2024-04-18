@@ -113,7 +113,7 @@ class BatchEngine:
         if is_function_entry:
             self._working_dir = working_dir or Path.cwd()
         else:
-            self._working_dir = self._working_dir = (
+            self._working_dir = (
                 Flow._resolve_working_dir(flow_file, working_dir) if flow_file is not None else working_dir
             )
 
