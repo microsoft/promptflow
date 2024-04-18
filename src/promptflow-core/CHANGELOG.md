@@ -1,6 +1,6 @@
 # promptflow-core package
 
-## 1.9.0 (Upcoming)
+## v1.9.0 (Upcoming)
 
 ### Others
 - Connection default api version changed:

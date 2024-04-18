@@ -1,3 +1,3 @@
 # promptflow-azure package
 
-## 1.9.0 (Upcoming)
+## v1.9.0 (Upcoming)

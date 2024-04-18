@@ -32,7 +32,7 @@ pfazure-command-reference.md
 ```
 
 ```{toctree}
-:caption: ChangeLog
+:caption: Python Library ChangeLog
 :maxdepth: 1
 
 changelog/promptflow
