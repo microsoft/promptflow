@@ -94,7 +94,7 @@ class TestNonAdvSimulator:
                 template=ch_template,
                 parameters=template_parameters,
                 max_conversation_turns=2,
-                api_call_delay_sec=15,
+                api_call_delay_sec=60,
                 max_simulation_results=2,
             )
         )

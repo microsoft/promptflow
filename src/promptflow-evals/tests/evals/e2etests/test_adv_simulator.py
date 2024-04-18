@@ -38,7 +38,7 @@ class TestAdvSimulator:
             simulator.simulate_async(
                 template=ch_template,
                 max_conversation_turns=5,
-                api_call_delay_sec=5,
+                api_call_delay_sec=60,
                 max_simulation_results=1,
             )
         )
