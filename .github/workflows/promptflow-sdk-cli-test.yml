@@ -11,8 +11,6 @@ on:
       - scripts/building/**
       - .github/workflows/promptflow-sdk-cli-test.yml
       - src/promptflow-recording/**
-    paths-ignore:
-      - '**/*.md'
   workflow_dispatch:
     inputs:
       filepath:
