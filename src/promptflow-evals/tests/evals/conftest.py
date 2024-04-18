@@ -170,3 +170,20 @@ def _mock_process_wrapper(*args, **kwargs):
 def _mock_create_spawned_fork_process_manager(*args, **kwargs):
     setup_recording_injection_if_enabled()
     return create_spawned_fork_process_manager(*args, **kwargs)
+
+
+@pytest.fixture
+def ml_client_config() -> dict:
+    conn_name = "azure_ai_project_scope"
+
+    with open(
+        file=CONNECTION_FILE,
+        mode="r",
+        encoding="utf-8",  # Add the encoding parameter
+    ) as f:
+        dev_connections = json.load(f)
+
+    if conn_name not in dev_connections:
+        raise ValueError(f"Connection '{conn_name}' not found in dev connections.")
+
+    return dev_connections[conn_name]["value"]
