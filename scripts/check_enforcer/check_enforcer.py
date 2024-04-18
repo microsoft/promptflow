@@ -216,6 +216,11 @@ def trigger_prepare(input_paths):
         # Input pattern /**: input_path should match in the middle.
         # Input pattern /*: input_path should match last but one.
         # Other input pattern: input_path should match last.
+
+        # Skip if input path is a markdown file.
+        if input_path.endswith(".md"):
+            continue
+
         keys = [
             key for key in reverse_checks.keys() if fnmatch.fnmatch(input_path, key)
         ]
