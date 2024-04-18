@@ -1,3 +1,4 @@
+# flake8: noqa
 import asyncio
 
 import pytest
@@ -93,7 +94,6 @@ class TestNonAdvSimulator:
                 template=ch_template,
                 parameters=template_parameters,
                 max_conversation_turns=2,
-                parameters=template_parameters,
                 api_call_delay_sec=15,
                 max_simulation_results=2,
             )
