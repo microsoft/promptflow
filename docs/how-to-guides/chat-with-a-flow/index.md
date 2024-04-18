@@ -18,7 +18,7 @@ feature, you need to run `pf config set enable_internal_features="true"`.
 
 The following CLI command allows you to trigger a chat window.
 ```shell
-pf flow test --flow . --ui`
+pf flow test --flow . --ui
 ```
 Running the above command will yield the following example output:
 ```
@@ -29,7 +29,7 @@ Alternatively, if no requests are made within 1 hours, it will automatically sto
 You can begin chat flow on http://127.0.0.1:55627/v1.0/ui/chat?flow=***
 ```
 Clicking the chat URL will direct the user to a chat page corresponding to the passed flow:
-![img](../../media/how-to-guides/chat-with-a-flow/chat-basic-dag-flow.png)
+![chat-basic-dag-flow](../../media/how-to-guides/chat-with-a-flow/chat-basic-dag-flow.png)
 :::
 
 :::{tab-item} VS Code Extension
