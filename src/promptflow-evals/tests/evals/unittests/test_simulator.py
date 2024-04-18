@@ -19,14 +19,14 @@ from promptflow.evals.synthetic.simulator.templates._templates import CONVERSATI
 
 @pytest.fixture()
 def mock_config():
-    mock_config = Mock()
-    mock_config.api_key = "apikey"
-    mock_config.deployment_name = "deployment"
-    mock_config.api_version = "api-version"
-    mock_config.api_base = "api-base"
-    mock_config.model_name = "model-name"
-    mock_config.model_kwargs = {}
-    yield mock_config
+    return {
+        "api_key": "apikey",
+        "deployment_name": "deployment",
+        "api_version": "api-version",
+        "api_base": "api-base",
+        "model_name": "model-name",
+        "model_kwargs": {},
+    }
 
 
 @pytest.fixture()
