@@ -1,9 +1,11 @@
 import asyncio
 import json
+import types
 from pathlib import Path
 
 import pytest
 from _constants import PROMPTFLOW_ROOT
+from openai import Stream
 from openai.types.chat import ChatCompletion
 
 from promptflow._sdk._pf_client import PFClient
@@ -12,6 +14,7 @@ from promptflow.core._errors import InvalidConnectionError, InvalidOutputKeyErro
 from promptflow.core._flow import AsyncPrompty, Prompty
 from promptflow.core._model_configuration import AzureOpenAIModelConfiguration
 from promptflow.core._prompty_utils import convert_model_configuration_to_connection
+from promptflow.recording.record_mode import is_live, is_record, is_replay
 
 TEST_ROOT = PROMPTFLOW_ROOT / "tests"
 DATA_DIR = TEST_ROOT / "test_configs/datas"
@@ -233,42 +236,66 @@ class TestPrompty:
         result = prompty(question="what is the result of 1+1?")
         assert isinstance(result, ChatCompletion)
 
-    def test_prompty_with_stream_output(self, pf: PFClient):
-        # Test text stream output
+    def test_prompty_with_stream(self, pf: PFClient):
+        if is_live():
+            stream_type = Stream
+        elif is_record() or is_replay():
+            stream_type = types.GeneratorType
+        # Test text format with stream=true
         prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", model={"parameters": {"stream": True}})
         result = prompty(question="what is the result of 1+1?")
-        text_result_content = []
+        assert isinstance(result, types.GeneratorType)
+        response_contents = []
         for item in result:
-            if len(item.choices) > 0 and item.choices[0].delta.content:
-                text_result_content.append(item.choices[0].delta.content)
-        # assert "2" in result_content
+            response_contents.append(item)
+        assert "2" in "".join(response_contents)
 
-        # Test json format stream output
+        # Test text format with multi choices and response=first
         prompty = Prompty.load(
-            source=f"{PROMPTY_DIR}/prompty_example_with_json_format.prompty",
-            model={"parameters": {"n": 3, "stream": True}},
+            source=f"{PROMPTY_DIR}/prompty_example.prompty", model={"parameters": {"stream": True, "n": 2}}
         )
         result = prompty(question="what is the result of 1+1?")
-        json_result_content = []
+        assert isinstance(result, types.GeneratorType)
+        response_contents = []
         for item in result:
-            if len(item.choices) > 2:
-                print(len(item.choices))
-            if len(item.choices) > 0 and item.choices[0].delta.content:
-                json_result_content.append(item.choices[0].delta.content)
-        # assert "2" in result_content
+            response_contents.append(item)
+        assert "2" in "".join(response_contents)
 
-        # Test stream with outputs
+        # Test text format with multi choices
+        prompty = Prompty.load(
+            source=f"{PROMPTY_DIR}/prompty_example.prompty",
+            model={"parameters": {"stream": True, "n": 2}, "response": "all"},
+        )
+        result = prompty(question="what is the result of 1+1?")
+
+        assert isinstance(result, stream_type)
+
+        # Test text format with stream=true, response=all
+        prompty = Prompty.load(
+            source=f"{PROMPTY_DIR}/prompty_example.prompty", model={"parameters": {"stream": True}, "response": "all"}
+        )
+        result = prompty(question="what is the result of 1+1?")
+        assert isinstance(result, stream_type)
+
+        # Test json format with stream=true
+        prompty = Prompty.load(
+            source=f"{PROMPTY_DIR}/prompty_example_with_json_format.prompty",
+            model={"parameters": {"n": 2, "stream": True}},
+        )
+        result = prompty(question="what is the result of 1+1?")
+        assert isinstance(result, dict)
+        assert result["answer"] == 2
+
+        # Test json format with outputs
         prompty = Prompty.load(
             source=f"{PROMPTY_DIR}/prompty_example_with_json_format.prompty",
             model={"parameters": {"stream": True}},
             outputs={"answer": {"type": "number"}},
         )
         result = prompty(question="what is the result of 1+1?")
-        result_content = ""
-        for item in result:
-            if len(item.choices) > 0 and item.choices[0].delta.content:
-                result_content += item.choices[0].delta.content
-        assert "2" in result_content
+        assert isinstance(result, dict)
+        assert list(result.keys()) == ["answer"]
+        assert result["answer"] == 2
 
     def test_prompty_trace(self, pf: PFClient):
         run = pf.run(flow=f"{PROMPTY_DIR}/prompty_example.prompty", data=f"{DATA_DIR}/prompty_inputs.jsonl")

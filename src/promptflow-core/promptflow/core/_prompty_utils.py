@@ -157,6 +157,20 @@ def format_llm_response(response, api, is_first_choice, response_format=None, st
     """
     Format LLM response
 
+    If is_first_choice is false, it will directly return LLM response.
+    response_format: type: text
+        - n: None/1/2
+            Return the first choice content. Return type is string.
+        - stream: True
+            Return generator list of first choice content. Return type is generator[str]
+    response_format: type: json_object
+        - n : None/1/2
+            Return json dict of the first choice. Return type is dict
+        - stream: True
+            Return json dict of the first choice. Return type is dict
+        - outputs
+            Extract corresponding output in the json dict to the first choice. Return type is dict.
+
     :param response: LLM response.
     :type response:
     :param api: API type of the LLM.
@@ -176,7 +190,7 @@ def format_llm_response(response, api, is_first_choice, response_format=None, st
     def format_choice(item):
         # response_format is one of text or json_object.
         # https://platform.openai.com/docs/api-reference/chat/create#chat-create-response_format
-        if isinstance(response_format, dict) and response_format.get("type", None) == "json_object":
+        if is_json_format:
             result_dict = json.loads(item)
             if not outputs:
                 return result_dict
@@ -190,9 +204,26 @@ def format_llm_response(response, api, is_first_choice, response_format=None, st
         # Return text format response
         return item
 
-    if not is_first_choice or streaming:
+    def format_stream(llm_response):
+        cur_index = None
+        for chunk in llm_response:
+            if len(chunk.choices) > 0 and chunk.choices[0].delta.content:
+                if cur_index is None:
+                    cur_index = chunk.choices[0].index
+                if cur_index != chunk.choices[0].index:
+                    return
+                yield chunk.choices[0].delta.content
+
+    if not is_first_choice:
         return response
 
+    is_json_format = isinstance(response_format, dict) and response_format.get("type", None) == "json_object"
+    if streaming:
+        if not is_json_format:
+            return format_stream(llm_response=response)
+        else:
+            content = "".join([item for item in format_stream(llm_response=response)])
+            return format_choice(content)
     if api == "completion":
         result = format_choice(response.choices[0].text)
     else:
