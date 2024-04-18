@@ -70,6 +70,8 @@ def model_config() -> dict:
 
     model_config = AzureOpenAIModelConfiguration(**dev_connections[conn_name]["value"])
 
+    AzureOpenAIModelConfiguration.__repr__ = lambda self: "<sensitive data redacted>"
+
     return model_config
 
 
