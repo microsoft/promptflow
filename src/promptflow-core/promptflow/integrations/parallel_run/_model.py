@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Iterator, Mapping, Optional
 
 from promptflow._utils.utils import DataClassEncoder
-from promptflow.contracts.run_info import FlowRunInfo, RunInfo
+from promptflow.storage.run_records import LineRunRecord, NodeRunRecord
 
 
 class Row(Mapping[str, Any]):
@@ -40,8 +40,8 @@ class Row(Mapping[str, Any]):
 
 @dataclass
 class DebugInfo:
-    run_info: Optional[FlowRunInfo] = None
-    node_run_infos: Optional[Mapping[str, RunInfo]] = None
+    run_info: Optional[LineRunRecord] = None
+    node_run_infos: Optional[Mapping[str, NodeRunRecord]] = None
 
 
 @dataclass
