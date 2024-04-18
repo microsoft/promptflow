@@ -10,6 +10,7 @@ from promptflow.evals.synthetic.simulator.simulator import Simulator
 @pytest.mark.usefixtures("model_config", "recording_injection", "ml_client_config")
 @pytest.mark.e2etest
 class TestAdvSimulator:
+    @pytest.mark.skip(reason="This test is not ready yet due to DefaultAzureCredential.")
     def test_conversation(self, model_config, ml_client_config):
         from openai import AsyncAzureOpenAI
 
