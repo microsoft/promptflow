@@ -38,6 +38,7 @@ from promptflow.azure._constants._flow import (
 )
 from promptflow.azure._entities._flow import Flow
 from promptflow.azure._load_functions import load_flow
+from promptflow.core import AzureOpenAIModelConfiguration, OpenAIModelConfiguration
 from promptflow.exceptions import UserErrorException
 from promptflow.recording.record_mode import is_live
 
@@ -1462,6 +1463,44 @@ class TestFlowRun:
         )
         assert run.properties["azureml.promptflow.init_kwargs"] == '{"obj_input":"val"}'
 
+        assert_batch_run_result(run, pf, assert_func)
+
+    def test_model_config_obj_in_init(self, pf):
+        def assert_func(details_dict):
+            return details_dict["outputs.azure_open_ai_model_config_azure_endpoint"] == [
+                "https://gpt-test-eus.openai.azure.com/",
+                "https://gpt-test-eus.openai.azure.com/",
+            ] and details_dict["outputs.azure_open_ai_model_config_connection"] == [None, None]
+
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_model_config")
+        # init with model config object
+        config1 = AzureOpenAIModelConfiguration(azure_deployment="my_deployment", connection="azure_open_ai")
+        config2 = OpenAIModelConfiguration(model="my_model", base_url="fake_base_url")
+        run = pf.run(
+            flow=flow_path,
+            data=f"{EAGER_FLOWS_DIR}/basic_model_config/inputs.jsonl",
+            init={"azure_open_ai_model_config": config1, "open_ai_model_config": config2},
+        )
+        assert "azure_open_ai_model_config" in run.properties["azureml.promptflow.init_kwargs"]
+        assert_batch_run_result(run, pf, assert_func)
+
+    def test_model_config_dict_in_init(self, pf):
+        def assert_func(details_dict):
+            return details_dict["outputs.azure_open_ai_model_config_azure_endpoint"] == [
+                "https://gpt-test-eus.openai.azure.com/",
+                "https://gpt-test-eus.openai.azure.com/",
+            ] and details_dict["outputs.azure_open_ai_model_config_connection"] == [None, None]
+
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_model_config")
+        # init with model config dict
+        config1 = dict(azure_deployment="my_deployment", connection="azure_open_ai")
+        config2 = dict(model="my_model", base_url="fake_base_url")
+        run = pf.run(
+            flow=flow_path,
+            data=f"{EAGER_FLOWS_DIR}/basic_model_config/inputs.jsonl",
+            init={"azure_open_ai_model_config": config1, "open_ai_model_config": config2},
+        )
+        assert "azure_open_ai_model_config" in run.properties["azureml.promptflow.init_kwargs"]
         assert_batch_run_result(run, pf, assert_func)
 
 
