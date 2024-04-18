@@ -4,6 +4,7 @@
 
 import argparse
 import contextlib
+import json
 import logging
 import os
 import platform
@@ -330,7 +331,8 @@ def show_service():
     if status:
         extra_info = {"log_file": log_file.as_posix(), "version": get_pfs_version()}
         status.update(extra_info)
-        print(status)
+        dumped_status = json.dumps(status, ensure_ascii=False, indent=2, sort_keys=True, separators=(",", ": ")) + "\n"
+        print(dumped_status)
         return
     else:
         logger.warning(
