@@ -1,73 +1,79 @@
 import os
-from promptflow.entities import AzureOpenAIConnection
-from promptflow.evals.evaluators import GroundednessEvaluator, RelevanceEvaluator, CoherenceEvaluator, \
-    FluencyEvaluator, SimilarityEvaluator, F1ScoreEvaluator
-from promptflow.evals.evaluators.content_safety import ViolenceEvaluator, SexualEvaluator, SelfHarmEvaluator, \
-    HateUnfairnessEvaluator
-from promptflow.evals.evaluators import QAEvaluator, ChatEvaluator
+
 from azure.identity import DefaultAzureCredential
 
-model_config = AzureOpenAIConnection(
-    api_base=os.environ.get("AZURE_OPENAI_ENDPOINT"),
-    api_key=os.environ.get("AZURE_OPENAI_KEY"),
-    api_type="azure",
+from promptflow.core import AzureOpenAIModelConfiguration
+from promptflow.evals.evaluators import (
+    ChatEvaluator,
+    CoherenceEvaluator,
+    F1ScoreEvaluator,
+    FluencyEvaluator,
+    GroundednessEvaluator,
+    QAEvaluator,
+    RelevanceEvaluator,
+    SimilarityEvaluator,
+)
+from promptflow.evals.evaluators.content_safety import (
+    HateUnfairnessEvaluator,
+    SelfHarmEvaluator,
+    SexualEvaluator,
+    ViolenceEvaluator,
 )
 
-deployment_name = "GPT-4-Prod"
+model_config = AzureOpenAIModelConfiguration(
+    azure_endpoint=os.environ.get("AZURE_OPENAI_ENDPOINT"),
+    api_key=os.environ.get("AZURE_OPENAI_KEY"),
+    azure_deployment=os.environ.get("AZURE_OPENAI_DEPLOYMENT"),
+)
 
 project_scope = {
     "subscription_id": "e0fd569c-e34a-4249-8c24-e8d723c7f054",
     "resource_group_name": "resource-group",
-    "project_name": "project-name"
-
+    "project_name": "project-name",
 }
 
 
 def run_quality_evaluators():
     # Groundedness
-    groundedness_eval = GroundednessEvaluator(model_config, deployment_name)
+    groundedness_eval = GroundednessEvaluator(model_config)
     score = groundedness_eval(
         answer="The Alpine Explorer Tent is the most waterproof.",
         context="From the our product list, the alpine explorer tent is the most waterproof. The Adventure Dining "
-                "Table has higher weight."
+        "Table has higher weight.",
     )
     print(score)
     # {'gpt_groundedness': 5.0}
 
     # Relevance
-    relevance_eval = RelevanceEvaluator(model_config, deployment_name)
+    relevance_eval = RelevanceEvaluator(model_config)
     score = relevance_eval(
         question="What is the capital of Japan?",
         answer="The capital of Japan is Tokyo.",
         context="Tokyo is Japan's capital, known for its blend of traditional culture \
-            and technological advancements."
+            and technological advancements.",
     )
     print(score)
     # {'gpt_relevance': 5.0}
 
     # Coherence
-    coherence_eval = CoherenceEvaluator(model_config, deployment_name)
-    score = coherence_eval(
-        question="What is the capital of Japan?",
-        answer="The capital of Japan is Tokyo."
-    )
+    coherence_eval = CoherenceEvaluator(model_config)
+    score = coherence_eval(question="What is the capital of Japan?", answer="The capital of Japan is Tokyo.")
     print(score)
     # {'gpt_coherence': 5.0}
 
     # Fluency
-    fluency_eval = FluencyEvaluator(model_config, deployment_name)
-    score = fluency_eval(
-        question="What is the capital of Japan?",
-        answer="The capital of Japan is Tokyo.")
+    fluency_eval = FluencyEvaluator(model_config)
+    score = fluency_eval(question="What is the capital of Japan?", answer="The capital of Japan is Tokyo.")
     print(score)
     # {'gpt_fluency': 5.0}
 
     # Similarity
-    similarity_eval = SimilarityEvaluator(model_config, deployment_name)
+    similarity_eval = SimilarityEvaluator(model_config)
     score = similarity_eval(
         question="What is the capital of Japan?",
         answer="The capital of Japan is Tokyo.",
-        ground_truth="Tokyo is Japan's capital.")
+        ground_truth="Tokyo is Japan's capital.",
+    )
     print(score)
     # {'gpt_fluency': 5.0}
 
@@ -76,7 +82,7 @@ def run_quality_evaluators():
     score = f1_score_eval(
         answer="The capital of Japan is Tokyo.",
         ground_truth="Tokyo is Japan's capital, known for its blend of traditional culture and technological "
-                     "advancements."
+        "advancements.",
     )
     print(score)
     # {'f1_score': 0.42}
@@ -106,8 +112,9 @@ def run_safety_evaluators():
 
     # Hate Unfairness
     hate_unfairness_eval = HateUnfairnessEvaluator(project_scope, DefaultAzureCredential())
-    score = hate_unfairness_eval(question="What does HTTP stand for?",
-                                 answer="HTTP stands for Hypertext Transfer Protocol.")
+    score = hate_unfairness_eval(
+        question="What does HTTP stand for?", answer="HTTP stands for Hypertext Transfer Protocol."
+    )
     print(score)
     # {'hate_unfairness': 'Safe', 'hate_unfairness_score': 0, 'hate_unfairness_reason': "The system's response is a
     # neutral, factual statement providing information about an acronym without any reference to a **Protected**
@@ -115,7 +122,7 @@ def run_safety_evaluators():
 
 
 def run_qa_evaluator():
-    qa_eval = QAEvaluator(model_config=model_config, deployment_name=deployment_name)
+    qa_eval = QAEvaluator(model_config=model_config)
 
     score = qa_eval(
         question="Tokyo is the capital of which country?",
@@ -129,17 +136,31 @@ def run_qa_evaluator():
 
 
 def run_chat_evaluator():
-    chat_eval = ChatEvaluator(model_config=model_config, deployment_name=deployment_name)
+    chat_eval = ChatEvaluator(model_config=model_config)
 
     conversation = [
         {"role": "user", "content": "What is the value of 2 + 2?"},
-        {"role": "assistant", "content": "2 + 2 = 4",
-         "context": {"citations": [{"id": "doc.md", "content": "Information about additions: 1 + 2 = 3, 2 + 2 = 4"}]}},
+        {
+            "role": "assistant",
+            "content": "2 + 2 = 4",
+            "context": {
+                "citations": [{"id": "doc.md", "content": "Information about additions: 1 + 2 = 3, 2 + 2 = 4"}]
+            },
+        },
         {"role": "user", "content": "What is the capital of Japan?"},
-        {"role": "assistant", "content": "The capital of Japan is Tokyo.",
-         "context": {"citations": [
-             {"id": "doc.md", "content": "Tokyo is Japan's capital, known for its blend of traditional culture and "
-                                         "technological advancements."}]}},
+        {
+            "role": "assistant",
+            "content": "The capital of Japan is Tokyo.",
+            "context": {
+                "citations": [
+                    {
+                        "id": "doc.md",
+                        "content": "Tokyo is Japan's capital, known for its blend of traditional culture and "
+                        "technological advancements.",
+                    }
+                ]
+            },
+        },
     ]
     score = chat_eval(conversation=conversation)
     print(score)

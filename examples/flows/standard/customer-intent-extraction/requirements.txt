@@ -1,5 +1,5 @@
 promptflow
 promptflow-tools
 python-dotenv
-langchain
+langchain<0.2.0
 jinja2

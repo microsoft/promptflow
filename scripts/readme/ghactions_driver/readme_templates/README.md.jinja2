@@ -28,6 +28,20 @@
 {% for tutorial in tutorials.readmes %}| [{{ tutorial.name }}]({{ tutorial.path }}) | [![{{tutorial.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{tutorial.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{tutorial.yaml_name}}) | {{ tutorial.description }} |
 {% endfor %}
 
+### Prompty ([prompty](prompty))
+
+| path | status | description |
+------|--------|-------------
+{% for flow in prompty.readmes %}| [{{ flow.name }}]({{ flow.path }}) | [![{{flow.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{flow.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{flow.yaml_name}}) | {{ flow.description }} |
+{% endfor %}
+
+### Flex Flows ([flex-flows](flex-flows))
+
+| path | status | description |
+------|--------|-------------
+{% for flow in flex_flows.readmes %}| [{{ flow.name }}]({{ flow.path }}) | [![{{flow.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{flow.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{flow.yaml_name}}) | {{ flow.description }} |
+{% endfor %}
+
 ### Flows ([flows](flows))
 
 #### [Standard flows](flows/standard/)
@@ -75,6 +89,10 @@
 {%- for tutorial in tutorials.notebooks -%}| [{{ tutorial.name }}]({{ tutorial.path }}) | [![{{tutorial.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{tutorial.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{tutorial.yaml_name}}) | {{ tutorial.description }} |
 {% endfor %}
 {%- if connections.notebooks|length > 0 -%}{% for connection in connections.notebooks %}| [{{ connection.name }}]({{ connection.path }}) | [![{{connection.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{connection.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{connection.yaml_name}}) | {{ connection.description }} |
+{% endfor %}{% endif %}
+{%- if flex_flows.notebooks|length > 0 -%}{% for flow in flex_flows.notebooks %}| [{{ flow.name }}]({{ flow.path }}) | [![{{flow.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{flow.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{flow.yaml_name}}) | {{ flow.description }} |
+{% endfor %}{% endif %}
+{%- if prompty.notebooks|length > 0 -%}{% for flow in prompty.notebooks %}| [{{ flow.name }}]({{ flow.path }}) | [![{{flow.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{flow.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{flow.yaml_name}}) | {{ flow.description }} |
 {% endfor %}{% endif %}
 {%- if chats.notebooks|length > 0 -%}{% for chat in chats.notebooks %}| [{{ chat.name }}]({{ chat.path }}) | [![{{chat.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{chat.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{chat.yaml_name}}) | {{ chat.description }} |
 {% endfor %}{% endif %}

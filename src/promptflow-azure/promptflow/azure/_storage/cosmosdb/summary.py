@@ -27,7 +27,7 @@ from promptflow.azure._storage.cosmosdb.cosmosdb_utils import safe_create_cosmos
 @dataclass
 class SummaryLine:
     """
-    This class represents an Item in Summary container
+    This class represents an Item in LineSummary container and each value for evaluations dict.
     """
 
     id: str
@@ -54,27 +54,6 @@ class SummaryLine:
     line_run_id: str = None
 
 
-@dataclass
-class LineEvaluation:
-    """
-    This class represents an evaluation value in Summary container item.
-
-    """
-
-    outputs: typing.Dict
-    trace_id: str
-    root_span_id: str
-    name: str
-    created_by: typing.Dict
-    collection_id: str
-    flow_id: str = None
-    # Only for batch run
-    batch_run_id: str = None
-    line_number: str = None
-    # Only for line run
-    line_run_id: str = None
-
-
 class Summary:
     def __init__(self, span: Span, collection_id: str, created_by: typing.Dict, logger: logging.Logger) -> None:
         self.span = span
@@ -86,11 +65,14 @@ class Summary:
         self.outputs = None
 
     def persist(self, client: ContainerProxy):
+        if self.span.attributes.get(SpanAttributeFieldName.IS_AGGREGATION, False):
+            # Ignore aggregation node for now, we don't expect customer to use it.
+            return
         if self.span.parent_id:
             # For non root span, write a placeholder item to LineSummary table.
             self._persist_running_item(client)
             return
-        self._parse_inputs_outputs_from_events()
+        self._prepare_db_item()
 
         # Persist root span as a line run.
         self._persist_line_run(client)
@@ -188,9 +170,8 @@ class Summary:
         else:
             return _process_value(content)
 
-    def _persist_line_run(self, client: ContainerProxy):
-        attributes: dict = self.span.attributes
-
+    def _prepare_db_item(self):
+        self._parse_inputs_outputs_from_events()
         session_id = self.session_id
         start_time = self.span.start_time.isoformat()
         end_time = self.span.end_time.isoformat()
@@ -199,6 +180,7 @@ class Summary:
         # Convert ISO 8601 formatted strings to datetime objects
         latency = (self.span.end_time - self.span.start_time).total_seconds()
         # calculate `cumulative_token_count`
+        attributes: dict = self.span.attributes
         completion_token_count = int(attributes.get(SpanAttributeFieldName.COMPLETION_TOKEN_COUNT, 0))
         prompt_token_count = int(attributes.get(SpanAttributeFieldName.PROMPT_TOKEN_COUNT, 0))
         total_token_count = int(attributes.get(SpanAttributeFieldName.TOTAL_TOKEN_COUNT, 0))
@@ -234,10 +216,13 @@ class Summary:
         elif SpanAttributeFieldName.BATCH_RUN_ID in attributes and SpanAttributeFieldName.LINE_NUMBER in attributes:
             item.batch_run_id = attributes[SpanAttributeFieldName.BATCH_RUN_ID]
             item.line_number = attributes[SpanAttributeFieldName.LINE_NUMBER]
+        self.item = item
 
-        self.logger.info(f"Persist main run for LineSummary id: {item.id}")
+    def _persist_line_run(self, client: ContainerProxy):
+
+        self.logger.info(f"Persist main run for LineSummary id: {self.item.id}")
         # Use upsert because we may create running item in advance.
-        return client.upsert_item(body=asdict(item))
+        return client.upsert_item(body=asdict(self.item))
 
     def _insert_evaluation_with_retry(self, client: ContainerProxy):
         for attempt in range(3):
@@ -255,15 +240,6 @@ class Summary:
 
     def _insert_evaluation(self, client: ContainerProxy):
         attributes: dict = self.span.attributes
-        item = LineEvaluation(
-            trace_id=self.span.trace_id,
-            root_span_id=self.span.span_id,
-            collection_id=self.collection_id,
-            outputs=self.outputs,
-            name=self.span.name,
-            created_by=self.created_by,
-        )
-
         # None is the default value for the field.
         referenced_line_run_id = attributes.get(SpanAttributeFieldName.REFERENCED_LINE_RUN_ID, None)
         referenced_batch_run_id = attributes.get(SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID, None)
@@ -293,18 +269,18 @@ class Summary:
             raise InsertEvaluationsRetriableException(f"Cannot find main run by parameter {parameters}.")
 
         if SpanAttributeFieldName.LINE_RUN_ID in attributes:
-            item.line_run_id = attributes[SpanAttributeFieldName.LINE_RUN_ID]
             key = self.span.name
         else:
             batch_run_id = attributes[SpanAttributeFieldName.BATCH_RUN_ID]
-            item.batch_run_id = batch_run_id
-            item.line_number = line_number
             # Use the batch run id, instead of the name, as the key in the evaluations dictionary.
             # Customers may execute the same evaluation flow multiple times for a batch run.
             # We should be able to save all evaluations, as customers use batch runs in a critical manner.
             key = batch_run_id
 
-        patch_operations = [{"op": "add", "path": f"/evaluations/{key}", "value": asdict(item)}]
+        item_dict = asdict(self.item)
+        # Remove unnecessary fields from the item
+        del item_dict["evaluations"]
+        patch_operations = [{"op": "add", "path": f"/evaluations/{key}", "value": item_dict}]
         self.logger.info(f"Insert evaluation for LineSummary main_id: {main_id}")
         return client.patch_item(item=main_id, partition_key=main_partition_key, patch_operations=patch_operations)
 
