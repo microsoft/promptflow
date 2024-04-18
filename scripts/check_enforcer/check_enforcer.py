@@ -53,7 +53,6 @@ checks = {
         "src/promptflow/**",
         "src/promptflow-tracing/**",
         "scripts/building/**",
-        ".github/workflows/promptflow-sdk-cli-test.yml",
         "src/promptflow-recording/**",
     ],
     "sdk_cli_global_config_tests": [
@@ -63,12 +62,10 @@ checks = {
         "src/promptflow-azure/**",
         "src/promptflow/**",
         "scripts/building/**",
-        ".github/workflows/promptflow-global-config-test.yml",
     ],
     "sdk_cli_azure_test_replay": [
         "src/promptflow/**",
         "scripts/building/**",
-        ".github/workflows/sdk-cli-azure-test-pull-request.yml",
         "src/promptflow-tracing/**",
         "src/promptflow-core/**",
         "src/promptflow-devkit/**",
@@ -76,21 +73,17 @@ checks = {
     ],
     "tracing-e2e-test": [
         "src/promptflow-tracing/**",
-        ".github/workflows/promptflow-tracing-e2e-test.yml",
     ],
     "tracing-unit-test": [
         "src/promptflow-tracing/**",
-        ".github/workflows/promptflow-tracing-unit-test.yml",
     ],
     "core_test": [
         "src/promptflow-tracing/**",
         "src/promptflow-core/**",
-        ".github/workflows/promptflow-core-test.yml"
     ],
     "azureml_serving_test": [
         "src/promptflow-tracing/**",
         "src/promptflow-core/**",
-        ".github/workflows/promptflow-core-test.yml"
     ],
 }
 
