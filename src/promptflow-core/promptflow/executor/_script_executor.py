@@ -22,9 +22,9 @@ from promptflow._utils.yaml_utils import load_yaml
 from promptflow.connections import ConnectionProvider
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.tool import ConnectionType
-from promptflow.core._model_configuration import MODEL_CONFIG_NAMES
+from promptflow.core._model_configuration import MODEL_CONFIG_NAME_2_CLASS
 from promptflow.exceptions import ErrorTarget
-from promptflow.executor._errors import InvalidFlexFlowEntry
+from promptflow.executor._errors import InvalidFlexFlowEntry, InvalidModelConfigValueType
 from promptflow.executor._result import LineResult
 from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DefaultRunStorage
@@ -222,14 +222,14 @@ class ScriptExecutor(FlowExecutor):
         logger.debug(f"Resolving init kwargs: {init_kwargs.keys()}.")
         sig = inspect.signature(c.__init__)
         connection_params = []
-        model_config_params = []
+        model_config_param_name_2_cls = {}
         # TODO(3117908): support connection & model config from YAML signature.
         for key, param in sig.parameters.items():
             if ConnectionType.is_connection_class_name(param.annotation.__name__):
                 connection_params.append(key)
-            elif param.annotation.__name__ in MODEL_CONFIG_NAMES:
-                model_config_params.append(key)
-        if not connection_params and not model_config_params:
+            elif param.annotation.__name__ in MODEL_CONFIG_NAME_2_CLASS.keys():
+                model_config_param_name_2_cls[key] = MODEL_CONFIG_NAME_2_CLASS[param.annotation.__name__]
+        if not connection_params and not model_config_param_name_2_cls:
             return init_kwargs
         resolved_init_kwargs = {k: v for k, v in init_kwargs.items()}
         provider = ConnectionProvider.get_instance()
@@ -238,15 +238,25 @@ class ScriptExecutor(FlowExecutor):
         for key in connection_params:
             resolved_init_kwargs[key] = provider.get(init_kwargs[key])
         # parse model config
-        logger.debug(f"Resolving model config params: {model_config_params}")
-        for key in model_config_params:
+        logger.debug(f"Resolving model config params: {model_config_param_name_2_cls}")
+        for key, model_config_cls in model_config_param_name_2_cls.items():
             model_config_val = init_kwargs[key]
+            if isinstance(model_config_val, dict):
+                logger.debug(f"Recovering model config object from dict: {model_config_val}.")
+                model_config_val = model_config_cls(**model_config_val)
+            if not isinstance(model_config_val, model_config_cls):
+                raise InvalidModelConfigValueType(
+                    message_format="Model config value is not an instance of {model_config_cls}, got {value_type}",
+                    model_config_cls=model_config_cls,
+                    value_type=type(model_config_val),
+                )
             if getattr(model_config_val, "connection", None):
                 logger.debug(f"Getting connection {model_config_val.connection} for model config.")
                 connection_obj = provider.get(model_config_val.connection)
                 model_config_dict = dataclasses.asdict(model_config_val)
                 model_config_dict["connection"] = connection_obj
-                resolved_init_kwargs[key] = model_config_val.from_connection(**model_config_dict)
+                model_config_val = model_config_val.from_connection(**model_config_dict)
+            resolved_init_kwargs[key] = model_config_val
         return resolved_init_kwargs
 
     @property

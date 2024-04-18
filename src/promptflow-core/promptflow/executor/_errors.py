@@ -323,3 +323,7 @@ class FlowEntryInitializationError(UserErrorException):
 
 class InvalidFlexFlowEntry(ValidationException):
     pass
+
+
+class InvalidModelConfigValueType(ValidationException):
+    pass

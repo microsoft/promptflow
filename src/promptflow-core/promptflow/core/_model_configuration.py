@@ -105,4 +105,7 @@ class PromptyModelConfiguration:
             self._model = self.configuration.azure_deployment
 
 
-MODEL_CONFIG_NAMES = [AzureOpenAIModelConfiguration.__name__, OpenAIModelConfiguration.__name__]
+MODEL_CONFIG_NAME_2_CLASS = {
+    AzureOpenAIModelConfiguration.__name__: AzureOpenAIModelConfiguration,
+    OpenAIModelConfiguration.__name__: OpenAIModelConfiguration,
+}
