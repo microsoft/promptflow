@@ -18,6 +18,7 @@ from promptflow.core._prompty_utils import (
     convert_prompt_template,
     format_llm_response,
     get_open_ai_client_by_connection,
+    load_inputs_from_sample,
     prepare_open_ai_request_params,
     send_request_to_llm,
     update_dict_recursively,
@@ -304,6 +305,7 @@ class Prompty(FlowBase):
         self._inputs = configs.get("inputs", {})
         self._outputs = configs.get("outputs", {})
         self._name = configs.get("name", path.stem)
+        self._sample = configs.get("sample", None)
 
         # TODO support more templating engine
         self._template_engine = configs.get("template", "jinja2")
@@ -382,13 +384,17 @@ class Prompty(FlowBase):
         """
         if args:
             raise UserErrorException("Prompty can only be called with keyword arguments.")
-        enrich_prompt_template(self._template, variables=kwargs)
+        inputs = kwargs
+        if not inputs and self._sample:
+            # Load inputs from sample
+            inputs = load_inputs_from_sample(self._sample)
+        enrich_prompt_template(self._template, variables=inputs)
 
         # 1. Get connection
         connection = convert_model_configuration_to_connection(self._model.configuration)
 
         # 2.deal with prompt
-        inputs = self._validate_inputs(kwargs)
+        inputs = self._validate_inputs(inputs)
         traced_convert_prompt_template = _traced(func=convert_prompt_template, args_to_ignore=["api"])
         template = traced_convert_prompt_template(self._template, inputs, self._model.api)
 
@@ -435,13 +441,17 @@ class AsyncPrompty(Prompty):
         """
         if args:
             raise UserErrorException("Prompty can only be called with keyword arguments.")
-        enrich_prompt_template(self._template, variables=kwargs)
+        inputs = kwargs
+        if not inputs and self._sample:
+            # Load inputs from sample
+            inputs = load_inputs_from_sample(self._sample)
+        enrich_prompt_template(self._template, variables=inputs)
 
         # 1. Get connection
         connection = convert_model_configuration_to_connection(self._model.configuration)
 
         # 2.deal with prompt
-        inputs = self._validate_inputs(kwargs)
+        inputs = self._validate_inputs(inputs)
         traced_convert_prompt_template = _traced(func=convert_prompt_template, args_to_ignore=["api"])
         template = traced_convert_prompt_template(self._template, inputs, self._model.api)
 
