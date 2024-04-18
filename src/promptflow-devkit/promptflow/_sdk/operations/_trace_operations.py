@@ -87,7 +87,7 @@ class TraceOperations:
         Reference: https://github.com/open-telemetry/opentelemetry-python/blob/
         642f8dd18eea2737b4f8cd2f6f4d08a7e569c4b2/opentelemetry-sdk/src/opentelemetry/sdk/trace/__init__.py#L505
         """
-        return f"0x{format_span_id(int.from_bytes(span_id))}"
+        return f"0x{format_span_id(int.from_bytes(span_id, byteorder='big', signed=False))}"
 
     @staticmethod
     def format_trace_id(trace_id: bytes) -> str:
@@ -96,7 +96,7 @@ class TraceOperations:
         Reference: https://github.com/open-telemetry/opentelemetry-python/blob/
         642f8dd18eea2737b4f8cd2f6f4d08a7e569c4b2/opentelemetry-sdk/src/opentelemetry/sdk/trace/__init__.py#L505
         """
-        return f"0x{format_trace_id(int.from_bytes(trace_id))}"
+        return f"0x{format_trace_id(int.from_bytes(trace_id, byteorder='big', signed=False))}"
 
     @staticmethod
     def _parse_protobuf_span(span: PBSpan, resource: typing.Dict, logger: logging.Logger) -> Span:
