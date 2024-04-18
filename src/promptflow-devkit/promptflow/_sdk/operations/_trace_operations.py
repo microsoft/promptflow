@@ -9,6 +9,7 @@ import typing
 
 from google.protobuf.json_format import MessageToJson
 from opentelemetry.proto.trace.v1.trace_pb2 import Span as PBSpan
+from opentelemetry.trace.span import format_span_id, format_trace_id
 
 from promptflow._constants import (
     SpanContextFieldName,
@@ -57,6 +58,7 @@ class TraceOperations:
             events.append(event)
         return events
 
+    @staticmethod
     def _parse_protobuf_links(obj: typing.List[PBSpan.Link], logger: logging.Logger) -> typing.List[typing.Dict]:
         links = []
         if len(obj) == 0:
@@ -67,8 +69,8 @@ class TraceOperations:
             logger.debug("Received link: %s", json.dumps(link_dict))
             link = {
                 SpanLinkFieldName.CONTEXT: {
-                    SpanContextFieldName.TRACE_ID: pb_link.trace_id.hex(),
-                    SpanContextFieldName.SPAN_ID: pb_link.span_id.hex(),
+                    SpanContextFieldName.TRACE_ID: TraceOperations.format_trace_id(pb_link.trace_id),
+                    SpanContextFieldName.SPAN_ID: TraceOperations.format_span_id(pb_link.span_id),
                     SpanContextFieldName.TRACE_STATE: pb_link.trace_state,
                 },
                 SpanLinkFieldName.ATTRIBUTES: flatten_pb_attributes(
@@ -78,15 +80,34 @@ class TraceOperations:
             links.append(link)
         return links
 
+    @staticmethod
+    def format_span_id(span_id: bytes) -> str:
+        """Format span id to hex string.
+        Note that we need to add 0x since it is how opentelemetry-sdk does.
+        Reference: https://github.com/open-telemetry/opentelemetry-python/blob/
+        642f8dd18eea2737b4f8cd2f6f4d08a7e569c4b2/opentelemetry-sdk/src/opentelemetry/sdk/trace/__init__.py#L505
+        """
+        return f"0x{format_span_id(int.from_bytes(span_id, byteorder='big', signed=False))}"
+
+    @staticmethod
+    def format_trace_id(trace_id: bytes) -> str:
+        """Format trace_id id to hex string.
+        Note that we need to add 0x since it is how opentelemetry-sdk does.
+        Reference: https://github.com/open-telemetry/opentelemetry-python/blob/
+        642f8dd18eea2737b4f8cd2f6f4d08a7e569c4b2/opentelemetry-sdk/src/opentelemetry/sdk/trace/__init__.py#L505
+        """
+        return f"0x{format_trace_id(int.from_bytes(trace_id, byteorder='big', signed=False))}"
+
+    @staticmethod
     def _parse_protobuf_span(span: PBSpan, resource: typing.Dict, logger: logging.Logger) -> Span:
         # Open Telemetry does not provide official way to parse Protocol Buffer Span object
         # so we need to parse it manually relying on `MessageToJson`
         # reference: https://github.com/open-telemetry/opentelemetry-python/issues/3700#issuecomment-2010704554
         span_dict: dict = json.loads(MessageToJson(span))
         logger.debug("Received span: %s, resource: %s", json.dumps(span_dict), json.dumps(resource))
-        span_id = span.span_id.hex()
-        trace_id = span.trace_id.hex()
-        parent_id = span.parent_span_id.hex()
+        span_id = TraceOperations.format_span_id(span.span_id)
+        trace_id = TraceOperations.format_trace_id(span.trace_id)
+        parent_id = TraceOperations.format_span_id(span.parent_span_id) if span.parent_span_id else None
         # we have observed in some scenarios, there is not `attributes` field
         attributes = flatten_pb_attributes(span_dict.get(SpanFieldName.ATTRIBUTES, dict()))
         logger.debug("Parsed attributes: %s", json.dumps(attributes))

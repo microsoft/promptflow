@@ -11,8 +11,8 @@ For `DAG flow`, user can track and visualize node level inputs/outputs of flow e
 For `Flex flow` developers, who might use different frameworks (langchain, semantic kernel, OpenAI, kinds of agents) to create LLM based applications, prompt flow allow user to instrument their code in a [OpenTelemetry](https://opentelemetry.io/) compatible way, and visualize using UI provided by promptflow devkit.
 
 ## Instrumenting user's code
-#### **`start_trace()` to enable trace for LLM calls**
-Let's start with the simplest example, add single line code to enable trace for LLM calls in your application.
+#### Enable trace for LLM calls
+Let's start with the simplest example, add single line code `start_trace()` to enable trace for LLM calls in your application.
 ```python
 from openai import OpenAI
 from promptflow.tracing import start_trace
@@ -49,10 +49,10 @@ More examples of adding trace for [autogen](https://microsoft.github.io/autogen/
 
 ![langchain-trace-detail](../../../docs/media/trace/langchain-trace-detail.png)
 
-#### **`@trace` to allow you trace for any function**
+#### Trace for any function
 More common scenario is the application has complicated code structure, and developer would like to add trace on critical path that they would like to debug and monitor. 
 
-See the **[math_to_code](./math_to_code.py)** example. 
+See the **[math_to_code](./math_to_code.py)** example on how to use `@trace`. 
 
 ```python
 from promptflow.tracing import trace
