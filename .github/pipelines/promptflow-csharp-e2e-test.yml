@@ -3,8 +3,8 @@ name: $(BuildDefinitionName)_$(Date:yyyyMMdd)$(Rev:.r) # Configure run or build 
 
 variables:
   - group: promptflow-csharp
-  - name: buildConfiguration
-    value: 'Release'
+  - name: BuildConfiguration
+    value: 'Debug'
   - name: currentRepoPath
     value: "csharp"
   - name: flowProjectRelativePath
@@ -72,7 +72,6 @@ jobs:
           export OPENAI_CONNECTION=$(OPENAI_CONNECTION)
           export SERP_CONNECTION=$(SERP_CONNECTION)
           export ACS_CONNECTION=$(ACS_CONNECTION)
-          export CSHARP_TEST_CASES_ROOT=csharp/src/TestProjects
           export IS_IN_CI_PIPELINE=true
 
     - task: Bash@3
@@ -89,7 +88,7 @@ jobs:
         command: 'restore'
         projects: '$(flowProjectRelativePath)/**/*.csproj'
         feedsToUse: 'config'
-        nugetConfigPath: '.github/dependencies/nuget.config'
+        nugetConfigPath: 'csharp/src/TestProjects/nuget.config'
       displayName: 'dotnet restore'
 
     - task: DotNetCoreCLI@2
@@ -97,7 +96,7 @@ jobs:
         command: 'build'
         projects: '$(flowProjectRelativePath)/**/*.csproj'
         feedsToUse: 'config'
-        nugetConfigPath: '.github/dependencies/nuget.config'
+        nugetConfigPath: 'csharp/src/TestProjects/nuget.config'
       displayName: 'dotnet build'
 
     - task: Bash@3
@@ -107,10 +106,14 @@ jobs:
         script: |
           cd ./src/promptflow-devkit
           pytest tests/sdk_cli_test/e2etests/test_csharp_cli.py
+      env:
+        CSHARP_TEST_CASES_ROOT: $(Build.SourcesDirectory)/$(flowProjectRelativePath)
+        AZURE_OPENAI_API_KEY: $(AZURE_OPENAI_API_KEY)
+        AZURE_OPENAI_ENDPOINT: $(AZURE_OPENAI_ENDPOINT)
 
     - publish: $(flowProjectRelativePath)
       condition: always()
-      artifact: 'BuiltFlows-windows'
+      artifact: 'BuiltFlows-linux'
 - job: windows
   pool:
     name: promptflow-1ES-win
@@ -146,7 +149,6 @@ jobs:
           setx OPENAI_CONNECTION $(OPENAI_CONNECTION)
           setx SERP_CONNECTION $(SERP_CONNECTION)
           setx ACS_CONNECTION $(ACS_CONNECTION)
-          setx CSHARP_TEST_CASES_ROOT csharp/src/TestProjects
           setx IS_IN_CI_PIPELINE true
 
     - task: PowerShell@2
@@ -163,7 +165,7 @@ jobs:
         command: 'restore'
         projects: '$(flowProjectRelativePath)/**/*.csproj'
         feedsToUse: 'config'
-        nugetConfigPath: '.github/dependencies/nuget.config'
+        nugetConfigPath: 'csharp/src/TestProjects/nuget.config'
       displayName: 'dotnet restore'
 
     - task: DotNetCoreCLI@2
@@ -171,7 +173,7 @@ jobs:
         command: 'build'
         projects: '$(flowProjectRelativePath)/**/*.csproj'
         feedsToUse: 'config'
-        nugetConfigPath: '.github/dependencies/nuget.config'
+        nugetConfigPath: 'csharp/src/TestProjects/nuget.config'
       displayName: 'dotnet build'
 
     - task: PowerShell@2
@@ -181,6 +183,10 @@ jobs:
         script: |
           cd ./src/promptflow-devkit
           pytest tests/sdk_cli_test/e2etests/test_csharp_cli.py
+      env:
+        CSHARP_TEST_CASES_ROOT: $(Build.SourcesDirectory)/$(flowProjectRelativePath)
+        AZURE_OPENAI_API_KEY: $(AZURE_OPENAI_API_KEY)
+        AZURE_OPENAI_ENDPOINT: $(AZURE_OPENAI_ENDPOINT)
 
     - publish: $(flowProjectRelativePath)
       condition: always()
