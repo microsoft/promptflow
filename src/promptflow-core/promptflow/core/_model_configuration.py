@@ -20,25 +20,21 @@ class AzureOpenAIModelConfiguration(ModelConfiguration):
     azure_endpoint: str = None
     api_version: str = None
     api_key: str = None
-    organization: str = None
     # connection and model configs are exclusive.
     connection: str = None
 
     def __post_init__(self):
         self._type = ConnectionType.AZURE_OPEN_AI
-        if any([self.azure_endpoint, self.api_key, self.api_version, self.organization]) and self.connection:
+        if any([self.azure_endpoint, self.api_key, self.api_version]) and self.connection:
             raise InvalidConnectionError("Cannot configure model config and connection at the same time.")
 
     @classmethod
-    def from_connection(
-        cls, connection: AzureOpenAIConnection, azure_deployment: str, organization: str = None, **kwargs
-    ):
+    def from_connection(cls, connection: AzureOpenAIConnection, azure_deployment: str):
         return cls(
             azure_deployment=azure_deployment,
             azure_endpoint=connection.api_base,
             api_version=connection.api_version,
             api_key=connection.api_key,
-            organization=organization,
         )
 
 
@@ -57,12 +53,12 @@ class OpenAIModelConfiguration(ModelConfiguration):
             raise InvalidConnectionError("Cannot configure model config and connection at the same time.")
 
     @classmethod
-    def from_connection(cls, connection: OpenAIConnection, model: str, organization: str = None, **kwargs):
+    def from_connection(cls, connection: OpenAIConnection, model: str):
         return cls(
             model=model,
             base_url=connection.base_url,
             api_key=connection.api_key,
-            organization=organization,
+            organization=connection.organization,
         )
 
 
