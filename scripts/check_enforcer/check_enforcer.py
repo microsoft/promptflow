@@ -279,7 +279,7 @@ def run_checks():
     if failed_reason != "":
         raise Exception(failed_reason)
 
-    # Loop for 15 minutes at most.
+    # Loop for 30 minutes at most.
     for i in range(loop_times):
         # Wait for 30 seconds.
         time.sleep(30)
