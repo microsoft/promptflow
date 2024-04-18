@@ -3,7 +3,6 @@
 # ---------------------------------------------------------
 
 import ast
-import copy
 import datetime
 import typing
 from dataclasses import dataclass
@@ -294,15 +293,32 @@ class SearchTransStackItem:
 class SearchTranslator(ast.NodeVisitor):
     """Translate line run search to SQLite query."""
 
-    def __init__(
-        self,
-        model,
-        searchable_fields: typing.List[str],
-        json_fields: typing.Dict[str, str],
-    ):
+    LINE_RUN_SEARCHABLE_FIELDS = [
+        "name",
+        "kind",
+        "status",
+        "start_time",
+        # token count
+        "cumulative_token_count.total",
+        "cumulative_token_count.prompt",
+        "cumulative_token_count.completion",
+        # kind of syntax sugar: hide cumulative_token_count
+        "total",
+        "prompt",
+        "completion",
+        # filter
+        "collection",
+        "run",
+        "session_id",
+    ]
+    LINE_RUN_JSON_FIELDS = {
+        "total": "cumulative_token_count",
+        "prompt": "cumulative_token_count",
+        "completion": "cumulative_token_count",
+    }
+
+    def __init__(self, model):
         self._model = model
-        self._searchable_fields = copy.deepcopy(searchable_fields)
-        self._json_fields = copy.deepcopy(json_fields)
         # for query build during AST traversal
         self._stack: typing.List[SearchTransStackItem] = list()
         self._orm_condition_from_ast = None
@@ -372,8 +388,11 @@ class SearchTranslator(ast.NodeVisitor):
         self.generic_visit(node)
         return
 
-    def _resolve_ast_node(self, node: typing.Union[ast.Constant, ast.Name]) -> str:
-        if isinstance(node, ast.Constant):
+    def _resolve_ast_node(self, node: typing.Union[ast.Attribute, ast.Constant, ast.Name]) -> str:
+        if isinstance(node, ast.Attribute):
+            ast_name = ast.Name(id=f"{node.value.id}.{node.attr}")
+            return self._resolve_ast_name(ast_name)
+        elif isinstance(node, ast.Constant):
             return self._resolve_ast_constant(node)
         elif isinstance(node, ast.Name):
             return self._resolve_ast_name(node)
@@ -389,15 +408,22 @@ class SearchTranslator(ast.NodeVisitor):
         return f"'{value}'" if isinstance(value, str) else str(value)
 
     def _resolve_ast_name(self, node: ast.Name) -> str:
+        def _handle_json_field(_field: str, _parent_field: str) -> str:
+            # we need to record which JSON field(s) queried as we need to apply a final not null
+            self._searched_json_fields.add(_parent_field)
+            return f"json_extract({_parent_field}, '$.{_field}')"
+
         field = node.id
-        if field not in self._searchable_fields:
+        if field not in self.LINE_RUN_SEARCHABLE_FIELDS:
             raise Exception(f"field {field!r} is not searchable")
-        if field not in self._json_fields:
+        if field not in self.LINE_RUN_JSON_FIELDS:
+            # if "." exist in field, it is a JSON field, so need to parse field and its parent field
+            if "." in field:
+                parent_field, field = field.split(".")
+                return _handle_json_field(field, parent_field)
             return field
-        parent_field = self._json_fields[field]
-        # we need to record which JSON field(s) queried as we need to apply a final not null
-        self._searched_json_fields.add(parent_field)
-        return f"json_extract({parent_field}, '$.{field}')"
+        parent_field = self.LINE_RUN_JSON_FIELDS[field]
+        return _handle_json_field(field, parent_field)
 
     @staticmethod
     def _resolve_ast_op(ast_op: ast.cmpop) -> str:

@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session, declarative_base, sessionmaker
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR
 from promptflow._sdk._errors import WrongTraceSearchExpressionError
 from promptflow._sdk._orm.session import create_or_update_table, support_transaction
-from promptflow._sdk._orm.trace import LINE_RUN_JSON_FIELDS, LINE_RUN_SEARCHABLE_FIELDS, LineRun, SearchTranslator
+from promptflow._sdk._orm.trace import LineRun, SearchTranslator
 
 TABLENAME = "orm_entity"
 
@@ -237,11 +237,7 @@ def memory_session() -> Session:
 
 @pytest.fixture
 def search_trans() -> SearchTranslator:
-    return SearchTranslator(
-        model=LineRun,
-        searchable_fields=LINE_RUN_SEARCHABLE_FIELDS,
-        json_fields=LINE_RUN_JSON_FIELDS,
-    )
+    return SearchTranslator(model=LineRun)
 
 
 @pytest.mark.unittest
@@ -263,6 +259,12 @@ class TestTraceSearchTrans:
         ast_compare = ast.parse(compare_expr, mode="eval").body
         sql_condition = search_trans._translate_compare_to_sql(ast_compare)
         assert sql_condition == "name >= 42"
+
+    def test_translate_compare_json_field_to_sql(self, search_trans: SearchTranslator):
+        compare_expr = "cumulative_token_count.total > 2000"
+        ast_compare = ast.parse(compare_expr, mode="eval").body
+        sql_condition = search_trans._translate_compare_to_sql(ast_compare)
+        assert sql_condition == "json_extract(cumulative_token_count, '$.total') > 2000"
 
     def test_translate_compare_field_in_json_to_sql(self, search_trans: SearchTranslator):
         compare_expr = "total > 2000"
@@ -303,7 +305,7 @@ class TestTraceSearchTrans:
         assert expected_sql == str(query)
 
     def test_search_with_bracket(self, memory_session: Session, search_trans: SearchTranslator):
-        expr = "completion <= 200 and (name == 'web-classification' or kind != 'Flow')"
+        expr = "cumulative_token_count.completion <= 200 and (name == 'web-classification' or kind != 'Flow')"
         query = search_trans.translate(session=memory_session, expression=expr)
         expected_condition = (
             "json_extract(cumulative_token_count, '$.completion') <= 200 "
