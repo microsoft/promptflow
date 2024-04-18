@@ -224,7 +224,7 @@ class LineRun(Base):
                 searchable_fields=LINE_RUN_SEARCHABLE_FIELDS,
                 json_fields=LINE_RUN_JSON_FIELDS,
             )
-            query = translator.translate(session, expression)
+            query = translator.translate(session=session, expression=expression)
             return query.all()
 
     @sqlite_retry

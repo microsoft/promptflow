@@ -2,9 +2,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import traceback
 import typing
 from dataclasses import dataclass
 
+from flask import current_app
 from flask_restx import fields
 
 from promptflow._sdk._constants import PFS_MODEL_DATETIME_FORMAT, CumulativeTokenCountFieldName, LineRunFieldName
@@ -137,6 +139,7 @@ class LineRunSearch(Resource):
     @api.response(code=200, description="Line runs")
     def get(self):
         client: PFClient = get_client_from_request()
+        client.traces._logger = current_app.logger
         args = SearchLineRunParser.from_request()
         try:
             line_runs: typing.List[LineRunEntity] = client.traces._search_line_runs(
@@ -147,6 +150,10 @@ class LineRunSearch(Resource):
             )
             return [line_run._to_rest_object() for line_run in line_runs]
         except WrongTraceSearchExpressionError as e:
+            current_app.logger.error(traceback.format_exc())
+            current_app.logger.error(e)
             api.abort(400, str(e))
         except Exception as e:  # pylint: disable=broad-except
+            current_app.logger.error(traceback.format_exc())
+            current_app.logger.error(e)
             api.abort(500, str(e))
