@@ -75,3 +75,17 @@ class TestFlowAPIs:
                 status_code=200,
             ).json
         assert len(response) >= 1
+
+    def test_prompty_test(self, pfs_op: PFSOperations) -> None:
+        with check_activity_end_telemetry(
+            expected_activities=[
+                {"activity_name": "pf.connections.get", "first_call": False},
+                {"activity_name": "pf.flows.test"},
+            ]
+        ):
+            response = pfs_op.test_flow(
+                flow_path=Path(f"{PROMPTY_ROOT}/prompty_with_chat_history.prompty").absolute().as_posix(),
+                request_body={"inputs": {"question": "what is the result of 3+3?"}},
+                status_code=200,
+            ).json
+        assert len(response) >= 1
