@@ -60,13 +60,7 @@ class TestBuiltInEvaluators:
         condition=pytest.is_in_ci_pipeline,
         reason="This test is not ready in ci pipeline due to DefaultAzureCredential.",
     )
-    @pytest.mark.parametrize(
-        "parallel",
-        [
-            (False),
-            (True),
-        ],
-    )
+    @pytest.mark.parametrize("parallel", [False, True])
     def test_composite_evaluator_content_safety(self, project_scope, parallel):
         safety_eval = ContentSafetyEvaluator(project_scope, parallel)
         score = safety_eval(
