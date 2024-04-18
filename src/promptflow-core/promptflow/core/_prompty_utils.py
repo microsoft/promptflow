@@ -158,18 +158,19 @@ def format_llm_response(response, api, is_first_choice, response_format=None, st
     Format LLM response
 
     If is_first_choice is false, it will directly return LLM response.
-    response_format: type: text
-        - n: None/1/2
-            Return the first choice content. Return type is string.
-        - stream: True
-            Return generator list of first choice content. Return type is generator[str]
-    response_format: type: json_object
-        - n : None/1/2
-            Return json dict of the first choice. Return type is dict
-        - stream: True
-            Return json dict of the first choice. Return type is dict
-        - outputs
-            Extract corresponding output in the json dict to the first choice. Return type is dict.
+    If is_first_choice is true, behavior as blow:
+        response_format: type: text
+            - n: None/1/2
+                Return the first choice content. Return type is string.
+            - stream: True
+                Return generator list of first choice content. Return type is generator[str]
+        response_format: type: json_object
+            - n : None/1/2
+                Return json dict of the first choice. Return type is dict
+            - stream: True
+                Return json dict of the first choice. Return type is dict
+            - outputs
+                Extract corresponding output in the json dict to the first choice. Return type is dict.
 
     :param response: LLM response.
     :type response:
