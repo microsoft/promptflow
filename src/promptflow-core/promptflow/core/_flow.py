@@ -206,7 +206,7 @@ class Prompty(FlowBase):
     The front matter is a yaml file that contains meta fields like model configuration, inputs, etc..
 
     Prompty example:
-    .. code-block:: yaml
+    .. code-block::
 
         ---
         name: Hello Prompty
