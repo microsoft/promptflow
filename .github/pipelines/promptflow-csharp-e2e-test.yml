@@ -8,7 +8,7 @@ variables:
   - name: currentRepoPath
     value: "csharp"
   - name: flowProjectRelativePath
-    value: '$(currentRepoPath)/src/PromptflowCSharp/TestCases'
+    value: '$(currentRepoPath)/src/TestProjects'
   - name: system.debug
     value: 'true'
 
@@ -72,6 +72,7 @@ jobs:
           export OPENAI_CONNECTION=$(OPENAI_CONNECTION)
           export SERP_CONNECTION=$(SERP_CONNECTION)
           export ACS_CONNECTION=$(ACS_CONNECTION)
+          export CSHARP_TEST_CASES_ROOT=csharp/src/TestProjects
           export IS_IN_CI_PIPELINE=true
 
     - task: Bash@3
@@ -90,6 +91,26 @@ jobs:
         feedsToUse: 'config'
         nugetConfigPath: '.github/dependencies/nuget.config'
       displayName: 'dotnet restore'
+
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: 'build'
+        projects: '$(flowProjectRelativePath)/**/*.csproj'
+        feedsToUse: 'config'
+        nugetConfigPath: '.github/dependencies/nuget.config'
+      displayName: 'dotnet build'
+
+    - task: Bash@3
+      displayName: 'Run tests'
+      inputs:
+        targetType: 'inline'
+        script: |
+          cd ./src/promptflow-devkit
+          pytest tests/sdk_cli_test/e2etests/test_csharp_cli.py
+
+    - publish: $(flowProjectRelativePath)
+      condition: always()
+      artifact: 'BuiltFlows-windows'
 - job: windows
   pool:
     name: promptflow-1ES-win
@@ -125,6 +146,7 @@ jobs:
           setx OPENAI_CONNECTION $(OPENAI_CONNECTION)
           setx SERP_CONNECTION $(SERP_CONNECTION)
           setx ACS_CONNECTION $(ACS_CONNECTION)
+          setx CSHARP_TEST_CASES_ROOT csharp/src/TestProjects
           setx IS_IN_CI_PIPELINE true
 
     - task: PowerShell@2
@@ -143,3 +165,23 @@ jobs:
         feedsToUse: 'config'
         nugetConfigPath: '.github/dependencies/nuget.config'
       displayName: 'dotnet restore'
+
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: 'build'
+        projects: '$(flowProjectRelativePath)/**/*.csproj'
+        feedsToUse: 'config'
+        nugetConfigPath: '.github/dependencies/nuget.config'
+      displayName: 'dotnet build'
+
+    - task: PowerShell@2
+      displayName: 'Run tests'
+      inputs:
+        targetType: 'inline'
+        script: |
+          cd ./src/promptflow-devkit
+          pytest tests/sdk_cli_test/e2etests/test_csharp_cli.py
+
+    - publish: $(flowProjectRelativePath)
+      condition: always()
+      artifact: 'BuiltFlows-windows'

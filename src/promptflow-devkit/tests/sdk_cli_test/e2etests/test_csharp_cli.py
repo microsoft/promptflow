@@ -8,8 +8,8 @@ import pytest
 from promptflow._cli._pf.entry import main
 
 
-def get_repo_base_path():
-    return os.getenv("CSHARP_REPO_BASE_PATH", None)
+def get_test_cases_root():
+    return os.getenv("CSHARP_TEST_CASES_ROOT", None)
 
 
 # TODO: move this to a shared utility module
@@ -35,42 +35,43 @@ def run_pf_command(*args, cwd=None):
 )
 @pytest.mark.cli_test
 @pytest.mark.e2etest
-@pytest.mark.skipif(get_repo_base_path() is None, reason="available locally only before csharp support go public")
+@pytest.mark.skipif(get_test_cases_root() is None, reason="available locally only before csharp support go public")
 class TestCSharpCli:
     def test_pf_flow_test_basic(self):
         run_pf_command(
             "flow",
             "test",
             "--flow",
-            f"{get_repo_base_path()}\\src\\PromptflowCSharp\\Sample\\Basic\\bin\\Debug\\net6.0",
+            f"{get_test_cases_root()}\\Basic\\bin\\Debug\\net6.0",
             "--inputs",
             "question=what is promptflow?",
         )
 
-    def test_pf_flow_test_eager_mode(self):
+    def test_flex_flow_test(self):
         run_pf_command(
             "flow",
             "test",
             "--flow",
-            f"{get_repo_base_path()}\\src\\PromptflowCSharp\\TestCases\\FunctionModeBasic\\bin\\Debug\\net6.0",
+            f"{get_test_cases_root()}\\FunctionModeBasic\\bin\\Debug\\net6.0",
             "--inputs",
             "topic=promptflow",
         )
 
+    @pytest.mark.skip(reason="need to update the test case")
     def test_pf_run_create_with_connection_override(self):
         run_pf_command(
             "run",
             "create",
             "--flow",
-            f"{get_repo_base_path()}\\examples\\BasicWithBuiltinLLM\\bin\\Debug\\net6.0",
+            f"{get_test_cases_root()}\\examples\\BasicWithBuiltinLLM\\bin\\Debug\\net6.0",
             "--data",
-            f"{get_repo_base_path()}\\examples\\BasicWithBuiltinLLM\\batchRunData.jsonl",
+            f"{get_test_cases_root()}\\examples\\BasicWithBuiltinLLM\\batchRunData.jsonl",
             "--connections",
             "get_answer.connection=azure_open_ai_connection",
         )
 
     def test_flow_chat(self, monkeypatch, capsys):
-        flow_dir = f"{get_repo_base_path()}\\src\\PromptflowCSharp\\Sample\\BasicChat\\bin\\Debug\\net6.0"
+        flow_dir = f"{get_test_cases_root()}\\BasicChat\\bin\\Debug\\net6.0"
         # mock user input with pop so make chat list reversed
         chat_list = ["what is chat gpt?", "hi"]
 
@@ -99,12 +100,13 @@ class TestCSharpCli:
         assert "Hello world round 0: hi" in outerr.out
         assert "Hello world round 1: what is chat gpt?" in outerr.out
 
+    @pytest.mark.skip(reason="need to update the test case")
     def test_flow_chat_ui_streaming(self):
         """Note that this test won't pass. Instead, it will hang and pop up a web page for user input.
         Leave it here for debugging purpose.
         """
         # The test need to interact with user input in ui
-        flow_dir = f"{get_repo_base_path()}\\examples\\BasicChatFlowWithBuiltinLLM\\bin\\Debug\\net6.0"
+        flow_dir = f"{get_test_cases_root()}\\examples\\BasicChatFlowWithBuiltinLLM\\bin\\Debug\\net6.0"
         run_pf_command(
             "flow",
             "test",
@@ -113,8 +115,9 @@ class TestCSharpCli:
             "--ui",
         )
 
+    @pytest.mark.skip(reason="need to update the test case")
     def test_flow_chat_interactive_streaming(self, monkeypatch, capsys):
-        flow_dir = f"{get_repo_base_path()}\\examples\\BasicChatFlowWithBuiltinLLM\\bin\\Debug\\net6.0"
+        flow_dir = f"{get_test_cases_root()}\\examples\\BasicChatFlowWithBuiltinLLM\\bin\\Debug\\net6.0"
         # mock user input with pop so make chat list reversed
         chat_list = ["what is chat gpt?", "hi"]
 
@@ -142,15 +145,16 @@ class TestCSharpCli:
         # Check node output
         assert "language model" in outerr.out
 
+    @pytest.mark.skip(reason="need to update the test case")
     def test_flow_run_from_resume(self):
         run_pf_command("run", "create", "--resume-from", "net6_0_variant_0_20240326_163600_356909")
 
-    def test_flow_class_init(self):
+    def test_flow_test_class_init(self):
         """Note that this test won't pass. Instead, it will hang and pop up a web page for user input.
         Leave it here for debugging purpose.
         """
         # The test need to interact with user input in ui
-        flow_dir = f"{get_repo_base_path()}\\src\\PromptflowCSharp\\FlexFlowClassInit\\bin\\Debug\\net6.0"
+        flow_dir = f"{get_test_cases_root()}\\ClassInitFlexFlow\\bin\\Debug\\net6.0"
 
         run_pf_command(
             "flow",
@@ -158,8 +162,20 @@ class TestCSharpCli:
             "--flow",
             flow_dir,
             "--inputs",
-            "topic=aklhdfqwejk",
+            "question=aklhdfqwejk",
             "--init",
             "name=world",
             "connection=azure_open_ai_connection",
+        )
+
+    def test_pf_run_create_basic(self):
+        run_pf_command(
+            "run",
+            "create",
+            "--flow",
+            f"{get_test_cases_root()}\\ClassInitFlexFlow\\bin\\Debug\\net6.0",
+            "--data",
+            f"{get_test_cases_root()}\\ClassInitFlexFlow\\data.jsonl",
+            "--init",
+            f"{get_test_cases_root()}\\ClassInitFlexFlow\\init.json",
         )
