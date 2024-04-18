@@ -2,8 +2,8 @@
 
 ## 1.9.0 (Upcoming)
 
-### Improvements
--  Add ThreadPoolExecutorWithContext to keep parent/child relationship in ThreadPool.
+### Features Added
+- Provide ThreadPoolExecutorContext in promptflow.tracing namespace.
 
 ## 1.0.0 (2024.03.21)
 
