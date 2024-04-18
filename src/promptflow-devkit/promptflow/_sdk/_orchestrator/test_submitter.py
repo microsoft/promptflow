@@ -112,10 +112,11 @@ class TestSubmitter:
     @property
     def dataplane_flow(self):
         # TODO: test submitter shouldn't interact with dataplane flow directly
-        if isinstance(self.flow, Prompty):
-            self._dataplane_flow = ExecutablePromptyFlow.deserialize(self.flow._data)
         if not self._dataplane_flow:
-            self._dataplane_flow = ExecutableFlow.from_yaml(flow_file=self.flow.path, working_dir=self.flow.code)
+            if isinstance(self.flow, Prompty):
+                self._dataplane_flow = ExecutablePromptyFlow.deserialize(self.flow._data)
+            if not self._dataplane_flow:
+                self._dataplane_flow = ExecutableFlow.from_yaml(flow_file=self.flow.path, working_dir=self.flow.code)
         return self._dataplane_flow
 
     @property
@@ -554,7 +555,7 @@ class TestSubmitter:
             init_kwargs = None
             if isinstance(self.flow, Prompty):
                 # Override prompt output format configuration and only return first choice in interactive mode.
-                init_kwargs = {"model": {"parameters": {"stream": False}, "response": "first"}}
+                init_kwargs = {"model": {"response": "first"}}
             flow_result = self.flow_test(
                 inputs=chat_inputs,
                 allow_generator_output=True,
