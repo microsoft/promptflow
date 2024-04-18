@@ -40,16 +40,18 @@ class Simulator:
     def __init__(
         self,
         *,
-        simulator_connection: "AzureOpenAIModelConfiguration" = None,  # type: ignore[name-defined]
+        simulator_connection: Dict = None,  # type: ignore[name-defined]
         ml_client: "MLClient" = None,  # type: ignore[name-defined]
         simulate_callback: Optional[Callable[[Dict], Dict]] = None,
     ):
         """
         Initialize the instance with the given parameters.
 
-        :keyword simulator_connection: An instance of AzureOpenAIModelConfiguration representing the connection
-            for simulating user response. Defaults to None.
-        :paramtype simulator_connection: Optional[AzureOpenAIModelConfiguration]
+        :keyword simulator_connection: A dictionary containing the configuration for the openAI simulator connection.
+            Mandatory keys: api_key, api_base, model_name, api_version
+            Optional keys: model_kwargs
+            Defaults to None.
+        :paramtype simulator_connection: Optional[Dict]
         :keyword ml_client: An instance of MLClient for interacting with the AI service. Defaults to None.
         :paramtype ml_client: Optional[MLClient]
         :keyword simulate_callback: A callback function that takes a dictionary as input and returns a dictionary.
@@ -95,20 +97,29 @@ class Simulator:
             temperature=0.0,
         )
 
-    def _to_openai_chat_completion_model(self, config: "AzureOpenAIModelConfiguration"):  # type: ignore[name-defined]
+    def _to_openai_chat_completion_model(self, config: Dict):  # type: ignore[name-defined]
         if config is None:
             return None
+        #  validate the config object to have the required fields
+        if "api_key" not in config:
+            raise ValueError("api_key is required in the config object.")
+        if "api_base" not in config:
+            raise ValueError("api_base is required in the config object.")
+        if "model_name" not in config:
+            raise ValueError("model_name is required in the config object.")
+        if "api_version" not in config:
+            raise ValueError("api_version is required in the config object.")
         token_manager = PlainTokenManager(
-            openapi_key=config.api_key,
+            openapi_key=config.get("api_key"),
             auth_header="api-key",
-            logger=logging.getLogger(f"{config.deployment_name}_bot_token_manager"),
+            logger=logging.getLogger("bot_token_manager"),
         )
         return OpenAIChatCompletionsModel(
-            endpoint_url=f"{config.api_base}openai/deployments/{config.deployment_name}/chat/completions",
+            endpoint_url=f"{config.get('api_base')}openai/deployments/{config.get('model_name')}/chat/completions",
             token_manager=token_manager,
-            api_version=config.api_version,
-            name=config.model_name,
-            **config.model_kwargs,
+            api_version=config.get("api_version"),
+            name=config.get("model_name"),
+            **config.get("model_kwargs", {}),
         )
 
     def _create_bot(

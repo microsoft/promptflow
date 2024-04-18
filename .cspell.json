@@ -233,7 +233,8 @@
     "Chunker",
     "mpnet",
     "wargs",
-    "dcid"
+    "dcid",
+    "Deuter"
   ],
   "flagWords": [
     "Prompt Flow"
