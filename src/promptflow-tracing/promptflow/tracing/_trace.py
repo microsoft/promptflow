@@ -14,7 +14,7 @@ from typing import Callable, Dict, List, Optional
 import opentelemetry.trace as otel_trace
 from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.trace import Link
-from opentelemetry.trace.span import NonRecordingSpan
+from opentelemetry.trace.span import NonRecordingSpan, format_trace_id
 from opentelemetry.trace.status import StatusCode
 
 from ._openai_utils import OpenAIMetricsCalculator, OpenAIResponseParser
@@ -346,7 +346,7 @@ def _traced_async(
         otel_tracer = otel_trace.get_tracer("promptflow")
         with otel_tracer.start_as_current_span(span_name) as span:
             # Store otel trace id in context for correlation
-            OperationContext.get_instance()["otel_trace_id"] = f"{span.get_span_context().trace_id:032x}"
+            OperationContext.get_instance()["otel_trace_id"] = f"0x{format_trace_id(span.get_span_context().trace_id)}"
             enrich_span_with_trace(span, trace)
             enrich_span_with_prompt_info(span, func, kwargs)
 
@@ -412,7 +412,7 @@ def _traced_sync(
         otel_tracer = otel_trace.get_tracer("promptflow")
         with otel_tracer.start_as_current_span(span_name) as span:
             # Store otel trace id in context for correlation
-            OperationContext.get_instance()["otel_trace_id"] = f"{span.get_span_context().trace_id:032x}"
+            OperationContext.get_instance()["otel_trace_id"] = f"0x{format_trace_id(span.get_span_context().trace_id)}"
             enrich_span_with_trace(span, trace)
             enrich_span_with_prompt_info(span, func, kwargs)
 
