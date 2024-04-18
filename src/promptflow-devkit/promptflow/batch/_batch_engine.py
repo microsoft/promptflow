@@ -472,11 +472,10 @@ class BatchEngine:
                 line_timeout_sec=self._line_timeout_sec,
                 worker_count=self._worker_count,
             )
+            line_results.extend(results)
         else:
-            # TODO: Enable batch timeout for other api based executor proxy
-            results = await self._exec_batch(inputs_to_run, run_id)
+            await self._exec_batch(line_results, inputs_to_run, run_id)
 
-        line_results.extend(results)
         handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
         # persist outputs to output dir
         outputs = [
@@ -508,10 +507,12 @@ class BatchEngine:
 
     async def _exec_batch(
         self,
+        line_results: List[LineResult],
         batch_inputs: List[Mapping[str, Any]],
         run_id: Optional[str] = None,
     ) -> List[LineResult]:
-        line_results = []
+        # line_results as input parameter, so that the completed line results can be summarized
+        # when batch run is canceled.
         worker_count = self._worker_count or DEFAULT_CONCURRENCY
         semaphore = asyncio.Semaphore(worker_count)
 
@@ -538,14 +539,13 @@ class BatchEngine:
             self._persist_run_info(completed_line_results)
             line_results.extend(completed_line_results)
             # update the progress log
-            completed_line = len(line_results)
+            completed_line += len(completed_line_results)
             last_log_count = log_progress(
                 run_start_time=self._start_time,
                 total_count=total_lines,
                 current_count=completed_line,
                 last_log_count=last_log_count,
             )
-        return line_results
 
     async def _exec_line_under_semaphore(
         self,
