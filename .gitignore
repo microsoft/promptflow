@@ -191,3 +191,7 @@ config.json
 poetry.lock
 # promptflow subpackages __init__
 src/promptflow-*/promptflow/__init__.py
+
+# Eclipse project files
+**/.project
+**/.pydevproject

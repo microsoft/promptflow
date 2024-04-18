@@ -1,7 +1,4 @@
 # Deploy a flow using development server
-:::{admonition} Experimental feature
-This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
-:::
 
 Once you have created and thoroughly tested a flow, you can use it as an HTTP endpoint.
 

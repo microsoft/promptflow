@@ -6,8 +6,9 @@ from typing import Any, Dict, List, Union
 
 import requests
 
-from promptflow._constants import AML_WORKSPACE_TEMPLATE, ConnectionAuthMode
+from promptflow._constants import AML_WORKSPACE_TEMPLATE
 from promptflow._utils.retry_utils import http_retry_wrapper
+from promptflow.constants import ConnectionAuthMode
 from promptflow.core._connection import CustomConnection, _Connection
 from promptflow.core._errors import (
     AccessDeniedError,

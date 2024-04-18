@@ -3,9 +3,11 @@ import time
 from enum import Enum
 from unittest.mock import patch
 
+import opentelemetry
 import pytest
 from openai.types.create_embedding_response import CreateEmbeddingResponse, Embedding, Usage
 
+from promptflow.tracing._experimental import enrich_prompt_template
 from promptflow.tracing._operation_context import OperationContext
 from promptflow.tracing._trace import (
     TokenCollector,
@@ -284,3 +286,15 @@ def test_serialize_attribute_with_non_serializable_data():
 
     data = NonSerializable()
     assert serialize_attribute(data) == json.dumps(str(data))
+
+
+@pytest.mark.unitests
+def test_set_enrich_prompt_template():
+    mock_span = MockSpan(MockSpanContext(1))
+    with patch.object(opentelemetry.trace, "get_current_span", return_value=mock_span):
+        template = "mock prompt template"
+        variables = {"key": "value"}
+        enrich_prompt_template(template=template, variables=variables)
+
+        assert template == mock_span.attributes["prompt.template"]
+        assert variables == json.loads(mock_span.attributes["prompt.variables"])
