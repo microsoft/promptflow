@@ -32,7 +32,7 @@ from promptflow._sdk._constants import (
     ContextAttributeKey,
 )
 from promptflow._sdk._tracing import start_trace_with_devkit
-from promptflow._sdk._tracing_utils import WorkspaceKindLocalCache
+from promptflow._sdk._tracing_utils import WorkspaceKindLocalCache, append_conditions
 from promptflow._sdk.operations._trace_operations import TraceOperations
 from promptflow.client import PFClient
 from promptflow.exceptions import UserErrorException
@@ -213,6 +213,20 @@ class TestTraceOperations:
         _validate_invalid_params({"run": str(uuid.uuid4()), "started_before": datetime.datetime.now().isoformat()})
         _validate_invalid_params({"collection": TRACE_DEFAULT_COLLECTION})
         _validate_invalid_params({"collection": str(uuid.uuid4()), "started_before": "invalid isoformat"})
+
+    def test_append_conditions(self) -> None:
+        orig_expr = "name == 'web_classification'"
+        expr = append_conditions(
+            expression=orig_expr,
+            collection="test-collection",
+            runs=["run1", "run2"],
+            session_id="test-session-id",
+        )
+        expected_expr = (
+            "name == 'web_classification' and collection == 'test-collection' and "
+            "run in ('run1', 'run2') and session_id == 'test-session-id'"
+        )
+        assert expr == expected_expr
 
 
 @pytest.mark.unittest
