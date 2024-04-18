@@ -280,6 +280,17 @@ class ScriptExecutor(FlowExecutor):
         # If the function is not decorated with trace, add trace for it.
         if not hasattr(func, "__original_function"):
             func = _traced(func, trace_type=TraceType.FLOW)
+        else:
+            if inspect.ismethod(func):
+                # For class method, the original function is a function reference that not bound to any object,
+                # so we need to pass the instance to it.
+                func = _traced(
+                    partial(getattr(func, "__original_function"), self=func.__self__),
+                    trace_type=TraceType.FLOW,
+                    name=func.__qualname__,
+                )
+            else:
+                func = _traced(getattr(func, "__original_function"), trace_type=TraceType.FLOW)
         self._func = func
         inputs, _, _, _ = function_to_interface(self._func)
         self._inputs = {k: v.to_flow_input_definition() for k, v in inputs.items()}
