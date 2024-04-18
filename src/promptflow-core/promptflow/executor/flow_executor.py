@@ -18,6 +18,7 @@ from types import GeneratorType
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 
 import opentelemetry.trace as otel_trace
+from opentelemetry.trace.span import format_trace_id
 from opentelemetry.trace.status import StatusCode
 
 from promptflow._constants import LINE_NUMBER_KEY
@@ -62,12 +63,7 @@ from promptflow.storage._run_storage import DefaultRunStorage
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
 from promptflow.tracing._operation_context import OperationContext
 from promptflow.tracing._start_trace import setup_exporter_from_environ
-from promptflow.tracing._trace import (
-    enrich_span_with_context,
-    enrich_span_with_input,
-    enrich_span_with_trace_type,
-    open_telemetry_tracer,
-)
+from promptflow.tracing._trace import enrich_span_with_context, enrich_span_with_input, enrich_span_with_trace_type
 from promptflow.tracing.contracts.trace import TraceType
 
 
@@ -849,9 +845,11 @@ class FlowExecutor:
         validate_inputs=False,
         allow_generator_output=False,
     ):
-        with open_telemetry_tracer.start_as_current_span(self._flow.name) as span:
+        # need to get everytime to ensure tracer is latest
+        otel_tracer = otel_trace.get_tracer("promptflow")
+        with otel_tracer.start_as_current_span(self._flow.name) as span:
             # Store otel trace id in context for correlation
-            OperationContext.get_instance()["otel_trace_id"] = f"{span.get_span_context().trace_id:032x}"
+            OperationContext.get_instance()["otel_trace_id"] = f"0x{format_trace_id(span.get_span_context().trace_id)}"
             # initialize span
             span.set_attributes(
                 {
