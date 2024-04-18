@@ -9,10 +9,11 @@ import logging
 from collections.abc import Iterator
 from importlib.metadata import version
 from threading import Lock
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Sequence
 
 import opentelemetry.trace as otel_trace
-from opentelemetry.sdk.trace import ReadableSpan
+from opentelemetry.sdk.trace import ReadableSpan, TracerProvider
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor, SpanExporter, SpanExportResult
 from opentelemetry.trace import Link
 from opentelemetry.trace.span import NonRecordingSpan, format_trace_id
 from opentelemetry.trace.status import StatusCode
@@ -25,6 +26,43 @@ from .contracts.generator_proxy import GeneratorProxy
 from .contracts.trace import Trace, TraceType
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
+
+
+class LastSpanExporter(SpanExporter):
+    _instance = None
+    _added = True
+
+    @staticmethod
+    def get_instance():
+        if LastSpanExporter._instance is None:
+            LastSpanExporter._instance = LastSpanExporter()
+        return LastSpanExporter._instance
+
+    @staticmethod
+    def get_last_span():
+        return LastSpanExporter.get_instance()._last_span
+
+    @staticmethod
+    def add_to_tracer():
+        LastSpanExporter.get_instance()._add_to_tracer()
+
+    def __init__(self):
+        self._last_span = None
+        self._added = False
+
+    def _add_to_tracer(self):
+        if self._added:
+            return
+        provider = otel_trace.get_tracer_provider()
+        if not isinstance(provider, TracerProvider):
+            return
+        provider.add_span_processor(SimpleSpanProcessor(self))
+        self._added = True
+
+    def export(self, spans: Sequence[ReadableSpan]) -> SpanExportResult:
+        for span in spans:
+            self._last_span = span
+        return SpanExportResult.SUCCESS
 
 
 class TokenCollector:
@@ -345,6 +383,7 @@ def _traced_async(
         # need to get everytime to ensure tracer is latest
         otel_tracer = otel_trace.get_tracer("promptflow")
         with otel_tracer.start_as_current_span(span_name) as span:
+            LastSpanExporter.add_to_tracer()
             # Store otel trace id in context for correlation
             OperationContext.get_instance()["otel_trace_id"] = f"0x{format_trace_id(span.get_span_context().trace_id)}"
             enrich_span_with_trace(span, trace)
@@ -411,6 +450,7 @@ def _traced_sync(
         # need to get everytime to ensure tracer is latest
         otel_tracer = otel_trace.get_tracer("promptflow")
         with otel_tracer.start_as_current_span(span_name) as span:
+            LastSpanExporter.add_to_tracer()
             # Store otel trace id in context for correlation
             OperationContext.get_instance()["otel_trace_id"] = f"0x{format_trace_id(span.get_span_context().trace_id)}"
             enrich_span_with_trace(span, trace)
@@ -474,3 +514,7 @@ def trace(func: Callable = None) -> Callable:
     """
 
     return _traced(func, trace_type=TraceType.FUNCTION)
+
+
+def get_last_span():
+    return LastSpanExporter.get_last_span()
