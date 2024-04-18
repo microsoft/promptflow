@@ -340,6 +340,19 @@ def refine_extra_fields_not_permitted_error(connection, deployment_name, model):
     return None
 
 
+def is_retriable_api_connection_error(e: APIConnectionError):
+    retriable_error_messages = [
+        "connection aborted",
+        # issue 2296
+        "server disconnected without sending a response"
+    ]
+    for message in retriable_error_messages:
+        if message in str(e).lower() or message in str(e.__cause__).lower():
+            return True
+
+    return False
+
+
 # TODO(2971352): revisit this tries=100 when there is any change to the 10min timeout logic
 def handle_openai_error(tries: int = 100):
     """
@@ -378,7 +391,7 @@ def handle_openai_error(tries: int = 100):
                             raise WrappedOpenAIError(e)
 
                     if isinstance(e, APIConnectionError) and not isinstance(e, APITimeoutError) \
-                            and "connection aborted" not in str(e).lower():
+                            and not is_retriable_api_connection_error(e):
                         raise WrappedOpenAIError(e)
                     # Retry InternalServerError(>=500), RateLimitError(429), UnprocessableEntityError(422)
                     if isinstance(e, APIStatusError):

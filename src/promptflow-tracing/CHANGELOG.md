@@ -2,6 +2,8 @@
 
 ## 1.9.0 (Upcoming)
 
+### Improvements
+-  Add ThreadPoolExecutorWithContext to keep parent/child relationship in ThreadPool.
 
 ## 1.0.0 (2024.03.21)
 
