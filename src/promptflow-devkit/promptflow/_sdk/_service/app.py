@@ -37,7 +37,6 @@ from promptflow._sdk._service.utils.utils import (
     FormattedException,
     get_current_env_pfs_file,
     get_pfs_version,
-    get_port_file_location,
     get_port_from_config,
     is_run_from_built_binary,
     kill_exist_service,
@@ -184,13 +183,11 @@ def create_app():
                         )
                         port = get_port_from_config()
                         if port:
-                            port_file_path = get_port_file_location()
                             app.logger.info(
                                 f"Try auto stop promptflow service in port {port} since no request to app within "
-                                f"{PF_SERVICE_HOUR_TIMEOUT}h and delete port file: {port_file_path}."
+                                f"{PF_SERVICE_HOUR_TIMEOUT}h."
                             )
                             kill_exist_service(port)
-                            port_file_path.unlink(missing_ok=True)
                         break
 
         if not is_run_from_built_binary():

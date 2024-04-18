@@ -29,7 +29,6 @@ from promptflow._sdk._service.utils.utils import (
     dump_port_to_config,
     get_current_env_pfs_file,
     get_pfs_version,
-    get_port_file_location,
     get_port_from_config,
     get_started_service_info,
     hint_stop_before_upgrade,
@@ -199,8 +198,9 @@ def start_service(args):
 
 def validate_port(port, force_start):
     if port:
-        dump_port_to_config(port)
         _validate_port(port, force_start)
+        # dump port to config file only when port is valid or force_start is True.
+        dump_port_to_config(port)
     else:
         port = get_port_from_config(create_if_not_exists=True)
         _validate_port(port, force_start)
@@ -312,9 +312,6 @@ def stop_service():
     if port is not None and is_port_in_use(port):
         kill_exist_service(port)
         message = f"Prompt flow service stop in {port}."
-        port_file_path = get_port_file_location()
-        port_file_path.unlink(missing_ok=True)
-        logger.debug(f"Delete port file: {port_file_path}.")
     else:
         message = "Prompt flow service is not started."
     logger.debug(message)
