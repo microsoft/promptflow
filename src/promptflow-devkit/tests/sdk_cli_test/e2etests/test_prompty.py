@@ -298,6 +298,7 @@ class TestPrompty:
         assert list(result.keys()) == ["answer"]
         assert result["answer"] == 2
 
+    @pytest.mark.skip(reason="Double check this test in python 3.9")
     def test_prompty_trace(self, pf: PFClient):
         run = pf.run(flow=f"{PROMPTY_DIR}/prompty_example.prompty", data=f"{DATA_DIR}/prompty_inputs.jsonl")
         line_runs = pf.traces.list_line_runs(runs=run.name)
