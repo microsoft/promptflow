@@ -278,6 +278,18 @@ class TestTraceSearchTrans:
         sql_condition = search_trans._translate_compare_to_sql(ast_compare)
         assert sql_condition == "100 < json_extract(cumulative_token_count, '$.prompt') <= 2000"
 
+    def test_translate_compare_status_complete_to_sql(self, search_trans: SearchTranslator):
+        compare_expr = "status == 'complete'"
+        ast_compare = ast.parse(compare_expr, mode="eval").body
+        sql_condition = search_trans._translate_compare_to_sql(ast_compare)
+        assert sql_condition == "status = 'Ok'"
+
+    def test_translate_compare_start_time_to_sql(self, search_trans: SearchTranslator):
+        compare_expr = "'2012/12/21' < start_time <= '2024/04/18 18:55:42'"
+        ast_compare = ast.parse(compare_expr, mode="eval").body
+        sql_condition = search_trans._translate_compare_to_sql(ast_compare)
+        assert sql_condition == "2012-12-21T00:00:00 < start_time <= 2024-04-18T18:55:42"
+
     def test_basic_search(self, memory_session: Session, search_trans: SearchTranslator):
         basic_expr = "name == 'web-classification'"
         query = search_trans.translate(session=memory_session, expression=basic_expr)
@@ -328,6 +340,7 @@ class TestTraceSearchTrans:
                 "name is '<name>'",
                 "Unsupported compare operator, currently support: '==', '!=', '<', '<=', '>' and '>='.",
             ),
+            ("start_time >= 'promptflow'", "Invalid time format: 'promptflow'"),
         ]
         for expr, error_msg in test_cases:
             with pytest.raises(WrongTraceSearchExpressionError) as e:

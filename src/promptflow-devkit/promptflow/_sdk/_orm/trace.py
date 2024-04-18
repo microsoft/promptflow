@@ -8,6 +8,7 @@ import typing
 from dataclasses import dataclass
 
 import sqlalchemy
+from dateutil.parser import parse
 from sqlalchemy import INTEGER, JSON, REAL, TEXT, TIMESTAMP, Column, Index
 from sqlalchemy.orm import Mapped, Query, Session, declarative_base
 
@@ -444,10 +445,58 @@ class SearchTranslator(ast.NodeVisitor):
             raise WrongTraceSearchExpressionError(error_message)
 
     def _translate_compare_to_sql(self, node: ast.Compare) -> str:
-        sql = self._resolve_ast_node(node.left)
+        left = self._resolve_ast_node(node.left)
+        sql_ops, sql_comparators = list(), list()
         for i in range(len(node.ops)):
             ast_op, ast_comparator = node.ops[i], node.comparators[i]
-            sql_op = self._resolve_ast_op(ast_op)
-            sql_comparator = self._resolve_ast_node(ast_comparator)
-            sql += f" {sql_op} {sql_comparator}"
+            sql_ops.append(self._resolve_ast_op(ast_op))
+            sql_comparators.append(self._resolve_ast_node(ast_comparator))
+        # status
+        if left == "status" or "status" in sql_comparators:
+            left, sql_comparators = self._refine_comparators_for_status(left, sql_comparators)
+        # start_time
+        if left == "start_time" or "start_time" in sql_comparators:
+            left, sql_comparators = self._refine_comparators_for_start_time(left, sql_comparators)
+        # finally concat to build the SQL
+        sql = left
+        for i in range(len(sql_ops)):
+            sql += f" {sql_ops[i]} {sql_comparators[i]}"
         return sql
+
+    # special logic to be compatible with UX query
+    @staticmethod
+    def _refine_comparators_for_status(
+        left: str,
+        comparators: typing.List[str],
+    ) -> typing.Tuple[str, typing.List[str]]:
+        # UX renders OTel status 'Ok' as 'complete'
+        # so we need to replace that to 'Ok' before query to SQLite
+        def _convert_complete_to_ok(_comparator: str) -> str:
+            if _comparator == "complete":
+                return "Ok"
+            return _comparator
+
+        new_left = _convert_complete_to_ok(left)
+        new_comparators = [_convert_complete_to_ok(comparator) for comparator in comparators]
+        return new_left, new_comparators
+
+    @staticmethod
+    def _refine_comparators_for_start_time(
+        left: str,
+        comparators: typing.List[str],
+    ) -> typing.Tuple[str, typing.List[str]]:
+        # we should not suppose user can write standard ISO format time string
+        # so we need to apply an internal conversion before query to SQLite
+        def _convert_time_string_to_iso(_comparator: str) -> str:
+            if _comparator == "start_time":
+                return _comparator
+            try:
+                dt = parse(_comparator)
+                return dt.isoformat()
+            except ValueError:
+                error_message = f"Invalid time format: {_comparator}"
+                raise WrongTraceSearchExpressionError(error_message)
+
+        new_left = _convert_time_string_to_iso(left)
+        new_comparators = [_convert_time_string_to_iso(comparator) for comparator in comparators]
+        return new_left, new_comparators
