@@ -92,7 +92,11 @@ def add_parser_start_service(subparsers):
     pf service start --port 65553
     """  # noqa: E501
     add_param_port = lambda parser: parser.add_argument(  # noqa: E731
-        "-p", "--port", type=int, help="port of the prompt flow service"
+        "-p",
+        "--port",
+        type=int,
+        help="The designated port of the prompt flow service and port number will be logged "
+        "in the pfs.port file if port is available.",
     )
     add_param_force = lambda parser: parser.add_argument(  # noqa: E731
         "--force",
@@ -107,7 +111,8 @@ def add_parser_start_service(subparsers):
     )
     activate_action(
         name="start",
-        description="Start prompt flow service.",
+        description="Retrieve available port numbers starting from 23333 to start prompt flow service if pfs.port file "
+        "is absent. If the file exists, just try to start the service on the specified port number",
         epilog=epilog,
         add_params=[
             add_param_port,
