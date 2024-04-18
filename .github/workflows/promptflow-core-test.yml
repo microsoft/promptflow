@@ -8,8 +8,6 @@ on:
       - src/promptflow-tracing/**
       - src/promptflow-core/**
       - .github/workflows/promptflow-core-test.yml
-    paths-ignore:
-      - '**/*.md'
   workflow_dispatch:
 
 env:

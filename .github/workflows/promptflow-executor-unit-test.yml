@@ -23,8 +23,6 @@ on:
       - src/promptflow-devkit/promptflow/**
       - scripts/building/**
       - .github/workflows/promptflow-executor-unit-test.yml
-    paths-ignore:
-      - '**/*.md'
   workflow_dispatch:
 env:
   packageSetupType: promptflow_with_extra

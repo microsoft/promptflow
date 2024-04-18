@@ -1,9 +1,12 @@
 # promptflow-devkit package
 
-## v1.9.0 (Upcoming)
+## v1.10.0 (Upcoming)
+
+## 1.9.0 (2024.04.17)
 
 ### Features Added
 - Added autocomplete feature for linux, reach [here](https://microsoft.github.io/promptflow/reference/pf-command-reference.html#autocomplete) for more details.
+- Support trace experience in flow test and batch run. See [here](https://microsoft.github.io/promptflow/how-to-guides/tracing/index.html) for more details.
 
 ### Improvements
 
