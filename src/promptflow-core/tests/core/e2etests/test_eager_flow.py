@@ -5,7 +5,7 @@ import pytest
 
 from promptflow._core.tool_meta_generator import PythonLoadError
 from promptflow.contracts.run_info import Status
-from promptflow.executor._errors import FlowEntryInitializationError
+from promptflow.executor._errors import FlowEntryInitializationError, InvalidFlexFlowEntry
 from promptflow.executor._result import LineResult
 from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import FlowExecutor
@@ -143,7 +143,7 @@ class TestEagerFlow:
         [
             ("callable_flow_with_init_exception", FlowEntryInitializationError, "Failed to initialize flow entry with"),
             ("invalid_illegal_entry", PythonLoadError, "Failed to load python module for"),
-            ("incorrect_entry", PythonLoadError, "Failed to load python module for"),
+            ("incorrect_entry", InvalidFlexFlowEntry, "Invalid entry"),
         ],
     )
     def test_execute_func_with_user_error(self, flow_folder, expected_exception, expected_error_msg):

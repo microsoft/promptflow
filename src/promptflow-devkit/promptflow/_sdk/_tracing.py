@@ -48,6 +48,7 @@ from promptflow._sdk._service.utils.utils import (
     is_port_in_use,
     is_run_from_built_binary,
 )
+from promptflow._sdk._tracing_utils import get_workspace_kind
 from promptflow._sdk._utils import extract_workspace_triad_from_trace_provider, parse_kv_from_pb_attribute
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.thread_utils import ThreadWithContextVars
@@ -57,6 +58,7 @@ from promptflow.tracing._operation_context import OperationContext
 _logger = get_cli_sdk_logger()
 
 PF_CONFIG_TRACE_FEATURE_DISABLE = "none"
+PF_CONFIG_TRACE_LOCAL = "local"
 TRACER_PROVIDER_PFS_EXPORTER_SET_ATTR = "_pfs_exporter_set"
 
 
@@ -150,6 +152,9 @@ def _get_ws_triad_from_pf_config() -> typing.Optional[AzureMLWorkspaceTriad]:
     from promptflow._sdk._configuration import Configuration
 
     ws_arm_id = Configuration.get_instance().get_trace_provider()
+    # enable local only trace feature, no workspace
+    if ws_arm_id == PF_CONFIG_TRACE_LOCAL:
+        return
     return extract_workspace_triad_from_trace_provider(ws_arm_id) if ws_arm_id is not None else None
 
 
@@ -177,21 +182,6 @@ def _print_tracing_url_from_azure_portal(
     exp: typing.Optional[str] = None,  # pylint: disable=unused-argument
     run: typing.Optional[str] = None,
 ) -> None:
-    # as this there is an if condition for azure extension, we can assume the extension is installed
-    from azure.ai.ml import MLClient
-
-    from promptflow.azure._cli._utils import get_credentials_for_cli
-
-    # we have different url for Azure ML workspace and AI project
-    # so we need to distinguish them
-    ml_client = MLClient(
-        credential=get_credentials_for_cli(),
-        subscription_id=ws_triad.subscription_id,
-        resource_group_name=ws_triad.resource_group_name,
-        workspace_name=ws_triad.workspace_name,
-    )
-    workspace = ml_client.workspaces.get(name=ws_triad.workspace_name)
-
     url = (
         "https://int.ml.azure.com/{query}?"
         f"wsid=/subscriptions/{ws_triad.subscription_id}"
@@ -204,13 +194,15 @@ def _print_tracing_url_from_azure_portal(
     if run is None:
         _logger.debug("run is not specified, need to concat `collection_id` for query")
         collection_id = _get_collection_id_for_azure(collection=collection)
-    if AzureWorkspaceKind.is_workspace(workspace):
+
+    kind = get_workspace_kind(ws_triad)
+    if AzureWorkspaceKind.is_workspace(kind):
         _logger.debug(f"{ws_triad.workspace_name!r} is an Azure ML workspace.")
         if run is None:
             query = f"trace/collection/{collection_id}/list"
         else:
             query = f"prompts/trace/run/{run}/details"
-    elif AzureWorkspaceKind.is_project(workspace):
+    elif AzureWorkspaceKind.is_project(kind):
         _logger.debug(f"{ws_triad.workspace_name!r} is an Azure AI project.")
         url = url.replace("int.ml.azure.com", "int.ai.azure.com")
         if run is None:

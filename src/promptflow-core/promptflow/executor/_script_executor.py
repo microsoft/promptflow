@@ -24,13 +24,15 @@ from promptflow.connections import ConnectionProvider
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.tool import ConnectionType
 from promptflow.core import log_metric
+from promptflow.exceptions import ErrorTarget
+from promptflow.executor._errors import InvalidFlexFlowEntry
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DefaultRunStorage
 from promptflow.tracing._trace import _traced
 from promptflow.tracing._tracer import Tracer
 
-from ._errors import FlowEntryInitializationError, InvalidAggregationInterface
+from ._errors import FlowEntryInitializationError, InvalidAggregationFunction
 from .flow_executor import FlowExecutor
 
 
@@ -268,8 +270,8 @@ class ScriptExecutor(FlowExecutor):
             if inspect.isfunction(self._entry):
                 return self._entry
             return self._entry.__call__
+        module_name, func_name = self._parse_flow_file()
         try:
-            module_name, func_name = self._parse_flow_file()
             module = importlib.import_module(module_name)
         except Exception as e:
             error_type_and_message = f"({e.__class__.__name__}) {e}"
@@ -323,7 +325,7 @@ class ScriptExecutor(FlowExecutor):
         if aggr_func is not None:
             sign = inspect.signature(aggr_func)
             if len(sign.parameters) != 1:
-                raise InvalidAggregationInterface(
+                raise InvalidAggregationFunction(
                     message_format="The __aggregate__ method should have only one parameter.",
                 )
             if not hasattr(aggr_func, "__original_function"):
@@ -335,5 +337,12 @@ class ScriptExecutor(FlowExecutor):
         with open(self._working_dir / self._flow_file, "r", encoding="utf-8") as fin:
             flow_dag = load_yaml(fin)
         entry = flow_dag.get("entry", "")
-        module_name, func_name = entry.split(":")
+        try:
+            module_name, func_name = entry.split(":")
+        except Exception as e:
+            raise InvalidFlexFlowEntry(
+                message_format="Invalid entry '{entry}'.The entry should be in the format of '<module>:<function>'.",
+                entry=entry,
+                target=ErrorTarget.EXECUTOR,
+            ) from e
         return module_name, func_name

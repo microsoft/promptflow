@@ -26,6 +26,7 @@ from promptflow._utils.exception_utils import ErrorResponse, ExceptionPresenter
 from promptflow._utils.flow_utils import is_flex_flow, read_json_content, resolve_flow_path
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.utils import load_json
+from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.exceptions import ErrorTarget, ValidationException
 from promptflow.executor._errors import AggregationNodeExecutionTimeoutError, LineExecutionTimeoutError
@@ -36,7 +37,6 @@ EXECUTOR_UNHEALTHY_MESSAGE = "The executor service is currently not in a healthy
 
 
 class AbstractExecutorProxy:
-
     def __init__(self):
         self._should_apply_inputs_mapping = True
         self._allow_aggregation = True
@@ -60,12 +60,6 @@ class AbstractExecutorProxy:
         :rtype: _type_
         """
         return self._allow_aggregation
-
-    @classmethod
-    def dump_metadata(cls, flow_file: Path, working_dir: Path) -> NoReturn:
-        """Generate metadata for a specific flow."""
-        cls.generate_flow_tools_json(flow_file, working_dir, dump=True)
-        cls.generate_flow_json(flow_file, working_dir, dump=True)
 
     @classmethod
     def generate_flow_tools_json(
@@ -273,18 +267,30 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         # for cloud, they will assume that metadata has already been dumped into the flow directory so do nothing here
         return
 
+    def _get_interface_definition(self):
+        """
+        Get type of interfaces of a flow.
+
+        For dag flow, we can directly get type of ports from yaml.
+        For flex flow, we can also get type of ports from yaml in cloud as SDK will update the flow file before upload.
+        For local flex flow, python will infer type of ports from the function signature;
+        csharp depends on a flow.json generated with a dotnet command.
+        """
+        _, flow_file = resolve_flow_path(flow_path=self.working_dir, check_flow_exist=False)
+        flow_data = load_yaml(flow_file)
+        port_definitions = {}
+        for key in ["inputs", "outputs", "init"]:
+            if key in flow_data:
+                port_definitions[key] = flow_data[key]
+        return port_definitions
+
     def get_inputs_definition(self):
         """Get the inputs definition of an eager flow"""
         from promptflow.contracts.flow import FlowInputDefinition
 
-        _, flow_file = resolve_flow_path(flow_path=self.working_dir, check_flow_exist=False)
-        flow_meta = self.generate_flow_json(
-            flow_file=self.working_dir / flow_file,
-            working_dir=self.working_dir,
-            dump=False,
-        )
+        input_definitions = self._get_interface_definition().get("inputs", {})
         inputs = {}
-        for key, value in flow_meta.get("inputs", {}).items():
+        for key, value in input_definitions.items():
             # TODO: update this after we determine whether to accept list here or now
             _type = value.get("type")
             if isinstance(_type, list):
@@ -329,7 +335,11 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
     @property
     def chat_output_name(self) -> Optional[str]:
         """The name of the chat output in the line result. Return None if the bonded flow is not a chat flow."""
-        # TODO: implement this based on _generate_flow_json
+        outputs = self._get_interface_definition().get("outputs", {})
+        for key, value in outputs.items():
+            if value.get("is_chat_output", False):
+                return key
+        # no chat output found
         return None
 
     def exec_line(

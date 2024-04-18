@@ -321,5 +321,9 @@ class FlowEntryInitializationError(UserErrorException):
         )
 
 
-class InvalidAggregationInterface(UserErrorException):
-    """Exception raised when aggregation result is invalid."""
+class InvalidFlexFlowEntry(ValidationException):
+    pass
+
+
+class InvalidAggregationFunction(UserErrorException):
+    pass

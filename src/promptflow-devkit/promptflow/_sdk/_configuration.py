@@ -18,7 +18,7 @@ from promptflow._sdk._constants import (
     SERVICE_CONFIG_FILE,
 )
 from promptflow._sdk._errors import MissingAzurePackage
-from promptflow._sdk._tracing import PF_CONFIG_TRACE_FEATURE_DISABLE
+from promptflow._sdk._tracing import PF_CONFIG_TRACE_FEATURE_DISABLE, PF_CONFIG_TRACE_LOCAL
 from promptflow._sdk._utils import call_from_extension, gen_uuid_by_compute_info, read_write_by_user
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
@@ -222,6 +222,9 @@ class Configuration(object):
         elif key == Configuration.TRACE_PROVIDER:
             # disable trace feature, no need to validate
             if value.lower() == PF_CONFIG_TRACE_FEATURE_DISABLE:
+                return
+            # enable trace feature, but disable local to cloud
+            if value.lower() == PF_CONFIG_TRACE_LOCAL:
                 return
             try:
                 from promptflow.azure._utils._tracing import validate_trace_provider

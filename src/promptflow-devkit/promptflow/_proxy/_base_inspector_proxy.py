@@ -40,3 +40,22 @@ class AbstractInspectorProxy:
     ) -> Dict[str, Any]:
         """Generate meta data for a flow entry."""
         raise NotImplementedError()
+
+    def prepare_metadata(
+        self,
+        flow_file: Path,
+        working_dir: Path,
+        **kwargs,
+    ) -> None:
+        """Prepare metadata for a flow.
+
+        This method will be called:
+        1) before local flow test;
+        2) before local run create;
+        3) before flow upload.
+
+        For dag flow, it will generate flow.tools.json;
+        For python flex flow, it will do nothing;
+        For csharp flex flow, it will generate metadata based on a dotnet command.
+        """
+        return
