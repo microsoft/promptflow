@@ -194,7 +194,9 @@ async def traced_async_generator(original_span: ReadableSpan, inputs, generator)
     context = original_span.get_span_context()
     link = Link(context)
     # If start_trace is not called, the name of the original_span will be empty.
-    with open_telemetry_tracer.start_as_current_span(
+    # need to get everytime to ensure tracer is latest
+    otel_tracer = otel_trace.get_tracer("promptflow")
+    with otel_tracer.start_as_current_span(
         f"Iterated({original_span.name})",
         links=[link],
     ) as span:
