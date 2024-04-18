@@ -6,7 +6,6 @@ __path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
 
 from typing import Optional
 
-from promptflow.core import AzureOpenAIModelConfiguration
 from promptflow.evals.evaluators import (
     CoherenceEvaluator,
     F1ScoreEvaluator,
@@ -18,7 +17,7 @@ from promptflow.evals.evaluators import (
 
 
 class QAEvaluator:
-    def __init__(self, model_config: AzureOpenAIModelConfiguration,
+    def __init__(self, model_config,
                  log_level: Optional[int] = None):
         """
         Initialize an evaluator configured for a specific Azure OpenAI model.

@@ -9,12 +9,11 @@ from typing import Optional
 from pathlib import Path
 
 from promptflow.client import load_flow
-from promptflow.core import AzureOpenAIModelConfiguration
 from promptflow.core._prompty_utils import convert_model_configuration_to_connection
 
 
 class GroundednessEvaluator:
-    def __init__(self, model_config: AzureOpenAIModelConfiguration,
+    def __init__(self, model_config,
                  log_level: Optional[int] = None):
         """
         Initialize an evaluator configured for a specific Azure OpenAI model.
