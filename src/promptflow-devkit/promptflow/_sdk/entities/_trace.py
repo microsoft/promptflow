@@ -177,6 +177,23 @@ class Span:
             "external_event_data_uris": rest_external_event_data_uris,
         }
 
+    def to_otel_dict(self) -> typing.Dict:
+        """Return a dictionary that follows OpenTelemetry span spec."""
+        # manually build this dict, referring to `ReadableSpan.to_json` in OTel Python SDK
+        return {
+            "name": self.name,
+            "context": copy.deepcopy(self.context),
+            "kind": self.kind,
+            "parent_id": self.parent_id,
+            "start_time": self.start_time.isoformat(),
+            "end_time": self.end_time.isoformat(),
+            "status": copy.deepcopy(self.status),
+            "attributes": copy.deepcopy(self.attributes),
+            "events": copy.deepcopy(self.events),
+            "links": copy.deepcopy(self.links),
+            "resource": copy.deepcopy(self.resource),
+        }
+
 
 @dataclass
 class LineRun:
