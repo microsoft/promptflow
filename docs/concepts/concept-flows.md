@@ -29,14 +29,14 @@ Prompt flow examples organize flows by three categories:
 
 
 Flex flow [examples](https://github.com/microsoft/promptflow/tree/main/examples/flex-flows):
-- [basic](https://github.com/microsoft/promptflow/tree/main/examples/flex-flows/basic)
-- [chat-basic](https://github.com/microsoft/promptflow/tree/main/examples/flex-flows/chat-basic)
-- [eval-basic](https://github.com/microsoft/promptflow/tree/main/examples/flex-flows/eval-basic)
+- [basic](https://github.com/microsoft/promptflow/tree/main/examples/flex-flows/basic): A basic standard flow define using function entry that calls Azure OpenAI with connection info stored in environment variables.
+- [chat-basic](https://github.com/microsoft/promptflow/tree/main/examples/flex-flows/chat-basic): A basic chat flow defined using class entry. It demonstrates how to create a chatbot that can remember previous interactions and use the conversation history to generate next message.
+- [eval-code-quality](https://github.com/microsoft/promptflow/tree/main/examples/flex-flows/eval-code-quality): A example flow defined using function entry which shows how to evaluate the quality of code snippet.
 
 DAG flow [examples](https://github.com/microsoft/promptflow/tree/main/examples/flows):
-- [basic](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/basic)
-- [chat-basic](https://github.com/microsoft/promptflow/tree/main/examples/flows/chat/chat-basic)
-- [eval-basic](https://github.com/microsoft/promptflow/tree/main/examples/flows/evaluation/eval-basic)
+- [basic](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/basic): A basic standard flow using custom python tool that calls Azure OpenAI with connection info stored in environment variables.
+- [chat-basic](https://github.com/microsoft/promptflow/tree/main/examples/flows/chat/chat-basic): This example shows how to create a basic chat flow. It demonstrates how to create a chatbot that can remember previous interactions and use the conversation history to generate next message.
+- [eval-basic](https://github.com/microsoft/promptflow/tree/main/examples/flows/evaluation/eval-basic): 
 
 
 ## Next steps
