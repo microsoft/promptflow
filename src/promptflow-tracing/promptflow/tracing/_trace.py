@@ -26,8 +26,6 @@ from .contracts.trace import Trace, TraceType
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
 
-open_telemetry_tracer = otel_trace.get_tracer("promptflow")
-
 
 class TokenCollector:
     _lock = Lock()
@@ -156,7 +154,9 @@ def traced_generator(original_span: ReadableSpan, inputs, generator):
     context = original_span.get_span_context()
     link = Link(context)
     # If start_trace is not called, the name of the original_span will be empty.
-    with open_telemetry_tracer.start_as_current_span(
+    # need to get everytime to ensure tracer is latest
+    otel_tracer = otel_trace.get_tracer("promptflow")
+    with otel_tracer.start_as_current_span(
         f"Iterated({original_span.name})",
         links=[link],
     ) as span:
@@ -342,7 +342,9 @@ def _traced_async(
         trace = create_trace(func, args, kwargs)
         # For node span we set the span name to node name, otherwise we use the function name.
         span_name = get_node_name_from_context(used_for_span_name=True) or trace.name
-        with open_telemetry_tracer.start_as_current_span(span_name) as span:
+        # need to get everytime to ensure tracer is latest
+        otel_tracer = otel_trace.get_tracer("promptflow")
+        with otel_tracer.start_as_current_span(span_name) as span:
             # Store otel trace id in context for correlation
             OperationContext.get_instance()["otel_trace_id"] = f"{span.get_span_context().trace_id:032x}"
             enrich_span_with_trace(span, trace)
@@ -406,7 +408,9 @@ def _traced_sync(
         trace = create_trace(func, args, kwargs)
         # For node span we set the span name to node name, otherwise we use the function name.
         span_name = get_node_name_from_context(used_for_span_name=True) or trace.name
-        with open_telemetry_tracer.start_as_current_span(span_name) as span:
+        # need to get everytime to ensure tracer is latest
+        otel_tracer = otel_trace.get_tracer("promptflow")
+        with otel_tracer.start_as_current_span(span_name) as span:
             # Store otel trace id in context for correlation
             OperationContext.get_instance()["otel_trace_id"] = f"{span.get_span_context().trace_id:032x}"
             enrich_span_with_trace(span, trace)
