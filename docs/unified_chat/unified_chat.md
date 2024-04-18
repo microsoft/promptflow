@@ -86,33 +86,10 @@ With prompt flow integration:
   await myChat.terminate();
   ```
 
-- Users are able to subscribe the terminate events
+  
 
-  ```py
-  from promptflow.devkit import start_chat
   
-  my_chat = start_chat
-  
-  def on_terminate_chat(reason: str):
-      print(f"chat terminated: {reason}") # chat terminated: keyboardInterrupt
-  
-  my_chat.on_terminate(on_terminate_chat)
-  ```
-  
-  ```typescript
-  import { Chat, EventType } from "@promptflow/chat";
-  
-  new Chat()
-  	.start()
-  	.onEvent(evt => {
-      	if (evt === EventType.Terminate) {
-          	console.log(evt.reason); // "KeyboardInterrupt"
-      	}
-  	})
-  ```
-  
-  
-  
+
 
 ## Basic - receive a message from the Chat window, and send replies.
 
@@ -541,23 +518,63 @@ def user_thumb_up():
     print("user loves it!")
     
 thumb_up_action = new Chat.message_action(
-  label="like", # REQUIRED! if appearance is "icon-only", will apply the label to tooltips and aria-label for screen releases
-  apperance="icon-only", # icon-only, link, button
-  icon="thumbup.png",
-  position="bottom-right,
+  	label="like", # REQUIRED! if appearance is "icon-only", will apply the label to tooltips and aria-label for screen releases
+  	apperance="icon-only", # icon-only, link, button
+  	icon="thumbup.png",
+  	position="bottom-end", # top, top-start, top-end, bottom, bottom-start, bottom-end
 	handler=user_thumb_up
 )
 
 message_with_user_feedback = new Chat.text_message(
 	text="This is a test message",
-  actions=[thumb_up_action]
+  	actions=[thumb_up_action]
 )
 
 my_chat.send(
-		message=message_with_user_feedback
+    message=message_with_user_feedback
   	from=bot
 )
 
+```
+
+```typescript
+import {
+    Chat,
+    MessageAction,
+    MessageActionApperance,
+    MessageWidgetPosition,
+    TextMessage
+} from "@promptflow/chat";
+
+const myChat = new Chat();
+const commonMessageActions: Array<MessageAction> = [
+    {
+        label: "like",
+        appearance: MessageActionApperance.IconOnly,
+        icon: "thumbup.png",
+        position: MessageWidgetPosition.BottomEnd,
+        onClick: async () => {
+            await myChat.send({
+                text: "Thanks! Can you star me on the Github",
+                links: [
+                    {
+                    	label: "Star me",
+                        url: "https://github.com/microsoft/promptflow"
+                    }
+                ]
+            } satisifies TextMessage)
+        }
+    }
+]
+
+const someHandler = async () => {
+    await myChat.send({
+        text: "bla bla bla",
+        actions: commonMessageActions
+    });
+}
+
+await myChat.start();
 ```
 
 
@@ -762,3 +779,84 @@ with client.beta.threads.runs.stream(
   stream.until_done()
 ```
 
+## Advanced - Non-chat-message notifications (Toasts on UI)
+
+![image-20240418095035885](./image-20240418095035885.png)
+
+```python
+from promptflow.devkit import start_chat, Chat
+
+my_chat = start_chat()
+
+def handle_toast_status_change(status: string):
+    print(status) # queued, visible, dismissed, unmounted
+
+notification = new Chat.Notification(
+	title="Internal error",
+    body="call stack:\n ...",
+    intent="error", # success, info, warning, error, progress, avatar
+    position="bottom-end", # top, top-start, top-end, bottom, bottom-start, bottom-end
+    on_status_change=handle_toast_status_change
+)
+my_chat.notify(notification)
+```
+
+```typescript
+import { 
+    Chat, 
+    Notification,
+    NotificationIntent,
+    UIWidgetPosition
+} from "@promptflow/chat";
+
+const myChat = new Chat();
+;
+
+const someEventHandler = async () => {
+    // internal error occurred.
+    const notification: Notification = {
+        title: "internal error",
+        body: "call stack:\n...",
+        intent: NotificationIntent.Error,
+        position: UIWidgetPosition.BottomEnd,
+        onStatusChange: status => console.log(status)
+    }
+    
+    await myChat.notify(notification);
+}
+
+await myChat.start();
+```
+
+
+
+# Implement design
+
+## start chat
+
+Sequences:
+
+- start_chat(window="my_chat_window") invoked
+- local pfs look up if chat window "my_chat_window" is already mounted
+  - Yes: push "append new chat events". UI get it and append it in the chat list. Need detail contract design
+  - No: local pfs start a new chat window, with "window_id=my_chat_window" in the url
+
+## Update UI layout
+
+E.g. register right panel
+
+- Local pfs push "append right panel" event to UI. New right panel id in the payload.
+- UI send get request (rest api) to fetch the right panel config in object to local server. Need detail contract design.
+- UI send status code to server to keep server awareness about whether the registerRightPanel call is completed.
+
+## Messaging & Notification
+
+**TBD** Use web socket.
+
+## HTML templating
+
+Template engine candidates:
+
+- Jade
+- EJS
+- Jinja
