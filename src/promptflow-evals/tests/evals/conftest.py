@@ -4,7 +4,6 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-from azure.identity import DefaultAzureCredential
 from pytest_mock import MockerFixture
 
 from promptflow.client import PFClient
@@ -14,7 +13,6 @@ from promptflow.executor._process_manager import create_spawned_fork_process_man
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
 
 try:
-    from promptflow.recording.azure import FakeTokenCredential
     from promptflow.recording.local import recording_array_reset
     from promptflow.recording.record_mode import is_in_ci_pipeline, is_live, is_record, is_replay
 except ImportError:
@@ -91,15 +89,6 @@ def project_scope() -> dict:
         raise ValueError(f"Connection '{conn_name}' not found in dev connections.")
 
     return dev_connections[conn_name]["value"]
-
-
-@pytest.fixture
-def azure_credential():
-    # CI pipeline currently does not support DefaultAzureCredential
-    if pytest.is_replay:
-        return FakeTokenCredential()
-
-    return DefaultAzureCredential()
 
 
 @pytest.fixture

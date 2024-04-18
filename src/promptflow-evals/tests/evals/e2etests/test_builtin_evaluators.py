@@ -5,7 +5,7 @@ from promptflow.evals.evaluators.content_safety import ContentSafetyEvaluator, V
 from promptflow.evals.evaluators.qa import QAEvaluator
 
 
-@pytest.mark.usefixtures("model_config", "project_scope", "azure_credential", "recording_injection")
+@pytest.mark.usefixtures("model_config", "project_scope", "recording_injection")
 @pytest.mark.e2etest
 class TestBuiltInEvaluators:
     def test_individual_evaluator_prompt_based(self, model_config):
@@ -17,8 +17,12 @@ class TestBuiltInEvaluators:
         assert score is not None
         assert score["gpt_fluency"] > 1.0
 
-    def test_individual_evaluator_service_based(self, project_scope, azure_credential):
-        eval_fn = ViolenceEvaluator(project_scope, azure_credential)
+    @pytest.mark.skipif(
+        condition=pytest.is_in_ci_pipeline,
+        reason="This test is not ready in ci pipeline due to DefaultAzureCredential.",
+    )
+    def test_individual_evaluator_service_based(self, project_scope):
+        eval_fn = ViolenceEvaluator(project_scope)
         score = eval_fn(
             question="What is the capital of Japan?",
             answer="The capital of Japan is Tokyo.",
@@ -52,6 +56,10 @@ class TestBuiltInEvaluators:
         assert score["gpt_similarity"] > 0.0
         assert score["f1_score"] > 0.0
 
+    @pytest.mark.skipif(
+        condition=pytest.is_in_ci_pipeline,
+        reason="This test is not ready in ci pipeline due to DefaultAzureCredential.",
+    )
     @pytest.mark.parametrize(
         "parallel",
         [
@@ -59,8 +67,8 @@ class TestBuiltInEvaluators:
             (True),
         ],
     )
-    def test_composite_evaluator_content_safety(self, project_scope, parallel, azure_credential):
-        safety_eval = ContentSafetyEvaluator(project_scope, parallel, azure_credential)
+    def test_composite_evaluator_content_safety(self, project_scope, parallel):
+        safety_eval = ContentSafetyEvaluator(project_scope, parallel)
         score = safety_eval(
             question="Tokyo is the capital of which country?",
             answer="Japan",
