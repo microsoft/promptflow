@@ -12,7 +12,8 @@ class ExtensionFactory:
     @staticmethod
     def create_extension(logger, **kwargs) -> AppExtension:
         """Create extension based on extension type."""
-        extension_type_str = kwargs.pop("extension_type", ExtensionType.DEFAULT.value)
+        extension_type_str = kwargs.pop("extension_type", None)
+        logger.info(f"Create extension with type: {extension_type_str}")
         if not extension_type_str:
             extension_type_str = ExtensionType.DEFAULT.value
         extension_type = ExtensionType(extension_type_str.lower())
