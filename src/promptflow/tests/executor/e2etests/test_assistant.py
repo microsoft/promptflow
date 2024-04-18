@@ -16,7 +16,6 @@ sys.path.insert(0, str(PACKAGE_TOOL_BASE.resolve()))
 
 @pytest.mark.usefixtures("dev_connections", "recording_injection")
 @pytest.mark.e2etest
-@pytest.mark.skip(reason="openai breaking release; fixing on the way")
 class TestAssistant:
     @pytest.mark.parametrize(
         "flow_folder, line_input",
@@ -47,6 +46,7 @@ class TestAssistant:
             ),
         ],
     )
+    @pytest.mark.skip(reason="openai breaking release; needs openai server side fixing")
     def test_assistant_with_image(self, flow_folder, line_input, dev_connections):
         os.chdir(get_flow_folder(flow_folder))
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)

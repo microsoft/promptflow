@@ -60,8 +60,16 @@ async def create_assistant(cli: Union[AsyncOpenAI, AsyncAzureOpenAI], assistant_
 @trace
 async def add_message(cli: Union[AsyncOpenAI, AsyncAzureOpenAI], message: list, thread_id: str):
     content = extract_text_from_message(message)
+    api_args = {
+        "thread_id": thread_id,
+        "role": "user",
+        "content": content
+    }
     file_ids = await extract_file_ids_from_message(cli, message)
-    msg = await cli.beta.threads.messages.create(thread_id=thread_id, role="user", content=content, file_ids=file_ids)
+    if file_ids:
+        api_args['attachments'] = [{"file_id": file_id} for file_id in file_ids]
+
+    msg = await cli.beta.threads.messages.create(**api_args)
     print(f"Created message message_id: {msg.id}, thread_id: {thread_id}")
     return msg
 
