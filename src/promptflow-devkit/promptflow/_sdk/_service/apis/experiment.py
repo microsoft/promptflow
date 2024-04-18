@@ -40,7 +40,7 @@ test_experiment.add_argument(
     "main_flow_run_id", type=str, required=False, location="json", help="Designated run id of main flow node"
 )
 test_experiment.add_argument(
-    "init",
+    "main_flow_init",
     type=dict,
     required=False,
     location="json",
@@ -88,7 +88,7 @@ class ExperimentTest(Resource):
         output_path = args.output_path
         session = args.session
         main_flow_run_id = args.main_flow_run_id
-        init = args.init or {}
+        init = args.main_flow_init or {}
 
         context = None
         if override_flow_path:

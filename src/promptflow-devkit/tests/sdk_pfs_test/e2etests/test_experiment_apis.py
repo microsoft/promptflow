@@ -92,7 +92,7 @@ class TestExperimentAPIs:
                         EXPERIMENT_ROOT / "class-based-eager-flow-exp-template/flow.exp.yaml"
                     ).as_posix(),
                     "override_flow_path": (EAGER_FLOWS_DIR / "basic_callable_class" / "flow.flex.yaml").as_posix(),
-                    "init": {"obj_input": "val3"},
+                    "main_flow_init": {"obj_input": "val3"},
                 }
             ).json
         assert "main" in experiment and experiment["main"]["detail"]["flow_runs"][0]["inputs"] == {
