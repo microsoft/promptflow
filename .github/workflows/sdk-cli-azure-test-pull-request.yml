@@ -13,8 +13,6 @@ on:
       - src/promptflow-core/**
       - src/promptflow-devkit/**
       - src/promptflow-azure/**
-    paths-ignore:
-      - '**/*.md'
 
 
 env:
@@ -55,7 +53,7 @@ jobs:
         run: |
           set -xe
           poetry install --with ci,test
-  
+
           poetry run pip show promptflow-tracing
           poetry run pip show promptflow-core
           poetry run pip show promptflow-devkit
