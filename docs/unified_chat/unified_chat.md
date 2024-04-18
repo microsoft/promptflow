@@ -860,3 +860,9 @@ Template engine candidates:
 - Jade
 - EJS
 - Jinja
+
+## Prompty/Flow test integration
+
+- We can add "tags" fields in the chat object. Then UI is able to identify it is a "dag flow"/"flex flow"/"prompty"
+- Triggers start_chat() on "pf flow test --ui". And binds on_message to flow test invoking and send(message) with flow test output.
+- Triggers start_chat() multiple times on variants, with rules to identify different variants.
