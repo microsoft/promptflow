@@ -24,6 +24,7 @@ from promptflow._sdk._orm.trace import Event as ORMEvent
 from promptflow._sdk._orm.trace import LineRun as ORMLineRun
 from promptflow._sdk._orm.trace import Span as ORMSpan
 from promptflow._sdk._telemetry import ActivityType, monitor_operation
+from promptflow._sdk._tracing_utils import append_conditions
 from promptflow._sdk._utils import (
     convert_time_unix_nano_to_timestamp,
     flatten_pb_attributes,
@@ -204,20 +205,14 @@ class TraceOperations:
         runs: typing.Optional[typing.Union[str, typing.List[str]]] = None,
         session_id: typing.Optional[str] = None,
     ) -> typing.List[LineRun]:
-        # append condition(s) to the expression
-        self._logger.debug("received search parameter expression: %s", expression)
-        if collection is not None:
-            self._logger.debug("received search parameter collection: %s", collection)
-            expression += f" and collection == '{collection}'"
-        if runs is not None:
-            self._logger.debug("received search parameter runs: %s", runs)
-            runs_expr = ", ".join([f"'{run}'" for run in runs])
-            expression += f" and run in ({runs_expr})"
-        if session_id is not None:
-            self._logger.debug("received search parameter session_id: %s", session_id)
-            expression += f" and session_id == '{session_id}'"
+        expression = append_conditions(
+            expression=expression,
+            collection=collection,
+            runs=runs,
+            session_id=session_id,
+            logger=self._logger,
+        )
         self._logger.info("search expression that will be executed: %s", expression)
-
         orm_line_runs = ORMLineRun.search(expression)
         return self._parse_line_runs_from_orm(orm_line_runs)
 
