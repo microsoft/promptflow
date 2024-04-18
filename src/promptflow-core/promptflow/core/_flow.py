@@ -230,6 +230,7 @@ class Prompty(FlowBase):
         Write a simple {{text}} program that displays the greeting message.
 
     Prompty as function example:
+
     .. code-block:: python
 
         from promptflow.core import Prompty
@@ -242,12 +243,12 @@ class Prompty(FlowBase):
             "configuration": {
                 "type": "azure_openai",
                 "azure_deployment": "gpt-35-turbo",
-                "api_key": ${env:AZURE_OPENAI_API_KEY},
-                "api_version": ${env:AZURE_OPENAI_API_VERSION},
-                "azure_endpoint": ${env:AZURE_OPENAI_ENDPOINT},
+                "api_key": "${env:AZURE_OPENAI_API_KEY}",
+                "api_version": "${env:AZURE_OPENAI_API_VERSION}",
+                "azure_endpoint": "${env:AZURE_OPENAI_ENDPOINT}",
             },
             "parameters": {
-                max_token: 512
+                "max_token": 512
             }
         }
         prompty = Prompty.load(source="path/to/prompty.prompty", model=model_config)
@@ -260,11 +261,11 @@ class Prompty(FlowBase):
             "configuration": AzureOpenAIModelConfiguration(
                 azure_deployment="gpt-35-turbo",
                 api_key="${env:AZURE_OPENAI_API_KEY}",
-                api_version=${env:AZURE_OPENAI_API_VERSION}",
+                api_version="${env:AZURE_OPENAI_API_VERSION}",
                 azure_endpoint="${env:AZURE_OPENAI_ENDPOINT}",
             ),
             "parameters": {
-                max_token: 512
+                "max_token": 512
             }
         }
         prompty = Prompty.load(source="path/to/prompty.prompty", model=model_config)
@@ -279,12 +280,11 @@ class Prompty(FlowBase):
                 azure_deployment="gpt-35-turbo",
             ),
             "parameters": {
-                max_token: 512
+                "max_token": 512
             }
         }
         prompty = Prompty.load(source="path/to/prompty.prompty", model=model_config)
         result = prompty(input_a=1, input_b=2)
-
     """
 
     def __init__(
