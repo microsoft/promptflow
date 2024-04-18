@@ -110,7 +110,7 @@ if($WithReferenceDoc){
         $SubPkgRefDocPath = [System.IO.Path]::Combine($RefDocPath, $Item.Name)
         Write-Host "===============Build $Item Reference Doc==============="
         $TemplatePath = [System.IO.Path]::Combine($RepoRootPath, "scripts\docs\api_doc_templates")
-        sphinx-apidoc --module-first --no-headings --no-toc --implicit-namespaces "$SubPkgPath" -o "$SubPkgRefDocPath" -t $TemplatePath | Tee-Object -FilePath $SphinxApiDoc
+        sphinx-apidoc --separate --module-first --no-toc --implicit-namespaces "$SubPkgPath" -o "$SubPkgRefDocPath" -t $TemplatePath | Tee-Object -FilePath $SphinxApiDoc
         $SubPkgWarningsAndErrors = Select-String -Path $SphinxApiDoc -Pattern $WarningErrorPattern
         if($SubPkgWarningsAndErrors){
             $ApidocWarningsAndErrors.AddRange($SubPkgWarningsAndErrors)

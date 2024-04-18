@@ -1,0 +1,5 @@
+{
+  "question": "what's the capital of China?",
+  "answer": "Shanghai",
+  "ground_truth": "Beijing"
+}

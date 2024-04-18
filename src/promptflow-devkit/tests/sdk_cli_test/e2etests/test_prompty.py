@@ -269,3 +269,13 @@ class TestPrompty:
             if len(item.choices) > 0 and item.choices[0].delta.content:
                 result_content += item.choices[0].delta.content
         assert "2" in result_content
+
+    def test_prompty_trace(self, pf: PFClient):
+        run = pf.run(flow=f"{PROMPTY_DIR}/prompty_example.prompty", data=f"{DATA_DIR}/prompty_inputs.jsonl")
+        line_runs = pf.traces.list_line_runs(runs=run.name)
+        running_line_run = pf.traces.get_line_run(line_run_id=line_runs[0].line_run_id)
+        spans = pf.traces.list_spans(trace_ids=[running_line_run.trace_id])
+        prompty_span = next((span for span in spans if span.name == "Basic Prompt"), None)
+        events = [pf.traces.get_event(item["attributes"]["event.id"]) for item in prompty_span.events]
+        assert any(["prompt.template" in event["attributes"]["payload"] for event in events])
+        assert any(["prompt.variables" in event["attributes"]["payload"] for event in events])
