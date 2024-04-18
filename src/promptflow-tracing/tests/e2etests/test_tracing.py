@@ -223,7 +223,7 @@ class TestTracing:
     def test_otel_trace_with_multiple_functions(self):
         execute_function_in_subprocess(self.assert_otel_traces_with_multiple_functions)
 
-    def test_otel_tracer_refreshed_after_start_trace(self):
+    def _assert_otel_tracer_collection_after_start_trace(self):
         from promptflow.tracing import start_trace
 
         memory_exporter = prepare_memory_exporter()
@@ -243,6 +243,9 @@ class TestTracing:
         assert len(new_span_list) > len(span_list)
         for span in new_span_list[len(span_list) :]:
             assert span.resource.attributes["collection"] == collection2
+
+    def test_otel_tracer_refreshed_after_start_trace(self):
+        execute_function_in_subprocess(self._assert_otel_tracer_collection_after_start_trace)
 
     def assert_otel_traces_with_multiple_functions(self):
         memory_exporter = prepare_memory_exporter()
