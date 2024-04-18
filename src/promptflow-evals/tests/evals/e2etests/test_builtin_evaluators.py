@@ -17,10 +17,7 @@ class TestBuiltInEvaluators:
         assert score is not None
         assert score["gpt_fluency"] > 1.0
 
-    @pytest.mark.skipif(
-        condition=pytest.is_in_ci_pipeline,
-        reason="This test is not ready in ci pipeline due to DefaultAzureCredential.",
-    )
+    @pytest.mark.skip(reason="This test is not ready in ci pipeline due to DefaultAzureCredential.")
     def test_individual_evaluator_service_based(self, project_scope):
         eval_fn = ViolenceEvaluator(project_scope)
         score = eval_fn(
@@ -56,10 +53,7 @@ class TestBuiltInEvaluators:
         assert score["gpt_similarity"] > 0.0
         assert score["f1_score"] > 0.0
 
-    @pytest.mark.skipif(
-        condition=pytest.is_in_ci_pipeline,
-        reason="This test is not ready in ci pipeline due to DefaultAzureCredential.",
-    )
+    @pytest.mark.skip(reason="This test is not ready in ci pipeline due to DefaultAzureCredential.")
     @pytest.mark.parametrize("parallel", [False, True])
     def test_composite_evaluator_content_safety(self, project_scope, parallel):
         safety_eval = ContentSafetyEvaluator(project_scope, parallel)
