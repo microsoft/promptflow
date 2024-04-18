@@ -13,6 +13,8 @@ on:
       - src/promptflow-core/**
       - src/promptflow-devkit/**
       - src/promptflow-azure/**
+    paths-ignore:
+      - '**/*.md'
 
 
 env:
