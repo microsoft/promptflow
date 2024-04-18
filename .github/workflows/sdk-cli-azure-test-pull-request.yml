@@ -69,7 +69,7 @@ jobs:
         shell: pwsh
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: |
-          poetry run pytest ./tests/sdk_cli_azure_test -p promptflow --cov=promptflow --cov-config=pyproject.toml `
+          poetry run pytest ./tests/sdk_cli_azure_test --cov=promptflow --cov-config=pyproject.toml `
           --cov-report=term --cov-report=html --cov-report=xml -n auto -m "unittest or e2etest"
 
       - name: Upload Test Results
