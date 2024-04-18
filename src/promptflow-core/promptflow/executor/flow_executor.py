@@ -842,7 +842,6 @@ class FlowExecutor:
         run_info: FlowRunInfo,
         run_tracker: RunTracker,
         context: FlowExecutionContext,
-        validate_inputs=False,
         allow_generator_output=False,
     ):
         # need to get everytime to ensure tracer is latest
@@ -866,7 +865,6 @@ class FlowExecutor:
                 run_info,
                 run_tracker,
                 context,
-                validate_inputs,
                 allow_generator_output,
             )
             # enrich span with trace type
@@ -881,15 +879,8 @@ class FlowExecutor:
         run_info: FlowRunInfo,
         run_tracker: RunTracker,
         context: FlowExecutionContext,
-        validate_inputs=False,
         allow_generator_output=False,
     ):
-        if validate_inputs:
-            inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=run_info.index)
-        inputs = self._multimedia_processor.load_multimedia_data(self._flow.inputs, inputs)
-        # Inputs are assigned after validation and multimedia data loading, instead of at the start of the flow run.
-        # This way, if validation or multimedia data loading fails, we avoid persisting invalid inputs.
-        run_info.inputs = inputs
         output, nodes_outputs = self._traverse_nodes(inputs, context)
         output = self._stringify_generator_output(output) if not allow_generator_output else output
         # Persist the node runs for the nodes that have a generator output
@@ -953,12 +944,17 @@ class FlowExecutor:
         output = {}
         aggregation_inputs = {}
         try:
+            if validate_inputs:
+                inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=run_info.index)
+            inputs = self._multimedia_processor.load_multimedia_data(self._flow.inputs, inputs)
+            # Inputs are assigned after validation and multimedia data loading, instead of at the start of the flow run.
+            # This way, if validation or multimedia data loading fails, we avoid persisting invalid inputs.
+            run_info.inputs = inputs
             output, aggregation_inputs = self._exec_inner_with_trace(
                 inputs,
                 run_info,
                 run_tracker,
                 context,
-                validate_inputs,
                 allow_generator_output,
             )
         except KeyboardInterrupt as ex:
