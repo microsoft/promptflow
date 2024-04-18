@@ -45,7 +45,10 @@ promptflow.tools.llm_vision.llm_vision:
       enabled_by_type:
       - OpenAIConnection
       enum:
+      - gpt-4-turbo
       - gpt-4-vision-preview
+      - gpt-4-turbo-2024-04-09
+      - gpt-4-1106-vision-preview
       allow_manual_entry: true
       type:
         - string

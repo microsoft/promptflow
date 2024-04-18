@@ -18,6 +18,8 @@ promptflow.tools.embedding.embedding:
         embeddings: true
       model_list:
       - text-embedding-ada-002
+      - text-embedding-3-large
+      - text-embedding-3-small
       - text-search-ada-doc-001
       - text-search-ada-query-001
     model:
