@@ -49,25 +49,16 @@ jobs:
           python-version: ${{ matrix.pythonVersion }}
       - uses: snok/install-poetry@v1
       - name: install test dependency group
+        working-directory: ${{ env.WORKING_DIRECTORY }}
         run: |
           set -xe
-          poetry install --only test
-          poetry run pip install ${{ env.TRACING_DIRECTORY }}
-          poetry run pip install ${{ env.CORE_DIRECTORY }}[azureml-serving]
-          poetry run pip install ${{ env.DEVKIT_DIRECTORY }}[pyarrow]
-          poetry run pip install -e ${{ env.WORKING_DIRECTORY }}
-
-          echo "Need to install promptflow to avoid tool dependency issue"
-          poetry run pip install ${{ env.PROMPTFLOW_DIRECTORY }}
-          poetry run pip install ${{ env.TOOL_DIRECTORY }}
-          poetry run pip install -e ${{ env.RECORD_DIRECTORY }}
-
+          poetry install --with ci,test
+  
           poetry run pip show promptflow-tracing
           poetry run pip show promptflow-core
           poetry run pip show promptflow-devkit
           poetry run pip show promptflow-azure
           poetry run pip show promptflow-tools
-        working-directory: ${{ env.WORKING_DIRECTORY }}
 
       - name: generate live test resources
         working-directory: ${{ env.PROMPTFLOW_DIRECTORY }}
