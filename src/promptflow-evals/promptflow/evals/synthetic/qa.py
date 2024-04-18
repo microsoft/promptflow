@@ -186,7 +186,7 @@ class QADataGenerator:
     _PARSING_ERR_UNEQUAL_Q_AFTER_MOD = "Parsing error: Unequal question count after modification"
     _PARSING_ERR_FIRST_LINE = "Parsing error: First line must be a question"
 
-    def __init__(self, model_config: Dict):
+    def __init__(self, *, model_config: Dict):
         """Initialize QADataGenerator using Azure OpenAI details."""
 
         api_key = "OPENAI_API_KEY"

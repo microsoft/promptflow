@@ -48,7 +48,7 @@ class TestDataGenerator:
             "Answer after space.\n\n",
         ]
         model_config = dict(api_base=API_BASE, api_key=API_KEY, deployment=DEPLOYMENT, model=MODEL)
-        qa_generator = QADataGenerator(model_config)
+        qa_generator = QADataGenerator(model_config=model_config)
         questions, answers = qa_generator._parse_qa_from_response(response_text=response_text)
         for i, question in enumerate(questions):
             assert expected_questions[i] == question, "Question not equal"
@@ -57,7 +57,7 @@ class TestDataGenerator:
 
     def test_unsupported_num_questions_for_summary(self):
         model_config = dict(api_base=API_BASE, api_key=API_KEY, deployment=DEPLOYMENT, model=MODEL)
-        qa_generator = QADataGenerator(model_config)
+        qa_generator = QADataGenerator(model_config=model_config)
         with pytest.raises(ValueError) as excinfo:
             qa_generator.generate("", QAType.SUMMARY, 10)
         assert str(excinfo.value) == "num_questions unsupported for Summary QAType"
@@ -65,7 +65,7 @@ class TestDataGenerator:
     @pytest.mark.parametrize("num_questions", [0, -1])
     def test_invalid_num_questions(self, num_questions):
         model_config = dict(api_base=API_BASE, api_key=API_KEY, deployment=DEPLOYMENT, model=MODEL)
-        qa_generator = QADataGenerator(model_config)
+        qa_generator = QADataGenerator(model_config=model_config)
         with pytest.raises(ValueError) as excinfo:
             qa_generator.generate("", QAType.SHORT_ANSWER, num_questions)
         assert str(excinfo.value) == "num_questions must be an integer greater than zero"
@@ -89,7 +89,7 @@ class TestDataGenerator:
         ]
 
         model_config = dict(api_base=API_BASE, api_key=API_KEY, deployment=DEPLOYMENT, model=MODEL)
-        qa_generator = QADataGenerator(model_config)
+        qa_generator = QADataGenerator(model_config=model_config)
         qas = list(zip(questions, answers))
         filepath = os.path.join(pathlib.Path(__file__).parent.parent.resolve(), "test_configs")
         output_file = os.path.join(filepath, f"test_{qa_type.value}_{structure.value}.jsonl")
