@@ -133,6 +133,8 @@ def append_conditions(
         logger.debug("received search parameter runs: %s", runs)
         if isinstance(runs, str):
             expression += f" and run == '{runs}'"
+        elif len(runs) == 1:
+            expression += f" and run == '{runs[0]}'"
         else:
             runs_expr = " or ".join([f"run == '{run}'" for run in runs])
             expression += f" and ({runs_expr})"
