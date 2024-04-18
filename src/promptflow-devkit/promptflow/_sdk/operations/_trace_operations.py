@@ -197,7 +197,27 @@ class TraceOperations:
         )
         return self._parse_line_runs_from_orm(orm_line_runs)
 
-    def _search_line_runs(self, expression: str) -> typing.List[LineRun]:
+    def _search_line_runs(
+        self,
+        expression: str,
+        collection: typing.Optional[str] = None,
+        runs: typing.Optional[typing.Union[str, typing.List[str]]] = None,
+        session_id: typing.Optional[str] = None,
+    ) -> typing.List[LineRun]:
+        # append condition(s) to the expression
+        self._logger.debug("received search parameter expression: %s", expression)
+        if collection is not None:
+            self._logger.debug("received search parameter collection: %s", collection)
+            expression += f" and collection == '{collection}'"
+        if runs is not None:
+            self._logger.debug("received search parameter runs: %s", runs)
+            runs_expr = ", ".join([f"'{run}'" for run in runs])
+            expression += f" and run in ({runs_expr})"
+        if session_id is not None:
+            self._logger.debug("received search parameter session_id: %s", session_id)
+            expression += f" and session_id == '{session_id}'"
+        self._logger.info("search expression that will be executed: %s", expression)
+
         orm_line_runs = ORMLineRun.search(expression)
         return self._parse_line_runs_from_orm(orm_line_runs)
 
