@@ -122,7 +122,18 @@ def add_default_routes(app: PromptflowServingApp):
     def swagger():
         """Get the swagger object."""
         return jsonify(app.swagger)
+    
+    print(f'{app.project_path}/ai-plugin.json')
 
+    if(os.path.isfile(f'{app.project_path}/ai-plugin.json')):
+        @app.route('/.well-known/ai-plugin.json', methods=['GET', 'OPTIONS'])
+        def get_plugin_json():
+            if request.method == 'OPTIONS':
+                return ('', 204, {})
+            with open('ai-plugin.json', 'r') as f:
+                    json_data = f.read()
+                    return Response(json_data, mimetype='text/json')
+  
     @app.route("/health", methods=["GET"])
     def health():
         """Check if the runtime is alive."""
