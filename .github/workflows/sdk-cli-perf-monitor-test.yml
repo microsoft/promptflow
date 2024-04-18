@@ -12,8 +12,6 @@ on:
       - src/promptflow-azure/**
       - scripts/building/**
       - .github/workflows/sdk-cli-perf-monitor-test.yml
-    paths-ignore:
-      - '**/*.md'
 
   schedule:
     - cron: "0 */6 * * *"  # Run every 6 hours
