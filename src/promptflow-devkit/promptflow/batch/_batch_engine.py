@@ -590,9 +590,8 @@ class BatchEngine:
             # if the flow language is python, we have already persisted node run infos during execution.
             # so we should persist node run infos in aggr_result for other languages.
             if not isinstance(self._executor_proxy, PythonExecutorProxy):
-                if not self._is_eager_flow:
-                    for node_run in aggr_result.node_run_infos.values():
-                        self._storage.persist_node_run(node_run)
+                for node_run in aggr_result.node_run_infos.values():
+                    self._storage.persist_node_run(node_run)
             bulk_logger.info(f"Finish executing aggregation {name}.")
             return aggr_result
         except PromptflowException as e:
