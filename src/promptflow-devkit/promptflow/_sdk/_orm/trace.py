@@ -468,8 +468,8 @@ class SearchTranslator(ast.NodeVisitor):
         # UX renders OTel status 'Ok' as 'complete'
         # so we need to replace that to 'Ok' before query to SQLite
         def _convert_complete_to_ok(_comparator: str) -> str:
-            if _comparator == "complete":
-                return "Ok"
+            if _comparator == "'complete'":
+                return "'Ok'"
             return _comparator
 
         new_left = _convert_complete_to_ok(left)
