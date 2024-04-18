@@ -6,6 +6,7 @@ from unittest.mock import patch
 import pytest
 from pytest_mock import MockerFixture
 
+from promptflow.client import PFClient
 from promptflow.core import AzureOpenAIModelConfiguration
 from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
@@ -32,9 +33,9 @@ except ImportError:
         return False
 
 
-PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
-CONNECTION_FILE = (PROMOTFLOW_ROOT / "promptflow-evals/connections.json").resolve().absolute().as_posix()
-RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMOTFLOW_ROOT / "promptflow-recording/recordings/local").resolve()
+PROMPTFLOW_ROOT = Path(__file__) / "../../../.."
+CONNECTION_FILE = (PROMPTFLOW_ROOT / "promptflow-evals/connections.json").resolve().absolute().as_posix()
+RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "promptflow-recording/recordings/local").resolve()
 
 
 def pytest_configure():
@@ -86,6 +87,12 @@ def project_scope() -> dict:
         raise ValueError(f"Connection '{conn_name}' not found in dev connections.")
 
     return dev_connections[conn_name]["value"]
+
+
+@pytest.fixture
+def pf_client() -> PFClient:
+    """The fixture, returning PRClient"""
+    return PFClient()
 
 
 # ==================== Recording injection ====================

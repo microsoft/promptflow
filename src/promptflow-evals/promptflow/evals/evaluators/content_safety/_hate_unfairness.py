@@ -1,14 +1,11 @@
 from pathlib import Path
-from typing import Optional
-
-from azure.core.credentials import TokenCredential
 
 from promptflow.client import load_flow
 from promptflow.evals._constants import EvaluationMetrics
 
 
 class HateUnfairnessEvaluator:
-    def __init__(self, project_scope: dict, credential: Optional[TokenCredential] = None):
+    def __init__(self, project_scope: dict, credential=None):
         """
         Initialize an evaluator for hate unfairness score.
 

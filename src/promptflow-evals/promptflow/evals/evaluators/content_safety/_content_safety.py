@@ -1,7 +1,4 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Optional
-
-from azure.core.credentials import TokenCredential
 
 from ._hate_unfairness import HateUnfairnessEvaluator
 from ._self_harm import SelfHarmEvaluator
@@ -10,7 +7,7 @@ from ._violence import ViolenceEvaluator
 
 
 class ContentSafetyEvaluator:
-    def __init__(self, project_scope: dict, parallel: bool = True, credential: Optional[TokenCredential] = None):
+    def __init__(self, project_scope: dict, parallel: bool = True, credential=None):
         """
         Initialize an evaluator configured for a specific Azure OpenAI model.
 
