@@ -1,0 +1,14 @@
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": "where is the nearest coffee shop?"
+    },
+    {
+      "role": "assistant",
+      "content": "I'm sorry, I don't know that. Would you like me to look it up for you?"
+    }
+  ],
+  "question": "How many questions did John Doe ask?",
+  "answer": "1 question."
+}

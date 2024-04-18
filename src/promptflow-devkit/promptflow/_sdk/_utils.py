@@ -64,8 +64,7 @@ from promptflow._sdk._errors import (
     UnsecureConnectionError,
 )
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
-from promptflow._sdk.entities._flows.base import FlowBase
-from promptflow._sdk.entities._flows.dag import Flow as DAGFlow
+from promptflow._utils.context_utils import inject_sys_path
 from promptflow._utils.flow_utils import is_flex_flow, resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
@@ -1055,6 +1054,19 @@ def callable_to_entry_string(callable_obj: Callable) -> str:
     return f"{module_str}:{func_str}"
 
 
+def entry_string_to_callable(entry_file, entry) -> Callable:
+    with inject_sys_path(Path(entry_file).parent):
+        try:
+            module_name, func_name = entry.split(":")
+            module = importlib.import_module(module_name)
+        except Exception as e:
+            raise UserErrorException(
+                message_format="Failed to load python module for {entry_file}",
+                entry_file=entry_file,
+            ) from e
+        return getattr(module, func_name, None)
+
+
 def is_flex_run(run: "Run") -> bool:
     if run._run_source == RunInfoSources.LOCAL:
         try:
@@ -1071,16 +1083,36 @@ def is_flex_run(run: "Run") -> bool:
     return False
 
 
+def format_signature_type(flow_meta):
+    # signature is language irrelevant, so we apply json type system
+    # TODO: enable this mapping after service supports more types
+    value_type_map = {
+        # ValueType.INT.value: SignatureValueType.INT.value,
+        # ValueType.DOUBLE.value: SignatureValueType.NUMBER.value,
+        # ValueType.LIST.value: SignatureValueType.ARRAY.value,
+        # ValueType.BOOL.value: SignatureValueType.BOOL.value,
+    }
+    for port_type in ["inputs", "outputs", "init"]:
+        if port_type not in flow_meta:
+            continue
+        for port_name, port in flow_meta[port_type].items():
+            if port["type"] in value_type_map:
+                port["type"] = value_type_map[port["type"]]
+
+
 generate_flow_meta = _generate_flow_meta
 # DO NOT remove the following line, it's used by the runtime imports from _sdk/_utils directly
 get_used_connection_names_from_dict = get_used_connection_names_from_dict
 update_dict_value_with_connections = update_dict_value_with_connections
 
 
-def get_flow_name(flow: Union[FlowBase, Path]) -> str:
+def get_flow_name(flow) -> str:
     if isinstance(flow, Path):
         return flow.resolve().name
+
+    from promptflow._sdk.entities._flows.dag import Flow as DAGFlow
+
     if isinstance(flow, DAGFlow):
         return flow.name
-    # others: flex flow, prompty, etc.
+    # should be promptflow._sdk.entities._flows.base.FlowBase: flex flow, prompty, etc.
     return flow.code.name

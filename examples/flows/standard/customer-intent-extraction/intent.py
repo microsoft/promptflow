@@ -7,7 +7,10 @@ from langchain.schema import HumanMessage
 
 
 def extract_intent(chat_prompt: str):
-    if "AZURE_OPENAI_API_KEY" not in os.environ:
+    if (
+        "AZURE_OPENAI_API_KEY" not in os.environ
+        or "AZURE_OPENAI_API_BASE" not in os.environ
+    ):
         # load environment variables from .env file
         try:
             from dotenv import load_dotenv
@@ -18,8 +21,11 @@ def extract_intent(chat_prompt: str):
 
         load_dotenv()
 
+    # AZURE_OPENAI_ENDPOINT conflict with AZURE_OPENAI_API_BASE when use with langchain
+    if "AZURE_OPENAI_ENDPOINT" in os.environ:
+        os.environ.pop("AZURE_OPENAI_ENDPOINT")
     chat = AzureChatOpenAI(
-        deployment_name=os.environ["CHAT_DEPLOYMENT_NAME"],
+        deployment_name=os.environ.get("CHAT_DEPLOYMENT_NAME", "gpt-35-turbo"),
         openai_api_key=os.environ["AZURE_OPENAI_API_KEY"],
         openai_api_base=os.environ["AZURE_OPENAI_API_BASE"],
         openai_api_type="azure",
@@ -38,11 +44,11 @@ def generate_prompt(customer_info: str, history: list, user_prompt_template: str
 
     prompt_template = PromptTemplate.from_template(user_prompt_template)
     chat_prompt_template = ChatPromptTemplate.from_messages(
-        [
-            HumanMessagePromptTemplate(prompt=prompt_template)
-        ]
+        [HumanMessagePromptTemplate(prompt=prompt_template)]
     )
-    return chat_prompt_template.format_prompt(customer_info=customer_info, chat_history=chat_history_text).to_string()
+    return chat_prompt_template.format_prompt(
+        customer_info=customer_info, chat_history=chat_history_text
+    ).to_string()
 
 
 if __name__ == "__main__":
@@ -60,7 +66,9 @@ if __name__ == "__main__":
 
     # each test
     for item in data:
-        chat_prompt = generate_prompt(item["customer_info"], item["history"], user_prompt_template)
+        chat_prompt = generate_prompt(
+            item["customer_info"], item["history"], user_prompt_template
+        )
         reply = extract_intent(chat_prompt)
         print("=====================================")
         # print("Customer info: ", item["customer_info"])

@@ -7,7 +7,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from promptflow._constants import FlowLanguage
 from promptflow._core._errors import MetaFileNotFound, MetaFileReadError
+from promptflow._proxy import ProxyFactory
 from promptflow._proxy._csharp_executor_proxy import CSharpExecutorProxy
 from promptflow._sdk._constants import FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
 from promptflow.executor._result import AggregationResult
@@ -134,3 +136,17 @@ class TestCSharpExecutorProxy:
                 s.bind(("localhost", int(port)))
         except OSError:
             pytest.fail("Port is not actually available")
+
+    @pytest.mark.parametrize(
+        "entry_str, expected_result",
+        [
+            pytest.param(
+                "(FunctionModeBasic)FunctionModeBasic.MyEntry.WritePoemReturnObjectAsync",
+                True,
+                id="flex_flow_class_init",
+            ),
+        ],
+    )
+    def test_is_csharp_flex_flow_entry(self, entry_str: str, expected_result: bool):
+        result = ProxyFactory().create_inspector_proxy(FlowLanguage.CSharp).is_flex_flow_entry(entry_str)
+        assert result is expected_result

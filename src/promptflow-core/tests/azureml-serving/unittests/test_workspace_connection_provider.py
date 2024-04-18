@@ -5,7 +5,7 @@ import copy
 
 import pytest
 
-from promptflow._constants import ConnectionAuthMode
+from promptflow.constants import ConnectionAuthMode
 from promptflow.core._connection_provider._models._models import (
     WorkspaceConnectionPropertiesV2BasicResource,
     WorkspaceConnectionPropertiesV2BasicResourceArmPaginatedResult,
