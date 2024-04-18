@@ -488,7 +488,7 @@ class SearchTranslator(ast.NodeVisitor):
                 return _comparator
             try:
                 dt = parse(_comparator)
-                return dt.isoformat()
+                return f"'{dt.isoformat()}'"
             except ValueError:
                 error_message = f"Invalid time format: {_comparator}"
                 raise WrongTraceSearchExpressionError(error_message)

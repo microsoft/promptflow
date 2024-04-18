@@ -288,7 +288,7 @@ class TestTraceSearchTrans:
         compare_expr = "'2012/12/21' < start_time <= '2024/04/18 18:55:42'"
         ast_compare = ast.parse(compare_expr, mode="eval").body
         sql_condition = search_trans._translate_compare_to_sql(ast_compare)
-        assert sql_condition == "2012-12-21T00:00:00 < start_time <= 2024-04-18T18:55:42"
+        assert sql_condition == "'2012-12-21T00:00:00' < start_time <= '2024-04-18T18:55:42'"
 
     def test_basic_search(self, memory_session: Session, search_trans: SearchTranslator):
         basic_expr = "name == 'web-classification'"
