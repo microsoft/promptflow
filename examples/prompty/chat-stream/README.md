@@ -1,5 +1,7 @@
-# Chat stream
-A prompt works in stream mode that uses the chat API to answer questions with chat history, leveraging promptflow connection.
+# Stream chat
+A prompt that uses the chat API to answer questions with chat history, leveraging promptflow connection. 
+
+Note this is a prompty produce a text in stream mode. The prompty has a stream parameter.
 
 
 ## Prerequisites
@@ -55,8 +57,8 @@ pf connection show --name open_ai_connection
 
 - Test flow: single turn
 ```bash
-# run chat flow with default question in flow.flex.yaml TODO
-# pf flow test --flow chat.prompty
+# run chat flow with default question in flow.flex.yaml
+pf flow test --flow chat.prompty
 
 # run chat flow with new question
 pf flow test --flow chat.prompty --inputs question="What's Azure Machine Learning?"
