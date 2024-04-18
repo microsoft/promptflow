@@ -12,9 +12,9 @@ tracing/index
 :caption: Flow
 :maxdepth: 1
 develop-a-flow/index
-run-and-evaluate-a-flow/index
 execute-flow-as-a-function
 chat-with-a-flow/index
+run-and-evaluate-a-flow/index
 ```
 
 ```{toctree}

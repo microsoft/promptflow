@@ -28,12 +28,16 @@ You can stop the prompt flow service with the following command:'pf service stop
 Alternatively, if no requests are made within 1 hours, it will automatically stop.
 You can begin chat flow on http://127.0.0.1:55627/v1.0/ui/chat?flow=***
 ```
-Clicking the chat URL will direct the user to a chat page corresponding to the passed flow:
+The browser page corresponding to the chat URL will automatically open and direct the user to a chat page 
+corresponding to the passed flow:
 ![chat-basic-dag-flow](../../media/how-to-guides/chat-with-a-flow/chat-basic-dag-flow.png)
 :::
 
 :::{tab-item} VS Code Extension
 :sync: VSC
 
+Click the `Open test chat page` button while viewing a flow YAML file in the Prompt flow VS Code extension, and you 
+will be directed to the chat page.
+![start-chat-window-in-vsc](../../media/how-to-guides/chat-with-a-flow/start-chat-window-in-vsc.png)
 :::
 ::::
