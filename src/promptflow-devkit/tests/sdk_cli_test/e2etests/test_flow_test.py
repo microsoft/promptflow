@@ -454,7 +454,7 @@ class TestFlowTest:
             "open_ai_model_config_model": "my_model",
         }
 
-        config1 = AzureOpenAIModelConfiguration(azure_deployment="my_deployment", connection="open_ai_connection")
+        config1 = AzureOpenAIModelConfiguration(azure_deployment="my_deployment", connection="azure_open_ai_connection")
         config2 = OpenAIModelConfiguration(model="my_model", base_url="fake_base_url")
         result2 = pf.test(
             flow=flow_path,
