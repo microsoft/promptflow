@@ -72,6 +72,12 @@ def get_connection_by_name(connection_name):
     return connection, connection_type
 
 
+def is_empty_connection_config(connection_dict):
+    reversed_fields = set(["azure_deployment", "model"])
+    connection_keys = set([k for k, v in connection_dict.items() if v])
+    return len(connection_keys - reversed_fields) == 0
+
+
 def convert_model_configuration_to_connection(model_configuration):
     if isinstance(model_configuration, dict):
         # Get connection from connection field
@@ -98,9 +104,15 @@ def convert_model_configuration_to_connection(model_configuration):
     if connection_type in [AzureOpenAIConnection.TYPE, "azure_openai"]:
         if "api_base" not in connection:
             connection["api_base"] = connection.get("azure_endpoint", None)
-        return AzureOpenAIConnection(**connection)
+        if is_empty_connection_config(connection):
+            return AzureOpenAIConnection.from_env()
+        else:
+            return AzureOpenAIConnection(**connection)
     elif connection_type in [OpenAIConnection.TYPE, "openai"]:
-        return OpenAIConnection(**connection)
+        if is_empty_connection_config(connection):
+            return OpenAIConnection.from_env()
+        else:
+            return OpenAIConnection(**connection)
     error_message = (
         f"Not Support connection type {connection_type} for embedding api. "
         f"Connection type should be in [{AzureOpenAIConnection.TYPE}, {OpenAIConnection.TYPE}]."

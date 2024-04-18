@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -281,3 +282,11 @@ class TestPrompty:
             )
             prompty()
         assert "Only dict and json file are supported as sample in prompty" in ex.value.message
+
+    def test_prompty_with_default_connection(self, pf: PFClient):
+        connection = pf.connections.get(name="azure_open_ai_connection", with_secrets=True)
+        os.environ["AZURE_OPENAI_ENDPOINT"] = connection.api_base
+        os.environ["AZURE_OPENAI_API_KEY"] = connection.api_key
+        prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example_with_default_connection.prompty")
+        result = prompty(question="what is the result of 1+1?")
+        assert "2" in result
