@@ -1,0 +1,238 @@
+promptflow.tools.llm.llm:
+  name: LLM
+  description:
+    default: Use OpenAI-like Large Language Model for text completion or chat.
+    aml: Use OpenAI-like Large Language Model for text completion or chat. For more details, refer to this [document](https://aka.ms/promptflow/llm-tool).
+    ai_studio: Use OpenAI-like Large Language Model for text completion or chat. For more details, refer to this [document](https://aka.ms/aistudio/pf/llm-tool).
+  type: custom_llm
+  module: promptflow.tools.llm
+  function: llm
+  category: llm
+  icon:
+    light: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAx0lEQVR4nJWSwQ2CQBBFX0jAcjgqXUgPJNiIsQQrIVCIFy8GC6ABDcGDX7Mus9n1Xz7zZ+fPsLPwH4bUg0dD2wMPcbR48Uxq4AKU4iSTDwZ1LhWXipN/B3V0J6hjBTvgLHZNonewBXrgDpzEvXSIjN0BE3AACmmF4kl5F6tNzcCoLpW0SvGovFvsb4oZ2AANcAOu4ka6axCcINN3rg654sww+CYsPD0OwjcozFNh/Qcd78tqVbCIW+n+Fky472Bh/Q6SYb1EEy8tDzd+9IsVPAAAAABJRU5ErkJggg==
+    dark: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA2ElEQVR4nJXSzW3CQBAF4DUSTjk+Al1AD0ikESslpBIEheRALhEpgAYSWV8OGUublf/yLuP3PPNmdndS+gdwXZrYDmh7fGE/W+wXbaYd8IYm4rxJPnZ0boI3wZcdJxs/n+AwV7DFK7aFyfQdYIMLPvES8YJNf5yp4jMeeEYdWh38gXOR35YGHe5xabvQdsHv6PLi8qV6gycc8YH3iMfQu6Lh4ASr+F5Hh3XwVWnQYzUkVlX1nccplAb1SN6Y/sfgmlK64VS8wimldIv/0yj2QLkHizG0iWP4AVAfQ34DVQONAAAAAElFTkSuQmCC
+  default_prompt: |
+    # system:
+    You are a helpful assistant.
+
+    # user:
+    {{question}}
+  groups:  
+  - name: Tools
+    description: Configure interactive capabilities by selecting tools for the model to use and guiding its tool call decisions.
+    inputs:  
+    - tools
+    - tool_choice
+    ui_hints:
+      display_style: table
+  inputs:
+    connection:
+      type:
+      - AzureOpenAIConnection
+      - OpenAIConnection
+      - ServerlessConnection
+    api:
+      type:
+      - string
+      default: chat
+      # api needs to distinguish by connection, as only offer chat to serverless
+      filter_by:
+        input_name: connection
+        # filter_attribute is used to hint what attribute to extract for input_name: type | value.
+        # default is value.
+        filter_attribute: type
+        values:
+          AzureOpenAIConnection:
+            enum:
+              - chat
+              - completion
+          OpenAIConnection:
+            enum:
+              - chat
+              - completion
+          ServerlessConnection:
+            enum:
+              - chat
+      allow_manual_entry: true
+      ui_hints:
+        text_box_size: sm
+    deployment_name:
+      type:
+        - string
+      enabled_by: connection
+      enabled_by_type:
+      - AzureOpenAIConnection
+      filter_by:
+        input_name: api
+        values:
+          chat:
+            capabilities:
+              chat_completion: true
+              exclude:
+                model_version:
+                  - vision-preview
+          completion:
+            capabilities:
+              completion: true
+              include:
+                model_name:
+                - gpt-35-turbo-instruct
+      allow_manual_entry: true
+      is_multi_select: false
+      ui_hints:
+        text_box_size: lg
+    model:
+      type:
+        - string
+      enabled_by: connection
+      enabled_by_type:
+      - OpenAIConnection
+      filter_by:
+        input_name: api
+        values:
+          chat:
+            enum:
+            - gpt-3.5-turbo
+            - gpt-3.5-turbo-0301
+            - gpt-3.5-turbo-16k
+            - gpt-3.5-turbo-1106
+            - gpt-4
+            - gpt-4-1106-preview
+            - gpt-4-0314
+            - gpt-4-32k
+            - gpt-4-32k-0314
+          completion:
+            enum:
+            - gpt-3.5-turbo-instruct
+      allow_manual_entry: true
+      is_multi_select: false
+      ui_hints:
+        text_box_size: lg
+    temperature:
+      default: 1
+      type:
+        - double
+      ui_hints:
+        text_box_size: xs
+    top_p:
+      default: 1
+      type:
+        - double
+      ui_hints:
+        text_box_size: xs
+      advanced: true
+    stop:
+      default: ""
+      type:
+        - list
+      ui_hints:
+        text_box_size: md
+    max_tokens:
+      default: ""
+      type:
+        - int
+      ui_hints:
+        text_box_size: xs
+    presence_penalty:
+      default: 0
+      type:
+        - double
+      advanced: true
+    response_format:
+      type:
+      - object
+      enabled_by: api
+      enabled_by_value:
+      - chat
+      advanced: false
+      ui_hints:
+        text_box_size: lg
+      enum:
+      - type: json_object
+      - type: text
+      allow_manual_entry: true
+      default: ""
+    frequency_penalty:
+      type:
+      - int
+      default: 0
+      advanced: true
+      ui_hints:
+        text_box_size: xs
+    logit_bias:
+      type:
+      - object
+      default: ""
+      advanced: true
+      ui_hints:
+        text_box_size: lg
+    seed:
+      default: ""
+      type:
+      - int
+      enabled_by: api
+      enabled_by_value:
+      - chat
+      advanced: true
+      ui_hints:
+        text_box_size: xs
+    suffix:
+      default: ""
+      type:
+      - string
+      enabled_by: api
+      enabled_by_value:
+      - completion
+      advanced: true
+      ui_hints:
+        text_box_size: xs
+    logprobs:
+      default: ""
+      type:
+      - int
+      enabled_by: api
+      enabled_by_value:
+      - completion
+      advanced: true
+      ui_hints:
+        text_box_size: xs
+    echo:
+      default: false
+      type:
+      - bool
+      enabled_by: api
+      enabled_by_value:
+      - completion
+      advanced: true
+      ui_hints:
+        text_box_size: xs
+    best_of:
+      default: 1
+      type:
+      - int
+      enabled_by: api
+      enabled_by_value:
+      - completion
+      advanced: true
+      ui_hints:
+        text_box_size: xs
+    tools:
+      type:
+      - list
+      default: []
+      enabled_by: api
+      enabled_by_value:
+      - chat
+      ui_hints:
+        display_style: reusable_tool
+    tool_choice:
+      type:
+      # 'object' must be set as the first type since executor takes the first type to parse the string value in flow DAG yaml.
+      # Otherwise the tool_choice dict value cannot be correctly parsed.
+      # Related code: https://github.com/microsoft/promptflow/blob/main/src/promptflow-core/promptflow/executor/_tool_resolver.py#L270
+      - object
+      - string
+      default: ""
+      enabled_by: api
+      enabled_by_value:
+      - chat

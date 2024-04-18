@@ -225,12 +225,12 @@ class TestSubmitter:
             # temp flow is generated, will use self.flow instead of self._origin_flow in the following context
             self._within_init_context = True
 
-            # Python flow may get metadata in-memory, so no need to dump them first
-            if self.flow.language != FlowLanguage.Python:
+            if not isinstance(self.flow, Prompty):
                 # variant is resolve in the context, so we can't move this to Operations for now
-                ProxyFactory().get_executor_proxy_cls(self.flow.language).dump_metadata(
+                ProxyFactory().create_inspector_proxy(self.flow.language).prepare_metadata(
                     flow_file=self.flow.path,
                     working_dir=self.flow.code,
+                    init_kwargs=init_kwargs,
                 )
 
             self._target_node = target_node
