@@ -10,6 +10,10 @@ The `promptflow-tracing` package offers tracing capabilities to capture and illu
 
 # Release History
 
+## 1.9.0 (Upcoming)
+
+-  Add ThreadPoolExecutorWithContext to keep parent/child relationship in ThreadPool.
+
 ## 1.0.0 (2024.03.21)
 
 - Compatible with promptflow 1.7.0.

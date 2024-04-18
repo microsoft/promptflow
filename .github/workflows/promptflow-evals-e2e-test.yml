@@ -33,9 +33,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        # TODO: Following up with PF team for the attribute error from 3.8 and 3.9.
-        python-version: ['3.10', '3.11']
-        #python-version: ['3.8', '3.9', '3.10', '3.11']
+        python-version: ['3.8', '3.9', '3.10', '3.11']
       fail-fast: false
     # snok/install-poetry need this to support Windows
     defaults:
@@ -58,8 +56,10 @@ jobs:
           path: ${{ env.WORKING_DIRECTORY }}
       - name: install promptflow packages in editable mode
         run: |
+          poetry run pip install -e ../promptflow
           poetry run pip install -e ../promptflow-core
           poetry run pip install -e ../promptflow-devkit
+          poetry run pip install -e ../promptflow-tracing
           poetry run pip install -e ../promptflow-tools
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: install promptflow-evals from wheel
@@ -73,8 +73,7 @@ jobs:
         run: poetry install
         working-directory: ${{ env.RECORD_DIRECTORY }}
       - name: generate end-to-end test config from secret
-        # TODO: replace with evals secret
-        run: echo '${{ secrets.PF_TRACING_E2E_TEST_CONFIG }}' >> connections.json
+        run: echo '${{ secrets.PF_EVALS_E2E_TEST_CONFIG }}' >> connections.json
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: run e2e tests
         run: poetry run pytest -m e2etest --cov=promptflow --cov-config=pyproject.toml --cov-report=term --cov-report=html --cov-report=xml

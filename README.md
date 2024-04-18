@@ -99,7 +99,7 @@ Prompt flow is a tool designed to **build high quality LLM apps**, the developme
 
 We also offer a VS Code extension (a flow designer) for an interactive flow development experience with UI.
 
-<img src="examples/tutorials/quick-start/media/vsc.png" alt="vsc" width="1000"/>
+<img src="docs/media/readme/vsc.png" alt="vsc" width="1000"/>
 
 You can install it from the <a href="https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow">visualstudio marketplace</a>.
 

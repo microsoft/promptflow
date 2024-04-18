@@ -1,7 +1,5 @@
 import functools
 import inspect
-import os
-from pathlib import Path
 
 from promptflow.tracing._tracer import _create_trace_from_function_call
 from promptflow.tracing.contracts.trace import TraceType
@@ -16,8 +14,6 @@ from .record_storage import (
     is_record,
     is_replay,
 )
-
-COUNT_RECORD = (Path(__file__) / "../../count.json").resolve()
 
 # recording array is a global variable to store the function names that need to be recorded
 recording_array = ["fetch_text_content_from_url", "my_python_tool"]
@@ -93,7 +89,7 @@ def call_func(func, args, kwargs):
                 RecordStorage.get_instance().set_record(input_dict, e)
             obj = RecordStorage.get_instance().set_record(input_dict, obj)
     elif is_live() and is_in_ci_pipeline():
-        obj = Counter.get_instance().set_file_record_count(COUNT_RECORD, func(*args, **kwargs))
+        obj = Counter.get_instance().set_record_count(func(*args, **kwargs))
     else:
         obj = func(*args, **kwargs)
     return obj
@@ -126,16 +122,15 @@ async def call_func_async(func, args, kwargs):
                 RecordStorage.get_instance().set_record(input_dict, e)
             obj = RecordStorage.get_instance().set_record(input_dict, obj)
     elif is_live() and is_in_ci_pipeline():
-        obj = Counter.get_instance().set_file_record_count(COUNT_RECORD, await func(*args, **kwargs))
+        obj = Counter.get_instance().set_record_count(await func(*args, **kwargs))
     else:
         obj = await func(*args, **kwargs)
     return obj
 
 
 def delete_count_lock_file():
-    lock_file = str(COUNT_RECORD) + ".lock"
-    if os.path.isfile(lock_file):
-        os.remove(lock_file)
+    # Not Deprecate since too much file is referencing.
+    pass
 
 
 def mock_tool(original_tool):

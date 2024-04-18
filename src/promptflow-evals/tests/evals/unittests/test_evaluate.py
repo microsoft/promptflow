@@ -3,7 +3,6 @@ import pathlib
 
 import pytest
 
-from promptflow.connections import AzureOpenAIConnection
 from promptflow.evals.evaluate import evaluate
 from promptflow.evals.evaluators import F1ScoreEvaluator, GroundednessEvaluator
 
@@ -20,48 +19,38 @@ def missing_columns_jsonl_file():
     return os.path.join(data_path, "missing_columns_evaluate_test_data.jsonl")
 
 
-@pytest.fixture
-def mock_model_config():
-    return AzureOpenAIConnection(api_base="mocked_endpoint", api_key="mocked_key")
-
-
+@pytest.mark.usefixtures("mock_model_config")
 @pytest.mark.unittest
 class TestEvaluate:
-    def test_evaluate_missing_data(self, mock_model_config, deployment_name):
+    def test_evaluate_missing_data(self, mock_model_config):
         with pytest.raises(ValueError) as exc_info:
-            evaluate(
-                evaluators={"g": GroundednessEvaluator(model_config=mock_model_config, deployment_name=deployment_name)}
-            )
+            evaluate(evaluators={"g": GroundednessEvaluator(model_config=mock_model_config)})
 
         assert "data must be provided for evaluation." in exc_info.value.args[0]
 
-    def test_evaluate_evaluators_not_a_dict(self, mock_model_config, deployment_name):
+    def test_evaluate_evaluators_not_a_dict(self, mock_model_config):
         with pytest.raises(ValueError) as exc_info:
             evaluate(
                 data="data",
-                evaluators=[GroundednessEvaluator(model_config=mock_model_config, deployment_name=deployment_name)],
+                evaluators=[GroundednessEvaluator(model_config=mock_model_config)],
             )
 
         assert "evaluators must be a dictionary." in exc_info.value.args[0]
 
-    def test_evaluate_invalid_data(self, mock_model_config, deployment_name):
+    def test_evaluate_invalid_data(self, mock_model_config):
         with pytest.raises(ValueError) as exc_info:
             evaluate(
                 data=123,
-                evaluators={
-                    "g": GroundednessEvaluator(model_config=mock_model_config, deployment_name=deployment_name)
-                },
+                evaluators={"g": GroundednessEvaluator(model_config=mock_model_config)},
             )
 
         assert "data must be a string." in exc_info.value.args[0]
 
-    def test_evaluate_invalid_jsonl_data(self, mock_model_config, deployment_name, invalid_jsonl_file):
+    def test_evaluate_invalid_jsonl_data(self, mock_model_config, invalid_jsonl_file):
         with pytest.raises(ValueError) as exc_info:
             evaluate(
                 data=invalid_jsonl_file,
-                evaluators={
-                    "g": GroundednessEvaluator(model_config=mock_model_config, deployment_name=deployment_name)
-                },
+                evaluators={"g": GroundednessEvaluator(model_config=mock_model_config)},
             )
 
         assert "Failed to load data from " in exc_info.value.args[0]

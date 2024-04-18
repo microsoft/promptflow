@@ -9,7 +9,7 @@ import pytest
 from _constants import PROMPTFLOW_ROOT
 
 from promptflow._cli._pf._connection import validate_and_interactive_get_secrets
-from promptflow._sdk._constants import SCRUBBED_VALUE, ConnectionAuthMode, CustomStrongTypeConnectionConfigs
+from promptflow._sdk._constants import SCRUBBED_VALUE, CustomStrongTypeConnectionConfigs
 from promptflow._sdk._errors import ConnectionClassNotFoundError, SDKError
 from promptflow._sdk._load_functions import _load_env_to_connection
 from promptflow._sdk.entities._connection import (
@@ -26,6 +26,7 @@ from promptflow._sdk.entities._connection import (
     _Connection,
 )
 from promptflow._utils.yaml_utils import load_yaml
+from promptflow.constants import ConnectionAuthMode
 from promptflow.core._connection import RequiredEnvironmentVariablesNotSetError
 from promptflow.exceptions import UserErrorException
 
