@@ -10,7 +10,7 @@ from tests.utils import verify_url_exists
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
 # since the code here is in promptflow namespace as well
 from promptflow._internal import ConnectionManager
-from promptflow.connections import CustomConnection, OpenAIConnection, SerpConnection
+from promptflow.connections import CustomConnection, OpenAIConnection, SerpConnection, ServerlessConnection
 from promptflow.contracts.multimedia import Image
 from promptflow.tools.aoai import AzureOpenAI
 from promptflow.tools.aoai_gpt4v import AzureOpenAI as AzureOpenAIVision
@@ -60,6 +60,11 @@ def serp_connection():
     return ConnectionManager().get("serp_connection")
 
 
+@pytest.fixture
+def serverless_connection():
+    return ConnectionManager().get("serverless_connection")
+
+
 def verify_om_llm_custom_connection(connection: CustomConnection) -> bool:
     '''Verify that there is a MIR endpoint up and available for the Custom Connection.
     We explicitly do not pass the endpoint key to avoid the delay in generating a response.
@@ -93,7 +98,8 @@ def skip_if_no_api_key(request, mocker):
         conn_name = request.node.get_closest_marker('skip_if_no_api_key').args[0]
         connection = request.getfixturevalue(conn_name)
         # if dummy placeholder key, skip.
-        if isinstance(connection, OpenAIConnection) or isinstance(connection, SerpConnection):
+        if isinstance(connection, OpenAIConnection) or isinstance(connection, SerpConnection) \
+                or isinstance(connection, ServerlessConnection):
             if "-api-key" in connection.api_key:
                 pytest.skip('skipped because no key')
         elif isinstance(connection, CustomConnection):
@@ -135,6 +141,13 @@ def example_prompt_template_with_function() -> str:
 
 
 @pytest.fixture
+def example_prompt_template_with_tool() -> str:
+    with open(PROMPTFLOW_ROOT / "tests/test_configs/prompt_templates/prompt_with_tool.jinja2") as f:
+        prompt_template = f.read()
+    return prompt_template
+
+
+@pytest.fixture
 def example_prompt_template_with_image() -> str:
     with open(PROMPTFLOW_ROOT / "tests/test_configs/prompt_templates/prompt_with_image.jinja2") as f:
         prompt_template = f.read()
@@ -162,6 +175,89 @@ def functions():
     ]
 
 
+# tools
+@pytest.fixture
+def tools():
+    return [
+      {
+        "type": "function",
+        "function": {
+          "name": "get_current_weather",
+          "description": "Get the current weather in a given location",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "location": {
+                "type": "string",
+                "description": "The city and state, e.g. San Francisco, CA",
+              },
+              "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
+            },
+            "required": ["location"],
+          },
+        }
+      }
+    ]
+
+
 @pytest.fixture
 def azure_content_safety_connection():
     return ConnectionManager().get("azure_content_safety_connection")
+
+
+@pytest.fixture
+def parsed_chat_with_tools():
+    return [
+        {
+            "role": "system",
+            "content": "Don't make assumptions about what values to plug into functions.",
+        },
+        {
+            "role": "user",
+            "content": "What's the weather like in San Francisco, Tokyo, and Paris?",
+        },
+        {
+            "role": "assistant",
+            "tool_calls": [
+                {
+                    "id": "call_001",
+                    "function": {
+                        "arguments": '{"location": {"city": "San Francisco", "country": "USA"}, "unit": "metric"}',
+                        "name": "get_current_weather_py",
+                    },
+                    "type": "function",
+                },
+                {
+                    "id": "call_002",
+                    "function": {
+                        "arguments": '{"location": {"city": "Tokyo", "country": "Japan"}, "unit": "metric"}',
+                        "name": "get_current_weather_py",
+                    },
+                    "type": "function",
+                },
+                {
+                    "id": "call_003",
+                    "function": {
+                        "arguments": '{"location": {"city": "Paris", "country": "France"}, "unit": "metric"}',
+                        "name": "get_current_weather_py",
+                    },
+                    "type": "function",
+                },
+            ],
+        },
+        {
+            "role": "tool",
+            "tool_call_id": "call_001",
+            "content": '{"location": "San Francisco, CA", "temperature": "72", "unit": null}',
+        },
+        {
+            "role": "tool",
+            "tool_call_id": "call_002",
+            "content": '{"location": "Tokyo", "temperature": "72", "unit": null}',
+        },
+        {
+            "role": "tool",
+            "tool_call_id": "call_003",
+            "content": '{"location": "Paris", "temperature": "72", "unit": null}',
+        },
+    ]

@@ -197,7 +197,6 @@ class FlowInvoker:
         :return: The result of executor.
         :rtype: ~promptflow.executor._result.LineResult
         """
-
         self._invoke_context(data, disable_input_output_logging)
         return self.executor.exec_line(data, run_id=run_id, allow_generator_output=self.streaming())
 
@@ -256,7 +255,12 @@ class AsyncFlowInvoker(FlowInvoker):
             data, run_id=run_id, disable_input_output_logging=disable_input_output_logging
         )
         # Get base64 for multi modal object
-        resolved_outputs = self._convert_multimedia_data_to_base64(result)
+        output_dict = convert_eager_flow_output_to_dict(result.output)
+        if not isinstance(result.output, dict) and not dataclasses.is_dataclass(result.output):
+            returned_non_dict_output = True
+        else:
+            returned_non_dict_output = False
+        resolved_outputs = self._convert_multimedia_data_to_base64(output_dict)
         self._dump_invoke_result(result)
         log_outputs = "<REDACTED>" if disable_input_output_logging else result.output
         self.logger.info(f"Flow run result: {log_outputs}")
@@ -266,5 +270,6 @@ class AsyncFlowInvoker(FlowInvoker):
                 output=resolved_outputs or {},
                 run_info=result.run_info,
                 node_run_infos=result.node_run_infos,
+                response_original_value=returned_non_dict_output,
             )
         return resolved_outputs
