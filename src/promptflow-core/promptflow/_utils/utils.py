@@ -7,6 +7,7 @@
 """
 import contextlib
 import contextvars
+import dataclasses
 import functools
 import importlib
 import json
@@ -48,6 +49,13 @@ class DateTimeEncoder(json.JSONEncoder):
         if isinstance(o, datetime):
             return o.isoformat()
         return json.JSONEncoder.default(self, o)
+
+
+class DataClassEncoder(json.JSONEncoder):
+    def default(self, o):
+        if dataclasses.is_dataclass(o):
+            return dataclasses.asdict(o)
+        return super().default(o)
 
 
 def is_json_serializable(value: Any) -> bool:
