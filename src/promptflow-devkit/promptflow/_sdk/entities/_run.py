@@ -6,6 +6,7 @@ import datetime
 import functools
 import json
 import uuid
+from dataclasses import asdict
 from os import PathLike
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
@@ -374,7 +375,7 @@ class Run(YAMLTranslatableMixin):
             display_name=display_name,
             description=self.description,
             tags=json.dumps(self.tags) if self.tags else None,
-            properties=json.dumps(self.properties),
+            properties=json.dumps(self.properties, default=asdict),
             data=Path(self.data).resolve().absolute().as_posix() if self.data else None,
             run_source=self._run_source,
         )
