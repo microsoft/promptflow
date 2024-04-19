@@ -17,8 +17,7 @@ from promptflow._sdk._constants import (
     HOME_PROMPT_FLOW_DIR,
     SERVICE_CONFIG_FILE,
 )
-from promptflow._sdk._errors import MissingAzurePackage
-from promptflow._sdk._tracing import PF_CONFIG_TRACE_FEATURE_DISABLE, PF_CONFIG_TRACE_LOCAL
+from promptflow._sdk._tracing import TraceProviderConfig
 from promptflow._sdk._utils import call_from_extension, gen_uuid_by_compute_info, read_write_by_user
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
@@ -169,9 +168,6 @@ class Configuration(object):
         provider = self.get_config(key=self.CONNECTION_PROVIDER)
         return self.resolve_connection_provider(provider, path=path)
 
-    def get_trace_provider(self) -> Optional[str]:
-        return self.get_config(key=self.TRACE_PROVIDER)
-
     @classmethod
     def resolve_connection_provider(cls, provider, path=None) -> Optional[str]:
         if provider is None:
@@ -182,6 +178,17 @@ class Configuration(object):
         # If provider not None and not Azure, return it directly.
         # It can be the full path of a workspace.
         return provider
+
+    def get_trace_provider(self, *, path: Optional[Path] = None) -> Optional[str]:
+        provider = self.get_config(key=self.TRACE_PROVIDER)
+        if TraceProviderConfig.need_to_resolve(provider):
+            return self._resolve_trace_provider(provider, path=path)
+        else:
+            return provider
+
+    def _resolve_trace_provider(self, provider: str, *, path: Optional[Path] = None) -> Optional[str]:
+        if provider is None:
+            ...
 
     def get_telemetry_consent(self) -> Optional[bool]:
         """Get the current telemetry consent value. Return None if not configured."""
@@ -220,18 +227,7 @@ class Configuration(object):
                     "please use its child folder, e.g. '${flow_directory}/.runs'."
                 )
         elif key == Configuration.TRACE_PROVIDER:
-            # disable trace feature, no need to validate
-            if value.lower() == PF_CONFIG_TRACE_FEATURE_DISABLE:
-                return
-            # enable trace feature, but disable local to cloud
-            if value.lower() == PF_CONFIG_TRACE_LOCAL:
-                return
-            try:
-                from promptflow.azure._utils._tracing import validate_trace_provider
-
-                validate_trace_provider(value)
-            except ImportError:
-                raise MissingAzurePackage()
+            TraceProviderConfig.validate(value)
         return
 
     def get_user_agent(self) -> Optional[str]:

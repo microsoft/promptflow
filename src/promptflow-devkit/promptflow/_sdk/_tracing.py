@@ -39,6 +39,7 @@ from promptflow._sdk._constants import (
     AzureMLWorkspaceTriad,
     ContextAttributeKey,
 )
+from promptflow._sdk._errors import MissingAzurePackage
 from promptflow._sdk._service.utils.utils import (
     add_executable_script_to_env_path,
     get_port_from_config,
@@ -57,7 +58,44 @@ from promptflow.tracing._operation_context import OperationContext
 
 _logger = get_cli_sdk_logger()
 
-PF_CONFIG_TRACE_FEATURE_DISABLE = "none"
+
+class TraceProviderConfig:
+    DISABLE = "none"
+    LOCAL = "local"
+    AZUREML = "azureml"
+    # note that if user has never specified "trace.provider", we will get `None` instead of a str
+    # so we have to keep in mind to handle `None` case
+
+    @staticmethod
+    def is_feature_disabled(value: typing.Optional[str]) -> bool:
+        if isinstance(value, str):
+            return value.lower() == TraceProviderConfig.DISABLE
+        return False
+
+    @staticmethod
+    def need_to_resolve(value: typing.Optional[str]) -> bool:
+        """Need to resolve workspace when user specified `azureml` as trace provider."""
+        if isinstance(value, str):
+            return value.lower() == TraceProviderConfig.AZUREML
+        return False
+
+    @staticmethod
+    def validate(value: typing.Optional[str]) -> None:
+        # None, "none", "local" and "azureml" are valid values for trace provider
+        if value is None or value.lower() in (
+            TraceProviderConfig.DISABLE,
+            TraceProviderConfig.LOCAL,
+            TraceProviderConfig.AZUREML,
+        ):
+            return
+        try:
+            from promptflow.azure._utils._tracing import validate_trace_provider
+
+            validate_trace_provider(value)
+        except ImportError:
+            raise MissingAzurePackage()
+
+
 PF_CONFIG_TRACE_LOCAL = "local"
 TRACER_PROVIDER_PFS_EXPORTER_SET_ATTR = "_pfs_exporter_set"
 
@@ -65,11 +103,8 @@ TRACER_PROVIDER_PFS_EXPORTER_SET_ATTR = "_pfs_exporter_set"
 def is_trace_feature_disabled() -> bool:
     from promptflow._sdk._configuration import Configuration
 
-    trace_provider = Configuration.get_instance().get_trace_provider()
-    if isinstance(trace_provider, str):
-        return Configuration.get_instance().get_trace_provider().lower() == PF_CONFIG_TRACE_FEATURE_DISABLE
-    else:
-        return False
+    config = Configuration.get_instance().get_trace_provider()
+    return TraceProviderConfig.is_feature_disabled(config)
 
 
 def _is_azure_ext_installed() -> bool:
