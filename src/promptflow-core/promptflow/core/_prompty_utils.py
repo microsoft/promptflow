@@ -3,7 +3,9 @@ import json
 import os
 import re
 from dataclasses import asdict
-from typing import List, Mapping
+from os import PathLike
+from pathlib import Path
+from typing import List, Mapping, Union
 
 from promptflow.core._connection import AzureOpenAIConnection, OpenAIConnection, _Connection
 from promptflow.core._errors import (
@@ -11,6 +13,7 @@ from promptflow.core._errors import (
     ChatAPIInvalidRoleError,
     CoreError,
     InvalidOutputKeyError,
+    InvalidSampleError,
     UnknownConnectionType,
 )
 from promptflow.core._model_configuration import ModelConfiguration
@@ -43,13 +46,27 @@ def parse_environment_variable(value):
         return value
 
 
+def load_inputs_from_sample(sample: Union[dict, str, PathLike]):
+    if not sample:
+        return {}
+    elif isinstance(sample, dict):
+        return sample
+    elif isinstance(sample, (str, Path)) and Path(sample).suffix.lower() == ".json":
+        if not Path(sample).exists():
+            raise InvalidSampleError(f"Cannot find sample file {sample}.")
+        with open(sample, "r") as f:
+            return json.load(f)
+    else:
+        raise InvalidSampleError("Only dict and json file are supported as sample in prompty.")
+
+
 def get_connection_by_name(connection_name):
     try:
         from promptflow._sdk._pf_client import PFClient
     except ImportError as ex:
         raise CoreError(f"Please try 'pip install promptflow-devkit' to install dependency, {ex.msg}")
     client = PFClient()
-    connection_obj = client.connections.get(connection_name, with_secrets=True)
+    connection_obj = client.connections._get(connection_name, with_secrets=True)
     connection = connection_obj._to_execution_connection_dict()["value"]
     connection_type = connection_obj.TYPE
     return connection, connection_type
@@ -169,6 +186,21 @@ def format_llm_response(response, api, is_first_choice, response_format=None, st
     """
     Format LLM response
 
+    If is_first_choice is false, it will directly return LLM response.
+    If is_first_choice is true, behavior as blow:
+        response_format: type: text
+            - n: None/1/2
+                Return the first choice content. Return type is string.
+            - stream: True
+                Return generator list of first choice content. Return type is generator[str]
+        response_format: type: json_object
+            - n : None/1/2
+                Return json dict of the first choice. Return type is dict
+            - stream: True
+                Return json dict of the first choice. Return type is dict
+            - outputs
+                Extract corresponding output in the json dict to the first choice. Return type is dict.
+
     :param response: LLM response.
     :type response:
     :param api: API type of the LLM.
@@ -188,7 +220,7 @@ def format_llm_response(response, api, is_first_choice, response_format=None, st
     def format_choice(item):
         # response_format is one of text or json_object.
         # https://platform.openai.com/docs/api-reference/chat/create#chat-create-response_format
-        if isinstance(response_format, dict) and response_format.get("type", None) == "json_object":
+        if is_json_format:
             result_dict = json.loads(item)
             if not outputs:
                 return result_dict
@@ -202,9 +234,26 @@ def format_llm_response(response, api, is_first_choice, response_format=None, st
         # Return text format response
         return item
 
-    if not is_first_choice or streaming:
+    def format_stream(llm_response):
+        cur_index = None
+        for chunk in llm_response:
+            if len(chunk.choices) > 0 and chunk.choices[0].delta.content:
+                if cur_index is None:
+                    cur_index = chunk.choices[0].index
+                if cur_index != chunk.choices[0].index:
+                    return
+                yield chunk.choices[0].delta.content
+
+    if not is_first_choice:
         return response
 
+    is_json_format = isinstance(response_format, dict) and response_format.get("type", None) == "json_object"
+    if streaming:
+        if not is_json_format:
+            return format_stream(llm_response=response)
+        else:
+            content = "".join([item for item in format_stream(llm_response=response)])
+            return format_choice(content)
     if api == "completion":
         result = format_choice(response.choices[0].text)
     else:
