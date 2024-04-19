@@ -2,14 +2,19 @@ import inspect
 import json
 import logging
 import uuid
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
 from contextvars import ContextVar
 from datetime import datetime
 from typing import Dict, List, Optional
 
 from ._thread_local_singleton import ThreadLocalSingleton
 from ._utils import serialize
-from .contracts.generator_proxy import GeneratorProxy, generate_from_proxy
+from .contracts.generator_proxy import (
+    AsyncGeneratorProxy,
+    GeneratorProxy,
+    generate_from_async_proxy,
+    generate_from_proxy,
+)
 from .contracts.trace import Trace, TraceType
 
 
@@ -113,6 +118,8 @@ class Tracer(ThreadLocalSingleton):
             return output
         if isinstance(output, Iterator):
             output = GeneratorProxy(output)
+        if isinstance(output, AsyncIterator):
+            output = AsyncGeneratorProxy(output)
         if output is not None:
             last_trace.output = self.to_serializable(output)
         if error is not None:
@@ -122,6 +129,8 @@ class Tracer(ThreadLocalSingleton):
 
         if isinstance(output, GeneratorProxy):
             return generate_from_proxy(output)
+        elif isinstance(output, AsyncGeneratorProxy):
+            return generate_from_async_proxy(output)
         else:
             return output
 
