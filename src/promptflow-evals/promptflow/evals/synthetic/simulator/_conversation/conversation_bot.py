@@ -29,16 +29,14 @@ class ConversationBot:
         """
         Create a ConversationBot with specific name, persona and a sentence that can be used as a conversation starter.
 
-        Parameters
-        ----------
-        role: The role of the bot in the conversation, either USER or ASSISTANT
-        model: The LLM model to use for generating responses
-        conversation_template: A jinja2 template that describes the conversation,
-        this is used to generate the prompt for the LLM
-        instantiation_parameters: A dictionary of parameters that are used to instantiate the conversation template
-            Dedicated parameters:
-                - conversation_starter: A sentence that can be used as a conversation starter, if not provided,
-                    the first turn will be generated using the LLM
+        :param role: The role of the bot in the conversation, either USER or ASSISTANT.
+        :type role: ConversationRole
+        :param model: The LLM model to use for generating responses.
+        :type model: OpenAIChatCompletionsModel
+        :param conversation_template: A Jinja2 template describing the conversation to generate the prompt for the LLM
+        :type conversation_template: str
+        :param instantiation_parameters: A dictionary of parameters used to instantiate the conversation template
+        :type instantiation_parameters: dict
         """
         if role == ConversationRole.USER and isinstance(model, LLAMAChatCompletionsModel):
             # pylint: disable=access-member-before-definition
