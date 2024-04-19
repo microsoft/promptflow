@@ -392,6 +392,7 @@ def list_deployment_connections(connection=""):
                     or isinstance(connection_provider, HttpConnectionProvider):
                 print("1111111111")
                 conn = connection_provider.get(connection)
+                print("conn type....................", type(conn))
                 resource_id = conn.resource_id
                 print("resource_id.........:", resource_id)
                 if not resource_id:
