@@ -18,5 +18,14 @@
 		"prompt-flow.prompt-flow"
 	],
 
-	"runArgs": ["-v", "/var/run/docker.sock:/var/run/docker.sock"]
+	"runArgs": ["-v", "/var/run/docker.sock:/var/run/docker.sock"],
+
+	"customizations": {
+		"codespaces": {
+		  "openFiles": [
+			"README.md",
+			"examples/README.md"
+		  ]
+		}
+	  }
 }
