@@ -1,9 +1,8 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import asyncio
 from typing import TypedDict
-
-from promptflow.tracing import trace
 
 class FlowOutput(TypedDict):
     obj_input: str
@@ -15,15 +14,16 @@ class MyFlow:
     def __init__(self, obj_input: str):
         self.obj_input = obj_input
 
-    @trace
-    def __call__(self, func_input: str) -> FlowOutput:
+    async def __call__(self, func_input: str) -> FlowOutput:
+        await asyncio.sleep(1)
         return {
             "obj_input": self.obj_input,
             "func_input": func_input,
             "obj_id": id(self),
         }
 
-    def __aggregate__(self, results: list) -> dict:
+    async def __aggregate__(self, results: list) -> dict:
+        await asyncio.sleep(1)
         return {"length": len(results)}
 
 

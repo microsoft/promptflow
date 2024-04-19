@@ -26,6 +26,10 @@ class PromptyExecutor(ScriptExecutor):
         self.prompty = Prompty.load(source=flow_file)
         super().__init__(flow_file=flow_file, connections=connections, working_dir=working_dir, storage=storage)
 
+    @property
+    def has_aggregation_node(self):
+        return False
+
     def _initialize_function(self):
         """
         This function will be called when initializing the executor.
