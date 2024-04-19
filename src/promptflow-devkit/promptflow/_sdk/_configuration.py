@@ -181,6 +181,7 @@ class Configuration(object):
 
     def get_trace_provider(self, *, path: Optional[Path] = None) -> Optional[str]:
         provider = self.get_config(key=self.TRACE_PROVIDER)
+        logger.info("pf.config.trace.provider: %s", provider)
         if TraceProviderConfig.need_to_resolve(provider):
             return self._resolve_trace_provider(path=path)
         else:

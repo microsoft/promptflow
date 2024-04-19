@@ -13,6 +13,7 @@ import sys
 import traceback
 import typing
 from datetime import datetime
+from pathlib import Path
 
 from google.protobuf.json_format import MessageToJson
 from opentelemetry import trace
@@ -188,10 +189,11 @@ def _invoke_pf_svc() -> str:
     return port
 
 
-def _get_ws_triad_from_pf_config() -> typing.Optional[AzureMLWorkspaceTriad]:
+def _get_ws_triad_from_pf_config(path: typing.Optional[Path]) -> typing.Optional[AzureMLWorkspaceTriad]:
     from promptflow._sdk._configuration import Configuration
 
-    config = Configuration.get_instance().get_trace_provider()
+    config = Configuration.get_instance().get_trace_provider(path=path)
+    _logger.info("tracing.trace.provider: %s", config)
     if not TraceProviderConfig.need_to_export_to_azure(config):
         return None
     return extract_workspace_triad_from_trace_provider(config)
@@ -314,6 +316,7 @@ def start_trace_with_devkit(collection: str, **kwargs: typing.Any) -> None:
     _logger.debug("kwargs: %s", kwargs)
     attrs = kwargs.get("attributes", None)
     run = kwargs.get("run", None)
+    path = kwargs.get("path", None)
 
     # honor and set attributes if user has specified
     if isinstance(attrs, dict):
@@ -339,7 +342,9 @@ def start_trace_with_devkit(collection: str, **kwargs: typing.Any) -> None:
     _logger.debug("operation context OTel attributes: %s", op_ctx._get_otel_attributes())
 
     # local to cloud feature
-    ws_triad = _get_ws_triad_from_pf_config()
+    if path is not None:
+        _logger.debug("path from kwargs: %s", path)
+    ws_triad = _get_ws_triad_from_pf_config(path=path)
     is_azure_ext_installed = _is_azure_ext_installed()
     if ws_triad is not None and not is_azure_ext_installed:
         warning_msg = (

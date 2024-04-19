@@ -92,10 +92,15 @@ class RunSubmitter:
             collection_for_run = run._flow_name
             logger.debug("collection for run: %s", collection_for_run)
             # pass with internal parameter `_collection`
-            start_trace(attributes=attributes, run=run.name, _collection=collection_for_run)
+            start_trace(
+                attributes=attributes,
+                run=run.name,
+                _collection=collection_for_run,
+                path=Path(run.flow),
+            )
         else:
             logger.debug("trace collection is protected, will honor existing collection.")
-            start_trace(attributes=attributes, run=run.name)
+            start_trace(attributes=attributes, run=run.name, path=Path(run.flow))
 
         self._validate_inputs(run=run)
 
