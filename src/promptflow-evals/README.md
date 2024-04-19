@@ -17,7 +17,7 @@ The package includes
  - QA evaluator is an ensemble of evaluator, which calculates groundness, relevance, coherence, fluency, similarity and F1 score of question and answer.
  - Relevance evaluator. Relevance measures how well the answer addresses the main aspects of the question, based on the context. This evaluator also return integer value from 1 to 5 where 1 means that the answer completely lacks the relevance and 5 means that the relevance is perfect.
  - Similarity evaluator measures similarity between the predicted answer and the correct answer using nubers from 1 to 5, where one means no similarity and five absolute similarity.
- - Content safety evaluators score the answer received from model based on presnce of inappropriate contents. Evaluators package includes three content safety evauators.
+ - Content safety evaluators score the answer received from model based on presence of inappropriate contents. Evaluators package includes three content safety evaluators.
    * Self harm evaluator
    * Hate/unfairness evaluator
    * Sexual evaluator
