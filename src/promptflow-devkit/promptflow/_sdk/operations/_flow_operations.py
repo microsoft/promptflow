@@ -1038,7 +1038,11 @@ class FlowOperations(TelemetryMixin):
             flow_meta["init"] = init_dict
             format_signature_type(flow_meta)
         elif isinstance(entry, FlexFlow):
-            # TODO: this part will fail for csharp
+            # non-python flow depends on dumped flow meta to infer signature
+            ProxyFactory().create_inspector_proxy(language=entry.language).prepare_metadata(
+                flow_file=entry.path,
+                working_dir=entry.code,
+            )
             entry_file = resolve_entry_file(entry=entry.entry, working_dir=entry.code)
             entry_func = entry_string_to_callable(entry_file, entry.entry)
             flow_meta, _, _ = FlowOperations._infer_signature_flex_flow(
@@ -1046,7 +1050,7 @@ class FlowOperations(TelemetryMixin):
             )
         elif inspect.isclass(entry) or inspect.isfunction(entry):
             flow_meta, _, _ = FlowOperations._infer_signature_flex_flow(
-                entry=entry, include_primitive_output=include_primitive_output
+                entry=entry, include_primitive_output=include_primitive_output, language=FlowLanguage.Python
             )
         else:
             # TODO support to get infer signature of dag flow
@@ -1057,10 +1061,10 @@ class FlowOperations(TelemetryMixin):
     def _infer_signature_flex_flow(
         entry: Union[Callable, str],
         *,
+        language: str,
         code: str = None,
         keep_entry: bool = False,
         validate: bool = True,
-        language: str = FlowLanguage.Python,
         include_primitive_output: bool = False,
     ) -> Tuple[dict, Path, List[str]]:
         """Infer signature of a flow entry.
