@@ -22,7 +22,11 @@ from promptflow._utils.yaml_utils import load_yaml
 from promptflow.connections import ConnectionProvider
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.tool import ConnectionType
-from promptflow.core._model_configuration import MODEL_CONFIG_NAMES
+from promptflow.core._model_configuration import (
+    MODEL_CONFIG_NAMES,
+    AzureOpenAIModelConfiguration,
+    OpenAIModelConfiguration,
+)
 from promptflow.exceptions import ErrorTarget
 from promptflow.executor._errors import InvalidFlexFlowEntry
 from promptflow.executor._result import LineResult
@@ -244,9 +248,14 @@ class ScriptExecutor(FlowExecutor):
             if getattr(model_config_val, "connection", None):
                 logger.debug(f"Getting connection {model_config_val.connection} for model config.")
                 connection_obj = provider.get(model_config_val.connection)
-                model_config_dict = dataclasses.asdict(model_config_val)
-                model_config_dict["connection"] = connection_obj
-                resolved_init_kwargs[key] = model_config_val.from_connection(**model_config_dict)
+                if isinstance(model_config_val, AzureOpenAIModelConfiguration):
+                    resolved_init_kwargs[key] = AzureOpenAIModelConfiguration.from_connection(
+                        connection=connection_obj, azure_deployment=model_config_val.azure_deployment
+                    )
+                elif isinstance(model_config_val, OpenAIModelConfiguration):
+                    resolved_init_kwargs[key] = OpenAIModelConfiguration.from_connection(
+                        connection=connection_obj, model=model_config_val.model
+                    )
         return resolved_init_kwargs
 
     @property
