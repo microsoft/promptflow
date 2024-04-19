@@ -66,7 +66,9 @@ jobs:
         run: poetry install --only test
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: install recording
-        run: poetry install
+        run: |
+          pip install vcrpy
+          pip install .
         working-directory: ${{ env.RECORD_DIRECTORY }}
       - name: run unit tests
         run: poetry run pytest -m unittest --cov=promptflow --cov-config=pyproject.toml --cov-report=term --cov-report=html --cov-report=xml

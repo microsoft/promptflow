@@ -70,7 +70,9 @@ jobs:
         run: poetry install --only test
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: install recording
-        run: poetry install
+        run: |
+          pip install vcrpy
+          pip install .
         working-directory: ${{ env.RECORD_DIRECTORY }}
       - name: generate end-to-end test config from secret
         run: echo '${{ secrets.PF_EVALS_E2E_TEST_CONFIG }}' >> connections.json
