@@ -19,7 +19,7 @@ Default runtime image is continuously updated, and here we record the new featur
 
 #### New features
 - Add 'detail' parameter on 'Azure OpenAI GPT-4 Turbo with Vision" tool and "OpenAI GPT-4V" tool.
-- Upgrade langchain>=0.1.1 and langchain-core>=0.1.30 to fix vulnerablity
+- Upgrade langchain>=0.1.1 and langchain-core>=0.1.30 to fix vulnerablity.
 
 #### Bugs fixed
 - Resolved an intermittent ImportError that arose while loading the package tool.
