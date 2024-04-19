@@ -767,7 +767,9 @@ class ExperimentTemplateContext:
         # Generate line run id for node
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
         self.node_name_to_id = {node.name: f"{node.name}_attempt{timestamp}" for node in template.nodes}
+        # context_node_name is the skip node name, overwrite input/run_id node name
         context_node_name = kwargs.get("context_node_name", None)
+        # context_run_id is the respective run id of flow naming context_node_name
         context_run_id = kwargs.get("context_run_id", None)
         if context_run_id and context_node_name:
             self.node_name_to_id[context_node_name] = context_run_id

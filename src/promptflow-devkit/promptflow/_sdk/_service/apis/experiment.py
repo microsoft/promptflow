@@ -54,6 +54,16 @@ skip_test_experiment.add_argument("skip_flow_output", type=dict, location="json"
 skip_test_experiment.add_argument("skip_flow_run_id", type=str, location="json", required=True)
 
 
+def generate_experiment_output_path(experiment_template):
+    filename = str(uuid.uuid4())
+    if os.path.isdir(experiment_template):
+        output_path = Path(experiment_template) / PROMPT_FLOW_DIR_NAME / filename
+    else:
+        output_path = Path(os.path.dirname(experiment_template)) / PROMPT_FLOW_DIR_NAME / filename
+    os.makedirs(output_path, exist_ok=True)
+    return output_path
+
+
 @api.route("/")
 class ExperimentList(Resource):
     @api.response(code=200, description="Experiment", model=list_field)
@@ -97,14 +107,8 @@ class ExperimentTest(Resource):
             context = {"inputs": inputs, "node": override_flow_path, "run_id": main_flow_run_id, "init": init}
 
         if output_path is None:
-            filename = str(uuid.uuid4())
-            if os.path.isdir(experiment_template):
-                output_path = Path(experiment_template) / PROMPT_FLOW_DIR_NAME / filename
-            else:
-                output_path = Path(os.path.dirname(experiment_template)) / PROMPT_FLOW_DIR_NAME / filename
-            os.makedirs(output_path, exist_ok=True)
+            output_path = generate_experiment_output_path(experiment_template)
         output_path = Path(output_path).resolve()
-
         result = client._experiments._test_with_ui(
             experiment=experiment_template,
             output_path=output_path,
@@ -138,14 +142,8 @@ class ExperimentSkipTest(Resource):
         context = {"node": skip_flow, "outputs": skip_flow_output, "run_id": skip_flow_run_id}
 
         if output_path is None:
-            filename = str(uuid.uuid4())
-            if os.path.isdir(experiment_template):
-                output_path = Path(experiment_template) / PROMPT_FLOW_DIR_NAME / filename
-            else:
-                output_path = Path(os.path.dirname(experiment_template)) / PROMPT_FLOW_DIR_NAME / filename
-            os.makedirs(output_path, exist_ok=True)
+            output_path = generate_experiment_output_path(experiment_template)
         output_path = Path(output_path).resolve()
-
         result = client._experiments._test_with_ui(
             experiment=experiment_template,
             output_path=output_path,

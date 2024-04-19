@@ -172,9 +172,9 @@ class ExperimentOperations(TelemetryMixin):
         session = kwargs.pop("session", None)
         return ExperimentOrchestrator(client=self._client, experiment=None).test(
             experiment_template,
-            None,
-            inputs,
-            environment_variables,
+            flow=None,
+            inputs=inputs,
+            environment_variables=environment_variables,
             output_path=output_path,
             session=session,
             **kwargs,

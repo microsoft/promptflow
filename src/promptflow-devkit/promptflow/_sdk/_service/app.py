@@ -7,7 +7,7 @@ import threading
 import time
 from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
-from pathlib import PosixPath, WindowsPath
+from pathlib import PurePath
 
 from flask import Blueprint, Flask, current_app, g, jsonify, redirect, request, url_for
 from flask_cors import CORS
@@ -121,18 +121,18 @@ def create_app():
             app.logger.error(e, exc_info=True, stack_info=True)
             formatted_exception = FormattedException(e)
 
-            def handle_windows_path(obj):
-                if isinstance(obj, (WindowsPath, PosixPath)):
+            def handle_path_object(obj):
+                if isinstance(obj, PurePath):
                     return str(obj)
                 elif isinstance(obj, dict):
-                    return {k: handle_windows_path(v) for k, v in obj.items()}
+                    return {k: handle_path_object(v) for k, v in obj.items()}
                 elif isinstance(obj, list):
-                    return [handle_windows_path(v) for v in obj]
+                    return [handle_path_object(v) for v in obj]
                 else:
                     return obj
 
             return (
-                handle_windows_path(asdict(formatted_exception, dict_factory=lambda x: {k: v for (k, v) in x if v})),
+                handle_path_object(asdict(formatted_exception, dict_factory=lambda x: {k: v for (k, v) in x if v})),
                 formatted_exception.status_code,
             )
 
