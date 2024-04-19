@@ -203,19 +203,23 @@ class AsyncFlow(FlowBase):
 class Prompty(FlowBase):
     """A prompty is a prompt with predefined metadata like inputs, and can be executed directly like a flow.
     A prompty is represented as a templated markdown file with a modified front matter.
-    The front matter is a yaml file that contains meta fields like connection, parameters, inputs, etc..
+    The front matter is a yaml file that contains meta fields like model configuration, inputs, etc..
 
     Prompty example:
-    .. code-block:: yaml
+    .. code-block::
 
         ---
         name: Hello Prompty
         description: A basic prompt
         model:
             api: chat
-            connection: connection_name
+            configuration:
+              type: azure_openai
+              azure_deployment: gpt-35-turbo
+              api_key="${env:AZURE_OPENAI_API_KEY}",
+              api_version=${env:AZURE_OPENAI_API_VERSION}",
+              azure_endpoint="${env:AZURE_OPENAI_ENDPOINT}",
             parameters:
-              deployment_name: gpt-35-turbo
               max_tokens: 128
               temperature: 0.2
         inputs:
@@ -226,6 +230,7 @@ class Prompty(FlowBase):
         Write a simple {{text}} program that displays the greeting message.
 
     Prompty as function example:
+
     .. code-block:: python
 
         from promptflow.core import Prompty
@@ -238,29 +243,29 @@ class Prompty(FlowBase):
             "configuration": {
                 "type": "azure_openai",
                 "azure_deployment": "gpt-35-turbo",
-                "api_key": ${env:AZURE_OPENAI_API_KEY},
-                "api_version": ${env:AZURE_OPENAI_API_VERSION},
-                "azure_endpoint": ${env:AZURE_OPENAI_ENDPOINT},
+                "api_key": "${env:AZURE_OPENAI_API_KEY}",
+                "api_version": "${env:AZURE_OPENAI_API_VERSION}",
+                "azure_endpoint": "${env:AZURE_OPENAI_ENDPOINT}",
             },
             "parameters": {
-                max_token: 512
+                "max_token": 512
             }
         }
         prompty = Prompty.load(source="path/to/prompty.prompty", model=model_config)
         result = prompty(input_a=1, input_b=2)
 
         # Override model config with configuration
-        from promptflow.core._model_configuration import AzureOpenAIModelConfiguration
+        from promptflow.core import AzureOpenAIModelConfiguration
         model_config = {
             "api": "chat",
             "configuration": AzureOpenAIModelConfiguration(
                 azure_deployment="gpt-35-turbo",
                 api_key="${env:AZURE_OPENAI_API_KEY}",
-                api_version=${env:AZURE_OPENAI_API_VERSION}",
+                api_version="${env:AZURE_OPENAI_API_VERSION}",
                 azure_endpoint="${env:AZURE_OPENAI_ENDPOINT}",
             ),
             "parameters": {
-                max_token: 512
+                "max_token": 512
             }
         }
         prompty = Prompty.load(source="path/to/prompty.prompty", model=model_config)
@@ -275,12 +280,11 @@ class Prompty(FlowBase):
                 azure_deployment="gpt-35-turbo",
             ),
             "parameters": {
-                max_token: 512
+                "max_token": 512
             }
         }
         prompty = Prompty.load(source="path/to/prompty.prompty", model=model_config)
         result = prompty(input_a=1, input_b=2)
-
     """
 
     def __init__(
@@ -314,7 +318,6 @@ class Prompty(FlowBase):
     def load(
         cls,
         source: Union[str, PathLike],
-        raise_error=True,
         **kwargs,
     ) -> "Prompty":
         """
@@ -324,8 +327,6 @@ class Prompty(FlowBase):
             If the source is a path, it will be open and read.
             An exception is raised if the file does not exist.
         :type source: Union[PathLike, str]
-        :param raise_error: Argument for non-dag flow raise validation error on unknown fields.
-        :type raise_error: bool
         :return: A Prompty object
         :rtype: Prompty
         """
@@ -419,7 +420,7 @@ class AsyncPrompty(Prompty):
         import asyncio
         from promptflow.core import AsyncPrompty
         prompty = AsyncPrompty.load(source="path/prompty.prompty")
-        result = asyncio.run(prompty(input_a=1, input_b=2))
+        result = await prompty(input_a=1, input_b=2)
 
     """
 

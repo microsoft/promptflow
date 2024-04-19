@@ -516,6 +516,7 @@ def _create_executor_fork(*, flow_executor: FlowExecutor, storage: AbstractRunSt
             connections=flow_executor._connections,
             working_dir=flow_executor._working_dir,
             storage=storage,
+            init_kwargs=flow_executor._init_kwargs,
         )
     if isinstance(flow_executor, ScriptExecutor):
         return ScriptExecutor(
