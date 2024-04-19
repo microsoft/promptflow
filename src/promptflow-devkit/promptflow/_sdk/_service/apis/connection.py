@@ -136,9 +136,6 @@ class Connection(Resource):
 class ConnectionWithSecret(Resource):
     @api.doc(parser=working_directory_parser, description="Get connection with secret")
     @api.response(code=200, description="Connection details with secret", model=dict_field)
-    @api.response(
-        code=403, description="This service is available for local user only, please specify X-Remote-User in headers."
-    )
     def get(self, name: str):
         args = working_directory_parser.parse_args()
         connection_op = _get_connection_operation(args.working_directory)
