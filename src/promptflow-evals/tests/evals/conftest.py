@@ -15,7 +15,9 @@ from promptflow.tracing._integrations._openai_injector import inject_openai_api
 try:
     from promptflow.recording.local import recording_array_reset
     from promptflow.recording.record_mode import is_in_ci_pipeline, is_live, is_record, is_replay
-except ImportError:
+except ImportError as e:
+    print(f"Failed to import promptflow-recording: {e}")
+
     # Run test in empty mode if promptflow-recording is not installed
     def recording_array_reset():
         pass
@@ -43,6 +45,12 @@ def pytest_configure():
     pytest.is_record = is_record()
     pytest.is_replay = is_replay()
     pytest.is_in_ci_pipeline = is_in_ci_pipeline()
+
+    print()
+    print(f"pytest.is_live: {pytest.is_live}")
+    print(f"pytest.is_record: {pytest.is_record}")
+    print(f"pytest.is_replay: {pytest.is_replay}")
+    print(f"pytest.is_in_ci_pipeline: {pytest.is_in_ci_pipeline}")
 
 
 @pytest.fixture
