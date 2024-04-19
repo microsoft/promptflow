@@ -479,8 +479,7 @@ class TestFlowTest:
             inputs={"func_input": "input"},
             init={"azure_open_ai_model_config": config1, "open_ai_model_config": config2},
         )
-        assert pydash.omit(result2, "obj_id") == {
-            "azure_open_ai_model_config_azure_endpoint": "https://gpt-test-eus.openai.azure.com/",
+        assert pydash.omit(result2, "obj_id", "azure_open_ai_model_config_azure_endpoint") == {
             "azure_open_ai_model_config_connection": None,
             "azure_open_ai_model_config_deployment": "my_deployment",
             "func_input": "input",

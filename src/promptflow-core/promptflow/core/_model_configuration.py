@@ -34,7 +34,7 @@ class AzureOpenAIModelConfiguration(ModelConfiguration):
         """Create a model configuration from an Azure OpenAI connection.
 
         :param connection: AzureOpenAI Connection object.
-        :type connection: AzureOpenAIConnection
+        :type connection: promptflow.connections.AzureOpenAIConnection
         :param azure_deployment: Azure deployment name.
         :type azure_deployment: str
         """
@@ -65,7 +65,7 @@ class OpenAIModelConfiguration(ModelConfiguration):
         """Create a model configuration from an OpenAI connection.
 
         :param connection: OpenAI Connection object.
-        :type connection: OpenAIConnection
+        :type connection: promptflow.connections.OpenAIConnection
         :param model: model name.
         :type model: str
         """

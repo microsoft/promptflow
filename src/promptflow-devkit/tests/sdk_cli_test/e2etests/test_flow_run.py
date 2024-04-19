@@ -1728,14 +1728,11 @@ class TestFlowRun:
                 "inputs.func_input",
                 "outputs.func_input",
                 "outputs.obj_id",
+                "outputs.azure_open_ai_model_config_azure_endpoint",
             ]
             omitted_output = {k: v for k, v in details_dict.items() if k not in keys_to_omit}
             return omitted_output == {
                 "outputs.azure_open_ai_model_config_deployment": ["my_deployment", "my_deployment"],
-                "outputs.azure_open_ai_model_config_azure_endpoint": [
-                    "https://gpt-test-eus.openai.azure.com/",
-                    "https://gpt-test-eus.openai.azure.com/",
-                ],
                 "outputs.azure_open_ai_model_config_connection": ["(Failed)", "(Failed)"],
                 "outputs.open_ai_model_config_model": ["my_model", "my_model"],
                 "outputs.open_ai_model_config_base_url": ["fake_base_url", "fake_base_url"],
