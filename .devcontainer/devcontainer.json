@@ -22,5 +22,8 @@
         "prompt-flow.prompt-flow"
       ]
     }
+  },
+  "features": { 
+	"ghcr.io/devcontainers/features/azure-cli:1": {}
   }
 }

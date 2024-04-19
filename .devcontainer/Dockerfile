@@ -13,9 +13,6 @@ RUN apt-get update \
 RUN pip install ipython ipykernel
 RUN ipython kernel install --user --name promptflow
 
-# Install AZ CLI
-RUN curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
-
 # FROM base AS promptflow
 COPY requirements.txt .
 RUN pip install -r requirements.txt
