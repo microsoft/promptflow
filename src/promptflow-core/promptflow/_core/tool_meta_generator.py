@@ -559,6 +559,7 @@ def generate_flow_meta_dict_by_object(f, cls):
     # Include data in generated meta to avoid flow definition's fields(e.g. environment variable) missing.
     flow_meta = {}
     if cls:
+        # TODO(3129057): check if we can not depend on tools' util
         init_tool = _parse_tool_from_function(cls.__init__, include_outputs=False, support_model_config=True)
         init_inputs = init_tool.inputs
         validate_interface(
