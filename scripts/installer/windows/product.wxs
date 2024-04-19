@@ -86,6 +86,12 @@
           <Custom Action="Set_WIXUI_EXITDIALOGOPTIONALTEXT" After="CostFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED</Custom>
         </InstallUISequence>
 
+        <CustomAction Id="StopPromptFlowServiceFileExists"
+            Property="STOPFILEEXISTS"
+            Value="1"
+            Execute="immediate"
+            FileKey="stop_service.vbs"
+            Return="ignore" />
         <CustomAction Id="StartPromptFlowService"
             Directory="APPLICATIONFOLDER"
             Execute="deferred"
@@ -97,7 +103,8 @@
             ExeCommand="wscript.exe stop_service.vbs"
             Return="ignore" />
         <InstallExecuteSequence>
-            <Custom Action="StopPromptFlowService" Before="InstallInitialize">Installed OR WIX_UPGRADE_DETECTED</Custom>
+            <Custom Action="StopPromptFlowServiceFileExists" Before="StopPromptFlowService">Installed OR WIX_UPGRADE_DETECTED</Custom>
+            <Custom Action="StopPromptFlowService" Before="InstallInitialize">(Installed OR WIX_UPGRADE_DETECTED) AND STOPFILEEXISTS="1"</Custom>
             <Custom Action="StartPromptFlowService" Before="InstallFinalize">NOT Installed OR WIX_UPGRADE_DETECTED</Custom>
         </InstallExecuteSequence>
     </Product>
