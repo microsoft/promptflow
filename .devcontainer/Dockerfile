@@ -9,8 +9,12 @@ RUN apt-get update \
     && apt-get -y install build-essential \
     && apt-get -y install docker.io
 
+# Install notebook depenency
 RUN pip install ipython ipykernel
 RUN ipython kernel install --user --name promptflow
+
+# Install AZ CLI
+RUN curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 
 # FROM base AS promptflow
 COPY requirements.txt .
