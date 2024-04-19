@@ -29,6 +29,7 @@ from promptflow._sdk._constants import (
     PF_TRACE_CONTEXT,
     PF_TRACE_CONTEXT_ATTR,
     TRACE_DEFAULT_COLLECTION,
+    TRACE_LIST_DEFAULT_LIMIT,
     ContextAttributeKey,
 )
 from promptflow._sdk._tracing import start_trace_with_devkit
@@ -241,6 +242,17 @@ class TestTraceOperations:
             "(run == 'run1' or run == 'run2') and session_id == 'test-session-id'"
         )
         assert expr == expected_expr
+
+    def test_search_default_limit(self, pf: PFClient) -> None:
+        # mock ORM search to assert the default limit is applied
+        def mock_orm_line_run_search(expression, limit):
+            assert limit == TRACE_LIST_DEFAULT_LIMIT
+            return []  # return an empty list to ensure test passed
+
+        from promptflow._sdk._orm.trace import LineRun
+
+        with patch.object(LineRun, "search", side_effect=mock_orm_line_run_search):
+            pf.traces._search_line_runs(expression="name == 'web_classification'")
 
 
 @pytest.mark.unittest
