@@ -102,6 +102,82 @@ def assert_span_equals(span: Span, expected_span_dict: typing.Dict) -> None:
 @pytest.mark.e2etest
 @pytest.mark.sdk_test
 class TestTraceEntitiesAndOperations:
+    def test_span_to_dict(self) -> None:
+        # this should be the groundtruth as OpenTelemetry span spec
+        otel_span_path = TEST_ROOT / "test_configs/traces/large-data-span-example.json"
+        with open(otel_span_path, mode="r", encoding="utf-8") as f:
+            span_dict = json.load(f)
+        span_entity = Span(
+            name=span_dict["name"],
+            trace_id=span_dict["context"]["trace_id"],
+            span_id=span_dict["context"]["span_id"],
+            parent_id=span_dict["parent_id"],
+            context=span_dict["context"],
+            kind=span_dict["kind"],
+            start_time=datetime.datetime.fromisoformat(span_dict["start_time"]),
+            end_time=datetime.datetime.fromisoformat(span_dict["end_time"]),
+            status=span_dict["status"],
+            attributes=span_dict["attributes"],
+            links=span_dict["links"],
+            events=span_dict["events"],
+            resource=span_dict["resource"],
+        )
+        otel_span_dict = {
+            "name": "openai.resources.chat.completions.Completions.create",
+            "context": {
+                "trace_id": "32a6fb50e281736543979ce5b929dfdc",
+                "span_id": "3a3596a19efef900",
+                "trace_state": "",
+            },
+            "kind": "1",
+            "parent_id": "9c63581c6da66596",
+            "start_time": "2024-03-21T06:37:22.332582Z",
+            "end_time": "2024-03-21T06:37:26.445007Z",
+            "status": {
+                "status_code": "Ok",
+                "description": "",
+            },
+            "attributes": {
+                "framework": "promptflow",
+                "span_type": "LLM",
+                "function": "openai.resources.chat.completions.Completions.create",
+                "node_name": "Azure_OpenAI_GPT_4_Turbo_with_Vision_mrr4",
+                "line_run_id": "277fab99-d26e-4c43-8ec4-b0c61669fd68",
+                "llm.response.model": "gpt-4",
+                "__computed__.cumulative_token_count.completion": "14",
+                "__computed__.cumulative_token_count.prompt": "1497",
+                "__computed__.cumulative_token_count.total": "1511",
+                "llm.usage.completion_tokens": "14",
+                "llm.usage.prompt_tokens": "1497",
+                "llm.usage.total_tokens": "1511",
+            },
+            "events": [
+                {
+                    "name": "promptflow.function.inputs",
+                    "timestamp": "2024-03-21T06:37:22.332582Z",
+                    "attributes": {
+                        "payload": '{"input1": "value1", "input2": "value2"}',
+                    },
+                },
+                {
+                    "name": "promptflow.function.output",
+                    "timestamp": "2024-03-21T06:37:26.445007Z",
+                    "attributes": {
+                        "payload": '{"output1": "val1", "output2": "val2"}',
+                    },
+                },
+            ],
+            "links": [],
+            "resource": {
+                "attributes": {
+                    "service.name": "promptflow",
+                    "collection": "default",
+                },
+                "schema_url": "",
+            },
+        }
+        assert span_entity.to_dict() == otel_span_dict
+
     def test_span_persist_and_gets(self, pf: PFClient) -> None:
         trace_id = str(uuid.uuid4())
         span_id = str(uuid.uuid4())
@@ -253,6 +329,38 @@ class TestTraceEntitiesAndOperations:
         mock_span_for_delete_tests(run=mock_run)
         num_traces = pf.traces.delete(run=mock_run, dry_run=True)
         assert num_traces == 1
+
+    def test_basic_search_line_runs(self, pf: PFClient) -> None:
+        trace_id = str(uuid.uuid4())
+        span_id = str(uuid.uuid4())
+        line_run_id = str(uuid.uuid4())
+        span = mock_span(trace_id=trace_id, span_id=span_id, parent_id=None, line_run_id=line_run_id)
+        name = str(uuid.uuid4())
+        span.name = name
+        span._persist()
+        expr = f"name == '{name}'"
+        line_runs = pf.traces._search_line_runs(expression=expr)
+        assert len(line_runs) == 1
+
+    def test_search_line_runs_with_tokens(self, pf: PFClient) -> None:
+        num_line_runs = 5
+        trace_ids = list()
+        name = str(uuid.uuid4())
+        for _ in range(num_line_runs):
+            trace_id = str(uuid.uuid4())
+            span_id = str(uuid.uuid4())
+            line_run_id = str(uuid.uuid4())
+            span = mock_span(trace_id=trace_id, span_id=span_id, parent_id=None, line_run_id=line_run_id)
+            span.name = name
+            span.attributes.update({"__computed__.cumulative_token_count.total": "42"})
+            span._persist()
+            trace_ids.append(trace_id)
+        expr = f"name == '{name}' and total < 100"
+        line_runs = pf.traces._search_line_runs(expression=expr)
+        assert len(line_runs) == num_line_runs
+        # assert these line runs are exactly the ones we just persisted
+        line_run_trace_ids = {line_run.trace_id for line_run in line_runs}
+        assert len(set(trace_ids) & line_run_trace_ids) == num_line_runs
 
 
 @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
