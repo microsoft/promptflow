@@ -4,10 +4,10 @@
 [![License: MIT](https://img.shields.io/github/license/microsoft/promptflow)](https://github.com/microsoft/promptflow/blob/main/LICENSE)
 
 ## Introduction
-Evaluators are custom or prebuilt promptflow pipelines that are designed to measure the quality of the outputs from language models.
+Evaluators are custom or prebuilt promptflow flows that are designed to measure the quality of the outputs from language models.
 
 ## Usage
-Users can create run evaluators on the local machine as shown in the example below:
+Users can create evaluator runs on the local machine as shown in the example below:
 
 ```python
 import os
@@ -17,40 +17,6 @@ from promptflow.core import AzureOpenAIModelConfiguration
 from promptflow.evals.evaluate import evaluate
 from promptflow.evals.evaluators import RelevanceEvaluator
 from promptflow.evals.evaluators.content_safety import ViolenceEvaluator
-
-
-def built_in_evaluator():
-    # Initialize Azure OpenAI Model Configuration
-    model_config = AzureOpenAIModelConfiguration(
-        azure_endpoint=os.environ.get("AZURE_OPENAI_ENDPOINT"),
-        api_key=os.environ.get("AZURE_OPENAI_KEY"),
-        azure_deployment=os.environ.get("AZURE_OPENAI_DEPLOYMENT"),
-    )
-
-    # Initialzing Relevance Evaluator
-    relevance_eval = RelevanceEvaluator(model_config)
-
-    # Running Relevance Evaluator on single input row
-    relevance_score = relevance_eval(
-        answer="The Alpine Explorer Tent is the most waterproof.",
-        context="From the our product list, the alpine explorer tent is the most waterproof. The Adventure Dining "
-        "Table has higher weight.",
-    )
-
-    pprint(relevance_score)
-
-
-def content_safety_evaluator():
-    # Initialize Project Scope
-    project_scope = {
-        "subscription_id": "e0fd569c-e34a-4249-8c24-e8d723c7f054",
-        "resource_group_name": "rg-test",
-        "project_name": "project-test",
-    }
-
-    violence_eval = ViolenceEvaluator(project_scope)
-    violence_score = violence_eval(question="What is the capital of France?", answer="Paris.")
-    pprint(violence_score)
 
 
 def answer_length(answer, **kwargs):
