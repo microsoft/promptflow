@@ -24,6 +24,7 @@ from azure.ai.ml.entities import Workspace
 from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
 from azure.core.exceptions import HttpResponseError
 
+from promptflow._constants import FLOW_DAG_YAML
 from promptflow._constants import FlowType as FlowYamlType
 from promptflow._sdk._constants import (
     CLIENT_FLOW_TYPE_2_SERVICE_FLOW_TYPE,
@@ -142,9 +143,8 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         if not file_share_flow_path:
             raise FlowOperationError(f"File share path should not be empty, got {file_share_flow_path!r}.")
 
-        # create flow to remote
-        flow_path, flow_file = resolve_flow_path(file_share_flow_path, check_flow_exist=False)
-        flow_definition_file_path = str(flow_path / flow_file)
+        # create flow to remote. Currently only dag yaml is supported to be uploaded to cloud
+        flow_definition_file_path = f"{file_share_flow_path}/{FLOW_DAG_YAML}"
         rest_flow = self._create_remote_flow_via_file_share_path(
             flow_display_name=flow_display_name,
             flow_type=flow_type,
@@ -475,8 +475,6 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
 
     @classmethod
     def _try_resolve_code_for_flow(cls, flow: Flow, ops: OperationOrchestrator, ignore_tools_json=False) -> None:
-        from promptflow._proxy import ProxyFactory
-
         if flow.path:
             # remote path
             if flow.path.startswith("azureml://datastores"):
@@ -490,13 +488,6 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                 return
             if flow._code_uploaded:
                 return
-
-            # generate .promptflow/flow.json for eager flow and .promptflow/flow.dag.yaml for non-eager flow
-            flow_directory, flow_file = resolve_flow_path(code.path)
-            ProxyFactory().get_executor_proxy_cls(flow.language).generate_flow_tools_json(
-                flow_file=flow_directory / flow_file,
-                working_dir=flow_directory,
-            )
 
             if ignore_tools_json:
                 ignore_file = code._ignore_file

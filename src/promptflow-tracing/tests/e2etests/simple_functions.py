@@ -5,6 +5,7 @@ from typing import Union
 
 from openai import AsyncAzureOpenAI, AzureOpenAI
 
+from promptflow.tracing import ThreadPoolExecutorWithContext
 from promptflow.tracing._trace import trace
 
 
@@ -38,8 +39,14 @@ def greetings(user_id):
 
 
 @trace
-async def dummy_llm(prompt: str, model: str):
+async def dummy_llm_async(prompt: str, model: str):
     await asyncio.sleep(0.5)
+    return "dummy_output"
+
+
+@trace
+def dummy_llm(prompt: str, model: str):
+    sleep(0.5)
     return "dummy_output"
 
 
@@ -47,9 +54,18 @@ async def dummy_llm(prompt: str, model: str):
 async def dummy_llm_tasks_async(prompt: str, models: list):
     tasks = []
     for model in models:
-        tasks.append(asyncio.create_task(dummy_llm(prompt, model)))
+        tasks.append(asyncio.create_task(dummy_llm_async(prompt, model)))
     done, _ = await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
     return [task.result() for task in done]
+
+
+@trace
+def dummy_llm_tasks_threadpool(prompt: str, models: list):
+    prompts = [prompt] * len(models)
+    with ThreadPoolExecutorWithContext(2, "dummy_llm", initializer=lambda x: x, initargs=(prompt,)) as executor:
+        executor.map(dummy_llm, prompts, models)
+    with ThreadPoolExecutorWithContext() as executor:
+        return list(executor.map(dummy_llm, prompts, models))
 
 
 @trace
@@ -83,6 +99,40 @@ def openai_completion(connection: dict, prompt: str, stream: bool = False):
                     yield chunk.choices[0].text or ""
 
         return "".join(generator())
+    return response.choices[0].text or ""
+
+
+@trace
+async def openai_chat_async(connection: dict, prompt: str, stream: bool = False):
+    client = AsyncAzureOpenAI(**connection)
+
+    messages = [{"role": "system", "content": "You are a helpful assistant."}, {"role": "user", "content": prompt}]
+    response = await client.chat.completions.create(model="gpt-35-turbo", messages=messages, stream=stream)
+
+    if stream:
+
+        async def generator():
+            async for chunk in response:
+                if chunk.choices:
+                    yield chunk.choices[0].delta.content or ""
+
+        return "".join([chunk async for chunk in generator()])
+    return response.choices[0].message.content or ""
+
+
+@trace
+async def openai_completion_async(connection: dict, prompt: str, stream: bool = False):
+    client = AsyncAzureOpenAI(**connection)
+    response = await client.completions.create(model="text-ada-001", prompt=prompt, stream=stream)
+
+    if stream:
+
+        async def generator():
+            async for chunk in response:
+                if chunk.choices:
+                    yield chunk.choices[0].text or ""
+
+        return "".join([chunk async for chunk in generator()])
     return response.choices[0].text or ""
 
 

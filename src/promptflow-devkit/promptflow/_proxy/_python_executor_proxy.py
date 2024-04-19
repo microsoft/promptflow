@@ -73,14 +73,17 @@ class PythonExecutorProxy(AbstractExecutorProxy):
             )
         return cls(flow_executor)
 
+    @property
+    def has_aggregation(self) -> bool:
+        return self._flow_executor.has_aggregation_node
+
     async def exec_aggregation_async(
         self,
         batch_inputs: Mapping[str, Any],
         aggregation_inputs: Mapping[str, Any],
         run_id: Optional[str] = None,
     ) -> AggregationResult:
-        with self._flow_executor._run_tracker.node_log_manager:
-            return self._flow_executor._exec_aggregation(batch_inputs, aggregation_inputs, run_id=run_id)
+        return self._flow_executor.exec_aggregation(batch_inputs, aggregation_inputs, run_id=run_id)
 
     async def _exec_batch(
         self,

@@ -8,20 +8,14 @@ import time
 import zlib
 from pathlib import Path
 
-from flask import jsonify, request
 from opentelemetry.baggage.propagation import W3CBaggagePropagator
 from opentelemetry.context import Context
 from opentelemetry.propagate import extract, set_global_textmap
 from opentelemetry.propagators.composite import CompositePropagator
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 
-from promptflow._utils.exception_utils import ErrorResponse, ExceptionPresenter
 from promptflow.contracts.flow import Flow as FlowContract
-from promptflow.core._serving._errors import (
-    JsonPayloadRequiredForMultipleInputFields,
-    MissingRequiredFlowInput,
-    NotAcceptable,
-)
+from promptflow.core._serving._errors import JsonPayloadRequiredForMultipleInputFields, MissingRequiredFlowInput
 from promptflow.exceptions import ErrorTarget
 
 DEFAULT_RESOURCE_PATH = Path(__file__).parent / "resources"
@@ -64,11 +58,6 @@ def validate_request_data(flow, data):
         )
 
 
-def streaming_response_required():
-    """Check if streaming response is required."""
-    return "text/event-stream" in request.accept_mimetypes.values()
-
-
 def get_sample_json(project_path, logger):
     # load swagger sample if exists
     sample_file = os.path.join(project_path, "samples.json")
@@ -89,21 +78,6 @@ def get_output_fields_to_remove(flow: FlowContract, logger) -> list:
         res = json.loads(included_outputs)
         return [k for k, v in flow.outputs.items() if k not in res]
     return [k for k, v in flow.outputs.items() if v.evaluation_only]
-
-
-def handle_error_to_response(e, logger):
-    presenter = ExceptionPresenter.create(e)
-    logger.error(f"Promptflow serving app error: {presenter.to_dict()}")
-    logger.error(f"Promptflow serving error traceback: {presenter.formatted_traceback}")
-    resp = ErrorResponse(presenter.to_dict())
-    response_code = resp.response_code
-    # The http response code for NotAcceptable is 406.
-    # Currently the error framework does not allow response code overriding,
-    # we add a check here to override the response code.
-    # TODO: Consider how to embed this logic into the error framework.
-    if isinstance(e, NotAcceptable):
-        response_code = 406
-    return jsonify(resp.to_simplified_dict()), response_code
 
 
 def get_pf_serving_env(env_key: str):
@@ -149,10 +123,10 @@ def encode_dict(data: dict) -> str:
     return b64_data.decode()
 
 
-def try_extract_trace_context(logger) -> Context:
+def try_extract_trace_context(logger, headers) -> Context:
     """Try to extract trace context from request headers."""
     # reference: https://www.w3.org/TR/trace-context/
-    context = extract(request.headers)
+    context = extract(headers)
     if context:
         logger.info(f"Received trace context: {context}")
     return context

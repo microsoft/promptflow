@@ -192,3 +192,37 @@ class TestTrace:
         persist_a_span(collection=mock_collection, custom_attributes=custom_attributes)
         line_runs = pfs_op.list_line_runs(session_id=mock_session_id).json
         assert len(line_runs) == 1
+
+    def test_list_line_run_with_line_run_id(self, pfs_op: PFSOperations, mock_collection: str) -> None:
+        mock_line_run_id = str(uuid.uuid4())
+        custom_attributes = {SpanAttributeFieldName.LINE_RUN_ID: mock_line_run_id}
+        persist_a_span(collection=mock_collection, custom_attributes=custom_attributes)
+        line_runs = pfs_op.list_line_runs(line_run_ids=[mock_line_run_id]).json
+        assert len(line_runs) == 1
+
+    def test_search_line_run_with_invalid_expr(self, pfs_op: PFSOperations) -> None:
+        response = pfs_op.search_line_runs(expression="invalid expr")
+        assert response.status_code == 400
+
+    def test_basic_search_line_run(self, pfs_op: PFSOperations, mock_collection: str) -> None:
+        span = persist_a_span(collection=mock_collection)
+        name = span.name
+        line_runs = pfs_op.search_line_runs(expression=f"name == '{name}'").json
+        assert len(line_runs) == 1
+
+    def test_search_line_run_with_bool_op(self, pfs_op: PFSOperations, mock_collection: str) -> None:
+        span = persist_a_span(collection=mock_collection)
+        line_runs = pfs_op.search_line_runs(expression=f"name == '{span.name}' and kind == 'Flow'").json
+        assert len(line_runs) == 1
+
+    def test_search_line_run_with_collection(self, pfs_op: PFSOperations, mock_collection: str) -> None:
+        # persist two spans/line runs, one w/ session and one w/o
+        persist_a_span(collection=mock_collection)
+        session_id = str(uuid.uuid4())
+        custom_attributes = {SpanAttributeFieldName.SESSION_ID: session_id}
+        persist_a_span(collection=mock_collection, custom_attributes=custom_attributes)
+        # search with collection, should get 2 line runs
+        line_runs = pfs_op.search_line_runs(expression="kind == 'Flow'", collection=mock_collection).json
+        assert len(line_runs) == 2
+        # search with collection and session_id, should get 1 line run
+        line_runs = pfs_op.search_line_runs(expression="kind == 'Flow'", session_id=session_id).json

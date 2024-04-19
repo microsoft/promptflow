@@ -18,6 +18,7 @@ from types import GeneratorType
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 
 import opentelemetry.trace as otel_trace
+from opentelemetry.trace.span import format_trace_id
 from opentelemetry.trace.status import StatusCode
 
 from promptflow._constants import LINE_NUMBER_KEY
@@ -31,7 +32,6 @@ from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
     apply_default_value_for_input,
-    collect_lines,
     extract_aggregation_inputs,
     get_aggregation_inputs_properties,
 )
@@ -39,11 +39,11 @@ from promptflow._utils.flow_utils import is_flex_flow, is_prompty_flow
 from promptflow._utils.logger_utils import flow_logger, logger
 from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow._utils.user_agent_utils import append_promptflow_package_ua
-from promptflow._utils.utils import get_int_env_var, transpose
+from promptflow._utils.utils import get_int_env_var
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.connections import ConnectionProvider
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
-from promptflow.contracts.run_info import FlowRunInfo, Status
+from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_mode import RunMode
 from promptflow.core._connection_provider._dict_connection_provider import DictConnectionProvider
 from promptflow.exceptions import PromptflowException
@@ -63,12 +63,7 @@ from promptflow.storage._run_storage import DefaultRunStorage
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
 from promptflow.tracing._operation_context import OperationContext
 from promptflow.tracing._start_trace import setup_exporter_from_environ
-from promptflow.tracing._trace import (
-    enrich_span_with_context,
-    enrich_span_with_input,
-    enrich_span_with_trace_type,
-    open_telemetry_tracer,
-)
+from promptflow.tracing._trace import enrich_span_with_context, enrich_span_with_input, enrich_span_with_trace_type
 from promptflow.tracing.contracts.trace import TraceType
 
 
@@ -226,6 +221,7 @@ class FlowExecutor:
                 flow_file=Path(flow_file),
                 working_dir=working_dir,
                 storage=storage,
+                init_kwargs=init_kwargs,
             )
         else:
             if init_kwargs:
@@ -512,49 +508,6 @@ class FlowExecutor:
             result[idx] = value
         return result
 
-    def _exec_aggregation_with_bulk_results(
-        self,
-        batch_inputs: List[dict],
-        results: List[LineResult],
-        run_id=None,
-    ) -> AggregationResult:
-        if not self.aggregation_nodes:
-            return AggregationResult({}, {}, {})
-
-        logger.info("Executing aggregation nodes...")
-
-        run_infos = [r.run_info for r in results]
-        succeeded = [i for i, r in enumerate(run_infos) if r.status == Status.Completed]
-
-        succeeded_batch_inputs = [batch_inputs[i] for i in succeeded]
-        resolved_succeeded_batch_inputs = [
-            FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=input) for input in succeeded_batch_inputs
-        ]
-
-        succeeded_inputs = transpose(resolved_succeeded_batch_inputs, keys=list(self._flow.inputs.keys()))
-
-        aggregation_inputs = transpose(
-            [result.aggregation_inputs for result in results],
-            keys=self._aggregation_inputs_references,
-        )
-        succeeded_aggregation_inputs = collect_lines(succeeded, aggregation_inputs)
-        try:
-            aggr_results = self._exec_aggregation(succeeded_inputs, succeeded_aggregation_inputs, run_id)
-            logger.info("Finish executing aggregation nodes.")
-            return aggr_results
-        except PromptflowException as e:
-            # For PromptflowException, we already do classification, so throw directly.
-            raise e
-        except Exception as e:
-            error_type_and_message = f"({e.__class__.__name__}) {e}"
-            raise UnexpectedError(
-                message_format=(
-                    "Unexpected error occurred while executing the aggregated nodes. "
-                    "Please fix or contact support for assistance. The error details: {error_type_and_message}."
-                ),
-                error_type_and_message=error_type_and_message,
-            ) from e
-
     @staticmethod
     def _try_get_aggregation_input(val: InputAssignment, aggregation_inputs: dict):
         if val.value_type != InputValueType.NODE_REFERENCE:
@@ -604,12 +557,10 @@ class FlowExecutor:
         )
 
         # Resolve aggregated_flow_inputs from list of strings to list of objects, whose type is specified in yaml file.
-        # TODO: For now, we resolve type for batch run's aggregation input in _exec_aggregation_with_bulk_results.
-        # If we decide to merge the resolve logic into one place, remember to take care of index for batch run.
         resolved_aggregated_flow_inputs = FlowValidator.resolve_aggregated_flow_inputs_type(
             self._flow, aggregated_flow_inputs
         )
-        with self._run_tracker.node_log_manager:
+        with self._run_tracker.node_log_manager, self._update_operation_context_for_aggregation(run_id=run_id):
             return self._exec_aggregation(resolved_aggregated_flow_inputs, aggregation_inputs, run_id)
 
     @staticmethod
@@ -811,7 +762,7 @@ class FlowExecutor:
     def _update_operation_context(self, run_id: str, line_number: int):
         operation_context = OperationContext.get_instance()
         original_context = operation_context.copy()
-        original_mode = operation_context.get("run_mode", None)
+        original_mode = operation_context.get("run_mode", RunMode.Test.name)
         values_for_context = {"flow_id": self._flow_id, "root_run_id": run_id}
         if original_mode == RunMode.Batch.name:
             values_for_otel = {
@@ -823,7 +774,36 @@ class FlowExecutor:
         try:
             append_promptflow_package_ua(operation_context)
             operation_context.set_default_tracing_keys({"run_mode", "root_run_id", "flow_id", "batch_input_source"})
-            operation_context.run_mode = original_mode or RunMode.Test.name
+            operation_context.run_mode = original_mode
+            operation_context.update(values_for_context)
+            for k, v in values_for_otel.items():
+                operation_context._add_otel_attributes(k, v)
+            # Inject OpenAI API to make sure traces and headers injection works and
+            # update OpenAI API configs from environment variables.
+            inject_openai_api()
+            yield
+        finally:
+            OperationContext.set_instance(original_context)
+
+    @contextlib.contextmanager
+    def _update_operation_context_for_aggregation(self, run_id: str):
+        operation_context = OperationContext.get_instance()
+        original_context = operation_context.copy()
+        original_mode = operation_context.get("run_mode", RunMode.Test.name)
+        values_for_context = {"flow_id": self._flow_id, "root_run_id": run_id}
+        values_for_otel = {"is_aggregation": True}
+        # Add batch_run_id here because one aggregate node exists under the batch run concept.
+        # Don't add line_run_id because it doesn't exist under the line run concept.
+        if original_mode == RunMode.Batch.name:
+            values_for_otel.update(
+                {
+                    "batch_run_id": run_id,
+                }
+            )
+        try:
+            append_promptflow_package_ua(operation_context)
+            operation_context.set_default_tracing_keys({"run_mode", "root_run_id", "flow_id", "batch_input_source"})
+            operation_context.run_mode = original_mode
             operation_context.update(values_for_context)
             for k, v in values_for_otel.items():
                 operation_context._add_otel_attributes(k, v)
@@ -863,12 +843,13 @@ class FlowExecutor:
         run_info: FlowRunInfo,
         run_tracker: RunTracker,
         context: FlowExecutionContext,
-        validate_inputs=False,
         allow_generator_output=False,
     ):
-        with open_telemetry_tracer.start_as_current_span(self._flow.name) as span:
+        # need to get everytime to ensure tracer is latest
+        otel_tracer = otel_trace.get_tracer("promptflow")
+        with otel_tracer.start_as_current_span(self._flow.name) as span:
             # Store otel trace id in context for correlation
-            OperationContext.get_instance()["otel_trace_id"] = f"{span.get_span_context().trace_id:032x}"
+            OperationContext.get_instance()["otel_trace_id"] = f"0x{format_trace_id(span.get_span_context().trace_id)}"
             # initialize span
             span.set_attributes(
                 {
@@ -885,7 +866,6 @@ class FlowExecutor:
                 run_info,
                 run_tracker,
                 context,
-                validate_inputs,
                 allow_generator_output,
             )
             # enrich span with trace type
@@ -900,15 +880,8 @@ class FlowExecutor:
         run_info: FlowRunInfo,
         run_tracker: RunTracker,
         context: FlowExecutionContext,
-        validate_inputs=False,
         allow_generator_output=False,
     ):
-        if validate_inputs:
-            inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=run_info.index)
-        inputs = self._multimedia_processor.load_multimedia_data(self._flow.inputs, inputs)
-        # Inputs are assigned after validation and multimedia data loading, instead of at the start of the flow run.
-        # This way, if validation or multimedia data loading fails, we avoid persisting invalid inputs.
-        run_info.inputs = inputs
         output, nodes_outputs = self._traverse_nodes(inputs, context)
         output = self._stringify_generator_output(output) if not allow_generator_output else output
         # Persist the node runs for the nodes that have a generator output
@@ -972,12 +945,17 @@ class FlowExecutor:
         output = {}
         aggregation_inputs = {}
         try:
+            if validate_inputs:
+                inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=run_info.index)
+            inputs = self._multimedia_processor.load_multimedia_data(self._flow.inputs, inputs)
+            # Inputs are assigned after validation and multimedia data loading, instead of at the start of the flow run.
+            # This way, if validation or multimedia data loading fails, we avoid persisting invalid inputs.
+            run_info.inputs = inputs
             output, aggregation_inputs = self._exec_inner_with_trace(
                 inputs,
                 run_info,
                 run_tracker,
                 context,
-                validate_inputs,
                 allow_generator_output,
             )
         except KeyboardInterrupt as ex:

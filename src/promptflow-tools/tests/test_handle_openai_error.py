@@ -94,6 +94,13 @@ class TestHandleOpenAIError:
         assert mock_method.call_count == 1
         assert exc_info.value.error_codes == error_codes.split("/")
 
+    def create_api_connection_error_with_cause():
+        error = APIConnectionError(
+            request=httpx.Request('GET', 'https://www.example.com')
+        )
+        error.__cause__ = Exception("Server disconnected without sending a response.")
+        return error
+
     @pytest.mark.parametrize(
         "dummyExceptionList",
         [
@@ -105,6 +112,7 @@ class TestHandleOpenAIError:
                     APIConnectionError(
                         message="('Connection aborted.', ConnectionResetError(104, 'Connection reset by peer'))",
                         request=httpx.Request('GET', 'https://www.example.com')),
+                    create_api_connection_error_with_cause(),
                     InternalServerError("Something went wrong", response=httpx.Response(
                         503, request=httpx.Request('GET', 'https://www.example.com')), body=None),
                     UnprocessableEntityError("Something went wrong", response=httpx.Response(
