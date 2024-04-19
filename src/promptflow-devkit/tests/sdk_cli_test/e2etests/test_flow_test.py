@@ -431,3 +431,13 @@ class TestFlowTest:
         result2 = pf.test(flow=flow_path, inputs={"func_input": "input"}, init={"obj_input": "val"})
         assert result2["func_input"] == "input"
         assert result1["obj_id"] != result2["obj_id"]
+
+    def test_flow_flow_with_sample(self, pf):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_callable_class_with_sample_file")
+        result1 = pf.test(flow=flow_path, init={"obj_input": "val"})
+        assert result1["func_input"] == "mock_input"
+
+        result2 = pf.test(
+            flow=flow_path, init={"obj_input": "val"}, inputs=f"{EAGER_FLOWS_DIR}/basic_callable_class/inputs.jsonl"
+        )
+        assert result2["func_input"] == "func_input"
