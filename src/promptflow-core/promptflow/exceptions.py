@@ -4,17 +4,18 @@
 import inspect
 import string
 import traceback
+from enum import Enum
 from functools import cached_property
 from typing import Dict, List
 
 
-class ErrorCategory(object):
+class ErrorCategory(str, Enum):
     USER_ERROR = "UserError"
     SYSTEM_ERROR = "SystemError"
     UNKNOWN = "Unknown"
 
 
-class ErrorTarget(object):
+class ErrorTarget(str, Enum):
     """The target of the error, indicates which part of the system the error occurs."""
 
     EXECUTOR = "Executor"
@@ -54,7 +55,7 @@ class PromptflowException(Exception):
         self,
         message="",
         message_format="",
-        target: str = ErrorTarget.UNKNOWN,
+        target: ErrorTarget = ErrorTarget.UNKNOWN,
         module=None,
         privacy_info: List[str] = None,
         **kwargs,
@@ -233,21 +234,21 @@ class _ErrorInfo:
     @classmethod
     def get_error_info(cls, e: BaseException):
         if not isinstance(e, BaseException):
-            return ErrorCategory.UNKNOWN, type(e).__name__, ErrorTarget.UNKNOWN, "", ""
+            return ErrorCategory.UNKNOWN.value, type(e).__name__, ErrorTarget.UNKNOWN.value, "", ""
 
         if cls._is_user_error(e):
             return (
-                ErrorCategory.USER_ERROR,
+                ErrorCategory.USER_ERROR.value,
                 cls._error_type(e),
-                cls._error_target(e),
+                cls._error_target(e).value,
                 cls._error_message(e),
                 cls._error_detail(e),
             )
 
         return (
-            ErrorCategory.SYSTEM_ERROR,
+            ErrorCategory.SYSTEM_ERROR.value,
             cls._error_type(e),
-            cls._error_target(e),
+            cls._error_target(e).value,
             cls._error_message(e),
             cls._error_detail(e),
         )
@@ -295,9 +296,9 @@ class _ErrorInfo:
         return error_type
 
     @classmethod
-    def _error_target(cls, e: BaseException):
+    def _error_target(cls, e: BaseException) -> ErrorTarget:
         error_target = getattr(e, "target", ErrorTarget.UNKNOWN)
-        if error_target != ErrorTarget.UNKNOWN:
+        if error_target != ErrorTarget.UNKNOWN and isinstance(error_target, ErrorTarget):
             return error_target
 
         module_target_map = cls._module_target_map()
