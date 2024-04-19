@@ -925,14 +925,14 @@ and will utilize it for subsequent service startups.
 pf service start
 ```
 
-Forcefully start the promptflow service. If the port is already in use, the existing service will be terminated and 
+Forcefully start the prompt flow service. If the port is already in use, the existing service will be terminated and 
 restart a new service
 
 ```bash
 pf service start --force
 ```
 
-Start the promptflow service with a specified port. If the port is already taken, prompt flow will raise an error 
+Start the prompt flow service with a specified port. If the port is already taken, prompt flow will raise an error 
 unless forcefully start the service with the `--force` flag. Upon availability, prompt flow retains the port number for 
 future reference and will utilize it for subsequent service startups.
 
