@@ -11,7 +11,6 @@ from typing import Dict, List
 
 import numpy as np
 
-from promptflow.core import AzureOpenAIModelConfiguration
 from promptflow.evals.evaluators import CoherenceEvaluator, FluencyEvaluator, GroundednessEvaluator, RelevanceEvaluator
 
 logger = logging.getLogger(__name__)
@@ -19,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 class ChatEvaluator:
     def __init__(
-        self, model_config: AzureOpenAIModelConfiguration, eval_last_turn: bool = False, parallel: bool = True
+        self, model_config, eval_last_turn: bool = False, parallel: bool = True
     ):
         """
         Initialize an evaluator configured for a specific Azure OpenAI model.
@@ -64,7 +63,7 @@ class ChatEvaluator:
             FluencyEvaluator(model_config),
         ]
 
-    def __call__(self, *, conversation: List[Dict], **kwargs):
+    def __call__(self, *, conversation, **kwargs):
         """Evaluates chat scenario.
 
         :param conversation: The conversation to be evaluated. Each turn should have "role" and "content" keys.
