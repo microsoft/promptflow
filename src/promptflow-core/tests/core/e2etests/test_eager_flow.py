@@ -77,6 +77,17 @@ class TestEagerFlow:
         line_result2 = executor.exec_line(inputs=inputs, index=0)
         assert line_result1.output == line_result2.output
 
+    def test_flow_run_with_tokens(self):
+        flow_file = get_yaml_file("flow_with_openai_chat", root=EAGER_FLOW_ROOT)
+        inputs = {"question": "Hello", "stream": False}
+
+        executor = FlowExecutor.create(flow_file=flow_file, connections={})
+        line_result = executor.exec_line(inputs=inputs, index=0)
+        assert isinstance(line_result, LineResult)
+        token_names = ["prompt_tokens", "completion_tokens", "total_tokens"]
+        for token_name in token_names:
+            assert token_name in line_result.run_info.api_calls[0]["children"][0]["system_metrics"]
+
     @pytest.mark.parametrize("entry, inputs, expected_output", function_entries)
     def test_flow_run_with_function_entry(self, entry, inputs, expected_output):
         executor = FlowExecutor.create(entry, {})
