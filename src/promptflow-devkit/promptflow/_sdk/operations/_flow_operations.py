@@ -39,7 +39,6 @@ from promptflow._sdk._utils import (
     _get_additional_includes,
     _merge_local_code_and_additional_includes,
     copy_tree_respect_template_and_ignore_file,
-    entry_string_to_callable,
     format_signature_type,
     generate_flow_tools_json,
     generate_random_string,
@@ -55,7 +54,6 @@ from promptflow._utils.flow_utils import (
     is_flex_flow,
     is_prompty_flow,
     parse_variant,
-    resolve_entry_file,
 )
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.exceptions import ErrorTarget, UserErrorException
@@ -1043,10 +1041,11 @@ class FlowOperations(TelemetryMixin):
                 flow_file=entry.path,
                 working_dir=entry.code,
             )
-            entry_file = resolve_entry_file(entry=entry.entry, working_dir=entry.code)
-            entry_func = entry_string_to_callable(entry_file, entry.entry)
             flow_meta, _, _ = FlowOperations._infer_signature_flex_flow(
-                entry=entry_func, language=entry.language, include_primitive_output=include_primitive_output
+                entry=entry.entry,
+                code=entry.code.as_posix(),
+                language=entry.language,
+                include_primitive_output=include_primitive_output,
             )
         elif inspect.isclass(entry) or inspect.isfunction(entry):
             flow_meta, _, _ = FlowOperations._infer_signature_flex_flow(
@@ -1067,10 +1066,7 @@ class FlowOperations(TelemetryMixin):
         validate: bool = True,
         include_primitive_output: bool = False,
     ) -> Tuple[dict, Path, List[str]]:
-        """Infer signature of a flow entry.
-
-        Note that this is a Python only feature.
-        """
+        """Infer signature of a flow entry."""
         snapshot_list = None
         # resolve entry and code
         if isinstance(entry, str):
@@ -1121,7 +1117,6 @@ class FlowOperations(TelemetryMixin):
             # this path is actually not used
             flow = FlexFlow(path=code / FLOW_FLEX_YAML, code=code, data=flow_meta, entry=flow_meta["entry"])
             flow._validate(raise_error=True)
-            flow_meta.pop("language", None)
 
         if include_primitive_output and "outputs" not in flow_meta:
             flow_meta["outputs"] = {
@@ -1130,9 +1125,11 @@ class FlowOperations(TelemetryMixin):
                 }
             }
 
-        if not keep_entry:
-            flow_meta.pop("entry", None)
-        return flow_meta, code, snapshot_list
+        keys_to_keep = ["inputs", "outputs", "init"]
+        if keep_entry:
+            keys_to_keep.append("entry")
+        filtered_meta = {k: flow_meta[k] for k in keys_to_keep if k in flow_meta}
+        return filtered_meta, code, snapshot_list
 
     @monitor_operation(activity_name="pf.flows.infer_signature", activity_type=ActivityType.PUBLICAPI)
     def infer_signature(self, entry: Union[Callable, FlexFlow, Flow, Prompty], **kwargs) -> dict:
