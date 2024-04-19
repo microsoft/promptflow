@@ -1,11 +1,11 @@
 import asyncio
 import contextlib
 import dataclasses
-import functools
 import importlib
 import inspect
 import uuid
 from dataclasses import is_dataclass
+from functools import partial
 from pathlib import Path
 from types import GeneratorType
 from typing import Any, Callable, Dict, Mapping, Optional, Union
@@ -22,11 +22,14 @@ from promptflow._utils.yaml_utils import load_yaml
 from promptflow.connections import ConnectionProvider
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.tool import ConnectionType
+from promptflow.exceptions import ErrorTarget
+from promptflow.executor._errors import InvalidFlexFlowEntry
 from promptflow.executor._result import LineResult
 from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DefaultRunStorage
 from promptflow.tracing._trace import _traced
 from promptflow.tracing._tracer import Tracer
+from promptflow.tracing.contracts.trace import TraceType
 
 from ._errors import FlowEntryInitializationError
 from .flow_executor import FlowExecutor
@@ -181,7 +184,7 @@ class ScriptExecutor(FlowExecutor):
             if self._is_async:
                 output = await self._func(**inputs)
             else:
-                partial_func = functools.partial(self._func, **inputs)
+                partial_func = partial(self._func, **inputs)
                 output = await asyncio.get_event_loop().run_in_executor(None, partial_func)
             output = self._stringify_generator_output(output) if not allow_generator_output else output
             traces = Tracer.end_tracing(line_run_id)
@@ -242,8 +245,8 @@ class ScriptExecutor(FlowExecutor):
             if inspect.isfunction(self._entry):
                 return self._entry
             return self._entry.__call__
+        module_name, func_name = self._parse_flow_file()
         try:
-            module_name, func_name = self._parse_flow_file()
             module = importlib.import_module(module_name)
         except Exception as e:
             raise PythonLoadError(
@@ -282,7 +285,18 @@ class ScriptExecutor(FlowExecutor):
         func = self._parse_entry_func()
         # If the function is not decorated with trace, add trace for it.
         if not hasattr(func, "__original_function"):
-            func = _traced(func)
+            func = _traced(func, trace_type=TraceType.FLOW)
+        else:
+            if inspect.ismethod(func):
+                # For class method, the original function is a function reference that not bound to any object,
+                # so we need to pass the instance to it.
+                func = _traced(
+                    partial(getattr(func, "__original_function"), self=func.__self__),
+                    trace_type=TraceType.FLOW,
+                    name=func.__qualname__,
+                )
+            else:
+                func = _traced(getattr(func, "__original_function"), trace_type=TraceType.FLOW)
         self._func = func
         inputs, _, _, _ = function_to_interface(self._func)
         self._inputs = {k: v.to_flow_input_definition() for k, v in inputs.items()}
@@ -293,5 +307,12 @@ class ScriptExecutor(FlowExecutor):
         with open(self._working_dir / self._flow_file, "r", encoding="utf-8") as fin:
             flow_dag = load_yaml(fin)
         entry = flow_dag.get("entry", "")
-        module_name, func_name = entry.split(":")
+        try:
+            module_name, func_name = entry.split(":")
+        except Exception as e:
+            raise InvalidFlexFlowEntry(
+                message_format="Invalid entry '{entry}'.The entry should be in the format of '<module>:<function>'.",
+                entry=entry,
+                target=ErrorTarget.EXECUTOR,
+            ) from e
         return module_name, func_name

@@ -37,7 +37,7 @@ pf connection create -f .env --name custom_connection
 
 3. test flow with single line input
 ```bash
-pf flow test --flow . --input ./data/denormalized-flat.jsonl
+pf flow test --flow . --inputs ./data/sample.json
 ```
 
 4. run with multiple lines input

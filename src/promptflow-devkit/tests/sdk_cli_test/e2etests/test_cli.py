@@ -71,9 +71,16 @@ def run_pf_command(*args, cwd=None):
 @pytest.mark.e2etest
 class TestCli:
     def test_pf_version(self, capfd):
+        import re
+
+        from pkg_resources import parse_version
+
         run_pf_command("--version")
-        out, _ = capfd.readouterr()
-        assert "0.0.1" in out
+        out, err = capfd.readouterr()
+
+        pf_versions = re.findall(r'"\S+":\s+"(\S+)"', out)
+        for pf_version in pf_versions:
+            assert parse_version(pf_version)
 
     def test_basic_flow_run(self, capfd) -> None:
         # fetch std out
@@ -2493,7 +2500,7 @@ class TestCli:
                 "--code",
                 f"{EAGER_FLOWS_DIR}/../functions/hello_world",
             )
-            assert os.listdir(temp_dir) == [FLOW_FLEX_YAML, "hello.py"]
+            assert set(os.listdir(temp_dir)) == {FLOW_FLEX_YAML, "hello.py"}
             content = load_yaml(Path(temp_dir) / FLOW_FLEX_YAML)
             assert content == {
                 "entry": "hello:hello_world",
@@ -2512,7 +2519,7 @@ class TestCli:
                 cwd=temp_dir,
             )
             # __pycache__ will be created when inspecting the module
-            assert os.listdir(temp_dir) == [FLOW_FLEX_YAML, "hello.py", "__pycache__"]
+            assert set(os.listdir(temp_dir)) == {FLOW_FLEX_YAML, "hello.py", "__pycache__"}
             new_content = load_yaml(Path(temp_dir) / FLOW_FLEX_YAML)
             assert new_content == content
 
@@ -2550,6 +2557,72 @@ class TestCli:
             )
             tracer_provider: TracerProvider = trace.get_tracer_provider()
             assert tracer_provider.resource.attributes["collection"] == collection
+
+    def test_prompty_test_with_sample_file(self, capsys):
+
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{PROMPTY_DIR}/prompty_example_with_sample.prompty",
+        )
+        outerr = capsys.readouterr()
+        assert "2" in outerr.out
+
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{PROMPTY_DIR}/prompty_example.prompty",
+            "--inputs",
+            f"{DATAS_DIR}/prompty_inputs.json",
+        )
+        outerr = capsys.readouterr()
+        assert "2" in outerr.out
+
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{PROMPTY_DIR}/prompty_example.prompty",
+            "--inputs",
+            f"{DATAS_DIR}/prompty_inputs.jsonl",
+        )
+        outerr = capsys.readouterr()
+        assert "2" in outerr.out
+
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{PROMPTY_DIR}/prompty_example.prompty",
+            "--inputs",
+            'question="what is the result of 1+1?"',
+        )
+        outerr = capsys.readouterr()
+        assert "2" in outerr.out
+
+        with pytest.raises(ValueError) as ex:
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{PROMPTY_DIR}/prompty_example.prompty",
+                "--inputs",
+                f"{DATAS_DIR}/invalid_path.json",
+            )
+        assert "Cannot find inputs file" in ex.value.args[0]
+
+        with pytest.raises(ValueError) as ex:
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{PROMPTY_DIR}/prompty_example.prompty",
+                "--inputs",
+                f"{DATAS_DIR}/logo.jpg",
+            )
+        assert "Only support jsonl or json file as input" in ex.value.args[0]
 
 
 def assert_batch_run_result(run, pf, assert_func):
