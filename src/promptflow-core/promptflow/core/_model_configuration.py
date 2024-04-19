@@ -11,6 +11,7 @@ class ModelConfiguration:
     @classmethod
     @abc.abstractmethod
     def from_connection(cls, connection, **kwargs):
+        """Create a model configuration from a connection."""
         pass
 
 
@@ -30,6 +31,13 @@ class AzureOpenAIModelConfiguration(ModelConfiguration):
 
     @classmethod
     def from_connection(cls, connection: AzureOpenAIConnection, azure_deployment: str):
+        """Create a model configuration from an Azure OpenAI connection.
+
+        :param connection: AzureOpenAI Connection object.
+        :type connection: AzureOpenAIConnection
+        :param azure_deployment: Azure deployment name.
+        :type azure_deployment: str
+        """
         return cls(
             azure_deployment=azure_deployment,
             azure_endpoint=connection.api_base,
@@ -54,6 +62,13 @@ class OpenAIModelConfiguration(ModelConfiguration):
 
     @classmethod
     def from_connection(cls, connection: OpenAIConnection, model: str):
+        """Create a model configuration from an OpenAI connection.
+
+        :param connection: OpenAI Connection object.
+        :type connection: OpenAIConnection
+        :param model: model name.
+        :type model: str
+        """
         return cls(
             model=model,
             base_url=connection.base_url,
