@@ -61,6 +61,10 @@ class TestConnectionAPIs:
             conn_from_pfs = pfs_op.get_connection_with_secret(name=name, status_code=200).json
         assert not conn_from_pfs["secrets"]["api_key"].startswith("*")
 
+        with check_activity_end_telemetry(expected_activities=[]):
+            conn_from_pfs = pfs_op.connection_operation_with_invalid_user(name=name)
+        assert conn_from_pfs.status_code == 403
+
     def test_delete_connection(self, pf_client: PFClient, pfs_op: PFSOperations) -> None:
         len_connections = len(pfs_op.list_connections().json)
 

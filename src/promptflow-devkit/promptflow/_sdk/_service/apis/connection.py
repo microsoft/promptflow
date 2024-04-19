@@ -10,7 +10,7 @@ from flask import jsonify, request
 import promptflow._sdk.schemas._connection as connection
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._service import Namespace, Resource, fields
-from promptflow._sdk._service.utils.utils import get_client_from_request, make_response_no_content
+from promptflow._sdk._service.utils.utils import get_client_from_request, local_user_only, make_response_no_content
 from promptflow._sdk.entities._connection import _Connection
 
 api = Namespace("Connections", description="Connections Management")
@@ -136,6 +136,10 @@ class Connection(Resource):
 class ConnectionWithSecret(Resource):
     @api.doc(parser=working_directory_parser, description="Get connection with secret")
     @api.response(code=200, description="Connection details with secret", model=dict_field)
+    @local_user_only
+    @api.response(
+        code=403, description="This service is available for local user only, please specify X-Remote-User in headers."
+    )
     def get(self, name: str):
         args = working_directory_parser.parse_args()
         connection_op = _get_connection_operation(args.working_directory)
