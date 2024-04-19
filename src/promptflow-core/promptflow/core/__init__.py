@@ -7,7 +7,7 @@ from promptflow._core.metric_logger import log_metric
 
 # flake8: noqa
 from promptflow._core.tool import ToolProvider, tool
-from promptflow.core._flow import AsyncFlow, Flow
+from promptflow.core._flow import AsyncFlow, AsyncPrompty, Flow, Prompty
 from promptflow.core._model_configuration import (
     AzureOpenAIModelConfiguration,
     ModelConfiguration,
@@ -25,6 +25,8 @@ __all__ = [
     "tool",
     "Flow",
     "AsyncFlow",
+    "Prompty",
+    "AsyncPrompty",
     "ModelConfiguration",
     "OpenAIModelConfiguration",
     "AzureOpenAIModelConfiguration",
