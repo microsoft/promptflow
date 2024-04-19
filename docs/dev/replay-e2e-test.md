@@ -1,6 +1,6 @@
 # Replay end-to-end tests
 
-* This document introduces replay tests for those located in [sdk_cli_azure_test](../../src/promptflow/tests/sdk_cli_azure_test/e2etests/) and [sdk_cli_test](../../src/promptflow/tests/sdk_cli_test/e2etests/).
+* This document introduces replay tests for those located in [sdk_cli_azure_test](../../src/promptflow-azure/tests/sdk_cli_azure_test/e2etests/) and [sdk_cli_test](../../src/promptflow-devkit/tests/sdk_cli_test/e2etests/).
 * The primary purpose of replay tests is to avoid the need for credentials, Azure workspaces, OpenAI tokens, and to directly test prompt flow behavior.
 * Although there are different techniques behind recording/replaying, there are some common steps to run the tests in replay mode.
 * The key handle of replay tests is the environment variable `PROMPT_FLOW_TEST_MODE`.
@@ -31,8 +31,8 @@ To record a test, don’t forget to clone the full repo and set up the proper te
 2. Record the test.
    * Specify the environment variable `PROMPT_FLOW_TEST_MODE` to `'record'`. If you have a `.env` file, we recommend specifying it there. Here is an example [.env file](../../src/promptflow/.env.example). Then, just run the test that you want to record.
 3. Once the test completed.
-   * If you have changed/affected tests in __sdk_cli_azure_test__: There should be one new YAML file located in `src/promptflow/tests/test_configs/recordings/`, containing the network traffic of the test.
-   * If you have changed/affected tests in __sdk_cli_test__: There may be changes in the folder `src/promptflow/tests/test_configs/node_recordings/`.  Don’t worry if there are no changes, because similar LLM calls may have been recorded before.
+   * If you have changed/affected tests in __sdk_cli_azure_test__: There should be one new YAML file located in [Azure recording folder](../../src/promptflow-recording/recordings/azure/), containing the network traffic of the test.
+   * If you have changed/affected tests in __sdk_cli_test__: There may be changes in the folder [Local recording folder](../../src/promptflow-recording/recordings/local/).  Don’t worry if there are no changes, because similar LLM calls may have been recorded before.
 
 ## Techniques behind replay test
 
