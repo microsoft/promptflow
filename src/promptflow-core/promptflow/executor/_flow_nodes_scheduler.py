@@ -5,7 +5,10 @@
 import asyncio
 import contextvars
 import inspect
+import os
+import signal
 import threading
+import time
 from concurrent import futures
 from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Dict, List, Optional, Tuple
@@ -13,6 +16,7 @@ from typing import Dict, List, Optional, Tuple
 from promptflow._core.flow_execution_context import FlowExecutionContext
 from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.logger_utils import flow_logger
+from promptflow._utils.thread_utils import ThreadWithContextVars
 from promptflow._utils.utils import set_context
 from promptflow.contracts.flow import Node
 from promptflow.executor._dag_manager import DAGManager
@@ -21,6 +25,32 @@ from promptflow.executor._errors import LineExecutionTimeoutError, NoNodeExecute
 RUN_FLOW_NODES_LINEARLY = 1
 DEFAULT_CONCURRENCY_BULK = 2
 DEFAULT_CONCURRENCY_FLOW = 16
+
+
+def exit_process_with_delay():
+
+    # Add delay to wait for the main thread to exit to guarantee we can export span data.
+    time.sleep(3)
+    # Use os._exit instead of sys.exit, so that the process can stop without
+    # waiting for the thread created by ThreadPoolExecutor to finish.
+    # sys.exit: https://docs.python.org/3/library/sys.html#sys.exit
+    # Raise a SystemExit exception, signaling an intention to exit the interpreter.
+    # Specifically, it does not exit non-daemon thread
+    # os._exit https://docs.python.org/3/library/os.html#os._exit
+    # Exit the process with status n, without calling cleanup handlers, flushing stdio buffers, etc.
+    # Specifically, it stops process without waiting for non-daemon thread.
+    os._exit(0)
+
+
+def signal_handler(sig, frame):
+    """
+    We have no way to cancel running tasks in ThreadPoolExecutor, so we raise KeyboardInterrupt to exit the process.
+    """
+    flow_logger.info(f"Received signal {sig}({signal.Signals(sig).name}), start to exit sync flow execution.")
+
+    monitor = ThreadWithContextVars(target=exit_process_with_delay)
+    monitor.start()
+    raise KeyboardInterrupt
 
 
 class FlowNodesScheduler:
@@ -51,45 +81,55 @@ class FlowNodesScheduler:
         self,
         line_timeout_sec: Optional[int] = None,
     ) -> Tuple[dict, dict]:
+        if threading.current_thread() is threading.main_thread():
+            signal.signal(signal.SIGINT, signal_handler)
+            signal.signal(signal.SIGTERM, signal_handler)
+        else:
+            flow_logger.info(
+                "Current thread is not main thread, skip signal handler registration in AsyncNodesScheduler."
+            )
         parent_context = contextvars.copy_context()
-        with ThreadPoolExecutor(
+        # If we use with ThreadPoolExecutor, we can't use KeyboardInterrupt to exit waiting.
+        executor = ThreadPoolExecutor(
             max_workers=self._node_concurrency, initializer=set_context, initargs=(parent_context,)
-        ) as executor:
-            self._execute_nodes(executor)
-            timeout_task = None
-            event = threading.Event()
-            if line_timeout_sec is not None:
-                timeout_task = executor.submit(self.wait_within_timeout, event, line_timeout_sec)
-            try:
-                while not self._dag_manager.completed():
-                    if not self._future_to_node:
-                        raise NoNodeExecutedError("No nodes are ready for execution, but the flow is not completed.")
-                    tasks_to_wait = list(self._future_to_node.keys())
-                    if timeout_task is not None:
-                        tasks_to_wait.append(timeout_task)
-                    completed_futures_with_wait, _ = futures.wait(tasks_to_wait, return_when=futures.FIRST_COMPLETED)
-                    completed_futures = [f for f in completed_futures_with_wait if f in self._future_to_node]
-                    self._dag_manager.complete_nodes(self._collect_outputs(completed_futures))
-                    for each_future in completed_futures:
-                        del self._future_to_node[each_future]
-                    if timeout_task and timeout_task.done():
-                        raise LineExecutionTimeoutError(self._context._line_number, line_timeout_sec)
-                    self._execute_nodes(executor)
-            except Exception as e:
-                err_msg = "Flow execution has failed."
-                if isinstance(e, LineExecutionTimeoutError):
-                    err_msg = f"Line execution timeout after {line_timeout_sec} seconds."
-                    self._context.cancel_node_runs(err_msg)
-                node_names = ",".join(node.name for node in self._future_to_node.values())
-                flow_logger.error(f"{err_msg} Cancelling all running nodes: {node_names}.")
-                for unfinished_future in self._future_to_node.keys():
-                    # We can't cancel running tasks here, only pending tasks could be cancelled.
-                    unfinished_future.cancel()
-                # Even we raise exception here, still need to wait all running jobs finish to exit.
-                raise e
-            finally:
-                # Cancel timeout task no matter the execution is finished or failed.
-                event.set()
+        )
+        self._execute_nodes(executor)
+        timeout_task = None
+        event = threading.Event()
+        if line_timeout_sec is not None:
+            timeout_task = executor.submit(self.wait_within_timeout, event, line_timeout_sec)
+        try:
+            while not self._dag_manager.completed():
+                if not self._future_to_node:
+                    raise NoNodeExecutedError("No nodes are ready for execution, but the flow is not completed.")
+                tasks_to_wait = list(self._future_to_node.keys())
+                if timeout_task is not None:
+                    tasks_to_wait.append(timeout_task)
+                completed_futures_with_wait, _ = futures.wait(
+                    tasks_to_wait, timeout=10, return_when=futures.FIRST_COMPLETED
+                )
+                completed_futures = [f for f in completed_futures_with_wait if f in self._future_to_node]
+                self._dag_manager.complete_nodes(self._collect_outputs(completed_futures))
+                for each_future in completed_futures:
+                    del self._future_to_node[each_future]
+                if timeout_task and timeout_task.done():
+                    raise LineExecutionTimeoutError(self._context._line_number, line_timeout_sec)
+                self._execute_nodes(executor)
+        except Exception as e:
+            err_msg = "Flow execution has failed."
+            if isinstance(e, LineExecutionTimeoutError):
+                err_msg = f"Line execution timeout after {line_timeout_sec} seconds."
+                self._context.cancel_node_runs(err_msg)
+            node_names = ",".join(node.name for node in self._future_to_node.values())
+            flow_logger.error(f"{err_msg} Cancelling all running nodes: {node_names}.")
+            for unfinished_future in self._future_to_node.keys():
+                # We can't cancel running tasks here, only pending tasks could be cancelled.
+                unfinished_future.cancel()
+            # Even we raise exception here, still need to wait all running jobs finish to exit.
+            raise e
+        finally:
+            # Cancel timeout task no matter the execution is finished or failed.
+            event.set()
         for node in self._dag_manager.bypassed_nodes:
             self._dag_manager.completed_nodes_outputs[node] = None
         return self._dag_manager.completed_nodes_outputs, self._dag_manager.bypassed_nodes
