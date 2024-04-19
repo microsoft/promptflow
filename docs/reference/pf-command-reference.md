@@ -917,22 +917,25 @@ pf service start [--port]
 ```
 
 #### Examples
-Prompt flow will try to start the service on the default port 23333 if "pfs.port" file doesn't exist. If the port is 
-already taken, prompt flow will sequentially probe new ports, incrementing by one each time. If the port file exists, 
-prompt flow will just try to start the service on the port number specified in the file.
+Prompt flow will try to start the service on the default port 23333. If the port is already taken, prompt flow will 
+sequentially probe new ports, incrementing by one each time. Prompt flow retains the port number for future reference 
+and will utilize it for subsequent service startups.
 
 ```bash
 pf service start
 ```
 
-Forcefully restart the promptflow service even if the port is already in use.
+Forcefully start the promptflow service. If the port is already in use, the existing service will be terminated and 
+restart a new service
+
 ```bash
 pf service start --force
 ```
 
 Start the promptflow service with a specified port. If the port is already taken, prompt flow will raise an error 
-unless forcefully start the service with the `--force` flag. Upon availability, the port number will be logged in the 
-"pfs.port" file.
+unless forcefully start the service with the `--force` flag. Upon availability, prompt flow retains the port number for 
+future reference and will utilize it for subsequent service startups.
+
 ```bash
 pf service start --port 65553
 ```
@@ -946,7 +949,7 @@ pf service start --debug
 
 `--port -p`
 
-The designated port of the prompt flow service and port number will be logged in the pfs.port file if port is available.
+The designated port of the prompt flow service and port number will be remembered if port is available.
 
 `--force`
 

@@ -24,6 +24,7 @@ from promptflow._constants import PF_RUN_AS_BUILT_BINARY
 from promptflow._sdk._constants import (
     DEFAULT_ENCODING,
     HOME_PROMPT_FLOW_DIR,
+    PF_SERVICE_DEFAULT_PORT,
     PF_SERVICE_HOUR_TIMEOUT,
     PF_SERVICE_PORT_DIT_NAME,
     PF_SERVICE_PORT_FILE,
@@ -127,7 +128,7 @@ def is_port_in_use(port: int):
 
 
 def get_pfs_port():
-    port = 23333
+    port = PF_SERVICE_DEFAULT_PORT
     while True:
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
