@@ -1,6 +1,6 @@
 # Prompt flow evaluators
 
-[![Python package](https://img.shields.io/pypi/v/promptflow-tools)](https://pypi.org/project/promptflow-evals/)
+[![Python package](https://img.shields.io/pypi/v/promptflow-evals)](https://pypi.org/project/promptflow-evals/)
 [![License: MIT](https://img.shields.io/github/license/microsoft/promptflow)](https://github.com/microsoft/promptflow/blob/main/LICENSE)
 
 ## Introduction
