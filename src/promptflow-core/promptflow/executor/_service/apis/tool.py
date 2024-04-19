@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import os
 from fastapi import APIRouter
 
 from promptflow._core.tool_meta_generator import generate_tool_meta_in_subprocess
@@ -24,6 +25,11 @@ def list_package_tools():
 
 @router.post("/retrieve_tool_func_result")
 async def retrieve_tool_func_result(request: RetrieveToolFuncResultRequest):
+    # Now runtime put PF_HTTP_CONNECTION_PROVIDER_ENDPOINT in request.environment_variables.
+    # It is used to init a http connection provider to get connection in dynamic list scenario.
+    if request.environment_variables and isinstance(request.environment_variables, dict):
+        os.environ.update(request.environment_variables)
+
     from promptflow._core.tools_manager import retrieve_tool_func_result
 
     args = (request.func_call_scenario, request.func_path, request.func_kwargs, request.ws_triple)
