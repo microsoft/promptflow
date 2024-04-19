@@ -1,7 +1,9 @@
 import json
+import os
 from dataclasses import dataclass
 from pathlib import Path
 
+from dotenv import load_dotenv
 from jinja2 import Template
 from openai import AzureOpenAI
 
@@ -73,10 +75,15 @@ if __name__ == "__main__":
     from promptflow.client import PFClient
 
     start_trace()
-    pf = PFClient()
-    connection = pf.connections.get("open_ai_connection", with_secrets=True)
-    model_config = AzureOpenAIModelConfiguration.from_connection(
-        connection=connection,
+    if "AZURE_OPENAI_API_KEY" not in os.environ:
+        # load environment variables from .env file
+        load_dotenv()
+
+    if "AZURE_OPENAI_API_KEY" not in os.environ:
+        raise Exception("Please specify environment variables: AZURE_OPENAI_API_KEY")
+    model_config = AzureOpenAIModelConfiguration(
+        azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+        api_key=os.environ["AZURE_OPENAI_API_KEY"], 
         azure_deployment="gpt-35-turbo",
     )
     evaluator = CodeEvaluator(model_config)
