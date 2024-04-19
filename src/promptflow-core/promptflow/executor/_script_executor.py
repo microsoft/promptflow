@@ -273,14 +273,16 @@ class ScriptExecutor(FlowExecutor):
         if not connection_params and not model_config_param_name_2_cls:
             return init_kwargs
         resolved_init_kwargs = {k: v for k, v in init_kwargs.items()}
-        self._resolve_connection_params(
-            connection_params=connection_params, init_kwargs=init_kwargs, resolved_init_kwargs=resolved_init_kwargs
-        )
-        self._resolve_model_config_params(
-            model_config_param_name_2_cls=model_config_param_name_2_cls,
-            init_kwargs=init_kwargs,
-            resolved_init_kwargs=resolved_init_kwargs,
-        )
+        if connection_params:
+            self._resolve_connection_params(
+                connection_params=connection_params, init_kwargs=init_kwargs, resolved_init_kwargs=resolved_init_kwargs
+            )
+        if model_config_param_name_2_cls:
+            self._resolve_model_config_params(
+                model_config_param_name_2_cls=model_config_param_name_2_cls,
+                init_kwargs=init_kwargs,
+                resolved_init_kwargs=resolved_init_kwargs,
+            )
 
         return resolved_init_kwargs
 
