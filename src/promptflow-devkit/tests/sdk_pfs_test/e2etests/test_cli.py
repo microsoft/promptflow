@@ -42,10 +42,10 @@ class TestPromptflowServiceCLI:
         response = requests.get(f"http://localhost:{port}/heartbeat")
         return response.status_code == 200
 
-    def test_start_service(self):
+    def test_start_service(self, capsys):
         try:
-            # start pfs by pf.yaml
-            self._test_start_service()
+            # force start pfs
+            self._test_start_service(force=True)
             # Start pfs by specified port
             port = get_pfs_port()
             self._test_start_service(port=port, force=True)
@@ -55,6 +55,12 @@ class TestPromptflowServiceCLI:
             # Wait for service to be started
             start_pfs.wait()
             assert self._is_service_healthy()
+
+            # show-status
+            self._run_pfs_command("status")
+            output, _ = capsys.readouterr()
+            assert str(port) in output
+
             self._test_start_service(force=True)
             # previous pfs is killed
             assert start_pfs.poll() is not None
@@ -64,18 +70,5 @@ class TestPromptflowServiceCLI:
         finally:
             port = get_port_from_config()
             kill_exist_service(port=port)
-
-    def test_show_service_status(self, capsys):
-        with pytest.raises(SystemExit):
-            self._run_pfs_command("status")
-        start_pfs = subprocess.Popen("pf service start", shell=True)
-        # Wait for service to be started
-        start_pfs.wait()
-        assert self._is_service_healthy()
-        port = get_port_from_config()
-        self._run_pfs_command("status")
-        output, _ = capsys.readouterr()
-        assert str(port) in output
-        self._run_pfs_command("stop")
-        output, _ = capsys.readouterr()
-        assert str(port) in output
+            with pytest.raises(SystemExit):
+                self._run_pfs_command("status")
