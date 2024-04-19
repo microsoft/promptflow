@@ -516,16 +516,11 @@ class BatchEngine:
         worker_count = self._worker_count or DEFAULT_CONCURRENCY
         semaphore = asyncio.Semaphore(worker_count)
 
-        batch_inputs_dict = {}
-        if any(LINE_NUMBER_KEY not in input for input in batch_inputs):
-            bulk_logger.warning("There are lines without line number in the batch inputs, use index as line number.")
-            batch_inputs_dict = {i: input for i, input in enumerate(batch_inputs)}
-        else:
-            batch_inputs_dict = {input[LINE_NUMBER_KEY]: input for input in batch_inputs}
-
         pending = [
-            asyncio.create_task(self._exec_line_under_semaphore(semaphore, line_inputs, i, run_id))
-            for i, line_inputs in batch_inputs_dict.items()
+            asyncio.create_task(
+                self._exec_line_under_semaphore(semaphore, line_input, line_input[LINE_NUMBER_KEY], run_id)
+            )
+            for line_input in batch_inputs
         ]
 
         total_lines = len(batch_inputs)
