@@ -2,6 +2,9 @@
 
 ## v1.10.0 (Upcoming)
 
+### Features Added
+- Flow supports file as inputs of flow tests, reach [here](https://microsoft.github.io/promptflow/reference/pf-command-reference.html#pf-flow-test) for more details.
+
 ## 1.9.0 (2024.04.17)
 
 ### Features Added
