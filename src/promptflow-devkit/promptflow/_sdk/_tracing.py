@@ -73,6 +73,12 @@ class TraceProviderConfig:
         return False
 
     @staticmethod
+    def need_to_export_to_azure(value: typing.Optional[str]) -> bool:
+        if isinstance(value, str):
+            return value.lower() not in (TraceProviderConfig.DISABLE, TraceProviderConfig.LOCAL)
+        return False
+
+    @staticmethod
     def need_to_resolve(value: typing.Optional[str]) -> bool:
         """Need to resolve workspace when user specified `azureml` as trace provider."""
         if isinstance(value, str):
@@ -96,7 +102,6 @@ class TraceProviderConfig:
             raise MissingAzurePackage()
 
 
-PF_CONFIG_TRACE_LOCAL = "local"
 TRACER_PROVIDER_PFS_EXPORTER_SET_ATTR = "_pfs_exporter_set"
 
 
@@ -186,11 +191,10 @@ def _invoke_pf_svc() -> str:
 def _get_ws_triad_from_pf_config() -> typing.Optional[AzureMLWorkspaceTriad]:
     from promptflow._sdk._configuration import Configuration
 
-    ws_arm_id = Configuration.get_instance().get_trace_provider()
-    # enable local only trace feature, no workspace
-    if ws_arm_id == PF_CONFIG_TRACE_LOCAL:
-        return
-    return extract_workspace_triad_from_trace_provider(ws_arm_id) if ws_arm_id is not None else None
+    config = Configuration.get_instance().get_trace_provider()
+    if not TraceProviderConfig.need_to_export_to_azure(config):
+        return None
+    return extract_workspace_triad_from_trace_provider(config)
 
 
 # priority: run > experiment > collection
