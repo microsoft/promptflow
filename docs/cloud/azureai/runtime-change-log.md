@@ -22,7 +22,7 @@ Default runtime image is continuously updated, and here we record the new featur
 
 #### Bugs fixed
 - Resolve an intermittent ImportError that arose while loading the package tool.
-- Upgrade langchain>=0.1.1 and langchain-core>=0.1.30 to fix vulnerablity.
+- Upgrade langchain>=0.1.1 and langchain-core>=0.1.30 to fix vulnerability.
 
 ### 20240403.v2
 
