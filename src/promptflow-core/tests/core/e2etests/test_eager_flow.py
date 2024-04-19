@@ -1,10 +1,12 @@
 import asyncio
 from dataclasses import is_dataclass
+from unittest.mock import patch
 
 import pytest
 
 from promptflow._core.tool_meta_generator import PythonLoadError
 from promptflow.contracts.run_info import Status
+from promptflow.core._connection_provider._dict_connection_provider import DictConnectionProvider
 from promptflow.executor._errors import FlowEntryInitializationError, InvalidFlexFlowEntry
 from promptflow.executor._result import LineResult
 from promptflow.executor._script_executor import ScriptExecutor
@@ -38,6 +40,7 @@ function_entries = [
 ]
 
 
+@pytest.mark.usefixtures("dev_connections")
 @pytest.mark.e2etest
 class TestEagerFlow:
     @pytest.mark.parametrize(
@@ -77,16 +80,23 @@ class TestEagerFlow:
         line_result2 = executor.exec_line(inputs=inputs, index=0)
         assert line_result1.output == line_result2.output
 
-    def test_flow_run_with_tokens(self):
-        flow_file = get_yaml_file("flow_with_openai_chat", root=EAGER_FLOW_ROOT)
-        inputs = {"question": "Hello", "stream": False}
+    def test_flow_run_with_openai_chat(self, dev_connections):
+        flow_file = get_yaml_file("callable_class_with_openai", root=EAGER_FLOW_ROOT, file_name="flow.flex.yaml")
+        connection = dev_connections["azure_open_ai_connection"]
+        # TODO: Remove this after the connection type is added to github secrets
+        if "type" not in connection:
+            connection["type"] = "AzureOpenAIConnection"
 
-        executor = FlowExecutor.create(flow_file=flow_file, connections={})
-        line_result = executor.exec_line(inputs=inputs, index=0)
-        assert isinstance(line_result, LineResult)
-        token_names = ["prompt_tokens", "completion_tokens", "total_tokens"]
-        for token_name in token_names:
-            assert token_name in line_result.run_info.api_calls[0]["children"][0]["system_metrics"]
+        with patch(
+            "promptflow.connections.ConnectionProvider.get_instance",
+            return_value=DictConnectionProvider({"azure_open_ai_connection": connection}),
+        ):
+            executor = ScriptExecutor(flow_file=flow_file, init_kwargs={"connection": "azure_open_ai_connection"})
+            line_result = executor.exec_line(inputs={"question": "Hello", "stream": False}, index=0)
+            assert line_result.run_info.status == Status.Completed, line_result.run_info.error
+            token_names = ["prompt_tokens", "completion_tokens", "total_tokens"]
+            for token_name in token_names:
+                assert token_name in line_result.run_info.api_calls[0]["children"][0]["system_metrics"]
 
     @pytest.mark.parametrize("entry, inputs, expected_output", function_entries)
     def test_flow_run_with_function_entry(self, entry, inputs, expected_output):
