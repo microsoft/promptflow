@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "promptflow-devkit"
-version = "1.9.0.dev0"
+version = "1.10.0.dev0"
 description = "Prompt flow devkit"
 include = [
   "promptflow/_sdk/_service/static/*",
@@ -86,7 +86,6 @@ pyarrow = [
 pre-commit = "*"
 import-linter = "*"
 promptflow-core = {path = "../promptflow-core", extras = ["azureml-serving"], develop = true}
-promptflow-azure = {path = "../promptflow-azure", develop = true}
 promptflow-tracing = {path = "../promptflow-tracing", develop = true}
 promptflow = {path = "../promptflow"}
 promptflow-tools = {path = "../promptflow-tools"}
@@ -95,7 +94,6 @@ promptflow-recording =  {path = "../promptflow-recording", develop = true}
 [tool.poetry.group.ci.dependencies]
 import-linter = "*"
 promptflow-core = {path = "../promptflow-core", extras = ["azureml-serving"]}
-promptflow-azure = {path = "../promptflow-azure"}
 promptflow-tracing = {path = "../promptflow-tracing"}
 promptflow = {path = "../promptflow"}
 promptflow-tools = {path = "../promptflow-tools"}

@@ -113,7 +113,7 @@ def resolve_flow_path(
     file_path = flow_folder / flow_file
     if file_path.suffix.lower() not in FLOW_FILE_SUFFIX:
         raise UserErrorException(
-            error_format=f"The flow file suffix must be yaml or yml, " f"and cannot be {file_path.suffix}"
+            error_format=f"The flow file suffix must be yaml or yml, and cannot be {file_path.suffix}"
         )
 
     if not check_flow_exist:
@@ -126,10 +126,17 @@ def resolve_flow_path(
         )
 
     if not file_path.is_file():
-        raise UserErrorException(
-            f"Flow file {file_path.absolute().as_posix()} does not exist.",
-            privacy_info=[file_path.absolute().as_posix()],
-        )
+        if flow_folder == flow_path:
+            raise UserErrorException(
+                f"Flow path {flow_path.absolute().as_posix()} "
+                f"must have postfix either {FLOW_DAG_YAML} or {FLOW_FLEX_YAML}",
+                privacy_info=[flow_path.absolute().as_posix()],
+            )
+        else:
+            raise UserErrorException(
+                f"Flow file {file_path.absolute().as_posix()} does not exist.",
+                privacy_info=[file_path.absolute().as_posix()],
+            )
 
     return flow_folder.resolve().absolute(), flow_file
 
@@ -288,9 +295,12 @@ def is_executable_chat_flow(flow: ExecutableFlow):
     if len(chat_inputs) != 1:
         _is_chat_flow = False
         error_msg = "chat flow does not support multiple chat inputs"
-    elif len(chat_outputs) != 1:
+    elif len(chat_outputs) > 1:
         _is_chat_flow = False
         error_msg = "chat flow does not support multiple chat outputs"
+    elif not chat_outputs and len(flow.outputs.values()) > 0:
+        _is_chat_flow = False
+        error_msg = "chat output is not configured"
     elif not chat_history_input_name:
         _is_chat_flow = False
         error_msg = "chat_history is required in the inputs of chat flow"

@@ -96,6 +96,12 @@ class InvalidOutputKeyError(CoreError):
     pass
 
 
+class InvalidSampleError(CoreError):
+    """Exception raise when invalid sample in Prompty."""
+
+    pass
+
+
 class OpenURLUserAuthenticationError(UserAuthenticationError):
     def __init__(self, **kwargs):
         super().__init__(target=ErrorTarget.CORE, **kwargs)

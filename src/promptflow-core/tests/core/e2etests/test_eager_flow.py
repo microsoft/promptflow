@@ -5,6 +5,7 @@ import pytest
 
 from promptflow._core.tool_meta_generator import PythonLoadError
 from promptflow.contracts.run_info import Status
+from promptflow.core import AzureOpenAIModelConfiguration, OpenAIModelConfiguration
 from promptflow.executor._errors import FlowEntryInitializationError, InvalidFlexFlowEntry
 from promptflow.executor._result import LineResult
 from promptflow.executor._script_executor import ScriptExecutor
@@ -56,6 +57,34 @@ class TestEagerFlow:
                 lambda x: x["func_input"] == "func_input",
                 {"obj_input": "obj_input"},
             ),
+            (
+                "basic_callable_class_async",
+                {"func_input": "func_input"},
+                lambda x: x["func_input"] == "func_input",
+                {"obj_input": "obj_input"},
+            ),
+            (
+                "basic_model_config",
+                {"func_input": "input"},
+                lambda x: x["azure_open_ai_model_config_azure_endpoint"] == "fake_endpoint",
+                {
+                    "azure_open_ai_model_config": AzureOpenAIModelConfiguration(
+                        azure_deployment="my_deployment", azure_endpoint="fake_endpoint"
+                    ),
+                    "open_ai_model_config": OpenAIModelConfiguration(model="my_model", base_url="fake_base_url"),
+                },
+            ),
+            (
+                "basic_model_config",
+                {"func_input": "input"},
+                lambda x: x["azure_open_ai_model_config_azure_endpoint"] == "https://gpt-test-eus.openai.azure.com/",
+                {
+                    "azure_open_ai_model_config": AzureOpenAIModelConfiguration(
+                        azure_deployment="my_deployment", connection="azure_open_ai_connection"
+                    ),
+                    "open_ai_model_config": OpenAIModelConfiguration(model="my_model", base_url="fake_base_url"),
+                },
+            ),
         ],
     )
     def test_flow_run(self, flow_folder, inputs, ensure_output, init_kwargs):
@@ -66,6 +95,10 @@ class TestEagerFlow:
         line_result = executor.exec_line(inputs=inputs, index=0)
         assert isinstance(line_result, LineResult)
         assert ensure_output(line_result.output)
+
+        if executor.has_aggregation_node:
+            aggr_result = executor._exec_aggregation(inputs=[line_result.output])
+            assert aggr_result.metrics == {"length": 1}
 
         # Test submitting eager flow to flow executor
         executor = FlowExecutor.create(flow_file=flow_file, connections={}, init_kwargs=init_kwargs)

@@ -327,3 +327,7 @@ class InvalidFlexFlowEntry(ValidationException):
 
 class InvalidModelConfigValueType(ValidationException):
     pass
+
+
+class InvalidAggregationFunction(UserErrorException):
+    pass
