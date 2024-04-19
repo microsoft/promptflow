@@ -188,6 +188,8 @@ def _create_trace_from_function_call(
     else:
         # Get __qualname__ from callable class
         function = f.__call__.__qualname__
+    if function.endswith(".__call__"):
+        function = function[: -len(".__call__")]
     if trace_type in [TraceType.LLM, TraceType.EMBEDDING] and f.__module__:
         function = f"{f.__module__}.{function}"
 
