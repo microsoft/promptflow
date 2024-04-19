@@ -386,7 +386,7 @@ class TestFlowTest:
         clear_module_cache("flow")
         clear_module_cache("my_module.entry")
         flow_path = Path(f"{EAGER_FLOWS_DIR}/{flow_path}").absolute()
-        flow_meta = _client._flows._generate_flow_meta(flow_path, load_in_subprocess=False)
+        flow_meta = _client._flows._generate_flow_meta(flow_path)
         omitted_meta = pydash.omit(flow_meta, "environment")
         assert omitted_meta == expected_meta
 

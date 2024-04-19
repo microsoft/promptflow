@@ -29,7 +29,6 @@ def _generate_meta_from_file(working_dir, source_path, data, meta_dict, exceptio
             )
             meta_dict.update(result)
         except Exception as e:
-            raise e
             exception_list.append(str(e))
 
 
