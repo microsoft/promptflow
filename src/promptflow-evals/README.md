@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/github/license/microsoft/promptflow)](https://github.com/microsoft/promptflow/blob/main/LICENSE)
 
 ## Introduction
-Evaluators are prebuilt promptflow pipelines that are designed to measure the quality of the outputs from language models.
+Evaluators are custom or prebuilt promptflow pipelines that are designed to measure the quality of the outputs from language models.
 
 ## Usage
 Users can create run evaluators on the local machine as shown in the example below:
