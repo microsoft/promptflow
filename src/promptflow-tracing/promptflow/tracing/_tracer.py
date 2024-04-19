@@ -66,7 +66,7 @@ class Tracer(ThreadLocalSingleton):
     def to_serializable(obj):
         if isinstance(obj, dict) and all(isinstance(k, str) for k in obj.keys()):
             return {k: Tracer.to_serializable(v) for k, v in obj.items()}
-        if isinstance(obj, GeneratorProxy):
+        if isinstance(obj, (GeneratorProxy, AsyncGeneratorProxy)):
             return obj
         try:
             obj = serialize(obj)
