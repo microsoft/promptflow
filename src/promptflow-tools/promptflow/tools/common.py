@@ -388,6 +388,7 @@ def list_deployment_connections(connection=""):
         try:
             connection_provider = ConnectionProvider.get_instance()
             conn_sub, conn_rg, conn_account = "", "", ""
+            print("type........:", type(connection_provider))
             if isinstance(connection_provider, WorkspaceConnectionProvider) \
                     or isinstance(connection_provider, HttpConnectionProvider):
                 print("1111111111")
