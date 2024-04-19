@@ -3,11 +3,13 @@ import sys
 from pathlib import Path
 
 import pytest
+from dotenv import load_dotenv
 
+from promptflow._sdk._pf_client import PFClient
 from promptflow.contracts.run_info import Status
 from promptflow.executor import FlowExecutor
 
-from ..utils import get_flow_folder, get_flow_package_tool_definition, get_yaml_file
+from ..utils import EAGER_FLOWS_ROOT, get_flow_folder, get_flow_package_tool_definition, get_yaml_file
 
 PACKAGE_TOOL_BASE = Path(__file__).parent.parent / "package_tools"
 PACKAGE_TOOL_ENTRY = "promptflow._core.tools_manager.collect_package_tools"
@@ -70,3 +72,23 @@ class TestAssistant:
             executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections, raise_ex=True)
             flow_result = executor.exec_line({})
             assert flow_result.run_info.status == Status.Completed
+
+
+_client = PFClient()
+
+
+@pytest.mark.usefixtures("dev_connections", "recording_injection")
+@pytest.mark.e2etest
+class TestAssistantEagerFlow:
+    def test_eager_flow_with_two_assistants(self):
+        # Need to create .env file for the flow.
+        # > python generate_connection_config.py --target_folder <flow_folder>
+        flow_path = get_flow_folder("story_assistant", EAGER_FLOWS_ROOT).absolute()
+        # Load .env file as env variables
+        load_dotenv(dotenv_path=f"{flow_path}/.env")
+
+        inputs = {
+            "topic": "Basketball.",
+        }
+        result = _client._flows._test(flow=flow_path, inputs=inputs)
+        assert result.run_info.status.value == "Completed"
