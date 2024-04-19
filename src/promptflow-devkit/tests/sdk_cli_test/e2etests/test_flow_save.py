@@ -611,8 +611,8 @@ class TestFlowSave:
             "init": {
                 "configuration": {"type": "object"},
                 "parameters": {"type": "object"},
-                "api": {"type": "object", "default": "chat"},
-                "response": {"type": "object", "default": "first"},
+                "api": {"type": "string", "default": "chat"},
+                "response": {"type": "string", "default": "first"},
             },
         }
 
@@ -626,8 +626,8 @@ class TestFlowSave:
             "init": {
                 "configuration": {"type": "object"},
                 "parameters": {"type": "object"},
-                "api": {"type": "object", "default": "chat"},
-                "response": {"type": "object", "default": "first"},
+                "api": {"type": "string", "default": "chat"},
+                "response": {"type": "string", "default": "first"},
             },
         }
         # Flex flow
