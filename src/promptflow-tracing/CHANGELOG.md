@@ -5,7 +5,7 @@
 ### Features Added
 - Provide ThreadPoolExecutorContext in promptflow.tracing namespace.
 
-## v1.9.0 (Upcoming)
+## v1.9.0 (2024.04.17)
 
 ## 1.0.0 (2024.03.21)
 
