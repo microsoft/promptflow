@@ -1,7 +1,6 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-import dataclasses
 from typing import TypedDict
 
 from promptflow.core import AzureOpenAIModelConfiguration, OpenAIModelConfiguration
@@ -14,7 +13,11 @@ class FlowOutput(TypedDict):
 
 
 class MyFlow:
-    def __init__(self, azure_open_ai_model_config: AzureOpenAIModelConfiguration, open_ai_model_config: OpenAIModelConfiguration):
+    def __init__(
+            self,
+            azure_open_ai_model_config: AzureOpenAIModelConfiguration,
+            open_ai_model_config: OpenAIModelConfiguration
+    ):
         self.azure_open_ai_model_config = azure_open_ai_model_config
         self.open_ai_model_config = open_ai_model_config
 

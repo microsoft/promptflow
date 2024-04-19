@@ -363,14 +363,32 @@ class TestFlowTest:
                     "inputs": {"input_val": {"default": "gpt", "type": "string"}},
                 },
             ),
+            (
+                "basic_model_config",
+                {
+                    "init": {
+                        "azure_open_ai_model_config": {"type": "AzureOpenAIModelConfiguration"},
+                        "open_ai_model_config": {"type": "OpenAIModelConfiguration"},
+                    },
+                    "inputs": {"func_input": {"type": "string"}},
+                    "outputs": {
+                        "func_input": {"type": "string"},
+                        "obj_id": {"type": "string"},
+                        "obj_input": {"type": "string"},
+                    },
+                    "entry": "class_with_model_config:MyFlow",
+                    "function": "__call__",
+                },
+            ),
         ],
     )
     def test_generate_flow_meta(self, flow_path, expected_meta):
         clear_module_cache("flow")
         clear_module_cache("my_module.entry")
         flow_path = Path(f"{EAGER_FLOWS_DIR}/{flow_path}").absolute()
-        flow_meta = _client._flows._generate_flow_meta(flow_path)
-        assert flow_meta == expected_meta
+        flow_meta = _client._flows._generate_flow_meta(flow_path, load_in_subprocess=False)
+        omitted_meta = pydash.omit(flow_meta, "environment")
+        assert omitted_meta == expected_meta
 
     def test_generate_flow_meta_exception(self):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/incorrect_entry/").absolute()
