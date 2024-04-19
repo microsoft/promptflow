@@ -6,7 +6,7 @@ import json
 import logging
 import os
 
-from flask import Flask, g, jsonify, request
+from flask import Flask, Response, g, jsonify, request
 from opentelemetry import baggage, context, trace
 from opentelemetry.trace.span import INVALID_SPAN
 
@@ -123,16 +123,16 @@ def add_default_routes(app: PromptflowServingApp):
         """Get the swagger object."""
         return jsonify(app.swagger)
     
-    print(f'{app.project_path}/ai-plugin.json')
-
-    if(os.path.isfile(f'{app.project_path}/ai-plugin.json')):
-        @app.route('/.well-known/ai-plugin.json', methods=['GET', 'OPTIONS'])
-        def get_plugin_json():
+    @app.route('/.well-known/ai-plugin.json', methods=['GET', 'OPTIONS'])
+    def get_plugin_json():
+        if(os.path.isfile(f'{app.project_path}/ai-plugin.json')):
             if request.method == 'OPTIONS':
                 return ('', 204, {})
             with open('ai-plugin.json', 'r') as f:
-                    json_data = f.read()
-                    return Response(json_data, mimetype='text/json')
+                json_data = f.read()
+                return Response(json_data, mimetype='text/json')
+        else:
+            return ('', 204, {})
   
     @app.route("/health", methods=["GET"])
     def health():
