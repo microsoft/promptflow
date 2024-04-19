@@ -273,11 +273,29 @@ class ScriptExecutor(FlowExecutor):
         if not connection_params and not model_config_param_name_2_cls:
             return init_kwargs
         resolved_init_kwargs = {k: v for k, v in init_kwargs.items()}
+        self._resolve_connection_params(
+            connection_params=connection_params, init_kwargs=init_kwargs, resolved_init_kwargs=resolved_init_kwargs
+        )
+        self._resolve_model_config_params(
+            model_config_param_name_2_cls=model_config_param_name_2_cls,
+            init_kwargs=init_kwargs,
+            resolved_init_kwargs=resolved_init_kwargs,
+        )
+
+        return resolved_init_kwargs
+
+    @classmethod
+    def _resolve_connection_params(cls, connection_params: list, init_kwargs: dict, resolved_init_kwargs: dict):
         provider = ConnectionProvider.get_instance()
         # parse connection
         logger.debug(f"Resolving connection params: {connection_params}")
         for key in connection_params:
             resolved_init_kwargs[key] = provider.get(init_kwargs[key])
+
+    @classmethod
+    def _resolve_model_config_params(
+        cls, model_config_param_name_2_cls: dict, init_kwargs: dict, resolved_init_kwargs: dict
+    ):
         # parse model config
         logger.debug(f"Resolving model config params: {model_config_param_name_2_cls}")
         for key, model_config_cls in model_config_param_name_2_cls.items():
@@ -293,6 +311,7 @@ class ScriptExecutor(FlowExecutor):
                 )
             if getattr(model_config_val, "connection", None):
                 logger.debug(f"Getting connection {model_config_val.connection} for model config.")
+                provider = ConnectionProvider.get_instance()
                 connection_obj = provider.get(model_config_val.connection)
 
                 if isinstance(model_config_val, AzureOpenAIModelConfiguration):
@@ -304,7 +323,6 @@ class ScriptExecutor(FlowExecutor):
                         connection=connection_obj, model=model_config_val.model
                     )
             resolved_init_kwargs[key] = model_config_val
-        return resolved_init_kwargs
 
     @property
     def is_function_entry(self):
