@@ -9,7 +9,7 @@ import pytest
 from _constants import PROMPTFLOW_ROOT
 from sdk_cli_azure_test.conftest import DATAS_DIR, FLOWS_DIR
 
-from promptflow._sdk._constants import Local2CloudProperties, RunStatus
+from promptflow._sdk._constants import Local2CloudProperties, Local2CloudUserProperties, RunStatus
 from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk._pf_client import PFClient as LocalPFClient
 from promptflow._sdk.entities import Run
@@ -169,8 +169,8 @@ class TestFlowRunUpload:
             tags={"sdk-cli-test": "true"},
             description="test sdk local to cloud",
             properties={
-                Local2CloudProperties.EVAL_RUN: eval_run,
-                Local2CloudProperties.EVAL_ARTIFACTS: eval_artifacts,
+                Local2CloudUserProperties.EVAL_RUN: eval_run,
+                Local2CloudUserProperties.EVAL_ARTIFACTS: eval_artifacts,
             },
         )
         run = local_pf.runs.stream(run.name)
@@ -178,5 +178,7 @@ class TestFlowRunUpload:
 
         # check the run is uploaded to cloud, and the properties are set correctly
         cloud_run = Local2CloudTestHelper.check_local_to_cloud_run(pf, run)
-        assert cloud_run.properties[Local2CloudProperties.EVAL_RUN] == eval_run
-        assert cloud_run.properties[Local2CloudProperties.EVAL_ARTIFACTS] == eval_artifacts
+        assert cloud_run.properties[Local2CloudUserProperties.EVAL_RUN] == eval_run
+        assert cloud_run.properties[Local2CloudUserProperties.EVAL_ARTIFACTS] == eval_artifacts
+        # check total tokens is recorded
+        assert cloud_run.properties[Local2CloudProperties.TOTAL_TOKENS]

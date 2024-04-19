@@ -33,6 +33,7 @@ from promptflow._sdk._constants import (
     FlowRunProperties,
     IdentityKeys,
     Local2CloudProperties,
+    Local2CloudUserProperties,
     LocalStorageFilenames,
     RestRunTypes,
     RunDataKeys,
@@ -664,12 +665,11 @@ class Run(YAMLTranslatableMixin):
 
             # extract properties that needs to be passed to the request
             total_tokens = self.properties[FlowRunProperties.SYSTEM_METRICS].get("total_tokens", 0)
-            properties = {
-                Local2CloudProperties.TOTAL_TOKENS: total_tokens,
-                Local2CloudProperties.EVAL_RUN: self.properties.get(Local2CloudProperties.EVAL_RUN, None),
-                Local2CloudProperties.EVAL_ARTIFACTS: self.properties.get(Local2CloudProperties.EVAL_ARTIFACTS, None),
-            }
-            properties = {k: v for k, v in properties.items() if v is not None}
+            properties = {Local2CloudProperties.TOTAL_TOKENS: total_tokens}
+            for property_key in Local2CloudUserProperties.get_all_values():
+                value = self.properties.get(property_key, None)
+                if value is not None:
+                    properties[property_key] = value
 
             return CreateExistingBulkRunRequest(
                 run_id=self.name,
