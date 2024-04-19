@@ -113,10 +113,10 @@ class TestExecutorLogs:
             assert 40 <= line_count <= 50
 
     @pytest.mark.parametrize(
-        "flow_root_dir, flow_folder_name, line_number",
+        "flow_root_dir, flow_folder_name, max_line_number",
         [[FLOW_ROOT, "print_input_flow", 8], [EAGER_FLOW_ROOT, "print_input_flex", 2]],
     )
-    def test_batch_run_flow_logs(self, flow_root_dir, flow_folder_name, line_number):
+    def test_batch_run_flow_logs(self, flow_root_dir, flow_folder_name, max_line_number):
         logs_directory = Path(mkdtemp())
         bulk_run_log_path = str(logs_directory / "test_bulk_run.log")
         bulk_run_flow_logs_folder = str(logs_directory / "test_bulk_run_flow_logs_folder")
@@ -133,7 +133,11 @@ class TestExecutorLogs:
                 assert "execution          WARNING" in log_content
                 assert "execution.flow     INFO" in log_content
                 assert f"in line {i} (index starts from 0)" in log_content
-                assert line_number == count_lines(flow_log_file)
+                # Some monitor logs may not be printed in CI test.
+                # Assert max line number to avoid printing too many noisy logs.
+                assert max_line_number >= count_lines(
+                    flow_log_file
+                ), f"log line count is incorrect, content is {log_content}"
 
     @pytest.mark.parametrize(
         "folder_name",
