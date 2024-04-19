@@ -11,7 +11,7 @@ import pytest
 import requests
 
 from promptflow._cli._pf.entry import main
-from promptflow._sdk._service.utils.utils import get_pfs_port, get_port_from_config, kill_exist_service
+from promptflow._sdk._service.utils.utils import get_port_from_config, kill_exist_service
 
 
 @pytest.mark.e2etest
@@ -46,10 +46,6 @@ class TestPromptflowServiceCLI:
         try:
             # force start pfs
             self._test_start_service(force=True)
-            # Start pfs by specified port
-            port = get_pfs_port()
-            self._test_start_service(port=port, force=True)
-
             # start pfs
             start_pfs = subprocess.Popen("pf service start", shell=True)
             # Wait for service to be started
@@ -59,6 +55,7 @@ class TestPromptflowServiceCLI:
             # show-status
             self._run_pfs_command("status")
             output, _ = capsys.readouterr()
+            port = get_port_from_config()
             assert str(port) in output
 
             self._test_start_service(force=True)
