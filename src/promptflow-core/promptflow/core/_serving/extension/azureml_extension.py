@@ -65,8 +65,8 @@ class AzureMLExtension(AppExtension):
     def get_connection_provider(self) -> str:
         return self.connection_provider
 
-    def get_blueprints(self):
-        return self._get_default_blueprints()
+    def get_blueprints(self, flow_monitor):
+        return self._get_default_blueprints(flow_monitor)
 
     def get_override_connections(self, flow: Flow) -> Tuple[dict, dict]:
         connection_names = flow.get_connection_names()

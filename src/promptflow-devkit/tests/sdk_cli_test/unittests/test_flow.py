@@ -8,7 +8,7 @@ from marshmallow import ValidationError
 
 from promptflow._sdk.entities._flows import FlexFlow, Flow
 from promptflow.client import load_flow
-from promptflow.exceptions import ValidationException
+from promptflow.exceptions import UserErrorException, ValidationException
 
 FLOWS_DIR = Path("./tests/test_configs/flows")
 EAGER_FLOWS_DIR = Path("./tests/test_configs/eager_flows")
@@ -82,3 +82,27 @@ class TestRun:
     def test_specify_flow_load(self):
         load_flow(EAGER_FLOWS_DIR / "multiple_flow_yaml" / "flow.dag.yaml")
         load_flow(EAGER_FLOWS_DIR / "multiple_flow_yaml" / "flow.flex.yaml")
+
+    def test_flow_path_not_exist(self):
+        flow_path = EAGER_FLOWS_DIR / "flow_path_not_exist"
+        with pytest.raises(UserErrorException) as e:
+            load_flow(flow_path)
+
+        assert f"Flow path {flow_path.absolute().as_posix()} does not exist." in str(e.value)
+
+    def test_flow_file_not_exist(self):
+        flow_path = EAGER_FLOWS_DIR / "multiple_flow_yaml" / "flow.dag2.yaml"
+        with pytest.raises(UserErrorException) as e:
+            load_flow(flow_path)
+
+        assert f"Flow file {flow_path.absolute().as_posix()} does not exist." in str(e.value)
+
+    def test_flow_file_not_exist2(self):
+        flow_path = EAGER_FLOWS_DIR / "simple_without_yaml"
+        with pytest.raises(UserErrorException) as e:
+            load_flow(flow_path)
+
+        assert (
+            f"Flow path {flow_path.absolute().as_posix()} must have postfix either flow.dag.yaml or flow.flex.yaml"
+            in str(e.value)
+        )
