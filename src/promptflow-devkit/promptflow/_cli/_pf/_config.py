@@ -1,6 +1,5 @@
 import argparse
 import json
-from pathlib import Path
 
 from promptflow._cli._params import add_param_path, add_param_set_positional, base_params
 from promptflow._cli._utils import activate_action, list_of_dict_to_dict
@@ -70,7 +69,7 @@ def set_config(args):
     for k, v in params_override.items():
         logger.debug("Setting config %s to %s", k, v)
         try:
-            new_temp_path = Path(path).absolute().resolve() if isinstance(path, str) else Configuration.CONFIG_PATH
+            new_temp_path = path if isinstance(path, str) else Configuration.CONFIG_PATH
             with Configuration.set_temp_config_path(new_temp_path):
                 Configuration.get_instance().set_config(k, v)
                 print(f"Set config {args.params_override} successfully.")
