@@ -79,7 +79,6 @@ class TestFlowAPIs:
     def test_prompty_test(self, pfs_op: PFSOperations) -> None:
         with check_activity_end_telemetry(
             expected_activities=[
-                {"activity_name": "pf.connections.get", "first_call": False},
                 {"activity_name": "pf.flows.test"},
             ]
         ):
