@@ -113,7 +113,7 @@ class BatchEngine:
         if is_function_entry:
             self._working_dir = working_dir or Path.cwd()
         else:
-            self._working_dir = self._working_dir = (
+            self._working_dir = (
                 Flow._resolve_working_dir(flow_file, working_dir) if flow_file is not None else working_dir
             )
 
@@ -355,6 +355,7 @@ class BatchEngine:
                         node_run_infos=previous_node_run_infos_dict,
                     )
                 previous_run_results.append(previous_line_result)
+            return previous_run_results
         except Exception as e:
             bulk_logger.error(f"Error occurred while copying previous run result. Exception: {str(e)}")
             raise ResumeCopyError(
@@ -362,8 +363,6 @@ class BatchEngine:
                 message_format="Failed to copy results when resuming the run. Error: {error_type_and_message}.",
                 error_type_and_message=f"({e.__class__.__name__}) {e}",
             ) from e
-
-        return previous_run_results
 
     def cancel(self):
         """Cancel the batch run"""
