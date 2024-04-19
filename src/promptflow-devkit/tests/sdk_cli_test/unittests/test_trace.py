@@ -29,10 +29,11 @@ from promptflow._sdk._constants import (
     PF_TRACE_CONTEXT,
     PF_TRACE_CONTEXT_ATTR,
     TRACE_DEFAULT_COLLECTION,
+    TRACE_LIST_DEFAULT_LIMIT,
     ContextAttributeKey,
 )
 from promptflow._sdk._tracing import start_trace_with_devkit
-from promptflow._sdk._tracing_utils import WorkspaceKindLocalCache
+from promptflow._sdk._tracing_utils import WorkspaceKindLocalCache, append_conditions
 from promptflow._sdk.operations._trace_operations import TraceOperations
 from promptflow.client import PFClient
 from promptflow.exceptions import UserErrorException
@@ -213,6 +214,45 @@ class TestTraceOperations:
         _validate_invalid_params({"run": str(uuid.uuid4()), "started_before": datetime.datetime.now().isoformat()})
         _validate_invalid_params({"collection": TRACE_DEFAULT_COLLECTION})
         _validate_invalid_params({"collection": str(uuid.uuid4()), "started_before": "invalid isoformat"})
+
+    def test_append_conditions(self) -> None:
+        orig_expr = "name == 'web_classification'"
+        expr = append_conditions(
+            expression=orig_expr,
+            collection="test-collection",
+            runs="run",
+            session_id="test-session-id",
+        )
+        expected_expr = (
+            "name == 'web_classification' and collection == 'test-collection' and "
+            "run == 'run' and session_id == 'test-session-id'"
+        )
+        assert expr == expected_expr
+
+    def test_append_conditions_multiple_runs(self) -> None:
+        orig_expr = "name == 'web_classification'"
+        expr = append_conditions(
+            expression=orig_expr,
+            collection="test-collection",
+            runs=["run1", "run2"],
+            session_id="test-session-id",
+        )
+        expected_expr = (
+            "name == 'web_classification' and collection == 'test-collection' and "
+            "(run == 'run1' or run == 'run2') and session_id == 'test-session-id'"
+        )
+        assert expr == expected_expr
+
+    def test_search_default_limit(self, pf: PFClient) -> None:
+        # mock ORM search to assert the default limit is applied
+        def mock_orm_line_run_search(expression, limit):
+            assert limit == TRACE_LIST_DEFAULT_LIMIT
+            return []  # return an empty list to ensure test passed
+
+        from promptflow._sdk._orm.trace import LineRun
+
+        with patch.object(LineRun, "search", side_effect=mock_orm_line_run_search):
+            pf.traces._search_line_runs(expression="name == 'web_classification'")
 
 
 @pytest.mark.unittest
