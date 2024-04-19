@@ -24,17 +24,33 @@ from promptflow._constants import PF_RUN_AS_BUILT_BINARY
 from promptflow._sdk._constants import (
     DEFAULT_ENCODING,
     HOME_PROMPT_FLOW_DIR,
+    PF_SERVICE_HOUR_TIMEOUT,
     PF_SERVICE_PORT_DIT_NAME,
     PF_SERVICE_PORT_FILE,
 )
 from promptflow._sdk._errors import ConnectionNotFoundError, RunNotFoundError
-from promptflow._sdk._utils import get_promptflow_sdk_version, read_write_by_user
+from promptflow._sdk._utils import get_promptflow_devkit_version, get_promptflow_sdk_version, read_write_by_user
 from promptflow._sdk._version import VERSION
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.exceptions import PromptflowException, UserErrorException
 
 logger = get_cli_sdk_logger()
+
+hint_stop_message = (
+    f"You can stop the prompt flow service with the following command:'\033[1mpf service stop\033[0m'.\n"
+    f"Alternatively, if no requests are made within {PF_SERVICE_HOUR_TIMEOUT} "
+    f"hours, it will automatically stop."
+)
+hint_stop_before_upgrade = (
+    "Kindly reminder: If you have previously upgraded the prompt flow package , please "
+    "double-confirm that you have run '\033[1mpf service stop\033[0m' to stop the prompt flow"
+    "service before proceeding with the upgrade. Otherwise, you may encounter unexpected "
+    "environmental issues or inconsistencies between the version of running prompt flow service "
+    "and the local prompt flow version. Alternatively, you can use the "
+    "'\033[1mpf upgrade\033[0m' command to proceed with the upgrade process for the prompt flow "
+    "package."
+)
 
 
 def local_user_only(func):
@@ -69,16 +85,17 @@ def get_port_from_config(create_if_not_exists=False):
         port_file_path.touch(mode=read_write_by_user(), exist_ok=True)
     else:
         port_file_path = get_current_env_pfs_file(PF_SERVICE_PORT_FILE)
-    with open(port_file_path, "r", encoding=DEFAULT_ENCODING) as f:
+    with open(port_file_path, "r+", encoding=DEFAULT_ENCODING) as f:
         service_config = load_yaml(f) or {}
         port = service_config.get("service", {}).get("port", None)
-    if not port and create_if_not_exists:
-        with open(port_file_path, "w", encoding=DEFAULT_ENCODING) as f:
-            # Set random port to ~/.promptflow/pf.yaml
+        if not port and create_if_not_exists:
             port = get_random_port()
             service_config["service"] = service_config.get("service", {})
             service_config["service"]["port"] = port
+            logger.debug(f"Set port {port} to file {port_file_path}")
+            f.seek(0)  # Move the file pointer to the beginning of the file
             dump_yaml(service_config, f)
+            f.truncate()  # Remove any remaining content
     return port
 
 
@@ -89,12 +106,15 @@ def dump_port_to_config(port):
     else:
         # Set port to ~/.promptflow/pfs/**_pf.port, if already have a port in file , will overwrite it.
         port_file_path = get_current_env_pfs_file(PF_SERVICE_PORT_FILE)
-    with open(port_file_path, "r", encoding=DEFAULT_ENCODING) as f:
+    with open(port_file_path, "r+", encoding=DEFAULT_ENCODING) as f:
         service_config = load_yaml(f) or {}
-    with open(port_file_path, "w", encoding=DEFAULT_ENCODING) as f:
         service_config["service"] = service_config.get("service", {})
-        service_config["service"]["port"] = port
-        dump_yaml(service_config, f)
+        if service_config["service"].get("port", None) != port:
+            service_config["service"]["port"] = port
+            logger.debug(f"Set port {port} to file {port_file_path}")
+            f.seek(0)  # Move the file pointer to the beginning of the file
+            dump_yaml(service_config, f)
+            f.truncate()  # Remove any remaining content
 
 
 def is_port_in_use(port: int):
@@ -155,42 +175,55 @@ def make_response_no_content():
     return make_response("", 204)
 
 
+def get_pfs_version():
+    """Prompt flow service show promptflow version if installed from root, else devkit version"""
+    version_promptflow = get_promptflow_sdk_version()
+    if version_promptflow:
+        return version_promptflow
+    else:
+        version_devkit = get_promptflow_devkit_version()
+        return version_devkit
+
+
 def is_pfs_service_healthy(pfs_port) -> bool:
     """Check if pfs service is running and pfs version matches pf version."""
     try:
         response = requests.get("http://localhost:{}/heartbeat".format(pfs_port))
         if response.status_code == 200:
-            logger.debug(f"Promptflow service is already running on port {pfs_port}, {response.text}")
+            logger.debug(f"Prompt flow service is already running on port {pfs_port}, {response.text}")
             match = re.search(r'"promptflow":"(.*?)"', response.text)
             if match:
                 version = match.group(1)
-                is_healthy = version == get_promptflow_sdk_version()
+                local_version = get_pfs_version()
+                is_healthy = version == local_version
                 if not is_healthy:
                     logger.warning(
-                        f"Promptflow service is running on port {pfs_port}, but the version is not the same as "
-                        f"promptflow sdk version {get_promptflow_sdk_version()}. The service version is {version}."
+                        f"Prompt flow service is running on port {pfs_port}, but the version is not the same as "
+                        f"local sdk version {local_version}. The service version is {version}."
                     )
             else:
                 is_healthy = False
-                logger.warning("/heartbeat response doesn't contain current pfs version.")
+                logger.warning("/heartbeat response doesn't contain current prompt flow service version.")
             return is_healthy
     except Exception:  # pylint: disable=broad-except
         pass
-    logger.debug(
-        f"Promptflow service can't be reached through port {pfs_port}, will try to (force) start promptflow service."
-    )
+    logger.debug(f"Failed to call prompt flow service api /heartbeat on port {pfs_port}.")
     return False
 
 
-def check_pfs_service_status(pfs_port, time_delay=1, count_threshold=20) -> bool:
+def check_pfs_service_status(pfs_port, time_delay=1, count_threshold=10) -> bool:
     cnt = 1
     time.sleep(time_delay)
     is_healthy = is_pfs_service_healthy(pfs_port)
     while is_healthy is False and count_threshold > cnt:
-        logger.info(
-            f"Promptflow service is not ready. It has been tried for {cnt} times, will try at most {count_threshold} "
-            f"times."
+        message = (
+            f"Waiting for the prompt flow service status to become healthy... It has been tried for {cnt} times, will "
+            f"try at most {count_threshold} times."
         )
+        if cnt >= 3:
+            logger.warning(message)
+        else:
+            logger.info(message)
         cnt += 1
         time.sleep(time_delay)
         is_healthy = is_pfs_service_healthy(pfs_port)
@@ -219,6 +252,7 @@ class ErrorInfo:
                 self.code = "UserError"
             self.message = exception.message
             self.message_format = exception.message_format
+            self.message_parameters = {k: str(v) for k, v in exception.message_parameters.items()}
             self.message_parameters = exception.message_parameters
             self.target = exception.target
             self.module = exception.module
@@ -274,13 +308,25 @@ def get_client_from_request(*, connection_provider=None) -> "PFClient":
 
 def is_run_from_built_binary():
     """
-    Use this function to trigger behavior difference between calling from promptflow sdk/cli and built binary.
+    Use this function to trigger behavior difference between calling from prompt flow sdk/cli and built binary.
 
     Allow customer to use environment variable to control the triggering.
     """
-    return (not sys.executable.endswith("python.exe") and not sys.executable.endswith("python")) or os.environ.get(
-        PF_RUN_AS_BUILT_BINARY, ""
-    ).lower() == "true"
+    return (
+        sys.executable.endswith("pfcli.exe")
+        or sys.executable.endswith("app.exe")
+        or sys.executable.endswith("app")
+        or os.environ.get(PF_RUN_AS_BUILT_BINARY, "").lower() == "true"
+    )
+
+
+def add_executable_script_to_env_path():
+    # Add executable script dir to PATH to make sure the subprocess can find the executable, especially in notebook
+    # environment which won't add it to system path automatically.
+    python_dir = os.path.dirname(sys.executable)
+    executable_dir = os.path.join(python_dir, "Scripts") if platform.system() == "Windows" else python_dir
+    if executable_dir not in os.environ["PATH"].split(os.pathsep):
+        os.environ["PATH"] = executable_dir + os.pathsep + os.environ["PATH"]
 
 
 def encrypt_flow_path(flow_path):

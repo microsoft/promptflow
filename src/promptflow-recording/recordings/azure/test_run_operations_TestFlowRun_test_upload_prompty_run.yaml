@@ -1,0 +1,30 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, br
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.31.0
+    method: GET
+    uri: http://localhost:50318/heartbeat
+  response:
+    body:
+      string: '{"promptflow": "0.0.1"}'
+    headers:
+      access-control-allow-origin:
+      - '*'
+      content-length:
+      - '23'
+      content-type:
+      - application/json
+      server:
+      - waitress
+    status:
+      code: 200
+      message: OK
+version: 1

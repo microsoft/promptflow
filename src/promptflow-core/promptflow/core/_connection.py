@@ -4,18 +4,14 @@
 import importlib
 import os
 import types
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from promptflow._constants import CONNECTION_SCRUBBED_VALUE as SCRUBBED_VALUE
-from promptflow._constants import (
-    CONNECTION_SCRUBBED_VALUE_NO_CHANGE,
-    ConnectionAuthMode,
-    ConnectionType,
-    CustomStrongTypeConnectionConfigs,
-)
+from promptflow._constants import CONNECTION_SCRUBBED_VALUE_NO_CHANGE, ConnectionType, CustomStrongTypeConnectionConfigs
 from promptflow._core.token_provider import AzureTokenProvider
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.utils import in_jupyter_notebook
+from promptflow.constants import ConnectionAuthMode, ConnectionDefaultApiVersion
 from promptflow.contracts.types import Secret
 from promptflow.core._errors import RequiredEnvironmentVariablesNotSetError
 from promptflow.exceptions import UserErrorException, ValidationException
@@ -155,10 +151,12 @@ class AzureOpenAIConnection(_StrongTypeConnection):
     :type api_base: str
     :param api_type: The api type, default "azure".
     :type api_type: str
-    :param api_version: The api version, default "2023-07-01-preview".
+    :param api_version: The api version, default see: :obj:`~.constants.ConnectionDefaultApiVersion.AZURE_OPEN_AI`
     :type api_version: str
-    :param auth_type: The auth type, supported value ["key", "meid_token"].
-    :type api_version: str
+    :param auth_mode: The auth mode, supported values see: :class:`~.constants.ConnectionAuthMode`.
+    :type auth_mode: str
+    :param resource_id: Optional, the arm resource id.
+    :type resource_id: str
     :param name: Connection name.
     :type name: str
     """
@@ -170,11 +168,18 @@ class AzureOpenAIConnection(_StrongTypeConnection):
         api_base: str,
         api_key: str = None,
         api_type: str = "azure",
-        api_version: str = "2023-07-01-preview",
+        api_version: str = ConnectionDefaultApiVersion.AZURE_OPEN_AI,
         auth_mode: str = ConnectionAuthMode.KEY,
+        resource_id: Optional[str] = None,
         **kwargs,
     ):
-        configs = {"api_base": api_base, "api_type": api_type, "api_version": api_version, "auth_mode": auth_mode}
+        configs = {
+            "api_base": api_base,
+            "api_type": api_type,
+            "api_version": api_version,
+            "auth_mode": auth_mode,
+            "resource_id": resource_id,
+        }
         secrets = {"api_key": api_key} if auth_mode == ConnectionAuthMode.KEY else {}
         self._token_provider = kwargs.get("token_provider")
         super().__init__(configs=configs, secrets=secrets, **kwargs)
@@ -220,6 +225,16 @@ class AzureOpenAIConnection(_StrongTypeConnection):
         self.configs["auth_mode"] = value
 
     @property
+    def resource_id(self):
+        """Return the connection resource id."""
+        return self.configs.get("resource_id")
+
+    @resource_id.setter
+    def resource_id(self, value):
+        """Set the resource id."""
+        self.configs["resource_id"] = value
+
+    @property
     def _has_api_key(self):
         """Return if the connection has api key."""
         return self.auth_mode == ConnectionAuthMode.KEY
@@ -237,9 +252,12 @@ class AzureOpenAIConnection(_StrongTypeConnection):
         Build connection from environment variables.
 
         Relevant environment variables:
-        - AZURE_OPENAI_ENDPOINT: The api base.
-        - AZURE_OPENAI_API_KEY: The api key.
-        - OPENAI_API_VERSION: Optional. The api version, default "2023-07-01-preview".
+         - AZURE_OPENAI_ENDPOINT: The api base.
+         - AZURE_OPENAI_API_KEY: The api key.
+         - OPENAI_API_VERSION: Optional.
+
+         The api version default to :obj:`~.constants.ConnectionDefaultApiVersion.AZURE_OPEN_AI`.
+
         """
         # Env var name reference: https://github.com/openai/openai-python/blob/main/src/openai/lib/azure.py#L160
         api_base = os.getenv("AZURE_OPENAI_ENDPOINT")
@@ -414,7 +432,7 @@ class CognitiveSearchConnection(_StrongTypeConnection):
     :type api_key: str
     :param api_base: The api base.
     :type api_base: str
-    :param api_version: The api version, default "2023-07-01-Preview".
+    :param api_version: The api version, default "2023-11-01".
     :type api_version: str
     :param name: Connection name.
     :type name: str
@@ -422,7 +440,9 @@ class CognitiveSearchConnection(_StrongTypeConnection):
 
     TYPE = ConnectionType.COGNITIVE_SEARCH.value
 
-    def __init__(self, api_key: str, api_base: str, api_version: str = "2023-07-01-Preview", **kwargs):
+    def __init__(
+        self, api_key: str, api_base: str, api_version: str = ConnectionDefaultApiVersion.COGNITIVE_SEARCH, **kwargs
+    ):
         configs = {"api_base": api_base, "api_version": api_version}
         secrets = {"api_key": api_key}
         super().__init__(configs=configs, secrets=secrets, **kwargs)
@@ -455,7 +475,8 @@ class AzureContentSafetyConnection(_StrongTypeConnection):
     :type api_key: str
     :param endpoint: The api endpoint.
     :type endpoint: str
-    :param api_version: The api version, default "2023-04-30-preview".
+    :param api_version: The api version,
+        default see: :obj:`~.constants.ConnectionDefaultApiVersion.AZURE_CONTENT_SAFETY`.
     :type api_version: str
     :param api_type: The api type, default "Content Safety".
     :type api_type: str
@@ -469,7 +490,7 @@ class AzureContentSafetyConnection(_StrongTypeConnection):
         self,
         api_key: str,
         endpoint: str,
-        api_version: str = "2023-10-01",
+        api_version: str = ConnectionDefaultApiVersion.AZURE_CONTENT_SAFETY,
         api_type: str = "Content Safety",
         **kwargs,
     ):
@@ -515,7 +536,7 @@ class FormRecognizerConnection(AzureContentSafetyConnection):
     :type api_key: str
     :param endpoint: The api endpoint.
     :type endpoint: str
-    :param api_version: The api version, default "2023-07-31".
+    :param api_version: The api version, default see: :obj:`~.constants.ConnectionDefaultApiVersion.FORM_RECOGNIZER`.
     :type api_version: str
     :param api_type: The api type, default "Form Recognizer".
     :type api_type: str
@@ -527,7 +548,12 @@ class FormRecognizerConnection(AzureContentSafetyConnection):
     TYPE = ConnectionType.FORM_RECOGNIZER.value
 
     def __init__(
-        self, api_key: str, endpoint: str, api_version: str = "2023-07-31", api_type: str = "Form Recognizer", **kwargs
+        self,
+        api_key: str,
+        endpoint: str,
+        api_version: str = ConnectionDefaultApiVersion.FORM_RECOGNIZER,
+        api_type: str = "Form Recognizer",
+        **kwargs,
     ):
         super().__init__(api_key=api_key, endpoint=endpoint, api_version=api_version, api_type=api_type, **kwargs)
 

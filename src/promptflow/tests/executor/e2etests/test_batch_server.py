@@ -38,6 +38,7 @@ class TestBatchServer:
 
 class MockPythonAPIBasedExecutorProxy(AbstractExecutorProxy):
     def __init__(self, *, executor_client: TestClient):
+        super().__init__()
         self._executor_client = executor_client
 
     @classmethod

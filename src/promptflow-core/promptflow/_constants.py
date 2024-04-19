@@ -27,6 +27,7 @@ USER_AGENT_OVERRIDE_KEY = "user_agent_override"
 FLOW_DAG_YAML = "flow.dag.yaml"
 FLOW_FLEX_YAML = "flow.flex.yaml"
 PROMPTY_EXTENSION = ".prompty"
+FLOW_FILE_SUFFIX = (".yaml", ".yml", PROMPTY_EXTENSION)
 
 CHAT_HISTORY = "chat_history"
 
@@ -74,6 +75,7 @@ class FlowType:
 
     DAG_FLOW = "dag"
     FLEX_FLOW = "flex"
+    PROMPTY = "prompty"
 
 
 class AvailableIDE:
@@ -165,6 +167,7 @@ class SpanAttributeFieldName:
     BATCH_RUN_ID = "batch_run_id"
     LINE_NUMBER = "line_number"
     REFERENCED_BATCH_RUN_ID = "referenced.batch_run_id"
+    IS_AGGREGATION = "is_aggregation"
     COMPLETION_TOKEN_COUNT = "__computed__.cumulative_token_count.completion"
     PROMPT_TOKEN_COUNT = "__computed__.cumulative_token_count.prompt"
     TOTAL_TOKEN_COUNT = "__computed__.cumulative_token_count.total"
@@ -233,11 +236,6 @@ class ConnectionType(str, Enum):
     CUSTOM = "Custom"
 
 
-class ConnectionAuthMode:
-    KEY = "key"
-    MEID_TOKEN = "meid_token"  # Microsoft Entra ID
-
-
 class CustomStrongTypeConnectionConfigs:
     PREFIX = "promptflow.connection."
     TYPE = "custom_type"
@@ -269,3 +267,29 @@ AZURE_WORKSPACE_REGEX_FORMAT = (
     "(/providers/Microsoft.MachineLearningServices)?/workspaces/([^/]+)$"
 )
 CONNECTION_DATA_CLASS_KEY = "DATA_CLASS"
+AML_WORKSPACE_TEMPLATE = "azureml://subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}"  # noqa: E501
+
+
+class AzureWorkspaceKind:
+    DEFAULT = "default"
+    HUB = "hub"
+    PROJECT = "project"
+
+    # obj can be string or azure.ai.ml.entities.Workspace
+    @staticmethod
+    def is_workspace(obj) -> bool:
+        if isinstance(obj, str):
+            return obj == AzureWorkspaceKind.DEFAULT
+        return obj._kind == AzureWorkspaceKind.DEFAULT
+
+    @staticmethod
+    def is_hub(obj) -> bool:
+        if isinstance(obj, str):
+            return obj == AzureWorkspaceKind.HUB
+        return obj._kind == AzureWorkspaceKind.HUB
+
+    @staticmethod
+    def is_project(obj) -> bool:
+        if isinstance(obj, str):
+            return obj == AzureWorkspaceKind.PROJECT
+        return obj._kind == AzureWorkspaceKind.PROJECT

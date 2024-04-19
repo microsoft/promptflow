@@ -1,0 +1,15 @@
+system:
+You are an assistant that can answer philosophical questions.
+
+Here is the initial message from user:
+{{question}}
+
+{% if conversation_history %}
+Here is a chat history you had with the user:
+{% for item in conversation_history %}
+{{item}}
+{% endfor %}
+{% endif %}
+
+Now please continue the conversation with the user, just answer the question, no extra formatting is needed:
+assistant:

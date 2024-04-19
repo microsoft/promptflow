@@ -39,8 +39,10 @@ class CSharpBaseExecutorProxy(APIBasedExecutorProxy):
         yaml_path: str = "flow.dag.yaml",
         log_level: str = "Warning",
         assembly_folder: str = ".",
+        init_kwargs_path: str = None,
+        **kwargs,
     ) -> List[str]:
-        return [
+        cmd = [
             "dotnet",
             EXECUTOR_SERVICE_DLL,
             "--execution_service",
@@ -57,3 +59,6 @@ class CSharpBaseExecutorProxy(APIBasedExecutorProxy):
             "--error_file_path",
             error_file_path,
         ]
+        if init_kwargs_path:
+            cmd.extend(["--init", init_kwargs_path])
+        return cmd

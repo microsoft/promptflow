@@ -13,6 +13,9 @@ from promptflow.executor._service.utils.service_utils import generate_error_resp
 
 router = APIRouter(prefix="/tool")
 
+# Collect package tools when executor server starts to avoid loading latency in request.
+collect_package_tools()
+
 
 @router.get("/package_tools")
 def list_package_tools():

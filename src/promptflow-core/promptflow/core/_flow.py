@@ -11,18 +11,20 @@ from typing import Any, Mapping, Union
 from promptflow._constants import DEFAULT_ENCODING, LANGUAGE_KEY, PROMPTY_EXTENSION, FlowLanguage
 from promptflow._utils.flow_utils import is_flex_flow, is_prompty_flow, resolve_flow_path
 from promptflow._utils.yaml_utils import load_yaml_string
-from promptflow.contracts.tool import ValueType
 from promptflow.core._errors import MissingRequiredInputError
+from promptflow.core._model_configuration import PromptyModelConfiguration
 from promptflow.core._prompty_utils import (
+    convert_model_configuration_to_connection,
     convert_prompt_template,
     format_llm_response,
-    get_connection,
     get_open_ai_client_by_connection,
+    load_inputs_from_sample,
     prepare_open_ai_request_params,
     send_request_to_llm,
+    update_dict_recursively,
 )
 from promptflow.exceptions import UserErrorException
-from promptflow.tracing import trace
+from promptflow.tracing._experimental import enrich_prompt_template
 from promptflow.tracing._trace import _traced
 
 
@@ -201,19 +203,23 @@ class AsyncFlow(FlowBase):
 class Prompty(FlowBase):
     """A prompty is a prompt with predefined metadata like inputs, and can be executed directly like a flow.
     A prompty is represented as a templated markdown file with a modified front matter.
-    The front matter is a yaml file that contains meta fields like connection, parameters, inputs, etc..
+    The front matter is a yaml file that contains meta fields like model configuration, inputs, etc..
 
     Prompty example:
-    .. code-block:: yaml
+    .. code-block::
 
         ---
         name: Hello Prompty
         description: A basic prompt
         model:
             api: chat
-            connection: connection_name
+            configuration:
+              type: azure_openai
+              azure_deployment: gpt-35-turbo
+              api_key="${env:AZURE_OPENAI_API_KEY}",
+              api_version=${env:AZURE_OPENAI_API_VERSION}",
+              azure_endpoint="${env:AZURE_OPENAI_ENDPOINT}",
             parameters:
-              deployment_name: gpt-35-turbo
               max_tokens: 128
               temperature: 0.2
         inputs:
@@ -224,12 +230,61 @@ class Prompty(FlowBase):
         Write a simple {{text}} program that displays the greeting message.
 
     Prompty as function example:
+
     .. code-block:: python
 
         from promptflow.core import Prompty
         prompty = Prompty.load(source="path/to/prompty.prompty")
         result = prompty(input_a=1, input_b=2)
 
+        # Override model config with dict
+        model_config = {
+            "api": "chat",
+            "configuration": {
+                "type": "azure_openai",
+                "azure_deployment": "gpt-35-turbo",
+                "api_key": "${env:AZURE_OPENAI_API_KEY}",
+                "api_version": "${env:AZURE_OPENAI_API_VERSION}",
+                "azure_endpoint": "${env:AZURE_OPENAI_ENDPOINT}",
+            },
+            "parameters": {
+                "max_token": 512
+            }
+        }
+        prompty = Prompty.load(source="path/to/prompty.prompty", model=model_config)
+        result = prompty(input_a=1, input_b=2)
+
+        # Override model config with configuration
+        from promptflow.core import AzureOpenAIModelConfiguration
+        model_config = {
+            "api": "chat",
+            "configuration": AzureOpenAIModelConfiguration(
+                azure_deployment="gpt-35-turbo",
+                api_key="${env:AZURE_OPENAI_API_KEY}",
+                api_version="${env:AZURE_OPENAI_API_VERSION}",
+                azure_endpoint="${env:AZURE_OPENAI_ENDPOINT}",
+            ),
+            "parameters": {
+                "max_token": 512
+            }
+        }
+        prompty = Prompty.load(source="path/to/prompty.prompty", model=model_config)
+        result = prompty(input_a=1, input_b=2)
+
+        # Override model config with created connection
+        from promptflow.core._model_configuration import AzureOpenAIModelConfiguration
+        model_config = {
+            "api": "chat",
+            "configuration": AzureOpenAIModelConfiguration(
+                connection="azure_open_ai_connection",
+                azure_deployment="gpt-35-turbo",
+            ),
+            "parameters": {
+                "max_token": 512
+            }
+        }
+        prompty = Prompty.load(source="path/to/prompty.prompty", model=model_config)
+        result = prompty(input_a=1, input_b=2)
     """
 
     def __init__(
@@ -240,29 +295,18 @@ class Prompty(FlowBase):
     ):
         # prompty file path
         path = Path(path)
-        model = model or {}
         configs, self._template = self._parse_prompty(path)
-        prompty_model = configs.get("model", {})
-        prompty_model["api"] = model.get("api") or prompty_model.get("api", "chat")
-        # TODO wait for model spec
-        prompty_model["connection"] = model.get("connection") or prompty_model.get("connection", None)
-        if model.get("parameters", None):
-            if prompty_model.get("parameters", {}):
-                prompty_model["parameters"].update(model["parameters"])
-            else:
-                prompty_model["parameters"] = model["parameters"]
-        for k in list(kwargs.keys()):
-            value = kwargs.pop(k)
-            if k in configs and isinstance(value, dict):
-                configs[k].update(value)
-            else:
-                configs[k] = value
-        configs["inputs"] = self._resolve_inputs(configs.get("inputs", {}))
-        self._connection = prompty_model["connection"]
-        self._parameters = prompty_model.get("parameters", None)
-        self._api = prompty_model["api"]
+        configs = update_dict_recursively(configs, kwargs)
+        configs["model"] = update_dict_recursively(configs.get("model", {}), model or {})
+
+        self._model = PromptyModelConfiguration(**configs["model"])
         self._inputs = configs.get("inputs", {})
-        configs["model"] = prompty_model
+        self._outputs = configs.get("outputs", {})
+        self._name = configs.get("name", path.stem)
+        self._sample = configs.get("sample", None)
+
+        # TODO support more templating engine
+        self._template_engine = configs.get("template", "jinja2")
         super().__init__(code=path.parent, path=path, data=configs, content_hash=None, **kwargs)
 
     @classmethod
@@ -274,7 +318,6 @@ class Prompty(FlowBase):
     def load(
         cls,
         source: Union[str, PathLike],
-        raise_error=True,
         **kwargs,
     ) -> "Prompty":
         """
@@ -284,8 +327,6 @@ class Prompty(FlowBase):
             If the source is a path, it will be open and read.
             An exception is raised if the file does not exist.
         :type source: Union[PathLike, str]
-        :param raise_error: Argument for non-dag flow raise validation error on unknown fields.
-        :type raise_error: bool
         :return: A Prompty object
         :rtype: Prompty
         """
@@ -314,15 +355,6 @@ class Prompty(FlowBase):
         configs = load_yaml_string(config_content)
         return configs, prompt_template
 
-    def _resolve_inputs(self, inputs):
-        resolved_inputs = {}
-        for k, v in inputs.items():
-            if isinstance(v, dict):
-                resolved_inputs[k] = v
-            else:
-                resolved_inputs[k] = {"type": ValueType.from_value(v).value, "default": v}
-        return resolved_inputs
-
     def _validate_inputs(self, input_values):
         resolved_inputs = {}
         missing_inputs = []
@@ -335,7 +367,6 @@ class Prompty(FlowBase):
             raise MissingRequiredInputError(f"Missing required inputs: {missing_inputs}")
         return resolved_inputs
 
-    @trace
     def __call__(self, *args, **kwargs):
         """Calling flow as a function, the inputs should be provided with key word arguments.
         Returns the output of the prompty.
@@ -348,27 +379,34 @@ class Prompty(FlowBase):
         """
         if args:
             raise UserErrorException("Prompty can only be called with keyword arguments.")
+        inputs = kwargs
+        if not inputs and self._sample:
+            # Load inputs from sample
+            inputs = load_inputs_from_sample(self._sample)
+        enrich_prompt_template(self._template, variables=inputs)
+
         # 1. Get connection
-        connection = get_connection(self._connection)
+        connection = convert_model_configuration_to_connection(self._model.configuration)
 
         # 2.deal with prompt
-        inputs = self._validate_inputs(kwargs)
+        inputs = self._validate_inputs(inputs)
         traced_convert_prompt_template = _traced(func=convert_prompt_template, args_to_ignore=["api"])
-        template = traced_convert_prompt_template(self._template, inputs, self._api)
+        template = traced_convert_prompt_template(self._template, inputs, self._model.api)
 
         # 3. prepare params
-        params = prepare_open_ai_request_params(self._parameters, template, self._api, connection)
+        params = prepare_open_ai_request_params(self._model, template, connection)
 
         # 4. send request to open ai
         api_client = get_open_ai_client_by_connection(connection=connection)
 
-        traced_llm_call = _traced(send_request_to_llm)
-        response = traced_llm_call(api_client, self._api, params)
+        response = send_request_to_llm(api_client, self._model.api, params)
         return format_llm_response(
             response=response,
-            api=self._api,
-            response_format=params.get("response_format", None),
-            raw=self._data.get("format", None) == "raw",
+            api=self._model.api,
+            response_format=params.get("response_format", {}),
+            is_first_choice=self._data.get("model", {}).get("response", None) != "all",
+            streaming=params.get("stream", False),
+            outputs=self._outputs,
         )
 
 
@@ -382,11 +420,10 @@ class AsyncPrompty(Prompty):
         import asyncio
         from promptflow.core import AsyncPrompty
         prompty = AsyncPrompty.load(source="path/prompty.prompty")
-        result = asyncio.run(prompty(input_a=1, input_b=2))
+        result = await prompty(input_a=1, input_b=2)
 
     """
 
-    @trace
     async def __call__(self, *args, **kwargs) -> Mapping[str, Any]:
         """Calling prompty as a function in async, the inputs should be provided with key word arguments.
         Returns the output of the prompty.
@@ -399,24 +436,32 @@ class AsyncPrompty(Prompty):
         """
         if args:
             raise UserErrorException("Prompty can only be called with keyword arguments.")
+        inputs = kwargs
+        if not inputs and self._sample:
+            # Load inputs from sample
+            inputs = load_inputs_from_sample(self._sample)
+        enrich_prompt_template(self._template, variables=inputs)
+
         # 1. Get connection
-        connection = get_connection(self._connection)
+        connection = convert_model_configuration_to_connection(self._model.configuration)
 
         # 2.deal with prompt
-        inputs = self._validate_inputs(kwargs)
-        template = convert_prompt_template(self._template, inputs, self._api)
+        inputs = self._validate_inputs(inputs)
+        traced_convert_prompt_template = _traced(func=convert_prompt_template, args_to_ignore=["api"])
+        template = traced_convert_prompt_template(self._template, inputs, self._model.api)
 
         # 3. prepare params
-        params = prepare_open_ai_request_params(self._parameters, template, self._api, connection)
+        params = prepare_open_ai_request_params(self._model, template, connection)
 
         # 4. send request to open ai
         api_client = get_open_ai_client_by_connection(connection=connection, is_async=True)
 
-        traced_llm_call = _traced(send_request_to_llm)
-        response = await traced_llm_call(api_client, self._api, params)
+        response = await send_request_to_llm(api_client, self._model.api, params)
         return format_llm_response(
             response=response,
-            api=self._api,
-            response_format=params.get("response_format", None),
-            raw=self._data.get("format", None) == "raw",
+            api=self._model.api,
+            response_format=params.get("response_format", {}),
+            is_first_choice=self._data.get("model", {}).get("response", None) != "all",
+            streaming=params.get("stream", False),
+            outputs=self._outputs,
         )

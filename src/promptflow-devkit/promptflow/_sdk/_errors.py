@@ -199,6 +199,24 @@ class DownloadInternalError(SDKInternalError):
     pass
 
 
+class UploadInternalError(SDKInternalError):
+    """Exception raised if upload internal error."""
+
+    pass
+
+
+class UploadUserError(SDKError):
+    """Exception raised if upload user error."""
+
+    pass
+
+
+class UserAuthenticationError(SDKError):
+    """Exception raised when user authentication failed"""
+
+    pass
+
+
 class ExperimentNodeRunFailedError(SDKError):
     """Orchestrator raised if node run failed."""
 
@@ -237,5 +255,25 @@ class UnexpectedAttributeError(SDKError):
 
 class LineRunNotFoundError(SDKError):
     """Exception raised if line run cannot be found."""
+
+    pass
+
+
+class MissingAzurePackage(SDKError):
+    """Exception raised if missing required package."""
+
+    def __init__(
+        self,
+        **kwargs,
+    ):
+        msg = (
+            '"promptflow[azure]" is required for this functionality, '
+            'please install it by running "pip install promptflow-azure" with your version.'
+        )
+        super().__init__(message=msg, no_personal_data_message=msg, **kwargs)
+
+
+class WrongTraceSearchExpressionError(SDKError):
+    """Exception raised if the trace search expression is wrong."""
 
     pass

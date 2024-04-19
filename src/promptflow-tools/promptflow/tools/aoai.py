@@ -1,6 +1,7 @@
 import json
-from promptflow.tools.common import render_jinja_template, handle_openai_error, parse_chat, to_bool, \
-    validate_functions, process_function_call, post_process_chat_api_response, init_azure_openai_client
+from promptflow.tools.common import render_jinja_template, handle_openai_error, to_bool, \
+    validate_functions, process_function_call, post_process_chat_api_response, init_azure_openai_client, \
+    build_messages, process_tool_choice, validate_tools
 
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
 # since the code here is in promptflow namespace as well
@@ -48,7 +49,7 @@ class AzureOpenAI(ToolProvider):
         logit_bias: dict = {},
         user: str = "",
         **kwargs,
-    ) -> str:
+    ):
         prompt = render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, **kwargs)
         # TODO: remove below type conversion after client can pass json rather than string.
         echo = to_bool(echo)
@@ -58,7 +59,7 @@ class AzureOpenAI(ToolProvider):
             model=deployment_name,
             # empty string suffix should be treated as None.
             suffix=suffix if suffix else None,
-            max_tokens=int(max_tokens),
+            max_tokens=int(max_tokens) if max_tokens is not None else None,
             temperature=float(temperature),
             top_p=float(top_p),
             n=int(n),
@@ -113,31 +114,39 @@ class AzureOpenAI(ToolProvider):
         # function_call can be of type str or dict.
         function_call: object = None,
         functions: list = None,
+        # tool_choice can be of type str or dict.
+        tool_choice: object = None,
+        tools: list = None,
         response_format: object = None,
         seed: int = None,
         **kwargs,
-    ) -> [str, dict]:
-        # keep_trailing_newline=True is to keep the last \n in the prompt to avoid converting "user:\t\n" to "user:".
-        chat_str = render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, **kwargs)
-        messages = parse_chat(chat_str)
-        # TODO: remove below type conversion after client can pass json rather than string.
+    ):
+        messages = build_messages(prompt, **kwargs)
         stream = to_bool(stream)
         params = {
             "model": deployment_name,
             "messages": messages,
-            "temperature": float(temperature),
-            "top_p": float(top_p),
-            "n": int(n),
+            "temperature": temperature,
+            "top_p": top_p,
+            "n": n,
             "stream": stream,
-            "presence_penalty": float(presence_penalty),
-            "frequency_penalty": float(frequency_penalty),
+            "presence_penalty": presence_penalty,
+            "frequency_penalty": frequency_penalty,
             "user": user,
             "extra_headers": {"ms-azure-ai-promptflow-called-from": "aoai-tool"}
         }
-        if functions is not None:
-            validate_functions(functions)
-            params["functions"] = functions
-            params["function_call"] = process_function_call(function_call)
+
+        # functions and function_call are deprecated and are replaced by tools and tool_choice.
+        # if both are provided, tools and tool_choice are used and functions and function_call are ignored.
+        if tools:
+            validate_tools(tools)
+            params["tools"] = tools
+            params["tool_choice"] = process_tool_choice(tool_choice)
+        else:
+            if functions:
+                validate_functions(functions)
+                params["functions"] = functions
+                params["function_call"] = process_function_call(function_call)
 
         # to avoid vision model validation error for empty param values.
         if stop:
@@ -152,7 +161,7 @@ class AzureOpenAI(ToolProvider):
             params["seed"] = seed
 
         completion = self._client.chat.completions.create(**params)
-        return post_process_chat_api_response(completion, stream, functions)
+        return post_process_chat_api_response(completion, stream, functions, tools)
 
 
 register_apis(AzureOpenAI)
@@ -178,7 +187,7 @@ def completion(
     logit_bias: dict = {},
     user: str = "",
     **kwargs,
-) -> str:
+):
     return AzureOpenAI(connection).completion(
         prompt=prompt,
         deployment_name=deployment_name,
@@ -217,10 +226,12 @@ def chat(
     user: str = "",
     function_call: object = None,
     functions: list = None,
+    tool_choice: object = None,
+    tools: list = None,
     response_format: object = None,
     seed: int = None,
     **kwargs,
-) -> str:
+):
     # chat model is not available in azure openai, so need to set the environment variable.
     return AzureOpenAI(connection).chat(
         prompt=prompt,
@@ -237,6 +248,8 @@ def chat(
         user=user,
         function_call=function_call,
         functions=functions,
+        tool_choice=tool_choice,
+        tools=tools,
         response_format=response_format,
         seed=seed,
         **kwargs,

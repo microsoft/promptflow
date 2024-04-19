@@ -2,14 +2,19 @@ import inspect
 import json
 import logging
 import uuid
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
 from contextvars import ContextVar
 from datetime import datetime
 from typing import Dict, List, Optional
 
 from ._thread_local_singleton import ThreadLocalSingleton
 from ._utils import serialize
-from .contracts.generator_proxy import GeneratorProxy, generate_from_proxy
+from .contracts.generator_proxy import (
+    AsyncGeneratorProxy,
+    GeneratorProxy,
+    generate_from_async_proxy,
+    generate_from_proxy,
+)
 from .contracts.trace import Trace, TraceType
 
 
@@ -113,6 +118,8 @@ class Tracer(ThreadLocalSingleton):
             return output
         if isinstance(output, Iterator):
             output = GeneratorProxy(output)
+        if isinstance(output, AsyncIterator):
+            output = AsyncGeneratorProxy(output)
         if output is not None:
             last_trace.output = self.to_serializable(output)
         if error is not None:
@@ -122,6 +129,8 @@ class Tracer(ThreadLocalSingleton):
 
         if isinstance(output, GeneratorProxy):
             return generate_from_proxy(output)
+        elif isinstance(output, AsyncGeneratorProxy):
+            return generate_from_async_proxy(output)
         else:
             return output
 
@@ -137,7 +146,13 @@ class Tracer(ThreadLocalSingleton):
 
 
 def _create_trace_from_function_call(
-    f, *, args=None, kwargs=None, args_to_ignore: Optional[List[str]] = None, trace_type=TraceType.FUNCTION, name=None,
+    f,
+    *,
+    args=None,
+    kwargs=None,
+    args_to_ignore: Optional[List[str]] = None,
+    trace_type=TraceType.FUNCTION,
+    name=None,
 ):
     """
     Creates a trace object from a function call.
@@ -177,7 +192,13 @@ def _create_trace_from_function_call(
     for key in args_to_ignore:
         all_kwargs.pop(key, None)
 
-    function = f.__qualname__
+    if hasattr(f, "__qualname__"):
+        function = f.__qualname__
+    else:
+        # Get __qualname__ from callable class
+        function = f.__call__.__qualname__
+    if function.endswith(".__call__"):
+        function = function[: -len(".__call__")]
     if trace_type in [TraceType.LLM, TraceType.EMBEDDING] and f.__module__:
         function = f"{f.__module__}.{function}"
 

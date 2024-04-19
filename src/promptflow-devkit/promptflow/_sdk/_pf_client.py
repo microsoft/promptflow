@@ -1,6 +1,8 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import inspect
+import json
 import os
 from os import PathLike
 from pathlib import Path
@@ -171,6 +173,13 @@ class PFClient:
             raise FileNotFoundError(f"data path {data} does not exist")
         if not run and not data:
             raise ValueError("at least one of data or run must be provided")
+
+        if callable(flow) and not inspect.isclass(flow) and not inspect.isfunction(flow):
+            dynamic_callable = flow
+            flow = flow.__class__
+        else:
+            dynamic_callable = None
+
         with generate_yaml_entry(entry=flow, code=code) as flow:
             # load flow object for validation and early failure
             flow_obj = load_flow(source=flow)
@@ -192,6 +201,7 @@ class PFClient:
                 environment_variables=environment_variables,
                 config=Configuration(overrides=self._config),
                 init=init,
+                dynamic_callable=dynamic_callable,
             )
             return self.runs.create_or_update(run=run, **kwargs)
 
@@ -312,17 +322,18 @@ class PFClient:
         self,
         flow: Union[str, PathLike],
         *,
-        inputs: dict = None,
+        inputs: Union[dict, PathLike] = None,
         variant: str = None,
         node: str = None,
         environment_variables: dict = None,
+        init: Optional[dict] = None,
     ) -> dict:
         """Test flow or node.
 
         :param flow: path to flow directory to test
         :type flow: Union[str, PathLike]
-        :param inputs: Input data for the flow test
-        :type inputs: dict
+        :param inputs: Input data or json file for the flow test
+        :type inputs: Union[dict, PathLike]
         :param variant: Node & variant name in format of ${node_name.variant_name}, will use default variant
             if not specified.
         :type variant: str
@@ -333,11 +344,26 @@ class PFClient:
             The value reference to connection keys will be resolved to the actual value,
             and all environment variables specified will be set into os.environ.
         :type environment_variables: dict
+        :param init: Initialization parameters for flex flow, only supported when flow is callable class.
+        :type init: dict
         :return: The result of flow or node
         :rtype: dict
         """
+        # Load the inputs for the flow test from sample file.
+        if isinstance(inputs, (str, Path)):
+            if Path(inputs).suffix not in [".json", ".jsonl"]:
+                raise UserErrorException("Only support jsonl or json file as input.")
+            if not Path(inputs).exists():
+                raise UserErrorException(f"Cannot find inputs file {inputs}.")
+            if Path(inputs).suffix == ".json":
+                with open(inputs, "r") as f:
+                    inputs = json.load(f)
+            else:
+                from promptflow._utils.load_data import load_data
+
+                inputs = load_data(local_path=inputs)[0]
         return self.flows.test(
-            flow=flow, inputs=inputs, variant=variant, environment_variables=environment_variables, node=node
+            flow=flow, inputs=inputs, variant=variant, environment_variables=environment_variables, node=node, init=init
         )
 
     @property

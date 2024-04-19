@@ -11,8 +11,8 @@
 /src/promptflow-devkit/ @microsoft/promptflow-sdk
 /src/promptflow-azure/ @microsoft/promptflow-sdk
 /src/promptflow-recording/ @microsoft/promptflow-sdk
-
 /src/promptflow-evals/ @microsoft/pf-eval-team-contributor
+/src/promptflow-rag/ @microsoft/promptflow-rag
 
 /scripts/docs/ @microsoft/promptflow-sdk
 /scripts/installer/ @microsoft/promptflow-sdk
@@ -29,6 +29,7 @@
 /src/promptflow-core/promptflow/executor/ @microsoft/promptflow-execution
 /src/promptflow-core/promptflow/integrations/ @microsoft/promptflow-execution
 /src/promptflow-core/promptflow/storage/ @microsoft/promptflow-execution
+/src/promptflow-devkit/promptflow/_sdk/_mlflow.py @brynn-code
 /src/promptflow-devkit/promptflow/_internal/ @microsoft/promptflow-execution
 /src/promptflow-devkit/promptflow/batch/ @microsoft/promptflow-execution
 /src/promptflow/tests/executor/ @microsoft/promptflow-execution

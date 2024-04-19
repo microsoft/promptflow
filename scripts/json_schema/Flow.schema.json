@@ -24,6 +24,11 @@
                     "type": "object",
                     "additionalProperties": {}
                 },
+                "environment_variables": {
+                    "title": "environment_variables",
+                    "type": "object",
+                    "additionalProperties": {}
+                },
                 "inputs": {
                     "title": "inputs",
                     "type": "object",
@@ -34,7 +39,13 @@
                 },
                 "language": {
                     "title": "language",
-                    "type": "string"
+                    "type": "string",
+                    "default": "python",
+                    "enum": [
+                        "python",
+                        "csharp"
+                    ],
+                    "enumNames": []
                 },
                 "node_variants": {
                     "title": "node_variants",
@@ -116,8 +127,47 @@
                     "type": "object",
                     "additionalProperties": {}
                 },
+                "environment_variables": {
+                    "title": "environment_variables",
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "init": {
+                    "title": "init",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "object",
+                        "$ref": "#/definitions/FlexFlowInitSchema"
+                    }
+                },
+                "inputs": {
+                    "title": "inputs",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "object",
+                        "$ref": "#/definitions/FlexFlowInputSchema"
+                    }
+                },
                 "language": {
                     "title": "language",
+                    "type": "string",
+                    "default": "python",
+                    "enum": [
+                        "python",
+                        "csharp"
+                    ],
+                    "enumNames": []
+                },
+                "outputs": {
+                    "title": "outputs",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "object",
+                        "$ref": "#/definitions/FlexFlowOutputSchema"
+                    }
+                },
+                "sample": {
+                    "title": "sample",
                     "type": "string"
                 },
                 "$schema": {

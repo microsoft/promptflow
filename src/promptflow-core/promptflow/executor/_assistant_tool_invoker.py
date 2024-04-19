@@ -2,9 +2,18 @@ from dataclasses import dataclass
 from typing import Callable, Dict, Optional
 
 from promptflow.contracts.flow import ToolSource, ToolSourceType
-from promptflow.contracts.tool import ToolType
+from promptflow.contracts.tool import ToolType, ValueType
 from promptflow.exceptions import ErrorTarget
 from promptflow.executor._errors import InvalidAssistantTool
+
+to_json_type_mapping = {
+    ValueType.INT: "number",
+    ValueType.DOUBLE: "number",
+    ValueType.BOOL: "boolean",
+    ValueType.STRING: "string",
+    ValueType.LIST: "array",
+    ValueType.OBJECT: "object",
+}
 
 
 @dataclass
