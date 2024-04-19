@@ -38,6 +38,7 @@ class AzureOpenAIConnectionSchema(ConnectionSchema):
     api_base = fields.Str(required=True)
     api_type = fields.Str(dump_default="azure")
     api_version = fields.Str(dump_default=ConnectionDefaultApiVersion.AZURE_OPEN_AI)
+    resource_id = fields.Str()
     auth_mode = StringTransformedEnum(
         allowed_values=[ConnectionAuthMode.MEID_TOKEN, ConnectionAuthMode.KEY],
         allow_none=True,
