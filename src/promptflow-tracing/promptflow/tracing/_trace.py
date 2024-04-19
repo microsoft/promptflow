@@ -139,6 +139,9 @@ def enrich_span_with_trace_type(span, inputs, output, trace_type):
         # Handle the non-streaming output of LLM, the streaming output will be handled in traced_generator.
         token_collector.collect_openai_tokens(span, output)
         enrich_span_with_llm_output(span, output)
+    if trace_type == TraceType.ASSISTANT:
+        token_collector.collect_openai_tokens(span, output)
+        enrich_span_with_assistant_output(span, output)        
     elif trace_type == TraceType.EMBEDDING:
         token_collector.collect_openai_tokens(span, output)
         enrich_span_with_embedding(span, inputs, output)
@@ -302,6 +305,15 @@ def enrich_span_with_llm_output(span, output):
                 generated_message = None
             enrich_span_with_llm(span, model, generated_message)
 
+def enrich_span_with_assistant_output(span, output):
+    model = None
+    generated_message = None
+    try:
+        span.set_attribute("assistant.name", "Test Assistant")
+        span.set_attribute("assistant.message", "Message")
+        span.add_event("promptflow.assistant.created_assistant", {"payload": serialize_attribute(generated_message)})
+    except Exception as e:
+        logging.warning(f"Failed to enrich span with assistant: {e}")
 
 def serialize_attribute(value):
     """Serialize values that can be used as attributes in span."""
