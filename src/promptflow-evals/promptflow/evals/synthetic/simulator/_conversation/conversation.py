@@ -30,8 +30,8 @@ def is_closing_message_helper(response: str):
     message = response.lower()
     if "?" in message.lower():
         return False
-    punc = [".", ",", "!", ";", ":"]
-    for p in punc:
+    punctuation = [".", ",", "!", ";", ":"]
+    for p in punctuation:
         message = message.replace(p, "")
     if (
         "bye" not in message.lower().split()
