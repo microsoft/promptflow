@@ -15,7 +15,9 @@ from .simple_functions import (
     dummy_llm_tasks_threadpool,
     greetings,
     openai_chat,
+    openai_chat_async,
     openai_completion,
+    openai_completion_async,
     openai_embedding_async,
     prompt_tpl_chat,
     prompt_tpl_completion,
@@ -169,6 +171,10 @@ class TestTracing:
             (openai_completion, {"prompt": "Hello"}, 2),
             (openai_chat, {"prompt": "Hello", "stream": True}, 3),
             (openai_completion, {"prompt": "Hello", "stream": True}, 3),
+            (openai_chat_async, {"prompt": "Hello"}, 2),
+            (openai_completion_async, {"prompt": "Hello"}, 2),
+            (openai_chat_async, {"prompt": "Hello", "stream": True}, 3),
+            (openai_completion_async, {"prompt": "Hello", "stream": True}, 3),
         ],
     )
     def test_otel_trace_with_llm(self, dev_connections, func, inputs, expected_span_length):

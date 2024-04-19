@@ -323,3 +323,7 @@ class FlowEntryInitializationError(UserErrorException):
 
 class InvalidFlexFlowEntry(ValidationException):
     pass
+
+
+class InvalidAggregationFunction(UserErrorException):
+    pass
