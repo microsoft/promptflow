@@ -10,14 +10,13 @@ from openai import Stream
 from openai.types.chat import ChatCompletion
 
 from promptflow._sdk._pf_client import PFClient
-from promptflow.core import Flow
+from promptflow.core import AsyncPrompty, Flow, Prompty
 from promptflow.core._errors import (
     InvalidConnectionError,
     InvalidOutputKeyError,
     InvalidSampleError,
     MissingRequiredInputError,
 )
-from promptflow.core._flow import AsyncPrompty, Prompty
 from promptflow.core._model_configuration import AzureOpenAIModelConfiguration
 from promptflow.core._prompty_utils import convert_model_configuration_to_connection
 from promptflow.recording.record_mode import is_live, is_record, is_replay
