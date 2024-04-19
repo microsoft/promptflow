@@ -2,7 +2,7 @@
 
 ## v1.10.0 (Upcoming)
 
-## 1.9.0 (2024.04.17)
+## v1.9.0 (2024.04.17)
 
 ### Features Added
 - [promptflow-devkit]: Added autocomplete feature for linux, reach [here](https://microsoft.github.io/promptflow/reference/pf-command-reference.html#autocomplete) for more details.
