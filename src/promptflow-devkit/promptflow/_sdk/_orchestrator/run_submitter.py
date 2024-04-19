@@ -87,6 +87,8 @@ class RunSubmitter:
             run._resume_from = self._ensure_run_completed(run._resume_from)
         # start trace
         logger.debug("start trace for flow run...")
+        flow_path = Path(run.flow).resolve()
+        logger.debug("flow path for `start_trace`: %s", flow_path)
         if is_collection_writeable():
             logger.debug("trace collection is writeable, will use flow name as collection...")
             collection_for_run = run._flow_name
@@ -96,11 +98,11 @@ class RunSubmitter:
                 attributes=attributes,
                 run=run.name,
                 _collection=collection_for_run,
-                path=Path(run.flow),
+                path=flow_path,
             )
         else:
             logger.debug("trace collection is protected, will honor existing collection.")
-            start_trace(attributes=attributes, run=run.name, path=Path(run.flow))
+            start_trace(attributes=attributes, run=run.name, path=flow_path)
 
         self._validate_inputs(run=run)
 
@@ -220,7 +222,7 @@ class RunSubmitter:
             )
 
             # upload run to cloud if the trace provider is set to cloud
-            trace_provider = self._config.get_trace_provider()
+            trace_provider = self._config.get_trace_provider(path=Path(self.flow).resolve())
             if trace_provider and trace_provider.startswith(REMOTE_URI_PREFIX):
                 logger.debug(f"Trace provider set to {trace_provider!r}, uploading run to cloud...")
                 self._upload_run_to_cloud(run=run)

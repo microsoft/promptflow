@@ -109,8 +109,10 @@ TRACER_PROVIDER_PFS_EXPORTER_SET_ATTR = "_pfs_exporter_set"
 def is_trace_feature_disabled() -> bool:
     from promptflow._sdk._configuration import Configuration
 
-    config = Configuration.get_instance().get_trace_provider()
-    return TraceProviderConfig.is_feature_disabled(config)
+    # do not use `get_trace_provider` as we do not expect resolve for this function
+    conf = Configuration.get_instance()
+    value = conf.get_config(key=conf.TRACE_PROVIDER)
+    return TraceProviderConfig.is_feature_disabled(value)
 
 
 def _is_azure_ext_installed() -> bool:
@@ -342,8 +344,7 @@ def start_trace_with_devkit(collection: str, **kwargs: typing.Any) -> None:
     _logger.debug("operation context OTel attributes: %s", op_ctx._get_otel_attributes())
 
     # local to cloud feature
-    if path is not None:
-        _logger.debug("path from kwargs: %s", path)
+    _logger.debug("start_trace_with_devkit.path(from kwargs): %s", path)
     ws_triad = _get_ws_triad_from_pf_config(path=path)
     is_azure_ext_installed = _is_azure_ext_installed()
     if ws_triad is not None and not is_azure_ext_installed:

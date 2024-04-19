@@ -182,9 +182,12 @@ class Configuration(object):
     def get_trace_provider(self, *, path: Optional[Path] = None) -> Optional[str]:
         provider = self.get_config(key=self.TRACE_PROVIDER)
         logger.info("pf.config.trace.provider: %s", provider)
+        logger.debug("get_trace_provider.path: %s", path)
         if TraceProviderConfig.need_to_resolve(provider):
+            logger.debug("will resolve trace provider from config.json...")
             return self._resolve_trace_provider(path=path)
         else:
+            logger.debug("trace provider does not need to be resolved, directly return...")
             return provider
 
     def _resolve_trace_provider(self, *, path: Optional[Path] = None) -> str:
