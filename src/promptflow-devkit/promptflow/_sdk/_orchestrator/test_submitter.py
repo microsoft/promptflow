@@ -115,7 +115,7 @@ class TestSubmitter:
         if not self._dataplane_flow:
             if isinstance(self.flow, Prompty):
                 self._dataplane_flow = ExecutablePromptyFlow.deserialize(self.flow._data)
-            if not self._dataplane_flow:
+            else:
                 self._dataplane_flow = ExecutableFlow.from_yaml(flow_file=self.flow.path, working_dir=self.flow.code)
         return self._dataplane_flow
 
