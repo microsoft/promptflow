@@ -9,6 +9,7 @@ from promptflow.evals.synthetic.simulator.simulator import Simulator
 @pytest.mark.usefixtures("model_config", "recording_injection")
 @pytest.mark.e2etest
 class TestNonAdvSimulator:
+    @pytest.mark.skip(reason="This test is not ready yet due to 429 rate limit errors in recording.")
     def test_non_adv_conversation(self, model_config):
         from openai import AsyncAzureOpenAI
 
