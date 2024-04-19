@@ -29,9 +29,9 @@ class TestExceptions:
         except Exception as e:
             ex = e
         error_category, error_type, error_target, error_message, error_detail = _ErrorInfo.get_error_info(ex)
-        assert error_category == ErrorCategory.USER_ERROR
+        assert error_category == "UserError"
         assert error_type == "RunNotFoundError"
-        assert error_target == ErrorTarget.CONTROL_PLANE_SDK
+        assert error_target == "ControlPlaneSDK"
         assert error_message == ""
         assert is_match_error_detail(
             "promptflow._sdk._orm.retry, line 43, "
@@ -48,9 +48,9 @@ class TestExceptions:
         except Exception as e:
             ex = e
         error_category, error_type, error_target, error_message, error_detail = _ErrorInfo.get_error_info(ex)
-        assert error_category == ErrorCategory.SYSTEM_ERROR
+        assert error_category == "SystemError"
         assert error_type == "InvalidAggregationInput"
-        assert error_target == ErrorTarget.EXECUTOR
+        assert error_target == "Executor"
         assert error_message == (
             "The input for aggregation is incorrect. "
             "The value for aggregated reference input '{input_key}' should be a list, "
