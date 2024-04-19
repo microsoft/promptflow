@@ -22,8 +22,10 @@ extensions = [
     "sphinx_copybutton",
     "matplotlib.sphinxext.plot_directive",
     "sphinx_togglebutton",
-    'myst_parser',
+    "myst_nb",
+    # 'myst_parser',
     "sphinx.builders.linkcheck",
+    "jupyter_sphinx",
 ]
 
 # -- Internationalization ------------------------------------------------
@@ -41,10 +43,12 @@ autosummary_generate = True
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
+nb_execution_mode = "off"
 exclude_patterns = [
     "_build", "Thumbs.db", ".DS_Store", "**.ipynb_checkpoints",
-    "**.py", "**.yml", "**.ipynb", "**.sh", "**.zip", "**.skip"
+    "**.py", "**.yml", "**.sh", "**.zip", "**.skip"
 ]
+source_suffix = ['.rst', '.md', '.ipynb']
 
 # Options for the linkcheck builder
 linkcheck_ignore = [

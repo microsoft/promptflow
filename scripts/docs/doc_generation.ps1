@@ -44,6 +44,7 @@ if (-not $SkipInstall){
     pip install myst-parser==0.18.1
     pip install matplotlib==3.4.3
     pip install jinja2==3.0.1
+    pip install jupyter-sphinx==0.4.0
     Write-Host "===============Finished install requirements==============="
 }
 
@@ -133,11 +134,57 @@ function Add-Api-Reference {
     }
 }
 
+function Add-Notebook
+{
+    Write-Host "===============Collect Package Notebooks==============="
+    $NotebookRootPath = [System.IO.Path]::Combine($RepoRootPath, "examples")
+    $TargetNotebookPath = [System.IO.Path]::Combine($TempDocPath, "tutorials")
+    # Create section list
+    $SectionNames = "Tracing", "Prompty", "Flow"
+    $Sections = [ordered]@{
+        Tracing=[System.Collections.ArrayList]::new();
+        Prompty=[System.Collections.ArrayList]::new();
+        Flow=[System.Collections.ArrayList]::new()
+    }
+    foreach($Item in Get-Childitem -path $NotebookRootPath -Recurse -Filter "*.ipynb")
+    {
+        # Notebook to build must have metadata: {"build_doc": {"category": "local/azure"}}
+        $NotebookContent = Get-Content $Item.FullName -Raw | ConvertFrom-Json
+        if(-not $NotebookContent.metadata.build_doc){
+            continue
+        }
+        $SectionName = $NotebookContent.metadata.build_doc.section
+        $Category = $NotebookContent.metadata.build_doc.category
+        # Add ItemName, Category tuple to sections
+        $Sections[$SectionName].Add([Tuple]::Create($Item.Name.Replace(".ipynb", ""), $Category))
+        # Copy notebook to doc path
+        Write-Host "Adding Notebook $Item ..."
+        Copy-Item -Path $Item.FullName -Destination $TargetNotebookPath
+    }
+    # Reverse sort each section list by category, ordered by 1 local 2 azure
+    foreach($SectionName in $SectionNames){
+        $Sections[$SectionName] = $Sections[$SectionName] | Sort-Object -Property { $_.Item2 } -Descending
+    }
+    $TocTreeContent = @("", "``````{{toctree}}", ":caption: {0}", ":hidden:", ":maxdepth: 1", "", "{1}", "``````")
+    # Build toctree content for each section, append to tutorials index.md
+    $TutorialIndex = [System.IO.Path]::Combine($TargetNotebookPath, "index.md")
+    foreach($SectionName in $SectionNames){
+        $SectionTocTree = $TocTreeContent -join "`n"
+        # Join Item1 to a string in list
+        $ExampleList = ($Sections[$SectionName] | ForEach-Object { $_.Item1 }) -join "`n"
+        $SectionTocTree = $SectionTocTree -f $SectionName, $ExampleList
+        Write-Debug $SectionTocTree
+        Add-Content -Path $TutorialIndex -Value $SectionTocTree
+    }
+}
+
 if($WithReferenceDoc){
     Add-Api-Reference
 }
-
+# Build subpackage changelog
 Add-Changelog
+# Build notebook examples
+Add-Notebook
 
 Write-Host "===============Build Documentation with internal=${Internal}==============="
 $BuildParams = [System.Collections.ArrayList]::new()
@@ -148,7 +195,7 @@ if($WarningAsError){
 if($BuildLinkCheck){
     $BuildParams.Add("-blinkcheck")
 }
-sphinx-build $TempDocPath $OutPath -c $ScriptPath $BuildParams | Tee-Object -FilePath $SphinxBuildDoc
+sphinx-build $TempDocPath $OutPath -c $ScriptPath $BuildParams -v | Tee-Object -FilePath $SphinxBuildDoc
 $buildWarningsAndErrors = Select-String -Path $SphinxBuildDoc -Pattern $WarningErrorPattern
 
 Write-Host "Clean path: $TempDocPath"
