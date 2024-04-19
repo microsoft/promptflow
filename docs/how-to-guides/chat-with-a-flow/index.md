@@ -9,8 +9,7 @@ You can engage in conversation with the flow and view its responses directly wit
 
 ## Initiating a chat window
 There are two methods to open a chat window: executing the prompt flow CLI command or clicking the 
-`Open test chat page` button when viewing a flow YAML file in the Prompt flow VS Code extension. To enable this 
-feature, you need to run `pf config set enable_internal_features="true"`.
+`Open test chat page` button when viewing a flow YAML file in the Prompt flow VS Code extension.
 
 ::::{tab-set}
 :::{tab-item} CLI
@@ -23,10 +22,8 @@ pf flow test --flow . --ui
 Running the above command will yield the following example output:
 ```
 Starting prompt flow service...
-Start prompt flow service on port 55627, version: 0.0.1.
-You can stop the prompt flow service with the following command:'pf service stop'.
-Alternatively, if no requests are made within 1 hours, it will automatically stop.
-You can begin chat flow on http://127.0.0.1:55627/v1.0/ui/chat?flow=***
+...
+You can begin chat flow on http://127.0.0.1:**/v1.0/ui/chat?flow=***
 ```
 The browser page corresponding to the chat URL will automatically open and direct the user to a chat page 
 corresponding to the passed flow:
