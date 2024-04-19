@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 import logging
 import os.path
+from contextlib import contextmanager
 from itertools import product
 from os import PathLike
 from pathlib import Path
@@ -247,3 +248,12 @@ class Configuration(object):
         if isinstance(result, str):
             return result.lower() == "true"
         return result is True
+
+    @classmethod
+    @contextmanager
+    def set_temp_config_path(cls, temp_path: Union[str, Path]):
+        temp_path = Path(temp_path).resolve().absolute()
+        original_path = cls.CONFIG_PATH
+        cls.CONFIG_PATH = temp_path
+        yield
+        cls.CONFIG_PATH = original_path

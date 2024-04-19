@@ -356,3 +356,13 @@ def add_param_init(parser):
         "Example: --init param1=val1 param2=val2",
         nargs="+",
     )
+
+
+def add_param_path(parser):
+    parser.add_argument(
+        "--path",
+        type=str,
+        required=False,
+        help="When using the set command, specify the directory of pf.yaml, "
+        "and pf.yaml only takes effect within the specified directory or its subdirectories.",
+    )
