@@ -82,7 +82,7 @@ class InvalidFlowRequest(ValidationException):
         )
 
 
-class FlexFlowExecutionError(UserErrorException):
+class ScriptExecutionError(UserErrorException):
     pass
 
 
