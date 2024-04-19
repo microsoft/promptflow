@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
-<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 
     <?define ProductVersion="$(env.CLI_VERSION)" ?>
 
@@ -12,7 +12,6 @@
     <?if $(var.Platform) = "x64" ?>
     <?define PromptflowCliRegistryGuid = "0efd984f-9eec-425b-b230-a3994b69649a" ?>
     <?define PromptflowServiceGuid = "d4e99207-77be-4bdf-a430-b08632c5aa2b" ?>
-    <?define StopPromptflowServiceGuid = "a33e2e72-6e5c-47c2-ad9b-9b2c20c0040f" ?>
     <?define PromptflowSystemPathGuid = "4c321045-d4e0-4446-bda4-8c19eaa42af1" ?>
     <?define ProgramFilesFolder = "ProgramFiles64Folder" ?>
     <?define RemovePromptflowFolderGuid = "ee843aa5-2b72-4958-be84-53dbac17efc7" ?>
@@ -22,7 +21,6 @@
     <?elseif $(var.Platform) = "x86" ?>
     <?define PromptflowCliRegistryGuid = "7c2c792d-c395-44a1-8222-8e4ea006abb9" ?>
     <?define PromptflowServiceGuid = "f706b208-a15d-4ae7-9185-cfcc43656570" ?>
-    <?define StopPromptflowServiceGuid = "c381ece5-1aea-4555-8c96-48f12e4caf78" ?>
     <?define PromptflowSystemPathGuid = "9661fe6a-ff48-4e7c-a60d-fc34c2d06ef3" ?>
     <?define ProgramFilesFolder = "ProgramFilesFolder" ?>
     <?define RemovePromptflowFolderGuid = "588ca5e1-38c6-4659-8b38-762df7ed5b28" ?>
@@ -91,13 +89,7 @@
             Execute="deferred"
             ExeCommand="wscript.exe promptflow_service.vbs"
             Return="asyncNoWait" />
-        <CustomAction Id="StopPromptFlowService"
-            Directory="APPLICATIONFOLDER"
-            Execute="immediate"
-            ExeCommand="wscript.exe stop_service.vbs"
-            Return="ignore" />
         <InstallExecuteSequence>
-            <Custom Action="StopPromptFlowService" Before="InstallInitialize">Installed OR WIX_UPGRADE_DETECTED</Custom>
             <Custom Action="StartPromptFlowService" Before="InstallFinalize">NOT Installed OR WIX_UPGRADE_DETECTED</Custom>
         </InstallExecuteSequence>
     </Product>
@@ -132,10 +124,6 @@
 
             <Component Id="promptflow_service.vbs" Directory="APPLICATIONFOLDER" Guid="$(var.PromptflowServiceGuid)">
                 <File Id="promptflow_service.vbs" Source="scripts\promptflow_service.vbs" KeyPath="yes" Checksum="yes"/>
-            </Component>
-
-            <Component Id="stop_service.vbs" Directory="APPLICATIONFOLDER" Guid="$(var.StopPromptflowServiceGuid)">
-                <File Id="stop_service.vbs" Source="scripts\stop_service.vbs" KeyPath="yes" Checksum="yes"/>
             </Component>
 
             <Component Id="ApplicationShortcut" Directory="StartupFolder" Guid="$(var.PromptflowCliRegistryGuid)">

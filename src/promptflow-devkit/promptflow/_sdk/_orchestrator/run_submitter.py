@@ -207,7 +207,7 @@ class RunSubmitter:
             # system metrics: token related
             system_metrics = batch_result.system_metrics.to_dict() if batch_result else {}
 
-            self.run_operations.update(
+            run = self.run_operations.update(
                 name=run.name,
                 status=status,
                 end_time=datetime.datetime.now(),
