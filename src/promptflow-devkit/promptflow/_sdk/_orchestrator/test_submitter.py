@@ -16,7 +16,7 @@ from promptflow._internal import ConnectionManager
 from promptflow._proxy import ProxyFactory
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._utils import get_flow_name
-from promptflow._sdk.entities._flows import Flow, FlowContext
+from promptflow._sdk.entities._flows import Flow, FlowContext, Prompty
 from promptflow._sdk.operations._local_storage_operations import LoggerOperations
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.context_utils import _change_working_dir
@@ -222,12 +222,12 @@ class TestSubmitter:
             # temp flow is generated, will use self.flow instead of self._origin_flow in the following context
             self._within_init_context = True
 
-            # Python flow may get metadata in-memory, so no need to dump them first
-            if self.flow.language != FlowLanguage.Python:
+            if not isinstance(self.flow, Prompty):
                 # variant is resolve in the context, so we can't move this to Operations for now
-                ProxyFactory().get_executor_proxy_cls(self.flow.language).dump_metadata(
+                ProxyFactory().create_inspector_proxy(self.flow.language).prepare_metadata(
                     flow_file=self.flow.path,
                     working_dir=self.flow.code,
+                    init_kwargs=init_kwargs,
                 )
 
             self._target_node = target_node
