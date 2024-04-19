@@ -5,6 +5,7 @@ import pytest
 
 from promptflow._core.tool_meta_generator import PythonLoadError
 from promptflow.contracts.run_info import Status
+from promptflow.core import AzureOpenAIModelConfiguration, OpenAIModelConfiguration
 from promptflow.executor._errors import FlowEntryInitializationError, InvalidFlexFlowEntry
 from promptflow.executor._result import LineResult
 from promptflow.executor._script_executor import ScriptExecutor
@@ -55,6 +56,28 @@ class TestEagerFlow:
                 {"func_input": "func_input"},
                 lambda x: x["func_input"] == "func_input",
                 {"obj_input": "obj_input"},
+            ),
+            (
+                "basic_model_config",
+                {"func_input": "input"},
+                lambda x: x["azure_open_ai_model_config_azure_endpoint"] == "fake_endpoint",
+                {
+                    "azure_open_ai_model_config": AzureOpenAIModelConfiguration(
+                        azure_deployment="my_deployment", azure_endpoint="fake_endpoint"
+                    ),
+                    "open_ai_model_config": OpenAIModelConfiguration(model="my_model", base_url="fake_base_url"),
+                },
+            ),
+            (
+                "basic_model_config",
+                {"func_input": "input"},
+                lambda x: x["azure_open_ai_model_config_azure_endpoint"] == "https://gpt-test-eus.openai.azure.com/",
+                {
+                    "azure_open_ai_model_config": AzureOpenAIModelConfiguration(
+                        azure_deployment="my_deployment", connection="azure_open_ai_connection"
+                    ),
+                    "open_ai_model_config": OpenAIModelConfiguration(model="my_model", base_url="fake_base_url"),
+                },
             ),
         ],
     )
