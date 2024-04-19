@@ -318,7 +318,6 @@ class Prompty(FlowBase):
     def load(
         cls,
         source: Union[str, PathLike],
-        raise_error=True,
         **kwargs,
     ) -> "Prompty":
         """
@@ -328,8 +327,6 @@ class Prompty(FlowBase):
             If the source is a path, it will be open and read.
             An exception is raised if the file does not exist.
         :type source: Union[PathLike, str]
-        :param raise_error: Argument for non-dag flow raise validation error on unknown fields.
-        :type raise_error: bool
         :return: A Prompty object
         :rtype: Prompty
         """
