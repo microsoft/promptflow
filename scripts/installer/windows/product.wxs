@@ -84,12 +84,6 @@
           <Custom Action="Set_WIXUI_EXITDIALOGOPTIONALTEXT" After="CostFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED</Custom>
         </InstallUISequence>
 
-        <Property Id="STOPFILEEXISTS">
-            <DirectorySearch Id="CheckForStopServiceFile" Path="[APPLICATIONFOLDER]" Depth="0">
-                <FileSearch Id="StopServiceFile" Name="stop_service.vbs" />
-            </DirectorySearch>
-        </Property>
-
         <CustomAction Id="StartPromptFlowService"
             Directory="APPLICATIONFOLDER"
             Execute="deferred"
