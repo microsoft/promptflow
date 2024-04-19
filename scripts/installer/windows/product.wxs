@@ -86,11 +86,18 @@
           <Custom Action="Set_WIXUI_EXITDIALOGOPTIONALTEXT" After="CostFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED</Custom>
         </InstallUISequence>
 
-        <Property Id="STOPFILEEXISTS">
-            <DirectorySearch Id="CheckForStopServiceFile" Path="[APPLICATIONFOLDER]">
-                <FileSearch Id="StopServiceFile" Name="stop_service.vbs" />
-            </DirectorySearch>
-        </Property>
+        <CustomAction Id="StopPromptFlowServiceFileExists"
+            Script="vbscript"
+            Execute="immediate"
+            Return="ignore">
+        <![CDATA[
+        Dim fso
+        Set fso = CreateObject("Scripting.FileSystemObject")
+        If (fso.FileExists("[APPLICATIONFOLDER]stop_service.vbs")) Then
+            Session.Property("STOPFILEEXISTS") = "1"
+        End If
+        ]]>
+        </CustomAction>
 
         <CustomAction Id="StartPromptFlowService"
             Directory="APPLICATIONFOLDER"
@@ -103,7 +110,8 @@
             ExeCommand="wscript.exe stop_service.vbs"
             Return="ignore" />
         <InstallExecuteSequence>
-            <Custom Action="StopPromptFlowService" Before="InstallInitialize">(Installed OR WIX_UPGRADE_DETECTED) AND STOPFILEEXISTS</Custom>
+            <Custom Action="StopPromptFlowServiceFileExists" Before="StopPromptFlowService">Installed OR WIX_UPGRADE_DETECTED</Custom>
+            <Custom Action="StopPromptFlowService" Before="InstallInitialize">(Installed OR WIX_UPGRADE_DETECTED) AND STOPFILEEXISTS="1"</Custom>
             <Custom Action="StartPromptFlowService" Before="InstallFinalize">NOT Installed OR WIX_UPGRADE_DETECTED</Custom>
         </InstallExecuteSequence>
     </Product>
