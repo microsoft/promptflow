@@ -110,6 +110,7 @@ jobs:
         CSHARP_TEST_CASES_ROOT: $(Build.SourcesDirectory)/$(flowProjectRelativePath)
         AZURE_OPENAI_API_KEY: $(AZURE_OPENAI_API_KEY)
         AZURE_OPENAI_ENDPOINT: $(AZURE_OPENAI_ENDPOINT)
+        IS_IN_CI_PIPELINE: true
 
     - publish: $(flowProjectRelativePath)
       condition: always()
@@ -187,6 +188,7 @@ jobs:
         CSHARP_TEST_CASES_ROOT: $(Build.SourcesDirectory)/$(flowProjectRelativePath)
         AZURE_OPENAI_API_KEY: $(AZURE_OPENAI_API_KEY)
         AZURE_OPENAI_ENDPOINT: $(AZURE_OPENAI_ENDPOINT)
+        IS_IN_CI_PIPELINE: true
 
     - publish: $(flowProjectRelativePath)
       condition: always()
