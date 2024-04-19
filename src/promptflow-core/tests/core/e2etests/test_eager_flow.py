@@ -58,6 +58,12 @@ class TestEagerFlow:
                 {"obj_input": "obj_input"},
             ),
             (
+                "basic_callable_class_async",
+                {"func_input": "func_input"},
+                lambda x: x["func_input"] == "func_input",
+                {"obj_input": "obj_input"},
+            ),
+            (
                 "basic_model_config",
                 {"func_input": "input"},
                 lambda x: x["azure_open_ai_model_config_azure_endpoint"] == "fake_endpoint",
@@ -89,6 +95,10 @@ class TestEagerFlow:
         line_result = executor.exec_line(inputs=inputs, index=0)
         assert isinstance(line_result, LineResult)
         assert ensure_output(line_result.output)
+
+        if executor.has_aggregation_node:
+            aggr_result = executor._exec_aggregation(inputs=[line_result.output])
+            assert aggr_result.metrics == {"length": 1}
 
         # Test submitting eager flow to flow executor
         executor = FlowExecutor.create(flow_file=flow_file, connections={}, init_kwargs=init_kwargs)

@@ -1,19 +1,20 @@
 import asyncio
 import contextlib
 import dataclasses
-import functools
 import importlib
 import inspect
 import uuid
 from dataclasses import is_dataclass
+from functools import partial
 from pathlib import Path
 from types import GeneratorType
-from typing import Any, Callable, Dict, Mapping, Optional, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 
 from promptflow._constants import LINE_NUMBER_KEY, MessageFormatType
 from promptflow._core.log_manager import NodeLogManager
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool_meta_generator import PythonLoadError
+from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
 from promptflow._utils.logger_utils import logger
 from promptflow._utils.multimedia_utils import BasicMultimediaProcessor
@@ -22,6 +23,7 @@ from promptflow._utils.yaml_utils import load_yaml
 from promptflow.connections import ConnectionProvider
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.tool import ConnectionType
+from promptflow.core import log_metric
 from promptflow.core._model_configuration import (
     MODEL_CONFIG_NAMES,
     AzureOpenAIModelConfiguration,
@@ -29,13 +31,14 @@ from promptflow.core._model_configuration import (
 )
 from promptflow.exceptions import ErrorTarget
 from promptflow.executor._errors import InvalidFlexFlowEntry
-from promptflow.executor._result import LineResult
+from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DefaultRunStorage
 from promptflow.tracing._trace import _traced
 from promptflow.tracing._tracer import Tracer
+from promptflow.tracing.contracts.trace import TraceType
 
-from ._errors import FlowEntryInitializationError
+from ._errors import FlowEntryInitializationError, InvalidAggregationFunction
 from .flow_executor import FlowExecutor
 
 
@@ -155,6 +158,40 @@ class ScriptExecutor(FlowExecutor):
             line_result.output[LINE_NUMBER_KEY] = run_info.index
         return line_result
 
+    @property
+    def has_aggregation_node(self):
+        return hasattr(self, "_aggr_func")
+
+    def exec_aggregation(
+        self,
+        inputs: Mapping[str, Any],
+        aggregation_inputs: List[Any],
+        run_id: Optional[str] = None,
+    ) -> AggregationResult:
+        if not self._aggr_func:
+            return AggregationResult({}, {}, {})
+        # Similar to dag flow, add a prefix "reduce" for run id of aggregation function.
+        run_id = f"{run_id}_reduce" if run_id is not None else f"{str(uuid.uuid4())}_reduce"
+        with self._update_operation_context_for_aggregation(run_id):
+            return self._exec_aggregation(aggregation_inputs)
+
+    def _exec_aggregation(
+        self,
+        inputs: List[Any],
+    ) -> AggregationResult:
+        output = None
+        try:
+            if inspect.iscoroutinefunction(self._aggr_func):
+                output = async_run_allowing_running_loop(self._aggr_func, **{self._aggr_input_name: inputs})
+            else:
+                output = self._aggr_func(**{self._aggr_input_name: inputs})
+            metrics = output if isinstance(output, dict) else {"metrics": output}
+            for k, v in metrics.items():
+                log_metric(k, v)
+        except Exception:
+            pass
+        return AggregationResult(output, metrics, {})
+
     async def exec_line_async(
         self,
         inputs: Mapping[str, Any],
@@ -186,7 +223,7 @@ class ScriptExecutor(FlowExecutor):
             if self._is_async:
                 output = await self._func(**inputs)
             else:
-                partial_func = functools.partial(self._func, **inputs)
+                partial_func = partial(self._func, **inputs)
                 output = await asyncio.get_event_loop().run_in_executor(None, partial_func)
             output = self._stringify_generator_output(output) if not allow_generator_output else output
             traces = Tracer.end_tracing(line_run_id)
@@ -271,9 +308,11 @@ class ScriptExecutor(FlowExecutor):
         try:
             module = importlib.import_module(module_name)
         except Exception as e:
+            error_type_and_message = f"({e.__class__.__name__}) {e}"
             raise PythonLoadError(
-                message_format="Failed to load python module for {entry_file}",
+                message_format="Failed to load python module for {entry_file}: {error_type_and_message}",
                 entry_file=self._flow_file,
+                error_type_and_message=error_type_and_message,
             ) from e
         func = getattr(module, func_name, None)
         # check if func is a callable class
@@ -289,6 +328,7 @@ class ScriptExecutor(FlowExecutor):
                     # TODO: scrub secrets in init kwarg values
                     raise FlowEntryInitializationError(init_kwargs=self._init_kwargs, ex=e) from e
                 func = getattr(obj, "__call__")
+                self._initialize_aggr_function(obj)
             else:
                 raise PythonLoadError(
                     message_format="Python class entry '{func_name}' does not have __call__ method.",
@@ -308,12 +348,36 @@ class ScriptExecutor(FlowExecutor):
         func = self._parse_entry_func()
         # If the function is not decorated with trace, add trace for it.
         if not hasattr(func, "__original_function"):
-            func = _traced(func)
+            func = _traced(func, trace_type=TraceType.FLOW)
+        else:
+            if inspect.ismethod(func):
+                # For class method, the original function is a function reference that not bound to any object,
+                # so we need to pass the instance to it.
+                func = _traced(
+                    partial(getattr(func, "__original_function"), self=func.__self__),
+                    trace_type=TraceType.FLOW,
+                    name=func.__qualname__,
+                )
+            else:
+                func = _traced(getattr(func, "__original_function"), trace_type=TraceType.FLOW)
         self._func = func
         inputs, _, _, _ = function_to_interface(self._func)
         self._inputs = {k: v.to_flow_input_definition() for k, v in inputs.items()}
         self._is_async = inspect.iscoroutinefunction(self._func)
         return func
+
+    def _initialize_aggr_function(self, flow_obj: object):
+        aggr_func = getattr(flow_obj, "__aggregate__", None)
+        if aggr_func is not None:
+            sign = inspect.signature(aggr_func)
+            if len(sign.parameters) != 1:
+                raise InvalidAggregationFunction(
+                    message_format="The __aggregate__ method should have only one parameter.",
+                )
+            if not hasattr(aggr_func, "__original_function"):
+                aggr_func = _traced(aggr_func)
+            self._aggr_func = aggr_func
+            self._aggr_input_name = list(sign.parameters.keys())[0]
 
     def _parse_flow_file(self):
         with open(self._working_dir / self._flow_file, "r", encoding="utf-8") as fin:

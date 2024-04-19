@@ -100,6 +100,7 @@ class CSharpInspectorProxy(AbstractInspectorProxy):
         # csharp depends on init_kwargs to identify the target constructor
         if init_kwargs:
             temp_init_kwargs_file = working_dir / PROMPT_FLOW_DIR_NAME / f"init-{uuid.uuid4()}.json"
+            temp_init_kwargs_file.parent.mkdir(parents=True, exist_ok=True)
             temp_init = {k: None for k in init_kwargs}
             temp_init_kwargs_file.write_text(json.dumps(temp_init))
             command.extend(["--init", temp_init_kwargs_file.as_posix()])
