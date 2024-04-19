@@ -40,11 +40,19 @@ def create_evals_test_resource_template() -> None:
     connections_filename = "connections.json"
     connections_file_path = (working_dir / connections_filename).resolve().absolute()
     connections_template = {
-        "azure_open_ai_connection": {
+        "azure_openai_model_config": {
             "value": {
+                "azure_endpoint": "aoai-api-endpoint",
                 "api_key": "aoai-api-key",
-                "api_base": "aoai-api-endpoint",
                 "api_version": "2023-07-01-preview",
+                "azure_deployment": "aoai-deployment"
+            },
+        },
+        "azure_ai_project_scope": {
+            "value": {
+                "subscription_id": "subscription-id",
+                "resource_group_name": "resource-group-name",
+                "project_name": "project-name"
             }
         }
     }

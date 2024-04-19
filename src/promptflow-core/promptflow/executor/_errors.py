@@ -319,3 +319,11 @@ class FlowEntryInitializationError(UserErrorException):
             init_kwargs=init_kwargs,
             ex=ex,
         )
+
+
+class InvalidFlexFlowEntry(ValidationException):
+    pass
+
+
+class InvalidAggregationFunction(UserErrorException):
+    pass

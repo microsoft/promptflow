@@ -91,7 +91,7 @@ jobs:
         targetFolder: ${{ env.PROMPTFLOW_DIRECTORY }}
     - name: run devkit tests
       run: |
-        poetry run pytest ./tests/sdk_cli_global_config_test -p promptflow --cov=promptflow --cov-config=pyproject.toml \
+        poetry run pytest ./tests/sdk_cli_global_config_test --cov=promptflow --cov-config=pyproject.toml \
         --cov-report=term --cov-report=html --cov-report=xml -n auto -m "unittest or e2etest"
       working-directory: ${{ env.WORKING_DIRECTORY }}
     - name: Upload Test Results

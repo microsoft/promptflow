@@ -1,12 +1,6 @@
 # Run and evaluate a flow
 
-:::{admonition} Experimental feature
-This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
-:::
-
-After you have developed and tested the flow in [init and test a flow](../init-and-test-a-flow.md), this guide will help you learn how to run a flow with a larger dataset and then evaluate the flow you have created.
-
-
+After you have developed and tested the flow in [init and test a flow](../develop-a-flow/init-and-test-a-flow.md), this guide will help you learn how to run a flow with a larger dataset and then evaluate the flow you have created.
 
 ## Create a batch run
 
@@ -115,7 +109,7 @@ Click the bulk test button on the top of the visual editor to trigger flow test.
 
 ::::
 
-We also have a more detailed documentation  [Manage runs](../manage-runs.md) demonstrating how to manage your finished runs with CLI, SDK and VS Code Extension.
+We also have a more detailed documentation  [Manage runs](./manage-runs.md) demonstrating how to manage your finished runs with CLI, SDK and VS Code Extension.
 
 ## Evaluate your flow
 
@@ -238,7 +232,7 @@ There are actions to trigger local batch runs. To perform an evaluation you can 
 Learn more about:
 - [Tune prompts with variants](../tune-prompts-with-variants.md)
 - [Deploy a flow](../deploy-a-flow/index.md)
-- [Manage runs](../manage-runs.md)
+- [Manage runs](./manage-runs.md)
 - [Python library reference](../../reference/python-library-reference/promptflow-core/promptflow.rst)
 
 ```{toctree}
@@ -246,4 +240,5 @@ Learn more about:
 :hidden:
 
 use-column-mapping
+manage-runs
 ```
