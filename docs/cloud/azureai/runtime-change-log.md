@@ -18,12 +18,12 @@ Default runtime image is continuously updated, and here we record the new featur
 ### 20240411.v4
 
 #### New features
-- [#2665](https://github.com/microsoft/promptflow/pull/2665) [Executor][Feature]Allow function/instance as the entry of script executor
-- [#2547](https://github.com/microsoft/promptflow/pull/2547) [Feature][Tools] llm vision tool support detail parameter
-- [#2591](https://github.com/microsoft/promptflow/pull/2591) [BatchEngine] Chat group orchestrator and related change in batch engine
+- [#2665](https://github.com/microsoft/promptflow/pull/2665) Allow function/instance as the entry of script executor.
+- [#2591](https://github.com/microsoft/promptflow/pull/2591) Chat group orchestrator and related change in batch engine.
 - [#2548](https://github.com/microsoft/promptflow/pull/2548) Migrate the yaml used by the eager flow to flow.flex.yaml, code support both flow.flex.yaml and flow.dag.yaml.
-- [#2628](https://github.com/microsoft/promptflow/pull/2628) [Executor] Support connection init for flex flow
+- [#2628](https://github.com/microsoft/promptflow/pull/2628) Support connection init for flex flow.
 - [#2441](https://github.com/microsoft/promptflow/pull/2441) Redirect print content to log for flex.
+- [#2547](https://github.com/microsoft/promptflow/pull/2547) llm vision tool support detail parameter.
 
 #### Bugs fixed
 NA
