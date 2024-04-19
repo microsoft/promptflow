@@ -17,7 +17,7 @@ from promptflow._constants import (
     SpanLinkFieldName,
     SpanStatusFieldName,
 )
-from promptflow._sdk._constants import TRACE_DEFAULT_COLLECTION
+from promptflow._sdk._constants import TRACE_DEFAULT_COLLECTION, TRACE_LIST_DEFAULT_LIMIT
 from promptflow._sdk._orm.retry import sqlite_retry
 from promptflow._sdk._orm.session import trace_mgmt_db_session
 from promptflow._sdk._orm.trace import Event as ORMEvent
@@ -213,7 +213,13 @@ class TraceOperations:
             logger=self._logger,
         )
         self._logger.info("search expression that will be executed: %s", expression)
-        orm_line_runs = ORMLineRun.search(expression)
+        # when neither collection, runs nor session_id is specified, we will add a limit for the query
+        # avoid returning too many results
+        limit = None
+        if collection is None and runs is None and session_id is None:
+            limit = TRACE_LIST_DEFAULT_LIMIT
+            self._logger.info("apply a default limit for the search: %d", limit)
+        orm_line_runs = ORMLineRun.search(expression, limit=limit)
         return self._parse_line_runs_from_orm(orm_line_runs)
 
     @monitor_operation(activity_name="pf.traces.delete", activity_type=ActivityType.PUBLICAPI)

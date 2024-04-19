@@ -217,11 +217,11 @@ class LineRun(Base):
 
     @staticmethod
     @sqlite_retry
-    def search(expression: str) -> typing.List["LineRun"]:
+    def search(expression: str, limit: typing.Optional[int] = None) -> typing.List["LineRun"]:
         with trace_mgmt_db_session() as session:
             translator = SearchTranslator(model=LineRun)
             query = translator.translate(session=session, expression=expression)
-            return query.all()
+            return query.all() if limit is None else query.limit(limit).all()
 
     @sqlite_retry
     def _update(self) -> None:
