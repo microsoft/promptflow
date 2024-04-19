@@ -77,7 +77,7 @@ class TestAssistant:
 _client = PFClient()
 
 
-@pytest.mark.usefixtures("dev_connections", "recording_injection")
+@pytest.mark.usefixtures
 @pytest.mark.e2etest
 class TestAssistantEagerFlow:
     def test_eager_flow_with_two_assistants(self):

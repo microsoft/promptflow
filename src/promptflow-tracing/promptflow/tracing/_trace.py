@@ -144,6 +144,9 @@ def enrich_span_with_trace_type(span, inputs, output, trace_type):
     elif trace_type == TraceType.EMBEDDING:
         token_collector.collect_openai_tokens(span, output)
         enrich_span_with_embedding(span, inputs, output)
+    elif trace_type == TraceType.Assistant:
+        enrich_assistant_span(span, inputs, output)
+
     enrich_span_with_openai_tokens(span, trace_type)
     enrich_span_with_output(span, output)
     # If the output is a generator, while the span is a valid span, we will trace the generator.
@@ -241,6 +244,29 @@ def enrich_span_with_embedding(span, inputs, output):
             span.add_event("promptflow.embedding.embeddings", {"payload": serialize_attribute(embeddings)})
     except Exception as e:
         logging.warning(f"Failed to enrich span with embedding: {e}")
+
+
+def enrich_assistant_span(span, inputs, output):
+
+    from openai.types.beta import Assistant
+
+    try:
+        if isinstance(output, Assistant):
+            span.set_attribute("assistance.id", output.id)
+            span.set_attribute("assistance.description", output.description)
+            span.set_attribute("assistance.name", output.name)
+            span.set_attribute("assistance.model", output.model)
+            span.set_attribute("assistance.instructions", output.instructions)
+            span.set_attribute(
+                "assistance.tool_resources", output.tool_resources.dict() if output.tool_resources else None
+            )
+            span.set_attribute("assistance.tools", [tool.dict() for tool in output.tools])
+            span.set_attribute("assistance.temperature", output.temperature)
+            span.set_attribute("assistance.top_p", output.top_p)
+            span.set_attribute("assistance.metadata", serialize_attribute(output.metadata))
+            span.add_event("assistant.created_", {"created_at": output.created_at})
+    except Exception as e:
+        logging.warning(f"Failed to enrich assistant span: {e}")
 
 
 def _is_single_input(embedding_inputs):
