@@ -535,6 +535,8 @@ class Run(YAMLTranslatableMixin):
     @classmethod
     def _to_rest_init(cls, init):
         """Convert init to rest object."""
+        if not init:
+            return None
         return {k: asdict(v) if dataclasses.is_dataclass(v) else v for k, v in init.items()}
 
     def _to_rest_object(self):
