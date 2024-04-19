@@ -43,6 +43,10 @@ def pytest_configure():
     pytest.is_record = is_record()
     pytest.is_replay = is_replay()
     pytest.is_in_ci_pipeline = is_in_ci_pipeline()
+    print(f"pytest.is_live: {pytest.is_live}")
+    print(f"pytest.is_record: {pytest.is_record}")
+    print(f"pytest.is_replay: {pytest.is_replay}")
+    print(f"pytest.is_in_ci_pipeline: {pytest.is_in_ci_pipeline}")
 
 
 @pytest.fixture
