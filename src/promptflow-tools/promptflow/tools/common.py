@@ -388,12 +388,12 @@ def list_deployment_connections(connection=""):
         try:
             connection_provider = ConnectionProvider.get_instance()
             conn_sub, conn_rg, conn_account = "", "", ""
-            print("type........:", type(connection_provider))
             if isinstance(connection_provider, WorkspaceConnectionProvider) \
                     or isinstance(connection_provider, HttpConnectionProvider):
                 print("1111111111")
                 conn = connection_provider.get(connection)
                 resource_id = conn.resource_id
+                print("resource_id.........:", resource_id)
                 if not resource_id:
                     return None
                 conn_sub, conn_rg, conn_account = _parse_resource_id(resource_id)
@@ -406,6 +406,7 @@ def list_deployment_connections(connection=""):
             raise ListDeploymentsError(msg=msg) from e
 
         if conn_sub:
+            print("conn_sub.........:", conn_sub)
             client = CognitiveServicesManagementClient(
                 credential=credential,
                 subscription_id=conn_sub,
