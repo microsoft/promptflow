@@ -10,7 +10,7 @@ from flask import jsonify, request
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._service import Namespace, Resource
 from promptflow._sdk._service.utils.utils import decrypt_flow_path, get_client_from_request
-from promptflow._utils.flow_utils import resolve_flow_path
+from promptflow._utils.flow_utils import is_prompty_flow, resolve_flow_path
 from promptflow.client import load_flow
 
 api = Namespace("Flows", description="Flows Management")
@@ -57,7 +57,11 @@ class FlowTest(Resource):
     def post(self):
         args = flow_path_parser.parse_args()
         flow = decrypt_flow_path(args.flow)
-        flow, _ = resolve_flow_path(flow)
+        is_prompty = is_prompty_flow(flow)
+        if is_prompty:
+            flow = Path(flow).absolute()
+        else:
+            flow, _ = resolve_flow_path(flow)
         inputs = args.inputs
         environment_variables = args.environment_variables
         variant = args.variant
@@ -68,7 +72,10 @@ class FlowTest(Resource):
 
         if output_path is None:
             filename = str(uuid.uuid4())
-            output_path = flow / PROMPT_FLOW_DIR_NAME / filename
+            if is_prompty:
+                output_path = flow.parent / PROMPT_FLOW_DIR_NAME / flow.stem / filename
+            else:
+                output_path = flow / PROMPT_FLOW_DIR_NAME / filename
             os.makedirs(output_path, exist_ok=True)
         output_path = Path(output_path).resolve()
         result = get_client_from_request().flows._test_with_ui(
