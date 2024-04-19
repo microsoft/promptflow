@@ -182,13 +182,12 @@ class Configuration(object):
     def get_trace_provider(self, *, path: Optional[Path] = None) -> Optional[str]:
         provider = self.get_config(key=self.TRACE_PROVIDER)
         if TraceProviderConfig.need_to_resolve(provider):
-            return self._resolve_trace_provider(provider, path=path)
+            return self._resolve_trace_provider(path=path)
         else:
             return provider
 
-    def _resolve_trace_provider(self, provider: str, *, path: Optional[Path] = None) -> Optional[str]:
-        if provider is None:
-            ...
+    def _resolve_trace_provider(self, *, path: Optional[Path] = None) -> str:
+        return "azureml:" + self._get_workspace_from_config(path=path)
 
     def get_telemetry_consent(self) -> Optional[bool]:
         """Get the current telemetry consent value. Return None if not configured."""
