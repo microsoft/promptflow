@@ -18,13 +18,14 @@ from promptflow._constants import (
     SpanLinkFieldName,
     SpanStatusFieldName,
 )
-from promptflow._sdk._constants import TRACE_DEFAULT_COLLECTION
+from promptflow._sdk._constants import TRACE_DEFAULT_COLLECTION, TRACE_LIST_DEFAULT_LIMIT
 from promptflow._sdk._orm.retry import sqlite_retry
 from promptflow._sdk._orm.session import trace_mgmt_db_session
 from promptflow._sdk._orm.trace import Event as ORMEvent
 from promptflow._sdk._orm.trace import LineRun as ORMLineRun
 from promptflow._sdk._orm.trace import Span as ORMSpan
 from promptflow._sdk._telemetry import ActivityType, monitor_operation
+from promptflow._sdk._tracing_utils import append_conditions
 from promptflow._sdk._utils import (
     convert_time_unix_nano_to_timestamp,
     flatten_pb_attributes,
@@ -176,6 +177,16 @@ class TraceOperations:
         line_run._append_evaluations(eval_line_runs)
         return line_run
 
+    def _parse_line_runs_from_orm(self, orm_line_runs: typing.List[ORMLineRun]) -> typing.List[LineRun]:
+        line_runs = []
+        for obj in orm_line_runs:
+            line_run = LineRun._from_orm_object(obj)
+            orm_eval_line_runs = ORMLineRun._get_children(line_run_id=line_run.line_run_id)
+            eval_line_runs = [LineRun._from_orm_object(obj) for obj in orm_eval_line_runs]
+            line_run._append_evaluations(eval_line_runs)
+            line_runs.append(line_run)
+        return line_runs
+
     def list_line_runs(
         self,
         collection: typing.Optional[str] = None,
@@ -206,14 +217,31 @@ class TraceOperations:
             session_id=session_id,
             line_run_ids=line_run_ids,
         )
-        line_runs = []
-        for obj in orm_line_runs:
-            line_run = LineRun._from_orm_object(obj)
-            orm_eval_line_runs = ORMLineRun._get_children(line_run_id=line_run.line_run_id)
-            eval_line_runs = [LineRun._from_orm_object(obj) for obj in orm_eval_line_runs]
-            line_run._append_evaluations(eval_line_runs)
-            line_runs.append(line_run)
-        return line_runs
+        return self._parse_line_runs_from_orm(orm_line_runs)
+
+    def _search_line_runs(
+        self,
+        expression: str,
+        collection: typing.Optional[str] = None,
+        runs: typing.Optional[typing.Union[str, typing.List[str]]] = None,
+        session_id: typing.Optional[str] = None,
+    ) -> typing.List[LineRun]:
+        expression = append_conditions(
+            expression=expression,
+            collection=collection,
+            runs=runs,
+            session_id=session_id,
+            logger=self._logger,
+        )
+        self._logger.info("search expression that will be executed: %s", expression)
+        # when neither collection, runs nor session_id is specified, we will add a limit for the query
+        # avoid returning too many results
+        limit = None
+        if collection is None and runs is None and session_id is None:
+            limit = TRACE_LIST_DEFAULT_LIMIT
+            self._logger.info("apply a default limit for the search: %d", limit)
+        orm_line_runs = ORMLineRun.search(expression, limit=limit)
+        return self._parse_line_runs_from_orm(orm_line_runs)
 
     @monitor_operation(activity_name="pf.traces.delete", activity_type=ActivityType.PUBLICAPI)
     def delete(
