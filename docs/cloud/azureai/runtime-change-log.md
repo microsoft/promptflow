@@ -15,6 +15,14 @@ You can check the runtime image version from the flow execution log:
 ## Change log
 Default runtime image is continuously updated, and here we record the new features and fixed bugs of each image version.
 
+### 20240411.v4
+
+#### New features
+- #2547 [Feature][Tools] llm vision tool support detail parameter
+
+#### Bugs fixed
+NA
+
 ### 20240403.v2
 
 #### New features
