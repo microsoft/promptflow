@@ -221,6 +221,7 @@ class FlowExecutor:
                 flow_file=Path(flow_file),
                 working_dir=working_dir,
                 storage=storage,
+                init_kwargs=init_kwargs,
             )
         else:
             if init_kwargs:
