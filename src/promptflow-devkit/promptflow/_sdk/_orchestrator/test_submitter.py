@@ -249,19 +249,21 @@ class TestSubmitter:
             # do not enable trace when test single node, as we have not determined this behavior
             if target_node is None:
                 logger.debug("start trace for flow test...")
+                flow_path = Path(self._origin_flow._flow_dir).resolve()
+                logger.debug("flow path for test.start_trace: %s", flow_path)
                 if collection is not None:
                     logger.debug("collection is user specified: %s, will use it...", collection)
-                    start_trace(collection=collection, session=session, path=Path(self.flow.path))
+                    start_trace(collection=collection, session=session, path=flow_path)
                 else:
                     if is_collection_writeable():
                         logger.debug("trace collection is writeable, will use flow name as collection...")
                         collection_for_test = get_flow_name(self._origin_flow)
                         logger.debug("collection for test: %s", collection_for_test)
                         # pass with internal parameter `_collection`
-                        start_trace(session=session, _collection=collection_for_test, path=Path(self.flow.path))
+                        start_trace(session=session, _collection=collection_for_test, path=flow_path)
                     else:
                         logger.debug("trace collection is protected, will honor existing collection.")
-                        start_trace(session=session, path=Path(self.flow.path))
+                        start_trace(session=session, path=flow_path)
 
             self._output_base, log_path, output_sub = self._resolve_output_path(
                 output_base=output_path,

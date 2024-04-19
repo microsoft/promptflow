@@ -88,7 +88,7 @@ class RunSubmitter:
         # start trace
         logger.debug("start trace for flow run...")
         flow_path = Path(run.flow).resolve()
-        logger.debug("flow path for `start_trace`: %s", flow_path)
+        logger.debug("flow path for run.start_trace: %s", flow_path)
         if is_collection_writeable():
             logger.debug("trace collection is writeable, will use flow name as collection...")
             collection_for_run = run._flow_name
