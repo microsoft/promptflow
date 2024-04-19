@@ -74,17 +74,18 @@ class TestEagerFlow:
                     "open_ai_model_config": OpenAIModelConfiguration(model="my_model", base_url="fake_base_url"),
                 },
             ),
-            (
-                "basic_model_config",
-                {"func_input": "input"},
-                lambda x: x["azure_open_ai_model_config_azure_endpoint"] == "https://gpt-test-eus.openai.azure.com/",
-                {
-                    "azure_open_ai_model_config": AzureOpenAIModelConfiguration(
-                        azure_deployment="my_deployment", connection="azure_open_ai_connection"
-                    ),
-                    "open_ai_model_config": OpenAIModelConfiguration(model="my_model", base_url="fake_base_url"),
-                },
-            ),
+            # TODO(3128519): enable this when core test supports dict connection
+            # (
+            #     "basic_model_config",
+            #     {"func_input": "input"},
+            #     lambda x: x["azure_open_ai_model_config_azure_endpoint"] == "https://gpt-test-eus.openai.azure.com/",
+            #     {
+            #         "azure_open_ai_model_config": AzureOpenAIModelConfiguration(
+            #             azure_deployment="my_deployment", connection="azure_open_ai_connection"
+            #         ),
+            #         "open_ai_model_config": OpenAIModelConfiguration(model="my_model", base_url="fake_base_url"),
+            #     },
+            # ),
         ],
     )
     def test_flow_run(self, flow_folder, inputs, ensure_output, init_kwargs):
