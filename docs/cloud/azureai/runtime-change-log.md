@@ -18,6 +18,7 @@ Default runtime image is continuously updated, and here we record the new featur
 ### 20240411.v4
 
 #### New features
+- [#2665](https://github.com/microsoft/promptflow/pull/2665) [Executor][Feature]Allow function/instance as the entry of script executor
 - #2547 [Feature][Tools] llm vision tool support detail parameter
 
 #### Bugs fixed
