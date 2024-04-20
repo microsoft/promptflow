@@ -48,6 +48,7 @@ class TestConnection:
                     "api_version": "2023-07-01-preview",
                     "api_key": "<to-be-replaced>",
                     "api_base": "aoai-api-endpoint",
+                    "resource_id": "mock_id",
                 },
                 {
                     "module": "promptflow.connections",
