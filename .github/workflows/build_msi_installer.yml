@@ -189,7 +189,8 @@ jobs:
         run: |
           $version = "${{ steps.get-version.outputs.version }}"
           $downloaded_version = "${{ steps.download-json.outputs.downloaded_version }}"
-          if ($version -like '1.*' -and [Version]$version -gt [Version]$downloaded_version){
+          $uploadAsLatest = "${{ github.event.inputs.uploadAsLatest }}"
+          if ($uploadAsLatest -ieq 'True' -and $version -like '1.*' -and [Version]$version -gt [Version]$downloaded_version){
             $jsonContent = @{
               "promptflow" = $version
             } | ConvertTo-Json -Depth 100
