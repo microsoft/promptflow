@@ -84,7 +84,7 @@
           <Custom Action="Set_WIXUI_EXITDIALOGOPTIONALTEXT" After="CostFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED</Custom>
         </InstallUISequence>
 
-        <Property Id="WixQuietExec64CmdLine" Value="&quot;[System64Folder]cmd.exe&quot; /C start /B &quot;[APPLICATIONFOLDER]pfcli.exe&quot; pf service stop"/>
+        <Property Id="WixQuietExec64CmdLine" Value="&quot;[System64Folder]cmd.exe&quot; /C start &quot;&quot;[APPLICATIONFOLDER]pfcli.exe&quot; pf service stop&quot;"/>
         <CustomAction Id="StopPromptFlowService"
               Execute="immediate"
               Return="ignore"
