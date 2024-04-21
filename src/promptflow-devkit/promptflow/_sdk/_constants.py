@@ -468,8 +468,6 @@ class LineRunFieldName:
 
 
 class Local2Cloud:
-    EXPERIMENT_NAME = "local_to_cloud"
-    PROPERTY_KEY = "azureml.promptflow.local_to_cloud"
     BLOB_ROOT_PROMPTFLOW = "promptflow"
     BLOB_ROOT_RUNS = "runs"
     BLOB_ARTIFACTS = "PromptFlowArtifacts"
@@ -477,6 +475,26 @@ class Local2Cloud:
     ASSET_NAME_DEBUG_INFO = "debug_info"
     ASSET_NAME_FLOW_OUTPUTS = "flow_outputs"
     EXECUTION_LOG = "logs/azureml/executionlogs.txt"
+
+
+class Local2CloudProperties:
+    """Run properties that server needs when uploading local run to cloud."""
+
+    TOTAL_TOKENS = "azureml.promptflow.total_tokens"
+
+
+class Local2CloudUserProperties:
+    """Run properties that user can specify when uploading local run to cloud."""
+
+    EVAL_RUN = "_azureml.evaluation_run"
+    EVAL_ARTIFACTS = "_azureml.evaluate_artifacts"
+
+    @staticmethod
+    def get_all_values():
+        values = [
+            value for key, value in vars(Local2CloudUserProperties).items() if isinstance(value, str) and key.isupper()
+        ]
+        return values
 
 
 class CloudDatastore:
