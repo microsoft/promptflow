@@ -70,7 +70,25 @@ def model_config() -> dict:
 
     model_config = AzureOpenAIModelConfiguration(**dev_connections[conn_name]["value"])
 
+    AzureOpenAIModelConfiguration.__repr__ = lambda self: "<sensitive data redacted>"
+
     return model_config
+
+
+@pytest.fixture
+def project_scope() -> dict:
+    conn_name = "azure_ai_project_scope"
+
+    with open(
+        file=CONNECTION_FILE,
+        mode="r",
+    ) as f:
+        dev_connections = json.load(f)
+
+    if conn_name not in dev_connections:
+        raise ValueError(f"Connection '{conn_name}' not found in dev connections.")
+
+    return dev_connections[conn_name]["value"]
 
 
 @pytest.fixture
