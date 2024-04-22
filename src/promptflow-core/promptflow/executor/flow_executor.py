@@ -881,7 +881,7 @@ class FlowExecutor:
         except KeyboardInterrupt as ex:
             if span.is_recording():
                 span.record_exception(ex)
-                span.set_status(StatusCode.ERROR, "KeyboardInterrupt received, execution cancelled.")
+                span.set_status(StatusCode.ERROR, "Execution cancelled.")
             raise
 
     def _exec_inner(

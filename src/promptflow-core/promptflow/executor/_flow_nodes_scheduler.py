@@ -27,26 +27,27 @@ DEFAULT_CONCURRENCY_BULK = 2
 DEFAULT_CONCURRENCY_FLOW = 16
 
 
-def exit_process_with_delay():
-
-    # Add delay to wait for the main thread to exit to guarantee we can export span data.
-    time.sleep(3)
-    # Use os._exit instead of sys.exit, so that the process can stop without
-    # waiting for the thread created by ThreadPoolExecutor to finish.
-    # sys.exit: https://docs.python.org/3/library/sys.html#sys.exit
-    # Raise a SystemExit exception, signaling an intention to exit the interpreter.
-    # Specifically, it does not exit non-daemon thread
-    # os._exit https://docs.python.org/3/library/os.html#os._exit
-    # Exit the process with status n, without calling cleanup handlers, flushing stdio buffers, etc.
-    # Specifically, it stops process without waiting for non-daemon thread.
-    os._exit(0)
-
-
 def signal_handler(sig, frame):
     """
-    We have no way to cancel running tasks in ThreadPoolExecutor, so we raise KeyboardInterrupt to exit the process.
+    In main thread, we raise KeyboardInterrupt to mark run as cancelled and exit execution.
+    But the process may not exit immediately because there are worker threads running from ThreadPoolExecutor.
+    So, start new worker thread and use os._exit to guarantee the process could exit after delay time.
     """
+
     flow_logger.info(f"Received signal {sig}({signal.Signals(sig).name}), start to exit sync flow execution.")
+
+    def exit_process_with_delay():
+        # Adding 3 seconds delay here to let the main thread to finish the cleanup work, such as exporting spans.
+        time.sleep(3)
+        # Use os._exit instead of sys.exit, so that the process can stop without
+        # waiting for the thread created by ThreadPoolExecutor to finish.
+        # sys.exit: https://docs.python.org/3/library/sys.html#sys.exit
+        # Raise a SystemExit exception, signaling an intention to exit the interpreter.
+        # Specifically, it does not exit non-daemon thread
+        # os._exit https://docs.python.org/3/library/os.html#os._exit
+        # Exit the process with status n, without calling cleanup handlers, flushing stdio buffers, etc.
+        # Specifically, it stops process without waiting for non-daemon thread.
+        os._exit(0)
 
     monitor = ThreadWithContextVars(target=exit_process_with_delay)
     monitor.start()
@@ -89,7 +90,9 @@ class FlowNodesScheduler:
                 "Current thread is not main thread, skip signal handler registration in AsyncNodesScheduler."
             )
         parent_context = contextvars.copy_context()
-        # If we use with ThreadPoolExecutor, we can't use KeyboardInterrupt to exit waiting.
+        # If we use `with ThreadPoolExecutor`, the __exit__ method will be called to wait all threads are finished.
+        # Then any exception raised in the threads will be blocked, which is unexpected.
+        # So, we just create the executor and shutdown it manually.
         executor = ThreadPoolExecutor(
             max_workers=self._node_concurrency, initializer=set_context, initargs=(parent_context,)
         )
@@ -105,9 +108,7 @@ class FlowNodesScheduler:
                 tasks_to_wait = list(self._future_to_node.keys())
                 if timeout_task is not None:
                     tasks_to_wait.append(timeout_task)
-                completed_futures_with_wait, _ = futures.wait(
-                    tasks_to_wait, timeout=10, return_when=futures.FIRST_COMPLETED
-                )
+                completed_futures_with_wait, _ = futures.wait(tasks_to_wait, return_when=futures.FIRST_COMPLETED)
                 completed_futures = [f for f in completed_futures_with_wait if f in self._future_to_node]
                 self._dag_manager.complete_nodes(self._collect_outputs(completed_futures))
                 for each_future in completed_futures:
@@ -129,7 +130,9 @@ class FlowNodesScheduler:
             for unfinished_future in self._future_to_node.keys():
                 # We can't cancel running tasks here, only pending tasks could be cancelled.
                 unfinished_future.cancel()
-            # Even we raise exception here, still need to wait all running jobs finish to exit.
+            # Use shutdown(wait=False) to ignore running threads.
+            # We want to exit the execution and mark it as failed/cancelled, so don't need to wait for running threads.
+            executor.shutdown(wait=False)
             raise e
         for node in self._dag_manager.bypassed_nodes:
             self._dag_manager.completed_nodes_outputs[node] = None
