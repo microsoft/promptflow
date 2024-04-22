@@ -25,15 +25,13 @@ def list_package_tools():
 
 @router.post("/retrieve_tool_func_result")
 async def retrieve_tool_func_result(request: RetrieveToolFuncResultRequest):
-    # Now runtime put PF_HTTP_CONNECTION_PROVIDER_ENDPOINT in request.environment_variables.
-    # It is used to init a http connection provider to get connection in dynamic list scenario.
-    if request.environment_variables and isinstance(request.environment_variables, dict):
-        os.environ.update(request.environment_variables)
-
     from promptflow._core.tools_manager import retrieve_tool_func_result
 
     args = (request.func_call_scenario, request.func_path, request.func_kwargs, request.ws_triple)
-    return await invoke_sync_function_in_process(retrieve_tool_func_result, args=args, wait_timeout=SHORT_WAIT_TIMEOUT)
+    # To support dynamic list, runtime put PF_HTTP_CONNECTION_PROVIDER_ENDPOINT in request.environment_variables,
+    # executor should set it to environment variables in subprocess for init http connection provider later.
+    environment_variables = request.environment_variables if request.environment_variables and isinstance(request.environment_variables, dict) else None
+    return await invoke_sync_function_in_process(retrieve_tool_func_result, args=args, wait_timeout=SHORT_WAIT_TIMEOUT, environment_variables=environment_variables)
 
 
 @router.post("/meta")

@@ -31,14 +31,15 @@ async def invoke_sync_function_in_process(
     run_id: str = None,
     context_dict: dict = None,
     wait_timeout: int = LONG_WAIT_TIMEOUT,
+    environment_variables: dict = None,
 ):
     with multiprocessing.Manager() as manager:
         return_dict = manager.dict()
         error_dict = manager.dict()
 
         p = multiprocessing.Process(
-            target=_execute_target_function,
-            args=(target_function, args, kwargs, return_dict, error_dict, context_dict),
+            target=_set_environment_variable_then_execute_target_function,
+            args=(target_function, args, kwargs, return_dict, error_dict, context_dict, environment_variables),
         )
         p.start()
         service_logger.info(f"[{os.getpid()}--{p.pid}] Start process to execute the request.")
@@ -81,15 +82,19 @@ async def invoke_sync_function_in_process(
                 ProcessManager().remove_process(run_id)
 
 
-def _execute_target_function(
+def _set_environment_variable_then_execute_target_function(
     target_function: Callable,
     args: tuple,
     kwargs: dict,
     return_dict: dict,
     error_dict: dict,
     context_dict: dict,
+    environment_variables: dict,
 ):
     block_terminate_signal_to_parent()
+    if environment_variables:
+        service_logger.info("Set environment variable before invoke target function.")
+        os.environ.update(environment_variables)
     with exception_wrapper(error_dict):
         if context_dict:
             OperationContext.get_instance().update(context_dict)
