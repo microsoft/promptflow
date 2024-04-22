@@ -115,7 +115,11 @@ class FlowNodesScheduler:
                 if timeout_task and timeout_task.done():
                     raise LineExecutionTimeoutError(self._context._line_number, line_timeout_sec)
                 self._execute_nodes(executor)
+            event.set()
+            executor.shutdown()
         except Exception as e:
+            # When meet exception, mark event to exit timeout task.
+            event.set()
             err_msg = "Flow execution has failed."
             if isinstance(e, LineExecutionTimeoutError):
                 err_msg = f"Line execution timeout after {line_timeout_sec} seconds."
@@ -127,9 +131,6 @@ class FlowNodesScheduler:
                 unfinished_future.cancel()
             # Even we raise exception here, still need to wait all running jobs finish to exit.
             raise e
-        finally:
-            # Cancel timeout task no matter the execution is finished or failed.
-            event.set()
         for node in self._dag_manager.bypassed_nodes:
             self._dag_manager.completed_nodes_outputs[node] = None
         return self._dag_manager.completed_nodes_outputs, self._dag_manager.bypassed_nodes
