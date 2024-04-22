@@ -1043,9 +1043,7 @@ class FlowExecutor:
             run_info.inputs = inputs
             output, nodes_outputs = await self._traverse_nodes_async(inputs, context)
             # TODO: Consider async implementation for _stringify_generator_output
-            if not allow_generator_output:
-                output = self._stringify_generator_output(output)
-                output = await self._stringify_async_generator_output(output)
+            output = self._stringify_generator_output(output) if not allow_generator_output else output
             # Persist the node runs for the nodes that have a generator output
             generator_output_nodes = [
                 nodename for nodename, output in nodes_outputs.items() if isinstance(output, GeneratorType)

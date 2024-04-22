@@ -162,13 +162,6 @@ class ScriptExecutor(FlowExecutor):
             run_tracker.persist_flow_run(run_info)
         return self._construct_line_result(output, run_info)
 
-    def _handle_generator_output(self, output, allow_generator_output):
-        if not allow_generator_output:
-            output = self._stringify_generator_output(output)
-            if self._is_async:
-                output = asyncio.run(self._stringify_async_generator_output(output))
-        return output
-
     def _construct_line_result(self, output, run_info):
         line_result = LineResult(output, {}, run_info, {})
         #  Return line result with index
