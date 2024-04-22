@@ -547,7 +547,6 @@ class Run(YAMLTranslatableMixin):
 
             from promptflow.azure._restclient.flow.models import (
                 BatchDataInput,
-                CreateExistingBulkRunRequest,
                 RunDisplayNameGenerationType,
                 SessionSetupModeEnum,
                 SubmitBulkRunRequest,
@@ -657,51 +656,57 @@ class Run(YAMLTranslatableMixin):
                 )
         elif local_to_cloud_info:
             # register local run to cloud
-
-            # parse local_to_cloud_info to get necessary information
-            flow_artifact_path = local_to_cloud_info[OutputsFolderName.FLOW_ARTIFACTS]
-            flow_artifact_root_path = Path(flow_artifact_path).parent.as_posix()
-            log_file_relative_path = local_to_cloud_info[LocalStorageFilenames.LOG]
-            snapshot_file_path = local_to_cloud_info[LocalStorageFilenames.SNAPSHOT_FOLDER]
-
-            # get the start and end time. Plus "Z" to specify the timezone is UTC, otherwise there will be warning
-            # when sending the request to the server.
-            # e.g. WARNING:msrest.serialization:Datetime with no tzinfo will be considered UTC.
-            # for start_time, switch to "_start_time" once the bug item is fixed: BUG - 3085432.
-            start_time = self._created_on.isoformat() + "Z" if self._created_on else None
-            end_time = self._end_time.isoformat() + "Z" if self._end_time else None
-
-            # extract properties that needs to be passed to the request
-            total_tokens = self.properties[FlowRunProperties.SYSTEM_METRICS].get("total_tokens", 0)
-            properties = {Local2CloudProperties.TOTAL_TOKENS: total_tokens}
-            for property_key in Local2CloudUserProperties.get_all_values():
-                value = self.properties.get(property_key, None)
-                if value is not None:
-                    properties[property_key] = value
-
-            return CreateExistingBulkRunRequest(
-                run_id=self.name,
-                run_status=self.status,
-                start_time_utc=start_time,
-                end_time_utc=end_time,
-                run_display_name=self._get_default_display_name(),
-                description=self.description,
-                tags=self.tags,
-                properties=properties,
-                run_experiment_name=self._experiment_name,
-                run_display_name_generation_type=RunDisplayNameGenerationType.USER_PROVIDED_MACRO,
-                output_data_store=CloudDatastore.DEFAULT,
-                flow_artifacts_root_path=flow_artifact_root_path,
-                log_file_relative_path=log_file_relative_path,
-                flow_definition_data_store_name=CloudDatastore.DEFAULT,
-                flow_definition_blob_path=snapshot_file_path,
-            )
+            return self._to_rest_object_for_local_to_cloud(local_to_cloud_info, variant)
         else:
             # upload via CodeOperations.create_or_update
             # submit with param FlowDefinitionDataUri
             return common_submit_bulk_run_request(
                 flow_definition_data_uri=str(self.flow),
             )
+
+    def _to_rest_object_for_local_to_cloud(self, local_to_cloud_info: dict, variant_run_id=None):
+        """Convert run object to CreateExistingBulkRunRequest object for local to cloud operation."""
+        from promptflow.azure._restclient.flow.models import CreateExistingBulkRunRequest, RunDisplayNameGenerationType
+
+        # parse local_to_cloud_info to get necessary information
+        flow_artifact_path = local_to_cloud_info[OutputsFolderName.FLOW_ARTIFACTS]
+        flow_artifact_root_path = Path(flow_artifact_path).parent.as_posix()
+        log_file_relative_path = local_to_cloud_info[LocalStorageFilenames.LOG]
+        snapshot_file_path = local_to_cloud_info[LocalStorageFilenames.SNAPSHOT_FOLDER]
+
+        # get the start and end time. Plus "Z" to specify the timezone is UTC, otherwise there will be warning
+        # when sending the request to the server.
+        # e.g. WARNING:msrest.serialization:Datetime with no tzinfo will be considered UTC.
+        # for start_time, switch to "_start_time" once the bug item is fixed: BUG - 3085432.
+        start_time = self._created_on.isoformat() + "Z" if self._created_on else None
+        end_time = self._end_time.isoformat() + "Z" if self._end_time else None
+
+        # extract properties that needs to be passed to the request
+        total_tokens = self.properties[FlowRunProperties.SYSTEM_METRICS].get("total_tokens", 0)
+        properties = {Local2CloudProperties.TOTAL_TOKENS: total_tokens}
+        for property_key in Local2CloudUserProperties.get_all_values():
+            value = self.properties.get(property_key, None)
+            if value is not None:
+                properties[property_key] = value
+
+        return CreateExistingBulkRunRequest(
+            run_id=self.name,
+            run_status=self.status,
+            start_time_utc=start_time,
+            end_time_utc=end_time,
+            run_display_name=self._get_default_display_name(),
+            description=self.description,
+            tags=self.tags,
+            variant_run_id=variant_run_id,
+            properties=properties,
+            run_experiment_name=self._experiment_name,
+            run_display_name_generation_type=RunDisplayNameGenerationType.USER_PROVIDED_MACRO,
+            output_data_store=CloudDatastore.DEFAULT,
+            flow_artifacts_root_path=flow_artifact_root_path,
+            log_file_relative_path=log_file_relative_path,
+            flow_definition_data_store_name=CloudDatastore.DEFAULT,
+            flow_definition_blob_path=snapshot_file_path,
+        )
 
     def _check_run_status_is_completed(self) -> None:
         if self.status != RunStatus.COMPLETED:

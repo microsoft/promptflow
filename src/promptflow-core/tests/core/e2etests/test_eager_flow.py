@@ -199,3 +199,14 @@ class TestEagerFlow:
         with pytest.raises(expected_exception) as e:
             ScriptExecutor(flow_file=flow_file)
         assert expected_error_msg in str(e.value)
+
+    def test_aggregation_error(self):
+        flow_folder = "class_based_flow_with_aggregation_exception"
+        flow_file = get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT)
+        executor = ScriptExecutor(flow_file=flow_file, init_kwargs={"obj_input": "obj_input"})
+        line_result = executor.exec_line(inputs={"func_input": "func_input"}, index=0)
+
+        if executor.has_aggregation_node:
+            aggr_result = executor._exec_aggregation(inputs=[line_result.output])
+            # exec aggregation won't fail with error
+            assert aggr_result.metrics == {}
