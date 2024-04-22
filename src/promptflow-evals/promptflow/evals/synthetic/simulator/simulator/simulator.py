@@ -30,6 +30,7 @@ from promptflow.evals.synthetic.simulator.simulator._callback_conversation_bot i
 from promptflow.evals.synthetic.simulator.simulator._proxy_completion_model import ProxyChatCompletionsModel
 from promptflow.evals.synthetic.simulator.simulator._token_manager import PlainTokenManager, TokenScope
 from promptflow.evals.synthetic.simulator.simulator._utils import JsonLineList
+from promptflow.evals.synthetic.simulator.simulator.userbot_config import UserBotConfig
 from promptflow.evals.synthetic.simulator.templates._simulator_templates import SimulatorTemplates, Template
 
 BASIC_MD = os.path.join(template_dir, "basic.md")  # type: ignore[has-type]
@@ -40,18 +41,16 @@ class Simulator:
     def __init__(
         self,
         *,
-        simulator_connection: Dict = None,  # type: ignore[name-defined]
+        simulator_connection: UserBotConfig = None,  # type: ignore[name-defined]
         ml_client: "MLClient" = None,  # type: ignore[name-defined]
         simulate_callback: Optional[Callable[[Dict], Dict]] = None,
     ):
         """
         Initialize the instance with the given parameters.
 
-        :keyword simulator_connection: A dictionary containing the configuration for the openAI simulator connection.
-            Mandatory keys: api_key, api_base, model_name, api_version
-            Optional keys: model_kwargs
+        :keyword simulator_connection: An object representing the configuration for the simulation service
             Defaults to None.
-        :paramtype simulator_connection: Optional[Dict]
+        :paramtype simulator_connection: UserBotConfig
         :keyword ml_client: An instance of MLClient for interacting with the AI service. Defaults to None.
         :paramtype ml_client: Optional[MLClient]
         :keyword simulate_callback: A callback function that takes a dictionary as input and returns a dictionary.
@@ -71,7 +70,7 @@ class Simulator:
         if not asyncio.iscoroutinefunction(simulate_callback):
             raise ValueError("Callback has to be an async function.")
 
-        self.simulator_connection = self._to_openai_chat_completion_model(simulator_connection)
+        self.simulator_connection = simulator_connection.to_open_ai_chat_completions() if simulator_connection else None
         self.adversarial = False
         self.rai_client = None
         if ml_client:
@@ -95,31 +94,6 @@ class Simulator:
             api_version="2023-07-01-preview",
             max_tokens=1200,
             temperature=0.0,
-        )
-
-    def _to_openai_chat_completion_model(self, config: Dict):  # type: ignore[name-defined]
-        if config is None:
-            return None
-        #  validate the config object to have the required fields
-        if "api_key" not in config:
-            raise ValueError("api_key is required in the config object.")
-        if "api_base" not in config:
-            raise ValueError("api_base is required in the config object.")
-        if "model_name" not in config:
-            raise ValueError("model_name is required in the config object.")
-        if "api_version" not in config:
-            raise ValueError("api_version is required in the config object.")
-        token_manager = PlainTokenManager(
-            openapi_key=config.get("api_key"),
-            auth_header="api-key",
-            logger=logging.getLogger("bot_token_manager"),
-        )
-        return OpenAIChatCompletionsModel(
-            endpoint_url=f"{config.get('api_base')}openai/deployments/{config.get('model_name')}/chat/completions",
-            token_manager=token_manager,
-            api_version=config.get("api_version"),
-            name=config.get("model_name"),
-            **config.get("model_kwargs", {}),
         )
 
     def _create_bot(
