@@ -1,0 +1,25 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Experiment.schema.json
+
+description: Eager flow experiment
+
+data:
+  - name: my_data
+    path: ./inputs.jsonl
+
+nodes:
+  - name: main
+    type: flow
+    path: ../../eager_flows/basic_callable_class/flow.flex.yaml
+    inputs:
+      func_input: ${data.my_data.func_input}
+    init:
+      obj_input: val
+
+
+  - name: main2
+    type: flow
+    path: ../../eager_flows/basic_callable_class/flow.flex.yaml
+    inputs:
+      func_input: ${main.outputs.func_input}
+    init:
+      obj_input: val
