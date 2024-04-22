@@ -5,7 +5,7 @@ from typing import Any, Dict, List
 from promptflow._constants import FlowEntryRegex
 from promptflow._core.entry_meta_generator import _generate_flow_meta
 from promptflow._sdk._constants import FLOW_META_JSON_GEN_TIMEOUT
-from promptflow._utils.flow_utils import is_flex_flow, resolve_entry_file
+from promptflow._utils.flow_utils import is_flex_flow, resolve_python_entry_file
 
 from ._base_inspector_proxy import AbstractInspectorProxy
 
@@ -41,7 +41,7 @@ class PythonInspectorProxy(AbstractInspectorProxy):
         # generate flow.json only for eager flow for now
         return _generate_flow_meta(
             flow_directory=working_dir,
-            source_path=resolve_entry_file(entry=flow_dag.get("entry"), working_dir=working_dir),
+            source_path=resolve_python_entry_file(entry=flow_dag.get("entry"), working_dir=working_dir),
             data=flow_dag,
             timeout=timeout,
             load_in_subprocess=load_in_subprocess,

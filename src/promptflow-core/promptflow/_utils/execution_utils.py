@@ -20,18 +20,18 @@ def apply_default_value_for_input(inputs: Dict[str, FlowInputDefinition], line_i
 
 def handle_line_failures(run_infos: List[FlowRunInfo], raise_on_line_failure: bool = False):
     """Handle line failures in batch run"""
-    failed = [i for i, r in enumerate(run_infos) if r.status == Status.Failed]
+    failed_run_infos = [r for r in run_infos if r.status == Status.Failed]
     failed_msg = None
-    if len(failed) > 0:
-        failed_indexes = ",".join([str(i) for i in failed])
-        first_fail_exception = run_infos[failed[0]].error["message"]
+    if len(failed_run_infos) > 0:
+        failed_indexes = ",".join([str(r.index) for r in failed_run_infos])
+        first_fail_exception = failed_run_infos[0].error["message"]
         if raise_on_line_failure:
             failed_msg = "Flow run failed due to the error: " + first_fail_exception
             raise Exception(failed_msg)
 
         failed_msg = (
-            f"{len(failed)}/{len(run_infos)} flow run failed, indexes: [{failed_indexes}],"
-            f" exception of index {failed[0]}: {first_fail_exception}"
+            f"{len(failed_run_infos)}/{len(run_infos)} flow run failed, indexes: [{failed_indexes}],"
+            f" exception of index {failed_run_infos[0].index}: {first_fail_exception}"
         )
         logger.error(failed_msg)
 
