@@ -17,7 +17,12 @@ from promptflow.tracing._operation_context import OperationContext
 def get_log_context(request: BaseExecutionRequest, enable_service_logger: bool = False) -> LogContext:
     run_mode = request.get_run_mode()
     credential_list = ConnectionManager(request.connections).get_secret_list()
-    log_context = LogContext(file_path=request.log_path, run_mode=run_mode, credential_list=credential_list)
+    log_context = LogContext(
+        file_path=request.log_path,
+        run_mode=run_mode,
+        credential_list=credential_list,
+        flow_logs_folder=request.flow_logs_folder,
+    )
     if enable_service_logger:
         log_context.input_logger = service_logger
     return log_context

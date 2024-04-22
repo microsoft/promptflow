@@ -1,6 +1,8 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import inspect
+import json
 import os
 from os import PathLike
 from pathlib import Path
@@ -17,7 +19,7 @@ from ._load_functions import load_flow
 from ._user_agent import USER_AGENT
 from ._utils import generate_yaml_entry
 from .entities import Run
-from .entities._flow import FlexFlow
+from .entities._flows import FlexFlow
 from .operations import RunOperations
 from .operations._connection_operations import ConnectionOperations
 from .operations._experiment_operations import ExperimentOperations
@@ -59,6 +61,154 @@ class PFClient:
             ClientUserAgentUtil.append_user_agent(kwargs["user_agent"])
         self._traces = TraceOperations()
         setup_user_agent_to_operation_context(USER_AGENT)
+
+    def _run(
+        self,
+        flow: Union[str, PathLike, Callable] = None,
+        *,
+        data: Union[str, PathLike] = None,
+        run: Union[str, Run] = None,
+        column_mapping: dict = None,
+        variant: str = None,
+        connections: dict = None,
+        environment_variables: dict = None,
+        properties: dict = None,
+        name: str = None,
+        display_name: str = None,
+        tags: Dict[str, str] = None,
+        resume_from: Union[str, Run] = None,
+        code: Union[str, PathLike] = None,
+        init: Optional[dict] = None,
+        **kwargs,
+    ) -> Run:
+        """Run flow against provided data or run. Hide some parameters for internal use. Like "properties".
+
+        .. note::
+            At least one of the ``data`` or ``run`` parameters must be provided.
+
+        .. admonition:: Column_mapping
+
+            Column mapping is a mapping from flow input name to specified values.
+            If specified, the flow will be executed with provided value for specified inputs.
+            The value can be:
+
+            - from data:
+                - ``data.col1``
+            - from run:
+                - ``run.inputs.col1``: if need reference run's inputs
+                - ``run.output.col1``: if need reference run's outputs
+            - Example:
+                - ``{"ground_truth": "${data.answer}", "prediction": "${run.outputs.answer}"}``
+
+        :param flow: Path to the flow directory to run evaluation.
+        :type flow: Union[str, PathLike]
+        :param data: Pointer to the test data (of variant bulk runs) for eval runs.
+        :type data: Union[str, PathLike]
+        :param run: Flow run ID or flow run. This parameter helps keep lineage between
+            the current run and variant runs. Batch outputs can be
+            referenced as ``${run.outputs.col_name}`` in inputs_mapping.
+        :type run: Union[str, ~promptflow.entities.Run]
+        :param column_mapping: Define a data flow logic to map input data.
+        :type column_mapping: Dict[str, str]
+        :param variant: Node & variant name in the format of ``${node_name.variant_name}``.
+            The default variant will be used if not specified.
+        :type variant: str
+        :param connections: Overwrite node level connections with provided values.
+            Example: ``{"node1": {"connection": "new_connection", "deployment_name": "gpt-35-turbo"}}``
+        :type connections: Dict[str, Dict[str, str]]
+        :param environment_variables: Environment variables to set by specifying a property path and value.
+            Example: ``{"key1": "${my_connection.api_key}", "key2"="value2"}``
+            The value reference to connection keys will be resolved to the actual value,
+            and all environment variables specified will be set into os.environ.
+        :type environment_variables: Dict[str, str]
+        :param properties: Additional properties to set for the run.
+        :type properties: Dict[str, Any]
+        :param name: Name of the run.
+        :type name: str
+        :param display_name: Display name of the run.
+        :type display_name: str
+        :param tags: Tags of the run.
+        :type tags: Dict[str, str]
+        :param resume_from: Create run resume from an existing run.
+        :type resume_from: str
+        :param code: Path to the code directory to run.
+        :type code: Union[str, PathLike]
+        :param init: Initialization parameters for flex flow, only supported when flow is callable class.
+        :type init: dict
+        :return: Flow run info.
+        :rtype: ~promptflow.entities.Run
+        """
+        from promptflow._proxy import ProxyFactory
+
+        if resume_from:
+            unsupported = {
+                k: v
+                for k, v in {
+                    "flow": flow,
+                    "data": data,
+                    "run": run,
+                    "column_mapping": column_mapping,
+                    "variant": variant,
+                    "connections": connections,
+                    "environment_variables": environment_variables,
+                    "properties": properties,
+                }.items()
+                if v
+            }
+            if any(unsupported):
+                raise ValueError(
+                    f"'resume_from' is not supported to be used with the with following parameters: {unsupported}. "
+                )
+            resume_from = resume_from.name if isinstance(resume_from, Run) else resume_from
+            return self.runs._create_by_resume_from(
+                resume_from=resume_from, name=name, display_name=display_name, tags=tags, **kwargs
+            )
+        if not flow:
+            raise ValueError("'flow' is required to create a run.")
+        if callable(flow):
+            logger.debug(f"flow entry {flow} is a callable.")
+        elif ProxyFactory().get_executor_proxy_cls(FlowLanguage.Python).is_flex_flow_entry(entry=flow):
+            logger.debug(f"flow entry {flow} is a python flex flow.")
+        elif os.path.exists(flow):
+            logger.debug(f"flow entry {flow} is a local path.")
+        else:
+            raise UserErrorException(f"Flow path {flow} does not exist and it's not a valid entry point.")
+        if data and not os.path.exists(data):
+            raise FileNotFoundError(f"data path {data} does not exist")
+        if not run and not data:
+            raise ValueError("at least one of data or run must be provided")
+
+        if callable(flow) and not inspect.isclass(flow) and not inspect.isfunction(flow):
+            dynamic_callable = flow
+            flow = flow.__class__
+        else:
+            dynamic_callable = None
+
+        with generate_yaml_entry(entry=flow, code=code) as flow:
+            # load flow object for validation and early failure
+            flow_obj = load_flow(source=flow)
+            # validate param conflicts
+            if isinstance(flow_obj, FlexFlow):
+                if variant or connections:
+                    logger.warning("variant and connections are not supported for eager flow, will be ignored")
+                    variant, connections = None, None
+            run = Run(
+                name=name,
+                display_name=display_name,
+                tags=tags,
+                data=data,
+                column_mapping=column_mapping,
+                run=run,
+                variant=variant,
+                flow=Path(flow),
+                connections=connections,
+                environment_variables=environment_variables,
+                properties=properties,
+                config=Configuration(overrides=self._config),
+                init=init,
+                dynamic_callable=dynamic_callable,
+            )
+            return self.runs.create_or_update(run=run, **kwargs)
 
     def run(
         self,
@@ -133,67 +283,22 @@ class PFClient:
         :return: Flow run info.
         :rtype: ~promptflow.entities.Run
         """
-        from promptflow._proxy import ProxyFactory
-
-        if resume_from:
-            unsupported = {
-                k: v
-                for k, v in {
-                    "flow": flow,
-                    "data": data,
-                    "run": run,
-                    "column_mapping": column_mapping,
-                    "variant": variant,
-                    "connections": connections,
-                    "environment_variables": environment_variables,
-                }.items()
-                if v
-            }
-            if any(unsupported):
-                raise ValueError(
-                    f"'resume_from' is not supported to be used with the with following parameters: {unsupported}. "
-                )
-            resume_from = resume_from.name if isinstance(resume_from, Run) else resume_from
-            return self.runs._create_by_resume_from(
-                resume_from=resume_from, name=name, display_name=display_name, tags=tags, **kwargs
-            )
-        if not flow:
-            raise ValueError("'flow' is required to create a run.")
-        if callable(flow):
-            logger.debug(f"flow entry {flow} is a callable.")
-        elif ProxyFactory().get_executor_proxy_cls(FlowLanguage.Python).is_flex_flow_entry(entry=flow):
-            logger.debug(f"flow entry {flow} is a python flex flow.")
-        elif os.path.exists(flow):
-            logger.debug(f"flow entry {flow} is a local path.")
-        else:
-            raise UserErrorException(f"Flow path {flow} does not exist and it's not a valid entry point.")
-        if data and not os.path.exists(data):
-            raise FileNotFoundError(f"data path {data} does not exist")
-        if not run and not data:
-            raise ValueError("at least one of data or run must be provided")
-        with generate_yaml_entry(entry=flow, code=code) as flow:
-            # load flow object for validation and early failure
-            flow_obj = load_flow(source=flow)
-            # validate param conflicts
-            if isinstance(flow_obj, FlexFlow):
-                if variant or connections:
-                    logger.warning("variant and connections are not supported for eager flow, will be ignored")
-                    variant, connections = None, None
-            run = Run(
-                name=name,
-                display_name=display_name,
-                tags=tags,
-                data=data,
-                column_mapping=column_mapping,
-                run=run,
-                variant=variant,
-                flow=Path(flow),
-                connections=connections,
-                environment_variables=environment_variables,
-                config=Configuration(overrides=self._config),
-                init=init,
-            )
-            return self.runs.create_or_update(run=run, **kwargs)
+        return self._run(
+            flow=flow,
+            data=data,
+            run=run,
+            column_mapping=column_mapping,
+            variant=variant,
+            connections=connections,
+            environment_variables=environment_variables,
+            name=name,
+            display_name=display_name,
+            tags=tags,
+            resume_from=resume_from,
+            code=code,
+            init=init,
+            **kwargs,
+        )
 
     def stream(self, run: Union[str, Run], raise_on_error: bool = True) -> Run:
         """Stream run logs to the console.
@@ -312,17 +417,18 @@ class PFClient:
         self,
         flow: Union[str, PathLike],
         *,
-        inputs: dict = None,
+        inputs: Union[dict, PathLike] = None,
         variant: str = None,
         node: str = None,
         environment_variables: dict = None,
+        init: Optional[dict] = None,
     ) -> dict:
         """Test flow or node.
 
         :param flow: path to flow directory to test
         :type flow: Union[str, PathLike]
-        :param inputs: Input data for the flow test
-        :type inputs: dict
+        :param inputs: Input data or json file for the flow test
+        :type inputs: Union[dict, PathLike]
         :param variant: Node & variant name in format of ${node_name.variant_name}, will use default variant
             if not specified.
         :type variant: str
@@ -333,11 +439,26 @@ class PFClient:
             The value reference to connection keys will be resolved to the actual value,
             and all environment variables specified will be set into os.environ.
         :type environment_variables: dict
+        :param init: Initialization parameters for flex flow, only supported when flow is callable class.
+        :type init: dict
         :return: The result of flow or node
         :rtype: dict
         """
+        # Load the inputs for the flow test from sample file.
+        if isinstance(inputs, (str, Path)):
+            if Path(inputs).suffix not in [".json", ".jsonl"]:
+                raise UserErrorException("Only support jsonl or json file as input.")
+            if not Path(inputs).exists():
+                raise UserErrorException(f"Cannot find inputs file {inputs}.")
+            if Path(inputs).suffix == ".json":
+                with open(inputs, "r") as f:
+                    inputs = json.load(f)
+            else:
+                from promptflow._utils.load_data import load_data
+
+                inputs = load_data(local_path=inputs)[0]
         return self.flows.test(
-            flow=flow, inputs=inputs, variant=variant, environment_variables=environment_variables, node=node
+            flow=flow, inputs=inputs, variant=variant, environment_variables=environment_variables, node=node, init=init
         )
 
     @property

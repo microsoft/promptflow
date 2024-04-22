@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Callable, Dict
 
-from .contracts.generator_proxy import GeneratorProxy
+from .contracts.generator_proxy import AsyncGeneratorProxy, GeneratorProxy
 
 
 def serialize(value: object, remove_null: bool = False, serialization_funcs: Dict[type, Callable] = None) -> dict:
@@ -18,7 +18,7 @@ def serialize(value: object, remove_null: bool = False, serialization_funcs: Dic
         return value.value
     if isinstance(value, list):
         return [serialize(v, remove_null, serialization_funcs) for v in value]
-    if isinstance(value, GeneratorProxy):
+    if isinstance(value, (GeneratorProxy, AsyncGeneratorProxy)):
         # TODO: The current implementation of the serialize function is not self-explanatory, as value.items is mutable
         # whereas the serialize function should deal with a fixed object. We should rename the function to
         # to_serializable to better reflect its purpose.
@@ -85,6 +85,8 @@ def get_prompt_param_name_from_func(f):
     try:
         from promptflow.contracts.types import PromptTemplate
 
-        return next((k for k, annotation in f.__annotations__.items() if annotation == PromptTemplate), None)
+        return next(
+            (k for k, annotation in getattr(f, "__annotations__", {}).items() if annotation == PromptTemplate), None
+        )
     except ImportError:
         return None

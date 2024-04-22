@@ -5,6 +5,7 @@ import collections
 import datetime
 import hashlib
 import importlib
+import inspect
 import json
 import os
 import platform
@@ -28,15 +29,13 @@ import keyring
 import pydash
 from cryptography.fernet import Fernet
 from filelock import FileLock
-from jinja2 import Template
 from keyring.errors import NoKeyringError
 from marshmallow import ValidationError
 
-import promptflow
-from promptflow._constants import ENABLE_MULTI_CONTAINER_KEY, EXTENSION_UA, FlowLanguage
+from promptflow._constants import ENABLE_MULTI_CONTAINER_KEY, EXTENSION_UA, FLOW_FLEX_YAML, FlowLanguage
+from promptflow._core.entry_meta_generator import generate_flow_meta as _generate_flow_meta
 from promptflow._sdk._constants import (
     AZURE_WORKSPACE_REGEX_FORMAT,
-    DAG_FILE_NAME,
     DEFAULT_ENCODING,
     FLOW_TOOLS_JSON,
     FLOW_TOOLS_JSON_GEN_TIMEOUT,
@@ -55,6 +54,8 @@ from promptflow._sdk._constants import (
     VARIANTS,
     AzureMLWorkspaceTriad,
     CommonYamlFields,
+    RunInfoSources,
+    RunMode,
 )
 from promptflow._sdk._errors import (
     DecryptConnectionError,
@@ -63,13 +64,17 @@ from promptflow._sdk._errors import (
     UnsecureConnectionError,
 )
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
-from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
+from promptflow._utils.context_utils import inject_sys_path
+from promptflow._utils.flow_utils import is_flex_flow, resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
 from promptflow.contracts.tool import ToolType
-from promptflow.core._utils import generate_flow_meta as _generate_flow_meta
-from promptflow.core._utils import get_used_connection_names_from_dict, update_dict_value_with_connections
+from promptflow.core._utils import (
+    get_used_connection_names_from_dict,
+    render_jinja_template_content,
+    update_dict_value_with_connections,
+)
 from promptflow.exceptions import ErrorTarget, UserErrorException, ValidationException
 
 logger = get_cli_sdk_logger()
@@ -193,8 +198,9 @@ def load_from_dict(schema: Any, data: Dict, context: Dict, additional_message: s
 
 def render_jinja_template(template_path, *, trim_blocks=True, keep_trailing_newline=True, **kwargs):
     with open(template_path, "r", encoding=DEFAULT_ENCODING) as f:
-        template = Template(f.read(), trim_blocks=trim_blocks, keep_trailing_newline=keep_trailing_newline)
-    return template.render(**kwargs)
+        return render_jinja_template_content(
+            f.read(), trim_blocks=trim_blocks, keep_trailing_newline=keep_trailing_newline, **kwargs
+        )
 
 
 def print_yellow_warning(message):
@@ -286,12 +292,8 @@ def _merge_local_code_and_additional_includes(code_path: Path):
             for name in src.glob("*"):
                 additional_includes_copy(name, Path(relative_path) / name.name, target_dir)
 
-    if code_path.is_dir():
-        yaml_path = (Path(code_path) / DAG_FILE_NAME).resolve()
-        code_path = code_path.resolve()
-    else:
-        yaml_path = code_path.resolve()
-        code_path = code_path.parent.resolve()
+    code_path, yaml_file = resolve_flow_path(code_path, check_flow_exist=False)
+    yaml_path = code_path / yaml_file
 
     with tempfile.TemporaryDirectory() as temp_dir:
         shutil.copytree(code_path.resolve().as_posix(), temp_dir, dirs_exist_ok=True)
@@ -327,15 +329,80 @@ def incremental_print(log: str, printed: int, fileout) -> int:
 
 def get_promptflow_sdk_version() -> str:
     try:
+        import promptflow
+
         return promptflow.__version__
-    except AttributeError:
-        # if promptflow is installed from source, it does not have __version__ attribute
-        return "0.0.1"
+    except (ImportError, AttributeError):
+        # if promptflow is not installed from root, it does not have __version__ attribute
+        return None
 
 
-def print_pf_version():
-    print("promptflow\t\t\t {}".format(get_promptflow_sdk_version()))
-    print()
+def get_promptflow_tracing_version() -> Union[str, None]:
+    try:
+        from promptflow.tracing._version import __version__
+
+        return __version__
+    except ImportError:
+        return None
+
+
+def get_promptflow_core_version() -> Union[str, None]:
+    try:
+        from promptflow.core._version import __version__
+
+        return __version__
+    except ImportError:
+        return None
+
+
+def get_promptflow_devkit_version() -> Union[str, None]:
+    try:
+        from promptflow._sdk._version import __version__
+
+        return __version__
+    except ImportError:
+        return None
+
+
+def get_promptflow_azure_version() -> Union[str, None]:
+    try:
+        from promptflow.azure._version import __version__
+
+        return __version__
+    except ImportError:
+        return None
+
+
+def print_promptflow_version_dict_string(with_azure: bool = False, ignore_none: bool = False):
+    version_dict = {"promptflow": get_promptflow_sdk_version()}
+    # check tracing version
+    version_tracing = get_promptflow_tracing_version()
+    if version_tracing:
+        version_dict["promptflow-tracing"] = version_tracing
+    # check core version
+    version_core = get_promptflow_core_version()
+    if version_core:
+        version_dict["promptflow-core"] = version_core
+    # check devkit version
+    version_devkit = get_promptflow_devkit_version()
+    if version_devkit:
+        version_dict["promptflow-devkit"] = version_devkit
+
+    if with_azure:
+        # check azure version
+        version_azure = get_promptflow_azure_version()
+        if version_azure:
+            version_dict["promptflow-azure"] = version_azure
+    if ignore_none:
+        version_dict = {k: v for k, v in version_dict.items() if v is not None}
+    version_dict_string = (
+        json.dumps(version_dict, ensure_ascii=False, indent=2, sort_keys=True, separators=(",", ": ")) + "\n"
+    )
+    print(version_dict_string)
+
+
+def print_pf_version(with_azure: bool = False, ignore_none: bool = False):
+    print_promptflow_version_dict_string(with_azure, ignore_none)
     print("Executable '{}'".format(os.path.abspath(sys.executable)))
     print("Python ({}) {}".format(platform.system(), sys.version))
 
@@ -588,9 +655,9 @@ def generate_flow_tools_json(
     :param used_packages_only: whether to only include used packages, default value is False.
     :param source_path_mapping: if specified, record yaml paths for each source.
     """
-    flow_directory = Path(flow_directory).resolve()
+    flow_directory, flow_file = resolve_flow_path(flow_directory, check_flow_exist=False)
     # parse flow DAG
-    data = load_yaml(flow_directory / DAG_FILE_NAME)
+    data = load_yaml(flow_directory / flow_file)
 
     tools, used_packages, _source_path_mapping = _get_involved_code_and_package(data)
 
@@ -879,20 +946,6 @@ def parse_otel_span_status_code(value: int) -> str:
         return "Error"
 
 
-def _generate_meta_from_file(working_dir, source_path, entry, meta_dict, exception_list):
-    from promptflow._core.tool_meta_generator import generate_flow_meta_dict_by_file
-
-    with _change_working_dir(working_dir), inject_sys_path(working_dir):
-        try:
-            result = generate_flow_meta_dict_by_file(
-                path=source_path,
-                entry=entry,
-            )
-            meta_dict.update(result)
-        except Exception as e:
-            exception_list.append(str(e))
-
-
 def extract_workspace_triad_from_trace_provider(trace_provider: str) -> AzureMLWorkspaceTriad:
     match = re.match(AZURE_WORKSPACE_REGEX_FORMAT, trace_provider)
     if not match or len(match.groups()) != 5:
@@ -934,6 +987,7 @@ def generate_yaml_entry(entry: Union[str, PathLike, Callable], code: Path = None
 @contextmanager
 def create_temp_flex_flow_yaml(entry: Union[str, PathLike, Callable], code: Path = None):
     """Create a temporary flow.dag.yaml in code folder"""
+
     logger.info("Create temporary entry for flex flow.")
     if callable(entry):
         entry = callable_to_entry_string(entry)
@@ -944,7 +998,7 @@ def create_temp_flex_flow_yaml(entry: Union[str, PathLike, Callable], code: Path
         code = Path(code)
         if not code.exists():
             raise UserErrorException(f"Code path {code.as_posix()} does not exist.")
-    flow_yaml_path = code / DAG_FILE_NAME
+    flow_yaml_path = code / FLOW_FLEX_YAML
     existing_content = None
 
     try:
@@ -968,10 +1022,18 @@ def create_temp_flex_flow_yaml(entry: Union[str, PathLike, Callable], code: Path
                     logger.warning(f"Failed to delete generated: {flow_yaml_path.as_posix()}, error: {e}")
 
 
+def can_accept_kwargs(func):
+    sig = inspect.signature(func)
+    params = sig.parameters.values()
+    return any(param.kind == param.VAR_KEYWORD for param in params)
+
+
 def callable_to_entry_string(callable_obj: Callable) -> str:
     """Convert callable object to entry string."""
-    if not isfunction(callable_obj):
-        raise UserErrorException(f"{callable_obj} is not function, only function is supported.")
+    if not isfunction(callable_obj) and not hasattr(callable_obj, "__call__"):
+        raise UserErrorException(
+            f"{callable_obj} is not function or callable object, only function or callable object are supported."
+        )
 
     try:
         module_str = callable_obj.__module__
@@ -992,7 +1054,65 @@ def callable_to_entry_string(callable_obj: Callable) -> str:
     return f"{module_str}:{func_str}"
 
 
+def entry_string_to_callable(entry_file, entry) -> Callable:
+    with inject_sys_path(Path(entry_file).parent):
+        try:
+            module_name, func_name = entry.split(":")
+            module = importlib.import_module(module_name)
+        except Exception as e:
+            raise UserErrorException(
+                message_format="Failed to load python module for {entry_file}",
+                entry_file=entry_file,
+            ) from e
+        return getattr(module, func_name, None)
+
+
+def is_flex_run(run: "Run") -> bool:
+    if run._run_source == RunInfoSources.LOCAL:
+        try:
+            # The flow yaml may have been temporarily generated and deleted after creating a run.
+            # So check_flow_exist=False.
+            return is_flex_flow(flow_path=run.flow, check_flow_exist=False)
+        except Exception as e:
+            # For run with incomplete flow snapshot, ignore load flow error to make sure it can still show.
+            logger.debug(f"Failed to check is flex flow from {run.flow} due to {e}.")
+            return False
+    elif run._run_source in [RunInfoSources.INDEX_SERVICE, RunInfoSources.RUN_HISTORY]:
+        return run._properties.get("azureml.promptflow.run_mode") == RunMode.EAGER
+    # TODO(2901279): support eager mode for run created from run folder
+    return False
+
+
+def format_signature_type(flow_meta):
+    # signature is language irrelevant, so we apply json type system
+    # TODO: enable this mapping after service supports more types
+    value_type_map = {
+        # ValueType.INT.value: SignatureValueType.INT.value,
+        # ValueType.DOUBLE.value: SignatureValueType.NUMBER.value,
+        # ValueType.LIST.value: SignatureValueType.ARRAY.value,
+        # ValueType.BOOL.value: SignatureValueType.BOOL.value,
+    }
+    for port_type in ["inputs", "outputs", "init"]:
+        if port_type not in flow_meta:
+            continue
+        for port_name, port in flow_meta[port_type].items():
+            if port["type"] in value_type_map:
+                port["type"] = value_type_map[port["type"]]
+
+
 generate_flow_meta = _generate_flow_meta
 # DO NOT remove the following line, it's used by the runtime imports from _sdk/_utils directly
 get_used_connection_names_from_dict = get_used_connection_names_from_dict
 update_dict_value_with_connections = update_dict_value_with_connections
+
+
+def get_flow_name(flow) -> str:
+    if isinstance(flow, Path):
+        return flow.resolve().name
+
+    from promptflow._sdk.entities._flows.dag import Flow as DAGFlow
+
+    if isinstance(flow, DAGFlow):
+        return flow.name
+    # should be promptflow._sdk.entities._flows.base.FlowBase: flex flow, prompty, etc.
+    return flow.code.name

@@ -2,7 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Dict, List
 
 
 class AbstractInspectorProxy:
@@ -28,7 +28,34 @@ class AbstractInspectorProxy:
         """Check the type of each node input/attribute and return the connection names used in the flow."""
         raise NotImplementedError()
 
-    @classmethod
     def is_flex_flow_entry(self, entry: str) -> bool:
         """Check if the flow is a flex flow entry."""
         raise NotImplementedError()
+
+    def get_entry_meta(
+        self,
+        entry: str,
+        working_dir: Path,
+        **kwargs,
+    ) -> Dict[str, Any]:
+        """Generate meta data for a flow entry."""
+        raise NotImplementedError()
+
+    def prepare_metadata(
+        self,
+        flow_file: Path,
+        working_dir: Path,
+        **kwargs,
+    ) -> None:
+        """Prepare metadata for a flow.
+
+        This method will be called:
+        1) before local flow test;
+        2) before local run create;
+        3) before flow upload.
+
+        For dag flow, it will generate flow.tools.json;
+        For python flex flow, it will do nothing;
+        For csharp flex flow, it will generate metadata based on a dotnet command.
+        """
+        return

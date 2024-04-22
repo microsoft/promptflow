@@ -2,12 +2,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import os
-import re
 
-from promptflow._constants import PF_NO_INTERACTIVE_LOGIN
-from promptflow._sdk._constants import AZURE_WORKSPACE_REGEX_FORMAT
+from promptflow._constants import PF_NO_INTERACTIVE_LOGIN, AzureWorkspaceKind
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
-from promptflow.core._errors import MalformedConnectionProviderConfig, MissingRequiredPackage
+from promptflow.core._errors import MissingRequiredPackage, UnsupportedWorkspaceKind
 from promptflow.exceptions import ValidationException
 
 
@@ -17,7 +15,7 @@ def check_required_packages():
         import azure.identity  # noqa: F401
     except ImportError as e:
         raise MissingRequiredPackage(
-            message="Please install 'promptflow-core[azureml-serving]' to use workspace connection."
+            message="Please install 'promptflow-core[azureml-serving]' to use Azure related features."
         ) from e
 
 
@@ -54,16 +52,6 @@ def get_token(credential, resource) -> str:
     return token
 
 
-def extract_workspace(provider_config) -> tuple:
-    match = re.match(AZURE_WORKSPACE_REGEX_FORMAT, provider_config)
-    if not match or len(match.groups()) != 5:
-        raise MalformedConnectionProviderConfig(provider_config=provider_config)
-    subscription_id = match.group(1)
-    resource_group = match.group(3)
-    workspace_name = match.group(5)
-    return subscription_id, resource_group, workspace_name
-
-
 def is_github_codespaces():
     """Check if the current environment is GitHub Codespaces."""
     # Ref:
@@ -79,3 +67,14 @@ def interactive_credential_disabled():
 def is_from_cli():
     """Check if the current execution is from promptflow-cli."""
     return "promptflow-cli" in ClientUserAgentUtil.get_user_agent()
+
+
+def check_connection_provider_resource(resource_id: str, credential, pkg_name):
+    from .._utils import get_workspace_from_resource_id
+
+    workspace = get_workspace_from_resource_id(resource_id, credential, pkg_name)
+    if workspace._kind not in [AzureWorkspaceKind.DEFAULT, AzureWorkspaceKind.PROJECT]:
+        raise UnsupportedWorkspaceKind(
+            message=f"Workspace kind {workspace._kind!r} is not supported. "
+            f"Please use either an azure machine learning workspace or an azure ai project."
+        )

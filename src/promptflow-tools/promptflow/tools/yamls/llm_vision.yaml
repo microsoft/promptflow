@@ -1,0 +1,101 @@
+promptflow.tools.llm_vision.llm_vision:
+  name: LLM-Vision
+  description:
+    default: Use OpenAI-like Large Language Model to leverage vision ability.
+    aml: Use OpenAI-like Large Language Model to leverage vision ability. For more details, refer to this [document](https://aka.ms/promptflow/llm-vision-tool).
+    ai_studio: Use OpenAI-like Large Language Model to leverage vision ability. For more details, refer to this [document](https://aka.ms/aistudio/pf/llm-vision-tool).
+  type: custom_llm
+  module: promptflow.tools.llm_vision
+  function: llm_vision
+  tool_state: preview
+  category: llm
+  icon:
+    light: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAx0lEQVR4nJWSwQ2CQBBFX0jAcjgqXUgPJNiIsQQrIVCIFy8GC6ABDcGDX7Mus9n1Xz7zZ+fPsLPwH4bUg0dD2wMPcbR48Uxq4AKU4iSTDwZ1LhWXipN/B3V0J6hjBTvgLHZNonewBXrgDpzEvXSIjN0BE3AACmmF4kl5F6tNzcCoLpW0SvGovFvsb4oZ2AANcAOu4ka6axCcINN3rg654sww+CYsPD0OwjcozFNh/Qcd78tqVbCIW+n+Fky472Bh/Q6SYb1EEy8tDzd+9IsVPAAAAABJRU5ErkJggg==
+    dark: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA2ElEQVR4nJXSzW3CQBAF4DUSTjk+Al1AD0ikESslpBIEheRALhEpgAYSWV8OGUublf/yLuP3PPNmdndS+gdwXZrYDmh7fGE/W+wXbaYd8IYm4rxJPnZ0boI3wZcdJxs/n+AwV7DFK7aFyfQdYIMLPvES8YJNf5yp4jMeeEYdWh38gXOR35YGHe5xabvQdsHv6PLi8qV6gycc8YH3iMfQu6Lh4ASr+F5Hh3XwVWnQYzUkVlX1nccplAb1SN6Y/sfgmlK64VS8wimldIv/0yj2QLkHizG0iWP4AVAfQ34DVQONAAAAAElFTkSuQmCC
+  default_prompt: |
+    # system:
+    As an AI assistant, your task involves interpreting images and responding to questions about the image.
+    Remember to provide accurate answers based on the information present in the image.
+
+    # user:
+    Can you tell me what the image depicts?
+    ![image]({{image_input}})
+  inputs:
+    connection:
+      type:
+      - AzureOpenAIConnection
+      - OpenAIConnection
+    deployment_name:
+      type:
+        - string
+      enabled_by: connection
+      enabled_by_type:
+      - AzureOpenAIConnection
+      capabilities:
+        chat_completion: true
+        include:
+          model_version:
+          - vision-preview
+      allow_manual_entry: true
+      is_multi_select: false
+      ui_hints:
+        text_box_size: lg
+    model:
+      enabled_by: connection
+      enabled_by_type:
+      - OpenAIConnection
+      enum:
+      - gpt-4-vision-preview
+      allow_manual_entry: true
+      type:
+        - string
+      ui_hints:
+        text_box_size: lg
+    temperature:
+      default: 1
+      type:
+        - double
+      ui_hints:
+        text_box_size: xs
+    top_p:
+      default: 1
+      type:
+        - double
+      ui_hints:
+        text_box_size: xs
+    stop:
+      default: ""
+      type:
+        - list
+      ui_hints:
+        text_box_size: md
+    max_tokens:
+      default: ""
+      type:
+        - int
+      ui_hints:
+        text_box_size: xs
+    presence_penalty:
+      default: 0
+      type:
+        - double
+    frequency_penalty:
+      type:
+      - int
+      default: 0
+      ui_hints:
+        text_box_size: xs
+    seed:
+      default: ""
+      type:
+        - int
+      ui_hints:
+        text_box_size: xs
+    detail:
+      enum:
+      - low
+      - high
+      - auto
+      type:
+        - string
+      default: auto

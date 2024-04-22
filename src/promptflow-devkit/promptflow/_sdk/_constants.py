@@ -8,13 +8,14 @@ from enum import Enum
 from pathlib import Path
 
 from promptflow._constants import (
+    AZURE_WORKSPACE_REGEX_FORMAT,
     CONNECTION_SCRUBBED_VALUE,
     CONNECTION_SCRUBBED_VALUE_NO_CHANGE,
     PROMPT_FLOW_DIR_NAME,
-    ConnectionAuthMode,
     ConnectionType,
     CustomStrongTypeConnectionConfigs,
 )
+from promptflow.constants import ConnectionAuthMode
 
 LOGGER_NAME = "promptflow"
 
@@ -68,7 +69,7 @@ def _prepare_home_dir() -> Path:
 
 HOME_PROMPT_FLOW_DIR = _prepare_home_dir()
 
-DAG_FILE_NAME = "flow.dag.yaml"
+DEFAULT_REQUIREMENTS_FILE_NAME = "requirements.txt"
 NODE_VARIANTS = "node_variants"
 VARIANTS = "variants"
 NODES = "nodes"
@@ -78,6 +79,7 @@ USE_VARIANTS = "use_variants"
 DEFAULT_VAR_ID = "default_variant_id"
 FLOW_TOOLS_JSON = "flow.tools.json"
 FLOW_META_JSON = "flow.json"
+SERVE_SAMPLE_JSON_PATH = "sample.json"
 FLOW_TOOLS_JSON_GEN_TIMEOUT = 60
 FLOW_META_JSON_GEN_TIMEOUT = 60
 PROMPT_FLOW_RUNS_DIR_NAME = ".runs"
@@ -119,10 +121,7 @@ SCRUBBED_VALUE_USER_INPUT = "<user-input>"
 WORKSPACE_LINKED_DATASTORE_NAME = "workspaceblobstore"
 LINE_NUMBER = "line_number"
 AZUREML_PF_RUN_PROPERTIES_LINEAGE = "azureml.promptflow.input_run_id"
-AZURE_WORKSPACE_REGEX_FORMAT = (
-    "^azureml:[/]{1,2}subscriptions/([^/]+)/resource(groups|Groups)/([^/]+)"
-    "(/providers/Microsoft.MachineLearningServices)?/workspaces/([^/]+)$"
-)
+AZURE_WORKSPACE_REGEX_FORMAT = AZURE_WORKSPACE_REGEX_FORMAT
 DEFAULT_ENCODING = "utf-8"
 LOCAL_STORAGE_BATCH_SIZE = 1
 LOCAL_SERVICE_PORT = 5000
@@ -250,6 +249,11 @@ class RunStatus(object):
         """Return the list of running statuses."""
         return [cls.CANCEL_REQUESTED, cls.FINALIZING]
 
+    @classmethod
+    def get_terminated_statuses(cls):
+        """Return the list of terminated statuses."""
+        return [cls.COMPLETED, cls.FAILED, cls.CANCELED]
+
 
 class FlowRunProperties:
     FLOW_PATH = "flow_path"
@@ -292,7 +296,6 @@ class CLIListOutputFormat:
 
 class LocalStorageFilenames:
     SNAPSHOT_FOLDER = "snapshot"
-    DAG = DAG_FILE_NAME
     FLOW_TOOLS_JSON = FLOW_TOOLS_JSON
     INPUTS = "inputs.jsonl"
     OUTPUTS = "outputs.jsonl"
@@ -463,6 +466,41 @@ class LineRunFieldName:
     EVALUATIONS = "evaluations"
 
 
+class Local2Cloud:
+    BLOB_ROOT_PROMPTFLOW = "promptflow"
+    BLOB_ROOT_RUNS = "runs"
+    BLOB_ARTIFACTS = "PromptFlowArtifacts"
+    BLOB_EXPERIMENT_RUN = "ExperimentRun"
+    ASSET_NAME_DEBUG_INFO = "debug_info"
+    ASSET_NAME_FLOW_OUTPUTS = "flow_outputs"
+    EXECUTION_LOG = "logs/azureml/executionlogs.txt"
+
+
+class Local2CloudProperties:
+    """Run properties that server needs when uploading local run to cloud."""
+
+    TOTAL_TOKENS = "azureml.promptflow.total_tokens"
+
+
+class Local2CloudUserProperties:
+    """Run properties that user can specify when uploading local run to cloud."""
+
+    EVAL_RUN = "_azureml.evaluation_run"
+    EVAL_ARTIFACTS = "_azureml.evaluate_artifacts"
+
+    @staticmethod
+    def get_all_values():
+        values = [
+            value for key, value in vars(Local2CloudUserProperties).items() if isinstance(value, str) and key.isupper()
+        ]
+        return values
+
+
+class CloudDatastore:
+    DEFAULT = "workspaceblobstore"
+    ARTIFACT = "workspaceartifactstore"
+
+
 class CreatedByFieldName:
     OBJECT_ID = "object_id"
     TENANT_ID = "tenant_id"
@@ -489,6 +527,21 @@ class IdentityKeys(str, Enum):
 class OSType:
     WINDOWS = "Windows"
     LINUX = "Linux"
+
+
+class SignatureValueType(str, Enum):
+    STRING = "string"
+    NUMBER = "number"
+    INT = "integer"
+    OBJECT = "object"
+    ARRAY = "array"
+    BOOL = "boolean"
+    # null will be controlled by required field
+    # NULL = "null"
+
+
+class RunMode:
+    EAGER = "Eager"
 
 
 # Note: Keep these for backward compatibility

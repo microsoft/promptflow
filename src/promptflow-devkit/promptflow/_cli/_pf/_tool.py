@@ -31,7 +31,7 @@ def add_tool_parser(subparsers):
     tool_parser = subparsers.add_parser(
         "tool",
         description="Manage tools for promptflow.",
-        help="pf tool",
+        help="Manage tools.",
     )
     subparsers = tool_parser.add_subparsers()
     add_parser_init_tool(subparsers)

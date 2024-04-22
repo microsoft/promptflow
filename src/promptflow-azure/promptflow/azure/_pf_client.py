@@ -10,7 +10,6 @@ from azure.core.credentials import TokenCredential
 
 from promptflow._sdk._constants import MAX_SHOW_DETAILS_RESULTS
 from promptflow._sdk._errors import RunOperationParameterError
-from promptflow._sdk._user_agent import USER_AGENT
 from promptflow._sdk._utils import generate_yaml_entry
 from promptflow._sdk.entities import Run
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil, setup_user_agent_to_operation_context
@@ -21,6 +20,8 @@ from promptflow.azure.operations._connection_operations import ConnectionOperati
 from promptflow.azure.operations._flow_operations import FlowOperations
 from promptflow.azure.operations._trace_operations import TraceOperations
 from promptflow.exceptions import UserErrorException
+
+from ._user_agent import USER_AGENT
 
 
 class PFClient:
@@ -261,9 +262,6 @@ class PFClient:
         :return: flow run info.
         :rtype: ~promptflow.entities.Run
         """
-        # TODO(3047273): support cloud run init
-        if init:
-            raise NotImplementedError("init is not supported for pfazure.")
         if resume_from:
             unsupported = {
                 k: v
@@ -300,6 +298,7 @@ class PFClient:
                 flow=flow,
                 connections=connections,
                 environment_variables=environment_variables,
+                init=init,
             )
             return self.runs.create_or_update(run=run, **kwargs)
 

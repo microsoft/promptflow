@@ -24,11 +24,10 @@ from azure.ai.ml.entities import Workspace
 from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
 from azure.core.exceptions import HttpResponseError
 
-from promptflow._constants import FLEX_FLOW_PUBLIC_NAME
-from promptflow._proxy import ProxyFactory
+from promptflow._constants import FLOW_DAG_YAML
+from promptflow._constants import FlowType as FlowYamlType
 from promptflow._sdk._constants import (
     CLIENT_FLOW_TYPE_2_SERVICE_FLOW_TYPE,
-    DAG_FILE_NAME,
     MAX_LIST_CLI_RESULTS,
     WORKSPACE_LINKED_DATASTORE_NAME,
     FlowType,
@@ -144,8 +143,8 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         if not file_share_flow_path:
             raise FlowOperationError(f"File share path should not be empty, got {file_share_flow_path!r}.")
 
-        # create flow to remote
-        flow_definition_file_path = f"{file_share_flow_path}/{DAG_FILE_NAME}"
+        # create flow to remote. Currently only dag yaml is supported to be uploaded to cloud
+        flow_definition_file_path = f"{file_share_flow_path}/{FLOW_DAG_YAML}"
         rest_flow = self._create_remote_flow_via_file_share_path(
             flow_display_name=flow_display_name,
             flow_type=flow_type,
@@ -208,34 +207,30 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
     @staticmethod
     def _validate_flow_creation_parameters(source, flow_display_name=None, flow_type=None, **kwargs):
         """Validate the parameters for flow creation operation."""
-        from promptflow._sdk.entities._flow import FlexFlow
+        from promptflow._sdk.entities._flows import FlexFlow
         from promptflow.client import load_flow as load_local_flow
 
         # validate the source folder
         logger.info("Validating flow source.")
-        if not Path(source, DAG_FILE_NAME).exists():
-            raise UserErrorException(
-                f"Flow source must be a directory with flow definition yaml '{DAG_FILE_NAME}'. "
-                f"Got {Path(source).resolve().as_posix()!r}."
-            )
+        flow_path, flow_file = resolve_flow_path(source)
         # eager flow is not supported since eager flow don't have cloud authoring experience
-        flow_entity = load_local_flow(source)
+        flow_entity = load_local_flow(flow_path)
         if isinstance(flow_entity, FlexFlow):
             raise UserErrorException(
-                f"Flow source {Path(source).resolve().as_posix()!r}. is {FLEX_FLOW_PUBLIC_NAME} flow. "
+                f"Flow source {Path(flow_path).resolve().as_posix()!r}. is {FlowYamlType.FLEX_FLOW} flow. "
                 "Creating it to cloud is not supported."
             )
 
         # validate flow source with flow schema
         logger.info("Validating flow schema.")
-        flow_dict = FlowOperations._validate_flow_schema(source, flow_display_name, flow_type, **kwargs)
+        flow_dict = FlowOperations._validate_flow_schema(flow_path, flow_display_name, flow_type, **kwargs)
 
         logger.info("Validating flow creation parameters.")
-        flow = load_flow(source)
+        flow = load_flow(flow_path)
         # if no flow name specified, use "flow name + timestamp"
         flow_display_name = flow_dict.get("display_name", None)
         if not flow_display_name:
-            flow_display_name = f"{Path(source).name}-{datetime.now().strftime('%m-%d-%Y-%H-%M-%S')}"
+            flow_display_name = f"{Path(flow_path).name}-{datetime.now().strftime('%m-%d-%Y-%H-%M-%S')}"
 
         # if no flow type specified, use default flow type "standard"
         flow_type = flow_dict.get("type", None)
@@ -256,7 +251,7 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
     @staticmethod
     def _validate_flow_schema(source, display_name=None, type=None, **kwargs):
         """Validate the flow schema."""
-        from promptflow._sdk.entities._flow import Flow
+        from promptflow._sdk.entities._flows import Flow
 
         params_override = copy.deepcopy(kwargs)
         if display_name is not None:
@@ -493,13 +488,6 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                 return
             if flow._code_uploaded:
                 return
-
-            # generate .promptflow/flow.json for eager flow and .promptflow/flow.dag.yaml for non-eager flow
-            flow_directory, flow_file = resolve_flow_path(code.path)
-            ProxyFactory().get_executor_proxy_cls(flow.language).dump_metadata(
-                flow_file=flow_directory / flow_file,
-                working_dir=flow_directory,
-            )
 
             if ignore_tools_json:
                 ignore_file = code._ignore_file

@@ -1,0 +1,107 @@
+name: promptflow-evals-unit-test
+
+on:
+  schedule:
+    - cron: "40 10 * * *" # 2:40 PST every day
+  pull_request:
+    paths:
+      - src/promptflow-evals/**
+      - .github/workflows/promptflow-evals-unit-test.yml
+  workflow_dispatch:
+
+env:
+  IS_IN_CI_PIPELINE: "true"
+  WORKING_DIRECTORY: ${{ github.workspace }}/src/promptflow-evals
+  RECORD_DIRECTORY: ${{ github.workspace }}/src/promptflow-recording
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: snok/install-poetry@v1
+    - name: build
+      run: poetry build
+      working-directory: ${{ env.WORKING_DIRECTORY }}
+    - uses: actions/upload-artifact@v4
+      with:
+        name: promptflow-evals
+        path: ${{ env.WORKING_DIRECTORY }}/dist/promptflow_evals-*.whl
+
+  test:
+    needs: build
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.8', '3.9', '3.10', '3.11']
+      fail-fast: false
+    # snok/install-poetry need this to support Windows
+    defaults:
+      run:
+        shell: bash
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: snok/install-poetry@v1
+      - uses: actions/download-artifact@v4
+        with:
+          name: promptflow-evals
+          path: ${{ env.WORKING_DIRECTORY }}
+      - name: install promptflow packages in editable mode
+        run: |
+          poetry run pip install -e ../promptflow
+          poetry run pip install -e ../promptflow-core
+          poetry run pip install -e ../promptflow-devkit
+          poetry run pip install -e ../promptflow-tracing
+          poetry run pip install -e ../promptflow-tools
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+      - name: install promptflow-evals from wheel
+        # wildcard expansion (*) does not work in Windows, so leverage python to find and install
+        run: poetry run pip install --pre $(python -c "import glob; print(glob.glob('promptflow_evals-*.whl')[0])")
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+      - name: install test dependency group
+        run: poetry install --only test
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+      - name: install recording
+        run: poetry install
+        working-directory: ${{ env.RECORD_DIRECTORY }}
+      - name: run unit tests
+        run: poetry run pytest -m unittest --cov=promptflow --cov-config=pyproject.toml --cov-report=term --cov-report=html --cov-report=xml
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+      - name: upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: |
+            ${{ env.WORKING_DIRECTORY }}/*.xml
+            ${{ env.WORKING_DIRECTORY }}/htmlcov/
+
+  report:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      checks: write
+      pull-requests: write
+      contents: read
+      issues: read
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          check_name: promptflow-evals test result
+          comment_title: promptflow-evals test result
+          files: "artifacts/**/test-results.xml"  # align with `--junit-xml` in pyproject.toml
+      - uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: "artifacts/report-ubuntu-latest-py3.9/coverage.xml"
+          badge: true
+          fail_below_min: false
+          format: markdown
+          hide_complexity: true
+          output: both
+          thresholds: 40 60

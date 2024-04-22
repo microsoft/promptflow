@@ -24,6 +24,7 @@ param(
 [string] $SphinxApiDoc = [System.IO.Path]::Combine($DocPath, "sphinx_apidoc.log")
 [string] $SphinxBuildDoc = [System.IO.Path]::Combine($DocPath, "sphinx_build.log")
 [string] $WarningErrorPattern = "WARNING:|ERROR:|CRITICAL:| broken "
+[System.Collections.ArrayList]$IncludeList = @("promptflow-tracing", "promptflow-core", "promptflow-devkit", "promptflow-azure")
 $apidocWarningsAndErrors = $null
 $buildWarningsAndErrors = $null
 
@@ -62,16 +63,6 @@ Write-Host "Copy doc to: $TempDocPath"
 ROBOCOPY $DocPath $TempDocPath /S /NFL /NDL /XD "*.git" [System.IO.Path]::Combine($DocPath, "_scripts\_build")
 ProcessFiles
 
-function ForceOverwrite {
-    param (
-        [string] $Module
-    )
-    $FileName = "promptflow.{0}.rst" -f $Module
-    $TargetRst = [System.IO.Path]::Combine($RepoRootPath, ("scripts\docs\{0}" -f $FileName))
-    $AutoGenRst = [System.IO.Path]::Combine($RefDocPath, $FileName)
-    Copy-Item -Path $TargetRst -Destination $AutoGenRst -Force
-}
-
 function Update-Sub-Pkg-Index-Title {
     param (
         [string] $SubPkgRefDocPath,
@@ -88,29 +79,52 @@ function Update-Sub-Pkg-Index-Title {
     Set-Content $IndexRst $IndexContent
 }
 
-if($WithReferenceDoc){
+function Add-Changelog {
+    $ChangelogFolder = [System.IO.Path]::Combine($TempDocPath, "reference\changelog")
+    New-Item -ItemType Directory -Path $ChangelogFolder -Force
+    Write-Host "===============Collect Package ChangeLog==============="
+    $TocTreeContent = @("", "``````{toctree}", ":maxdepth: 1", ":hidden:", "")
+    foreach($Item in Get-Childitem -path $PkgSrcPath)
+    {
+        if((-not ($IncludeList -contains $Item.Name)) -and ($Item.Name -ne "promptflow")){
+            continue
+        }
+        # Collect CHANGELOG, name with package.md
+        $ChangelogPath = [System.IO.Path]::Combine($Item.FullName, "CHANGELOG.md")
+        $TargetChangelogPath = [System.IO.Path]::Combine($ChangelogFolder, "{0}.md" -f $Item.Name)
+        if($Item.Name -ne "promptflow"){
+            $TocTreeContent += $Item.name
+        }
+        Copy-Item -Path $ChangelogPath -Destination $TargetChangelogPath
+    }
+    $TocTreeContent += "``````"
+    # Add subpackage index to promptflow changelog
+    $PromptflowChangelog = [System.IO.Path]::Combine($ChangelogFolder, "promptflow.md")
+    $PromptflowChangelogContent = Get-Content $PromptflowChangelog
+    $PromptflowChangelogContent[0] = "# promptflow package"
+    $PromptflowChangelogContent += $TocTreeContent
+    Set-Content $PromptflowChangelog $PromptflowChangelogContent
+}
+
+function Add-Api-Reference {
     $RefDocRelativePath = "reference\python-library-reference"
     $RefDocPath = [System.IO.Path]::Combine($TempDocPath, $RefDocRelativePath)
+    $PlaceHolderFile = [System.IO.Path]::Combine($RefDocPath, "promptflow.md")
     if(!(Test-Path $RefDocPath)){
         throw "Reference doc path not found. Please make sure '$RefDocRelativePath' is under '$DocPath'"
     }
-    Remove-Item $RefDocPath -Recurse -Force
-    Write-Host "===============Build Promptflow Reference Doc==============="
+    Remove-Item $PlaceHolderFile -Force
     $ApidocWarningsAndErrors = [System.Collections.ArrayList]::new()
-    $IgnoreList = @("promptflow-recording", "promptflow", "promptflow-tools")
     foreach($Item in Get-Childitem -path $PkgSrcPath){
-        if(-not ($Item -is [System.IO.DirectoryInfo])){
-            # Only looking for package directory
+        if(-not ($IncludeList -contains $Item.Name)){
             continue
         }
-        if($IgnoreList -contains $Item.Name){
-            continue
-        }
+        # Build API reference doc
         $SubPkgPath = [System.IO.Path]::Combine($Item.FullName, "promptflow")
         $SubPkgRefDocPath = [System.IO.Path]::Combine($RefDocPath, $Item.Name)
         Write-Host "===============Build $Item Reference Doc==============="
         $TemplatePath = [System.IO.Path]::Combine($RepoRootPath, "scripts\docs\api_doc_templates")
-        sphinx-apidoc --module-first --no-headings --no-toc --implicit-namespaces "$SubPkgPath" -o "$SubPkgRefDocPath" -t $TemplatePath | Tee-Object -FilePath $SphinxApiDoc
+        sphinx-apidoc --separate --module-first --no-toc --implicit-namespaces "$SubPkgPath" -o "$SubPkgRefDocPath" -t $TemplatePath | Tee-Object -FilePath $SphinxApiDoc
         $SubPkgWarningsAndErrors = Select-String -Path $SphinxApiDoc -Pattern $WarningErrorPattern
         if($SubPkgWarningsAndErrors){
             $ApidocWarningsAndErrors.AddRange($SubPkgWarningsAndErrors)
@@ -119,6 +133,11 @@ if($WithReferenceDoc){
     }
 }
 
+if($WithReferenceDoc){
+    Add-Api-Reference
+}
+
+Add-Changelog
 
 Write-Host "===============Build Documentation with internal=${Internal}==============="
 $BuildParams = [System.Collections.ArrayList]::new()
@@ -135,12 +154,6 @@ $buildWarningsAndErrors = Select-String -Path $SphinxBuildDoc -Pattern $WarningE
 Write-Host "Clean path: $TempDocPath"
 Remove-Item $TempDocPath -Recurse -Confirm:$False -Force
 
-if ($ApidocWarningsAndErrors) {
-    Write-Host "=============== API doc warnings and errors ==============="  
-    foreach ($line in $ApidocWarningsAndErrors) {
-        Write-Host $line -ForegroundColor Red  
-    }  
-}  
   
 if ($buildWarningsAndErrors) {  
     Write-Host "=============== Build warnings and errors ==============="  

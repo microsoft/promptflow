@@ -18,6 +18,7 @@ from promptflow._sdk._constants import MAX_LIST_CLI_RESULTS
 from promptflow._sdk._load_functions import load_connection
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk.entities._connection import _Connection
+from promptflow._sdk.operations._connection_operations import ConnectionOperations
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import load_yaml
 
@@ -46,7 +47,7 @@ def add_connection_parser(subparsers):
         description="""A CLI tool to manage connections for promptflow.
 
         Your secrets will be encrypted using AES(Advanced Encryption Standard) technology.""",  # noqa: E501
-        help="pf connection",
+        help="Manage connections.",
     )
     subparsers = connection_parser.add_subparsers()
     add_connection_create(subparsers)
@@ -190,7 +191,13 @@ def create_connection(file_path, params_override=None, name=None):
     if name:
         params_override.append({"name": name})
     connection = load_connection(source=file_path, params_override=params_override)
-    existing_connection = _get_pf_client().connections.get(connection.name, raise_error=False)
+    existing_connection = None
+    connection_ops = _get_pf_client().connections
+    if isinstance(connection_ops, ConnectionOperations):
+        # Only get the connection if the connection_ops is LocalConnectionOperations.
+        # For AzureConnectionOperations, the get method will raise an error if the connection does not exist.
+        # So skip this step to let future unsupported error propagate.
+        connection_ops.get(connection.name, raise_error=False)
     if existing_connection:
         logger.warning(f"Connection with name {connection.name} already exists. Updating it.")
         # Note: We don't set the existing secret back here, let user input the secrets.

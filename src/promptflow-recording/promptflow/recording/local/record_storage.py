@@ -7,6 +7,7 @@ import json
 import os
 import shelve
 import traceback
+from dbm import dumb
 from pathlib import Path
 from typing import Dict, Iterator, Union
 
@@ -80,7 +81,9 @@ class RecordFile:
             if file_content_line is not None:
                 lock = FileLock(self.real_file.parent / "record_file.lock")
                 with lock:
-                    saved_dict = shelve.open(self.record_file_str, "c", writeback=False)
+                    # Use dumb db for compatibility with windows/linux
+                    db = dumb.open(self.record_file_str, "c")
+                    saved_dict = shelve.Shelf(db, writeback=False)
                     saved_dict[hashkey] = file_content_line
                     saved_dict.close()
             else:
@@ -108,7 +111,8 @@ class RecordFile:
         # Load file directly.
         lock = FileLock(self.real_file.parent / "record_file.lock")
         with lock:
-            saved_dict = shelve.open(self.record_file_str, "r", writeback=False)
+            db = dumb.open(self.record_file_str, "r")
+            saved_dict = shelve.Shelf(db, writeback=False)
             cached_items[self.record_file_str] = {}
             for key, value in saved_dict.items():
                 cached_items[self.record_file_str][key] = value
@@ -447,7 +451,7 @@ class Counter:
     def is_non_zero_file(self, fpath):
         return os.path.isfile(fpath) and os.path.getsize(fpath) > 0
 
-    def set_file_record_count(self, file, obj):
+    def set_record_count(self, obj):
         """
         Just count how many tokens are calculated. Different from
         openai_metric_calculator, this is directly returned from AOAI.
@@ -461,16 +465,15 @@ class Counter:
             # This is error. Suppress it.
             count = 0
 
-        self.file = file
-        with FileLock(str(file) + ".lock"):
-            is_non_zero_file = self.is_non_zero_file(file)
+        with FileLock(str(self.file) + ".lock"):
+            is_non_zero_file = self.is_non_zero_file(self.file)
             if is_non_zero_file:
-                with open(file, "r", encoding="utf-8") as f:
+                with open(self.file, "r", encoding="utf-8") as f:
                     number = json.load(f)
                     number["count"] += count
             else:
                 number = {"count": count}
-            with open(file, "w", encoding="utf-8") as f:
+            with open(self.file, "w", encoding="utf-8") as f:
                 number_str = json.dumps(number, ensure_ascii=False)
                 f.write(number_str)
 
@@ -484,3 +487,16 @@ class Counter:
         if cls._instance is None:
             cls._instance = Counter()
         return cls._instance
+
+    @classmethod
+    def set_file(cls, file):
+        cls.get_instance().file = file
+
+    @classmethod
+    def delete_count_lock_file(cls, default_path=None):
+        file = cls.get_instance().file
+        if file is None:
+            file = default_path
+        lock_file = str(file) + ".lock"
+        if os.path.isfile(lock_file):
+            os.remove(lock_file)

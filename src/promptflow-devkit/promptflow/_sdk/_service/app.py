@@ -2,23 +2,26 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import logging
+import os
 import threading
 import time
 from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
 from pathlib import WindowsPath
 
-from flask import Blueprint, Flask, current_app, g, jsonify, request
+from flask import Blueprint, Flask, current_app, g, jsonify, redirect, request, url_for
 from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
 
 from promptflow._sdk._constants import (
     HOME_PROMPT_FLOW_DIR,
+    PF_SERVICE_DEBUG,
     PF_SERVICE_HOUR_TIMEOUT,
     PF_SERVICE_LOG_FILE,
     PF_SERVICE_MONITOR_SECOND,
     CreatedByFieldName,
 )
+from promptflow._sdk._errors import MissingAzurePackage
 from promptflow._sdk._service import Api
 from promptflow._sdk._service.apis.collector import trace_collector
 from promptflow._sdk._service.apis.connection import api as connection_api
@@ -29,23 +32,28 @@ from promptflow._sdk._service.apis.run import api as run_api
 from promptflow._sdk._service.apis.span import api as span_api
 from promptflow._sdk._service.apis.telemetry import api as telemetry_api
 from promptflow._sdk._service.apis.ui import api as ui_api
-from promptflow._sdk._service.apis.ui import serve_trace_ui
+from promptflow._sdk._service.apis.ui import serve_chat_ui, serve_trace_ui
 from promptflow._sdk._service.utils.utils import (
     FormattedException,
     get_current_env_pfs_file,
+    get_pfs_version,
     get_port_from_config,
     is_run_from_built_binary,
     kill_exist_service,
 )
-from promptflow._sdk._utils import get_promptflow_sdk_version, overwrite_null_std_logger, read_write_by_user
+from promptflow._sdk._utils import overwrite_null_std_logger, read_write_by_user
 from promptflow._utils.thread_utils import ThreadWithContextVars
 
 overwrite_null_std_logger()
 
 
 def heartbeat():
-    response = {"promptflow": get_promptflow_sdk_version()}
+    response = {"promptflow": get_pfs_version()}
     return jsonify(response)
+
+
+def root():
+    return redirect(url_for("serve_trace_ui"))
 
 
 def create_app():
@@ -56,12 +64,15 @@ def create_app():
     # as there might be different ports in that scenario
     CORS(app)
 
+    app.add_url_rule("/", view_func=root)
     app.add_url_rule("/heartbeat", view_func=heartbeat)
     app.add_url_rule(
         "/v1/traces", view_func=lambda: trace_collector(get_created_by_info_with_cache, app.logger), methods=["POST"]
     )
     app.add_url_rule("/v1.0/ui/traces/", defaults={"path": ""}, view_func=serve_trace_ui, methods=["GET"])
     app.add_url_rule("/v1.0/ui/traces/<path:path>", view_func=serve_trace_ui, methods=["GET"])
+    app.add_url_rule("/v1.0/ui/chat/", defaults={"path": ""}, view_func=serve_chat_ui, methods=["GET"])
+    app.add_url_rule("/v1.0/ui/chat/<path:path>", view_func=serve_chat_ui, methods=["GET"])
     with app.app_context():
         api_v1 = Blueprint("Prompt Flow Service", __name__, url_prefix="/v1.0", template_folder="static")
 
@@ -92,8 +103,19 @@ def create_app():
         handler = RotatingFileHandler(filename=log_file, maxBytes=1_000_000, backupCount=1)
         formatter = logging.Formatter("[%(asctime)s][%(name)s][%(levelname)s] - %(message)s")
         handler.setFormatter(formatter)
+
+        # Create a stream handler to output logs to the terminal
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(formatter)
+
         # Set app logger to the only one RotatingFileHandler to avoid duplicate logs
         app.logger.handlers = [handler]
+        if os.environ.get(PF_SERVICE_DEBUG) == "true":
+            # Set app logger to use both the rotating file handler and the stream handler in debug mode
+            app.logger.handlers.append(stream_handler)
+
+        # Prevent logs from being handled by the root logger
+        app.logger.propagate = False
 
         # Basic error handler
         @api.errorhandler(Exception)
@@ -203,6 +225,8 @@ def get_created_by_info_with_cache():
                     CreatedByFieldName.NAME: decoded_token.get("name", decoded_token.get("appid", "")),
                 }
             )
+        except ImportError:
+            raise MissingAzurePackage()
         except Exception as e:
             # This function is only target to be used in Flask app.
             current_app.logger.error(f"Failed to get created_by info, stop writing span. Exception: {e}")
