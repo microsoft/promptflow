@@ -7,7 +7,8 @@ import datetime
 from pathlib import Path
 from typing import Union
 
-from promptflow._constants import FlowLanguage, FlowType
+from promptflow._constants import FlowType
+from promptflow._proxy import ProxyFactory
 from promptflow._sdk._constants import REMOTE_URI_PREFIX, ContextAttributeKey, FlowRunProperties
 from promptflow._sdk.entities._flows import Flow, Prompty
 from promptflow._sdk.entities._run import Run
@@ -115,13 +116,11 @@ class RunSubmitter:
     ) -> dict:
         logger.info(f"Submitting run {run.name}, log path: {local_storage.logger.file_path}")
         run_id = run.name
-        # for python, we can get metadata in-memory, so no need to dump them first
-        if flow.language != FlowLanguage.Python:
-            from promptflow._proxy import ProxyFactory
-
+        # TODO: unify the logic for prompty and other flows
+        if not isinstance(flow, Prompty):
             # variants are resolved in the context, so we can't move this logic to Operations for now
-            ProxyFactory().get_executor_proxy_cls(flow.language).dump_metadata(
-                flow_file=Path(flow.path), working_dir=Path(flow.code)
+            ProxyFactory().create_inspector_proxy(flow.language).prepare_metadata(
+                flow_file=Path(flow.path), working_dir=Path(flow.code), init_kwargs=run.init
             )
 
         with _change_working_dir(flow.code):
@@ -208,7 +207,7 @@ class RunSubmitter:
             # system metrics: token related
             system_metrics = batch_result.system_metrics.to_dict() if batch_result else {}
 
-            self.run_operations.update(
+            run = self.run_operations.update(
                 name=run.name,
                 status=status,
                 end_time=datetime.datetime.now(),

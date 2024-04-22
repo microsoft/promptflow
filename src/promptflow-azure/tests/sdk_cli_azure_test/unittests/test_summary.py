@@ -4,14 +4,9 @@ from unittest import mock
 
 import pytest
 
-from promptflow._constants import OK_LINE_RUN_STATUS, SpanAttributeFieldName
+from promptflow._constants import OK_LINE_RUN_STATUS, SpanAttributeFieldName, SpanStatusFieldName
 from promptflow._sdk.entities._trace import Span
-from promptflow.azure._storage.cosmosdb.summary import (
-    InsertEvaluationsRetriableException,
-    LineEvaluation,
-    Summary,
-    SummaryLine,
-)
+from promptflow.azure._storage.cosmosdb.summary import InsertEvaluationsRetriableException, Summary, SummaryLine
 
 
 @pytest.mark.unittest
@@ -48,6 +43,16 @@ class TestSummary:
             },
         ]
         self.summary = Summary(test_span, self.FAKE_COLLECTION_ID, self.FAKE_CREATED_BY, self.FAKE_LOGGER)
+        # Just for assert purpose
+        self.summary.item = SummaryLine(
+            id="test_trace_id",
+            partition_key=self.FAKE_COLLECTION_ID,
+            collection_id=self.FAKE_COLLECTION_ID,
+            session_id="test_session_id",
+            line_run_id="line_run_id",
+            trace_id=self.summary.span.trace_id,
+            root_span_id=self.summary.span.span_id,
+        )
 
     def test_aggregate_node_span_does_not_persist(self):
         mock_client = mock.Mock()
@@ -56,30 +61,26 @@ class TestSummary:
         with mock.patch.multiple(
             self.summary,
             _persist_running_item=mock.DEFAULT,
-            _parse_inputs_outputs_from_events=mock.DEFAULT,
             _persist_line_run=mock.DEFAULT,
             _insert_evaluation_with_retry=mock.DEFAULT,
         ) as values:
             self.summary.persist(mock_client)
             values["_persist_running_item"].assert_not_called()
-            values["_parse_inputs_outputs_from_events"].assert_not_called()
             values["_persist_line_run"].assert_not_called()
             values["_insert_evaluation_with_retry"].assert_not_called()
 
-    def test_non_root_span_does_not_persist(self):
+    def test_non_root_span_persist_running_node(self):
         mock_client = mock.Mock()
         self.summary.span.parent_id = "parent_span_id"
 
         with mock.patch.multiple(
             self.summary,
             _persist_running_item=mock.DEFAULT,
-            _parse_inputs_outputs_from_events=mock.DEFAULT,
             _persist_line_run=mock.DEFAULT,
             _insert_evaluation_with_retry=mock.DEFAULT,
         ) as values:
             self.summary.persist(mock_client)
             values["_persist_running_item"].assert_called_once()
-            values["_parse_inputs_outputs_from_events"].assert_not_called()
             values["_persist_line_run"].assert_not_called()
             values["_insert_evaluation_with_retry"].assert_not_called()
 
@@ -92,17 +93,15 @@ class TestSummary:
         with mock.patch.multiple(
             self.summary,
             _persist_running_item=mock.DEFAULT,
-            _parse_inputs_outputs_from_events=mock.DEFAULT,
             _persist_line_run=mock.DEFAULT,
             _insert_evaluation_with_retry=mock.DEFAULT,
         ) as values:
             self.summary.persist(mock_client)
             values["_persist_running_item"].assert_not_called()
-            values["_parse_inputs_outputs_from_events"].assert_called_once()
             values["_persist_line_run"].assert_called_once()
             values["_insert_evaluation_with_retry"].assert_not_called()
 
-    def test_root_evaluation_span_insert(self):
+    def test_root_eval_span_persist_eval(self):
         mock_client = mock.Mock()
         self.summary.span.parent_id = None
         self.summary.span.attributes[SpanAttributeFieldName.LINE_RUN_ID] = "line_run_id"
@@ -110,17 +109,84 @@ class TestSummary:
         with mock.patch.multiple(
             self.summary,
             _persist_running_item=mock.DEFAULT,
-            _parse_inputs_outputs_from_events=mock.DEFAULT,
             _persist_line_run=mock.DEFAULT,
             _insert_evaluation_with_retry=mock.DEFAULT,
         ) as values:
             self.summary.persist(mock_client)
             values["_persist_running_item"].assert_not_called()
-            values["_parse_inputs_outputs_from_events"].assert_called_once()
             values["_persist_line_run"].assert_called_once()
             values["_insert_evaluation_with_retry"].assert_called_once()
 
-    def test_insert_evaluation_not_found(self):
+    @pytest.mark.parametrize(
+        "run_id_dict, expected_line_run_id, expected_batch_run_id, expected_line_number",
+        [
+            [{}, None, None, None],
+            [
+                {
+                    SpanAttributeFieldName.LINE_NUMBER: "1",
+                },
+                None,
+                None,
+                None,
+            ],
+            [{SpanAttributeFieldName.BATCH_RUN_ID: "batch_run_id"}, None, None, None],
+            [
+                {
+                    SpanAttributeFieldName.BATCH_RUN_ID: "batch_run_id",
+                    SpanAttributeFieldName.LINE_NUMBER: "1",
+                },
+                None,
+                "batch_run_id",
+                "1",
+            ],
+            [{SpanAttributeFieldName.LINE_RUN_ID: "line_run_id"}, "line_run_id", None, None],
+        ],
+    )
+    def test_prepare_db_item(self, run_id_dict, expected_line_run_id, expected_batch_run_id, expected_line_number):
+        self.summary.span.start_time = datetime.datetime.fromisoformat("2022-01-01T00:00:00")
+        self.summary.span.end_time = datetime.datetime.fromisoformat("2022-01-01T00:01:00")
+        self.summary.span.attributes = {
+            SpanAttributeFieldName.COMPLETION_TOKEN_COUNT: 10,
+            SpanAttributeFieldName.PROMPT_TOKEN_COUNT: 5,
+            SpanAttributeFieldName.TOTAL_TOKEN_COUNT: 15,
+            SpanAttributeFieldName.SPAN_TYPE: "span_type",
+        }
+        self.summary.span.attributes.update(run_id_dict)
+
+        self.summary._prepare_db_item()
+
+        assert self.summary.item.id == self.summary.span.trace_id
+        assert self.summary.item.partition_key == self.summary.collection_id
+        assert self.summary.item.session_id == self.summary.session_id
+        assert self.summary.item.trace_id == self.summary.span.trace_id
+        assert self.summary.item.collection_id == self.summary.collection_id
+        assert self.summary.item.root_span_id == self.summary.span.span_id
+        assert self.summary.item.inputs == self.summary.inputs
+        assert self.summary.item.outputs == self.summary.outputs
+        assert self.summary.item.start_time == "2022-01-01T00:00:00"
+        assert self.summary.item.end_time == "2022-01-01T00:01:00"
+        assert self.summary.item.status == self.summary.span.status[SpanStatusFieldName.STATUS_CODE]
+        assert self.summary.item.latency == 60.0
+        assert self.summary.item.name == self.summary.span.name
+        assert self.summary.item.kind == "span_type"
+        assert self.summary.item.cumulative_token_count == {
+            "completion": 10,
+            "prompt": 5,
+            "total": 15,
+        }
+        assert self.summary.item.created_by == self.summary.created_by
+        assert self.summary.item.line_run_id == expected_line_run_id
+        assert self.summary.item.batch_run_id == expected_batch_run_id
+        assert self.summary.item.line_number == expected_line_number
+
+    @pytest.mark.parametrize(
+        "return_value",
+        [
+            [],  # No item found
+            [{"id": "main_id"}],  # Not finished
+        ],
+    )
+    def test_insert_evaluation_no_action(self, return_value):
         client = mock.Mock()
         self.summary.span.attributes = {
             SpanAttributeFieldName.REFERENCED_LINE_RUN_ID: "referenced_line_run_id",
@@ -133,20 +199,7 @@ class TestSummary:
         client.query_items.assert_called_once()
         client.patch_item.assert_not_called()
 
-    def test_insert_evaluation_not_finished(self):
-        client = mock.Mock()
-        self.summary.span.attributes = {
-            SpanAttributeFieldName.REFERENCED_LINE_RUN_ID: "referenced_line_run_id",
-            SpanAttributeFieldName.LINE_RUN_ID: "line_run_id",
-        }
-
-        client.query_items.return_value = [{"id": "main_id"}]
-        with pytest.raises(InsertEvaluationsRetriableException):
-            self.summary._insert_evaluation(client)
-        client.query_items.assert_called_once()
-        client.patch_item.assert_not_called()
-
-    def test_insert_evaluation_query_line(self):
+    def test_insert_evaluation_query_line_run(self):
         client = mock.Mock()
         self.summary.span.attributes = {
             SpanAttributeFieldName.REFERENCED_LINE_RUN_ID: "referenced_line_run_id",
@@ -168,18 +221,11 @@ class TestSummary:
             ],
             enable_cross_partition_query=True,
         )
+        item_dict = asdict(self.summary.item)
+        del item_dict["evaluations"]
 
-        expected_item = LineEvaluation(
-            line_run_id="line_run_id",
-            collection_id=self.FAKE_COLLECTION_ID,
-            trace_id=self.summary.span.trace_id,
-            root_span_id=self.summary.span.span_id,
-            outputs=None,
-            name=self.summary.span.name,
-            created_by=self.FAKE_CREATED_BY,
-        )
         expected_patch_operations = [
-            {"op": "add", "path": f"/evaluations/{self.summary.span.name}", "value": asdict(expected_item)}
+            {"op": "add", "path": f"/evaluations/{self.summary.span.name}", "value": item_dict}
         ]
         client.patch_item.assert_called_once_with(
             item="main_id",
@@ -212,17 +258,10 @@ class TestSummary:
             enable_cross_partition_query=True,
         )
 
-        expected_item = LineEvaluation(
-            batch_run_id="batch_run_id",
-            collection_id=self.FAKE_COLLECTION_ID,
-            line_number=1,
-            trace_id=self.summary.span.trace_id,
-            root_span_id=self.summary.span.span_id,
-            outputs=None,
-            name=self.summary.span.name,
-            created_by=self.FAKE_CREATED_BY,
-        )
-        expected_patch_operations = [{"op": "add", "path": "/evaluations/batch_run_id", "value": asdict(expected_item)}]
+        item_dict = asdict(self.summary.item)
+        del item_dict["evaluations"]
+
+        expected_patch_operations = [{"op": "add", "path": "/evaluations/batch_run_id", "value": item_dict}]
         client.patch_item.assert_called_once_with(
             item="main_id",
             partition_key="test_main_partition_key",
@@ -231,81 +270,8 @@ class TestSummary:
 
     def test_persist_line_run(self):
         client = mock.Mock()
-        self.summary.span.attributes.update(
-            {
-                SpanAttributeFieldName.LINE_RUN_ID: "line_run_id",
-                SpanAttributeFieldName.SPAN_TYPE: "promptflow.TraceType.Flow",
-                SpanAttributeFieldName.COMPLETION_TOKEN_COUNT: 10,
-                SpanAttributeFieldName.PROMPT_TOKEN_COUNT: 5,
-                SpanAttributeFieldName.TOTAL_TOKEN_COUNT: 15,
-            }
-        )
-        expected_item = SummaryLine(
-            id="test_trace_id",
-            partition_key=self.FAKE_COLLECTION_ID,
-            collection_id=self.FAKE_COLLECTION_ID,
-            session_id="test_session_id",
-            line_run_id="line_run_id",
-            trace_id=self.summary.span.trace_id,
-            root_span_id=self.summary.span.span_id,
-            inputs=None,
-            outputs=None,
-            start_time="2022-01-01T00:00:00",
-            end_time="2022-01-01T00:01:00",
-            status=OK_LINE_RUN_STATUS,
-            latency=60.0,
-            name=self.summary.span.name,
-            kind="promptflow.TraceType.Flow",
-            created_by=self.FAKE_CREATED_BY,
-            cumulative_token_count={
-                "completion": 10,
-                "prompt": 5,
-                "total": 15,
-            },
-        )
-
         self.summary._persist_line_run(client)
-        client.upsert_item.assert_called_once_with(body=asdict(expected_item))
-
-    def test_persist_batch_run(self):
-        client = mock.Mock()
-        self.summary.span.attributes.update(
-            {
-                SpanAttributeFieldName.BATCH_RUN_ID: "batch_run_id",
-                SpanAttributeFieldName.LINE_NUMBER: "1",
-                SpanAttributeFieldName.SPAN_TYPE: "promptflow.TraceType.Flow",
-                SpanAttributeFieldName.COMPLETION_TOKEN_COUNT: 10,
-                SpanAttributeFieldName.PROMPT_TOKEN_COUNT: 5,
-                SpanAttributeFieldName.TOTAL_TOKEN_COUNT: 15,
-            },
-        )
-        expected_item = SummaryLine(
-            id="test_trace_id",
-            partition_key=self.FAKE_COLLECTION_ID,
-            session_id="test_session_id",
-            collection_id=self.FAKE_COLLECTION_ID,
-            batch_run_id="batch_run_id",
-            line_number="1",
-            trace_id=self.summary.span.trace_id,
-            root_span_id=self.summary.span.span_id,
-            inputs=None,
-            outputs=None,
-            start_time="2022-01-01T00:00:00",
-            end_time="2022-01-01T00:01:00",
-            status=OK_LINE_RUN_STATUS,
-            latency=60.0,
-            name=self.summary.span.name,
-            created_by=self.FAKE_CREATED_BY,
-            kind="promptflow.TraceType.Flow",
-            cumulative_token_count={
-                "completion": 10,
-                "prompt": 5,
-                "total": 15,
-            },
-        )
-
-        self.summary._persist_line_run(client)
-        client.upsert_item.assert_called_once_with(body=asdict(expected_item))
+        client.upsert_item.assert_called_once_with(body=asdict(self.summary.item))
 
     def test_insert_evaluation_with_retry_success(self):
         client = mock.Mock()

@@ -271,3 +271,9 @@ class MissingAzurePackage(SDKError):
             'please install it by running "pip install promptflow-azure" with your version.'
         )
         super().__init__(message=msg, no_personal_data_message=msg, **kwargs)
+
+
+class WrongTraceSearchExpressionError(SDKError):
+    """Exception raised if the trace search expression is wrong."""
+
+    pass

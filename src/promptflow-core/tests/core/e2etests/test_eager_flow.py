@@ -5,7 +5,7 @@ import pytest
 
 from promptflow._core.tool_meta_generator import PythonLoadError
 from promptflow.contracts.run_info import Status
-from promptflow.executor._errors import FlowEntryInitializationError
+from promptflow.executor._errors import FlowEntryInitializationError, InvalidFlexFlowEntry
 from promptflow.executor._result import LineResult
 from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import FlowExecutor
@@ -56,6 +56,12 @@ class TestEagerFlow:
                 lambda x: x["func_input"] == "func_input",
                 {"obj_input": "obj_input"},
             ),
+            (
+                "basic_callable_class_async",
+                {"func_input": "func_input"},
+                lambda x: x["func_input"] == "func_input",
+                {"obj_input": "obj_input"},
+            ),
         ],
     )
     def test_flow_run(self, flow_folder, inputs, ensure_output, init_kwargs):
@@ -66,6 +72,10 @@ class TestEagerFlow:
         line_result = executor.exec_line(inputs=inputs, index=0)
         assert isinstance(line_result, LineResult)
         assert ensure_output(line_result.output)
+
+        if executor.has_aggregation_node:
+            aggr_result = executor._exec_aggregation(inputs=[line_result.output])
+            assert aggr_result.metrics == {"length": 1}
 
         # Test submitting eager flow to flow executor
         executor = FlowExecutor.create(flow_file=flow_file, connections={}, init_kwargs=init_kwargs)
@@ -133,7 +143,7 @@ class TestEagerFlow:
         [
             ("callable_flow_with_init_exception", FlowEntryInitializationError, "Failed to initialize flow entry with"),
             ("invalid_illegal_entry", PythonLoadError, "Failed to load python module for"),
-            ("incorrect_entry", PythonLoadError, "Failed to load python module for"),
+            ("incorrect_entry", InvalidFlexFlowEntry, "Invalid entry"),
         ],
     )
     def test_execute_func_with_user_error(self, flow_folder, expected_exception, expected_error_msg):

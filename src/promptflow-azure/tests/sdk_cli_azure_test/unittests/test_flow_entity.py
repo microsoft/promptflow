@@ -10,14 +10,15 @@ from pathlib import Path
 import pytest
 from _constants import PROMPTFLOW_ROOT
 from mock.mock import Mock
-from sdk_cli_azure_test.conftest import FLOWS_DIR
+from sdk_cli_azure_test.conftest import EAGER_FLOWS_DIR, FLOWS_DIR
 
 from promptflow import load_run
 from promptflow._sdk._vendor import get_upload_files_from_folder
 from promptflow._utils.flow_utils import load_flow_dag
 from promptflow.azure._constants._flow import ENVIRONMENT, PYTHON_REQUIREMENTS_TXT
 from promptflow.azure._entities._flow import Flow
-from promptflow.exceptions import ValidationException
+from promptflow.core._errors import GenerateFlowMetaJsonError
+from promptflow.exceptions import UserErrorException, ValidationException
 
 RUNS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/runs"
 
@@ -242,3 +243,67 @@ class TestFlow:
             flow = load_flow(source=FLOWS_DIR / "flow_with_additional_include_req")
             with flow._build_code():
                 assert flow._environment == {"python_requirements_txt": ["tensorflow"]}
+
+    @pytest.mark.parametrize(
+        "exception_type, data, error_message",
+        [
+            (
+                GenerateFlowMetaJsonError,
+                {"entry": "invalid_call:MyFlow"},
+                "The input 'func_input' is of a complex python type",
+            ),
+            (
+                GenerateFlowMetaJsonError,
+                {"entry": "invalid_init:MyFlow"},
+                "The input 'obj_input' is of a complex python type",
+            ),
+            (
+                GenerateFlowMetaJsonError,
+                {"entry": "invalid_output:MyFlow"},
+                "The output 'obj_input' is of a complex python type",
+            ),
+            (
+                UserErrorException,
+                {
+                    "entry": "simple_callable_class:MyFlow",
+                    "init": {
+                        "obj_input": {
+                            "type": "Object",
+                        }
+                    },
+                },
+                "'init.obj_input.type': 'Must be one of",
+            ),
+            (
+                UserErrorException,
+                {
+                    "entry": "simple_callable_class:MyFlow",
+                    "inputs": {
+                        "func_input": {
+                            "type": "Object",
+                        }
+                    },
+                },
+                "'inputs.func_input.type': 'Must be one of",
+            ),
+            (
+                UserErrorException,
+                {
+                    "entry": "simple_callable_class:MyFlow",
+                    "outputs": {
+                        "func_input": {
+                            "type": "Object",
+                        }
+                    },
+                },
+                "Provided signature of outputs does not match the entry",
+            ),
+        ],
+    )
+    def test_flex_flow_run_unsupported_types(self, exception_type, data, error_message):
+        with pytest.raises(exception_type) as e:
+            Flow._resolve_signature(
+                code=Path(f"{EAGER_FLOWS_DIR}/invalid_illegal_input_type"),
+                data=data,
+            )
+        assert error_message in str(e.value)
