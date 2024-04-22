@@ -29,8 +29,17 @@ async def retrieve_tool_func_result(request: RetrieveToolFuncResultRequest):
     args = (request.func_call_scenario, request.func_path, request.func_kwargs, request.ws_triple)
     # To support dynamic list, runtime put PF_HTTP_CONNECTION_PROVIDER_ENDPOINT in request.environment_variables,
     # executor should set it to environment variables in subprocess for init http connection provider later.
-    environment_variables = request.environment_variables if request.environment_variables and isinstance(request.environment_variables, dict) else None
-    return await invoke_sync_function_in_process(retrieve_tool_func_result, args=args, wait_timeout=SHORT_WAIT_TIMEOUT, environment_variables=environment_variables)
+    environment_variables = (
+        request.environment_variables
+        if request.environment_variables and isinstance(request.environment_variables, dict)
+        else None
+    )
+    return await invoke_sync_function_in_process(
+        retrieve_tool_func_result,
+        args=args,
+        wait_timeout=SHORT_WAIT_TIMEOUT,
+        environment_variables=environment_variables,
+    )
 
 
 @router.post("/meta")

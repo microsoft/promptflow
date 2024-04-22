@@ -38,7 +38,7 @@ async def invoke_sync_function_in_process(
         error_dict = manager.dict()
 
         p = multiprocessing.Process(
-            target=_set_environment_variable_then_execute_target_function,
+            target=_set_environment_variables_then_execute_target_function,
             args=(target_function, args, kwargs, return_dict, error_dict, context_dict, environment_variables),
         )
         p.start()
@@ -82,7 +82,7 @@ async def invoke_sync_function_in_process(
                 ProcessManager().remove_process(run_id)
 
 
-def _set_environment_variable_then_execute_target_function(
+def _set_environment_variables_then_execute_target_function(
     target_function: Callable,
     args: tuple,
     kwargs: dict,
