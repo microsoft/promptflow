@@ -62,6 +62,9 @@ class MockSpan:
     def record_exception(self, exception):
         self.exception = exception
 
+    def is_recording(self):
+        return True
+
     def __enter__(self):
         return self
 
@@ -321,5 +324,5 @@ def test_record_keyboard_interrupt_to_span():
     except KeyboardInterrupt:
         pass
     assert mock_span.status == StatusCode.ERROR
-    assert "KeyboardInterrupt" in mock_span.description
+    assert "Execution cancelled" in mock_span.description
     assert isinstance(mock_span.exception, KeyboardInterrupt)

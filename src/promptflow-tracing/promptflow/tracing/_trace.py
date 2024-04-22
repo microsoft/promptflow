@@ -33,8 +33,9 @@ def _record_keyboard_interrupt_to_span(span: Span):
     try:
         yield
     except KeyboardInterrupt as ex:
-        span.record_exception(ex)
-        span.set_status(StatusCode.ERROR, "KeyboardInterrupt received, execution cancelled.")
+        if span.is_recording():
+            span.record_exception(ex)
+            span.set_status(StatusCode.ERROR, "Execution cancelled.")
         raise
 
 
