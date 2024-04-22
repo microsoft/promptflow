@@ -44,25 +44,6 @@ jobs:
   pool:
     name: promptflow-1ES-ubuntu20
   steps:
-    - task: UseDotNet@2
-      inputs:
-        version: '6.x'
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '3.9.x'
-        architecture: 'x64'
-    - task: Bash@3
-      displayName: 'Install promptflow cli'
-      inputs:
-        targetType: 'inline'
-        script: |
-          Set-PSDebug -Trace 1
-          pip install -r ./src/promptflow/dev_requirements.txt
-          pip install ./src/promptflow-tracing
-          pip install ./src/promptflow-core[executor-service]
-          pip install ./src/promptflow-devkit
-          pip install ./src/promptflow-azure
-          pip freeze
     - task: Bash@3
       displayName: 'Set environment variables'
       inputs:
@@ -74,43 +55,16 @@ jobs:
           export ACS_CONNECTION=$(ACS_CONNECTION)
           export IS_IN_CI_PIPELINE=true
 
-    - task: Bash@3
-      displayName: 'Clone csharp repository'
-      inputs:
-        targetType: 'inline'
-        script: |
-          git clone https://$(PROMPTFLOW_CS_PAT)@dev.azure.com/msdata/Vienna/_git/PromptflowCS csharp
+    - template: promptflow-csharp-e2e-test-env-setup.yml
+      parameters:
+        flowProjectRelativePath: '$(flowProjectRelativePath)'
+        promptflowCsPat: '$(PROMPTFLOW_CS_PAT)'
 
-    - task: NuGetAuthenticate@1
-
-    - task: DotNetCoreCLI@2
-      inputs:
-        command: 'restore'
-        projects: '$(flowProjectRelativePath)/**/*.csproj'
-        feedsToUse: 'config'
-        nugetConfigPath: 'csharp/src/TestProjects/nuget.config'
-      displayName: 'dotnet restore'
-
-    - task: DotNetCoreCLI@2
-      inputs:
-        command: 'build'
-        projects: '$(flowProjectRelativePath)/**/*.csproj'
-        feedsToUse: 'config'
-        nugetConfigPath: 'csharp/src/TestProjects/nuget.config'
-      displayName: 'dotnet build'
-
-    - task: Bash@3
-      displayName: 'Run tests'
-      inputs:
-        targetType: 'inline'
-        script: |
-          cd ./src/promptflow-devkit
-          pytest tests/sdk_cli_test/e2etests/test_csharp_cli.py
-      env:
-        CSHARP_TEST_CASES_ROOT: $(Build.SourcesDirectory)/$(flowProjectRelativePath)
-        AZURE_OPENAI_API_KEY: $(AZURE_OPENAI_API_KEY)
-        AZURE_OPENAI_ENDPOINT: $(AZURE_OPENAI_ENDPOINT)
-        IS_IN_CI_PIPELINE: true
+    - template: promptflow-csharp-e2e-test-tests.yml
+      parameters:
+        flowProjectRelativePath: '$(flowProjectRelativePath)'
+        azureOpenAiApiBase: '$(AZURE_OPENAI_API_BASE)'
+        azureOpenAiApiKey: '$(AZURE_OPENAI_API_KEY)'
 
     - publish: $(flowProjectRelativePath)
       condition: always()
@@ -119,28 +73,6 @@ jobs:
   pool:
     name: promptflow-1ES-win
   steps:
-    - task: UseDotNet@2
-      inputs:
-        version: '6.x'
-
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '3.8.x'
-        architecture: 'x64'
-
-    - task: PowerShell@2
-      displayName: 'Install promptflow cli'
-      inputs:
-        targetType: 'inline'
-        script: |
-          Set-PSDebug -Trace 1
-          pip install -r ./src/promptflow/dev_requirements.txt
-          pip install ./src/promptflow-tracing
-          pip install ./src/promptflow-core[executor-service]
-          pip install ./src/promptflow-devkit
-          pip install ./src/promptflow-azure
-          pip freeze
-
     - task: PowerShell@2
       displayName: 'Set environment variables'
       inputs:
@@ -152,43 +84,16 @@ jobs:
           setx ACS_CONNECTION $(ACS_CONNECTION)
           setx IS_IN_CI_PIPELINE true
 
-    - task: PowerShell@2
-      displayName: 'Clone csharp repository'
-      inputs:
-        targetType: 'inline'
-        script: |
-          git clone https://$(PROMPTFLOW_CS_PAT)@dev.azure.com/msdata/Vienna/_git/PromptflowCS csharp
+    - template: promptflow-csharp-e2e-test-env-setup.yml
+      parameters:
+        flowProjectRelativePath: '$(flowProjectRelativePath)'
+        promptflowCsPat: '$(PROMPTFLOW_CS_PAT)'
 
-    - task: NuGetAuthenticate@1
-
-    - task: DotNetCoreCLI@2
-      inputs:
-        command: 'restore'
-        projects: '$(flowProjectRelativePath)/**/*.csproj'
-        feedsToUse: 'config'
-        nugetConfigPath: 'csharp/src/TestProjects/nuget.config'
-      displayName: 'dotnet restore'
-
-    - task: DotNetCoreCLI@2
-      inputs:
-        command: 'build'
-        projects: '$(flowProjectRelativePath)/**/*.csproj'
-        feedsToUse: 'config'
-        nugetConfigPath: 'csharp/src/TestProjects/nuget.config'
-      displayName: 'dotnet build'
-
-    - task: PowerShell@2
-      displayName: 'Run tests'
-      inputs:
-        targetType: 'inline'
-        script: |
-          cd ./src/promptflow-devkit
-          pytest tests/sdk_cli_test/e2etests/test_csharp_cli.py
-      env:
-        CSHARP_TEST_CASES_ROOT: $(Build.SourcesDirectory)/$(flowProjectRelativePath)
-        AZURE_OPENAI_API_KEY: $(AZURE_OPENAI_API_KEY)
-        AZURE_OPENAI_ENDPOINT: $(AZURE_OPENAI_ENDPOINT)
-        IS_IN_CI_PIPELINE: true
+    - template: promptflow-csharp-e2e-test-tests.yml
+      parameters:
+        flowProjectRelativePath: '$(flowProjectRelativePath)'
+        azureOpenAiApiBase: '$(AZURE_OPENAI_API_BASE)'
+        azureOpenAiApiKey: '$(AZURE_OPENAI_API_KEY)'
 
     - publish: $(flowProjectRelativePath)
       condition: always()
