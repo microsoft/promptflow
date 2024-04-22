@@ -7,7 +7,7 @@ from pathlib import Path
 
 from flask import jsonify, request
 
-from promptflow._sdk._constants import get_list_view_type
+from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME, get_list_view_type
 from promptflow._sdk._service import Namespace, Resource
 from promptflow._sdk._service.utils.utils import get_client_from_request
 from promptflow._utils.flow_utils import resolve_flow_path
@@ -36,12 +36,32 @@ test_experiment.add_argument(
 test_experiment.add_argument(
     "inputs", type=dict, location="json", required=False, help="Input parameters for experiment"
 )
+test_experiment.add_argument(
+    "main_flow_run_id", type=str, required=False, location="json", help="Designated run id of main flow node"
+)
+test_experiment.add_argument(
+    "main_flow_init",
+    type=dict,
+    required=False,
+    location="json",
+    help="Initialization parameters for main flex flow, only supported when flow is callable class.",
+)
 
 # Define skip test experiments request parsing
 skip_test_experiment = base_experiment.copy()
 skip_test_experiment.add_argument("skip_flow", type=str, location="json", required=True)
 skip_test_experiment.add_argument("skip_flow_output", type=dict, location="json", required=True)
 skip_test_experiment.add_argument("skip_flow_run_id", type=str, location="json", required=True)
+
+
+def generate_experiment_output_path(experiment_template):
+    filename = str(uuid.uuid4())
+    if os.path.isdir(experiment_template):
+        output_path = Path(experiment_template) / PROMPT_FLOW_DIR_NAME / filename
+    else:
+        output_path = Path(os.path.dirname(experiment_template)) / PROMPT_FLOW_DIR_NAME / filename
+    os.makedirs(output_path, exist_ok=True)
+    return output_path
 
 
 @api.route("/")
@@ -72,25 +92,23 @@ class ExperimentTest(Resource):
         args = test_experiment.parse_args()
         client = get_client_from_request()
         experiment_template = args.experiment_template
-        inputs = args.inputs
+        inputs = args.inputs or {}
         override_flow_path = args.override_flow_path
         environment_variables = args.environment_variables
         output_path = args.output_path
         session = args.session
+        main_flow_run_id = args.main_flow_run_id
+        init = args.main_flow_init or {}
+
         context = None
-        if inputs and override_flow_path:
+        if override_flow_path:
             flow_path_dir, flow_path_file = resolve_flow_path(override_flow_path)
             override_flow_path = (flow_path_dir / flow_path_file).as_posix()
-            context = {"inputs": inputs, "node": override_flow_path}
-        if output_path is None:
-            filename = str(uuid.uuid4())
-            if os.path.isdir(experiment_template):
-                output_path = Path(experiment_template) / filename
-            else:
-                output_path = Path(os.path.dirname(experiment_template)) / filename
-            os.makedirs(output_path, exist_ok=True)
-        output_path = Path(output_path).resolve()
+            context = {"inputs": inputs, "node": override_flow_path, "run_id": main_flow_run_id, "init": init}
 
+        if output_path is None:
+            output_path = generate_experiment_output_path(experiment_template)
+        output_path = Path(output_path).resolve()
         result = client._experiments._test_with_ui(
             experiment=experiment_template,
             output_path=output_path,
@@ -124,14 +142,8 @@ class ExperimentSkipTest(Resource):
         context = {"node": skip_flow, "outputs": skip_flow_output, "run_id": skip_flow_run_id}
 
         if output_path is None:
-            filename = str(uuid.uuid4())
-            if os.path.isdir(experiment_template):
-                output_path = Path(experiment_template) / filename
-            else:
-                output_path = Path(os.path.dirname(experiment_template)) / filename
-            os.makedirs(output_path, exist_ok=True)
+            output_path = generate_experiment_output_path(experiment_template)
         output_path = Path(output_path).resolve()
-
         result = client._experiments._test_with_ui(
             experiment=experiment_template,
             output_path=output_path,

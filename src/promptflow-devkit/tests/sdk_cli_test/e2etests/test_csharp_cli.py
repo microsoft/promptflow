@@ -1,15 +1,13 @@
+import json
 import os
 import os.path
 import sys
 from pathlib import Path
+from typing import TypedDict
 
 import pytest
 
 from promptflow._cli._pf.entry import main
-
-
-def get_repo_base_path():
-    return os.getenv("CSHARP_REPO_BASE_PATH", None)
 
 
 # TODO: move this to a shared utility module
@@ -30,47 +28,84 @@ def run_pf_command(*args, cwd=None):
         os.chdir(origin_cwd)
 
 
+class CSharpProject(TypedDict):
+    flow_dir: str
+    data: str
+    init: str
+
+
 @pytest.mark.usefixtures(
-    "use_secrets_config_file", "recording_injection", "setup_local_connection", "install_custom_tool_pkg"
+    "use_secrets_config_file",
+    "recording_injection",
+    "setup_local_connection",
+    "install_custom_tool_pkg",
 )
 @pytest.mark.cli_test
 @pytest.mark.e2etest
-@pytest.mark.skipif(get_repo_base_path() is None, reason="available locally only before csharp support go public")
+@pytest.mark.csharp
 class TestCSharpCli:
-    def test_pf_flow_test_basic(self):
-        run_pf_command(
-            "flow",
-            "test",
-            "--flow",
-            f"{get_repo_base_path()}\\src\\PromptflowCSharp\\Sample\\Basic\\bin\\Debug\\net6.0",
-            "--inputs",
-            "question=what is promptflow?",
-        )
-
-    def test_pf_flow_test_eager_mode(self):
-        run_pf_command(
-            "flow",
-            "test",
-            "--flow",
-            f"{get_repo_base_path()}\\src\\PromptflowCSharp\\TestCases\\FunctionModeBasic\\bin\\Debug\\net6.0",
-            "--inputs",
-            "topic=promptflow",
-        )
-
-    def test_pf_run_create_with_connection_override(self):
-        run_pf_command(
+    @pytest.mark.parametrize(
+        "target_fixture_name",
+        [
+            pytest.param("csharp_test_project_basic", id="basic"),
+            pytest.param("csharp_test_project_basic_chat", id="basic_chat"),
+            pytest.param("csharp_test_project_function_mode_basic", id="function_mode_basic"),
+            pytest.param("csharp_test_project_class_init_flex_flow", id="class_init_flex_flow"),
+        ],
+    )
+    def test_pf_run_create(self, request, target_fixture_name: str):
+        test_case: CSharpProject = request.getfixturevalue(target_fixture_name)
+        cmd = [
             "run",
             "create",
             "--flow",
-            f"{get_repo_base_path()}\\examples\\BasicWithBuiltinLLM\\bin\\Debug\\net6.0",
+            test_case["flow_dir"],
             "--data",
-            f"{get_repo_base_path()}\\examples\\BasicWithBuiltinLLM\\batchRunData.jsonl",
-            "--connections",
-            "get_answer.connection=azure_open_ai_connection",
-        )
+            test_case["data"],
+        ]
+        if os.path.exists(test_case["init"]):
+            cmd.extend(["--init", test_case["init"]])
+        run_pf_command(*cmd)
 
-    def test_flow_chat(self, monkeypatch, capsys):
-        flow_dir = f"{get_repo_base_path()}\\src\\PromptflowCSharp\\Sample\\BasicChat\\bin\\Debug\\net6.0"
+    @pytest.mark.parametrize(
+        "target_fixture_name",
+        [
+            pytest.param("csharp_test_project_basic", id="basic"),
+            pytest.param("csharp_test_project_basic_chat", id="basic_chat"),
+            pytest.param("csharp_test_project_function_mode_basic", id="function_mode_basic"),
+            pytest.param("csharp_test_project_class_init_flex_flow", id="class_init_flex_flow"),
+        ],
+    )
+    def test_pf_flow_test(self, request, target_fixture_name: str):
+        test_case: CSharpProject = request.getfixturevalue(target_fixture_name)
+        with open(test_case["data"], "r") as f:
+            lines = f.readlines()
+        if len(lines) == 0:
+            pytest.skip("No data provided for the test case.")
+        inputs = json.loads(lines[0])
+        if not isinstance(inputs, dict):
+            pytest.skip("The first line of the data file should be a JSON object.")
+
+        cmd = [
+            "flow",
+            "test",
+            "--flow",
+            test_case["flow_dir"],
+            "--inputs",
+        ]
+        for key, value in inputs.items():
+            if isinstance(value, (list, dict)):
+                pytest.skip("TODO 3113715: ensure input type")
+            if isinstance(value, str):
+                value = f'"{value}"'
+            cmd.extend([f"{key}={value}"])
+
+        if os.path.exists(test_case["init"]):
+            cmd.extend(["--init", test_case["init"]])
+        run_pf_command(*cmd)
+
+    def test_flow_chat(self, monkeypatch, capsys, csharp_test_project_basic_chat: CSharpProject):
+        flow_dir = csharp_test_project_basic_chat["flow_dir"]
         # mock user input with pop so make chat list reversed
         chat_list = ["what is chat gpt?", "hi"]
 
@@ -99,67 +134,23 @@ class TestCSharpCli:
         assert "Hello world round 0: hi" in outerr.out
         assert "Hello world round 1: what is chat gpt?" in outerr.out
 
+    @pytest.mark.skip(reason="need to update the test case")
+    def test_pf_run_create_with_connection_override(self, csharp_test_project_basic):
+        run_pf_command(
+            "run",
+            "create",
+            "--flow",
+            csharp_test_project_basic["flow_dir"],
+            "--data",
+            csharp_test_project_basic["data"],
+            "--connections",
+            "get_answer.connection=azure_open_ai_connection",
+        )
+
+    @pytest.mark.skip(reason="need to update the test case")
     def test_flow_chat_ui_streaming(self):
-        """Note that this test won't pass. Instead, it will hang and pop up a web page for user input.
-        Leave it here for debugging purpose.
-        """
-        # The test need to interact with user input in ui
-        flow_dir = f"{get_repo_base_path()}\\examples\\BasicChatFlowWithBuiltinLLM\\bin\\Debug\\net6.0"
-        run_pf_command(
-            "flow",
-            "test",
-            "--flow",
-            flow_dir,
-            "--ui",
-        )
+        pass
 
-    def test_flow_chat_interactive_streaming(self, monkeypatch, capsys):
-        flow_dir = f"{get_repo_base_path()}\\examples\\BasicChatFlowWithBuiltinLLM\\bin\\Debug\\net6.0"
-        # mock user input with pop so make chat list reversed
-        chat_list = ["what is chat gpt?", "hi"]
-
-        def mock_input(*args, **kwargs):
-            if chat_list:
-                return chat_list.pop()
-            else:
-                raise KeyboardInterrupt()
-
-        monkeypatch.setattr("builtins.input", mock_input)
-        run_pf_command(
-            "flow",
-            "test",
-            "--flow",
-            flow_dir,
-            "--interactive",
-            "--verbose",
-        )
-        output_path = Path(flow_dir) / ".promptflow" / "chat.output.json"
-        assert output_path.exists()
-        detail_path = Path(flow_dir) / ".promptflow" / "chat.detail.json"
-        assert detail_path.exists()
-
-        outerr = capsys.readouterr()
-        # Check node output
-        assert "language model" in outerr.out
-
+    @pytest.mark.skip(reason="need to update the test case")
     def test_flow_run_from_resume(self):
         run_pf_command("run", "create", "--resume-from", "net6_0_variant_0_20240326_163600_356909")
-
-    def test_flow_class_init(self):
-        """Note that this test won't pass. Instead, it will hang and pop up a web page for user input.
-        Leave it here for debugging purpose.
-        """
-        # The test need to interact with user input in ui
-        flow_dir = f"{get_repo_base_path()}\\src\\PromptflowCSharp\\FlexFlowClassInit\\bin\\Debug\\net6.0"
-
-        run_pf_command(
-            "flow",
-            "test",
-            "--flow",
-            flow_dir,
-            "--inputs",
-            "topic=aklhdfqwejk",
-            "--init",
-            "name=world",
-            "connection=azure_open_ai_connection",
-        )

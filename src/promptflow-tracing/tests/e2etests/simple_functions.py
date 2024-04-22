@@ -103,6 +103,40 @@ def openai_completion(connection: dict, prompt: str, stream: bool = False):
 
 
 @trace
+async def openai_chat_async(connection: dict, prompt: str, stream: bool = False):
+    client = AsyncAzureOpenAI(**connection)
+
+    messages = [{"role": "system", "content": "You are a helpful assistant."}, {"role": "user", "content": prompt}]
+    response = await client.chat.completions.create(model="gpt-35-turbo", messages=messages, stream=stream)
+
+    if stream:
+
+        async def generator():
+            async for chunk in response:
+                if chunk.choices:
+                    yield chunk.choices[0].delta.content or ""
+
+        return "".join([chunk async for chunk in generator()])
+    return response.choices[0].message.content or ""
+
+
+@trace
+async def openai_completion_async(connection: dict, prompt: str, stream: bool = False):
+    client = AsyncAzureOpenAI(**connection)
+    response = await client.completions.create(model="text-ada-001", prompt=prompt, stream=stream)
+
+    if stream:
+
+        async def generator():
+            async for chunk in response:
+                if chunk.choices:
+                    yield chunk.choices[0].text or ""
+
+        return "".join([chunk async for chunk in generator()])
+    return response.choices[0].text or ""
+
+
+@trace
 async def openai_embedding_async(connection: dict, input: Union[str, list]):
     client = AsyncAzureOpenAI(**connection)
     resp = await client.embeddings.create(model="text-embedding-ada-002", input=input)

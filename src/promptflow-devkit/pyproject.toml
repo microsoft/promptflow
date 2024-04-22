@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "promptflow-devkit"
-version = "1.9.0.dev0"
+version = "1.10.0.dev0"
 description = "Prompt flow devkit"
 include = [
   "promptflow/_sdk/_service/static/*",
@@ -121,7 +121,8 @@ pf = "promptflow._cli.pf:main"
 [tool.pytest.ini_options]
 markers = [
   "unittest",
-  "e2etest"
+  "e2etest",
+  "csharp"
 ]
 # junit - analyse and publish test results (https://github.com/EnricoMi/publish-unit-test-result-action)
 # durations - list the slowest test durations

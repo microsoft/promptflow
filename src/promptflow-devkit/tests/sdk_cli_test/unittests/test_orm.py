@@ -2,14 +2,17 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import ast
 import uuid
 
 import pytest
 from sqlalchemy import TEXT, Column, create_engine, inspect, text
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR
+from promptflow._sdk._errors import WrongTraceSearchExpressionError
 from promptflow._sdk._orm.session import create_or_update_table, support_transaction
+from promptflow._sdk._orm.trace import LineRun, SearchTranslator
 
 TABLENAME = "orm_entity"
 
@@ -224,3 +227,122 @@ class TestTransaction:
         except Exception:
             pass
         assert not inspect(engine).has_table(tablename)
+
+
+@pytest.fixture
+def memory_session() -> Session:
+    engine = create_engine("sqlite:///:memory:")
+    return sessionmaker(bind=engine)()
+
+
+@pytest.fixture
+def search_trans() -> SearchTranslator:
+    return SearchTranslator(model=LineRun)
+
+
+@pytest.mark.unittest
+@pytest.mark.sdk_test
+class TestTraceSearchTrans:
+    SEARCH_SQL_PREFIX = "SELECT line_runs.line_run_id AS line_runs_line_run_id, line_runs.trace_id AS line_runs_trace_id, line_runs.root_span_id AS line_runs_root_span_id, line_runs.inputs AS line_runs_inputs, line_runs.outputs AS line_runs_outputs, line_runs.start_time AS line_runs_start_time, line_runs.end_time AS line_runs_end_time, line_runs.status AS line_runs_status, line_runs.duration AS line_runs_duration, line_runs.name AS line_runs_name, line_runs.kind AS line_runs_kind, line_runs.cumulative_token_count AS line_runs_cumulative_token_count, line_runs.parent_id AS line_runs_parent_id, line_runs.run AS line_runs_run, line_runs.line_number AS line_runs_line_number, line_runs.experiment AS line_runs_experiment, line_runs.session_id AS line_runs_session_id, line_runs.collection AS line_runs_collection \nFROM line_runs"  # noqa: E501
+
+    def _build_expected_sql(self, condition: str) -> str:
+        return f"{self.SEARCH_SQL_PREFIX} \nWHERE {condition}"
+
+    def test_translate_compare_str_to_sql(self, search_trans: SearchTranslator):
+        compare_expr = "name == 'web-classification'"
+        ast_compare = ast.parse(compare_expr, mode="eval").body
+        sql_condition = search_trans._translate_compare_to_sql(ast_compare)
+        assert sql_condition == "name = 'web-classification'"
+
+    def test_translate_compare_num_to_sql(self, search_trans: SearchTranslator):
+        compare_expr = "name >= 42"  # note that this is only for test, name should be a string
+        ast_compare = ast.parse(compare_expr, mode="eval").body
+        sql_condition = search_trans._translate_compare_to_sql(ast_compare)
+        assert sql_condition == "name >= 42"
+
+    def test_translate_compare_json_field_to_sql(self, search_trans: SearchTranslator):
+        compare_expr = "cumulative_token_count.total > 2000"
+        ast_compare = ast.parse(compare_expr, mode="eval").body
+        sql_condition = search_trans._translate_compare_to_sql(ast_compare)
+        assert sql_condition == "json_extract(cumulative_token_count, '$.total') > 2000"
+
+    def test_translate_compare_field_in_json_to_sql(self, search_trans: SearchTranslator):
+        compare_expr = "total > 2000"
+        ast_compare = ast.parse(compare_expr, mode="eval").body
+        sql_condition = search_trans._translate_compare_to_sql(ast_compare)
+        assert sql_condition == "json_extract(cumulative_token_count, '$.total') > 2000"
+
+    def test_translate_compare_with_multiple_comparator_to_sql(self, search_trans: SearchTranslator):
+        compare_expr = "100 < prompt <= 2000"
+        ast_compare = ast.parse(compare_expr, mode="eval").body
+        sql_condition = search_trans._translate_compare_to_sql(ast_compare)
+        assert sql_condition == "100 < json_extract(cumulative_token_count, '$.prompt') <= 2000"
+
+    def test_translate_compare_status_complete_to_sql(self, search_trans: SearchTranslator):
+        compare_expr = "status == 'complete'"
+        ast_compare = ast.parse(compare_expr, mode="eval").body
+        sql_condition = search_trans._translate_compare_to_sql(ast_compare)
+        assert sql_condition == "status = 'Ok'"
+
+    def test_translate_compare_start_time_to_sql(self, search_trans: SearchTranslator):
+        compare_expr = "'2012/12/21' < start_time <= '2024/04/18 18:55:42'"
+        ast_compare = ast.parse(compare_expr, mode="eval").body
+        sql_condition = search_trans._translate_compare_to_sql(ast_compare)
+        assert sql_condition == "'2012-12-21T00:00:00' < start_time <= '2024-04-18T18:55:42'"
+
+    def test_basic_search(self, memory_session: Session, search_trans: SearchTranslator):
+        basic_expr = "name == 'web-classification'"
+        query = search_trans.translate(session=memory_session, expression=basic_expr)
+        expected_condition = "name = 'web-classification'"
+        expected_sql = self._build_expected_sql(expected_condition)
+        assert expected_sql == str(query)
+
+    def test_search_with_bool(self, memory_session: Session, search_trans: SearchTranslator):
+        expr = "name == 'web-classification' and kind == 'LLM'"
+        query = search_trans.translate(session=memory_session, expression=expr)
+        expected_condition = "name = 'web-classification' AND kind = 'LLM'"
+        expected_sql = self._build_expected_sql(expected_condition)
+        assert expected_sql == str(query)
+
+    def test_search_with_multiple_bool(self, memory_session: Session, search_trans: SearchTranslator):
+        expr = "name == 'web-classification' and total > 2000 and kind != 'Function'"
+        query = search_trans.translate(session=memory_session, expression=expr)
+        expected_condition = (
+            "name = 'web-classification' "
+            "AND json_extract(cumulative_token_count, '$.total') > 2000 "
+            "AND kind != 'Function' "
+            "AND cumulative_token_count IS NOT NULL"
+        )
+        expected_sql = self._build_expected_sql(expected_condition)
+        assert expected_sql == str(query)
+
+    def test_search_with_bracket(self, memory_session: Session, search_trans: SearchTranslator):
+        expr = "cumulative_token_count.completion <= 200 and (name == 'web-classification' or kind != 'Flow')"
+        query = search_trans.translate(session=memory_session, expression=expr)
+        expected_condition = (
+            "json_extract(cumulative_token_count, '$.completion') <= 200 "
+            "AND (name = 'web-classification' OR kind != 'Flow') "
+            "AND cumulative_token_count IS NOT NULL"
+        )
+        expected_sql = self._build_expected_sql(expected_condition)
+        assert expected_sql == str(query)
+
+    def test_search_with_wrong_expr(self, memory_session: Session, search_trans: SearchTranslator):
+        test_cases = [
+            ("name", "Invalid search expression, currently support Python syntax for search."),
+            ("name = 1", "Invalid search expression, currently support Python syntax for search."),
+            ("name == '<name>' AND", "Invalid search expression, currently support Python syntax for search."),
+            (
+                "name in ('<name1>', '<name2>')",
+                "Unsupported compare operator, currently support: '==', '!=', '<', '<=', '>' and '>='.",
+            ),
+            (
+                "name is '<name>'",
+                "Unsupported compare operator, currently support: '==', '!=', '<', '<=', '>' and '>='.",
+            ),
+            ("start_time >= 'promptflow'", "Invalid time format: 'promptflow'"),
+        ]
+        for expr, error_msg in test_cases:
+            with pytest.raises(WrongTraceSearchExpressionError) as e:
+                search_trans.translate(session=memory_session, expression=expr)
+            assert error_msg in str(e)

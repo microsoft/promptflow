@@ -82,6 +82,10 @@ class InvalidFlowRequest(ValidationException):
         )
 
 
+class ScriptExecutionError(UserErrorException):
+    pass
+
+
 class NodeInputValidationError(InvalidFlowRequest):
     pass
 
@@ -322,4 +326,12 @@ class FlowEntryInitializationError(UserErrorException):
 
 
 class InvalidFlexFlowEntry(ValidationException):
+    pass
+
+
+class InvalidModelConfigValueType(ValidationException):
+    pass
+
+
+class InvalidAggregationFunction(UserErrorException):
     pass

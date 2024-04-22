@@ -25,6 +25,7 @@ class TestArmConnectionOperations:
         assert result.name == "azure_open_ai_connection"
         assert result.api_type == "azure"
         assert result.module == "promptflow.connections"
+        assert "/subscriptions" in result.resource_id
 
         result = connection_ops.get(name="custom_connection")
         assert isinstance(result, CustomConnection)
