@@ -14,6 +14,7 @@ from promptflow.tracing.contracts.trace import TraceType
 
 module_logger = logging.getLogger(__name__)
 STREAMING_OPTION_PARAMETER_ATTR = "_streaming_option_parameter"
+INPUTS_TO_ESCAPE_PARAM_KEY = "inputs_to_escape"
 
 
 # copied from promptflow.contracts.tool import ToolType
