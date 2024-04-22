@@ -8,6 +8,7 @@ import json
 import os
 import shutil
 import sys
+import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor
 from functools import cached_property
@@ -48,6 +49,7 @@ from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, mo
 from promptflow._sdk._utils import incremental_print, is_multi_container_enabled, is_remote_uri, print_red_error
 from promptflow._sdk.entities import Run
 from promptflow._utils.async_utils import async_run_allowing_running_loop
+from promptflow._utils.flow_utils import is_prompty_flow
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.utils import in_jupyter_notebook
 from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME, AUTOMATIC_RUNTIME_NAME, CLOUD_RUNS_PAGE_SIZE
@@ -724,8 +726,23 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
     def _resolve_flow_and_session_id(self, run: Run) -> Tuple[str, Optional[str]]:
         """Resolve flow to remote flow and session id."""
         # for remote flow case, leave session id to None and let service side resolve
+        environment_variables = {}
         if run._use_remote_flow:
-            return self._resolve_flow_definition_resource_id(run=run), None
+            return self._resolve_flow_definition_resource_id(run=run), None, environment_variables
+        if is_prompty_flow(run.flow):
+            from promptflow.core._flow import Prompty
+
+            # Replace connection configuration to environment variables in temp prompty.
+            temp_flow_path = Path(tempfile.TemporaryDirectory().name)
+            shutil.copytree(src=Path(run.flow).parent, dst=temp_flow_path, dirs_exist_ok=True)
+
+            prompty_flow = Prompty.load(source=run.flow)
+            with open(temp_flow_path / Path(run.flow).name, "w") as f:
+                prompty_content, environment_variables = prompty_flow._dump_to_content(connection_map_to_env=True)
+                f.write(prompty_content)
+            # Replace flow path to temp prompty path.
+            run.flow = temp_flow_path / Path(run.flow).name
+
         flow = load_flow(run.flow)
         self._flow_operations._resolve_arm_id_or_upload_dependencies(
             flow=flow,
@@ -734,7 +751,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         )
         # for local flow case, use flow path to calculate session id
         session_id = self._get_session_id(flow=flow, flow_lineage_id=run._lineage_id)
-        return flow.path, session_id
+        return flow.path, session_id, environment_variables
 
     def _get_session_id(self, flow, flow_lineage_id):
         try:
@@ -847,7 +864,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             task_results = [task.result() for task in tasks]
 
         run.data = task_results[0]
-        run.flow, session_id = task_results[1]
+        run.flow, session_id, environment_variables = task_results[1]
 
         runtime = self._resolve_runtime(run=run, runtime=runtime)
         self._resolve_identity(run=run)
@@ -855,6 +872,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         rest_obj = run._to_rest_object()
         rest_obj.runtime_name = runtime
         rest_obj.session_id = session_id
+        rest_obj.environment_variables.update(environment_variables)
 
         # TODO(2884482): support force reset & force install
 

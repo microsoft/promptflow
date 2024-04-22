@@ -171,12 +171,15 @@ class Flow(AdditionalIncludesMixin):
                 code.datastore = DEFAULT_STORAGE
                 dag_updated = self._resolve_requirements(flow_dir, flow_dag) or dag_updated
 
-                # generate .promptflow/flow.json for csharp flow as it's required to infer signature for csharp flow
-                flow_directory, flow_file = resolve_flow_path(code.path)
-                # TODO: pass in init_kwargs to support csharp class init flex flow
-                ProxyFactory().create_inspector_proxy(self.language).prepare_metadata(
-                    flow_file=flow_directory / flow_file, working_dir=flow_directory
-                )
+                if self._is_prompty_flow:
+                    flow_directory, flow_file = Path(self.code), self.path
+                else:
+                    # generate .promptflow/flow.json for csharp flow as it's required to infer signature for csharp flow
+                    flow_directory, flow_file = resolve_flow_path(code.path)
+                    # TODO: pass in init_kwargs to support csharp class init flex flow
+                    ProxyFactory().create_inspector_proxy(self.language).prepare_metadata(
+                        flow_file=flow_directory / flow_file, working_dir=flow_directory
+                    )
                 dag_updated = self._resolve_signature(flow_dir, flow_dag) or dag_updated
                 self._environment = self._resolve_environment(flow_dir, flow_dag)
                 if dag_updated and not self._is_prompty_flow:

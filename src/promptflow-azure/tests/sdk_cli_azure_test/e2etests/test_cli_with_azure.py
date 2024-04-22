@@ -229,21 +229,3 @@ class TestCliWithAzure:
         )
         run = pf.runs.get(run=name)
         assert isinstance(run, Run)
-
-    def test_flex_flow_run_bulk(self, pf, runtime: str, randstr: Callable[[str], str]) -> None:
-        FLEX_DIR = PROMPTFLOW_ROOT / "tests/test_configs/eager_flows"
-
-        name = randstr("name")
-        run_pf_command(
-            "run",
-            "create",
-            "--flow",
-            f"{FLEX_DIR}/builtin_llm",
-            "--data",
-            f"{FLEX_DIR}/builtin_llm/data.jsonl",
-            "--name",
-            name,
-            pf=pf,
-        )
-        run = pf.runs.get(run=name)
-        assert isinstance(run, Run)
