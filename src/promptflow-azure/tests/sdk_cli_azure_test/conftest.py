@@ -614,15 +614,11 @@ def mock_check_latest_version() -> None:
 
 
 @pytest.fixture
-def mock_trace_provider_to_cloud(
-    subscription_id: str,
-    resource_group_name: str,
-    workspace_name: str,
-) -> None:
-    """Mock trace provider to cloud."""
-    trace_provider = (
+def mock_trace_destination_to_cloud(subscription_id: str, resource_group_name: str, workspace_name: str):
+    """Mock trace destination to cloud."""
+    trace_destination = (
         f"azureml://subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/"
         f"providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}"
     )
-    with patch("promptflow._sdk._configuration.Configuration.get_trace_provider", return_value=trace_provider):
+    with patch("promptflow._sdk._configuration.Configuration.get_trace_destination", return_value=trace_destination):
         yield
