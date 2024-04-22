@@ -214,7 +214,8 @@
     "Chunker",
     "mpnet",
     "wargs",
-    "dcid"
+    "dcid",
+    "cmpop"
   ],
   "flagWords": [
     "Prompt Flow"
