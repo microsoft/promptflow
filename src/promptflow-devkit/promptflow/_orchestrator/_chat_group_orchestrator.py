@@ -2,27 +2,29 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from typing import Optional, List, Mapping, Dict, Any
-from promptflow._sdk.entities._chat_group._chat_role import ChatRole
-from promptflow._proxy._base_executor_proxy import AbstractExecutorProxy
-from promptflow.executor._result import LineResult
-from promptflow.storage import AbstractRunStorage
-from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
-from promptflow._utils.execution_utils import apply_default_value_for_input
-from promptflow._proxy._proxy_factory import ProxyFactory
-from promptflow._utils.logger_utils import bulk_logger
+from typing import Any, Dict, List, Mapping, Optional
+
 from promptflow._orchestrator._constants import (
+    CHAT_ROLE_KEY,
     CONVERSATION_HISTORY_EXPRESSION,
     CONVERSATION_HISTORY_OUTPUT_KEY,
-    CHAT_ROLE_KEY
 )
 from promptflow._orchestrator._errors import (
     InvalidChatRoleCount,
+    InvalidMaxTurnValue,
     MissingConversationHistoryExpression,
     MultipleConversationHistoryInputsMapping,
     UsingReservedRoleKey,
-    InvalidMaxTurnValue
 )
+from promptflow._proxy._base_executor_proxy import AbstractExecutorProxy
+from promptflow._proxy._proxy_factory import ProxyFactory
+from promptflow._sdk.entities._chat_group._chat_role import ChatRole
+from promptflow._utils.execution_utils import apply_default_value_for_input
+from promptflow._utils.logger_utils import bulk_logger
+from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
+from promptflow.contracts.run_info import Status
+from promptflow.executor._result import LineResult
+from promptflow.storage import AbstractRunStorage
 
 
 class ChatGroupOrchestrator:
@@ -32,7 +34,7 @@ class ChatGroupOrchestrator:
         max_turn: Optional[int] = 0,
         storage: Optional[AbstractRunStorage] = None,
         max_lines_count: Optional[int] = None,
-        **kwargs
+        **kwargs,
     ):
         """Chat group orchestrator schedule runs for each line in batch inputs.
         :param chat_group_roles: chat group roles
@@ -51,10 +53,7 @@ class ChatGroupOrchestrator:
 
         if self._max_turn == 0:
             bulk_logger.error(f"Invalid max_turn value for chat group run: {self._max_turn}")
-            message = (
-                f"Invalid max_turn value for chat group run: {self._max_turn}. "
-                "Please assign max_turn at least 1."
-            )
+            message = f"Invalid max_turn value for chat group run: {self._max_turn}. Please assign max_turn at least 1."
             raise InvalidMaxTurnValue(message=message)
 
         if len(self._chat_group_roles) < 2:
@@ -99,7 +98,7 @@ class ChatGroupOrchestrator:
                 worker_count=chat_role._worker_count,
                 line_timeout_sec=chat_role._line_timeout_sec,
                 init_kwargs=chat_role._init_kwargs,
-                **kwargs
+                **kwargs,
             )
             bulk_logger.info(f"Created executor proxy for role:{chat_role.role}. name: {chat_role._name}")
             executor_proxy_list.append(executor_proxy)
@@ -110,11 +109,11 @@ class ChatGroupOrchestrator:
             await executor_proxy.destroy()
 
     async def _schedule_line_runs(
-            self,
-            line_index: int,
-            inputs: Mapping[str, Any] = None,
-            run_id: str = None,
-            ) -> LineResult:
+        self,
+        line_index: int,
+        inputs: Mapping[str, Any] = None,
+        run_id: str = None,
+    ) -> LineResult:
         """schedule runs for each line in batch inputs.
         It also resolve flow inputs and flow outputs for each turn.
         :param line_index: line index in batch inputs
@@ -143,8 +142,8 @@ class ChatGroupOrchestrator:
             chat_role = self._chat_group_roles[role_index]
             chat_role_input = batch_inputs[role_index]
             conversation_history_key = next(
-                (key for key, value in chat_role._inputs_mapping.items()
-                 if value == CONVERSATION_HISTORY_EXPRESSION), None
+                (key for key, value in chat_role._inputs_mapping.items() if value == CONVERSATION_HISTORY_EXPRESSION),
+                None,
             )
             if conversation_history_key is None:
                 bulk_logger.error(
@@ -158,22 +157,26 @@ class ChatGroupOrchestrator:
                 )
                 raise MissingConversationHistoryExpression(message=message)
             chat_role_input[conversation_history_key] = conversation_history
-            bulk_logger.info(
-                f"Start to execute turn {turn}. role: {chat_role.role}. name: {chat_role._name}"
-            )
+            bulk_logger.info(f"Start to execute turn {turn}. role: {chat_role.role}. name: {chat_role._name}")
 
             current_line_result = await executor_proxy.exec_line_async(chat_role_input, line_index, run_id)
             self._process_flow_outputs(
-                turn,
-                chat_role,
-                current_line_result,
-                conversation_history,
-                outputs,
-                aggregation_inputs)
+                turn, chat_role, current_line_result, conversation_history, outputs, aggregation_inputs
+            )
             bulk_logger.info(
                 f"Finish process line result for "
                 f"line number: {line_index}, turn:{turn}. role:{chat_role.role}, name: {chat_role._name}"
             )
+
+            if (
+                current_line_result.run_info.status == Status.Failed
+                or current_line_result.run_info.status == Status.Canceled
+            ):
+                bulk_logger.warning(
+                    f"Stop chat since run of turn:{turn} end with status {current_line_result.run_info.status}. "
+                    f"line number: {line_index}, role:{chat_role.role}, name: {chat_role._name}"
+                )
+                break
 
             if any(value == chat_role._stop_signal for value in current_line_result.output.values()):
                 bulk_logger.info(
@@ -192,17 +195,18 @@ class ChatGroupOrchestrator:
             output=outputs,
             aggregation_inputs=aggregation_inputs,
             node_run_infos=current_line_result.node_run_infos,
-            run_info=current_line_result.run_info
+            run_info=current_line_result.run_info,
         )
 
     def _process_flow_outputs(
-            self,
-            index: int,
-            chat_role: ChatRole,
-            current_line_result: LineResult,
-            conversation_history: List[Mapping[str, Any]],
-            outputs: dict,
-            aggregation_inputs: dict):
+        self,
+        index: int,
+        chat_role: ChatRole,
+        current_line_result: LineResult,
+        conversation_history: List[Mapping[str, Any]],
+        outputs: dict,
+        aggregation_inputs: dict,
+    ):
 
         if CHAT_ROLE_KEY in current_line_result.output:
             message = f"chat role output use reserved key {CHAT_ROLE_KEY}"
@@ -220,7 +224,8 @@ class ChatGroupOrchestrator:
         batch_inputs: List = []
         for chat_role in self._chat_group_roles:
             conversation_history_mapping = [
-                (key, value) for key, value in chat_role._inputs_mapping.items()
+                (key, value)
+                for key, value in chat_role._inputs_mapping.items()
                 if value == CONVERSATION_HISTORY_EXPRESSION
             ]
             if len(conversation_history_mapping) == 0:
@@ -244,14 +249,14 @@ class ChatGroupOrchestrator:
                 raise MultipleConversationHistoryInputsMapping(message=message)
 
             cleaned_inputs_mapping = {
-                key: value for key, value in chat_role._inputs_mapping.items()
+                key: value
+                for key, value in chat_role._inputs_mapping.items()
                 if value != CONVERSATION_HISTORY_EXPRESSION
             }
 
             batch_input_processor = BatchInputsProcessor(
-                chat_role._working_dir,
-                chat_role._flow_definition.inputs,
-                self._max_lines_count)
+                chat_role._working_dir, chat_role._flow_definition.inputs, self._max_lines_count
+            )
             batch_input = batch_input_processor._process_batch_inputs_line(inputs, cleaned_inputs_mapping)
             bulk_logger.info(f"Init conversation history for role: {chat_role.role}")
             batch_input[CONVERSATION_HISTORY_OUTPUT_KEY] = []
