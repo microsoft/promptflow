@@ -40,8 +40,9 @@ class TestExecutable:
                     "pf",
                     "start_pfs.vbs",
                 ]
+                output_path = Path(output_path).resolve()
                 for check_path in check_path_list:
-                    check_path = Path(output_path, check_path)
+                    check_path = output_path / check_path
                     assert check_path.exists()
         finally:
             shutil.rmtree(output_path, ignore_errors=True)
