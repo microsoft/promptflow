@@ -13,7 +13,7 @@ from typing import Callable, List, Optional
 
 from promptflow._constants import MessageFormatType
 from promptflow._core._errors import InvalidSource
-from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
+from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR, INPUTS_TO_ESCAPE_PARAM_KEY
 from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping
 from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow._utils.tool_utils import (
@@ -466,10 +466,13 @@ class ToolResolver:
         )
         self._validate_duplicated_inputs(prompt_tpl_inputs_mapping.keys(), param_names, msg)
         node.inputs = self._load_images_for_prompt_tpl(prompt_tpl_inputs_mapping, node.inputs)
-
-        flow_input_list = self._get_flow_input_list(node)
-        if flow_input_list:
-            node.inputs["flow_inputs"] = InputAssignment(value=flow_input_list, value_type=InputValueType.LITERAL)
+        # Store flow inputs list as a node input to enable tools to identify these inputs,
+        # and apply escape/unescape to avoid parsing of role in user inputs.
+        inputs_to_escape = self._get_inputs_to_escape(node)
+        if inputs_to_escape and node.inputs:
+            node.inputs[INPUTS_TO_ESCAPE_PARAM_KEY] = InputAssignment(
+                value=inputs_to_escape, value_type=InputValueType.LITERAL
+            )
 
         callable = partial(render_template_jinja2, template=prompt_tpl)
         return ResolvedTool(node=node, definition=None, callable=callable, init_args={})
@@ -531,14 +534,14 @@ class ToolResolver:
         provider = connection_type_to_api_mapping[connection_type]
         return connection, provider
 
-    def _get_flow_input_list(self, node: Node):
+    def _get_inputs_to_escape(self, node: Node) -> list:
+        inputs_to_escape = []
         inputs = node.inputs
-        flow_input_list = []
         if node.type == ToolType.LLM or node.type == ToolType.PROMPT or node.type == ToolType.CUSTOM_LLM:
             for k, v in inputs.items():
                 if v.value_type == InputValueType.FLOW_INPUT:
-                    flow_input_list.append(k)
-        return flow_input_list
+                    inputs_to_escape.append(k)
+        return inputs_to_escape
 
     def _resolve_llm_node(self, node: Node, convert_input_types=False) -> ResolvedTool:
         connection, provider = self._resolve_llm_connection_with_provider(self._get_llm_node_connection(node))
@@ -551,10 +554,13 @@ class ToolResolver:
         updated_node.inputs[key] = InputAssignment(value=connection, value_type=InputValueType.LITERAL)
         if convert_input_types:
             updated_node = self._convert_node_literal_input_types(updated_node, tool)
-        
-        flow_input_list = self._get_flow_input_list(updated_node)
-        if flow_input_list:
-            updated_node.inputs["flow_inputs"] = InputAssignment(value=flow_input_list, value_type=InputValueType.LITERAL)
+        # Store flow inputs list as a node input to enable tools to identify these inputs,
+        # and apply escape/unescape to avoid parsing of role in user inputs.
+        inputs_to_escape = self._get_inputs_to_escape(updated_node)
+        if inputs_to_escape:
+            updated_node.inputs[INPUTS_TO_ESCAPE_PARAM_KEY] = InputAssignment(
+                value=inputs_to_escape, value_type=InputValueType.LITERAL
+            )
 
         prompt_tpl = self._load_source_content(node)
         prompt_tpl_inputs_mapping = get_inputs_for_prompt_template(prompt_tpl)
