@@ -32,6 +32,8 @@ from promptflow._sdk._constants import (
     DownloadedRun,
     FlowRunProperties,
     IdentityKeys,
+    Local2CloudProperties,
+    Local2CloudUserProperties,
     LocalStorageFilenames,
     RestRunTypes,
     RunDataKeys,
@@ -277,7 +279,7 @@ class Run(YAMLTranslatableMixin):
             end_time=datetime.datetime.fromisoformat(str(obj.end_time)) if obj.end_time else None,
             status=str(obj.status),
             data=Path(obj.data).resolve().absolute().as_posix() if obj.data else None,
-            properties={FlowRunProperties.SYSTEM_METRICS: properties_json.get(FlowRunProperties.SYSTEM_METRICS, {})},
+            properties=properties_json,
             # compatible with old runs, their run_source is empty, treat them as local
             run_source=obj.run_source or RunInfoSources.LOCAL,
             # experiment command node only fields
@@ -661,6 +663,14 @@ class Run(YAMLTranslatableMixin):
             start_time = self._created_on.isoformat() + "Z" if self._created_on else None
             end_time = self._end_time.isoformat() + "Z" if self._end_time else None
 
+            # extract properties that needs to be passed to the request
+            total_tokens = self.properties[FlowRunProperties.SYSTEM_METRICS].get("total_tokens", 0)
+            properties = {Local2CloudProperties.TOTAL_TOKENS: total_tokens}
+            for property_key in Local2CloudUserProperties.get_all_values():
+                value = self.properties.get(property_key, None)
+                if value is not None:
+                    properties[property_key] = value
+
             return CreateExistingBulkRunRequest(
                 run_id=self.name,
                 run_status=self.status,
@@ -669,6 +679,7 @@ class Run(YAMLTranslatableMixin):
                 run_display_name=self._get_default_display_name(),
                 description=self.description,
                 tags=self.tags,
+                properties=properties,
                 run_experiment_name=self._experiment_name,
                 run_display_name_generation_type=RunDisplayNameGenerationType.USER_PROVIDED_MACRO,
                 output_data_store=CloudDatastore.DEFAULT,
