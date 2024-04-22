@@ -226,12 +226,12 @@ def _print_tracing_url_from_azure_portal(
     run: typing.Optional[str] = None,
 ) -> None:
     url = (
-        "https://int.ml.azure.com/{query}?"
+        "https://ml.azure.com/{query}?"
         f"wsid=/subscriptions/{ws_triad.subscription_id}"
         f"/resourceGroups/{ws_triad.resource_group_name}"
         "/providers/Microsoft.MachineLearningServices"
         f"/workspaces/{ws_triad.workspace_name}"
-        "&flight=PFTrace,PFNewRunDetail"
+        "&flight=PFTrace"
     )
 
     if run is None:
