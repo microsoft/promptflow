@@ -278,8 +278,7 @@ class Configuration(object):
         temp_path = Path(temp_path).resolve().absolute()
         if temp_path.is_file():
             raise InvalidConfigFile(
-                "The configuration file folder is not set correctly. "
-                "It cannot be a file address, it can only be a folder"
+                "The configuration file folder is not set correctly. " "It cannot be a file, it can only be a folder"
             )
         original_path = cls.CONFIG_PATH
         file_name = cls.CONFIG_PATH.name

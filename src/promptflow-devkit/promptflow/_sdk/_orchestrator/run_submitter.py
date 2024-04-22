@@ -36,7 +36,7 @@ class RunSubmitter:
 
     def __init__(self, client):
         self._client = client
-        self._config = Configuration(overrides=self._client.config)
+        self._config = Configuration(overrides=self._client._config)
         self.run_operations = self._client.runs
 
     def submit(self, run: Run, stream=False, **kwargs):
