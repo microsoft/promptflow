@@ -14,7 +14,7 @@ import uuid
 from contextlib import contextmanager
 from pathlib import Path
 from threading import current_thread
-from types import GeneratorType
+from types import AsyncGeneratorType, GeneratorType
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 
 import opentelemetry.trace as otel_trace
@@ -883,10 +883,14 @@ class FlowExecutor:
         allow_generator_output=False,
     ):
         output, nodes_outputs = self._traverse_nodes(inputs, context)
-        output = self._stringify_generator_output(output) if not allow_generator_output else output
+        if not allow_generator_output:
+            output = self._stringify_generator_output(output)
+            output = asyncio.run(self._stringify_async_generator_output(output))
         # Persist the node runs for the nodes that have a generator output
         generator_output_nodes = [
-            nodename for nodename, output in nodes_outputs.items() if isinstance(output, GeneratorType)
+            nodename
+            for nodename, output in nodes_outputs.items()
+            if isinstance(output, (GeneratorType, AsyncGeneratorType))
         ]
         run_tracker.persist_selected_node_runs(run_info, generator_output_nodes)
         run_tracker.allow_generator_types = allow_generator_output
@@ -1041,7 +1045,9 @@ class FlowExecutor:
             run_info.inputs = inputs
             output, nodes_outputs = await self._traverse_nodes_async(inputs, context)
             # TODO: Consider async implementation for _stringify_generator_output
-            output = self._stringify_generator_output(output) if not allow_generator_output else output
+            if not allow_generator_output:
+                output = self._stringify_generator_output(output)
+                output = await self._stringify_async_generator_output(output)
             # Persist the node runs for the nodes that have a generator output
             generator_output_nodes = [
                 nodename for nodename, output in nodes_outputs.items() if isinstance(output, GeneratorType)
@@ -1155,6 +1161,15 @@ class FlowExecutor:
             if isinstance(v, GeneratorType):
                 outputs[k] = "".join(str(chuck) for chuck in v)
 
+        return outputs
+
+    async def _stringify_async_generator_output(self, outputs: dict):
+        for k, v in outputs.items():
+            if isinstance(v, AsyncGeneratorType):
+                # Collect all items from the async generator into a list
+                collected = [str(chunk) async for chunk in v]
+                # Join the string representations of the items
+                outputs[k] = "".join(collected)
         return outputs
 
     def _submit_to_scheduler(self, context: FlowExecutionContext, inputs, nodes: List[Node]) -> Tuple[dict, dict]:

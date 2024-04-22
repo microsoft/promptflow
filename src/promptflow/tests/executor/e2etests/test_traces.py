@@ -1,10 +1,11 @@
+import asyncio
 import json
 import multiprocessing
 import sys
 import threading
 import uuid
 from pathlib import Path
-from types import GeneratorType
+from types import AsyncGeneratorType, GeneratorType
 from unittest.mock import patch
 
 import opentelemetry.trace as otel_trace
@@ -150,6 +151,10 @@ def sub_level_function():
     return "Hello, World!"
 
 
+async def get_next_async(generator):
+    return await generator.__anext__()
+
+
 @pytest.mark.usefixtures("dev_connections", "recording_injection")
 @pytest.mark.e2etest
 class TestExecutorTraces:
@@ -275,6 +280,50 @@ class TestExecutorTraces:
                 assert generator_output_trace[-1] == generated_text
             except StopIteration:
                 assert False, "Generator did not generate any text"
+        else:
+            # If generator output is not allowed, the trace list should contain generated items
+            assert generator_output_trace
+            assert all(isinstance(item, str) for item in generator_output_trace)
+
+    @pytest.mark.parametrize("allow_generator_output", [False, True])
+    def test_trace_behavior_with_async_generator_output(self, dev_connections, allow_generator_output):
+        """Test to verify the trace output list behavior for a flow with an async generator node.
+
+        This test checks the trace output list for a flow with an async generator node. The test ensures that the trace
+        accurately reflects the async generator's consumption status and helps in monitoring and debugging execution.
+        """
+        # Set up executor with a flow that contains an async generator node
+        executor = FlowExecutor.create(get_yaml_file("async_generator_nodes"), dev_connections)
+        inputs = {"text": "This is a test"}
+
+        # Execute the flow with the given inputs
+        flow_result = executor.exec_line(inputs, allow_generator_output=allow_generator_output)
+
+        # Verify that the flow execution result is a dictionary and the flow has completed successfully
+        assert isinstance(flow_result.output, dict)
+        assert flow_result.run_info.status == Status.Completed
+        assert flow_result.run_info.api_calls is not None
+
+        # Extract the trace for the async generator node
+        tool_trace = flow_result.run_info.api_calls[0]["children"][0]
+        generator_output_trace = tool_trace.get("output")
+
+        # Verify that the trace output is a list
+        assert isinstance(generator_output_trace, list)
+        if allow_generator_output:
+            # If generator output is allowed, the trace list should be empty before consumption
+            assert not generator_output_trace
+            # Obtain the generator from the flow result
+            answer_gen = flow_result.output.get("answer")
+            assert isinstance(answer_gen, AsyncGeneratorType)
+            # Consume the generator and check that it yields text
+            try:
+                generated_text = asyncio.run(get_next_async(answer_gen))
+                assert isinstance(generated_text, str)
+                # Verify the trace list contains the most recently generated item
+                assert generator_output_trace[-1] == generated_text
+            except StopIteration:
+                assert False, "Async generator did not generate any text"
         else:
             # If generator output is not allowed, the trace list should contain generated items
             assert generator_output_trace

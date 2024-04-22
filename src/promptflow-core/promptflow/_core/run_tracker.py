@@ -6,7 +6,7 @@ import asyncio
 import json
 from contextvars import ContextVar
 from datetime import datetime, timezone
-from types import GeneratorType
+from types import AsyncGeneratorType, GeneratorType
 from typing import Any, Dict, List, Mapping, Optional, Union
 
 from promptflow._constants import MessageFormatType
@@ -296,7 +296,7 @@ class RunTracker(ThreadLocalSingleton):
     def _ensure_serializable_value(self, val, warning_msg: Optional[str] = None):
         if ConnectionType.is_connection_value(val):
             return ConnectionType.serialize_conn(val)
-        if self.allow_generator_types and isinstance(val, GeneratorType):
+        if self.allow_generator_types and isinstance(val, (GeneratorType, AsyncGeneratorType)):
             return str(val)
         try:
             json.dumps(val, default=default_json_encoder)

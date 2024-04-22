@@ -1,11 +1,14 @@
+import asyncio
 from pathlib import Path
 from tempfile import mkdtemp
+from types import AsyncGeneratorType
 
 import pytest
 
 from promptflow._constants import OUTPUT_FILE_NAME
 from promptflow.batch._batch_engine import BatchEngine
 from promptflow.batch._result import BatchResult
+from promptflow.executor._script_executor import ScriptExecutor
 
 from ..utils import (
     EAGER_FLOW_ROOT,
@@ -19,6 +22,10 @@ from ..utils import (
 SAMPLE_FLOW = "web_classification_no_variants"
 SAMPLE_EVAL_FLOW = "classification_accuracy_evaluation"
 SAMPLE_FLOW_WITH_PARTIAL_FAILURE = "python_tool_partial_failure"
+
+
+async def get_next_async(generator):
+    return await generator.__anext__()
 
 
 def validate_batch_result(batch_result: BatchResult, flow_folder, output_dir, ensure_output):
@@ -126,3 +133,44 @@ class TestEagerFlow:
         batch_engine.run(input_dirs, {"func_input": "${data.func_input}"}, output_dir)
         outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
         assert ensure_output(outputs), outputs
+
+    @pytest.mark.parametrize("allow_generator_output", [False, True])
+    def test_trace_behavior_with_async_generator_output(self, allow_generator_output):
+        """Test to verify the trace output list behavior for a flex flow with an async generator output."""
+
+        flow_file = get_yaml_file("async_stream_output", root=EAGER_FLOW_ROOT)
+
+        # Submitting eager flow to script executor
+        executor = ScriptExecutor(flow_file=flow_file)
+        result = executor.exec_line(inputs={}, allow_generator_output=allow_generator_output)
+
+        # Check the status of the run
+        assert (
+            result.run_info.status.value == "Completed"
+        ), f"Expected status to be 'Completed', but got {result.run_info.status.value}"
+
+        # Check the number and content of api calls
+        api_calls = result.run_info.api_calls
+        assert len(api_calls) == 1, f"Expected one api call, but got {len(api_calls)}"
+        assert "output" in api_calls[0], "The 'output' key was not found in the API calls"
+        generator_output_trace = api_calls[0]["output"]
+        assert isinstance(generator_output_trace, list), "Expected generator_output_trace to be a list"
+
+        if allow_generator_output:
+            # If generator output is allowed, the trace list should be empty before consumption
+            assert not generator_output_trace, "Expected generator_output_trace to be empty"
+            assert isinstance(result.output, AsyncGeneratorType), "Expected result.output to be an async generator"
+            # Consume the generator and check that it yields text
+            try:
+                generated_text = asyncio.run(get_next_async(result.output))
+                assert isinstance(generated_text, str)
+                # Verify the trace list contains the most recently generated item
+                assert generator_output_trace[-1] == generated_text
+            except StopIteration:
+                assert False, "Async generator did not generate any text"
+        else:
+            # If generator output is not allowed, the trace list should contain generated items
+            assert generator_output_trace, "Expected generator_output_trace to contain generated items"
+            assert all(
+                isinstance(item, str) for item in generator_output_trace
+            ), "Expected all items in generator_output_trace to be strings"
