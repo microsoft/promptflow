@@ -137,9 +137,7 @@ class ScriptExecutor(FlowExecutor):
                 output = asyncio.run(self._func(**inputs))
             else:
                 output = self._func(**inputs)
-            if not allow_generator_output:
-                output = self._stringify_generator_output(output)
-                output = asyncio.run(self._stringify_async_generator_output(output))
+            output = self._stringify_generator_output(output) if not allow_generator_output else output
             traces = Tracer.end_tracing(line_run_id)
             # Should convert output to dict before storing it to run info, since we will add key 'line_number' to it,
             # so it must be a dict.
@@ -163,6 +161,13 @@ class ScriptExecutor(FlowExecutor):
         finally:
             run_tracker.persist_flow_run(run_info)
         return self._construct_line_result(output, run_info)
+
+    def _handle_generator_output(self, output, allow_generator_output):
+        if not allow_generator_output:
+            output = self._stringify_generator_output(output)
+            if self._is_async:
+                output = asyncio.run(self._stringify_async_generator_output(output))
+        return output
 
     def _construct_line_result(self, output, run_info):
         line_result = LineResult(output, {}, run_info, {})
@@ -261,23 +266,14 @@ class ScriptExecutor(FlowExecutor):
                 if isinstance(getattr(output, field.name), GeneratorType):
                     consumed_values = "".join(str(chuck) for chuck in getattr(output, field.name))
                     setattr(output, field.name, consumed_values)
+                if isinstance(getattr(output, field.name), AsyncGeneratorType):
+                    consumed_values = asyncio.run(super()._stringify_async_generator(getattr(output, field.name)))
+                    setattr(output, field.name, consumed_values)
         else:
             if isinstance(output, GeneratorType):
                 output = "".join(str(chuck) for chuck in output)
-        return output
-
-    async def _stringify_async_generator_output(self, output):
-        if inspect.iscoroutine(output):
-            return await super()._stringify_async_generator_output(output)
-        elif is_dataclass(output):
-            fields = dataclasses.fields(output)
-            for field in fields:
-                if isinstance(getattr(output, field.name), AsyncGeneratorType):
-                    consumed_values = "".join([str(chuck) async for chuck in getattr(output, field.name)])
-                    setattr(output, field.name, consumed_values)
-        else:
             if isinstance(output, AsyncGeneratorType):
-                output = "".join([str(chuck) async for chuck in output])
+                output = asyncio.run(super()._stringify_async_generator(output))
         return output
 
     def enable_streaming_for_llm_flow(self, stream_required: Callable[[], bool]):

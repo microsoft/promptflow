@@ -15,7 +15,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from threading import current_thread
 from types import AsyncGeneratorType, GeneratorType
-from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
+from typing import Any, AsyncIterator, Callable, Dict, List, Mapping, Optional, Tuple, Union
 
 import opentelemetry.trace as otel_trace
 from opentelemetry.trace.span import format_trace_id
@@ -883,9 +883,7 @@ class FlowExecutor:
         allow_generator_output=False,
     ):
         output, nodes_outputs = self._traverse_nodes(inputs, context)
-        if not allow_generator_output:
-            output = self._stringify_generator_output(output)
-            output = asyncio.run(self._stringify_async_generator_output(output))
+        output = self._stringify_generator_output(output) if not allow_generator_output else output
         # Persist the node runs for the nodes that have a generator output
         generator_output_nodes = [
             nodename
@@ -1161,16 +1159,14 @@ class FlowExecutor:
             if isinstance(v, GeneratorType):
                 outputs[k] = "".join(str(chuck) for chuck in v)
 
+            if isinstance(v, AsyncGeneratorType):
+                outputs[k] = asyncio.run(self._stringify_async_generator(v))
+
         return outputs
 
-    async def _stringify_async_generator_output(self, outputs: dict):
-        for k, v in outputs.items():
-            if isinstance(v, AsyncGeneratorType):
-                # Collect all items from the async generator into a list
-                collected = [str(chunk) async for chunk in v]
-                # Join the string representations of the items
-                outputs[k] = "".join(collected)
-        return outputs
+    async def _stringify_async_generator(self, generator: AsyncIterator[Any]):
+        collected = [str(chunk) async for chunk in generator]
+        return "".join(collected)
 
     def _submit_to_scheduler(self, context: FlowExecutionContext, inputs, nodes: List[Node]) -> Tuple[dict, dict]:
         if not isinstance(self._node_concurrency, int):
