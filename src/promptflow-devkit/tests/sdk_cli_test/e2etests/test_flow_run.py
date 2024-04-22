@@ -1678,17 +1678,22 @@ class TestFlowRun:
                 "func_input",
             ] and details_dict["outputs.obj_input"] == ["val", "val", "val", "val"]
 
+        def assert_metrics(metrics_dict):
+            return metrics_dict == {"length": 4}
+
         flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_callable_class")
         run = pf.run(
             flow=flow_path, data=f"{EAGER_FLOWS_DIR}/basic_callable_class/inputs.jsonl", init={"obj_input": "val"}
         )
         assert_batch_run_result(run, pf, assert_func)
+        assert_run_metrics(run, pf, assert_metrics)
 
         run = load_run(
             source=f"{EAGER_FLOWS_DIR}/basic_callable_class/run.yaml",
         )
         run = pf.runs.create_or_update(run=run)
         assert_batch_run_result(run, pf, assert_func)
+        assert_run_metrics(run, pf, assert_metrics)
 
     def test_run_with_init_class(self, pf):
         def assert_func(details_dict):
@@ -1769,3 +1774,10 @@ def assert_batch_run_result(run: Run, pf: PFClient, assert_func):
     # convert DataFrame to dict
     details_dict = details.to_dict(orient="list")
     assert assert_func(details_dict), details_dict
+
+
+def assert_run_metrics(run: Run, pf: PFClient, assert_func):
+    assert run.status == "Completed"
+    assert "error" not in run._to_dict(), run._to_dict()["error"]
+    metrics = pf.runs.get_metrics(run.name)
+    assert assert_func(metrics), metrics
