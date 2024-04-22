@@ -56,6 +56,22 @@ class ChatInputList(list):
         return "\n".join(map(str, self))
 
 
+class ExtendedStr(str):
+    def __init__(self, string):
+        super().__init__()
+        self.original_string = string
+        self.escaped_string = ""
+
+    # def encode(self, string):
+    #     return "".join(str(ord(c)) for c in string)
+
+    def get_escape_str(self):
+        return self.escaped_string
+
+    def __str__(self):
+        return self.original_string
+
+
 def validate_role(role: str, valid_roles: List[str] = None):
     if not valid_roles:
         valid_roles = VALID_ROLES
@@ -587,10 +603,17 @@ def render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, 
 
 
 def build_escape_dict(kwargs: dict):
-    escape_dict = {}
-    for _, value in kwargs.items():
-        escape_dict = _build_escape_dict(value, escape_dict)
-    return escape_dict
+    # escape_dict = {}
+    # for _, value in kwargs.items():
+    #     escape_dict = _build_escape_dict(value, escape_dict)
+    # return escape_dict
+    return {
+        "system": "11_system",
+        "user": "11_user",
+        "assistant": "11_assistant",
+        "function": "11_function",
+        "tool": "11_tool",
+    }
 
 
 def _build_escape_dict(val, escape_dict: dict):
@@ -613,11 +636,18 @@ def _build_escape_dict(val, escape_dict: dict):
     return escape_dict
 
 
+def _should_escape_roles(k: str, inputs_to_escape: list):
+    return k in inputs_to_escape
+
+
 def escape_roles(val, escape_dict: dict):
     """
     Escape the roles in the prompt inputs to avoid the input string with pattern '# role' get parsed.
     """
-    if isinstance(val, ChatInputList):
+    # Case that the val is a prompt tool output.
+    if isinstance(val, ExtendedStr):
+        return val.get_escape()
+    elif isinstance(val, ChatInputList):
         return ChatInputList([escape_roles(item, escape_dict) for item in val])
     elif isinstance(val, str):
         for role, encoded_role in escape_dict.items():
@@ -625,6 +655,23 @@ def escape_roles(val, escape_dict: dict):
         return val
     else:
         return val
+
+
+def escape_roles_for_prompt_tool_input(val):
+    """
+    Escape the roles in the prompt inputs to avoid the input string with pattern '# role' get parsed.
+    """
+    # Case that the val is a prompt tool output.
+    if isinstance(val, str):
+        escape_dict = {}
+        pattern = r"(?i)^\s*#?\s*(" + "|".join(VALID_ROLES) + r")\s*:\s*\n"
+        roles = re.findall(pattern, val, flags=re.MULTILINE)
+        for role in roles:
+            if role not in escape_dict:
+                escape_dict[role] = str(uuid.uuid4())
+        for role, encoded_role in escape_dict.items():
+            val = val.replace(role, encoded_role)
+    return val
 
 
 def unescape_roles(val, escape_dict: dict):
@@ -662,15 +709,21 @@ def build_messages(
     image_detail: str = 'auto',
     **kwargs,
 ):
+    inputs_to_escape = kwargs.get("inputs_to_escape", [])
     # Use escape/unescape to avoid unintended parsing of role in user inputs.
-    escape_dict = build_escape_dict(kwargs)
+    escape_dict = build_escape_dict(prompt, kwargs)
     updated_kwargs = {
-        key: escape_roles(value, escape_dict) for key, value in kwargs.items()
+        key: (
+            escape_roles(value, escape_dict)
+            if _should_escape_roles(key, inputs_to_escape)
+            else value
+        )
+        for key, value in kwargs.items()
     }
 
     # keep_trailing_newline=True is to keep the last \n in the prompt to avoid converting "user:\t\n" to "user:".
     chat_str = render_jinja_template(
-        prompt, trim_blocks=True, keep_trailing_newline=True, **updated_kwargs
+        prompt._get_escape(), trim_blocks=True, keep_trailing_newline=True, **updated_kwargs
     )
     messages = parse_chat(chat_str, images=images, image_detail=image_detail)
 
