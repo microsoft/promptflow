@@ -3,10 +3,7 @@ from promptflow.tools.exception import InvalidConnectionType
 from promptflow.contracts.types import PromptTemplate
 from promptflow.tools.aoai import AzureOpenAI
 from promptflow.tools.openai import OpenAI
-
-# Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
-# since the code here is in promptflow namespace as well
-from promptflow._internal import tool
+from promptflow._core.tool import tool
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 try:
     from promptflow.connections import ServerlessConnection

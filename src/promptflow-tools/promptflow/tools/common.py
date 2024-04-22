@@ -383,44 +383,26 @@ def list_deployment_connections(connection=""):
         return None
 
     try:
-        print("00000000")
         credential = _get_credential()
         try:
             connection_provider = ConnectionProvider.get_instance()
             conn_sub, conn_rg, conn_account = "", "", ""
             if isinstance(connection_provider, WorkspaceConnectionProvider) \
                     or isinstance(connection_provider, HttpConnectionProvider):
-                print("1111111111")
-                print("conn provider type....................", type(connection_provider))
                 conn = connection_provider.get(connection)
-                print("conn type....................", type(conn))
                 resource_id = conn.resource_id
-                print("resource_id.........:", resource_id)
                 if not resource_id:
-                    print("44444444444")
                     return None
                 conn_sub, conn_rg, conn_account = _parse_resource_id(resource_id)
-                print("test list.....................................")
-                conns = connection_provider.list()
-                print(conns)
-                for c in conns:
-                    print("**************************************")
-                    print(c.name)
-                    print(c.configs)
-                    print(c.type)
-                    print("**************************************")
         except OpenURLFailedUserError:
-            print("22222222222")
             return None
         except ListDeploymentsError as e:
-            print("33333333333")
             raise e
         except Exception as e:
             msg = f"Parsing connection with exception: {e}"
             raise ListDeploymentsError(msg=msg) from e
 
         if conn_sub:
-            print("conn_sub.........:", conn_sub)
             client = CognitiveServicesManagementClient(
                 credential=credential,
                 subscription_id=conn_sub,

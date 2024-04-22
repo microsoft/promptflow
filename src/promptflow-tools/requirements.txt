@@ -1,4 +1,5 @@
 google-search-results==2.4.1
+# TODO: pin promptflow-core>=1.9.0 and remove pin promptflow after all tools remove pf dependency
 promptflow>=1.6.0
 # promptflow-tools only supports openai 1.x
 openai>=1.0.0
