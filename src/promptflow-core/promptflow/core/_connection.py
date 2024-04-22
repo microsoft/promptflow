@@ -4,7 +4,7 @@
 import importlib
 import os
 import types
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from promptflow._constants import CONNECTION_SCRUBBED_VALUE as SCRUBBED_VALUE
 from promptflow._constants import CONNECTION_SCRUBBED_VALUE_NO_CHANGE, ConnectionType, CustomStrongTypeConnectionConfigs
@@ -155,6 +155,8 @@ class AzureOpenAIConnection(_StrongTypeConnection):
     :type api_version: str
     :param auth_mode: The auth mode, supported values see: :class:`~.constants.ConnectionAuthMode`.
     :type auth_mode: str
+    :param resource_id: Optional, the arm resource id.
+    :type resource_id: str
     :param name: Connection name.
     :type name: str
     """
@@ -168,9 +170,16 @@ class AzureOpenAIConnection(_StrongTypeConnection):
         api_type: str = "azure",
         api_version: str = ConnectionDefaultApiVersion.AZURE_OPEN_AI,
         auth_mode: str = ConnectionAuthMode.KEY,
+        resource_id: Optional[str] = None,
         **kwargs,
     ):
-        configs = {"api_base": api_base, "api_type": api_type, "api_version": api_version, "auth_mode": auth_mode}
+        configs = {
+            "api_base": api_base,
+            "api_type": api_type,
+            "api_version": api_version,
+            "auth_mode": auth_mode,
+            "resource_id": resource_id,
+        }
         secrets = {"api_key": api_key} if auth_mode == ConnectionAuthMode.KEY else {}
         self._token_provider = kwargs.get("token_provider")
         super().__init__(configs=configs, secrets=secrets, **kwargs)
@@ -214,6 +223,16 @@ class AzureOpenAIConnection(_StrongTypeConnection):
     def auth_mode(self, value):
         """Set the connection auth mode."""
         self.configs["auth_mode"] = value
+
+    @property
+    def resource_id(self):
+        """Return the connection resource id."""
+        return self.configs.get("resource_id")
+
+    @resource_id.setter
+    def resource_id(self, value):
+        """Set the resource id."""
+        self.configs["resource_id"] = value
 
     @property
     def _has_api_key(self):

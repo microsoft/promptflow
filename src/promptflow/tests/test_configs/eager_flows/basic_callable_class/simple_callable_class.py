@@ -23,6 +23,9 @@ class MyFlow:
             "obj_id": id(self),
         }
 
+    def __aggregate__(self, results: list) -> dict:
+        return {"length": len(results)}
+
 
 if __name__ == "__main__":
     flow = MyFlow("obj_input")
