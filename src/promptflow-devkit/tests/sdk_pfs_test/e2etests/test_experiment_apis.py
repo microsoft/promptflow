@@ -36,6 +36,29 @@ class TestExperimentAPIs:
         }
         assert "eval" in experiment
 
+    def test_experiment_with_run_id(self, pfs_op: PFSOperations) -> None:
+        with check_activity_end_telemetry(
+            expected_activities=[
+                {"activity_name": "pf.flows.test", "first_call": False},
+                {"activity_name": "pf.flows.test", "first_call": False},
+                {"activity_name": "pf.experiment.test"},
+            ]
+        ):
+            experiment = pfs_op.experiment_test(
+                body={
+                    "experiment_template": (
+                        EXPERIMENT_ROOT / "dummy-basic-no-script-template/basic.exp.yaml"
+                    ).as_posix(),
+                    "override_flow_path": (FLOW_ROOT / "dummy_web_classification" / "flow.dag.yaml").as_posix(),
+                    "main_flow_run_id": "123",
+                }
+            ).json
+        assert "main" in experiment and experiment["main"]["detail"]["flow_runs"][0]["inputs"] == {
+            "url": "https://www.youtube.com/watch?v=kYqRtjDBci8"
+        }
+        assert "main" in experiment and experiment["main"]["detail"]["flow_runs"][0]["root_run_id"] == "123"
+        assert "eval" in experiment
+
     def test_experiment_eager_flow_with_yaml(self, pfs_op: PFSOperations) -> None:
         with check_activity_end_telemetry(
             expected_activities=[
@@ -55,6 +78,29 @@ class TestExperimentAPIs:
         assert "main2" in experiment
         assert "main3" in experiment
 
+    def test_experiment_eager_flow_with_init(self, pfs_op: PFSOperations) -> None:
+        with check_activity_end_telemetry(
+            expected_activities=[
+                {"activity_name": "pf.flows.test", "first_call": False},
+                {"activity_name": "pf.flows.test", "first_call": False},
+                {"activity_name": "pf.experiment.test"},
+            ]
+        ):
+            experiment = pfs_op.experiment_test(
+                body={
+                    "experiment_template": (
+                        EXPERIMENT_ROOT / "class-based-eager-flow-exp-template/flow.exp.yaml"
+                    ).as_posix(),
+                    "override_flow_path": (EAGER_FLOWS_DIR / "basic_callable_class" / "flow.flex.yaml").as_posix(),
+                    "main_flow_init": {"obj_input": "val3"},
+                }
+            ).json
+        assert "main" in experiment and experiment["main"]["detail"]["flow_runs"][0]["inputs"] == {
+            "func_input": "val1",
+        }
+        assert "main" in experiment and experiment["main"]["detail"]["flow_runs"][0]["output"]["obj_input"] == "val3"
+        assert "main2" in experiment
+
     def test_experiment_test_with_override_input(self, pfs_op: PFSOperations) -> None:
         with check_activity_end_telemetry(
             expected_activities=[
@@ -70,6 +116,7 @@ class TestExperimentAPIs:
                     ).as_posix(),
                     "override_flow_path": (FLOW_ROOT / "dummy_web_classification" / "flow.dag.yaml").as_posix(),
                     "inputs": {"url": "https://arxiv.org/abs/2307.04767", "answer": "Academic", "evidence": "Both"},
+                    "main_flow_run_id": "123",
                 }
             ).json
         assert "main" in experiment and experiment["main"]["detail"]["flow_runs"][0]["inputs"] == {
@@ -77,6 +124,7 @@ class TestExperimentAPIs:
             "answer": "Academic",
             "evidence": "Both",
         }
+        assert "main" in experiment and experiment["main"]["detail"]["flow_runs"][0]["root_run_id"] == "123"
         assert "eval" in experiment
 
         with check_activity_end_telemetry(
