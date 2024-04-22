@@ -141,7 +141,16 @@ def enrich_span_with_trace_type(span, inputs, output, trace_type):
         enrich_span_with_llm_output(span, output)
     if trace_type == TraceType.ASSISTANT:
         token_collector.collect_openai_tokens(span, output)
-        enrich_span_with_assistant_output(span, output)        
+        enrich_span_with_assistant_output(span, output)
+    if trace_type == TraceType.THREAD:
+        token_collector.collect_openai_tokens(span, output)
+        enrich_span_with_thread_output(span, output)   
+    if trace_type == TraceType.MESSAGE:
+        token_collector.collect_openai_tokens(span, output)
+        enrich_span_with_message_output(span, output)   
+    if trace_type == TraceType.RUN:
+        token_collector.collect_openai_tokens(span, output)
+        enrich_span_with_run_output(span, output)   
     elif trace_type == TraceType.EMBEDDING:
         token_collector.collect_openai_tokens(span, output)
         enrich_span_with_embedding(span, inputs, output)
@@ -309,11 +318,37 @@ def enrich_span_with_assistant_output(span, output):
     model = None
     generated_message = None
     try:
-        span.set_attribute("assistant.name", "Test Assistant")
-        span.set_attribute("assistant.message", "Message")
+        #span.set_attribute("attribute.name", "Attribute value")
         span.add_event("promptflow.assistant.created_assistant", {"payload": serialize_attribute(generated_message)})
     except Exception as e:
         logging.warning(f"Failed to enrich span with assistant: {e}")
+
+def enrich_span_with_thread_output(span, output):
+    model = None
+    generated_message = None
+    try:
+        #span.set_attribute("attribute.name", "Attribute value")
+        span.add_event("promptflow.thread.created_thread", {"payload": serialize_attribute(generated_message)})
+    except Exception as e:
+        logging.warning(f"Failed to enrich span with thread: {e}")
+
+def enrich_span_with_message_output(span, output):
+    model = None
+    generated_message = None
+    try:
+        #span.set_attribute("attribute.name", "Attribute value")
+        span.add_event("promptflow.message.created_message", {"payload": serialize_attribute(generated_message)})
+    except Exception as e:
+        logging.warning(f"Failed to enrich span with message: {e}")
+
+def enrich_span_with_run_output(span, output):
+    model = None
+    generated_message = None
+    try:
+        #span.set_attribute("attribute.name", "Attribute value")
+        span.add_event("promptflow.message.created_run", {"payload": serialize_attribute(generated_message)})
+    except Exception as e:
+        logging.warning(f"Failed to enrich span with run: {e}")
 
 def serialize_attribute(value):
     """Serialize values that can be used as attributes in span."""
