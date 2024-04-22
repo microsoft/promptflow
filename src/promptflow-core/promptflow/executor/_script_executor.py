@@ -16,7 +16,8 @@ from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool_meta_generator import PythonLoadError
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
-from promptflow._utils.exception_utils import ExceptionPresenter, apply_default_value_for_input
+from promptflow._utils.exception_utils import ExceptionPresenter
+from promptflow._utils.execution_utils import apply_default_value_for_input
 from promptflow._utils.logger_utils import logger
 from promptflow._utils.multimedia_utils import BasicMultimediaProcessor
 from promptflow._utils.tool_utils import function_to_interface
