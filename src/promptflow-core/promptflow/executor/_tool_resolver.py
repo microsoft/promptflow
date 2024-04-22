@@ -368,6 +368,14 @@ class ToolResolver:
                 )
         return updated_inputs
 
+    def _get_flow_input_list(self, node: Node, inputs: dict):
+        flow_input_list = []
+        if node.type == ToolType.LLM:
+            for k, v in inputs.items():
+                if v.value_type == InputValueType.FLOW_INPUT:
+                    flow_input_list.append(k)
+        return flow_input_list
+
     def _convert_node_literal_input_types(self, node: Node, tool: Tool, module: types.ModuleType = None):
         updated_node = copy.deepcopy(node)
         updated_node.inputs = self._convert_literal_input_types(node.name, node.source, node.inputs, tool, module)
@@ -537,6 +545,10 @@ class ToolResolver:
         updated_node.inputs[key] = InputAssignment(value=connection, value_type=InputValueType.LITERAL)
         if convert_input_types:
             updated_node = self._convert_node_literal_input_types(updated_node, tool)
+
+        flow_input_list = self._get_flow_input_list(updated_node, updated_node.inputs)
+        if flow_input_list:
+            updated_node.inputs["flow_inputs"] = flow_input_list
 
         prompt_tpl = self._load_source_content(node)
         prompt_tpl_inputs_mapping = get_inputs_for_prompt_template(prompt_tpl)
