@@ -13,7 +13,9 @@ from promptflow._sdk._constants import Local2CloudProperties, Local2CloudUserPro
 from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk._pf_client import PFClient as LocalPFClient
 from promptflow._sdk.entities import Run
+from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow.azure import PFClient
+from promptflow.azure.operations._async_run_uploader import AsyncRunUploader
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
 
@@ -39,7 +41,7 @@ class Local2CloudTestHelper:
         return local_pf
 
     @staticmethod
-    def check_local_to_cloud_run(pf: PFClient, run: Run):
+    def check_local_to_cloud_run(pf: PFClient, run: Run, check_run_details_in_cloud: bool = False) -> Run:
         # check if local run is uploaded
         cloud_run = pf.runs.get(run.name)
         assert cloud_run.display_name == run.display_name
@@ -53,6 +55,13 @@ class Local2CloudTestHelper:
             assert cloud_run.description == run.description
         if run.tags:
             assert cloud_run.tags == run.tags
+
+        # check run details are actually uploaded to cloud
+        if check_run_details_in_cloud:
+            run_uploader = AsyncRunUploader._from_run_operations(run=run, run_ops=pf.runs)
+            result_dict = async_run_allowing_running_loop(run_uploader._check_run_details_exist_in_cloud)
+            for key, value in result_dict.items():
+                assert value is True, f"Run details {key!r} not found in cloud, run name is {run.name!r}"
 
         return cloud_run
 
@@ -86,11 +95,10 @@ class TestFlowRunUpload:
             tags={"sdk-cli-test": "true"},
             description="test sdk local to cloud",
         )
-        run = local_pf.runs.stream(run.name)
         assert run.status == RunStatus.COMPLETED
 
         # check the run is uploaded to cloud
-        Local2CloudTestHelper.check_local_to_cloud_run(pf, run)
+        Local2CloudTestHelper.check_local_to_cloud_run(pf, run, check_run_details_in_cloud=True)
 
     @pytest.mark.skipif(condition=not pytest.is_live, reason="Bug - 3089145 Replay failed for test 'test_upload_run'")
     @pytest.mark.usefixtures(
