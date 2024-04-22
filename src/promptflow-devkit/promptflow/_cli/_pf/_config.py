@@ -69,7 +69,7 @@ def set_config(args):
     for k, v in params_override.items():
         logger.debug("Setting config %s to %s", k, v)
         try:
-            new_temp_path = path if isinstance(path, str) else Configuration.CONFIG_PATH
+            new_temp_path = path if isinstance(path, str) else Configuration.CONFIG_PATH.parent
             with Configuration.set_temp_config_path(new_temp_path):
                 Configuration.get_instance().set_config(k, v)
                 print(f"Set config {args.params_override} successfully.")
