@@ -8,7 +8,7 @@ import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Callable
+from typing import Callable, TypedDict
 from unittest.mock import patch
 
 import jwt
@@ -619,17 +619,13 @@ def mock_check_latest_version() -> None:
 
 
 @pytest.fixture
-def mock_trace_provider_to_cloud(
-    subscription_id: str,
-    resource_group_name: str,
-    workspace_name: str,
-) -> None:
-    """Mock trace provider to cloud."""
-    trace_provider = (
+def mock_trace_destination_to_cloud(subscription_id: str, resource_group_name: str, workspace_name: str):
+    """Mock trace destination to cloud."""
+    trace_destination = (
         f"azureml://subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/"
         f"providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}"
     )
-    with patch("promptflow._sdk._configuration.Configuration.get_trace_provider", return_value=trace_provider):
+    with patch("promptflow._sdk._configuration.Configuration.get_trace_destination", return_value=trace_destination):
         yield
 
 
@@ -699,3 +695,26 @@ def counting_tokens_in_live(remote_client):
             with open(COUNTER_FILE, "w", encoding="utf-8") as f:
                 number_str = json.dumps(number, ensure_ascii=False)
                 f.write(number_str)
+
+
+class CSharpProject(TypedDict):
+    flow_dir: str
+    data: str
+    init: str
+
+
+def construct_csharp_test_project(flow_name: str) -> CSharpProject:
+    root_of_test_cases = os.getenv("CSHARP_TEST_PROJECTS_ROOT", None)
+    if not root_of_test_cases:
+        pytest.skip(reason="No C# test cases found, please set CSHARP_TEST_CASES_ROOT.")
+    root_of_test_cases = Path(root_of_test_cases)
+    return {
+        "flow_dir": (root_of_test_cases / flow_name / "bin" / "Debug" / "net6.0").as_posix(),
+        "data": (root_of_test_cases / flow_name / "data.jsonl").as_posix(),
+        "init": (root_of_test_cases / flow_name / "init.json").as_posix(),
+    }
+
+
+@pytest.fixture
+def csharp_test_project_basic() -> CSharpProject:
+    return construct_csharp_test_project("Basic")

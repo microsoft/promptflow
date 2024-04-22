@@ -21,6 +21,13 @@ class TestEmbedding:
             model="text-embedding-ada-002")
         assert len(result) == 1536
 
+    @pytest.mark.skip_if_no_api_key("serverless_connection_embedding")
+    def test_embedding_conn_serverless(self, serverless_connection_embedding):
+        result = embedding(
+            connection=serverless_connection_embedding,
+            input="The food was delicious and the waiter",)
+        assert len(result) == 1024
+
     def test_embedding_invalid_connection_type(self, serp_connection):
         error_codes = "UserError/ToolValidationError/InvalidConnectionType"
         with pytest.raises(InvalidConnectionType) as exc_info:
