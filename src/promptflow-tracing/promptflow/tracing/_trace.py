@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import contextlib
 import functools
 import inspect
 import json
@@ -13,7 +14,7 @@ from typing import Callable, Dict, List, Optional
 
 import opentelemetry.trace as otel_trace
 from opentelemetry.sdk.trace import ReadableSpan
-from opentelemetry.trace import Link
+from opentelemetry.trace import Link, Span
 from opentelemetry.trace.span import NonRecordingSpan, format_trace_id
 from opentelemetry.trace.status import StatusCode
 
@@ -25,6 +26,16 @@ from .contracts.generator_proxy import AsyncGeneratorProxy, GeneratorProxy
 from .contracts.trace import Trace, TraceType
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
+
+
+@contextlib.contextmanager
+def _record_keyboard_interrupt_to_span(span: Span):
+    try:
+        yield
+    except KeyboardInterrupt as ex:
+        span.record_exception(ex)
+        span.set_status(StatusCode.ERROR, "KeyboardInterrupt received, execution cancelled.")
+        raise
 
 
 class TokenCollector:
@@ -175,7 +186,7 @@ def traced_generator(original_span: ReadableSpan, inputs, generator):
     with otel_tracer.start_as_current_span(
         f"Iterated({original_span.name})",
         links=[link],
-    ) as span:
+    ) as span, _record_keyboard_interrupt_to_span(span):
         enrich_span_with_original_attributes(span, original_span.attributes)
         # Enrich the new span with input before generator iteration to prevent loss of input information.
         # The input is as an event within this span.
@@ -199,7 +210,7 @@ async def traced_async_generator(original_span: ReadableSpan, inputs, generator)
     with otel_tracer.start_as_current_span(
         f"Iterated({original_span.name})",
         links=[link],
-    ) as span:
+    ) as span, _record_keyboard_interrupt_to_span(span):
         enrich_span_with_original_attributes(span, original_span.attributes)
         # Enrich the new span with input before generator iteration to prevent loss of input information.
         # The input is as an event within this span.
@@ -376,7 +387,7 @@ def _traced_async(
         span_name = get_node_name_from_context(used_for_span_name=True) or trace.name
         # need to get everytime to ensure tracer is latest
         otel_tracer = otel_trace.get_tracer("promptflow")
-        with otel_tracer.start_as_current_span(span_name) as span:
+        with otel_tracer.start_as_current_span(span_name) as span, _record_keyboard_interrupt_to_span(span):
             # Store otel trace id in context for correlation
             OperationContext.get_instance()["otel_trace_id"] = f"0x{format_trace_id(span.get_span_context().trace_id)}"
             enrich_span_with_trace(span, trace)
@@ -442,7 +453,7 @@ def _traced_sync(
         span_name = get_node_name_from_context(used_for_span_name=True) or trace.name
         # need to get everytime to ensure tracer is latest
         otel_tracer = otel_trace.get_tracer("promptflow")
-        with otel_tracer.start_as_current_span(span_name) as span:
+        with otel_tracer.start_as_current_span(span_name) as span, _record_keyboard_interrupt_to_span(span):
             # Store otel trace id in context for correlation
             OperationContext.get_instance()["otel_trace_id"] = f"0x{format_trace_id(span.get_span_context().trace_id)}"
             enrich_span_with_trace(span, trace)
