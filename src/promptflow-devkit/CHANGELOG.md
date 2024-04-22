@@ -1,6 +1,8 @@
 # promptflow-devkit package
 
 ## v1.10.0 (Upcoming)
+- The `pf config set <key=value>` support set the folder where the config is saved by `--path folder` parameter,
+  and the config will take effect when **os.getcwd** is a subdirectory of the specified folder.
 
 ## 1.9.0 (2024.04.17)
 
