@@ -61,6 +61,15 @@ class EvalFlow:
             results[key] = r
         return results
 
+    def __aggregate__(self, line_results: list) -> dict:
+        """Aggregate the results."""
+        total = len(line_results)
+        avg_correctness = sum(int(r["correctness"]["score"]) for r in line_results) / total
+        return {
+            "average_correctness": avg_correctness,
+            "total": total,
+        }
+
 
 if __name__ == "__main__":
     from promptflow.tracing import start_trace
@@ -89,3 +98,7 @@ if __name__ == "__main__":
         statements=statements,
     )
     print(result)
+
+    # run aggregation
+    aggregation_result = flow.__aggregate__([result])
+    print(aggregation_result)
