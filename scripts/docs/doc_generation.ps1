@@ -159,7 +159,13 @@ function Add-Notebook
         $Sections[$SectionName].Add([Tuple]::Create($Item.Name.Replace(".ipynb", ""), $Category))
         # Copy notebook to doc path
         Write-Host "Adding Notebook $Item ..."
+        $MediaDir = $Item.FullName + '\..\media'
         Copy-Item -Path $Item.FullName -Destination $TargetNotebookPath
+        if(Test-Path $MediaDir){
+            # copy image referenced in notebook
+            Write-Host "Copying media files from $MediaDir ..."
+            Copy-Item -Path $MediaDir -Destination $TargetNotebookPath -Recurse -Force
+        }
     }
     # Reverse sort each section list by category, ordered by 1 local 2 azure
     foreach($SectionName in $SectionNames){
