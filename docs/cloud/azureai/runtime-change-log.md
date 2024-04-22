@@ -15,18 +15,51 @@ You can check the runtime image version from the flow execution log:
 ## Change log
 Default runtime image is continuously updated, and here we record the new features and fixed bugs of each image version.
 
+### 20240411.v4
+
+#### New features
+- Add 'detail' parameter on 'Azure OpenAI GPT-4 Turbo with Vision" tool and "OpenAI GPT-4V" tool.
+
+#### Bugs fixed
+- Resolve an intermittent ImportError that arose while loading the package tool.
+- Upgrade langchain>=0.1.1 and langchain-core>=0.1.30 to fix vulnerability.
+
+### 20240403.v2
+
+#### New features
+NA
+
+#### Bugs fixed
+NA
+
+
+### 20240326.v2
+
+#### New features
+- Support environment variables for C# batch run.
+
+#### Bugs fixed
+NA
+
+
 ### 20240319.v1
 
 #### New features
+NA
 
-- Add param "seed" to LLM tool chat api.
+#### Bugs fixed
+NA
+
 
 ### 20240313.v1
 
-#### Bugs fixed
+#### New features
+NA
 
+#### Bugs fixed
 - Fix an issue where calling a flow with a flow function would result in failure.
 - Improve error handling by categorizing errors as user errors when a run is archived prior to being processed by the runtime.
+
 
 ### 20240306.v5
 

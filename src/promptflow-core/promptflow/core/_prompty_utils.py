@@ -49,7 +49,7 @@ def get_connection_by_name(connection_name):
     except ImportError as ex:
         raise CoreError(f"Please try 'pip install promptflow-devkit' to install dependency, {ex.msg}")
     client = PFClient()
-    connection_obj = client.connections.get(connection_name, with_secrets=True)
+    connection_obj = client.connections._get(connection_name, with_secrets=True)
     connection = connection_obj._to_execution_connection_dict()["value"]
     connection_type = connection_obj.TYPE
     return connection, connection_type
