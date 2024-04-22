@@ -131,6 +131,12 @@ class Flow(FlowBase):
     def invoke(self, inputs: dict, connections: dict = None, **kwargs) -> "LineResult":
         """Invoke a flow and get a LineResult object."""
         # candidate parameters: connections, variant, overrides, streaming
+        from promptflow._utils.logger_utils import LoggerFactory
+
+        with LoggerFactory.disable_all_loggers():
+            return self._invoke(inputs=inputs, connections=connections, **kwargs)
+
+    def _invoke(self, inputs: dict, connections: dict = None, **kwargs) -> "LineResult":
         from promptflow.core._serving.flow_invoker import FlowInvoker
 
         if is_flex_flow(yaml_dict=self._data, working_dir=self.code):
