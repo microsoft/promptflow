@@ -221,10 +221,10 @@ class RunSubmitter:
                 system_metrics=system_metrics,
             )
 
-            # upload run to cloud if the trace provider is set to cloud
-            trace_provider = self._config.get_trace_destination(path=Path(run.flow).resolve())
-            if trace_provider and trace_provider.startswith(REMOTE_URI_PREFIX):
-                logger.debug(f"Trace provider set to {trace_provider!r}, uploading run to cloud...")
+            # upload run to cloud if the trace destination is set to cloud
+            trace_destination = self._config.get_trace_destination(path=Path(run.flow).resolve())
+            if trace_destination and trace_destination.startswith(REMOTE_URI_PREFIX):
+                logger.debug(f"Trace destination set to {trace_destination!r}, uploading run to cloud...")
                 self._upload_run_to_cloud(run=run)
 
     def _resolve_input_dirs(self, run: Run):
