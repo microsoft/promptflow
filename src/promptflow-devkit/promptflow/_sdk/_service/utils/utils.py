@@ -320,15 +320,6 @@ def is_run_from_built_binary():
     )
 
 
-def add_executable_script_to_env_path():
-    # Add executable script dir to PATH to make sure the subprocess can find the executable, especially in notebook
-    # environment which won't add it to system path automatically.
-    python_dir = os.path.dirname(sys.executable)
-    executable_dir = os.path.join(python_dir, "Scripts") if platform.system() == "Windows" else python_dir
-    if executable_dir not in os.environ["PATH"].split(os.pathsep):
-        os.environ["PATH"] = executable_dir + os.pathsep + os.environ["PATH"]
-
-
 def encrypt_flow_path(flow_path):
     return base64.urlsafe_b64encode(flow_path.encode()).decode()
 

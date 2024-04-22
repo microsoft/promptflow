@@ -7,6 +7,7 @@ import glob
 import inspect
 import json
 import os
+import platform
 import shutil
 import stat
 import subprocess
@@ -38,6 +39,7 @@ from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_ope
 from promptflow._sdk._utils import (
     _get_additional_includes,
     _merge_local_code_and_additional_includes,
+    add_executable_script_to_env_path,
     copy_tree_respect_template_and_ignore_file,
     entry_string_to_callable,
     format_signature_type,
@@ -657,11 +659,14 @@ class FlowOperations(TelemetryMixin):
         with open(Path(__file__).parent.parent / "data" / "executable" / "requirements.txt", "r") as f:
             all_packages = f.read().splitlines()
 
+        if platform.system() != "Windows":
+            all_packages = [pkg for pkg in all_packages if pkg.lower() != "pywin32"]
+
         hidden_imports = copy.deepcopy(all_packages)
         meta_packages = copy.deepcopy(all_packages)
         special_packages = ["streamlit-quill", "flask-cors", "flask-restx"]
         for i in range(len(hidden_imports)):
-            # need special handeling because it use _ to import
+            # need special handling because it uses _ to import
             if hidden_imports[i] in special_packages:
                 hidden_imports[i] = hidden_imports[i].replace("-", "_").lower()
             else:
@@ -670,6 +675,7 @@ class FlowOperations(TelemetryMixin):
         return hidden_imports, all_packages, meta_packages
 
     def _run_pyinstaller(self, output_dir):
+        add_executable_script_to_env_path()
         with _change_working_dir(output_dir, mkdir=False):
             try:
                 subprocess.run(["pyinstaller", "app.spec"], check=True)
