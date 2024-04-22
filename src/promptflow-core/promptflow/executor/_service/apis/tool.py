@@ -2,7 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-import os
 from fastapi import APIRouter
 
 from promptflow._core.tool_meta_generator import generate_tool_meta_in_subprocess
