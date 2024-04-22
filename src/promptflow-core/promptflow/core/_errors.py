@@ -102,6 +102,12 @@ class InvalidSampleError(CoreError):
     pass
 
 
+class ChatAPIToolRoleInvalidFormat(CoreError):
+    """Base exception raised when failed to validate chat api tool role format."""
+
+    pass
+
+
 class OpenURLUserAuthenticationError(UserAuthenticationError):
     def __init__(self, **kwargs):
         super().__init__(target=ErrorTarget.CORE, **kwargs)
