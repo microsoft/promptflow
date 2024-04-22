@@ -38,7 +38,7 @@ class CodeEvaluator:
     def __call__(self, code: str) -> Result:
         """Evaluate the code based on correctness, readability."""
         prompty = Prompty.load(
-            source="./eval.prompty",
+            source="./eval_code_quality.prompty",
             model={"configuration": self.model_config}
         )
         output = prompty(code=code)
