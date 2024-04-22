@@ -8,7 +8,7 @@ import json
 import multiprocessing
 import os
 from datetime import datetime, timedelta
-from typing import Callable
+from typing import Any, Callable, Mapping
 
 from promptflow._core._errors import UnexpectedError
 from promptflow._utils.exception_utils import ExceptionPresenter, JsonSerializedPromptflowException
@@ -17,6 +17,7 @@ from promptflow._utils.process_utils import block_terminate_signal_to_parent
 from promptflow.exceptions import ErrorTarget
 from promptflow.executor._service._errors import ExecutionCanceledError, ExecutionTimeoutError
 from promptflow.executor._service.utils.process_manager import ProcessManager
+from promptflow.executor._service.utils.service_utils import set_environment_variables
 from promptflow.tracing._operation_context import OperationContext
 
 LONG_WAIT_TIMEOUT = timedelta(days=1).total_seconds()
@@ -31,14 +32,14 @@ async def invoke_sync_function_in_process(
     run_id: str = None,
     context_dict: dict = None,
     wait_timeout: int = LONG_WAIT_TIMEOUT,
-    environment_variables: dict = None,
+    environment_variables: Mapping[str, Any] = None,
 ):
     with multiprocessing.Manager() as manager:
         return_dict = manager.dict()
         error_dict = manager.dict()
 
         p = multiprocessing.Process(
-            target=_set_environment_variables_then_execute_target_function,
+            target=_execute_target_function,
             args=(target_function, args, kwargs, return_dict, error_dict, context_dict, environment_variables),
         )
         p.start()
@@ -82,19 +83,17 @@ async def invoke_sync_function_in_process(
                 ProcessManager().remove_process(run_id)
 
 
-def _set_environment_variables_then_execute_target_function(
+def _execute_target_function(
     target_function: Callable,
     args: tuple,
     kwargs: dict,
     return_dict: dict,
     error_dict: dict,
     context_dict: dict,
-    environment_variables: dict,
+    environment_variables: Mapping[str, Any],
 ):
     block_terminate_signal_to_parent()
-    if environment_variables:
-        service_logger.info("Set environment variable before invoke target function.")
-        os.environ.update(environment_variables)
+    set_environment_variables(environment_variables)
     with exception_wrapper(error_dict):
         if context_dict:
             OperationContext.get_instance().update(context_dict)
