@@ -20,7 +20,7 @@ def render_template_jinja2(template: str, **kwargs) -> PromptResult:
     updated_kwargs = escape_roles_for_flow_inputs_and_prompt_output(escape_dict, inputs_to_escape, **kwargs)
     if escape_dict:
         escaped_rendered_template = render_jinja_template(
-            template, trim_blocks=True, keep_trailing_newline=True, **updated_kwargs
+            template, trim_blocks=True, keep_trailing_newline=True, escape_dict=escape_dict, **updated_kwargs
         )
         prompt_result.escaped_string = escaped_rendered_template
         prompt_result.escaped_mapping = escape_dict

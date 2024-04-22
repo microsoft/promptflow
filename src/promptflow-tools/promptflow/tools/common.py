@@ -78,13 +78,13 @@ class PromptResult(str):
         return self.original_string
 
 
-def validate_role(role: str, valid_roles: List[str] = None):
+def validate_role(role: str, valid_roles: List[str] = None, escape_dict: dict = {}):
     if not valid_roles:
         valid_roles = VALID_ROLES
 
     if role not in valid_roles:
         valid_roles_str = ','.join([f'\'{role}:\\n\'' for role in valid_roles])
-        unescaped_invalid_role = _unescape_roles(role)
+        unescaped_invalid_role = _unescape_roles(role, escape_dict)
         error_message = (
             f"The Chat API requires a specific format for prompt definition, and the prompt should include separate "
             f"lines as role delimiters: {valid_roles_str}. Current parsed role '{unescaped_invalid_role}'"
@@ -264,7 +264,13 @@ def parse_tools(last_message, chunk, hash2images, image_detail):
         last_message["content"] = to_content_str_or_list(parsed_result[1], hash2images, image_detail)
 
 
-def parse_chat(chat_str, images: List = None, valid_roles: List[str] = None, image_detail: str = 'auto'):
+def parse_chat(
+    chat_str,
+    images: List = None,
+    valid_roles: List[str] = None,
+    image_detail: str = "auto",
+    escape_dict: dict = {},
+):
     if not valid_roles:
         valid_roles = VALID_ROLES
 
@@ -319,7 +325,7 @@ def parse_chat(chat_str, images: List = None, valid_roles: List[str] = None, ima
             # Check if prompt follows chat api message format and has valid role.
             # References: https://platform.openai.com/docs/api-reference/chat/create.
             role = chunk.strip().lower()
-            validate_role(role, valid_roles=valid_roles)
+            validate_role(role, valid_roles=valid_roles, escape_dict=escape_dict)
             new_message = {"role": role}
             chat_list.append(new_message)
     return chat_list
@@ -598,13 +604,13 @@ def to_bool(value) -> bool:
     return str(value).lower() == "true"
 
 
-def render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, **kwargs):
+def render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, escape_dict={}, **kwargs):
     try:
         return Template(prompt, trim_blocks=trim_blocks, keep_trailing_newline=keep_trailing_newline).render(**kwargs)
     except Exception as e:
         # For exceptions raised by jinja2 module, mark UserError
-        exception_message = {str(e)}
-        unescaped_exception_message = _unescape_roles(exception_message)
+        exception_message = str(e)
+        unescaped_exception_message = _unescape_roles(exception_message, escape_dict)
         print(f"Exception occurs: {type(e).__name__}: {unescaped_exception_message}", file=sys.stderr)
         error_message = f"Failed to render jinja template: {type(e).__name__}: {unescaped_exception_message}. " \
                         + "Please modify your prompt to fix the issue."
@@ -612,11 +618,17 @@ def render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, 
 
 
 def _should_escape(k, v, inputs_to_escape: list):
-    return (isinstance(v, PromptResult) and v.get_escape_mapping()) or k in inputs_to_escape
+    # Should escape if the value is a prompt result or the key is flow input.
+    return (isinstance(v, PromptResult) and v.get_escape_mapping()) or (
+        inputs_to_escape and k in inputs_to_escape
+    )
 
 
 def build_escape_dict(inputs_to_escape: list, **kwargs):
     escape_dict = {}
+    if not inputs_to_escape:
+        return escape_dict
+
     for k, v in kwargs.items():
         # build escape dict either from flow inputs or prompt tool outputs.
         if _should_escape(k, v, inputs_to_escape):
@@ -650,6 +662,9 @@ def _escape_roles(val, escape_dict: dict):
     """
     Escape the roles in the prompt inputs to avoid the input string with pattern '# role' get parsed.
     """
+    if not escape_dict:
+        return val
+
     if isinstance(val, PromptResult) and val.get_escape():
         return val.get_escape()
     elif isinstance(val, ChatInputList):
@@ -676,6 +691,9 @@ def _unescape_roles(val, escape_dict: dict):
             'image_url': {}
         }]
     """
+    if not escape_dict:
+        return val
+
     if isinstance(val, str):
         for role, encoded_role in escape_dict.items():
             val = val.replace(encoded_role, role)
@@ -714,9 +732,9 @@ def build_messages(
     updated_kwargs = escape_roles_for_flow_inputs_and_prompt_output(escape_dict, inputs_to_escape, **kwargs)
     # keep_trailing_newline=True is to keep the last \n in the prompt to avoid converting "user:\t\n" to "user:".
     chat_str = render_jinja_template(
-        prompt, trim_blocks=True, keep_trailing_newline=True, **updated_kwargs
+        prompt, trim_blocks=True, keep_trailing_newline=True, escape_dict=escape_dict, **updated_kwargs
     )
-    messages = parse_chat(chat_str, images=images, image_detail=image_detail)
+    messages = parse_chat(chat_str, images=images, image_detail=image_detail, escape_dict=escape_dict)
 
     if escape_dict and isinstance(messages, list):
         for message in messages:
