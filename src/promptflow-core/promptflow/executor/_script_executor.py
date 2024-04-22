@@ -445,6 +445,7 @@ class ScriptExecutor(FlowExecutor):
         return module_name, func_name
 
     def _initialize_flow(self):
-        with open(self._working_dir / self._flow_file, "r", encoding="utf-8") as fin:
-            flow_dag = load_yaml(fin)
-        self._flow = FlexFlow.deserialize(flow_dag)
+        if not inspect.isfunction(self._flow_file):
+            with open(self._working_dir / self._flow_file, "r", encoding="utf-8") as fin:
+                flow_dag = load_yaml(fin)
+            self._flow = FlexFlow.deserialize(flow_dag)
