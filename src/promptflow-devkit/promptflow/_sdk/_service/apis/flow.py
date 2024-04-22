@@ -42,6 +42,14 @@ flow_path_parser.add_argument(
 flow_path_parser.add_argument("inputs", type=dict, required=False, location="json")
 flow_path_parser.add_argument("environment_variables", type=dict, required=False, location="json")
 flow_path_parser.add_argument("session", type=str, required=False, location="json")
+flow_path_parser.add_argument(
+    "init",
+    type=dict,
+    required=False,
+    location="json",
+    help="Initialization parameters for flex flow, only supported when flow is callable class.",
+)
+flow_path_parser.add_argument("run_id", type=str, required=False, location="json", help="Designated run id of flow")
 
 flow_infer_signature_parser = api.parser()
 flow_infer_signature_parser.add_argument(
@@ -69,6 +77,8 @@ class FlowTest(Resource):
         experiment = args.experiment
         output_path = args.output_path
         session = args.session
+        init = args.init
+        run_id = args.run_id
 
         if output_path is None:
             filename = str(uuid.uuid4())
@@ -87,6 +97,8 @@ class FlowTest(Resource):
             node=node,
             experiment=experiment,
             session=session,
+            init=init,
+            run_id=run_id,
             allow_generator_output=False,
             stream_output=False,
             dump_test_result=True,

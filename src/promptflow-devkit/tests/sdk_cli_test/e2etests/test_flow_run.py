@@ -38,6 +38,7 @@ from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.client import PFClient
 from promptflow.connections import AzureOpenAIConnection
+from promptflow.core import AzureOpenAIModelConfiguration, OpenAIModelConfiguration
 from promptflow.exceptions import UserErrorException
 
 TEST_ROOT = PROMPTFLOW_ROOT / "tests"
@@ -1708,8 +1709,6 @@ class TestFlowRun:
                 # set code folder to avoid snapshot too big
                 code=f"{EAGER_FLOWS_DIR}/basic_callable_class",
             )
-            assert run.status == "Completed"
-            assert "error" not in run._to_dict()
 
             assert_batch_run_result(run, pf, assert_func)
 
@@ -1719,10 +1718,48 @@ class TestFlowRun:
                 # set code folder to avoid snapshot too big
                 code=f"{EAGER_FLOWS_DIR}/basic_callable_class",
             )
-            assert run.status == "Completed"
-            assert "error" not in run._to_dict()
 
             assert_batch_run_result(run, pf, assert_func)
+
+    def test_model_config_in_init(self, pf):
+        def assert_func(details_dict):
+            keys_to_omit = [
+                "inputs.line_number",
+                "inputs.func_input",
+                "outputs.func_input",
+                "outputs.obj_id",
+                "outputs.azure_open_ai_model_config_azure_endpoint",
+            ]
+            omitted_output = {k: v for k, v in details_dict.items() if k not in keys_to_omit}
+            return omitted_output == {
+                "outputs.azure_open_ai_model_config_deployment": ["my_deployment", "my_deployment"],
+                "outputs.azure_open_ai_model_config_connection": ["(Failed)", "(Failed)"],
+                "outputs.open_ai_model_config_model": ["my_model", "my_model"],
+                "outputs.open_ai_model_config_base_url": ["fake_base_url", "fake_base_url"],
+                "outputs.open_ai_model_config_connection": ["(Failed)", "(Failed)"],
+            }
+
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_model_config")
+
+        # init with model config object
+        config1 = AzureOpenAIModelConfiguration(azure_deployment="my_deployment", connection="azure_open_ai_connection")
+        config2 = OpenAIModelConfiguration(model="my_model", base_url="fake_base_url")
+        run = pf.run(
+            flow=flow_path,
+            data=f"{EAGER_FLOWS_DIR}/basic_model_config/inputs.jsonl",
+            init={"azure_open_ai_model_config": config1, "open_ai_model_config": config2},
+        )
+        assert_batch_run_result(run, pf, assert_func)
+
+        # init with model config dict
+        config1 = dict(azure_deployment="my_deployment", connection="azure_open_ai_connection")
+        config2 = dict(model="my_model", base_url="fake_base_url")
+        run = pf.run(
+            flow=flow_path,
+            data=f"{EAGER_FLOWS_DIR}/basic_model_config/inputs.jsonl",
+            init={"azure_open_ai_model_config": config1, "open_ai_model_config": config2},
+        )
+        assert_batch_run_result(run, pf, assert_func)
 
 
 def assert_batch_run_result(run: Run, pf: PFClient, assert_func):
