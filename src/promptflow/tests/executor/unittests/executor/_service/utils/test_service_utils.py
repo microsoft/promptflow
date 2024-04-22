@@ -10,7 +10,7 @@ from promptflow._utils.logger_utils import bulk_logger, flow_logger, logger, ser
 from promptflow._version import VERSION as PF_VERSION
 from promptflow.core._version import __version__ as PF_CORE_VERSION
 from promptflow.executor._service._errors import ExecutionTimeoutError
-from promptflow.executor._service.contracts.execution_request import BaseExecutionRequest, FlowExecutionRequest
+from promptflow.executor._service.contracts.execution_request import FlowExecutionRequest
 from promptflow.executor._service.utils.service_utils import (
     generate_error_response,
     get_commit_id,
