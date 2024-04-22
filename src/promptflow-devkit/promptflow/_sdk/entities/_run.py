@@ -797,6 +797,7 @@ class Run(YAMLTranslatableMixin):
         Meta: name, display_name, description, tags.
         Run setting: runtime, resources, identity.
         """
+        init_properties = {"init_kwargs": self.properties["init_kwargs"]} if "init_kwargs" in self.properties else {}
         init_params = {
             "flow": self.flow,
             "data": self.data,
@@ -808,7 +809,7 @@ class Run(YAMLTranslatableMixin):
             "tags": self.tags,
             "environment_variables": self.environment_variables,
             "connections": self.connections,
-            # "properties": self._properties,  # Do not copy system metrics
+            "properties": init_properties,  # copy no properties except init_kwargs
             "source": self.source,
             "identity": self._identity,
             **kwargs,

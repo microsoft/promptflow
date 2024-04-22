@@ -2568,6 +2568,60 @@ class TestCli:
         run = pf.runs.get(run_id)
         assert_batch_run_result(run, pf, assert_func)
 
+    def test_pf_run_with_init_resume(self, pf):
+        original_run_id = str(uuid.uuid4())
+        run_pf_command(
+            "run",
+            "create",
+            "--flow",
+            f"{EAGER_FLOWS_DIR}/basic_callable_class",
+            "--data",
+            f"{EAGER_FLOWS_DIR}/basic_callable_class/inputs.jsonl",
+            "--name",
+            original_run_id,
+            "--init",
+            "obj_input=val",
+        )
+
+        def assert_func(details_dict):
+            return details_dict["outputs.func_input"] == [
+                "func_input",
+                "func_input",
+                "func_input",
+                "func_input",
+            ] and details_dict["outputs.obj_input"] == ["val", "val", "val", "val"]
+
+        # check run results
+        run = pf.runs.get(original_run_id)
+        assert run.status == "Completed"
+        assert_batch_run_result(run, pf, assert_func)
+
+        resume_run_id_fail = str(uuid.uuid4())
+        with pytest.raises(ValueError):
+            run_pf_command(
+                "run",
+                "create",
+                "--resume-from",
+                original_run_id,
+                "--name",
+                resume_run_id_fail,
+                "--init",
+                "obj_input=val",
+            )
+
+        resume_run_id = str(uuid.uuid4())
+        run_pf_command(
+            "run",
+            "create",
+            "--resume-from",
+            original_run_id,
+            "--name",
+            resume_run_id,
+        )
+        resume_run = pf.runs.get(resume_run_id)
+        assert resume_run.status == "Completed"
+        assert_batch_run_result(resume_run, pf, assert_func)
+
     def test_pf_flow_save(self, pf):
         with tempfile.TemporaryDirectory() as temp_dir:
             run_pf_command(
