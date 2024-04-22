@@ -17,6 +17,7 @@ from promptflow._constants import PF_MAIN_MODULE_NAME
 from promptflow._core._errors import DuplicateToolMappingError
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.utils import is_json_serializable
+from promptflow.core._model_configuration import MODEL_CONFIG_NAME_2_CLASS
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 from ..contracts.tool import (
@@ -62,7 +63,7 @@ def resolve_annotation(anno) -> Union[str, list]:
     return args[0] if len(args) == 1 else args
 
 
-def param_to_definition(param, gen_custom_type_conn=False) -> (InputDefinition, bool):
+def param_to_definition(param, gen_custom_type_conn=False, support_model_config=False) -> (InputDefinition, bool):
     default_value = param.default
     # Get value type and enum from annotation
     value_type = resolve_annotation(param.annotation)
@@ -104,6 +105,8 @@ def param_to_definition(param, gen_custom_type_conn=False) -> (InputDefinition, 
                         custom_connection_added = True
                         typ.append(t.__name__)
             is_connection = True
+    elif support_model_config and value_type in MODEL_CONFIG_NAME_2_CLASS.values():
+        typ = [value_type.__name__]
     else:
         typ = [ValueType.from_type(value_type)]
 
@@ -137,7 +140,11 @@ def resolve_complicated_type(return_type):
 
 
 def function_to_interface(
-    f: Callable, initialize_inputs=None, gen_custom_type_conn=False, skip_prompt_template=False
+    f: Callable,
+    initialize_inputs=None,
+    gen_custom_type_conn=False,
+    skip_prompt_template=False,
+    support_model_config=False,
 ) -> tuple:
     sign = inspect.signature(f)
     all_inputs = {}
@@ -163,7 +170,9 @@ def function_to_interface(
         if skip_prompt_template and value_type is PromptTemplate:
             # custom llm tool has prompt template as input, skip it
             continue
-        input_def, is_connection = param_to_definition(v, gen_custom_type_conn=gen_custom_type_conn)
+        input_def, is_connection = param_to_definition(
+            v, gen_custom_type_conn=gen_custom_type_conn, support_model_config=support_model_config
+        )
         input_defs[k] = input_def
         if is_connection:
             connection_types.append(input_def.type)

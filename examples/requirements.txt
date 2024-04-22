@@ -4,7 +4,5 @@ promptflow-devkit @ git+https://github.com/microsoft/promptflow/@clwan/sample_1_
 promptflow-azure @ git+https://github.com/microsoft/promptflow/@clwan/sample_1_10#subdirectory=src/promptflow-azure
 promptflow @ git+https://github.com/microsoft/promptflow/@clwan/sample_1_10#subdirectory=src/promptflow
 promptflow-tools @ git+https://github.com/microsoft/promptflow/@clwan/sample_1_10#subdirectory=src/promptflow-tools
-
-promptflow-tools
 python-dotenv
 bs4

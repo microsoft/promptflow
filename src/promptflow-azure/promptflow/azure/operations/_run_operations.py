@@ -946,6 +946,18 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             )
         set_event_loop_policy()
 
+        # check if it's evaluation run and make sure the main run is already uploaded
+        if run.run:
+            main_run_name = run.run.name if isinstance(run.run, Run) else run.run
+            try:
+                self.get(main_run_name)
+            except RunNotFoundError:
+                raise UserErrorException(
+                    f"Failed to upload evaluation run {run.name!r} to cloud. It ran against a run {main_run_name!r} "
+                    f"that was not uploaded to cloud. Make sure the previous run is already uploaded to cloud when "
+                    f"uploading an evaluation run."
+                )
+
         # upload local run details to cloud
         run_uploader = AsyncRunUploader._from_run_operations(run=run, run_ops=self)
         result_dict = async_run_allowing_running_loop(run_uploader.upload)
@@ -961,7 +973,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             print(f"Portal url: {self._get_run_portal_url(run_id=run.name)}")
 
     def _registry_existing_bulk_run(self, run: Run):
-        # register the run in the cloud
+        """Register the run in the cloud"""
         rest_obj = run._to_rest_object()
         self._service_caller.create_existing_bulk_run(
             subscription_id=self._operation_scope.subscription_id,
