@@ -15,7 +15,7 @@ from promptflow._core._errors import NotSupported
 from promptflow._internal import ConnectionManager
 from promptflow._proxy import ProxyFactory
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
-from promptflow._sdk._utils import get_flow_name
+from promptflow._sdk._utils import get_flow_name, get_flow_path
 from promptflow._sdk.entities._flows import Flow, FlowContext, Prompty
 from promptflow._sdk.operations._local_storage_operations import LoggerOperations
 from promptflow._utils.async_utils import async_run_allowing_running_loop
@@ -249,19 +249,21 @@ class TestSubmitter:
             # do not enable trace when test single node, as we have not determined this behavior
             if target_node is None:
                 logger.debug("start trace for flow test...")
+                flow_path = get_flow_path(self._origin_flow)
+                logger.debug("flow path for test.start_trace: %s", flow_path)
                 if collection is not None:
                     logger.debug("collection is user specified: %s, will use it...", collection)
-                    start_trace(collection=collection, session=session)
+                    start_trace(collection=collection, session=session, path=flow_path)
                 else:
                     if is_collection_writeable():
                         logger.debug("trace collection is writeable, will use flow name as collection...")
                         collection_for_test = get_flow_name(self._origin_flow)
                         logger.debug("collection for test: %s", collection_for_test)
                         # pass with internal parameter `_collection`
-                        start_trace(session=session, _collection=collection_for_test)
+                        start_trace(session=session, _collection=collection_for_test, path=flow_path)
                     else:
                         logger.debug("trace collection is protected, will honor existing collection.")
-                        start_trace(session=session)
+                        start_trace(session=session, path=flow_path)
 
             self._output_base, log_path, output_sub = self._resolve_output_path(
                 output_base=output_path,
@@ -612,7 +614,7 @@ class TestSubmitter:
             error_type = user_execution_error.get("type", "Exception")
             if show_trace:
                 print(stack_trace)
-            raise UserErrorException(f"{error_type}: {error_message}")
+            raise UserErrorException(f"{error_type}: {error_message}", error=stack_trace)
 
     @staticmethod
     def _get_generator_outputs(outputs):
