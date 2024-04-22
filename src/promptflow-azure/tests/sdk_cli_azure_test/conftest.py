@@ -4,6 +4,7 @@
 
 import logging
 import os
+import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -31,7 +32,7 @@ from promptflow.azure import PFClient
 from promptflow.azure._entities._flow import Flow
 
 try:
-    from promptflow.recording.record_mode import is_live, is_record, is_replay
+    from promptflow.recording.record_mode import is_in_ci_pipeline, is_live, is_record, is_replay
 except ImportError:
 
     def is_live():
@@ -41,6 +42,9 @@ except ImportError:
         return False
 
     def is_replay():
+        return False
+
+    def is_in_ci_pipeline():
         return False
 
 
@@ -54,6 +58,7 @@ DATAS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/datas"
 AZUREML_RESOURCE_PROVIDER = "Microsoft.MachineLearningServices"
 RESOURCE_ID_FORMAT = "/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}"
 MODEL_ROOT = FLOWS_DIR
+COUNTER_FILE = (Path(__file__) / "../count.json").resolve()
 
 
 def pytest_configure():
@@ -626,3 +631,71 @@ def mock_trace_provider_to_cloud(
     )
     with patch("promptflow._sdk._configuration.Configuration.get_trace_provider", return_value=trace_provider):
         yield
+
+
+@pytest.fixture(scope="class", autouse=is_live() and is_in_ci_pipeline())
+def counting_tokens_in_live(remote_client):
+    if is_live():
+
+        run_summary = []
+        # mock run creation, if run is generated, collect into run_summary
+
+        from promptflow.azure._pf_client import PFClient
+
+        origin_run_method = PFClient.run
+
+        def mocked_run_method(self, *args, **kwargs):
+            _run = origin_run_method(self, *args, **kwargs)
+            run_summary.append(_run)
+            return _run
+
+        patcher = patch("promptflow.azure._pf_client.PFClient.run", mocked_run_method)
+        patcher.start()
+        yield
+        patcher.stop()
+
+        # check run_summary
+        completed_run_metrics = []
+
+        # timeout setup
+        start_time = time.time()
+        timeout = 180
+
+        while len(run_summary) > 0:
+            run = run_summary[0]
+            run_summary = run_summary[1:]
+            new_run = remote_client.runs.get(run.name)
+            used_time = time.time() - start_time
+            if (
+                new_run.status == RunStatus.COMPLETED
+                or new_run.status == RunStatus.FAILED
+                or new_run.status == RunStatus.CANCEL_REQUESTED
+                or new_run.status == RunStatus.CANCELED
+            ):
+                # get total tokens.
+                metrics = remote_client.runs._get_run_from_run_history(new_run.name)
+                completed_run_metrics.append(int(metrics.properties.get("azureml.promptflow.total_tokens", 0)))
+            elif used_time > timeout:
+                # timeout dealing.
+                completed_run_metrics.append(0)
+            else:
+                # simple dealing, let this run append to the last and wait for 3 seconds.
+                run_summary.append(new_run)
+                time.sleep(3)
+
+        import json
+
+        from filelock import FileLock
+
+        count = sum(completed_run_metrics)
+        with FileLock(str(COUNTER_FILE) + ".lock"):
+            is_non_zero_file = os.path.isfile(COUNTER_FILE) and os.path.getsize(COUNTER_FILE) > 0
+            if is_non_zero_file:
+                with open(COUNTER_FILE, "r", encoding="utf-8") as f:
+                    number = json.load(f)
+                    number["count"] += count
+            else:
+                number = {"count": count}
+            with open(COUNTER_FILE, "w", encoding="utf-8") as f:
+                number_str = json.dumps(number, ensure_ascii=False)
+                f.write(number_str)
