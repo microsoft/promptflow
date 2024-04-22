@@ -1,11 +1,12 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
+import dataclasses
 import datetime
 import functools
 import json
 import uuid
+from dataclasses import asdict
 from os import PathLike
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
@@ -376,7 +377,7 @@ class Run(YAMLTranslatableMixin):
             display_name=display_name,
             description=self.description,
             tags=json.dumps(self.tags) if self.tags else None,
-            properties=json.dumps(self.properties),
+            properties=json.dumps(self.properties, default=asdict),
             data=Path(self.data).resolve().absolute().as_posix() if self.data else None,
             run_source=self._run_source,
         )
@@ -533,6 +534,13 @@ class Run(YAMLTranslatableMixin):
     def _get_schema_cls(self):
         return RunSchema
 
+    @classmethod
+    def _to_rest_init(cls, init):
+        """Convert init to rest object."""
+        if not init:
+            return None
+        return {k: asdict(v) if dataclasses.is_dataclass(v) else v for k, v in init.items()}
+
     def _to_rest_object(self):
         try:
             from azure.ai.ml._utils._storage_utils import AzureMLDatastorePathUri
@@ -616,7 +624,7 @@ class Run(YAMLTranslatableMixin):
             compute_name=compute_name,
             identity=identity_resource_id,
             enable_multi_container=is_multi_container_enabled(),
-            init_k_wargs=self.init,
+            init_k_wargs=self._to_rest_init(self.init),
         )
 
         # use when uploading a local existing run to cloud
