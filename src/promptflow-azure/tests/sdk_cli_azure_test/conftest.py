@@ -629,6 +629,7 @@ def mock_trace_destination_to_cloud(subscription_id: str, resource_group_name: s
         yield
 
 
+# Counting llm token counts in test.
 @pytest.fixture(scope="class", autouse=is_live() and is_in_ci_pipeline())
 def counting_tokens_in_live(remote_client):
     if is_live():
@@ -651,7 +652,7 @@ def counting_tokens_in_live(remote_client):
         patcher.stop()
 
         # check run_summary
-        completed_run_metrics = []
+        completed_run_metrics = {}
 
         # timeout setup
         start_time = time.time()
@@ -669,11 +670,14 @@ def counting_tokens_in_live(remote_client):
                 or new_run.status == RunStatus.CANCELED
             ):
                 # get total tokens.
-                metrics = remote_client.runs._get_run_from_run_history(new_run.name)
-                completed_run_metrics.append(int(metrics.properties.get("azureml.promptflow.total_tokens", 0)))
+                try:
+                    metrics = remote_client.runs._get_run_from_run_history(new_run.name)
+                    completed_run_metrics[run.name] = int(metrics.properties.get("azureml.promptflow.total_tokens", 0))
+                except Exception:
+                    completed_run_metrics[run.name] = 0
             elif used_time > timeout:
                 # timeout dealing.
-                completed_run_metrics.append(0)
+                completed_run_metrics[run.name] = 0
             else:
                 # simple dealing, let this run append to the last and wait for 3 seconds.
                 run_summary.append(new_run)
@@ -683,15 +687,16 @@ def counting_tokens_in_live(remote_client):
 
         from filelock import FileLock
 
-        count = sum(completed_run_metrics)
+        count = sum(completed_run_metrics.values())
         with FileLock(str(COUNTER_FILE) + ".lock"):
             is_non_zero_file = os.path.isfile(COUNTER_FILE) and os.path.getsize(COUNTER_FILE) > 0
             if is_non_zero_file:
                 with open(COUNTER_FILE, "r", encoding="utf-8") as f:
                     number = json.load(f)
+                    number = number | completed_run_metrics
                     number["count"] += count
             else:
-                number = {"count": count}
+                number = {"count": count} | completed_run_metrics
             with open(COUNTER_FILE, "w", encoding="utf-8") as f:
                 number_str = json.dumps(number, ensure_ascii=False)
                 f.write(number_str)
