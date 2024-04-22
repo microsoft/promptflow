@@ -16,7 +16,7 @@ from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool_meta_generator import PythonLoadError
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
-from promptflow._utils.execution_utils import apply_default_value_for_input
+from promptflow._utils.exception_utils import ExceptionPresenter, apply_default_value_for_input
 from promptflow._utils.logger_utils import logger
 from promptflow._utils.multimedia_utils import BasicMultimediaProcessor
 from promptflow._utils.tool_utils import function_to_interface
@@ -195,7 +195,7 @@ class ScriptExecutor(FlowExecutor):
         self,
         inputs: List[Any],
     ) -> AggregationResult:
-        output = None
+        output, metrics = None, {}
         try:
             if inspect.iscoroutinefunction(self._aggr_func):
                 output = async_run_allowing_running_loop(self._aggr_func, **{self._aggr_input_name: inputs})
@@ -204,8 +204,16 @@ class ScriptExecutor(FlowExecutor):
             metrics = output if isinstance(output, dict) else {"metrics": output}
             for k, v in metrics.items():
                 log_metric(k, v)
-        except Exception:
-            pass
+        except Exception as e:
+            error_type_and_message = f"({e.__class__.__name__}) {e}"
+            e = ScriptExecutionError(
+                message_format="Execution failure in '{func_name}': {error_type_and_message}",
+                func_name=self._aggr_func.__name__,
+                error_type_and_message=error_type_and_message,
+            )
+            error = ExceptionPresenter.create(e).to_dict(include_debug_info=True)
+            logger.warning(f"Failed to execute aggregation function with error: {error}")
+            logger.warning("The flow will have empty metrics.")
         return AggregationResult(output, metrics, {})
 
     async def exec_line_async(
