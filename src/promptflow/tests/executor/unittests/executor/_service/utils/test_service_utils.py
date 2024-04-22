@@ -103,9 +103,8 @@ class TestServiceUtils:
         assert json_ser_error_response.innermost_error_code == "ExecutionTimeoutError"
 
     def test_set_environment_variables(self):
-        execution_request = BaseExecutionRequest(**MOCK_REQUEST)
-        execution_request.environment_variables = {
+        environment_variables = {
             "PF_TEST_ENV": "dummy_value",
         }
-        set_environment_variables(execution_request)
+        set_environment_variables(environment_variables)
         assert os.environ.get("PF_TEST_ENV") == "dummy_value"
