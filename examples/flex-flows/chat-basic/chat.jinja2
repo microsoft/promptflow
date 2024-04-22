@@ -2,10 +2,8 @@ system:
 You are a helpful assistant.
 
 {% for item in chat_history %}
-user:
-{{item.inputs.question}}
-assistant:
-{{item.outputs.answer}}
+{{item.role}}:
+{{item.content}}
 {% endfor %}
 
 user:

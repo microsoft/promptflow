@@ -3,20 +3,20 @@
 # Any manual changes to this file may cause incorrect behavior.
 # Any manual changes will be overwritten if the code is regenerated.
 
-name: samples_flexflows_chatbasic_classbasedflowazure
+name: samples_flexflows_chatbasic_chatwithclassbasedflow
 on:
   schedule:
-    - cron: "3 21 * * *" # Every day starting at 5:3 BJT
+    - cron: "32 22 * * *" # Every day starting at 6:32 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/flex-flows/chat-basic/**, examples/*requirements.txt, .github/workflows/samples_flexflows_chatbasic_classbasedflowazure.yml ]
+    paths: [ examples/flex-flows/chat-basic/**, examples/*requirements.txt, .github/workflows/samples_flexflows_chatbasic_chatwithclassbasedflow.yml ]
   workflow_dispatch:
 
 env:
   IS_IN_CI_PIPELINE: "true"
 
 jobs:
-  samples_flexflows_chatbasic_classbasedflowazure:
+  samples_flexflows_chatbasic_chatwithclassbasedflow:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -55,7 +55,7 @@ jobs:
       - name: Test Notebook
         working-directory: examples/flex-flows/chat-basic
         run: |
-          papermill -k python class-based-flow-azure.ipynb class-based-flow-azure.output.ipynb
+          papermill -k python chat-with-class-based-flow.ipynb chat-with-class-based-flow.output.ipynb
       - name: Upload artifact
         if: ${{ always() }}
         uses: actions/upload-artifact@v3
