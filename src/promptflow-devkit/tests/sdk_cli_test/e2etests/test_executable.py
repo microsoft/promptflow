@@ -19,8 +19,6 @@ DATAS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/datas"
 class TestExecutable:
     def test_flow_build_executable(self):
         source = f"{FLOWS_DIR}/web_classification/flow.dag.yaml"
-        output_path = "dist"
-
         try:
             with tempfile.TemporaryDirectory() as temp_dir:
                 run_pf_command(
@@ -40,7 +38,7 @@ class TestExecutable:
                     "pf",
                     "start_pfs.vbs",
                 ]
-                output_path = Path(output_path).resolve()
+                output_path = Path(temp_dir).resolve()
                 for check_path in check_path_list:
                     check_path = output_path / check_path
                     assert check_path.exists()
