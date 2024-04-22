@@ -1125,3 +1125,16 @@ def add_executable_script_to_env_path():
     executable_dir = os.path.join(python_dir, "Scripts") if platform.system() == "Windows" else python_dir
     if executable_dir not in os.environ["PATH"].split(os.pathsep):
         os.environ["PATH"] = executable_dir + os.pathsep + os.environ["PATH"]
+
+
+def get_flow_path(flow) -> Path:
+    # use public API to get flow path for DAG/flex flow or prompty
+    from promptflow._sdk.entities._flows.dag import Flow as DAGFlow
+    from promptflow._sdk.entities._flows.flex import FlexFlow
+    from promptflow._sdk.entities._flows.prompty import Prompty
+
+    if isinstance(flow, DAGFlow):
+        return flow.flow_dag_path.parent.resolve()
+    if isinstance(flow, (FlexFlow, Prompty)):
+        return flow.path.parent.resolve()
+    raise ValueError(f"Unsupported flow type {type(flow)!r}")
