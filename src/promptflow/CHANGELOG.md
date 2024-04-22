@@ -1,6 +1,8 @@
 # Release History
 
 ## v1.10.0 (Upcoming)
+### Features Added
+- [promptflow-devkit]: Expose --ui to trigger a chat window, reach [here](https://microsoft.github.io/promptflow/reference/pf-command-reference.html#pf-flow-test) for more details.
 
 ## 1.9.0 (2024.04.17)
 
