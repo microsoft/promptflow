@@ -1,0 +1,16 @@
+inputs:
+  text:
+    type: string
+    default: Hello world!
+outputs:
+  answer:
+    type: string
+    reference: ${async_echo.output}
+nodes:
+- name: async_echo
+  type: python
+  source:
+    type: code
+    path: async_echo.py
+  inputs:
+    text: ${inputs.text}
