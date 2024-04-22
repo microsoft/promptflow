@@ -62,6 +62,11 @@ jobs:
     - name: import lint testing private imports from global
       run: |
         set -xe
+        rm ${{ env.WORKING_DIRECTORY }}/src/promptflow-tracing/promptflow/__init__.py
+        rm ${{ env.WORKING_DIRECTORY }}/src/promptflow-core/promptflow/__init__.py
+        rm ${{ env.WORKING_DIRECTORY }}/src/promptflow-devkit/promptflow/__init__.py
+        rm ${{ env.WORKING_DIRECTORY }}/src/promptflow-azure/promptflow/__init__.py
+        rm ${{ env.WORKING_DIRECTORY }}/src/promptflow-evals/promptflow/__init__.py
         cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-azure
         echo "=== Add more import linter when facing more import errors ==="
 
