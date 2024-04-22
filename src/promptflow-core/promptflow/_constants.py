@@ -173,6 +173,7 @@ class SpanAttributeFieldName:
     TOTAL_TOKEN_COUNT = "__computed__.cumulative_token_count.total"
 
     SESSION_ID = "session_id"
+    FLOW_LOG_PATH = "flow_log_path"
 
 
 class SpanResourceAttributesFieldName:
