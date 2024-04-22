@@ -268,7 +268,7 @@ class RunSubmitter:
             from promptflow._sdk._tracing import _get_ws_triad_from_pf_config
             from promptflow.azure._cli._utils import _get_azure_pf_client
 
-            ws_triad = _get_ws_triad_from_pf_config(path=run.flow.resolve())
+            ws_triad = _get_ws_triad_from_pf_config(path=run._get_flow_dir().resolve())
             pf = _get_azure_pf_client(
                 subscription_id=ws_triad.subscription_id,
                 resource_group=ws_triad.resource_group_name,
