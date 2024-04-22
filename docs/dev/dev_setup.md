@@ -2,10 +2,20 @@
 
 ## Set up process
 
-- First create a new [conda](https://conda.io/projects/conda/en/latest/user-guide/getting-started.html) environment. Please specify python version as 3.9.
-  `conda create -n <env_name> python=3.9`.
-- Activate the env you created.
-- In root folder, run `python scripts/dev-setup/main.py` to install the packages and dependencies; if you are using Visual Studio Code, it is recommended to add `--vscode` (which is `python scripts/dev-setup/main.py --vscode`) to enable VS Code to recognize the packages.
+Select either Conda or Poetry to set up your development environment.
+
+1. Conada environment setup
+  - First create a new [conda](https://conda.io/projects/conda/en/latest/user-guide/getting-started.html) environment. Please specify python version as 3.8/3.9/3.10/3.11.
+    `conda create -n <env_name> python=3.9`.
+  - Activate the env you created.
+  - In root folder, run `python scripts/dev-setup/main.py` to install the packages and dependencies; if you are using Visual Studio Code, it is recommended to add `--vscode` (which is `python scripts/dev-setup/main.py --vscode`) to enable VS Code to recognize the packages.
+
+2. Poetry environment setup
+  - Install [poetry](https://python-poetry.org/docs/). Please specify python version as 3.8/3.9/3.10/3.11.
+  - Each folder under [src](../../src/) (except the promptflow folder) is a separate package, so you need to install the dependencies for each package.
+    - `cd promptflow-core && poetry install -E <extra> --with dev,test`
+    - `cd promptflow-devkit && poetry install -E <extra> --with dev,test`
+    - `cd promptflow-azure && poetry install -E <extra> --with dev,test`
 
 ## How to run tests
 
@@ -21,10 +31,18 @@ After above setup process is finished. You can use `pytest` command to run test,
 
 ### Run tests via command
 
-- Run all tests under a folder: `pytest src/promptflow/tests -v`
-- Run a single test: ` pytest src/promptflow/tests/promptflow_test/e2etests/test_executor.py::TestExecutor::test_executor_basic_flow -v`
+1. Conda environment
+  - Run all tests under a folder: `pytest src/promptflow/tests -v`, `pytest src/promptflow-devkit/tests -v`
+  - Run a single test: ` pytest src/promptflow/tests/promptflow_test/e2etests/test_executor.py::TestExecutor::test_executor_basic_flow -v`
+
+2. Poetry environment: there is limitation for running tests in src/promptflow folder, you can only run tests under other package folders.
+  - for example: under the target folder `promptflow-devkit`, you can run `poetry run pytest tests/sdk_cli_test -v`
 
 ### Run tests in VSCode
+
+---
+
+#### Conda environment
 
 1. Set up your python interperter
 
@@ -75,6 +93,14 @@ Open `.vscode/settings.json`, write `"--ignore=src/promptflow/tests/sdk_cli_azur
 3. Run test, right-click the test name to run, or click the green arrow button on the left.
 
 ![img2](../media/dev_setup/set_up_pycharm_2.png)
+
+---
+
+#### Poetry environment
+
+VSCode could pick up the correct environment automatically if you open vscode/pycharm under the package folders.
+
+There are some limitations currently, intellisense may not work properly in poetry environment.
 
 ## How to write docstring
 

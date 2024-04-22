@@ -22,15 +22,21 @@ There are 3 representative values of the environment variable `PROMPT_FLOW_TEST_
 - `record`: Tests run against the real backend, and network traffic will be sanitized (filter sensitive and unnecessary requests/responses) and recorded to local files (recordings).
 - `replay`: There is no real network traffic between SDK/CLI and the backend, tests run against local recordings.
 
+## Supported modules
+* [promptflow-devkit](../../src/promptflow-devkit)
+* [promptflow-azure](../../src/promptflow-azure)
+
 ## Update test recordings
 
 To record a test, don’t forget to clone the full repo and set up the proper test environment following [dev_setup.md](./dev_setup.md):
-1. Prepare some data.
+1. Ensure you have installed dev version of promptflow-recording package.
+   * If it is not installed, run `pip install -e src/promptflow-recording` in the root directory of the repo.
+2. Prepare some data.
    * If you have changed/affected tests in __sdk_cli_test__: Copy or rename the file [dev-connections.json.example](../../src/promptflow/dev-connections.json.example) to `connections.json` in the same folder.
    * If you have changed/affected tests in __sdk_cli_azure_test__: prepare your Azure ML workspace, make sure your Azure CLI logged in, and set the environment variable `PROMPT_FLOW_SUBSCRIPTION_ID`, `PROMPT_FLOW_RESOURCE_GROUP_NAME`, `PROMPT_FLOW_WORKSPACE_NAME` and `PROMPT_FLOW_RUNTIME_NAME` (if needed) pointing to your workspace.
-2. Record the test.
+3. Record the test.
    * Specify the environment variable `PROMPT_FLOW_TEST_MODE` to `'record'`. If you have a `.env` file, we recommend specifying it there. Here is an example [.env file](../../src/promptflow/.env.example). Then, just run the test that you want to record.
-3. Once the test completed.
+4. Once the test completed.
    * If you have changed/affected tests in __sdk_cli_azure_test__: There should be one new YAML file located in [Azure recording folder](../../src/promptflow-recording/recordings/azure/), containing the network traffic of the test.
    * If you have changed/affected tests in __sdk_cli_test__: There may be changes in the folder [Local recording folder](../../src/promptflow-recording/recordings/local/).  Don’t worry if there are no changes, because similar LLM calls may have been recorded before.
 
