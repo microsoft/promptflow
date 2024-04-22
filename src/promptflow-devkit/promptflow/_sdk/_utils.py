@@ -1116,3 +1116,16 @@ def get_flow_name(flow) -> str:
         return flow.name
     # should be promptflow._sdk.entities._flows.base.FlowBase: flex flow, prompty, etc.
     return flow.code.name
+
+
+def get_flow_path(flow) -> Path:
+    # use public API to get flow path for DAG/flex flow or prompty
+    from promptflow._sdk.entities._flows.dag import Flow as DAGFlow
+    from promptflow._sdk.entities._flows.flex import FlexFlow
+    from promptflow._sdk.entities._flows.prompty import Prompty
+
+    if isinstance(flow, DAGFlow):
+        return flow.flow_dag_path.parent.resolve()
+    if isinstance(flow, (FlexFlow, Prompty)):
+        return flow.path.parent.resolve()
+    raise ValueError(f"Unsupported flow type {type(flow)!r}")

@@ -133,7 +133,11 @@ class TestExecutorLogs:
                 assert "execution          WARNING" in log_content
                 assert "execution.flow     INFO" in log_content
                 assert f"in line {i} (index starts from 0)" in log_content
-                assert line_number == count_lines(flow_log_file)
+                # Some monitor logs may not be printed in CI test.
+                # Assert max line number to avoid printing too many noisy logs.
+                assert line_number == count_lines(
+                    flow_log_file
+                ), f"log line count is incorrect, content is {log_content}"
 
     @pytest.mark.parametrize(
         "folder_name",

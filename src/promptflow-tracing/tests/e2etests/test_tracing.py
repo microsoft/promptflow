@@ -1,5 +1,6 @@
 import asyncio
 import json
+import uuid
 from unittest.mock import patch
 
 import pytest
@@ -14,7 +15,9 @@ from .simple_functions import (
     dummy_llm_tasks_threadpool,
     greetings,
     openai_chat,
+    openai_chat_async,
     openai_completion,
+    openai_completion_async,
     openai_embedding_async,
     prompt_tpl_chat,
     prompt_tpl_completion,
@@ -168,6 +171,10 @@ class TestTracing:
             (openai_completion, {"prompt": "Hello"}, 2),
             (openai_chat, {"prompt": "Hello", "stream": True}, 3),
             (openai_completion, {"prompt": "Hello", "stream": True}, 3),
+            (openai_chat_async, {"prompt": "Hello"}, 2),
+            (openai_completion_async, {"prompt": "Hello"}, 2),
+            (openai_chat_async, {"prompt": "Hello", "stream": True}, 3),
+            (openai_completion_async, {"prompt": "Hello", "stream": True}, 3),
         ],
     )
     def test_otel_trace_with_llm(self, dev_connections, func, inputs, expected_span_length):
@@ -223,6 +230,30 @@ class TestTracing:
 
     def test_otel_trace_with_multiple_functions(self):
         execute_function_in_subprocess(self.assert_otel_traces_with_multiple_functions)
+
+    def _assert_otel_tracer_collection_after_start_trace(self):
+        from promptflow.tracing import start_trace
+
+        memory_exporter = prepare_memory_exporter()
+        inputs = {"user_id": 1}
+        collection1 = str(uuid.uuid4())
+        start_trace(collection=collection1)
+        self.run_func(greetings, inputs)
+        span_list = memory_exporter.get_finished_spans()
+        assert len(span_list) > 0
+        for span in span_list:
+            assert span.resource.attributes["collection"] == collection1
+        # resource.attributes.collection should be refreshed after start_trace
+        collection2 = str(uuid.uuid4())
+        start_trace(collection=collection2)
+        self.run_func(greetings, inputs)
+        new_span_list = memory_exporter.get_finished_spans()
+        assert len(new_span_list) > len(span_list)
+        for span in new_span_list[len(span_list) :]:
+            assert span.resource.attributes["collection"] == collection2
+
+    def test_otel_tracer_refreshed_after_start_trace(self):
+        execute_function_in_subprocess(self._assert_otel_tracer_collection_after_start_trace)
 
     def assert_otel_traces_with_multiple_functions(self):
         memory_exporter = prepare_memory_exporter()

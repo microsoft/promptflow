@@ -446,7 +446,10 @@ def resolve_generator(flow_result, generator_record):
             )
             flow_result.run_info.output[k] = flow_output
             flow_result.run_info.result[k] = flow_output
-            flow_result.output[k] = flow_output
+            if isinstance(flow_result.output, dict):
+                flow_result.output[k] = flow_output
+            else:
+                flow_result.output = flow_output
 
     # resolve generator in node outputs
     for node_name, node in flow_result.node_run_infos.items():

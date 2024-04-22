@@ -18,6 +18,7 @@ from types import GeneratorType
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 
 import opentelemetry.trace as otel_trace
+from opentelemetry.trace.span import Span, format_trace_id
 from opentelemetry.trace.status import StatusCode
 
 from promptflow._constants import LINE_NUMBER_KEY
@@ -62,12 +63,7 @@ from promptflow.storage._run_storage import DefaultRunStorage
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
 from promptflow.tracing._operation_context import OperationContext
 from promptflow.tracing._start_trace import setup_exporter_from_environ
-from promptflow.tracing._trace import (
-    enrich_span_with_context,
-    enrich_span_with_input,
-    enrich_span_with_trace_type,
-    open_telemetry_tracer,
-)
+from promptflow.tracing._trace import enrich_span_with_context, enrich_span_with_input, enrich_span_with_trace_type
 from promptflow.tracing.contracts.trace import TraceType
 
 
@@ -225,6 +221,7 @@ class FlowExecutor:
                 flow_file=Path(flow_file),
                 working_dir=working_dir,
                 storage=storage,
+                init_kwargs=init_kwargs,
             )
         else:
             if init_kwargs:
@@ -846,12 +843,13 @@ class FlowExecutor:
         run_info: FlowRunInfo,
         run_tracker: RunTracker,
         context: FlowExecutionContext,
-        validate_inputs=False,
         allow_generator_output=False,
     ):
-        with open_telemetry_tracer.start_as_current_span(self._flow.name) as span:
+        # need to get everytime to ensure tracer is latest
+        otel_tracer = otel_trace.get_tracer("promptflow")
+        with otel_tracer.start_as_current_span(self._flow.name) as span, self._record_keyboard_interrupt_to_span(span):
             # Store otel trace id in context for correlation
-            OperationContext.get_instance()["otel_trace_id"] = f"{span.get_span_context().trace_id:032x}"
+            OperationContext.get_instance()["otel_trace_id"] = f"0x{format_trace_id(span.get_span_context().trace_id)}"
             # initialize span
             span.set_attributes(
                 {
@@ -868,7 +866,6 @@ class FlowExecutor:
                 run_info,
                 run_tracker,
                 context,
-                validate_inputs,
                 allow_generator_output,
             )
             # enrich span with trace type
@@ -877,21 +874,24 @@ class FlowExecutor:
             span.set_status(StatusCode.OK)
             return output, aggregation_inputs
 
+    @contextlib.contextmanager
+    def _record_keyboard_interrupt_to_span(self, span: Span):
+        try:
+            yield
+        except KeyboardInterrupt as ex:
+            if span.is_recording():
+                span.record_exception(ex)
+                span.set_status(StatusCode.ERROR, "Execution cancelled.")
+            raise
+
     def _exec_inner(
         self,
         inputs: Mapping[str, Any],
         run_info: FlowRunInfo,
         run_tracker: RunTracker,
         context: FlowExecutionContext,
-        validate_inputs=False,
         allow_generator_output=False,
     ):
-        if validate_inputs:
-            inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=run_info.index)
-        inputs = self._multimedia_processor.load_multimedia_data(self._flow.inputs, inputs)
-        # Inputs are assigned after validation and multimedia data loading, instead of at the start of the flow run.
-        # This way, if validation or multimedia data loading fails, we avoid persisting invalid inputs.
-        run_info.inputs = inputs
         output, nodes_outputs = self._traverse_nodes(inputs, context)
         output = self._stringify_generator_output(output) if not allow_generator_output else output
         # Persist the node runs for the nodes that have a generator output
@@ -955,12 +955,17 @@ class FlowExecutor:
         output = {}
         aggregation_inputs = {}
         try:
+            if validate_inputs:
+                inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=run_info.index)
+            inputs = self._multimedia_processor.load_multimedia_data(self._flow.inputs, inputs)
+            # Inputs are assigned after validation and multimedia data loading, instead of at the start of the flow run.
+            # This way, if validation or multimedia data loading fails, we avoid persisting invalid inputs.
+            run_info.inputs = inputs
             output, aggregation_inputs = self._exec_inner_with_trace(
                 inputs,
                 run_info,
                 run_tracker,
                 context,
-                validate_inputs,
                 allow_generator_output,
             )
         except KeyboardInterrupt as ex:
@@ -971,9 +976,6 @@ class FlowExecutor:
             # Update the run info of those running nodes to a canceled status.
             run_tracker.cancel_node_runs(run_id)
             run_tracker.end_run(line_run_id, ex=ex)
-            # If async execution is enabled, ignore this exception and return the partial line results.
-            if not self._should_use_async():
-                raise
         except Exception as ex:
             run_tracker.end_run(line_run_id, ex=ex)
             if self._raise_ex:
