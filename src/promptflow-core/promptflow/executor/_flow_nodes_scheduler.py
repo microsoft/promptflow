@@ -119,8 +119,6 @@ class FlowNodesScheduler:
             event.set()
             executor.shutdown()
         except Exception as e:
-            # When meet exception, mark event to exit timeout task.
-            event.set()
             err_msg = "Flow execution has failed."
             if isinstance(e, LineExecutionTimeoutError):
                 err_msg = f"Line execution timeout after {line_timeout_sec} seconds."
@@ -130,10 +128,15 @@ class FlowNodesScheduler:
             for unfinished_future in self._future_to_node.keys():
                 # We can't cancel running tasks here, only pending tasks could be cancelled.
                 unfinished_future.cancel()
-            # Use shutdown(wait=False) to ignore running threads.
-            # We want to exit the execution and mark it as failed/cancelled, so don't need to wait for running threads.
-            executor.shutdown(wait=False)
             raise e
+        finally:
+            # When meet exception, mark event to exit timeout task.
+            event.set()
+            # Use shutdown(wait=False) to ignore running threads.
+            # When meet exception, we want to exit the execution and mark it as failed/cancelled,
+            # so don't need to wait for running threads.
+            # If not meet exception, below shutdown will not take any effect.
+            executor.shutdown(wait=False)
         for node in self._dag_manager.bypassed_nodes:
             self._dag_manager.completed_nodes_outputs[node] = None
         return self._dag_manager.completed_nodes_outputs, self._dag_manager.bypassed_nodes
