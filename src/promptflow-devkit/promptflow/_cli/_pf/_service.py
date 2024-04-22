@@ -89,7 +89,7 @@ def add_parser_start_service(subparsers):
     # Force restart prompt flow service:
     pf service start --force
     # Start prompt flow service with specific port:
-    pf service start --port 65553
+    pf service start --port 65535
     """  # noqa: E501
     add_param_port = lambda parser: parser.add_argument(  # noqa: E731
         "-p",
