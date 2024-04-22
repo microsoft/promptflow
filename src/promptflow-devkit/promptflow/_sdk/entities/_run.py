@@ -1,11 +1,12 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
+import dataclasses
 import datetime
 import functools
 import json
 import uuid
+from dataclasses import asdict
 from os import PathLike
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
@@ -32,6 +33,8 @@ from promptflow._sdk._constants import (
     DownloadedRun,
     FlowRunProperties,
     IdentityKeys,
+    Local2CloudProperties,
+    Local2CloudUserProperties,
     LocalStorageFilenames,
     RestRunTypes,
     RunDataKeys,
@@ -277,7 +280,7 @@ class Run(YAMLTranslatableMixin):
             end_time=datetime.datetime.fromisoformat(str(obj.end_time)) if obj.end_time else None,
             status=str(obj.status),
             data=Path(obj.data).resolve().absolute().as_posix() if obj.data else None,
-            properties={FlowRunProperties.SYSTEM_METRICS: properties_json.get(FlowRunProperties.SYSTEM_METRICS, {})},
+            properties=properties_json,
             # compatible with old runs, their run_source is empty, treat them as local
             run_source=obj.run_source or RunInfoSources.LOCAL,
             # experiment command node only fields
@@ -374,7 +377,7 @@ class Run(YAMLTranslatableMixin):
             display_name=display_name,
             description=self.description,
             tags=json.dumps(self.tags) if self.tags else None,
-            properties=json.dumps(self.properties),
+            properties=json.dumps(self.properties, default=asdict),
             data=Path(self.data).resolve().absolute().as_posix() if self.data else None,
             run_source=self._run_source,
         )
@@ -531,6 +534,13 @@ class Run(YAMLTranslatableMixin):
     def _get_schema_cls(self):
         return RunSchema
 
+    @classmethod
+    def _to_rest_init(cls, init):
+        """Convert init to rest object."""
+        if not init:
+            return None
+        return {k: asdict(v) if dataclasses.is_dataclass(v) else v for k, v in init.items()}
+
     def _to_rest_object(self):
         try:
             from azure.ai.ml._utils._storage_utils import AzureMLDatastorePathUri
@@ -614,7 +624,7 @@ class Run(YAMLTranslatableMixin):
             compute_name=compute_name,
             identity=identity_resource_id,
             enable_multi_container=is_multi_container_enabled(),
-            init_k_wargs=self.init,
+            init_k_wargs=self._to_rest_init(self.init),
         )
 
         # use when uploading a local existing run to cloud
@@ -661,6 +671,14 @@ class Run(YAMLTranslatableMixin):
             start_time = self._created_on.isoformat() + "Z" if self._created_on else None
             end_time = self._end_time.isoformat() + "Z" if self._end_time else None
 
+            # extract properties that needs to be passed to the request
+            total_tokens = self.properties[FlowRunProperties.SYSTEM_METRICS].get("total_tokens", 0)
+            properties = {Local2CloudProperties.TOTAL_TOKENS: total_tokens}
+            for property_key in Local2CloudUserProperties.get_all_values():
+                value = self.properties.get(property_key, None)
+                if value is not None:
+                    properties[property_key] = value
+
             return CreateExistingBulkRunRequest(
                 run_id=self.name,
                 run_status=self.status,
@@ -669,6 +687,7 @@ class Run(YAMLTranslatableMixin):
                 run_display_name=self._get_default_display_name(),
                 description=self.description,
                 tags=self.tags,
+                properties=properties,
                 run_experiment_name=self._experiment_name,
                 run_display_name_generation_type=RunDisplayNameGenerationType.USER_PROVIDED_MACRO,
                 output_data_store=CloudDatastore.DEFAULT,
