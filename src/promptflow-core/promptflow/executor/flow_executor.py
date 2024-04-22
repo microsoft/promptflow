@@ -976,9 +976,6 @@ class FlowExecutor:
             # Update the run info of those running nodes to a canceled status.
             run_tracker.cancel_node_runs(run_id)
             run_tracker.end_run(line_run_id, ex=ex)
-            # If async execution is enabled, ignore this exception and return the partial line results.
-            if not self._should_use_async():
-                raise
         except Exception as ex:
             run_tracker.end_run(line_run_id, ex=ex)
             if self._raise_ex:
