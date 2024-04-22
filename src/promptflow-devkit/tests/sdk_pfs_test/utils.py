@@ -240,7 +240,7 @@ class PFSOperations:
         return response
 
     # trace APIs
-    # LineRuns
+    # LineRuns/list
     def list_line_runs(
         self,
         *,
@@ -263,6 +263,29 @@ class PFSOperations:
             query_string["session"] = session_id
         response = self._client.get(
             f"{self.LINE_RUNS_PREFIX}/list",
+            query_string=query_string,
+            headers=self.remote_user_header(),
+        )
+        return response
+
+    # LineRuns/search
+    def search_line_runs(
+        self,
+        *,
+        expression: str,
+        collection: Optional[str] = None,
+        runs: Optional[List[str]] = None,
+        session_id: Optional[str] = None,
+    ):
+        query_string = {"expression": expression}
+        if collection is not None:
+            query_string["collection"] = collection
+        if runs is not None:
+            query_string["run"] = ",".join(runs)
+        if session_id is not None:
+            query_string["session"] = session_id
+        response = self._client.get(
+            f"{self.LINE_RUNS_PREFIX}/search",
             query_string=query_string,
             headers=self.remote_user_header(),
         )
