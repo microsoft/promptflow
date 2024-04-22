@@ -34,6 +34,8 @@ from promptflow.tools.exception import (
 
 GPT4V_VERSION = "vision-preview"
 VALID_ROLES = ["system", "user", "assistant", "function", "tool"]
+ESCAPE_DICT = {role: (lambda key: '-'.join(str(ord(c)) for c in key))(role)
+               for role in ["system", "user", "assistant", "function", "tool"]}
 
 
 class Deployment:
@@ -54,6 +56,19 @@ class ChatInputList(list):
 
     def __str__(self):
         return "\n".join(map(str, self))
+
+
+class ExtendedStr(str):
+    def __init__(self, string):
+        super().__init__()
+        self.original_string = string
+        self.escaped_string = ""
+
+    def get_escape_str(self):
+        return self.escaped_string
+
+    def __str__(self):
+        return self.original_string
 
 
 def validate_role(role: str, valid_roles: List[str] = None):
@@ -586,13 +601,6 @@ def render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, 
         raise JinjaTemplateError(message=error_message) from e
 
 
-def build_escape_dict(kwargs: dict):
-    escape_dict = {}
-    for _, value in kwargs.items():
-        escape_dict = _build_escape_dict(value, escape_dict)
-    return escape_dict
-
-
 def _build_escape_dict(val, escape_dict: dict):
     """
     Build escape dictionary with roles as keys and uuids as values.
@@ -613,21 +621,23 @@ def _build_escape_dict(val, escape_dict: dict):
     return escape_dict
 
 
-def escape_roles(val, escape_dict: dict):
+def escape_roles(val):
     """
     Escape the roles in the prompt inputs to avoid the input string with pattern '# role' get parsed.
     """
     if isinstance(val, ChatInputList):
-        return ChatInputList([escape_roles(item, escape_dict) for item in val])
+        return ChatInputList([escape_roles(item) for item in val])
     elif isinstance(val, str):
-        for role, encoded_role in escape_dict.items():
-            val = val.replace(role, encoded_role)
+        pattern = r"(?i)^\s*#?\s*(" + "|".join(VALID_ROLES) + r")\s*:\s*\n"
+        roles = re.findall(pattern, val, flags=re.MULTILINE)
+        for role in roles:
+            val = val.replace(role, ESCAPE_DICT[role.lower()])
         return val
     else:
         return val
 
 
-def unescape_roles(val, escape_dict: dict):
+def unescape_roles(val):
     """
     Unescape the roles in the parsed chat messages to restore the original role names.
 
@@ -643,13 +653,13 @@ def unescape_roles(val, escape_dict: dict):
         }]
     """
     if isinstance(val, str):
-        for role, encoded_role in escape_dict.items():
+        for role, encoded_role in ESCAPE_DICT.items():
             val = val.replace(encoded_role, role)
         return val
     elif isinstance(val, list):
         for index, item in enumerate(val):
             if isinstance(item, dict) and "text" in item:
-                for role, encoded_role in escape_dict.items():
+                for role, encoded_role in ESCAPE_DICT.items():
                     val[index]["text"] = item["text"].replace(encoded_role, role)
         return val
     else:
@@ -662,11 +672,18 @@ def build_messages(
     image_detail: str = 'auto',
     **kwargs,
 ):
-    # Use escape/unescape to avoid unintended parsing of role in user inputs.
-    escape_dict = build_escape_dict(kwargs)
-    updated_kwargs = {
-        key: escape_roles(value, escape_dict) for key, value in kwargs.items()
-    }
+    flow_input_list = kwargs.pop("flow_inputs", None)
+    updated_kwargs = kwargs
+    if flow_input_list:
+        # Use escape/unescape to avoid unintended parsing of role in user inputs.
+        # 1. Do escape/unescape for llm node inputs.
+        updated_kwargs = {
+            key: escape_roles(value) if key in flow_input_list else value for key, value in kwargs.items()
+        }
+        # 2. Do escape/unescape for prompt tool outputs.
+        updated_kwargs = {
+            key: value.get_escape_str() if isinstance(value, ExtendedStr) else value for key, value in updated_kwargs.items()
+        }
 
     # keep_trailing_newline=True is to keep the last \n in the prompt to avoid converting "user:\t\n" to "user:".
     chat_str = render_jinja_template(
@@ -674,12 +691,12 @@ def build_messages(
     )
     messages = parse_chat(chat_str, images=images, image_detail=image_detail)
 
-    if escape_dict and isinstance(messages, list):
+    if flow_input_list and isinstance(messages, list):
         for message in messages:
             if not isinstance(message, dict):
                 continue
             for key, val in message.items():
-                message[key] = unescape_roles(val, escape_dict)
+                message[key] = unescape_roles(val)
 
     return messages
 

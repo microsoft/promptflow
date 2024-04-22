@@ -466,6 +466,11 @@ class ToolResolver:
         )
         self._validate_duplicated_inputs(prompt_tpl_inputs_mapping.keys(), param_names, msg)
         node.inputs = self._load_images_for_prompt_tpl(prompt_tpl_inputs_mapping, node.inputs)
+
+        flow_input_list = self._get_flow_input_list(node)
+        if flow_input_list:
+            node.inputs["flow_inputs"] = InputAssignment(value=flow_input_list, value_type=InputValueType.LITERAL)
+
         callable = partial(render_template_jinja2, template=prompt_tpl)
         return ResolvedTool(node=node, definition=None, callable=callable, init_args={})
 
@@ -526,6 +531,15 @@ class ToolResolver:
         provider = connection_type_to_api_mapping[connection_type]
         return connection, provider
 
+    def _get_flow_input_list(self, node: Node):
+        inputs = node.inputs
+        flow_input_list = []
+        if node.type == ToolType.LLM or node.type == ToolType.PROMPT or node.type == ToolType.CUSTOM_LLM:
+            for k, v in inputs.items():
+                if v.value_type == InputValueType.FLOW_INPUT:
+                    flow_input_list.append(k)
+        return flow_input_list
+
     def _resolve_llm_node(self, node: Node, convert_input_types=False) -> ResolvedTool:
         connection, provider = self._resolve_llm_connection_with_provider(self._get_llm_node_connection(node))
         # Always set the provider according to the connection type
@@ -537,6 +551,10 @@ class ToolResolver:
         updated_node.inputs[key] = InputAssignment(value=connection, value_type=InputValueType.LITERAL)
         if convert_input_types:
             updated_node = self._convert_node_literal_input_types(updated_node, tool)
+        
+        flow_input_list = self._get_flow_input_list(updated_node)
+        if flow_input_list:
+            updated_node.inputs["flow_inputs"] = InputAssignment(value=flow_input_list, value_type=InputValueType.LITERAL)
 
         prompt_tpl = self._load_source_content(node)
         prompt_tpl_inputs_mapping = get_inputs_for_prompt_template(prompt_tpl)
