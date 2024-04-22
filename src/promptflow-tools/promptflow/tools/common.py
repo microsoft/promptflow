@@ -400,6 +400,15 @@ def list_deployment_connections(connection=""):
                     print("44444444444")
                     return None
                 conn_sub, conn_rg, conn_account = _parse_resource_id(resource_id)
+                print("test list.....................................")
+                conns = connection_provider.list()
+                print(conns)
+                for c in conns:
+                    print("**************************************")
+                    print(c.name)
+                    print(c.configs)
+                    print(c.type)
+                    print("**************************************")
         except OpenURLFailedUserError:
             print("22222222222")
             return None
