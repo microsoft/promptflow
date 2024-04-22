@@ -2,21 +2,41 @@ import copy
 import json
 import os
 import re
-from typing import List, Mapping
+from dataclasses import asdict
+from os import PathLike
+from pathlib import Path
+from typing import List, Mapping, Union
 
 from promptflow.core._connection import AzureOpenAIConnection, OpenAIConnection, _Connection
 from promptflow.core._errors import (
     ChatAPIFunctionRoleInvalidFormatError,
     ChatAPIInvalidRoleError,
     CoreError,
-    InvalidConnectionError,
+    InvalidOutputKeyError,
+    InvalidSampleError,
     UnknownConnectionType,
 )
+from promptflow.core._model_configuration import ModelConfiguration
 from promptflow.core._utils import render_jinja_template_content
+
+
+def update_dict_recursively(origin_dict, overwrite_dict):
+    updated_dict = {}
+    for k, v in overwrite_dict.items():
+        if isinstance(v, dict):
+            updated_dict[k] = update_dict_recursively(origin_dict.get(k, {}), v)
+        else:
+            updated_dict[k] = v
+    for k, v in origin_dict.items():
+        if k not in updated_dict:
+            updated_dict[k] = v
+    return updated_dict
 
 
 def parse_environment_variable(value):
     """Get environment variable from ${env:ENV_NAME}. If not found, return original value."""
+    if not isinstance(value, str):
+        return value
     pattern = r"^\$\{env:(.*)\}$"
     result = re.match(pattern, value)
     if result:
@@ -26,34 +46,73 @@ def parse_environment_variable(value):
         return value
 
 
-def get_connection(connection):
-    if not isinstance(connection, (str, dict, _Connection)):
-        error_message = (
-            "Illegal definition of connection, only support connection name or dict of connection info. "
-            "You can refer to https://microsoft.github.io/promptflow/how-to-guides/"
-            "manage-connections.html#create-a-connection for more details about connection."
-        )
-        raise InvalidConnectionError(message=error_message)
-    if isinstance(connection, str):
-        # Get connection by name
-        try:
-            from promptflow._sdk._pf_client import PFClient
-        except ImportError as ex:
-            raise CoreError(f"Please try 'pip install promptflow-devkit' to install dependency, {ex.msg}")
-        client = PFClient()
-        connection_obj = client.connections.get(connection, with_secrets=True)
-        connection = connection_obj._to_execution_connection_dict()["value"]
-        connection_type = connection_obj.TYPE
-    elif isinstance(connection, dict):
-        connection_type = connection.pop("type", None)
-        # Get value from environment
-        connection = {k: parse_environment_variable(v) for k, v in connection.items()}
+def load_inputs_from_sample(sample: Union[dict, str, PathLike]):
+    if not sample:
+        return {}
+    elif isinstance(sample, dict):
+        return sample
+    elif isinstance(sample, (str, Path)) and Path(sample).suffix.lower() == ".json":
+        if not Path(sample).exists():
+            raise InvalidSampleError(f"Cannot find sample file {sample}.")
+        with open(sample, "r") as f:
+            return json.load(f)
     else:
-        return connection
-    if connection_type == AzureOpenAIConnection.TYPE:
-        return AzureOpenAIConnection(**connection)
-    elif connection_type == OpenAIConnection.TYPE:
-        return OpenAIConnection(**connection)
+        raise InvalidSampleError("Only dict and json file are supported as sample in prompty.")
+
+
+def get_connection_by_name(connection_name):
+    try:
+        from promptflow._sdk._pf_client import PFClient
+    except ImportError as ex:
+        raise CoreError(f"Please try 'pip install promptflow-devkit' to install dependency, {ex.msg}")
+    client = PFClient()
+    connection_obj = client.connections._get(connection_name, with_secrets=True)
+    connection = connection_obj._to_execution_connection_dict()["value"]
+    connection_type = connection_obj.TYPE
+    return connection, connection_type
+
+
+def is_empty_connection_config(connection_dict):
+    reversed_fields = set(["azure_deployment", "model"])
+    connection_keys = set([k for k, v in connection_dict.items() if v])
+    return len(connection_keys - reversed_fields) == 0
+
+
+def convert_model_configuration_to_connection(model_configuration):
+    if isinstance(model_configuration, dict):
+        # Get connection from connection field
+        connection = model_configuration.get("connection", None)
+        if connection:
+            if isinstance(connection, str):
+                # Get connection by name
+                connection, connection_type = get_connection_by_name(connection)
+            elif isinstance(connection, _Connection):
+                return connection
+        else:
+            connection_dict = copy.copy(model_configuration)
+            connection_type = connection_dict.pop("type", None)
+            # Get value from environment
+            connection = {k: parse_environment_variable(v) for k, v in connection_dict.items()}
+    elif isinstance(model_configuration, ModelConfiguration):
+        # Get connection from model configuration
+        connection_type = model_configuration._type
+        if model_configuration.connection:
+            connection, _ = get_connection_by_name(model_configuration.connection)
+        else:
+            connection = {k: parse_environment_variable(v) for k, v in asdict(model_configuration).items()}
+
+    if connection_type in [AzureOpenAIConnection.TYPE, "azure_openai"]:
+        if "api_base" not in connection:
+            connection["api_base"] = connection.get("azure_endpoint", None)
+        if is_empty_connection_config(connection):
+            return AzureOpenAIConnection.from_env()
+        else:
+            return AzureOpenAIConnection(**connection)
+    elif connection_type in [OpenAIConnection.TYPE, "openai"]:
+        if is_empty_connection_config(connection):
+            return OpenAIConnection.from_env()
+        else:
+            return OpenAIConnection(**connection)
     error_message = (
         f"Not Support connection type {connection_type} for embedding api. "
         f"Connection type should be in [{AzureOpenAIConnection.TYPE}, {OpenAIConnection.TYPE}]."
@@ -76,14 +135,14 @@ def convert_prompt_template(template, inputs, api):
         return parse_chat(rendered_prompt, list(referenced_images))
 
 
-def prepare_open_ai_request_params(params, template, api, connection):
+def prepare_open_ai_request_params(model_config, template, connection):
     # TODO validate function in params
-    params = copy.copy(params)
+    params = copy.copy(model_config.parameters)
     if isinstance(connection, AzureOpenAIConnection):
-        params["model"] = params.pop("deployment_name")
         params["extra_headers"] = {"ms-azure-ai-promptflow-called-from": "promptflow-core"}
+    params["model"] = model_config._model
 
-    if api == "completion":
+    if model_config.api == "completion":
         params["prompt"] = template
     else:
         params["messages"] = template
@@ -123,21 +182,83 @@ def send_request_to_llm(client, api, parameters):
     return result
 
 
-def format_llm_response(response, api, response_format=None, raw=False, streaming=False):
-    if raw or streaming:
+def format_llm_response(response, api, is_first_choice, response_format=None, streaming=False, outputs=None):
+    """
+    Format LLM response
+
+    If is_first_choice is false, it will directly return LLM response.
+    If is_first_choice is true, behavior as blow:
+        response_format: type: text
+            - n: None/1/2
+                Return the first choice content. Return type is string.
+            - stream: True
+                Return generator list of first choice content. Return type is generator[str]
+        response_format: type: json_object
+            - n : None/1/2
+                Return json dict of the first choice. Return type is dict
+            - stream: True
+                Return json dict of the first choice. Return type is dict
+            - outputs
+                Extract corresponding output in the json dict to the first choice. Return type is dict.
+
+    :param response: LLM response.
+    :type response:
+    :param api: API type of the LLM.
+    :type api: str
+    :param is_first_choice: If true, it will return the first item in response choices, else it will return all response
+    :type is_first_choice: bool
+    :param response_format: An object specifying the format that the model must output.
+    :type response_format: str
+    :param streaming: Indicates whether to stream the response
+    :type streaming: bool
+    :param outputs: Extract corresponding output in json format response
+    :type outputs: dict
+    :return: Formatted LLM response.
+    :rtype: Union[str, dict, Response]
+    """
+
+    def format_choice(item):
+        # response_format is one of text or json_object.
+        # https://platform.openai.com/docs/api-reference/chat/create#chat-create-response_format
+        if is_json_format:
+            result_dict = json.loads(item)
+            if not outputs:
+                return result_dict
+            # return the keys in outputs
+            output_results = {}
+            for key in outputs:
+                if key not in result_dict:
+                    raise InvalidOutputKeyError(f"Cannot find {key} in response {list(result_dict.keys())}")
+                output_results[key] = result_dict[key]
+            return output_results
+        # Return text format response
+        return item
+
+    def format_stream(llm_response):
+        cur_index = None
+        for chunk in llm_response:
+            if len(chunk.choices) > 0 and chunk.choices[0].delta.content:
+                if cur_index is None:
+                    cur_index = chunk.choices[0].index
+                if cur_index != chunk.choices[0].index:
+                    return
+                yield chunk.choices[0].delta.content
+
+    if not is_first_choice:
         return response
 
+    is_json_format = isinstance(response_format, dict) and response_format.get("type", None) == "json_object"
+    if streaming:
+        if not is_json_format:
+            return format_stream(llm_response=response)
+        else:
+            content = "".join([item for item in format_stream(llm_response=response)])
+            return format_choice(content)
     if api == "completion":
-        result = response.choices[0].text
+        result = format_choice(response.choices[0].text)
     else:
-        result = getattr(response.choices[0].message, "content", "")
-
-    # response_format is one of text or json_object.
-    # https://platform.openai.com/docs/api-reference/chat/create#chat-create-response_format
-    if response_format == "json_object":
-        return json.loads(result)
-    else:
-        return result
+        result = format_choice(getattr(response.choices[0].message, "content", ""))
+    return result
 
 
 # region: Copied from promptflow-tools

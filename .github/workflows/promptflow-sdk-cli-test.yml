@@ -12,44 +12,22 @@ on:
       - .github/workflows/promptflow-sdk-cli-test.yml
       - src/promptflow-recording/**
   workflow_dispatch:
+    inputs:
+      filepath:
+        description: file or paths you want to trigger a test
+        required: true
+        default: "./tests/sdk_cli_test ./tests/sdk_pfs_test"
+        type: string
 env:
-  packageSetupType: promptflow_with_extra
-  testWorkingDirectory: ${{ github.workspace }}/src/promptflow
-  PYTHONPATH: ${{ github.workspace }}/src/promptflow
   IS_IN_CI_PIPELINE: "true"
   RECORD_DIRECTORY: ${{ github.workspace }}/src/promptflow-recording
+  TRACING_DIRECTORY: ${{ github.workspace }}/src/promptflow-tracing
+  CORE_DIRECTORY: ${{ github.workspace }}/src/promptflow-core
+  WORKING_DIRECTORY: ${{ github.workspace }}/src/promptflow-devkit
+  PROMPTFLOW_DIRECTORY: ${{ github.workspace }}/src/promptflow
+  TOOL_DIRECTORY: ${{ github.workspace }}/src/promptflow-tools
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-    runs-on: ubuntu-latest
-    steps:
-    - name: checkout
-      uses: actions/checkout@v4
-    - name: Display and Set Environment Variables
-      run: |
-        env | sort >> $GITHUB_OUTPUT
-      id: display_env
-      shell: bash -el {0}
-    - name: Python Setup - ubuntu-latest - Python Version 3.9
-      uses: "./.github/actions/step_create_python_environment"
-      with:
-        pythonVersion: 3.9
-    - name: Build wheel
-      uses: "./.github/actions/step_sdk_setup"
-      with:
-        setupType: promptflow_with_extra
-        scriptPath: ${{ env.testWorkingDirectory }}
-    - name: Upload Wheel
-      if: always()
-      uses: actions/upload-artifact@v3
-      with:
-        name: wheel
-        path: |
-          ${{ github.workspace }}/src/promptflow/dist/*.whl
-          ${{ github.workspace }}/src/promptflow-tools/dist/*.whl
   sdk_cli_tests:
-    needs: build
     strategy:
       fail-fast: false
       matrix:
@@ -58,40 +36,24 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - name: set test mode
-      run: echo "PROMPT_FLOW_TEST_MODE=$(if [[ "${{ github.event_name }}" == "pull_request" ]]; then echo replay; else echo live; fi)" >> $GITHUB_ENV
-    - name: checkout
-      uses: actions/checkout@v4
-    - name: Display and Set Environment Variables
       run: |
-        env | sort >> $GITHUB_OUTPUT
-      id: display_env
-      shell: bash -el {0}
-    - name: Python Setup - ${{ matrix.os }} - Python Version ${{ matrix.pythonVersion }}
-      uses: "./.github/actions/step_create_python_environment"
+        echo "PROMPT_FLOW_TEST_MODE=$(if [[ "${{ github.event_name }}" == "pull_request" ]]; then echo replay; else echo live; fi)" >> $GITHUB_ENV
+        echo "FILE_PATHS=$(if [[ "${{ inputs.filepath }}" == "" ]]; then echo "./tests/sdk_cli_test ./tests/sdk_pfs_test"; else echo ${{ inputs.filepath }}; fi)" >> $GITHUB_ENV
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
       with:
-        pythonVersion: ${{ matrix.pythonVersion }}
-    - name: Download Artifacts
-      uses: actions/download-artifact@v3
-      with:
-        name: wheel
-        path: artifacts
-    - name: Install wheel
-      shell: pwsh
-      working-directory: artifacts
+        python-version: ${{ matrix.pythonVersion }}
+    - uses: snok/install-poetry@v1
+    - name: install test dependency group
       run: |
-        Set-PSDebug -Trace 1
-        pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
-        pip install ${{ github.workspace }}/src/promptflow-tracing
-        pip install ${{ github.workspace }}/src/promptflow-core
-        pip install ${{ github.workspace }}/src/promptflow-devkit[pyarrow]
-        pip install ${{ github.workspace }}/src/promptflow
-        gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
-        pip freeze
-    - name: install recording
-      run: |
-        pip install vcrpy
-        pip install .
-      working-directory: ${{ env.RECORD_DIRECTORY }}
+        set -xe
+        poetry install -E pyarrow --with ci,test
+
+        poetry run pip show promptflow-tracing
+        poetry run pip show promptflow-core
+        poetry run pip show promptflow-devkit
+        poetry run pip show promptflow-tools
+      working-directory: ${{ env.WORKING_DIRECTORY }}
     - name: Azure login (non pull_request workflow)
       if: github.event_name != 'pull_request'
       uses: azure/login@v1
@@ -101,62 +63,33 @@ jobs:
       if: github.event_name != 'pull_request'
       uses: "./.github/actions/step_generate_configs"
       with:
-        targetFolder: ${{ env.testWorkingDirectory }}
+        targetFolder: ${{ env.PROMPTFLOW_DIRECTORY }}
     - name: generate live test resources (pull_request workflow)
       if: github.event_name == 'pull_request'
-      shell: pwsh
-      working-directory: ${{ env.testWorkingDirectory }}
+      working-directory: ${{ env.PROMPTFLOW_DIRECTORY }}
       run: |
         cp ${{ github.workspace }}/src/promptflow/dev-connections.json.example ${{ github.workspace }}/src/promptflow/connections.json
-    - name: Run SDK CLI Test
-      shell: pwsh
-      working-directory: ${{ env.testWorkingDirectory }}
+    - name: run devkit tests
       run: |
-        python "../../scripts/building/run_coverage_tests.py" `
-          -p promptflow `
-          -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test `
-          -l eastus `
-          -m "unittest or e2etest" `
-          --coverage-config ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test/.coveragerc `
-          -o "${{ env.testWorkingDirectory }}/test-results-sdk-cli.xml" `
-          --ignore-glob ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test/e2etests/test_executable.py
-    - name: Install pf executable
-      shell: pwsh
-      working-directory: artifacts
-      run: |
-        Set-PSDebug -Trace 1
-        pip install ${{ github.workspace }}/src/promptflow-devkit[pyarrow,executable]
-        pip freeze
-    - name: Run SDK CLI Executable Test
-      shell: pwsh
-      working-directory: ${{ env.testWorkingDirectory }}
-      run: |
-        python "../../scripts/building/run_coverage_tests.py" `
-          -p promptflow `
-          -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test/e2etests/test_executable.py `
-          -l eastus `
-          -m "unittest or e2etest" `
-          -o "${{ env.testWorkingDirectory }}/test-results-sdk-cli-executable.xml"
-    - name: Run PFS Test
-      shell: pwsh
-      working-directory: ${{ env.testWorkingDirectory }}
-      run: |
-        python "../../scripts/building/run_coverage_tests.py" `
-          -p promptflow `
-          -t ${{ github.workspace }}/src/promptflow/tests/sdk_pfs_test `
-          -l eastus `
-          -m "e2etest" `
-          --coverage-config ${{ github.workspace }}/src/promptflow/tests/sdk_pfs_test/.coveragerc `
-          -o "${{ env.testWorkingDirectory }}/test-results-pfs.xml"
+        poetry run pytest ${{ env.FILE_PATHS }} --cov=promptflow --cov-config=pyproject.toml \
+        --cov-report=term --cov-report=html --cov-report=xml -n auto -m "unittest or e2etest" \
+        --ignore-glob ./tests/sdk_cli_test/e2etests/test_executable.py
+      working-directory: ${{ env.WORKING_DIRECTORY }}
     - name: Upload Test Results
       if: always()
       uses: actions/upload-artifact@v3
       with:
         name: Test Results (Python ${{ matrix.pythonVersion }}) (OS ${{ matrix.os }})
         path: |
-          ${{ env.testWorkingDirectory }}/*.xml
-          ${{ env.testWorkingDirectory }}/htmlcov/
-          ${{ env.testWorkingDirectory }}/tests/sdk_cli_test/count.json
+          ${{ env.WORKING_DIRECTORY }}/*.xml
+          ${{ env.WORKING_DIRECTORY }}/htmlcov/
+          ${{ env.WORKING_DIRECTORY }}/tests/sdk_cli_test/count.json
+    - run: poetry install -E executable
+      working-directory: ${{ env.WORKING_DIRECTORY }}
+    - name: run devkit executable tests
+      run: |
+        poetry run pytest -n auto -m "unittest or e2etest" ./tests/sdk_cli_test/e2etests/test_executable.py
+      working-directory: ${{ env.WORKING_DIRECTORY }}
 
 
   publish-test-results-sdk-cli-test:

@@ -7,13 +7,13 @@ import json
 import os
 from pathlib import Path
 
-from flask import Response, current_app, make_response, render_template, send_from_directory, url_for
+from flask import Response, current_app, make_response, send_from_directory
 from ruamel.yaml import YAMLError
 from werkzeug.utils import safe_join
 
 from promptflow._sdk._constants import DEFAULT_ENCODING, PROMPT_FLOW_DIR_NAME, UX_INPUTS_JSON
 from promptflow._sdk._service import Namespace, Resource, fields
-from promptflow._sdk._service.utils.utils import decrypt_flow_path
+from promptflow._sdk._service.utils.utils import decrypt_flow_path, get_client_from_request
 from promptflow._sdk._utils import json_load, read_write_by_user
 from promptflow._utils.flow_utils import is_flex_flow, resolve_flow_path
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
@@ -67,15 +67,6 @@ flow_ux_input_get_parser = create_parser(flow_arg)
 flow_ux_input_post_parser = create_parser(flow_arg, ux_inputs_arg)
 
 
-@api.route("/chat")
-class ChatUI(Resource):
-    def get(self):
-        return Response(
-            render_template("chat-window/index.html", url_for=url_for),
-            mimetype="text/html",
-        )
-
-
 def save_image(directory, base64_data, extension):
     image_data = base64.b64decode(base64_data)
     hash_object = hashlib.sha256(image_data)
@@ -93,13 +84,11 @@ class MediaSave(Resource):
     @api.expect(media_save_parser)
     def post(self):
         args = media_save_parser.parse_args()
-        flow = args.flow
-        flow = decrypt_flow_path(flow)
-        if os.path.isfile(flow):
-            flow = os.path.dirname(flow)
+        flow = decrypt_flow_path(args.flow)
+        flow, _ = resolve_flow_path(flow)
         base64_data = args.base64_data
         extension = args.extension
-        safe_path = safe_join(flow, PROMPT_FLOW_DIR_NAME)
+        safe_path = safe_join(str(flow), PROMPT_FLOW_DIR_NAME)
         if safe_path is None:
             message = f"The untrusted path {PROMPT_FLOW_DIR_NAME} relative to the base directory {flow} detected!"
             raise UserErrorException(message)
@@ -114,12 +103,10 @@ class MediaView(Resource):
     @api.doc(description="Get image url")
     def get(self):
         args = media_get_parser.parse_args()
-        flow = args.flow
-        flow = decrypt_flow_path(flow)
-        if os.path.isfile(flow):
-            flow = os.path.dirname(flow)
+        flow = decrypt_flow_path(args.flow)
+        flow, _ = resolve_flow_path(flow)
         image_path = args.image_path
-        safe_path = safe_join(flow, image_path)
+        safe_path = safe_join(str(flow), image_path)
         if safe_path is None:
             message = f"The untrusted path {image_path} relative to the base directory {flow} detected!"
             raise UserErrorException(message)
@@ -152,7 +139,10 @@ def get_set_flow_yaml(flow, experiment, is_get=True):
             if not os.path.exists(flow):
                 raise UserErrorException(f"The flow doesn't exist: {flow}")
         flow_path = flow
-    return Path(flow_path)
+    flow_path = Path(flow_path)
+    parent_dir = flow_path.parent
+    parent_dir.mkdir(parents=True, exist_ok=True)
+    return flow_path
 
 
 @api.route("/yaml")
@@ -162,16 +152,16 @@ class YamlEdit(Resource):
     @api.produces(["text/yaml"])
     def get(self):
         args = yaml_get_parser.parse_args()
-        flow = args.flow
-        flow = decrypt_flow_path(flow)
+        flow = decrypt_flow_path(args.flow)
         experiment = args.experiment
         flow_path = get_set_flow_yaml(flow, experiment)
         flow_path_dir, flow_path_file = resolve_flow_path(flow_path)
         flow_info = load_yaml(flow_path_dir / flow_path_file)
         if is_flex_flow(flow_path=flow_path_dir / flow_path_file):
-            # call api provided by han to get flow input
-            flow_input = {}
-            flow_info.update(flow_input)
+            flow_meta, _, _ = get_client_from_request()._flows._infer_signature_flex_flow(
+                entry=flow_info["entry"], code=flow_path_dir, include_primitive_output=True
+            )
+            flow_info.update(flow_meta)
         flow_info = dump_yaml(flow_info)
         return Response(flow_info, mimetype="text/yaml")
 
@@ -181,8 +171,7 @@ class YamlEdit(Resource):
     def post(self):
         args = yaml_post_parser.parse_args()
         content = args.inputs
-        flow = args.flow
-        flow = decrypt_flow_path(flow)
+        flow = decrypt_flow_path(args.flow)
         experiment = args.experiment
         flow_path = get_set_flow_yaml(flow, experiment, is_get=False)
         flow_path.touch(mode=read_write_by_user(), exist_ok=True)
@@ -201,12 +190,13 @@ class FlowUxInputs(Resource):
     @api.doc(description="Get the file content of file UX_INPUTS_JSON")
     def get(self):
         args = flow_ux_input_get_parser.parse_args()
-        flow_path = args.flow
-        flow_path = decrypt_flow_path(flow_path)
+        flow_path = decrypt_flow_path(args.flow)
         if not os.path.exists(flow_path):
             raise UserErrorException(f"The flow doesn't exist: {flow_path}")
         flow_path, _ = resolve_flow_path(flow_path)
-        flow_ux_inputs_path = flow_path / PROMPT_FLOW_DIR_NAME / UX_INPUTS_JSON
+        flow_ux_inputs_dir = flow_path / PROMPT_FLOW_DIR_NAME
+        flow_ux_inputs_dir.mkdir(parents=True, exist_ok=True)
+        flow_ux_inputs_path = flow_ux_inputs_dir / UX_INPUTS_JSON
         if not flow_ux_inputs_path.exists():
             flow_ux_inputs_path.touch(mode=read_write_by_user(), exist_ok=True)
         try:
@@ -221,10 +211,11 @@ class FlowUxInputs(Resource):
     def post(self):
         args = flow_ux_input_post_parser.parse_args()
         content = args.ux_inputs
-        flow_path = args.flow
-        flow_path = decrypt_flow_path(flow_path)
+        flow_path = decrypt_flow_path(args.flow)
         flow_path, _ = resolve_flow_path(flow_path)
-        flow_ux_inputs_path = flow_path / PROMPT_FLOW_DIR_NAME / UX_INPUTS_JSON
+        flow_ux_inputs_dir = flow_path / PROMPT_FLOW_DIR_NAME
+        flow_ux_inputs_dir.mkdir(parents=True, exist_ok=True)
+        flow_ux_inputs_path = flow_ux_inputs_dir / UX_INPUTS_JSON
         flow_ux_inputs_path.touch(mode=read_write_by_user(), exist_ok=True)
         with open(flow_ux_inputs_path, mode="w", encoding=DEFAULT_ENCODING) as f:
             json.dump(content, f, ensure_ascii=False, indent=2)
@@ -234,6 +225,20 @@ class FlowUxInputs(Resource):
 def serve_trace_ui(path):
     # trace ui static folder: static/trace/
     static_folder = os.path.join(current_app.static_folder, "trace")
+    if path != "" and os.path.exists(os.path.join(static_folder, path)):
+        # explicitly set mimetype for js files since flask auto-detection is not reliable
+        _, ext = os.path.splitext(path)
+        if ext.lower() == ".js":
+            mimetype = "application/javascript"
+        else:
+            mimetype = None
+        return send_from_directory(static_folder, path, mimetype=mimetype)
+    return send_from_directory(static_folder, "index.html")
+
+
+def serve_chat_ui(path):
+    # chat ui static folder: static/chat-window/
+    static_folder = os.path.join(current_app.static_folder, "chat-window")
     if path != "" and os.path.exists(os.path.join(static_folder, path)):
         # explicitly set mimetype for js files since flask auto-detection is not reliable
         _, ext = os.path.splitext(path)

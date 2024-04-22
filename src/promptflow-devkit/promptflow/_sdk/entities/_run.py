@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from dateutil import parser as date_parser
 
-from promptflow._constants import FLOW_DAG_YAML, OutputsFolderName
+from promptflow._constants import FlowType, OutputsFolderName
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
@@ -32,6 +32,8 @@ from promptflow._sdk._constants import (
     DownloadedRun,
     FlowRunProperties,
     IdentityKeys,
+    Local2CloudProperties,
+    Local2CloudUserProperties,
     LocalStorageFilenames,
     RestRunTypes,
     RunDataKeys,
@@ -39,7 +41,7 @@ from promptflow._sdk._constants import (
     RunStatus,
     RunTypes,
 )
-from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError
+from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, MissingAzurePackage
 from promptflow._sdk._orm import RunInfo as ORMRun
 from promptflow._sdk._utils import (
     _sanitize_python_variable_name,
@@ -49,7 +51,7 @@ from promptflow._sdk._utils import (
 )
 from promptflow._sdk.entities._yaml_translatable import YAMLTranslatableMixin
 from promptflow._sdk.schemas._run import RunSchema
-from promptflow._utils.flow_utils import get_flow_lineage_id, parse_variant
+from promptflow._utils.flow_utils import get_flow_lineage_id, is_prompty_flow, parse_variant
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import UserErrorException
 
@@ -178,7 +180,10 @@ class Run(YAMLTranslatableMixin):
             self._output_path = Path(
                 kwargs.get("output_path", self._generate_output_path(config=kwargs.get("config", None)))
             )
-            self._flow_name = flow_dir.name
+            if is_prompty_flow(self.flow):
+                self._flow_name = Path(self.flow).stem
+            else:
+                self._flow_name = flow_dir.name
         elif self._run_source == RunInfoSources.INDEX_SERVICE:
             self._metrics = kwargs.get("metrics", {})
             self._experiment_name = experiment_name
@@ -193,6 +198,9 @@ class Run(YAMLTranslatableMixin):
         self._identity = kwargs.get("identity", {})
         self._outputs = kwargs.get("outputs", None)
         self._command = kwargs.get("command", None)
+        # To support `pf.run` for dynamic callable, we need to create a run whose target function is a dynamic callable.
+        # TODO: such run is not resumable, not sure if we need specific error message for this case.
+        self._dynamic_callable = kwargs.get("dynamic_callable", None)
         if init:
             self._properties[FlowRunProperties.INIT_KWARGS] = init
 
@@ -271,7 +279,7 @@ class Run(YAMLTranslatableMixin):
             end_time=datetime.datetime.fromisoformat(str(obj.end_time)) if obj.end_time else None,
             status=str(obj.status),
             data=Path(obj.data).resolve().absolute().as_posix() if obj.data else None,
-            properties={FlowRunProperties.SYSTEM_METRICS: properties_json.get(FlowRunProperties.SYSTEM_METRICS, {})},
+            properties=properties_json,
             # compatible with old runs, their run_source is empty, treat them as local
             run_source=obj.run_source or RunInfoSources.LOCAL,
             # experiment command node only fields
@@ -515,7 +523,7 @@ class Run(YAMLTranslatableMixin):
 
     def _get_flow_dir(self) -> Path:
         if not self._use_remote_flow:
-            flow = Path(self.flow)
+            flow = Path(str(self.flow)).resolve().absolute()
             if flow.is_dir():
                 return flow
             return flow.parent
@@ -526,15 +534,18 @@ class Run(YAMLTranslatableMixin):
         return RunSchema
 
     def _to_rest_object(self):
-        from azure.ai.ml._utils._storage_utils import AzureMLDatastorePathUri
+        try:
+            from azure.ai.ml._utils._storage_utils import AzureMLDatastorePathUri
 
-        from promptflow.azure._restclient.flow.models import (
-            BatchDataInput,
-            CreateExistingBulkRunRequest,
-            RunDisplayNameGenerationType,
-            SessionSetupModeEnum,
-            SubmitBulkRunRequest,
-        )
+            from promptflow.azure._restclient.flow.models import (
+                BatchDataInput,
+                CreateExistingBulkRunRequest,
+                RunDisplayNameGenerationType,
+                SessionSetupModeEnum,
+                SubmitBulkRunRequest,
+            )
+        except ImportError:
+            raise MissingAzurePackage()
 
         if self.run is not None:
             if isinstance(self.run, Run):
@@ -643,8 +654,7 @@ class Run(YAMLTranslatableMixin):
             flow_artifact_path = local_to_cloud_info[OutputsFolderName.FLOW_ARTIFACTS]
             flow_artifact_root_path = Path(flow_artifact_path).parent.as_posix()
             log_file_relative_path = local_to_cloud_info[LocalStorageFilenames.LOG]
-            snapshot_folder = local_to_cloud_info[LocalStorageFilenames.SNAPSHOT_FOLDER]
-            snapshot_file_path = f"{snapshot_folder}/{FLOW_DAG_YAML}"
+            snapshot_file_path = local_to_cloud_info[LocalStorageFilenames.SNAPSHOT_FOLDER]
 
             # get the start and end time. Plus "Z" to specify the timezone is UTC, otherwise there will be warning
             # when sending the request to the server.
@@ -652,6 +662,14 @@ class Run(YAMLTranslatableMixin):
             # for start_time, switch to "_start_time" once the bug item is fixed: BUG - 3085432.
             start_time = self._created_on.isoformat() + "Z" if self._created_on else None
             end_time = self._end_time.isoformat() + "Z" if self._end_time else None
+
+            # extract properties that needs to be passed to the request
+            total_tokens = self.properties[FlowRunProperties.SYSTEM_METRICS].get("total_tokens", 0)
+            properties = {Local2CloudProperties.TOTAL_TOKENS: total_tokens}
+            for property_key in Local2CloudUserProperties.get_all_values():
+                value = self.properties.get(property_key, None)
+                if value is not None:
+                    properties[property_key] = value
 
             return CreateExistingBulkRunRequest(
                 run_id=self.name,
@@ -661,6 +679,7 @@ class Run(YAMLTranslatableMixin):
                 run_display_name=self._get_default_display_name(),
                 description=self.description,
                 tags=self.tags,
+                properties=properties,
                 run_experiment_name=self._experiment_name,
                 run_display_name_generation_type=RunDisplayNameGenerationType.USER_PROVIDED_MACRO,
                 output_data_store=CloudDatastore.DEFAULT,
@@ -801,10 +820,11 @@ class Run(YAMLTranslatableMixin):
     def _flow_type(self) -> str:
         """Get flow type of run."""
 
-        from promptflow._constants import FlowType
         from promptflow._sdk._load_functions import load_flow
         from promptflow._sdk.entities._flows import FlexFlow
 
+        if is_prompty_flow(self.flow):
+            return FlowType.PROMPTY
         flow_obj = load_flow(source=self.flow)
         if isinstance(flow_obj, FlexFlow):
             return FlowType.FLEX_FLOW

@@ -1,0 +1,195 @@
+# https://msdata.visualstudio.com/Vienna/_build?definitionId=33952&_a=summary
+name: $(BuildDefinitionName)_$(Date:yyyyMMdd)$(Rev:.r) # Configure run or build numbers
+
+variables:
+  - group: promptflow-csharp
+  - name: BuildConfiguration
+    value: 'Debug'
+  - name: currentRepoPath
+    value: "csharp"
+  - name: flowProjectRelativePath
+    value: '$(currentRepoPath)/src/TestProjects'
+  - name: system.debug
+    value: 'true'
+
+schedules:
+  - cron: "40 18 * * *" # Every day starting at 2:40 BJT
+    branches:
+      include:
+        - main
+
+pr:
+  branches:
+    include:
+      - main
+      - releases/*
+  paths:
+    include:
+    - src/promptflow-core/**
+    - src/promptflow-devkit/**
+    - src/promptflow/**
+    - src/promptflow-tracing/**
+    - scripts/building/**
+    - .github/pipelines/promptflow-csharp-e2e-test.yml
+    - src/promptflow-recording/**
+
+parameters:
+  - name: githubPromptflowBranch
+    displayName: "Github Promptflow Branch Name"
+    type: string
+    default: main
+
+jobs:
+- job: linux
+  pool:
+    name: promptflow-1ES-ubuntu20
+  steps:
+    - task: UseDotNet@2
+      inputs:
+        version: '6.x'
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.9.x'
+        architecture: 'x64'
+    - task: Bash@3
+      displayName: 'Install promptflow cli'
+      inputs:
+        targetType: 'inline'
+        script: |
+          Set-PSDebug -Trace 1
+          pip install -r ./src/promptflow/dev_requirements.txt
+          pip install ./src/promptflow-tracing
+          pip install ./src/promptflow-core[executor-service]
+          pip install ./src/promptflow-devkit
+          pip install ./src/promptflow-azure
+          pip freeze
+    - task: Bash@3
+      displayName: 'Set environment variables'
+      inputs:
+        targetType: inline
+        script: |
+          export AOAI_CONNECTION=$(AOAI_CONNECTION)
+          export OPENAI_CONNECTION=$(OPENAI_CONNECTION)
+          export SERP_CONNECTION=$(SERP_CONNECTION)
+          export ACS_CONNECTION=$(ACS_CONNECTION)
+          export IS_IN_CI_PIPELINE=true
+
+    - task: Bash@3
+      displayName: 'Clone csharp repository'
+      inputs:
+        targetType: 'inline'
+        script: |
+          git clone https://$(PROMPTFLOW_CS_PAT)@dev.azure.com/msdata/Vienna/_git/PromptflowCS csharp
+
+    - task: NuGetAuthenticate@1
+
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: 'restore'
+        projects: '$(flowProjectRelativePath)/**/*.csproj'
+        feedsToUse: 'config'
+        nugetConfigPath: 'csharp/src/TestProjects/nuget.config'
+      displayName: 'dotnet restore'
+
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: 'build'
+        projects: '$(flowProjectRelativePath)/**/*.csproj'
+        feedsToUse: 'config'
+        nugetConfigPath: 'csharp/src/TestProjects/nuget.config'
+      displayName: 'dotnet build'
+
+    - task: Bash@3
+      displayName: 'Run tests'
+      inputs:
+        targetType: 'inline'
+        script: |
+          cd ./src/promptflow-devkit
+          pytest tests/sdk_cli_test/e2etests/test_csharp_cli.py
+      env:
+        CSHARP_TEST_CASES_ROOT: $(Build.SourcesDirectory)/$(flowProjectRelativePath)
+        AZURE_OPENAI_API_KEY: $(AZURE_OPENAI_API_KEY)
+        AZURE_OPENAI_ENDPOINT: $(AZURE_OPENAI_ENDPOINT)
+        IS_IN_CI_PIPELINE: true
+
+    - publish: $(flowProjectRelativePath)
+      condition: always()
+      artifact: 'BuiltFlows-linux'
+- job: windows
+  pool:
+    name: promptflow-1ES-win
+  steps:
+    - task: UseDotNet@2
+      inputs:
+        version: '6.x'
+
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.8.x'
+        architecture: 'x64'
+
+    - task: PowerShell@2
+      displayName: 'Install promptflow cli'
+      inputs:
+        targetType: 'inline'
+        script: |
+          Set-PSDebug -Trace 1
+          pip install -r ./src/promptflow/dev_requirements.txt
+          pip install ./src/promptflow-tracing
+          pip install ./src/promptflow-core[executor-service]
+          pip install ./src/promptflow-devkit
+          pip install ./src/promptflow-azure
+          pip freeze
+
+    - task: PowerShell@2
+      displayName: 'Set environment variables'
+      inputs:
+        targetType: inline
+        script: |
+          setx AOAI_CONNECTION $(AOAI_CONNECTION)
+          setx OPENAI_CONNECTION $(OPENAI_CONNECTION)
+          setx SERP_CONNECTION $(SERP_CONNECTION)
+          setx ACS_CONNECTION $(ACS_CONNECTION)
+          setx IS_IN_CI_PIPELINE true
+
+    - task: PowerShell@2
+      displayName: 'Clone csharp repository'
+      inputs:
+        targetType: 'inline'
+        script: |
+          git clone https://$(PROMPTFLOW_CS_PAT)@dev.azure.com/msdata/Vienna/_git/PromptflowCS csharp
+
+    - task: NuGetAuthenticate@1
+
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: 'restore'
+        projects: '$(flowProjectRelativePath)/**/*.csproj'
+        feedsToUse: 'config'
+        nugetConfigPath: 'csharp/src/TestProjects/nuget.config'
+      displayName: 'dotnet restore'
+
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: 'build'
+        projects: '$(flowProjectRelativePath)/**/*.csproj'
+        feedsToUse: 'config'
+        nugetConfigPath: 'csharp/src/TestProjects/nuget.config'
+      displayName: 'dotnet build'
+
+    - task: PowerShell@2
+      displayName: 'Run tests'
+      inputs:
+        targetType: 'inline'
+        script: |
+          cd ./src/promptflow-devkit
+          pytest tests/sdk_cli_test/e2etests/test_csharp_cli.py
+      env:
+        CSHARP_TEST_CASES_ROOT: $(Build.SourcesDirectory)/$(flowProjectRelativePath)
+        AZURE_OPENAI_API_KEY: $(AZURE_OPENAI_API_KEY)
+        AZURE_OPENAI_ENDPOINT: $(AZURE_OPENAI_ENDPOINT)
+        IS_IN_CI_PIPELINE: true
+
+    - publish: $(flowProjectRelativePath)
+      condition: always()
+      artifact: 'BuiltFlows-windows'
