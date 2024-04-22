@@ -13,7 +13,9 @@ from promptflow._sdk._constants import Local2CloudProperties, Local2CloudUserPro
 from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk._pf_client import PFClient as LocalPFClient
 from promptflow._sdk.entities import Run
+from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow.azure import PFClient
+from promptflow.azure.operations._async_run_uploader import AsyncRunUploader
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
 
@@ -39,16 +41,28 @@ class Local2CloudTestHelper:
         return local_pf
 
     @staticmethod
-    def check_local_to_cloud_run(pf: PFClient, run: Run):
+    def check_local_to_cloud_run(pf: PFClient, run: Run, check_run_details_in_cloud: bool = False) -> Run:
         # check if local run is uploaded
         cloud_run = pf.runs.get(run.name)
         assert cloud_run.display_name == run.display_name
-        assert cloud_run.description == run.description
-        assert cloud_run.tags == run.tags
         assert cloud_run.status == run.status
         assert cloud_run._start_time and cloud_run._end_time
         assert cloud_run.properties["azureml.promptflow.local_to_cloud"] == "true"
         assert cloud_run.properties["azureml.promptflow.snapshot_id"]
+
+        # if no description or tags, skip the check, since one could be {} but the other is None
+        if run.description:
+            assert cloud_run.description == run.description
+        if run.tags:
+            assert cloud_run.tags == run.tags
+
+        # check run details are actually uploaded to cloud
+        if check_run_details_in_cloud:
+            run_uploader = AsyncRunUploader._from_run_operations(run=run, run_ops=pf.runs)
+            result_dict = async_run_allowing_running_loop(run_uploader._check_run_details_exist_in_cloud)
+            for key, value in result_dict.items():
+                assert value is True, f"Run details {key!r} not found in cloud, run name is {run.name!r}"
+
         return cloud_run
 
 
@@ -62,7 +76,7 @@ class Local2CloudTestHelper:
 class TestFlowRunUpload:
     @pytest.mark.skipif(condition=not pytest.is_live, reason="Bug - 3089145 Replay failed for test 'test_upload_run'")
     @pytest.mark.usefixtures(
-        "mock_isinstance_for_mock_datastore", "mock_get_azure_pf_client", "mock_trace_provider_to_cloud"
+        "mock_isinstance_for_mock_datastore", "mock_get_azure_pf_client", "mock_trace_destination_to_cloud"
     )
     def test_upload_run(
         self,
@@ -81,15 +95,14 @@ class TestFlowRunUpload:
             tags={"sdk-cli-test": "true"},
             description="test sdk local to cloud",
         )
-        run = local_pf.runs.stream(run.name)
         assert run.status == RunStatus.COMPLETED
 
         # check the run is uploaded to cloud
-        Local2CloudTestHelper.check_local_to_cloud_run(pf, run)
+        Local2CloudTestHelper.check_local_to_cloud_run(pf, run, check_run_details_in_cloud=True)
 
     @pytest.mark.skipif(condition=not pytest.is_live, reason="Bug - 3089145 Replay failed for test 'test_upload_run'")
     @pytest.mark.usefixtures(
-        "mock_isinstance_for_mock_datastore", "mock_get_azure_pf_client", "mock_trace_provider_to_cloud"
+        "mock_isinstance_for_mock_datastore", "mock_get_azure_pf_client", "mock_trace_destination_to_cloud"
     )
     def test_upload_flex_flow_run_with_yaml(self, pf: PFClient, randstr: Callable[[str], str]):
         name = randstr("flex_run_name_with_yaml_for_upload")
@@ -111,7 +124,7 @@ class TestFlowRunUpload:
 
     @pytest.mark.skipif(condition=not pytest.is_live, reason="Bug - 3089145 Replay failed for test 'test_upload_run'")
     @pytest.mark.usefixtures(
-        "mock_isinstance_for_mock_datastore", "mock_get_azure_pf_client", "mock_trace_provider_to_cloud"
+        "mock_isinstance_for_mock_datastore", "mock_get_azure_pf_client", "mock_trace_destination_to_cloud"
     )
     def test_upload_flex_flow_run_without_yaml(self, pf: PFClient, randstr: Callable[[str], str]):
         name = randstr("flex_run_name_without_yaml_for_upload")
@@ -134,7 +147,7 @@ class TestFlowRunUpload:
 
     @pytest.mark.skipif(condition=not pytest.is_live, reason="Bug - 3089145 Replay failed for test 'test_upload_run'")
     @pytest.mark.usefixtures(
-        "mock_isinstance_for_mock_datastore", "mock_get_azure_pf_client", "mock_trace_provider_to_cloud"
+        "mock_isinstance_for_mock_datastore", "mock_get_azure_pf_client", "mock_trace_destination_to_cloud"
     )
     def test_upload_prompty_run(self, pf: PFClient, randstr: Callable[[str], str]):
         # currently prompty run is skipped for upload, this test should be finished without error
@@ -150,7 +163,7 @@ class TestFlowRunUpload:
 
     @pytest.mark.skipif(condition=not pytest.is_live, reason="Bug - 3089145 Replay failed for test 'test_upload_run'")
     @pytest.mark.usefixtures(
-        "mock_isinstance_for_mock_datastore", "mock_get_azure_pf_client", "mock_trace_provider_to_cloud"
+        "mock_isinstance_for_mock_datastore", "mock_get_azure_pf_client", "mock_trace_destination_to_cloud"
     )
     def test_upload_run_with_customized_run_properties(self, pf: PFClient, randstr: Callable[[str], str]):
         name = randstr("batch_run_name_for_upload_with_customized_properties")
@@ -182,3 +195,32 @@ class TestFlowRunUpload:
         assert cloud_run.properties[Local2CloudUserProperties.EVAL_ARTIFACTS] == eval_artifacts
         # check total tokens is recorded
         assert cloud_run.properties[Local2CloudProperties.TOTAL_TOKENS]
+
+    @pytest.mark.skipif(condition=not pytest.is_live, reason="Bug - 3089145 Replay failed for test 'test_upload_run'")
+    @pytest.mark.usefixtures(
+        "mock_isinstance_for_mock_datastore", "mock_get_azure_pf_client", "mock_trace_destination_to_cloud"
+    )
+    def test_upload_eval_run(self, pf: PFClient, randstr: Callable[[str], str]):
+        main_run_name = randstr("main_run_name_for_test_upload_eval_run")
+        local_pf = Local2CloudTestHelper.get_local_pf(main_run_name)
+        main_run = local_pf.run(
+            flow=f"{FLOWS_DIR}/simple_hello_world",
+            data=f"{DATAS_DIR}/webClassification3.jsonl",
+            name=main_run_name,
+            column_mapping={"name": "${data.url}"},
+        )
+        Local2CloudTestHelper.check_local_to_cloud_run(pf, main_run)
+
+        # run an evaluation run
+        eval_run_name = randstr("eval_run_name_for_test_upload_eval_run")
+        local_lpf = Local2CloudTestHelper.get_local_pf(eval_run_name)
+        eval_run = local_lpf.run(
+            flow=f"{FLOWS_DIR}/simple_hello_world",
+            data=f"{DATAS_DIR}/webClassification3.jsonl",
+            run=main_run_name,
+            name=eval_run_name,
+            # column_mapping={"name": "${run.outputs.result}"},
+            column_mapping={"name": "${data.url}"},
+        )
+        eval_run = Local2CloudTestHelper.check_local_to_cloud_run(pf, eval_run)
+        assert eval_run.properties["azureml.promptflow.variant_run_id"] == main_run_name

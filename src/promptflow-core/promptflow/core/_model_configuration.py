@@ -1,12 +1,18 @@
+import abc
 from dataclasses import dataclass
 from typing import Union
 
 from promptflow._constants import ConnectionType
+from promptflow.core._connection import AzureOpenAIConnection, OpenAIConnection
 from promptflow.core._errors import InvalidConnectionError
 
 
 class ModelConfiguration:
-    pass
+    @classmethod
+    @abc.abstractmethod
+    def from_connection(cls, connection, **kwargs):
+        """Create a model configuration from a connection."""
+        pass
 
 
 @dataclass
@@ -15,14 +21,29 @@ class AzureOpenAIModelConfiguration(ModelConfiguration):
     azure_endpoint: str = None
     api_version: str = None
     api_key: str = None
-    organization: str = None
     # connection and model configs are exclusive.
     connection: str = None
 
     def __post_init__(self):
         self._type = ConnectionType.AZURE_OPEN_AI
-        if any([self.azure_endpoint, self.api_key, self.api_version, self.organization]) and self.connection:
+        if any([self.azure_endpoint, self.api_key, self.api_version]) and self.connection:
             raise InvalidConnectionError("Cannot configure model config and connection at the same time.")
+
+    @classmethod
+    def from_connection(cls, connection: AzureOpenAIConnection, azure_deployment: str):
+        """Create a model configuration from an Azure OpenAI connection.
+
+        :param connection: AzureOpenAI Connection object.
+        :type connection: promptflow.connections.AzureOpenAIConnection
+        :param azure_deployment: Azure deployment name.
+        :type azure_deployment: str
+        """
+        return cls(
+            azure_deployment=azure_deployment,
+            azure_endpoint=connection.api_base,
+            api_version=connection.api_version,
+            api_key=connection.api_key,
+        )
 
 
 @dataclass
@@ -36,8 +57,24 @@ class OpenAIModelConfiguration(ModelConfiguration):
 
     def __post_init__(self):
         self._type = ConnectionType.OPEN_AI
-        if any([self.base_url, self.api_key, self.api_version, self.organization]) and self.connection:
+        if any([self.base_url, self.api_key, self.organization]) and self.connection:
             raise InvalidConnectionError("Cannot configure model config and connection at the same time.")
+
+    @classmethod
+    def from_connection(cls, connection: OpenAIConnection, model: str):
+        """Create a model configuration from an OpenAI connection.
+
+        :param connection: OpenAI Connection object.
+        :type connection: promptflow.connections.OpenAIConnection
+        :param model: model name.
+        :type model: str
+        """
+        return cls(
+            model=model,
+            base_url=connection.base_url,
+            api_key=connection.api_key,
+            organization=connection.organization,
+        )
 
 
 @dataclass
@@ -77,3 +114,9 @@ class PromptyModelConfiguration:
             self._model = self.configuration.model
         elif isinstance(self.configuration, AzureOpenAIModelConfiguration):
             self._model = self.configuration.azure_deployment
+
+
+MODEL_CONFIG_NAME_2_CLASS = {
+    AzureOpenAIModelConfiguration.__name__: AzureOpenAIModelConfiguration,
+    OpenAIModelConfiguration.__name__: OpenAIModelConfiguration,
+}
