@@ -82,6 +82,10 @@ class InvalidFlowRequest(ValidationException):
         )
 
 
+class ScriptExecutionError(UserErrorException):
+    pass
+
+
 class NodeInputValidationError(InvalidFlowRequest):
     pass
 
