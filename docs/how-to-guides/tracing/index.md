@@ -118,3 +118,13 @@ pf run create --flow . --data "./data/bert-paper-qna.jsonl" --column-mapping cha
 Then you will get a run related trace URL, e.g. http://localhost:<port>/v1.0/ui/traces?run=chat_with_pdf_20240226_181222_219335
 
 ![batch_run_record](../../media/trace/batch_run_record.png)
+
+### Search
+
+Trace UI supports simple Python expression for search experience, which is demonstrated in below GIF:
+
+![advanced_search](../../media/trace/advanced-search.gif)
+
+Currently it supports bool operator `and` and `or`, compare operator `==`, `!=`, `>`, `>=`, `<`, `<=`; and the fields that are searchable: `name`, `kind`, `status`, `start_time`, `cumulative_token_count.total`, `cumulative_token_count.prompt` and `cumulative_token_count.completion`. You can find the hints by clicking the button right to the search edit box.
+
+![search_hint](../../media/trace/trace-ui-search-hint.png)
