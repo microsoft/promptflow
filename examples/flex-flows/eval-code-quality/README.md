@@ -29,7 +29,6 @@ Note in [flow.flex.yaml](flow.flex.yaml) we are using connection named `open_ai_
 pf connection show --name open_ai_connection
 ```
 
-
 - Run as normal Python file
 ```bash
 python code_quality.py
@@ -38,8 +37,8 @@ python code_quality.py
 - Test flow
 ```bash
 # correct
-pf flow test --flow . --inputs code='print(\"Hello, world!\")'
+pf flow test --flow . --inputs code='print(\"Hello, world!\")' --init init.json
 
 # incorrect
-pf flow test --flow . --inputs code='print("Hello, world!")'
+pf flow test --flow . --inputs code='printf("Hello, world!")' --init init.json
 ```

@@ -38,11 +38,11 @@ class CodeEvaluator:
         """Evaluate the code based on correctness, readability."""
         prompty = Prompty.load(
             source="./eval.prompty",
-            model=self.model_config
+            model={"configuration": self.model_config}
         )
         output = prompty(code=code)
         print(output)
-        output = Result(**json.loads(output))
+        output = Result(**output)
         return output
 
 
@@ -55,7 +55,7 @@ if __name__ == "__main__":
     connection = pf.connections.get("open_ai_connection", with_secrets=True)
     model_config = AzureOpenAIModelConfiguration.from_connection(
         connection=connection,
-        azure_deployment="gpt-35-turbo",
+        azure_deployment="gpt-35-turbo-0125",
     )
     evaluator = CodeEvaluator(model_config)
     result = evaluator('print("Hello, world!")')
