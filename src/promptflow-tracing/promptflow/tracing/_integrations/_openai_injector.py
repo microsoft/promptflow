@@ -208,3 +208,9 @@ def recover_openai_api():
     for api, method, _, _, _ in available_openai_apis_and_injectors():
         if hasattr(getattr(api, method), "_original"):
             setattr(api, method, getattr(getattr(api, method), "_original"))
+
+
+class OpenAIInstrumentor:
+    def instrument(self, **kwargs):
+        """Instrument the openai APIs in PF way."""
+        inject_openai_api()
