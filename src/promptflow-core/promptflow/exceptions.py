@@ -234,21 +234,21 @@ class _ErrorInfo:
     @classmethod
     def get_error_info(cls, e: BaseException):
         if not isinstance(e, BaseException):
-            return ErrorCategory.UNKNOWN, type(e).__name__, ErrorTarget.UNKNOWN, "", ""
+            return ErrorCategory.UNKNOWN.value, type(e).__name__, ErrorTarget.UNKNOWN.value, "", ""
 
         if cls._is_user_error(e):
             return (
-                ErrorCategory.USER_ERROR,
+                ErrorCategory.USER_ERROR.value,
                 cls._error_type(e),
-                cls._error_target(e),
+                cls._error_target(e).value,
                 cls._error_message(e),
                 cls._error_detail(e),
             )
 
         return (
-            ErrorCategory.SYSTEM_ERROR,
+            ErrorCategory.SYSTEM_ERROR.value,
             cls._error_type(e),
-            cls._error_target(e),
+            cls._error_target(e).value,
             cls._error_message(e),
             cls._error_detail(e),
         )
@@ -296,9 +296,9 @@ class _ErrorInfo:
         return error_type
 
     @classmethod
-    def _error_target(cls, e: BaseException):
+    def _error_target(cls, e: BaseException) -> ErrorTarget:
         error_target = getattr(e, "target", ErrorTarget.UNKNOWN)
-        if error_target != ErrorTarget.UNKNOWN:
+        if error_target != ErrorTarget.UNKNOWN and isinstance(error_target, ErrorTarget):
             return error_target
 
         module_target_map = cls._module_target_map()

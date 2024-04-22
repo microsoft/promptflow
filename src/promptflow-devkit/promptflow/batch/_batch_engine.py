@@ -113,7 +113,7 @@ class BatchEngine:
         if is_function_entry:
             self._working_dir = working_dir or Path.cwd()
         else:
-            self._working_dir = self._working_dir = (
+            self._working_dir = (
                 Flow._resolve_working_dir(flow_file, working_dir) if flow_file is not None else working_dir
             )
 
@@ -474,8 +474,8 @@ class BatchEngine:
             )
             line_results.extend(results)
         else:
-            # TODO: Enable batch timeout for other api based executor proxy
-            await self._exec_batch(line_results, batch_inputs, run_id)
+            await self._exec_batch(line_results, inputs_to_run, run_id)
+
         handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
         # persist outputs to output dir
         outputs = [
@@ -511,11 +511,16 @@ class BatchEngine:
         batch_inputs: List[Mapping[str, Any]],
         run_id: Optional[str] = None,
     ) -> List[LineResult]:
+        # line_results as input parameter, so that the completed line results can be summarized
+        # when batch run is canceled.
         worker_count = self._worker_count or DEFAULT_CONCURRENCY
         semaphore = asyncio.Semaphore(worker_count)
+
         pending = [
-            asyncio.create_task(self._exec_line_under_semaphore(semaphore, line_inputs, i, run_id))
-            for i, line_inputs in enumerate(batch_inputs)
+            asyncio.create_task(
+                self._exec_line_under_semaphore(semaphore, line_input, line_input[LINE_NUMBER_KEY], run_id)
+            )
+            for line_input in batch_inputs
         ]
 
         total_lines = len(batch_inputs)
@@ -529,7 +534,7 @@ class BatchEngine:
             self._persist_run_info(completed_line_results)
             line_results.extend(completed_line_results)
             # update the progress log
-            completed_line = len(line_results)
+            completed_line += len(completed_line_results)
             last_log_count = log_progress(
                 run_start_time=self._start_time,
                 total_count=total_lines,
