@@ -188,10 +188,9 @@ def load_inputs_from_sample(sample: Union[dict, str, PathLike]):
         return {}
     elif isinstance(sample, dict):
         return sample
-    elif isinstance(sample, (str, Path)) and Path(sample).suffix.lower() == ".json":
-        if not str(sample).startswith("file:"):
-            raise InvalidSampleError("Json file path must be prefixed with `file:` when used as sample.")
-        sample = sample[len("file:") :]
+    elif isinstance(sample, (str, Path)) and str(sample).endswith(".json"):
+        if str(sample).startswith("file:"):
+            sample = sample[len("file:") :]
         if not Path(sample).exists():
             raise InvalidSampleError(f"Cannot find sample file {sample}.")
         with open(sample, "r") as f:
