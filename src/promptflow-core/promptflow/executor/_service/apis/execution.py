@@ -17,7 +17,6 @@ from promptflow.executor._service.utils.process_utils import invoke_sync_functio
 from promptflow.executor._service.utils.service_utils import (
     enable_async_execution,
     get_log_context,
-    set_environment_variables,
     update_and_get_operation_context,
 )
 from promptflow.executor.flow_executor import FlowExecutor, execute_flow
