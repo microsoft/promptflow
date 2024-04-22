@@ -612,7 +612,7 @@ class TestSubmitter:
             error_type = user_execution_error.get("type", "Exception")
             if show_trace:
                 print(stack_trace)
-            raise UserErrorException(f"{error_type}: {error_message}")
+            raise UserErrorException(f"{error_type}: {error_message}", error=stack_trace)
 
     @staticmethod
     def _get_generator_outputs(outputs):
