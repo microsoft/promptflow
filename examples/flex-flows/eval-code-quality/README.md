@@ -42,3 +42,49 @@ pf flow test --flow . --inputs code='print(\"Hello, world!\")' --init init.json
 # incorrect
 pf flow test --flow . --inputs code='printf("Hello, world!")' --init init.json
 ```
+
+- Create run with multiple lines data
+
+```bash
+pf run create --flow . --init init.json --data ./data.jsonl --stream
+```
+
+Reference [here](https://aka.ms/pf/column-mapping) for default behavior when `column-mapping` not provided in CLI.
+
+- List and show run meta
+
+```bash
+# list created run
+pf run list
+
+# get a sample run name
+
+name=$(pf run list -r 10 | jq '.[] | select(.name | contains("eval_checklist_")) | .name'| head -n 1 | tr -d '"')
+# show specific run detail
+pf run show --name $name
+
+# show output
+pf run show-details --name $name
+
+# show metrics
+pf run show-metrics --name $name
+
+# visualize run in browser
+pf run visualize --name $name
+```
+
+## Run flow in cloud
+
+- Assume we already have a connection named `open_ai_connection` in workspace.
+
+```bash
+# set default workspace
+az account set -s <your_subscription_id>
+az configure --defaults group=<your_resource_group_name> workspace=<your_workspace_name>
+```
+
+- Create run
+
+```bash
+# run with environment variable reference connection in azureml workspace
+pfazure run create --flow . --init init.json --data ./data.jsonl --stream

@@ -1,5 +1,6 @@
 import json
 import os
+from typing import TypedDict
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -23,8 +24,8 @@ def load_prompt(jinja2_template: str, code: str, examples: list) -> str:
         return prompt
 
 
-@dataclass
-class Result:
+
+class Result(TypedDict):
     correctness: float
     readability: float
     explanation: str
@@ -45,6 +46,17 @@ class CodeEvaluator:
         output = Result(**output)
         return output
 
+    def __aggregate__(self, line_results: list) -> dict:
+        """Aggregate the results."""
+        total = len(line_results)
+        avg_correctness = sum(int(r["correctness"]) for r in line_results) / total
+        avg_readability = sum(int(r["readability"]) for r in line_results) / total
+        return {
+            "average_correctness": avg_correctness,
+            "average_readability": avg_readability,
+            "total": total,
+        }
+
 
 if __name__ == "__main__":
     from promptflow.tracing import start_trace
@@ -60,3 +72,5 @@ if __name__ == "__main__":
     evaluator = CodeEvaluator(model_config)
     result = evaluator('print("Hello, world!")')
     print(result)
+    aggregate_result = evaluator.__aggregate__([result])
+    print(aggregate_result)

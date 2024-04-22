@@ -61,7 +61,7 @@ class EvalFlow:
             results[key] = r
         return results
 
-    def __aggregate__(self, line_results: list):
+    def __aggregate__(self, line_results: list) -> dict:
         """Aggregate the results."""
         total = len(line_results)
         avg_correctness = sum(int(r["correctness"]["score"]) for r in line_results) / total
