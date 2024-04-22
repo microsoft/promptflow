@@ -187,6 +187,34 @@ class ScriptExecutor(FlowExecutor):
             pass
         return AggregationResult(output, metrics, {})
 
+    async def exec_aggregation_async(
+        self,
+        inputs: Mapping[str, Any],
+        aggregation_inputs: List[Any],
+        run_id: Optional[str] = None,
+    ):
+        if not self._aggr_func:
+            return AggregationResult({}, {}, {})
+        # Similar to dag flow, add a prefix "reduce" for run id of aggregation function.
+        run_id = f"{run_id}_reduce" if run_id is not None else f"{str(uuid.uuid4())}_reduce"
+        with self._update_operation_context_for_aggregation(run_id):
+            return await self._exec_aggregation_async(aggregation_inputs)
+
+    async def _exec_aggregation_async(self, inputs):
+        output = None
+        try:
+            if inspect.iscoroutinefunction(self._aggr_func):
+                output = await self._aggr_func(**{self._aggr_input_name: inputs})
+            else:
+                partial_func = partial(self._aggr_func, **{self._aggr_input_name: inputs})
+                output = await asyncio.get_event_loop().run_in_executor(None, partial_func)
+            metrics = output if isinstance(output, dict) else {"metrics": output}
+            for k, v in metrics.items():
+                log_metric(k, v)
+        except Exception:
+            pass
+        return AggregationResult(output, metrics, {})
+
     async def exec_line_async(
         self,
         inputs: Mapping[str, Any],
