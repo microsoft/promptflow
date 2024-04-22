@@ -8,14 +8,13 @@ from promptflow.tools.exception import InvalidConnectionType
 # since the code here is in promptflow namespace as well
 from promptflow._internal import tool
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
-
-
-def is_serverless_connection(connection):
-    try:
-        from promptflow.connections import ServerlessConnection
-        return isinstance(connection, ServerlessConnection)
-    except ImportError:
-        return False
+try:
+    from promptflow.connections import ServerlessConnection
+except ImportError:
+    # If unable to import ServerlessConnection, define a placeholder class to allow isinstance checks to pass.
+    # ServerlessConnection was introduced in pf version 1.6.0.
+    class ServerlessConnection:
+        pass
 
 
 class EmbeddingModel(str, Enum):
@@ -45,7 +44,7 @@ def embedding(
             input=input,
             model=model
         ).data[0].embedding
-    elif is_serverless_connection(connection):
+    elif isinstance(connection, ServerlessConnection):
         client = init_openai_client(connection)
         return client.embeddings.create(
             input=[input],
