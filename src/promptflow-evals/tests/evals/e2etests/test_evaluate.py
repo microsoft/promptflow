@@ -15,8 +15,24 @@ def data_file():
     return os.path.join(data_path, "evaluate_test_data.jsonl")
 
 
+@pytest.fixture
+def questions_file():
+    data_path = os.path.join(pathlib.Path(__file__).parent.resolve(), "data")
+    return os.path.join(data_path, "questions.jsonl")
+
+
 def answer_evaluator(answer):
     return {"length": len(answer)}
+
+
+def _target_fn(question: str) -> str:
+    """An example target function."""
+    if 'LV-426' in question:
+        return {'answer': 'There is nothing good there.'}
+    if 'central heating' in question:
+        return {'answer': 'There is no central heating on the streets today, but it will be, I promise.'}
+    if 'strange' in question:
+        return {'answer': 'The life is strange...'}
 
 
 @pytest.mark.usefixtures("model_config", "recording_injection", "data_file")
@@ -80,3 +96,15 @@ class TestEvaluate:
         assert "answer.length" in metrics.keys()
         assert metrics.get("answer.length") == np.nanmean(row_result_df["outputs.answer.length"])
         assert row_result_df["outputs.answer.length"][2] == 31
+
+    def test_evaluate_with_target(self, questions_file):
+        """Test evaluation with target function."""
+        # run the evaluation with targets
+        result = evaluate(
+            data=questions_file,
+            target=_target_fn,
+            evaluators={"answer": answer_evaluator},
+        )
+        row_result_df = pd.DataFrame(result["rows"])
+        print(row_result_df)
+        assert list(row_result_df["outputs.answer.length"]) == [28, 76, 22]

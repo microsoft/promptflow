@@ -1,10 +1,16 @@
 import os
 import pathlib
 
+import pandas as pd
 import pytest
 
+from pandas.testing import assert_frame_equal
+from unittest.mock import patch
+
 from promptflow.evals.evaluate import evaluate
+from promptflow.evals.evaluate._evaluate import _apply_target_to_data
 from promptflow.evals.evaluators import F1ScoreEvaluator, GroundednessEvaluator
+from promptflow.evals.evaluate._utils import save_function_as_fow
 
 
 @pytest.fixture
@@ -17,6 +23,28 @@ def invalid_jsonl_file():
 def missing_columns_jsonl_file():
     data_path = os.path.join(pathlib.Path(__file__).parent.resolve(), "data")
     return os.path.join(data_path, "missing_columns_evaluate_test_data.jsonl")
+
+
+@pytest.fixture
+def questions_file():
+    data_path = os.path.join(pathlib.Path(__file__).parent.resolve(), "data")
+    return os.path.join(data_path, "questions.jsonl")
+
+
+@pytest.fixture
+def questions_answers_file():
+    data_path = os.path.join(pathlib.Path(__file__).parent.resolve(), "data")
+    return os.path.join(data_path, "questions_answers.jsonl")
+
+
+def _target_fn(question):
+    """An example target function."""
+    if 'LV-426' in question:
+        return {'answer': 'There is nothing good there.'}
+    if 'central heating' in question:
+        return {'answer': 'There is no central heating on the streets today, but it will be, I promise.'}
+    if 'strange' in question:
+        return {'answer': 'The life is strange...'}
 
 
 @pytest.mark.usefixtures("mock_model_config")
@@ -61,3 +89,21 @@ class TestEvaluate:
             evaluate(data=missing_columns_jsonl_file, evaluators={"g": F1ScoreEvaluator()})
 
         assert "Missing required inputs for evaluator g : ['ground_truth']." in exc_info.value.args[0]
+
+    @pytest.mark.parametrize('script_is_file', [True, False])
+    def test_save_fun_as_flow(self, tmpdir, pf_client, script_is_file):
+        """Test saving function as flow."""
+        with patch('promptflow.evals.evaluate._utils.os') as mock_os:
+            mock_os.path.isfile.return_value = script_is_file
+            save_function_as_fow(_target_fn, tmpdir, pf_client)
+        assert os.path.isfile(os.path.join(tmpdir, 'flow.flex.yaml'))
+
+    def test_apply_target_to_data(self, pf_client, questions_file, questions_answers_file):
+        """Test that target was applied correctly."""
+        qa = _apply_target_to_data(_target_fn, questions_file, pf_client)
+        results = pd.read_json(qa, lines=True)
+        ground_truth = pd.read_json(questions_answers_file, lines=True)
+        try:
+            assert_frame_equal(results, ground_truth, check_like=True)
+        finally:
+            os.unlink(qa)

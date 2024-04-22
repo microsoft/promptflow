@@ -2,6 +2,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import inspect
+import os
+import tempfile
+import uuid
+
 from types import FunctionType
 from typing import Callable, Dict, Optional
 
@@ -10,6 +14,9 @@ import pandas as pd
 from promptflow.client import PFClient
 
 from ._code_client import CodeClient
+from ._utils import save_function_as_fow
+
+from promptflow._sdk._constants import LINE_NUMBER
 
 
 def _calculate_mean(df) -> Dict[str, float]:
@@ -61,12 +68,50 @@ def _validation(target, data, evaluators, output_path, tracking_uri, evaluation_
     try:
         data_df = pd.read_json(data, lines=True)
     except Exception as e:
-        raise ValueError(f"Failed to load data from {data}. Please validate it is a valid jsonl data. Error: {str(e)}.")
+        raise ValueError(
+            f"Failed to load data from {data}. Please validate it is a valid jsonl data. Error: {str(e)}.")
 
-    for evaluator_name, evaluator in evaluators.items():
-        _validate_input_data_for_evaluator(evaluator, evaluator_name, data_df)
+    if not target:
+        # If the target function is given, it may return
+        # several columns and hence we cannot check the availability of columns
+        # without knowing target function semantics.
+        for evaluator_name, evaluator in evaluators.items():
+            _validate_input_data_for_evaluator(evaluator, evaluator_name, data_df)
 
-def _is_chat_format():
+
+def _apply_target_to_data(target: Callable, data: str, pf_client: PFClient) -> str:
+    """
+    Apply the target function to the data set and save the data to temporary file.
+
+    :keyword target: The function to be applied to data.
+    :paramtype target: Callable
+    :keyword data: The path to input jsonl file.
+    :paramtype data: str
+    :keyword pf_client: The promptflow client to be used.
+    :paramtype pf_client: PFClient
+    :return: The path to data file with answers from target function.
+    :rtype: str
+    """
+    with tempfile.TemporaryDirectory() as d:
+        save_function_as_fow(fun=target, target_dir=d, pf=pf_client)
+        run = pf_client.run(
+            flow=d,
+            data=data,
+            name=f'preprocess_{uuid.uuid1()}'
+        )
+        run = pf_client.stream(run)
+        function_output = pd.read_json(pf_client.runs._get_outputs_path(run),
+                                       orient='records', lines=True)
+    function_output.set_index(LINE_NUMBER, inplace=True)
+    function_output.sort_index(inplace=True)
+    data_input = pd.read_json(data, orient='records', lines=True)
+    data_input = pd.concat([data_input, function_output], axis=1, verify_integrity=True)
+    del function_output
+    data_obj = tempfile.TemporaryFile(suffix='.jsonl', mode='w', delete=False)
+    data_obj.close()
+    data_input.to_json(data_obj.name, orient='records', lines=True, index=False)
+    return data_obj.name
+
 
 def evaluate(
     *,
@@ -99,12 +144,14 @@ def evaluate(
     """
 
     _validation(target, data, evaluators, output_path, tracking_uri, evaluation_name)
-    
-    if data is not None and target is not None:
-        # 
 
     pf_client = PFClient()
     code_client = CodeClient()
+
+    tempfile_created = False
+    if data is not None and target is not None:
+        data = _apply_target_to_data(target, data, pf_client)
+        tempfile_created = True
 
     evaluator_info = {}
 
@@ -146,6 +193,9 @@ def evaluate(
         )
 
     input_data_df = pd.read_json(data, lines=True)
+    if tempfile_created:
+        # During the run we have created the temprary file. We will delete it here.
+        os.unlink(data)
     input_data_df = input_data_df.rename(columns={col: f"inputs.{col}" for col in input_data_df.columns})
 
     result_df = pd.concat([input_data_df, evaluators_result_df], axis=1, verify_integrity=True)
