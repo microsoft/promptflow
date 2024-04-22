@@ -60,45 +60,45 @@ from promptflow.tracing._operation_context import OperationContext
 _logger = get_cli_sdk_logger()
 
 
-class TraceProviderConfig:
+class TraceDestinationConfig:
     DISABLE = "none"
     LOCAL = "local"
     AZUREML = "azureml"
-    # note that if user has never specified "trace.provider", we will get `None` instead of a str
+    # note that if user has never specified "trace.destination", we will get `None` instead of a str
     # so we have to keep in mind to handle `None` case
 
     @staticmethod
     def is_feature_disabled(value: typing.Optional[str]) -> bool:
         if isinstance(value, str):
-            return value.lower() == TraceProviderConfig.DISABLE
+            return value.lower() == TraceDestinationConfig.DISABLE
         return False
 
     @staticmethod
     def need_to_export_to_azure(value: typing.Optional[str]) -> bool:
         if isinstance(value, str):
-            return value.lower() not in (TraceProviderConfig.DISABLE, TraceProviderConfig.LOCAL)
+            return value.lower() not in (TraceDestinationConfig.DISABLE, TraceDestinationConfig.LOCAL)
         return False
 
     @staticmethod
     def need_to_resolve(value: typing.Optional[str]) -> bool:
-        """Need to resolve workspace when user specified `azureml` as trace provider."""
+        """Need to resolve workspace when user specified `azureml` as trace destination."""
         if isinstance(value, str):
-            return value.lower() == TraceProviderConfig.AZUREML
+            return value.lower() == TraceDestinationConfig.AZUREML
         return False
 
     @staticmethod
     def validate(value: typing.Optional[str]) -> None:
-        # None, "none", "local" and "azureml" are valid values for trace provider
+        # None, "none", "local" and "azureml" are valid values for trace destination
         if value is None or value.lower() in (
-            TraceProviderConfig.DISABLE,
-            TraceProviderConfig.LOCAL,
-            TraceProviderConfig.AZUREML,
+            TraceDestinationConfig.DISABLE,
+            TraceDestinationConfig.LOCAL,
+            TraceDestinationConfig.AZUREML,
         ):
             return
         try:
-            from promptflow.azure._utils._tracing import validate_trace_provider
+            from promptflow.azure._utils._tracing import validate_trace_destination
 
-            validate_trace_provider(value)
+            validate_trace_destination(value)
         except ImportError:
             raise MissingAzurePackage()
 
@@ -111,8 +111,8 @@ def is_trace_feature_disabled() -> bool:
 
     # do not use `get_trace_provider` as we do not expect resolve for this function
     conf = Configuration.get_instance()
-    value = conf.get_config(key=conf.TRACE_PROVIDER)
-    return TraceProviderConfig.is_feature_disabled(value)
+    value = conf.get_config(key=conf.TRACE_DESTINATION)
+    return TraceDestinationConfig.is_feature_disabled(value)
 
 
 def _is_azure_ext_installed() -> bool:
@@ -194,9 +194,9 @@ def _invoke_pf_svc() -> str:
 def _get_ws_triad_from_pf_config(path: typing.Optional[Path]) -> typing.Optional[AzureMLWorkspaceTriad]:
     from promptflow._sdk._configuration import Configuration
 
-    config = Configuration.get_instance().get_trace_provider(path=path)
-    _logger.info("tracing.trace.provider: %s", config)
-    if not TraceProviderConfig.need_to_export_to_azure(config):
+    config = Configuration.get_instance().get_trace_destination(path=path)
+    _logger.info("resolved tracing.trace.destination: %s", config)
+    if not TraceDestinationConfig.need_to_export_to_azure(config):
         return None
     return extract_workspace_triad_from_trace_provider(config)
 
