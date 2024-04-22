@@ -190,7 +190,7 @@ class Configuration(object):
             return value
 
     def _resolve_trace_destination(self, path: Optional[Path] = None) -> str:
-        return "azureml:" + self._get_workspace_from_config(path=path)
+        return "azureml:/" + self._get_workspace_from_config(path=path)
 
     def get_telemetry_consent(self) -> Optional[bool]:
         """Get the current telemetry consent value. Return None if not configured."""
