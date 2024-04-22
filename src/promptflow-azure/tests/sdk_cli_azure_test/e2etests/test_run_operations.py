@@ -590,7 +590,7 @@ class TestFlowRun:
         mock_run._identity = None
 
         with patch.object(RunOperations, "_resolve_data_to_asset_id"), patch.object(
-            RunOperations, "_resolve_flow_and_session_id", return_value=("fake_flow_id", "fake_session_id")
+            RunOperations, "_resolve_flow_and_session_id", return_value=("fake_flow_id", "fake_session_id", {})
         ):
             with patch.object(RequestsTransport, "send") as mock_request, patch.object(
                 FlowServiceCaller, "_set_headers_with_user_aml_token"
@@ -627,7 +627,7 @@ class TestFlowRun:
                 assert submit_count == 1
 
         with patch.object(RunOperations, "_resolve_data_to_asset_id"), patch.object(
-            RunOperations, "_resolve_flow_and_session_id", return_value=("fake_flow_id", "fake_session_id")
+            RunOperations, "_resolve_flow_and_session_id", return_value=("fake_flow_id", "fake_session_id", {})
         ):
             with patch.object(RequestsTransport, "send") as mock_request, patch.object(
                 FlowServiceCaller, "_set_headers_with_user_aml_token"
