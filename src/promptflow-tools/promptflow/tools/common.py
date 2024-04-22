@@ -391,16 +391,20 @@ def list_deployment_connections(connection=""):
             if isinstance(connection_provider, WorkspaceConnectionProvider) \
                     or isinstance(connection_provider, HttpConnectionProvider):
                 print("1111111111")
+                print("conn provider type....................", type(connection_provider))
                 conn = connection_provider.get(connection)
                 print("conn type....................", type(conn))
                 resource_id = conn.resource_id
                 print("resource_id.........:", resource_id)
                 if not resource_id:
+                    print("44444444444")
                     return None
                 conn_sub, conn_rg, conn_account = _parse_resource_id(resource_id)
         except OpenURLFailedUserError:
+            print("22222222222")
             return None
         except ListDeploymentsError as e:
+            print("33333333333")
             raise e
         except Exception as e:
             msg = f"Parsing connection with exception: {e}"
