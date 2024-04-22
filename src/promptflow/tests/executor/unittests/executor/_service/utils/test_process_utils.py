@@ -79,7 +79,9 @@ class TestProcessUtils:
         return_dict = {}
         error_dict = {}
         with patch("promptflow.executor._service.utils.process_utils.service_logger") as mock_logger:
-            _set_environment_variables_then_execute_target_function(target_function, (1,), {}, return_dict, error_dict, MOCK_CONTEXT_DICT)
+            _set_environment_variables_then_execute_target_function(
+                target_function, (1,), {}, return_dict, error_dict, MOCK_CONTEXT_DICT
+            )
             mock_logger.info.assert_called_once()
 
     @pytest.mark.asyncio
@@ -88,7 +90,9 @@ class TestProcessUtils:
         error_dict = {}
         with patch("promptflow.executor._service.utils.process_utils.service_logger") as mock_logger:
             with pytest.raises(JsonSerializedPromptflowException) as exc_info:
-                _set_environment_variables_then_execute_target_function(target_function, (0,), {}, return_dict, error_dict, MOCK_CONTEXT_DICT)
+                _set_environment_variables_then_execute_target_function(
+                    target_function, (0,), {}, return_dict, error_dict, MOCK_CONTEXT_DICT
+                )
             assert json.loads(exc_info.value.message)["message"] == "Test exception"
             mock_logger.info.assert_called_once()
 
