@@ -15,7 +15,7 @@ from promptflow._core._errors import NotSupported
 from promptflow._internal import ConnectionManager
 from promptflow._proxy import ProxyFactory
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
-from promptflow._sdk._utils import get_flow_name
+from promptflow._sdk._utils import get_flow_name, get_flow_path
 from promptflow._sdk.entities._flows import Flow, FlowContext, Prompty
 from promptflow._sdk.operations._local_storage_operations import LoggerOperations
 from promptflow._utils.async_utils import async_run_allowing_running_loop
@@ -249,7 +249,7 @@ class TestSubmitter:
             # do not enable trace when test single node, as we have not determined this behavior
             if target_node is None:
                 logger.debug("start trace for flow test...")
-                flow_path = Path(self._origin_flow._flow_dir).resolve()
+                flow_path = get_flow_path(self._origin_flow)
                 logger.debug("flow path for test.start_trace: %s", flow_path)
                 if collection is not None:
                     logger.debug("collection is user specified: %s, will use it...", collection)
