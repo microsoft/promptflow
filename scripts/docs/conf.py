@@ -59,9 +59,13 @@ linkcheck_ignore = [
     "deploy-using-docker.html",
     "deploy-using-kubernetes.html",
     "https://portal.azure.com/#create/Microsoft.CognitiveServicesTextAnalytics",  # sphinx recognizes #create as an anchor while it's not. # noqa: E501
+    "https://ms.portal.azure.com/#view/Microsoft_Azure_Marketplace/MarketplaceOffersBlade/searchQuery/machine%20learning",
 ]
 
-linkcheck_exclude_documents = ["contributing"]
+linkcheck_exclude_documents = [
+    "contributing", 
+    r".*/tutorials/.*" # ignore link in copied notebooks.
+]
 
 # -- Extension options -------------------------------------------------------
 
