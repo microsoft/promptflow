@@ -211,7 +211,7 @@ class FlowOperations(TelemetryMixin):
                 return_output[key] = {
                     "detail": detail_content,
                     "log": log_content,
-                    "output_path": (output_path / key).as_posix(),
+                    "output_path": str(output_path / key),
                 }
         else:
             if node:
@@ -227,9 +227,7 @@ class FlowOperations(TelemetryMixin):
             detail_content = json_load(detail_path)
             with open(log_path, "r") as file:
                 log_content = file.read()
-            return_output = {
-                "flow": {"detail": detail_content, "log": log_content, "output_path": output_path.as_posix()}
-            }
+            return_output = {"flow": {"detail": detail_content, "log": log_content, "output_path": str(output_path)}}
         return return_output
 
     def _test(
@@ -1308,10 +1306,10 @@ class FlowOperations(TelemetryMixin):
             include_primitive_output=True,
         )
         merged_signatures = self._merge_signature(extracted=signatures, signature_overrides=data)
-        FlexFlow(path=code / FLOW_FLEX_YAML, code=code, data=data, entry=entry)._validate(raise_error=True)
         updated = False
         for field in ["inputs", "outputs", "init"]:
             if merged_signatures.get(field) != data.get(field):
                 updated = True
         data.update(merged_signatures)
+        FlexFlow(path=code / FLOW_FLEX_YAML, code=code, data=data, entry=entry)._validate(raise_error=True)
         return updated

@@ -307,3 +307,21 @@ class TestFlow:
                 data=data,
             )
         assert error_message in str(e.value)
+
+    def test_model_config_resolve_signature(self):
+        Flow._resolve_signature(
+            code=Path(f"{EAGER_FLOWS_DIR}/basic_model_config"),
+            data={
+                "entry": "class_with_model_config:MyFlow",
+                "init": {
+                    "azure_open_ai_model_config": {"type": "AzureOpenAIModelConfiguration"},
+                    "open_ai_model_config": {"type": "OpenAIModelConfiguration"},
+                },
+                "inputs": {"func_input": {"type": "string"}},
+                "outputs": {
+                    "func_input": {"type": "string"},
+                    "obj_id": {"type": "string"},
+                    "obj_input": {"type": "string"},
+                },
+            },
+        )
