@@ -115,6 +115,18 @@ class TestCSharpCli:
         captured = capfd.readouterr()
         assert "[TOOL.HelloWorld]" in captured.out
 
+        run_pf_command(
+            "run",
+            "create",
+            "--flow",
+            csharp_test_project_basic["flow_dir"],
+            "--data",
+            csharp_test_project_basic["data"],
+        )
+        captured = capfd.readouterr()
+        # info log shouldn't be printed
+        assert "[TOOL.HelloWorld]" not in captured.out
+
     def test_flow_chat(self, monkeypatch, capsys, csharp_test_project_basic_chat: CSharpProject):
         flow_dir = csharp_test_project_basic_chat["flow_dir"]
         # mock user input with pop so make chat list reversed

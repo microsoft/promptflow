@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import json
+import logging
 import platform
 import signal
 import socket
@@ -98,6 +99,7 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
         connections: Optional[dict] = None,
         storage: Optional[AbstractRunStorage] = None,
         init_kwargs: Optional[dict] = None,
+        logging_level: int = logging.WARN,
         **kwargs,
     ) -> "CSharpExecutorProxy":
         """Create a new executor"""
@@ -117,10 +119,24 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
             # if port is not provided, find an available port and start a new execution service
             port = cls.find_available_port()
 
+            if logging_level == logging.WARN:
+                logging_level = "Warning"
+            elif logging_level == logging.INFO:
+                logging_level = "Information"
+            elif logging_level == logging.DEBUG:
+                logging_level = "Debug"
+            elif logging_level == logging.ERROR:
+                logging_level = "Error"
+            elif logging_level == logging.CRITICAL:
+                logging_level = "Fatal"
+            else:
+                logging_level = "Verbose"
+
             process = subprocess.Popen(
                 cls._construct_service_startup_command(
                     port=port,
                     log_path=log_path,
+                    log_level=logging_level,
                     error_file_path=init_error_file,
                     yaml_path=flow_file.as_posix(),
                     init_kwargs_path=init_kwargs_path.absolute().as_posix() if init_kwargs_path else None,

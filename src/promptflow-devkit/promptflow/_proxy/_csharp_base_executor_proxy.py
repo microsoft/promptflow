@@ -37,7 +37,7 @@ class CSharpBaseExecutorProxy(APIBasedExecutorProxy):
         log_path,
         error_file_path,
         yaml_path: str = "flow.dag.yaml",
-        log_level: str = "Information",
+        log_level: str = "Warning",
         assembly_folder: str = ".",
         init_kwargs_path: str = None,
         **kwargs,
