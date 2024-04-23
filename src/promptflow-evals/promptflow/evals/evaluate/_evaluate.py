@@ -158,7 +158,7 @@ def _apply_target_to_data(target: Callable, data: str, pf_client: PFClient) -> s
     data_input = pd.concat([data_input, function_output], axis=1, verify_integrity=True)
     del function_output
     new_data_name = f'{uuid.uuid1()}.jsonl'
-    data_input.to_json(new_data_name, orient='records', lines=True, index=False)
+    data_input.to_json(new_data_name, orient='records', lines=True)
     return new_data_name
 
 
