@@ -94,7 +94,7 @@ class ScriptExecutor(FlowExecutor):
         **kwargs,
     ) -> LineResult:
         run_id = run_id or str(uuid.uuid4())
-        if not self.is_yaml_flow:
+        if self.is_yaml_flow:
             inputs = apply_default_value_for_input(self._inputs_sign, inputs)
         with self._exec_line_context(run_id, index):
             return self._exec_line(inputs, index, run_id, allow_generator_output=allow_generator_output)
@@ -121,7 +121,7 @@ class ScriptExecutor(FlowExecutor):
         # Executor will add line_number to batch inputs if there is no line_number in the original inputs,
         # which should be removed, so, we only preserve the inputs that are contained in self._inputs.
         inputs = {k: inputs[k] for k in self._inputs if k in inputs}
-        if not self.is_yaml_flow:
+        if self.is_yaml_flow:
             FlowValidator.ensure_flow_inputs_type(self._inputs_sign, inputs)
         return run_info, inputs, run_tracker, None, []
 
@@ -228,7 +228,7 @@ class ScriptExecutor(FlowExecutor):
         **kwargs,
     ) -> LineResult:
         run_id = run_id or str(uuid.uuid4())
-        if not self.is_yaml_flow:
+        if self.is_yaml_flow:
             inputs = apply_default_value_for_input(self._inputs_sign, inputs)
         with self._exec_line_context(run_id, index):
             return await self._exec_line_async(inputs, index, run_id, allow_generator_output=allow_generator_output)
@@ -292,7 +292,7 @@ class ScriptExecutor(FlowExecutor):
     def _resolve_init_kwargs(self, c: type, init_kwargs: dict):
         """Resolve init kwargs, the connection names will be resolved to connection objects."""
         logger.debug(f"Resolving init kwargs: {init_kwargs.keys()}.")
-        if not self.is_yaml_flow:
+        if self.is_yaml_flow:
             init_kwargs = apply_default_value_for_input(self._init_sign, init_kwargs)
         sig = inspect.signature(c.__init__)
         connection_params = []
