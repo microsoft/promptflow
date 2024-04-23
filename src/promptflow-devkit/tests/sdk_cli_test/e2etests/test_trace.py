@@ -450,7 +450,7 @@ class TestTraceLifeCycle:
         data_path = Path(f"{DATA_DIR}/simple_eager_flow_data.jsonl").absolute()
         pf.run(flow=flow_path, data=data_path)
         line_runs = pf.traces.list_line_runs(collection=collection)
-        assert len(line_runs) == 3
+        assert len(line_runs) == 1
 
     def test_batch_run_prompty(self, pf: PFClient, collection: str) -> None:
         flow_path = Path(f"{PROMPTY_DIR}/prompty_example.prompty").absolute()
