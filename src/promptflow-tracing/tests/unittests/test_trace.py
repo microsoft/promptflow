@@ -6,11 +6,13 @@ from unittest.mock import patch
 import opentelemetry
 import pytest
 from openai.types.create_embedding_response import CreateEmbeddingResponse, Embedding, Usage
+from opentelemetry.trace.status import StatusCode
 
 from promptflow.tracing._experimental import enrich_prompt_template
 from promptflow.tracing._operation_context import OperationContext
 from promptflow.tracing._trace import (
     TokenCollector,
+    _record_keyboard_interrupt_to_span,
     enrich_span_with_context,
     enrich_span_with_embedding,
     enrich_span_with_input,
@@ -31,6 +33,9 @@ class MockSpan:
         self.raise_exception_for_attr = raise_exception_for_attr
         self.attributes = {}
         self.events = []
+        self.status = None
+        self.description = None
+        self.exception = None
 
     def get_span_context(self):
         return self.span_context
@@ -49,6 +54,16 @@ class MockSpan:
 
     def add_event(self, name: str, attributes=None, timestamp=None):
         self.events.append(MockEvent(name, attributes, timestamp))
+
+    def set_status(self, status=None, description=None):
+        self.status = status
+        self.description = description
+
+    def record_exception(self, exception):
+        self.exception = exception
+
+    def is_recording(self):
+        return True
 
     def __enter__(self):
         return self
@@ -298,3 +313,16 @@ def test_set_enrich_prompt_template():
 
         assert template == mock_span.attributes["prompt.template"]
         assert variables == json.loads(mock_span.attributes["prompt.variables"])
+
+
+@pytest.mark.unitests
+def test_record_keyboard_interrupt_to_span():
+    mock_span = MockSpan(MockSpanContext(1))
+    try:
+        with _record_keyboard_interrupt_to_span(mock_span):
+            raise KeyboardInterrupt
+    except KeyboardInterrupt:
+        pass
+    assert mock_span.status == StatusCode.ERROR
+    assert "Execution cancelled" in mock_span.description
+    assert isinstance(mock_span.exception, KeyboardInterrupt)
