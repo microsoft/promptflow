@@ -99,12 +99,15 @@ class TestEvaluate:
 
     def test_evaluate_with_target(self, questions_file):
         """Test evaluation with target function."""
+        f1_score_eval = F1ScoreEvaluator()
         # run the evaluation with targets
         result = evaluate(
             data=questions_file,
             target=_target_fn,
-            evaluators={"answer": answer_evaluator},
+            evaluators={"answer": answer_evaluator, 'f1': f1_score_eval},
         )
         row_result_df = pd.DataFrame(result["rows"])
-        print(row_result_df)
+        assert "outputs.answer.length" in row_result_df.columns
         assert list(row_result_df["outputs.answer.length"]) == [28, 76, 22]
+        assert "outputs.f1.f1_score" in row_result_df.columns
+        assert not any(np.isnan(f1) for f1 in row_result_df["outputs.f1.f1_score"])

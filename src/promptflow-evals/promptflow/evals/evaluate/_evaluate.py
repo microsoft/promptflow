@@ -3,7 +3,7 @@
 # ---------------------------------------------------------
 import inspect
 import os
-import tempfile
+import shutil
 import uuid
 
 from types import FunctionType
@@ -102,25 +102,35 @@ def _apply_target_to_data(target: Callable, data: str, pf_client: PFClient) -> s
     :return: The path to data file with answers from target function.
     :rtype: str
     """
-    with tempfile.TemporaryDirectory() as d:
-        save_function_as_flow(fun=target, target_dir=d, pf=pf_client)
-        run = pf_client.run(
-            flow=d,
-            data=data,
-            name=f'preprocess_{uuid.uuid1()}'
-        )
-        run = pf_client.stream(run)
-        function_output = pd.read_json(pf_client.runs._get_outputs_path(run),
-                                       orient='records', lines=True)
+    # We are manually creating the temporary directory for the flow
+    # because the way tempdir remove temporary directories will
+    # hang the debugger, because promptflow will keep flow directory.
+    saved_flow = f'flow_{uuid.uuid1()}'
+    os.makedirs(saved_flow)
+    save_function_as_flow(fun=target, target_dir=saved_flow, pf=pf_client)
+    run = pf_client.run(
+        flow=saved_flow,
+        data=data,
+        name=f'preprocess_{uuid.uuid1()}'
+    )
+    run = pf_client.stream(run)
+    # Delete temporary directory if we can.
+    try:
+        shutil.rmtree(saved_flow)
+    except BaseException:
+        # Exception means, we are running in debugger. In this case we can keep the
+        # directory.
+        pass
+    function_output = pd.read_json(pf_client.runs._get_outputs_path(run),
+                                   orient='records', lines=True)
     function_output.set_index(LINE_NUMBER, inplace=True)
     function_output.sort_index(inplace=True)
     data_input = pd.read_json(data, orient='records', lines=True)
     data_input = pd.concat([data_input, function_output], axis=1, verify_integrity=True)
     del function_output
-    data_obj = tempfile.TemporaryFile(suffix='.jsonl', mode='w', delete=False)
-    data_obj.close()
-    data_input.to_json(data_obj.name, orient='records', lines=True, index=False)
-    return data_obj.name
+    new_data_name = f'{uuid.uuid1()}.jsonl'
+    data_input.to_json(new_data_name, orient='records', lines=True, index=False)
+    return new_data_name
 
 
 def evaluate(
