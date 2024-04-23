@@ -36,8 +36,8 @@ class Span:
         self.context = span.context
         self.kind = span.kind
         self.parent_id = span.parent_id
-        self.start_time = span.start_time.isoformat()
-        self.end_time = span.end_time.isoformat()
+        self.start_time = span.start_time.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        self.end_time = span.end_time.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         self.status = span.status
         self.attributes = span.attributes
         # We will remove attributes from events for cosmosdb 2MB size limit.
@@ -93,13 +93,31 @@ class Span:
     def _persist_span_json(self, blob_container_client: ContainerClient, blob_base_uri: str):
         """
         Persist the span data as a JSON string in a blob.
+
+        Persisted span should confirm the format of ReadableSpan.to_json().
+        https://opentelemetry-python.readthedocs.io/en/latest/_modules/opentelemetry/sdk/trace.html#ReadableSpan.to_json
         """
         # check if span_json_uri is already set
         if self.span_json_uri is not None:
             return
 
         # persist the span as a json string in a blob
-        span_data = json.dumps(self.to_dict())
+        # align with ReadableSpan.to_json() format
+        f_span = {
+            "name": self.name,
+            "context": self.context,
+            "kind": self.kind,
+            "parent_id": self.parent_id,
+            "start_time": self.start_time,
+            "end_time": self.end_time,
+            "status": self.status,
+            "attributes": self.attributes,
+            "events": self.events,
+            "links": self.links,
+            "resource": self.resource,
+        }
+
+        span_data = json.dumps(f_span)
         blob_path = self._generate_blob_path(file_name="span.json")
         blob_client = blob_container_client.get_blob_client(blob_path)
         blob_client.upload_blob(span_data)
