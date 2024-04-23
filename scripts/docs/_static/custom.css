@@ -69,3 +69,9 @@ html[data-theme="dark"] {
     /* contain | cover | fill | scale-down */
     object-fit: contain;
 }
+
+.avatar {
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+}
