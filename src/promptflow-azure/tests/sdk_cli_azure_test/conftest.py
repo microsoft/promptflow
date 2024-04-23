@@ -22,7 +22,7 @@ from _constants import (
     DEFAULT_WORKSPACE_NAME,
 )
 from azure.core.exceptions import ResourceNotFoundError
-from mock import mock
+from mock import MagicMock, mock
 from pytest_mock import MockerFixture
 
 from promptflow._sdk._constants import FlowType, RunStatus
@@ -663,6 +663,8 @@ def counting_tokens_in_live(remote_client):
             run_summary = run_summary[1:]
             try:
                 new_run = remote_client.runs.get(run.name)
+                if new_run.name is MagicMock:
+                    continue
                 used_time = time.time() - start_time
                 if (
                     new_run.status == RunStatus.COMPLETED
@@ -671,17 +673,16 @@ def counting_tokens_in_live(remote_client):
                     or new_run.status == RunStatus.CANCELED
                 ):
                     # get total tokens.
-                    new_run_name = str(new_run.name)
                     try:
                         metrics = remote_client.runs._get_run_from_run_history(new_run.name)
-                        completed_run_metrics[new_run_name] = int(
+                        completed_run_metrics[new_run.name] = int(
                             metrics.properties.get("azureml.promptflow.total_tokens", 0)
                         )
                     except Exception:
-                        completed_run_metrics[new_run_name] = -2
+                        completed_run_metrics[new_run.name] = -2
                 elif used_time > timeout:
                     # timeout dealing.
-                    completed_run_metrics[new_run_name] = -3
+                    completed_run_metrics[new_run.name] = -3
                 else:
                     # simple dealing, let this run append to the last and wait for 3 seconds.
                     run_summary.append(new_run)
