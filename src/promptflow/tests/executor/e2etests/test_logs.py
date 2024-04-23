@@ -1,5 +1,5 @@
-import logging
 import os
+from datetime import datetime
 from pathlib import Path
 from tempfile import mkdtemp
 
@@ -279,15 +279,12 @@ class TestExecutorLogs:
             assert all(log in log_content for log in logs_list)
         os.environ.pop("PF_LONG_RUNNING_LOGGING_INTERVAL")
 
-    def test_change_log_format(self):
-        # Save original log level and handlers
-        self.original_log_level = logging.root.manager.disable
-        self.original_handlers = logging.root.handlers[:]
-
+    def test_change_log_format(self, monkeypatch):
         # Change log format
         date_format = "%Y/%m/%d %H:%M:%S"
         log_format = "[%(asctime)s][%(name)s][%(levelname)s] - %(message)s"
-        logging.basicConfig(format=log_format, datefmt=date_format)
+        monkeypatch.setenv("PF_LOG_FORMAT", log_format)
+        monkeypatch.setenv("PF_LOG_DATETIME_FORMAT", date_format)
 
         logs_directory = Path(mkdtemp())
         log_path = str(logs_directory / "flow.log")
@@ -295,12 +292,14 @@ class TestExecutorLogs:
             executor = FlowExecutor.create(get_yaml_file("print_input_flow"), {})
             executor.exec_line(inputs={"text": "line_text"})
             log_content = load_content(log_path)
-            logs_list = ["[execution][INFO] - Start executing nodes in thread pool mode."]
-            assert all(log in log_content for log in logs_list), f"Log content is {log_content}"
-
-        # Restore original log level and handlers
-        logging.root.manager.disable = self.original_log_level
-        logging.root.handlers = self.original_handlers[:]
-        for handler in logging.root.handlers:
-            logging.root.removeHandler(handler)
-        logging.basicConfig(handlers=self.original_handlers)
+            current_date = datetime.now().strftime("%Y/%m/%d")
+            logs_list = [
+                f"[{current_date}",
+                "[execution.flow][INFO] - Start executing nodes in thread pool mode.",
+                "[execution.flow][INFO] - Executing node print_input.",
+                "[execution.flow][INFO] - Node print_input completes.",
+                "stderr> STDERR: line_text",
+            ]
+            assert all(
+                log in log_content for log in logs_list
+            ), f"Missing logs are [{[log for log in logs_list if log not in log_content]}]"
