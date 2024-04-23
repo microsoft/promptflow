@@ -94,7 +94,7 @@ class Configuration(object):
             config = load_yaml(self.CONFIG_PATH)
         else:
             os.makedirs(self.CONFIG_PATH.parent, exist_ok=True)
-            # self.CONFIG_PATH.touch(mode=read_write_by_user(), exist_ok=True)
+            self.CONFIG_PATH.touch(mode=read_write_by_user(), exist_ok=True)
             config = {}
 
         pydash.set_(config, key, value)
