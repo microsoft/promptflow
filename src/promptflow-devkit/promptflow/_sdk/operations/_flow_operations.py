@@ -333,6 +333,7 @@ class FlowOperations(TelemetryMixin):
         """
         from promptflow._sdk._load_functions import load_flow
 
+        flow = generate_yaml_entry_core(entry=flow)
         flow = load_flow(flow)
         flow.context.variant = variant
 
