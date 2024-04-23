@@ -1059,6 +1059,7 @@ def entry_string_to_callable(entry_file, entry) -> Callable:
         try:
             module_name, func_name = entry.split(":")
             module = importlib.import_module(module_name)
+            # To avoid changes in the loaded module code, reload here to get the latest module.
             importlib.reload(module)
         except Exception as e:
             raise UserErrorException(
