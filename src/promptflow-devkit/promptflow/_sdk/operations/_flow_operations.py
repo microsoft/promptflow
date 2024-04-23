@@ -722,6 +722,7 @@ class FlowOperations(TelemetryMixin):
 
         flow = load_flow(flow)
         is_csharp_flow = flow.language == FlowLanguage.CSharp
+        is_flex_flow = isinstance(flow, FlexFlow)
 
         if format not in ["docker", "executable"]:
             raise ValueError(f"Unsupported export format: {format}")
@@ -742,7 +743,7 @@ class FlowOperations(TelemetryMixin):
             output=output_flow_dir,
             tuning_node=tuning_node,
             node_variant=node_variant,
-            update_flow_tools_json=False if is_csharp_flow else True,
+            update_flow_tools_json=False if is_csharp_flow or is_flex_flow else True,
         )
 
         if flow_only:
