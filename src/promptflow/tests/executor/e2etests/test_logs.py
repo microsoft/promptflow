@@ -1,3 +1,4 @@
+import logging
 import os
 from pathlib import Path
 from tempfile import mkdtemp
@@ -277,3 +278,29 @@ class TestExecutorLogs:
             logs_list = ["INFO     monitor_long_running_coroutine started"]
             assert all(log in log_content for log in logs_list)
         os.environ.pop("PF_LONG_RUNNING_LOGGING_INTERVAL")
+
+    def test_change_log_format(self):
+        # Save original log level and handlers
+        self.original_log_level = logging.root.manager.disable
+        self.original_handlers = logging.root.handlers[:]
+
+        # Change log format
+        date_format = "%Y/%m/%d %H:%M:%S"
+        log_format = "[%(asctime)s][%(name)s][%(levelname)s] - %(message)s"
+        logging.basicConfig(format=log_format, datefmt=date_format)
+
+        logs_directory = Path(mkdtemp())
+        log_path = str(logs_directory / "flow.log")
+        with LogContext(log_path):
+            executor = FlowExecutor.create(get_yaml_file("print_input_flow"), {})
+            executor.exec_line(inputs={"text": "line_text"})
+            log_content = load_content(log_path)
+            logs_list = ["INFO - execution - Start executing nodes in thread pool mode."]
+            assert all(log in log_content for log in logs_list), f"Log content is {log_content}"
+
+        # Restore original log level and handlers
+        logging.root.manager.disable = self.original_log_level
+        logging.root.handlers = self.original_handlers[:]
+        for handler in logging.root.handlers:
+            logging.root.removeHandler(handler)
+        logging.basicConfig(handlers=self.original_handlers)
