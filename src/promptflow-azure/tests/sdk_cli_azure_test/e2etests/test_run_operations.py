@@ -1347,6 +1347,39 @@ class TestFlowRun:
 
         assert_batch_run_result(run, pf, assert_func)
 
+    def test_flex_flow_run_batch_resume(
+        self, pf: PFClient, randstr: Callable[[str], str], capfd: pytest.CaptureFixture
+    ):
+        name = randstr("flex_flow_original_run")
+        try:
+            original_run = pf.runs.get(run=name)
+        except RunNotFoundError:
+            flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_with_random_fail")
+            original_run = pf.run(
+                flow=flow_path,
+                data=f"{EAGER_FLOWS_DIR}/simple_with_random_fail/inputs.jsonl",
+                name=name,
+            )
+        original_run = pf.runs.stream(run=name)
+        assert isinstance(original_run, Run)
+        assert original_run.name == name
+        assert original_run.status == "Completed"
+        # Since the data have 15 lines, we can assume the original run has succeeded lines in over 99% cases
+        original_details = pf.get_details(original_run)
+        original_success_count = len(original_details[original_details["outputs.output"].notnull()])
+        resume_name = randstr("resume_name")
+        resume_run = pf.run(resume_from=original_run, name=resume_name, display_name="flex_flow_resume_run")
+        resume_run = pf.runs.stream(run=resume_name)
+        assert isinstance(resume_run, Run)
+        assert resume_run.name == resume_name
+        assert resume_run._resume_from == original_run.name
+        original_metrics = pf.runs.get_metrics(run=name)
+        resume_metrics = pf.runs.get_metrics(run=resume_name)
+        assert original_metrics["image_count"] < resume_metrics["image_count"]
+        # assert skip in the log
+        out, _ = capfd.readouterr()
+        assert f"Skipped the execution of {original_success_count} existing results." in out
+
     @pytest.mark.skipif(not is_live(), reason="Content change in submission time which lead to recording issue.")
     def test_model_config_obj_in_init(self, pf):
         def assert_func(details_dict):
