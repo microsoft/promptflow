@@ -661,27 +661,32 @@ def counting_tokens_in_live(remote_client):
         while len(run_summary) > 0:
             run = run_summary[0]
             run_summary = run_summary[1:]
-            new_run = remote_client.runs.get(run.name)
-            used_time = time.time() - start_time
-            if (
-                new_run.status == RunStatus.COMPLETED
-                or new_run.status == RunStatus.FAILED
-                or new_run.status == RunStatus.CANCEL_REQUESTED
-                or new_run.status == RunStatus.CANCELED
-            ):
-                # get total tokens.
-                try:
-                    metrics = remote_client.runs._get_run_from_run_history(new_run.name)
-                    completed_run_metrics[run.name] = int(metrics.properties.get("azureml.promptflow.total_tokens", 0))
-                except Exception:
-                    completed_run_metrics[run.name] = 0
-            elif used_time > timeout:
-                # timeout dealing.
-                completed_run_metrics[run.name] = 0
-            else:
-                # simple dealing, let this run append to the last and wait for 3 seconds.
-                run_summary.append(new_run)
-                time.sleep(3)
+            try:
+                new_run = remote_client.runs.get(run.name)
+                used_time = time.time() - start_time
+                if (
+                    new_run.status == RunStatus.COMPLETED
+                    or new_run.status == RunStatus.FAILED
+                    or new_run.status == RunStatus.CANCEL_REQUESTED
+                    or new_run.status == RunStatus.CANCELED
+                ):
+                    # get total tokens.
+                    try:
+                        metrics = remote_client.runs._get_run_from_run_history(new_run.name)
+                        completed_run_metrics[run.name] = int(
+                            metrics.properties.get("azureml.promptflow.total_tokens", 0)
+                        )
+                    except Exception:
+                        completed_run_metrics[run.name] = -2
+                elif used_time > timeout:
+                    # timeout dealing.
+                    completed_run_metrics[run.name] = -3
+                else:
+                    # simple dealing, let this run append to the last and wait for 3 seconds.
+                    run_summary.append(new_run)
+                    time.sleep(3)
+            except Exception:
+                completed_run_metrics[run.name] = -1
 
         import json
 
@@ -689,7 +694,7 @@ def counting_tokens_in_live(remote_client):
 
         number = {}
 
-        count = sum(completed_run_metrics.values())
+        count = sum(val for val in completed_run_metrics.values() if val > 0)
         with FileLock(str(COUNTER_FILE) + ".lock"):
             is_non_zero_file = os.path.isfile(COUNTER_FILE) and os.path.getsize(COUNTER_FILE) > 0
             if is_non_zero_file:
