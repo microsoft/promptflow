@@ -113,7 +113,7 @@ class BatchEngine:
         if is_function_entry:
             self._working_dir = working_dir or Path.cwd()
         else:
-            self._working_dir = self._working_dir = (
+            self._working_dir = (
                 Flow._resolve_working_dir(flow_file, working_dir) if flow_file is not None else working_dir
             )
 
@@ -290,19 +290,37 @@ class BatchEngine:
         """
         try:
             previous_run_results = []
-            aggregation_nodes = {node.name for node in self._flow.nodes if node.aggregation}
-            for i in range(len(batch_inputs)):
+            if not self._is_eager_flow:
+                aggregation_nodes = {node.name for node in self._flow.nodes if node.aggregation}
+            for i, _ in enumerate(batch_inputs):
                 previous_run_info: FlowRunInfo = resume_from_run_storage.load_flow_run_info(i)
 
-                if previous_run_info and previous_run_info.status == Status.Completed:
-                    # UI uses root_run_id  to link the base path in datastore with the run_info of line.
-                    # Thus the root_run_id needs to be the current batch run id.
-                    previous_run_info.root_run_id = run_id
-                    previous_run_info.parent_run_id = run_id
+                if not previous_run_info or previous_run_info.status != Status.Completed:
+                    continue
 
-                    # Load previous node run info
+                # UI uses root_run_id  to link the base path in datastore with the run_info of line.
+                # Thus the root_run_id needs to be the current batch run id.
+                previous_run_info.root_run_id = run_id
+                previous_run_info.parent_run_id = run_id
+
+                # Deepcopy to avoid modifying the original object when serializing image
+                self._storage.persist_flow_run(previous_run_info)
+                previous_run_output = deepcopy(previous_run_info.output)
+                previous_run_output_in_line_result = self._multimedia_processor.persist_multimedia_data(
+                    previous_run_output, output_dir
+                )
+
+                if self._is_eager_flow:
+                    # Directly create LineResult object for previous line result
+                    previous_line_result = LineResult(
+                        output=previous_run_output_in_line_result,
+                        aggregation_inputs=previous_run_output_in_line_result,
+                        run_info=previous_run_info,
+                        node_run_infos={},
+                    )
+                else:
+                    # Since there is no node run in flex flow, only load previous node run info when it is not flex flow
                     previous_node_run_infos = resume_from_run_storage.load_node_run_info_for_line(i)
-
                     # In storage, aggregation nodes are persisted with filenames similar to regular nodes.
                     # Currently we read regular node run records by filename in the node artifacts folder,
                     # which may lead to load records of aggregation nodes at the same time, which is not intended.
@@ -322,39 +340,29 @@ class BatchEngine:
                     previous_node_run_outputs = {
                         node_info.node: node_info.output for node_info in previous_node_run_infos
                     }
-
                     # Extract aggregation inputs for flow with aggregation node
                     aggregation_inputs = extract_aggregation_inputs(self._flow, previous_node_run_outputs)
 
-                    # Deepcopy to avoid modifying the original object when serializing image
-                    previous_run_output = deepcopy(previous_run_info.output)
-                    previous_run_output_in_line_result = self._multimedia_processor.persist_multimedia_data(
-                        previous_run_output, output_dir
-                    )
-
-                    # Persist previous run info and node run info
-                    self._storage.persist_flow_run(previous_run_info)
+                    # Persist node run info to storage
                     for node_run_info in previous_node_run_infos:
                         self._storage.persist_node_run(node_run_info)
 
-                    # Create LineResult object for previous line result
+                    # Create LineResult object with aggregation inputs and node_run_infos
                     previous_line_result = LineResult(
                         output=previous_run_output_in_line_result,
                         aggregation_inputs=aggregation_inputs,
                         run_info=previous_run_info,
                         node_run_infos=previous_node_run_infos_dict,
                     )
-                    previous_run_results.append(previous_line_result)
-
+                previous_run_results.append(previous_line_result)
             return previous_run_results
         except Exception as e:
             bulk_logger.error(f"Error occurred while copying previous run result. Exception: {str(e)}")
-            resume_copy_error = ResumeCopyError(
+            raise ResumeCopyError(
                 target=ErrorTarget.BATCH,
                 message_format="Failed to copy results when resuming the run. Error: {error_type_and_message}.",
                 error_type_and_message=f"({e.__class__.__name__}) {e}",
-            )
-            raise resume_copy_error from e
+            ) from e
 
     def cancel(self):
         """Cancel the batch run"""
@@ -474,8 +482,8 @@ class BatchEngine:
             )
             line_results.extend(results)
         else:
-            # TODO: Enable batch timeout for other api based executor proxy
-            await self._exec_batch(line_results, batch_inputs, run_id)
+            await self._exec_batch(line_results, inputs_to_run, run_id)
+
         handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
         # persist outputs to output dir
         outputs = [
@@ -511,11 +519,16 @@ class BatchEngine:
         batch_inputs: List[Mapping[str, Any]],
         run_id: Optional[str] = None,
     ) -> List[LineResult]:
+        # line_results as input parameter, so that the completed line results can be summarized
+        # when batch run is canceled.
         worker_count = self._worker_count or DEFAULT_CONCURRENCY
         semaphore = asyncio.Semaphore(worker_count)
+
         pending = [
-            asyncio.create_task(self._exec_line_under_semaphore(semaphore, line_inputs, i, run_id))
-            for i, line_inputs in enumerate(batch_inputs)
+            asyncio.create_task(
+                self._exec_line_under_semaphore(semaphore, line_input, line_input[LINE_NUMBER_KEY], run_id)
+            )
+            for line_input in batch_inputs
         ]
 
         total_lines = len(batch_inputs)
@@ -529,7 +542,7 @@ class BatchEngine:
             self._persist_run_info(completed_line_results)
             line_results.extend(completed_line_results)
             # update the progress log
-            completed_line = len(line_results)
+            completed_line += len(completed_line_results)
             last_log_count = log_progress(
                 run_start_time=self._start_time,
                 total_count=total_lines,

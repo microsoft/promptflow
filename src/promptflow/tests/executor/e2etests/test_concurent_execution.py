@@ -47,7 +47,7 @@ class TestConcurrentExecution:
     def test_concurrent_run_with_exception(self):
         executor = FlowExecutor.create(get_yaml_file(FLOW_FOLDER), {}, raise_ex=False)
         flow_result = executor.exec_line({"input1": "True", "input2": "False", "input3": "False", "input4": "False"})
-        assert 2 < flow_result.run_info.system_metrics["duration"] < 4, "Should at least finish the running job."
+        assert 1 > flow_result.run_info.system_metrics["duration"], "Will finish quickly with exception."
         error_response = ErrorResponse.from_error_dict(flow_result.run_info.error)
         assert error_response.error_code_hierarchy == "UserError/ToolExecutionError"
 

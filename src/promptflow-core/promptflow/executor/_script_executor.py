@@ -16,6 +16,7 @@ from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool_meta_generator import PythonLoadError
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
+from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import logger
 from promptflow._utils.multimedia_utils import BasicMultimediaProcessor
 from promptflow._utils.tool_utils import function_to_interface
@@ -24,8 +25,13 @@ from promptflow.connections import ConnectionProvider
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.tool import ConnectionType
 from promptflow.core import log_metric
+from promptflow.core._model_configuration import (
+    MODEL_CONFIG_NAME_2_CLASS,
+    AzureOpenAIModelConfiguration,
+    OpenAIModelConfiguration,
+)
 from promptflow.exceptions import ErrorTarget
-from promptflow.executor._errors import InvalidFlexFlowEntry
+from promptflow.executor._errors import InvalidFlexFlowEntry, InvalidModelConfigValueType
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DefaultRunStorage
@@ -33,7 +39,7 @@ from promptflow.tracing._trace import _traced
 from promptflow.tracing._tracer import Tracer
 from promptflow.tracing.contracts.trace import TraceType
 
-from ._errors import FlowEntryInitializationError, InvalidAggregationFunction
+from ._errors import FlowEntryInitializationError, InvalidAggregationFunction, ScriptExecutionError
 from .flow_executor import FlowExecutor
 
 
@@ -137,8 +143,19 @@ class ScriptExecutor(FlowExecutor):
             # Should convert output to dict before storing it to run info, since we will add key 'line_number' to it,
             # so it must be a dict.
             output_dict = convert_eager_flow_output_to_dict(output)
-            run_tracker.end_run(line_run_id, result=output_dict, traces=traces)
+            run_info.api_calls = traces
+            run_tracker.set_openai_metrics(line_run_id)
+            run_tracker.end_run(line_run_id, result=output_dict)
         except Exception as e:
+            # We assume the error comes from user's code.
+            # For these cases, raise ScriptExecutionError, which is classified as UserError
+            # and shows stack trace in the error message to make it easy for user to troubleshoot.
+            error_type_and_message = f"({e.__class__.__name__}) {e}"
+            e = ScriptExecutionError(
+                message_format="Execution failure in '{func_name}': {error_type_and_message}",
+                func_name=self._func.__qualname__,
+                error_type_and_message=error_type_and_message,
+            )
             if not traces:
                 traces = Tracer.end_tracing(line_run_id)
             run_tracker.end_run(line_run_id, ex=e, traces=traces)
@@ -174,7 +191,7 @@ class ScriptExecutor(FlowExecutor):
         self,
         inputs: List[Any],
     ) -> AggregationResult:
-        output = None
+        output, metrics = None, {}
         try:
             if inspect.iscoroutinefunction(self._aggr_func):
                 output = async_run_allowing_running_loop(self._aggr_func, **{self._aggr_input_name: inputs})
@@ -183,8 +200,16 @@ class ScriptExecutor(FlowExecutor):
             metrics = output if isinstance(output, dict) else {"metrics": output}
             for k, v in metrics.items():
                 log_metric(k, v)
-        except Exception:
-            pass
+        except Exception as e:
+            error_type_and_message = f"({e.__class__.__name__}) {e}"
+            e = ScriptExecutionError(
+                message_format="Execution failure in '{func_name}': {error_type_and_message}",
+                func_name=self._aggr_func.__name__,
+                error_type_and_message=error_type_and_message,
+            )
+            error = ExceptionPresenter.create(e).to_dict(include_debug_info=True)
+            logger.warning(f"Failed to execute aggregation function with error: {error}")
+            logger.warning("The flow will have empty metrics.")
         return AggregationResult(output, metrics, {})
 
     async def exec_line_async(
@@ -223,7 +248,9 @@ class ScriptExecutor(FlowExecutor):
             output = self._stringify_generator_output(output) if not allow_generator_output else output
             traces = Tracer.end_tracing(line_run_id)
             output_dict = convert_eager_flow_output_to_dict(output)
-            run_tracker.end_run(line_run_id, result=output_dict, traces=traces)
+            run_info.api_calls = traces
+            run_tracker.set_openai_metrics(line_run_id)
+            run_tracker.end_run(line_run_id, result=output_dict)
         except Exception as e:
             if not traces:
                 traces = Tracer.end_tracing(line_run_id)
@@ -255,18 +282,71 @@ class ScriptExecutor(FlowExecutor):
 
     def _resolve_init_kwargs(self, c: type, init_kwargs: dict):
         """Resolve init kwargs, the connection names will be resolved to connection objects."""
+        logger.debug(f"Resolving init kwargs: {init_kwargs.keys()}.")
         sig = inspect.signature(c.__init__)
         connection_params = []
+        model_config_param_name_2_cls = {}
+        # TODO(3117908): support connection & model config from YAML signature.
         for key, param in sig.parameters.items():
             if ConnectionType.is_connection_class_name(param.annotation.__name__):
                 connection_params.append(key)
-        if not connection_params:
+            elif param.annotation.__name__ in MODEL_CONFIG_NAME_2_CLASS.keys():
+                model_config_param_name_2_cls[key] = MODEL_CONFIG_NAME_2_CLASS[param.annotation.__name__]
+        if not connection_params and not model_config_param_name_2_cls:
             return init_kwargs
         resolved_init_kwargs = {k: v for k, v in init_kwargs.items()}
+        if connection_params:
+            self._resolve_connection_params(
+                connection_params=connection_params, init_kwargs=init_kwargs, resolved_init_kwargs=resolved_init_kwargs
+            )
+        if model_config_param_name_2_cls:
+            self._resolve_model_config_params(
+                model_config_param_name_2_cls=model_config_param_name_2_cls,
+                init_kwargs=init_kwargs,
+                resolved_init_kwargs=resolved_init_kwargs,
+            )
+
+        return resolved_init_kwargs
+
+    @classmethod
+    def _resolve_connection_params(cls, connection_params: list, init_kwargs: dict, resolved_init_kwargs: dict):
         provider = ConnectionProvider.get_instance()
+        # parse connection
+        logger.debug(f"Resolving connection params: {connection_params}")
         for key in connection_params:
             resolved_init_kwargs[key] = provider.get(init_kwargs[key])
-        return resolved_init_kwargs
+
+    @classmethod
+    def _resolve_model_config_params(
+        cls, model_config_param_name_2_cls: dict, init_kwargs: dict, resolved_init_kwargs: dict
+    ):
+        # parse model config
+        logger.debug(f"Resolving model config params: {model_config_param_name_2_cls}")
+        for key, model_config_cls in model_config_param_name_2_cls.items():
+            model_config_val = init_kwargs[key]
+            if isinstance(model_config_val, dict):
+                logger.debug(f"Recovering model config object from dict: {model_config_val}.")
+                model_config_val = model_config_cls(**model_config_val)
+            if not isinstance(model_config_val, model_config_cls):
+                raise InvalidModelConfigValueType(
+                    message_format="Model config value is not an instance of {model_config_cls}, got {value_type}",
+                    model_config_cls=model_config_cls,
+                    value_type=type(model_config_val),
+                )
+            if getattr(model_config_val, "connection", None):
+                logger.debug(f"Getting connection {model_config_val.connection} for model config.")
+                provider = ConnectionProvider.get_instance()
+                connection_obj = provider.get(model_config_val.connection)
+
+                if isinstance(model_config_val, AzureOpenAIModelConfiguration):
+                    model_config_val = AzureOpenAIModelConfiguration.from_connection(
+                        connection=connection_obj, azure_deployment=model_config_val.azure_deployment
+                    )
+                elif isinstance(model_config_val, OpenAIModelConfiguration):
+                    model_config_val = OpenAIModelConfiguration.from_connection(
+                        connection=connection_obj, model=model_config_val.model
+                    )
+            resolved_init_kwargs[key] = model_config_val
 
     @property
     def is_function_entry(self):
@@ -298,6 +378,7 @@ class ScriptExecutor(FlowExecutor):
                     resolved_init_kwargs = self._resolve_init_kwargs(func, self._init_kwargs)
                     obj = func(**resolved_init_kwargs)
                 except Exception as e:
+                    # TODO: scrub secrets in init kwarg values
                     raise FlowEntryInitializationError(init_kwargs=self._init_kwargs, ex=e) from e
                 func = getattr(obj, "__call__")
                 self._initialize_aggr_function(obj)

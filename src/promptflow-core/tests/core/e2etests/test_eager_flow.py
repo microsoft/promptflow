@@ -5,6 +5,7 @@ import pytest
 
 from promptflow._core.tool_meta_generator import PythonLoadError
 from promptflow.contracts.run_info import Status
+from promptflow.core import AzureOpenAIModelConfiguration, OpenAIModelConfiguration
 from promptflow.executor._errors import FlowEntryInitializationError, InvalidFlexFlowEntry
 from promptflow.executor._result import LineResult
 from promptflow.executor._script_executor import ScriptExecutor
@@ -38,6 +39,7 @@ function_entries = [
 ]
 
 
+@pytest.mark.usefixtures("dev_connections")
 @pytest.mark.e2etest
 class TestEagerFlow:
     @pytest.mark.parametrize(
@@ -62,9 +64,32 @@ class TestEagerFlow:
                 lambda x: x["func_input"] == "func_input",
                 {"obj_input": "obj_input"},
             ),
+            (
+                "basic_model_config",
+                {"func_input": "input"},
+                lambda x: x["azure_open_ai_model_config_azure_endpoint"] == "fake_endpoint",
+                {
+                    "azure_open_ai_model_config": AzureOpenAIModelConfiguration(
+                        azure_deployment="my_deployment", azure_endpoint="fake_endpoint"
+                    ),
+                    "open_ai_model_config": OpenAIModelConfiguration(model="my_model", base_url="fake_base_url"),
+                },
+            ),
+            (
+                "basic_model_config",
+                {"func_input": "input"},
+                lambda x: x["azure_open_ai_model_config_azure_endpoint"] is not None
+                and x["open_ai_model_config_connection"] is None,
+                {
+                    "azure_open_ai_model_config": AzureOpenAIModelConfiguration(
+                        azure_deployment="my_deployment", connection="azure_open_ai_connection"
+                    ),
+                    "open_ai_model_config": OpenAIModelConfiguration(model="my_model", base_url="fake_base_url"),
+                },
+            ),
         ],
     )
-    def test_flow_run(self, flow_folder, inputs, ensure_output, init_kwargs):
+    def test_flow_run(self, flow_folder, inputs, ensure_output, init_kwargs, mock_dict_azure_open_ai_connection):
         flow_file = get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT)
 
         # Test submitting eager flow to script executor
@@ -86,6 +111,16 @@ class TestEagerFlow:
         # run the same line again will get same output
         line_result2 = executor.exec_line(inputs=inputs, index=0)
         assert line_result1.output == line_result2.output
+
+    def test_flow_run_with_openai_chat(self, mock_dict_azure_open_ai_connection):
+        flow_file = get_yaml_file("callable_class_with_openai", root=EAGER_FLOW_ROOT, file_name="flow.flex.yaml")
+
+        executor = ScriptExecutor(flow_file=flow_file, init_kwargs={"connection": "azure_open_ai_connection"})
+        line_result = executor.exec_line(inputs={"question": "Hello", "stream": False}, index=0)
+        assert line_result.run_info.status == Status.Completed, line_result.run_info.error
+        token_names = ["prompt_tokens", "completion_tokens", "total_tokens"]
+        for token_name in token_names:
+            assert token_name in line_result.run_info.api_calls[0]["children"][0]["system_metrics"]
 
     @pytest.mark.parametrize("entry, inputs, expected_output", function_entries)
     def test_flow_run_with_function_entry(self, entry, inputs, expected_output):
@@ -151,3 +186,14 @@ class TestEagerFlow:
         with pytest.raises(expected_exception) as e:
             ScriptExecutor(flow_file=flow_file)
         assert expected_error_msg in str(e.value)
+
+    def test_aggregation_error(self):
+        flow_folder = "class_based_flow_with_aggregation_exception"
+        flow_file = get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT)
+        executor = ScriptExecutor(flow_file=flow_file, init_kwargs={"obj_input": "obj_input"})
+        line_result = executor.exec_line(inputs={"func_input": "func_input"}, index=0)
+
+        if executor.has_aggregation_node:
+            aggr_result = executor._exec_aggregation(inputs=[line_result.output])
+            # exec aggregation won't fail with error
+            assert aggr_result.metrics == {}
