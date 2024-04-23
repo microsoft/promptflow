@@ -151,8 +151,8 @@ function Add-Metadata{
         # If the first cell length > 1, indicate there are more things than title it self in the first cell
         return
     }
-    $MetadataFormat = "Authored by: {0} {1}"
-    $SingleAuthor = "<a href='https://github.com/{0}' target='_blank'><img src='https://github.com/{0}.png' alt='Avatar' class='avatar'></a>"
+    $MetadataFormat = "Authored by:&nbsp;{0}{1}"
+    $SingleAuthor = "&nbsp;<a href='https://github.com/{0}' target='_blank'><img src='https://github.com/{0}.png' alt='Avatar' class='avatar dark-light'></a>"
     $JumpLink = "<a href='{0}' target='_blank'><img decoding='async' loading='lazy' src='https://img.shields.io/badge/Open%20on%20GitHub-grey?logo=github' alt='Open on GitHub' class='img_ev3q' style='float: right;'></a>" -f $NotebookRepoPath
     $Authors = $AuthorList | ForEach-Object { $SingleAuthor -f $_.replace("@github.com", "") }
     $Metadata = $MetadataFormat -f ($Authors -join ""), $JumpLink
