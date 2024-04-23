@@ -4,6 +4,7 @@
 
 from pathlib import Path
 from typing import Callable
+from unittest.mock import patch
 
 import pytest
 from _constants import PROMPTFLOW_ROOT
@@ -224,3 +225,25 @@ class TestFlowRunUpload:
         )
         eval_run = Local2CloudTestHelper.check_local_to_cloud_run(pf, eval_run)
         assert eval_run.properties["azureml.promptflow.variant_run_id"] == main_run_name
+
+    @pytest.mark.skipif(condition=not pytest.is_live, reason="Bug - 3089145 Replay failed for test 'test_upload_run'")
+    @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore", "mock_get_azure_pf_client")
+    def test_upload_flex_flow_run_with_global_azureml(self, pf: PFClient, randstr: Callable[[str], str]):
+        with patch("promptflow._sdk._configuration.Configuration.get_config", return_value="azureml"):
+            name = randstr("flex_run_name_with_global_azureml_for_upload")
+            local_pf = Local2CloudTestHelper.get_local_pf(name)
+            # submit a local flex run
+            run = local_pf.run(
+                flow="entry:my_flow",
+                code=f"{EAGER_FLOWS_DIR}/simple_with_config_json",
+                data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+                name=name,
+                display_name="sdk-cli-test-run-local-to-cloud-flex-with-global-azureml",
+                tags={"sdk-cli-test-flex": "true"},
+                description="test sdk local to cloud",
+            )
+            assert run.status == "Completed"
+            assert "error" not in run._to_dict()
+
+            # check the run is uploaded to cloud.
+            Local2CloudTestHelper.check_local_to_cloud_run(pf, run)
