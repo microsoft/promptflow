@@ -8,7 +8,7 @@ from pandas.testing import assert_frame_equal
 from unittest.mock import patch
 
 from promptflow.evals.evaluate import evaluate
-from promptflow.evals.evaluate._evaluate import _apply_target_to_data
+from promptflow.evals.evaluate._evaluate import _apply_target_to_data, _get_missing_inputs
 from promptflow.evals.evaluators import F1ScoreEvaluator, GroundednessEvaluator
 from promptflow.evals.evaluate._utils import save_function_as_flow
 
@@ -62,10 +62,10 @@ class TestEvaluate:
 
         assert "data must be provided for evaluation." in exc_info.value.args[0]
 
-    def test_evaluate_evaluators_not_a_dict(self, mock_model_config):
+    def test_evaluate_evaluators_not_a_dict(self, mock_model_config, questions_file):
         with pytest.raises(ValueError) as exc_info:
             evaluate(
-                data="data",
+                data=questions_file,
                 evaluators=[GroundednessEvaluator(model_config=mock_model_config)],
             )
 
@@ -129,3 +129,11 @@ class TestEvaluate:
             assert_frame_equal(results, ground_truth, check_like=True)
         finally:
             os.unlink(qa)
+
+    @pytest.mark.parametrize('columns,expected', [
+        (['answer'], ['ground_truth']),
+        (['answer', 'ground_truth'], []),
+        ])
+    def test_missing_columns(self, columns, expected):
+        """Test that we are returning correct missing columns."""
+        assert _get_missing_inputs(F1ScoreEvaluator(), columns) == expected

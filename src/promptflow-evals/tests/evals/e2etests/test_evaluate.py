@@ -107,6 +107,7 @@ class TestEvaluate:
             evaluators={"answer": answer_evaluator, 'f1': f1_score_eval},
         )
         row_result_df = pd.DataFrame(result["rows"])
+        assert "outputs.answer" in row_result_df.columns
         assert "outputs.answer.length" in row_result_df.columns
         assert list(row_result_df["outputs.answer.length"]) == [28, 76, 22]
         assert "outputs.f1.f1_score" in row_result_df.columns
