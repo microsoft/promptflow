@@ -1,6 +1,8 @@
 import importlib
 import json
 import os
+import platform
+import subprocess
 import tempfile
 from multiprocessing import Lock
 from pathlib import Path
@@ -8,6 +10,7 @@ from typing import TypedDict
 from unittest.mock import MagicMock, patch
 
 import pytest
+import requests
 from _constants import (
     CONNECTION_FILE,
     DEFAULT_RESOURCE_GROUP_NAME,
@@ -19,10 +22,12 @@ from _constants import (
 from _pytest.monkeypatch import MonkeyPatch
 from dotenv import load_dotenv
 from filelock import FileLock
+from mock import mock
 from pytest_mock import MockerFixture
 
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
 from promptflow._core.connection_manager import ConnectionManager
+from promptflow._sdk._service.utils.utils import get_pfs_port
 from promptflow._sdk.entities._connection import AzureOpenAIConnection
 from promptflow._utils.context_utils import _change_working_dir
 
@@ -298,3 +303,21 @@ def csharp_test_project_class_init_flex_flow() -> CSharpProject:
     if is_in_ci_pipeline:
         pytest.skip(reason="need to avoid fetching connection from local pfs to enable this in ci")
     return construct_csharp_test_project("ClassInitFlexFlow")
+
+
+@pytest.fixture(scope="session")
+def otlp_collector():
+    """A session scope fixture, invokes a separate prompt flow service serves as OTLP collector."""
+    # invoke a prompt flow service without pf.config
+    port = str(get_pfs_port())
+    cmd_args = ["pf", "service", "start", "--port", port]
+    start_pfs = subprocess.Popen(cmd_args, shell=platform.system() == "Windows", stderr=subprocess.PIPE)
+    start_pfs.wait(timeout=20)
+    # try to GET heartbeat to ensure PFS is healthy
+    response = requests.get(f"http://localhost:{port}/heartbeat")
+    assert response.status_code == 200, "fixture `otlp_collector` invokes PFS failed"
+    # mock invoke prompt flow service as it has been invoked already
+    with mock.patch("promptflow._sdk._tracing._invoke_pf_svc", return_value=port), mock.patch(
+        "promptflow._sdk._tracing.is_pfs_service_healthy", return_value=True
+    ):
+        yield
