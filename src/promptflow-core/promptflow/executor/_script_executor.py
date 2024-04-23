@@ -66,7 +66,7 @@ class ScriptExecutor(FlowExecutor):
             self._working_dir = Flow._resolve_working_dir(entry, working_dir)
         else:
             self._working_dir = working_dir or Path.cwd()
-        self._init_sign_from_yaml()
+        self._init_input_sign()
         self._initialize_function()
         self._connections = connections
         self._storage = storage or DefaultRunStorage()
@@ -94,7 +94,7 @@ class ScriptExecutor(FlowExecutor):
         **kwargs,
     ) -> LineResult:
         run_id = run_id or str(uuid.uuid4())
-        if not self.is_function_entry:
+        if not self.is_yaml_flow:
             inputs = apply_default_value_for_input(self._inputs_sign, inputs)
         with self._exec_line_context(run_id, index):
             return self._exec_line(inputs, index, run_id, allow_generator_output=allow_generator_output)
@@ -121,7 +121,7 @@ class ScriptExecutor(FlowExecutor):
         # Executor will add line_number to batch inputs if there is no line_number in the original inputs,
         # which should be removed, so, we only preserve the inputs that are contained in self._inputs.
         inputs = {k: inputs[k] for k in self._inputs if k in inputs}
-        if not self.is_function_entry:
+        if not self.is_yaml_flow:
             FlowValidator.ensure_flow_inputs_type(self._inputs_sign, inputs)
         return run_info, inputs, run_tracker, None, []
 
@@ -228,7 +228,7 @@ class ScriptExecutor(FlowExecutor):
         **kwargs,
     ) -> LineResult:
         run_id = run_id or str(uuid.uuid4())
-        if not self.is_function_entry:
+        if not self.is_yaml_flow:
             inputs = apply_default_value_for_input(self._inputs_sign, inputs)
         with self._exec_line_context(run_id, index):
             return await self._exec_line_async(inputs, index, run_id, allow_generator_output=allow_generator_output)
@@ -292,7 +292,7 @@ class ScriptExecutor(FlowExecutor):
     def _resolve_init_kwargs(self, c: type, init_kwargs: dict):
         """Resolve init kwargs, the connection names will be resolved to connection objects."""
         logger.debug(f"Resolving init kwargs: {init_kwargs.keys()}.")
-        if not self.is_function_entry:
+        if not self.is_yaml_flow:
             init_kwargs = apply_default_value_for_input(self._init_sign, init_kwargs)
         sig = inspect.signature(c.__init__)
         connection_params = []
@@ -362,6 +362,10 @@ class ScriptExecutor(FlowExecutor):
     @property
     def is_function_entry(self):
         return hasattr(self._entry, "__call__") or inspect.isfunction(self._entry)
+
+    @property
+    def is_yaml_flow(self):
+        return isinstance(self._flow_file, (str, Path)) and Path(self._flow_file).suffix in [".yaml", ".yml"]
 
     def _parse_entry_func(self):
         if self.is_function_entry:
@@ -457,8 +461,8 @@ class ScriptExecutor(FlowExecutor):
             ) from e
         return module_name, func_name
 
-    def _init_sign_from_yaml(self):
-        if not self.is_function_entry:
+    def _init_input_sign(self):
+        if self.is_yaml_flow:
             with open(self._working_dir / self._flow_file, "r", encoding="utf-8") as fin:
                 flow_dag = load_yaml(fin)
             flow = FlexFlow.deserialize(flow_dag)
