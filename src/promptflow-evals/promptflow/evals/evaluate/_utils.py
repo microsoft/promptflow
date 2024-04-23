@@ -6,7 +6,7 @@ from typing import Callable
 import inspect
 import json
 import os
-import tempfile
+import uuid
 
 from promptflow.client import PFClient
 
@@ -34,17 +34,17 @@ def save_function_as_flow(fun: Callable, target_dir: str, pf: PFClient) -> None:
         # in this case function may miss required imports.
         lines = inspect.getsource(fun)
         os.makedirs(target_dir, exist_ok=True)
-        source = tempfile.TemporaryFile(suffix='.py', mode='w', delete=False)
-        source.write(lines)
-        source.close()
+        source = f'tmp_{uuid.uuid4()}.py'.replace('-', '')
+        with open(source, 'w') as fp:
+            fp.write(lines)
         try:
             pf.flows.save(
                 entry=fun.__name__,
-                code=source.name,
+                code=source,
                 path=target_dir
             )
         finally:
-            os.unlink(source.name)
+            os.unlink(source)
     else:
         pf.flows.save(
             entry=fun,
