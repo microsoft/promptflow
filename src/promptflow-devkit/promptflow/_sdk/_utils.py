@@ -64,7 +64,6 @@ from promptflow._sdk._errors import (
     UnsecureConnectionError,
 )
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
-from promptflow._utils.context_utils import inject_sys_path
 from promptflow._utils.flow_utils import is_flex_flow, resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
@@ -1052,21 +1051,6 @@ def callable_to_entry_string(callable_obj: Callable) -> str:
         )
 
     return f"{module_str}:{func_str}"
-
-
-def entry_string_to_callable(entry_file, entry) -> Callable:
-    with inject_sys_path(Path(entry_file).parent):
-        try:
-            module_name, func_name = entry.split(":")
-            module = importlib.import_module(module_name)
-            # To avoid changes in the loaded module code, reload here to get the latest module.
-            importlib.reload(module)
-        except Exception as e:
-            raise UserErrorException(
-                message_format="Failed to load python module for {entry_file}",
-                entry_file=entry_file,
-            ) from e
-        return getattr(module, func_name, None)
 
 
 def is_flex_run(run: "Run") -> bool:
