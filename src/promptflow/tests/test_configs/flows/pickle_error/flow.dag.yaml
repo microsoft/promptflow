@@ -1,0 +1,16 @@
+inputs:
+  input1:
+    type: string
+    default: hello
+outputs:
+  output:
+    type: string
+    reference: ${return_dict.output}
+nodes:
+- name: return_dict
+  type: python
+  source:
+    type: code
+    path: pickle_error.py
+  inputs:
+    input1: ${inputs.input1}

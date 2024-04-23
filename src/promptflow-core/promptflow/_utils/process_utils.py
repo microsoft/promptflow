@@ -4,11 +4,13 @@
 
 import logging
 import os
+import pickle
 import signal
 
 import psutil
 
 from promptflow._utils.logger_utils import bulk_logger
+from promptflow.tracing._utils import serialize
 
 
 def block_terminate_signal_to_parent():
@@ -85,3 +87,23 @@ def get_manager_process_log_path():
     from promptflow.executor._process_manager import ProcessPoolConstants
 
     return ProcessPoolConstants.PROCESS_LOG_PATH / ProcessPoolConstants.MANAGER_PROCESS_LOG_NAME
+
+
+def is_pickleable(obj):
+    try:
+        pickle.dumps(obj)
+        return True
+    except pickle.PicklingError:
+        return False
+
+
+def ensure_serializable_object(obj):
+    """
+    Ensure all attributes of an object are serializable.
+    """
+    for attribute in dir(obj):
+        if not attribute.startswith("__"):
+            value = getattr(obj, attribute)
+            if not is_pickleable(value):
+                setattr(obj, attribute, serialize(value))
+    return obj

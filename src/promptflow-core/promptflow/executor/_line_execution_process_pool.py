@@ -1,7 +1,6 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
 import asyncio
 import contextvars
 import multiprocessing
@@ -30,6 +29,7 @@ from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.process_utils import (
+    ensure_serializable_object,
     get_available_max_worker_count,
     get_manager_process_log_path,
     get_subprocess_log_path,
@@ -771,6 +771,7 @@ def _exec_line_for_queue(
                     index=line_number,
                     line_timeout_sec=line_timeout_sec,
                 )
+                result = ensure_serializable_object(result)
                 output_queue.put(result)
         except queue.Empty:
             # Do nothing until the input_queue have content or process is killed

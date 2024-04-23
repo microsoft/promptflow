@@ -141,6 +141,10 @@ class TestBatch:
                 "sample_flow_with_functions",
                 {"question": "${data.question}"},
             ),
+            (
+                "pickle_error",
+                {"input1": "${data.input1}"},
+            ),
         ],
     )
     def test_batch_run(self, flow_folder, inputs_mapping, dev_connections):

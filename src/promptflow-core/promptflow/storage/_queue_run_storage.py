@@ -7,6 +7,7 @@ from pathlib import Path
 
 from promptflow._constants import OutputsFolderName
 from promptflow._utils.multimedia_utils import MultimediaProcessor
+from promptflow._utils.process_utils import ensure_serializable_object
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.storage import AbstractRunStorage
@@ -21,9 +22,11 @@ class QueueRunStorage(AbstractRunStorage):
         self.queue = queue
 
     def persist_node_run(self, run_info: NodeRunInfo):
+        run_info = ensure_serializable_object(run_info)
         self.queue.put(run_info)
 
     def persist_flow_run(self, run_info: FlowRunInfo):
+        run_info = ensure_serializable_object(run_info)
         self.queue.put(run_info)
 
 
