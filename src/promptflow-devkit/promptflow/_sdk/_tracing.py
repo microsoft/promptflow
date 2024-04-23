@@ -450,7 +450,7 @@ def _setup_url_templates(
         remote_url_template = _get_tracing_detail_url_template_from_azure_portal(ws_triad=ws_triad)
         if remote_url_template:
             url_templates.append(remote_url_template)
-    os.environ["PF_TRACE_URL_TEMPLATES"] = json.dumps(url_templates)
+    os.environ[OTLPSpanExporterWithTraceURL.PF_TRACE_URL_TEMPLATES] = json.dumps(url_templates)
 
 
 def setup_exporter_to_pfs() -> None:
