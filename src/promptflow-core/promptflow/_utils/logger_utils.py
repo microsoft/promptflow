@@ -106,7 +106,8 @@ class FileHandler:
         self._stream_handler = self._get_stream_handler(file_path)
         if formatter is None:
             # Default formatter to scrub credentials in log message, exception and stack trace.
-            self._formatter = CredentialScrubberFormatter(fmt=LOG_FORMAT, datefmt=DATETIME_FORMAT)
+            fmt, datefmt = _get_format_for_logger()
+            self._formatter = CredentialScrubberFormatter(fmt=fmt, datefmt=datefmt)
         else:
             self._formatter = formatter
         self._stream_handler.setFormatter(self._formatter)
@@ -186,7 +187,8 @@ def get_logger(name: str) -> logging.Logger:
     logger.setLevel(get_pf_logging_level())
     logger.addHandler(FileHandlerConcurrentWrapper())
     stdout_handler = logging.StreamHandler(sys.stdout)
-    stdout_handler.setFormatter(CredentialScrubberFormatter(fmt=LOG_FORMAT, datefmt=DATETIME_FORMAT))
+    fmt, datefmt = _get_format_for_logger()
+    stdout_handler.setFormatter(CredentialScrubberFormatter(fmt=fmt, datefmt=datefmt))
     logger.addHandler(stdout_handler)
     return logger
 
@@ -406,7 +408,8 @@ class LoggerFactory:
         # set target_stdout=True can log data into sys.stdout instead of default sys.stderr, in this way
         # logger info and python print result can be synchronized
         handler = logging.StreamHandler(stream=sys.stdout) if target_stdout else logging.StreamHandler()
-        formatter = logging.Formatter("[%(asctime)s][%(name)s][%(levelname)s] - %(message)s")
+        fmt, datefmt = _get_format_for_logger(default_log_format="[%(asctime)s][%(name)s][%(levelname)s] - %(message)s")
+        formatter = logging.Formatter(fmt=fmt, datefmt=datefmt)
         handler.setFormatter(formatter)
         handler.setLevel(verbosity)
         logger.addHandler(handler)
@@ -439,7 +442,7 @@ def get_cli_sdk_logger():
     return LoggerFactory.get_logger("promptflow", verbosity=logging.WARNING)
 
 
-def _get_format_for_logger():
+def _get_format_for_logger(default_log_format: str = None, default_date_format: str = None) -> str:
     """
     Get the logging format and date format for logger.
 
@@ -455,4 +458,6 @@ def _get_format_for_logger():
         if handler.formatter:
             return handler.formatter._fmt, handler.formatter.datefmt
     # Return default format and date format if no formatter is found
+    if default_log_format:
+        return default_log_format, default_date_format
     return LOG_FORMAT, DATETIME_FORMAT
