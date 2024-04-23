@@ -575,7 +575,7 @@ class BatchEngine:
 
         succeeded_batch_inputs = [batch_inputs[i] for i in succeeded]
         resolved_succeeded_batch_inputs = [
-            FlowValidator.ensure_flow_inputs_type(flow=self._flow.inputs, inputs=input)
+            FlowValidator.ensure_flow_inputs_type(flow_inputs=self._flow.inputs, inputs=input)
             for input in succeeded_batch_inputs
         ]
         succeeded_inputs = transpose(resolved_succeeded_batch_inputs, keys=list(self._flow.inputs.keys()))
