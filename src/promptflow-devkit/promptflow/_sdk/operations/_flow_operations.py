@@ -7,6 +7,7 @@ import glob
 import inspect
 import json
 import os
+import platform
 import shutil
 import stat
 import subprocess
@@ -38,8 +39,8 @@ from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_ope
 from promptflow._sdk._utils import (
     _get_additional_includes,
     _merge_local_code_and_additional_includes,
+    add_executable_script_to_env_path,
     copy_tree_respect_template_and_ignore_file,
-    entry_string_to_callable,
     format_signature_type,
     generate_flow_tools_json,
     generate_random_string,
@@ -55,9 +56,9 @@ from promptflow._utils.flow_utils import (
     is_flex_flow,
     is_prompty_flow,
     parse_variant,
-    resolve_entry_file,
 )
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
+from promptflow.core._utils import load_inputs_from_sample
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 
@@ -211,7 +212,7 @@ class FlowOperations(TelemetryMixin):
                 return_output[key] = {
                     "detail": detail_content,
                     "log": log_content,
-                    "output_path": (output_path / key).as_posix(),
+                    "output_path": str(output_path / key),
                 }
         else:
             if node:
@@ -227,9 +228,7 @@ class FlowOperations(TelemetryMixin):
             detail_content = json_load(detail_path)
             with open(log_path, "r") as file:
                 log_content = file.read()
-            return_output = {
-                "flow": {"detail": detail_content, "log": log_content, "output_path": output_path.as_posix()}
-            }
+            return_output = {"flow": {"detail": detail_content, "log": log_content, "output_path": str(output_path)}}
         return return_output
 
     def _test(
@@ -263,7 +262,6 @@ class FlowOperations(TelemetryMixin):
         :param init: Initialization parameters for flex flow, only supported when flow is callable class.
         :return: Executor result
         """
-        inputs = inputs or {}
         output_path = kwargs.get("output_path", None)
         session = kwargs.pop("session", None)
         collection = kwargs.pop("collection", None)
@@ -287,6 +285,7 @@ class FlowOperations(TelemetryMixin):
             init_kwargs=init,
             collection=collection,
         ) as submitter:
+            inputs = inputs or load_inputs_from_sample(submitter.flow.sample)
             if isinstance(flow, FlexFlow) or isinstance(flow, Prompty):
                 # TODO(2897153): support chat eager flow
                 # set is chat flow to True to allow generator output
@@ -657,11 +656,14 @@ class FlowOperations(TelemetryMixin):
         with open(Path(__file__).parent.parent / "data" / "executable" / "requirements.txt", "r") as f:
             all_packages = f.read().splitlines()
 
+        if platform.system() != "Windows":
+            all_packages = [pkg for pkg in all_packages if pkg.lower() != "pywin32"]
+
         hidden_imports = copy.deepcopy(all_packages)
         meta_packages = copy.deepcopy(all_packages)
         special_packages = ["streamlit-quill", "flask-cors", "flask-restx"]
         for i in range(len(hidden_imports)):
-            # need special handeling because it use _ to import
+            # need special handling because it uses _ to import
             if hidden_imports[i] in special_packages:
                 hidden_imports[i] = hidden_imports[i].replace("-", "_").lower()
             else:
@@ -670,6 +672,7 @@ class FlowOperations(TelemetryMixin):
         return hidden_imports, all_packages, meta_packages
 
     def _run_pyinstaller(self, output_dir):
+        add_executable_script_to_env_path()
         with _change_working_dir(output_dir, mkdir=False):
             try:
                 subprocess.run(["pyinstaller", "app.spec"], check=True)
@@ -1022,7 +1025,6 @@ class FlowOperations(TelemetryMixin):
     @staticmethod
     def _infer_signature(entry: Union[Callable, FlexFlow, Flow, Prompty], include_primitive_output: bool = False):
         if isinstance(entry, Prompty):
-            from promptflow._sdk.schemas._flow import ALLOWED_TYPES
             from promptflow.contracts.tool import ValueType
             from promptflow.core._model_configuration import PromptyModelConfiguration
 
@@ -1033,22 +1035,26 @@ class FlowOperations(TelemetryMixin):
                 flow_meta["outputs"] = {"output": {"type": "string"}}
             init_dict = {}
             for field in fields(PromptyModelConfiguration):
-                filed_type = type(field.type).__name__
-                init_dict[field.name] = {"type": filed_type if filed_type in ALLOWED_TYPES else ValueType.OBJECT.value}
+                init_dict[field.name] = {"type": ValueType.from_type(field.type).value}
                 if field.default != MISSING:
                     init_dict[field.name]["default"] = field.default
             flow_meta["init"] = init_dict
             format_signature_type(flow_meta)
         elif isinstance(entry, FlexFlow):
-            # TODO: this part will fail for csharp
-            entry_file = resolve_entry_file(entry=entry.entry, working_dir=entry.code)
-            entry_func = entry_string_to_callable(entry_file, entry.entry)
+            # non-python flow depends on dumped flow meta to infer signature
+            ProxyFactory().create_inspector_proxy(language=entry.language).prepare_metadata(
+                flow_file=entry.path,
+                working_dir=entry.code,
+            )
             flow_meta, _, _ = FlowOperations._infer_signature_flex_flow(
-                entry=entry_func, language=entry.language, include_primitive_output=include_primitive_output
+                entry=entry.entry,
+                code=entry.code.as_posix(),
+                language=entry.language,
+                include_primitive_output=include_primitive_output,
             )
         elif inspect.isclass(entry) or inspect.isfunction(entry):
             flow_meta, _, _ = FlowOperations._infer_signature_flex_flow(
-                entry=entry, include_primitive_output=include_primitive_output
+                entry=entry, include_primitive_output=include_primitive_output, language=FlowLanguage.Python
             )
         else:
             # TODO support to get infer signature of dag flow
@@ -1059,16 +1065,13 @@ class FlowOperations(TelemetryMixin):
     def _infer_signature_flex_flow(
         entry: Union[Callable, str],
         *,
+        language: str,
         code: str = None,
         keep_entry: bool = False,
         validate: bool = True,
-        language: str = FlowLanguage.Python,
         include_primitive_output: bool = False,
     ) -> Tuple[dict, Path, List[str]]:
-        """Infer signature of a flow entry.
-
-        Note that this is a Python only feature.
-        """
+        """Infer signature of a flow entry."""
         snapshot_list = None
         # resolve entry and code
         if isinstance(entry, str):
@@ -1119,7 +1122,6 @@ class FlowOperations(TelemetryMixin):
             # this path is actually not used
             flow = FlexFlow(path=code / FLOW_FLEX_YAML, code=code, data=flow_meta, entry=flow_meta["entry"])
             flow._validate(raise_error=True)
-            flow_meta.pop("language", None)
 
         if include_primitive_output and "outputs" not in flow_meta:
             flow_meta["outputs"] = {
@@ -1128,9 +1130,11 @@ class FlowOperations(TelemetryMixin):
                 }
             }
 
-        if not keep_entry:
-            flow_meta.pop("entry", None)
-        return flow_meta, code, snapshot_list
+        keys_to_keep = ["inputs", "outputs", "init"]
+        if keep_entry:
+            keys_to_keep.append("entry")
+        filtered_meta = {k: flow_meta[k] for k in keys_to_keep if k in flow_meta}
+        return filtered_meta, code, snapshot_list
 
     @monitor_operation(activity_name="pf.flows.infer_signature", activity_type=ActivityType.PUBLICAPI)
     def infer_signature(self, entry: Union[Callable, FlexFlow, Flow, Prompty], **kwargs) -> dict:
@@ -1308,10 +1312,10 @@ class FlowOperations(TelemetryMixin):
             include_primitive_output=True,
         )
         merged_signatures = self._merge_signature(extracted=signatures, signature_overrides=data)
-        FlexFlow(path=code / FLOW_FLEX_YAML, code=code, data=data, entry=entry)._validate(raise_error=True)
         updated = False
         for field in ["inputs", "outputs", "init"]:
             if merged_signatures.get(field) != data.get(field):
                 updated = True
         data.update(merged_signatures)
+        FlexFlow(path=code / FLOW_FLEX_YAML, code=code, data=data, entry=entry)._validate(raise_error=True)
         return updated

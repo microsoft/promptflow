@@ -1,0 +1,18 @@
+inputs:
+  name:
+    type: string
+    default: hod
+outputs:
+  result:
+    type: string
+    reference: ${hello_world.output}
+nodes:
+- name: hello_world
+  type: python
+  source:
+    type: code
+    path: hello_world.py
+  inputs:
+    name: ${inputs.name}
+environment_variables:
+  PF_LINE_TIMEOUT_SEC: 10
