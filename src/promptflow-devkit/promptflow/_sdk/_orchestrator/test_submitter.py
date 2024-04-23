@@ -299,6 +299,7 @@ class TestSubmitter:
                     enable_stream_output=stream_output,
                     language=self.flow.language,
                     init_kwargs=init_kwargs,
+                    logging_level=logging.INFO,
                 )
 
                 try:
