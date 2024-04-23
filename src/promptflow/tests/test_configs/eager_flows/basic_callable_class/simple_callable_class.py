@@ -23,8 +23,8 @@ class MyFlow:
 
     def __aggregate__(self, results: list) -> dict:
         # Try attribute-style access for the datacalss
-        obj_inputs = [r.obj_inputs for r in results]
-        func_inputs = [r.func_inputs for r in results]
+        obj_inputs = [r.obj_input for r in results]
+        func_inputs = [r.func_input for r in results]
         obj_ids = [r.obj_id for r in results]
 
         return {"length": len(results)}
