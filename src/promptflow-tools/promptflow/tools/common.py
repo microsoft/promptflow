@@ -383,7 +383,6 @@ def list_deployment_connections(connection=""):
         return None
 
     try:
-        credential = _get_credential()
         try:
             connection_provider = ConnectionProvider.get_instance()
             conn_sub, conn_rg, conn_account = "", "", ""
@@ -403,6 +402,7 @@ def list_deployment_connections(connection=""):
             raise ListDeploymentsError(msg=msg) from e
 
         if conn_sub:
+            credential = _get_credential()
             client = CognitiveServicesManagementClient(
                 credential=credential,
                 subscription_id=conn_sub,

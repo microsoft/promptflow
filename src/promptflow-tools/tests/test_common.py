@@ -1,7 +1,15 @@
+import uuid
 from unittest.mock import patch
 
 import pytest
-import uuid
+
+from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
+from promptflow.contracts.multimedia import Image
+from promptflow.contracts.types import PromptTemplate
+from promptflow.core._connection_provider._connection_provider import ConnectionProvider
+from promptflow.core._connection_provider._http_connection_provider import HttpConnectionProvider
+from promptflow.core._connection_provider._workspace_connection_provider import WorkspaceConnectionProvider
+from promptflow.core._errors import OpenURLFailedUserError
 from promptflow.tools.common import ChatAPIInvalidFunctions, validate_functions, process_function_call, \
     parse_chat, find_referenced_image_set, preprocess_template_string, convert_to_chat_list, ChatInputList, \
     ParseConnectionError, _parse_resource_id, list_deployment_connections, normalize_connection_config, \
@@ -13,10 +21,6 @@ from promptflow.tools.exception import (
     ChatAPIAssistantRoleInvalidFormat,
     ChatAPIToolRoleInvalidFormat,
 )
-
-from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
-from promptflow.contracts.multimedia import Image
-from promptflow.contracts.types import PromptTemplate
 from tests.utils import CustomException, Deployment
 
 DEFAULT_SUBSCRIPTION_ID = "sub"
@@ -26,22 +30,28 @@ DEFAULT_ACCOUNT = "account"
 DEFAULT_CONNECTION = "conn"
 
 
-def mock_build_connection_dict_func1(**kwargs):
-    from promptflow.azure.operations._arm_connection_operations import OpenURLFailedUserError
-
+def mock_get_conn_error(self, connection, **kwargs):
     raise OpenURLFailedUserError
 
 
-def mock_build_connection_dict_func2(**kwargs):
-    return {"value": {"resource_id": "abc"}}
+def mock_get_invalid_resource_id(self, connection, **kwargs):
+    return AzureOpenAIConnection(api_base="fake-base-url", resource_id="abc")
 
 
-def mock_build_connection_dict_func3(**kwargs):
+def mock_get(self, connection, **kwargs):
     resource_id = (
         f"/subscriptions/{DEFAULT_SUBSCRIPTION_ID}/resourceGroups/{DEFAULT_RESOURCE_GROUP_NAME}"
         f"/providers/Microsoft.CognitiveServices/accounts/{DEFAULT_ACCOUNT}"
     )
-    return {"value": {"resource_id": resource_id}}
+    return AzureOpenAIConnection(api_base="fake-base-url", resource_id=resource_id)
+
+
+def mock_ws_connection_provider(**kwargs):
+    return WorkspaceConnectionProvider(DEFAULT_SUBSCRIPTION_ID, DEFAULT_RESOURCE_GROUP_NAME, DEFAULT_WORKSPACE_NAME)
+
+
+def mock_http_connection_provider(**kwargs):
+    return HttpConnectionProvider("fake_endpoint")
 
 
 class TestCommon:
@@ -367,115 +377,129 @@ class TestCommon:
         with pytest.raises(ParseConnectionError, match=error_message):
             _parse_resource_id(resource_id)
 
-    # def test_list_deployment_connections_with_conn_error(self, monkeypatch):
-    #     from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
-    #
-    #     monkeypatch.setattr(
-    #         ArmConnectionOperations,
-    #         "_build_connection_dict",
-    #         mock_build_connection_dict_func1
-    #     )
-    #     res = list_deployment_connections(
-    #         DEFAULT_SUBSCRIPTION_ID,
-    #         DEFAULT_RESOURCE_GROUP_NAME,
-    #         DEFAULT_WORKSPACE_NAME,
-    #         DEFAULT_CONNECTION
-    #     )
-    #     assert res is None
-    #
-    # def test_list_deployment_connections_with_wrong_connection_id(self, monkeypatch):
-    #     from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
-    #
-    #     monkeypatch.setattr(
-    #         ArmConnectionOperations,
-    #         "_build_connection_dict",
-    #         mock_build_connection_dict_func2
-    #     )
-    #     with pytest.raises(ListDeploymentsError):
-    #         list_deployment_connections(
-    #             DEFAULT_SUBSCRIPTION_ID,
-    #             DEFAULT_RESOURCE_GROUP_NAME,
-    #             DEFAULT_WORKSPACE_NAME,
-    #             DEFAULT_CONNECTION,
-    #         )
-    #
-    # def test_list_deployment_connections_with_permission_issue(self, monkeypatch):
-    #     from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
-    #
-    #     monkeypatch.setattr(
-    #         ArmConnectionOperations,
-    #         "_build_connection_dict",
-    #         mock_build_connection_dict_func3
-    #     )
-    #     with patch('azure.mgmt.cognitiveservices.CognitiveServicesManagementClient') as mock:
-    #         mock.side_effect = CustomException("", 403)
-    #         with pytest.raises(ListDeploymentsError) as excinfo:
-    #             list_deployment_connections(
-    #                 DEFAULT_SUBSCRIPTION_ID,
-    #                 DEFAULT_RESOURCE_GROUP_NAME,
-    #                 DEFAULT_WORKSPACE_NAME,
-    #                 DEFAULT_CONNECTION,
-    #             )
-    #         assert "Failed to list deployments due to permission issue" in str(excinfo.value)
-    #
-    # def test_list_deployment_connections(self, monkeypatch):
-    #     from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
-    #     from azure.ai.ml._azure_environments import AzureEnvironments
-    #
-    #     monkeypatch.setattr(
-    #         ArmConnectionOperations,
-    #         "_build_connection_dict",
-    #         mock_build_connection_dict_func3
-    #     )
-    #     with (
-    #         patch('azure.ai.ml._azure_environments._get_default_cloud_name') as mock_cloud_name,
-    #         patch('azure.mgmt.cognitiveservices.CognitiveServicesManagementClient') as mock
-    #     ):
-    #         mock_cloud_name.return_value = AzureEnvironments.ENV_DEFAULT
-    #         instance = mock.return_value
-    #         instance.deployments.list.return_value = {
-    #             Deployment("deployment1", "model1", "vision-preview"),
-    #             Deployment("deployment2", "model2", "version2")
-    #         }
-    #         res = list_deployment_connections(
-    #             DEFAULT_SUBSCRIPTION_ID,
-    #             DEFAULT_RESOURCE_GROUP_NAME,
-    #             DEFAULT_WORKSPACE_NAME,
-    #             DEFAULT_CONNECTION
-    #         )
-    #         assert len(res) == 2
-    #
-    # def test_list_deployment_connections_sovereign_credential(self, monkeypatch):
-    #     from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
-    #     from azure.ai.ml._azure_environments import AzureEnvironments
-    #
-    #     monkeypatch.setattr(
-    #         ArmConnectionOperations,
-    #         "_build_connection_dict",
-    #         mock_build_connection_dict_func3
-    #     )
-    #     with (
-    #         patch('azure.ai.ml._azure_environments._get_default_cloud_name') as mock_cloud_name,
-    #         patch('azure.ai.ml._azure_environments._get_cloud') as mock_cloud,
-    #         patch('azure.identity.DefaultAzureCredential') as mock_cre,
-    #         patch('azure.mgmt.cognitiveservices.CognitiveServicesManagementClient') as mock
-    #     ):
-    #         mock_cloud_name.return_value = AzureEnvironments.ENV_CHINA
-    #         cloud = mock_cloud.return_value
-    #         cloud.get.return_value = "authority"
-    #         mock_cre.return_value = "credential"
-    #         instance = mock.return_value
-    #         instance.deployments.list.return_value = {
-    #             Deployment("deployment1", "model1", "vision-preview"),
-    #             Deployment("deployment2", "model2", "version2")
-    #         }
-    #         res = list_deployment_connections(
-    #             DEFAULT_SUBSCRIPTION_ID,
-    #             DEFAULT_RESOURCE_GROUP_NAME,
-    #             DEFAULT_WORKSPACE_NAME,
-    #             DEFAULT_CONNECTION
-    #         )
-    #         assert len(res) == 2
+    @pytest.mark.parametrize(
+        "connection_provider, mock_connection_provider, mock_get, expected",
+        [
+            # test single-container
+            (WorkspaceConnectionProvider, mock_ws_connection_provider, mock_get_conn_error, None),
+            # test multi-container
+            (HttpConnectionProvider, mock_http_connection_provider, mock_get_conn_error, None)
+        ],
+    )
+    def test_list_deployment_connections_with_conn_error(
+            self,
+            monkeypatch,
+            connection_provider,
+            mock_connection_provider,
+            mock_get,
+            expected):
+        monkeypatch.setattr(ConnectionProvider, "get_instance", mock_connection_provider)
+        monkeypatch.setattr(connection_provider, "get", mock_get)
+        res = list_deployment_connections(DEFAULT_CONNECTION)
+        assert res is None
+
+    @pytest.mark.parametrize(
+        "connection_provider, mock_connection_provider, mock_get",
+        [
+            # test single-container
+            (WorkspaceConnectionProvider, mock_ws_connection_provider, mock_get_invalid_resource_id),
+            # test multi-container
+            (HttpConnectionProvider, mock_http_connection_provider, mock_get_invalid_resource_id)
+        ],
+    )
+    def test_list_deployment_connections_with_wrong_resource_id(
+            self,
+            monkeypatch,
+            connection_provider,
+            mock_connection_provider,
+            mock_get):
+        monkeypatch.setattr(ConnectionProvider, "get_instance", mock_connection_provider)
+        monkeypatch.setattr(connection_provider, "get", mock_get)
+        with pytest.raises(ListDeploymentsError):
+            list_deployment_connections(DEFAULT_CONNECTION)
+
+    @pytest.mark.parametrize(
+        "connection_provider, mock_connection_provider, mock_get",
+        [
+            # test single-container
+            (WorkspaceConnectionProvider, mock_ws_connection_provider, mock_get),
+            # test multi-container
+            (HttpConnectionProvider, mock_http_connection_provider, mock_get)
+        ],
+    )
+    def test_list_deployment_connections_with_permission_issue(
+            self,
+            monkeypatch,
+            connection_provider,
+            mock_connection_provider,
+            mock_get):
+        monkeypatch.setattr(ConnectionProvider, "get_instance", mock_connection_provider)
+        monkeypatch.setattr(connection_provider, "get", mock_get)
+        with patch('azure.mgmt.cognitiveservices.CognitiveServicesManagementClient') as mock:
+            mock.side_effect = CustomException("", 403)
+            with pytest.raises(ListDeploymentsError) as excinfo:
+                list_deployment_connections(DEFAULT_CONNECTION)
+            assert "Failed to list deployments due to permission issue" in str(excinfo.value)
+
+    @pytest.mark.parametrize(
+        "connection_provider, mock_connection_provider, mock_get",
+        [
+            # test single-container
+            (WorkspaceConnectionProvider, mock_ws_connection_provider, mock_get),
+            # test multi-container
+            (HttpConnectionProvider, mock_http_connection_provider, mock_get)
+        ],
+    )
+    def test_list_deployment_connections(self, monkeypatch, connection_provider, mock_connection_provider, mock_get):
+        from azure.ai.ml._azure_environments import AzureEnvironments
+
+        monkeypatch.setattr(ConnectionProvider, "get_instance", mock_connection_provider)
+        monkeypatch.setattr(connection_provider, "get", mock_get)
+        with (
+            patch('azure.ai.ml._azure_environments._get_default_cloud_name') as mock_cloud_name,
+            patch('azure.mgmt.cognitiveservices.CognitiveServicesManagementClient') as mock
+        ):
+            mock_cloud_name.return_value = AzureEnvironments.ENV_DEFAULT
+            instance = mock.return_value
+            instance.deployments.list.return_value = {
+                Deployment("deployment1", "model1", "vision-preview"),
+                Deployment("deployment2", "model2", "version2")
+            }
+            res = list_deployment_connections(DEFAULT_SUBSCRIPTION_ID)
+            assert len(res) == 2
+
+    @pytest.mark.parametrize(
+        "connection_provider, mock_connection_provider, mock_get",
+        [
+            # test single-container
+            (WorkspaceConnectionProvider, mock_ws_connection_provider, mock_get),
+            # test multi-container
+            (HttpConnectionProvider, mock_http_connection_provider, mock_get)
+        ],
+    )
+    def test_list_deployment_connections_sovereign_credential(self, monkeypatch, connection_provider,
+                                                              mock_connection_provider, mock_get):
+        from azure.ai.ml._azure_environments import AzureEnvironments
+
+        monkeypatch.setattr(ConnectionProvider, "get_instance", mock_connection_provider)
+        monkeypatch.setattr(connection_provider, "get", mock_get)
+        with (
+            patch('azure.ai.ml._azure_environments._get_default_cloud_name') as mock_cloud_name,
+            patch('azure.ai.ml._azure_environments._get_cloud') as mock_cloud,
+            patch('azure.identity.DefaultAzureCredential') as mock_cre,
+            patch('azure.mgmt.cognitiveservices.CognitiveServicesManagementClient') as mock
+        ):
+            mock_cloud_name.return_value = AzureEnvironments.ENV_CHINA
+            cloud = mock_cloud.return_value
+            cloud.get.return_value = "authority"
+            mock_cre.return_value = "credential"
+            instance = mock.return_value
+            instance.deployments.list.return_value = {
+                Deployment("deployment1", "model1", "vision-preview"),
+                Deployment("deployment2", "model2", "version2")
+            }
+            res = list_deployment_connections(DEFAULT_SUBSCRIPTION_ID)
+            assert len(res) == 2
 
     @pytest.mark.parametrize(
         "input_data, expected_output",
