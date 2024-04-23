@@ -13,7 +13,7 @@ from typing import Callable, List, Optional
 
 from promptflow._constants import MessageFormatType
 from promptflow._core._errors import InvalidSource
-from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR, INPUTS_TO_ESCAPE_PARAM_KEY
+from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR, INPUTS_TO_ESCAPE_PARAM_KEY, TOOL_TYPE_TO_ESCAPE
 from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping
 from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow._utils.tool_utils import (
@@ -533,7 +533,7 @@ class ToolResolver:
         # and apply escape/unescape to avoid parsing of role in user inputs.
         inputs_to_escape = []
         inputs = node.inputs
-        if node.type == ToolType.LLM or node.type == ToolType.PROMPT or node.type == ToolType.CUSTOM_LLM:
+        if node.type in TOOL_TYPE_TO_ESCAPE:
             for k, v in inputs.items():
                 if v.value_type == InputValueType.FLOW_INPUT:
                     inputs_to_escape.append(k)

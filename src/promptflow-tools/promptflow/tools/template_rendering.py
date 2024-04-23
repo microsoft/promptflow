@@ -4,8 +4,7 @@ from promptflow._internal import tool
 from promptflow.tools.common import (
     render_jinja_template,
     PromptResult,
-    build_escape_dict,
-    escape_roles_for_flow_inputs_and_prompt_output,
+    Escaper,
     INPUTS_TO_ESCAPE_PARAM_KEY
 )
 
@@ -14,14 +13,19 @@ from promptflow.tools.common import (
 def render_template_jinja2(template: str, **kwargs) -> PromptResult:
     rendered_template = render_jinja_template(template, trim_blocks=True, keep_trailing_newline=True, **kwargs)
     prompt_result = PromptResult(rendered_template)
+    prompt_result.merge_escape_mapping_of_prompt_results(**kwargs)
 
     inputs_to_escape = kwargs.pop(INPUTS_TO_ESCAPE_PARAM_KEY, None)
-    escape_dict = build_escape_dict(inputs_to_escape=inputs_to_escape, **kwargs)
-    updated_kwargs = escape_roles_for_flow_inputs_and_prompt_output(escape_dict, inputs_to_escape, **kwargs)
-    if escape_dict:
+    prompt_result.merge_escape_mapping_of_flow_inputs(inputs_to_escape, **kwargs)
+
+    updated_kwargs = Escaper.escape_kwargs(prompt_result.get_escape_mapping(), inputs_to_escape, **kwargs)
+    if prompt_result.need_to_escape():
         escaped_rendered_template = render_jinja_template(
-            template, trim_blocks=True, keep_trailing_newline=True, escape_dict=escape_dict, **updated_kwargs
+            template,
+            trim_blocks=True,
+            keep_trailing_newline=True,
+            escape_dict=prompt_result.get_escape_mapping(),
+            **updated_kwargs
         )
-        prompt_result.escaped_string = escaped_rendered_template
-        prompt_result.escaped_mapping = escape_dict
+        prompt_result.set_escape_string(escaped_rendered_template)
     return prompt_result
