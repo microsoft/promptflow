@@ -22,11 +22,11 @@ def answer_evaluator(answer):
 @pytest.mark.usefixtures("model_config", "recording_injection", "data_file")
 @pytest.mark.e2etest
 class TestEvaluate:
-    def test_groundedness_evaluator(self, model_config, deployment_name, data_file):
+    def test_groundedness_evaluator(self, model_config, data_file):
         # data
         input_data = pd.read_json(data_file, lines=True)
 
-        groundedness_eval = GroundednessEvaluator(model_config, deployment_name)
+        groundedness_eval = GroundednessEvaluator(model_config)
         f1_score_eval = F1ScoreEvaluator()
 
         # run the evaluation
@@ -57,7 +57,7 @@ class TestEvaluate:
         assert row_result_df["outputs.grounded.gpt_groundedness"][2] in [4, 5]
         assert row_result_df["outputs.f1_score.f1_score"][2] == 1
 
-    def test_evaluate_python_function(self, model_config, deployment_name, data_file):
+    def test_evaluate_python_function(self, data_file):
         # data
         input_data = pd.read_json(data_file, lines=True)
 

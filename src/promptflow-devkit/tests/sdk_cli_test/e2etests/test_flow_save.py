@@ -4,6 +4,7 @@ import re
 import shutil
 import sys
 import tempfile
+from pathlib import Path
 from typing import Callable, TypedDict
 
 import pytest
@@ -18,6 +19,7 @@ TEST_ROOT = PROMPTFLOW_ROOT / "tests"
 FLOWS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/flows"
 EAGER_FLOWS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/eager_flows"
 FLOW_RESULT_KEYS = ["category", "evidence"]
+PROMPTY_DIR = (TEST_ROOT / "test_configs/prompty").resolve().absolute().as_posix()
 
 _client = PFClient()
 
@@ -418,7 +420,7 @@ class TestFlowSave:
 
     def test_pf_infer_signature_include_primitive_output(self):
         pf = PFClient()
-        flow_meta, _, _ = pf.flows._infer_signature(entry=global_hello, include_primitive_output=True)
+        flow_meta = pf.flows._infer_signature(entry=global_hello, include_primitive_output=True)
         assert flow_meta == {
             "inputs": {
                 "text": {
@@ -592,4 +594,95 @@ class TestFlowSave:
                     }
                 },
             }
-            assert os.listdir(temp_dir) == ["flow.flex.yaml", "hello.py"]
+            assert set(os.listdir(temp_dir)) == {"flow.flex.yaml", "hello.py"}
+
+    def test_flow_infer_signature(self):
+        pf = PFClient()
+        # Prompty
+        prompty = load_flow(source=Path(PROMPTY_DIR) / "prompty_example.prompty")
+        meta = pf.flows.infer_signature(entry=prompty, include_primitive_output=True)
+        assert meta == {
+            "inputs": {
+                "firstName": {"type": "string", "default": "John"},
+                "lastName": {"type": "string", "default": "Doh"},
+                "question": {"type": "string"},
+            },
+            "outputs": {"output": {"type": "string"}},
+            "init": {
+                "configuration": {"type": "object"},
+                "parameters": {"type": "object"},
+                "api": {"type": "string", "default": "chat"},
+                "response": {"type": "string", "default": "first"},
+            },
+        }
+
+        meta = pf.flows.infer_signature(entry=prompty)
+        assert meta == {
+            "inputs": {
+                "firstName": {"type": "string", "default": "John"},
+                "lastName": {"type": "string", "default": "Doh"},
+                "question": {"type": "string"},
+            },
+            "init": {
+                "configuration": {"type": "object"},
+                "parameters": {"type": "object"},
+                "api": {"type": "string", "default": "chat"},
+                "response": {"type": "string", "default": "first"},
+            },
+        }
+        # Flex flow
+        flex_flow = load_flow(source=Path(EAGER_FLOWS_DIR) / "builtin_llm")
+        meta = pf.flows.infer_signature(entry=flex_flow, include_primitive_output=True)
+        assert meta == {
+            "inputs": {
+                "chat_history": {"default": "[]", "type": "list"},
+                "question": {"default": "What is ChatGPT?", "type": "string"},
+                "stream": {"default": "False", "type": "bool"},
+            },
+            "outputs": {"output": {"type": "string"}},
+        }
+
+        meta = pf.flows.infer_signature(entry=flex_flow)
+        assert meta == {
+            "inputs": {
+                "chat_history": {"default": "[]", "type": "list"},
+                "question": {"default": "What is ChatGPT?", "type": "string"},
+                "stream": {"default": "False", "type": "bool"},
+            },
+        }
+
+        with pytest.raises(UserErrorException) as ex:
+            pf.flows.infer_signature(entry="invalid_entry")
+        assert "only support callable object or prompty" in ex.value.message
+
+        # Test update flex flow
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with open(Path(temp_dir) / "flow.flex.yaml", "w") as f:
+                f.write("entry: entry:my_flow")
+
+            with open(Path(temp_dir) / "entry.py", "w") as f:
+                f.write(
+                    """
+def my_flow(input_val: str = "gpt") -> str:
+    pass
+"""
+                )
+            flex_flow = load_flow(source=temp_dir)
+            meta = pf.flows.infer_signature(entry=flex_flow, include_primitive_output=True)
+            assert meta == {
+                "inputs": {"input_val": {"default": "gpt", "type": "string"}},
+                "outputs": {"output": {"type": "string"}},
+            }
+            # Update flex flow
+            with open(Path(temp_dir) / "entry.py", "w") as f:
+                f.write(
+                    """
+def my_flow(input_val: str, new_input_val: str) -> str:
+    pass
+"""
+                )
+            meta = pf.flows.infer_signature(entry=flex_flow, include_primitive_output=True)
+            assert meta == {
+                "inputs": {"input_val": {"type": "string"}, "new_input_val": {"type": "string"}},
+                "outputs": {"output": {"type": "string"}},
+            }

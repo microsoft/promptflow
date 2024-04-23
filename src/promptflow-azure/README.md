@@ -17,8 +17,6 @@ The `promptflow-azure` package help user to leverage the cloud version of [promp
 - Evaluate their performance through large-scale batch run.
 
 
-# Release History
+## ChangeLog
 
-## 0.1.0b1 (Upcoming)
-
-- Stub version in PyPI.
+Reach the full change log [here](https://microsoft.github.io/promptflow/reference/changelog/promptflow-azure.html).

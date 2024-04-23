@@ -101,6 +101,7 @@ class FlowNode(YAMLTranslatableMixin):
         environment_variables: Optional[Dict[str, str]] = None,
         connections: Optional[Dict[str, Dict]] = None,
         properties: Optional[Dict[str, Any]] = None,
+        init: Optional[dict] = None,
         **kwargs,
     ):
         self.type = ExperimentNodeType.FLOW
@@ -118,6 +119,7 @@ class FlowNode(YAMLTranslatableMixin):
         self.path = path
         # default run name: flow directory name + timestamp
         self.name = name
+        self.init = init or {}
         self._runtime = kwargs.get("runtime", None)
         self._resources = kwargs.get("resources", None)
 

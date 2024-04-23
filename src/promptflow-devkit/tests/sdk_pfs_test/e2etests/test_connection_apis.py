@@ -61,6 +61,10 @@ class TestConnectionAPIs:
             conn_from_pfs = pfs_op.get_connection_with_secret(name=name, status_code=200).json
         assert not conn_from_pfs["secrets"]["api_key"].startswith("*")
 
+        with check_activity_end_telemetry(expected_activities=[]):
+            conn_from_pfs = pfs_op.connection_operation_with_invalid_user(name=name)
+        assert conn_from_pfs.status_code == 403
+
     def test_delete_connection(self, pf_client: PFClient, pfs_op: PFSOperations) -> None:
         len_connections = len(pfs_op.list_connections().json)
 
@@ -74,12 +78,6 @@ class TestConnectionAPIs:
         len_connections_after = len(pfs_op.list_connections().json)
         assert len_connections_after == len_connections
 
-    def test_list_connection_with_invalid_user(self, pfs_op: PFSOperations) -> None:
-        # TODO: should we record telemetry for this case?
-        with check_activity_end_telemetry(expected_activities=[]):
-            conn_from_pfs = pfs_op.connection_operation_with_invalid_user()
-        assert conn_from_pfs.status_code == 403
-
     def test_get_connection_specs(self, pfs_op: PFSOperations) -> None:
         with check_activity_end_telemetry(expected_activities=[]):
             specs = pfs_op.get_connection_specs(status_code=200).json
@@ -88,8 +86,11 @@ class TestConnectionAPIs:
     @pytest.mark.skipif(pytest.is_replay, reason="connection provider test, skip in non-live mode.")
     def test_get_connection_by_provicer(self, pfs_op, subscription_id, resource_group_name, workspace_name):
         target = "promptflow._sdk._pf_client.Configuration.get_connection_provider"
-        with mock.patch(target) as mocked_config:
+        provider_url_target = "promptflow.core._utils.extract_workspace"
+        mock_provider_url = (subscription_id, resource_group_name, workspace_name)
+        with mock.patch(target) as mocked_config, mock.patch(provider_url_target) as mocked_provider_url:
             mocked_config.return_value = "azureml"
+            mocked_provider_url.return_value = mock_provider_url
             connections = pfs_op.list_connections(status_code=200).json
             assert len(connections) > 0
 

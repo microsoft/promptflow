@@ -46,6 +46,7 @@ class FlowNodeSchema(RunSchema):
     type = StringTransformedEnum(allowed_values=ExperimentNodeType.FLOW, required=True)
     inputs = fields.Dict(keys=fields.Str)
     path = UnionField([LocalPathField(required=True), fields.Str(required=True)])
+    init = fields.Dict(keys=fields.Str)
 
     @pre_load
     def warning_unknown_fields(self, data, **kwargs):

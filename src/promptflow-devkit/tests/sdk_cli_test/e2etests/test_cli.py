@@ -71,9 +71,16 @@ def run_pf_command(*args, cwd=None):
 @pytest.mark.e2etest
 class TestCli:
     def test_pf_version(self, capfd):
+        import re
+
+        from pkg_resources import parse_version
+
         run_pf_command("--version")
-        out, _ = capfd.readouterr()
-        assert "0.0.1" in out
+        out, err = capfd.readouterr()
+
+        pf_versions = re.findall(r'"\S+":\s+"(\S+)"', out)
+        for pf_version in pf_versions:
+            assert parse_version(pf_version)
 
     def test_basic_flow_run(self, capfd) -> None:
         # fetch std out
@@ -982,20 +989,6 @@ class TestCli:
         detail_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "chat.detail.json"
         assert detail_path.exists()
 
-        # Test streaming output
-        chat_list = ["hi", "what is chat gpt?"]
-        run_pf_command(
-            "flow",
-            "test",
-            "--flow",
-            f"{FLOWS_DIR}/chat_flow_with_stream_output",
-            "--interactive",
-        )
-        output_path = Path(FLOWS_DIR) / "chat_flow_with_stream_output" / ".promptflow" / "chat.output.json"
-        assert output_path.exists()
-        detail_path = Path(FLOWS_DIR) / "chat_flow_with_stream_output" / ".promptflow" / "chat.detail.json"
-        assert detail_path.exists()
-
         chat_list = ["hi", "what is chat gpt?"]
         run_pf_command(
             "flow",
@@ -1004,9 +997,13 @@ class TestCli:
             f"{FLOWS_DIR}/chat_flow_with_python_node_streaming_output",
             "--interactive",
         )
-        output_path = Path(FLOWS_DIR) / "chat_flow_with_stream_output" / ".promptflow" / "chat.output.json"
+        output_path = (
+            Path(FLOWS_DIR) / "chat_flow_with_python_node_streaming_output" / ".promptflow" / "chat.output.json"
+        )
         assert output_path.exists()
-        detail_path = Path(FLOWS_DIR) / "chat_flow_with_stream_output" / ".promptflow" / "chat.detail.json"
+        detail_path = (
+            Path(FLOWS_DIR) / "chat_flow_with_python_node_streaming_output" / ".promptflow" / "chat.detail.json"
+        )
         assert detail_path.exists()
 
         # Validate terminal output
@@ -1017,6 +1014,15 @@ class TestCli:
         assert "chat_node:" in outerr.out
         assert "show_answer:" in outerr.out
         assert "[show_answer]: print:" in outerr.out
+
+    def test_invalid_chat_flow(self, monkeypatch, capsys):
+        def mock_input(*args, **kwargs):
+            if chat_list:
+                return chat_list.pop()
+            else:
+                raise KeyboardInterrupt()
+
+        monkeypatch.setattr("builtins.input", mock_input)
 
         chat_list = ["hi", "what is chat gpt?"]
         with pytest.raises(SystemExit):
@@ -1044,6 +1050,74 @@ class TestCli:
             )
         outerr = capsys.readouterr()
         assert "chat flow does not support multiple chat outputs" in outerr.out
+
+        with pytest.raises(SystemExit):
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{FLOWS_DIR}/chat_flow_with_multi_input_invalid",
+                "--interactive",
+            )
+        outerr = capsys.readouterr()
+        assert "chat flow does not support multiple chat inputs" in outerr.out
+
+        with pytest.raises(SystemExit):
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{FLOWS_DIR}/chat_flow_with_invalid_output",
+                "--interactive",
+            )
+        outerr = capsys.readouterr()
+        assert "chat output is not configured" in outerr.out
+
+    def test_chat_with_stream_output(self, monkeypatch, capsys):
+        chat_list = ["hi", "what is chat gpt?"]
+
+        def mock_input(*args, **kwargs):
+            if chat_list:
+                return chat_list.pop()
+            else:
+                raise KeyboardInterrupt()
+
+        monkeypatch.setattr("builtins.input", mock_input)
+
+        # Test streaming output
+        chat_list = ["hi", "what is chat gpt?"]
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/chat_flow_with_stream_output",
+            "--interactive",
+        )
+        output_path = Path(FLOWS_DIR) / "chat_flow_with_stream_output" / ".promptflow" / "chat.output.json"
+        assert output_path.exists()
+        detail_path = Path(FLOWS_DIR) / "chat_flow_with_stream_output" / ".promptflow" / "chat.detail.json"
+        assert detail_path.exists()
+
+        # Test prompty with stream output
+        chat_list = ["What is the sum of the calculation results of previous rounds?", "what is the result of 3+3?"]
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{PROMPTY_DIR}/prompty_with_chat_history_and_stream_output.prompty",
+            "--interactive",
+        )
+        outerr = capsys.readouterr()
+        assert "6" in outerr.out
+        assert "12" in outerr.out
+        output_path = (
+            Path(PROMPTY_DIR) / ".promptflow" / "prompty_with_chat_history_and_stream_output" / "chat.output.json"
+        )
+        assert output_path.exists()
+        detail_path = (
+            Path(PROMPTY_DIR) / ".promptflow" / "prompty_with_chat_history_and_stream_output" / "chat.detail.json"
+        )
+        assert detail_path.exists()
 
     def test_flow_test_with_default_chat_history(self):
         run_pf_command(
@@ -1098,6 +1172,18 @@ class TestCli:
             )
         outerr = capsys.readouterr()
         assert "chat_history is required in the inputs of chat flow" in outerr.out
+
+        chat_list = ["What is the sum of the calculation results of previous rounds?", "what is the result of 3+3?"]
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{PROMPTY_DIR}/prompty_with_chat_history.prompty",
+            "--interactive",
+        )
+        outerr = capsys.readouterr()
+        assert "6" in outerr.out
+        assert "12" in outerr.out
 
     @pytest.mark.parametrize(
         "extra_args,expected_err",
@@ -1254,6 +1340,7 @@ class TestCli:
                     "api_version": "2023-07-01-preview",
                     "api_key": SCRUBBED_VALUE,
                     "api_base": "aoai-api-endpoint",
+                    "resource_id": "mock_id",
                 },
                 ("api_base", "new_value"),
             ),
@@ -2493,7 +2580,7 @@ class TestCli:
                 "--code",
                 f"{EAGER_FLOWS_DIR}/../functions/hello_world",
             )
-            assert os.listdir(temp_dir) == [FLOW_FLEX_YAML, "hello.py"]
+            assert set(os.listdir(temp_dir)) == {FLOW_FLEX_YAML, "hello.py"}
             content = load_yaml(Path(temp_dir) / FLOW_FLEX_YAML)
             assert content == {
                 "entry": "hello:hello_world",
@@ -2512,7 +2599,7 @@ class TestCli:
                 cwd=temp_dir,
             )
             # __pycache__ will be created when inspecting the module
-            assert os.listdir(temp_dir) == [FLOW_FLEX_YAML, "hello.py", "__pycache__"]
+            assert set(os.listdir(temp_dir)) == {FLOW_FLEX_YAML, "hello.py", "__pycache__"}
             new_content = load_yaml(Path(temp_dir) / FLOW_FLEX_YAML)
             assert new_content == content
 
@@ -2550,6 +2637,72 @@ class TestCli:
             )
             tracer_provider: TracerProvider = trace.get_tracer_provider()
             assert tracer_provider.resource.attributes["collection"] == collection
+
+    def test_prompty_test_with_sample_file(self, capsys):
+
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{PROMPTY_DIR}/prompty_example_with_sample.prompty",
+        )
+        outerr = capsys.readouterr()
+        assert "2" in outerr.out
+
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{PROMPTY_DIR}/prompty_example.prompty",
+            "--inputs",
+            f"{DATAS_DIR}/prompty_inputs.json",
+        )
+        outerr = capsys.readouterr()
+        assert "2" in outerr.out
+
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{PROMPTY_DIR}/prompty_example.prompty",
+            "--inputs",
+            f"{DATAS_DIR}/prompty_inputs.jsonl",
+        )
+        outerr = capsys.readouterr()
+        assert "2" in outerr.out
+
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{PROMPTY_DIR}/prompty_example.prompty",
+            "--inputs",
+            'question="what is the result of 1+1?"',
+        )
+        outerr = capsys.readouterr()
+        assert "2" in outerr.out
+
+        with pytest.raises(ValueError) as ex:
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{PROMPTY_DIR}/prompty_example.prompty",
+                "--inputs",
+                f"{DATAS_DIR}/invalid_path.json",
+            )
+        assert "Cannot find inputs file" in ex.value.args[0]
+
+        with pytest.raises(ValueError) as ex:
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{PROMPTY_DIR}/prompty_example.prompty",
+                "--inputs",
+                f"{DATAS_DIR}/logo.jpg",
+            )
+        assert "Only support jsonl or json file as input" in ex.value.args[0]
 
 
 def assert_batch_run_result(run, pf, assert_func):

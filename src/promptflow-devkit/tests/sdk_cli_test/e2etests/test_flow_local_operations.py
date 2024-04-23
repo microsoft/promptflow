@@ -513,3 +513,12 @@ class TestFlowLocalOperations:
         assert "prompty_example.prompty" in tools_meta["code"]
         prompty = Prompty.load(source=source)
         assert all([key in tools_meta["code"]["prompty_example.prompty"]["inputs"] for key in prompty._inputs.keys()])
+
+    def test_flow_validate_with_non_str_environment_variable(self, pf):
+        source = f"{FLOWS_DIR}/flow_with_non_str_environment_variable"
+
+        from promptflow._sdk._load_functions import load_flow
+
+        flow = load_flow(source)
+        result = flow._validate()
+        assert result.passed

@@ -51,7 +51,9 @@ class TestExperiment:
         expected["nodes"][1]["path"] = (experiment._output_dir / "snapshots" / "eval").absolute().as_posix()
         experiment_dict = experiment._to_dict()
         assert experiment_dict["data"][0].items() == expected["data"][0].items()
+        experiment_dict["nodes"][0].pop("init")
         assert experiment_dict["nodes"][0].items() == expected["nodes"][0].items()
+        experiment_dict["nodes"][1].pop("init")
         assert experiment_dict["nodes"][1].items() == expected["nodes"][1].items()
         assert experiment_dict.items() >= expected.items()
 
