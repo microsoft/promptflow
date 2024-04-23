@@ -38,10 +38,8 @@ def _get_format_for_logger(default_log_format: str = None, default_date_format: 
     This can be configured through logging.basicConfig. If no configured formatter is found,
     it defaults to LOG_FORMAT and DATETIME_FORMAT.
     """
-    default_log_format = default_log_format or LOG_FORMAT
-    default_date_format = default_date_format or DATETIME_FORMAT
-    log_format = os.environ.get("PF_LOG_FORMAT") or default_log_format
-    datetime_format = os.environ.get("PF_DATETIME_FORMAT") or default_date_format
+    log_format = os.environ.get("PF_LOG_FORMAT") or default_log_format or LOG_FORMAT
+    datetime_format = os.environ.get("PF_DATETIME_FORMAT") or default_date_format or DATETIME_FORMAT
     return log_format, datetime_format
 
 
