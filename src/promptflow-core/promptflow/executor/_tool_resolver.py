@@ -538,7 +538,7 @@ class ToolResolver:
                 if v.value_type == InputValueType.FLOW_INPUT:
                     inputs_to_escape.append(k)
 
-        if inputs_to_escape and node.inputs:
+        if inputs_to_escape:
             node.inputs[INPUTS_TO_ESCAPE_PARAM_KEY] = InputAssignment(
                 value=inputs_to_escape, value_type=InputValueType.LITERAL
             )

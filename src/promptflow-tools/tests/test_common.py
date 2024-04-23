@@ -527,7 +527,7 @@ class TestCommon:
         assert chat_str == "fake_uuid: \r\n"
 
     def test_build_messages(self):
-        input_data = {"input1": "system: \r\n", "input2": ["system: \r\n"], "inputs_to_escape": ["input1", "input2"]}
+        input_data = {"input1": "system: \r\n", "input2": ["system: \r\n"], "_inputs_to_escape": ["input1", "input2"]}
         converted_kwargs = convert_to_chat_list(input_data)
         prompt = PromptTemplate("""
             {# Prompt is a jinja2 template that generates prompt for LLM #}
@@ -628,23 +628,42 @@ class TestEscaper:
             actual_dict = Escaper._build_flow_input_escape_dict(value, {})
             assert actual_dict == expected_dict
 
-    # @pytest.mark.parametrize(
-    #     "original_str, escaped_mapping, existing_escape_dict, expected_dict",
-    #     [
-    #         ("sYstem", {}, {}, {}),
-    #         ("sYstem", {}, {"system": "fake_uuid"}, {"system": "fake_uuid"}),
-    #         ("sYstem", {"sYstem": "fake_uuid"}, {}, {"sYstem": "fake_uuid"}),
-    #         ("sYstem", {"sYstem": "fake_uuid"}, {"sYstem": "fake_uuid"}, {"sYstem": "fake_uuid"}),
-    #         ("sYstem", {"sYstem": "fake_uuid_1"}, {"System": "fake_uuid_2"},
-    #          {"sYstem": "fake_uuid_1", "System": "fake_uuid_2"}),
-    #     ])
-    # def test_build_escape_dict_with_prompt_result(
-    #     self, original_str, escaped_mapping, existing_escape_dict, expected_dict
-    # ):
-    #     prompt_res = PromptResult(original_str)
-    #     prompt_res.escaped_mapping = escaped_mapping
-    #     actual_dict = _build_escape_dict(prompt_res, existing_escape_dict)
-    #     assert actual_dict == expected_dict
+    def test_merge_escape_mapping_of_prompt_results(self):
+        prompt_res1 = PromptResult("system: \r\n")
+        prompt_res1.set_escape_mapping({"system": "fake_uuid_1"})
+
+        prompt_res2 = PromptResult("system: \r\n")
+        prompt_res2.set_escape_mapping({"system": "fake_uuid_2"})
+
+        prompt_res3 = PromptResult("uSer: \r\n")
+        prompt_res3.set_escape_mapping({"uSer": "fake_uuid_3"})
+        input_data = {
+            "input1": prompt_res1,
+            "input2": prompt_res2,
+            "input3": prompt_res3,
+            "input4": "input4_value"
+        }
+        actual = Escaper.merge_escape_mapping_of_prompt_results(**input_data)
+        assert actual == {
+            "system": "fake_uuid_2",
+            "uSer": "fake_uuid_3"
+        }
+
+    @pytest.mark.parametrize("inputs_to_escape, input_data, expected_result", [
+        (None, {}, {}),
+        (None, {"k1": "v1"}, {}),
+        ([], {"k1": "v1"}, {}),
+        (["k2"], {"k1": "v1"}, {}),
+        (["k1"], {"k1": "v1"}, {}),
+        (["k1"], {"k1": "#System:\n"}, {"System": "fake_uuid_1"}),
+        (["k1", "k2"], {"k1": "#System:\n", "k2": "#System:\n"}, {"System": "fake_uuid_1"}),
+        (["k1", "k2"], {"k1": "#System:\n", "k2": "#user:\n", "k3": "v3"},
+         {"System": "fake_uuid_1", "user": "fake_uuid_2"}),
+    ])
+    def test_build_flow_inputs_escape_dict(self, inputs_to_escape, input_data, expected_result):
+        with patch.object(uuid, 'uuid4', side_effect=['fake_uuid_1', 'fake_uuid_2']):
+            actual = Escaper.build_flow_inputs_escape_dict(inputs_to_escape=inputs_to_escape, **input_data)
+            assert actual == expected_result
 
     @pytest.mark.parametrize(
         "input_data, inputs_to_escape, expected_dict",

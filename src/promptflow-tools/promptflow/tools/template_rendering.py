@@ -11,15 +11,17 @@ from promptflow.tools.common import (
 
 @tool
 def render_template_jinja2(template: str, **kwargs) -> PromptResult:
+    # step 1: set original string of prompt result.
     rendered_template = render_jinja_template(template, trim_blocks=True, keep_trailing_newline=True, **kwargs)
     prompt_result = PromptResult(rendered_template)
+    # step 2: build escape dict from prompt results and flow inputs.
     prompt_result.merge_escape_mapping_of_prompt_results(**kwargs)
-
     inputs_to_escape = kwargs.pop(INPUTS_TO_ESCAPE_PARAM_KEY, None)
     prompt_result.merge_escape_mapping_of_flow_inputs(inputs_to_escape, **kwargs)
 
-    updated_kwargs = Escaper.escape_kwargs(prompt_result.get_escape_mapping(), inputs_to_escape, **kwargs)
     if prompt_result.need_to_escape():
+        updated_kwargs = Escaper.escape_kwargs(prompt_result.get_escape_mapping(), inputs_to_escape, **kwargs)
+        # step 3: escape prompt result string.
         escaped_rendered_template = render_jinja_template(
             template,
             trim_blocks=True,

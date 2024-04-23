@@ -62,6 +62,14 @@ class ChatInputList(list):
 
 
 class PromptResult(str):
+    """
+    PromptResult is the prompt tool output. This class substitutes the initial string output to
+    avoid unintended parsing of roles for user input. The class has three properties:
+
+    Original string: the previous rendered prompt result,
+    Escaped string: the escaped prompt result string,
+    Escaped mapping: the mapping of roles and uuids for the escaped prompt result string.
+    """
     def __init__(self, string):
         super().__init__()
         self.original_string = string
@@ -98,6 +106,8 @@ def validate_role(role: str, valid_roles: List[str] = None, escape_dict: dict = 
 
     if role not in valid_roles:
         valid_roles_str = ','.join([f'\'{role}:\\n\'' for role in valid_roles])
+        # The role string may contain escaped roles(uuids).
+        # Need to unescape invalid role as the error message will be displayed to user.
         unescaped_invalid_role = Escaper._unescape_roles(role, escape_dict)
         error_message = (
             f"The Chat API requires a specific format for prompt definition, and the prompt should include separate "
@@ -632,6 +642,10 @@ def render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, 
 
 
 class Escaper:
+    """
+    This class handles common escape and unescape functionality for flow inputs and prompt result input.
+    Its primary purpose is to avoid unintended parsing of roles for user input.
+    """
     @staticmethod
     def merge_escape_mapping_of_prompt_results(**kwargs):
         escape_dict = {}
