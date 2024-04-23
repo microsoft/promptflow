@@ -295,7 +295,7 @@ class TestExecutorLogs:
             executor = FlowExecutor.create(get_yaml_file("print_input_flow"), {})
             executor.exec_line(inputs={"text": "line_text"})
             log_content = load_content(log_path)
-            logs_list = ["INFO - execution - Start executing nodes in thread pool mode."]
+            logs_list = ["[execution][INFO] - Start executing nodes in thread pool mode."]
             assert all(log in log_content for log in logs_list), f"Log content is {log_content}"
 
         # Restore original log level and handlers
