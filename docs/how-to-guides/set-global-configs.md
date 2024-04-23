@@ -11,7 +11,7 @@ The configs are stored in a yaml file, which is located at `<config_folder>/pf.y
 The config file is shared between promptflow extension and sdk/cli. Promptflow extension controls each config through UI, so the following sections will show how to set global configs using promptflow cli.
 
 ## Set config
-#### Set global config
+Set global config
 ```shell
 pf config set <config_name>=<config_value>
 ```
@@ -20,7 +20,7 @@ For example:
 pf config set connection.provider="azureml://subscriptions/<your-subscription>/resourceGroups/<your-resourcegroup>/providers/Microsoft.MachineLearningServices/workspaces/<your-workspace>"
 ```
 
-#### Setting the config for a specific path
+Setting the config for a specific path
 ```shell
 pf config set <config_name>=<config_value> --path <config_folder>
 ```
