@@ -51,7 +51,7 @@ from promptflow.exceptions import ErrorTarget, UserErrorException
 
 DEFAULT_CONNECTION = "open_ai_connection"
 DEFAULT_DEPLOYMENT = "gpt-35-turbo"
-ENABLE_STREAMLIT = "enable_streamlit"
+PF_CHAT_UI_ENABLE_STREAMLIT = "pf_chat_ui_enable_streamlit"
 logger = get_cli_sdk_logger()
 
 
@@ -480,7 +480,7 @@ def _build_inputs_for_flow_test(args):
 
 def _test_flow_multi_modal(args, pf_client):
     """Test flow with multi modality mode."""
-    if str(os.getenv(ENABLE_STREAMLIT, "false")).lower() == "true":
+    if str(os.getenv(PF_CHAT_UI_ENABLE_STREAMLIT, "false")).lower() == "true":
         from promptflow._sdk._load_functions import load_flow
 
         if is_flex_flow(flow_path=args.flow):
