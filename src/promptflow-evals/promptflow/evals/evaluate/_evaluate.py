@@ -2,14 +2,12 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import inspect
-from types import FunctionType
+import re
 from typing import Callable, Dict, Optional
 
 import pandas as pd
 
 from promptflow.client import PFClient
-
-from ._code_client import CodeClient
 
 
 def _calculate_mean(df) -> Dict[str, float]:
@@ -30,7 +28,7 @@ def _validate_input_data_for_evaluator(evaluator, evaluator_name, data_df):
         raise ValueError(f"Missing required inputs for evaluator {evaluator_name} : {missing_inputs}.")
 
 
-def _validation(target, data, evaluators, output_path, tracking_uri, evaluation_name):
+def _validation(target, data, evaluators, output_path, tracking_uri, evaluation_name, evaluator_config):
     if data is None:
         raise ValueError("data must be provided for evaluation.")
 
@@ -64,7 +62,41 @@ def _validation(target, data, evaluators, output_path, tracking_uri, evaluation_
         raise ValueError(f"Failed to load data from {data}. Please validate it is a valid jsonl data. Error: {str(e)}.")
 
     for evaluator_name, evaluator in evaluators.items():
-        _validate_input_data_for_evaluator(evaluator, evaluator_name, data_df)
+        # Apply column mapping
+        mapping_config = evaluator_config.get(evaluator_name, evaluator_config.get("default", None))
+        renamed_data_df = _apply_column_mapping(data_df, "data", mapping_config)
+
+        # Validate input data for evaluator
+        _validate_input_data_for_evaluator(evaluator, evaluator_name, renamed_data_df)
+
+
+def _apply_column_mapping(source_df, source_name, mapping_config, inplace=False):
+    SUPPORTED_SOURCE_NAMES = ["data", "target"]
+
+    result_df = source_df
+    if mapping_config:
+        column_mapping = {}
+        for map_to_key, map_value in mapping_config.items():
+            match = re.search(r"^\${([^{}]+)}$", map_value)
+
+            if match is not None:
+                pattern = match.group(1)
+
+                # Check if source reference is valid
+                source_reference = pattern.split(".")[0]
+                if source_reference not in SUPPORTED_SOURCE_NAMES:
+                    raise ValueError(
+                        f"'{source_reference}' is not a valid source reference. "
+                        + f"It should be one of {SUPPORTED_SOURCE_NAMES}."
+                    )
+
+                if pattern.startswith(f"{source_name}."):
+                    map_from_key = pattern.split(f"{source_name}.")[1]
+                    column_mapping[map_from_key] = map_to_key
+
+        result_df = source_df.rename(columns=column_mapping, inplace=inplace)
+
+    return result_df
 
 
 def evaluate(
@@ -97,18 +129,14 @@ def evaluate(
     :rtype: ~azure.ai.generative.evaluate.EvaluationResult
     """
 
-    _validation(target, data, evaluators, output_path, tracking_uri, evaluation_name)
+    _validation(target, data, evaluators, output_path, tracking_uri, evaluation_name, evaluator_config)
 
     pf_client = PFClient()
-    code_client = CodeClient()
 
     evaluator_info = {}
 
     for evaluator_name, evaluator in evaluators.items():
-        if isinstance(evaluator, FunctionType):
-            evaluator_info.update({evaluator_name: {"client": pf_client, "evaluator": evaluator}})
-        else:
-            evaluator_info.update({evaluator_name: {"client": code_client, "evaluator": evaluator}})
+        evaluator_info.update({evaluator_name: {"client": pf_client, "evaluator": evaluator}})
 
         evaluator_info[evaluator_name]["run"] = evaluator_info[evaluator_name]["client"].run(
             flow=evaluator,

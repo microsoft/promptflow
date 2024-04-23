@@ -15,6 +15,12 @@ def data_file():
     return os.path.join(data_path, "evaluate_test_data.jsonl")
 
 
+@pytest.fixture
+def column_mapping_data_file():
+    data_path = os.path.join(pathlib.Path(__file__).parent.resolve(), "data")
+    return os.path.join(data_path, "column_mapping_test_data.jsonl")
+
+
 def answer_evaluator(answer):
     return {"length": len(answer)}
 
@@ -79,3 +85,38 @@ class TestEvaluate:
         assert "answer.length" in metrics.keys()
         assert metrics.get("answer.length") == np.nanmean(row_result_df["outputs.answer.length"])
         assert row_result_df["outputs.answer.length"][2] == 31
+
+    @pytest.mark.usefixtures("column_mapping_data_file")
+    def test_evaluate_with_column_mapping(self, column_mapping_data_file):
+        # data
+        input_data = pd.read_json(column_mapping_data_file, lines=True)
+        f1_score_evaluator = F1ScoreEvaluator()
+
+        # run the evaluation
+        result = evaluate(
+            data=column_mapping_data_file,
+            evaluators={"f1_score": f1_score_evaluator, "answer": answer_evaluator},
+            evaluator_config={
+                "f1_score": {
+                    "ground_truth": "${data.ground_truth}",
+                    "answer": "${data.response}",
+                },
+                "answer": {
+                    "answer": "${data.response}",
+                },
+            },
+        )
+
+        row_result_df = pd.DataFrame(result["rows"])
+        metrics = result["metrics"]
+
+        # validate the results
+        assert result is not None
+        assert result["rows"] is not None
+        assert row_result_df.shape[0] == len(input_data)
+
+        assert "outputs.answer.length" in row_result_df.columns.to_list()
+        assert "outputs.f1_score.f1_score" in row_result_df.columns.to_list()
+
+        assert "answer.length" in metrics.keys()
+        assert "f1_score.f1_score" in metrics.keys()

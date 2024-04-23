@@ -1,9 +1,11 @@
 import os
 import pathlib
 
+import pandas as pd
 import pytest
 
 from promptflow.evals.evaluate import evaluate
+from promptflow.evals.evaluate._evaluate import _apply_column_mapping
 from promptflow.evals.evaluators import F1ScoreEvaluator, GroundednessEvaluator
 
 
@@ -61,3 +63,45 @@ class TestEvaluate:
             evaluate(data=missing_columns_jsonl_file, evaluators={"g": F1ScoreEvaluator()})
 
         assert "Missing required inputs for evaluator g : ['ground_truth']." in exc_info.value.args[0]
+
+    def test_apply_column_mapping_normal(self):
+        json_data = [
+            {
+                "question": "How are you?",
+                "ground_truth": "I'm fine",
+            }
+        ]
+        inputs_mapping = {
+            "question": "${data.question}",
+            "answer": "${data.ground_truth}",
+        }
+
+        data_df = pd.DataFrame(json_data)
+        new_data_df = _apply_column_mapping(data_df, "data", inputs_mapping)
+
+        assert "question" in new_data_df.columns
+        assert "answer" in new_data_df.columns
+
+        assert new_data_df["question"][0] == "How are you?"
+        assert new_data_df["answer"][0] == "I'm fine"
+
+    def test_apply_column_mapping_invalid_source_reference(self):
+        json_data = [
+            {
+                "question": "How are you?",
+                "ground_truth": "I'm fine",
+            }
+        ]
+        inputs_mapping = {
+            "question": "${foo.question}",
+            "answer": "${foo.ground_truth}",
+        }
+
+        data_df = pd.DataFrame(json_data)
+
+        with pytest.raises(ValueError) as exc_info:
+            _apply_column_mapping(data_df, "data", inputs_mapping)
+
+        assert (
+            "'foo' is not a valid source reference. It should be one of ['data', 'target']." in exc_info.value.args[0]
+        )
