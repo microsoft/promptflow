@@ -20,7 +20,7 @@ def save_function_as_flow(fun: Callable, target_dir: str, pf: PFClient) -> None:
     """
     Save the function to the designated folder.
 
-    :keyword fun: The fuction to be saved as a flow.
+    :keyword fun: The function to be saved as a flow.
     :paramtype fun: Callable
     :keyword target_dir: The directory to save flow to.
     :paramtype target_dir: str
