@@ -209,7 +209,7 @@ function Add-Notebook
         $CopiedNotebookPath = [System.IO.Path]::Combine($TargetNotebookPath, $Item.Name)
         Add-Metadata $CopiedNotebookPath $RepoPath $AuthorList
     }
-    # Reverse sort each section list by Weigth
+    # Reverse sort each section list by Weight
     foreach($SectionName in $SectionNames){
         $Sections[$SectionName] = $Sections[$SectionName] | Sort-Object -Property { $_.Item2 }
     }
