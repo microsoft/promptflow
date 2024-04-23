@@ -117,10 +117,17 @@ def build_index(
         if embeddings_model_config.connection_config:
             connection_id = embeddings_model_config.connection_config.build_connection_id()
             aoai_connection = get_connection_by_id_v2(connection_id)
+            if isinstance(aoai_connection, dict):
+                if "properties" in aoai_connection and "target" in aoai_connection["properties"]:
+                    endpoint = aoai_connection["properties"]["target"]
+            elif aoai_connection.target:
+                endpoint = aoai_connection.target
+            else:
+                raise ValueError("Cannot get target from model connection")
             connection_args = {
                 "connection_type": "workspace_connection",
                 "connection": {"id": connection_id},
-                "endpoint": aoai_connection["properties"]["target"],
+                "endpoint": endpoint,
             }
         else:
             import openai
@@ -166,7 +173,7 @@ def build_index(
         ai_search_args = {
             "index_name": index_config.ai_search_index_name,
         }
-        if not index_config.ai_search_connection_id:
+        if not index_config.ai_search_connection_config:
             import os
 
             ai_search_args = {
@@ -180,19 +187,34 @@ def build_index(
             }
             connection_args = {"connection_type": "environment", "connection": {"key": "AZURE_AI_SEARCH_KEY"}}
         else:
-            ai_search_connection = get_connection_by_id_v2(index_config.ai_search_connection_id)
-            ai_search_args = {
-                **ai_search_args,
-                **{
-                    "endpoint": ai_search_connection["properties"]["target"],
-                    "api_version": ai_search_connection["properties"]
-                    .get("metadata", {})
-                    .get("apiVersion", AZURE_AI_SEARCH_API_VERSION),
-                },
-            }
+            connection_id = index_config.ai_search_connection_config.build_connection_id()
+            ai_search_connection = get_connection_by_id_v2(connection_id)
+            if isinstance(ai_search_connection, dict):
+                ai_search_args = {
+                    **ai_search_args,
+                    **{
+                        "endpoint": ai_search_connection["properties"]["target"],
+                        "api_version": ai_search_connection["properties"]
+                        .get("metadata", {})
+                        .get("apiVersion", AZURE_AI_SEARCH_API_VERSION),
+                    },
+                }
+            elif ai_search_connection.target:
+                api_version = AZURE_AI_SEARCH_API_VERSION
+                if ai_search_connection.tags and "ApiVersion" in ai_search_connection.tags:
+                    api_version = ai_search_connection.tags["ApiVersion"]
+                ai_search_args = {
+                    **ai_search_args,
+                    **{
+                        "endpoint": ai_search_connection.target,
+                        "api_version": api_version
+                    },
+                }
+            else:
+                raise ValueError("Cannot get target from ai search connection")
             connection_args = {
                 "connection_type": "workspace_connection",
-                "connection": {"id": index_config.ai_search_connection_id},
+                "connection": {"id": connection_id},
             }
 
         create_index_from_raw_embeddings(
