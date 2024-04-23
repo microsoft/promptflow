@@ -29,9 +29,12 @@ def get_client(
             container_client = _get_client_from_map(client_key)
             if container_client is None:
                 if credential is None:
-                    from azure.identity import DefaultAzureCredential
+                    # in cloud scenario, runtime will pass in credential
+                    # so this is local to cloud only code, happens in prompt flow service
+                    # which should rely on Azure CLI credential only
+                    from azure.identity import AzureCliCredential
 
-                    credential = DefaultAzureCredential()
+                    credential = AzureCliCredential()
                 token = _get_resource_token(
                     container_name, subscription_id, resource_group_name, workspace_name, credential
                 )
