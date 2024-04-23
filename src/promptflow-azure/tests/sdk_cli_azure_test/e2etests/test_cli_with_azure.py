@@ -74,7 +74,7 @@ class TestCliWithAzure:
             "--name",
             name,
             pf=pf,
-            # runtime=runtime,
+            runtime=runtime,
         )
         run = pf.runs.get(run=name)
         assert isinstance(run, Run)
