@@ -58,6 +58,7 @@ from promptflow._utils.flow_utils import (
     parse_variant,
 )
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
+from promptflow.core._utils import load_inputs_from_sample
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 
@@ -261,7 +262,6 @@ class FlowOperations(TelemetryMixin):
         :param init: Initialization parameters for flex flow, only supported when flow is callable class.
         :return: Executor result
         """
-        inputs = inputs or {}
         output_path = kwargs.get("output_path", None)
         session = kwargs.pop("session", None)
         collection = kwargs.pop("collection", None)
@@ -285,6 +285,7 @@ class FlowOperations(TelemetryMixin):
             init_kwargs=init,
             collection=collection,
         ) as submitter:
+            inputs = inputs or load_inputs_from_sample(submitter.flow.sample)
             if isinstance(flow, FlexFlow) or isinstance(flow, Prompty):
                 # TODO(2897153): support chat eager flow
                 # set is chat flow to True to allow generator output
@@ -1024,7 +1025,6 @@ class FlowOperations(TelemetryMixin):
     @staticmethod
     def _infer_signature(entry: Union[Callable, FlexFlow, Flow, Prompty], include_primitive_output: bool = False):
         if isinstance(entry, Prompty):
-            from promptflow._sdk.schemas._flow import ALLOWED_TYPES
             from promptflow.contracts.tool import ValueType
             from promptflow.core._model_configuration import PromptyModelConfiguration
 
@@ -1035,8 +1035,7 @@ class FlowOperations(TelemetryMixin):
                 flow_meta["outputs"] = {"output": {"type": "string"}}
             init_dict = {}
             for field in fields(PromptyModelConfiguration):
-                filed_type = type(field.type).__name__
-                init_dict[field.name] = {"type": filed_type if filed_type in ALLOWED_TYPES else ValueType.OBJECT.value}
+                init_dict[field.name] = {"type": ValueType.from_type(field.type).value}
                 if field.default != MISSING:
                     init_dict[field.name]["default"] = field.default
             flow_meta["init"] = init_dict

@@ -1,10 +1,12 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import json
 import os
 import re
+from os import PathLike
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, Union
 
 from jinja2 import Template
 
@@ -13,7 +15,7 @@ from promptflow._utils.flow_utils import is_flex_flow, resolve_flow_path, resolv
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.utils import _match_reference
 from promptflow._utils.yaml_utils import load_yaml
-from promptflow.core._errors import MalformedConnectionProviderConfig, MissingRequiredPackage
+from promptflow.core._errors import InvalidSampleError, MalformedConnectionProviderConfig, MissingRequiredPackage
 from promptflow.exceptions import UserErrorException
 
 logger = LoggerFactory.get_logger(name=__name__)
@@ -179,3 +181,19 @@ def get_workspace_from_resource_id(resource_id: str, credential, pkg_name: Optio
         workspace_name=workspace_name,
     )
     return ml_client.workspaces.get(name=workspace_name)
+
+
+def load_inputs_from_sample(sample: Union[dict, str, PathLike]):
+    if not sample:
+        return {}
+    elif isinstance(sample, dict):
+        return sample
+    elif isinstance(sample, (str, Path)) and str(sample).endswith(".json"):
+        if str(sample).startswith("file:"):
+            sample = sample[len("file:") :]
+        if not Path(sample).exists():
+            raise InvalidSampleError(f"Cannot find sample file {sample}.")
+        with open(sample, "r") as f:
+            return json.load(f)
+    else:
+        raise InvalidSampleError("Only dict and json file are supported as sample in prompty.")

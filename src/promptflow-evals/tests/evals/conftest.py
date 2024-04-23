@@ -1,5 +1,6 @@
 import json
 import multiprocessing
+import os
 from pathlib import Path
 from unittest.mock import patch
 
@@ -38,6 +39,21 @@ except ImportError as e:
 PROMPTFLOW_ROOT = Path(__file__) / "../../../.."
 CONNECTION_FILE = (PROMPTFLOW_ROOT / "promptflow-evals/connections.json").resolve().absolute().as_posix()
 RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "promptflow-recording/recordings/local").resolve()
+
+
+@pytest.fixture
+def configure_default_azure_credential():
+    with open(
+        file=CONNECTION_FILE,
+        mode="r",
+    ) as f:
+        dev_connections = json.load(f)
+
+    # for running e2e test which uses DefaultAzureCredential in ci pipeline
+    if "pf-evals-sp" in dev_connections:
+        creds = dev_connections["pf-evals-sp"]["value"]
+        for key, value in creds.items():
+            os.environ[key] = value
 
 
 def pytest_configure():
