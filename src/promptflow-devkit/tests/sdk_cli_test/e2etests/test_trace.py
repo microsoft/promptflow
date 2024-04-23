@@ -451,7 +451,7 @@ class TestTraceLifeCycle:
         expected_number_lines: int,
     ):
         run = pf.run(flow=flow_path, data=data_path)
-        line_runs = pf.traces.list_line_runs(run=run.name)
+        line_runs = pf.traces.list_line_runs(runs=run.name)
         assert len(line_runs) == expected_number_lines
 
     def test_batch_run_dag_flow(self, pf: PFClient) -> None:
