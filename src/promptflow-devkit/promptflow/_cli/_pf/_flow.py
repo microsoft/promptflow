@@ -514,7 +514,7 @@ def _test_flow_multi_modal(args, pf_client):
             encrypted_flow_path = encrypt_flow_path(flow_path)
             query_dict = {"flow": encrypted_flow_path}
             if Configuration.get_instance().is_internal_features_enabled():
-                query_dict.update({"enable_internal_features": True})
+                query_dict.update({"enable_internal_features": "true"})
             query_params = urlencode(query_dict)
             return urlunparse(("http", f"127.0.0.1:{port}", "/v1.0/ui/chat", "", query_params, ""))
 
