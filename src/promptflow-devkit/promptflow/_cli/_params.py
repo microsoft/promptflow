@@ -363,6 +363,7 @@ def add_param_path(parser):
         "--path",
         type=str,
         required=False,
-        help="When using the set command, specify the directory of pf.yaml, "
-        "and pf.yaml only takes effect within the specified directory or its subdirectories.",
+        help="Specify the directory of the config file, "
+        "and config file will only take effect when working in that directory or subdirectories. "
+        "Example: pf config set key=value --path config_folder",
     )
