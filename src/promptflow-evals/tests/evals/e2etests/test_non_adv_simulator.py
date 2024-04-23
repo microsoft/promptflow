@@ -1,5 +1,6 @@
 # flake8: noqa
 import asyncio
+import sys
 
 import pytest
 
@@ -10,6 +11,9 @@ from promptflow.evals.synthetic.simulator.simulator.userbot_config import UserBo
 @pytest.mark.usefixtures("model_config", "recording_injection")
 @pytest.mark.e2etest
 class TestNonAdvSimulator:
+    @pytest.mark.skipif(
+        sys.version_info < (3, 10), reason="improvements and changes in the asynchronous event loop handling."
+    )
     def test_non_adv_conversation(self, model_config):
         from openai import AsyncAzureOpenAI
 
