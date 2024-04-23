@@ -468,15 +468,15 @@ class TestFlowTest:
     def test_flow_flow_with_sample(self, pf):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_callable_class_with_sample_file")
         result1 = pf.test(flow=flow_path, init={"obj_input": "val"})
-        assert result1["func_input"] == "mock_input"
+        assert result1.func_input == "mock_input"
 
         result2 = pf.test(
             flow=flow_path, init={"obj_input": "val"}, inputs=f"{EAGER_FLOWS_DIR}/basic_callable_class/inputs.jsonl"
         )
-        assert result2["func_input"] == "func_input"
+        assert result2.func_input == "func_input"
 
         result3 = pf.test(flow=flow_path, init={"obj_input": "val"}, inputs={"func_input": "mock_func_input"})
-        assert result3["func_input"] == "mock_func_input"
+        assert result3.func_input == "mock_func_input"
 
     def test_flex_flow_with_model_config(self, pf):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_model_config")
