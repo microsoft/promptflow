@@ -1056,19 +1056,6 @@ def callable_to_entry_string(callable_obj: Callable) -> str:
     return f"{module_str}:{func_str}"
 
 
-def entry_string_to_callable(entry_file, entry) -> Callable:
-    with inject_sys_path(Path(entry_file).parent):
-        try:
-            module_name, func_name = entry.split(":")
-            module = importlib.import_module(module_name)
-        except Exception as e:
-            raise UserErrorException(
-                message_format="Failed to load python module for {entry_file}",
-                entry_file=entry_file,
-            ) from e
-        return getattr(module, func_name, None)
-
-
 def is_flex_run(run: "Run") -> bool:
     if run._run_source == RunInfoSources.LOCAL:
         try:
@@ -1118,6 +1105,15 @@ def get_flow_name(flow) -> str:
         return flow.name
     # should be promptflow._sdk.entities._flows.base.FlowBase: flex flow, prompty, etc.
     return flow.code.name
+
+
+def add_executable_script_to_env_path():
+    # Add executable script dir to PATH to make sure the subprocess can find the executable, especially in notebook
+    # environment which won't add it to system path automatically.
+    python_dir = os.path.dirname(sys.executable)
+    executable_dir = os.path.join(python_dir, "Scripts") if platform.system() == "Windows" else python_dir
+    if executable_dir not in os.environ["PATH"].split(os.pathsep):
+        os.environ["PATH"] = executable_dir + os.pathsep + os.environ["PATH"]
 
 
 def get_flow_path(flow) -> Path:

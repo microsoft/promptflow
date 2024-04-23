@@ -7,6 +7,7 @@ import glob
 import inspect
 import json
 import os
+import platform
 import shutil
 import stat
 import subprocess
@@ -38,6 +39,7 @@ from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_ope
 from promptflow._sdk._utils import (
     _get_additional_includes,
     _merge_local_code_and_additional_includes,
+    add_executable_script_to_env_path,
     copy_tree_respect_template_and_ignore_file,
     format_signature_type,
     generate_flow_tools_json,
@@ -56,6 +58,7 @@ from promptflow._utils.flow_utils import (
     parse_variant,
 )
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
+from promptflow.core._utils import load_inputs_from_sample
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 
@@ -259,7 +262,6 @@ class FlowOperations(TelemetryMixin):
         :param init: Initialization parameters for flex flow, only supported when flow is callable class.
         :return: Executor result
         """
-        inputs = inputs or {}
         output_path = kwargs.get("output_path", None)
         session = kwargs.pop("session", None)
         collection = kwargs.pop("collection", None)
@@ -283,6 +285,7 @@ class FlowOperations(TelemetryMixin):
             init_kwargs=init,
             collection=collection,
         ) as submitter:
+            inputs = inputs or load_inputs_from_sample(submitter.flow.sample)
             if isinstance(flow, FlexFlow) or isinstance(flow, Prompty):
                 # TODO(2897153): support chat eager flow
                 # set is chat flow to True to allow generator output
@@ -653,11 +656,14 @@ class FlowOperations(TelemetryMixin):
         with open(Path(__file__).parent.parent / "data" / "executable" / "requirements.txt", "r") as f:
             all_packages = f.read().splitlines()
 
+        if platform.system() != "Windows":
+            all_packages = [pkg for pkg in all_packages if pkg.lower() != "pywin32"]
+
         hidden_imports = copy.deepcopy(all_packages)
         meta_packages = copy.deepcopy(all_packages)
         special_packages = ["streamlit-quill", "flask-cors", "flask-restx"]
         for i in range(len(hidden_imports)):
-            # need special handeling because it use _ to import
+            # need special handling because it uses _ to import
             if hidden_imports[i] in special_packages:
                 hidden_imports[i] = hidden_imports[i].replace("-", "_").lower()
             else:
@@ -666,6 +672,7 @@ class FlowOperations(TelemetryMixin):
         return hidden_imports, all_packages, meta_packages
 
     def _run_pyinstaller(self, output_dir):
+        add_executable_script_to_env_path()
         with _change_working_dir(output_dir, mkdir=False):
             try:
                 subprocess.run(["pyinstaller", "app.spec"], check=True)
@@ -1018,7 +1025,6 @@ class FlowOperations(TelemetryMixin):
     @staticmethod
     def _infer_signature(entry: Union[Callable, FlexFlow, Flow, Prompty], include_primitive_output: bool = False):
         if isinstance(entry, Prompty):
-            from promptflow._sdk.schemas._flow import ALLOWED_TYPES
             from promptflow.contracts.tool import ValueType
             from promptflow.core._model_configuration import PromptyModelConfiguration
 
@@ -1029,8 +1035,7 @@ class FlowOperations(TelemetryMixin):
                 flow_meta["outputs"] = {"output": {"type": "string"}}
             init_dict = {}
             for field in fields(PromptyModelConfiguration):
-                filed_type = type(field.type).__name__
-                init_dict[field.name] = {"type": filed_type if filed_type in ALLOWED_TYPES else ValueType.OBJECT.value}
+                init_dict[field.name] = {"type": ValueType.from_type(field.type).value}
                 if field.default != MISSING:
                     init_dict[field.name]["default"] = field.default
             flow_meta["init"] = init_dict
