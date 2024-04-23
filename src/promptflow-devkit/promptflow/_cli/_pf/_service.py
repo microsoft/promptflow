@@ -23,7 +23,6 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._service.app import create_app
 from promptflow._sdk._service.utils.utils import (
-    add_executable_script_to_env_path,
     check_pfs_service_status,
     dump_port_to_config,
     get_current_env_pfs_file,
@@ -35,6 +34,7 @@ from promptflow._sdk._service.utils.utils import (
     is_run_from_built_binary,
     kill_exist_service,
 )
+from promptflow._sdk._utils import add_executable_script_to_env_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger  # noqa: E402
 from promptflow.exceptions import UserErrorException
 

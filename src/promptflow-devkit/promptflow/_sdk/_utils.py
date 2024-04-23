@@ -1118,6 +1118,15 @@ def get_flow_name(flow) -> str:
     return flow.code.name
 
 
+def add_executable_script_to_env_path():
+    # Add executable script dir to PATH to make sure the subprocess can find the executable, especially in notebook
+    # environment which won't add it to system path automatically.
+    python_dir = os.path.dirname(sys.executable)
+    executable_dir = os.path.join(python_dir, "Scripts") if platform.system() == "Windows" else python_dir
+    if executable_dir not in os.environ["PATH"].split(os.pathsep):
+        os.environ["PATH"] = executable_dir + os.pathsep + os.environ["PATH"]
+
+
 def get_flow_path(flow) -> Path:
     # use public API to get flow path for DAG/flex flow or prompty
     from promptflow._sdk.entities._flows.dag import Flow as DAGFlow
