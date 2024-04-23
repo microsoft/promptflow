@@ -416,45 +416,55 @@ class TestTraceLifeCycle:
         except Exception:  # pylint: disable=broad-except
             pass
 
-    def test_flow_test_dag_flow(self, pf: PFClient, collection: str) -> None:
-        flow_path = Path(f"{FLOWS_DIR}/web_classification").absolute()
-        inputs = {"url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g", "answer": "Channel", "evidence": "Url"}
+    def _pf_test_and_assert(
+        self,
+        pf: PFClient,
+        flow_path: Path,
+        inputs: typing.Dict[str, str],
+        collection: str,
+    ) -> None:
         pf.test(flow=flow_path, inputs=inputs)
         line_runs = pf.traces.list_line_runs(collection=collection)
         assert len(line_runs) == 1
+
+    def test_flow_test_dag_flow(self, pf: PFClient, collection: str) -> None:
+        flow_path = Path(f"{FLOWS_DIR}/web_classification").absolute()
+        inputs = {"url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g", "answer": "Channel", "evidence": "Url"}
+        self._pf_test_and_assert(pf, flow_path, inputs, collection)
 
     def test_flow_test_flex_flow(self, pf: PFClient, collection: str) -> None:
         self._clear_module_cache("entry")
         flow_path = Path(f"{FLEX_FLOWS_DIR}/simple_with_yaml").absolute()
         inputs = {"input_val": "val1"}
-        pf.test(flow=flow_path, inputs=inputs)
-        line_runs = pf.traces.list_line_runs(collection=collection)
-        assert len(line_runs) == 1
+        self._pf_test_and_assert(pf, flow_path, inputs, collection)
 
     def test_flow_test_prompty(self, pf: PFClient, collection: str) -> None:
         flow_path = Path(f"{PROMPTY_DIR}/prompty_example.prompty").absolute()
         inputs = {"question": "what is the result of 1+1?"}
-        pf.test(flow=flow_path, inputs=inputs)
-        line_runs = pf.traces.list_line_runs(collection=collection)
-        assert len(line_runs) == 1
+        self._pf_test_and_assert(pf, flow_path, inputs, collection)
 
-    def test_batch_run_dag_flow(self, pf: PFClient, collection: str) -> None:
+    def _pf_run_and_assert(
+        self,
+        pf: PFClient,
+        flow_path: Path,
+        data_path: Path,
+        expected_number_lines: int,
+    ):
+        run = pf.run(flow=flow_path, data=data_path)
+        line_runs = pf.traces.list_line_runs(run=run.name)
+        assert len(line_runs) == expected_number_lines
+
+    def test_batch_run_dag_flow(self, pf: PFClient) -> None:
         flow_path = Path(f"{FLOWS_DIR}/web_classification").absolute()
         data_path = Path(f"{DATA_DIR}/webClassification3.jsonl").absolute()
-        pf.run(flow=flow_path, data=data_path)
-        line_runs = pf.traces.list_line_runs(collection=collection)
-        assert len(line_runs) == 3
+        self._pf_run_and_assert(pf, flow_path, data_path, expected_number_lines=3)
 
-    def test_batch_run_flex_flow(self, pf: PFClient, collection: str) -> None:
+    def test_batch_run_flex_flow(self, pf: PFClient) -> None:
         flow_path = Path(f"{FLEX_FLOWS_DIR}/simple_with_yaml").absolute()
         data_path = Path(f"{DATA_DIR}/simple_eager_flow_data.jsonl").absolute()
-        pf.run(flow=flow_path, data=data_path)
-        line_runs = pf.traces.list_line_runs(collection=collection)
-        assert len(line_runs) == 1
+        self._pf_run_and_assert(pf, flow_path, data_path, expected_number_lines=1)
 
-    def test_batch_run_prompty(self, pf: PFClient, collection: str) -> None:
+    def test_batch_run_prompty(self, pf: PFClient) -> None:
         flow_path = Path(f"{PROMPTY_DIR}/prompty_example.prompty").absolute()
         data_path = Path(f"{DATA_DIR}/prompty_inputs.jsonl").absolute()
-        pf.run(flow=flow_path, data=data_path)
-        line_runs = pf.traces.list_line_runs(collection=collection)
-        assert len(line_runs) == 3
+        self._pf_run_and_assert(pf, flow_path, data_path, expected_number_lines=3)
