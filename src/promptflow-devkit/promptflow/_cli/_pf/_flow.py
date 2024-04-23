@@ -51,6 +51,7 @@ from promptflow.exceptions import ErrorTarget, UserErrorException
 
 DEFAULT_CONNECTION = "open_ai_connection"
 DEFAULT_DEPLOYMENT = "gpt-35-turbo"
+PF_CHAT_UI_ENABLE_STREAMLIT = "pf_chat_ui_enable_streamlit"
 logger = get_cli_sdk_logger()
 
 
@@ -275,7 +276,9 @@ pf flow test --flow my-awesome-flow --init key1=value1 key2=value2
     add_param_multi_modal = lambda parser: parser.add_argument(  # noqa: E731
         "--multi-modal", action="store_true", help=argparse.SUPPRESS
     )
-    add_param_ui = lambda parser: parser.add_argument("--ui", action="store_true", help=argparse.SUPPRESS)  # noqa: E731
+    add_param_ui = lambda parser: parser.add_argument(  # noqa: E731
+        "--ui", action="store_true", help="The flag to start an interactive chat experience in local chat window."
+    )
     add_param_input = lambda parser: parser.add_argument("--input", type=str, help=argparse.SUPPRESS)  # noqa: E731
     add_param_detail = lambda parser: parser.add_argument(  # noqa: E731
         "--detail", type=str, default=None, required=False, help=argparse.SUPPRESS
@@ -479,25 +482,9 @@ def _build_inputs_for_flow_test(args):
 
 def _test_flow_multi_modal(args, pf_client):
     """Test flow with multi modality mode."""
-    from promptflow._sdk._load_functions import load_flow
+    if str(os.getenv(PF_CHAT_UI_ENABLE_STREAMLIT, "false")).lower() == "true":
+        from promptflow._sdk._load_functions import load_flow
 
-    if Configuration.get_instance().is_internal_features_enabled():
-        from promptflow._sdk._tracing import _invoke_pf_svc
-
-        # Todo: use base64 encode for now, will consider whether need use encryption or use db to store flow path info
-        def generate_url(flow_path, port):
-            encrypted_flow_path = encrypt_flow_path(flow_path)
-            query_params = urlencode({"flow": encrypted_flow_path})
-            return urlunparse(("http", f"127.0.0.1:{port}", "/v1.0/ui/chat", "", query_params, ""))
-
-        pfs_port = _invoke_pf_svc()
-        flow_path_dir, flow_path_file = resolve_flow_path(args.flow)
-        flow_path = str(flow_path_dir / flow_path_file)
-        chat_page_url = generate_url(flow_path, pfs_port)
-        print(f"You can begin chat flow on {chat_page_url}")
-        if not args.skip_open_browser:
-            webbrowser.open(chat_page_url)
-    else:
         if is_flex_flow(flow_path=args.flow):
             error = ValueError("Only support dag yaml in streamlit ui.")
             raise UserErrorException(
@@ -521,6 +508,25 @@ def _test_flow_multi_modal(args, pf_client):
             main_script_path = os.path.join(temp_dir, "main.py")
             logger.info("Start streamlit with main script generated at: %s", main_script_path)
             pf_client.flows._chat_with_ui(script=main_script_path, skip_open_browser=args.skip_open_browser)
+    else:
+        from promptflow._sdk._tracing import _invoke_pf_svc
+
+        # Todo: use base64 encode for now, will consider whether need use encryption or use db to store flow path info
+        def generate_url(flow_path, port):
+            encrypted_flow_path = encrypt_flow_path(flow_path)
+            query_dict = {"flow": encrypted_flow_path}
+            if Configuration.get_instance().is_internal_features_enabled():
+                query_dict.update({"enable_internal_features": "true"})
+            query_params = urlencode(query_dict)
+            return urlunparse(("http", f"127.0.0.1:{port}", "/v1.0/ui/chat", "", query_params, ""))
+
+        pfs_port = _invoke_pf_svc()
+        flow_path_dir, flow_path_file = resolve_flow_path(args.flow)
+        flow_path = str(flow_path_dir / flow_path_file)
+        chat_page_url = generate_url(flow_path, pfs_port)
+        print(f"You can begin chat flow on {chat_page_url}")
+        if not args.skip_open_browser:
+            webbrowser.open(chat_page_url)
 
 
 def _test_flow_interactive(args, pf_client, inputs, environment_variables):
