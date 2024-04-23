@@ -290,6 +290,9 @@ pf flow test --flow my-awesome-flow --init key1=value1 key2=value2
     add_param_skip_browser = lambda parser: parser.add_argument(  # noqa: E731
         "--skip-open-browser", action="store_true", help=argparse.SUPPRESS
     )
+    add_param_url_params = lambda parser: parser.add_argument(  # noqa: E731
+        "--url-params", type=str, help=argparse.SUPPRESS
+    )
 
     add_params = [
         add_param_flow,
@@ -306,6 +309,7 @@ pf flow test --flow my-awesome-flow --init key1=value1 key2=value2
         add_param_collection,
         add_param_skip_browser,
         add_param_init,
+        add_param_url_params,
     ] + base_params
 
     if Configuration.get_instance().is_internal_features_enabled():
@@ -510,18 +514,20 @@ def _test_flow_multi_modal(args, pf_client):
         from promptflow._sdk._tracing import _invoke_pf_svc
 
         # Todo: use base64 encode for now, will consider whether need use encryption or use db to store flow path info
-        def generate_url(flow_path, port):
+        def generate_url(flow_path, port, url_params):
             encrypted_flow_path = encrypt_flow_path(flow_path)
             query_dict = {"flow": encrypted_flow_path}
             if Configuration.get_instance().is_internal_features_enabled():
                 query_dict.update({"enable_internal_features": "true"})
             query_params = urlencode(query_dict)
+            if url_params:
+                query_params += "&" + url_params
             return urlunparse(("http", f"127.0.0.1:{port}", "/v1.0/ui/chat", "", query_params, ""))
 
         pfs_port = _invoke_pf_svc()
         flow_path_dir, flow_path_file = resolve_flow_path(args.flow)
         flow_path = str(flow_path_dir / flow_path_file)
-        chat_page_url = generate_url(flow_path, pfs_port)
+        chat_page_url = generate_url(flow_path, pfs_port, args.url_params)
         print(f"You can begin chat flow on {chat_page_url}")
         if not args.skip_open_browser:
             webbrowser.open(chat_page_url)
