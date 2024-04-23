@@ -1,5 +1,6 @@
 import datetime
 import json
+import sys
 import typing
 import uuid
 from pathlib import Path
@@ -18,9 +19,13 @@ from promptflow._constants import (
 from promptflow._sdk._constants import TRACE_DEFAULT_COLLECTION
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk.entities._trace import Span
+from promptflow.tracing import start_trace
 
-TEST_ROOT = PROMPTFLOW_ROOT / "tests"
+TEST_ROOT = (PROMPTFLOW_ROOT / "tests").resolve().absolute()
 FLOWS_DIR = (TEST_ROOT / "test_configs/flows").resolve().absolute().as_posix()
+FLEX_FLOWS_DIR = (TEST_ROOT / "test_configs/eager_flows").resolve().absolute().as_posix()
+PROMPTY_DIR = (TEST_ROOT / "test_configs/prompty").resolve().absolute().as_posix()
+DATA_DIR = (TEST_ROOT / "test_configs/datas").resolve().absolute().as_posix()
 
 
 def load_and_override_span_example(
@@ -97,6 +102,13 @@ def assert_span_equals(span: Span, expected_span_dict: typing.Dict) -> None:
     assert "external_event_data_uris" in span_dict
     span_dict.pop("external_event_data_uris")
     assert span_dict == expected_span_dict
+
+
+@pytest.fixture
+def collection() -> str:
+    _collection = str(uuid.uuid4())
+    start_trace(collection=_collection)
+    return _collection
 
 
 @pytest.mark.e2etest
@@ -389,3 +401,60 @@ class TestTraceWithDevKit:
                     node="fetch_text_content_from_url",
                 )
                 assert mock_start_trace.call_count == 0
+
+
+@pytest.mark.usefixtures("otlp_collector", "recording_injection", "setup_local_connection", "use_secrets_config_file")
+@pytest.mark.e2etest
+@pytest.mark.sdk_test
+class TestTraceLifeCycle:
+    """End-to-end tests that cover the trace lifecycle."""
+
+    def _clear_module_cache(self, module_name) -> None:
+        # referenced from test_flow_test.py::clear_module_cache
+        try:
+            del sys.modules[module_name]
+        except Exception:  # pylint: disable=broad-except
+            pass
+
+    def test_flow_test_dag_flow(self, pf: PFClient, collection: str) -> None:
+        flow_path = Path(f"{FLOWS_DIR}/web_classification").absolute()
+        inputs = {"url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g", "answer": "Channel", "evidence": "Url"}
+        pf.test(flow=flow_path, inputs=inputs)
+        line_runs = pf.traces.list_line_runs(collection=collection)
+        assert len(line_runs) == 1
+
+    def test_flow_test_flex_flow(self, pf: PFClient, collection: str) -> None:
+        self._clear_module_cache("entry")
+        flow_path = Path(f"{FLEX_FLOWS_DIR}/simple_with_yaml").absolute()
+        inputs = {"input_val": "val1"}
+        pf.test(flow=flow_path, inputs=inputs)
+        line_runs = pf.traces.list_line_runs(collection=collection)
+        assert len(line_runs) == 1
+
+    def test_flow_test_prompty(self, pf: PFClient, collection: str) -> None:
+        flow_path = Path(f"{PROMPTY_DIR}/prompty_example.prompty").absolute()
+        inputs = {"question": "what is the result of 1+1?"}
+        pf.test(flow=flow_path, inputs=inputs)
+        line_runs = pf.traces.list_line_runs(collection=collection)
+        assert len(line_runs) == 1
+
+    def test_batch_run_dag_flow(self, pf: PFClient, collection: str) -> None:
+        flow_path = Path(f"{FLOWS_DIR}/web_classification").absolute()
+        data_path = Path(f"{DATA_DIR}/webClassification3.jsonl").absolute()
+        pf.run(flow=flow_path, data=data_path)
+        line_runs = pf.traces.list_line_runs(collection=collection)
+        assert len(line_runs) == 3
+
+    def test_batch_run_flex_flow(self, pf: PFClient, collection: str) -> None:
+        flow_path = Path(f"{FLEX_FLOWS_DIR}/simple_with_yaml").absolute()
+        data_path = Path(f"{DATA_DIR}/simple_eager_flow_data.jsonl").absolute()
+        pf.run(flow=flow_path, data=data_path)
+        line_runs = pf.traces.list_line_runs(collection=collection)
+        assert len(line_runs) == 3
+
+    def test_batch_run_prompty(self, pf: PFClient, collection: str) -> None:
+        flow_path = Path(f"{PROMPTY_DIR}/prompty_example.prompty").absolute()
+        data_path = Path(f"{DATA_DIR}/prompty_inputs.jsonl").absolute()
+        pf.run(flow=flow_path, data=data_path)
+        line_runs = pf.traces.list_line_runs(collection=collection)
+        assert len(line_runs) == 3
