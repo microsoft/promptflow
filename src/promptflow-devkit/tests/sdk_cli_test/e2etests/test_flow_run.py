@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 import sys
@@ -38,6 +39,7 @@ from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.client import PFClient
 from promptflow.connections import AzureOpenAIConnection
+from promptflow.core import AzureOpenAIModelConfiguration, OpenAIModelConfiguration
 from promptflow.exceptions import UserErrorException
 
 TEST_ROOT = PROMPTFLOW_ROOT / "tests"
@@ -1409,6 +1411,38 @@ class TestFlowRun:
         assert run.status == "Completed"
         assert "error" not in run._to_dict()
 
+    def test_eager_flow_run_batch_resume(self, pf):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_with_random_fail")
+        original_name = str(uuid.uuid4())
+        original_run = pf.run(
+            flow=flow_path,
+            data=f"{EAGER_FLOWS_DIR}/simple_with_random_fail/inputs.jsonl",
+            name=original_name,
+        )
+        assert original_run.status == "Completed"
+        output_path = os.path.join(original_run.properties["output_path"], "flow_outputs", "output.jsonl")
+        with open(output_path, "r") as file:
+            original_output = [json.loads(line) for line in file]
+        original_success_count = len(original_output)
+
+        resume_name = str(uuid.uuid4())
+        resume_run = pf.run(
+            resume_from=original_run,
+            name=resume_name,
+        )
+        assert resume_run.name == resume_name
+        assert resume_run._resume_from == original_name
+        # assert new run resume from the original run
+        output_path = os.path.join(resume_run.properties["output_path"], "flow_outputs", "output.jsonl")
+        with open(output_path, "r") as file:
+            resume_output = [json.loads(line) for line in file]
+        assert len(original_output) < len(resume_output)
+
+        log_path = os.path.join(resume_run.properties["output_path"], "logs.txt")
+        with open(log_path, "r") as file:
+            log_text = file.read()
+        assert f"Skipped the execution of {original_success_count} existing results." in log_text
+
     def test_eager_flow_test_invalid_cases(self, pf):
         # incorrect entry provided
         flow_path = Path(f"{EAGER_FLOWS_DIR}/incorrect_entry/")
@@ -1677,17 +1711,22 @@ class TestFlowRun:
                 "func_input",
             ] and details_dict["outputs.obj_input"] == ["val", "val", "val", "val"]
 
+        def assert_metrics(metrics_dict):
+            return metrics_dict == {"length": 4}
+
         flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_callable_class")
         run = pf.run(
             flow=flow_path, data=f"{EAGER_FLOWS_DIR}/basic_callable_class/inputs.jsonl", init={"obj_input": "val"}
         )
         assert_batch_run_result(run, pf, assert_func)
+        assert_run_metrics(run, pf, assert_metrics)
 
         run = load_run(
             source=f"{EAGER_FLOWS_DIR}/basic_callable_class/run.yaml",
         )
         run = pf.runs.create_or_update(run=run)
         assert_batch_run_result(run, pf, assert_func)
+        assert_run_metrics(run, pf, assert_metrics)
 
     def test_run_with_init_class(self, pf):
         def assert_func(details_dict):
@@ -1708,8 +1747,6 @@ class TestFlowRun:
                 # set code folder to avoid snapshot too big
                 code=f"{EAGER_FLOWS_DIR}/basic_callable_class",
             )
-            assert run.status == "Completed"
-            assert "error" not in run._to_dict()
 
             assert_batch_run_result(run, pf, assert_func)
 
@@ -1719,10 +1756,48 @@ class TestFlowRun:
                 # set code folder to avoid snapshot too big
                 code=f"{EAGER_FLOWS_DIR}/basic_callable_class",
             )
-            assert run.status == "Completed"
-            assert "error" not in run._to_dict()
 
             assert_batch_run_result(run, pf, assert_func)
+
+    def test_model_config_in_init(self, pf):
+        def assert_func(details_dict):
+            keys_to_omit = [
+                "inputs.line_number",
+                "inputs.func_input",
+                "outputs.func_input",
+                "outputs.obj_id",
+                "outputs.azure_open_ai_model_config_azure_endpoint",
+            ]
+            omitted_output = {k: v for k, v in details_dict.items() if k not in keys_to_omit}
+            return omitted_output == {
+                "outputs.azure_open_ai_model_config_deployment": ["my_deployment", "my_deployment"],
+                "outputs.azure_open_ai_model_config_connection": ["(Failed)", "(Failed)"],
+                "outputs.open_ai_model_config_model": ["my_model", "my_model"],
+                "outputs.open_ai_model_config_base_url": ["fake_base_url", "fake_base_url"],
+                "outputs.open_ai_model_config_connection": ["(Failed)", "(Failed)"],
+            }
+
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_model_config")
+
+        # init with model config object
+        config1 = AzureOpenAIModelConfiguration(azure_deployment="my_deployment", connection="azure_open_ai_connection")
+        config2 = OpenAIModelConfiguration(model="my_model", base_url="fake_base_url")
+        run = pf.run(
+            flow=flow_path,
+            data=f"{EAGER_FLOWS_DIR}/basic_model_config/inputs.jsonl",
+            init={"azure_open_ai_model_config": config1, "open_ai_model_config": config2},
+        )
+        assert_batch_run_result(run, pf, assert_func)
+
+        # init with model config dict
+        config1 = dict(azure_deployment="my_deployment", connection="azure_open_ai_connection")
+        config2 = dict(model="my_model", base_url="fake_base_url")
+        run = pf.run(
+            flow=flow_path,
+            data=f"{EAGER_FLOWS_DIR}/basic_model_config/inputs.jsonl",
+            init={"azure_open_ai_model_config": config1, "open_ai_model_config": config2},
+        )
+        assert_batch_run_result(run, pf, assert_func)
 
 
 def assert_batch_run_result(run: Run, pf: PFClient, assert_func):
@@ -1732,3 +1807,10 @@ def assert_batch_run_result(run: Run, pf: PFClient, assert_func):
     # convert DataFrame to dict
     details_dict = details.to_dict(orient="list")
     assert assert_func(details_dict), details_dict
+
+
+def assert_run_metrics(run: Run, pf: PFClient, assert_func):
+    assert run.status == "Completed"
+    assert "error" not in run._to_dict(), run._to_dict()["error"]
+    metrics = pf.runs.get_metrics(run.name)
+    assert assert_func(metrics), metrics

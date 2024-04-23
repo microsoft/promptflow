@@ -18,11 +18,11 @@ from promptflow.core._prompty_utils import (
     convert_prompt_template,
     format_llm_response,
     get_open_ai_client_by_connection,
-    load_inputs_from_sample,
     prepare_open_ai_request_params,
     send_request_to_llm,
     update_dict_recursively,
 )
+from promptflow.core._utils import load_inputs_from_sample
 from promptflow.exceptions import UserErrorException
 from promptflow.tracing._experimental import enrich_prompt_template
 from promptflow.tracing._trace import _traced
@@ -129,6 +129,12 @@ class Flow(FlowBase):
     def invoke(self, inputs: dict, connections: dict = None, **kwargs) -> "LineResult":
         """Invoke a flow and get a LineResult object."""
         # candidate parameters: connections, variant, overrides, streaming
+        from promptflow._utils.logger_utils import LoggerFactory
+
+        with LoggerFactory.disable_all_loggers():
+            return self._invoke(inputs=inputs, connections=connections, **kwargs)
+
+    def _invoke(self, inputs: dict, connections: dict = None, **kwargs) -> "LineResult":
         from promptflow.core._serving.flow_invoker import FlowInvoker
 
         if is_flex_flow(yaml_dict=self._data, working_dir=self.code):
