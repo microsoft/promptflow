@@ -14,7 +14,7 @@ import pandas as pd
 from promptflow.client import PFClient
 
 from ._code_client import CodeClient
-from ._utils import save_function_as_fow
+from ._utils import save_function_as_flow
 
 from promptflow._sdk._constants import LINE_NUMBER
 
@@ -103,7 +103,7 @@ def _apply_target_to_data(target: Callable, data: str, pf_client: PFClient) -> s
     :rtype: str
     """
     with tempfile.TemporaryDirectory() as d:
-        save_function_as_fow(fun=target, target_dir=d, pf=pf_client)
+        save_function_as_flow(fun=target, target_dir=d, pf=pf_client)
         run = pf_client.run(
             flow=d,
             data=data,
@@ -207,7 +207,7 @@ def evaluate(
 
     input_data_df = pd.read_json(data, lines=True)
     if tempfile_created:
-        # During the run we have created the temprary file. We will delete it here.
+        # During the run we have created the temporary file. We will delete it here.
         os.unlink(data)
     input_data_df = input_data_df.rename(columns={col: f"inputs.{col}" for col in input_data_df.columns})
 

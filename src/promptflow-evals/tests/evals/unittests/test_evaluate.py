@@ -10,7 +10,7 @@ from unittest.mock import patch
 from promptflow.evals.evaluate import evaluate
 from promptflow.evals.evaluate._evaluate import _apply_target_to_data
 from promptflow.evals.evaluators import F1ScoreEvaluator, GroundednessEvaluator
-from promptflow.evals.evaluate._utils import save_function_as_fow
+from promptflow.evals.evaluate._utils import save_function_as_flow
 
 
 @pytest.fixture
@@ -105,7 +105,7 @@ class TestEvaluate:
         assert "Missing required inputs for target : ['question']." in exc_info.value.args[0]
 
     def test_wrong_target(self, questions_file):
-        """Test error, when target fuction does not generate required column."""
+        """Test error, when target function does not generate required column."""
         with pytest.raises(ValueError) as exc_info:
             # target_fn will generate the "answer", but not ground truth.
             evaluate(data=questions_file, evaluators={"g": F1ScoreEvaluator()}, target=_target_fn)
@@ -117,7 +117,7 @@ class TestEvaluate:
         """Test saving function as flow."""
         with patch('promptflow.evals.evaluate._utils.os') as mock_os:
             mock_os.path.isfile.return_value = script_is_file
-            save_function_as_fow(_target_fn, tmpdir, pf_client)
+            save_function_as_flow(_target_fn, tmpdir, pf_client)
         assert os.path.isfile(os.path.join(tmpdir, 'flow.flex.yaml'))
 
     def test_apply_target_to_data(self, pf_client, questions_file, questions_answers_file):

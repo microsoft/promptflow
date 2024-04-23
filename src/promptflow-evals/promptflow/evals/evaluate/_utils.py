@@ -16,7 +16,7 @@ def load_jsonl(path):
         return [json.loads(line) for line in f.readlines()]
 
 
-def save_function_as_fow(fun: Callable, target_dir: str, pf: PFClient) -> None:
+def save_function_as_flow(fun: Callable, target_dir: str, pf: PFClient) -> None:
     """
     Save the function to the designated folder.
 
