@@ -1282,6 +1282,27 @@ class TestFlowRun:
         # the YAML file will not exist in user's folder
         assert not Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/flow.flex.yaml").exists()
 
+    def test_flex_flow_run_update_signature(self, pf):
+        run = pf.run(
+            flow="entry:my_flow",
+            code=f"{EAGER_FLOWS_DIR}/simple_without_yaml",
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+        )
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict()
+        # will create a YAML in run snapshot
+        local_storage = LocalStorageOperations(run=run)
+        assert local_storage._dag_path.exists()
+        # the YAML file will not exist in user's folder
+        assert not Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/flow.flex.yaml").exists()
+
+        yaml_dict = load_yaml(local_storage._dag_path)
+        assert yaml_dict == {
+            "entry": "entry:my_flow",
+            "inputs": {"input_val": {"type": "string"}},
+            "outputs": {"output": {"type": "string"}},
+        }
+
     def test_eager_flow_yaml_override(self, pf):
         run = pf.run(
             flow="entry2:my_flow2",
