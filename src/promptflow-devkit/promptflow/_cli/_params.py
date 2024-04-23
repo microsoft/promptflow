@@ -3,8 +3,10 @@
 # ---------------------------------------------------------
 
 import argparse
+import json
 from pathlib import Path
 
+from promptflow._cli._completers._param_completers import run_name_completer
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME, PROMPT_FLOW_RUNS_DIR_NAME, CLIListOutputFormat, FlowType
 
 # TODO: avoid azure dependency here
@@ -39,7 +41,8 @@ class FlowTestInputAction(AppendToDictAction):  # pylint: disable=protected-acce
             if values[0].endswith(".jsonl"):
                 return load_data(local_path=values[0])[0]
             elif values[0].endswith(".json"):
-                return load_data(local_path=values[0])
+                with open(values[0], "r") as f:
+                    return json.load(f)
             else:
                 raise ValueError("Only support jsonl or json file as input.")
         else:
@@ -182,7 +185,9 @@ def add_param_source(parser):
 
 
 def add_param_run_name(parser):
-    parser.add_argument("-n", "--name", required=True, type=str, help="Name of the run.")
+    parser.add_argument(
+        "-n", "--name", required=True, type=str, help="Name of the run.", metavar="PROTOCOL"
+    ).completer = run_name_completer
 
 
 def add_param_connection_name(parser):

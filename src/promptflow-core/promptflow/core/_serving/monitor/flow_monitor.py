@@ -2,17 +2,14 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-import time
 from typing import Dict
 
-from flask import g, request
-
 from promptflow._utils.exception_utils import ErrorResponse
-from promptflow.core._serving.flow_result import FlowResult
+from promptflow.core._serving.monitor.context_data_provider import ContextDataProvider
 from promptflow.core._serving.monitor.data_collector import FlowDataCollector
 from promptflow.core._serving.monitor.metrics import MetricsRecorder, ResponseType
 from promptflow.core._serving.monitor.streaming_monitor import StreamingMonitor
-from promptflow.core._serving.utils import get_cost_up_to_now, streaming_response_required
+from promptflow.core._serving.utils import get_cost_up_to_now
 
 
 class FlowMonitor:
@@ -23,12 +20,14 @@ class FlowMonitor:
         logger,
         default_flow_name,
         data_collector: FlowDataCollector,
+        context_data_provider: ContextDataProvider,
         custom_dimensions: Dict[str, str],
         metric_exporters=None,
         trace_exporters=None,
     ):
         self.data_collector = data_collector
         self.logger = logger
+        self.context_data_provider = context_data_provider
         self.metrics_recorder = self.setup_metrics_recorder(custom_dimensions, metric_exporters)
         self.flow_name = default_flow_name
         self.setup_trace_exporters(trace_exporters)
@@ -72,17 +71,23 @@ class FlowMonitor:
         except Exception as e:
             self.logger.error(f"Setup trace exporters failed: {e}")
 
-    def setup_streaming_monitor_if_needed(self, response_creator, data, output):
-        g.streaming = response_creator.has_stream_field and response_creator.text_stream_specified_explicitly
+    def setup_streaming_monitor_if_needed(self, response_creator):
+        input_data = self.context_data_provider.get_request_data()
+        flow_result = self.context_data_provider.get_flow_result()
+        output = flow_result.output if flow_result else {}
+        streaming = self.context_data_provider.is_response_streaming()
+        req_id = self.context_data_provider.get_request_id()
+        flow_id = self.context_data_provider.get_flow_id() or self.flow_name
+        req_start_time = self.context_data_provider.get_request_start_time()
         # set streaming callback functions if the response is streaming
-        if g.streaming:
+        if streaming:
             streaming_monitor = StreamingMonitor(
                 self.logger,
-                flow_id=g.get("flow_id", self.flow_name),
-                start_time=g.start_time,
-                inputs=data,
+                flow_id=flow_id,
+                start_time=req_start_time,
+                inputs=input_data,
                 outputs=output,
-                req_id=g.get("req_id", None),
+                req_id=req_id,
                 streaming_field_name=response_creator.stream_field_name,
                 metric_recorder=self.metrics_recorder,
                 data_collector=self.data_collector,
@@ -90,49 +95,39 @@ class FlowMonitor:
             response_creator._on_stream_start = streaming_monitor.on_stream_start
             response_creator._on_stream_end = streaming_monitor.on_stream_end
             response_creator._on_stream_event = streaming_monitor.on_stream_event
-            self.logger.info(f"Finish stream callback setup for flow with streaming={g.streaming}.")
+            self.logger.info(f"Finish stream callback setup for flow with streaming={streaming}.")
         else:
             self.logger.info("Flow does not enable streaming response.")
 
     def handle_error(self, ex: Exception, resp_code: int):
         if self.metrics_recorder:
-            flow_id = g.get("flow_id", self.flow_name)
+            flow_id = self.context_data_provider.get_flow_id() or self.flow_name
+            streaming = self.context_data_provider.is_response_streaming()
             err_code = ErrorResponse.from_exception(ex).innermost_error_code
-            streaming = g.get("streaming", False)
             self.metrics_recorder.record_flow_request(flow_id, resp_code, err_code, streaming)
 
     def start_monitoring(self):
-        g.start_time = time.time()
-        g.streaming = streaming_response_required()
-        # if both request_id and client_request_id are provided, each will respect their own value.
-        # if either one is provided, the provided one will be used for both request_id and client_request_id.
-        # in aml deployment, request_id is provided by aml, user can only customize client_request_id.
-        # in non-aml deployment, user can customize both request_id and client_request_id.
-        g.req_id = request.headers.get("x-request-id", None)
-        g.client_req_id = request.headers.get("x-ms-client-request-id", g.req_id)
-        g.req_id = g.req_id or g.client_req_id
-        self.logger.info(f"Start monitoring new request, request_id: {g.req_id}, client_request_id: {g.client_req_id}")
+        pass
 
-    def finish_monitoring(self, resp_status_code):
-        data = g.get("data", None)
-        flow_result: FlowResult = g.get("flow_result", None)
-        req_id = g.get("req_id", None)
-        client_req_id = g.get("client_req_id", req_id)
-        flow_id = g.get("flow_id", self.flow_name)
+    def finish_monitoring(self, resp_status_code):  # noqa: E501
+        flow_id = self.context_data_provider.get_flow_id() or self.flow_name
+        req_start_time = self.context_data_provider.get_request_start_time()
+        input_data = self.context_data_provider.get_request_data()
+        flow_result = self.context_data_provider.get_flow_result()
+        streaming = self.context_data_provider.is_response_streaming()
+        req_id = self.context_data_provider.get_request_id()
         # collect non-streaming flow request/response data
-        if self.data_collector and data and flow_result and flow_result.output and not g.streaming:
-            self.data_collector.collect_flow_data(data, flow_result.output, req_id)
+        if self.data_collector and input_data and flow_result and flow_result.output and not streaming:
+            self.data_collector.collect_flow_data(input_data, flow_result.output, req_id)
 
         if self.metrics_recorder:
             if flow_result:
                 self.metrics_recorder.record_tracing_metrics(flow_result.run_info, flow_result.node_run_infos)
-            err_code = g.get("err_code", "None")
-            self.metrics_recorder.record_flow_request(flow_id, resp_status_code, err_code, g.streaming)
+            err_code = self.context_data_provider.get_exception_code()
+            self.metrics_recorder.record_flow_request(flow_id, resp_status_code, err_code, streaming)
             # streaming metrics will be recorded in the streaming callback func
-            if not g.streaming:
-                latency = get_cost_up_to_now(g.start_time)
+            if not streaming:
+                latency = get_cost_up_to_now(req_start_time)
                 self.metrics_recorder.record_flow_latency(
-                    flow_id, resp_status_code, g.streaming, ResponseType.Default.value, latency
+                    flow_id, resp_status_code, streaming, ResponseType.Default.value, latency
                 )
-
-        self.logger.info(f"Finish monitoring request, request_id: {req_id}, client_request_id: {client_req_id}.")

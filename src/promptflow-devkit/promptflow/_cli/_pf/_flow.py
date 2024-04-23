@@ -45,11 +45,13 @@ from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._service.utils.utils import encrypt_flow_path
 from promptflow._sdk.operations._flow_operations import FlowOperations
+from promptflow._utils.flow_utils import is_flex_flow, resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 DEFAULT_CONNECTION = "open_ai_connection"
 DEFAULT_DEPLOYMENT = "gpt-35-turbo"
+PF_CHAT_UI_ENABLE_STREAMLIT = "pf_chat_ui_enable_streamlit"
 logger = get_cli_sdk_logger()
 
 
@@ -256,6 +258,8 @@ pf flow test --flow my-awesome-flow --variant ${node_name.variant_name}
 pf flow test --flow my-awesome-flow --node node_name
 # Chat in the flow:
 pf flow test --flow my-awesome-flow --node node_name --interactive
+# Test a flow with init kwargs:
+pf flow test --flow my-awesome-flow --init key1=value1 key2=value2
 """  # noqa: E501
     add_param_flow = lambda parser: parser.add_argument(  # noqa: E731
         "--flow", type=str, required=True, help="the flow directory to test."
@@ -280,6 +284,9 @@ pf flow test --flow my-awesome-flow --node node_name --interactive
     add_param_experiment = lambda parser: parser.add_argument(  # noqa: E731
         "--experiment", type=str, help="the experiment template path of flow."
     )
+    add_param_collection = lambda parser: parser.add_argument(  # noqa: E731
+        "--collection", type=str, help="the collection of flow test trace."
+    )
     add_param_skip_browser = lambda parser: parser.add_argument(  # noqa: E731
         "--skip-open-browser", action="store_true", help=argparse.SUPPRESS
     )
@@ -296,7 +303,9 @@ pf flow test --flow my-awesome-flow --node node_name --interactive
         add_param_ui,
         add_param_config,
         add_param_detail,
+        add_param_collection,
         add_param_skip_browser,
+        add_param_init,
     ] + base_params
 
     if Configuration.get_instance().is_internal_features_enabled():
@@ -471,25 +480,16 @@ def _build_inputs_for_flow_test(args):
 
 def _test_flow_multi_modal(args, pf_client):
     """Test flow with multi modality mode."""
-    from promptflow._sdk._load_functions import load_flow
+    if str(os.getenv(PF_CHAT_UI_ENABLE_STREAMLIT, "false")).lower() == "true":
+        from promptflow._sdk._load_functions import load_flow
 
-    if Configuration.get_instance().is_internal_features_enabled():
-        from promptflow._sdk._tracing import _invoke_pf_svc
-
-        # Todo: use base64 encode for now, will consider whether need use encryption or use db to store flow path info
-        def generate_url(flow_path, port):
-            encrypted_flow_path = encrypt_flow_path(flow_path)
-            query_params = urlencode({"flow": encrypted_flow_path})
-            return urlunparse(("http", f"127.0.0.1:{port}", "/v1.0/ui/chat", "", query_params, ""))
-
-        pfs_port = _invoke_pf_svc()
-        flow = load_flow(args.flow)
-        flow_dir = os.path.abspath(flow.code)
-        chat_page_url = generate_url(flow_dir, pfs_port)
-        print(f"You can begin chat flow on {chat_page_url}")
-        if not args.skip_open_browser:
-            webbrowser.open(chat_page_url)
-    else:
+        if is_flex_flow(flow_path=args.flow):
+            error = ValueError("Only support dag yaml in streamlit ui.")
+            raise UserErrorException(
+                target=ErrorTarget.CONTROL_PLANE_SDK,
+                message=str(error),
+                error=error,
+            )
         with tempfile.TemporaryDirectory() as temp_dir:
             flow = load_flow(args.flow)
 
@@ -506,6 +506,25 @@ def _test_flow_multi_modal(args, pf_client):
             main_script_path = os.path.join(temp_dir, "main.py")
             logger.info("Start streamlit with main script generated at: %s", main_script_path)
             pf_client.flows._chat_with_ui(script=main_script_path, skip_open_browser=args.skip_open_browser)
+    else:
+        from promptflow._sdk._tracing import _invoke_pf_svc
+
+        # Todo: use base64 encode for now, will consider whether need use encryption or use db to store flow path info
+        def generate_url(flow_path, port):
+            encrypted_flow_path = encrypt_flow_path(flow_path)
+            query_dict = {"flow": encrypted_flow_path}
+            if Configuration.get_instance().is_internal_features_enabled():
+                query_dict.update({"enable_internal_features": "true"})
+            query_params = urlencode(query_dict)
+            return urlunparse(("http", f"127.0.0.1:{port}", "/v1.0/ui/chat", "", query_params, ""))
+
+        pfs_port = _invoke_pf_svc()
+        flow_path_dir, flow_path_file = resolve_flow_path(args.flow)
+        flow_path = str(flow_path_dir / flow_path_file)
+        chat_page_url = generate_url(flow_path, pfs_port)
+        print(f"You can begin chat flow on {chat_page_url}")
+        if not args.skip_open_browser:
+            webbrowser.open(chat_page_url)
 
 
 def _test_flow_interactive(args, pf_client, inputs, environment_variables):
@@ -516,6 +535,7 @@ def _test_flow_interactive(args, pf_client, inputs, environment_variables):
         environment_variables=environment_variables,
         variant=args.variant,
         show_step_output=args.verbose,
+        collection=args.collection,
     )
 
 
@@ -531,6 +551,8 @@ def _test_flow_standard(args, pf_client, inputs, environment_variables):
         stream_output=False,
         dump_test_result=True,
         output_path=args.detail,
+        init=list_of_dict_to_dict(args.init),
+        collection=args.collection,
     )
     # Print flow/node test result
     if isinstance(result, dict):
@@ -554,6 +576,7 @@ def _test_flow_experiment(args, pf_client, inputs, environment_variables):
         environment_variables=environment_variables,
         experiment=args.experiment,
         output_path=args.detail,
+        collection=args.collection,
     )
     print(json.dumps(node_results, indent=4, ensure_ascii=False))
 
@@ -640,7 +663,7 @@ def serve_flow_python(args, source):
         static_folder=static_folder,
         environment_variables=list_of_dict_to_dict(args.environment_variables),
         connection_provider=connection_provider,
-        inits=list_of_dict_to_dict(args.inits),
+        init=list_of_dict_to_dict(args.init),
     )
     if not args.skip_open_browser:
         target = f"http://{args.host}:{args.port}"

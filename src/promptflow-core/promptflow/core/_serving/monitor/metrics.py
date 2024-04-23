@@ -213,7 +213,7 @@ class MetricsRecorder(object):
         try:
             for _, run in node_runs.items():
                 flow_id = flow_run.flow_id if flow_run is not None else "default"
-                if len(run.system_metrics) > 0:
+                if run.system_metrics and len(run.system_metrics) > 0:
                     duration = run.system_metrics.get("duration", None)
                     if duration is not None:
                         duration = duration * 1000

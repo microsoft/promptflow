@@ -1029,8 +1029,10 @@ def can_accept_kwargs(func):
 
 def callable_to_entry_string(callable_obj: Callable) -> str:
     """Convert callable object to entry string."""
-    if not isfunction(callable_obj):
-        raise UserErrorException(f"{callable_obj} is not function, only function is supported.")
+    if not isfunction(callable_obj) and not hasattr(callable_obj, "__call__"):
+        raise UserErrorException(
+            f"{callable_obj} is not function or callable object, only function or callable object are supported."
+        )
 
     try:
         module_str = callable_obj.__module__
@@ -1067,7 +1069,58 @@ def is_flex_run(run: "Run") -> bool:
     return False
 
 
+def format_signature_type(flow_meta):
+    # signature is language irrelevant, so we apply json type system
+    # TODO: enable this mapping after service supports more types
+    value_type_map = {
+        # ValueType.INT.value: SignatureValueType.INT.value,
+        # ValueType.DOUBLE.value: SignatureValueType.NUMBER.value,
+        # ValueType.LIST.value: SignatureValueType.ARRAY.value,
+        # ValueType.BOOL.value: SignatureValueType.BOOL.value,
+    }
+    for port_type in ["inputs", "outputs", "init"]:
+        if port_type not in flow_meta:
+            continue
+        for port_name, port in flow_meta[port_type].items():
+            if port["type"] in value_type_map:
+                port["type"] = value_type_map[port["type"]]
+
+
 generate_flow_meta = _generate_flow_meta
 # DO NOT remove the following line, it's used by the runtime imports from _sdk/_utils directly
 get_used_connection_names_from_dict = get_used_connection_names_from_dict
 update_dict_value_with_connections = update_dict_value_with_connections
+
+
+def get_flow_name(flow) -> str:
+    if isinstance(flow, Path):
+        return flow.resolve().name
+
+    from promptflow._sdk.entities._flows.dag import Flow as DAGFlow
+
+    if isinstance(flow, DAGFlow):
+        return flow.name
+    # should be promptflow._sdk.entities._flows.base.FlowBase: flex flow, prompty, etc.
+    return flow.code.name
+
+
+def add_executable_script_to_env_path():
+    # Add executable script dir to PATH to make sure the subprocess can find the executable, especially in notebook
+    # environment which won't add it to system path automatically.
+    python_dir = os.path.dirname(sys.executable)
+    executable_dir = os.path.join(python_dir, "Scripts") if platform.system() == "Windows" else python_dir
+    if executable_dir not in os.environ["PATH"].split(os.pathsep):
+        os.environ["PATH"] = executable_dir + os.pathsep + os.environ["PATH"]
+
+
+def get_flow_path(flow) -> Path:
+    # use public API to get flow path for DAG/flex flow or prompty
+    from promptflow._sdk.entities._flows.dag import Flow as DAGFlow
+    from promptflow._sdk.entities._flows.flex import FlexFlow
+    from promptflow._sdk.entities._flows.prompty import Prompty
+
+    if isinstance(flow, DAGFlow):
+        return flow.flow_dag_path.parent.resolve()
+    if isinstance(flow, (FlexFlow, Prompty)):
+        return flow.path.parent.resolve()
+    raise ValueError(f"Unsupported flow type {type(flow)!r}")

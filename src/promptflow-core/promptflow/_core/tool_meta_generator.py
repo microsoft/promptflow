@@ -5,7 +5,6 @@
 """
 This file can generate a meta file for the given prompt template or a python file.
 """
-import dataclasses
 import importlib.util
 import inspect
 import json
@@ -45,8 +44,10 @@ from promptflow._utils.tool_utils import (
     function_to_interface,
     get_inputs_for_prompt_template,
     resolve_annotation,
+    resolve_complicated_type,
 )
 from promptflow.contracts.tool import InputDefinition, Tool, ToolType, ValueType
+from promptflow.core._model_configuration import MODEL_CONFIG_NAME_2_CLASS
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 
@@ -160,6 +161,7 @@ def _parse_tool_from_function(
     gen_custom_type_conn=False,
     skip_prompt_template=False,
     include_outputs=False,
+    support_model_config=False,
 ):
     try:
         tool_type = getattr(f, "__type", None) or ToolType.PYTHON
@@ -177,6 +179,7 @@ def _parse_tool_from_function(
             initialize_inputs=initialize_inputs,
             gen_custom_type_conn=gen_custom_type_conn,
             skip_prompt_template=skip_prompt_template,
+            support_model_config=support_model_config,
         )
     except Exception as e:
         error_type_and_message = f"({e.__class__.__name__}) {e}"
@@ -505,12 +508,15 @@ def generate_tool_meta_in_subprocess(
     return tool_dict, exception_dict
 
 
-def validate_interface(ports, fields, tool_name, port_type):
+def validate_interface(ports, fields, tool_name, port_type, support_model_config=False):
     """Validate if the interface are serializable."""
+    supported_types = [dict, inspect.Signature.empty]
+    if support_model_config:
+        supported_types += list(MODEL_CONFIG_NAME_2_CLASS.values())
     for k, v in ports.items():
         if ValueType.OBJECT not in v.type:
             continue
-        if resolve_annotation(fields[k]) not in [dict, inspect.Signature.empty]:
+        if resolve_annotation(fields[k]) not in supported_types:
             raise BadFunctionInterface(
                 message_format=(
                     "Parse interface for tool '{tool_name}' failed: "
@@ -536,24 +542,39 @@ def generate_flow_meta_dict_by_object(f, cls):
 
     # validate output
     return_type = resolve_annotation(signature.return_annotation)
-    if dataclasses.is_dataclass(return_type):
-        output_fields = {x.name: x.type for x in dataclasses.fields(return_type)}
-    else:
-        output_fields = {"output": return_type}
-    validate_interface(tool.outputs, output_fields, tool.name, "output")
+    output_fields, composed_output = resolve_complicated_type(return_type)
+    if composed_output:
+        validate_interface(tool.outputs, output_fields, tool.name, "output")
+    elif return_type not in [str, inspect.Signature.empty]:
+        raise BadFunctionInterface(
+            message_format=(
+                "Parse interface for '{entry}' failed: "
+                "The return annotation of the entry function must be dataclass, TypedDict or string, "
+                "but got {t}."
+            ),
+            entry=cls.__name__ if cls else f.__name__,
+            t=str(return_type),
+        )
 
     # Include data in generated meta to avoid flow definition's fields(e.g. environment variable) missing.
     flow_meta = {}
     if cls:
-        init_tool = _parse_tool_from_function(cls.__init__, include_outputs=False)
+        # TODO(3129057): check if we can not depend on tools' util
+        init_tool = _parse_tool_from_function(cls.__init__, include_outputs=False, support_model_config=True)
         init_inputs = init_tool.inputs
-        # no need to validate init as dict is not allowed in init for now.
+        validate_interface(
+            init_inputs,
+            {k: v.annotation for k, v in inspect.signature(cls.__init__).parameters.items()},
+            tool.name,
+            "input",
+            support_model_config=True,
+        )
     else:
         init_inputs = None
 
     for ports, meta_key in [
         (tool.inputs, "inputs"),
-        (tool.outputs, "outputs"),
+        (tool.outputs if composed_output else None, "outputs"),
         (init_inputs, "init"),
     ]:
         if not ports:

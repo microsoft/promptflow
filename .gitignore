@@ -71,7 +71,8 @@ instance/
 .scrapy
 
 # Sphinx documentation
-docs/_build/
+scripts/docs/_build/
+scripts/docs/jupyter_execute/
 
 # PyBuilder
 .pybuilder/
@@ -177,8 +178,6 @@ examples/gen_test_data/config.yml
 # secrets
 **/connections.json
 
-# doc build
-scripts/docs/_build/
 **/bash_script.sh
 
 .index
@@ -193,3 +192,7 @@ config.json
 poetry.lock
 # promptflow subpackages __init__
 src/promptflow-*/promptflow/__init__.py
+
+# Eclipse project files
+**/.project
+**/.pydevproject

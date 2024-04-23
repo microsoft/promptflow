@@ -6,9 +6,11 @@ from marshmallow import ValidationError, fields, validate, validates_schema
 
 from promptflow._constants import LANGUAGE_KEY, ConnectionType, FlowLanguage
 from promptflow._proxy import ProxyFactory
-from promptflow._sdk._constants import FlowType, SignatureValueType
+from promptflow._sdk._constants import FlowType
 from promptflow._sdk.schemas._base import PatchedSchemaMeta, YamlFileSchema
 from promptflow._sdk.schemas._fields import NestedField
+from promptflow.contracts.tool import ValueType
+from promptflow.core._model_configuration import MODEL_CONFIG_NAME_2_CLASS
 
 
 class FlowInputSchema(metaclass=PatchedSchemaMeta):
@@ -60,11 +62,21 @@ class FlowSchema(BaseFlowSchema):
     node_variants = fields.Dict(keys=fields.Str(), values=fields.Dict())
 
 
+ALLOWED_TYPES = [
+    ValueType.STRING.value,
+    ValueType.INT.value,
+    ValueType.DOUBLE.value,
+    ValueType.BOOL.value,
+    ValueType.LIST.value,
+    ValueType.OBJECT.value,
+]
+
+
 class FlexFlowInputSchema(FlowInputSchema):
     type = fields.Str(
         required=True,
         # TODO 3062609: Flex flow GPT-V support
-        validate=validate.OneOf(list(map(lambda x: x.value, SignatureValueType))),
+        validate=validate.OneOf(ALLOWED_TYPES),
     )
 
 
@@ -72,10 +84,11 @@ class FlexFlowInitSchema(FlowInputSchema):
     type = fields.Str(
         required=True,
         validate=validate.OneOf(
-            [SignatureValueType.NUMBER, SignatureValueType.BOOL, SignatureValueType.INT, SignatureValueType.STRING]
+            ALLOWED_TYPES
             + list(
                 map(lambda x: f"{x.value}Connection", filter(lambda x: x != ConnectionType._NOT_SET, ConnectionType))
             )
+            + list(MODEL_CONFIG_NAME_2_CLASS.keys())
         ),
     )
 
@@ -83,7 +96,7 @@ class FlexFlowInitSchema(FlowInputSchema):
 class FlexFlowOutputSchema(FlowOutputSchema):
     type = fields.Str(
         required=True,
-        validate=validate.OneOf(list(map(lambda x: x.value, SignatureValueType))),
+        validate=validate.OneOf(ALLOWED_TYPES),
     )
 
 
