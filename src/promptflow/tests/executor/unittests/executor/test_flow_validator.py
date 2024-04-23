@@ -168,7 +168,7 @@ class TestFlowValidator:
     ):
         flow = get_flow_from_folder(flow_folder)
         with pytest.raises(error_type) as exe_info:
-            FlowValidator.resolve_flow_inputs_type(flow, inputs, idx=index)
+            FlowValidator.resolve_flow_inputs_type(flow.inputs, inputs, idx=index)
         assert error_message == exe_info.value.message
 
     @pytest.mark.parametrize(
