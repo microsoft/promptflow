@@ -1,8 +1,5 @@
-# Stream chat
-A prompt that uses the chat API to answer questions with chat history, leveraging promptflow connection. 
-
-Note this is a prompty produce a text in stream mode. The prompty has a stream parameter.
-
+# Prompty output format
+A few examples that demos different prompty response format like text, json_object, and how to enable stream output.
 
 ## Prerequisites
 
@@ -14,23 +11,8 @@ pip install promptflow-devkit
 ## What you will learn
 
 In this flow, you will learn
-- how to compose a chat flow.
-- prompt template format of chat api. Message delimiter is a separate line containing role name and colon: "system:", "user:", "assistant:".
-See <a href="https://platform.openai.com/docs/api-reference/chat/create#chat/create-role" target="_blank">OpenAI Chat</a> for more about message role.
-    ```jinja
-    system:
-    You are a chatbot having a conversation with a human.
-
-    user:
-    {{question}}
-    ```
-- how to consume chat history in prompt.
-    ```jinja
-    {% for item in chat_history %}
-    {{item.role}}:
-    {{item.content}}
-    {% endfor %}
-    ```
+- Understand how to handle output format of prompty like: text, json_object.
+- Understand how to consume stream output of prompty
 
 ## Getting started
 
@@ -47,7 +29,7 @@ Currently, there are two connection types supported by LLM tool: "AzureOpenAI" a
 pf connection create --file ../../connections/azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base>
 ```
 
-Note in [chat.prompty](chat.prompty) we are using connection named `open_ai_connection`.
+Note we are using connection named `open_ai_connection`.
 ```bash
 # show registered connection
 pf connection show --name open_ai_connection
@@ -55,31 +37,46 @@ pf connection show --name open_ai_connection
 
 ## Run prompty
 
-- Test flow: single turn
+- [text format output](./text_format.prompty)
 ```bash
-# run chat flow with default question in flow.flex.yaml
-pf flow test --flow chat.prompty
+pf flow test --flow text_format.prompty
+```
 
-# run chat flow with new question
-pf flow test --flow chat.prompty --inputs question="What's Azure Machine Learning?"
+- [json format output](./json_format.prompty)
+```bash
+pf flow test --flow json_format.prompty
+```
 
-# run chat flow with sample.json
-pf flow test --flow chat.prompty --inputs sample.json
+- [all response](./all_resonse.prompty)
+```bash
+# TODO
+# pf flow test --flow all_response.prompty
+```
+
+- [stream output](./stream_output.prompty)
+```bash
+pf flow test --flow stream_output.prompty
 ```
 
 - Test flow: multi turn
 ```powershell
 # start test in interactive terminal (TODO)
-pf flow test --flow chat.prompty --interactive
+pf flow test --flow stream_output.prompty --interactive
 
 # start test in chat ui (TODO)
-pf flow test --flow chat.prompty --ui
+pf flow test --flow stream_output.prompty --ui
 ```
 
 - Create run with multiple lines data
 ```bash
-# using environment from .env file (loaded in user code: hello.py)
-pf run create --flow chat.prompty --data ./data.jsonl --column-mapping question='${data.question}' --stream
+pf run create --flow json_format.prompty --data ./data.jsonl --column-mapping question='${data.question}' --stream
+
+pf run create --flow text_format.prompty --data ./data.jsonl --column-mapping question='${data.question}' --stream
+
+pf run create --flow stream_output.prompty --data ./data.jsonl --column-mapping question='${data.question}' --stream
+
+# TODO
+# pf run create --flow all_response.prompty --data ./data.jsonl --column-mapping question='${data.question}' --stream
 ```
 
 You can also skip providing `column-mapping` if provided data has same column name as the flow.
@@ -92,7 +89,7 @@ pf run list
 
 # get a sample run name
 
-name=$(pf run list -r 10 | jq '.[] | select(.name | contains("chat_basic_")) | .name'| head -n 1 | tr -d '"')
+name=$(pf run list -r 10 | jq '.[] | select(.name | contains("format_output_")) | .name'| head -n 1 | tr -d '"')
 # show specific run detail
 pf run show --name $name
 

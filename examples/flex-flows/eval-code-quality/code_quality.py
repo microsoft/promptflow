@@ -1,12 +1,7 @@
-import json
-import os
 from typing import TypedDict
-from dataclasses import dataclass
 from pathlib import Path
 
-from dotenv import load_dotenv
 from jinja2 import Template
-from openai import AzureOpenAI
 
 from promptflow.tracing import trace
 from promptflow.core import AzureOpenAIModelConfiguration
@@ -24,7 +19,6 @@ def load_prompt(jinja2_template: str, code: str, examples: list) -> str:
         return prompt
 
 
-
 class Result(TypedDict):
     correctness: float
     readability: float
@@ -38,8 +32,8 @@ class CodeEvaluator:
     def __call__(self, code: str) -> Result:
         """Evaluate the code based on correctness, readability."""
         prompty = Prompty.load(
-            source= BASE_DIR / "eval_code_quality.prompty",
-            model={"configuration": self.model_config}
+            source=BASE_DIR / "eval_code_quality.prompty",
+            model={"configuration": self.model_config},
         )
         output = prompty(code=code)
         print(output)
