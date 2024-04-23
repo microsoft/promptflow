@@ -687,16 +687,18 @@ def counting_tokens_in_live(remote_client):
 
         from filelock import FileLock
 
+        number = {}
+
         count = sum(completed_run_metrics.values())
         with FileLock(str(COUNTER_FILE) + ".lock"):
             is_non_zero_file = os.path.isfile(COUNTER_FILE) and os.path.getsize(COUNTER_FILE) > 0
             if is_non_zero_file:
                 with open(COUNTER_FILE, "r", encoding="utf-8") as f:
                     number = json.load(f)
-                    number = number | completed_run_metrics
+                    number = {**number, **completed_run_metrics}
                     number["count"] += count
             else:
-                number = {"count": count} | completed_run_metrics
+                number = {"count": count, **completed_run_metrics}
             with open(COUNTER_FILE, "w", encoding="utf-8") as f:
                 number_str = json.dumps(number, ensure_ascii=False)
                 f.write(number_str)
