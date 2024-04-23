@@ -41,7 +41,7 @@ class TestLLMVision:
                          marks=pytest.mark.skip_if_no_api_key("open_ai_connection")),
         ]
     )
-    def test_aoai_gpt4v_stream_chat(self, request, connection_type, model_or_deployment_name,
+    def test_llm_gpt4v_stream_chat(self, request, connection_type, model_or_deployment_name,
                                     example_prompt_template_with_image, example_image):
         connection = request.getfixturevalue(connection_type)
         result = llm_vision(
