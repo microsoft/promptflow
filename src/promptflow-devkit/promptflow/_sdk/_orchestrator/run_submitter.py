@@ -87,7 +87,7 @@ class RunSubmitter:
             run._resume_from = self._ensure_run_completed(run._resume_from)
         # start trace
         logger.debug("start trace for flow run...")
-        flow_path = Path(run.flow).resolve()
+        flow_path = run._get_flow_dir().resolve()
         logger.debug("flow path for run.start_trace: %s", flow_path)
         if is_collection_writeable():
             logger.debug("trace collection is writeable, will use flow name as collection...")
@@ -222,7 +222,7 @@ class RunSubmitter:
             )
 
             # upload run to cloud if the trace destination is set to cloud
-            trace_destination = self._config.get_trace_destination(path=Path(run.flow).resolve())
+            trace_destination = self._config.get_trace_destination(path=run._get_flow_dir().resolve())
             if trace_destination and trace_destination.startswith(REMOTE_URI_PREFIX):
                 logger.debug(f"Trace destination set to {trace_destination!r}, uploading run to cloud...")
                 self._upload_run_to_cloud(run=run)
@@ -268,7 +268,7 @@ class RunSubmitter:
             from promptflow._sdk._tracing import _get_ws_triad_from_pf_config
             from promptflow.azure._cli._utils import _get_azure_pf_client
 
-            ws_triad = _get_ws_triad_from_pf_config(path=run.flow.resolve())
+            ws_triad = _get_ws_triad_from_pf_config(path=run._get_flow_dir().resolve())
             pf = _get_azure_pf_client(
                 subscription_id=ws_triad.subscription_id,
                 resource_group=ws_triad.resource_group_name,

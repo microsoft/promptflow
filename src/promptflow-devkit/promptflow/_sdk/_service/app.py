@@ -178,7 +178,7 @@ def create_app():
                         if port:
                             app.logger.info(
                                 f"Try auto stop promptflow service in port {port} since no request to app within "
-                                f"{PF_SERVICE_HOUR_TIMEOUT}h"
+                                f"{PF_SERVICE_HOUR_TIMEOUT}h."
                             )
                             kill_exist_service(port)
                         break
@@ -202,13 +202,11 @@ def get_created_by_info_with_cache():
         try:
             # The total time of collecting info is about 3s.
             import jwt
-            from azure.identity import DefaultAzureCredential
+            from azure.identity import AzureCliCredential
 
             from promptflow.azure._utils.general import get_arm_token
 
-            default_credential = DefaultAzureCredential()
-
-            token = get_arm_token(credential=default_credential)
+            token = get_arm_token(credential=AzureCliCredential())
             decoded_token = jwt.decode(token, options={"verify_signature": False})
             created_by_for_local_to_cloud_trace.update(
                 {
