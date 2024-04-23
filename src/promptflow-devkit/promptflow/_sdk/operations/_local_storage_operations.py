@@ -34,10 +34,11 @@ from promptflow._sdk._utils import (
     read_open,
     write_open,
 )
+from promptflow._sdk._utils.signature_utils import update_signatures
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._flows import Flow
 from promptflow._utils.exception_utils import PromptflowExceptionPresenter
-from promptflow._utils.flow_utils import dump_flow_dag, is_prompty_flow, update_signatures
+from promptflow._utils.flow_utils import dump_flow_dag, is_prompty_flow
 from promptflow._utils.logger_utils import LogContext, get_cli_sdk_logger
 from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow._utils.utils import prepare_folder

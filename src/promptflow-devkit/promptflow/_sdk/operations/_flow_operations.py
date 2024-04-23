@@ -46,17 +46,19 @@ from promptflow._sdk._utils import (
     json_load,
     logger,
 )
+from promptflow._sdk._utils.signature_utils import (
+    format_signature_type,
+    infer_signature_for_flex_flow,
+    merge_flow_signature,
+)
 from promptflow._sdk.entities._flows import FlexFlow, Flow, Prompty
 from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.flow_utils import (
     dump_flow_result,
-    format_signature_type,
-    infer_signature_for_flex_flow,
     is_executable_chat_flow,
     is_flex_flow,
     is_prompty_flow,
-    merge_flow_signature,
     parse_variant,
 )
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml

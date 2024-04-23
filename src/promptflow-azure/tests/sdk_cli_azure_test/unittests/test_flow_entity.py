@@ -13,8 +13,9 @@ from mock.mock import Mock
 from sdk_cli_azure_test.conftest import EAGER_FLOWS_DIR, FLOWS_DIR
 
 from promptflow import load_run
+from promptflow._sdk._utils.signature_utils import update_signatures
 from promptflow._sdk._vendor import get_upload_files_from_folder
-from promptflow._utils.flow_utils import load_flow_dag, update_signatures
+from promptflow._utils.flow_utils import load_flow_dag
 from promptflow.azure._constants._flow import ENVIRONMENT, PYTHON_REQUIREMENTS_TXT
 from promptflow.azure._entities._flow import Flow
 from promptflow.core._errors import GenerateFlowMetaJsonError
