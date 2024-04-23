@@ -146,6 +146,8 @@ def enrich_span_with_trace_type(span, inputs, output, trace_type):
         enrich_span_with_embedding(span, inputs, output)
     elif trace_type == TraceType.Assistant:
         enrich_assistant_span(span, inputs, output)
+    elif trace_type == TraceType.Run:
+        enrich_run_span(span, inputs, output)
 
     enrich_span_with_openai_tokens(span, trace_type)
     enrich_span_with_output(span, output)
@@ -267,6 +269,42 @@ def enrich_assistant_span(span, inputs, output):
             span.add_event("assistant.created_", {"created_at": output.created_at})
     except Exception as e:
         logging.warning(f"Failed to enrich assistant span: {e}")
+
+
+def enrich_run_span(span, inputs, output):
+
+    from openai.types.beta.threads.run import Run
+
+    try:
+        if isinstance(output, Run):
+            span.set_attribute("assistance.run.id", output.id)
+            span.set_attribute("assistance.run.assistant_id", output.assistant_id)
+            span.set_attribute("assistance.run.thread_id", output.thread_id)
+            span.set_attribute("assistance.run.model", output.model)
+            span.set_attribute("assistance.run.instructions", output.instructions)
+            span.set_attribute("assistance.run.status", output.status)
+            span.set_attribute("assistance.run.temperature", output.temperature)
+            span.set_attribute("assistance.run.top_p", output.top_p)
+            span.set_attribute("assistance.run.metadata", serialize_attribute(output.metadata))
+            span.set_attribute("assistance.run.max_completion_tokens", output.max_completion_tokens)
+            span.set_attribute("assistance.run.max_prompt_tokens", output.max_prompt_tokens)
+            span.set_attribute(
+                "assistance.run.tool_choice",
+                serialize_attribute(output.tool_choice.dict()) if output.tool_choice else None,
+            )
+            span.set_attribute(
+                "assistance.run.truncation_strategy",
+                serialize_attribute(output.truncation_strategy.dict()) if output.truncation_strategy else None,
+            )
+            # To be implemented
+            span.set_attribute("assistance.run.additional_message", None)
+            span.add_event("assistant.run.cancelled_", {"cancelled_at": output.cancelled_at})
+            span.add_event("assistant.run.completed_", {"created_at": output.completed_at})
+            span.add_event("assistant.run.created_", {"created_at": output.created_at})
+            span.add_event("assistant.run.expired_", {"created_at": output.expires_at})
+            span.add_event("assistant.run.failed_", {"created_at": output.failed_at})
+    except Exception as e:
+        logging.warning(f"Failed to enrich assistant run span: {e}")
 
 
 def _is_single_input(embedding_inputs):
@@ -496,3 +534,7 @@ def trace(func: Callable = None) -> Callable:
     """
 
     return _traced(func, trace_type=TraceType.FUNCTION)
+
+
+def run(func: Callable = None) -> Callable:
+    return _traced(func, trace_type=TraceType.Run)

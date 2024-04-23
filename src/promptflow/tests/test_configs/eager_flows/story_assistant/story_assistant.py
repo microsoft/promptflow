@@ -2,7 +2,7 @@ import json
 import random
 import time
 
-from promptflow.tracing import trace
+from promptflow.tracing import trace, run
 import os
 from openai_injection import setup_trace
 from openai import AzureOpenAI, NOT_GIVEN
@@ -120,8 +120,7 @@ client = AzureOpenAI(
 )
 
 
-# We may want to introduce a decorator and span type for run execution here.
-@trace
+@run
 def Run_execute(thread_id, assistant_id):
     run =create_and_poll_run(
         thread_id=thread_id,
@@ -144,7 +143,7 @@ def Run_execute(thread_id, assistant_id):
             # Expect the terminated run to show up in trace
             # To delete: list all steps
             list_all_steps(run, thread_id)
-            return run.dict()
+            return run
         else:
             raise Exception(f"Unsupported run status: {run.status}")
 

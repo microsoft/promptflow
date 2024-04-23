@@ -14,13 +14,13 @@ def setup_trace():
     openai.resources.beta.threads.Messages.create = _traced(
         openai.resources.beta.threads.Messages.create)
     openai.resources.beta.threads.Runs.create = _traced(
-        openai.resources.beta.threads.Runs.create)
+        openai.resources.beta.threads.Runs.create, trace_type=TraceType.Run)
     openai.resources.beta.threads.Messages.list = _traced(
         openai.resources.beta.threads.Messages.list)
     openai.resources.beta.threads.Runs.submit_tool_outputs = _traced(
-        openai.resources.beta.threads.Runs.submit_tool_outputs)
+        openai.resources.beta.threads.Runs.submit_tool_outputs, trace_type=TraceType.Run)
     openai.resources.beta.threads.Runs.submit_tool_outputs_and_poll = _traced(
-        openai.resources.beta.threads.Runs.submit_tool_outputs_and_poll)
+        openai.resources.beta.threads.Runs.submit_tool_outputs_and_poll, trace_type=TraceType.Run)
 
     openai.resources.beta.AsyncAssistants.create = _traced(
         openai.resources.beta.AsyncAssistants.create, trace_type=TraceType.Assistant)
@@ -33,8 +33,8 @@ def setup_trace():
     openai.resources.beta.threads.AsyncMessages.list = _traced(
         openai.resources.beta.threads.AsyncMessages.list)
     openai.resources.beta.threads.AsyncRuns.create = _traced(
-        openai.resources.beta.threads.AsyncRuns.create)
+        openai.resources.beta.threads.AsyncRuns.create, trace_type=TraceType.Run)
     openai.resources.beta.threads.AsyncRuns.submit_tool_outputs = _traced(
-        openai.resources.beta.threads.AsyncRuns.submit_tool_outputs)
+        openai.resources.beta.threads.AsyncRuns.submit_tool_outputs, trace_type=TraceType.Run)
     openai.resources.beta.threads.AsyncRuns.submit_tool_outputs_and_poll = _traced(
-        openai.resources.beta.threads.AsyncRuns.submit_tool_outputs_and_poll)
+        openai.resources.beta.threads.AsyncRuns.submit_tool_outputs_and_poll, trace_type=TraceType.Run)
