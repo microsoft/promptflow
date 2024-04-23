@@ -4,6 +4,7 @@ import asyncio
 import pytest
 
 from promptflow.evals.synthetic.simulator.simulator import Simulator
+from promptflow.evals.synthetic.simulator.simulator.userbot_config import UserBotConfig
 
 
 @pytest.mark.usefixtures("model_config", "recording_injection")
@@ -17,12 +18,12 @@ class TestNonAdvSimulator:
             azure_endpoint=model_config.azure_endpoint,
             api_version="2023-12-01-preview",
         )
-        userbot_config = {
-            "api_base": model_config.azure_endpoint,
-            "api_key": model_config.api_key,
-            "api_version": model_config.api_version,
-            "model_name": "gpt-4",
-        }
+        userbot_config = UserBotConfig(
+            api_key=model_config.api_key,
+            api_base=model_config.azure_endpoint,
+            model_name="gpt-4",
+            api_version=model_config.api_version,
+        )
         template_parameters = [
             {
                 "name": "Jane",
