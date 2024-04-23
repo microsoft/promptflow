@@ -656,7 +656,7 @@ def counting_tokens_in_live(remote_client):
 
         # timeout setup
         start_time = time.time()
-        timeout = 180
+        timeout = 240
 
         while len(run_summary) > 0:
             run = run_summary[0]
@@ -671,22 +671,23 @@ def counting_tokens_in_live(remote_client):
                     or new_run.status == RunStatus.CANCELED
                 ):
                     # get total tokens.
+                    new_run_name = str(new_run.name)
                     try:
                         metrics = remote_client.runs._get_run_from_run_history(new_run.name)
-                        completed_run_metrics[run.name] = int(
+                        completed_run_metrics[new_run_name] = int(
                             metrics.properties.get("azureml.promptflow.total_tokens", 0)
                         )
                     except Exception:
-                        completed_run_metrics[run.name] = -2
+                        completed_run_metrics[new_run_name] = -2
                 elif used_time > timeout:
                     # timeout dealing.
-                    completed_run_metrics[run.name] = -3
+                    completed_run_metrics[new_run_name] = -3
                 else:
                     # simple dealing, let this run append to the last and wait for 3 seconds.
                     run_summary.append(new_run)
                     time.sleep(3)
             except Exception:
-                completed_run_metrics[run.name] = -1
+                completed_run_metrics[str(run.name)] = -1
 
         import json
 
