@@ -67,6 +67,10 @@ class Flow(FlowBase):
     def display_name(self) -> str:
         return self._data.get("display_name", self._flow_dir.name)
 
+    @property
+    def sample(self):
+        return self._data.get("sample", None)
+
     # endregion
 
     # region SchemaValidatableMixin

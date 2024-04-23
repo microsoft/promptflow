@@ -88,6 +88,7 @@ SERVICE_CONFIG_FILE = "pf.yaml"
 PF_SERVICE_PORT_DIT_NAME = "pfs"
 PF_SERVICE_PORT_FILE = "pfs.port"
 PF_SERVICE_LOG_FILE = "pfs.log"
+PF_SERVICE_DEFAULT_PORT = 23333
 PF_SERVICE_HOUR_TIMEOUT = 1
 PF_SERVICE_MONITOR_SECOND = 60
 PF_SERVICE_WORKER_NUM = 16
@@ -474,6 +475,8 @@ class Local2Cloud:
     ASSET_NAME_DEBUG_INFO = "debug_info"
     ASSET_NAME_FLOW_OUTPUTS = "flow_outputs"
     EXECUTION_LOG = "logs/azureml/executionlogs.txt"
+    # instance_results.jsonl contains the inputs and outputs of all lines
+    FLOW_INSTANCE_RESULTS_FILE_NAME = "instance_results.jsonl"
 
 
 class Local2CloudProperties:

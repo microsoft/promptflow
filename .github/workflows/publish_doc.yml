@@ -9,6 +9,7 @@ on:
     paths:
       - 'README.md'
       - 'docs/**'
+      - 'examples/**.ipynb'
       - 'scripts/docs/**'
       - '.github/workflows/publish_doc.yml'
       - 'src/promptflow-tracing/promptflow/**'
