@@ -6,6 +6,7 @@ from pathlib import Path
 from types import GeneratorType
 
 import papermill
+import pydash
 import pytest
 from _constants import PROMPTFLOW_ROOT
 from marshmallow import ValidationError
@@ -13,8 +14,10 @@ from marshmallow import ValidationError
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._pf_client import PFClient
 from promptflow._utils.context_utils import _change_working_dir
+from promptflow.core import AzureOpenAIModelConfiguration, OpenAIModelConfiguration
 from promptflow.core._utils import init_executable
 from promptflow.exceptions import UserErrorException
+from promptflow.executor._errors import FlowEntryInitializationError
 
 TEST_ROOT = PROMPTFLOW_ROOT / "tests"
 CONNECTION_FILE = (PROMPTFLOW_ROOT / "connections.json").resolve().absolute().as_posix()
@@ -361,6 +364,23 @@ class TestFlowTest:
                     "inputs": {"input_val": {"default": "gpt", "type": "string"}},
                 },
             ),
+            (
+                "basic_model_config",
+                {
+                    "init": {
+                        "azure_open_ai_model_config": {"type": "AzureOpenAIModelConfiguration"},
+                        "open_ai_model_config": {"type": "OpenAIModelConfiguration"},
+                    },
+                    "inputs": {"func_input": {"type": "string"}},
+                    "outputs": {
+                        "func_input": {"type": "string"},
+                        "obj_id": {"type": "string"},
+                        "obj_input": {"type": "string"},
+                    },
+                    "entry": "class_with_model_config:MyFlow",
+                    "function": "__call__",
+                },
+            ),
         ],
     )
     def test_generate_flow_meta(self, flow_path, expected_meta):
@@ -368,7 +388,8 @@ class TestFlowTest:
         clear_module_cache("my_module.entry")
         flow_path = Path(f"{EAGER_FLOWS_DIR}/{flow_path}").absolute()
         flow_meta = _client._flows._generate_flow_meta(flow_path)
-        assert flow_meta == expected_meta
+        omitted_meta = pydash.omit(flow_meta, "environment")
+        assert omitted_meta == expected_meta
 
     def test_generate_flow_meta_exception(self):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/incorrect_entry/").absolute()
@@ -432,3 +453,77 @@ class TestFlowTest:
         result2 = pf.test(flow=flow_path, inputs={"func_input": "input"}, init={"obj_input": "val"})
         assert result2["func_input"] == "input"
         assert result1["obj_id"] != result2["obj_id"]
+
+        with pytest.raises(FlowEntryInitializationError) as ex:
+            pf.test(flow=flow_path, inputs={"func_input": "input"}, init={"invalid_init_func": "val"})
+        assert "got an unexpected keyword argument 'invalid_init_func'" in ex.value.message
+
+        with pytest.raises(FlowEntryInitializationError) as ex:
+            pf.test(flow=flow_path, inputs={"func_input": "input"})
+        assert "__init__() missing 1 required positional argument: 'obj_input'" in ex.value.message
+
+        with pytest.raises(UserErrorException) as ex:
+            pf.test(flow=flow_path, inputs={"invalid_input_func": "input"}, init={"obj_input": "val"})
+        assert "__call__() missing 1 required positional argument: 'func_input'" in ex.value.message
+
+    def test_flow_flow_with_sample(self, pf):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_callable_class_with_sample_file")
+        result1 = pf.test(flow=flow_path, init={"obj_input": "val"})
+        assert result1["func_input"] == "mock_input"
+
+        result2 = pf.test(
+            flow=flow_path, init={"obj_input": "val"}, inputs=f"{EAGER_FLOWS_DIR}/basic_callable_class/inputs.jsonl"
+        )
+        assert result2["func_input"] == "func_input"
+
+        result3 = pf.test(flow=flow_path, init={"obj_input": "val"}, inputs={"func_input": "mock_func_input"})
+        assert result3["func_input"] == "mock_func_input"
+
+    def test_flex_flow_with_model_config(self, pf):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_model_config")
+        config1 = AzureOpenAIModelConfiguration(azure_deployment="my_deployment", azure_endpoint="fake_endpoint")
+        config2 = OpenAIModelConfiguration(model="my_model", base_url="fake_base_url")
+        result1 = pf.test(
+            flow=flow_path,
+            inputs={"func_input": "input"},
+            init={"azure_open_ai_model_config": config1, "open_ai_model_config": config2},
+        )
+        assert pydash.omit(result1, "obj_id") == {
+            "azure_open_ai_model_config_azure_endpoint": "fake_endpoint",
+            "azure_open_ai_model_config_connection": None,
+            "azure_open_ai_model_config_deployment": "my_deployment",
+            "func_input": "input",
+            "open_ai_model_config_base_url": "fake_base_url",
+            "open_ai_model_config_connection": None,
+            "open_ai_model_config_model": "my_model",
+        }
+
+        config1 = AzureOpenAIModelConfiguration(azure_deployment="my_deployment", connection="azure_open_ai_connection")
+        config2 = OpenAIModelConfiguration(model="my_model", base_url="fake_base_url")
+        result2 = pf.test(
+            flow=flow_path,
+            inputs={"func_input": "input"},
+            init={"azure_open_ai_model_config": config1, "open_ai_model_config": config2},
+        )
+        assert pydash.omit(result2, "obj_id", "azure_open_ai_model_config_azure_endpoint") == {
+            "azure_open_ai_model_config_connection": None,
+            "azure_open_ai_model_config_deployment": "my_deployment",
+            "func_input": "input",
+            "open_ai_model_config_base_url": "fake_base_url",
+            "open_ai_model_config_connection": None,
+            "open_ai_model_config_model": "my_model",
+        }
+        assert result1["obj_id"] != result2["obj_id"]
+
+    def test_model_config_wrong_connection_type(self, pf):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_model_config")
+        config1 = AzureOpenAIModelConfiguration(azure_deployment="my_deployment", azure_endpoint="fake_endpoint")
+        # using azure open ai connection to initialize open ai model config
+        config2 = OpenAIModelConfiguration(model="my_model", connection="azure_open_ai_connection")
+        with pytest.raises(FlowEntryInitializationError) as e:
+            pf.test(
+                flow=flow_path,
+                inputs={"func_input": "input"},
+                init={"azure_open_ai_model_config": config1, "open_ai_model_config": config2},
+            )
+        assert "'AzureOpenAIConnection' object has no attribute 'base_url'" in str(e.value)

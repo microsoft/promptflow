@@ -1,3 +1,2 @@
-azure-cli
-promptflow[azure]
+promptflow[azure]>=1.9.0
 promptflow-tools

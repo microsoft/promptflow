@@ -178,7 +178,7 @@ def create_app():
                         if port:
                             app.logger.info(
                                 f"Try auto stop promptflow service in port {port} since no request to app within "
-                                f"{PF_SERVICE_HOUR_TIMEOUT}h"
+                                f"{PF_SERVICE_HOUR_TIMEOUT}h."
                             )
                             kill_exist_service(port)
                         break

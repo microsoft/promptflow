@@ -17,7 +17,6 @@ from promptflow.executor._service.utils.process_utils import invoke_sync_functio
 from promptflow.executor._service.utils.service_utils import (
     enable_async_execution,
     get_log_context,
-    set_environment_variables,
     update_and_get_operation_context,
 )
 from promptflow.executor.flow_executor import FlowExecutor, execute_flow
@@ -36,7 +35,11 @@ async def flow_execution(request: FlowExecutionRequest):
         )
         try:
             result = await invoke_sync_function_in_process(
-                flow_test, args=(request,), run_id=request.run_id, context_dict=request.operation_context
+                flow_test,
+                args=(request,),
+                run_id=request.run_id,
+                context_dict=request.operation_context,
+                environment_variables=request.environment_variables,
             )
             service_logger.info(f"Completed flow execution request, flow run id: {request.run_id}.")
             return result
@@ -58,7 +61,11 @@ async def node_execution(request: NodeExecutionRequest):
         )
         try:
             result = await invoke_sync_function_in_process(
-                single_node_run, args=(request,), run_id=request.run_id, context_dict=request.operation_context
+                single_node_run,
+                args=(request,),
+                run_id=request.run_id,
+                context_dict=request.operation_context,
+                environment_variables=request.environment_variables,
             )
             service_logger.info(f"Completed node execution request, node name: {request.node_name}.")
             return result
@@ -80,8 +87,6 @@ def cancel_execution(request: CancelExecutionRequest):
 def flow_test(request: FlowExecutionRequest):
     # validate request
     request.validate_request()
-    # resolve environment variables
-    set_environment_variables(request)
     enable_async_execution()
     # execute flow
     storage = DefaultRunStorage(base_dir=request.working_dir, sub_dir=request.output_dir)
@@ -101,8 +106,6 @@ def flow_test(request: FlowExecutionRequest):
 def single_node_run(request: NodeExecutionRequest):
     # validate request
     request.validate_request()
-    # resolve environment variables
-    set_environment_variables(request)
     storage = DefaultRunStorage(base_dir=request.working_dir, sub_dir=request.output_dir)
     with _change_working_dir(request.working_dir), get_log_context(request):
         return FlowExecutor.load_and_exec_node(

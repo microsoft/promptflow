@@ -78,4 +78,5 @@ TEST_CLASSES_FOR_RUN_INTEGRATION_TEST_RECORDING = [
     "TestFlow",
     "TestTelemetry",
     "TestAzureCliPerf",
+    "TestCSharpSdk",
 ]

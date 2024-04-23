@@ -194,7 +194,7 @@ def is_prompty_flow(file_path: Union[str, Path], raise_error: bool = False):
     return Path(file_path).suffix.lower() == PROMPTY_EXTENSION
 
 
-def resolve_entry_file(entry: str, working_dir: Path) -> Optional[str]:
+def resolve_python_entry_file(entry: str, working_dir: Path) -> Optional[str]:
     """Resolve entry file from entry.
     If entry is a local file, e.g. my.local.file:entry_function, return the local file: my/local/file.py
         and executor will import it from local file.
