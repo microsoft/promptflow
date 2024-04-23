@@ -429,7 +429,9 @@ def start_trace_with_devkit(collection: str, **kwargs: typing.Any) -> None:
         is_azure_ext_installed=is_azure_ext_installed,
     )
     setup_exporter_to_pfs()
-    # print tracing url(s)
+    if not run:
+        return
+    # print tracing url(s) when run is specified
     _print_tracing_url_from_local(pfs_port=pfs_port, collection=collection, exp=exp, run=run)
     if ws_triad is not None and is_azure_ext_installed:
         _print_tracing_url_from_azure_portal(ws_triad=ws_triad, collection=collection, exp=exp, run=run)
@@ -443,6 +445,8 @@ def _setup_url_templates(
     ws_triad: typing.Optional[AzureMLWorkspaceTriad] = None,
     is_azure_ext_installed: bool = False,
 ):
+    if run is not None:
+        return  # do not set tracing detail url template for run
     url_templates = [
         _get_tracing_detail_url_template_from_local(pfs_port=pfs_port, collection=collection, exp=exp, run=run)
     ]
