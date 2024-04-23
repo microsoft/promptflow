@@ -38,16 +38,11 @@ def _get_format_for_logger(default_log_format: str = None, default_date_format: 
     This can be configured through logging.basicConfig. If no configured formatter is found,
     it defaults to LOG_FORMAT and DATETIME_FORMAT.
     """
-    # Get the root logger
-    logger = logging.getLogger()
-    # Return the format and date format from the default handler
-    for handler in logger.handlers:
-        if handler.formatter:
-            return handler.formatter._fmt, handler.formatter.datefmt
-    # Return default format and date format if no formatter is found
-    if default_log_format:
-        return default_log_format, default_date_format
-    return LOG_FORMAT, DATETIME_FORMAT
+    default_log_format = default_log_format or LOG_FORMAT
+    default_date_format = default_date_format or DATETIME_FORMAT
+    log_format = os.environ.get("PF_LOG_FORMAT") or default_log_format
+    datetime_format = os.environ.get("PF_DATETIME_FORMAT") or default_date_format
+    return log_format, datetime_format
 
 
 class CredentialScrubberFormatter(logging.Formatter):
