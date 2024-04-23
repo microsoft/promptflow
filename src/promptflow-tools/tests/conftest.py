@@ -63,6 +63,11 @@ def serverless_connection():
     return ConnectionManager().get("serverless_connection")
 
 
+@pytest.fixture
+def serverless_connection_embedding():
+    return ConnectionManager().get("serverless_connection_embedding")
+
+
 def verify_om_llm_custom_connection(connection: CustomConnection) -> bool:
     '''Verify that there is a MIR endpoint up and available for the Custom Connection.
     We explicitly do not pass the endpoint key to avoid the delay in generating a response.
