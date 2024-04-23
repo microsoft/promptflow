@@ -4,6 +4,7 @@
 
 import json
 from copy import deepcopy
+from datetime import datetime
 from typing import Any, Dict
 
 from azure.cosmos.container import ContainerProxy
@@ -11,6 +12,8 @@ from azure.storage.blob import ContainerClient
 
 from promptflow._constants import SpanContextFieldName, SpanEventFieldName, SpanFieldName
 from promptflow._sdk.entities._trace import Span as SpanEntity
+
+DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 
 class Span:
@@ -36,8 +39,8 @@ class Span:
         self.context = span.context
         self.kind = span.kind
         self.parent_id = span.parent_id
-        self.start_time = span.start_time.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-        self.end_time = span.end_time.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        self.start_time = span.start_time.strftime(DATE_FORMAT)
+        self.end_time = span.end_time.strftime(DATE_FORMAT)
         self.status = span.status
         self.attributes = span.attributes
         # We will remove attributes from events for cosmosdb 2MB size limit.
@@ -51,6 +54,12 @@ class Span:
         self.created_by = created_by
         self.external_event_data_uris = []
         self.span_json_uri = None
+
+        # covert event time to OTel format
+        for event in self.events:
+            event[SpanEventFieldName.TIMESTAMP] = datetime.fromisoformat(event[SpanEventFieldName.TIMESTAMP]).strftime(
+                DATE_FORMAT
+            )
 
     def persist(self, cosmos_client: ContainerProxy, blob_container_client: ContainerClient, blob_base_uri: str):
         if self.id is None or self.partition_key is None or self.resource is None:
