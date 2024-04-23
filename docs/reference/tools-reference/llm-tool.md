@@ -1,7 +1,7 @@
 # LLM 
 
 ## Introduction
-Prompt flow LLM tool enables you to leverage widely used large language models like [OpenAI](https://platform.openai.com/) or [Azure OpenAI (AOAI)](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/overview) for natural language processing. 
+Prompt flow LLM tool enables you to leverage widely used large language models like [OpenAI](https://platform.openai.com/) or [Azure OpenAI (AOAI)](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/overview), and models in [Model catelog](https://learn.microsoft.com/en-us/azure/ai-studio/how-to/model-catalog) for natural language processing. 
 > [!NOTE]
 > The previous version of the LLM tool is now being deprecated. Please upgrade to latest [promptflow-tools](https://pypi.org/project/promptflow-tools/) package to consume new llm tools.
 
@@ -11,7 +11,7 @@ Prompt flow provides a few different LLM APIs:
 
 
 ## Prerequisite
-Create OpenAI or Azure OpenAI resources:
+Create OpenAI, Azure OpenAI resources and Serverless deployment for models in [Model catelog](https://learn.microsoft.com/en-us/azure/ai-studio/how-to/model-catalog):
 
 - **OpenAI**
 
@@ -23,14 +23,19 @@ Create OpenAI or Azure OpenAI resources:
 
     Create Azure OpenAI resources with [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal)
 
+- **Serverless deployment**
+
+    Create Serverless deployment with [instruction](https://learn.microsoft.com/en-us/azure/ai-studio/how-to/deploy-models-openai#deploying-an-azure-openai-model-from-the-model-catalog)
+
 ## **Connections**
 
 Setup connections to provisioned resources in prompt flow.
 
-| Type        | Name     | API KEY  | API Type | API Version |
-|-------------|----------|----------|----------|-------------|
-| OpenAI      | Required | Required | -        | -           |
-| AzureOpenAI | Required | Required | Required | Required    |
+| Type        | Name     | API KEY  | API BASE |  API Type | API Version |
+|-------------|----------|----------|----------|-----------|-------------|
+| OpenAI      | Required | Required | -        | -         | -           |
+| AzureOpenAI | Required | Required | Required | Required  | Required    |
+| Serverless  | Required | Required | Required | -         | -           |
 
 
 ## Inputs
