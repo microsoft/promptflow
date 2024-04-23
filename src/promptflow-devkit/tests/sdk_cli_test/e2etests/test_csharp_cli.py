@@ -104,6 +104,17 @@ class TestCSharpCli:
             cmd.extend(["--init", test_case["init"]])
         run_pf_command(*cmd)
 
+    def test_flow_test_include_log(self, csharp_test_project_basic: CSharpProject, capfd):
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            csharp_test_project_basic["flow_dir"],
+        )
+        # use capfd to capture stdout and stderr redirected from subprocess
+        captured = capfd.readouterr()
+        assert "[TOOL.HelloWorld]" in captured.out
+
     def test_flow_chat(self, monkeypatch, capsys, csharp_test_project_basic_chat: CSharpProject):
         flow_dir = csharp_test_project_basic_chat["flow_dir"]
         # mock user input with pop so make chat list reversed
@@ -129,10 +140,10 @@ class TestCSharpCli:
         detail_path = Path(flow_dir) / ".promptflow" / "chat.detail.json"
         assert detail_path.exists()
 
-        outerr = capsys.readouterr()
+        captured = capsys.readouterr()
         # Check node output
-        assert "Hello world round 0: hi" in outerr.out
-        assert "Hello world round 1: what is chat gpt?" in outerr.out
+        assert "Hello world round 0: hi" in captured.out
+        assert "Hello world round 1: what is chat gpt?" in captured.out
 
     @pytest.mark.skip(reason="need to update the test case")
     def test_pf_run_create_with_connection_override(self, csharp_test_project_basic):

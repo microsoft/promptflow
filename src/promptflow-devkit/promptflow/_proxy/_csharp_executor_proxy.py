@@ -26,7 +26,7 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
     def __init__(
         self,
         *,
-        process,
+        process: subprocess.Popen,
         port: str,
         working_dir: Optional[Path] = None,
         enable_stream_output: bool = False,
@@ -46,7 +46,7 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
 
     @property
     def port(self) -> str:
-        return self._port
+        return str(self._port)
 
     @classmethod
     def dump_metadata(cls, flow_file: Path, working_dir: Path) -> NoReturn:
