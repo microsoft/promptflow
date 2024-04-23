@@ -2,13 +2,14 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import asyncio
+import inspect
 import signal
 import threading
 import uuid
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional, Type
+from typing import Any, Callable, Dict, List, Mapping, Optional, Type, Union
 
 from promptflow._constants import (
     LANGUAGE_KEY,
@@ -31,7 +32,7 @@ from promptflow._utils.execution_utils import (
     handle_line_failures,
     set_batch_input_source_from_inputs_mapping,
 )
-from promptflow._utils.flow_utils import is_flex_flow
+from promptflow._utils.flow_utils import is_flex_flow, is_prompty_flow
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow._utils.utils import (
@@ -75,7 +76,7 @@ class BatchEngine:
 
     def __init__(
         self,
-        flow_file: Path,
+        flow_file: Union[Path, Callable],
         working_dir: Optional[Path] = None,
         *,
         connections: Optional[dict] = None,
@@ -108,17 +109,41 @@ class BatchEngine:
         :type kwargs: Any
         """
         self._flow_file = flow_file
-        self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
+        is_function_entry = hasattr(flow_file, "__call__") or inspect.isfunction(flow_file)
+        if is_function_entry:
+            self._working_dir = working_dir or Path.cwd()
+        else:
+            self._working_dir = (
+                Flow._resolve_working_dir(flow_file, working_dir) if flow_file is not None else working_dir
+            )
 
-        self._is_eager_flow, self._program_language = self._check_eager_flow_and_language_from_yaml()
+        # Chat group doesn't pass flow_file
+        if self._flow_file is not None:
+            if is_function_entry:
+                self._is_eager_flow = True
+                self._program_language = FlowLanguage.Python
+            elif is_prompty_flow(self._flow_file):
+                self._is_eager_flow = True
+                self._program_language = FlowLanguage.Python
+            else:
+                self._is_prompty_flow = False
+                self._is_eager_flow, self._program_language = self._check_eager_flow_and_language_from_yaml()
+        else:
+            self._is_prompty_flow = False
+            self._is_eager_flow = False
+            self._program_language = None
 
         # TODO: why self._flow is not initialized for eager flow?
-        if not self._is_eager_flow:
+        # Chat group run does not pass flow_file
+        if flow_file is not None and not self._is_eager_flow:
             self._flow = Flow.from_yaml(flow_file, working_dir=self._working_dir)
             FlowValidator.ensure_flow_valid_in_batch_mode(self._flow)
 
-        # eager flow does not support multimedia contract currently, just use basic format type.
-        self._message_format = self._flow.message_format if not self._is_eager_flow else MessageFormatType.BASIC
+        # eager flow and chat group does not support multimedia contract currently, just use basic format type.
+        if not self._is_eager_flow and self._flow_file is not None:
+            self._message_format = self._flow.message_format
+        else:
+            self._message_format = MessageFormatType.BASIC
         self._multimedia_processor = MultimediaProcessor.create(self._message_format)
 
         self._connections = connections
@@ -150,6 +175,7 @@ class BatchEngine:
         raise_on_line_failure: Optional[bool] = False,
         resume_from_run_storage: Optional[AbstractBatchRunStorage] = None,
         resume_from_run_output_dir: Optional[Path] = None,
+        executor_proxy: Optional[AbstractExecutorProxy] = None,
     ) -> BatchResult:
         """Run flow in batch mode
 
@@ -178,7 +204,7 @@ class BatchEngine:
             self._start_time = datetime.utcnow()
             with _change_working_dir(self._working_dir):
                 # create executor proxy instance according to the flow program language
-                self._executor_proxy = ProxyFactory().create_executor_proxy(
+                self._executor_proxy = executor_proxy or ProxyFactory().create_executor_proxy(
                     flow_file=self._flow_file,
                     working_dir=self._working_dir,
                     connections=self._connections,
@@ -200,16 +226,22 @@ class BatchEngine:
                                 "Current thread is not main thread, skip signal handler registration in BatchEngine."
                             )
 
-                    # set batch input source from input mapping
-                    set_batch_input_source_from_inputs_mapping(inputs_mapping)
-                    # if using eager flow, the self._flow is none, so we need to get inputs definition from executor
-                    inputs = self._executor_proxy.get_inputs_definition() if self._is_eager_flow else self._flow.inputs
+                    if self._executor_proxy.should_apply_inputs_mapping:
+                        # set batch input source from input mapping
+                        set_batch_input_source_from_inputs_mapping(inputs_mapping)
+                        # if using eager flow, the self._flow is none, so we need to get inputs definition from executor
+                        inputs = (
+                            self._executor_proxy.get_inputs_definition() if self._is_eager_flow else self._flow.inputs
+                        )
 
-                    # resolve input data from input dirs and apply inputs mapping
-                    batch_input_processor = BatchInputsProcessor(
-                        self._working_dir, inputs, max_lines_count, message_format=self._message_format
-                    )
-                    batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
+                        # resolve input data from input dirs and apply inputs mapping
+                        batch_input_processor = BatchInputsProcessor(
+                            self._working_dir, inputs, max_lines_count, message_format=self._message_format
+                        )
+                        batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
+                    else:
+                        batch_input_processor = BatchInputsProcessor("", {}, max_lines_count)
+                        batch_inputs = batch_input_processor.process_batch_inputs_without_inputs_mapping(input_dirs)
                     # resolve output dir
                     output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
 
@@ -258,19 +290,37 @@ class BatchEngine:
         """
         try:
             previous_run_results = []
-            aggregation_nodes = {node.name for node in self._flow.nodes if node.aggregation}
-            for i in range(len(batch_inputs)):
+            if not self._is_eager_flow:
+                aggregation_nodes = {node.name for node in self._flow.nodes if node.aggregation}
+            for i, _ in enumerate(batch_inputs):
                 previous_run_info: FlowRunInfo = resume_from_run_storage.load_flow_run_info(i)
 
-                if previous_run_info and previous_run_info.status == Status.Completed:
-                    # UI uses root_run_id  to link the base path in datastore with the run_info of line.
-                    # Thus the root_run_id needs to be the current batch run id.
-                    previous_run_info.root_run_id = run_id
-                    previous_run_info.parent_run_id = run_id
+                if not previous_run_info or previous_run_info.status != Status.Completed:
+                    continue
 
-                    # Load previous node run info
+                # UI uses root_run_id  to link the base path in datastore with the run_info of line.
+                # Thus the root_run_id needs to be the current batch run id.
+                previous_run_info.root_run_id = run_id
+                previous_run_info.parent_run_id = run_id
+
+                # Deepcopy to avoid modifying the original object when serializing image
+                self._storage.persist_flow_run(previous_run_info)
+                previous_run_output = deepcopy(previous_run_info.output)
+                previous_run_output_in_line_result = self._multimedia_processor.persist_multimedia_data(
+                    previous_run_output, output_dir
+                )
+
+                if self._is_eager_flow:
+                    # Directly create LineResult object for previous line result
+                    previous_line_result = LineResult(
+                        output=previous_run_output_in_line_result,
+                        aggregation_inputs=previous_run_output_in_line_result,
+                        run_info=previous_run_info,
+                        node_run_infos={},
+                    )
+                else:
+                    # Since there is no node run in flex flow, only load previous node run info when it is not flex flow
                     previous_node_run_infos = resume_from_run_storage.load_node_run_info_for_line(i)
-
                     # In storage, aggregation nodes are persisted with filenames similar to regular nodes.
                     # Currently we read regular node run records by filename in the node artifacts folder,
                     # which may lead to load records of aggregation nodes at the same time, which is not intended.
@@ -290,39 +340,29 @@ class BatchEngine:
                     previous_node_run_outputs = {
                         node_info.node: node_info.output for node_info in previous_node_run_infos
                     }
-
                     # Extract aggregation inputs for flow with aggregation node
                     aggregation_inputs = extract_aggregation_inputs(self._flow, previous_node_run_outputs)
 
-                    # Deepcopy to avoid modifying the original object when serializing image
-                    previous_run_output = deepcopy(previous_run_info.output)
-                    previous_run_output_in_line_result = self._multimedia_processor.persist_multimedia_data(
-                        previous_run_output, output_dir
-                    )
-
-                    # Persist previous run info and node run info
-                    self._storage.persist_flow_run(previous_run_info)
+                    # Persist node run info to storage
                     for node_run_info in previous_node_run_infos:
                         self._storage.persist_node_run(node_run_info)
 
-                    # Create LineResult object for previous line result
+                    # Create LineResult object with aggregation inputs and node_run_infos
                     previous_line_result = LineResult(
                         output=previous_run_output_in_line_result,
                         aggregation_inputs=aggregation_inputs,
                         run_info=previous_run_info,
                         node_run_infos=previous_node_run_infos_dict,
                     )
-                    previous_run_results.append(previous_line_result)
-
+                previous_run_results.append(previous_line_result)
             return previous_run_results
         except Exception as e:
             bulk_logger.error(f"Error occurred while copying previous run result. Exception: {str(e)}")
-            resume_copy_error = ResumeCopyError(
+            raise ResumeCopyError(
                 target=ErrorTarget.BATCH,
                 message_format="Failed to copy results when resuming the run. Error: {error_type_and_message}.",
                 error_type_and_message=f"({e.__class__.__name__}) {e}",
-            )
-            raise resume_copy_error from e
+            ) from e
 
     def cancel(self):
         """Cancel the batch run"""
@@ -411,7 +451,7 @@ class BatchEngine:
         await self._executor_proxy.ensure_executor_health()
         # apply default value in early stage, so we can use it both in line and aggregation nodes execution.
         # if the flow is None, we don't need to apply default value for inputs.
-        if not self._is_eager_flow:
+        if not self._is_eager_flow and self._flow_file is not None:
             batch_inputs = [
                 apply_default_value_for_input(self._flow.inputs, each_line_input) for each_line_input in batch_inputs
             ]
@@ -442,8 +482,8 @@ class BatchEngine:
             )
             line_results.extend(results)
         else:
-            # TODO: Enable batch timeout for other api based executor proxy
-            await self._exec_batch(line_results, batch_inputs, run_id)
+            await self._exec_batch(line_results, inputs_to_run, run_id)
+
         handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
         # persist outputs to output dir
         outputs = [
@@ -456,12 +496,7 @@ class BatchEngine:
 
         # if the batch runs with errors, we should update the errors to ex
         ex = None
-        if not is_timeout:
-            # execute aggregation nodes
-            aggr_exec_result = await self._exec_aggregation(batch_inputs, line_results, run_id)
-            # use the execution result to update aggr_result to make sure we can get the aggr_result in _exec_in_task
-            self._update_aggr_result(aggr_result, aggr_exec_result)
-        else:
+        if is_timeout:
             ex = BatchRunTimeoutError(
                 message_format=(
                     "The batch run failed due to timeout [{batch_timeout_sec}s]. "
@@ -470,6 +505,11 @@ class BatchEngine:
                 batch_timeout_sec=self._batch_timeout_sec,
                 target=ErrorTarget.BATCH,
             )
+        elif self._executor_proxy.allow_aggregation:
+            # execute aggregation nodes
+            aggr_exec_result = await self._exec_aggregation(batch_inputs, line_results, run_id)
+            # use the execution result to update aggr_result to make sure we can get the aggr_result in _exec_in_task
+            self._update_aggr_result(aggr_result, aggr_exec_result)
         # summary some infos from line results and aggr results to batch result
         return BatchResult.create(self._start_time, datetime.utcnow(), line_results, aggr_result, exception=ex)
 
@@ -479,11 +519,16 @@ class BatchEngine:
         batch_inputs: List[Mapping[str, Any]],
         run_id: Optional[str] = None,
     ) -> List[LineResult]:
+        # line_results as input parameter, so that the completed line results can be summarized
+        # when batch run is canceled.
         worker_count = self._worker_count or DEFAULT_CONCURRENCY
         semaphore = asyncio.Semaphore(worker_count)
+
         pending = [
-            asyncio.create_task(self._exec_line_under_semaphore(semaphore, line_inputs, i, run_id))
-            for i, line_inputs in enumerate(batch_inputs)
+            asyncio.create_task(
+                self._exec_line_under_semaphore(semaphore, line_input, line_input[LINE_NUMBER_KEY], run_id)
+            )
+            for line_input in batch_inputs
         ]
 
         total_lines = len(batch_inputs)
@@ -497,7 +542,7 @@ class BatchEngine:
             self._persist_run_info(completed_line_results)
             line_results.extend(completed_line_results)
             # update the progress log
-            completed_line = len(line_results)
+            completed_line += len(completed_line_results)
             last_log_count = log_progress(
                 run_start_time=self._start_time,
                 total_count=total_lines,
@@ -515,45 +560,52 @@ class BatchEngine:
         async with semaphore:
             return await self._executor_proxy.exec_line_async(inputs, index, run_id)
 
+    def _should_exec_aggregation(self) -> bool:
+        if self._is_eager_flow:
+            return self._executor_proxy.has_aggregation
+        aggregation_nodes = {node.name for node in self._flow.nodes if node.aggregation}
+        return bool(aggregation_nodes)
+
+    def _get_aggregation_inputs(self, batch_inputs, line_results: List[LineResult]):
+        run_infos = [r.run_info for r in line_results]
+        succeeded = [i for i, r in enumerate(run_infos) if r.status == Status.Completed]
+
+        if self._is_eager_flow:
+            return None, [line_results[i].output for i in succeeded]
+
+        succeeded_batch_inputs = [batch_inputs[i] for i in succeeded]
+        resolved_succeeded_batch_inputs = [
+            FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=input) for input in succeeded_batch_inputs
+        ]
+        succeeded_inputs = transpose(resolved_succeeded_batch_inputs, keys=list(self._flow.inputs.keys()))
+        aggregation_inputs = transpose(
+            [result.aggregation_inputs for result in line_results],
+            keys=get_aggregation_inputs_properties(self._flow),
+        )
+        succeeded_aggregation_inputs = collect_lines(succeeded, aggregation_inputs)
+        return succeeded_inputs, succeeded_aggregation_inputs
+
     async def _exec_aggregation(
         self,
         batch_inputs: List[dict],
         line_results: List[LineResult],
         run_id: Optional[str] = None,
     ) -> AggregationResult:
-        if self._is_eager_flow:
-            return AggregationResult({}, {}, {})
-        aggregation_nodes = {node.name for node in self._flow.nodes if node.aggregation}
-        if not aggregation_nodes:
+        if not self._should_exec_aggregation():
             return AggregationResult({}, {}, {})
 
-        bulk_logger.info("Executing aggregation nodes...")
+        name = "function" if self._is_eager_flow else "node"
+        bulk_logger.info(f"Executing aggregation {name}...")
 
-        run_infos = [r.run_info for r in line_results]
-        succeeded = [i for i, r in enumerate(run_infos) if r.status == Status.Completed]
-
-        succeeded_batch_inputs = [batch_inputs[i] for i in succeeded]
-        resolved_succeeded_batch_inputs = [
-            FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=input) for input in succeeded_batch_inputs
-        ]
-
-        succeeded_inputs = transpose(resolved_succeeded_batch_inputs, keys=list(self._flow.inputs.keys()))
-
-        aggregation_inputs = transpose(
-            [result.aggregation_inputs for result in line_results],
-            keys=get_aggregation_inputs_properties(self._flow),
-        )
-        succeeded_aggregation_inputs = collect_lines(succeeded, aggregation_inputs)
         try:
-            aggr_result = await self._executor_proxy.exec_aggregation_async(
-                succeeded_inputs, succeeded_aggregation_inputs, run_id
-            )
+            inputs, aggregation_inputs = self._get_aggregation_inputs(batch_inputs, line_results)
+            aggr_result = await self._executor_proxy.exec_aggregation_async(inputs, aggregation_inputs, run_id)
             # if the flow language is python, we have already persisted node run infos during execution.
             # so we should persist node run infos in aggr_result for other languages.
             if not isinstance(self._executor_proxy, PythonExecutorProxy):
                 for node_run in aggr_result.node_run_infos.values():
                     self._storage.persist_node_run(node_run)
-            bulk_logger.info("Finish executing aggregation nodes.")
+            bulk_logger.info(f"Finish executing aggregation {name}.")
             return aggr_result
         except PromptflowException as e:
             # for PromptflowException, we already do classification, so throw directly.

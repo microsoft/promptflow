@@ -174,6 +174,56 @@
         }
       }
     },
+    "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/BulkRuns/create": {
+      "post": {
+        "tags": [
+          "BulkRuns"
+        ],
+        "operationId": "BulkRuns_CreateExistingBulkRun",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/subscriptionIdParameter"
+          },
+          {
+            "$ref": "#/components/parameters/resourceGroupNameParameter"
+          },
+          {
+            "$ref": "#/components/parameters/workspaceNameParameter"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateExistingBulkRunRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error response describing why the operation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/BulkRuns/{flowRunId}": {
       "get": {
         "tags": [
@@ -1312,6 +1362,164 @@
         }
       }
     },
+    "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Experiments/{experimentId}/resubmit": {
+      "post": {
+        "tags": [
+          "Experiments"
+        ],
+        "operationId": "Experiments_ResubmitExperiment",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/subscriptionIdParameter"
+          },
+          {
+            "$ref": "#/components/parameters/resourceGroupNameParameter"
+          },
+          {
+            "$ref": "#/components/parameters/workspaceNameParameter"
+          },
+          {
+            "name": "experimentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResubmitExperimentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlowDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error response describing why the operation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/flow/v1.0/flowexperiments/getIndexEntities": {
+      "post": {
+        "tags": [
+          "ExperimentsProvider"
+        ],
+        "operationId": "ExperimentsProvider_GetIndexEntityById",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/subscriptionIdParameter"
+          },
+          {
+            "$ref": "#/components/parameters/resourceGroupNameParameter"
+          },
+          {
+            "$ref": "#/components/parameters/workspaceNameParameter"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnversionedEntityRequestDto_ExperimentIndexEntity_ExperimentAnnotations_ExperimentProperties_ExtensibleObject"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnversionedEntityResponseDto_ExperimentIndexEntity_ExperimentAnnotations_ExperimentProperties_ExtensibleObject"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error response describing why the operation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/flow/v1.0/flowexperiments/rebuildIndex": {
+      "post": {
+        "tags": [
+          "ExperimentsProvider"
+        ],
+        "operationId": "ExperimentsProvider_GetUpdatedEntityIdsForWorkspace",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/subscriptionIdParameter"
+          },
+          {
+            "$ref": "#/components/parameters/resourceGroupNameParameter"
+          },
+          {
+            "$ref": "#/components/parameters/workspaceNameParameter"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnversionedRebuildIndexDto_ExperimentIndexEntity_ExperimentAnnotations_ExperimentProperties_ExtensibleObject"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnversionedRebuildResponseDto_ExperimentIndexEntity_ExperimentAnnotations_ExperimentProperties_ExtensibleObject"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error response describing why the operation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/ExperimentTemplates/{experimentTemplateId}": {
       "post": {
         "tags": [
@@ -1400,6 +1608,106 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExperimentTemplateDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error response describing why the operation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/flow/v1.0/flowexperimenttemplates/getIndexEntities": {
+      "post": {
+        "tags": [
+          "ExperimentTemplatesProvider"
+        ],
+        "operationId": "ExperimentTemplatesProvider_GetIndexEntityById",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/subscriptionIdParameter"
+          },
+          {
+            "$ref": "#/components/parameters/resourceGroupNameParameter"
+          },
+          {
+            "$ref": "#/components/parameters/workspaceNameParameter"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnversionedEntityRequestDto_ExperimentTemplateIndexEntity_ExperimentTemplateAnnotations_ExperimentTemplateProperties_ExtensibleObject"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnversionedEntityResponseDto_ExperimentTemplateIndexEntity_ExperimentTemplateAnnotations_ExperimentTemplateProperties_ExtensibleObject"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error response describing why the operation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/flow/v1.0/flowexperimenttemplates/rebuildIndex": {
+      "post": {
+        "tags": [
+          "ExperimentTemplatesProvider"
+        ],
+        "operationId": "ExperimentTemplatesProvider_GetUpdatedEntityIdsForWorkspace",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/subscriptionIdParameter"
+          },
+          {
+            "$ref": "#/components/parameters/resourceGroupNameParameter"
+          },
+          {
+            "$ref": "#/components/parameters/workspaceNameParameter"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnversionedRebuildIndexDto_ExperimentTemplateIndexEntity_ExperimentTemplateAnnotations_ExperimentTemplateProperties_ExtensibleObject"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnversionedRebuildResponseDto_ExperimentTemplateIndexEntity_ExperimentTemplateAnnotations_ExperimentTemplateProperties_ExtensibleObject"
                 }
               }
             }
@@ -4111,7 +4419,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UnversionedEntityRequestDto"
+                "$ref": "#/components/schemas/UnversionedEntityRequestDto_FlowIndexEntity_FlowAnnotations_FlowProperties_ExtensibleObject"
               }
             }
           }
@@ -4122,7 +4430,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnversionedEntityResponseDto"
+                  "$ref": "#/components/schemas/UnversionedEntityResponseDto_FlowIndexEntity_FlowAnnotations_FlowProperties_ExtensibleObject"
                 }
               }
             }
@@ -4161,7 +4469,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UnversionedRebuildIndexDto"
+                "$ref": "#/components/schemas/UnversionedRebuildIndexDto_FlowIndexEntity_FlowAnnotations_FlowProperties_ExtensibleObject"
               }
             }
           }
@@ -4172,7 +4480,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnversionedRebuildResponseDto"
+                  "$ref": "#/components/schemas/UnversionedRebuildResponseDto_FlowIndexEntity_FlowAnnotations_FlowProperties_ExtensibleObject"
                 }
               }
             }
@@ -4336,71 +4644,6 @@
                   "additionalProperties": {
                     "$ref": "#/components/schemas/Tool"
                   }
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Error response describing why the operation failed.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Tools/dynamicList": {
-      "post": {
-        "tags": [
-          "Tools"
-        ],
-        "operationId": "Tools_GetDynamicList",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/subscriptionIdParameter"
-          },
-          {
-            "$ref": "#/components/parameters/resourceGroupNameParameter"
-          },
-          {
-            "$ref": "#/components/parameters/workspaceNameParameter"
-          },
-          {
-            "name": "flowRuntimeName",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "flowId",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetDynamicListRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": { }
                 }
               }
             }
@@ -10379,6 +10622,10 @@
             "type": "string",
             "nullable": true
           },
+          "modelVersion": {
+            "type": "string",
+            "nullable": true
+          },
           "capabilities": {
             "$ref": "#/components/schemas/AzureOpenAIModelCapabilities"
           }
@@ -10398,6 +10645,24 @@
           },
           "embeddings": {
             "type": "boolean",
+            "nullable": true
+          },
+          "include": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": { }
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "exclude": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": { }
+            },
+            "description": "This is a dictionary",
             "nullable": true
           }
         },
@@ -10439,6 +10704,9 @@
           "type": {
             "type": "string",
             "nullable": true
+          },
+          "inputFileFormat": {
+            "$ref": "#/components/schemas/PromptFlowInputFileFormat"
           }
         },
         "additionalProperties": false
@@ -10514,6 +10782,16 @@
             "items": {
               "$ref": "#/components/schemas/ComponentNameMetaInfo"
             },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BindOptions": {
+        "type": "object",
+        "properties": {
+          "propagation": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -11823,6 +12101,7 @@
           "Redis",
           "ApiKey",
           "AzureOpenAI",
+          "AIServices",
           "CognitiveSearch",
           "CognitiveService",
           "CustomKeys",
@@ -11951,6 +12230,20 @@
             "items": {
               "$ref": "#/components/schemas/ConnectionAuthMode"
             },
+            "nullable": true
+          },
+          "supportedAuthModeMapping": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "meid_token": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false,
+            "description": "This is a dictionary",
             "nullable": true
           }
         },
@@ -12308,6 +12601,121 @@
         },
         "additionalProperties": false
       },
+      "CreateExistingBulkRunRequest": {
+        "type": "object",
+        "properties": {
+          "runId": {
+            "type": "string",
+            "nullable": true
+          },
+          "runDisplayName": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "tags": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "runExperimentName": {
+            "type": "string",
+            "nullable": true
+          },
+          "runDisplayNameGenerationType": {
+            "$ref": "#/components/schemas/RunDisplayNameGenerationType"
+          },
+          "experimentNodeName": {
+            "type": "string",
+            "nullable": true
+          },
+          "outputDataStore": {
+            "type": "string",
+            "nullable": true
+          },
+          "flowArtifactsRootPath": {
+            "type": "string",
+            "nullable": true
+          },
+          "environmentVariables": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "initKWargs": {
+            "type": "object",
+            "additionalProperties": { },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "logFileRelativePath": {
+            "type": "string",
+            "nullable": true
+          },
+          "batchDataInput": {
+            "$ref": "#/components/schemas/BatchDataInput"
+          },
+          "inputsMapping": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "nodeVariant": {
+            "type": "string",
+            "nullable": true
+          },
+          "variantRunId": {
+            "type": "string",
+            "nullable": true
+          },
+          "baselineRunId": {
+            "type": "string",
+            "nullable": true
+          },
+          "flowDefinitionDataStoreName": {
+            "type": "string",
+            "nullable": true
+          },
+          "flowDefinitionBlobPath": {
+            "type": "string",
+            "nullable": true
+          },
+          "runStatus": {
+            "$ref": "#/components/schemas/RunStatus"
+          },
+          "endTimeUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "startTimeUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "CreateExperimentTemplateRequest": {
         "type": "object",
         "properties": {
@@ -12368,6 +12776,13 @@
           "identity": {
             "type": "string",
             "nullable": true
+          },
+          "computeName": {
+            "type": "string",
+            "nullable": true
+          },
+          "enableMultiContainer": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -12436,6 +12851,10 @@
             "nullable": true
           },
           "baseImage": {
+            "type": "string",
+            "nullable": true
+          },
+          "runtimeImage": {
             "type": "string",
             "nullable": true
           },
@@ -15112,7 +15531,18 @@
             "description": "This is a dictionary",
             "nullable": true
           },
-          "runtimeName": {
+          "runDisplayNameGenerationType": {
+            "$ref": "#/components/schemas/RunDisplayNameGenerationType"
+          },
+          "experimentNodeName": {
+            "type": "string",
+            "nullable": true
+          },
+          "outputDataStore": {
+            "type": "string",
+            "nullable": true
+          },
+          "flowArtifactsRootPath": {
             "type": "string",
             "nullable": true
           },
@@ -15127,6 +15557,24 @@
             "description": "This is a dictionary",
             "nullable": true
           },
+          "environmentVariables": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "initKWargs": {
+            "type": "object",
+            "additionalProperties": { },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "logFileRelativePath": {
+            "type": "string",
+            "nullable": true
+          },
           "connections": {
             "type": "object",
             "additionalProperties": {
@@ -15139,23 +15587,8 @@
             "description": "This is a dictionary",
             "nullable": true
           },
-          "environmentVariables": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string"
-            },
-            "description": "This is a dictionary",
-            "nullable": true
-          },
-          "outputDataStore": {
-            "type": "string",
-            "nullable": true
-          },
-          "runDisplayNameGenerationType": {
-            "$ref": "#/components/schemas/RunDisplayNameGenerationType"
-          },
-          "collieRunSettings": {
-            "$ref": "#/components/schemas/CollieRunSettings"
+          "promptflowEngineType": {
+            "$ref": "#/components/schemas/PromptflowEngineType"
           },
           "workerCount": {
             "type": "integer",
@@ -15167,12 +15600,32 @@
             "format": "int32",
             "nullable": true
           },
-          "promptflowEngineType": {
-            "$ref": "#/components/schemas/PromptflowEngineType"
-          },
-          "experimentNodeName": {
+          "runtimeName": {
             "type": "string",
             "nullable": true
+          },
+          "collieRunSettings": {
+            "$ref": "#/components/schemas/CollieRunSettings"
+          },
+          "vmSize": {
+            "type": "string",
+            "nullable": true
+          },
+          "maxIdleTimeSeconds": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "identity": {
+            "type": "string",
+            "nullable": true
+          },
+          "computeName": {
+            "type": "string",
+            "nullable": true
+          },
+          "enableMultiContainer": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -15272,6 +15725,65 @@
           "Finalization"
         ],
         "type": "string"
+      },
+      "ExperimentAnnotations": {
+        "type": "object",
+        "properties": {
+          "nodeRuns": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "nodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExperimentNode"
+            },
+            "nullable": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExperimentData"
+            },
+            "nullable": true
+          },
+          "createdDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "lastModifiedDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "owner": {
+            "$ref": "#/components/schemas/SchemaContractsCreatedBy"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "archived": {
+            "type": "boolean"
+          },
+          "tags": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "nullable": true
+            },
+            "nullable": true
+          }
+        }
       },
       "ExperimentComputeMetaInfo": {
         "type": "object",
@@ -15433,6 +15945,81 @@
         ],
         "type": "string"
       },
+      "ExperimentIndexEntity": {
+        "type": "object",
+        "properties": {
+          "schemaId": {
+            "type": "string",
+            "nullable": true
+          },
+          "entityId": {
+            "type": "string",
+            "nullable": true
+          },
+          "kind": {
+            "$ref": "#/components/schemas/EntityKind"
+          },
+          "annotations": {
+            "$ref": "#/components/schemas/ExperimentAnnotations"
+          },
+          "properties": {
+            "$ref": "#/components/schemas/ExperimentProperties"
+          },
+          "internal": {
+            "$ref": "#/components/schemas/ExtensibleObject"
+          },
+          "updateSequence": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "version": {
+            "type": "string",
+            "nullable": true,
+            "readOnly": true
+          },
+          "entityContainerId": {
+            "type": "string",
+            "nullable": true,
+            "readOnly": true
+          },
+          "entityObjectId": {
+            "type": "string",
+            "nullable": true,
+            "readOnly": true
+          },
+          "resourceType": {
+            "type": "string",
+            "nullable": true,
+            "readOnly": true
+          },
+          "relationships": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Relationship"
+            },
+            "nullable": true
+          },
+          "assetId": {
+            "type": "string",
+            "nullable": true
+          },
+          "usage": {
+            "$ref": "#/components/schemas/EntityUsage"
+          },
+          "isAFragment": {
+            "type": "boolean"
+          },
+          "fragmentId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "ExperimentInfo": {
         "type": "object",
         "properties": {
@@ -15534,12 +16121,208 @@
         },
         "additionalProperties": false
       },
+      "ExperimentNodeRunSettings": {
+        "type": "object",
+        "properties": {
+          "resume": {
+            "type": "boolean"
+          },
+          "flowRunDisplayName": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "tags": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "runDisplayNameGenerationType": {
+            "$ref": "#/components/schemas/RunDisplayNameGenerationType"
+          },
+          "experimentNodeName": {
+            "type": "string",
+            "nullable": true
+          },
+          "outputDataStore": {
+            "type": "string",
+            "nullable": true
+          },
+          "flowArtifactsRootPath": {
+            "type": "string",
+            "nullable": true
+          },
+          "batchDataInput": {
+            "$ref": "#/components/schemas/BatchDataInput"
+          },
+          "inputsMapping": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "environmentVariables": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "initKWargs": {
+            "type": "object",
+            "additionalProperties": { },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "logFileRelativePath": {
+            "type": "string",
+            "nullable": true
+          },
+          "connections": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "description": "This is a dictionary"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "promptflowEngineType": {
+            "$ref": "#/components/schemas/PromptflowEngineType"
+          },
+          "workerCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "timeoutInSeconds": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "runtimeName": {
+            "type": "string",
+            "nullable": true
+          },
+          "collieRunSettings": {
+            "$ref": "#/components/schemas/CollieRunSettings"
+          },
+          "vmSize": {
+            "type": "string",
+            "nullable": true
+          },
+          "maxIdleTimeSeconds": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "identity": {
+            "type": "string",
+            "nullable": true
+          },
+          "computeName": {
+            "type": "string",
+            "nullable": true
+          },
+          "enableMultiContainer": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
       "ExperimentNodeType": {
         "enum": [
           "Flow",
           "ChatGroup"
         ],
         "type": "string"
+      },
+      "ExperimentProperties": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "experimentTemplateId": {
+            "type": "string",
+            "nullable": true
+          },
+          "creationContext": {
+            "$ref": "#/components/schemas/CreationContext"
+          }
+        }
+      },
+      "ExperimentTemplateAnnotations": {
+        "type": "object",
+        "properties": {
+          "nodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExperimentNode"
+            },
+            "nullable": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExperimentData"
+            },
+            "nullable": true
+          },
+          "createdDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "lastModifiedDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "owner": {
+            "$ref": "#/components/schemas/SchemaContractsCreatedBy"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "archived": {
+            "type": "boolean"
+          },
+          "tags": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "nullable": true
+            },
+            "nullable": true
+          }
+        }
       },
       "ExperimentTemplateDto": {
         "type": "object",
@@ -15592,6 +16375,93 @@
           }
         },
         "additionalProperties": false
+      },
+      "ExperimentTemplateIndexEntity": {
+        "type": "object",
+        "properties": {
+          "schemaId": {
+            "type": "string",
+            "nullable": true
+          },
+          "entityId": {
+            "type": "string",
+            "nullable": true
+          },
+          "kind": {
+            "$ref": "#/components/schemas/EntityKind"
+          },
+          "annotations": {
+            "$ref": "#/components/schemas/ExperimentTemplateAnnotations"
+          },
+          "properties": {
+            "$ref": "#/components/schemas/ExperimentTemplateProperties"
+          },
+          "internal": {
+            "$ref": "#/components/schemas/ExtensibleObject"
+          },
+          "updateSequence": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "version": {
+            "type": "string",
+            "nullable": true,
+            "readOnly": true
+          },
+          "entityContainerId": {
+            "type": "string",
+            "nullable": true,
+            "readOnly": true
+          },
+          "entityObjectId": {
+            "type": "string",
+            "nullable": true,
+            "readOnly": true
+          },
+          "resourceType": {
+            "type": "string",
+            "nullable": true,
+            "readOnly": true
+          },
+          "relationships": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Relationship"
+            },
+            "nullable": true
+          },
+          "assetId": {
+            "type": "string",
+            "nullable": true
+          },
+          "usage": {
+            "$ref": "#/components/schemas/EntityUsage"
+          },
+          "isAFragment": {
+            "type": "boolean"
+          },
+          "fragmentId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ExperimentTemplateProperties": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "creationContext": {
+            "$ref": "#/components/schemas/CreationContext"
+          }
+        }
       },
       "ExportComponentMetaInfo": {
         "type": "object",
@@ -15774,6 +16644,38 @@
         },
         "additionalProperties": false
       },
+      "FilterBy": {
+        "type": "object",
+        "properties": {
+          "input_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "values": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/FilterValue"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "FilterValue": {
+        "type": "object",
+        "properties": {
+          "capabilities": {
+            "$ref": "#/components/schemas/AzureOpenAIModelCapabilities"
+          },
+          "enum": {
+            "type": "array",
+            "items": { },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "Flow": {
         "type": "object",
         "properties": {
@@ -15930,6 +16832,9 @@
             "type": "string",
             "nullable": true
           },
+          "enableMultiContainer": {
+            "type": "boolean"
+          },
           "flowDiagnostics": {
             "$ref": "#/components/schemas/FlowDiagnostics"
           }
@@ -16058,6 +16963,9 @@
             "type": "string",
             "nullable": true
           },
+          "enableMultiContainer": {
+            "type": "boolean"
+          },
           "flowDiagnostics": {
             "$ref": "#/components/schemas/FlowDiagnostics"
           }
@@ -16072,6 +16980,10 @@
             "nullable": true
           },
           "python_requirements_txt": {
+            "type": "string",
+            "nullable": true
+          },
+          "runtime_image": {
             "type": "string",
             "nullable": true
           }
@@ -16339,6 +17251,13 @@
         ],
         "type": "string"
       },
+      "FlowMessageFormatType": {
+        "enum": [
+          "basic",
+          "openai-vision"
+        ],
+        "type": "string"
+      },
       "FlowNode": {
         "type": "object",
         "properties": {
@@ -16598,6 +17517,10 @@
             "type": "string",
             "nullable": true
           },
+          "sessionId": {
+            "type": "string",
+            "nullable": true
+          },
           "studioPortalEndpoint": {
             "type": "string",
             "nullable": true
@@ -16614,7 +17537,9 @@
           "Eval",
           "PairwiseEval",
           "ExperimentTest",
-          "ExperimentEval"
+          "ExperimentEval",
+          "ChatGroup",
+          "ChatGroupRole"
         ],
         "type": "string"
       },
@@ -16887,7 +17812,18 @@
             "description": "This is a dictionary",
             "nullable": true
           },
-          "runtimeName": {
+          "runDisplayNameGenerationType": {
+            "$ref": "#/components/schemas/RunDisplayNameGenerationType"
+          },
+          "experimentNodeName": {
+            "type": "string",
+            "nullable": true
+          },
+          "outputDataStore": {
+            "type": "string",
+            "nullable": true
+          },
+          "flowArtifactsRootPath": {
             "type": "string",
             "nullable": true
           },
@@ -16902,6 +17838,24 @@
             "description": "This is a dictionary",
             "nullable": true
           },
+          "environmentVariables": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "initKWargs": {
+            "type": "object",
+            "additionalProperties": { },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "logFileRelativePath": {
+            "type": "string",
+            "nullable": true
+          },
           "connections": {
             "type": "object",
             "additionalProperties": {
@@ -16914,23 +17868,8 @@
             "description": "This is a dictionary",
             "nullable": true
           },
-          "environmentVariables": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string"
-            },
-            "description": "This is a dictionary",
-            "nullable": true
-          },
-          "outputDataStore": {
-            "type": "string",
-            "nullable": true
-          },
-          "runDisplayNameGenerationType": {
-            "$ref": "#/components/schemas/RunDisplayNameGenerationType"
-          },
-          "collieRunSettings": {
-            "$ref": "#/components/schemas/CollieRunSettings"
+          "promptflowEngineType": {
+            "$ref": "#/components/schemas/PromptflowEngineType"
           },
           "workerCount": {
             "type": "integer",
@@ -16942,12 +17881,32 @@
             "format": "int32",
             "nullable": true
           },
-          "promptflowEngineType": {
-            "$ref": "#/components/schemas/PromptflowEngineType"
-          },
-          "experimentNodeName": {
+          "runtimeName": {
             "type": "string",
             "nullable": true
+          },
+          "collieRunSettings": {
+            "$ref": "#/components/schemas/CollieRunSettings"
+          },
+          "vmSize": {
+            "type": "string",
+            "nullable": true
+          },
+          "maxIdleTimeSeconds": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "identity": {
+            "type": "string",
+            "nullable": true
+          },
+          "computeName": {
+            "type": "string",
+            "nullable": true
+          },
+          "enableMultiContainer": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -17011,7 +17970,18 @@
             "description": "This is a dictionary",
             "nullable": true
           },
-          "runtimeName": {
+          "runDisplayNameGenerationType": {
+            "$ref": "#/components/schemas/RunDisplayNameGenerationType"
+          },
+          "experimentNodeName": {
+            "type": "string",
+            "nullable": true
+          },
+          "outputDataStore": {
+            "type": "string",
+            "nullable": true
+          },
+          "flowArtifactsRootPath": {
             "type": "string",
             "nullable": true
           },
@@ -17026,6 +17996,24 @@
             "description": "This is a dictionary",
             "nullable": true
           },
+          "environmentVariables": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "initKWargs": {
+            "type": "object",
+            "additionalProperties": { },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "logFileRelativePath": {
+            "type": "string",
+            "nullable": true
+          },
           "connections": {
             "type": "object",
             "additionalProperties": {
@@ -17038,23 +18026,8 @@
             "description": "This is a dictionary",
             "nullable": true
           },
-          "environmentVariables": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string"
-            },
-            "description": "This is a dictionary",
-            "nullable": true
-          },
-          "outputDataStore": {
-            "type": "string",
-            "nullable": true
-          },
-          "runDisplayNameGenerationType": {
-            "$ref": "#/components/schemas/RunDisplayNameGenerationType"
-          },
-          "collieRunSettings": {
-            "$ref": "#/components/schemas/CollieRunSettings"
+          "promptflowEngineType": {
+            "$ref": "#/components/schemas/PromptflowEngineType"
           },
           "workerCount": {
             "type": "integer",
@@ -17066,12 +18039,32 @@
             "format": "int32",
             "nullable": true
           },
-          "promptflowEngineType": {
-            "$ref": "#/components/schemas/PromptflowEngineType"
-          },
-          "experimentNodeName": {
+          "runtimeName": {
             "type": "string",
             "nullable": true
+          },
+          "collieRunSettings": {
+            "$ref": "#/components/schemas/CollieRunSettings"
+          },
+          "vmSize": {
+            "type": "string",
+            "nullable": true
+          },
+          "maxIdleTimeSeconds": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "identity": {
+            "type": "string",
+            "nullable": true
+          },
+          "computeName": {
+            "type": "string",
+            "nullable": true
+          },
+          "enableMultiContainer": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -17121,7 +18114,8 @@
           "EvaluationRun",
           "PairwiseEvaluationRun",
           "SingleNodeRun",
-          "FromNodeRun"
+          "FromNodeRun",
+          "ChatGroupRun"
         ],
         "type": "string"
       },
@@ -17251,6 +18245,10 @@
             "items": {
               "type": "string"
             },
+            "nullable": true
+          },
+          "runtimeImage": {
+            "type": "string",
             "nullable": true
           },
           "vmSize": {
@@ -17416,6 +18414,9 @@
           "entry": {
             "type": "string",
             "nullable": true
+          },
+          "message_format": {
+            "$ref": "#/components/schemas/FlowMessageFormatType"
           }
         },
         "additionalProperties": false
@@ -17575,7 +18576,18 @@
             "description": "This is a dictionary",
             "nullable": true
           },
-          "runtimeName": {
+          "runDisplayNameGenerationType": {
+            "$ref": "#/components/schemas/RunDisplayNameGenerationType"
+          },
+          "experimentNodeName": {
+            "type": "string",
+            "nullable": true
+          },
+          "outputDataStore": {
+            "type": "string",
+            "nullable": true
+          },
+          "flowArtifactsRootPath": {
             "type": "string",
             "nullable": true
           },
@@ -17590,6 +18602,24 @@
             "description": "This is a dictionary",
             "nullable": true
           },
+          "environmentVariables": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "initKWargs": {
+            "type": "object",
+            "additionalProperties": { },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "logFileRelativePath": {
+            "type": "string",
+            "nullable": true
+          },
           "connections": {
             "type": "object",
             "additionalProperties": {
@@ -17602,23 +18632,8 @@
             "description": "This is a dictionary",
             "nullable": true
           },
-          "environmentVariables": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string"
-            },
-            "description": "This is a dictionary",
-            "nullable": true
-          },
-          "outputDataStore": {
-            "type": "string",
-            "nullable": true
-          },
-          "runDisplayNameGenerationType": {
-            "$ref": "#/components/schemas/RunDisplayNameGenerationType"
-          },
-          "collieRunSettings": {
-            "$ref": "#/components/schemas/CollieRunSettings"
+          "promptflowEngineType": {
+            "$ref": "#/components/schemas/PromptflowEngineType"
           },
           "workerCount": {
             "type": "integer",
@@ -17630,12 +18645,32 @@
             "format": "int32",
             "nullable": true
           },
-          "promptflowEngineType": {
-            "$ref": "#/components/schemas/PromptflowEngineType"
-          },
-          "experimentNodeName": {
+          "runtimeName": {
             "type": "string",
             "nullable": true
+          },
+          "collieRunSettings": {
+            "$ref": "#/components/schemas/CollieRunSettings"
+          },
+          "vmSize": {
+            "type": "string",
+            "nullable": true
+          },
+          "maxIdleTimeSeconds": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "identity": {
+            "type": "string",
+            "nullable": true
+          },
+          "computeName": {
+            "type": "string",
+            "nullable": true
+          },
+          "enableMultiContainer": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -18030,22 +19065,6 @@
           },
           "working_dir": {
             "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "GetDynamicListRequest": {
-        "type": "object",
-        "properties": {
-          "func_path": {
-            "type": "string",
-            "nullable": true
-          },
-          "func_kwargs": {
-            "type": "object",
-            "additionalProperties": { },
-            "description": "This is a dictionary",
             "nullable": true
           }
         },
@@ -18807,6 +19826,33 @@
         ],
         "type": "string"
       },
+      "GroupDefinition": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "inputs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "ui_hints": {
+            "type": "object",
+            "additionalProperties": { },
+            "description": "This is a dictionary",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "HdfsReference": {
         "type": "object",
         "properties": {
@@ -19381,6 +20427,9 @@
             "additionalProperties": { },
             "description": "This is a dictionary",
             "nullable": true
+          },
+          "filter_by": {
+            "$ref": "#/components/schemas/FilterBy"
           }
         },
         "additionalProperties": false
@@ -20098,6 +21147,11 @@
             "$ref": "#/components/schemas/ActionType"
           },
           "lastCheckedTime": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "flowRunCreatedTime": {
             "type": "string",
             "format": "date-time",
             "nullable": true
@@ -24402,6 +25456,14 @@
         },
         "additionalProperties": false
       },
+      "PromptFlowInputFileFormat": {
+        "enum": [
+          "Jsonl",
+          "Csv",
+          "Tsv"
+        ],
+        "type": "string"
+      },
       "PromptflowEngineType": {
         "enum": [
           "FastEngine",
@@ -25874,6 +26936,20 @@
           },
           "sparkVersion": {
             "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ResubmitExperimentRequest": {
+        "type": "object",
+        "properties": {
+          "targetNodes": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ExperimentNodeRunSettings"
+            },
+            "description": "This is a dictionary",
             "nullable": true
           }
         },
@@ -27661,7 +28737,8 @@
         "enum": [
           "ManagedOnlineEndpoint",
           "ComputeInstance",
-          "TrainingSession"
+          "TrainingSession",
+          "Local"
         ],
         "type": "string"
       },
@@ -28059,7 +29136,59 @@
         },
         "additionalProperties": false
       },
-      "SegmentedResult`1": {
+      "SegmentedResult_1_ExperimentIndexEntity": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExperimentIndexEntity"
+            },
+            "nullable": true
+          },
+          "continuationToken": {
+            "type": "string",
+            "nullable": true
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "nextLink": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SegmentedResult_1_ExperimentTemplateIndexEntity": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExperimentTemplateIndexEntity"
+            },
+            "nullable": true
+          },
+          "continuationToken": {
+            "type": "string",
+            "nullable": true
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "nextLink": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SegmentedResult_1_FlowIndexEntity": {
         "type": "object",
         "properties": {
           "value": {
@@ -28138,6 +29267,10 @@
             "items": {
               "$ref": "#/components/schemas/Volume"
             },
+            "nullable": true
+          },
+          "networkMode": {
+            "type": "string",
             "nullable": true
           },
           "setupResults": {
@@ -29664,26 +30797,6 @@
             "type": "string",
             "nullable": true
           },
-          "vmSize": {
-            "type": "string",
-            "nullable": true
-          },
-          "maxIdleTimeSeconds": {
-            "type": "integer",
-            "format": "int64",
-            "nullable": true
-          },
-          "identity": {
-            "type": "string",
-            "nullable": true
-          },
-          "computeName": {
-            "type": "string",
-            "nullable": true
-          },
-          "enableMultiContainer": {
-            "type": "boolean"
-          },
           "flowRunDisplayName": {
             "type": "string",
             "nullable": true
@@ -29708,7 +30821,18 @@
             "description": "This is a dictionary",
             "nullable": true
           },
-          "runtimeName": {
+          "runDisplayNameGenerationType": {
+            "$ref": "#/components/schemas/RunDisplayNameGenerationType"
+          },
+          "experimentNodeName": {
+            "type": "string",
+            "nullable": true
+          },
+          "outputDataStore": {
+            "type": "string",
+            "nullable": true
+          },
+          "flowArtifactsRootPath": {
             "type": "string",
             "nullable": true
           },
@@ -29723,6 +30847,24 @@
             "description": "This is a dictionary",
             "nullable": true
           },
+          "environmentVariables": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "initKWargs": {
+            "type": "object",
+            "additionalProperties": { },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "logFileRelativePath": {
+            "type": "string",
+            "nullable": true
+          },
           "connections": {
             "type": "object",
             "additionalProperties": {
@@ -29735,23 +30877,8 @@
             "description": "This is a dictionary",
             "nullable": true
           },
-          "environmentVariables": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string"
-            },
-            "description": "This is a dictionary",
-            "nullable": true
-          },
-          "outputDataStore": {
-            "type": "string",
-            "nullable": true
-          },
-          "runDisplayNameGenerationType": {
-            "$ref": "#/components/schemas/RunDisplayNameGenerationType"
-          },
-          "collieRunSettings": {
-            "$ref": "#/components/schemas/CollieRunSettings"
+          "promptflowEngineType": {
+            "$ref": "#/components/schemas/PromptflowEngineType"
           },
           "workerCount": {
             "type": "integer",
@@ -29763,12 +30890,32 @@
             "format": "int32",
             "nullable": true
           },
-          "promptflowEngineType": {
-            "$ref": "#/components/schemas/PromptflowEngineType"
-          },
-          "experimentNodeName": {
+          "runtimeName": {
             "type": "string",
             "nullable": true
+          },
+          "collieRunSettings": {
+            "$ref": "#/components/schemas/CollieRunSettings"
+          },
+          "vmSize": {
+            "type": "string",
+            "nullable": true
+          },
+          "maxIdleTimeSeconds": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "identity": {
+            "type": "string",
+            "nullable": true
+          },
+          "computeName": {
+            "type": "string",
+            "nullable": true
+          },
+          "enableMultiContainer": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -30577,7 +31724,6 @@
             "nullable": true
           },
           "description": {
-            "type": "string",
             "nullable": true
           },
           "connection_type": {
@@ -30671,6 +31817,13 @@
           },
           "tool_state": {
             "$ref": "#/components/schemas/ToolState"
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GroupDefinition"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -31066,7 +32219,18 @@
             "description": "This is a dictionary",
             "nullable": true
           },
-          "runtimeName": {
+          "runDisplayNameGenerationType": {
+            "$ref": "#/components/schemas/RunDisplayNameGenerationType"
+          },
+          "experimentNodeName": {
+            "type": "string",
+            "nullable": true
+          },
+          "outputDataStore": {
+            "type": "string",
+            "nullable": true
+          },
+          "flowArtifactsRootPath": {
             "type": "string",
             "nullable": true
           },
@@ -31081,6 +32245,24 @@
             "description": "This is a dictionary",
             "nullable": true
           },
+          "environmentVariables": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "initKWargs": {
+            "type": "object",
+            "additionalProperties": { },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "logFileRelativePath": {
+            "type": "string",
+            "nullable": true
+          },
           "connections": {
             "type": "object",
             "additionalProperties": {
@@ -31093,23 +32275,8 @@
             "description": "This is a dictionary",
             "nullable": true
           },
-          "environmentVariables": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string"
-            },
-            "description": "This is a dictionary",
-            "nullable": true
-          },
-          "outputDataStore": {
-            "type": "string",
-            "nullable": true
-          },
-          "runDisplayNameGenerationType": {
-            "$ref": "#/components/schemas/RunDisplayNameGenerationType"
-          },
-          "collieRunSettings": {
-            "$ref": "#/components/schemas/CollieRunSettings"
+          "promptflowEngineType": {
+            "$ref": "#/components/schemas/PromptflowEngineType"
           },
           "workerCount": {
             "type": "integer",
@@ -31121,12 +32288,32 @@
             "format": "int32",
             "nullable": true
           },
-          "promptflowEngineType": {
-            "$ref": "#/components/schemas/PromptflowEngineType"
-          },
-          "experimentNodeName": {
+          "runtimeName": {
             "type": "string",
             "nullable": true
+          },
+          "collieRunSettings": {
+            "$ref": "#/components/schemas/CollieRunSettings"
+          },
+          "vmSize": {
+            "type": "string",
+            "nullable": true
+          },
+          "maxIdleTimeSeconds": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "identity": {
+            "type": "string",
+            "nullable": true
+          },
+          "computeName": {
+            "type": "string",
+            "nullable": true
+          },
+          "enableMultiContainer": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -31430,7 +32617,7 @@
         },
         "additionalProperties": false
       },
-      "UnversionedEntityRequestDto": {
+      "UnversionedEntityRequestDto_ExperimentIndexEntity_ExperimentAnnotations_ExperimentProperties_ExtensibleObject": {
         "type": "object",
         "properties": {
           "unversionedEntityIds": {
@@ -31443,7 +32630,81 @@
         },
         "additionalProperties": false
       },
-      "UnversionedEntityResponseDto": {
+      "UnversionedEntityRequestDto_ExperimentTemplateIndexEntity_ExperimentTemplateAnnotations_ExperimentTemplateProperties_ExtensibleObject": {
+        "type": "object",
+        "properties": {
+          "unversionedEntityIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UnversionedEntityRequestDto_FlowIndexEntity_FlowAnnotations_FlowProperties_ExtensibleObject": {
+        "type": "object",
+        "properties": {
+          "unversionedEntityIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UnversionedEntityResponseDto_ExperimentIndexEntity_ExperimentAnnotations_ExperimentProperties_ExtensibleObject": {
+        "type": "object",
+        "properties": {
+          "unversionedEntities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExperimentIndexEntity"
+            },
+            "nullable": true
+          },
+          "unversionedEntityJsonSchema": {
+            "nullable": true
+          },
+          "normalizedRequestCharge": {
+            "type": "number",
+            "format": "double"
+          },
+          "normalizedRequestChargePeriod": {
+            "type": "string",
+            "format": "date-span"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UnversionedEntityResponseDto_ExperimentTemplateIndexEntity_ExperimentTemplateAnnotations_ExperimentTemplateProperties_ExtensibleObject": {
+        "type": "object",
+        "properties": {
+          "unversionedEntities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExperimentTemplateIndexEntity"
+            },
+            "nullable": true
+          },
+          "unversionedEntityJsonSchema": {
+            "nullable": true
+          },
+          "normalizedRequestCharge": {
+            "type": "number",
+            "format": "double"
+          },
+          "normalizedRequestChargePeriod": {
+            "type": "string",
+            "format": "date-span"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UnversionedEntityResponseDto_FlowIndexEntity_FlowAnnotations_FlowProperties_ExtensibleObject": {
         "type": "object",
         "properties": {
           "unversionedEntities": {
@@ -31467,7 +32728,7 @@
         },
         "additionalProperties": false
       },
-      "UnversionedRebuildIndexDto": {
+      "UnversionedRebuildIndexDto_ExperimentIndexEntity_ExperimentAnnotations_ExperimentProperties_ExtensibleObject": {
         "type": "object",
         "properties": {
           "continuationToken": {
@@ -31512,11 +32773,141 @@
         },
         "additionalProperties": false
       },
-      "UnversionedRebuildResponseDto": {
+      "UnversionedRebuildIndexDto_ExperimentTemplateIndexEntity_ExperimentTemplateAnnotations_ExperimentTemplateProperties_ExtensibleObject": {
+        "type": "object",
+        "properties": {
+          "continuationToken": {
+            "type": "string",
+            "nullable": true
+          },
+          "entityCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "entityContainerType": {
+            "type": "string",
+            "nullable": true
+          },
+          "entityType": {
+            "type": "string",
+            "nullable": true
+          },
+          "resourceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "workspaceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "immutableResourceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "startTime": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "endTime": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UnversionedRebuildIndexDto_FlowIndexEntity_FlowAnnotations_FlowProperties_ExtensibleObject": {
+        "type": "object",
+        "properties": {
+          "continuationToken": {
+            "type": "string",
+            "nullable": true
+          },
+          "entityCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "entityContainerType": {
+            "type": "string",
+            "nullable": true
+          },
+          "entityType": {
+            "type": "string",
+            "nullable": true
+          },
+          "resourceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "workspaceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "immutableResourceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "startTime": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "endTime": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UnversionedRebuildResponseDto_ExperimentIndexEntity_ExperimentAnnotations_ExperimentProperties_ExtensibleObject": {
         "type": "object",
         "properties": {
           "entities": {
-            "$ref": "#/components/schemas/SegmentedResult`1"
+            "$ref": "#/components/schemas/SegmentedResult_1_ExperimentIndexEntity"
+          },
+          "unversionedEntitySchema": {
+            "nullable": true
+          },
+          "normalizedRequestCharge": {
+            "type": "number",
+            "format": "double"
+          },
+          "normalizedRequestChargePeriod": {
+            "type": "string",
+            "format": "date-span"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UnversionedRebuildResponseDto_ExperimentTemplateIndexEntity_ExperimentTemplateAnnotations_ExperimentTemplateProperties_ExtensibleObject": {
+        "type": "object",
+        "properties": {
+          "entities": {
+            "$ref": "#/components/schemas/SegmentedResult_1_ExperimentTemplateIndexEntity"
+          },
+          "unversionedEntitySchema": {
+            "nullable": true
+          },
+          "normalizedRequestCharge": {
+            "type": "number",
+            "format": "double"
+          },
+          "normalizedRequestChargePeriod": {
+            "type": "string",
+            "format": "date-span"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UnversionedRebuildResponseDto_FlowIndexEntity_FlowAnnotations_FlowProperties_ExtensibleObject": {
+        "type": "object",
+        "properties": {
+          "entities": {
+            "$ref": "#/components/schemas/SegmentedResult_1_FlowIndexEntity"
           },
           "unversionedEntitySchema": {
             "nullable": true
@@ -31625,6 +33016,13 @@
           "identity": {
             "type": "string",
             "nullable": true
+          },
+          "computeName": {
+            "type": "string",
+            "nullable": true
+          },
+          "enableMultiContainer": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -31897,10 +33295,6 @@
       "Volume": {
         "type": "object",
         "properties": {
-          "type": {
-            "type": "string",
-            "nullable": true
-          },
           "source": {
             "type": "string",
             "nullable": true
@@ -31908,6 +33302,9 @@
           "target": {
             "type": "string",
             "nullable": true
+          },
+          "bindOptions": {
+            "$ref": "#/components/schemas/BindOptions"
           }
         },
         "additionalProperties": false

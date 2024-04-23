@@ -6,7 +6,12 @@ __path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
 # flake8: noqa
 
 """Put some imports here for internal packages to minimize the effort of refactoring."""
-from promptflow._constants import PROMPTFLOW_CONNECTIONS, SpanAttributeFieldName, TraceEnvironmentVariableName
+from promptflow._constants import (
+    PROMPTFLOW_CONNECTIONS,
+    CosmosDBContainerName,
+    SpanAttributeFieldName,
+    TraceEnvironmentVariableName,
+)
 from promptflow._core._errors import GenerateMetaUserError, PackageToolNotFoundError, ToolExecutionError
 from promptflow._core.cache_manager import AbstractCacheManager, CacheManager, enable_cache
 from promptflow._core.connection_manager import ConnectionManager
@@ -44,6 +49,8 @@ from promptflow._proxy._base_executor_proxy import APIBasedExecutorProxy
 from promptflow._proxy._csharp_executor_proxy import CSharpBaseExecutorProxy
 from promptflow._sdk._constants import LOCAL_MGMT_DB_PATH, CreatedByFieldName
 from promptflow._sdk._service.apis.collector import trace_collector
+from promptflow._sdk._tracing import process_otlp_trace_request
+from promptflow._sdk._version import VERSION
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.credential_scrubber import CredentialScrubber
 from promptflow._utils.dataclass_serializer import deserialize_dataclass
@@ -92,17 +99,17 @@ from promptflow._utils.utils import (
     set_context,
     transpose,
 )
-from promptflow._version import VERSION
+from promptflow.core._connection_provider._workspace_connection_provider import WorkspaceConnectionProvider
+from promptflow.core._errors import OpenURLNotFoundError
 from promptflow.core._serving.response_creator import ResponseCreator
 from promptflow.core._serving.swagger import generate_swagger
 from promptflow.core._serving.utils import (
     get_output_fields_to_remove,
     get_sample_json,
-    handle_error_to_response,
     load_request_data,
-    streaming_response_required,
     validate_request_data,
 )
+from promptflow.core._serving.v1.utils import handle_error_to_response, streaming_response_required
 from promptflow.core._utils import (
     get_used_connection_names_from_environment_variables,
     update_environment_variables_with_connections,

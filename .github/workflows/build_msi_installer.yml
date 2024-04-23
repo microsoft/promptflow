@@ -60,6 +60,8 @@ jobs:
         if: ${{ github.event.inputs.version != null && github.event.inputs.version != '' }}
         run: |
           pip install "promptflow[azure,executable,azureml-serving,executor-service]==$env:INPUT_VERSION" promptflow-tools
+          echo "There's no promptflow-evals in pypi, we need to install it from source for now"
+          pip install ${{ github.workspace }}/src/promptflow-evals
         env:
           INPUT_VERSION: ${{ github.event.inputs.version }}
         shell: pwsh
@@ -108,7 +110,8 @@ jobs:
           setupType: promptflow_with_extra
           scriptPath: ${{ env.testWorkingDirectory }}
 
-      - name: Setup and Install dev promptflow
+      - name: Setup and Install separate dev promptflow
+        if: ${{ github.event.inputs.version == null || github.event.inputs.version == '' }}
         shell: pwsh
         run: |
           Set-PSDebug -Trace 1
@@ -117,6 +120,7 @@ jobs:
           pip install ${{ github.workspace }}/src/promptflow-core[executor-service,azureml-serving]
           pip install ${{ github.workspace }}/src/promptflow-devkit[pyarrow,executable]
           pip install ${{ github.workspace }}/src/promptflow-azure
+          pip install ${{ github.workspace }}/src/promptflow-evals
           echo "Should fix this after pf-core could install this dependency"
           pip install azureml-ai-monitoring
           pip freeze
@@ -185,7 +189,8 @@ jobs:
         run: |
           $version = "${{ steps.get-version.outputs.version }}"
           $downloaded_version = "${{ steps.download-json.outputs.downloaded_version }}"
-          if ($version -like '1.*' -and [Version]$version -gt [Version]$downloaded_version){
+          $uploadAsLatest = "${{ github.event.inputs.uploadAsLatest }}"
+          if ($uploadAsLatest -ieq 'True' -and $version -like '1.*' -and [Version]$version -gt [Version]$downloaded_version){
             $jsonContent = @{
               "promptflow" = $version
             } | ConvertTo-Json -Depth 100

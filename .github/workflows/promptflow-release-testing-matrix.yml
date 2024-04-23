@@ -13,11 +13,16 @@ on:
         required: false
         type: string
 env:
-  testWorkingDirectory: src/promptflow
   IS_IN_CI_PIPELINE: "true"
+  TRACING_DIRECTORY: ${{ github.workspace }}/src/promptflow-tracing
+  AZURE_DIRECTORY: ${{ github.workspace }}/src/promptflow-azure
+  CORE_DIRECTORY: ${{ github.workspace }}/src/promptflow-core
+  DEVKIT_DIRECTORY: ${{ github.workspace }}/src/promptflow-devkit
+  PROMPTFLOW_DIRECTORY: ${{ github.workspace }}/src/promptflow
+  TOOL_DIRECTORY: ${{ github.workspace }}/src/promptflow-tools
   RECORD_DIRECTORY: ${{ github.workspace }}/src/promptflow-recording
-  TRACING_PATH: ${{ github.workspace }}/src/promptflow-tracing
   PROMPT_FLOW_WORKSPACE_NAME: "promptflow-eastus"
+
 jobs:
   id:
     runs-on: ubuntu-latest
@@ -30,33 +35,51 @@ jobs:
     steps:
     - name: checkout
       uses: actions/checkout@v4
-    - name: Python Setup - 3.9
-      uses: "./.github/actions/step_create_python_environment"
+    - uses: actions/setup-python@v5
       with:
-        pythonVersion: 3.9
-    - name: Build wheel
-      uses: "./.github/actions/step_sdk_setup"
-      with:
-        setupType: promptflow_with_extra
-        scriptPath: ${{ env.testWorkingDirectory }}
+        python-version: "3.9"
+    - uses: snok/install-poetry@v1
+    - working-directory: ${{ env.TRACING_DIRECTORY }}
+      run: poetry build -f wheel
+    - working-directory: ${{ env.CORE_DIRECTORY }}
+      run: poetry build -f wheel
+    - working-directory: ${{ env.DEVKIT_DIRECTORY }}
+      run: poetry build -f wheel
+    - working-directory: ${{ env.AZURE_DIRECTORY }}
+      run: poetry build -f wheel
+    - working-directory: ${{ env.PROMPTFLOW_DIRECTORY }}
+      run: |
+        pip install -r ./dev_requirements.txt
+        python ./setup.py bdist_wheel
+    - working-directory: ${{ env.TOOL_DIRECTORY }}
+      run: python ./setup.py bdist_wheel
+
     - name: Upload Wheel
       uses: actions/upload-artifact@v3
       with:
         name: wheel
         path: |
           ${{ github.workspace }}/src/promptflow/dist/*.whl
+          ${{ github.workspace }}/src/promptflow-tracing/dist/*.whl
+          ${{ github.workspace }}/src/promptflow-core/dist/*.whl
+          ${{ github.workspace }}/src/promptflow-devkit/dist/*.whl
+          ${{ github.workspace }}/src/promptflow-azure/dist/*.whl
           ${{ github.workspace }}/src/promptflow-tools/dist/*.whl
 
-  promptflow_sdk_cli_tests:
+  promptflow_tracing_tests:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call' || github.event_name == 'pull_request' }}
     needs: build
     env:
       PROMPT_FLOW_TEST_MODE: "live"
+      WORKING_DIRECTORY: ${{ github.workspace }}/src/promptflow-tracing
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         pythonVersion: ['3.8', '3.9', '3.10', '3.11']
+    defaults:
+      run:
+        shell: bash
     runs-on: ${{ matrix.os }}
     steps:
     - name: checkout
@@ -64,85 +87,208 @@ jobs:
     - name: Display and Set Environment Variables
       run:
         env | sort >> $GITHUB_OUTPUT
-      shell: bash -el {0}
-    - name: Python Env Setup - ${{ matrix.os }} - Python Version ${{ matrix.pythonVersion }}
-      uses: "./.github/actions/step_create_python_environment"
+    - uses: actions/setup-python@v5
       with:
-        pythonVersion: ${{ matrix.pythonVersion }}
+        python-version: ${{ matrix.pythonVersion }}
+    - uses: snok/install-poetry@v1
     - name: Download Artifacts
       uses: actions/download-artifact@v3
       with:
         name: wheel
-        path: artifacts
+        path: ${{ env.WORKING_DIRECTORY }}/artifacts
+    - name: install promptflow-tracing from wheel
+      # wildcard expansion (*) does not work in Windows, so leverage python to find and install
+      run: poetry run pip install $(python -c "import glob; print(glob.glob('**/promptflow_tracing-*.whl', recursive=True)[0])")
+      working-directory: ${{ env.WORKING_DIRECTORY }}
+    - name: install test dependency group
+      run: poetry install --only test
+      working-directory: ${{ env.WORKING_DIRECTORY }}
     - name: install recording
-      run:
-        pip install vcrpy
-        pip install -e .
+      run: poetry install
       working-directory: ${{ env.RECORD_DIRECTORY }}
-    - name: Azure Login
-      uses: azure/login@v1
-      if: env.PROMPT_FLOW_TEST_MODE == 'live'
+    - name: generate end-to-end test config from secret
+      run: echo '${{ secrets.PF_TRACING_E2E_TEST_CONFIG }}' >> connections.json
+      working-directory: ${{ env.WORKING_DIRECTORY }}
+    - name: run e2e tests
+      run: poetry run pytest -m e2etest
+      working-directory: ${{ env.WORKING_DIRECTORY }}
+    - name: upload coverage report
+      uses: actions/upload-artifact@v4
       with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
-    - name: Generate Configs
-      uses: "./.github/actions/step_generate_configs"
-      if: env.PROMPT_FLOW_TEST_MODE == 'live'
-      with:
-        targetFolder: ${{ env.testWorkingDirectory }}
-    - name: generate test resources placeholder
-      if: env.PROMPT_FLOW_TEST_MODE != 'live'
-      shell: pwsh
-      working-directory: ${{ env.testWorkingDirectory }}
-      run: |
-        cp ${{ github.workspace }}/src/promptflow/dev-connections.json.example ${{ github.workspace }}/src/promptflow/connections.json
-    - name: Install pf
-      shell: pwsh
-      working-directory: artifacts
-      run: |
-        pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
-        pip uninstall -y promptflow-core promptflow-devkit promptflow-tracing
-        pip install ${{ github.workspace }}/src/promptflow-tracing
-        pip install ${{ github.workspace }}/src/promptflow-core
-        pip install ${{ github.workspace }}/src/promptflow-devkit[pyarrow]
-        pip install ${{ github.workspace }}/src/promptflow-azure
-        gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)"}}
-        gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)"}}
-        pip freeze
-    - name: Run SDK CLI Test
-      shell: pwsh
-      working-directory: ${{ env.testWorkingDirectory }}
-      run: |
-        python "../../scripts/building/run_coverage_tests.py" `
-          -p promptflow `
-          -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test `
-          -l eastus `
-          -m "unittest or e2etest" `
-          -o "${{ github.workspace }}/test-results-sdk-cli.xml" `
-          --ignore-glob ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test/e2etests/test_executable.py
-    - name: Install pf executable
-      shell: pwsh
-      working-directory: artifacts
-      run: |
-        Set-PSDebug -Trace 1
-        gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[executable]"}}
-        pip freeze
-    - name: Run SDK CLI Executable Test
-      shell: pwsh
-      working-directory: ${{ env.testWorkingDirectory }}
-      run: |
-        python "../../scripts/building/run_coverage_tests.py" `
-          -p promptflow `
-          -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test/e2etests/test_executable.py `
-          -l eastus `
-          -m "unittest or e2etest" `
-          -o "${{ github.workspace }}/test-results-sdk-cli-executable.xml"
-    - name: Upload pytest test results (Python ${{ matrix.pythonVersion }}) (OS ${{ matrix.os }})
-      if: ${{ always() }}
-      uses: actions/upload-artifact@v3
-      with:
-        name: promptflow_sdk_cli_tests Test Results (Python ${{ matrix.pythonVersion }}) (OS ${{ matrix.os }})
-        path: ${{ github.workspace }}/*.xml
-  promptflow_sdk_cli_azure_tests:
+        name: promptflow_tracing_tests report-${{ matrix.os }}-py${{ matrix.pythonVersion }}
+        path: |
+          ${{ env.WORKING_DIRECTORY }}/*.xml
+
+
+  promptflow_core_tests:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call' || github.event_name == 'pull_request' }}
+    needs: build
+    env:
+      PROMPT_FLOW_TEST_MODE: "live"
+      WORKING_DIRECTORY: ${{ github.workspace }}/src/promptflow-core
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        pythonVersion: ['3.8', '3.9', '3.10', '3.11']
+    # snok/install-poetry need this to support Windows
+    defaults:
+      run:
+        shell: bash
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.pythonVersion }}
+      - uses: snok/install-poetry@v1
+      - name: Download Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: wheel
+          path: ${{ env.WORKING_DIRECTORY }}/artifacts
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Generate Configs
+        uses: "./.github/actions/step_generate_configs"
+        with:
+          targetFolder: ${{ env.PROMPTFLOW_DIRECTORY }}
+      - name: install promptflow-core from wheel
+        # wildcard expansion (*) does not work in Windows, so leverage python to find and install
+        run: |
+          poetry run pip install $(python -c "import glob; print(glob.glob('**/promptflow_tracing-*.whl', recursive=True)[0])")
+          poetry run pip install $(python -c "import glob; print(glob.glob('**/promptflow_core-*.whl', recursive=True)[0])")
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+      - name: install test dependency group
+        run: poetry install --only test
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+      - name: install recording
+        run: poetry install
+        working-directory: ${{ env.RECORD_DIRECTORY }}
+      - name: run core tests
+        run: poetry run pytest ./tests/core
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+      - name: upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: promptflow_core_tests report-${{ matrix.os }}-py${{ matrix.pythonVersion }}
+          path: |
+            ${{ env.WORKING_DIRECTORY }}/*.xml
+
+  promptflow_core_azureml_serving_tests:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call' || github.event_name == 'pull_request' }}
+    needs: build
+    env:
+      PROMPT_FLOW_TEST_MODE: "live"
+      WORKING_DIRECTORY: ${{ github.workspace }}/src/promptflow-core
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        pythonVersion: ['3.8', '3.9', '3.10', '3.11']
+    # snok/install-poetry need this to support Windows
+    defaults:
+      run:
+        shell: bash
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.pythonVersion }}
+      - uses: snok/install-poetry@v1
+      - name: Download Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: wheel
+          path: ${{ env.WORKING_DIRECTORY }}/artifacts
+      - name: install promptflow-core from wheel
+        # wildcard expansion (*) does not work in Windows, so leverage python to find and install
+        run: |
+          poetry run pip install $(python -c "import glob; print(glob.glob('**/promptflow_tracing-*.whl', recursive=True)[0])")
+          poetry run pip install $(python -c "import glob; print(glob.glob('**/promptflow_core-*.whl', recursive=True)[0]+'[azureml-serving]')")
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+      - name: install test dependency group
+        run: poetry install --only test
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+      - name: install recording
+        run: poetry install
+        working-directory: ${{ env.RECORD_DIRECTORY }}
+      - name: run azureml-serving tests
+        run: poetry run pytest ./tests/azureml-serving
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+      - name: upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: promptflow_core_azureml_serving_tests report-${{ matrix.os }}-py${{ matrix.pythonVersion }}
+          path: |
+            ${{ env.WORKING_DIRECTORY }}/*.xml
+
+
+  promptflow_devkit_tests:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call' || github.event_name == 'pull_request' }}
+    needs: build
+    env:
+      PROMPT_FLOW_TEST_MODE: "live"
+      WORKING_DIRECTORY: ${{ github.workspace }}/src/promptflow-devkit
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        pythonVersion: ['3.8', '3.9', '3.10', '3.11']
+    # snok/install-poetry need this to support Windows
+    defaults:
+      run:
+        shell: bash
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.pythonVersion }}
+      - uses: snok/install-poetry@v1
+      - name: Download Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: wheel
+          path: ${{ env.WORKING_DIRECTORY }}/artifacts
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Generate Configs
+        uses: "./.github/actions/step_generate_configs"
+        with:
+          targetFolder: ${{ env.PROMPTFLOW_DIRECTORY }}
+      - name: install promptflow-devkit from wheel
+        # wildcard expansion (*) does not work in Windows, so leverage python to find and install
+        run: |
+          poetry run pip install $(python -c "import glob; print(glob.glob('**/promptflow_tracing-*.whl', recursive=True)[0])")
+          poetry run pip install $(python -c "import glob; print(glob.glob('**/promptflow_core-*.whl', recursive=True)[0]+'[azureml-serving]')")
+          poetry run pip install $(python -c "import glob; print(glob.glob('**/promptflow_devkit-*.whl', recursive=True)[0]+'[executable]')")
+          poetry run pip install $(python -c "import glob; print(glob.glob('**/promptflow-*.whl', recursive=True)[0])")
+          poetry run pip install $(python -c "import glob; print(glob.glob('**/promptflow_tools-*.whl', recursive=True)[0])")
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+      - name: install test dependency group
+        run: poetry install --only test
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+      - name: install recording
+        run: poetry install
+        working-directory: ${{ env.RECORD_DIRECTORY }}
+      - name: run devkit tests
+        run: poetry run pytest ./tests/sdk_cli_test ./tests/sdk_pfs_test -n auto -m "unittest or e2etest"
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+      - name: upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: promptflow_devkit_tests report-${{ matrix.os }}-py${{ matrix.pythonVersion }}
+          path: |
+            ${{ env.WORKING_DIRECTORY }}/*.xml
+
+
+  promptflow_azure_tests:
     needs: build
     strategy:
       fail-fast: false
@@ -151,70 +297,62 @@ jobs:
         pythonVersion: ['3.8', '3.9', '3.10', '3.11']
     env:
       PROMPT_FLOW_TEST_MODE: "live"
+      WORKING_DIRECTORY: ${{ github.workspace }}/src/promptflow-azure
+      PROMPT_FLOW_WORKSPACE_NAME: "promptflow-eastus"
+    # snok/install-poetry need this to support Windows
+    defaults:
+      run:
+        shell: bash
     runs-on: ${{ matrix.os }}
     steps:
-    - name: checkout
-      uses: actions/checkout@v4
-    - name: Display and Set Environment Variables
-      run:
-        env | sort >> $GITHUB_OUTPUT
-      shell: bash -el {0}
-    - name: Python Env Setup - ${{ matrix.os }} - Python Version ${{ matrix.pythonVersion }}
-      uses: "./.github/actions/step_create_python_environment"
-      with:
-        pythonVersion: ${{ matrix.pythonVersion }}
-    - name: Download Artifacts
-      uses: actions/download-artifact@v3
-      with:
-        name: wheel
-        path: artifacts
-    - name: install recording
-      run: |
-        pip install vcrpy
-        pip install -e .
-      working-directory: ${{ env.RECORD_DIRECTORY }}
-    - name: Azure Login
-      uses: azure/login@v1
-      if: env.PROMPT_FLOW_TEST_MODE == 'live'
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
-    - name: Generate Configs
-      uses: "./.github/actions/step_generate_configs"
-      if: env.PROMPT_FLOW_TEST_MODE == 'live'
-      with:
-        targetFolder: ${{ env.testWorkingDirectory }}
-    - name: Install pf azure
-      shell: pwsh
-      working-directory: artifacts
-      run: |
-        pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
-        pip uninstall -y promptflow-core promptflow-devkit promptflow-azure promptflow-tracing
-        pip install ${{ github.workspace }}/src/promptflow-tracing
-        pip install ${{ github.workspace }}/src/promptflow-core
-        pip install ${{ github.workspace }}/src/promptflow-devkit[pyarrow]
-        pip install ${{ github.workspace }}/src/promptflow-azure
-        gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[azure]"}}
-        gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)"}}
-        pip freeze
-    - name: Run SDK CLI Azure Test
-      shell: pwsh
-      working-directory: ${{ env.testWorkingDirectory }}
-      run: |
-        python "../../scripts/building/run_coverage_tests.py" `
-          -p promptflow `
-          -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_azure_test `
-          -l eastus `
-          -m "unittest or e2etest" `
-          -o "${{ github.workspace }}/test-results-sdk-cli-azure.xml"
-    - name: Upload pytest test results (Python ${{ matrix.pythonVersion }}) (OS ${{ matrix.os }})
-      if: ${{ always() }}
-      uses: actions/upload-artifact@v3
-      with:
-        name: promptflow_sdk_cli_azure_tests Test Results (Python ${{ matrix.pythonVersion }}) (OS ${{ matrix.os }})
-        path: ${{ github.workspace }}/*.xml
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.pythonVersion }}
+      - uses: snok/install-poetry@v1
+      - name: Download Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: wheel
+          path: ${{ env.WORKING_DIRECTORY }}/artifacts
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Generate Configs
+        uses: "./.github/actions/step_generate_configs"
+        with:
+          targetFolder: ${{ env.PROMPTFLOW_DIRECTORY }}
+      - name: install promptflow-azure from wheel
+        # wildcard expansion (*) does not work in Windows, so leverage python to find and install
+        run: |
+          poetry run pip install $(python -c "import glob; print(glob.glob('**/promptflow_tracing-*.whl', recursive=True)[0])")
+          poetry run pip install $(python -c "import glob; print(glob.glob('**/promptflow_core-*.whl', recursive=True)[0]+'[azureml-serving]')")
+          poetry run pip install $(python -c "import glob; print(glob.glob('**/promptflow_devkit-*.whl', recursive=True)[0]+'[executable]')")
+          poetry run pip install $(python -c "import glob; print(glob.glob('**/promptflow_azure-*.whl', recursive=True)[0])")
+          poetry run pip install $(python -c "import glob; print(glob.glob('**/promptflow-*.whl', recursive=True)[0])")
+          poetry run pip install $(python -c "import glob; print(glob.glob('**/promptflow_tools-*.whl', recursive=True)[0])")
+          poetry run pip install -e ../promptflow-recording
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+      - name: install test dependency group
+        run: poetry install --only test
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+      - name: run azure tests
+        run: poetry run pytest ./tests/sdk_cli_azure_test -n auto -m "unittest or e2etest"
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+      - name: upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: promptflow_azure_tests report-${{ matrix.os }}-py${{ matrix.pythonVersion }}
+          path: |
+            ${{ env.WORKING_DIRECTORY }}/*.xml
+
+
   promptflow_executor_tests:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call' || github.event_name == 'pull_request' }}
     needs: build
+    env:
+      testWorkingDirectory: src/promptflow
     strategy:
       fail-fast: false
       matrix:
@@ -281,56 +419,11 @@ jobs:
       with:
         name: promptflow_executor_tests Test Results (Python ${{ matrix.pythonVersion }}) (OS ${{ matrix.os }})
         path: ${{ github.workspace }}/*.xml
-  promptflow_core_tests:
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call' || github.event_name == 'pull_request' }}
-    needs: build
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        pythonVersion: ['3.8', '3.9', '3.10', '3.11']
-    # snok/install-poetry need this to support Windows
-    defaults:
-      run:
-        shell: bash
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-      - uses: snok/install-poetry@v1
-      - name: install promptflow-tracing
-        run: poetry install
-        working-directory: ${{ github.workspace }}/src/promptflow-tracing
-      - name: install promptflow-core
-        run: poetry install
-        working-directory: ${{ github.workspace }}/src/promptflow-core
-      - name: install test dependency group
-        run: poetry install --only test
-        working-directory: ${{ github.workspace }}/src/promptflow-core
-      - name: install recording
-        run: poetry install
-        working-directory: ${{ github.workspace }}/src/promptflow-recording
-      - name: run core tests
-        run: poetry run pytest --cov=promptflow --cov-config=pyproject.toml --cov-report=term --cov-report=html --cov-report=xml
-        working-directory: ${{ github.workspace }}/src/promptflow-core
-      - name: upload coverage report
-        uses: actions/upload-artifact@v4
-        with:
-          name: report-${{ matrix.os }}-py${{ matrix.python-version }}
-          path: |
-            ${{ env.WORKING_DIRECTORY }}/*.xml
-            ${{ env.WORKING_DIRECTORY }}/htmlcov/
-      - name: Upload pytest test results (Python ${{ matrix.pythonVersion }}) (OS ${{ matrix.os }})
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v3
-        with:
-          name: promptflow_core_tests Test Results (Python ${{ matrix.pythonVersion }}) (OS ${{ matrix.os }})
-          path: ${{ github.workspace }}/*.xml
+
+
   publish-test-results:
     name: "Publish Tests Results"
-    needs: [ promptflow_sdk_cli_tests, promptflow_sdk_cli_azure_tests, promptflow_executor_tests ]
+    needs: [ promptflow_devkit_tests, promptflow_azure_tests, promptflow_executor_tests, promptflow_core_tests, promptflow_core_azureml_serving_tests ]
     runs-on: ubuntu-latest
     permissions:
       checks: write

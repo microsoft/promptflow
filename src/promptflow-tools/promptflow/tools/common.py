@@ -4,29 +4,40 @@ import os
 import re
 import sys
 import time
-from typing import List, Mapping, Union
+from typing import List, Mapping
+import uuid
 
 from jinja2 import Template
-from openai import APIConnectionError, APIStatusError, OpenAIError, RateLimitError, APITimeoutError, BadRequestError
-from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, LLMError, JinjaTemplateError, \
-    ExceedMaxRetryTimes, ChatAPIInvalidFunctions, FunctionCallNotSupportedInStreamMode, \
-    ChatAPIFunctionRoleInvalidFormat, InvalidConnectionType, ListDeploymentsError, ParseConnectionError
+from openai import APIConnectionError, APIStatusError, APITimeoutError, BadRequestError, OpenAIError, RateLimitError
 
 from promptflow._cli._utils import get_workspace_triad_from_local
-from promptflow.connections import AzureOpenAIConnection, OpenAIConnection, ServerlessConnection
+from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
+from promptflow.contracts.types import PromptTemplate
 from promptflow.exceptions import SystemErrorException, UserErrorException
-
+from promptflow.tools.exception import (
+    ToolValidationError,
+    ChatAPIAssistantRoleInvalidFormat,
+    ChatAPIFunctionRoleInvalidFormat,
+    ChatAPIToolRoleInvalidFormat,
+    ChatAPIInvalidFunctions,
+    ChatAPIInvalidRole,
+    ChatAPIInvalidTools,
+    ExceedMaxRetryTimes,
+    FunctionCallNotSupportedInStreamMode,
+    InvalidConnectionType,
+    JinjaTemplateError,
+    ListDeploymentsError,
+    LLMError,
+    ParseConnectionError,
+    WrappedOpenAIError,
+)
 
 GPT4V_VERSION = "vision-preview"
+VALID_ROLES = ["system", "user", "assistant", "function", "tool"]
 
 
 class Deployment:
-    def __init__(
-            self,
-            name: str,
-            model_name: str,
-            version: str
-    ):
+    def __init__(self, name: str, model_name: str, version: str):
         self.name = name
         self.model_name = model_name
         self.version = version
@@ -47,7 +58,7 @@ class ChatInputList(list):
 
 def validate_role(role: str, valid_roles: List[str] = None):
     if not valid_roles:
-        valid_roles = ["assistant", "function", "user", "system"]
+        valid_roles = VALID_ROLES
 
     if role not in valid_roles:
         valid_roles_str = ','.join([f'\'{role}:\\n\'' for role in valid_roles])
@@ -59,6 +70,42 @@ def validate_role(role: str, valid_roles: List[str] = None):
             f"https://aka.ms/pfdoc/chat-prompt or view the samples in our gallery that contain 'Chat' in the name."
         )
         raise ChatAPIInvalidRole(message=error_message)
+
+
+def validate_function(common_tsg, i, function, expection: ToolValidationError):
+    # validate if the function is a dict
+    if not isinstance(function, dict):
+        raise expection(message=f"function {i} '{function}' is not a dict. {common_tsg}")
+    # validate if has required keys
+    for key in ["name", "parameters"]:
+        if key not in function.keys():
+            raise expection(
+                message=f"function {i} '{function}' does not have '{key}' property. {common_tsg}"
+            )
+    # validate if the parameters is a dict
+    if not isinstance(function["parameters"], dict):
+        raise expection(
+            message=f"function {i} '{function['name']}' parameters '{function['parameters']}' "
+            f"should be described as a JSON Schema object. {common_tsg}"
+        )
+    # validate if the parameters has required keys
+    for key in ["type", "properties"]:
+        if key not in function["parameters"].keys():
+            raise expection(
+                message=f"function {i} '{function['name']}' parameters '{function['parameters']}' "
+                f"does not have '{key}' property. {common_tsg}"
+            )
+    # validate if the parameters type is object
+    if function["parameters"]["type"] != "object":
+        raise expection(
+            message=f"function {i} '{function['name']}' parameters 'type' " f"should be 'object'. {common_tsg}"
+        )
+    # validate if the parameters properties is a dict
+    if not isinstance(function["parameters"]["properties"], dict):
+        raise expection(
+            message=f"function {i} '{function['name']}' parameters 'properties' "
+            f"should be described as a JSON Schema object. {common_tsg}"
+        )
 
 
 def validate_functions(functions):
@@ -82,35 +129,47 @@ def validate_functions(functions):
         raise ChatAPIInvalidFunctions(message=f"functions cannot be an empty list. {common_tsg}")
     else:
         for i, function in enumerate(functions):
-            # validate if the function is a dict
-            if not isinstance(function, dict):
-                raise ChatAPIInvalidFunctions(message=f"function {i} '{function}' is not a dict. {common_tsg}")
-            # validate if has required keys
-            for key in ["name", "parameters"]:
-                if key not in function.keys():
-                    raise ChatAPIInvalidFunctions(
-                        message=f"function {i} '{function}' does not have '{key}' property. {common_tsg}")
-            # validate if the parameters is a dict
-            if not isinstance(function["parameters"], dict):
-                raise ChatAPIInvalidFunctions(
-                    message=f"function {i} '{function['name']}' parameters '{function['parameters']}' "
-                            f"should be described as a JSON Schema object. {common_tsg}")
-            # validate if the parameters has required keys
-            for key in ["type", "properties"]:
-                if key not in function["parameters"].keys():
-                    raise ChatAPIInvalidFunctions(
-                        message=f"function {i} '{function['name']}' parameters '{function['parameters']}' "
-                                f"does not have '{key}' property. {common_tsg}")
-            # validate if the parameters type is object
-            if function["parameters"]["type"] != "object":
-                raise ChatAPIInvalidFunctions(
-                    message=f"function {i} '{function['name']}' parameters 'type' "
-                            f"should be 'object'. {common_tsg}")
-            # validate if the parameters properties is a dict
-            if not isinstance(function["parameters"]["properties"], dict):
-                raise ChatAPIInvalidFunctions(
-                    message=f"function {i} '{function['name']}' parameters 'properties' "
-                            f"should be described as a JSON Schema object. {common_tsg}")
+            validate_function(common_tsg, i, function, ChatAPIInvalidFunctions)
+
+
+def validate_tools(tools):
+    tool_example = json.dumps(
+        {
+            "type": "function",
+            "function": {
+                "name": "get_current_weather",
+                "description": "Get the current weather in a given location",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "location": {
+                            "type": "string",
+                            "description": "The city and state, e.g. San Francisco, CA",
+                        },
+                        "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
+                    },
+                    "required": ["location"],
+                },
+            },
+        }
+    )
+    common_tsg = (
+        f"Here is a valid tool example: {tool_example}. See more details at "
+        "https://platform.openai.com/docs/api-reference/chat/create"
+    )
+
+    if len(tools) == 0:
+        raise ChatAPIInvalidTools(message=f"tools cannot be an empty list. {common_tsg}")
+    for i, tool in enumerate(tools):
+        # validate if the tool is a dict
+        if not isinstance(tool, dict):
+            raise ChatAPIInvalidTools(message=f"tool {i} '{tool}' is not a dict. {common_tsg}")
+        # validate if has required keys
+        for key in ["type", "function"]:
+            if key not in tool.keys():
+                raise ChatAPIInvalidTools(
+                    message=f"tool {i} '{tool}' does not have '{key}' property. {common_tsg}")
+        validate_function(common_tsg, i, tool["function"], ChatAPIInvalidTools)
 
 
 def try_parse_name_and_content(role_prompt):
@@ -123,9 +182,68 @@ def try_parse_name_and_content(role_prompt):
     return None
 
 
-def parse_chat(chat_str, images: List = None, valid_roles: List[str] = None):
+def try_parse_tool_call_id_and_content(role_prompt):
+    # customer can add ## in front of tool_call_id/content for markdown highlight.
+    # and we still support tool_call_id/content without ## prefix for backward compatibility.
+    pattern = r"\n*#{0,2}\s*tool_call_id:\n+\s*(\S+)\s*\n*#{0,2}\s*content:\n?(.*)"
+    match = re.search(pattern, role_prompt, re.DOTALL)
+    if match:
+        return match.group(1), match.group(2)
+    return None
+
+
+def try_parse_tool_calls(role_prompt):
+    # customer can add ## in front of tool_calls for markdown highlight.
+    # and we still support tool_calls without ## prefix for backward compatibility.
+    pattern = r"\n*#{0,2}\s*tool_calls:\n*\s*(\[.*?\])"
+    match = re.search(pattern, role_prompt, re.DOTALL)
+    if match:
+        return match.group(1)
+    return None
+
+
+def is_tools_chunk(last_message):
+    return last_message and "role" in last_message and last_message["role"] == "tool" and "content" not in last_message
+
+
+def is_assistant_tool_calls_chunk(last_message, chunk):
+    return last_message and "role" in last_message and last_message["role"] == "assistant" and "tool_calls" in chunk
+
+
+def parse_tool_calls_for_assistant(last_message, chunk):
+    parsed_result = try_parse_tool_calls(chunk)
+    error_msg = "Failed to parse assistant role prompt with tool_calls. Please make sure the prompt follows the format:"
+    " 'tool_calls:\\n[{ id: tool_call_id, type: tool_type, function: {name: function_name, arguments: function_args }]'"
+    "See more details in https://platform.openai.com/docs/api-reference/chat/create#chat-create-messages"
+
+    if parsed_result is None:
+        raise ChatAPIAssistantRoleInvalidFormat(message=error_msg)
+    else:
+        parsed_array = None
+        try:
+            parsed_array = eval(parsed_result)
+            last_message["tool_calls"] = parsed_array
+        except Exception:
+            raise ChatAPIAssistantRoleInvalidFormat(message=error_msg)
+
+
+def parse_tools(last_message, chunk, hash2images, image_detail):
+    parsed_result = try_parse_tool_call_id_and_content(chunk)
+    if parsed_result is None:
+        raise ChatAPIToolRoleInvalidFormat(
+            message="Failed to parse tool role prompt. Please make sure the prompt follows the "
+            "format: 'tool_call_id:\\ntool_call_id\\ncontent:\\ntool_content'. "
+            "'tool_call_id' is required if role is tool, and it should be the tool call that this message is responding"
+            " to. See more details in https://platform.openai.com/docs/api-reference/chat/create#chat-create-messages"
+        )
+    else:
+        last_message["tool_call_id"] = parsed_result[0]
+        last_message["content"] = to_content_str_or_list(parsed_result[1], hash2images, image_detail)
+
+
+def parse_chat(chat_str, images: List = None, valid_roles: List[str] = None, image_detail: str = 'auto'):
     if not valid_roles:
-        valid_roles = ["system", "user", "assistant", "function"]
+        valid_roles = VALID_ROLES
 
     # openai chat api only supports below roles.
     # customer can add single # in front of role name for markdown highlight.
@@ -140,7 +258,20 @@ def parse_chat(chat_str, images: List = None, valid_roles: List[str] = None):
 
     for chunk in chunks:
         last_message = chat_list[-1] if len(chat_list) > 0 else None
-        if last_message and "role" in last_message and "content" not in last_message:
+        if is_tools_chunk(last_message):
+            parse_tools(last_message, chunk, hash2images, image_detail)
+            continue
+
+        if is_assistant_tool_calls_chunk(last_message, chunk):
+            parse_tool_calls_for_assistant(last_message, chunk)
+            continue
+
+        if (
+            last_message
+            and "role" in last_message
+            and "content" not in last_message
+            and "tool_calls" not in last_message
+        ):
             parsed_result = try_parse_name_and_content(chunk)
             if parsed_result is None:
                 # "name" is required if the role is "function"
@@ -155,10 +286,10 @@ def parse_chat(chat_str, images: List = None, valid_roles: List[str] = None):
                                 "or view sample 'How to use functions with chat models' in our gallery.")
                 # "name" is optional for other role types.
                 else:
-                    last_message["content"] = to_content_str_or_list(chunk, hash2images)
+                    last_message["content"] = to_content_str_or_list(chunk, hash2images, image_detail)
             else:
                 last_message["name"] = parsed_result[0]
-                last_message["content"] = to_content_str_or_list(parsed_result[1], hash2images)
+                last_message["content"] = to_content_str_or_list(parsed_result[1], hash2images, image_detail)
         else:
             if chunk.strip() == "":
                 continue
@@ -171,7 +302,7 @@ def parse_chat(chat_str, images: List = None, valid_roles: List[str] = None):
     return chat_list
 
 
-def to_content_str_or_list(chat_str: str, hash2images: Mapping):
+def to_content_str_or_list(chat_str: str, hash2images: Mapping, image_detail: str):
     chat_str = chat_str.strip()
     chunks = chat_str.split("\n")
     include_image = False
@@ -185,8 +316,11 @@ def to_content_str_or_list(chat_str: str, hash2images: Mapping):
             if not image_url:
                 image_bs64 = hash2images[chunk.strip()].to_base64()
                 image_mine_type = hash2images[chunk.strip()]._mime_type
-                image_url = {"url": f"data:{image_mine_type};base64,{image_bs64}"}
-            image_message["image_url"] = image_url
+                image_url = f"data:{image_mine_type};base64,{image_bs64}"
+            image_message["image_url"] = {
+                "url": image_url,
+                "detail": image_detail
+            }
             result.append(image_message)
             include_image = True
         elif chunk.strip() == "":
@@ -334,6 +468,19 @@ def refine_extra_fields_not_permitted_error(connection, deployment_name, model):
     return None
 
 
+def is_retriable_api_connection_error(e: APIConnectionError):
+    retriable_error_messages = [
+        "connection aborted",
+        # issue 2296
+        "server disconnected without sending a response"
+    ]
+    for message in retriable_error_messages:
+        if message in str(e).lower() or message in str(e.__cause__).lower():
+            return True
+
+    return False
+
+
 # TODO(2971352): revisit this tries=100 when there is any change to the 10min timeout logic
 def handle_openai_error(tries: int = 100):
     """
@@ -372,7 +519,7 @@ def handle_openai_error(tries: int = 100):
                             raise WrappedOpenAIError(e)
 
                     if isinstance(e, APIConnectionError) and not isinstance(e, APITimeoutError) \
-                            and "connection aborted" not in str(e).lower():
+                            and not is_retriable_api_connection_error(e):
                         raise WrappedOpenAIError(e)
                     # Retry InternalServerError(>=500), RateLimitError(429), UnprocessableEntityError(422)
                     if isinstance(e, APIStatusError):
@@ -439,6 +586,104 @@ def render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, 
         raise JinjaTemplateError(message=error_message) from e
 
 
+def build_escape_dict(kwargs: dict):
+    escape_dict = {}
+    for _, value in kwargs.items():
+        escape_dict = _build_escape_dict(value, escape_dict)
+    return escape_dict
+
+
+def _build_escape_dict(val, escape_dict: dict):
+    """
+    Build escape dictionary with roles as keys and uuids as values.
+    """
+    if isinstance(val, ChatInputList):
+        for item in val:
+            _build_escape_dict(item, escape_dict)
+    elif isinstance(val, str):
+        pattern = r"(?i)^\s*#?\s*(" + "|".join(VALID_ROLES) + r")\s*:\s*\n"
+        roles = re.findall(pattern, val, flags=re.MULTILINE)
+        for role in roles:
+            if role not in escape_dict:
+                # We cannot use a hard-coded hash str for each role, as the same role might be in various case formats.
+                # For example, the 'system' role may vary in input as 'system', 'System', 'SysteM','SYSTEM', etc.
+                # To convert the escaped roles back to the original str, we need to use different uuids for each case.
+                escape_dict[role] = str(uuid.uuid4())
+
+    return escape_dict
+
+
+def escape_roles(val, escape_dict: dict):
+    """
+    Escape the roles in the prompt inputs to avoid the input string with pattern '# role' get parsed.
+    """
+    if isinstance(val, ChatInputList):
+        return ChatInputList([escape_roles(item, escape_dict) for item in val])
+    elif isinstance(val, str):
+        for role, encoded_role in escape_dict.items():
+            val = val.replace(role, encoded_role)
+        return val
+    else:
+        return val
+
+
+def unescape_roles(val, escape_dict: dict):
+    """
+    Unescape the roles in the parsed chat messages to restore the original role names.
+
+    Besides the case that value is: 'some text. escaped_roles (i.e. fake uuids)'
+    We also need to handle the vision case that the content is converted to list.
+    For example:
+        [{
+            'type': 'text',
+            'text': 'some text. fake_uuid'
+        }, {
+            'type': 'image_url',
+            'image_url': {}
+        }]
+    """
+    if isinstance(val, str):
+        for role, encoded_role in escape_dict.items():
+            val = val.replace(encoded_role, role)
+        return val
+    elif isinstance(val, list):
+        for index, item in enumerate(val):
+            if isinstance(item, dict) and "text" in item:
+                for role, encoded_role in escape_dict.items():
+                    val[index]["text"] = item["text"].replace(encoded_role, role)
+        return val
+    else:
+        return val
+
+
+def build_messages(
+    prompt: PromptTemplate,
+    images: List = None,
+    image_detail: str = 'auto',
+    **kwargs,
+):
+    # Use escape/unescape to avoid unintended parsing of role in user inputs.
+    escape_dict = build_escape_dict(kwargs)
+    updated_kwargs = {
+        key: escape_roles(value, escape_dict) for key, value in kwargs.items()
+    }
+
+    # keep_trailing_newline=True is to keep the last \n in the prompt to avoid converting "user:\t\n" to "user:".
+    chat_str = render_jinja_template(
+        prompt, trim_blocks=True, keep_trailing_newline=True, **updated_kwargs
+    )
+    messages = parse_chat(chat_str, images=images, image_detail=image_detail)
+
+    if escape_dict and isinstance(messages, list):
+        for message in messages:
+            if not isinstance(message, dict):
+                continue
+            for key, val in message.items():
+                message[key] = unescape_roles(val, escape_dict)
+
+    return messages
+
+
 def process_function_call(function_call):
     if function_call is None:
         param = "auto"
@@ -462,8 +707,49 @@ def process_function_call(function_call):
     return param
 
 
-def post_process_chat_api_response(completion, stream, functions):
+def process_tool_choice(tool_choice):
+    if tool_choice is None:
+        param = "auto"
+    elif tool_choice == "auto" or tool_choice == "none":
+        param = tool_choice
+    else:
+        tool_choice_example = json.dumps({"type": "function", "function": {"name": "my_function"}})
+        common_tsg = (
+            f"Here is a valid example: {tool_choice_example}. See the guide at "
+            "https://platform.openai.com/docs/api-reference/chat/create."
+        )
+        param = tool_choice
+        if not isinstance(param, dict):
+            raise ChatAPIInvalidTools(
+                message=f"tool_choice parameter '{param}' must be a dict, but not {type(tool_choice)}. {common_tsg}"
+            )
+        else:
+            if "type" not in tool_choice:
+                raise ChatAPIInvalidTools(
+                    message=f'tool_choice parameter {json.dumps(param)} must contain "type" field. {common_tsg}'
+                )
+
+            if "function" not in tool_choice:
+                raise ChatAPIInvalidTools(
+                    message=f'tool_choice parameter {json.dumps(param)} must contain "function" field. {common_tsg}'
+                )
+
+            if not isinstance(param["function"], dict):
+                raise ChatAPIInvalidTools(
+                    message=f'function parameter "{param["function"]}" in tool_choice must be a dict, '
+                            f'but not {type(param["function"])}. {common_tsg}'
+                )
+            elif "name" not in tool_choice["function"]:
+                raise ChatAPIInvalidTools(
+                    message=f'function parameter "{json.dumps(param["function"])}" in tool_choice must '
+                            f'contain "name" field. {common_tsg}'
+                )
+    return param
+
+
+def post_process_chat_api_response(completion, stream, functions=None, tools=None):
     if stream:
+        # TODO: test if tools is supported by stream mode.
         if functions is not None:
             error_message = "Function calling has not been supported by stream mode yet."
             raise FunctionCallNotSupportedInStreamMode(message=error_message)
@@ -478,9 +764,9 @@ def post_process_chat_api_response(completion, stream, functions):
         # Otherwise, the function itself will become a generator, despite whether stream is True or False.
         return generator()
     else:
-        # When calling function, function_call response will be returned as a field in message, so we need return
-        # message directly. Otherwise, we only return content.
-        if functions is not None:
+        # When calling function/tool, function_call/tool_call response will be returned as a field in message,
+        # so we need return message directly. Otherwise, we only return content.
+        if functions or tools:
             return completion.model_dump()["choices"][0]["message"]
         else:
             # chat api may return message with no content.
@@ -527,6 +813,7 @@ def find_referenced_image_set(kwargs: dict):
     referenced_images = set()
     try:
         from promptflow.contracts.multimedia import Image
+
         for _, value in kwargs.items():
             add_referenced_images_to_set(value, referenced_images, Image)
     except ImportError:
@@ -541,6 +828,14 @@ def normalize_connection_config(connection):
     This function takes a connection object and normalizes its configuration,
     ensuring it is compatible and standardized for use.
     """
+    try:
+        from promptflow.connections import ServerlessConnection
+    except ImportError:
+        # If unable to import ServerlessConnection, define a placeholder class to allow isinstance checks to pass.
+        # ServerlessConnection was introduced in pf version 1.6.0.
+        class ServerlessConnection:
+            pass
+
     if isinstance(connection, AzureOpenAIConnection):
         if connection.api_key:
             return {
@@ -578,11 +873,12 @@ def normalize_connection_config(connection):
         }
     else:
         error_message = f"Not Support connection type '{type(connection).__name__}'. " \
-                        f"Connection type should be in [AzureOpenAIConnection, OpenAIConnection]."
+                        "Connection type should be in [AzureOpenAIConnection, OpenAIConnection, " \
+                        "ServerlessConnection]."
         raise InvalidConnectionType(message=error_message)
 
 
-def init_openai_client(connection: Union[OpenAIConnection, ServerlessConnection]):
+def init_openai_client(connection: OpenAIConnection):
     try:
         from openai import OpenAI as OpenAIClient
     except ImportError as e:

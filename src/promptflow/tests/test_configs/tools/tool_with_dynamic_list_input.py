@@ -1,4 +1,4 @@
-from promptflow import tool
+from promptflow.core import tool
 from promptflow.entities import InputSetting, DynamicList
 from typing import List, Union, Dict
 

@@ -101,6 +101,7 @@ class FlowNode(YAMLTranslatableMixin):
         environment_variables: Optional[Dict[str, str]] = None,
         connections: Optional[Dict[str, Dict]] = None,
         properties: Optional[Dict[str, Any]] = None,
+        init: Optional[dict] = None,
         **kwargs,
     ):
         self.type = ExperimentNodeType.FLOW
@@ -118,6 +119,7 @@ class FlowNode(YAMLTranslatableMixin):
         self.path = path
         # default run name: flow directory name + timestamp
         self.name = name
+        self.init = init or {}
         self._runtime = kwargs.get("runtime", None)
         self._resources = kwargs.get("resources", None)
 
@@ -128,15 +130,21 @@ class FlowNode(YAMLTranslatableMixin):
     def _save_snapshot(self, target):
         """Save flow source to experiment snapshot."""
         # Resolve additional includes in flow
+        from promptflow._sdk.entities._flows import Prompty
+
         from .._load_functions import load_flow
         from .._orchestrator import remove_additional_includes
 
         Path(target).mkdir(parents=True, exist_ok=True)
         flow = load_flow(source=self.path)
         saved_flow_path = Path(target) / self.name
-        with _merge_local_code_and_additional_includes(code_path=flow.code) as resolved_flow_dir:
-            remove_additional_includes(Path(resolved_flow_dir))
-            shutil.copytree(src=resolved_flow_dir, dst=saved_flow_path)
+        if isinstance(flow, Prompty):
+            shutil.copytree(src=flow.code, dst=saved_flow_path)
+            saved_flow_path = saved_flow_path / Path(self.path).name
+        else:
+            with _merge_local_code_and_additional_includes(code_path=flow.code) as resolved_flow_dir:
+                remove_additional_includes(Path(resolved_flow_dir))
+                shutil.copytree(src=resolved_flow_dir, dst=saved_flow_path)
         logger.debug(f"Flow source saved to {saved_flow_path}.")
         self.path = saved_flow_path.resolve().absolute().as_posix()
 

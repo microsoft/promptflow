@@ -10,7 +10,7 @@ import traceback
 import types
 from functools import partial
 from pathlib import Path
-from typing import Callable, Dict, List, Mapping, Optional, Tuple, Union, get_origin, get_args
+from typing import Callable, Dict, List, Mapping, Optional, Tuple, Union, get_args, get_origin
 
 from promptflow._core._errors import (
     InputTypeMismatch,

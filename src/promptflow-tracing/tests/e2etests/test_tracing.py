@@ -1,5 +1,7 @@
 import asyncio
 import json
+import uuid
+from unittest.mock import patch
 
 import pytest
 from opentelemetry.trace.status import StatusCode
@@ -8,7 +10,18 @@ from promptflow.tracing._integrations._openai_injector import inject_openai_api
 from promptflow.tracing.contracts.trace import TraceType
 
 from ..utils import execute_function_in_subprocess, prepare_memory_exporter
-from .simple_functions import dummy_llm_tasks_async, greetings, openai_chat, openai_completion, openai_embedding_async
+from .simple_functions import (
+    dummy_llm_tasks_async,
+    dummy_llm_tasks_threadpool,
+    greetings,
+    openai_chat,
+    openai_chat_async,
+    openai_completion,
+    openai_completion_async,
+    openai_embedding_async,
+    prompt_tpl_chat,
+    prompt_tpl_completion,
+)
 
 LLM_FUNCTION_NAMES = [
     "openai.resources.chat.completions.Completions.create",
@@ -46,6 +59,36 @@ CUMULATIVE_EMBEDDING_TOKEN_NAMES = [
     "__computed__.cumulative_token_count.total",
 ]
 
+SPAN_TYPE_ATTRIBUTE = "span_type"
+FRAMEWORK_ATTRIBUTE = "framework"
+FUNCTION_ATTRIBUTE = "function"
+EXPECTED_FRAMEWORK = "promptflow"
+
+ITERATED_SPAN_PREFIX = "Iterated("
+EMBEDDING_VECTOR = "embedding.vector"
+EMBEDDING_TEXT = "embedding.text"
+INPUT = "input"
+DIMENSIONAL_TOKEN = "dimensional token"
+PROMPT_TEMPLATE = "prompt.template"
+PROMPT_VARIABLES = "prompt.variables"
+
+FUNCTION_INPUTS_EVENT = "promptflow.function.inputs"
+FUNCTION_OUTPUT_EVENT = "promptflow.function.output"
+EMBEDDING_EVENT = "promptflow.embedding.embeddings"
+RETRIEVAL_QUERY_EVENT = "promptflow.retrieval.query"
+RETRIEVAL_DOCUMENTS_EVENT = "promptflow.retrieval.documents"
+PROMPT_TEMPLATE_EVENT = "promptflow.prompt.template"
+LLM_GENERATED_MESSAGE_EVENT = "promptflow.llm.generated_message"
+BUILTIN_EVENT_NAMES = {
+    FUNCTION_INPUTS_EVENT,
+    FUNCTION_OUTPUT_EVENT,
+    EMBEDDING_EVENT,
+    RETRIEVAL_QUERY_EVENT,
+    RETRIEVAL_DOCUMENTS_EVENT,
+    LLM_GENERATED_MESSAGE_EVENT,
+    PROMPT_TEMPLATE_EVENT,
+}
+
 
 @pytest.mark.usefixtures("dev_connections", "recording_injection")
 @pytest.mark.e2etest
@@ -55,6 +98,7 @@ class TestTracing:
         [
             (greetings, {"user_id": 1}, 4),
             (dummy_llm_tasks_async, {"prompt": "Hello", "models": ["model_1", "model_1"]}, 3),
+            (dummy_llm_tasks_threadpool, {"prompt": "Hello", "models": ["model_1", "model_1"]}, 5),
         ],
     )
     def test_otel_trace(self, func, inputs, expected_span_length):
@@ -68,24 +112,57 @@ class TestTracing:
         span_list = exporter.get_finished_spans()
         self.validate_span_list(span_list, expected_span_length)
 
-    def assert_otel_traces_with_prompt(self, func, inputs):
+    @pytest.mark.parametrize(
+        "func, inputs, expected_span_length",
+        [
+            (prompt_tpl_completion, {"prompt_tpl": "Hello {{name}}", "name": "world"}, 2),
+            (
+                prompt_tpl_chat,
+                {
+                    "prompt_tpl": "system:\nYou are a helpful assistant.\n\n\nuser:\n{{question}}",
+                    "question": "What is ChatGPT?",
+                },
+                2,
+            ),
+            (prompt_tpl_completion, {"prompt_tpl": "Hello {{name}}", "name": "world", "stream": True}, 3),
+            (
+                prompt_tpl_chat,
+                {
+                    "prompt_tpl": "system:\nYou are a helpful assistant.\n\n\nuser:\n{{question}}",
+                    "question": "What is ChatGPT?",
+                    "stream": True,
+                },
+                3,
+            ),
+        ],
+    )
+    def test_otel_traces_with_prompt(self, dev_connections, func, inputs, expected_span_length):
+        execute_function_in_subprocess(
+            self.assert_otel_traces_with_prompt, dev_connections, func, inputs, expected_span_length
+        )
+
+    def assert_otel_traces_with_prompt(self, dev_connections, func, inputs, expected_span_length):
         memory_exporter = prepare_memory_exporter()
 
-        result = self.run_func(func, inputs)
-        assert result == "Hello world!"
+        inputs = self.add_azure_connection_to_inputs(inputs, dev_connections)
+        is_stream = inputs.get("stream", False)
+        with patch("promptflow.tracing._trace.get_prompt_param_name_from_func", return_value="prompt_tpl"):
+            self.run_func(func, inputs)
 
-        span_list = memory_exporter.get_finished_spans()
-        for span in span_list:
-            assert span.status.status_code == StatusCode.OK
-            assert isinstance(span.name, str)
-            if span.attributes.get("function", "") == "render_prompt_template":
-                assert "prompt.template" in span.attributes
-                assert span.attributes["prompt.template"] == inputs["prompt"]
-                assert "prompt.variables" in span.attributes
-                for var in inputs:
-                    if var == "prompt":
-                        continue
-                    assert var in span.attributes["prompt.variables"]
+            span_list = memory_exporter.get_finished_spans()
+            assert (
+                len(span_list) == expected_span_length
+            ), f"Expected {expected_span_length} spans, but got {len(span_list)}."
+            self.validate_span_list(span_list, expected_span_length)
+            self.validate_openai_tokens(span_list, is_stream)
+
+            # Extract the root span and validate the prompt template value is correctly set.
+            root_span = next(span for span in span_list if span.parent is None)
+            events = self.load_builtin_events(root_span)
+            assert PROMPT_TEMPLATE_EVENT in events, f"Expected '{PROMPT_TEMPLATE_EVENT}' in events"
+            assert events[PROMPT_TEMPLATE_EVENT][PROMPT_TEMPLATE] == inputs["prompt_tpl"], "Mismatch in prompt template"
+            prompt_variables = json.loads(events[PROMPT_TEMPLATE_EVENT][PROMPT_VARIABLES])
+            assert all(item in inputs.items() for item in prompt_variables.items()), "Mismatch in prompt variables"
 
     @pytest.mark.parametrize(
         "func, inputs, expected_span_length",
@@ -94,6 +171,10 @@ class TestTracing:
             (openai_completion, {"prompt": "Hello"}, 2),
             (openai_chat, {"prompt": "Hello", "stream": True}, 3),
             (openai_completion, {"prompt": "Hello", "stream": True}, 3),
+            (openai_chat_async, {"prompt": "Hello"}, 2),
+            (openai_completion_async, {"prompt": "Hello"}, 2),
+            (openai_chat_async, {"prompt": "Hello", "stream": True}, 3),
+            (openai_completion_async, {"prompt": "Hello", "stream": True}, 3),
         ],
     )
     def test_otel_trace_with_llm(self, dev_connections, func, inputs, expected_span_length):
@@ -146,23 +227,33 @@ class TestTracing:
         span_list = memory_exporter.get_finished_spans()
         self.validate_span_list(span_list, expected_span_length)
         self.validate_openai_tokens(span_list)
-        for span in span_list:
-            if span.attributes.get("function", "") in EMBEDDING_FUNCTION_NAMES:
-                msg = f"Span attributes is not expected: {span.attributes}"
-                assert "ada" in span.attributes.get("llm.response.model", ""), msg
-                embeddings = span.attributes.get("embedding.embeddings", "")
-                assert "embedding.vector" in embeddings, msg
-                assert "embedding.text" in embeddings, msg
-                if isinstance(inputs["input"], list):
-                    # If the input is a token array, which is list of int, the attribute should contains
-                    # the length of the token array '<len(token_array) dimensional token>'.
-                    assert "dimensional token" in embeddings, msg
-                else:
-                    # If the input is a string, the attribute should contains the original input string.
-                    assert inputs["input"] in embeddings, msg
 
     def test_otel_trace_with_multiple_functions(self):
         execute_function_in_subprocess(self.assert_otel_traces_with_multiple_functions)
+
+    def _assert_otel_tracer_collection_after_start_trace(self):
+        from promptflow.tracing import start_trace
+
+        memory_exporter = prepare_memory_exporter()
+        inputs = {"user_id": 1}
+        collection1 = str(uuid.uuid4())
+        start_trace(collection=collection1)
+        self.run_func(greetings, inputs)
+        span_list = memory_exporter.get_finished_spans()
+        assert len(span_list) > 0
+        for span in span_list:
+            assert span.resource.attributes["collection"] == collection1
+        # resource.attributes.collection should be refreshed after start_trace
+        collection2 = str(uuid.uuid4())
+        start_trace(collection=collection2)
+        self.run_func(greetings, inputs)
+        new_span_list = memory_exporter.get_finished_spans()
+        assert len(new_span_list) > len(span_list)
+        for span in new_span_list[len(span_list) :]:
+            assert span.resource.attributes["collection"] == collection2
+
+    def test_otel_tracer_refreshed_after_start_trace(self):
+        execute_function_in_subprocess(self._assert_otel_tracer_collection_after_start_trace)
 
     def assert_otel_traces_with_multiple_functions(self):
         memory_exporter = prepare_memory_exporter()
@@ -209,48 +300,114 @@ class TestTracing:
         inputs["connection"] = conn_dict
         return inputs
 
+    def validate_span_type(self, span):
+        if span.attributes.get("function", "") in LLM_FUNCTION_NAMES:
+            expected_span_type = TraceType.LLM
+        elif span.attributes.get("function", "") in EMBEDDING_FUNCTION_NAMES:
+            expected_span_type = TraceType.EMBEDDING
+        else:
+            expected_span_type = TraceType.FUNCTION
+        assert span.attributes["span_type"] == expected_span_type
+
+    def validate_span_events(self, span):
+        events = self.load_builtin_events(span)
+        assert FUNCTION_INPUTS_EVENT in events, f"Expected '{FUNCTION_INPUTS_EVENT}' in events"
+        assert FUNCTION_OUTPUT_EVENT in events, f"Expected '{FUNCTION_OUTPUT_EVENT}' in events"
+
+        if span.attributes[SPAN_TYPE_ATTRIBUTE] == TraceType.LLM:
+            self.validate_llm_event(span, events)
+        elif span.attributes[SPAN_TYPE_ATTRIBUTE] == TraceType.EMBEDDING:
+            self.validate_embedding_event(events)
+
+        if PROMPT_TEMPLATE_EVENT in events:
+            self.validate_prompt_template_event(events)
+
+    def validate_llm_event(self, span, span_events):
+        is_stream = span_events[FUNCTION_INPUTS_EVENT].get("stream", False)
+        is_iterated_span = span.name.startswith(ITERATED_SPAN_PREFIX)
+
+        # iterate span should have LLM_GENERATED_MESSAGE_EVENT and links
+        if is_iterated_span:
+            assert (
+                LLM_GENERATED_MESSAGE_EVENT in span_events
+            ), f"Expected '{LLM_GENERATED_MESSAGE_EVENT}' in iterated span events"
+            assert span.links, "Expected links in iterated span"
+
+        # non-stream span should have LLM_GENERATED_MESSAGE_EVENT
+        if not is_stream:
+            assert (
+                LLM_GENERATED_MESSAGE_EVENT in span_events
+            ), f"Expected '{LLM_GENERATED_MESSAGE_EVENT}' in non-stream span events"
+
+        # original span in streaming mode should not have LLM_GENERATED_MESSAGE_EVENT
+        if is_stream and not is_iterated_span:
+            assert (
+                LLM_GENERATED_MESSAGE_EVENT not in span_events
+            ), f"Unexpected '{LLM_GENERATED_MESSAGE_EVENT}' in original span in streaming mode"
+
+    def validate_embedding_event(self, span_events):
+        assert EMBEDDING_EVENT in span_events, f"Expected '{EMBEDDING_EVENT}' in span events"
+        embeddings = json.dumps(span_events[EMBEDDING_EVENT])
+        assert EMBEDDING_VECTOR in embeddings, f"Expected '{EMBEDDING_VECTOR}' in embeddings"
+        assert EMBEDDING_TEXT in embeddings, f"Expected '{EMBEDDING_TEXT}' in embeddings"
+
+        assert INPUT in span_events[FUNCTION_INPUTS_EVENT], f"Expected '{INPUT}' in function inputs"
+        embeddings_input = span_events[FUNCTION_INPUTS_EVENT].get(INPUT)
+
+        if isinstance(embeddings_input, list):
+            # If the input is a token array, which is list of int, the attribute should contains
+            # the length of the token array '<len(token_array) dimensional token>'.
+            assert (
+                DIMENSIONAL_TOKEN in embeddings
+            ), f"Expected '{DIMENSIONAL_TOKEN}' in embeddings for token array input"
+        else:
+            # If the input is a string, the attribute should contains the original input string.
+            assert embeddings_input in embeddings, f"Expected input string '{embeddings_input}' in embeddings"
+
+    def validate_prompt_template_event(self, span_events):
+        assert PROMPT_TEMPLATE_EVENT in span_events, f"Expected '{PROMPT_TEMPLATE_EVENT}' in span events"
+        assert (
+            PROMPT_TEMPLATE in span_events[PROMPT_TEMPLATE_EVENT]
+        ), f"Expected '{PROMPT_TEMPLATE}' in {PROMPT_TEMPLATE_EVENT}"
+        assert (
+            PROMPT_VARIABLES in span_events[PROMPT_TEMPLATE_EVENT]
+        ), f"Expected '{PROMPT_VARIABLES}' in {PROMPT_TEMPLATE_EVENT}"
+
     def validate_span_list(self, span_list, expected_span_length):
-        assert len(span_list) == expected_span_length, f"Got {len(span_list)} spans."
+        assert (
+            len(span_list) == expected_span_length
+        ), f"Expected {expected_span_length} spans, but got {len(span_list)}."
         root_spans = [span for span in span_list if span.parent is None]
-        assert len(root_spans) == 1
+        names = ",".join([span.name for span in span_list])
+        msg = f"Expected exactly one root span but got {len(root_spans)}: {names}."
+        assert len(root_spans) == 1, msg
         root_span = root_spans[0]
         for span in span_list:
-            assert span.status.status_code == StatusCode.OK
-            assert isinstance(span.name, str)
-            assert span.attributes["framework"] == "promptflow"
-            if span.attributes.get("function", "") in LLM_FUNCTION_NAMES:
-                expected_span_type = TraceType.LLM
-            elif span.attributes.get("function", "") in EMBEDDING_FUNCTION_NAMES:
-                expected_span_type = TraceType.EMBEDDING
-            else:
-                expected_span_type = TraceType.FUNCTION
-            msg = f"span_type: {span.attributes['span_type']}, expected: {expected_span_type}"
-            assert span.attributes["span_type"] == expected_span_type, msg
+            assert span.status.status_code == StatusCode.OK, "Expected status code to be OK."
+            assert isinstance(span.name, str), "Expected span name to be a string."
+            assert (
+                span.attributes[FRAMEWORK_ATTRIBUTE] == EXPECTED_FRAMEWORK
+            ), f"Expected framework attribute to be '{EXPECTED_FRAMEWORK}'."
             if span != root_span:  # Non-root spans should have a parent
-                assert span.attributes["function"]
-            inputs = json.loads(span.attributes["inputs"])
-            output = json.loads(span.attributes["output"])
-            assert isinstance(inputs, dict)
-            assert output is not None
+                assert FUNCTION_ATTRIBUTE in span.attributes, "Expected non-root spans to have a function attribute."
 
-            self.validate_inputs_output_event(span)
+            self.validate_span_type(span)
+            self.validate_span_events(span)
 
-    def validate_inputs_output_event(self, span):
-        event_names = {event.name for event in span.events}
-        required_names = {"promptflow.function.inputs", "promptflow.function.output"}
-
-        missing_names = required_names - event_names
-        assert not missing_names, f"Missing required events: {', '.join(missing_names)}"
-
+    def load_builtin_events(self, span):
+        events_dict = {}
         for event in span.events:
-            if event.name in required_names:
-                assert "payload" in event.attributes, f"Event {event.name} does not have a payload attribute."
+            if event.name in events_dict:
+                raise ValueError(f"Duplicate event {event.name} found in span {span.name}")
+            if event.name in BUILTIN_EVENT_NAMES:
                 try:
-                    json.loads(event.attributes["payload"])
+                    payload = json.loads(event.attributes["payload"])
+                    events_dict[event.name] = payload
                 except json.JSONDecodeError:
-                    assert (
-                        False
-                    ), f"Failed to parse payload for event {event.name}. Payload: {event.attributes['payload']}"
+                    raise ValueError(
+                        f"Failed to parse payload for event {event.name}. Payload: {event.attributes['payload']}"
+                    )
+        return events_dict
 
     def validate_openai_tokens(self, span_list, is_stream=False):
         span_dict = {span.context.span_id: span for span in span_list}

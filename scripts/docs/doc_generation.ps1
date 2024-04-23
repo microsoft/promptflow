@@ -24,6 +24,7 @@ param(
 [string] $SphinxApiDoc = [System.IO.Path]::Combine($DocPath, "sphinx_apidoc.log")
 [string] $SphinxBuildDoc = [System.IO.Path]::Combine($DocPath, "sphinx_build.log")
 [string] $WarningErrorPattern = "WARNING:|ERROR:|CRITICAL:| broken "
+[System.Collections.ArrayList]$IncludeList = @("promptflow-tracing", "promptflow-core", "promptflow-devkit", "promptflow-azure")
 $apidocWarningsAndErrors = $null
 $buildWarningsAndErrors = $null
 
@@ -43,6 +44,7 @@ if (-not $SkipInstall){
     pip install myst-parser==0.18.1
     pip install matplotlib==3.4.3
     pip install jinja2==3.0.1
+    pip install jupyter-sphinx==0.4.0
     Write-Host "===============Finished install requirements==============="
 }
 
@@ -62,16 +64,6 @@ Write-Host "Copy doc to: $TempDocPath"
 ROBOCOPY $DocPath $TempDocPath /S /NFL /NDL /XD "*.git" [System.IO.Path]::Combine($DocPath, "_scripts\_build")
 ProcessFiles
 
-function ForceOverwrite {
-    param (
-        [string] $Module
-    )
-    $FileName = "promptflow.{0}.rst" -f $Module
-    $TargetRst = [System.IO.Path]::Combine($RepoRootPath, ("scripts\docs\{0}" -f $FileName))
-    $AutoGenRst = [System.IO.Path]::Combine($RefDocPath, $FileName)
-    Copy-Item -Path $TargetRst -Destination $AutoGenRst -Force
-}
-
 function Update-Sub-Pkg-Index-Title {
     param (
         [string] $SubPkgRefDocPath,
@@ -88,29 +80,52 @@ function Update-Sub-Pkg-Index-Title {
     Set-Content $IndexRst $IndexContent
 }
 
-if($WithReferenceDoc){
+function Add-Changelog {
+    $ChangelogFolder = [System.IO.Path]::Combine($TempDocPath, "reference\changelog")
+    New-Item -ItemType Directory -Path $ChangelogFolder -Force
+    Write-Host "===============Collect Package ChangeLog==============="
+    $TocTreeContent = @("", "``````{toctree}", ":maxdepth: 1", ":hidden:", "")
+    foreach($Item in Get-Childitem -path $PkgSrcPath)
+    {
+        if((-not ($IncludeList -contains $Item.Name)) -and ($Item.Name -ne "promptflow")){
+            continue
+        }
+        # Collect CHANGELOG, name with package.md
+        $ChangelogPath = [System.IO.Path]::Combine($Item.FullName, "CHANGELOG.md")
+        $TargetChangelogPath = [System.IO.Path]::Combine($ChangelogFolder, "{0}.md" -f $Item.Name)
+        if($Item.Name -ne "promptflow"){
+            $TocTreeContent += $Item.name
+        }
+        Copy-Item -Path $ChangelogPath -Destination $TargetChangelogPath
+    }
+    $TocTreeContent += "``````"
+    # Add subpackage index to promptflow changelog
+    $PromptflowChangelog = [System.IO.Path]::Combine($ChangelogFolder, "promptflow.md")
+    $PromptflowChangelogContent = Get-Content $PromptflowChangelog
+    $PromptflowChangelogContent[0] = "# promptflow package"
+    $PromptflowChangelogContent += $TocTreeContent
+    Set-Content $PromptflowChangelog $PromptflowChangelogContent
+}
+
+function Add-Api-Reference {
     $RefDocRelativePath = "reference\python-library-reference"
     $RefDocPath = [System.IO.Path]::Combine($TempDocPath, $RefDocRelativePath)
+    $PlaceHolderFile = [System.IO.Path]::Combine($RefDocPath, "promptflow.md")
     if(!(Test-Path $RefDocPath)){
         throw "Reference doc path not found. Please make sure '$RefDocRelativePath' is under '$DocPath'"
     }
-    Remove-Item $RefDocPath -Recurse -Force
-    Write-Host "===============Build Promptflow Reference Doc==============="
+    Remove-Item $PlaceHolderFile -Force
     $ApidocWarningsAndErrors = [System.Collections.ArrayList]::new()
-    $IncludeList = @("promptflow-tracing", "promptflow-core", "promptflow-devkit", "promptflow-azure")
     foreach($Item in Get-Childitem -path $PkgSrcPath){
-        if(-not ($Item -is [System.IO.DirectoryInfo])){
-            # Only looking for package directory
-            continue
-        }
         if(-not ($IncludeList -contains $Item.Name)){
             continue
         }
+        # Build API reference doc
         $SubPkgPath = [System.IO.Path]::Combine($Item.FullName, "promptflow")
         $SubPkgRefDocPath = [System.IO.Path]::Combine($RefDocPath, $Item.Name)
         Write-Host "===============Build $Item Reference Doc==============="
         $TemplatePath = [System.IO.Path]::Combine($RepoRootPath, "scripts\docs\api_doc_templates")
-        sphinx-apidoc --module-first --no-headings --no-toc --implicit-namespaces "$SubPkgPath" -o "$SubPkgRefDocPath" -t $TemplatePath | Tee-Object -FilePath $SphinxApiDoc
+        sphinx-apidoc --separate --module-first --no-toc --implicit-namespaces "$SubPkgPath" -o "$SubPkgRefDocPath" -t $TemplatePath | Tee-Object -FilePath $SphinxApiDoc
         $SubPkgWarningsAndErrors = Select-String -Path $SphinxApiDoc -Pattern $WarningErrorPattern
         if($SubPkgWarningsAndErrors){
             $ApidocWarningsAndErrors.AddRange($SubPkgWarningsAndErrors)
@@ -119,6 +134,63 @@ if($WithReferenceDoc){
     }
 }
 
+function Add-Notebook
+{
+    Write-Host "===============Collect Package Notebooks==============="
+    $NotebookRootPath = [System.IO.Path]::Combine($RepoRootPath, "examples")
+    $TargetNotebookPath = [System.IO.Path]::Combine($TempDocPath, "tutorials")
+    # Create section list
+    $SectionNames = "Tracing", "Prompty", "Flow"
+    $Sections = [ordered]@{
+        Tracing=[System.Collections.ArrayList]::new();
+        Prompty=[System.Collections.ArrayList]::new();
+        Flow=[System.Collections.ArrayList]::new()
+    }
+    foreach($Item in Get-Childitem -path $NotebookRootPath -Recurse -Filter "*.ipynb")
+    {
+        # Notebook to build must have metadata: {"build_doc": {"category": "local/azure"}}
+        $NotebookContent = Get-Content $Item.FullName -Raw | ConvertFrom-Json
+        if(-not $NotebookContent.metadata.build_doc){
+            continue
+        }
+        $SectionName = $NotebookContent.metadata.build_doc.section
+        $Category = $NotebookContent.metadata.build_doc.category
+        # Add ItemName, Category tuple to sections
+        $Sections[$SectionName].Add([Tuple]::Create($Item.Name.Replace(".ipynb", ""), $Category))
+        # Copy notebook to doc path
+        Write-Host "Adding Notebook $Item ..."
+        $MediaDir = $Item.FullName + '\..\media'
+        Copy-Item -Path $Item.FullName -Destination $TargetNotebookPath
+        if(Test-Path $MediaDir){
+            # copy image referenced in notebook
+            Write-Host "Copying media files from $MediaDir ..."
+            Copy-Item -Path $MediaDir -Destination $TargetNotebookPath -Recurse -Force
+        }
+    }
+    # Reverse sort each section list by category, ordered by 1 local 2 azure
+    foreach($SectionName in $SectionNames){
+        $Sections[$SectionName] = $Sections[$SectionName] | Sort-Object -Property { $_.Item2 } -Descending
+    }
+    $TocTreeContent = @("", "``````{{toctree}}", ":caption: {0}", ":hidden:", ":maxdepth: 1", "", "{1}", "``````")
+    # Build toctree content for each section, append to tutorials index.md
+    $TutorialIndex = [System.IO.Path]::Combine($TargetNotebookPath, "index.md")
+    foreach($SectionName in $SectionNames){
+        $SectionTocTree = $TocTreeContent -join "`n"
+        # Join Item1 to a string in list
+        $ExampleList = ($Sections[$SectionName] | ForEach-Object { $_.Item1 }) -join "`n"
+        $SectionTocTree = $SectionTocTree -f $SectionName, $ExampleList
+        Write-Debug $SectionTocTree
+        Add-Content -Path $TutorialIndex -Value $SectionTocTree
+    }
+}
+
+if($WithReferenceDoc){
+    Add-Api-Reference
+}
+# Build subpackage changelog
+Add-Changelog
+# Build notebook examples
+Add-Notebook
 
 Write-Host "===============Build Documentation with internal=${Internal}==============="
 $BuildParams = [System.Collections.ArrayList]::new()
@@ -129,18 +201,12 @@ if($WarningAsError){
 if($BuildLinkCheck){
     $BuildParams.Add("-blinkcheck")
 }
-sphinx-build $TempDocPath $OutPath -c $ScriptPath $BuildParams | Tee-Object -FilePath $SphinxBuildDoc
+sphinx-build $TempDocPath $OutPath -c $ScriptPath $BuildParams -v | Tee-Object -FilePath $SphinxBuildDoc
 $buildWarningsAndErrors = Select-String -Path $SphinxBuildDoc -Pattern $WarningErrorPattern
 
 Write-Host "Clean path: $TempDocPath"
 Remove-Item $TempDocPath -Recurse -Confirm:$False -Force
 
-if ($ApidocWarningsAndErrors) {
-    Write-Host "=============== API doc warnings and errors ==============="  
-    foreach ($line in $ApidocWarningsAndErrors) {
-        Write-Host $line -ForegroundColor Red  
-    }  
-}  
   
 if ($buildWarningsAndErrors) {  
     Write-Host "=============== Build warnings and errors ==============="  

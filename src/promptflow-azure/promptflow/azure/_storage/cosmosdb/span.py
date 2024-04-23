@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import json
+from copy import deepcopy
 from typing import Any, Dict
 
 from azure.cosmos.container import ContainerProxy
@@ -39,7 +40,9 @@ class Span:
         self.end_time = span.end_time.isoformat()
         self.status = span.status
         self.attributes = span.attributes
-        self.events = span.events
+        # We will remove attributes from events for cosmosdb 2MB size limit.
+        # Deep copy to keep original data for LineSummary container.
+        self.events = deepcopy(span.events)
         self.links = span.links
         self.resource = span.resource
         self.partition_key = collection_id
@@ -47,6 +50,7 @@ class Span:
         self.id = span.span_id
         self.created_by = created_by
         self.external_event_data_uris = []
+        self.span_json_uri = None
 
     def persist(self, cosmos_client: ContainerProxy, blob_container_client: ContainerClient, blob_base_uri: str):
         if self.id is None or self.partition_key is None or self.resource is None:
@@ -56,20 +60,55 @@ class Span:
         if resource_attributes is None:
             return
 
+        if blob_container_client is not None and blob_base_uri is not None:
+            self._persist_span_json(blob_container_client, blob_base_uri)
+
         if self.events and blob_container_client is not None and blob_base_uri is not None:
             self._persist_events(blob_container_client, blob_base_uri)
 
         from azure.cosmos.exceptions import CosmosResourceExistsError
 
         try:
-            return cosmos_client.create_item(body=self.to_dict())
+            return cosmos_client.create_item(body=self.to_cosmosdb_item())
         except CosmosResourceExistsError:
             return
 
     def to_dict(self) -> Dict[str, Any]:
         return {k: v for k, v in self.__dict__.items() if v}
 
+    def to_cosmosdb_item(self, attr_value_truncation_length: int = 8 * 1024):
+        """
+        Convert the object to a dictionary for persistence to CosmosDB.
+        Truncate attribute values to avoid exceeding CosmosDB's 2MB size limit.
+        """
+        item = self.to_dict()  # use to_dict method to get a dictionary representation of the object
+
+        attributes = item.get("attributes")
+        if attributes:
+            item["attributes"] = {
+                k: (v[:attr_value_truncation_length] if isinstance(v, str) else v) for k, v in attributes.items()
+            }
+        return item
+
+    def _persist_span_json(self, blob_container_client: ContainerClient, blob_base_uri: str):
+        """
+        Persist the span data as a JSON string in a blob.
+        """
+        # check if span_json_uri is already set
+        if self.span_json_uri is not None:
+            return
+
+        # persist the span as a json string in a blob
+        span_data = json.dumps(self.to_dict())
+        blob_path = self._generate_blob_path(file_name="span.json")
+        blob_client = blob_container_client.get_blob_client(blob_path)
+        blob_client.upload_blob(span_data)
+        self.span_json_uri = f"{blob_base_uri}{blob_path}"
+
     def _persist_events(self, blob_container_client: ContainerClient, blob_base_uri: str):
+        """
+        Persist the event data as a JSON string in a blob.
+        """
         for idx, event in enumerate(self.events):
             event_data = json.dumps(event)
             blob_client = blob_container_client.get_blob_client(self._event_path(idx))
@@ -78,8 +117,14 @@ class Span:
             event[SpanEventFieldName.ATTRIBUTES] = {}
             self.external_event_data_uris.append(f"{blob_base_uri}{self._event_path(idx)}")
 
-    EVENT_PATH_PREFIX = ".promptflow/.trace"
+    TRACE_PATH_PREFIX = ".promptflow/.trace"
 
     def _event_path(self, idx: int) -> str:
+        return self._generate_blob_path(file_name=f"{idx}")
+
+    def _generate_blob_path(self, file_name: str):
+        """
+        Generate the blob path for the given file name.
+        """
         trace_id = self.context[SpanContextFieldName.TRACE_ID]
-        return f"{self.EVENT_PATH_PREFIX}/{self.collection_id}/{trace_id}/{self.id}/{idx}"
+        return f"{self.TRACE_PATH_PREFIX}/{self.collection_id}/{trace_id}/{self.id}/{file_name}"

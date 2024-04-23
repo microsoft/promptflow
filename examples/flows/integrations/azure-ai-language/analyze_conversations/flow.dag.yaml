@@ -1,0 +1,143 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+environment:
+  python_requirements_txt: requirements.txt
+inputs:
+  transcript_path:
+    type: string
+    default: ./transcript.txt
+outputs:
+  narrative_summary:
+    type: string
+    reference: ${Narrative.output}
+  recap_summary:
+    type: string
+    reference: ${Recap.output}
+  follow_up_tasks:
+    type: string
+    reference: ${Follow_Up_Tasks.output}
+  chapter_title:
+    type: string
+    reference: ${Chapter_Title.output}
+  pii:
+    type: string
+    reference: ${Conversational_PII.output}
+  key_phrases:
+    type: string
+    reference: ${Key_Phrase_Extraction.output}
+nodes:
+- name: Read_File
+  type: python
+  source:
+    type: code
+    path: read_file.py
+  inputs:
+    file_path: ${inputs.transcript_path}
+- name: Language_Detection
+  type: python
+  source:
+    type: package
+    tool: language_tools.tools.language_detection.get_language_detection
+  inputs:
+    connection: azure_ai_language
+    text: ${Peek_Text.output}
+    parse_response: true
+- name: Peek_Text
+  type: python
+  source:
+    type: code
+    path: peek_text.py
+  inputs:
+    text: ${Read_File.output}
+    length: 5120
+- name: Extract_Language_Code
+  type: python
+  source:
+    type: code
+    path: extract_language_code.py
+  inputs:
+    ld_output: ${Language_Detection.output}
+- name: Create_Document
+  type: python
+  source:
+    type: code
+    path: create_document.py
+  inputs:
+    id: 1
+    text: ${Read_File.output}
+    language: ${Extract_Language_Code.output}
+- name: Create_Conversation
+  type: python
+  source:
+    type: code
+    path: create_conversation.py
+  inputs:
+    id: 2
+    text: ${Read_File.output}
+    modality: transcript
+    language: ${Extract_Language_Code.output}
+- name: Key_Phrase_Extraction
+  type: python
+  source:
+    type: package
+    tool: language_tools.tools.key_phrase_extraction.get_key_phrase_extraction
+  inputs:
+    connection: azure_ai_language
+    document: ${Create_Document.output}
+    parse_response: true
+- name: Conversational_PII
+  type: python
+  source:
+    type: package
+    tool: language_tools.tools.conversational_pii.get_conversational_pii
+  inputs:
+    connection: azure_ai_language
+    parse_response: true
+    conversation: ${Create_Conversation.output}
+- name: Create_Redacted_Conversation
+  type: python
+  source:
+    type: code
+    path: create_redacted_conversation.py
+  inputs:
+    conversation: ${Create_Conversation.output}
+    pii_output: ${Conversational_PII.output}
+- name: Narrative
+  type: python
+  source:
+    type: package
+    tool: language_tools.tools.conversation_summarization.get_conversation_summarization
+  inputs:
+    connection: azure_ai_language
+    conversation: ${Create_Redacted_Conversation.output}
+    summary_aspect: narrative
+    parse_response: true
+- name: Recap
+  type: python
+  source:
+    type: package
+    tool: language_tools.tools.conversation_summarization.get_conversation_summarization
+  inputs:
+    connection: azure_ai_language
+    conversation: ${Create_Redacted_Conversation.output}
+    summary_aspect: recap
+    parse_response: true
+- name: Follow_Up_Tasks
+  type: python
+  source:
+    type: package
+    tool: language_tools.tools.conversation_summarization.get_conversation_summarization
+  inputs:
+    connection: azure_ai_language
+    conversation: ${Create_Redacted_Conversation.output}
+    summary_aspect: follow-up tasks
+    parse_response: true
+- name: Chapter_Title
+  type: python
+  source:
+    type: package
+    tool: language_tools.tools.conversation_summarization.get_conversation_summarization
+  inputs:
+    connection: azure_ai_language
+    conversation: ${Create_Redacted_Conversation.output}
+    summary_aspect: chapterTitle
+    parse_response: true

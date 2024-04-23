@@ -74,7 +74,11 @@ class AzureResourceProcessor(RecordingProcessor):
         for account_name in self.storage_account_names:
             uri = uri.replace(account_name, SanitizedValues.FAKE_ACCOUNT_NAME)
         for container_name in self.storage_container_names:
-            uri = uri.replace(container_name, SanitizedValues.FAKE_CONTAINER_NAME)
+            # container name in uri should have special pattern
+            uri = uri.replace(
+                f"blob.core.windows.net/{container_name}/",
+                f"blob.core.windows.net/{SanitizedValues.FAKE_CONTAINER_NAME}/",
+            )
         for file_share_name in self.file_share_names:
             uri = uri.replace(file_share_name, SanitizedValues.FAKE_FILE_SHARE_NAME)
         return uri
@@ -124,12 +128,14 @@ class AzureResourceProcessor(RecordingProcessor):
         return body
 
     def _sanitize_response_for_arm_connection(self, body: Dict) -> Dict:
-        if body["properties"]["authType"] == "CustomKeys":
-            # custom connection, sanitize "properties.credentials.keys"
-            body["properties"]["credentials"]["keys"] = {}
-        else:
-            # others, sanitize "properties.credentials.key"
-            body["properties"]["credentials"]["key"] = "_"
+        # Note: list api returns credentials as null
+        if body["properties"]["credentials"] is not None:
+            if body["properties"]["authType"] == "CustomKeys":
+                # custom connection, sanitize "properties.credentials.keys"
+                body["properties"]["credentials"]["keys"] = {}
+            else:
+                # others, sanitize "properties.credentials.key"
+                body["properties"]["credentials"]["key"] = "_"
         body["properties"]["target"] = "_"
         return body
 

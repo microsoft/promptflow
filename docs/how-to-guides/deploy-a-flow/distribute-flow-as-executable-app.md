@@ -1,7 +1,4 @@
 # Distribute flow as executable app
-:::{admonition} Experimental feature
-This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
-:::
 
 We are going to use the [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification/) as
 an example to show how to distribute flow as executable app with [Pyinstaller](https://pyinstaller.org/en/stable/requirements.html#).
@@ -43,101 +40,14 @@ Exported files & its dependencies are located in the same folder. The structure 
 ### A template script of the entry file
 PyInstaller reads a spec file or Python script written by you. It analyzes your code to discover every other module and library your script needs in order to execute. Then it collects copies of all those files, including the active Python interpreter, and puts them with your script in a single folder, or optionally in a single executable file. 
 
-We provide a Python entry script named `app.py` as the entry point for the bundled app, which enables you to serve a flow folder as an endpoint.
-
-```python
-import os
-import sys
-
-from promptflow._cli._pf._connection import create_connection
-from streamlit.web import cli as st_cli
-from streamlit.runtime import exists
-
-from main import start
-
-def is_yaml_file(file_path):
-    _, file_extension = os.path.splitext(file_path)
-    return file_extension.lower() in ('.yaml', '.yml')
-
-def create_connections(directory_path) -> None:
-    for root, dirs, files in os.walk(directory_path):
-        for file in files:
-            file_path = os.path.join(root, file)
-            if is_yaml_file(file_path):
-                create_connection(file_path)
-
-
-if __name__ == "__main__":
-    create_connections(os.path.join(os.path.dirname(__file__), "connections"))
-    if exists():
-        start()
-    else:
-        main_script = os.path.join(os.path.dirname(__file__), "main.py")
-        sys.argv = ["streamlit", "run", main_script, "--global.developmentMode=false"]
-        st_cli.main(prog_name="streamlit")
-
-```
+We provide a Python entry script named [app.py](https://github.com/microsoft/promptflow/blob/main/src/promptflow-devkit/promptflow/_sdk/data/executable/app.py) as the entry point for the bundled app, which enables you to serve a flow folder as an endpoint.
 
 
 ### A template script of the spec file
 The spec file tells PyInstaller how to process your script. It encodes the script names and most of the options you give to the pyinstaller command. The spec file is actually executable Python code. PyInstaller builds the app by executing the contents of the spec file.
 
-To streamline this process, we offer a `app.spec` spec file that bundles the application into a single file. For additional information on spec files, you can refer to the [Using Spec Files](https://pyinstaller.org/en/stable/spec-files.html). Please replace `streamlit_runtime_interpreter_path` with the path of streamlit runtime interpreter in your environment.
+To streamline this process, we offer a [app.spec.jinja2](https://github.com/microsoft/promptflow/blob/main/src/promptflow-devkit/promptflow/_sdk/data/executable/app.spec.jinja2) spec template file that bundles the application into a single file. For additional information on spec files, you can refer to the [Using Spec Files](https://pyinstaller.org/en/stable/spec-files.html). Please replace `streamlit_runtime_interpreter_path` with the path of streamlit runtime interpreter in your environment.
 
-```spec
-# -*- mode: python ; coding: utf-8 -*-
-from PyInstaller.utils.hooks import collect_data_files
-from PyInstaller.utils.hooks import copy_metadata
-
-datas = [('connections', 'connections'), ('flow', 'flow'), ('settings.json', '.'), ('main.py', '.'), ('{{streamlit_runtime_interpreter_path}}', './streamlit/runtime')]
-datas += collect_data_files('streamlit')
-datas += copy_metadata('streamlit')
-datas += collect_data_files('keyrings.alt', include_py_files=True)
-datas += copy_metadata('keyrings.alt')
-datas += collect_data_files('streamlit_quill')
-
-block_cipher = None
-
-
-a = Analysis(
-    ['app.py', 'main.py'],
-    pathex=[],
-    binaries=[],
-    datas=datas,
-    hiddenimports=['bs4'],
-    hookspath=[],
-    hooksconfig={},
-    runtime_hooks=[],
-    excludes=[],
-    win_no_prefer_redirects=False,
-    win_private_assemblies=False,
-    cipher=block_cipher,
-    noarchive=False,
-)
-pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
-
-exe = EXE(
-    pyz,
-    a.scripts,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
-    [],
-    name='app',
-    debug=False,
-    bootloader_ignore_signals=False,
-    strip=False,
-    upx=True,
-    upx_exclude=[],
-    runtime_tmpdir=None,
-    console=True,
-    disable_windowed_traceback=False,
-    argv_emulation=False,
-    target_arch=None,
-    codesign_identity=None,
-    entitlements_file=None,
-)
-```
 
 ### The bundled application using Pyinstaller
 Once you've build a flow as executable format following [Build a flow as executable format](#build-a-flow-as-executable-format).
@@ -168,4 +78,4 @@ To your users, the app is self-contained. They do not need to install any partic
 1. Note that Python 3.10.0 contains a bug making it unsupportable by PyInstaller. PyInstaller will also not work with beta releases of Python 3.13.
 
 ## Next steps
-- Try the example [here](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/flow-deploy)
+- Try the example [here](https://github.com/microsoft/promptflow/tree/main/examples/tutorials/flow-deploy/distribute-flow-as-executable-app)

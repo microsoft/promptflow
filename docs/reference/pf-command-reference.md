@@ -6,14 +6,15 @@ This is an experimental feature, and may change at any time. Learn [more](../how
 
 Manage prompt flow resources with the prompt flow CLI.
 
-| Command                         | Description                     |
-|---------------------------------|---------------------------------|
-| [pf flow](#pf-flow)             | Manage flows.                   |
-| [pf connection](#pf-connection) | Manage connections.             |
-| [pf run](#pf-run)               | Manage runs.                    |
-| [pf tool](#pf-tool)             | Init or list tools.             |
+| Command                         | Description                    |
+|---------------------------------|--------------------------------|
+| [pf flow](#pf-flow)             | Manage flows.                  |
+| [pf connection](#pf-connection) | Manage connections.            |
+| [pf run](#pf-run)               | Manage runs.                   |
+| [pf tool](#pf-tool)             | Init or list tools.            |
 | [pf config](#pf-config)         | Manage config for current user. |
-| [pf upgrade](#pf-upgrade)       | Upgrade prompt flow CLI.        |
+| [pf service](#pf-service)       | Manage prompt flow service. |
+| [pf upgrade](#pf-upgrade)       | Upgrade prompt flow CLI.       |
 
 ## pf flow
 
@@ -109,7 +110,19 @@ Test the flow.
 pf flow test --flow <path-to-flow-directory>
 ```
 
-Test the flow with single line from input file.
+Test the flow from `json` file.
+
+```bash
+pf flow test --flow <path-to-flow-directory> --inputs inputs.json
+```
+
+Test the flow with first line from `jsonl` file.
+
+```bash
+pf flow test --flow <path-to-flow-directory> --inputs inputs.jsonl
+```
+
+Test the flow with input values.
 
 ```bash
 pf flow test --flow <path-to-flow-directory> --inputs data_key1=data_val1 data_key2=data_val2
@@ -883,6 +896,102 @@ Show prompt flow for current user.
 pf config show
 ```
 
+## pf service
+
+Manage prompt flow service.
+
+| Command                                 | Description                                   |
+|-----------------------------------------|-----------------------------------------------|
+| [pf service start](#pf-service-start)   | Start prompt flow service.                    |
+| [pf service stop](#pf-service-stop)     | Stop prompt flow service.                     |
+| [pf service status](#pf-service-status) | Display the started prompt flow service info. |
+
+### pf service start
+
+Start the prompt flow service.
+
+```bash
+pf service start [--port]
+                 [--force]
+                 [--debug]
+```
+
+#### Examples
+Prompt flow will try to start the service on the default port 23333. If the port is already taken, prompt flow will 
+sequentially probe new ports, incrementing by one each time. Prompt flow retains the port number for future reference 
+and will utilize it for subsequent service startups.
+
+```bash
+pf service start
+```
+
+Forcefully start the prompt flow service. If the port is already in use, the existing service will be terminated and 
+restart a new service
+
+```bash
+pf service start --force
+```
+
+Start the prompt flow service with a specified port. If the port is already taken, prompt flow will raise an error 
+unless forcefully start the service with the `--force` flag. Upon availability, prompt flow retains the port number for 
+future reference and will utilize it for subsequent service startups.
+
+```bash
+pf service start --port 65553
+```
+
+Start prompt flow service in foreground, displaying debug level logs directly in the terminal.
+```bash
+pf service start --debug
+```
+
+#### Optional Parameters
+
+`--port -p`
+
+The designated port of the prompt flow service and port number will be remembered if port is available.
+
+`--force`
+
+Force restart the existing service if the port is used.
+
+`--debug`
+
+Start prompt flow service in foreground, displaying debug level logs directly in the terminal.
+
+
+
+### pf service stop
+
+Stop prompt flow service.
+
+```bash
+pf service stop [--debug]
+```
+
+#### Example
+
+Stop prompt flow service.
+
+```bash
+pf service stop
+```
+
+#### Optional Parameter
+
+`--debug`
+
+The flag to turn on debug mode for cli.
+
+### pf service status
+
+Display the started prompt flow service info.
+
+```bash
+pf service status
+```
+
+
 ## pf upgrade
 
 Upgrade prompt flow CLI.
@@ -897,4 +1006,12 @@ Upgrade prompt flow without prompt and run non-interactively.
 
 ```bash
 pf upgrade --yes
+```
+
+## Autocomplete
+
+To activate autocomplete features for the pf CLI you need to add the following snippet to your ~/.bashrc or ~/.zshrc:
+
+```bash
+source <promptflow_package_install_root>/pf.completion.sh
 ```

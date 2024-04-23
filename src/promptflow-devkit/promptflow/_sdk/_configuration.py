@@ -17,10 +17,11 @@ from promptflow._sdk._constants import (
     HOME_PROMPT_FLOW_DIR,
     SERVICE_CONFIG_FILE,
 )
+from promptflow._sdk._tracing import TraceDestinationConfig
 from promptflow._sdk._utils import call_from_extension, gen_uuid_by_compute_info, read_write_by_user
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
-from promptflow.exceptions import ErrorTarget, UserErrorException, ValidationException
+from promptflow.exceptions import ErrorTarget, ValidationException
 
 logger = get_cli_sdk_logger()
 
@@ -46,7 +47,7 @@ class Configuration(object):
     RUN_OUTPUT_PATH = "run.output_path"
     USER_AGENT = "user_agent"
     ENABLE_INTERNAL_FEATURES = "enable_internal_features"
-    TRACE_PROVIDER = "trace.provider"
+    TRACE_DESTINATION = "trace.destination"
     _instance = None
 
     def __init__(self, overrides=None):
@@ -167,9 +168,6 @@ class Configuration(object):
         provider = self.get_config(key=self.CONNECTION_PROVIDER)
         return self.resolve_connection_provider(provider, path=path)
 
-    def get_trace_provider(self) -> Optional[str]:
-        return self.get_config(key=self.TRACE_PROVIDER)
-
     @classmethod
     def resolve_connection_provider(cls, provider, path=None) -> Optional[str]:
         if provider is None:
@@ -180,6 +178,19 @@ class Configuration(object):
         # If provider not None and not Azure, return it directly.
         # It can be the full path of a workspace.
         return provider
+
+    def get_trace_destination(self, path: Optional[Path] = None) -> Optional[str]:
+        value = self.get_config(key=self.TRACE_DESTINATION)
+        logger.info("pf.config.trace.destination: %s", value)
+        if TraceDestinationConfig.need_to_resolve(value):
+            logger.debug("will resolve trace destination from config.json...")
+            return self._resolve_trace_destination(path=path)
+        else:
+            logger.debug("trace destination does not need to be resolved, directly return...")
+            return value
+
+    def _resolve_trace_destination(self, path: Optional[Path] = None) -> str:
+        return "azureml:/" + self._get_workspace_from_config(path=path)
 
     def get_telemetry_consent(self) -> Optional[bool]:
         """Get the current telemetry consent value. Return None if not configured."""
@@ -217,21 +228,8 @@ class Configuration(object):
                     "if you want to specify run output path under flow directory, "
                     "please use its child folder, e.g. '${flow_directory}/.runs'."
                 )
-        elif key == Configuration.TRACE_PROVIDER:
-            try:
-                from promptflow.azure._utils._tracing import validate_trace_provider
-
-                validate_trace_provider(value)
-            except ImportError:
-                msg = (
-                    '"promptflow[azure]" is required to validate trace provider, '
-                    'please install it by running "pip install promptflow[azure]" with your version.'
-                )
-                raise UserErrorException(
-                    message=msg,
-                    target=ErrorTarget.CONTROL_PLANE_SDK,
-                    no_personal_data_message=msg,
-                )
+        elif key == Configuration.TRACE_DESTINATION:
+            TraceDestinationConfig.validate(value)
         return
 
     def get_user_agent(self) -> Optional[str]:

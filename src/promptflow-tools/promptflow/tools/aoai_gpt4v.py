@@ -1,8 +1,8 @@
 from typing import List, Dict
 
-from promptflow.tools.common import render_jinja_template, handle_openai_error, parse_chat, \
+from promptflow.tools.common import handle_openai_error, build_messages, \
     preprocess_template_string, find_referenced_image_set, convert_to_chat_list, init_azure_openai_client, \
-    post_process_chat_api_response, list_deployment_connections, build_deployment_dict, GPT4V_VERSION
+    post_process_chat_api_response, list_deployment_connections, build_deployment_dict, GPT4V_VERSION \
 
 from promptflow._internal import ToolProvider, tool
 from promptflow.connections import AzureOpenAIConnection
@@ -53,16 +53,15 @@ class AzureOpenAI(ToolProvider):
         presence_penalty: float = 0,
         frequency_penalty: float = 0,
         seed: int = None,
+        detail: str = 'auto',
         **kwargs,
     ) -> str:
-        # keep_trailing_newline=True is to keep the last \n in the prompt to avoid converting "user:\t\n" to "user:".
         prompt = preprocess_template_string(prompt)
         referenced_images = find_referenced_image_set(kwargs)
 
         # convert list type into ChatInputList type
         converted_kwargs = convert_to_chat_list(kwargs)
-        chat_str = render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, **converted_kwargs)
-        messages = parse_chat(chat_str, list(referenced_images))
+        messages = build_messages(prompt=prompt, images=list(referenced_images), detail=detail, **converted_kwargs)
 
         headers = {
             "Content-Type": "application/json",
@@ -89,4 +88,4 @@ class AzureOpenAI(ToolProvider):
             params["seed"] = seed
 
         completion = self._client.chat.completions.create(**params)
-        return post_process_chat_api_response(completion, stream, None)
+        return post_process_chat_api_response(completion, stream)

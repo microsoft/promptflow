@@ -3,9 +3,9 @@ import sys
 
 # -- Project information -----------------------------------------------------
 
-project = 'Prompt flow'
-copyright = '2024, Microsoft'
-author = 'Microsoft'
+project = "Prompt flow"
+copyright = "2024, Microsoft"
+author = "Microsoft"
 
 sys.path.append(".")
 from gallery_directive import GalleryDirective  # noqa: E402
@@ -22,8 +22,10 @@ extensions = [
     "sphinx_copybutton",
     "matplotlib.sphinxext.plot_directive",
     "sphinx_togglebutton",
-    'myst_parser',
+    "myst_nb",
+    # 'myst_parser',
     "sphinx.builders.linkcheck",
+    "jupyter_sphinx",
 ]
 
 # -- Internationalization ------------------------------------------------
@@ -41,10 +43,19 @@ autosummary_generate = True
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
+nb_execution_mode = "off"
 exclude_patterns = [
-    "_build", "Thumbs.db", ".DS_Store", "**.ipynb_checkpoints",
-    "**.py", "**.yml", "**.ipynb", "**.sh", "**.zip", "**.skip"
+    "_build",
+    "Thumbs.db",
+    ".DS_Store",
+    "**.ipynb_checkpoints",
+    "**.py",
+    "**.yml",
+    "**.sh",
+    "**.zip",
+    "**.skip",
 ]
+source_suffix = [".rst", ".md", ".ipynb"]
 
 # Options for the linkcheck builder
 linkcheck_ignore = [
@@ -55,9 +66,13 @@ linkcheck_ignore = [
     "deploy-using-docker.html",
     "deploy-using-kubernetes.html",
     "https://portal.azure.com/#create/Microsoft.CognitiveServicesTextAnalytics",  # sphinx recognizes #create as an anchor while it's not. # noqa: E501
+    "https://ms.portal.azure.com/#view/Microsoft_Azure_Marketplace/MarketplaceOffersBlade/searchQuery/machine%20learning",  # noqa: E501
 ]
 
-linkcheck_exclude_documents = ["contributing"]
+linkcheck_exclude_documents = [
+    "contributing",
+    r".*/tutorials/.*",  # ignore link in copied notebooks.
+]
 
 # -- Extension options -------------------------------------------------------
 
@@ -95,10 +110,10 @@ html_theme_options = {
     "show_toc_level": 1,
     "navbar_align": "left",  # [left, content, right] For testing that the navbar items align properly
     "navbar_center": ["navbar-nav"],
-    "announcement":
-        "Prompt flow supports OpenAI 1.x since v1.1.0. This may introduce breaking change. Reach "
-        "<a href='https://microsoft.github.io/promptflow/how-to-guides/faq.html#openai-1-x-support'>here</a> "
-        "for guide to upgrade.",
+    "announcement": "<b>[IMPORTANT]</b> Please uninstall existing promptflow and sub packages before you install "
+    "promptflow==1.8.0. Reach "
+    "<a href='https://microsoft.github.io/promptflow/how-to-guides/faq.html#promptflow-1-8-0-upgrade-guide'>"
+    "here</a> for more details.",
     "show_nav_level": 1,
 }
 
@@ -107,7 +122,7 @@ html_sidebars = {
     # "examples/persistent-search-field": ["search-field"],
     # Blog sidebars
     # ref: https://ablog.readthedocs.io/manual/ablog-configuration-options/#blog-sidebars
-    "features": ['localtoc.html', 'relations.html', 'searchbox.html'],
+    "features": ["localtoc.html", "relations.html", "searchbox.html"],
     # "tutorials": ['localtoc.html', 'relations.html', 'searchbox.html'],
 }
 
@@ -119,8 +134,7 @@ html_context = {
     "doc_path": "docs",
 }
 
-rediraffe_redirects = {
-}
+rediraffe_redirects = {}
 
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -128,7 +142,7 @@ rediraffe_redirects = {
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 html_css_files = ["custom.css"]
-html_js_files = ['custom.js']
+html_js_files = ["custom.js"]
 todo_include_todos = True
 
 

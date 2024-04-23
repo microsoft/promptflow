@@ -1,12 +1,14 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from typing import Any, Optional, Union
+import logging
+from typing import Any, Dict, List, Union
 
 import requests
 
-from promptflow._constants import ConnectionAuthMode
+from promptflow._constants import AML_WORKSPACE_TEMPLATE
 from promptflow._utils.retry_utils import http_retry_wrapper
+from promptflow.constants import ConnectionAuthMode
 from promptflow.core._connection import CustomConnection, _Connection
 from promptflow.core._errors import (
     AccessDeniedError,
@@ -15,6 +17,7 @@ from promptflow.core._errors import (
     MissingRequiredPackage,
     OpenURLFailed,
     OpenURLFailedUserError,
+    OpenURLNotFoundError,
     OpenURLUserAuthenticationError,
     UnknownConnectionType,
     UnsupportedConnectionAuthType,
@@ -23,7 +26,12 @@ from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorEx
 
 from ..._utils.credential_utils import get_default_azure_credential
 from ._connection_provider import ConnectionProvider
-from ._utils import interactive_credential_disabled, is_from_cli, is_github_codespaces
+from ._utils import (
+    check_connection_provider_resource,
+    interactive_credential_disabled,
+    is_from_cli,
+    is_github_codespaces,
+)
 
 GET_CONNECTION_URL = (
     "/subscriptions/{sub}/resourcegroups/{rg}/providers/Microsoft.MachineLearningServices"
@@ -34,6 +42,8 @@ LIST_CONNECTION_URL = (
     "/workspaces/{ws}/connections?api-version=2023-04-01-preview"
 )
 FLOW_META_PREFIX = "azureml.flow."
+
+logger = logging.getLogger(__name__)
 
 
 # Note: We define the category and auth type here because newly added enum values may
@@ -64,15 +74,19 @@ def get_case_insensitive_key(d, key, default=None):
 class WorkspaceConnectionProvider(ConnectionProvider):
     def __init__(
         self,
-        subscription_id: Optional[str] = None,
-        resource_group_name: Optional[str] = None,
-        workspace_name: Optional[str] = None,
+        subscription_id: str,
+        resource_group_name: str,
+        workspace_name: str,
         credential=None,
     ):
         self._credential = credential
         self.subscription_id = subscription_id
         self.resource_group_name = resource_group_name
         self.workspace_name = workspace_name
+        self.resource_id = AML_WORKSPACE_TEMPLATE.format(
+            self.subscription_id, self.resource_group_name, self.workspace_name
+        )
+        self._workspace_checked = False
 
     @property
     def credential(self):
@@ -128,7 +142,13 @@ class WorkspaceConnectionProvider(ConnectionProvider):
             f"Open url {{url}} failed with status code: {response.status_code}, action: {action}, reason: {{reason}}"
         )
         if response.status_code == 403:
-            raise AccessDeniedError(operation=url, target=ErrorTarget.RUNTIME)
+            raise AccessDeniedError(operation=url, target=ErrorTarget.CORE)
+        elif response.status_code == 404:
+            raise OpenURLNotFoundError(
+                message_format=message_format,
+                url=url,
+                reason=response.reason,
+            )
         elif 400 <= response.status_code < 500:
             raise OpenURLFailedUserError(
                 message_format=message_format,
@@ -148,16 +168,21 @@ class WorkspaceConnectionProvider(ConnectionProvider):
 
     @classmethod
     def validate_and_fallback_connection_type(cls, name, type_name, category, metadata):
+        # Note: Legacy CustomKeys may store different connection types, e.g. openai, serp.
+        # In this case, type name will not be None.
         if type_name:
             return type_name
         # Below category has corresponding connection type in PromptFlow, so we can fall back directly.
-        # Note: CustomKeys may store different connection types for now, e.g. openai, serp.
         if category in [
             ConnectionCategory.AzureOpenAI,
+            ConnectionCategory.OpenAI,
+            ConnectionCategory.Serp,
             ConnectionCategory.CognitiveSearch,
             ConnectionCategory.Serverless,
         ]:
             return category
+        if category == ConnectionCategory.CustomKeys:
+            return CustomConnection.__name__
         if category == ConnectionCategory.CognitiveService:
             kind = get_case_insensitive_key(metadata, "Kind")
             if kind == "Content Safety":
@@ -206,21 +231,27 @@ class WorkspaceConnectionProvider(ConnectionProvider):
         # Note: Category is connectionType in MT, but type name should be class name, which is flowValueType in MT.
         # Handle old connections here, see details: https://github.com/Azure/promptflow/tree/main/connections
         type_name = f"{type_name}Connection" if not type_name.endswith("Connection") else type_name
-        meta = {"type": type_name, "module": module}
+        meta = {"type": type_name, "module": module, "name": name}
 
-        def get_auth_config(props):
-            unsupported_message = "Unsupported connection auth type %r, supported types are 'ApiKey' and 'AAD'."
+        def get_auth_config(props, support_aad=False):
+            postfix = " and 'AAD'." if support_aad else "."
+            unsupported_message = f"Unsupported connection auth type %r, supported types are 'ApiKey'{postfix}"
             if not isinstance(props.auth_type, str):
                 raise UnsupportedConnectionAuthType(message=unsupported_message % props.auth_type)
             if props.auth_type.lower() == ConnectionAuthType.ApiKey.lower():
-                return {"api_key": props.credentials.key, "auth_mode": ConnectionAuthMode.KEY}
-            elif props.auth_type.lower() == ConnectionAuthType.AAD.lower():
+                result = {
+                    "api_key": props.credentials.key if props.credentials else None,
+                }
+                if support_aad:
+                    result["auth_mode"] = ConnectionAuthMode.KEY
+                return result
+            elif support_aad and props.auth_type.lower() == ConnectionAuthType.AAD.lower():
                 return {"api_key": None, "auth_mode": ConnectionAuthMode.MEID_TOKEN}
             raise UnsupportedConnectionAuthType(message=unsupported_message % props.auth_type)
 
         if properties.category == ConnectionCategory.AzureOpenAI:
             value = {
-                **get_auth_config(properties),
+                **get_auth_config(properties, support_aad=True),
                 "api_base": properties.target,
                 "api_type": get_case_insensitive_key(properties.metadata, "ApiType"),
                 "api_version": get_case_insensitive_key(properties.metadata, "ApiVersion"),
@@ -231,29 +262,39 @@ class WorkspaceConnectionProvider(ConnectionProvider):
                 value["resource_id"] = resource_id
         elif properties.category == ConnectionCategory.CognitiveSearch:
             value = {
-                **get_auth_config(properties),
+                **get_auth_config(properties, support_aad=True),
                 "api_base": properties.target,
                 "api_version": get_case_insensitive_key(properties.metadata, "ApiVersion"),
             }
         elif properties.category == ConnectionCategory.Serverless:
             value = {
-                **get_auth_config(properties),
+                **get_auth_config(properties, support_aad=True),
                 "api_base": properties.target,
             }
         elif properties.category == ConnectionCategory.CognitiveService:
             value = {
-                **get_auth_config(properties),
+                **get_auth_config(properties, support_aad=True),
                 "endpoint": properties.target,
                 "api_version": get_case_insensitive_key(properties.metadata, "ApiVersion"),
+            }
+        elif properties.category == ConnectionCategory.OpenAI:
+            value = {
+                **get_auth_config(properties),
+                "base_url": properties.target,
+                "organization": get_case_insensitive_key(properties.metadata, "organization"),
+            }
+        elif properties.category == ConnectionCategory.Serp:
+            value = {
+                **get_auth_config(properties),
             }
         elif properties.category == ConnectionCategory.CustomKeys:
             # Merge secrets from credentials.keys and other string fields from metadata
             value = {
-                **properties.credentials.keys,
+                **(properties.credentials.keys if properties.credentials else {}),
                 **{k: v for k, v in properties.metadata.items() if not k.startswith(FLOW_META_PREFIX)},
             }
             if type_name == CustomConnection.__name__:
-                meta["secret_keys"] = list(properties.credentials.keys.keys())
+                meta["secret_keys"] = list(properties.credentials.keys.keys()) if properties.credentials else []
         else:
             raise UnknownConnectionType(
                 message_format=(
@@ -306,6 +347,8 @@ class WorkspaceConnectionProvider(ConnectionProvider):
             raise OpenURLUserAuthenticationError(message=auth_error_message)
         except ClientAuthenticationError as e:
             raise UserErrorException(target=ErrorTarget.CORE, message=str(e), error=e)
+        except UserErrorException:
+            raise
         except Exception as e:
             raise SystemErrorException(target=ErrorTarget.CORE, message=str(e), error=e)
 
@@ -333,7 +376,98 @@ class WorkspaceConnectionProvider(ConnectionProvider):
                 name=conn_name,
             )
 
+    @classmethod
+    def _build_list_connection_dict(
+        cls, subscription_id, resource_group_name, workspace_name, credential
+    ) -> Dict[str, dict]:
+        url = LIST_CONNECTION_URL.format(
+            sub=subscription_id,
+            rg=resource_group_name,
+            ws=workspace_name,
+        )
+        # Note: There is a try-catch in get arm token. It requires azure-ai-ml.
+        # TODO: Remove the azure-ai-ml dependency.
+        from ._utils import get_arm_token
+
+        try:
+            from azure.core.exceptions import ClientAuthenticationError
+
+            from ._models import WorkspaceConnectionPropertiesV2BasicResourceArmPaginatedResult
+        except ImportError as e:
+            raise MissingRequiredPackage(
+                message="Please install 'promptflow-core[azureml-serving]' to use workspace connection."
+            ) from e
+        try:
+            token = get_arm_token(credential=credential)
+            rest_obj: WorkspaceConnectionPropertiesV2BasicResourceArmPaginatedResult = cls.open_url(
+                token,
+                url=url,
+                action="list",
+                method="GET",
+                model=WorkspaceConnectionPropertiesV2BasicResourceArmPaginatedResult,
+            )
+            result_list = [rest_obj]
+            while rest_obj.next_link is not None:
+                logger.debug("Workspace connection list is paginated, fetching next page.")
+                rest_obj = cls.open_url(
+                    token,
+                    url=rest_obj.next_link,
+                    action="list",
+                    method="GET",
+                    model=WorkspaceConnectionPropertiesV2BasicResourceArmPaginatedResult,
+                )
+                result_list.append(rest_obj)
+        except AccessDeniedError:
+            auth_error_message = (
+                "Access denied to list workspace connections due to invalid authentication. "
+                "Please ensure you have gain RBAC role 'Azure Machine Learning Workspace Connection Secrets Reader' "
+                "for current workspace, and wait for a few minutes to make sure the new role takes effect. "
+            )
+            raise OpenURLUserAuthenticationError(message=auth_error_message)
+        except ClientAuthenticationError as e:
+            raise UserErrorException(target=ErrorTarget.CORE, message=str(e), error=e) from e
+        except UserErrorException:
+            raise
+        except Exception as e:
+            raise SystemErrorException(target=ErrorTarget.CORE, message=str(e), error=e) from e
+
+        rest_list_connection_dict = {}
+        for rest_obj in result_list:
+            for conn in rest_obj.value:
+                try:
+                    rest_list_connection_dict[conn.name] = cls.build_connection_dict_from_rest_object(conn.name, conn)
+                except Exception as e:
+                    logger.warning("Connection %r skipped: build connection dict failed with %s.", conn.name, e)
+        return rest_list_connection_dict
+
+    def list(self) -> List[_Connection]:
+        if not self._workspace_checked:
+            # Check workspace not 'hub'
+            check_connection_provider_resource(
+                resource_id=self.resource_id, credential=self.credential, pkg_name="promptflow-core[azureml-serving]"
+            )
+            self._workspace_checked = True
+        rest_list_connection_dict = self._build_list_connection_dict(
+            subscription_id=self.subscription_id,
+            resource_group_name=self.resource_group_name,
+            workspace_name=self.workspace_name,
+            credential=self.credential,
+        )
+        connection_list = []
+        for name, conn_dict in rest_list_connection_dict.items():
+            try:
+                connection_list.append(_Connection._from_execution_connection_dict(name=name, data=conn_dict))
+            except Exception as e:
+                logger.warning("Connection %r skipped: build connection object failed with %s.", name, e)
+        return connection_list
+
     def get(self, name: str, **kwargs) -> _Connection:
+        if not self._workspace_checked:
+            # Check workspace not 'hub'
+            check_connection_provider_resource(
+                resource_id=self.resource_id, credential=self.credential, pkg_name="promptflow-core[azureml-serving]"
+            )
+            self._workspace_checked = True
         connection_dict = self._build_connection_dict(
             name,
             subscription_id=self.subscription_id,

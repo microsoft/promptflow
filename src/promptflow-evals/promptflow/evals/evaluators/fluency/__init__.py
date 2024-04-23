@@ -4,26 +4,25 @@
 
 __path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
 
-from promptflow import load_flow
-from promptflow.entities import AzureOpenAIConnection
 from pathlib import Path
+
+from promptflow.client import load_flow
+from promptflow.core._prompty_utils import convert_model_configuration_to_connection
 
 
 class FluencyEvaluator:
-    def __init__(self, model_config: AzureOpenAIConnection, deployment_name: str):
+    def __init__(self, model_config):
         """
         Initialize an evaluator configured for a specific Azure OpenAI model.
 
         :param model_config: Configuration for the Azure OpenAI model.
-        :type model_config: AzureOpenAIConnection
-        :param deployment_name: Deployment to be used which has Azure OpenAI model.
-        :type deployment_name: AzureOpenAIConnection
+        :type model_config: AzureOpenAIModelConfiguration
 
         **Usage**
 
         .. code-block:: python
 
-            eval_fn = FluencyEvaluator(model_config, deployment_name="gpt-4")
+            eval_fn = FluencyEvaluator(model_config)
             result = eval_fn(
                 question="What is the capital of Japan?",
                 answer="The capital of Japan is Tokyo.")
@@ -35,15 +34,11 @@ class FluencyEvaluator:
         self._flow = load_flow(source=flow_dir)
 
         # Override the connection
+        connection = convert_model_configuration_to_connection(model_config)
         self._flow.context.connections = {
             "query_llm": {
-                "connection": AzureOpenAIConnection(
-                    api_base=model_config.api_base,
-                    api_key=model_config.api_key,
-                    api_version=model_config.api_version,
-                    api_type="azure"
-                ),
-                "deployment_name": deployment_name,
+                "connection": connection,
+                "deployment_name": model_config.azure_deployment,
             }
         }
 
