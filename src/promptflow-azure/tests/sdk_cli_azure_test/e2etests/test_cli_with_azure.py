@@ -207,6 +207,7 @@ class TestCliWithAzure:
                     pass
                 raise
 
+    @pytest.mark.skipif(pytest.is_replay, reason="Skip to avoid expose secret in record.")
     def test_azure_run_prompty(self, pf, runtime: str, randstr: Callable[[str], str]) -> None:
         name = randstr("name")
         run_pf_command(
