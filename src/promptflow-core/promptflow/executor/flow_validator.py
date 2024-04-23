@@ -7,7 +7,7 @@ from json import JSONDecodeError
 from typing import Any, List, Mapping, Optional
 
 from promptflow._utils.logger_utils import logger
-from promptflow.contracts.flow import Flow, InputValueType, Node
+from promptflow.contracts.flow import Flow, FlowInputDefinition, InputValueType, Node
 from promptflow.contracts.tool import ValueType
 from promptflow.executor._errors import (
     DuplicateNodeName,
@@ -182,7 +182,9 @@ class FlowValidator:
         return updated_inputs
 
     @staticmethod
-    def resolve_flow_inputs_type(flow: Flow, inputs: Mapping[str, Any], idx: Optional[int] = None) -> Mapping[str, Any]:
+    def resolve_flow_inputs_type(
+        flow_inputs: FlowInputDefinition, inputs: Mapping[str, Any], idx: Optional[int] = None
+    ) -> Mapping[str, Any]:
         """Resolve inputs by type if existing. Ignore missing inputs.
 
         :param flow: The `flow` parameter is of type `Flow` and represents a flow object
@@ -198,13 +200,15 @@ class FlowValidator:
         :rtype: Mapping[str, Any]
         """
         updated_inputs = {k: v for k, v in inputs.items()}
-        for k, v in flow.inputs.items():
+        for k, v in flow_inputs.items():
             if k in inputs:
                 updated_inputs[k] = FlowValidator._parse_input_value(k, inputs[k], v.type, idx)
         return updated_inputs
 
     @staticmethod
-    def ensure_flow_inputs_type(flow: Flow, inputs: Mapping[str, Any], idx: Optional[int] = None) -> Mapping[str, Any]:
+    def ensure_flow_inputs_type(
+        flow_inputs: FlowInputDefinition, inputs: Mapping[str, Any], idx: Optional[int] = None
+    ) -> Mapping[str, Any]:
         """Make sure the inputs are completed and in the correct type. Raise Exception if not valid.
 
         :param flow: The `flow` parameter is of type `Flow` and represents a flow object
@@ -219,7 +223,7 @@ class FlowValidator:
             type specified in the `flow` object.
         :rtype: Mapping[str, Any]
         """
-        for k, v in flow.inputs.items():
+        for k, _ in flow_inputs.items():
             if k not in inputs:
                 line_info = "in input data" if idx is None else f"in line {idx} of input data"
                 msg_format = (
@@ -228,7 +232,7 @@ class FlowValidator:
                     "if it's no longer needed."
                 )
                 raise InputNotFound(message_format=msg_format, input_name=k, line_info=line_info)
-        return FlowValidator.resolve_flow_inputs_type(flow, inputs, idx)
+        return FlowValidator.resolve_flow_inputs_type(flow_inputs, inputs, idx)
 
     @staticmethod
     def convert_flow_inputs_for_node(flow: Flow, node: Node, inputs: Mapping[str, Any]) -> Mapping[str, Any]:
