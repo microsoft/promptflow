@@ -172,6 +172,10 @@ class AbstractExecutorProxy:
         """Execute a line"""
         raise NotImplementedError()
 
+    @property
+    def has_aggregation(self):
+        return False
+
     async def exec_aggregation_async(
         self,
         batch_inputs: Mapping[str, Any],

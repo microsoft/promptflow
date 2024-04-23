@@ -9,6 +9,7 @@ RUN apt-get update \
     && apt-get -y install build-essential \
     && apt-get -y install docker.io
 
+# Install notebook depenency
 RUN pip install ipython ipykernel
 RUN ipython kernel install --user --name promptflow
 

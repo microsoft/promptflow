@@ -919,7 +919,7 @@ Manage prompt flow service.
 
 ### pf service start
 
-Start prompt flow service.
+Start the prompt flow service.
 
 ```bash
 pf service start [--port]
@@ -928,17 +928,25 @@ pf service start [--port]
 ```
 
 #### Examples
-Start prompt flow service.
+Prompt flow will try to start the service on the default port 23333. If the port is already taken, prompt flow will 
+sequentially probe new ports, incrementing by one each time. Prompt flow retains the port number for future reference 
+and will utilize it for subsequent service startups.
+
 ```bash
 pf service start
 ```
 
-Force restart promptflow service.
+Forcefully start the prompt flow service. If the port is already in use, the existing service will be terminated and 
+restart a new service
+
 ```bash
 pf service start --force
 ```
 
-Start promptflow service with specific port.
+Start the prompt flow service with a specified port. If the port is already taken, prompt flow will raise an error 
+unless forcefully start the service with the `--force` flag. Upon availability, prompt flow retains the port number for 
+future reference and will utilize it for subsequent service startups.
+
 ```bash
 pf service start --port 65553
 ```
@@ -952,7 +960,7 @@ pf service start --debug
 
 `--port -p`
 
-Port of the promptflow service.
+The designated port of the prompt flow service and port number will be remembered if port is available.
 
 `--force`
 

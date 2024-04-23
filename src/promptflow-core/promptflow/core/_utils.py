@@ -1,19 +1,21 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import json
 import os
 import re
+from os import PathLike
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, Union
 
 from jinja2 import Template
 
 from promptflow._constants import AZURE_WORKSPACE_REGEX_FORMAT
-from promptflow._utils.flow_utils import is_flex_flow, resolve_entry_file, resolve_flow_path
+from promptflow._utils.flow_utils import is_flex_flow, resolve_flow_path, resolve_python_entry_file
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.utils import _match_reference
 from promptflow._utils.yaml_utils import load_yaml
-from promptflow.core._errors import MalformedConnectionProviderConfig, MissingRequiredPackage
+from promptflow.core._errors import InvalidSampleError, MalformedConnectionProviderConfig, MissingRequiredPackage
 from promptflow.exceptions import UserErrorException
 
 logger = LoggerFactory.get_logger(name=__name__)
@@ -44,7 +46,7 @@ def init_executable(*, flow_dag: dict = None, flow_path: Path = None, working_di
     if is_flex_flow(yaml_dict=flow_dag):
 
         entry = flow_dag.get("entry")
-        entry_file = resolve_entry_file(entry=entry, working_dir=working_dir)
+        entry_file = resolve_python_entry_file(entry=entry, working_dir=working_dir)
 
         from promptflow._core.entry_meta_generator import generate_flow_meta
 
@@ -179,3 +181,19 @@ def get_workspace_from_resource_id(resource_id: str, credential, pkg_name: Optio
         workspace_name=workspace_name,
     )
     return ml_client.workspaces.get(name=workspace_name)
+
+
+def load_inputs_from_sample(sample: Union[dict, str, PathLike]):
+    if not sample:
+        return {}
+    elif isinstance(sample, dict):
+        return sample
+    elif isinstance(sample, (str, Path)) and str(sample).endswith(".json"):
+        if str(sample).startswith("file:"):
+            sample = sample[len("file:") :]
+        if not Path(sample).exists():
+            raise InvalidSampleError(f"Cannot find sample file {sample}.")
+        with open(sample, "r") as f:
+            return json.load(f)
+    else:
+        raise InvalidSampleError("Only dict and json file are supported as sample in prompty.")

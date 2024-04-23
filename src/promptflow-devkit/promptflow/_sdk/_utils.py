@@ -64,7 +64,6 @@ from promptflow._sdk._errors import (
     UnsecureConnectionError,
 )
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
-from promptflow._utils.context_utils import inject_sys_path
 from promptflow._utils.flow_utils import is_flex_flow, resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
@@ -1054,19 +1053,6 @@ def callable_to_entry_string(callable_obj: Callable) -> str:
     return f"{module_str}:{func_str}"
 
 
-def entry_string_to_callable(entry_file, entry) -> Callable:
-    with inject_sys_path(Path(entry_file).parent):
-        try:
-            module_name, func_name = entry.split(":")
-            module = importlib.import_module(module_name)
-        except Exception as e:
-            raise UserErrorException(
-                message_format="Failed to load python module for {entry_file}",
-                entry_file=entry_file,
-            ) from e
-        return getattr(module, func_name, None)
-
-
 def is_flex_run(run: "Run") -> bool:
     if run._run_source == RunInfoSources.LOCAL:
         try:
@@ -1116,3 +1102,25 @@ def get_flow_name(flow) -> str:
         return flow.name
     # should be promptflow._sdk.entities._flows.base.FlowBase: flex flow, prompty, etc.
     return flow.code.name
+
+
+def add_executable_script_to_env_path():
+    # Add executable script dir to PATH to make sure the subprocess can find the executable, especially in notebook
+    # environment which won't add it to system path automatically.
+    python_dir = os.path.dirname(sys.executable)
+    executable_dir = os.path.join(python_dir, "Scripts") if platform.system() == "Windows" else python_dir
+    if executable_dir not in os.environ["PATH"].split(os.pathsep):
+        os.environ["PATH"] = executable_dir + os.pathsep + os.environ["PATH"]
+
+
+def get_flow_path(flow) -> Path:
+    # use public API to get flow path for DAG/flex flow or prompty
+    from promptflow._sdk.entities._flows.dag import Flow as DAGFlow
+    from promptflow._sdk.entities._flows.flex import FlexFlow
+    from promptflow._sdk.entities._flows.prompty import Prompty
+
+    if isinstance(flow, DAGFlow):
+        return flow.flow_dag_path.parent.resolve()
+    if isinstance(flow, (FlexFlow, Prompty)):
+        return flow.path.parent.resolve()
+    raise ValueError(f"Unsupported flow type {type(flow)!r}")

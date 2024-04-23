@@ -18,7 +18,7 @@ from types import GeneratorType
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 
 import opentelemetry.trace as otel_trace
-from opentelemetry.trace.span import format_trace_id
+from opentelemetry.trace.span import Span, format_trace_id
 from opentelemetry.trace.status import StatusCode
 
 from promptflow._constants import LINE_NUMBER_KEY
@@ -221,6 +221,7 @@ class FlowExecutor:
                 flow_file=Path(flow_file),
                 working_dir=working_dir,
                 storage=storage,
+                init_kwargs=init_kwargs,
             )
         else:
             if init_kwargs:
@@ -846,7 +847,7 @@ class FlowExecutor:
     ):
         # need to get everytime to ensure tracer is latest
         otel_tracer = otel_trace.get_tracer("promptflow")
-        with otel_tracer.start_as_current_span(self._flow.name) as span:
+        with otel_tracer.start_as_current_span(self._flow.name) as span, self._record_keyboard_interrupt_to_span(span):
             # Store otel trace id in context for correlation
             OperationContext.get_instance()["otel_trace_id"] = f"0x{format_trace_id(span.get_span_context().trace_id)}"
             # initialize span
@@ -872,6 +873,16 @@ class FlowExecutor:
             # set status
             span.set_status(StatusCode.OK)
             return output, aggregation_inputs
+
+    @contextlib.contextmanager
+    def _record_keyboard_interrupt_to_span(self, span: Span):
+        try:
+            yield
+        except KeyboardInterrupt as ex:
+            if span.is_recording():
+                span.record_exception(ex)
+                span.set_status(StatusCode.ERROR, "Execution cancelled.")
+            raise
 
     def _exec_inner(
         self,
@@ -965,9 +976,6 @@ class FlowExecutor:
             # Update the run info of those running nodes to a canceled status.
             run_tracker.cancel_node_runs(run_id)
             run_tracker.end_run(line_run_id, ex=ex)
-            # If async execution is enabled, ignore this exception and return the partial line results.
-            if not self._should_use_async():
-                raise
         except Exception as ex:
             run_tracker.end_run(line_run_id, ex=ex)
             if self._raise_ex:

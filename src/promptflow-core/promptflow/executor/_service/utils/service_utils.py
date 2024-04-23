@@ -68,9 +68,9 @@ def generate_error_response(ex: Union[dict, Exception]):
     return ErrorResponse.from_error_dict(error_dict)
 
 
-def set_environment_variables(request: BaseExecutionRequest):
-    if isinstance(request.environment_variables, dict) and request.environment_variables:
-        os.environ.update(request.environment_variables)
+def set_environment_variables(environment_variables: Mapping[str, Any]):
+    if isinstance(environment_variables, dict) and environment_variables:
+        os.environ.update(environment_variables)
 
 
 def enable_async_execution():
