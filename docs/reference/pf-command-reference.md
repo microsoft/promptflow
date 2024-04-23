@@ -100,6 +100,7 @@ pf flow test --flow
              [--debug]
              [--interactive]
              [--verbose]
+             [--ui]
 ```
 
 #### Examples
@@ -152,6 +153,12 @@ Chat in the flow.
 pf flow test --flow <path-to-flow-directory> --node <node_name> --interactive
 ```
 
+Chat in the chat window.
+
+```bash
+pf flow test --flow <path-to-flow-directory> --ui
+```
+
 #### Required Parameter
 
 `--flow`
@@ -183,6 +190,10 @@ Start a interactive chat session for chat flow.
 `--verbose`
 
 Displays the output for each step in the chat flow.
+
+`--ui`
+
+The flag to start an interactive chat experience in local chat window.
 
 ### pf flow validate
 
