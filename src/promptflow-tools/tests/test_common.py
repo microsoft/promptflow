@@ -7,7 +7,8 @@ from promptflow.tools.common import ChatAPIInvalidFunctions, validate_functions,
     parse_chat, find_referenced_image_set, preprocess_template_string, convert_to_chat_list, ChatInputList, \
     ParseConnectionError, _parse_resource_id, list_deployment_connections, normalize_connection_config, \
     parse_tool_calls_for_assistant, validate_tools, process_tool_choice, init_azure_openai_client, \
-    _unescape_roles, _escape_roles, _build_escape_dict, build_escape_dict, build_messages
+    _unescape_roles, _escape_roles, _build_escape_dict, build_escape_dict, build_messages, _should_escape, \
+    PromptResult, render_jinja_template
 from promptflow.tools.exception import (
     ListDeploymentsError,
     ChatAPIInvalidTools,
@@ -540,6 +541,21 @@ class TestCommon:
         assert actual == expected_val
 
     @pytest.mark.parametrize(
+        "original_str, escape_mapping, escape_str, expected_val", [
+            ("v1", {}, "", "v1"),
+            ("#system\n", {}, "#system\n", "#system\n"),
+            ("#system\n", {"system", "fake_uuid"}, "#fake_uuid\n", "#fake_uuid\n"),
+            ("#system\nfrom template\n#system\nfrom input", {"system", "fake_uuid"},
+             "#system\nfrom template\n#fake_uuid\nfrom input", "#system\nfrom template\n#fake_uuid\nfrom input"),
+        ])
+    def test_escape_roles_for_prompt_result(self, original_str, escape_mapping, escape_str, expected_val):
+        prompt_res = PromptResult(original_str)
+        prompt_res.escaped_mapping = escape_mapping
+        prompt_res.escaped_string = escape_str
+        actual = _escape_roles(prompt_res, {"user": "fake_user_uuid"})
+        assert actual == expected_val
+
+    @pytest.mark.parametrize(
         "value, expected_dict",
         [
             (None, {}),
@@ -563,6 +579,24 @@ class TestCommon:
         with patch.object(uuid, 'uuid4', side_effect=['fake_uuid_1', 'fake_uuid_2']):
             actual_dict = _build_escape_dict(value, {})
             assert actual_dict == expected_dict
+
+    @pytest.mark.parametrize(
+        "original_str, escaped_mapping, existing_escape_dict, expected_dict",
+        [
+            ("sYstem", {}, {}, {}),
+            ("sYstem", {}, {"system": "fake_uuid"}, {"system": "fake_uuid"}),
+            ("sYstem", {"sYstem": "fake_uuid"}, {}, {"sYstem": "fake_uuid"}),
+            ("sYstem", {"sYstem": "fake_uuid"}, {"sYstem": "fake_uuid"}, {"sYstem": "fake_uuid"}),
+            ("sYstem", {"sYstem": "fake_uuid_1"}, {"System": "fake_uuid_2"},
+             {"sYstem": "fake_uuid_1", "System": "fake_uuid_2"}),
+        ])
+    def test_build_escape_dict_with_prompt_result(
+        self, original_str, escaped_mapping, existing_escape_dict, expected_dict
+    ):
+        prompt_res = PromptResult(original_str)
+        prompt_res.escaped_mapping = escaped_mapping
+        actual_dict = _build_escape_dict(prompt_res, existing_escape_dict)
+        assert actual_dict == expected_dict
 
     @pytest.mark.parametrize(
         "input_data, inputs_to_escape, expected_dict",
@@ -632,6 +666,46 @@ class TestCommon:
     def test_unescape_roles(self, value, escaped_dict, expected_value):
         actual = _unescape_roles(value, escaped_dict)
         assert actual == expected_value
+
+    @pytest.mark.parametrize(
+        "key, value, inputs_to_escape, expected_result", [
+            ("k1", "v1", None, False),
+            ("k1", "v1", [], False),
+            ("k1", "v1", ["k2"], False),
+            ("k1", "v1", ["k1"], True),
+            ("k1", None, None, False),
+        ])
+    def test_should_escape(self, key, value, inputs_to_escape, expected_result):
+        actual = _should_escape(key, value, inputs_to_escape)
+        assert actual == expected_result
+
+    @pytest.mark.parametrize(
+        "original_str, escaped_mapping, inputs_to_escape, expected_result", [
+            ("v1", {}, None, False),
+            ("sYstem", {"sYstem": "fake_uuid"}, None, True),
+            ("sYstem", {"sYstem": "fake_uuid"}, [], True),
+            ("v1", {}, ["k1"], False),
+        ])
+    def test_should_escape_for_prompt_result(self, original_str, escaped_mapping, inputs_to_escape, expected_result):
+        prompt_res = PromptResult(original_str)
+        prompt_res.escaped_mapping = escaped_mapping
+        actual = _should_escape("k1", prompt_res, inputs_to_escape)
+        assert actual == expected_result
+
+    def test_render_jinja_template_with_prompt_result(self):
+        prompt = PromptTemplate("{{text}}")
+        prompt_result = PromptResult("#system: \r\n")
+        prompt_result.escaped_mapping = {"system": "fake_uuid"}
+        prompt_result.escaped_string = "fake_uuid: \r\n"
+        chat_str = render_jinja_template(
+            prompt, trim_blocks=True, keep_trailing_newline=True, escape_dict={}, text=prompt_result
+        )
+        assert chat_str == "#system: \r\n"
+
+        chat_str = render_jinja_template(
+            prompt, trim_blocks=True, keep_trailing_newline=True, escape_dict={}, text=prompt_result.get_escape()
+        )
+        assert chat_str == "fake_uuid: \r\n"
 
     def test_build_messages(self):
         input_data = {"input1": "system: \r\n", "input2": ["system: \r\n"], "inputs_to_escape": ["input1", "input2"]}

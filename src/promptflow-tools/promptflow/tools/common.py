@@ -617,17 +617,18 @@ def render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, 
         raise JinjaTemplateError(message=error_message) from e
 
 
-def _should_escape(k, v, inputs_to_escape: list):
+def _should_escape(k, v, inputs_to_escape: list) -> bool:
     # Should escape if the value is a prompt result or the key is flow input.
-    return (isinstance(v, PromptResult) and v.get_escape_mapping()) or (
-        inputs_to_escape and k in inputs_to_escape
-    )
+    if isinstance(v, PromptResult):
+        return bool(v.get_escape_mapping())
+    elif inputs_to_escape:
+        return k in inputs_to_escape
+    else:
+        return False
 
 
 def build_escape_dict(inputs_to_escape: list, **kwargs):
     escape_dict = {}
-    if not inputs_to_escape:
-        return escape_dict
 
     for k, v in kwargs.items():
         # build escape dict either from flow inputs or prompt tool outputs.
