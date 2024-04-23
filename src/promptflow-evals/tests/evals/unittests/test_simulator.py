@@ -13,20 +13,14 @@ from promptflow.evals.synthetic.simulator import _template_dir as template_dir
 from promptflow.evals.synthetic.simulator._conversation import ConversationRole
 from promptflow.evals.synthetic.simulator._conversation.conversation_turn import ConversationTurn
 from promptflow.evals.synthetic.simulator.simulator import Simulator
+from promptflow.evals.synthetic.simulator.simulator.userbot_config import UserBotConfig
 from promptflow.evals.synthetic.simulator.templates._simulator_templates import SimulatorTemplates
 from promptflow.evals.synthetic.simulator.templates._templates import CONVERSATION
 
 
 @pytest.fixture()
 def mock_config():
-    return {
-        "api_key": "apikey",
-        "deployment_name": "deployment",
-        "api_version": "api-version",
-        "api_base": "api-base",
-        "model_name": "model-name",
-        "model_kwargs": {},
-    }
+    return UserBotConfig(api_key="apikey", api_base="api-base", model_name="model-name", api_version="api-version")
 
 
 @pytest.fixture()
@@ -80,7 +74,7 @@ def async_callback():
 @pytest.mark.unittest
 class TestSimulator:
     @patch("promptflow.evals.synthetic.simulator.simulator.simulator.simulate_conversation")
-    @patch("promptflow.evals.synthetic.simulator.simulator.simulator.Simulator._to_openai_chat_completion_model")
+    @patch("promptflow.evals.synthetic.simulator.simulator.userbot_config.UserBotConfig.to_open_ai_chat_completions")
     def test_simulator_returns_formatted_conversations(
         self, _, simulate_conversation_mock, mock_config, task_parameters, conv_template, async_callback
     ):
@@ -164,7 +158,7 @@ class TestSimulator:
         assert turn_1_citations == expected_turn_1_citations, "incorrect turn_1 citations"
         assert turn_2_citations == expected_turn_2_citations, "incorrect turn_2 citations"
 
-    @patch("promptflow.evals.synthetic.simulator.simulator.simulator.Simulator._to_openai_chat_completion_model")
+    @patch("promptflow.evals.synthetic.simulator.simulator.userbot_config.UserBotConfig.to_open_ai_chat_completions")
     def test_simulator_from_openai_callback(
         self, to_chat_completion_model, mock_config, system_model_completion, task_parameters, conv_template
     ):
@@ -193,7 +187,7 @@ class TestSimulator:
     # disabled for now. Azure sdk for python test pipeline import error in promptflow
     #  from opencensus.ext.azure.log_exporter import AzureEventHandler
     # E   ImportError: cannot import name 'AzureEventHandler' from 'opencensus.ext.azure.log_exporter' (D:\a\_work\1\s\sdk\ai\azure-ai-generative\.tox\mindependency\lib\site-packages\opencensus\ext\azure\log_exporter\__init__.py)
-    @patch("promptflow.evals.synthetic.simulator.simulator.simulator.Simulator._to_openai_chat_completion_model")
+    @patch("promptflow.evals.synthetic.simulator.simulator.userbot_config.UserBotConfig.to_open_ai_chat_completions")
     @patch("promptflow.load_flow")
     @patch("promptflow.evals.synthetic.simulator.simulator.simulator.Simulator._wrap_pf")
     def simulator_from_pf(
@@ -224,7 +218,7 @@ class TestSimulator:
         assert len(conv) == 1
         assert conv[0]["messages"][1]["content"] == content
 
-    @patch("promptflow.evals.synthetic.simulator.simulator.simulator.Simulator._to_openai_chat_completion_model")
+    @patch("promptflow.evals.synthetic.simulator.simulator.userbot_config.UserBotConfig.to_open_ai_chat_completions")
     def test_simulator_from_custom_callback(
         self, to_chat_completion_model, mock_config, system_model_completion, task_parameters, conv_template
     ):

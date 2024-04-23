@@ -1,4 +1,5 @@
 import asyncio
+import os
 
 import pytest
 from azure.ai.ml import MLClient
@@ -7,11 +8,13 @@ from azure.identity import DefaultAzureCredential
 from promptflow.evals.synthetic.simulator.simulator import Simulator
 
 
-@pytest.mark.usefixtures("model_config", "recording_injection", "ml_client_config")
+@pytest.mark.usefixtures(
+    "model_config", "recording_injection", "ml_client_config", "configure_default_azure_credential"
+)
 @pytest.mark.e2etest
 class TestAdvSimulator:
-    @pytest.mark.skip(reason="This test is not ready yet due to DefaultAzureCredential.")
     def test_conversation(self, model_config, ml_client_config):
+        os.environ["rai_svc_url"] = "https://int.api.azureml-test.ms"
         from openai import AsyncAzureOpenAI
 
         oai_client = AsyncAzureOpenAI(
