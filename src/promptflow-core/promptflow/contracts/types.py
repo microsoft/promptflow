@@ -3,7 +3,7 @@
 # ---------------------------------------------------------
 
 from dataclasses import dataclass
-from typing import List
+from typing import Any, List
 
 
 class Secret(str):
@@ -54,3 +54,16 @@ class AssistantDefinition:
     def __post_init__(self):
         # Implicitly introduce the '_tool_invoker' attribute here
         self._tool_invoker = None  # reserved attribute for tool invoker injection
+
+
+class AttrDict(dict):
+    """A dictionary that allows attribute access to its keys."""
+
+    def __getattr__(self, key: str) -> Any:
+        if key in self:
+            return self[key]
+        else:
+            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{key}'")
+
+    def __setattr__(self, key: str, value: Any) -> None:
+        self[key] = value
