@@ -437,3 +437,22 @@ def get_cli_sdk_logger():
     # to avoid circular import error, use plain string here instead of importing from _constants
     # because this function is also called in _prepare_home_dir which is in _constants
     return LoggerFactory.get_logger("promptflow", verbosity=logging.WARNING)
+
+
+def _get_format_for_logger():
+    """
+    Get the logging format and date format for logger.
+
+    This function attempts to find the handler of the root logger with a configured formatter.
+    If such a handler is found, it returns the format and date format used by this handler.
+    This can be configured through logging.basicConfig. If no configured formatter is found,
+    it defaults to LOG_FORMAT and DATETIME_FORMAT.
+    """
+    # Get the root logger
+    logger = logging.getLogger()
+    # Return the format and date format from the default handler
+    for handler in logger.handlers:
+        if handler.formatter:
+            return handler.formatter._fmt, handler.formatter.datefmt
+    # Return default format and date format if no formatter is found
+    return LOG_FORMAT, DATETIME_FORMAT
