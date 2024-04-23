@@ -32,6 +32,12 @@ def questions_file():
 
 
 @pytest.fixture
+def questions_wrong_file():
+    data_path = os.path.join(pathlib.Path(__file__).parent.resolve(), "data")
+    return os.path.join(data_path, "questions_wrong.jsonl")
+
+
+@pytest.fixture
 def questions_answers_file():
     data_path = os.path.join(pathlib.Path(__file__).parent.resolve(), "data")
     return os.path.join(data_path, "questions_answers.jsonl")
@@ -87,6 +93,22 @@ class TestEvaluate:
     def test_evaluate_missing_required_inputs(self, missing_columns_jsonl_file):
         with pytest.raises(ValueError) as exc_info:
             evaluate(data=missing_columns_jsonl_file, evaluators={"g": F1ScoreEvaluator()})
+
+        assert "Missing required inputs for evaluator g : ['ground_truth']." in exc_info.value.args[0]
+
+    def test_evaluate_missing_required_inputs_target(self, questions_wrong_file):
+        with pytest.raises(ValueError) as exc_info:
+            evaluate(data=questions_wrong_file,
+                     evaluators={"g": F1ScoreEvaluator()},
+                     target=_target_fn
+                     )
+        assert "Missing required inputs for target : ['question']." in exc_info.value.args[0]
+
+    def test_wrong_target(self, questions_file):
+        """Test error, when target fuction does not generate required column."""
+        with pytest.raises(ValueError) as exc_info:
+            # target_fn will generate the "answer", but not ground truth.
+            evaluate(data=questions_file, evaluators={"g": F1ScoreEvaluator()}, target=_target_fn)
 
         assert "Missing required inputs for evaluator g : ['ground_truth']." in exc_info.value.args[0]
 

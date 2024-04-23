@@ -25,7 +25,7 @@ def _calculate_mean(df) -> Dict[str, float]:
     return mean_value.to_dict()
 
 
-def _validate_input_data_for_evaluator(evaluator, evaluator_name, data_df):
+def _validate_input_data_for_evaluator(evaluator, evaluator_name, data_df, is_target_fn=False):
     required_inputs = [
         param.name
         for param in inspect.signature(evaluator).parameters.values()
@@ -34,7 +34,10 @@ def _validate_input_data_for_evaluator(evaluator, evaluator_name, data_df):
 
     missing_inputs = [col for col in required_inputs if col not in data_df.columns]
     if missing_inputs:
-        raise ValueError(f"Missing required inputs for evaluator {evaluator_name} : {missing_inputs}.")
+        if not is_target_fn:
+            raise ValueError(f"Missing required inputs for evaluator {evaluator_name} : {missing_inputs}.")
+        else:
+            raise ValueError(f"Missing required inputs for target : {missing_inputs}.")
 
 
 def _validation(target, data, evaluators, output_path, tracking_uri, evaluation_name):
@@ -65,16 +68,23 @@ def _validation(target, data, evaluators, output_path, tracking_uri, evaluation_
         if not isinstance(evaluation_name, str):
             raise ValueError("evaluation_name must be a string.")
 
+    _validate_columns(data, evaluators, target)
+
+
+def _validate_columns(data, evaluators, target):
     try:
         data_df = pd.read_json(data, lines=True)
     except Exception as e:
         raise ValueError(
             f"Failed to load data from {data}. Please validate it is a valid jsonl data. Error: {str(e)}.")
 
-    if not target:
+    if target:
         # If the target function is given, it may return
         # several columns and hence we cannot check the availability of columns
         # without knowing target function semantics.
+        # Instead, here we will validate the columns, taken by target.
+        _validate_input_data_for_evaluator(target, None, data_df, is_target_fn=True)
+    else:
         for evaluator_name, evaluator in evaluators.items():
             _validate_input_data_for_evaluator(evaluator, evaluator_name, data_df)
 
@@ -151,6 +161,9 @@ def evaluate(
     tempfile_created = False
     if data is not None and target is not None:
         data = _apply_target_to_data(target, data, pf_client)
+        # After we have generated all columns we can check if we have
+        # everything we need for evaluators.
+        _validate_columns(data, evaluators, None)
         tempfile_created = True
 
     evaluator_info = {}
