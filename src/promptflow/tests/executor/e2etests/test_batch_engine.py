@@ -42,6 +42,7 @@ SAMPLE_EVAL_FLOW = "classification_accuracy_evaluation"
 SAMPLE_FLOW_WITH_PARTIAL_FAILURE = "python_tool_partial_failure"
 
 TEST_ROOT = Path(__file__).parent.parent.parent
+EAGER_ROOT = TEST_ROOT / "test_configs/eager_flows"
 RUNS_ROOT = TEST_ROOT / "test_configs/runs"
 
 

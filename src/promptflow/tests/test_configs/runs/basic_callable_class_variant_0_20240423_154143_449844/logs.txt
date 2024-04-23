@@ -1,0 +1,29 @@
+2024-04-23 15:41:48 +0800   27488 execution          WARNING  Starting run without column mapping may lead to unexpected results. Please consult the following documentation for more information: https://aka.ms/pf/column-mapping
+2024-04-23 15:41:48 +0800   27488 execution.bulk     INFO     Current system's available memory is 15545.93359375MB, memory consumption of current process is 148.7890625MB, estimated available worker count is 15545.93359375/148.7890625 = 104
+2024-04-23 15:41:48 +0800   27488 execution.bulk     INFO     Set process count to 4 by taking the minimum value among the factors of {'default_worker_count': 4, 'row_count': 4, 'estimated_worker_count_based_on_memory_usage': 104}.
+2024-04-23 15:41:52 +0800   27488 execution.bulk     INFO     Process name(SpawnProcess-2)-Process id(11688)-Line number(0) start execution.
+2024-04-23 15:41:52 +0800   27488 execution.bulk     INFO     Process name(SpawnProcess-3)-Process id(1452)-Line number(1) start execution.
+2024-04-23 15:41:52 +0800   27488 execution.bulk     INFO     Process name(SpawnProcess-5)-Process id(3784)-Line number(2) start execution.
+2024-04-23 15:41:52 +0800   27488 execution.bulk     INFO     Process name(SpawnProcess-4)-Process id(27448)-Line number(3) start execution.
+2024-04-23 15:41:52 +0800   27488 execution.bulk     INFO     Process name(SpawnProcess-2)-Process id(11688)-Line number(0) completed.
+2024-04-23 15:41:53 +0800   27488 execution.bulk     INFO     Finished 1 / 4 lines.
+2024-04-23 15:41:53 +0800   27488 execution.bulk     INFO     Average execution time for completed lines: 1.0 seconds. Estimated time for incomplete lines: 3.0 seconds.
+2024-04-23 15:41:56 +0800   27488 execution.bulk     INFO     Process name(SpawnProcess-4)-Process id(27448)-Line number(3) completed.
+2024-04-23 15:41:56 +0800   27488 execution.bulk     INFO     Process name(SpawnProcess-3)-Process id(1452)-Line number(1) completed.
+2024-04-23 15:41:56 +0800   27488 execution.bulk     INFO     Process name(SpawnProcess-5)-Process id(3784)-Line number(2) completed.
+2024-04-23 15:41:56 +0800   27488 execution.bulk     INFO     Finished 4 / 4 lines.
+2024-04-23 15:41:56 +0800   27488 execution.bulk     INFO     Average execution time for completed lines: 1.01 seconds. Estimated time for incomplete lines: 0.0 seconds.
+2024-04-23 15:41:56 +0800   27488 execution.bulk     INFO     The thread monitoring the process [11688-SpawnProcess-2] will be terminated.
+2024-04-23 15:41:56 +0800   27488 execution.bulk     INFO     The thread monitoring the process [27448-SpawnProcess-4] will be terminated.
+2024-04-23 15:41:56 +0800   27488 execution.bulk     INFO     The thread monitoring the process [1452-SpawnProcess-3] will be terminated.
+2024-04-23 15:41:56 +0800   27488 execution.bulk     INFO     The thread monitoring the process [3784-SpawnProcess-5] will be terminated.
+2024-04-23 15:41:56 +0800   27448 execution.bulk     INFO     The process [27448] has received a terminate signal.
+2024-04-23 15:41:56 +0800    1452 execution.bulk     INFO     The process [1452] has received a terminate signal.
+2024-04-23 15:41:56 +0800    3784 execution.bulk     INFO     The process [3784] has received a terminate signal.
+2024-04-23 15:41:56 +0800   11688 execution.bulk     INFO     The process [11688] has received a terminate signal.
+2024-04-23 15:41:59 +0800   27488 execution.bulk     INFO     Process 27448 terminated.
+2024-04-23 15:41:59 +0800   27488 execution.bulk     INFO     Process 3784 terminated.
+2024-04-23 15:41:59 +0800   27488 execution.bulk     INFO     Process 1452 terminated.
+2024-04-23 15:41:59 +0800   27488 execution.bulk     INFO     Process 11688 terminated.
+2024-04-23 15:41:59 +0800   27488 execution.bulk     INFO     Executing aggregation function...
+2024-04-23 15:41:59 +0800   27488 execution.bulk     INFO     Finish executing aggregation function.

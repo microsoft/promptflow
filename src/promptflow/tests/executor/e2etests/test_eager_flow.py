@@ -1,14 +1,20 @@
+import json
+import os
 from pathlib import Path
 from tempfile import mkdtemp
 
 import pytest
 
 from promptflow._constants import OUTPUT_FILE_NAME
+from promptflow._sdk.entities._run import Run
+from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow.batch._batch_engine import BatchEngine
 from promptflow.batch._result import BatchResult
+from promptflow.contracts.run_info import Status
 
 from ..utils import (
     EAGER_FLOW_ROOT,
+    RUNS_ROOT,
     get_bulk_inputs_from_jsonl,
     get_flow_folder,
     get_flow_inputs_file,
@@ -19,6 +25,15 @@ from ..utils import (
 SAMPLE_FLOW = "web_classification_no_variants"
 SAMPLE_EVAL_FLOW = "classification_accuracy_evaluation"
 SAMPLE_FLOW_WITH_PARTIAL_FAILURE = "python_tool_partial_failure"
+
+
+class MockRun(object):
+    def __init__(self, name: str, output_path: Path):
+        self.name = name
+        self._output_path = output_path
+        self.data = None
+        self._run_source = None
+        self.flow = None
 
 
 def validate_batch_result(batch_result: BatchResult, flow_folder, output_dir, ensure_output):
@@ -126,3 +141,46 @@ class TestEagerFlow:
         batch_engine.run(input_dirs, {"func_input": "${data.func_input}"}, output_dir)
         outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
         assert ensure_output(outputs), outputs
+
+    @pytest.mark.parametrize(
+        "flow_folder, resume_from_run_name, inputs_mapping, init_kwargs",
+        [
+            (
+                "basic_callable_class",
+                "basic_callable_class_variant_0_20240423_154143_449844",
+                {"func_input": "${data.func_input}"},
+                {"obj_input": "obj_input"},
+            ),
+        ],
+    )
+    def test_batch_run_resume(self, flow_folder, resume_from_run_name, inputs_mapping, init_kwargs):
+        run_storage = LocalStorageOperations(Run(flow=flow_folder))
+        batch_engine = BatchEngine(
+            get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT),
+            get_flow_folder(flow_folder, root=EAGER_FLOW_ROOT),
+            init_kwargs=init_kwargs,
+            storage=run_storage,
+        )
+        input_dirs = {"data": get_flow_inputs_file(flow_folder, root=EAGER_FLOW_ROOT)}
+        output_dir = Path(mkdtemp())
+
+        run_folder = RUNS_ROOT / resume_from_run_name
+        mock_resume_from_run = MockRun(resume_from_run_name, run_folder)
+        resume_from_run_storage = LocalStorageOperations(mock_resume_from_run)
+        resume_from_run_output_dir = resume_from_run_storage.outputs_folder
+        resume_run_id = mock_resume_from_run.name + "_resume"
+        resume_run_batch_results = batch_engine.run(
+            input_dirs,
+            inputs_mapping,
+            output_dir,
+            resume_run_id,
+            resume_from_run_storage=resume_from_run_storage,
+            resume_from_run_output_dir=resume_from_run_output_dir,
+        )
+        assert resume_run_batch_results.status == Status.Completed
+        output_path = os.path.join(resume_from_run_output_dir, "output.jsonl")
+        with open(output_path, "r") as file:
+            original_output = [json.loads(line) for line in file]
+        original_completed_count = len(original_output)
+        resume_completed_count = resume_run_batch_results.completed_lines
+        assert original_completed_count < resume_completed_count

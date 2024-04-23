@@ -85,6 +85,8 @@ class RunSubmitter:
         if run._resume_from is not None:
             logger.debug(f"Resume from run {run._resume_from!r}...")
             run._resume_from = self._ensure_run_completed(run._resume_from)
+        print("@@@", run)
+        print("@@@", run.init)
         # start trace
         logger.debug("start trace for flow run...")
         flow_path = run._get_flow_dir().resolve()
