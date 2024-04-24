@@ -3,11 +3,10 @@
 # ---------------------------------------------------------
 import inspect
 import os
-import re
 import uuid
 
 from types import FunctionType
-from typing import Any, Callable, Dict, Optional, List, Tuple
+from typing import Any, Callable, Dict, Optional, Set, Tuple
 
 import pandas as pd
 
@@ -103,7 +102,7 @@ def _apply_target_to_data(
         target: Callable,
         data: str,
         pf_client: PFClient,
-        initial_data: pd.DataFrame) -> Tuple[str, pd.DataFrame, List[str]]:
+        initial_data: pd.DataFrame) -> Tuple[str, pd.DataFrame, Set[str]]:
     """
     Apply the target function to the data set and save the data to temporary file.
 
@@ -129,24 +128,23 @@ def _apply_target_to_data(
     )
     target_output = pf_client.runs.get_details(run, all_results=True)
     # Remove input and output prefix
-    re_prefix = re.compile('(outputs[.])|(inputs[.])')
-    added_columns = {
-        re_prefix.sub('', col) for col in filter(
-            lambda x: x.startswith('outputs.'), target_output.columns)}
-
-    rename_dict = {col: re_prefix.sub('', col) for col in target_output.columns}
-    target_output.rename(columns=rename_dict, inplace=True)
-    drop_columns = set(target_output.columns) - added_columns
-    target_output.set_index(LINE_NUMBER, inplace=True)
+    prefix = 'outputs.'
+    rename_dict = {col: col[len(prefix):] for col in target_output.columns if col.startswith(prefix)}
+    # Sort output by line numbers
+    target_output.set_index(f'inputs.{LINE_NUMBER}', inplace=True)
     target_output.sort_index(inplace=True)
     target_output.reset_index(inplace=True, drop=False)
     # target_output contains only input columns, taken by function,
     # so we need to concatenate it to the input data frame.
+    drop_columns = set(target_output.columns) - set(rename_dict.keys())
     target_output.drop(drop_columns, inplace=True, axis=1)
+    # Remove outputs. prefix
+    target_output.rename(columns=rename_dict, inplace=True)
+    # Concatenate output to input
     target_output = pd.concat([target_output, initial_data], axis=1)
     new_data_name = f'{uuid.uuid1()}.jsonl'
     target_output.to_json(new_data_name, orient='records', lines=True)
-    return new_data_name, target_output, added_columns
+    return new_data_name, target_output, set(rename_dict.values())
 
 
 def evaluate(
