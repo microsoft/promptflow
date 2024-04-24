@@ -29,10 +29,10 @@ class TestEvaluate:
 
         assert "data must be provided for evaluation." in exc_info.value.args[0]
 
-    def test_evaluate_evaluators_not_a_dict(self, mock_model_config, questions_file):
+    def test_evaluate_evaluators_not_a_dict(self, mock_model_config):
         with pytest.raises(ValueError) as exc_info:
             evaluate(
-                data=questions_file,
+                data="data",
                 evaluators=[GroundednessEvaluator(model_config=mock_model_config)],
             )
 

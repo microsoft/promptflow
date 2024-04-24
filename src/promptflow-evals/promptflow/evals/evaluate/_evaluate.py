@@ -3,11 +3,12 @@
 # ---------------------------------------------------------
 import inspect
 import os
+import re
 import shutil
 import uuid
 
 from types import FunctionType
-from typing import Any, Callable, Dict, Optional, List
+from typing import Any, Callable, Dict, Optional, List, Tuple
 
 import pandas as pd
 
@@ -25,27 +26,14 @@ def _calculate_mean(df) -> Dict[str, float]:
     return mean_value.to_dict()
 
 
-def _get_missing_inputs(evaluator, columns):
+def _validate_input_data_for_evaluator(evaluator, evaluator_name, df_data, is_target_fn=False):
     required_inputs = [
         param.name
         for param in inspect.signature(evaluator).parameters.values()
         if param.default == inspect.Parameter.empty and param.name not in ["kwargs", "args", "self"]
     ]
 
-    return [col for col in required_inputs if col not in columns]
-
-
-def _validate_data(data):
-    if data is None:
-        raise ValueError("data must be provided for evaluation.")
-
-    if data is not None:
-        if not isinstance(data, str):
-            raise ValueError("data must be a string.")
-
-
-def _validate_input_data_for_evaluator(evaluator, evaluator_name, columns, is_target_fn=False):
-    missing_inputs = _get_missing_inputs(evaluator, columns)
+    missing_inputs = [col for col in required_inputs if col not in df_data.columns]
     if missing_inputs:
         if not is_target_fn:
             raise ValueError(f"Missing required inputs for evaluator {evaluator_name} : {missing_inputs}.")
@@ -53,11 +41,17 @@ def _validate_input_data_for_evaluator(evaluator, evaluator_name, columns, is_ta
             raise ValueError(f"Missing required inputs for target : {missing_inputs}.")
 
 
-def _validation(target, columns, evaluators, output_path, tracking_uri, evaluation_name):
+def _validate_and_load_data(target, data, evaluators, output_path, tracking_uri, evaluation_name):
+    if data is None:
+        raise ValueError("data must be provided for evaluation.")
 
     if target is not None:
         if not callable(target):
             raise ValueError("target must be a callable function.")
+
+    if data is not None:
+        if not isinstance(data, str):
+            raise ValueError("data must be a string.")
 
     if evaluators is not None:
         if not isinstance(evaluators, dict):
@@ -75,33 +69,22 @@ def _validation(target, columns, evaluators, output_path, tracking_uri, evaluati
         if not isinstance(evaluation_name, str):
             raise ValueError("evaluation_name must be a string.")
 
-    _validate_columns(columns, evaluators, target)
-
-
-def _get_data_columns(data: str) -> List[str]:
-    """
-    Read the data and return the list of columns, if data is None, return empty list.
-
-    :keyword data: The path to jsonl file.
-    :paramtype data: str
-    :return: The list of columns or empty list.
-    :rtype: List[str]
-    :raises: ValueError
-    """
     try:
-        data_df = pd.read_json(data, lines=True)
+        initial_data_df = pd.read_json(data, lines=True)
     except Exception as e:
         raise ValueError(
             f"Failed to load data from {data}. Please validate it is a valid jsonl data. Error: {str(e)}.")
-    return list(data_df.columns)
+
+    _validate_columns(initial_data_df, evaluators, target)
+    return initial_data_df
 
 
-def _validate_columns(columns: List[str], evaluators: Dict[str, Any], target: Optional[Callable]) -> None:
+def _validate_columns(df: pd.DataFrame, evaluators: Dict[str, Any], target: Optional[Callable]) -> None:
     """
     Check that all columns needed by evaluator or target function are present.
 
-    :keyword columns: The list of column in the data frame.
-    :paramtype columns: List[str]
+    :keyword df: The data frame to be validated.
+    :paramtype df: pd.DataFrame
     :keyword evaluators: The dictionary of evaluators.
     :paramtype evaluators: Dict[str, Any]
     :keyword target: The callable to be applied to data set.
@@ -112,13 +95,17 @@ def _validate_columns(columns: List[str], evaluators: Dict[str, Any], target: Op
         # several columns and hence we cannot check the availability of columns
         # without knowing target function semantics.
         # Instead, here we will validate the columns, taken by target.
-        _validate_input_data_for_evaluator(target, None, columns, is_target_fn=True)
+        _validate_input_data_for_evaluator(target, None, df, is_target_fn=True)
     else:
         for evaluator_name, evaluator in evaluators.items():
-            _validate_input_data_for_evaluator(evaluator, evaluator_name, columns)
+            _validate_input_data_for_evaluator(evaluator, evaluator_name, df)
 
 
-def _apply_target_to_data(target: Callable, data: str, pf_client: PFClient) -> str:
+def _apply_target_to_data(
+        target: Callable,
+        data: str,
+        pf_client: PFClient,
+        initial_data: pd.DataFrame) -> Tuple[str, pd.DataFrame, List[str]]:
     """
     Apply the target function to the data set and save the data to temporary file.
 
@@ -128,8 +115,10 @@ def _apply_target_to_data(target: Callable, data: str, pf_client: PFClient) -> s
     :paramtype data: str
     :keyword pf_client: The promptflow client to be used.
     :paramtype pf_client: PFClient
-    :return: The path to data file with answers from target function.
-    :rtype: str
+    :keyword initial_data: The data frame with the loaded data.
+    :paramtype initial_data: pd.DataFrame
+    :return: The tuple, containing path, data frame and the list of added columns.
+    :rtype: Tuple[str, pd.DataFrame, List[str]]
     """
     # We are manually creating the temporary directory for the flow
     # because the way tempdir remove temporary directories will
@@ -150,16 +139,26 @@ def _apply_target_to_data(target: Callable, data: str, pf_client: PFClient) -> s
         # Exception means, we are running in debugger. In this case we can keep the
         # directory.
         pass
-    function_output = pd.read_json(pf_client.runs._get_outputs_path(run),
-                                   orient='records', lines=True)
+    function_output = pf_client.runs.get_details(run, all_results=True)
+    # Remove input and output prefix
+    re_prefix = re.compile('(outputs[.])|(inputs[.])')
+    added_columns = {
+        re_prefix.sub('', col) for col in filter(
+            lambda x: x.startswith('outputs.'), function_output.columns)}
+
+    rename_dict = {col: re_prefix.sub('', col) for col in function_output.columns}
+    function_output.rename(columns=rename_dict, inplace=True)
+    drop_columns = set(function_output.columns) - added_columns
     function_output.set_index(LINE_NUMBER, inplace=True)
     function_output.sort_index(inplace=True)
-    data_input = pd.read_json(data, orient='records', lines=True)
-    data_input = pd.concat([data_input, function_output], axis=1, verify_integrity=True)
-    del function_output
+    function_output.reset_index(inplace=True, drop=False)
+    # function_output contains only input columns, taken by function,
+    # so we need to concatenate it to the input data frame.
+    function_output.drop(drop_columns, inplace=True, axis=1)
+    function_output = pd.concat([function_output, initial_data], axis=1)
     new_data_name = f'{uuid.uuid1()}.jsonl'
-    data_input.to_json(new_data_name, orient='records', lines=True)
-    return new_data_name
+    function_output.to_json(new_data_name, orient='records', lines=True)
+    return new_data_name, function_output, added_columns
 
 
 def evaluate(
@@ -192,20 +191,20 @@ def evaluate(
     :rtype: ~azure.ai.generative.evaluate.EvaluationResult
     """
 
-    _validate_data(data)
-    initial_columns = _get_data_columns(data)
-    _validation(target, initial_columns, evaluators, output_path, tracking_uri, evaluation_name)
+    input_data_df = _validate_and_load_data(
+        target, data, evaluators, output_path, tracking_uri, evaluation_name)
 
     pf_client = PFClient()
     code_client = CodeClient()
 
     tempfile_created = False
+    target_generated_columns = set()
     if data is not None and target is not None:
-        data = _apply_target_to_data(target, data, pf_client)
+        data, input_data_df, target_generated_columns = _apply_target_to_data(
+            target, data, pf_client, input_data_df)
         # After we have generated all columns we can check if we have
         # everything we need for evaluators.
-        new_columns = _get_data_columns(data)
-        _validate_columns(new_columns, evaluators, None)
+        _validate_columns(input_data_df, evaluators, None)
         tempfile_created = True
 
     evaluator_info = {}
@@ -247,15 +246,13 @@ def evaluate(
             else evaluator_result_df
         )
 
-    input_data_df = pd.read_json(data, lines=True)
     if tempfile_created:
         # During the run we have created the temporary file. We will delete it here.
         os.unlink(data)
 
     # Rename columns, generated by template function to outputs instead of inputs.
-    template_generated_columns = set(input_data_df) - set(initial_columns)
     input_data_df.rename(columns={
-        col: f"{'outputs' if col in template_generated_columns else 'inputs'}.{col}" for col in input_data_df.columns},
+        col: f"{'outputs' if col in target_generated_columns else 'inputs'}.{col}" for col in input_data_df.columns},
         inplace=True)
 
     result_df = pd.concat([input_data_df, evaluators_result_df], axis=1, verify_integrity=True)

@@ -10,8 +10,7 @@ from pandas.testing import assert_frame_equal
 from unittest.mock import patch
 
 from promptflow.client import PFClient
-from promptflow.evals.evaluate._evaluate import _apply_target_to_data, _get_missing_inputs, \
-    evaluate
+from promptflow.evals.evaluate._evaluate import _apply_target_to_data, evaluate
 from promptflow.evals.evaluate._utils import save_function_as_flow
 from promptflow.evals.evaluators.f1_score import F1ScoreEvaluator
 
@@ -50,7 +49,8 @@ def _target_fn(question):
         return {'answer': 'The life is strange...'}
 
 
-class TestEvaluate:
+@pytest.mark.unittest
+class TestEvaluateUnittest:
     """Test various functions from evaluate."""
 
     def test_evaluate_missing_required_inputs_target(self, questions_wrong_file):
@@ -79,18 +79,13 @@ class TestEvaluate:
 
     def test_apply_target_to_data(self, pf_client, questions_file, questions_answers_file):
         """Test that target was applied correctly."""
-        qa = _apply_target_to_data(_target_fn, questions_file, pf_client)
+        initial_data = pd.read_json(questions_file, lines=True)
+        qa, qa_df, columns = _apply_target_to_data(_target_fn, questions_file, pf_client, initial_data)
+        assert columns == {'answer'}
         results = pd.read_json(qa, lines=True)
+        assert_frame_equal(qa_df, results, check_like=True)
         ground_truth = pd.read_json(questions_answers_file, lines=True)
         try:
             assert_frame_equal(results, ground_truth, check_like=True)
         finally:
             os.unlink(qa)
-
-    @pytest.mark.parametrize('columns,expected', [
-        (['answer'], ['ground_truth']),
-        (['answer', 'ground_truth'], []),
-        ])
-    def test_missing_columns(self, columns, expected):
-        """Test that we are returning correct missing columns."""
-        assert _get_missing_inputs(F1ScoreEvaluator(), columns) == expected
