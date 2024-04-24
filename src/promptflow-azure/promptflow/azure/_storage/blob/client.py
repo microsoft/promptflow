@@ -29,8 +29,14 @@ def get_datastore_container_client(
 ) -> Tuple[ContainerClient, str]:
     try:
         credential = get_credential()
+        logger.info("get blob client for datastore.")
+
         datastore_definition, datastore_credential = _get_default_datastore(
             subscription_id, resource_group_name, workspace_name, credential
+        )
+
+        logger.info(
+            f"Get default datastore {datastore_definition.name}. Duration: {datetime.datetime.now() - start_time}"
         )
 
         storage_endpoint = _get_storage_endpoint_from_metadata()
@@ -50,7 +56,7 @@ def get_datastore_container_client(
         if not blob_base_uri.endswith("/"):
             blob_base_uri += "/"
 
-        logger.info(f"Get blob base url for {blob_base_uri}")
+        logger.info(f"Get blob base url for {blob_base_uri}, full duration: {datetime.datetime.now() - start_time}")
 
         return container_client, blob_base_uri
 

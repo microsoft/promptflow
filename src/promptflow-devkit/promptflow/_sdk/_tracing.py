@@ -573,6 +573,9 @@ def process_otlp_trace_request(
     :param cloud_trace_only: If True, only write trace to cosmosdb and skip local trace. Default is False.
     :type cloud_trace_only: bool
     """
+
+    logger.info("Start parse trace data")
+    start_time = datetime.now()
     from promptflow._sdk.entities._trace import Span
 
     all_spans = []
@@ -599,6 +602,7 @@ def process_otlp_trace_request(
                 else:
                     all_spans.append(span)
 
+    logger.info(f"Finish parse trace data. Duration {datetime.now() - start_time}")
     if cloud_trace_only:
         # If we only trace to cloud, we should make sure the data writing is success before return.
         _try_write_trace_to_cosmosdb(
@@ -646,7 +650,11 @@ def _try_write_trace_to_cosmosdb(
         # So, we load clients in parallel for warm up.
         span_client_thread = ThreadWithContextVars(
             target=get_client,
+<<<<<<< HEAD
             args=(CosmosDBContainerName.SPAN, subscription_id, resource_group_name, workspace_name, get_credential),
+=======
+            args=(CosmosDBContainerName.SPAN, subscription_id, resource_group_name, workspace_name, logger, credential),
+>>>>>>> 647c7e398 (add log)
         )
         span_client_thread.start()
 
@@ -657,7 +665,12 @@ def _try_write_trace_to_cosmosdb(
                 subscription_id,
                 resource_group_name,
                 workspace_name,
+<<<<<<< HEAD
                 get_credential,
+=======
+                logger,
+                credential,
+>>>>>>> 647c7e398 (add log)
             ),
         )
         collection_client_thread.start()
@@ -669,7 +682,12 @@ def _try_write_trace_to_cosmosdb(
                 subscription_id,
                 resource_group_name,
                 workspace_name,
+<<<<<<< HEAD
                 get_credential,
+=======
+                logger,
+                credential,
+>>>>>>> 647c7e398 (add log)
             ),
         )
         line_summary_client_thread.start()
@@ -694,9 +712,17 @@ def _try_write_trace_to_cosmosdb(
         line_summary_client_thread.join()
         created_by_thread.join()
 
+        logger.info(f"All clients are ready, start writing trace to cosmosdb. Duration {datetime.now() - start_time}.")
+        collection_start_time = datetime.now()
+
         created_by = get_created_by_info_with_cache()
         collection_client = get_client(
-            CosmosDBContainerName.COLLECTION, subscription_id, resource_group_name, workspace_name, get_credential
+            CosmosDBContainerName.COLLECTION,
+            subscription_id,
+            resource_group_name,
+            workspace_name,
+            logger,
+            get_credential,
         )
 
         collection_db = CollectionCosmosDB(first_span, is_cloud_trace, created_by)
@@ -705,16 +731,20 @@ def _try_write_trace_to_cosmosdb(
         # For local, collection id is collection name + user id for non batch run, batch run id for batch run.
         # We assign it to LineSummary and Span and use it as partition key.
         collection_id = collection_db.collection_id
-
         failed_span_count = 0
+        logger.info(f"Finish creating collection, duration {datetime.now() - collection_start_time}.")
+
         for span in all_spans:
             try:
                 span_client = get_client(
-                    CosmosDBContainerName.SPAN, subscription_id, resource_group_name, workspace_name, get_credential
+                    CosmosDBContainerName.SPAN, subscription_id, resource_group_name, workspace_name, logger, get_credential
                 )
                 result = SpanCosmosDB(span, collection_id, created_by).persist(
                     span_client, blob_container_client, blob_base_uri
                 )
+                logger.info(f"Finish writing span {span.span_id} to cosmosdb, duration {datetime.now() - span_start_time}.")
+                line_summary_start_time = datetime.now()
+
                 # None means the span already exists, then we don't need to persist the summary also.
                 if result is not None:
                     line_summary_client = get_client(
@@ -722,9 +752,13 @@ def _try_write_trace_to_cosmosdb(
                         subscription_id,
                         resource_group_name,
                         workspace_name,
+                        logger,
                         get_credential,
                     )
                     Summary(span, collection_id, created_by, logger).persist(line_summary_client)
+                logger.info(
+                    f"Finish writing summary of span {span.span_id}, duration {datetime.now() - line_summary_start_time}."
+                )
             except Exception as e:
                 failed_span_count += 1
                 stack_trace = traceback.format_exc()
