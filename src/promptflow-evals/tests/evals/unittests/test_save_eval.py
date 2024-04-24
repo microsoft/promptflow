@@ -3,9 +3,16 @@ from typing import Any, List, Optional, Type
 import inspect
 import os
 import pytest
+import pathlib
 
 from promptflow.evals import evaluators
 from promptflow.evals.evaluators import content_safety
+
+
+@pytest.fixture
+def data_file():
+    data_path = os.path.join(pathlib.Path(__file__).parent.resolve(), "data")
+    return os.path.join(data_path, "evaluate_test_data.jsonl")
 
 
 def get_evaluators_from_module(namespace: Any, exceptions: Optional[List[str]] = None) -> List[Type]:
@@ -36,3 +43,14 @@ class TestSaveEval:
         """Test saving of RAI evaluators"""
         pf_client.flows.save(rai_evaluator, path=tmpdir)
         assert os.path.isfile(os.path.join(tmpdir, 'flow.flex.yaml'))
+
+    def test_load_and_run_evaluators(self, tmpdir, pf_client, data_file) -> None:
+        """Test regular evaluator saving."""
+        from promptflow.evals.evaluators import F1ScoreEvaluator
+
+        pf_client.flows.save(F1ScoreEvaluator, path=tmpdir)
+        run = pf_client.run(tmpdir, data=data_file)
+        results_df = pf_client.get_details(run.name)
+
+        assert results_df is not None
+        assert results_df["outputs.f1_score"].notnull().all()
