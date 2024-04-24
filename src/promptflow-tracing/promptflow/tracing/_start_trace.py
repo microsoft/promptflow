@@ -44,6 +44,11 @@ def start_trace(
         logging.info("skip tracing local setup as the environment variable is set.")
         return
 
+    # openai instrumentation
+    logging.debug("injecting OpenAI API...")
+    inject_openai_api()
+    logging.debug("OpenAI API injected.")
+
     # prepare resource.attributes and set tracer provider
     res_attrs = {ResourceAttributesFieldName.SERVICE_NAME: RESOURCE_ATTRIBUTES_SERVICE_NAME}
     if isinstance(resource_attributes, dict):

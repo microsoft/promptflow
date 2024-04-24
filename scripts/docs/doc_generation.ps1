@@ -142,7 +142,7 @@ function Add-Metadata{
     )
     if (-not $AuthorList){
         # Skip insert if author list not set
-        Write-Host "Skip Add Metadata: $NotebookPath - Author list not set"
+        throw "Skip Add Metadata: $NotebookPath - Author list not set"
         return
     }
     $NotebookContent = Get-Content $NotebookPath -Raw | ConvertFrom-Json
@@ -150,8 +150,7 @@ function Add-Metadata{
     $NotebookContent.cells = [System.Collections.ArrayList]::new($NotebookContent.cells)
     if($NotebookContent.cells[0].source.Length -gt 1){
         # If the first cell length > 1, indicate there are more things than title it self in the first cell
-        Write-Host "Skip Add Metadata: $NotebookPath - First cell length > 1, only leave title to that cell."
-        Write-Host "$(NotebookContent.cells[0].source)"
+        throw "Skip Add Metadata: $NotebookPath - First cell length > 1, only leave title to that cell. $(NotebookContent.cells[0].source)"
         return
     }
     $MetadataFormat = "Authored by:&nbsp;{0}{1}"
