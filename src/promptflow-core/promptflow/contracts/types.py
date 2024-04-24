@@ -60,10 +60,7 @@ class AttrDict(dict):
     """A dictionary that allows attribute access to its keys."""
 
     def __getattr__(self, key: str) -> Any:
-        if key in self:
-            return self[key]
-        else:
-            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{key}'")
+        return self[key]
 
     def __setattr__(self, key: str, value: Any) -> None:
         self[key] = value
