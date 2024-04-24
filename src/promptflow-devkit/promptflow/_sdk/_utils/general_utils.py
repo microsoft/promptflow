@@ -372,6 +372,15 @@ def get_promptflow_azure_version() -> Union[str, None]:
         return None
 
 
+def get_promptflow_evals_version() -> Union[str, None]:
+    try:
+        from promptflow.evals._version import __version__
+
+        return __version__
+    except ImportError:
+        return None
+
+
 def print_promptflow_version_dict_string(with_azure: bool = False, ignore_none: bool = False):
     version_dict = {"promptflow": get_promptflow_sdk_version()}
     # check tracing version
@@ -392,6 +401,12 @@ def print_promptflow_version_dict_string(with_azure: bool = False, ignore_none: 
         version_azure = get_promptflow_azure_version()
         if version_azure:
             version_dict["promptflow-azure"] = version_azure
+
+    # check evals version
+    version_evals = get_promptflow_evals_version()
+    if version_evals:
+        version_dict["promptflow-evals"] = version_evals
+
     if ignore_none:
         version_dict = {k: v for k, v in version_dict.items() if v is not None}
     version_dict_string = (
