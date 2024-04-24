@@ -5,7 +5,7 @@ This is an experimental feature, and may change at any time. Learn [more](../faq
 :::
 
 Because Prompty can be called as a function, user can use prompty in a `flex flow` which is can be a python function or class.
-This allows user to do more custmization logic with prompty.
+This allows user to do more customization logic with prompty.
 
 
 ## Consume prompty in code
@@ -87,7 +87,7 @@ if __name__ == "__main__":
 
 ## Run as normal python file
 
-User can run above code as noremal python file.
+User can run above code as normal python file.
 
 ```batch
 python path/to/entry.py
@@ -102,7 +102,7 @@ pf flow test --flow file:ChatFlow --init init.json --inputs "question=What is Ch
 ```
 
 With the `flow` concept, user can further do a rich set of tasks, like:
-- Batch run a flow in parallel against multile lines of data, see [Run and evaluate a flow](../run-and-evaluate-a-flow/index.md).
+- Batch run a flow in parallel against multiple lines of data, see [Run and evaluate a flow](../run-and-evaluate-a-flow/index.md).
 - Chat with a flow using an UI, see [Chat with a flow](../chat-with-a-flow/index.md).
 - Deploy the flow to multiple platforms, see [Deploy a flow](../deploy-a-flow/index.md).
 
