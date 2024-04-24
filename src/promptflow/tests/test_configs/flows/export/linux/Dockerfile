@@ -3,7 +3,10 @@ FROM docker.io/continuumio/miniconda3:latest
 
 WORKDIR /
 
-COPY ./flow /flow
+COPY ./flow/requirements_txt /flow/requirements_txt
+
+# gcc is for build psutil in MacOS
+RUN apt-get update && apt-get install -y runit gcc
 
 # create conda environment
 RUN conda create -n promptflow-serve python=3.9.16 pip=23.0.1 -q -y && \
@@ -11,11 +14,12 @@ RUN conda create -n promptflow-serve python=3.9.16 pip=23.0.1 -q -y && \
     pip install -r /flow/requirements_txt && \
     conda run -n promptflow-serve pip install keyrings.alt && \
     conda run -n promptflow-serve pip install gunicorn==20.1.0 && \
+    conda run -n promptflow-serve pip install 'uvicorn>=0.27.0,<1.0.0' && \
     conda run -n promptflow-serve pip cache purge && \
     conda clean -a -y
 
+COPY ./flow /flow
 
-RUN apt-get update && apt-get install -y runit
 
 EXPOSE 8080
 
