@@ -1,8 +1,5 @@
-promptflow-tracing @ git+https://github.com/microsoft/promptflow/@clwan/sample_1_10#subdirectory=src/promptflow-tracing
-promptflow-core @ git+https://github.com/microsoft/promptflow/@clwan/sample_1_10#subdirectory=src/promptflow-core
-promptflow-devkit @ git+https://github.com/microsoft/promptflow/@clwan/sample_1_10#subdirectory=src/promptflow-devkit
-promptflow-azure @ git+https://github.com/microsoft/promptflow/@clwan/sample_1_10#subdirectory=src/promptflow-azure
-promptflow @ git+https://github.com/microsoft/promptflow/@clwan/sample_1_10#subdirectory=src/promptflow
-promptflow-tools @ git+https://github.com/microsoft/promptflow/@clwan/sample_1_10#subdirectory=src/promptflow-tools
+--extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
+promptflow[azure]==1.10.0
+promptflow-tools
 python-dotenv
 bs4
