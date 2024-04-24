@@ -66,7 +66,7 @@ Instead of calling `pf.save` to create flow YAML first.
 pf.run(flow="path.to.module:function_name", data="./data.jsonl")
 ```
 
-## Batch run
+## Batch run with YAML
 
 User can batch run a flex flow with YAML.
 

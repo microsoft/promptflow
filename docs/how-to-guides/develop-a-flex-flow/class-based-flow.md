@@ -68,7 +68,29 @@ pf flow test --flow path/to/flow --inputs path/to/inputs --init path/to/init --u
 
 Check [here](../chat-with-a-flow) for more information.
 
-## Batch run
+## Batch run without YAML
+
+User can also batch run a flex flow without YAML.
+Instead of calling `pf.save` to create flow YAML first.
+
+```python
+# user can also directly use entry in `flow` param for batch run
+pf.run(flow="path.to.module:ClassName", data="./data.jsonl")
+```
+
+Or directly run the imported flow class or flow instance.
+**Note**: this only works in local.
+
+```python
+class MyFlow:
+    pass
+pf.run(flow=MyFlow, init={"model_config": config, "flow_config": {}}, data="./data.jsonl")
+# or
+flow_obj = MyFlow(model_config=config, flow_config={})
+pf.run(flow=flow_obj, data="./data.jsonl")
+```
+
+## Batch run with YAML
 
 User can batch run a flex flow. Flow init function's param is supported by `init` parameter.
 
@@ -91,27 +113,6 @@ config = AzureOpenAIModelConfiguration(
 pfazure.run(flow="./flow.flex.yaml", init={"model_config": config, "flow_config": {}}, data="./data.jsonl")
 ```
 
-## Batch run without YAML
-
-User can also batch run a flex flow without YAML.
-Instead of calling `pf.save` to create flow YAML first.
-
-```python
-# user can also directly use entry in `flow` param for batch run
-pf.run(flow="path.to.module:ClassName", data="./data.jsonl")
-```
-
-Or directly run the imported flow class or flow instance.
-**Note**: this only works in local.
-
-```python
-class MyFlow:
-    pass
-pf.run(flow=MyFlow, init={"model_config": config, "flow_config": {}}, data="./data.jsonl")
-# or
-flow_obj = MyFlow(model_config=config, flow_config={})
-pf.run(flow=flow_obj, data="./data.jsonl")
-```
 
 ## Serve
 
@@ -144,7 +145,7 @@ Build & deploy a flex flow is supported like [DAG flow](../deploy-a-flow/).
 
 ### Model config in `__init__`
 
-Just like example in [batch run](#batch-run), it's supported to reference connection in ModelConfig.
+Just like example in [batch run](#batch-run-with-yaml), it's supported to reference connection in ModelConfig.
 And connection will be resolved and flatten connection's fields to ModelConfig.
 
 ### Connection in `__init__`
