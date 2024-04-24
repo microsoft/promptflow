@@ -41,11 +41,15 @@ from promptflow._sdk._utils import (
     _merge_local_code_and_additional_includes,
     add_executable_script_to_env_path,
     copy_tree_respect_template_and_ignore_file,
-    format_signature_type,
     generate_flow_tools_json,
     generate_random_string,
     json_load,
     logger,
+)
+from promptflow._sdk._utils.signature_utils import (
+    format_signature_type,
+    infer_signature_for_flex_flow,
+    merge_flow_signature,
 )
 from promptflow._sdk.entities._flows import FlexFlow, Flow, Prompty
 from promptflow._sdk.entities._validation import ValidationResult
@@ -994,35 +998,6 @@ class FlowOperations(TelemetryMixin):
         return None
 
     @staticmethod
-    def _merge_signature(extracted, signature_overrides):
-        if not signature_overrides:
-            signature_overrides = {}
-
-        signature = {}
-        for key in ["inputs", "outputs", "init"]:
-            if key in extracted:
-                signature[key] = extracted[key]
-            elif key in signature_overrides:
-                raise UserErrorException(
-                    f"Provided signature for {key}, which can't be overridden according to the entry."
-                )
-
-            if key not in signature_overrides:
-                continue
-
-            if set(extracted[key].keys()) != set(signature_overrides[key].keys()):
-                raise UserErrorException(
-                    f"Provided signature of {key} does not match the entry.\n"
-                    f"Ports from signature: {', '.join(signature_overrides[key].keys())}\n"
-                    f"Ports from entry: {', '.join(signature[key].keys())}\n"
-                )
-
-            # TODO: merge the signature
-            signature[key] = signature_overrides[key]
-
-        return signature
-
-    @staticmethod
     def _infer_signature(entry: Union[Callable, FlexFlow, Flow, Prompty], include_primitive_output: bool = False):
         if isinstance(entry, Prompty):
             from promptflow.contracts.tool import ValueType
@@ -1046,95 +1021,20 @@ class FlowOperations(TelemetryMixin):
                 flow_file=entry.path,
                 working_dir=entry.code,
             )
-            flow_meta, _, _ = FlowOperations._infer_signature_flex_flow(
+            flow_meta, _, _ = infer_signature_for_flex_flow(
                 entry=entry.entry,
                 code=entry.code.as_posix(),
                 language=entry.language,
                 include_primitive_output=include_primitive_output,
             )
         elif inspect.isclass(entry) or inspect.isfunction(entry):
-            flow_meta, _, _ = FlowOperations._infer_signature_flex_flow(
+            flow_meta, _, _ = infer_signature_for_flex_flow(
                 entry=entry, include_primitive_output=include_primitive_output, language=FlowLanguage.Python
             )
         else:
             # TODO support to get infer signature of dag flow
             raise UserErrorException(f"Invalid entry {type(entry).__name__}, only support callable object or prompty.")
         return flow_meta
-
-    @staticmethod
-    def _infer_signature_flex_flow(
-        entry: Union[Callable, str],
-        *,
-        language: str,
-        code: str = None,
-        keep_entry: bool = False,
-        validate: bool = True,
-        include_primitive_output: bool = False,
-    ) -> Tuple[dict, Path, List[str]]:
-        """Infer signature of a flow entry."""
-        snapshot_list = None
-        # resolve entry and code
-        if isinstance(entry, str):
-            if not code:
-                raise UserErrorException("Code path is required when entry is a string.")
-            code = Path(code)
-            if not code.exists():
-                raise UserErrorException(f"Specified code {code} does not exist.")
-            if code.is_file():
-                snapshot_list = [code.name]
-                entry = f"{code.stem}:{entry}"
-                code = code.parent
-
-            inspector_proxy = ProxyFactory().create_inspector_proxy(language=language)
-            if not inspector_proxy.is_flex_flow_entry(entry):
-                raise UserErrorException(f"Entry {entry} is not a valid entry for flow.")
-
-            # TODO: extract description?
-            flow_meta = inspector_proxy.get_entry_meta(entry=entry, working_dir=code)
-        elif code is not None:
-            # TODO: support specifying code when inferring signature?
-            raise UserErrorException(
-                "Code path will be the parent of entry source " "and can't be customized when entry is a callable."
-            )
-        elif inspect.isclass(entry) or inspect.isfunction(entry):
-            if inspect.isclass(entry):
-                if not hasattr(entry, "__call__"):
-                    raise UserErrorException("Class entry must have a __call__ method.")
-                f, cls = entry.__call__, entry
-            else:
-                f, cls = entry, None
-
-            # callable entry must be of python, so we directly import from promptflow._core locally here
-            from promptflow._core.tool_meta_generator import generate_flow_meta_dict_by_object
-
-            flow_meta = generate_flow_meta_dict_by_object(f, cls)
-            source_path = Path(inspect.getfile(entry))
-            code = source_path.parent
-            # TODO: should we handle the case that entry is not defined in root level of the source?
-            flow_meta["entry"] = f"{source_path.stem}:{entry.__name__}"
-        else:
-            raise UserErrorException("Entry must be a function or a class.")
-
-        format_signature_type(flow_meta)
-
-        if validate:
-            flow_meta["language"] = language
-            # this path is actually not used
-            flow = FlexFlow(path=code / FLOW_FLEX_YAML, code=code, data=flow_meta, entry=flow_meta["entry"])
-            flow._validate(raise_error=True)
-
-        if include_primitive_output and "outputs" not in flow_meta:
-            flow_meta["outputs"] = {
-                "output": {
-                    "type": "string",
-                }
-            }
-
-        keys_to_keep = ["inputs", "outputs", "init"]
-        if keep_entry:
-            keys_to_keep.append("entry")
-        filtered_meta = {k: flow_meta[k] for k in keys_to_keep if k in flow_meta}
-        return filtered_meta, code, snapshot_list
 
     @monitor_operation(activity_name="pf.flows.infer_signature", activity_type=ActivityType.PUBLICAPI)
     def infer_signature(self, entry: Union[Callable, FlexFlow, Flow, Prompty], **kwargs) -> dict:
@@ -1181,11 +1081,11 @@ class FlowOperations(TelemetryMixin):
         # hide the language field before csharp support go public
         language: str = kwargs.get(LANGUAGE_KEY, FlowLanguage.Python)
 
-        entry_meta, code, snapshot_list = self._infer_signature_flex_flow(
+        entry_meta, code, snapshot_list = infer_signature_for_flex_flow(
             entry, code=code, keep_entry=True, validate=False, language=language
         )
 
-        data = self._merge_signature(entry_meta, signature)
+        data = merge_flow_signature(entry_meta, signature)
         data["entry"] = entry_meta["entry"]
 
         # python_requirements_txt
@@ -1298,24 +1198,3 @@ class FlowOperations(TelemetryMixin):
             sample=sample,
             **kwargs,
         )
-
-    def _update_signatures(self, code: Path, data: dict) -> bool:
-        """Update signatures for flex flow. Raise validation error if signature is not valid."""
-        if not is_flex_flow(yaml_dict=data):
-            return False
-        entry = data.get("entry")
-        signatures, _, _ = self._infer_signature_flex_flow(
-            entry=entry,
-            code=code,
-            language=data.get(LANGUAGE_KEY, "python"),
-            validate=False,
-            include_primitive_output=True,
-        )
-        merged_signatures = self._merge_signature(extracted=signatures, signature_overrides=data)
-        updated = False
-        for field in ["inputs", "outputs", "init"]:
-            if merged_signatures.get(field) != data.get(field):
-                updated = True
-        data.update(merged_signatures)
-        FlexFlow(path=code / FLOW_FLEX_YAML, code=code, data=data, entry=entry)._validate(raise_error=True)
-        return updated
