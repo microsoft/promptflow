@@ -113,7 +113,6 @@ def setup_recording_injection_if_enabled():
         mocked_tool = mock_tool(original_tool)
         patch_targets = {
             "promptflow._core.tool.tool": mocked_tool,
-            "promptflow._internal.tool": mocked_tool,
             "promptflow.tool": mocked_tool,
             "promptflow.core.tool": mocked_tool,
             "promptflow.tracing._integrations._openai_injector.inject_sync": inject_sync_with_recording,
