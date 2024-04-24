@@ -156,7 +156,8 @@ pf.traces.delete(run="<run-name>")  # delete traces originated from specific pro
 
 Prompt flow tracing works not only for general LLM application, but also for more frameworks like `autogen` and `langchain`:
 
-1. Example: **[Add trace for LLM](https://github.com/microsoft/promptflow/tree/main/examples/tutorials/tracing/llm/)**
+<!-- need to add link to this example once we get that page available, otherwise our doc link check will fail -->
+1. Example: **Add trace for LLM**
 
 ![llm-trace-detail](../../media/trace/llm-app-trace-detail.png)
 
