@@ -39,10 +39,10 @@ class TestFlowAPIs:
         ).json
         assert response == {
             "init": {
-                "api": {"default": "chat", "type": "object"},
+                "api": {"default": "chat", "type": "string"},
                 "configuration": {"type": "object"},
                 "parameters": {"type": "object"},
-                "response": {"default": "first", "type": "object"},
+                "response": {"default": "first", "type": "string"},
             },
             "inputs": {
                 "firstName": {"default": "John", "type": "string"},
@@ -72,6 +72,27 @@ class TestFlowAPIs:
             response = pfs_op.test_flow(
                 flow_path=Path(f"{EAGER_FLOW_ROOT}/simple_with_yaml/").absolute().as_posix(),
                 request_body={"inputs": {"input_val": "val1"}},
+                status_code=200,
+            ).json
+        assert len(response) >= 1
+
+    def test_eager_flow_test_with_init(self, pfs_op: PFSOperations) -> None:
+        with check_activity_end_telemetry(activity_name="pf.flows.test"):
+            response = pfs_op.test_flow(
+                flow_path=Path(f"{EAGER_FLOW_ROOT}/basic_callable_class/").absolute().as_posix(),
+                request_body={"inputs": {"func_input": "input"}, "init": {"obj_input": "val"}},
+            ).json
+        assert len(response) >= 1
+
+    def test_prompty_test(self, pfs_op: PFSOperations) -> None:
+        with check_activity_end_telemetry(
+            expected_activities=[
+                {"activity_name": "pf.flows.test"},
+            ]
+        ):
+            response = pfs_op.test_flow(
+                flow_path=Path(f"{PROMPTY_ROOT}/prompty_with_chat_history.prompty").absolute().as_posix(),
+                request_body={"inputs": {"question": "what is the result of 3+3?"}},
                 status_code=200,
             ).json
         assert len(response) >= 1

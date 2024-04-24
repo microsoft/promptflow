@@ -13,6 +13,7 @@ import sys
 import traceback
 import typing
 from datetime import datetime
+from pathlib import Path
 
 from google.protobuf.json_format import MessageToJson
 from opentelemetry import trace
@@ -39,8 +40,8 @@ from promptflow._sdk._constants import (
     AzureMLWorkspaceTriad,
     ContextAttributeKey,
 )
+from promptflow._sdk._errors import MissingAzurePackage
 from promptflow._sdk._service.utils.utils import (
-    add_executable_script_to_env_path,
     get_port_from_config,
     hint_stop_before_upgrade,
     hint_stop_message,
@@ -49,7 +50,11 @@ from promptflow._sdk._service.utils.utils import (
     is_run_from_built_binary,
 )
 from promptflow._sdk._tracing_utils import get_workspace_kind
-from promptflow._sdk._utils import extract_workspace_triad_from_trace_provider, parse_kv_from_pb_attribute
+from promptflow._sdk._utils import (
+    add_executable_script_to_env_path,
+    extract_workspace_triad_from_trace_provider,
+    parse_kv_from_pb_attribute,
+)
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.thread_utils import ThreadWithContextVars
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
@@ -57,19 +62,60 @@ from promptflow.tracing._operation_context import OperationContext
 
 _logger = get_cli_sdk_logger()
 
-PF_CONFIG_TRACE_FEATURE_DISABLE = "none"
-PF_CONFIG_TRACE_LOCAL = "local"
+
+class TraceDestinationConfig:
+    DISABLE = "none"
+    LOCAL = "local"
+    AZUREML = "azureml"
+    # note that if user has never specified "trace.destination", we will get `None` instead of a str
+    # so we have to keep in mind to handle `None` case
+
+    @staticmethod
+    def is_feature_disabled(value: typing.Optional[str]) -> bool:
+        if isinstance(value, str):
+            return value.lower() == TraceDestinationConfig.DISABLE
+        return False
+
+    @staticmethod
+    def need_to_export_to_azure(value: typing.Optional[str]) -> bool:
+        if isinstance(value, str):
+            return value.lower() not in (TraceDestinationConfig.DISABLE, TraceDestinationConfig.LOCAL)
+        return False
+
+    @staticmethod
+    def need_to_resolve(value: typing.Optional[str]) -> bool:
+        """Need to resolve workspace when user specified `azureml` as trace destination."""
+        if isinstance(value, str):
+            return value.lower() == TraceDestinationConfig.AZUREML
+        return False
+
+    @staticmethod
+    def validate(value: typing.Optional[str]) -> None:
+        # None, "none", "local" and "azureml" are valid values for trace destination
+        if value is None or value.lower() in (
+            TraceDestinationConfig.DISABLE,
+            TraceDestinationConfig.LOCAL,
+            TraceDestinationConfig.AZUREML,
+        ):
+            return
+        try:
+            from promptflow.azure._utils._tracing import validate_trace_destination
+
+            validate_trace_destination(value)
+        except ImportError:
+            raise MissingAzurePackage()
+
+
 TRACER_PROVIDER_PFS_EXPORTER_SET_ATTR = "_pfs_exporter_set"
 
 
 def is_trace_feature_disabled() -> bool:
     from promptflow._sdk._configuration import Configuration
 
-    trace_provider = Configuration.get_instance().get_trace_provider()
-    if isinstance(trace_provider, str):
-        return Configuration.get_instance().get_trace_provider().lower() == PF_CONFIG_TRACE_FEATURE_DISABLE
-    else:
-        return False
+    # do not use `get_trace_provider` as we do not expect resolve for this function
+    conf = Configuration.get_instance()
+    value = conf.get_config(key=conf.TRACE_DESTINATION)
+    return TraceDestinationConfig.is_feature_disabled(value)
 
 
 def _is_azure_ext_installed() -> bool:
@@ -148,14 +194,14 @@ def _invoke_pf_svc() -> str:
     return port
 
 
-def _get_ws_triad_from_pf_config() -> typing.Optional[AzureMLWorkspaceTriad]:
+def _get_ws_triad_from_pf_config(path: typing.Optional[Path]) -> typing.Optional[AzureMLWorkspaceTriad]:
     from promptflow._sdk._configuration import Configuration
 
-    ws_arm_id = Configuration.get_instance().get_trace_provider()
-    # enable local only trace feature, no workspace
-    if ws_arm_id == PF_CONFIG_TRACE_LOCAL:
-        return
-    return extract_workspace_triad_from_trace_provider(ws_arm_id) if ws_arm_id is not None else None
+    config = Configuration.get_instance().get_trace_destination(path=path)
+    _logger.info("resolved tracing.trace.destination: %s", config)
+    if not TraceDestinationConfig.need_to_export_to_azure(config):
+        return None
+    return extract_workspace_triad_from_trace_provider(config)
 
 
 # priority: run > experiment > collection
@@ -183,12 +229,12 @@ def _print_tracing_url_from_azure_portal(
     run: typing.Optional[str] = None,
 ) -> None:
     url = (
-        "https://int.ml.azure.com/{query}?"
+        "https://ml.azure.com/{query}?"
         f"wsid=/subscriptions/{ws_triad.subscription_id}"
         f"/resourceGroups/{ws_triad.resource_group_name}"
         "/providers/Microsoft.MachineLearningServices"
         f"/workspaces/{ws_triad.workspace_name}"
-        "&flight=PFTrace,PFNewRunDetail"
+        "&flight=PFTrace"
     )
 
     if run is None:
@@ -204,7 +250,7 @@ def _print_tracing_url_from_azure_portal(
             query = f"prompts/trace/run/{run}/details"
     elif AzureWorkspaceKind.is_project(kind):
         _logger.debug(f"{ws_triad.workspace_name!r} is an Azure AI project.")
-        url = url.replace("int.ml.azure.com", "int.ai.azure.com")
+        url = url.replace("ml.azure.com", "ai.azure.com")
         if run is None:
             query = f"projecttrace/collection/{collection_id}/list"
         else:
@@ -275,6 +321,7 @@ def start_trace_with_devkit(collection: str, **kwargs: typing.Any) -> None:
     _logger.debug("kwargs: %s", kwargs)
     attrs = kwargs.get("attributes", None)
     run = kwargs.get("run", None)
+    path = kwargs.get("path", None)
 
     # honor and set attributes if user has specified
     if isinstance(attrs, dict):
@@ -300,7 +347,8 @@ def start_trace_with_devkit(collection: str, **kwargs: typing.Any) -> None:
     _logger.debug("operation context OTel attributes: %s", op_ctx._get_otel_attributes())
 
     # local to cloud feature
-    ws_triad = _get_ws_triad_from_pf_config()
+    _logger.debug("start_trace_with_devkit.path(from kwargs): %s", path)
+    ws_triad = _get_ws_triad_from_pf_config(path=path)
     is_azure_ext_installed = _is_azure_ext_installed()
     if ws_triad is not None and not is_azure_ext_installed:
         warning_msg = (

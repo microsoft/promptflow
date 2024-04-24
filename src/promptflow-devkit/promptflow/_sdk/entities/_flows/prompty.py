@@ -33,6 +33,10 @@ class Prompty(FlowBase):
     def language(self) -> str:
         return self._data.get(LANGUAGE_KEY, FlowLanguage.Python)
 
+    @property
+    def sample(self):
+        return self._data.get("sample", None)
+
     # region overrides
 
     @classmethod

@@ -9,7 +9,7 @@ from promptflow.batch._errors import BatchRunTimeoutError
 from promptflow.batch._result import BatchResult, LineError
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget
-from promptflow.executor._errors import BatchExecutionTimeoutError, LineExecutionTimeoutError
+from promptflow.executor._errors import LineExecutionTimeoutError
 
 from ..utils import MemoryRunStorage, get_flow_folder, get_flow_inputs_file, get_yaml_file
 
@@ -123,13 +123,24 @@ class TestBatchTimeout:
         assert len(mem_run_storage._node_runs) == 6, "Node runs are persisted in memory storage."
 
     @pytest.mark.parametrize(
-        "flow_folder, line_timeout_sec, batch_timeout_sec, expected_error, batch_run_status",
+        "flow_folder, line_timeout_sec, batch_timeout_sec, expected_error_message, batch_run_status",
         [
-            (ONE_LINE_OF_BULK_TEST_TIMEOUT, 600, 5, BatchExecutionTimeoutError(2, 5), Status.Failed),
-            (ONE_LINE_OF_BULK_TEST_TIMEOUT, 3, 600, LineExecutionTimeoutError(2, 3), Status.Completed),
+            # For the first case, the line timeout will not take effect
+            # because the real line timeout is calculated according to batch run timeout.
+            # So, both cases will raise LineExecutionTimeoutError
+            (ONE_LINE_OF_BULK_TEST_TIMEOUT, 600, 5, "Line 2 execution timeout for exceeding", Status.Failed),
+            (
+                ONE_LINE_OF_BULK_TEST_TIMEOUT,
+                3,
+                600,
+                "Line 2 execution timeout for exceeding 3 seconds",
+                Status.Completed,
+            ),
         ],
     )
-    def test_batch_timeout(self, flow_folder, line_timeout_sec, batch_timeout_sec, expected_error, batch_run_status):
+    def test_batch_timeout(
+        self, flow_folder, line_timeout_sec, batch_timeout_sec, expected_error_message, batch_run_status
+    ):
         mem_run_storage = MemoryRunStorage()
         batch_engine = BatchEngine(
             get_yaml_file(flow_folder),
@@ -175,9 +186,10 @@ class TestBatchTimeout:
         assert isinstance(actual_line_error, LineError)
         assert actual_line_error.line_number == 2
         actual_error_dict = actual_line_error.error
-        expected_error_dict = ExceptionPresenter.create(expected_error).to_dict()
+        expected_error_dict = ExceptionPresenter.create(LineExecutionTimeoutError(2, 1)).to_dict()
         assert actual_error_dict["code"] == expected_error_dict["code"]
-        assert actual_error_dict["message"] == expected_error_dict["message"]
+        # We can't assert the exact message because timeout it's dynamic
+        assert expected_error_message in actual_error_dict["message"]
         assert actual_error_dict["referenceCode"] == expected_error_dict["referenceCode"]
         assert actual_error_dict["innerError"]["code"] == expected_error_dict["innerError"]["code"]
 

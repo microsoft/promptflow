@@ -1,0 +1,46 @@
+parameters:
+- name: azureOpenAiApiKey
+  displayName: "Azure OpenAI API Key"
+  type: string
+- name: azureOpenAiApiBase
+  displayName: "Azure OpenAI API Base"
+  type: string
+- name: flowProjectRelativePath
+  displayName: "Flow Project Relative Path"
+  type: string
+
+steps:
+- task: PowerShell@2
+  displayName: 'Copy local connections for ci pipeline'
+  inputs:
+    targetType: 'inline'
+    script: |
+      Copy-Item dev-connections.json.example connections.json
+    workingDirectory: $(Build.SourcesDirectory)/src/promptflow
+
+- task: PowerShell@2
+  displayName: 'Run sdk cli tests'
+  inputs:
+    targetType: 'inline'
+    script: |
+      pytest tests/ -m "csharp"
+    workingDirectory: $(Build.SourcesDirectory)/src/promptflow-devkit
+  env:
+    CSHARP_TEST_PROJECTS_ROOT: $(Build.SourcesDirectory)/$(flowProjectRelativePath)
+    AZURE_OPENAI_API_KEY: $(azureOpenAiApiKey)
+    AZURE_OPENAI_ENDPOINT: $(azureOpenAiApiBase)
+    IS_IN_CI_PIPELINE: true
+
+- task: PowerShell@2
+  displayName: 'Run azure sdk cli tests'
+  inputs:
+    targetType: 'inline'
+    script: |
+      pytest tests/sdk_cli_azure_test/e2etests/test_csharp_sdk.py
+    workingDirectory: $(Build.SourcesDirectory)/src/promptflow-azure
+  env:
+    CSHARP_TEST_PROJECTS_ROOT: $(Build.SourcesDirectory)/$(flowProjectRelativePath)
+    AZURE_OPENAI_API_KEY: $(azureOpenAiApiKey)
+    AZURE_OPENAI_ENDPOINT: $(azureOpenAiApiBase)
+    PROMPT_FLOW_TEST_MODE: "replay"
+    IS_IN_CI_PIPELINE: true

@@ -1,22 +1,29 @@
 {
-	"name": "Promptflow-Python39",
-	// "context" is the path that the Codespaces docker build command should be run from, relative to devcontainer.json
-	"context": ".",
-	"dockerFile": "Dockerfile",
-
-	// Set *default* container specific settings.json values on container create.
-	"settings": {
-		"terminal.integrated.shell.linux": "/bin/bash"
-	},
-
-	// Add the IDs of extensions you want installed when the container is created.
-	"extensions": [
-		"ms-python.python",
-		"ms-toolsai.vscode-ai",
-		"ms-toolsai.jupyter",
-		"redhat.vscode-yaml",
-		"prompt-flow.prompt-flow"
-	],
-
-	"runArgs": ["-v", "/var/run/docker.sock:/var/run/docker.sock"]
+  "name": "Promptflow-Python39",
+  // "context" is the path that the Codespaces docker build command should be run from, relative to devcontainer.json
+  "context": ".",
+  "dockerFile": "Dockerfile",
+  "runArgs": ["-v", "/var/run/docker.sock:/var/run/docker.sock"],
+  "customizations": {
+    "codespaces": {
+      "openFiles": ["README.md", "examples/README.md"]
+    },
+    "vscode": {
+      // Set *default* container specific settings.json values on container create.
+      "settings": {
+        "terminal.integrated.shell.linux": "/bin/bash"
+      },
+      // Add the IDs of extensions you want installed when the container is created.
+      "extensions": [
+        "ms-python.python",
+        "ms-toolsai.vscode-ai",
+        "ms-toolsai.jupyter",
+        "redhat.vscode-yaml",
+        "prompt-flow.prompt-flow"
+      ]
+    }
+  },
+  "features": { 
+	"ghcr.io/devcontainers/features/azure-cli:1": {}
+  }
 }

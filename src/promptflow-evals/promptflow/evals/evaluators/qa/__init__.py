@@ -4,6 +4,8 @@
 
 __path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 from promptflow.evals.evaluators import (
     CoherenceEvaluator,
     F1ScoreEvaluator,
@@ -15,7 +17,7 @@ from promptflow.evals.evaluators import (
 
 
 class QAEvaluator:
-    def __init__(self, model_config):
+    def __init__(self, model_config, parallel: bool = True):
         """
         Initialize an evaluator configured for a specific Azure OpenAI model.
 
@@ -33,9 +35,11 @@ class QAEvaluator:
                 question="Tokyo is the capital of which country?",
                 answer="Japan",
                 context="Tokyo is the capital of Japan.",
-                ground_truth="Japan",
-        )
+                ground_truth="Japan"
+            )
         """
+        self._parallel = parallel
+
         self._evaluators = [
             GroundednessEvaluator(model_config),
             RelevanceEvaluator(model_config),
@@ -56,16 +60,34 @@ class QAEvaluator:
         :type context: str
         :param ground_truth: The ground truth to be evaluated.
         :type ground_truth: str
+        :param parallel: Whether to evaluate in parallel. Defaults to True.
+        :type parallel: bool
         :return: The scores for QA scenario.
         :rtype: dict
         """
-        # TODO: How to parallelize metrics calculation
+        results = {}
+        if self._parallel:
+            with ThreadPoolExecutor() as executor:
+                # Create a future for each evaluator
+                futures = {
+                    executor.submit(
+                        evaluator,
+                        question=question,
+                        answer=answer,
+                        context=context,
+                        ground_truth=ground_truth,
+                        **kwargs
+                    ): evaluator
+                    for evaluator in self._evaluators
+                }
 
-        return {
-            k: v
-            for d in [
-                evaluator(answer=answer, context=context, ground_truth=ground_truth, question=question)
-                for evaluator in self._evaluators
-            ]
-            for k, v in d.items()
-        }
+                # Collect results as they complete
+                for future in as_completed(futures):
+                    results.update(future.result())
+        else:
+            for evaluator in self._evaluators:
+                results.update(
+                    evaluator(question=question, answer=answer, context=context, ground_truth=ground_truth, **kwargs)
+                )
+
+        return results
