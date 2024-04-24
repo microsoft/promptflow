@@ -20,6 +20,9 @@ from promptflow._constants import (
 )
 from promptflow._sdk._utils import convert_time_unix_nano_to_timestamp
 from promptflow._sdk.entities._trace import Span
+from promptflow._utils.logger_utils import get_cli_sdk_logger
+
+_logger = get_cli_sdk_logger()
 
 
 def format_span_id(span_id: bytes) -> str:
@@ -145,3 +148,34 @@ def parse_protobuf_span(span: PBSpan, resource: typing.Dict, logger: logging.Log
         events=events,
         resource=resource,
     )
+
+
+# SCENARIO: local trace UI search experience
+# append condition(s) to user specified query
+def append_conditions(
+    expression: str,
+    collection: typing.Optional[str] = None,
+    runs: typing.Optional[typing.Union[str, typing.List[str]]] = None,
+    session_id: typing.Optional[str] = None,
+    logger: typing.Optional[logging.Logger] = None,
+) -> str:
+    if logger is None:
+        logger = _logger
+    logger.debug("received original search expression: %s", expression)
+    if collection is not None:
+        logger.debug("received search parameter collection: %s", collection)
+        expression += f" and collection == '{collection}'"
+    if runs is not None:
+        logger.debug("received search parameter runs: %s", runs)
+        if isinstance(runs, str):
+            expression += f" and run == '{runs}'"
+        elif len(runs) == 1:
+            expression += f" and run == '{runs[0]}'"
+        else:
+            runs_expr = " or ".join([f"run == '{run}'" for run in runs])
+            expression += f" and ({runs_expr})"
+    if session_id is not None:
+        logger.debug("received search parameter session_id: %s", session_id)
+        expression += f" and session_id == '{session_id}'"
+    logger.debug("final search expression: %s", expression)
+    return expression
