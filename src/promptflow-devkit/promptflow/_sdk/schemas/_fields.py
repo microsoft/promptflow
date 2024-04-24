@@ -62,9 +62,10 @@ class LocalPathField(fields.Str):
         "path_not_exist": "Can't find {allow_type} in resolved absolute path: {path}.",
     }
 
-    def __init__(self, allow_dir=True, allow_file=True, **kwargs):
+    def __init__(self, allow_dir=True, allow_file=True, check_exists=True, **kwargs):
         self._allow_dir = allow_dir
         self._allow_file = allow_file
+        self._check_exists = check_exists
         self._pattern = kwargs.get("pattern", None)
         super().__init__(**kwargs)
 
@@ -82,6 +83,8 @@ class LocalPathField(fields.Str):
             # for non-path string like "azureml:/xxx", OSError can be raised in either
             # resolve() or is_dir() or is_file()
             result = result.resolve()
+            if not self._check_exists:
+                return result
             if (self._allow_dir and result.is_dir()) or (self._allow_file and result.is_file()):
                 return result
         except OSError:
