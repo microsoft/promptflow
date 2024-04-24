@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 import inspect
 import os
+import tempfile
 import uuid
 
 from types import FunctionType
@@ -102,9 +103,9 @@ def _apply_target_to_data(
         target: Callable,
         data: str,
         pf_client: PFClient,
-        initial_data: pd.DataFrame) -> Tuple[str, pd.DataFrame, Set[str]]:
+        initial_data: pd.DataFrame) -> Tuple[pd.DataFrame, Set[str]]:
     """
-    Apply the target function to the data set and save the data to temporary file.
+    Apply the target function to the data set and return updated data and generated columns.
 
     :keyword target: The function to be applied to data.
     :paramtype target: Callable
@@ -114,8 +115,8 @@ def _apply_target_to_data(
     :paramtype pf_client: PFClient
     :keyword initial_data: The data frame with the loaded data.
     :paramtype initial_data: pd.DataFrame
-    :return: The tuple, containing path, data frame and the list of added columns.
-    :rtype: Tuple[str, pd.DataFrame, List[str]]
+    :return: The tuple, containing data frame and the list of added columns.
+    :rtype: Tuple[pd.DataFrame, List[str]]
     """
     # We are manually creating the temporary directory for the flow
     # because the way tempdir remove temporary directories will
@@ -142,9 +143,7 @@ def _apply_target_to_data(
     target_output.rename(columns=rename_dict, inplace=True)
     # Concatenate output to input
     target_output = pd.concat([target_output, initial_data], axis=1)
-    new_data_name = f'{uuid.uuid1()}.jsonl'
-    target_output.to_json(new_data_name, orient='records', lines=True)
-    return new_data_name, target_output, set(rename_dict.values())
+    return target_output, set(rename_dict.values())
 
 
 def evaluate(
@@ -183,58 +182,58 @@ def evaluate(
     pf_client = PFClient()
     code_client = CodeClient()
 
-    tempfile_created = False
     target_generated_columns = set()
     if data is not None and target is not None:
-        data, input_data_df, target_generated_columns = _apply_target_to_data(
+        input_data_df, target_generated_columns = _apply_target_to_data(
             target, data, pf_client, input_data_df)
         # After we have generated all columns we can check if we have
         # everything we need for evaluators.
         _validate_columns(input_data_df, evaluators, None)
-        tempfile_created = True
 
     evaluator_info = {}
 
-    for evaluator_name, evaluator in evaluators.items():
-        if isinstance(evaluator, FunctionType):
-            evaluator_info.update({evaluator_name: {"client": pf_client, "evaluator": evaluator}})
-        else:
-            evaluator_info.update({evaluator_name: {"client": code_client, "evaluator": evaluator}})
+    with tempfile.TemporaryDirectory() as d:
+        data_file = data
+        if target_generated_columns:
+            data_file = os.path.join(d, 'input.jsonl')
+            input_data_df.to_json(data_file, orient='records', lines=True)
+        for evaluator_name, evaluator in evaluators.items():
+            if isinstance(evaluator, FunctionType):
+                evaluator_info.update({evaluator_name: {"client": pf_client, "evaluator": evaluator}})
+            else:
+                evaluator_info.update({evaluator_name: {"client": code_client, "evaluator": evaluator}})
 
-        evaluator_info[evaluator_name]["run"] = evaluator_info[evaluator_name]["client"].run(
-            flow=evaluator,
-            column_mapping=evaluator_config.get(evaluator_name, evaluator_config.get("default", None)),
-            data=data,
-            stream=True,
-        )
+            evaluator_info[evaluator_name]["run"] = evaluator_info[evaluator_name]["client"].run(
+                flow=evaluator,
+                column_mapping=evaluator_config.get(evaluator_name, evaluator_config.get("default", None)),
+                data=data_file,
+                stream=True,
+            )
 
-    evaluators_result_df = None
-    for evaluator_name, evaluator_info in evaluator_info.items():
-        evaluator_result_df = evaluator_info["client"].get_details(evaluator_info["run"], all_results=True)
+        evaluators_result_df = None
+        for evaluator_name, evaluator_info in evaluator_info.items():
+            evaluator_result_df = evaluator_info["client"].get_details(evaluator_info["run"], all_results=True)
 
-        # drop input columns
-        evaluator_result_df = evaluator_result_df.drop(
-            columns=[col for col in evaluator_result_df.columns if col.startswith("inputs.")]
-        )
+            # drop input columns
+            evaluator_result_df = evaluator_result_df.drop(
+                columns=[col for col in evaluator_result_df.columns if col.startswith("inputs.")]
+            )
 
-        # rename output columns
-        # Assuming after removing inputs columns, all columns are output columns
-        evaluator_result_df.rename(
-            columns={
-                col: f"outputs.{evaluator_name}.{col.replace('outputs.', '')}" for col in evaluator_result_df.columns
-            },
-            inplace=True,
-        )
+            # rename output columns
+            # Assuming after removing inputs columns, all columns are output columns
+            evaluator_result_df.rename(
+                columns={
+                    col: "outputs."
+                         f"{evaluator_name}.{col.replace('outputs.', '')}" for col in evaluator_result_df.columns
+                },
+                inplace=True,
+            )
 
-        evaluators_result_df = (
-            pd.concat([evaluators_result_df, evaluator_result_df], axis=1, verify_integrity=True)
-            if evaluators_result_df is not None
-            else evaluator_result_df
-        )
-
-    if tempfile_created and os.path.isfile(data):
-        # During the run we have created the temporary file. We will delete it here.
-        os.unlink(data)
+            evaluators_result_df = (
+                pd.concat([evaluators_result_df, evaluator_result_df], axis=1, verify_integrity=True)
+                if evaluators_result_df is not None
+                else evaluator_result_df
+            )
 
     # Rename columns, generated by template function to outputs instead of inputs.
     input_data_df.rename(columns={
