@@ -232,43 +232,6 @@ def serving_client_with_environment_variables(mocker: MockerFixture):
     )
 
 
-@pytest.fixture
-def simple_eager_flow(mocker: MockerFixture):
-    return create_client_by_model("simple_with_dict_output", mocker, model_root=EAGER_FLOW_ROOT)
-
-
-@pytest.fixture
-def simple_eager_flow_primitive_output(mocker: MockerFixture):
-    return create_client_by_model("primitive_output", mocker, model_root=EAGER_FLOW_ROOT)
-
-
-@pytest.fixture
-def simple_eager_flow_dataclass_output(mocker: MockerFixture):
-    return create_client_by_model("flow_with_dataclass_output", mocker, model_root=EAGER_FLOW_ROOT)
-
-
-@pytest.fixture
-def non_json_serializable_output(mocker: MockerFixture):
-    return create_client_by_model("non_json_serializable_output", mocker, model_root=EAGER_FLOW_ROOT)
-
-
-@pytest.fixture
-def stream_output(mocker: MockerFixture):
-    return create_client_by_model("stream_output", mocker, model_root=EAGER_FLOW_ROOT)
-
-
-@pytest.fixture
-def multiple_stream_outputs(mocker: MockerFixture):
-    return create_client_by_model("multiple_stream_outputs", mocker, model_root=EAGER_FLOW_ROOT)
-
-
-@pytest.fixture
-def callable_class(mocker: MockerFixture):
-    return create_client_by_model(
-        "basic_callable_class", mocker, model_root=EAGER_FLOW_ROOT, init={"obj_input": "input1"}
-    )
-
-
 # ==================== FastAPI serving fixtures ====================
 
 
@@ -346,78 +309,6 @@ def fastapi_serving_client_with_environment_variables(mocker: MockerFixture):
         "flow_with_environment_variables",
         mocker,
         environment_variables={"env2": "runtime_env2", "env10": "aaaaa"},
-    )
-
-
-@pytest.fixture
-def fastapi_simple_eager_flow(mocker: MockerFixture):
-    return fastapi_create_client_by_model("simple_with_dict_output", mocker, model_root=EAGER_FLOW_ROOT)
-
-
-@pytest.fixture
-def fastapi_simple_eager_flow_primitive_output(mocker: MockerFixture):
-    return fastapi_create_client_by_model("primitive_output", mocker, model_root=EAGER_FLOW_ROOT)
-
-
-@pytest.fixture
-def fastapi_simple_eager_flow_dataclass_output(mocker: MockerFixture):
-    return fastapi_create_client_by_model("flow_with_dataclass_output", mocker, model_root=EAGER_FLOW_ROOT)
-
-
-@pytest.fixture
-def fastapi_non_json_serializable_output(mocker: MockerFixture):
-    return fastapi_create_client_by_model("non_json_serializable_output", mocker, model_root=EAGER_FLOW_ROOT)
-
-
-@pytest.fixture
-def fastapi_stream_output(mocker: MockerFixture):
-    return fastapi_create_client_by_model("stream_output", mocker, model_root=EAGER_FLOW_ROOT)
-
-
-@pytest.fixture
-def fastapi_multiple_stream_outputs(mocker: MockerFixture):
-    return fastapi_create_client_by_model("multiple_stream_outputs", mocker, model_root=EAGER_FLOW_ROOT)
-
-
-@pytest.fixture
-def fastapi_eager_flow_evc(mocker: MockerFixture):
-    return fastapi_create_client_by_model("environment_variables_connection", mocker, model_root=EAGER_FLOW_ROOT)
-
-
-@pytest.fixture
-def fastapi_eager_flow_evc_override(mocker: MockerFixture):
-    return fastapi_create_client_by_model(
-        "environment_variables_connection",
-        mocker,
-        model_root=EAGER_FLOW_ROOT,
-        environment_variables={"TEST": "${azure_open_ai_connection.api_base}"},
-    )
-
-
-@pytest.fixture
-def fastapi_eager_flow_evc_override_not_exist(mocker: MockerFixture):
-    return fastapi_create_client_by_model(
-        "environment_variables",
-        mocker,
-        model_root=EAGER_FLOW_ROOT,
-        environment_variables={"TEST": "${azure_open_ai_connection.api_type}"},
-    )
-
-
-@pytest.fixture
-def fastapi_eager_flow_evc_connection_not_exist(mocker: MockerFixture):
-    return fastapi_create_client_by_model(
-        "evc_connection_not_exist",
-        mocker,
-        model_root=EAGER_FLOW_ROOT,
-        environment_variables={"TEST": "VALUE"},
-    )
-
-
-@pytest.fixture
-def fastapi_callable_class(mocker: MockerFixture):
-    return fastapi_create_client_by_model(
-        "basic_callable_class", mocker, model_root=EAGER_FLOW_ROOT, init={"obj_input": "input1"}
     )
 
 

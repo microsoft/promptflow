@@ -1,4 +1,3 @@
-import base64
 import json
 import multiprocessing
 import os
@@ -204,62 +203,6 @@ def flow_serving_client(mocker: MockerFixture):
 
 
 @pytest.fixture
-def flow_serving_client_with_encoded_connection(mocker: MockerFixture):
-    from promptflow._core.connection_manager import ConnectionManager
-    from promptflow.core._serving.utils import encode_dict
-
-    connection_dict = json.loads(open(CONNECTION_FILE, "r").read())
-    connection_manager = ConnectionManager(connection_dict)
-    connections = {"PROMPTFLOW_ENCODED_CONNECTIONS": encode_dict(connection_manager.to_connections_dict())}
-    return create_client_by_model("basic-with-connection", mocker, connections, extension_type="azureml")
-
-
-@pytest.fixture
-def evaluation_flow_serving_client(mocker: MockerFixture):
-    return create_client_by_model("web_classification", mocker)
-
-
-@pytest.fixture
-def serving_client_llm_chat(mocker: MockerFixture):
-    return create_client_by_model("chat_flow_with_stream_output", mocker)
-
-
-@pytest.fixture
-def serving_client_python_stream_tools(mocker: MockerFixture):
-    return create_client_by_model("python_stream_tools", mocker)
-
-
-@pytest.fixture
-def sample_image():
-    image_path = (Path(FLOW_ROOT) / "python_tool_with_simple_image" / "logo.jpg").resolve()
-    return base64.b64encode(open(image_path, "rb").read()).decode("utf-8")
-
-
-@pytest.fixture
-def serving_client_image_python_flow(mocker: MockerFixture):
-    return create_client_by_model("python_tool_with_simple_image", mocker)
-
-
-@pytest.fixture
-def serving_client_composite_image_flow(mocker: MockerFixture):
-    return create_client_by_model("python_tool_with_composite_image", mocker)
-
-
-@pytest.fixture
-def serving_client_openai_vision_image_flow(mocker: MockerFixture):
-    return create_client_by_model("python_tool_with_openai_vision_image", mocker)
-
-
-@pytest.fixture
-def serving_client_with_environment_variables(mocker: MockerFixture):
-    return create_client_by_model(
-        "flow_with_environment_variables",
-        mocker,
-        environment_variables={"env2": "runtime_env2", "env10": "aaaaa"},
-    )
-
-
-@pytest.fixture
 def simple_eager_flow(mocker: MockerFixture):
     return create_client_by_model("simple_with_dict_output", mocker, model_root=EAGER_FLOW_ROOT)
 
@@ -370,45 +313,6 @@ def fastapi_create_client_by_model(
         environment_variables["API_TYPE"] = "${azure_open_ai_connection.api_type}"
     app = create_fastapi_app(environment_variables=environment_variables, extension_type=extension_type, init=init)
     return TestClient(app)
-
-
-@pytest.fixture
-def fastapi_evaluation_flow_serving_client(mocker: MockerFixture):
-    return fastapi_create_client_by_model("web_classification", mocker)
-
-
-@pytest.fixture
-def fastapi_serving_client_llm_chat(mocker: MockerFixture):
-    return fastapi_create_client_by_model("chat_flow_with_stream_output", mocker)
-
-
-@pytest.fixture
-def fastapi_serving_client_python_stream_tools(mocker: MockerFixture):
-    return fastapi_create_client_by_model("python_stream_tools", mocker)
-
-
-@pytest.fixture
-def fastapi_serving_client_image_python_flow(mocker: MockerFixture):
-    return fastapi_create_client_by_model("python_tool_with_simple_image", mocker)
-
-
-@pytest.fixture
-def fastapi_serving_client_composite_image_flow(mocker: MockerFixture):
-    return fastapi_create_client_by_model("python_tool_with_composite_image", mocker)
-
-
-@pytest.fixture
-def fastapi_serving_client_openai_vision_image_flow(mocker: MockerFixture):
-    return fastapi_create_client_by_model("python_tool_with_openai_vision_image", mocker)
-
-
-@pytest.fixture
-def fastapi_serving_client_with_environment_variables(mocker: MockerFixture):
-    return fastapi_create_client_by_model(
-        "flow_with_environment_variables",
-        mocker,
-        environment_variables={"env2": "runtime_env2", "env10": "aaaaa"},
-    )
 
 
 @pytest.fixture
