@@ -83,7 +83,7 @@ def build_index(
         embeddings_model_uri = None
     else:
         embeddings_model_uri = build_open_ai_protocol(
-            embeddings_model_config.deployment_name, 
+            embeddings_model_config.deployment_name,
             embeddings_model_config.model_name
         )
 
