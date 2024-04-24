@@ -50,6 +50,7 @@ class Local2CloudTestHelper:
         assert cloud_run._start_time and cloud_run._end_time
         assert cloud_run.properties["azureml.promptflow.local_to_cloud"] == "true"
         assert cloud_run.properties["azureml.promptflow.snapshot_id"]
+        assert cloud_run.properties[Local2CloudProperties.TOTAL_TOKENS]
 
         # if no description or tags, skip the check, since one could be {} but the other is None
         if run.description:
@@ -159,8 +160,11 @@ class TestFlowRunUpload:
             data=f"{DATAS_DIR}/prompty_inputs.jsonl",
             name=name,
         )
-        assert run.status == "Completed"
+        assert run.status == RunStatus.COMPLETED
         assert "error" not in run._to_dict()
+
+        # check the run is uploaded to cloud.
+        Local2CloudTestHelper.check_local_to_cloud_run(pf, run)
 
     @pytest.mark.skipif(condition=not pytest.is_live, reason="Bug - 3089145 Replay failed for test 'test_upload_run'")
     @pytest.mark.usefixtures(
@@ -170,7 +174,7 @@ class TestFlowRunUpload:
         name = randstr("batch_run_name_for_upload_with_customized_properties")
         local_pf = Local2CloudTestHelper.get_local_pf(name)
 
-        eval_run = "promptflow.BatchRun"
+        run_type = "test_run_type"
         eval_artifacts = '[{"path": "instance_results.jsonl", "type": "table"}]'
 
         # submit a local batch run
@@ -183,7 +187,7 @@ class TestFlowRunUpload:
             tags={"sdk-cli-test": "true"},
             description="test sdk local to cloud",
             properties={
-                Local2CloudUserProperties.EVAL_RUN: eval_run,
+                Local2CloudUserProperties.RUN_TYPE: run_type,
                 Local2CloudUserProperties.EVAL_ARTIFACTS: eval_artifacts,
             },
         )
@@ -192,10 +196,8 @@ class TestFlowRunUpload:
 
         # check the run is uploaded to cloud, and the properties are set correctly
         cloud_run = Local2CloudTestHelper.check_local_to_cloud_run(pf, run)
-        assert cloud_run.properties[Local2CloudUserProperties.EVAL_RUN] == eval_run
+        assert cloud_run.properties[Local2CloudUserProperties.RUN_TYPE] == run_type
         assert cloud_run.properties[Local2CloudUserProperties.EVAL_ARTIFACTS] == eval_artifacts
-        # check total tokens is recorded
-        assert cloud_run.properties[Local2CloudProperties.TOTAL_TOKENS]
 
     @pytest.mark.skipif(condition=not pytest.is_live, reason="Bug - 3089145 Replay failed for test 'test_upload_run'")
     @pytest.mark.usefixtures(
