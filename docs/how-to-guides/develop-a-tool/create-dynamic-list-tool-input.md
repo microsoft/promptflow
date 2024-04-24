@@ -187,7 +187,7 @@ pip install my-tools-package[azure]>=0.0.8
 
 If you are unable to see any options in a dynamic list tool input, you may see an error message below the input field stating:
 
-"Unable to display list of items due to XXX. Please contact the tool author/support team for troubleshooting assistance."
+"Unable to retrieve result due to XXX. Please contact the tool author/support team for troubleshooting assistance."
 
 If this occurs, follow these troubleshooting steps:
 

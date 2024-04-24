@@ -540,29 +540,6 @@ def _retrieve_tool_func_result(func_call_scenario: str, function_config: Dict):
     return result_with_log
 
 
-def _gen_dynamic_list(function_config: Dict) -> List:
-    """Generate dynamic list for a tool input.
-
-    :param function_config: function config in tool meta. Should contain'func_path' and 'func_kwargs'.
-    :return: a list of tool input dynamic enums.
-    """
-    from promptflow._core.tools_manager import gen_dynamic_list
-
-    func_path = function_config.get("func_path", "")
-    func_kwargs = function_config.get("func_kwargs", {})
-    # May call azure control plane api in the custom function to list Azure resources.
-    # which may need Azure workspace triple.
-    # TODO: move this method to a common place.
-    from promptflow._cli._utils import get_workspace_triad_from_local
-
-    workspace_triad = get_workspace_triad_from_local()
-    if workspace_triad.subscription_id and workspace_triad.resource_group_name and workspace_triad.workspace_name:
-        return gen_dynamic_list(func_path, func_kwargs, workspace_triad._asdict())
-    # if no workspace triple available, just skip.
-    else:
-        return gen_dynamic_list(func_path, func_kwargs)
-
-
 def _generate_package_tools(keys: Optional[List[str]] = None) -> dict:
     from promptflow._core.tools_manager import collect_package_tools
 
@@ -1085,23 +1062,6 @@ def is_flex_run(run: "Run") -> bool:
         return run._properties.get("azureml.promptflow.run_mode") == RunMode.EAGER
     # TODO(2901279): support eager mode for run created from run folder
     return False
-
-
-def format_signature_type(flow_meta):
-    # signature is language irrelevant, so we apply json type system
-    # TODO: enable this mapping after service supports more types
-    value_type_map = {
-        # ValueType.INT.value: SignatureValueType.INT.value,
-        # ValueType.DOUBLE.value: SignatureValueType.NUMBER.value,
-        # ValueType.LIST.value: SignatureValueType.ARRAY.value,
-        # ValueType.BOOL.value: SignatureValueType.BOOL.value,
-    }
-    for port_type in ["inputs", "outputs", "init"]:
-        if port_type not in flow_meta:
-            continue
-        for port_name, port in flow_meta[port_type].items():
-            if port["type"] in value_type_map:
-                port["type"] = value_type_map[port["type"]]
 
 
 generate_flow_meta = _generate_flow_meta

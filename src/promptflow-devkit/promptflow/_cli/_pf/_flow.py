@@ -15,6 +15,7 @@ from pathlib import Path
 from urllib.parse import urlencode, urlunparse
 
 from promptflow._cli._params import (
+    AppendToDictAction,
     add_param_config,
     add_param_entry,
     add_param_environment_variables,
@@ -277,7 +278,9 @@ pf flow test --flow my-awesome-flow --init key1=value1 key2=value2
     add_param_multi_modal = lambda parser: parser.add_argument(  # noqa: E731
         "--multi-modal", action="store_true", help=argparse.SUPPRESS
     )
-    add_param_ui = lambda parser: parser.add_argument("--ui", action="store_true", help=argparse.SUPPRESS)  # noqa: E731
+    add_param_ui = lambda parser: parser.add_argument(  # noqa: E731
+        "--ui", action="store_true", help="The flag to start an interactive chat experience in local chat window."
+    )
     add_param_input = lambda parser: parser.add_argument("--input", type=str, help=argparse.SUPPRESS)  # noqa: E731
     add_param_detail = lambda parser: parser.add_argument(  # noqa: E731
         "--detail", type=str, default=None, required=False, help=argparse.SUPPRESS
@@ -290,6 +293,9 @@ pf flow test --flow my-awesome-flow --init key1=value1 key2=value2
     )
     add_param_skip_browser = lambda parser: parser.add_argument(  # noqa: E731
         "--skip-open-browser", action="store_true", help=argparse.SUPPRESS
+    )
+    add_param_url_params = lambda parser: parser.add_argument(  # noqa: E731
+        "--url-params", action=AppendToDictAction, help=argparse.SUPPRESS, nargs="+"
     )
 
     add_params = [
@@ -307,6 +313,7 @@ pf flow test --flow my-awesome-flow --init key1=value1 key2=value2
         add_param_collection,
         add_param_skip_browser,
         add_param_init,
+        add_param_url_params,
     ] + base_params
 
     if Configuration.get_instance().is_internal_features_enabled():
@@ -511,11 +518,11 @@ def _test_flow_multi_modal(args, pf_client):
         from promptflow._sdk._tracing import _invoke_pf_svc
 
         # Todo: use base64 encode for now, will consider whether need use encryption or use db to store flow path info
-        def generate_url(flow_path, port, enable_internal_features=False):
+        def generate_url(flow_path, port, url_params, enable_internal_features=False):
             encrypted_flow_path = encrypt_flow_path(flow_path)
             query_dict = {"flow": encrypted_flow_path}
             if Configuration.get_instance().is_internal_features_enabled() or enable_internal_features:
-                query_dict.update({"enable_internal_features": "true"})
+                query_dict.update({"enable_internal_features": "true", **url_params})
             query_params = urlencode(query_dict)
             return urlunparse(("http", f"127.0.0.1:{port}", "/v1.0/ui/chat", "", query_params, ""))
 
@@ -525,7 +532,12 @@ def _test_flow_multi_modal(args, pf_client):
         enable_internal_features = True if flow != args.flow else False
         flow_path_dir, flow_path_file = resolve_flow_path(flow)
         flow_path = str(flow_path_dir / flow_path_file)
-        chat_page_url = generate_url(flow_path, pfs_port, enable_internal_features=enable_internal_features)
+        chat_page_url = generate_url(
+            flow_path,
+            pfs_port,
+            list_of_dict_to_dict(args.url_params),
+            enable_internal_features=enable_internal_features,
+        )
         print(f"You can begin chat flow on {chat_page_url}")
         if not args.skip_open_browser:
             webbrowser.open(chat_page_url)

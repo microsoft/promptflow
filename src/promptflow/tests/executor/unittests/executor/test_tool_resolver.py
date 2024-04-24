@@ -9,6 +9,7 @@ from jinja2 import TemplateSyntaxError
 
 from promptflow._core._errors import InvalidSource
 from promptflow._core.tools_manager import ToolLoader
+from promptflow._core.tool import INPUTS_TO_ESCAPE_PARAM_KEY
 from promptflow._internal import tool
 from promptflow.connections import AzureOpenAIConnection, CustomConnection, CustomStrongTypeConnection
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
@@ -790,3 +791,43 @@ class TestToolResolver:
             e.value.message == "Input 'input_name' for node 'dummy_node' of "
             "value 'assistant_definition_non_existing.yaml' is not a valid path."
         )
+
+    @pytest.mark.parametrize("tool_type, node_inputs, expected_inputs", [
+        (ToolType.PYTHON, {"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL)},
+         {"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL)}),
+        (ToolType.PYTHON, {"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL),
+                           "text": InputAssignment(value="Hello World!", value_type=InputValueType.FLOW_INPUT)},
+         {"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL),
+          "text": InputAssignment(value="Hello World!", value_type=InputValueType.FLOW_INPUT)}),
+        (ToolType.PROMPT, {"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL),
+                           "text": InputAssignment(value="Hello World!", value_type=InputValueType.FLOW_INPUT)},
+         {"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL),
+          "text": InputAssignment(value="Hello World!", value_type=InputValueType.FLOW_INPUT),
+          INPUTS_TO_ESCAPE_PARAM_KEY: InputAssignment(value=["text"], value_type=InputValueType.LITERAL)}),
+        (ToolType.LLM, {"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL),
+                        "text": InputAssignment(value="Hello World!", value_type=InputValueType.FLOW_INPUT)},
+         {"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL),
+          "text": InputAssignment(value="Hello World!", value_type=InputValueType.FLOW_INPUT),
+          INPUTS_TO_ESCAPE_PARAM_KEY: InputAssignment(value=["text"], value_type=InputValueType.LITERAL)}),
+        (ToolType.CUSTOM_LLM, {"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL),
+                               "text": InputAssignment(value="Hello World!", value_type=InputValueType.FLOW_INPUT)},
+         {"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL),
+          "text": InputAssignment(value="Hello World!", value_type=InputValueType.FLOW_INPUT),
+          INPUTS_TO_ESCAPE_PARAM_KEY: InputAssignment(value=["text"], value_type=InputValueType.LITERAL)}),
+        (ToolType.LLM, {"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL),
+                        "text": InputAssignment(value="Hello World!", value_type=InputValueType.LITERAL)},
+         {"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL),
+          "text": InputAssignment(value="Hello World!", value_type=InputValueType.LITERAL)}),
+    ])
+    def test_update_inputs_to_escape(self, tool_type, node_inputs, expected_inputs):
+        node = Node(
+            name="mock",
+            tool=None,
+            inputs=node_inputs,
+            connection="conn_name",
+            provider="mock",
+            type=tool_type,
+        )
+        tool_resolver = ToolResolver(working_dir=None)
+        tool_resolver._update_inputs_to_escape(node)
+        assert node.inputs == expected_inputs
