@@ -72,22 +72,23 @@ def build_index(
         )
         raise e
 
-    if not embeddings_model_config.embeddings_model:
-        raise ValueError("Please specify embeddings_model_config.embeddings_model")
+    if not embeddings_model_config.model_name:
+        raise ValueError("Please specify embeddings_model_config.model_name")
 
-    if "cohere" in embeddings_model_config.embeddings_model:
+    if "cohere" in embeddings_model_config.model_name:
         # If model uri is None, it is *considered* as a serverless endpoint for now.
         # TODO: depends on azureml.rag.Embeddings.from_uri to finalize a scheme for different embeddings
         if not embeddings_model_config.connection_config:
             raise ValueError("Please specify embeddings_model_config.connection_config to use cohere embedding models")
         embeddings_model_uri = None
     else:
-        embeddings_model_uri = build_open_ai_protocol(embeddings_model_config.embeddings_model)
+        embeddings_model_uri = build_open_ai_protocol(embeddings_model_config.deployment_name, embeddings_model_config.model_name)
 
     if vector_store == "azure_ai_search" and isinstance(input_source, AzureAISearchSource):
         return _create_mlindex_from_existing_ai_search(
             # TODO: Fix Bug 2818331
             embedding_model=embeddings_model_config.embeddings_model,
+            embedding_model_uri=embeddings_model_uri,
             connection_id=embeddings_model_config.connection_config.build_connection_id(),
             ai_search_config=input_source,
         )
@@ -163,7 +164,7 @@ def build_index(
         }
         embedder = EmbeddingsContainer.from_uri(None, credential=None, **connection_args)
     else:
-        raise ValueError("embeddings_model is not supported")
+        raise ValueError("embeddings model is not supported")
 
     embeddings = embedder.embed(chunked_docs)
 
@@ -229,6 +230,7 @@ def build_index(
 
 def _create_mlindex_from_existing_ai_search(
     embedding_model: str,
+    embedding_model_uri: Optional[str],
     connection_id: Optional[str],
     ai_search_config: AzureAISearchSource,
 ) -> str:
@@ -301,7 +303,7 @@ def _create_mlindex_from_existing_ai_search(
             }
         else:
             model_connection_args = {"connection_type": "workspace_connection", "connection": {"id": connection_id}}
-        embedding = EmbeddingsContainer.from_uri(embedding_model, credential=None, **model_connection_args)
+        embedding = EmbeddingsContainer.from_uri(embedding_model_uri, credential=None, **model_connection_args)
     mlindex_config["embeddings"] = embedding.get_metadata()
 
     path = Path.cwd() / f"import-ai_search-{ai_search_config.ai_search_index_name}-mlindex"

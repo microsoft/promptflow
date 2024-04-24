@@ -4,7 +4,6 @@
 
 AZURE_AI_SEARCH_API_VERSION = "2023-07-01-preview"
 OPEN_AI_PROTOCOL_TEMPLATE = "azure_open_ai://deployment/{}/model/{}"
-OPEN_AI_PROTOCOL_REGEX_PATTERN = OPEN_AI_PROTOCOL_TEMPLATE.format(".*", ".*")
 CONNECTION_ID_TEMPLATE = "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/connections/{}"
 
 

@@ -14,8 +14,10 @@ from ._connection_config import ConnectionConfig
 class EmbeddingsModelConfig:
     """Config class for a embedding model.
 
-    :param embeddings_model: The name of the embedding model.
-    :type embeddings_model: Optional[str]
+    :param model_name: The name of the embedding model.
+    :type model_name: Optional[str]
+    :param connection_config: The connection configuration for the embedding model.
+    :type connection_config: Optional[ConnectionConfig]
     :param connection_config: The connection configuration for the embedding model.
     :type connection_config: Optional[ConnectionConfig]
     """
@@ -23,8 +25,10 @@ class EmbeddingsModelConfig:
     def __init__(
         self,
         *,
-        embeddings_model: Optional[str] = None,
+        model_name: Optional[str] = None,
+        deployment_name: Optional[str] = None,
         connection_config: Optional[ConnectionConfig] = None,
     ) -> None:
-        self.embeddings_model = embeddings_model
+        self.model_name = model_name
+        self.deployment_name = deployment_name
         self.connection_config = connection_config
