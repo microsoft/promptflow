@@ -1,10 +1,13 @@
+import base64
 import json
 import multiprocessing
+import os
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 from _constants import CONNECTION_FILE, PROMPTFLOW_ROOT
+from fastapi.testclient import TestClient
 from mock import mock
 from pytest_mock import MockerFixture
 from sqlalchemy import create_engine
@@ -14,6 +17,7 @@ from promptflow._sdk._constants import EXPERIMENT_CREATED_ON_INDEX_NAME, EXPERIM
 from promptflow._sdk.entities import AzureOpenAIConnection as AzureOpenAIConnectionEntity
 from promptflow._sdk.entities._connection import CustomConnection, _Connection
 from promptflow.client import PFClient
+from promptflow.core._serving.app import create_app as create_serving_app
 from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
@@ -124,6 +128,297 @@ def setup_experiment_table():
         if Configuration.get_instance().is_internal_features_enabled():
             create_or_update_table(engine, orm_class=Experiment, tablename=EXPERIMENT_TABLE_NAME)
             create_index_if_not_exists(engine, EXPERIMENT_CREATED_ON_INDEX_NAME, EXPERIMENT_TABLE_NAME, "created_on")
+
+
+@pytest.fixture
+def flow_serving_client(mocker: MockerFixture):
+    model_path = (Path(MODEL_ROOT) / "basic-with-connection").resolve().absolute().as_posix()
+    mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
+    mocker.patch.dict(os.environ, {"USER_AGENT": "test-user-agent"})
+    app = create_serving_app(environment_variables={"API_TYPE": "${azure_open_ai_connection.api_type}"})
+    app.config.update(
+        {
+            "TESTING": True,
+        }
+    )
+    return app.test_client()
+
+
+@pytest.fixture
+def flow_serving_client_with_encoded_connection(mocker: MockerFixture):
+    from promptflow._core.connection_manager import ConnectionManager
+    from promptflow.core._serving.utils import encode_dict
+
+    connection_dict = json.loads(open(CONNECTION_FILE, "r").read())
+    connection_manager = ConnectionManager(connection_dict)
+    connections = {"PROMPTFLOW_ENCODED_CONNECTIONS": encode_dict(connection_manager.to_connections_dict())}
+    return create_client_by_model("basic-with-connection", mocker, connections, extension_type="azureml")
+
+
+@pytest.fixture
+def evaluation_flow_serving_client(mocker: MockerFixture):
+    model_path = (Path(MODEL_ROOT) / "web_classification").resolve().absolute().as_posix()
+    mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
+    app = create_serving_app()
+    app.config.update(
+        {
+            "TESTING": True,
+        }
+    )
+    return app.test_client()
+
+
+def create_client_by_model(
+    model_name: str,
+    mocker: MockerFixture,
+    connections: dict = {},
+    extension_type=None,
+    environment_variables={},
+    model_root=MODEL_ROOT,
+    init=None,
+):
+    model_path = (Path(model_root) / model_name).resolve().absolute().as_posix()
+    mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
+    if connections:
+        mocker.patch.dict(os.environ, connections)
+    if extension_type and extension_type == "azureml":
+        environment_variables["API_TYPE"] = "${azure_open_ai_connection.api_type}"
+    app = create_serving_app(environment_variables=environment_variables, extension_type=extension_type, init=init)
+    app.config.update(
+        {
+            "TESTING": True,
+        }
+    )
+    return app.test_client()
+
+
+@pytest.fixture
+def serving_client_llm_chat(mocker: MockerFixture):
+    return create_client_by_model("chat_flow_with_stream_output", mocker)
+
+
+@pytest.fixture
+def serving_client_python_stream_tools(mocker: MockerFixture):
+    return create_client_by_model("python_stream_tools", mocker)
+
+
+@pytest.fixture
+def sample_image():
+    image_path = (Path(MODEL_ROOT) / "python_tool_with_simple_image" / "logo.jpg").resolve()
+    return base64.b64encode(open(image_path, "rb").read()).decode("utf-8")
+
+
+@pytest.fixture
+def serving_client_image_python_flow(mocker: MockerFixture):
+    return create_client_by_model("python_tool_with_simple_image", mocker)
+
+
+@pytest.fixture
+def serving_client_composite_image_flow(mocker: MockerFixture):
+    return create_client_by_model("python_tool_with_composite_image", mocker)
+
+
+@pytest.fixture
+def serving_client_openai_vision_image_flow(mocker: MockerFixture):
+    return create_client_by_model("python_tool_with_openai_vision_image", mocker)
+
+
+@pytest.fixture
+def serving_client_with_environment_variables(mocker: MockerFixture):
+    return create_client_by_model(
+        "flow_with_environment_variables",
+        mocker,
+        environment_variables={"env2": "runtime_env2", "env10": "aaaaa"},
+    )
+
+
+@pytest.fixture
+def simple_eager_flow(mocker: MockerFixture):
+    return create_client_by_model("simple_with_dict_output", mocker, model_root=EAGER_FLOW_ROOT)
+
+
+@pytest.fixture
+def simple_eager_flow_primitive_output(mocker: MockerFixture):
+    return create_client_by_model("primitive_output", mocker, model_root=EAGER_FLOW_ROOT)
+
+
+@pytest.fixture
+def simple_eager_flow_dataclass_output(mocker: MockerFixture):
+    return create_client_by_model("flow_with_dataclass_output", mocker, model_root=EAGER_FLOW_ROOT)
+
+
+@pytest.fixture
+def non_json_serializable_output(mocker: MockerFixture):
+    return create_client_by_model("non_json_serializable_output", mocker, model_root=EAGER_FLOW_ROOT)
+
+
+@pytest.fixture
+def stream_output(mocker: MockerFixture):
+    return create_client_by_model("stream_output", mocker, model_root=EAGER_FLOW_ROOT)
+
+
+@pytest.fixture
+def multiple_stream_outputs(mocker: MockerFixture):
+    return create_client_by_model("multiple_stream_outputs", mocker, model_root=EAGER_FLOW_ROOT)
+
+
+@pytest.fixture
+def callable_class(mocker: MockerFixture):
+    return create_client_by_model(
+        "basic_callable_class", mocker, model_root=EAGER_FLOW_ROOT, init={"obj_input": "input1"}
+    )
+
+
+# ==================== FastAPI serving fixtures ====================
+
+
+def create_fastapi_app(**kwargs):
+    return create_serving_app(engine="fastapi", **kwargs)
+
+
+@pytest.fixture
+def fastapi_flow_serving_client(mocker: MockerFixture):
+    # model_path = (Path(MODEL_ROOT) / "basic-with-connection").resolve().absolute().as_posix()
+    # mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
+    # mocker.patch.dict(os.environ, {"USER_AGENT": "test-user-agent"})
+    # app = create_fastapi_app(environment_variables={"API_TYPE": "${azure_open_ai_connection.api_type}"})
+    return fastapi_create_client_by_model(
+        "basic-with-connection",
+        mocker,
+        mock_envs={"USER_AGENT": "test-user-agent"},
+        environment_variables={"API_TYPE": "${azure_open_ai_connection.api_type}"},
+    )
+    # return TestClient(app)
+
+
+def fastapi_create_client_by_model(
+    model_name: str,
+    mocker: MockerFixture,
+    mock_envs: dict = {},
+    extension_type=None,
+    environment_variables={},
+    model_root=MODEL_ROOT,
+    init=None,
+):
+    model_path = (Path(model_root) / model_name).resolve().absolute().as_posix()
+    mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
+    if mock_envs:
+        mocker.patch.dict(os.environ, mock_envs)
+    if extension_type and extension_type == "azureml":
+        environment_variables["API_TYPE"] = "${azure_open_ai_connection.api_type}"
+    app = create_fastapi_app(environment_variables=environment_variables, extension_type=extension_type, init=init)
+    return TestClient(app)
+
+
+@pytest.fixture
+def fastapi_evaluation_flow_serving_client(mocker: MockerFixture):
+    return fastapi_create_client_by_model("web_classification", mocker)
+
+
+@pytest.fixture
+def fastapi_serving_client_llm_chat(mocker: MockerFixture):
+    return fastapi_create_client_by_model("chat_flow_with_stream_output", mocker)
+
+
+@pytest.fixture
+def fastapi_serving_client_python_stream_tools(mocker: MockerFixture):
+    return fastapi_create_client_by_model("python_stream_tools", mocker)
+
+
+@pytest.fixture
+def fastapi_serving_client_image_python_flow(mocker: MockerFixture):
+    return fastapi_create_client_by_model("python_tool_with_simple_image", mocker)
+
+
+@pytest.fixture
+def fastapi_serving_client_composite_image_flow(mocker: MockerFixture):
+    return fastapi_create_client_by_model("python_tool_with_composite_image", mocker)
+
+
+@pytest.fixture
+def fastapi_serving_client_openai_vision_image_flow(mocker: MockerFixture):
+    return fastapi_create_client_by_model("python_tool_with_openai_vision_image", mocker)
+
+
+@pytest.fixture
+def fastapi_serving_client_with_environment_variables(mocker: MockerFixture):
+    return fastapi_create_client_by_model(
+        "flow_with_environment_variables",
+        mocker,
+        environment_variables={"env2": "runtime_env2", "env10": "aaaaa"},
+    )
+
+
+@pytest.fixture
+def fastapi_simple_eager_flow(mocker: MockerFixture):
+    return fastapi_create_client_by_model("simple_with_dict_output", mocker, model_root=EAGER_FLOW_ROOT)
+
+
+@pytest.fixture
+def fastapi_simple_eager_flow_primitive_output(mocker: MockerFixture):
+    return fastapi_create_client_by_model("primitive_output", mocker, model_root=EAGER_FLOW_ROOT)
+
+
+@pytest.fixture
+def fastapi_simple_eager_flow_dataclass_output(mocker: MockerFixture):
+    return fastapi_create_client_by_model("flow_with_dataclass_output", mocker, model_root=EAGER_FLOW_ROOT)
+
+
+@pytest.fixture
+def fastapi_non_json_serializable_output(mocker: MockerFixture):
+    return fastapi_create_client_by_model("non_json_serializable_output", mocker, model_root=EAGER_FLOW_ROOT)
+
+
+@pytest.fixture
+def fastapi_stream_output(mocker: MockerFixture):
+    return fastapi_create_client_by_model("stream_output", mocker, model_root=EAGER_FLOW_ROOT)
+
+
+@pytest.fixture
+def fastapi_multiple_stream_outputs(mocker: MockerFixture):
+    return fastapi_create_client_by_model("multiple_stream_outputs", mocker, model_root=EAGER_FLOW_ROOT)
+
+
+@pytest.fixture
+def fastapi_eager_flow_evc(mocker: MockerFixture):
+    return fastapi_create_client_by_model("environment_variables_connection", mocker, model_root=EAGER_FLOW_ROOT)
+
+
+@pytest.fixture
+def fastapi_eager_flow_evc_override(mocker: MockerFixture):
+    return fastapi_create_client_by_model(
+        "environment_variables_connection",
+        mocker,
+        model_root=EAGER_FLOW_ROOT,
+        environment_variables={"TEST": "${azure_open_ai_connection.api_base}"},
+    )
+
+
+@pytest.fixture
+def fastapi_eager_flow_evc_override_not_exist(mocker: MockerFixture):
+    return fastapi_create_client_by_model(
+        "environment_variables",
+        mocker,
+        model_root=EAGER_FLOW_ROOT,
+        environment_variables={"TEST": "${azure_open_ai_connection.api_type}"},
+    )
+
+
+@pytest.fixture
+def fastapi_eager_flow_evc_connection_not_exist(mocker: MockerFixture):
+    return fastapi_create_client_by_model(
+        "evc_connection_not_exist",
+        mocker,
+        model_root=EAGER_FLOW_ROOT,
+        environment_variables={"TEST": "VALUE"},
+    )
+
+
+@pytest.fixture
+def fastapi_callable_class(mocker: MockerFixture):
+    return fastapi_create_client_by_model(
+        "basic_callable_class", mocker, model_root=EAGER_FLOW_ROOT, init={"obj_input": "input1"}
+    )
 
 
 # ==================== Recording injection ====================
