@@ -31,20 +31,24 @@ class AppendToDictAction(argparse._AppendAction):  # pylint: disable=protected-a
         return kwargs
 
 
+def load_input_data(data_path):
+    from promptflow._utils.load_data import load_data
+
+    if not Path(data_path).exists():
+        raise ValueError(f"Cannot find inputs file {data_path}")
+    if data_path.endswith(".jsonl"):
+        return load_data(local_path=data_path)[0]
+    elif data_path.endswith(".json"):
+        with open(data_path, "r") as f:
+            return json.load(f)
+    else:
+        raise ValueError("Only support jsonl or json file as input.")
+
+
 class FlowTestInputAction(AppendToDictAction):  # pylint: disable=protected-access
     def get_action(self, values, option_string):  # pylint: disable=no-self-use
         if len(values) == 1 and "=" not in values[0]:
-            from promptflow._utils.load_data import load_data
-
-            if not Path(values[0]).exists():
-                raise ValueError(f"Cannot find inputs file {values[0]}")
-            if values[0].endswith(".jsonl"):
-                return load_data(local_path=values[0])[0]
-            elif values[0].endswith(".json"):
-                with open(values[0], "r") as f:
-                    return json.load(f)
-            else:
-                raise ValueError("Only support jsonl or json file as input.")
+            return load_input_data(values[0])
         else:
             return super().get_action(values, option_string)
 
