@@ -3,12 +3,12 @@ import os
 import re
 
 import pytest
-from _constants import PROMPTFLOW_ROOT
 from opentelemetry import trace
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+from tests.conftest import PROMPTFLOW_ROOT
 
 from promptflow._utils.multimedia_utils import OpenaiVisionMultimediaProcessor
 from promptflow.core._serving.constants import FEEDBACK_TRACE_FIELD_NAME
