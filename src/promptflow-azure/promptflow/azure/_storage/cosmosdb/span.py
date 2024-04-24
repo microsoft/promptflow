@@ -13,7 +13,7 @@ from azure.storage.blob import ContainerClient
 from promptflow._constants import SpanContextFieldName, SpanEventFieldName, SpanFieldName
 from promptflow._sdk.entities._trace import Span as SpanEntity
 
-DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
+DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"  # timestamp format e.g. 2021-08-25T00:00:00.000000Z
 
 
 class Span:
@@ -39,6 +39,7 @@ class Span:
         self.context = span.context
         self.kind = span.kind
         self.parent_id = span.parent_id
+        # span entity start_time and end_time are datetime objects using utc timezone
         self.start_time = span.start_time.strftime(DATE_FORMAT)
         self.end_time = span.end_time.strftime(DATE_FORMAT)
         self.status = span.status
