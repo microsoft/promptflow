@@ -3,7 +3,6 @@
 # ---------------------------------------------------------
 
 from promptflow.client import load_flow
-from promptflow.core import Flow
 from pathlib import Path
 
 

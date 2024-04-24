@@ -7,13 +7,13 @@ import pathlib
 
 from promptflow.evals import evaluators
 from promptflow.evals.evaluators import content_safety
-from promptflow.client import load_flow
-from promptflow.core import Flow
+
 
 @pytest.fixture
 def data_file():
     data_path = os.path.join(pathlib.Path(__file__).parent.resolve(), "data")
     return os.path.join(data_path, "evaluate_test_data.jsonl")
+
 
 def get_evaluators_from_module(namespace: Any, exceptions: Optional[List[str]] = None) -> List[Type]:
     evaluators = []
