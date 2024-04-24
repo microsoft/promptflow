@@ -356,3 +356,14 @@ def add_param_init(parser):
         "Example: --init param1=val1 param2=val2",
         nargs="+",
     )
+
+
+def add_param_path(parser):
+    parser.add_argument(
+        "--path",
+        type=str,
+        required=False,
+        help="Specify the directory of the config file, "
+        "and config file will only take effect when working in that directory or subdirectories. "
+        "Example: pf config set key=value --path config_folder",
+    )
