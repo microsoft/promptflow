@@ -16,8 +16,8 @@ class EmbeddingsModelConfig:
 
     :param model_name: The name of the embedding model.
     :type model_name: Optional[str]
-    :param connection_config: The connection configuration for the embedding model.
-    :type connection_config: Optional[ConnectionConfig]
+    :param deployment_name: The deployment_name for the embedding model.
+    :type deployment_name: Optional[ConnectionConfig]
     :param connection_config: The connection configuration for the embedding model.
     :type connection_config: Optional[ConnectionConfig]
     """
