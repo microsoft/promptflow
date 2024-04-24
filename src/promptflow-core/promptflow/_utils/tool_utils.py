@@ -475,7 +475,7 @@ class RetrieveToolFuncResultError(UserErrorException):
 
     def __init__(self, message):
         msg = (
-            f"Unable to retrieve tool func result due to '{message}'. \nPlease contact the tool author/support team "
+            f"Unable to retrieve result due to '{message}'. \nPlease contact the tool author/support team "
             f"for troubleshooting assistance."
         )
         super().__init__(msg, target=ErrorTarget.FUNCTION_PATH)
@@ -485,20 +485,9 @@ class RetrieveToolFuncResultValidationError(RetrieveToolFuncResultError):
     pass
 
 
-class DynamicListError(UserErrorException):
-    """Base exception raised for dynamic list errors."""
-
-    def __init__(self, message):
-        msg = (
-            f"Unable to display list of items due to '{message}'. \nPlease contact the tool author/support team "
-            f"for troubleshooting assistance."
-        )
-        super().__init__(msg, target=ErrorTarget.FUNCTION_PATH)
-
-
-class ListFunctionResponseError(DynamicListError):
+class ListFunctionResponseError(RetrieveToolFuncResultError):
     pass
 
 
-class FunctionPathValidationError(DynamicListError):
+class FunctionPathValidationError(RetrieveToolFuncResultError):
     pass

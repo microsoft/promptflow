@@ -64,7 +64,6 @@ from promptflow._sdk._errors import (
     UnsecureConnectionError,
 )
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
-from promptflow._utils.context_utils import inject_sys_path
 from promptflow._utils.flow_utils import is_flex_flow, resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
@@ -539,29 +538,6 @@ def _retrieve_tool_func_result(func_call_scenario: str, function_config: Dict):
 
     result_with_log = {"result": result, "logs": {}}
     return result_with_log
-
-
-def _gen_dynamic_list(function_config: Dict) -> List:
-    """Generate dynamic list for a tool input.
-
-    :param function_config: function config in tool meta. Should contain'func_path' and 'func_kwargs'.
-    :return: a list of tool input dynamic enums.
-    """
-    from promptflow._core.tools_manager import gen_dynamic_list
-
-    func_path = function_config.get("func_path", "")
-    func_kwargs = function_config.get("func_kwargs", {})
-    # May call azure control plane api in the custom function to list Azure resources.
-    # which may need Azure workspace triple.
-    # TODO: move this method to a common place.
-    from promptflow._cli._utils import get_workspace_triad_from_local
-
-    workspace_triad = get_workspace_triad_from_local()
-    if workspace_triad.subscription_id and workspace_triad.resource_group_name and workspace_triad.workspace_name:
-        return gen_dynamic_list(func_path, func_kwargs, workspace_triad._asdict())
-    # if no workspace triple available, just skip.
-    else:
-        return gen_dynamic_list(func_path, func_kwargs)
 
 
 def _generate_package_tools(keys: Optional[List[str]] = None) -> dict:
@@ -1052,19 +1028,6 @@ def callable_to_entry_string(callable_obj: Callable) -> str:
         )
 
     return f"{module_str}:{func_str}"
-
-
-def entry_string_to_callable(entry_file, entry) -> Callable:
-    with inject_sys_path(Path(entry_file).parent):
-        try:
-            module_name, func_name = entry.split(":")
-            module = importlib.import_module(module_name)
-        except Exception as e:
-            raise UserErrorException(
-                message_format="Failed to load python module for {entry_file}",
-                entry_file=entry_file,
-            ) from e
-        return getattr(module, func_name, None)
 
 
 def is_flex_run(run: "Run") -> bool:
