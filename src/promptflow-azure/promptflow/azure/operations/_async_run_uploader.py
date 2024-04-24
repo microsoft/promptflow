@@ -9,7 +9,7 @@ from azure.core.exceptions import HttpResponseError, ResourceExistsError
 from azure.storage.blob.aio import BlobServiceClient
 
 from promptflow._cli._utils import get_instance_results, merge_jsonl_files
-from promptflow._constants import OutputsFolderName
+from promptflow._constants import PROMPTY_EXTENSION, OutputsFolderName
 from promptflow._sdk._constants import (
     DEFAULT_ENCODING,
     CloudDatastore,
@@ -180,9 +180,17 @@ class AsyncRunUploader:
         """Upload run snapshot to cloud. Return the cloud relative path of flow definition file."""
         logger.debug(f"Uploading snapshot for run {self.run.name!r}.")
         local_folder = self.run_output_path / LocalStorageFilenames.SNAPSHOT_FOLDER
-        # for some types of flex flow, even there is no flow.flex.yaml in the original flow folder,
-        # it will be generated in the snapshot folder in the .runs folder, so we can upload it to cloud as well.
-        _, flow_file = resolve_flow_path(local_folder)
+
+        # parse the flow definition file
+        run_flow_path = Path(self.run.properties[FlowRunProperties.FLOW_PATH]).name
+        if str(run_flow_path).endswith(PROMPTY_EXTENSION):
+            # for prompty flow run, get prompty file name from properties/flow_path
+            flow_file = run_flow_path
+        else:
+            # for some types of flex flow, even there is no flow.flex.yaml in the original flow folder,
+            # it will be generated in the snapshot folder in the .runs folder, so we can upload it to cloud as well.
+            _, flow_file = resolve_flow_path(local_folder)
+
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_local_folder = Path(temp_dir) / self.run.name
             shutil.copytree(local_folder, temp_local_folder)

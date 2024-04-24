@@ -14,6 +14,7 @@ import traceback
 import typing
 from datetime import datetime
 from pathlib import Path
+from threading import Lock
 
 from google.protobuf.json_format import MessageToJson
 from opentelemetry import trace
@@ -23,6 +24,7 @@ from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_ENDPOINT
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.trace import format_trace_id
 
 from promptflow._constants import (
     OTEL_RESOURCE_SERVICE_NAME,
@@ -210,16 +212,62 @@ def _get_ws_triad_from_pf_config(path: typing.Optional[Path]) -> typing.Optional
 def _print_tracing_url_from_local(
     pfs_port: str,
     collection: str,
-    exp: typing.Optional[str] = None,  # pylint: disable=unused-argument
+    exp: typing.Optional[str] = None,
     run: typing.Optional[str] = None,
 ) -> None:
+    url = _get_tracing_url_from_local(pfs_port=pfs_port, collection=collection, exp=exp, run=run)
+    print(f"You can view the traces in local from {url}")
+
+
+def _get_tracing_url_from_local(
+    pfs_port: str,
+    collection: str,
+    exp: typing.Optional[str] = None,  # pylint: disable=unused-argument
+    run: typing.Optional[str] = None,
+) -> str:
     url = f"http://localhost:{pfs_port}/v1.0/ui/traces/"
     if run is not None:
         url += f"?#run={run}"
     else:
         # collection will not be None
         url += f"?#collection={collection}"
-    print(f"You can view the traces from local: {url}")
+    return url
+
+
+def _get_tracing_detail_url_template_from_local(
+    pfs_port: str,
+    collection: str,
+    exp: typing.Optional[str] = None,  # pylint: disable=unused-argument
+    run: typing.Optional[str] = None,
+) -> str:
+    base_url = _get_tracing_url_from_local(pfs_port=pfs_port, collection=collection, exp=exp, run=run)
+    return base_url + "&uiTraceId={trace_id}"
+
+
+def _get_workspace_base_url(ws_triad: AzureMLWorkspaceTriad) -> str:
+    return (
+        "https://ml.azure.com/{query}?"
+        f"wsid=/subscriptions/{ws_triad.subscription_id}"
+        f"/resourceGroups/{ws_triad.resource_group_name}"
+        "/providers/Microsoft.MachineLearningServices"
+        f"/workspaces/{ws_triad.workspace_name}"
+        "&flight=PFTrace"
+    )
+
+
+def _get_tracing_detail_url_template_from_azure_portal(
+    ws_triad: AzureMLWorkspaceTriad,
+) -> str:
+    base_url = _get_workspace_base_url(ws_triad)
+    kind = get_workspace_kind(ws_triad)
+    if AzureWorkspaceKind.is_workspace(kind):
+        return base_url.format(query="trace/detail/{trace_id}")
+    elif AzureWorkspaceKind.is_project(kind):
+        base_url = base_url.replace("ml.azure.com", "ai.azure.com")
+        return base_url.format(query="projecttrace/detail/{trace_id}")
+    else:
+        _logger.error(f"the workspace type of {ws_triad.workspace_name!r} is not supported.")
+        return ""
 
 
 def _print_tracing_url_from_azure_portal(
@@ -372,11 +420,41 @@ def start_trace_with_devkit(collection: str, **kwargs: typing.Any) -> None:
     _inject_res_attrs_to_environ(pfs_port=pfs_port, collection=collection, exp=exp, ws_triad=ws_triad)
     # instrument openai and setup exporter to pfs here for flex mode
     inject_openai_api()
+    _setup_url_templates(
+        pfs_port=pfs_port,
+        collection=collection,
+        exp=exp,
+        run=run,
+        ws_triad=ws_triad,
+        is_azure_ext_installed=is_azure_ext_installed,
+    )
     setup_exporter_to_pfs()
-    # print tracing url(s)
+    if not run:
+        return
+    # print tracing url(s) when run is specified
     _print_tracing_url_from_local(pfs_port=pfs_port, collection=collection, exp=exp, run=run)
     if ws_triad is not None and is_azure_ext_installed:
         _print_tracing_url_from_azure_portal(ws_triad=ws_triad, collection=collection, exp=exp, run=run)
+
+
+def _setup_url_templates(
+    pfs_port: str,
+    collection: str,
+    exp: typing.Optional[str] = None,  # pylint: disable=unused-argument
+    run: typing.Optional[str] = None,
+    ws_triad: typing.Optional[AzureMLWorkspaceTriad] = None,
+    is_azure_ext_installed: bool = False,
+):
+    if run is not None:
+        return  # do not set tracing detail url template for run
+    url_templates = [
+        _get_tracing_detail_url_template_from_local(pfs_port=pfs_port, collection=collection, exp=exp, run=run)
+    ]
+    if ws_triad is not None and is_azure_ext_installed:
+        remote_url_template = _get_tracing_detail_url_template_from_azure_portal(ws_triad=ws_triad)
+        if remote_url_template:
+            url_templates.append(remote_url_template)
+    os.environ[OTLPSpanExporterWithTraceURL.PF_TRACE_URL_TEMPLATES] = json.dumps(url_templates)
 
 
 def setup_exporter_to_pfs() -> None:
@@ -428,15 +506,53 @@ def setup_exporter_to_pfs() -> None:
     _logger.debug("environ OTEL_EXPORTER_OTLP_ENDPOINT: %s", endpoint)
     if endpoint is not None:
         # create OTLP span exporter if endpoint is set
-        otlp_span_exporter = OTLPSpanExporter(endpoint=endpoint)
+        otlp_span_exporter = OTLPSpanExporterWithTraceURL(endpoint=endpoint)
         tracer_provider: TracerProvider = trace.get_tracer_provider()
         if not getattr(tracer_provider, TRACER_PROVIDER_PFS_EXPORTER_SET_ATTR, False):
             _logger.info("have not set exporter to prompt flow service, will set it...")
-            tracer_provider.add_span_processor(BatchSpanProcessor(otlp_span_exporter))
+            # Use a 1000 millis schedule delay to help export the traces in 1 second.
+            processor = BatchSpanProcessor(otlp_span_exporter, schedule_delay_millis=1000)
+            tracer_provider.add_span_processor(processor)
             setattr(tracer_provider, TRACER_PROVIDER_PFS_EXPORTER_SET_ATTR, True)
         else:
             _logger.info("exporter to prompt flow service is already set, no action needed.")
     _logger.debug("finish setup exporter to prompt flow service.")
+
+
+class OTLPSpanExporterWithTraceURL(OTLPSpanExporter):
+    PF_TRACE_URL_TEMPLATES = "PF_TRACE_URL_TEMPLATES"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._url_templates = self._load_url_templates()
+        self._printed_trace_ids = set()
+        self._lock = Lock()
+
+    def _load_url_templates(self):
+        try:
+            return json.loads(os.getenv(self.PF_TRACE_URL_TEMPLATES, "[]"))
+        except json.JSONDecodeError:
+            return []
+
+    def _print_trace_url(self, trace_id: str):
+        if not self._url_templates:
+            return
+        with self._lock:
+            #  Avoid printing the same trace URL multiple times
+            if trace_id in self._printed_trace_ids:
+                return
+            self._printed_trace_ids.add(trace_id)
+            print("You can view the trace detail from the following URL:")
+            for url_template in self._url_templates:
+                print(url_template.format(trace_id=trace_id))
+
+    def export(self, spans: typing.Sequence[trace.Span]) -> None:
+        super().export(spans)
+        # Print trace URL for each trace ID after exported to the server.
+        trace_ids = {f"0x{format_trace_id(span.get_span_context().trace_id)}" for span in spans}
+        for trace_id in trace_ids:
+            self._print_trace_url(trace_id)
 
 
 def process_otlp_trace_request(

@@ -13,7 +13,7 @@ from typing import Callable, List, Optional
 
 from promptflow._constants import MessageFormatType
 from promptflow._core._errors import InvalidSource
-from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
+from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR, INPUTS_TO_ESCAPE_PARAM_KEY, TOOL_TYPE_TO_ESCAPE
 from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping
 from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow._utils.tool_utils import (
@@ -466,6 +466,8 @@ class ToolResolver:
         )
         self._validate_duplicated_inputs(prompt_tpl_inputs_mapping.keys(), param_names, msg)
         node.inputs = self._load_images_for_prompt_tpl(prompt_tpl_inputs_mapping, node.inputs)
+        self._update_inputs_to_escape(node)
+
         callable = partial(render_template_jinja2, template=prompt_tpl)
         return ResolvedTool(node=node, definition=None, callable=callable, init_args={})
 
@@ -526,6 +528,21 @@ class ToolResolver:
         provider = connection_type_to_api_mapping[connection_type]
         return connection, provider
 
+    def _update_inputs_to_escape(self, node: Node):
+        # Store flow inputs list as a node input to enable tools to identify these inputs,
+        # and apply escape/unescape to avoid parsing of role in user inputs.
+        inputs_to_escape = []
+        inputs = node.inputs
+        if node.type in TOOL_TYPE_TO_ESCAPE:
+            for k, v in inputs.items():
+                if v.value_type == InputValueType.FLOW_INPUT:
+                    inputs_to_escape.append(k)
+
+        if inputs_to_escape:
+            node.inputs[INPUTS_TO_ESCAPE_PARAM_KEY] = InputAssignment(
+                value=inputs_to_escape, value_type=InputValueType.LITERAL
+            )
+
     def _resolve_llm_node(self, node: Node, convert_input_types=False) -> ResolvedTool:
         connection, provider = self._resolve_llm_connection_with_provider(self._get_llm_node_connection(node))
         # Always set the provider according to the connection type
@@ -537,6 +554,8 @@ class ToolResolver:
         updated_node.inputs[key] = InputAssignment(value=connection, value_type=InputValueType.LITERAL)
         if convert_input_types:
             updated_node = self._convert_node_literal_input_types(updated_node, tool)
+
+        self._update_inputs_to_escape(updated_node)
 
         prompt_tpl = self._load_source_content(node)
         prompt_tpl_inputs_mapping = get_inputs_for_prompt_template(prompt_tpl)
@@ -594,6 +613,8 @@ class ToolResolver:
         updated_node = copy.deepcopy(node)
         if convert_input_types:
             updated_node = self._convert_node_literal_input_types(updated_node, tool)
+        self._update_inputs_to_escape(updated_node)
+
         callable, init_args = BuiltinsManager._load_package_tool(
             tool.name, tool.module, tool.class_name, tool.function, updated_node.inputs
         )

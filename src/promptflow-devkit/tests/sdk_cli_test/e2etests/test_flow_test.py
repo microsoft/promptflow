@@ -13,6 +13,7 @@ from marshmallow import ValidationError
 
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._pf_client import PFClient
+from promptflow._utils.context_utils import _change_working_dir
 from promptflow.core import AzureOpenAIModelConfiguration, OpenAIModelConfiguration
 from promptflow.core._utils import init_executable
 from promptflow.exceptions import UserErrorException
@@ -268,11 +269,11 @@ class TestFlowTest:
                 cwd=notebook_path.parent,
             )
 
-    @pytest.mark.skip("Won't support flow test with entry now.")
     def test_eager_flow_test(self):
-        flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/entry.py").absolute()
-        result = _client._flows._test(flow=flow_path, entry="my_flow", inputs={"input_val": "val1"})
-        assert result.run_info.status.value == "Completed"
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml_return_output/").absolute()
+        with _change_working_dir(flow_path):
+            result = _client._flows.test(flow="entry:my_flow", inputs={"input_val": "val1"})
+            assert result == "Hello world! val1"
 
     def test_eager_flow_test_with_yaml(self):
         clear_module_cache("entry")

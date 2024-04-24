@@ -1,19 +1,32 @@
-# Set global configs
+# Set promptflow configs
 :::{admonition} Experimental feature
 This is an experimental feature, and may change at any time. Learn [more](faq.md#stable-vs-experimental).
 :::
 
 Promptflow supports setting global configs to avoid passing the same parameters to each command. The global configs are stored in a yaml file, which is located at `~/.promptflow/pf.yaml` by default.
 
+Additionally, promptflow supports setting configs to a specified path, and these configs will only take effect for the Promptflow program when the working directory is the specified path or its subdirectories.
+The configs are stored in a yaml file, which is located at `<config_folder>/pf.yaml`.
+
 The config file is shared between promptflow extension and sdk/cli. Promptflow extension controls each config through UI, so the following sections will show how to set global configs using promptflow cli.
 
 ## Set config
+Set global config
 ```shell
 pf config set <config_name>=<config_value>
 ```
 For example:
 ```shell
 pf config set connection.provider="azureml://subscriptions/<your-subscription>/resourceGroups/<your-resourcegroup>/providers/Microsoft.MachineLearningServices/workspaces/<your-workspace>"
+```
+
+Setting the config for a specific path
+```shell
+pf config set <config_name>=<config_value> --path <config_folder>
+```
+For example:
+```shell
+pf config set connection.provider="azureml://subscriptions/<your-subscription>/resourceGroups/<your-resourcegroup>/providers/Microsoft.MachineLearningServices/workspaces/<your-workspace>" --path .
 ```
 
 ## Show config
