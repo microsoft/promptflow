@@ -653,19 +653,33 @@ def _try_write_trace_to_cosmosdb(
         # So, we load clients in parallel for warm up.
         span_client_thread = ThreadWithContextVars(
             target=get_client,
-            args=(CosmosDBContainerName.SPAN, subscription_id, resource_group_name, workspace_name, credential),
+            args=(CosmosDBContainerName.SPAN, subscription_id, resource_group_name, workspace_name, logger, credential),
         )
         span_client_thread.start()
 
         collection_client_thread = ThreadWithContextVars(
             target=get_client,
-            args=(CosmosDBContainerName.COLLECTION, subscription_id, resource_group_name, workspace_name, credential),
+            args=(
+                CosmosDBContainerName.COLLECTION,
+                subscription_id,
+                resource_group_name,
+                workspace_name,
+                logger,
+                credential,
+            ),
         )
         collection_client_thread.start()
 
         line_summary_client_thread = ThreadWithContextVars(
             target=get_client,
-            args=(CosmosDBContainerName.LINE_SUMMARY, subscription_id, resource_group_name, workspace_name, credential),
+            args=(
+                CosmosDBContainerName.LINE_SUMMARY,
+                subscription_id,
+                resource_group_name,
+                workspace_name,
+                logger,
+                credential,
+            ),
         )
         line_summary_client_thread.start()
 
@@ -698,6 +712,7 @@ def _try_write_trace_to_cosmosdb(
             subscription_id,
             resource_group_name,
             workspace_name,
+            logger,
             credential,
         )
 
@@ -717,6 +732,7 @@ def _try_write_trace_to_cosmosdb(
                 subscription_id,
                 resource_group_name,
                 workspace_name,
+                logger,
                 credential,
             )
             result = SpanCosmosDB(span, collection_id, created_by).persist(
@@ -732,6 +748,7 @@ def _try_write_trace_to_cosmosdb(
                     subscription_id,
                     resource_group_name,
                     workspace_name,
+                    logger,
                     credential,
                 )
                 Summary(span, collection_id, created_by, logger).persist(line_summary_client)

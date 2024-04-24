@@ -28,6 +28,9 @@ def get_datastore_container_client(
     credential: Optional[object] = None,
 ) -> Tuple[ContainerClient, str]:
     try:
+        logger.info("get blob client for datastore.")
+        start_time = datetime.datetime.now()
+
         if credential is None:
             # in cloud scenario, runtime will pass in credential
             # so this is local to cloud only code, happens in prompt flow service
@@ -38,6 +41,10 @@ def get_datastore_container_client(
 
         datastore_definition, datastore_credential = _get_default_datastore(
             subscription_id, resource_group_name, workspace_name, credential
+        )
+
+        logger.info(
+            f"Get default datastore {datastore_definition.name}. Duration: {datetime.datetime.now() - start_time}"
         )
 
         storage_endpoint = _get_storage_endpoint_from_metadata()
@@ -57,7 +64,7 @@ def get_datastore_container_client(
         if not blob_base_uri.endswith("/"):
             blob_base_uri += "/"
 
-        logger.info(f"Get blob base url for {blob_base_uri}")
+        logger.info(f"Get blob base url for {blob_base_uri}, full duration: {datetime.datetime.now() - start_time}")
 
         return container_client, blob_base_uri
 

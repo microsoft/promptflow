@@ -4,6 +4,7 @@
 
 import ast
 import datetime
+import logging
 import threading
 from typing import Optional
 
@@ -18,8 +19,11 @@ def get_client(
     subscription_id: str,
     resource_group_name: str,
     workspace_name: str,
+    logger: Optional[logging.Logger] = None,
     credential: Optional[object] = None,
 ):
+    start_time = datetime.datetime.now()
+    logger.info(f"Get cosmosdb client for {container_name}")
     client_key = _get_db_client_key(container_name, subscription_id, resource_group_name, workspace_name)
     container_client = _get_client_from_map(client_key)
     if container_client is None:
@@ -35,8 +39,14 @@ def get_client(
                     from azure.identity import AzureCliCredential
 
                     credential = AzureCliCredential()
+
+                get_token_start_time = datetime.datetime.now()
                 token = _get_resource_token(
                     container_name, subscription_id, resource_group_name, workspace_name, credential
+                )
+
+                logger.info(
+                    f"Finish db token for {container_name}, duration: {datetime.datetime.now() - get_token_start_time}"
                 )
                 container_client = _init_container_client(
                     endpoint=token["accountEndpoint"],
@@ -49,6 +59,11 @@ def get_client(
                     "expire_at": datetime.datetime.now() + datetime.timedelta(0, _token_timeout),
                     "client": container_client,
                 }
+
+    logger.info(
+        f"Finish get cosmosdb client for {container_name}, full duration: {datetime.datetime.now() - start_time}"
+    )
+
     return container_client
 
 
