@@ -1,15 +1,9 @@
-from dataclasses import dataclass
 from pathlib import Path
 
 from promptflow.tracing import trace
 from promptflow.core import AzureOpenAIModelConfiguration, Prompty
 
 BASE_DIR = Path(__file__).absolute().parent
-
-
-@dataclass
-class Result:
-    answer: str
 
 
 class ChatFlow:
@@ -19,7 +13,7 @@ class ChatFlow:
     @trace
     def __call__(
         self, question: str = "What is ChatGPT?", chat_history: list = None
-    ) -> Result:
+    ) -> str:
         """Flow entry function."""
 
         chat_history = chat_history or []
@@ -29,10 +23,10 @@ class ChatFlow:
             model={"configuration": self.model_config},
         )
 
-        # output is a string
+        # output is a generator of string as prompty enabled stream parameter
         output = prompty(question=question, chat_history=chat_history)
 
-        return Result(answer=output)
+        return output
 
 
 if __name__ == "__main__":
@@ -42,6 +36,9 @@ if __name__ == "__main__":
     config = AzureOpenAIModelConfiguration(
         connection="open_ai_connection", azure_deployment="gpt-35-turbo"
     )
-    flow = ChatFlow(config)
+    flow = ChatFlow(model_config=config)
     result = flow("What's Azure Machine Learning?", [])
-    print(result)
+
+    # print result in stream manner
+    for r in result:
+        print(result, end="")

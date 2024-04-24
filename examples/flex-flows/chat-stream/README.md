@@ -10,7 +10,7 @@ pip install -r requirements.txt
 
 ## What you will learn
 
-In this flow, you will learn
+In this flow, you will learn:
 - how to compose a chat flow that return output in stream mode.
 - prompt template format of LLM tool chat api. Message delimiter is a separate line containing role name and colon: "system:", "user:", "assistant:".
 See <a href="https://platform.openai.com/docs/api-reference/chat/create#chat/create-role" target="_blank">OpenAI Chat</a> for more about message role.
@@ -63,18 +63,18 @@ You'll need to write flow entry `flow.flex.yaml` to test with prompt flow.
 
 ```bash
 # run chat flow with default question in flow.flex.yaml
-pf flow test --flow . --init connection=open_ai_connection
+pf flow test --flow . --init init.json
 
 # run chat flow with new question
-pf flow test --flow . --init connection=open_ai_connection --inputs question="What's Azure Machine Learning?"
+pf flow test --flow . --init init.json --inputs question="What's Azure Machine Learning?"
 
-pf flow test --flow . --init connection=open_ai_connection --inputs question="What is ChatGPT? Please explain with consise statement."
+pf flow test --flow . --init init.json --inputs question="What is ChatGPT? Please explain with consise statement."
 ```
 
 - Create run with multiple lines data
 
 ```bash
-pf run create --flow . --init connection=open_ai_connection --data ./data.jsonl --column-mapping question='${data.question}' --stream
+pf run create --flow . --init init.json --data ./data.jsonl --column-mapping question='${data.question}' --stream
 ```
 
 You can also skip providing `column-mapping` if provided data has same column name as the flow.

@@ -1,6 +1,6 @@
 ---
 name: Evaluate code quality
-description: A example flow defined using class based entry which leverages model config to evaluate the quality of code snippet.
+description: Evaluate the quality of code snippet.
 model:
   api: chat
   configuration:

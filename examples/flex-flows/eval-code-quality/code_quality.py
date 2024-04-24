@@ -54,13 +54,10 @@ class CodeEvaluator:
 
 if __name__ == "__main__":
     from promptflow.tracing import start_trace
-    from promptflow.client import PFClient
 
     start_trace()
-    pf = PFClient()
-    connection = pf.connections.get("open_ai_connection", with_secrets=True)
     model_config = AzureOpenAIModelConfiguration.from_connection(
-        connection=connection,
+        connection="open_ai_connection",
         azure_deployment="gpt-35-turbo-0125",
     )
     evaluator = CodeEvaluator(model_config)
