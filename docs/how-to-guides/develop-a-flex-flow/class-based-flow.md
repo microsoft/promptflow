@@ -4,8 +4,7 @@
 This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
 :::
 
-When user need to persist objects (like connection) in memory during multiple rounds of flow runs,
-they can write a callable class as flex flow's entry and put persist params in `__init__` method.
+When user need to persist objects (like connection) in memory during multiple rounds of flow runs, they can write a callable class as flex flow's entry and put persist params in `__init__` method.
 
 If user need to log metrics on batch run outputs, they can add an `__aggregate__` method and it will be scheduled after batch run finishes.
 The `__aggregate__` method should only contain 1 params which is list of batch run results.
