@@ -61,19 +61,48 @@ Check [here](../chat-with-a-flow/index.md) for more information.
 User can also batch run a flex flow without YAML.
 Instead of calling `pf.save` to create flow YAML first.
 
+::::{tab-set}
+:::{tab-item} CLI
+:sync: CLI
+
+```bash
+pf run create --flow "path.to.module:function_name" --data "./data.jsonl"
+```
+
+:::
+
+:::{tab-item} SDK
+:sync: SDK
 ```python
 # user can also directly use entry in `flow` param for batch run
 pf.run(flow="path.to.module:function_name", data="./data.jsonl")
 ```
 
+:::
+
 ## Batch run with YAML
 
 User can batch run a flex flow with YAML.
+
+::::{tab-set}
+:::{tab-item} CLI
+:sync: CLI
+
+```bash
+pf run create --flow "./flow.flex.yaml" --data "./data.jsonl"
+```
+
+:::
+
+:::{tab-item} SDK
+:sync: SDK
 
 ```python
 pf = PFClient()
 pf.run(flow="./flow.flex.yaml", data="./data.jsonl")
 ```
+
+:::
 
 Or directly run the imported function.
 **Note**: this only works in local.

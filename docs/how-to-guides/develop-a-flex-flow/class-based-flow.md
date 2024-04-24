@@ -73,10 +73,24 @@ Check [here](../chat-with-a-flow/index.md) for more information.
 User can also batch run a flex flow without YAML.
 Instead of calling `pf.save` to create flow YAML first.
 
+::::{tab-set}
+:::{tab-item} CLI
+:sync: CLI
+
+```bash
+pf run create --flow "path.to.module:ClassName" --data "./data.jsonl"
+```
+
+:::
+
+:::{tab-item} SDK
+:sync: SDK
 ```python
 # user can also directly use entry in `flow` param for batch run
 pf.run(flow="path.to.module:ClassName", data="./data.jsonl")
 ```
+
+:::
 
 Or directly run the imported flow class or flow instance.
 **Note**: this only works in local.
@@ -93,6 +107,32 @@ pf.run(flow=flow_obj, data="./data.jsonl")
 ## Batch run with YAML
 
 User can batch run a flex flow. Flow init function's param is supported by `init` parameter.
+
+::::{tab-set}
+:::{tab-item} CLI
+:sync: CLI
+
+User need to write an JSON file as init's value since it's hard to write model config in command line.
+
+```json
+{
+    "model_config": {
+        "azure_endpoint": "my_endpoint",
+        "azure_deployment": "my_deployment",
+        "api_key": "actual_api_key"
+    },
+    "flow_config": {}
+}
+```
+
+```bash
+pf run create --flow "./flow.flex.yaml" --data "./data.jsonl" --init init.json
+```
+
+:::
+
+:::{tab-item} SDK
+:sync: SDK
 
 ```python
 pf = PFClient()
@@ -113,6 +153,7 @@ config = AzureOpenAIModelConfiguration(
 pfazure.run(flow="./flow.flex.yaml", init={"model_config": config, "flow_config": {}}, data="./data.jsonl")
 ```
 
+:::
 
 ## Serve
 
