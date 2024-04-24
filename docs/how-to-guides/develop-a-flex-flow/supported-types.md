@@ -28,3 +28,5 @@ class MyFlow:
 def my_flow(my_own_obj: MyOwnClass):
     pass
 ```
+
+Sample validation error: "The input 'my_own_obj' is of a complex python type. Please use a dict instead."

@@ -99,4 +99,4 @@ Build & deploy a flex flow is supported like [DAG flow](../deploy-a-flow/).
 
 - [Class based flex flow](./class-based-flow.md)
 - [Supported types](./supported-types.md)
-- [Function based flex flow sample](../../../examples/flex-flows/basic/)
+- [Function based flex flow sample](https://github.com/microsoft/promptflow/blob/main/examples/flex-flows/basic/README.md)

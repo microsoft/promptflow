@@ -240,5 +240,5 @@ There's several limitations on aggregation support:
 ## Next steps
 
 - [Supported types](./supported-types.md)
-- [Class based flex flow sample](../../../examples/flex-flows/chat-basic/)
-- [Class based flex flow evaluation sample](../../../examples/flex-flows/eval-code-quality/)
+- [Class based flex flow sample](https://github.com/microsoft/promptflow/blob/main/examples/flex-flows/chat-basic/README.md)
+- [Class based flex flow evaluation sample](https://github.com/microsoft/promptflow/blob/main/examples/flex-flows/eval-code-quality/README.md)
