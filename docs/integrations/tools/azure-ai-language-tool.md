@@ -47,7 +47,7 @@ my_document = {
     "language": "en"
 }
 ```
-When a tool parameter is of type `Conversation`, it requires a `dict` object of [this](https://learn.microsoft.com/en-us/rest/api/language/conversation-analysis-runtime/submit-job?view=rest-language-2023-04-01&tabs=HTTP#textconversation) or [this](https://learn.microsoft.com/en-us/rest/api/language/conversation-analysis-runtime/submit-job?view=rest-language-2023-04-01&tabs=HTTP#transcriptconversation) specification.
+When a tool parameter is of type `Conversation`, it requires a `dict` object.
 
 Example:
 ```
