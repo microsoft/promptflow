@@ -145,11 +145,15 @@ def _mock_create_spawned_fork_process_manager(*args, **kwargs):
 
 @pytest.fixture
 def setup_connection_provider():
-    if ConnectionProvider._instance:
-        return
-    connection_dict = json.loads(open(CONNECTION_FILE, "r").read())
-    ConnectionProvider._instance = DictConnectionProvider(connection_dict)
-    return
+    if not ConnectionProvider._instance:
+        connection_dict = json.loads(open(CONNECTION_FILE, "r").read())
+        ConnectionProvider._instance = DictConnectionProvider(connection_dict)
+    # patch get instance as executor run with sub-process and lost class instance
+    with patch(
+        "promptflow.connections.ConnectionProvider.get_instance",
+        return_value=ConnectionProvider._instance,
+    ):
+        yield
 
 
 # ==================== serving fixtures ====================
