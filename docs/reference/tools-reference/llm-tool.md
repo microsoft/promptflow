@@ -1,7 +1,7 @@
 # LLM 
 
 ## Introduction
-Prompt flow LLM tool enables you to leverage widely used large language models like [OpenAI](https://platform.openai.com/) or [Azure OpenAI (AOAI)](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/overview), and models in [Azure AI Studio Model catalog](https://learn.microsoft.com/en-us/azure/ai-studio/how-to/model-catalog) for natural language processing. 
+Prompt flow LLM tool enables you to leverage widely used large language models like [OpenAI](https://platform.openai.com/), [Azure OpenAI (AOAI)](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/overview), and models in [Azure AI Studio Model catalog](https://learn.microsoft.com/en-us/azure/ai-studio/how-to/model-catalog) for natural language processing. 
 > [!NOTE]
 > The previous version of the LLM tool is now being deprecated. Please upgrade to latest [promptflow-tools](https://pypi.org/project/promptflow-tools/) package to consume new llm tools.
 
