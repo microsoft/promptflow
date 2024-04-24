@@ -116,7 +116,7 @@ pf.run(flow=flow_obj, data="./data.jsonl")
 
 ## Serve
 
-User can serve a flex flow like DAG flow. Flow init function's param is supported by `init` parameter.
+User can serve a flex flow. Flow init function's param is supported by `init` parameter.
 The flex flow should have complete init/inputs/outputs specification in YAML to make sure serving swagger can be generated.
 
 User need to write an JSON file as init's value since it's hard to write model config in command line.
