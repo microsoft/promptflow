@@ -9,30 +9,38 @@ class TestTemplateRendering:
     def test_render_template_jinja2(self):
         template = """
         {{flow_input}}
-        {{prompt_result}}
+        {{prompt_result_1}}
+        {{prompt_result_2}}
         {{node_input}}
         """
-        prompt_result = PromptResult("#System:\n")
-        prompt_result.set_escape_string("#fake_uuid:\n")
-        prompt_result.set_escape_mapping({"System": "fake_uuid"})
+        prompt_result_1 = PromptResult("#System:\n")
+        prompt_result_1.set_escape_string("#fake_uuid_1:\n")
+        prompt_result_1.set_escape_mapping({"fake_uuid_1": "System"})
+
+        prompt_result_2 = PromptResult("#System:\n")
+        prompt_result_2.set_escape_string("#fake_uuid_2:\n")
+        prompt_result_2.set_escape_mapping({"fake_uuid_2": "System"})
 
         expected = PromptResult("""
         #Assistant:\n
         #System:\n
+        #System:\n
         #User:\n
         """)
         expected.set_escape_string("""
-        #fake_uuid_1:\n
         #fake_uuid:\n
+        #fake_uuid_1:\n
+        #fake_uuid_2:\n
         #User:\n
         """)
-        expected.set_escape_mapping({"System": "fake_uuid", "Assistant": "fake_uuid_1"})
+        expected.set_escape_mapping({"fake_uuid_1": "System", "fake_uuid_2": "System", "fake_uuid": "Assistant"})
 
-        with patch.object(uuid, 'uuid4', side_effect=['fake_uuid_1', 'fake_uuid_2']):
+        with patch.object(uuid, 'uuid4', return_value='fake_uuid'):
             actual = render_template_jinja2(
                 template,
                 flow_input="#Assistant:\n",
-                prompt_result=prompt_result,
+                prompt_result_1=prompt_result_1,
+                prompt_result_2=prompt_result_2,
                 node_input="#User:\n",
                 _inputs_to_escape=["flow_input"],
             )

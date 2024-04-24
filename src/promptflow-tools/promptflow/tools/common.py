@@ -677,11 +677,18 @@ class Escaper:
             pattern = r"(?i)^\s*#?\s*(" + "|".join(VALID_ROLES) + r")\s*:\s*\n"
             roles = re.findall(pattern, val, flags=re.MULTILINE)
             for role in roles:
-                if role not in escape_dict:
+                if role not in escape_dict.values():
                     # We cannot use a hard-coded hash str for each role, as the same role might be in various case.
                     # For example, the 'system' role may vary in input as 'system', 'System', 'SysteM','SYSTEM', etc.
                     # To convert the escaped roles back to original str, we need to use different uuids for each case.
-                    escape_dict[role] = str(uuid.uuid4())
+                    # Besides, use a uuid as KEY to be able to convert all the escape string back to original role.
+                    # For example:
+                    #  prompt result 1 escape mapping: {'syStem': 'uuid1'}, escape string: 'uuid1'
+                    #  prompt result 2 escape mapping: {'syStem': 'uuid2'}, escape string: 'uuid2'
+                    # In order to convert both uuid1 and uuid2 back, we need to store both uuid1 and uuid2.
+                    # Otherwise if using role as key, the merged dict would be {'syStem': 'uuid2'}.
+                    # So it cannot convert prompt result 2 escape string back.
+                    escape_dict[str(uuid.uuid4())] = role
 
         return escape_dict
 
@@ -696,7 +703,7 @@ class Escaper:
         if isinstance(val, ChatInputList):
             return ChatInputList([Escaper.escape_roles_in_flow_input(item, escape_dict) for item in val])
         elif isinstance(val, str):
-            for role, encoded_role in escape_dict.items():
+            for encoded_role, role in escape_dict.items():
                 val = val.replace(role, encoded_role)
             return val
         else:
@@ -721,13 +728,13 @@ class Escaper:
             return val
 
         if isinstance(val, str):
-            for role, encoded_role in escape_dict.items():
+            for encoded_role, role in escape_dict.items():
                 val = val.replace(encoded_role, role)
             return val
         elif isinstance(val, list):
             for index, item in enumerate(val):
                 if isinstance(item, dict) and "text" in item:
-                    for role, encoded_role in escape_dict.items():
+                    for encoded_role, role in escape_dict.items():
                         val[index]["text"] = item["text"].replace(encoded_role, role)
             return val
         else:

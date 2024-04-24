@@ -613,6 +613,8 @@ class ToolResolver:
         updated_node = copy.deepcopy(node)
         if convert_input_types:
             updated_node = self._convert_node_literal_input_types(updated_node, tool)
+        self._update_inputs_to_escape(updated_node)
+
         callable, init_args = BuiltinsManager._load_package_tool(
             tool.name, tool.module, tool.class_name, tool.function, updated_node.inputs
         )
