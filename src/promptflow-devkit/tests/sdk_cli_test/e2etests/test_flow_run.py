@@ -1835,6 +1835,21 @@ class TestFlowRun:
         )
         assert_batch_run_result(run, pf, assert_func)
 
+    def test_run_yaml_with_init_file(self, pf):
+        def assert_func(details_dict):
+            return details_dict["outputs.func_input"] == [
+                "func_input",
+                "func_input",
+                "func_input",
+                "func_input",
+            ] and details_dict["outputs.obj_input"] == ["val", "val", "val", "val"]
+
+        run = load_run(
+            source=f"{EAGER_FLOWS_DIR}/basic_callable_class/run.yaml",
+        )
+        run = pf.runs.create_or_update(run=run)
+        assert_batch_run_result(run, pf, assert_func)
+
 
 def assert_batch_run_result(run: Run, pf: PFClient, assert_func):
     assert run.status == "Completed"
