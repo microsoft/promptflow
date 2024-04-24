@@ -18,11 +18,7 @@ from promptflow._constants import (
     SpanLinkFieldName,
     SpanStatusFieldName,
 )
-from promptflow._sdk._utils import (
-    convert_time_unix_nano_to_timestamp,
-    flatten_pb_attributes,
-    parse_otel_span_status_code,
-)
+from promptflow._sdk._utils import convert_time_unix_nano_to_timestamp
 from promptflow._sdk.entities._trace import Span
 
 
@@ -44,6 +40,34 @@ def format_trace_id(trace_id: bytes) -> str:
     return f"0x{otel_format_trace_id(int.from_bytes(trace_id, byteorder='big', signed=False))}"
 
 
+def _parse_kv_from_pb_attribute(attribute: typing.Dict) -> typing.Tuple[str, str]:
+    attr_key = attribute["key"]
+    # suppose all values are flattened here
+    # so simply regard the first value as the attribute value
+    attr_value = list(attribute["value"].values())[0]
+    return attr_key, attr_value
+
+
+def _flatten_pb_attributes(attributes: typing.List[typing.Dict]) -> typing.Dict:
+    flattened_attributes = {}
+    for attribute in attributes:
+        attr_key, attr_value = _parse_kv_from_pb_attribute(attribute)
+        flattened_attributes[attr_key] = attr_value
+    return flattened_attributes
+
+
+def _parse_otel_span_status_code(value: int) -> str:
+    # map int value to string
+    # https://github.com/open-telemetry/opentelemetry-specification/blob/v1.22.0/specification/trace/api.md#set-status
+    # https://github.com/open-telemetry/opentelemetry-python/blob/v1.22.0/opentelemetry-api/src/opentelemetry/trace/status.py#L22-L32
+    if value == 0:
+        return "Unset"
+    elif value == 1:
+        return "Ok"
+    else:
+        return "Error"
+
+
 def parse_protobuf_events(obj: typing.List[PBSpan.Event], logger: logging.Logger) -> typing.List[typing.Dict]:
     events = []
     if len(obj) == 0:
@@ -56,7 +80,9 @@ def parse_protobuf_events(obj: typing.List[PBSpan.Event], logger: logging.Logger
             SpanEventFieldName.NAME: pb_event.name,
             # .isoformat() here to make this dumpable to JSON
             SpanEventFieldName.TIMESTAMP: convert_time_unix_nano_to_timestamp(pb_event.time_unix_nano).isoformat(),
-            SpanEventFieldName.ATTRIBUTES: flatten_pb_attributes(event_dict.get(SpanEventFieldName.ATTRIBUTES, dict())),
+            SpanEventFieldName.ATTRIBUTES: _flatten_pb_attributes(
+                event_dict.get(SpanEventFieldName.ATTRIBUTES, dict())
+            ),
         }
         events.append(event)
     return events
@@ -76,7 +102,7 @@ def parse_protobuf_links(obj: typing.List[PBSpan.Link], logger: logging.Logger) 
                 SpanContextFieldName.SPAN_ID: format_span_id(pb_link.span_id),
                 SpanContextFieldName.TRACE_STATE: pb_link.trace_state,
             },
-            SpanLinkFieldName.ATTRIBUTES: flatten_pb_attributes(link_dict.get(SpanLinkFieldName.ATTRIBUTES, dict())),
+            SpanLinkFieldName.ATTRIBUTES: _flatten_pb_attributes(link_dict.get(SpanLinkFieldName.ATTRIBUTES, dict())),
         }
         links.append(link)
     return links
@@ -92,7 +118,7 @@ def parse_protobuf_span(span: PBSpan, resource: typing.Dict, logger: logging.Log
     trace_id = format_trace_id(span.trace_id)
     parent_id = format_span_id(span.parent_span_id) if span.parent_span_id else None
     # we have observed in some scenarios, there is not `attributes` field
-    attributes = flatten_pb_attributes(span_dict.get(SpanFieldName.ATTRIBUTES, dict()))
+    attributes = _flatten_pb_attributes(span_dict.get(SpanFieldName.ATTRIBUTES, dict()))
     logger.debug("Parsed attributes: %s", json.dumps(attributes))
     links = parse_protobuf_links(span.links, logger)
     events = parse_protobuf_events(span.events, logger)
@@ -111,7 +137,7 @@ def parse_protobuf_span(span: PBSpan, resource: typing.Dict, logger: logging.Log
         start_time=convert_time_unix_nano_to_timestamp(span.start_time_unix_nano),
         end_time=convert_time_unix_nano_to_timestamp(span.end_time_unix_nano),
         status={
-            SpanStatusFieldName.STATUS_CODE: parse_otel_span_status_code(span.status.code),
+            SpanStatusFieldName.STATUS_CODE: _parse_otel_span_status_code(span.status.code),
             SpanStatusFieldName.DESCRIPTION: span.status.message,
         },
         attributes=attributes,
