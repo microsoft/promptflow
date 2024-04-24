@@ -4,7 +4,7 @@
 
 __path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
 
-from .relevance import RelevanceEvaluator
+from ._relevance import RelevanceEvaluator
 
 __all__ = [
     "RelevanceEvaluator",

@@ -5,7 +5,7 @@
 __path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
 
 
-from .similarity import SimilarityEvaluator
+from ._similarity import SimilarityEvaluator
 
 __all__ = [
     "SimilarityEvaluator",

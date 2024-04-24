@@ -4,7 +4,7 @@
 
 __path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
 
-from .groundedness import GroundednessEvaluator
+from ._groundedness import GroundednessEvaluator
 
 __all__ = [
     "GroundednessEvaluator",

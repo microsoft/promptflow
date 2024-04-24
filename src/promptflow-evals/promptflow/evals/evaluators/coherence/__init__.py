@@ -4,7 +4,7 @@
 
 __path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
 
-from .coherence import CoherenceEvaluator
+from ._coherence import CoherenceEvaluator
 
 __all__ = [
     "CoherenceEvaluator"

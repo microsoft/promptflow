@@ -4,7 +4,7 @@
 
 __path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
 
-from .fluency import FluencyEvaluator
+from ._fluency import FluencyEvaluator
 
 __all__ = [
     "FluencyEvaluator",

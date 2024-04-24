@@ -51,6 +51,6 @@ class TestSaveEval:
         pf_client.flows.save(F1ScoreEvaluator, path=tmpdir)
         run = pf_client.run(tmpdir, data=data_file)
         results_df = pf_client.get_details(run.name)
-        
+
         assert results_df is not None
         assert results_df["outputs.f1_score"].notnull().all()

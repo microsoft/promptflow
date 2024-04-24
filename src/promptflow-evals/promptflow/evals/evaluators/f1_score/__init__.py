@@ -4,7 +4,7 @@
 
 __path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
 
-from .f1_score import F1ScoreEvaluator
+from ._f1_score import F1ScoreEvaluator
 
 __all__ = [
     "F1ScoreEvaluator",
