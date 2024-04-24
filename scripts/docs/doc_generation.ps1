@@ -150,7 +150,7 @@ function Add-Metadata{
     $NotebookContent.cells = [System.Collections.ArrayList]::new($NotebookContent.cells)
     if($NotebookContent.cells[0].source.Length -gt 1){
         # If the first cell length > 1, indicate there are more things than title it self in the first cell
-        throw "Skip Add Metadata: $NotebookPath - First cell length > 1, only leave title to that cell. $(NotebookContent.cells[0].source)"
+        throw "Skip Add Metadata: $NotebookPath - First cell length > 1, only leave title to that cell."
         return
     }
     $MetadataFormat = "Authored by:&nbsp;{0}{1}"
