@@ -47,16 +47,6 @@ Click the trace url, user will see a trace list that corresponding to each LLM c
 Click on one line record, the LLM detail will be displayed with chat window experience, together with other LLM call params:
 ![LLM-trace-detail](../../media/trace/LLM-trace-detail.png)
 
-Promptflow tracing works for more frameworks like `autogen` and `langchain`:
-
-1. Example: **[Add trace for Autogen](https://github.com/microsoft/promptflow/tree/main/examples/tutorials/tracing/autogen-groupchat/)**
-
-![autogen-trace-detail](../../media/trace/autogen-trace-detail.png)
-
-2. Example: **[Add trace for Langchain](https://github.com/microsoft/promptflow/tree/main/examples/tutorials/tracing/langchain)**
-
-![langchain-trace-detail](../../media/trace/langchain-trace-detail.png)
-
 ### Trace on any function
 A more common scenario is the application has complicated code structure, and developer would like to add trace on critical path that they would like to debug and monitor. 
 
@@ -161,3 +151,20 @@ pf.traces.delete(run="<run-name>")  # delete traces originated from specific pro
 :::
 
 ::::
+
+## Trace with prompt flow
+
+Prompt flow tracing works not only for general LLM application, but also for more frameworks like `autogen` and `langchain`:
+
+<!-- need to add link to this example once we get that page available, otherwise our doc link check will fail -->
+1. Example: **Add trace for LLM**
+
+![llm-trace-detail](../../media/trace/llm-app-trace-detail.png)
+
+2. Example: **[Add trace for Autogen](https://github.com/microsoft/promptflow/tree/main/examples/tutorials/tracing/autogen-groupchat/)**
+
+![autogen-trace-detail](../../media/trace/autogen-trace-detail.png)
+
+3. Example: **[Add trace for Langchain](https://github.com/microsoft/promptflow/tree/main/examples/tutorials/tracing/langchain)**
+
+![langchain-trace-detail](../../media/trace/langchain-trace-detail.png)
