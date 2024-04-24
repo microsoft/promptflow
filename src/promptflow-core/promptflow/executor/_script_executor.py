@@ -381,7 +381,8 @@ class ScriptExecutor(FlowExecutor):
 
                 async def run_sync_function_async(*args, **kwargs):
                     with ThreadPoolExecutorWithContext() as executor:
-                        return executor.submit(aggr_func, *args, **kwargs).result()
+                        partial_func = partial(aggr_func, *args, **kwargs)
+                        return await asyncio.get_event_loop().run_in_executor(executor, partial_func)
 
                 self._aggr_func = aggr_func
                 self._aggr_func_async = run_sync_function_async
