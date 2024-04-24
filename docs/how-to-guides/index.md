@@ -9,6 +9,12 @@ tracing/index
 ```
 
 ```{toctree}
+:caption: FlexFlow
+:maxdepth: 1
+develop-a-flex-flow/index
+```
+
+```{toctree}
 :caption: Flow
 :maxdepth: 1
 develop-a-flow/index
