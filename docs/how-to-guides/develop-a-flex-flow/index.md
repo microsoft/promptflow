@@ -4,7 +4,7 @@
 This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
 :::
 
-Flex flow is short cut for flexible flow. Which means it works for most scenarios with little adjustment.
+Flex flow is short cut for flexible flow, which means it works for most scenarios with little adjustment.
 
 We provide guides on how to develop a flow by writing a flow yaml from scratch in this section.
 
