@@ -13,7 +13,7 @@ In this doc, you will learn:
 ### Text output
 By default, the prompty returns the message of first choices.
 
-```prompty
+```yaml
 ---
 name: Text Format Prompt
 description: A basic prompt that uses the GPT-3 chat API to answer questions
