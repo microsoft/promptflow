@@ -1,35 +1,38 @@
 # Function based flow
 
+:::{admonition} Experimental feature
+This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
+:::
+
 User can directly use a function(see [supported types](./index.md#supported-types) for typing support) as flex flow's entry.
-**Note**: the annotation is not required, user can use `flow save` to provide signatures or write `flow.flex.yaml`.
 
 ## Authoring
 
+
 ```python
+from promptflow.tracing import trace
+
 class Reply(TypedDict):
     output: str
 
 @trace
-def my_flow(text: str) -> Reply: 
+def my_flow(text: str) -> Reply:
+    # flow logic goes here
     pass
 ```
 
+**Note** tracing is supported for flex flow. Check [here](../tracing/) for more information.
+
 ## YAML support
 
-Similar as DAG flow. YAML file is identifier for flex flow.
+Similar as [DAG flow](../deploy-a-flow/). YAML file is identifier for flex flow.
 Flex flow will use `flow.flex.yaml` as it's identifier.
 User can write the YAML file manually or save a function/callable entry to YAML file.
-A complete flex flow YAML may look like this:
+A flex flow YAML may look like this:
 
 ```yaml
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 entry: path.to.module:function_name
-inputs:
-    text:
-        type: string
-outputs:
-    output:
-        type: string
 ```
 
 ## Flow test
@@ -53,15 +56,6 @@ pf flow test --flow path/to/flow --inputs path/to/inputs --ui
 
 Check [here](../chat-with-a-flow) for more information.
 
-## Batch run
-
-User can batch run a flex flow with YAML like DAG flow.
-
-```python
-pf = PFClient()
-pf.run(flow="./flow.flex.yaml", data="./data.jsonl")
-```
-
 ## Batch run without YAML
 
 User can also batch run a flex flow without YAML.
@@ -70,6 +64,15 @@ Instead of calling `pf.save` to create flow YAML first.
 ```python
 # user can also directly use entry in `flow` param for batch run
 pf.run(flow="path.to.module:function_name", data="./data.jsonl")
+```
+
+## Batch run
+
+User can batch run a flex flow with YAML.
+
+```python
+pf = PFClient()
+pf.run(flow="./flow.flex.yaml", data="./data.jsonl")
 ```
 
 Or directly run the imported function.
@@ -82,7 +85,7 @@ pf.run(flow=my_flow, data="./data.json;")
 
 ## Serve
 
-User can serve a flex flow like DAG flow.
+User can serve a flex flow.
 
 ```bash
 pf flow serve --source "./flow.flex.yaml"  --port 8088 --host localhost
@@ -92,7 +95,8 @@ pf flow serve --source "./flow.flex.yaml"  --port 8088 --host localhost
 
 Build & deploy a flex flow is supported like [DAG flow](../deploy-a-flow/).
 
-## Tracing support
+## Next steps
 
-Tracing is supported for flex flow.
-Check [here](../tracing/) for more information.
+- [Class based flex flow](./class-based-flow.md)
+- [Supported types](./supported-types.md)
+- [Function based flex flow sample](../../../examples/flex-flows/basic/)

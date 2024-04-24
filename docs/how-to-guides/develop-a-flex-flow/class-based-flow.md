@@ -1,7 +1,11 @@
 # Class based flow
 
-When user need to persist objects(like connection) in memory during multiple rounds of flow runs.
-They can write a callable class as flex flow's entry and put persist params in `__init__` method.
+:::{admonition} Experimental feature
+This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
+:::
+
+When user need to persist objects (like connection) in memory during multiple rounds of flow runs,
+they can write a callable class as flex flow's entry and put persist params in `__init__` method.
 
 If user need to log metrics on batch run outputs, they can add an `__aggregate__` method and it will be scheduled after batch run finishes.
 The `__aggregate__` method should only contain 1 params which is list of batch run results.
@@ -34,22 +38,11 @@ class MyFlow:
 Similar as DAG flow. YAML file is identifier for flex flow.
 Flex flow will use `flow.flex.yaml` as it's identifier.
 User can write the YAML file manually or save a function/callable entry to YAML file.
-A complete flex flow YAML may look like this:
+A flex flow YAML may look like this:
 
 ```yaml
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 entry: path.to.module:ClassName
-inputs:
-  text:
-    type: string
-outputs:
-  output:
-    type: string
-init:
-  model_config:
-    type: AzureOpenAIModelConfiguration
-  flow_config:
-    type: object
 ```
 
 ## Flow test
@@ -63,7 +56,7 @@ if __name__ == "__main__":
     flow = MyFlow(**init_args)
     output = flow(**call_args)
     metrics = flow.__aggregate__([output])
-    assert metrics == {"expected_key": "expected_value"}
+    # check metrics here
 ```
 
 ## Chat with a flow
@@ -78,7 +71,7 @@ Check [here](../chat-with-a-flow) for more information.
 
 ## Batch run
 
-User can batch run a flex flow with YAML like DAG flow. Flow init function's param is supported by `init` parameter.
+User can batch run a flex flow. Flow init function's param is supported by `init` parameter.
 
 ```python
 pf = PFClient()
@@ -243,3 +236,9 @@ There's several limitations on aggregation support:
   - Each element inside `processed_results` passed passed inside `__aggregate__` function is not same object with each line's `__call__` returns.
   - The reconstructed element is a dictionary which supports 1 layer attribute access. But it's recommended to access them by key. See the above example for usage.
 - If aggregation function accept more than 1 arguments, raise error in submission phase.
+
+## Next steps
+
+- [Supported types](./supported-types.md)
+- [Class based flex flow sample](../../../examples/flex-flows/chat-basic/)
+- [Class based flex flow evaluation sample](../../../examples/flex-flows/eval-code-quality/)
