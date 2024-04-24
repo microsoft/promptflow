@@ -5,8 +5,6 @@
 import datetime
 import typing
 
-from opentelemetry.trace.span import format_span_id, format_trace_id
-
 from promptflow._sdk._constants import TRACE_DEFAULT_COLLECTION, TRACE_LIST_DEFAULT_LIMIT
 from promptflow._sdk._orm.retry import sqlite_retry
 from promptflow._sdk._orm.session import trace_mgmt_db_session
@@ -23,24 +21,6 @@ from promptflow.exceptions import UserErrorException
 class TraceOperations:
     def __init__(self):
         self._logger = get_cli_sdk_logger()
-
-    @staticmethod
-    def format_span_id(span_id: bytes) -> str:
-        """Format span id to hex string.
-        Note that we need to add 0x since it is how opentelemetry-sdk does.
-        Reference: https://github.com/open-telemetry/opentelemetry-python/blob/
-        642f8dd18eea2737b4f8cd2f6f4d08a7e569c4b2/opentelemetry-sdk/src/opentelemetry/sdk/trace/__init__.py#L505
-        """
-        return f"0x{format_span_id(int.from_bytes(span_id, byteorder='big', signed=False))}"
-
-    @staticmethod
-    def format_trace_id(trace_id: bytes) -> str:
-        """Format trace_id id to hex string.
-        Note that we need to add 0x since it is how opentelemetry-sdk does.
-        Reference: https://github.com/open-telemetry/opentelemetry-python/blob/
-        642f8dd18eea2737b4f8cd2f6f4d08a7e569c4b2/opentelemetry-sdk/src/opentelemetry/sdk/trace/__init__.py#L505
-        """
-        return f"0x{format_trace_id(int.from_bytes(trace_id, byteorder='big', signed=False))}"
 
     def get_event(self, event_id: str) -> typing.Dict:
         return Event.get(event_id=event_id)
