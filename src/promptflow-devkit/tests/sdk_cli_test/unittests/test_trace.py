@@ -34,7 +34,7 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._tracing import start_trace_with_devkit
 from promptflow._sdk._tracing_utils import WorkspaceKindLocalCache, append_conditions
-from promptflow._sdk.operations._trace_operations import TraceOperations
+from promptflow._sdk._utils.tracing import parse_protobuf_span
 from promptflow.client import PFClient
 from promptflow.exceptions import UserErrorException
 from promptflow.tracing._operation_context import OperationContext
@@ -150,7 +150,7 @@ class TestStartTrace:
         pb_span.parent_span_id = base64.b64decode("C+++WS+OuxI=")
         pb_span.kind = PBSpan.SpanKind.SPAN_KIND_INTERNAL
         # below line should execute successfully
-        span = TraceOperations._parse_protobuf_span(pb_span, resource=mock_resource, logger=logging.getLogger(__name__))
+        span = parse_protobuf_span(pb_span, resource=mock_resource, logger=logging.getLogger(__name__))
         # as the above span do not have any attributes, so the parsed span should not have any attributes
         assert isinstance(span.attributes, dict)
         assert len(span.attributes) == 0
