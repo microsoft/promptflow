@@ -5,9 +5,9 @@ import json
 import os
 from typing import Any, Dict, List, Mapping
 
-from azureml_user.parallel_run.prompt_flow_entry import MetricsSender
-
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo, Status
+from promptflow.integrations.parallel_run._metrics.sender import MetricsSender
+from promptflow.storage.run_records import LineRunRecord, NodeRunRecord
 
 
 class Metrics:
@@ -22,14 +22,28 @@ class Metrics:
         return json.dumps(self._metrics)
 
 
-class UserMetrics(Metrics):
-    def __init__(self, metrics: Dict[str, Any] = None, sender: MetricsSender = None):
-        super().__init__(metrics, sender)
-
-
 class SystemMetrics(Metrics):
     def __init__(self, metrics: Dict[str, Any] = None, sender: MetricsSender = None):
         super().__init__(metrics, sender)
+
+    def merge_line_run_record(self, line_run_record: LineRunRecord):
+        completed = 1 if Status(line_run_record.status) == Status.Completed else 0
+        self._metrics["__pf__.lines.total"] = self._metrics.get("__pf__.lines.total", 0) + 1
+        self._metrics["__pf__.lines.completed"] = self._metrics.get("__pf__.lines.completed", 0) + completed
+        self._metrics["__pf__.lines.failed"] = (
+            self._metrics["__pf__.lines.total"] - self._metrics["__pf__.lines.completed"]
+        )
+
+    def merge_node_run_record(self, node_run_record: NodeRunRecord):
+        status = Status(node_run_record.status)
+        if node_run_record.line_number is not None:
+            if status in (Status.Completed, Status.Bypassed, Status.Failed):
+                key = f"__pf__.nodes.{node_run_record.node_name}.{node_run_record.status.lower()}"
+                self._metrics[key] = self._metrics.get(key, 0) + 1
+        else:
+            self._metrics[f"__pf__.nodes.{node_run_record.node_name}.completed"] = (
+                1 if status == Status.Completed else 0
+            )
 
     @classmethod
     def from_node_run_infos(cls, node_run_infos: Mapping[str, RunInfo]) -> "SystemMetrics":

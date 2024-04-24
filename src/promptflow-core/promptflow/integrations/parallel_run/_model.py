@@ -3,10 +3,9 @@
 # ---------------------------------------------------------
 import json
 from dataclasses import dataclass
-from typing import Any, Dict, Iterator, Mapping, Optional
+from typing import Any, Iterator, Mapping
 
-from promptflow._utils.utils import DataClassEncoder
-from promptflow.storage.run_records import LineRunRecord, NodeRunRecord
+from promptflow.executor._result import LineResult
 
 
 class Row(Mapping[str, Any]):
@@ -25,7 +24,7 @@ class Row(Mapping[str, Any]):
         return cls.from_dict(d=json.loads(json_str), **kwargs)
 
     @staticmethod
-    def from_dict(d: Dict[str, Any], row_number: int = None) -> "Row":
+    def from_dict(d: Mapping[str, Any], row_number: int = None) -> "Row":
         return Row(source=d, row_number=row_number)
 
     def __getitem__(self, __k: str) -> Any:
@@ -39,22 +38,6 @@ class Row(Mapping[str, Any]):
 
 
 @dataclass
-class DebugInfo:
-    run_info: Optional[LineRunRecord] = None
-    node_run_infos: Optional[Mapping[str, NodeRunRecord]] = None
-
-
-@dataclass
 class Result:
-    output: Mapping[str, Any]
-    aggregation_inputs: Optional[Mapping[str, Any]] = None
-    input: Optional[Row] = None
-    debug_info: Optional[DebugInfo] = None
-
-    def serialize(self) -> str:
-        """Serialize the Result to a JSON string.
-
-        :return: The serialized result
-        :rtype: str
-        """
-        return json.dumps(self, cls=DataClassEncoder)
+    input: Row
+    output: LineResult

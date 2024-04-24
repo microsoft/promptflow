@@ -28,3 +28,7 @@ class ParallelRunConfig:
     connections_override: Optional[Dict[str, str]] = None
     debug_output_dir: Optional[Path] = None
     logging_level: str = "INFO"
+
+    @property
+    def is_debug_enabled(self):
+        return self.logging_level.upper() == "DEBUG" and self.debug_output_dir is not None

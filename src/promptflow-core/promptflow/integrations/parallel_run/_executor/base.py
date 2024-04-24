@@ -6,14 +6,15 @@ import json
 import os
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import Any, Mapping
 
 from promptflow._utils.execution_utils import set_batch_input_source_from_inputs_mapping
 from promptflow._utils.multimedia_utils import persist_multimedia_data
 from promptflow.executor import FlowExecutor, FlowValidator
-from promptflow.executor._result import LineResult
+from promptflow.executor._result import AggregationResult
 from promptflow.integrations.parallel_run._config.model import ParallelRunConfig
 from promptflow.integrations.parallel_run._input_mapping import InputMapping
-from promptflow.integrations.parallel_run._model import Row
+from promptflow.integrations.parallel_run._model import Result, Row
 from promptflow.tracing._operation_context import OperationContext
 
 
@@ -26,17 +27,6 @@ class AbstractExecutor(ABC):
         self._flow_executor = self._create_flow_executor(self._resolve_connections_from_env(), config)
 
         print("PromptFlow executor initiated successfully")
-
-    def init(self):
-        self._setup_context(OperationContext.get_instance())
-        os.chdir(self._resolve_working_dir())
-
-    def execute(self, row: Row) -> LineResult:
-        row = self._input_mapping.apply(row)
-        inputs = FlowValidator.resolve_flow_inputs_type(self._flow_executor._flow, row)
-        executor_result = self._flow_executor.exec_line(inputs, index=row.row_number)
-        executor_result.output = persist_multimedia_data(executor_result.output, base_dir=self._config.output_dir)
-        return executor_result
 
     def _validate_config(self, config: ParallelRunConfig):
         assert config.input_dir is not None, "No input asset found."
@@ -54,6 +44,10 @@ class AbstractExecutor(ABC):
         FlowExecutor.update_environment_variables_with_connections(connections)
         return connections
 
+    def init(self):
+        self._setup_context(OperationContext.get_instance())
+        os.chdir(self._resolve_working_dir())
+
     def _setup_context(self, context: OperationContext):
         context.append_user_agent("ParallelComputing")
         set_batch_input_source_from_inputs_mapping(self._config.input_mapping)
@@ -61,10 +55,22 @@ class AbstractExecutor(ABC):
     def _resolve_working_dir(self) -> Path:
         return self._working_dir
 
+    def execute(self, row: Row) -> Result:
+        row = self._input_mapping.apply(row)
+        inputs = FlowValidator.resolve_flow_inputs_type(self._flow_executor._flow, row)
+        executor_result = self._flow_executor.exec_line(inputs, index=row.row_number)
+        executor_result.output = persist_multimedia_data(executor_result.output, base_dir=self._config.output_dir)
+        return Result(Row.from_dict(inputs), executor_result)
+
+    def execute_aggregation(
+        self, inputs: Mapping[str, Any], aggregation_inputs: Mapping[str, Any]
+    ) -> AggregationResult:
+        return self._flow_executor.exec_aggregation(inputs, aggregation_inputs)
+
     @property
     def _flow_dag(self):
         return self._resolve_working_dir() / "flow.dag.yaml"
 
     @property
-    def is_debug_enabled(self):
-        return self._config.logging_level.upper() == "DEBUG" and self._config.debug_output_dir is not None
+    def has_aggregation_node(self):
+        return self._flow_executor.has_aggregation_node

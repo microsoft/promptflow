@@ -16,7 +16,7 @@ class BulkRunExecutor(AbstractExecutor):
             connections,
             node_override=config.connections_override,
             raise_ex=False,
-            storage=DummyRunStorage() if self.is_debug_enabled else None,
+            storage=DummyRunStorage() if config.is_debug_enabled else None,
         )
 
     def _resolve_working_dir(self) -> Path:
