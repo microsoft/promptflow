@@ -1,10 +1,10 @@
 # Input output format
 
-## Supported types
-
 :::{admonition} Experimental feature
 This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
 :::
+
+## Supported types
 
 We'll only support the following types in flex flow. Flow inits/inputs/outputs without specification will lead to validation error.
 
