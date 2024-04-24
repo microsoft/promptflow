@@ -25,16 +25,6 @@ def answer_evaluator(answer):
     return {"length": len(answer)}
 
 
-def _target_fn(question: str) -> str:
-    """An example target function."""
-    if 'LV-426' in question:
-        return {'answer': 'There is nothing good there.'}
-    if 'central heating' in question:
-        return {'answer': 'There is no central heating on the streets today, but it will be, I promise.'}
-    if 'strange' in question:
-        return {'answer': 'The life is strange...'}
-
-
 @pytest.mark.usefixtures("model_config", "recording_injection", "data_file")
 @pytest.mark.e2etest
 class TestEvaluate:
@@ -98,11 +88,17 @@ class TestEvaluate:
 
     def test_evaluate_with_target(self, questions_file):
         """Test evaluation with target function."""
+        # We cannot define target in this file as pytest will load
+        # all modules in test folder and target_fn will be imported from the first
+        # module named test_evaluate and it will be a different module in unit test
+        # folder. By keeping function in separate file we guarantee, it will be loaded
+        # from there.
+        from .function_test import target_fn
         f1_score_eval = F1ScoreEvaluator()
         # run the evaluation with targets
         result = evaluate(
             data=questions_file,
-            target=_target_fn,
+            target=target_fn,
             evaluators={"answer": answer_evaluator, 'f1': f1_score_eval},
         )
         row_result_df = pd.DataFrame(result["rows"])

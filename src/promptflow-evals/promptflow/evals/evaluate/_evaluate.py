@@ -246,7 +246,7 @@ def evaluate(
             else evaluator_result_df
         )
 
-    if tempfile_created:
+    if tempfile_created and os.path.isfile(data):
         # During the run we have created the temporary file. We will delete it here.
         os.unlink(data)
 
