@@ -253,7 +253,7 @@ pf flow test --flow path/to/prompty.prompty --inputs first_name=John last_name=D
 # Test prompty with sample file
 pf flow test --flow path/to/prompty.prompty --inputs path/to/sample.json
 ```
-A trace link will be provided in the terminal to visualize the internal execution details for this run.
+A trace link will be provided in the terminal to visualize the internal execution details for this command.
 For Prompty, users can find the generated prompt, LLM request parameters, and other information in the trace UI. Learn [more](../tracing/index.md).
 
 ![prompty_test_trace.png](../../media/how-to-guides/prompty/prompty_test_trace.png)
