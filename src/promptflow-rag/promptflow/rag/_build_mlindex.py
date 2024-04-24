@@ -82,7 +82,10 @@ def build_index(
             raise ValueError("Please specify embeddings_model_config.connection_config to use cohere embedding models")
         embeddings_model_uri = None
     else:
-        embeddings_model_uri = build_open_ai_protocol(embeddings_model_config.deployment_name, embeddings_model_config.model_name)
+        embeddings_model_uri = build_open_ai_protocol(
+            embeddings_model_config.deployment_name, 
+            embeddings_model_config.model_name
+        )
 
     if vector_store == "azure_ai_search" and isinstance(input_source, AzureAISearchSource):
         return _create_mlindex_from_existing_ai_search(
