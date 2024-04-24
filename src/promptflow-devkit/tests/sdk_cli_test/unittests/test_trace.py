@@ -33,8 +33,7 @@ from promptflow._sdk._constants import (
     ContextAttributeKey,
 )
 from promptflow._sdk._tracing import start_trace_with_devkit
-from promptflow._sdk._tracing_utils import WorkspaceKindLocalCache
-from promptflow._sdk._utils.tracing import append_conditions, parse_protobuf_span
+from promptflow._sdk._utils.tracing import WorkspaceKindLocalCache, append_conditions, parse_protobuf_span
 from promptflow.client import PFClient
 from promptflow.exceptions import UserErrorException
 from promptflow.tracing._operation_context import OperationContext
