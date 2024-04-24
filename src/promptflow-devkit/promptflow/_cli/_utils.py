@@ -442,8 +442,8 @@ def get_instance_results(path: Union[str, Path]) -> List[Dict]:
             for line in f:
                 data = json.loads(line)
                 run_info = data.get("run_info", {})
-                inputs = run_info.get("inputs", {})
-                output = run_info.get("output", {})
+                inputs = run_info.get("inputs", None) or {}
+                output = run_info.get("output", None) or {}  # output can be None for some cases
                 record = {
                     "line_number": data.get("line_number"),
                     "status": run_info.get("status"),
