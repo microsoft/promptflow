@@ -4,26 +4,23 @@
 This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
 :::
 
-Flex flow is short cut for flexible flow. Which means it works for most scenarios with little adjustment.
+You can create LLM apps using a Python function or class as the entry point, which encapsulating your app logic. You can directly test or run these entries with pure code experience. 
 
-We provide guides on how to develop a flow by writing a flow yaml from scratch in this section.
+In PromptFlow, these functions or classes are referred to as `flex flow`. 
 
-Flex flow provides a new way to deploy your LLM app in prompt flow.
-Which has the following benifits:
+Alternatively, you can define a `flow.flex.yaml` that points to these entries (`entry:function_name` or `entry:ClassName`). This enables testing, running, or viewing traces via the [Promptflow VS Code Extension](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow).
 
-- Quick start (playground experience). Users can quickly test with prompt + python code with UI visualize experience. For example, user don't necessarily have to create YAML to run flex flow. See [batch run without YAML](./function-based-flow.md#batch-run-without-yaml) for more information.
-- More advanced orchestration. Users can write complex flow with Python built-in control operators (if-else, foreach) or other 3rd party / open-source library. 
-- Easy onboard from other platforms: other platforms like langchain and sematic kernel already have code first flow authoring experience. We can onboard those customers with a few code changes.
+Our [examples](https://github.com/microsoft/promptflow/tree/main/examples/flex-flows) should give you a good idea on how to write `flex flows`.
 
-## Stream
+Note: 
+- The term *Flex* is a shorthand for *flexible*, indicating its adaptability to most scenarios with minimal adjustments.
+- PromptFlow also supports the development of a `dag flow`. learn more on comparasion of these two [flow concepts](../../concepts/concept-flows.md).
 
-Stream is supported in flex flow.
-Reference this [sample](https://microsoft.github.io/promptflow/tutorials/stream-flex-flow.html) for details.
 
 ```{toctree}
 :maxdepth: 1
 
 function-based-flow
 class-based-flow
-supported-types
+input-output-format
 ```

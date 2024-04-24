@@ -4,7 +4,7 @@
 This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
 :::
 
-User can directly use a function(see [supported types](./supported-types.md) for typing support) as flex flow's entry.
+User can directly use a function (see [supported types](./input-output-format.md#supported-types) for typing support) as flex flow's entry.
 
 ## Authoring
 
@@ -93,10 +93,10 @@ pf flow serve --source "./flow.flex.yaml"  --port 8088 --host localhost
 
 ## Build & deploy
 
-Build & deploy a flex flow is supported like [DAG flow](../deploy-a-flow/index.md).
+Build & deploy a flex flow is supported, see [Deploy a flow](../deploy-a-flow/index.md).
 
 ## Next steps
 
 - [Class based flex flow](./class-based-flow.md)
-- [Supported types](./supported-types.md)
+- [Input output format](./input-output-format.md)
 - [Function based flex flow sample](https://github.com/microsoft/promptflow/blob/main/examples/flex-flows/basic/README.md)

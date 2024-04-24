@@ -1,4 +1,6 @@
-# Supported types
+# Input output format
+
+## Supported types
 
 :::{admonition} Experimental feature
 This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
@@ -30,3 +32,10 @@ def my_flow(my_own_obj: MyOwnClass):
 ```
 
 Sample validation error: "The input 'my_own_obj' is of a complex python type. Please use a dict instead."
+
+
+
+## Stream
+
+Stream is supported in flex flow.
+Reference this [sample](https://microsoft.github.io/promptflow/tutorials/stream-flex-flow.html) for details.
