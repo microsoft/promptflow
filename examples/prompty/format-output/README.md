@@ -63,7 +63,7 @@ pf flow test --flow stream_output.prompty
 # start test in interactive terminal (TODO)
 pf flow test --flow stream_output.prompty --interactive
 
-# start test in chat ui (TODO)
+# start test in chat ui
 pf flow test --flow stream_output.prompty --ui
 ```
 

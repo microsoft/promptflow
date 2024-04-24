@@ -70,7 +70,7 @@ pf flow test --flow chat.prompty --inputs sample.json
 # start test in interactive terminal (TODO)
 pf flow test --flow chat.prompty --interactive
 
-# start test in chat ui (TODO)
+# start test in chat ui
 pf flow test --flow chat.prompty --ui
 ```
 
