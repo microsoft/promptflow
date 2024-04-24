@@ -4,7 +4,7 @@
 This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
 :::
 
-User can directly use a function(see [supported types](./index.md#supported-types) for typing support) as flex flow's entry.
+User can directly use a function(see [supported types](./supported-types.md) for typing support) as flex flow's entry.
 
 ## Authoring
 
@@ -21,11 +21,11 @@ def my_flow(text: str) -> Reply:
     pass
 ```
 
-**Note** tracing is supported for flex flow. Check [here](../tracing/) for more information.
+**Note** tracing is supported for flex flow. Check [here](../tracing/index.md) for more information.
 
 ## YAML support
 
-Similar as [DAG flow](../deploy-a-flow/). YAML file is identifier for flex flow.
+Similar as [DAG flow](../deploy-a-flow/index.md). YAML file is identifier for flex flow.
 Flex flow will use `flow.flex.yaml` as it's identifier.
 User can write the YAML file manually or save a function/callable entry to YAML file.
 A flex flow YAML may look like this:
@@ -54,7 +54,7 @@ Chat with flex flow in CLI is supported:
 pf flow test --flow path/to/flow --inputs path/to/inputs --ui
 ```
 
-Check [here](../chat-with-a-flow) for more information.
+Check [here](../chat-with-a-flow/index.md) for more information.
 
 ## Batch run without YAML
 
@@ -93,7 +93,7 @@ pf flow serve --source "./flow.flex.yaml"  --port 8088 --host localhost
 
 ## Build & deploy
 
-Build & deploy a flex flow is supported like [DAG flow](../deploy-a-flow/).
+Build & deploy a flex flow is supported like [DAG flow](../deploy-a-flow/index.md).
 
 ## Next steps
 

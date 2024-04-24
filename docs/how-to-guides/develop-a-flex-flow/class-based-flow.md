@@ -66,7 +66,7 @@ Chat with flex flow in CLI is supported:
 pf flow test --flow path/to/flow --inputs path/to/inputs --init path/to/init --ui
 ```
 
-Check [here](../chat-with-a-flow) for more information.
+Check [here](../chat-with-a-flow/index.md) for more information.
 
 ## Batch run without YAML
 
@@ -139,7 +139,7 @@ pf flow serve --source "./"  --port 8088 --host localhost --init path/to/init.js
 
 ## Build & deploy
 
-Build & deploy a flex flow is supported like [DAG flow](../deploy-a-flow/).
+Build & deploy a flex flow is supported like [DAG flow](../deploy-a-flow/index.md).
 
 ## Connection support
 
