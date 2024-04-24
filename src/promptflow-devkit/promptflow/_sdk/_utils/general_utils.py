@@ -1046,23 +1046,6 @@ def is_flex_run(run: "Run") -> bool:
     return False
 
 
-def format_signature_type(flow_meta):
-    # signature is language irrelevant, so we apply json type system
-    # TODO: enable this mapping after service supports more types
-    value_type_map = {
-        # ValueType.INT.value: SignatureValueType.INT.value,
-        # ValueType.DOUBLE.value: SignatureValueType.NUMBER.value,
-        # ValueType.LIST.value: SignatureValueType.ARRAY.value,
-        # ValueType.BOOL.value: SignatureValueType.BOOL.value,
-    }
-    for port_type in ["inputs", "outputs", "init"]:
-        if port_type not in flow_meta:
-            continue
-        for port_name, port in flow_meta[port_type].items():
-            if port["type"] in value_type_map:
-                port["type"] = value_type_map[port["type"]]
-
-
 generate_flow_meta = _generate_flow_meta
 # DO NOT remove the following line, it's used by the runtime imports from _sdk/_utils directly
 get_used_connection_names_from_dict = get_used_connection_names_from_dict
