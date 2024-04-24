@@ -945,6 +945,20 @@ def overwrite_null_std_logger():
         sys.stderr = sys.stdout
 
 
+def generate_yaml_entry_without_recover(entry: Union[str, PathLike, Callable], code: Path = None):
+    """Generate yaml entry to run, will directly overwrite yaml if it already exists and not delete generated yaml."""
+    from promptflow._proxy import ProxyFactory
+
+    executor_proxy = ProxyFactory().get_executor_proxy_cls(FlowLanguage.Python)
+    if callable(entry) or executor_proxy.is_flex_flow_entry(entry=entry):
+        flow_yaml_path, _ = create_temp_flex_flow_yaml_core(entry, code)
+        return flow_yaml_path
+    else:
+        if code:
+            logger.warning(f"Specify code {code} is only supported for Python flex flow entry, ignoring it.")
+        return entry
+
+
 @contextmanager
 def generate_yaml_entry(entry: Union[str, PathLike, Callable], code: Path = None):
     """Generate yaml entry to run."""
@@ -960,10 +974,7 @@ def generate_yaml_entry(entry: Union[str, PathLike, Callable], code: Path = None
         yield entry
 
 
-@contextmanager
-def create_temp_flex_flow_yaml(entry: Union[str, PathLike, Callable], code: Path = None):
-    """Create a temporary flow.dag.yaml in code folder"""
-
+def create_temp_flex_flow_yaml_core(entry: Union[str, PathLike, Callable], code: Path = None):
     logger.info("Create temporary entry for flex flow.")
     if callable(entry):
         entry = callable_to_entry_string(entry)
@@ -977,13 +988,20 @@ def create_temp_flex_flow_yaml(entry: Union[str, PathLike, Callable], code: Path
     flow_yaml_path = code / FLOW_FLEX_YAML
     existing_content = None
 
+    if flow_yaml_path.exists():
+        logger.warning(f"Found existing {flow_yaml_path.as_posix()}, will not respect it in runtime.")
+        with open(flow_yaml_path, "r", encoding=DEFAULT_ENCODING) as f:
+            existing_content = f.read()
+    with open(flow_yaml_path, "w", encoding=DEFAULT_ENCODING) as f:
+        dump_yaml({"entry": entry}, f)
+    return flow_yaml_path, existing_content
+
+
+@contextmanager
+def create_temp_flex_flow_yaml(entry: Union[str, PathLike, Callable], code: Path = None):
+    """Create a temporary flow.dag.yaml in code folder"""
+    flow_yaml_path, existing_content = create_temp_flex_flow_yaml_core(entry, code)
     try:
-        if flow_yaml_path.exists():
-            logger.warning(f"Found existing {flow_yaml_path.as_posix()}, will not respect it in runtime.")
-            with open(flow_yaml_path, "r", encoding=DEFAULT_ENCODING) as f:
-                existing_content = f.read()
-        with open(flow_yaml_path, "w", encoding=DEFAULT_ENCODING) as f:
-            dump_yaml({"entry": entry}, f)
         yield flow_yaml_path
     finally:
         # delete the file or recover the content
