@@ -62,6 +62,12 @@ class TestEagerFlow:
                 lambda x: x["obj_input"] == "obj_input" and x["func_input"] == "func_input",
                 {"obj_input": "obj_input"},
             ),
+            (
+                "callable_class_with_primitive",
+                {"func_input": "${data.func_input}"},
+                lambda x: x["output"] == "The object input is obj_input and the function input is func_input",
+                {"obj_input": "obj_input"},
+            ),
         ],
     )
     def test_batch_run(self, flow_folder, inputs_mapping, ensure_output, init_kwargs):

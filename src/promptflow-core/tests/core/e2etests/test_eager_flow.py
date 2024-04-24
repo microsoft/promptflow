@@ -65,6 +65,12 @@ class TestEagerFlow:
                 {"obj_input": "obj_input"},
             ),
             (
+                "callable_class_with_primitive",
+                {"func_input": "func_input"},
+                lambda x: x == "The object input is obj_input and the function input is func_input",
+                {"obj_input": "obj_input"},
+            ),
+            (
                 "basic_model_config",
                 {"func_input": "input"},
                 lambda x: x["azure_open_ai_model_config_azure_endpoint"] == "fake_endpoint",
