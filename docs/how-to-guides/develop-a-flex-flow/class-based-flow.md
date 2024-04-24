@@ -152,16 +152,94 @@ Build & deploy a flex flow is supported like [DAG flow](../deploy-a-flow/).
 
 ### Model config in `__init__`
 
-
+Just like example in [batch run](#batch-run), it's supported to reference connection in ModelConfig.
+And connection will be resolved and flatten connection's fields to ModelConfig.
 
 ### Connection in `__init__`
 
+It's also supported to directly pass connection by **name** in `__init__`. 
+
+```python
+class MyFlow:
+    def __init__(self, my_connection: AzureOpenAIConnection):
+        pass
+```
+
+Note:
+
+- Union of connection types(`Union[OpenAIConnection, AzureOpenAIConnection]`) is not supported.
+
+#### Batch run with connection
+
+User can pass connection name to connection field in `init`.
+
+In local, the connection name will be replaced with local connection object in execution time.
+In cloud, the connection name will be replaced with workspace's connection object in execution time.
+
+```python
+# local connection "my_connection"'s instance will be passed to `__init__`
+pf.run(flow="./flow.flex.yaml", init={"connection": "my_connection"}, data="./data.jsonl")
+# cloud connection "my_cloud_connection"'s instance will be passed to `__init__`
+pfazure.run(flow="./flow.flex.yaml", init={"connection": "my_cloud_connection"}, data="./data.jsonl")
+```
+
 ### Environment variable connections(EVC)
 
+If flex flow's YAML has `environment_variables` and it's value is a connection reference like this:
+
+```yaml
+environment_variables:
+  AZURE_OPENAI_API_KEY: ${open_ai_connection.api_key}
+  AZURE_OPENAI_ENDPOINT: ${open_ai_connection.api_base}
+```
+
+The environment variable's value will be resolved to actual value in runtime.
+If the connection not exist (in local or cloud), connection not found error will be raised.
+
+**Note**: User can override the `environment_variables` with existing environment variable keys in `flow.flex.yaml`:
+
+```bash
+pf run create --flow . --data ./data.jsonl --environment-variables AZURE_OPENAI_API_KEY='${new_connection.api_key}' AZURE_OPENAI_ENDPOINT='my_endpoint'
+```
+
+Overriding with environment variable names which not exist in `flow.flex.yaml` is not supported.
+Which means if user added environment variables which does not exist in `flow.flex.yaml` in runtime, it's value won't be resolved.
+
+For example,
+
+```bash
+pf run create --flow . --data ./data.jsonl --environment-variables NEW_API_KEY='${my_new_connection.api_key}'
+```
+
+The `NEW_API_KEY`'s value won't be resolved to connection's API key.
 
 ## Aggregation support (metrics)
 
+```python
+class MyFlow:
+    def __call__(text: str) -> str:
+      """Flow execution logic goes here."""
+      pass
 
-**Note**: 
+    # will only execute once after batch run finished.
+    # the processed_results will be list of __call__'s output and we will log the return value as metrics automatically.
+    def __aggregate__(self, processed_results: List[str]) -> dict:
+        for element in processed_results:
+            # If __call__'s output is primitive type, element will be primitive type.
+            # If __call__'s output is dataclass, element will be a dictionary, but can access it's attribute with `element.attribute_name`
+            # For other cases, it's recommended to access by key `element["attribute_name"]`
 
-1. The actual `line_results` passed inside `__aggregate__` function is not same object with each line's `__call__` returns.
+```
+
+**Note**:
+
+There's several limitations on aggregation support:
+
+- Referencing node outputs is not supported (there’s no node concept in flex flow).
+- The aggregation function will only execute in batch run.
+- Only 1 hard coded `__aggregate__` function is supported.
+- The `__aggregate__` will only be passed **1** positional arguments when executing.
+- The aggregation function’s input will be flow run’s outputs list.
+  - Each element inside `processed_results` passed passed inside `__aggregate__` function is not same object with each line's `__call__` returns.
+  - The reconstructed element is a dictionary which supports 1 layer attribute access. But it's recommended to access them by key. See the above example for usage.
+- If aggregation function accept more than 1 arguments, raise error in submission phase.
