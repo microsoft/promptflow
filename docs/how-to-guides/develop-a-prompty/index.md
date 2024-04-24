@@ -105,41 +105,41 @@ user:
 
 Users can specify alternative parameters or utilize environment variables to adjust the model settings. The format `${env:ENV_NAME}` is used to reference environment variables.
 
-#### Using a dictionary
+- Using a dictionary
 
-```python
-from promptflow.core import Prompty
+    ```python
+    from promptflow.core import Prompty
+    
+    # Load prompty with dict override
+    override_model = {
+        "configuration": {
+            "api_key": "${env:AZURE_OPENAI_API_KEY}",
+            "api_version": "${env:AZURE_OPENAI_API_VERSION}",
+            "azure_endpoint": "${env:AZURE_OPENAI_ENDPOINT}"
+        },
+        "parameters": {"max_tokens": 512}
+    }
+    prompty = Prompty.load(source="path/to/prompty.prompty", model=override_model)
+    ```
 
-# Load prompty with dict override
-override_model = {
-    "configuration": {
-        "api_key": "${env:AZURE_OPENAI_API_KEY}",
-        "api_version": "${env:AZURE_OPENAI_API_VERSION}",
-        "azure_endpoint": "${env:AZURE_OPENAI_ENDPOINT}"
-    },
-    "parameters": {"max_tokens": 512}
-}
-prompty = Prompty.load(source="path/to/prompty.prompty", model=override_model)
-```
+- Using AzureOpenAIModelConfiguration:
 
-#### Using AzureOpenAIModelConfiguration:
-
-```python
-from promptflow.core import Prompty, AzureOpenAIModelConfiguration
-
-# Load prompty with AzureOpenAIModelConfiguration override
-configuration = AzureOpenAIModelConfiguration(
-    azure_deployment="gpt-3.5-turbo",
-    api_key="${env:AZURE_OPENAI_API_KEY}",
-    api_version="${env:AZURE_OPENAI_API_VERSION}",
-    azure_endpoint="${env:AZURE_OPENAI_ENDPOINT}"
-)
-override_model = {
-    "configuration": configuration,
-    "parameters": {"max_tokens": 512}
-}
-prompty = Prompty.load(source="path/to/prompty.prompty", model=override_model)
-```
+    ```python
+    from promptflow.core import Prompty, AzureOpenAIModelConfiguration
+    
+    # Load prompty with AzureOpenAIModelConfiguration override
+    configuration = AzureOpenAIModelConfiguration(
+        azure_deployment="gpt-3.5-turbo",
+        api_key="${env:AZURE_OPENAI_API_KEY}",
+        api_version="${env:AZURE_OPENAI_API_VERSION}",
+        azure_endpoint="${env:AZURE_OPENAI_ENDPOINT}"
+    )
+    override_model = {
+        "configuration": configuration,
+        "parameters": {"max_tokens": 512}
+    }
+    prompty = Prompty.load(source="path/to/prompty.prompty", model=override_model)
+    ```
 
 :::
 
@@ -182,39 +182,39 @@ user:
 ```
 Users can specify alternative parameters or utilize environment variables to adjust the model settings. The format `${env:ENV_NAME}` is used to reference environment variables.
 
-#### Using a dictionary
+- Using a dictionary
 
-```python
-from promptflow.core import Prompty
+    ```python
+    from promptflow.core import Prompty
+    
+    # Load prompty with dict override
+    override_model = {
+        "configuration": {
+            "api_key": "${env:OPENAI_API_KEY}",
+            "base_url": "${env:OPENAI_BASE_URL}",
+        },
+        "parameters": {"max_tokens": 512}
+    }
+    prompty = Prompty.load(source="path/to/prompty.prompty", model=override_model)
+    ```
 
-# Load prompty with dict override
-override_model = {
-    "configuration": {
-        "api_key": "${env:OPENAI_API_KEY}",
-        "base_url": "${env:OPENAI_BASE_URL}",
-    },
-    "parameters": {"max_tokens": 512}
-}
-prompty = Prompty.load(source="path/to/prompty.prompty", model=override_model)
-```
+- Using OpenAIModelConfiguration
 
-#### Using OpenAIModelConfiguration
-
-```python
-from promptflow.core import Prompty, OpenAIModelConfiguration
-
-# Load prompty with OpenAIModelConfiguration override
-configuration = OpenAIModelConfiguration(
-    model="gpt-35-turbo",
-    base_url="${env:OPENAI_BASE_URL}",
-    api_key="${env:OPENAI_API_KEY}",
-)
-override_model = {
-    "configuration": configuration,
-    "parameters": {"max_tokens": 512}
-}
-prompty = Prompty.load(source="path/to/prompty.prompty", model=override_model)
-```
+    ```python
+    from promptflow.core import Prompty, OpenAIModelConfiguration
+    
+    # Load prompty with OpenAIModelConfiguration override
+    configuration = OpenAIModelConfiguration(
+        model="gpt-35-turbo",
+        base_url="${env:OPENAI_BASE_URL}",
+        api_key="${env:OPENAI_API_KEY}",
+    )
+    override_model = {
+        "configuration": configuration,
+        "parameters": {"max_tokens": 512}
+    }
+    prompty = Prompty.load(source="path/to/prompty.prompty", model=override_model)
+    ```
 
 :::
 ::::
@@ -286,7 +286,7 @@ Promptflow CLI also provides an interactive chat session for testing chat flows.
 pf flow test --flow path/to/prompty.prompty --interactive
 ```
 
-```yaml
+```text
 ---
 name: Basic Prompt With Chat History
 description: A basic prompt that uses the GPT-3 chat API to answer questions

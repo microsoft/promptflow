@@ -10,7 +10,7 @@ Because Prompty can be called as a function, user can use prompty in flex flow.
 ## Create a flex flow with prompty
 
 prompty
-```yaml
+```text
 ---
 name: Stream Chat
 description: Chat with stream enabled.
