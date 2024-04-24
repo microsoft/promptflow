@@ -11,7 +11,7 @@ In promptflow, a file with a `.prompty` extension will be treated as a prompty.
 
 ### Prompty specification
 The prompty asset is a markdown file with a modified front matter. 
-The front matter is in yaml format that contains a number of metadata fields which defines model configuration and expected inputs of the prompty. And the following content is the prompt template in jinja2 format.
+The front matter is in yaml format that contains a number of metadata fields which defines model configuration and expected inputs of the prompty. And the following content is the prompt template in jinja format.
 
 Fields in the front matter:
 
