@@ -39,7 +39,6 @@ from promptflow._core.tools_manager import (
     ToolsManager,
     builtins,
     collect_package_tools,
-    gen_dynamic_list,
     register_apis,
     register_builtins,
     register_connections,
@@ -107,11 +106,10 @@ from promptflow.core._serving.swagger import generate_swagger
 from promptflow.core._serving.utils import (
     get_output_fields_to_remove,
     get_sample_json,
-    handle_error_to_response,
     load_request_data,
-    streaming_response_required,
     validate_request_data,
 )
+from promptflow.core._serving.v1.utils import handle_error_to_response, streaming_response_required
 from promptflow.core._utils import (
     get_used_connection_names_from_environment_variables,
     update_environment_variables_with_connections,

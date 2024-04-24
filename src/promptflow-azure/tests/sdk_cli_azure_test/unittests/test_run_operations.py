@@ -126,6 +126,7 @@ class TestRunOperations:
         from promptflow._sdk.operations import RunOperations
 
         mocked = mocker.patch.object(RunOperations, "get")
+        mocked.return_value.run = None
         mocked.return_value.status = "Completed"
         mocker.patch.object(pf.runs, "_workspace_default_datastore", "test")
         with pytest.raises(UserErrorException, match="workspace default datastore is not supported"):

@@ -5,7 +5,10 @@ from functools import partial
 from pathlib import Path
 from typing import Any, Callable
 
-from promptflow._utils.multimedia_utils import BasicMultimediaProcessor
+from promptflow._constants import MessageFormatType
+from promptflow._utils._errors import InvalidMessageFormatType
+from promptflow._utils.multimedia_utils import BasicMultimediaProcessor, ImageProcessor, OpenaiVisionMultimediaProcessor
+from promptflow.contracts.flow import Flow
 
 
 class ResourceType(Enum):
@@ -42,7 +45,7 @@ class AbstractMultimediaFormatAdapter:
     of the multimedia resource.
     The multimedia data is typically represented as a dictionary
     with keys and values conforming to a specific multimedia data contract.
-    One multimedia data example from 20231201 version: {"data:image/jpg;path": "logo.jpg"}
+    One multimedia data example from basic message format type: {"data:image/jpg;path": "logo.jpg"}
     """
 
     # Check if the original_data is a multimedia format according to the current contract version.
@@ -52,23 +55,25 @@ class AbstractMultimediaFormatAdapter:
     def extract_info(self, original_data: Any) -> MultimediaInfo:
         """
         Get the MultimediaInfo from the original data. Will include mime_type, resource_type, and content.
-        Below is an example for the 20231201 version:
+        Below is an example for basic message format type:
         {"data:image/jpg;path": "logo.jpg"} -> "image/jpg", "path", "logo.jpg"
         """
         raise NotImplementedError()
 
     def create_data(self, info: MultimediaInfo) -> Any:
         """
-        Create multimedia data from info. Below is an example for the 20231201 version:
+        Create multimedia data from info. Below is an example for basic message format type:
         "image/jpg", "path", "logo.jpg" -> {"data:image/jpg;path": "logo.jpg"}
         """
         raise NotImplementedError()
 
 
-class MultimediaFormatAdapter20231201(AbstractMultimediaFormatAdapter):
+class BasicMultimediaFormatAdapter(AbstractMultimediaFormatAdapter):
     """
-    20231201 version is our first contract's version, supports text and images (path/url/base64).
-    20231201 is the version number assigned by the customer in the YAML file.
+    Basic is our first multimedia contract's message format type,
+    supports text and images (path/url/base64).
+    Users can specify this version in the yaml file by configuring "message_format: basic".
+    If the user does not specify message_format, we will also use the default value "basic".
     Path format example: {"data:image/jpg;path": "logo.jpg"}
     Url format example: {"data:image/jpg;url": "https://example.com/logo.jpg"}
     Base64 format example: {"data:image/jpg;base64": "base64 string"}
@@ -92,6 +97,44 @@ class MultimediaFormatAdapter20231201(AbstractMultimediaFormatAdapter):
 
     def create_data(self, info: MultimediaInfo):
         return {f"data:{info.mime_type};{info.resource_type.value}": info.content}
+
+
+class OpenaiVisionMultimediaFormatAdapter(AbstractMultimediaFormatAdapter):
+    """
+    OpenaiVision is Image only openai-adapted multimedia contract's message format type,
+    supports text and images (path/url/base64).
+    Users can specify this version in the yaml file by configuring "message_format: openai-vision"
+    Path format example: {"type": "image_file", "image_file": {"path": "logo.jpg"}}
+    Url format example: {"type": "image_url", "image_url": {"url": "https://example.com/logo.jpg"}}
+    Base64 format example: {"type": "image_url", "image_url": {"url": "data:image/jpg;base64, some_b64_string"}}
+    """
+
+    def is_valid_format(self, original_data: Any):
+        return isinstance(original_data, dict) and OpenaiVisionMultimediaProcessor.is_multimedia_dict(original_data)
+
+    def extract_info(self, original_data: Any) -> MultimediaInfo:
+        if not self.is_valid_format(original_data):
+            return None
+
+        image_type = original_data["type"]
+        if image_type == "image_file":
+            # openai-vision image_dict does not contain mime_type, just use the default value "image/*" here.
+            # If we need to use mime_type in the MultimediaConverter in the future,
+            # we can convert image_dict to image object and then obtain mime_type from it. Not necessary now.
+            return MultimediaInfo("image/*", ResourceType.PATH, original_data["image_file"]["path"])
+        if image_type == "image_url":
+            image_url = original_data["image_url"]["url"]
+            if ImageProcessor.is_base64(image_url):
+                return MultimediaInfo("image/*", ResourceType.BASE64, image_url)
+            if ImageProcessor.is_url(image_url):
+                return MultimediaInfo("image/*", ResourceType.URL, image_url)
+        return None
+
+    def create_data(self, info: MultimediaInfo):
+        if info.resource_type == ResourceType.PATH:
+            return {"type": "image_file", "image_file": {"path": info.content}}
+        else:
+            return {"type": "image_url", "image_url": {"url": info.content}}
 
 
 class AbstractMultimediaInfoConverter:
@@ -119,7 +162,18 @@ class MultimediaConverter:
         # TODO: read flow.MessageFormatType from flow yaml file.
         # Implement the format_adapter class for the openai-vision type.
         # Then initialize the format_adapter for different MessageFormatType.
-        self.format_adapter = MultimediaFormatAdapter20231201()
+        message_format_type = Flow.load_message_format_from_yaml(flow_file)
+        if not message_format_type or message_format_type.lower() == MessageFormatType.BASIC:
+            self.format_adapter = BasicMultimediaFormatAdapter()
+        elif message_format_type.lower() == MessageFormatType.OPENAI_VISION:
+            self.format_adapter = OpenaiVisionMultimediaFormatAdapter()
+        else:
+            raise InvalidMessageFormatType(
+                message_format=(
+                    f"Invalid message format '{message_format_type}'. "
+                    "Supported message formats are ['basic', 'openai-vision']."
+                ),
+            )
 
     def convert_content_recursively(self, content: Any, client_converter: AbstractMultimediaInfoConverter):
         """

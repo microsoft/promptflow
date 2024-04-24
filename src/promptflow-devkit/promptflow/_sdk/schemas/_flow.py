@@ -10,6 +10,7 @@ from promptflow._sdk._constants import FlowType
 from promptflow._sdk.schemas._base import PatchedSchemaMeta, YamlFileSchema
 from promptflow._sdk.schemas._fields import NestedField
 from promptflow.contracts.tool import ValueType
+from promptflow.core._model_configuration import MODEL_CONFIG_NAME_2_CLASS
 
 
 class FlowInputSchema(metaclass=PatchedSchemaMeta):
@@ -87,6 +88,7 @@ class FlexFlowInitSchema(FlowInputSchema):
             + list(
                 map(lambda x: f"{x.value}Connection", filter(lambda x: x != ConnectionType._NOT_SET, ConnectionType))
             )
+            + list(MODEL_CONFIG_NAME_2_CLASS.keys())
         ),
     )
 

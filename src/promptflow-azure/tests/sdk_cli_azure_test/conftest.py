@@ -4,10 +4,11 @@
 
 import logging
 import os
+import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Callable
+from typing import Callable, TypedDict
 from unittest.mock import patch
 
 import jwt
@@ -21,7 +22,7 @@ from _constants import (
     DEFAULT_WORKSPACE_NAME,
 )
 from azure.core.exceptions import ResourceNotFoundError
-from mock import mock
+from mock import MagicMock, mock
 from pytest_mock import MockerFixture
 
 from promptflow._sdk._constants import FlowType, RunStatus
@@ -31,7 +32,7 @@ from promptflow.azure import PFClient
 from promptflow.azure._entities._flow import Flow
 
 try:
-    from promptflow.recording.record_mode import is_live, is_record, is_replay
+    from promptflow.recording.record_mode import is_in_ci_pipeline, is_live, is_record, is_replay
 except ImportError:
 
     def is_live():
@@ -41,6 +42,9 @@ except ImportError:
         return False
 
     def is_replay():
+        return False
+
+    def is_in_ci_pipeline():
         return False
 
 
@@ -54,6 +58,7 @@ DATAS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/datas"
 AZUREML_RESOURCE_PROVIDER = "Microsoft.MachineLearningServices"
 RESOURCE_ID_FORMAT = "/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}"
 MODEL_ROOT = FLOWS_DIR
+COUNTER_FILE = (Path(__file__) / "../count.json").resolve()
 
 
 def pytest_configure():
@@ -614,15 +619,116 @@ def mock_check_latest_version() -> None:
 
 
 @pytest.fixture
-def mock_trace_provider_to_cloud(
-    subscription_id: str,
-    resource_group_name: str,
-    workspace_name: str,
-) -> None:
-    """Mock trace provider to cloud."""
-    trace_provider = (
+def mock_trace_destination_to_cloud(subscription_id: str, resource_group_name: str, workspace_name: str):
+    """Mock trace destination to cloud."""
+    trace_destination = (
         f"azureml://subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/"
         f"providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}"
     )
-    with patch("promptflow._sdk._configuration.Configuration.get_trace_provider", return_value=trace_provider):
+    with patch("promptflow._sdk._configuration.Configuration.get_trace_destination", return_value=trace_destination):
         yield
+
+
+# Counting llm token counts in test.
+@pytest.fixture(scope="class", autouse=is_live() and is_in_ci_pipeline())
+def counting_tokens_in_live(remote_client):
+    if is_live():
+
+        run_summary = []
+        # mock run creation, if run is generated, collect into run_summary
+
+        from promptflow.azure._pf_client import PFClient
+
+        origin_run_method = PFClient.run
+
+        def mocked_run_method(self, *args, **kwargs):
+            _run = origin_run_method(self, *args, **kwargs)
+            run_summary.append(_run)
+            return _run
+
+        patcher = patch("promptflow.azure._pf_client.PFClient.run", mocked_run_method)
+        patcher.start()
+        yield
+        patcher.stop()
+
+        # check run_summary
+        completed_run_metrics = {}
+
+        # timeout setup
+        start_time = time.time()
+        timeout = 240
+
+        while len(run_summary) > 0:
+            run = run_summary[0]
+            run_summary = run_summary[1:]
+            try:
+                new_run = remote_client.runs.get(run.name)
+                if new_run.name is MagicMock:
+                    continue
+                used_time = time.time() - start_time
+                if (
+                    new_run.status == RunStatus.COMPLETED
+                    or new_run.status == RunStatus.FAILED
+                    or new_run.status == RunStatus.CANCEL_REQUESTED
+                    or new_run.status == RunStatus.CANCELED
+                ):
+                    # get total tokens.
+                    try:
+                        metrics = remote_client.runs._get_run_from_run_history(new_run.name)
+                        completed_run_metrics[new_run.name] = int(
+                            metrics.properties.get("azureml.promptflow.total_tokens", 0)
+                        )
+                    except Exception:
+                        completed_run_metrics[new_run.name] = -2
+                elif used_time > timeout:
+                    # timeout dealing.
+                    completed_run_metrics[new_run.name] = -3
+                else:
+                    # simple dealing, let this run append to the last and wait for 3 seconds.
+                    run_summary.append(new_run)
+                    time.sleep(3)
+            except Exception:
+                completed_run_metrics[str(run.name)] = -1
+
+        import json
+
+        from filelock import FileLock
+
+        number = {}
+
+        count = sum(val for val in completed_run_metrics.values() if val > 0)
+        with FileLock(str(COUNTER_FILE) + ".lock"):
+            is_non_zero_file = os.path.isfile(COUNTER_FILE) and os.path.getsize(COUNTER_FILE) > 0
+            if is_non_zero_file:
+                with open(COUNTER_FILE, "r", encoding="utf-8") as f:
+                    number = json.load(f)
+                    number = {**number, **completed_run_metrics}
+                    number["count"] += count
+            else:
+                number = {"count": count, **completed_run_metrics}
+            with open(COUNTER_FILE, "w", encoding="utf-8") as f:
+                number_str = json.dumps(number, ensure_ascii=False)
+                f.write(number_str)
+
+
+class CSharpProject(TypedDict):
+    flow_dir: str
+    data: str
+    init: str
+
+
+def construct_csharp_test_project(flow_name: str) -> CSharpProject:
+    root_of_test_cases = os.getenv("CSHARP_TEST_PROJECTS_ROOT", None)
+    if not root_of_test_cases:
+        pytest.skip(reason="No C# test cases found, please set CSHARP_TEST_CASES_ROOT.")
+    root_of_test_cases = Path(root_of_test_cases)
+    return {
+        "flow_dir": (root_of_test_cases / flow_name / "bin" / "Debug" / "net6.0").as_posix(),
+        "data": (root_of_test_cases / flow_name / "data.jsonl").as_posix(),
+        "init": (root_of_test_cases / flow_name / "init.json").as_posix(),
+    }
+
+
+@pytest.fixture
+def csharp_test_project_basic() -> CSharpProject:
+    return construct_csharp_test_project("Basic")

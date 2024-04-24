@@ -7,114 +7,84 @@ on:
     - cron: "30 20 * * *"  # 4:30 Beijing Time (GMT+8)
 
   workflow_dispatch:
+    inputs:
+      filepath:
+        description: file or path you want to trigger a test
+        required: true
+        default: "./tests/sdk_cli_azure_test"
+        type: string
+      promptflow_ws_name:
+        description: test workspace
+        required: true
+        default: "promptflow-eastus"
+        type: string
+
 
 
 env:
-  packageSetupType: promptflow_with_extra
-  testWorkingDirectory: ${{ github.workspace }}/src/promptflow
-  PYTHONPATH: ${{ github.workspace }}/src/promptflow
   IS_IN_CI_PIPELINE: "true"
   PROMPT_FLOW_TEST_MODE: "live"
   PROMPT_FLOW_WORKSPACE_NAME: "promptflow-eastus"
+  TRACING_DIRECTORY: ${{ github.workspace }}/src/promptflow-tracing
+  CORE_DIRECTORY: ${{ github.workspace }}/src/promptflow-core
+  DEVKIT_DIRECTORY: ${{ github.workspace }}/src/promptflow-devkit
+  WORKING_DIRECTORY: ${{ github.workspace }}/src/promptflow-azure
+  PROMPTFLOW_DIRECTORY: ${{ github.workspace }}/src/promptflow
+  TOOL_DIRECTORY: ${{ github.workspace }}/src/promptflow-tools
+  RECORD_DIRECTORY: ${{ github.workspace }}/src/promptflow-recording
 
 
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-    runs-on: ubuntu-latest
-    steps:
-    - name: checkout
-      uses: actions/checkout@v4
-    - name: Display and Set Environment Variables
-      run: |
-        env | sort >> $GITHUB_OUTPUT
-      id: display_env
-      shell: bash -el {0}
-    - name: Python Setup - ubuntu-latest - Python Version 3.9
-      uses: "./.github/actions/step_create_python_environment"
-      with:
-        pythonVersion: 3.9
-    - name: Build wheel
-      uses: "./.github/actions/step_sdk_setup"
-      with:
-        setupType: promptflow_with_extra
-        scriptPath: ${{ env.testWorkingDirectory }}
-    - name: Upload Wheel
-      if: always()
-      uses: actions/upload-artifact@v3
-      with:
-        name: wheel
-        path: |
-          ${{ github.workspace }}/src/promptflow/dist/*.whl
-          ${{ github.workspace }}/src/promptflow-tools/dist/*.whl
-
   sdk_cli_azure_test_live:
-    needs: build
     strategy:
       fail-fast: false
       matrix:
-        # too many live tests will lead to 429 when create run
-        include:
-          - os: ubuntu-latest
-            pythonVersion: '3.9'
-          - os: windows-latest
-            pythonVersion: '3.10'
+        # replay tests can cover more combinations
         os: [ubuntu-latest]
+        pythonVersion: ['3.8', '3.9', '3.10', '3.11']
 
     runs-on: ${{ matrix.os }}
     steps:
+      - name: set variables
+        run: |
+          echo "PROMPT_FLOW_WORKSPACE_NAME=$(if [[ "${{ inputs.promptflow_ws_name }}" == "" ]]; then echo "promptflow-eastus"; else echo ${{ inputs.promptflow_ws_name }}; fi)" >> $GITHUB_ENV
+          echo "FILE_PATHS=$(if [[ "${{ inputs.filepath }}" == "" ]]; then echo "./tests/sdk_cli_test ./tests/sdk_pfs_test"; else echo ${{ inputs.filepath }}; fi)" >> $GITHUB_ENV
+
       - name: checkout
         uses: actions/checkout@v4
 
       - name: Display and Set Environment Variables
         run: env | sort >> $GITHUB_OUTPUT
 
-      - name: Python Setup - ${{ matrix.os }} - Python Version ${{ matrix.pythonVersion }}
-        uses: "./.github/actions/step_create_python_environment"
+      - uses: actions/setup-python@v5
         with:
-          pythonVersion: ${{ matrix.pythonVersion }}
-
-      - name: Download Artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: wheel
-          path: artifacts
-
-      - name: Install wheel
-        shell: pwsh
-        working-directory: artifacts
-        run: |
-          Set-PSDebug -Trace 1
-          pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
-          pip install ${{ github.workspace }}/src/promptflow-tracing
-          pip install ${{ github.workspace }}/src/promptflow-core
-          pip install ${{ github.workspace }}/src/promptflow-devkit
-          pip install ${{ github.workspace }}/src/promptflow-azure
-          gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[azure]"}}
-          gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
-          pip freeze
-
-      - name: Azure login
+          python-version: ${{ matrix.pythonVersion }}
+      - uses: snok/install-poetry@v1
+      - name: Azure Login
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: generate live test resources
+      - name: Generate Configs
         uses: "./.github/actions/step_generate_configs"
         with:
-          targetFolder: ${{ env.testWorkingDirectory }}
-
-      - name: Run SDK CLI Azure Test (live mode)
-        shell: pwsh
-        working-directory: ${{ env.testWorkingDirectory }}
+          targetFolder: ${{ env.PROMPTFLOW_DIRECTORY }}
+      - name: install test dependency group
+        working-directory: ${{ env.WORKING_DIRECTORY }}
         run: |
-          python "../../scripts/building/run_coverage_tests.py" `
-            -p promptflow `
-            -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_azure_test `
-            -l eastus `
-            -m "unittest or e2etest" `
-            --coverage-config ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test/.coveragerc
+          set -xe
+          poetry install --with ci,test
+
+          poetry run pip show promptflow-tracing
+          poetry run pip show promptflow-core
+          poetry run pip show promptflow-devkit
+          poetry run pip show promptflow-azure
+          poetry run pip show promptflow-tools
+
+      - name: Run SDK CLI Azure Test
+        shell: pwsh
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: |
+          poetry run pytest ${{ inputs.filepath }} -n auto -m "unittest or e2etest"
 
       - name: Upload Test Results
         if: always()
@@ -122,29 +92,4 @@ jobs:
         with:
           name: Test Results (Python ${{ matrix.pythonVersion }}) (OS ${{ matrix.os }})
           path: |
-            ${{ env.testWorkingDirectory }}/*.xml
-            ${{ env.testWorkingDirectory }}/htmlcov/
-
-  publish-test-results-sdk-cli-azure-test:
-    needs: sdk_cli_azure_test_live
-    if: always()
-
-    runs-on: ubuntu-latest
-    permissions:
-      checks: write
-      pull-requests: write
-      contents: read
-      issues: read
-
-    steps:
-    - name: checkout
-      uses: actions/checkout@v4
-    - name: Publish Test Results
-      uses: "./.github/actions/step_publish_test_results"
-      with:
-        testActionFileName: promptflow-sdk-cli-azure-e2e-test.yml
-        testResultTitle: promptflow SDK CLI Azure E2E Test Result
-        osVersion: ubuntu-latest
-        pythonVersion: 3.9
-        coverageThreshold: 40
-        context: test/sdk_cli
+            ${{ env.WORKING_DIRECTORY }}/tests/sdk_cli_azure_test/count.json

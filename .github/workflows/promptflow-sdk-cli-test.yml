@@ -12,6 +12,12 @@ on:
       - .github/workflows/promptflow-sdk-cli-test.yml
       - src/promptflow-recording/**
   workflow_dispatch:
+    inputs:
+      filepath:
+        description: file or paths you want to trigger a test
+        required: true
+        default: "./tests/sdk_cli_test ./tests/sdk_pfs_test"
+        type: string
 env:
   IS_IN_CI_PIPELINE: "true"
   RECORD_DIRECTORY: ${{ github.workspace }}/src/promptflow-recording
@@ -30,7 +36,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - name: set test mode
-      run: echo "PROMPT_FLOW_TEST_MODE=$(if [[ "${{ github.event_name }}" == "pull_request" ]]; then echo replay; else echo live; fi)" >> $GITHUB_ENV
+      run: |
+        echo "PROMPT_FLOW_TEST_MODE=$(if [[ "${{ github.event_name }}" == "pull_request" ]]; then echo replay; else echo live; fi)" >> $GITHUB_ENV
+        echo "FILE_PATHS=$(if [[ "${{ inputs.filepath }}" == "" ]]; then echo "./tests/sdk_cli_test ./tests/sdk_pfs_test"; else echo ${{ inputs.filepath }}; fi)" >> $GITHUB_ENV
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
       with:
@@ -39,15 +47,7 @@ jobs:
     - name: install test dependency group
       run: |
         set -xe
-        poetry install --only test
-        poetry run pip install ${{ env.TRACING_DIRECTORY }}
-        poetry run pip install ${{ env.CORE_DIRECTORY }}[azureml-serving]
-        poetry run pip install -e ${{ env.WORKING_DIRECTORY }}[pyarrow]
-
-        echo "Need to install promptflow to avoid tool dependency issue"
-        poetry run pip install ${{ env.PROMPTFLOW_DIRECTORY }}
-        poetry run pip install ${{ env.TOOL_DIRECTORY }}
-        poetry run pip install -e ${{ env.RECORD_DIRECTORY }}
+        poetry install -E pyarrow --with ci,test
 
         poetry run pip show promptflow-tracing
         poetry run pip show promptflow-core
@@ -71,8 +71,8 @@ jobs:
         cp ${{ github.workspace }}/src/promptflow/dev-connections.json.example ${{ github.workspace }}/src/promptflow/connections.json
     - name: run devkit tests
       run: |
-        poetry run pytest ./tests/sdk_cli_test ./tests/sdk_pfs_test -p promptflow --cov=promptflow --cov-config=pyproject.toml \
-        --cov-report=term --cov-report=html --cov-report=xml -n auto -m "unittest or e2etest" \
+        poetry run pytest ${{ env.FILE_PATHS }} --cov=promptflow --cov-config=pyproject.toml \
+        --cov-report=term --cov-report=html --cov-report=xml -n auto -m "(unittest or e2etest) and not csharp" \
         --ignore-glob ./tests/sdk_cli_test/e2etests/test_executable.py
       working-directory: ${{ env.WORKING_DIRECTORY }}
     - name: Upload Test Results
@@ -84,7 +84,7 @@ jobs:
           ${{ env.WORKING_DIRECTORY }}/*.xml
           ${{ env.WORKING_DIRECTORY }}/htmlcov/
           ${{ env.WORKING_DIRECTORY }}/tests/sdk_cli_test/count.json
-    - run: poetry run pip install -e ${{ env.WORKING_DIRECTORY }}[executable]
+    - run: poetry install -E executable
       working-directory: ${{ env.WORKING_DIRECTORY }}
     - name: run devkit executable tests
       run: |

@@ -3,11 +3,18 @@
 Simple and short articles grouped by topics, each introduces a core feature of prompt flow and how you can use it to address your specific use cases.
 
 ```{toctree}
+:caption: Tracing
+:maxdepth: 1
+tracing/index
+```
+
+```{toctree}
 :caption: Flow
 :maxdepth: 1
 develop-a-flow/index
-run-and-evaluate-a-flow/index
 execute-flow-as-a-function
+chat-with-a-flow/index
+run-and-evaluate-a-flow/index
 ```
 
 ```{toctree}
@@ -27,7 +34,7 @@ enable-streaming-mode
 :caption: FAQ
 :maxdepth: 1
 faq
-set-global-configs
+set-promptflow-configs
 manage-connections
 tune-prompts-with-variants
 ```

@@ -409,6 +409,51 @@ def _try_delete_existing_run_record(run_name: str):
         pass
 
 
+def get_instance_results(path: Union[str, Path]) -> List[Dict]:
+    """Parse flow artifact jsonl files in a directory and return a list of dictionaries.
+
+    This function takes a path to a directory as input. It reads all jsonl files in the directory,
+    parses the json data, and returns a list of dictionaries. Each dictionary contains the following keys:
+    'line_number', 'status', and all keys in 'inputs' and 'output'.
+
+    .. example::
+        000000000_000000000.jsonl
+        000000001_000000001.jsonl
+        000000002_000000002.jsonl
+
+        Get a list of dict like this:
+            {"line_number": 0, "status": "Completed", "inputs.name": "hod", "inputs.line_number": 2, "result": "res"}
+            ...
+            ...
+
+    Note that inputs keys are prefixed with 'inputs.', but outputs keys are not.
+    Don't ask me why, because runtime did it this way :p
+
+    Args:
+        path (Union[str, Path]): The path to the directory containing the jsonl files.
+
+    Returns:
+        List[Dict]: A list of dictionaries containing the parsed data.
+    """
+    path = Path(path)
+    result = []
+    for file in path.glob("*.jsonl"):
+        with open(file, "r", encoding=DEFAULT_ENCODING) as f:
+            for line in f:
+                data = json.loads(line)
+                run_info = data.get("run_info", {})
+                inputs = run_info.get("inputs", None) or {}
+                output = run_info.get("output", None) or {}  # output can be None for some cases
+                record = {
+                    "line_number": data.get("line_number"),
+                    "status": run_info.get("status"),
+                }
+                record.update({f"inputs.{k}": v for k, v in inputs.items()})
+                record.update(output)
+                result.append(record)
+    return result
+
+
 def merge_jsonl_files(source_folder: Union[str, Path], output_folder: Union[str, Path], group_size: int = 25) -> None:
     """
     Merge .jsonl files from a source folder into groups and write the merged files to an output folder.

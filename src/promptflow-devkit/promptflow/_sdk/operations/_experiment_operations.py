@@ -170,9 +170,14 @@ class ExperimentOperations(TelemetryMixin):
         experiment_template = _load_experiment_template(experiment)
         output_path = kwargs.pop("output_path", None)
         session = kwargs.pop("session", None)
-
         return ExperimentOrchestrator(client=self._client, experiment=None).test(
-            experiment_template, None, inputs, environment_variables, output_path=output_path, session=session, **kwargs
+            experiment_template,
+            flow=None,
+            inputs=inputs,
+            environment_variables=environment_variables,
+            output_path=output_path,
+            session=session,
+            **kwargs,
         )
 
     def _test_with_ui(
@@ -200,7 +205,7 @@ class ExperimentOperations(TelemetryMixin):
             return_output[key] = {
                 "detail": detail_content,
                 "log": log_content,
-                "output_path": (output_path / key).as_posix(),
+                "output_path": str(output_path / key),
             }
         return return_output
 
