@@ -30,6 +30,8 @@ from promptflow.core._errors import MissingRequiredPackage
 _logger = get_cli_sdk_logger()
 
 
+# SCENARIO: OTLP trace collector
+# prompt flow service, runtime parse OTLP trace
 def format_span_id(span_id: bytes) -> str:
     """Format span id to hex string.
     Note that we need to add 0x since it is how opentelemetry-sdk does.
