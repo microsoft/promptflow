@@ -50,3 +50,7 @@ class PromptyExecutor(ScriptExecutor):
         self._inputs = {k: v.to_flow_input_definition() for k, v in inputs.items()}
         self._is_async = False
         return self._func
+
+    def _init_input_sign(self):
+        self._inputs_sign = {}
+        self._init_sign = {}
