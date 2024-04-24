@@ -3,14 +3,14 @@
 # ---------------------------------------------------------
 from typing import Any, Dict, List
 
-from promptflow.integrations.parallel_run._executor.base import AbstractExecutor
+from promptflow.integrations.parallel_run._executor.base import ParallelRunExecutor
 from promptflow.integrations.parallel_run._metrics.metrics import Metrics
 from promptflow.integrations.parallel_run._model import Row
 from promptflow.integrations.parallel_run._processor.finalizer import Finalizer
 
 
 class AggregationFinalizer(Finalizer):
-    def __init__(self, has_aggregation_node, executor: AbstractExecutor):
+    def __init__(self, has_aggregation_node, executor: ParallelRunExecutor):
         self._has_aggregation_node = has_aggregation_node
         self._executor = executor
         self._columned_aggregation_inputs = {}

@@ -2,7 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import json
-import sys
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Iterable, List, Optional, Tuple, Union
@@ -12,28 +11,30 @@ from promptflow._utils.utils import DataClassEncoder
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo
 from promptflow.integrations.parallel_run._config import parser
 from promptflow.integrations.parallel_run._config.model import ParallelRunConfig
-from promptflow.integrations.parallel_run._executor.base import AbstractExecutor
+from promptflow.integrations.parallel_run._executor.base import ParallelRunExecutor
 from promptflow.integrations.parallel_run._model import Result, Row
 from promptflow.integrations.parallel_run._processor.aggregation_finalizer import AggregationFinalizer
 from promptflow.integrations.parallel_run._processor.debug_info import DebugInfo
 from promptflow.integrations.parallel_run._processor.finalizer import CompositeFinalizer, Finalizer
+from promptflow.integrations.parallel_run.processor import ParallelRunProcessor
 
 
-class AbstractParallelRunProcessor(ABC):
-    def __init__(self, working_dir: Path):
+class AbstractParallelRunProcessor(ParallelRunProcessor, ABC):
+    def __init__(self, working_dir: Path, args: List[str]):
         self._working_dir = working_dir
+        self._args = args
         self._config: Optional[ParallelRunConfig] = None
-        self._executor: Optional[AbstractExecutor] = None
+        self._executor: Optional[ParallelRunExecutor] = None
         self._debug_info: Optional[DebugInfo] = None
 
     def init(self):
-        self._config = parser.parse(sys.argv[1:])
+        self._config = parser.parse(self._args)
         self._executor = self._create_executor(self._config)
         self._debug_info = DebugInfo(self._config.debug_output_dir)
         self._debug_info.prepare()
 
     @abstractmethod
-    def _create_executor(self, config: ParallelRunConfig) -> AbstractExecutor:
+    def _create_executor(self, config: ParallelRunConfig) -> ParallelRunExecutor:
         raise NotImplementedError
 
     def process(self, mini_batch: List[dict], context) -> List[str]:
@@ -76,7 +77,7 @@ class AbstractParallelRunProcessor(ABC):
         return CompositeFinalizer(finalizers) if len(finalizers) > 1 else finalizers[0]
 
     def _finalizers(self) -> Iterable[Finalizer]:
-        yield from []
+        return []
 
     def _read_outputs(self) -> Iterable[Row]:
         output_files = [f for f in self._config.output_dir.glob(self._config.output_file_pattern)]
@@ -103,15 +104,3 @@ class AbstractParallelRunProcessor(ABC):
                 run_info.result = run_info.output
         if run_info.api_calls:
             run_info.api_calls = persist_multimedia_data(run_info.api_calls, base_dir=base_dir)
-
-    def generate_flow_artifacts_file_name_by_line_number(self, line_number: int, debug_file_batch_size: int):
-        """Generate flow artifacts file name."""
-        section_start = line_number // debug_file_batch_size * debug_file_batch_size
-        return self.generate_flow_artifacts_file_name_by_line_range(section_start, debug_file_batch_size)
-
-    @staticmethod
-    def generate_flow_artifacts_file_name_by_line_range(start_line_number: int, line_count: int):
-        """Generate flow artifacts file name."""
-        section_start = start_line_number
-        section_end = section_start + line_count - 1
-        return "{0:09d}_{1:09d}.jsonl".format(section_start, section_end)

@@ -18,7 +18,28 @@ from promptflow.integrations.parallel_run._model import Result, Row
 from promptflow.tracing._operation_context import OperationContext
 
 
-class AbstractExecutor(ABC):
+class ParallelRunExecutor(ABC):
+    @abstractmethod
+    def init(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def execute(self, row: Row) -> Result:
+        raise NotImplementedError
+
+    @abstractmethod
+    def execute_aggregation(
+        self, inputs: Mapping[str, Any], aggregation_inputs: Mapping[str, Any]
+    ) -> AggregationResult:
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def has_aggregation_node(self):
+        raise NotImplementedError
+
+
+class AbstractExecutor(ParallelRunExecutor, ABC):
     def __init__(self, working_dir: Path, config: ParallelRunConfig):
         self._validate_config(config)
         self._working_dir = working_dir

@@ -6,7 +6,7 @@ from argparse import ArgumentParser, Namespace
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple
 
-from promptflow.integrations.parallel_run._config.model import Mode, ParallelRunConfig, output_file_pattern
+from promptflow.integrations.parallel_run._config.model import ParallelRunConfig, output_file_pattern
 
 
 def parse(args: List[str]) -> ParallelRunConfig:
@@ -16,7 +16,6 @@ def parse(args: List[str]) -> ParallelRunConfig:
 
 def _to_parallel_run_config(parsed_args: Namespace) -> ParallelRunConfig:
     return ParallelRunConfig(
-        mode=parsed_args.pf_run_mode,
         pf_model_dir=parsed_args.pf_model,
         input_dir=next(iter(parsed_args.input_assets.values()), None),
         output_dir=parsed_args.output_uri_file or parsed_args.output,
@@ -57,7 +56,6 @@ def _do_parse(args: List[str]) -> Namespace:
     parser.add_argument("--pf_connections", dest="pf_connections", required=False)
     parser.add_argument("--pf_deployment_names", dest="pf_deployment_names", required=False)
     parser.add_argument("--pf_model_names", dest="pf_model_names", required=False)
-    parser.add_argument("--pf_run_mode", dest="pf_run_mode", required=False, type=Mode, default=Mode.component)
     parser.add_argument("--output_uri_file", dest="output_uri_file", type=Path, required=False, default=None)
     parser.add_argument("--output", dest="output", type=Path, required=False, default=None)
     parser.add_argument(

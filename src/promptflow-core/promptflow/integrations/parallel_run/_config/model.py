@@ -2,14 +2,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 from dataclasses import dataclass, field
-from enum import Enum
 from pathlib import Path
 from typing import Dict, Optional
-
-
-class Mode(str, Enum):
-    bulk = "bulk"
-    component = "component"
 
 
 def output_file_pattern(suffix: str) -> str:
@@ -18,7 +12,6 @@ def output_file_pattern(suffix: str) -> str:
 
 @dataclass
 class ParallelRunConfig:
-    mode: Mode
     pf_model_dir: Optional[Path] = None
     input_dir: Optional[Path] = None
     output_dir: Optional[Path] = None

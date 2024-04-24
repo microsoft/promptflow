@@ -53,8 +53,9 @@ class DebugInfo:
         system_metrics = SystemMetrics()
         with file.open("w") as f:
             for line_run_record, node_run_records in itertools.chain([(first_line, first_line_nodes)], it):
-                system_metrics.merge_line_run_record(line_run_record)
                 self._write_flow(line_run_record, f)
+                system_metrics.merge_line_run_record(line_run_record)
+
                 node_metrics = self._write_nodes(node_run_records)
                 system_metrics.merge(node_metrics)
 

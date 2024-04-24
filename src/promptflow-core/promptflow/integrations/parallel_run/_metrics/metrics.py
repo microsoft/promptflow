@@ -3,9 +3,9 @@
 # ---------------------------------------------------------
 import json
 import os
-from typing import Any, Dict, List, Mapping
+from typing import Any, Dict
 
-from promptflow.contracts.run_info import FlowRunInfo, RunInfo, Status
+from promptflow.contracts.run_info import Status
 from promptflow.integrations.parallel_run._metrics.sender import MetricsSender
 from promptflow.storage.run_records import LineRunRecord, NodeRunRecord
 
@@ -44,37 +44,6 @@ class SystemMetrics(Metrics):
             self._metrics[f"__pf__.nodes.{node_run_record.node_name}.completed"] = (
                 1 if status == Status.Completed else 0
             )
-
-    @classmethod
-    def from_node_run_infos(cls, node_run_infos: Mapping[str, RunInfo]) -> "SystemMetrics":
-        """Summarize node metrics for single line.
-        See promptflow._core.run_tracker.RunTracker.get_status_summary().
-        """
-        status_summary = {}
-        for node_name, node_run_info in node_run_infos.items():
-            status = node_run_info.status
-            if node_run_info is not None and node_run_info.index is not None:
-                # Only consider Completed, Bypassed and Failed status, because the UX only support three status.
-                if status in (Status.Completed, Status.Bypassed, Status.Failed):
-                    node_status_key = f"__pf__.nodes.{node_name}.{status.value.lower()}"
-                    status_summary[node_status_key] = status_summary.setdefault(node_status_key, 0) + 1
-            # For reduce node, the index is None.
-            else:
-                status_summary[f"__pf__.nodes.{node_name}.completed"] = 1 if status == Status.Completed else 0
-        return cls(status_summary)
-
-    @classmethod
-    def from_line_run_infos(cls, line_run_infos: List[FlowRunInfo]) -> "SystemMetrics":
-        """Summarize line metrics.
-        See promptflow._core.run_tracker.RunTracker.get_status_summary().
-        """
-        total_lines = len(line_run_infos)
-        completed_lines = len([run_info for run_info in line_run_infos if run_info.status == Status.Completed])
-        status_summary = {
-            "__pf__.lines.completed": completed_lines,
-            "__pf__.lines.failed": total_lines - completed_lines,
-        }
-        return cls(status_summary)
 
     @classmethod
     def from_files(cls, root: str, sender: MetricsSender = None) -> "SystemMetrics":
