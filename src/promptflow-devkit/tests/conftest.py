@@ -2,7 +2,6 @@ import importlib
 import json
 import os
 import platform
-import subprocess
 import tempfile
 from multiprocessing import Lock
 from pathlib import Path
@@ -27,16 +26,30 @@ from pytest_mock import MockerFixture
 
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
 from promptflow._core.connection_manager import ConnectionManager
-from promptflow._sdk._service.utils.utils import get_pfs_port
 from promptflow._sdk.entities._connection import AzureOpenAIConnection
 from promptflow._utils.context_utils import _change_working_dir
 
 try:
+    from promptflow.recording.local import invoke_prompt_flow_service
     from promptflow.recording.record_mode import is_replay
 except ImportError:
     # Run test in empty mode if promptflow-recording is not installed
     def is_replay():
         return False
+
+    # copy lines from /src/promptflow-recording/promptflow/recording/local/test_utils.py
+    from promptflow._cli._pf._service import _start_background_service_on_unix, _start_background_service_on_windows
+    from promptflow._sdk._service.utils.utils import get_pfs_port
+
+    def invoke_prompt_flow_service() -> str:
+        port = str(get_pfs_port())
+        if platform.system() == "Windows":
+            _start_background_service_on_windows(port)
+        else:
+            _start_background_service_on_unix(port)
+        response = requests.get(f"http://localhost:{port}/heartbeat")
+        assert response.status_code == 200, "prompt flow service is not healthy via /heartbeat"
+        return port
 
 
 load_dotenv()
@@ -307,15 +320,8 @@ def csharp_test_project_class_init_flex_flow() -> CSharpProject:
 
 @pytest.fixture(scope="session")
 def otlp_collector():
-    """A session scope fixture, invokes a separate prompt flow service serves as OTLP collector."""
-    # invoke a prompt flow service without pf.config
-    port = str(get_pfs_port())
-    cmd_args = ["pf", "service", "start", "--port", port]
-    start_pfs = subprocess.Popen(cmd_args, shell=platform.system() == "Windows", stderr=subprocess.PIPE)
-    start_pfs.wait(timeout=20)
-    # try to GET heartbeat to ensure PFS is healthy
-    response = requests.get(f"http://localhost:{port}/heartbeat")
-    assert response.status_code == 200, "fixture `otlp_collector` invokes PFS failed"
+    """A session scope fixture, a separate standby prompt flow service serves as OTLP collector."""
+    port = invoke_prompt_flow_service()
     # mock invoke prompt flow service as it has been invoked already
     with mock.patch("promptflow._sdk._tracing._invoke_pf_svc", return_value=port), mock.patch(
         "promptflow._sdk._tracing.is_pfs_service_healthy", return_value=True
