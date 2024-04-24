@@ -51,17 +51,17 @@ setup(
     install_requires=REQUIRES,
     extras_require={
         "all": [
-            "promptflow-core[executor-service]==1.9.0rc11",
-            "promptflow-devkit[all]==1.9.0rc11",
+            "promptflow-core[executor-service]==1.9.0rc11rc1==1.9.0rc11",
+            "promptflow-devkit[all]==1.9.0rc11rc1==1.9.0rc11",
             "promptflow-azure==1.9.0rc11",
         ],
         "azure": ["promptflow-azure==1.9.0rc11"],
-        "executable": ["promptflow-devkit[executable]==1.9.0rc11"],
+        "executable": ["promptflow-devkit[executable]==1.9.0rc11rc1==1.9.0rc11"],
         "azureml-serving": [
-            "promptflow-core[azureml-serving]==1.9.0rc11",
+            "promptflow-core[azureml-serving]==1.9.0rc11rc1==1.9.0rc11",
         ],
         "executor-service": [
-            "promptflow-core[executor-service]==1.9.0rc11",  # used to build web executor server
+            "promptflow-core[executor-service]==1.9.0rc11rc1==1.9.0rc11",  # used to build web executor server
         ],
     },
     scripts=["pf.autocomplete.sh"],
