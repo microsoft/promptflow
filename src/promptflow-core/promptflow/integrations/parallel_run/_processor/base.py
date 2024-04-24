@@ -56,14 +56,19 @@ class AbstractParallelRunProcessor(ParallelRunProcessor, ABC):
             yield self._executor.execute(row)
 
     def _serialize(self, result: Result) -> str:
-        result_dict = dict(self._extract_result(result))
+        result_dict = dict(self._collect_result_for_serialization(result))
         return json.dumps(result_dict, cls=DataClassEncoder)
 
-    def _extract_result(self, result: Result) -> Iterable[Tuple[str, Any]]:
+    def _collect_result_for_serialization(self, result: Result) -> Iterable[Tuple[str, Any]]:
         yield "output", result.output.output
         if self._executor.has_aggregation_node:
             yield "aggregation_inputs", result.output.aggregation_inputs
             yield "inputs", result.input
+        yield from self._extract_result(result)
+
+    def _extract_result(self, result: Result) -> Iterable[Tuple[str, Any]]:
+        # Override this method to extract additional information from the result
+        return []
 
     def finalize(self):
         with self._resolve_finalizer() as finalizer:
@@ -77,6 +82,7 @@ class AbstractParallelRunProcessor(ParallelRunProcessor, ABC):
         return CompositeFinalizer(finalizers) if len(finalizers) > 1 else finalizers[0]
 
     def _finalizers(self) -> Iterable[Finalizer]:
+        # Override this method to provide additional finalizers
         return []
 
     def _read_outputs(self) -> Iterable[Row]:
