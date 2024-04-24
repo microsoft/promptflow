@@ -2618,6 +2618,33 @@ class TestCli:
         assert "obj_input" in stdout
         assert "func_input" in stdout
 
+    def test_eager_flow_test_without_yaml(self, pf, capsys):
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            "entry:my_flow",
+            "--inputs",
+            "input_val=val1",
+            cwd=f"{EAGER_FLOWS_DIR}/simple_without_yaml_return_output",
+        )
+        stdout, _ = capsys.readouterr()
+        assert "Hello world" in stdout
+        assert "val1" in stdout
+
+    def test_eager_flow_test_without_yaml_ui(self, pf, capsys):
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            "entry:my_flow",
+            "--ui",
+            cwd=f"{EAGER_FLOWS_DIR}/simple_without_yaml_return_output",
+        )
+        stdout, _ = capsys.readouterr()
+        assert "You can begin chat flow" in stdout
+        assert Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml_return_output/flow.flex.yaml").exists()
+
     @pytest.mark.usefixtures("reset_tracer_provider")
     def test_pf_flow_test_with_collection(self):
         with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:

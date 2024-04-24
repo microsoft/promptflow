@@ -5,6 +5,7 @@ import sys
 import tempfile
 import uuid
 from pathlib import Path
+from typing import Callable
 
 import numpy as np
 import pandas as pd
@@ -1268,73 +1269,117 @@ class TestFlowRun:
 
         monkeypatch.delenv("PF_BATCH_METHOD")
 
-    def test_eager_flow_run_without_yaml(self, pf):
-        run = pf.run(
-            flow="entry:my_flow",
-            code=f"{EAGER_FLOWS_DIR}/simple_without_yaml",
-            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
-        )
+    @pytest.mark.parametrize(
+        "run_params, expected_snapshot_yaml, extra_check, expected_details",
+        [
+            pytest.param(
+                {
+                    "flow": "entry:my_flow",
+                    "code": f"{EAGER_FLOWS_DIR}/simple_without_yaml",
+                    "data": f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+                },
+                {
+                    "entry": "entry:my_flow",
+                    "inputs": {"input_val": {"type": "string"}},
+                    "outputs": {"output": {"type": "string"}},
+                },
+                # the YAML file will not exist in user's folder
+                lambda: not Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/flow.flex.yaml").exists(),
+                {"inputs.input_val": ["input1"], "inputs.line_number": [0], "outputs.output": ["(Failed)"]},
+                id="without_yaml",
+            ),
+            pytest.param(
+                {
+                    "flow": Path(f"{EAGER_FLOWS_DIR}/simple_with_yaml"),
+                    "data": f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+                },
+                {
+                    "entry": "entry:my_flow",
+                    "inputs": {"input_val": {"type": "string", "default": "gpt"}},
+                    "outputs": {"output": {"type": "string"}},
+                },
+                # signature not in original YAML
+                lambda: "inputs" not in load_yaml(f"{EAGER_FLOWS_DIR}/simple_with_yaml/flow.flex.yaml"),
+                {"inputs.input_val": ["input1"], "inputs.line_number": [0], "outputs.output": ["Hello world! input1"]},
+                id="with_yaml",
+            ),
+            pytest.param(
+                {
+                    "flow": "entry2:my_flow2",
+                    "code": f"{EAGER_FLOWS_DIR}/multiple_entries",
+                    "data": f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+                },
+                {
+                    "entry": "entry2:my_flow2",
+                    "outputs": {"output": {"type": "string"}},
+                },
+                # entry is not changed in original YAML
+                lambda: load_yaml(f"{EAGER_FLOWS_DIR}/multiple_entries/flow.flex.yaml")["entry"] == "entry1:my_flow1",
+                {"inputs.line_number": [0], "outputs.output": ["entry2flow2"]},
+                id="entry_override",
+            ),
+            pytest.param(
+                {
+                    "flow": my_entry,
+                    "data": f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+                    # set code folder to avoid snapshot too big
+                    "code": f"{EAGER_FLOWS_DIR}/multiple_entries",
+                    "column_mapping": {"input1": "${data.input_val}"},
+                },
+                {
+                    "entry": "sdk_cli_test.e2etests.test_flow_run:my_entry",
+                    "inputs": {"input1": {"type": "string"}},
+                    "outputs": {"output": {"type": "string"}},
+                },
+                lambda: True,
+                {"inputs.input1": ["input1"], "inputs.line_number": [0], "outputs.output": ["input1"]},
+                id="with_func",
+            ),
+            pytest.param(
+                {
+                    "flow": my_async_entry,
+                    "data": f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+                    # set code folder to avoid snapshot too big
+                    "code": f"{EAGER_FLOWS_DIR}/multiple_entries",
+                    "column_mapping": {"input2": "${data.input_val}"},
+                },
+                {
+                    "entry": "sdk_cli_test.e2etests.test_flow_run:my_async_entry",
+                    "inputs": {"input2": {"type": "string"}},
+                    "outputs": {"output": {"type": "string"}},
+                },
+                lambda: True,
+                {"inputs.input2": ["input1"], "inputs.line_number": [0], "outputs.output": ["input1"]},
+                id="with_async_func",
+            ),
+        ],
+    )
+    def test_flex_flow_run(
+        self,
+        pf,
+        run_params: dict,
+        expected_snapshot_yaml: dict,
+        extra_check: Callable[[], bool],
+        expected_details: dict,
+    ) -> None:
+        run = pf.run(**run_params)
         assert run.status == "Completed"
         assert "error" not in run._to_dict()
+
+        assert extra_check()
+
         # will create a YAML in run snapshot
         local_storage = LocalStorageOperations(run=run)
         assert local_storage._dag_path.exists()
-        # the YAML file will not exist in user's folder
-        assert not Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/flow.flex.yaml").exists()
 
-    def test_eager_flow_yaml_override(self, pf):
-        run = pf.run(
-            flow="entry2:my_flow2",
-            code=f"{EAGER_FLOWS_DIR}/multiple_entries",
-            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
-        )
-        assert run.status == "Completed"
-        assert "error" not in run._to_dict()
-        # will create a YAML in run snapshot
-        local_storage = LocalStorageOperations(run=run)
-        assert local_storage._dag_path.exists()
-        # original YAMl content not changed
-        original_dict = load_yaml(f"{EAGER_FLOWS_DIR}/multiple_entries/flow.flex.yaml")
-        assert original_dict["entry"] == "entry1:my_flow1"
+        yaml_dict = load_yaml(local_storage._dag_path)
+        assert yaml_dict == expected_snapshot_yaml
 
         # actual result will be entry2:my_flow2
         details = pf.get_details(run.name)
         # convert DataFrame to dict
         details_dict = details.to_dict(orient="list")
-        assert details_dict == {"inputs.line_number": [0], "outputs.output": ["entry2flow2"]}
-
-    def test_flex_flow_with_func(self, pf):
-        run = pf.run(
-            flow=my_entry,
-            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
-            # set code folder to avoid snapshot too big
-            code=f"{EAGER_FLOWS_DIR}/multiple_entries",
-            column_mapping={"input1": "${data.input_val}"},
-        )
-        assert run.status == "Completed"
-        assert "error" not in run._to_dict()
-
-        # actual result will be entry2:my_flow2
-        details = pf.get_details(run.name)
-        # convert DataFrame to dict
-        details_dict = details.to_dict(orient="list")
-        assert details_dict == {"inputs.input1": ["input1"], "inputs.line_number": [0], "outputs.output": ["input1"]}
-
-        run = pf.run(
-            flow=my_async_entry,
-            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
-            # set code folder to avoid snapshot too big
-            code=f"{EAGER_FLOWS_DIR}/multiple_entries",
-            column_mapping={"input2": "${data.input_val}"},
-        )
-        assert run.status == "Completed"
-        assert "error" not in run._to_dict()
-
-        # actual result will be entry2:my_flow2
-        details = pf.get_details(run.name)
-        # convert DataFrame to dict
-        details_dict = details.to_dict(orient="list")
-        assert details_dict == {"inputs.input2": ["input1"], "inputs.line_number": [0], "outputs.output": ["input1"]}
+        assert details_dict == expected_details
 
     def test_flex_flow_with_local_imported_func(self, pf):
         # run eager flow against a function from local file
@@ -1401,15 +1446,6 @@ class TestFlowRun:
         # convert DataFrame to dict
         details_dict = details.to_dict(orient="list")
         assert details_dict == {"inputs.line_number": [0], "outputs.output": ["entry2flow1"]}
-
-    def test_eager_flow_run_with_yaml(self, pf):
-        flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_with_yaml")
-        run = pf.run(
-            flow=flow_path,
-            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
-        )
-        assert run.status == "Completed"
-        assert "error" not in run._to_dict()
 
     def test_eager_flow_run_batch_resume(self, pf):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_with_random_fail")

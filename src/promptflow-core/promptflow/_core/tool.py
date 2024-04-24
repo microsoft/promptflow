@@ -26,6 +26,13 @@ class ToolType(str, Enum):
     CUSTOM_LLM = "custom_llm"
 
 
+# Set a node input _inputs_to_escape for llm/custom_llm/prompt tool to store flow inputs list,
+# in order to enable tools to identify these inputs,
+# and apply escape/unescape to avoid parsing of role in user inputs.
+INPUTS_TO_ESCAPE_PARAM_KEY = "_inputs_to_escape"
+TOOL_TYPE_TO_ESCAPE = [ToolType.LLM, ToolType.CUSTOM_LLM, ToolType.PROMPT]
+
+
 class ToolInvoker(ABC):
     _active_tool_invoker: Optional["ToolInvoker"] = None
 
