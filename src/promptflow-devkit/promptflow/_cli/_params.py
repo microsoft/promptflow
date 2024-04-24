@@ -3,11 +3,10 @@
 # ---------------------------------------------------------
 
 import argparse
-import json
-from pathlib import Path
 
 from promptflow._cli._completers._param_completers import run_name_completer
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME, PROMPT_FLOW_RUNS_DIR_NAME, CLIListOutputFormat, FlowType
+from promptflow._sdk._utils import load_input_data
 
 # TODO: avoid azure dependency here
 MAX_LIST_CLI_RESULTS = 50
@@ -29,20 +28,6 @@ class AppendToDictAction(argparse._AppendAction):  # pylint: disable=protected-a
             except ValueError:
                 raise Exception("Usage error: {} KEY=VALUE [KEY=VALUE ...]".format(option_string))
         return kwargs
-
-
-def load_input_data(data_path):
-    from promptflow._utils.load_data import load_data
-
-    if not Path(data_path).exists():
-        raise ValueError(f"Cannot find inputs file {data_path}")
-    if data_path.endswith(".jsonl"):
-        return load_data(local_path=data_path)[0]
-    elif data_path.endswith(".json"):
-        with open(data_path, "r") as f:
-            return json.load(f)
-    else:
-        raise ValueError("Only support jsonl or json file as input.")
 
 
 class FlowTestInputAction(AppendToDictAction):  # pylint: disable=protected-access

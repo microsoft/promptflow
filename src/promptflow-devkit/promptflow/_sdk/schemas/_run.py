@@ -6,9 +6,8 @@ import os.path
 from dotenv import dotenv_values
 from marshmallow import RAISE, fields, post_load, pre_load
 
-from promptflow._cli._params import load_input_data
 from promptflow._sdk._constants import IdentityKeys
-from promptflow._sdk._utils import is_remote_uri
+from promptflow._sdk._utils import is_remote_uri, load_input_data
 from promptflow._sdk.schemas._base import PatchedSchemaMeta, YamlFileSchema
 from promptflow._sdk.schemas._fields import LocalPathField, NestedField, StringTransformedEnum, UnionField
 from promptflow._utils.logger_utils import get_cli_sdk_logger

@@ -1084,3 +1084,17 @@ def get_flow_path(flow) -> Path:
     if isinstance(flow, (FlexFlow, Prompty)):
         return flow.path.parent.resolve()
     raise ValueError(f"Unsupported flow type {type(flow)!r}")
+
+
+def load_input_data(data_path):
+    from promptflow._utils.load_data import load_data
+
+    if not Path(data_path).exists():
+        raise ValueError(f"Cannot find inputs file {data_path}")
+    if data_path.endswith(".jsonl"):
+        return load_data(local_path=data_path)[0]
+    elif data_path.endswith(".json"):
+        with open(data_path, "r") as f:
+            return json.load(f)
+    else:
+        raise ValueError("Only support jsonl or json file as input.")
