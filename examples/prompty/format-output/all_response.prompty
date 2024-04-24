@@ -1,6 +1,6 @@
 ---
-name: All Choise Text Format Prompt
-description: A basic prompt that uses the GPT-3 chat API to answer questions
+name: All Response Text Format Prompt
+description: A basic prompt that uses the GPT-3 chat API to answer questions return multiple choices.
 model:
     api: chat
     configuration:

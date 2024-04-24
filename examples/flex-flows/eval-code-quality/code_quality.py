@@ -36,7 +36,6 @@ class CodeEvaluator:
             model={"configuration": self.model_config},
         )
         output = prompty(code=code)
-        print(output)
         output = Result(**output)
         return output
 
@@ -56,7 +55,7 @@ if __name__ == "__main__":
     from promptflow.tracing import start_trace
 
     start_trace()
-    model_config = AzureOpenAIModelConfiguration.from_connection(
+    model_config = AzureOpenAIModelConfiguration(
         connection="open_ai_connection",
         azure_deployment="gpt-35-turbo-0125",
     )

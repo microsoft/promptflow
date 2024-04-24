@@ -87,7 +87,7 @@ pf run list
 
 # get a sample run name
 
-name=$(pf run list -r 10 | jq '.[] | select(.name | contains("chat_basic_")) | .name'| head -n 1 | tr -d '"')
+name=$(pf run list -r 10 | jq '.[] | select(.name | contains("chat_stream_")) | .name'| head -n 1 | tr -d '"')
 # show specific run detail
 pf run show --name $name
 
