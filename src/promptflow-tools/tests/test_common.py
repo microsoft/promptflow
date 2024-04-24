@@ -600,7 +600,7 @@ class TestEscaper:
         ],
     )
     def test_escape_roles_in_flow_input(self, value, escaped_dict, expected_val):
-        actual = Escaper._escape_roles_in_flow_input(value, escaped_dict)
+        actual = Escaper.escape_roles_in_flow_input(value, escaped_dict)
         assert actual == expected_val
 
     @pytest.mark.parametrize(
@@ -625,7 +625,7 @@ class TestEscaper:
     )
     def test_build_flow_input_escape_dict(self, value, expected_dict):
         with patch.object(uuid, 'uuid4', side_effect=['fake_uuid_1', 'fake_uuid_2']):
-            actual_dict = Escaper._build_flow_input_escape_dict(value, {})
+            actual_dict = Escaper.build_flow_input_escape_dict(value, {})
             assert actual_dict == expected_dict
 
     def test_merge_escape_mapping_of_prompt_results(self):
@@ -662,7 +662,7 @@ class TestEscaper:
     ])
     def test_build_flow_inputs_escape_dict(self, inputs_to_escape, input_data, expected_result):
         with patch.object(uuid, 'uuid4', side_effect=['fake_uuid_1', 'fake_uuid_2']):
-            actual = Escaper.build_flow_inputs_escape_dict(inputs_to_escape=inputs_to_escape, **input_data)
+            actual = Escaper.build_flow_inputs_escape_dict(_inputs_to_escape=inputs_to_escape, **input_data)
             assert actual == expected_result
 
     @pytest.mark.parametrize(
@@ -677,7 +677,7 @@ class TestEscaper:
     )
     def test_build_escape_dict_from_kwargs(self, input_data, inputs_to_escape, expected_dict):
         with patch.object(uuid, 'uuid4', side_effect=['fake_uuid_1', 'fake_uuid_2']):
-            actual_dict = Escaper.build_escape_dict_from_kwargs(inputs_to_escape, **input_data)
+            actual_dict = Escaper.build_escape_dict_from_kwargs(_inputs_to_escape=inputs_to_escape, **input_data)
             assert actual_dict == expected_dict
 
     @pytest.mark.parametrize(
@@ -731,5 +731,5 @@ class TestEscaper:
         ],
     )
     def test_unescape_roles(self, value, escaped_dict, expected_value):
-        actual = Escaper._unescape_roles(value, escaped_dict)
+        actual = Escaper.unescape_roles(value, escaped_dict)
         assert actual == expected_value

@@ -95,8 +95,8 @@ class PromptResult(str):
         prompt_result_escape_dict = Escaper.merge_escape_mapping_of_prompt_results(**kwargs)
         self.escaped_mapping.update(prompt_result_escape_dict)
 
-    def merge_escape_mapping_of_flow_inputs(self, inputs_to_escape: list, **kwargs):
-        flow_inputs_escape_dict = Escaper.build_flow_inputs_escape_dict(inputs_to_escape=inputs_to_escape, **kwargs)
+    def merge_escape_mapping_of_flow_inputs(self, _inputs_to_escape: list, **kwargs):
+        flow_inputs_escape_dict = Escaper.build_flow_inputs_escape_dict(_inputs_to_escape=_inputs_to_escape, **kwargs)
         self.escaped_mapping.update(flow_inputs_escape_dict)
 
 
@@ -108,7 +108,7 @@ def validate_role(role: str, valid_roles: List[str] = None, escape_dict: dict = 
         valid_roles_str = ','.join([f'\'{role}:\\n\'' for role in valid_roles])
         # The role string may contain escaped roles(uuids).
         # Need to unescape invalid role as the error message will be displayed to user.
-        unescaped_invalid_role = Escaper._unescape_roles(role, escape_dict)
+        unescaped_invalid_role = Escaper.unescape_roles(role, escape_dict)
         error_message = (
             f"The Chat API requires a specific format for prompt definition, and the prompt should include separate "
             f"lines as role delimiters: {valid_roles_str}. Current parsed role '{unescaped_invalid_role}'"
@@ -634,7 +634,7 @@ def render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, 
     except Exception as e:
         # For exceptions raised by jinja2 module, mark UserError
         exception_message = str(e)
-        unescaped_exception_message = Escaper._unescape_roles(exception_message, escape_dict)
+        unescaped_exception_message = Escaper.unescape_roles(exception_message, escape_dict)
         print(f"Exception occurs: {type(e).__name__}: {unescaped_exception_message}", file=sys.stderr)
         error_message = f"Failed to render jinja template: {type(e).__name__}: {unescaped_exception_message}. " \
                         + "Please modify your prompt to fix the issue."
@@ -655,24 +655,24 @@ class Escaper:
         return escape_dict
 
     @staticmethod
-    def build_flow_inputs_escape_dict(inputs_to_escape: list, **kwargs):
+    def build_flow_inputs_escape_dict(_inputs_to_escape: list, **kwargs):
         escape_dict = {}
-        if not inputs_to_escape:
+        if not _inputs_to_escape:
             return escape_dict
 
         for k, v in kwargs.items():
-            if k in inputs_to_escape:
-                escape_dict = Escaper._build_flow_input_escape_dict(v, escape_dict)
+            if k in _inputs_to_escape:
+                escape_dict = Escaper.build_flow_input_escape_dict(v, escape_dict)
         return escape_dict
 
     @staticmethod
-    def _build_flow_input_escape_dict(val, escape_dict: dict):
+    def build_flow_input_escape_dict(val, escape_dict: dict):
         """
         Build escape dictionary with roles as keys and uuids as values.
         """
         if isinstance(val, ChatInputList):
             for item in val:
-                Escaper._build_flow_input_escape_dict(item, escape_dict)
+                Escaper.build_flow_input_escape_dict(item, escape_dict)
         elif isinstance(val, str):
             pattern = r"(?i)^\s*#?\s*(" + "|".join(VALID_ROLES) + r")\s*:\s*\n"
             roles = re.findall(pattern, val, flags=re.MULTILINE)
@@ -686,7 +686,7 @@ class Escaper:
         return escape_dict
 
     @staticmethod
-    def _escape_roles_in_flow_input(val, escape_dict: dict):
+    def escape_roles_in_flow_input(val, escape_dict: dict):
         """
         Escape the roles in the prompt inputs to avoid the input string with pattern '# role' get parsed.
         """
@@ -694,7 +694,7 @@ class Escaper:
             return val
 
         if isinstance(val, ChatInputList):
-            return ChatInputList([Escaper._escape_roles_in_flow_input(item, escape_dict) for item in val])
+            return ChatInputList([Escaper.escape_roles_in_flow_input(item, escape_dict) for item in val])
         elif isinstance(val, str):
             for role, encoded_role in escape_dict.items():
                 val = val.replace(role, encoded_role)
@@ -703,7 +703,7 @@ class Escaper:
             return val
 
     @staticmethod
-    def _unescape_roles(val, escape_dict: dict):
+    def unescape_roles(val, escape_dict: dict):
         """
         Unescape the roles in the parsed chat messages to restore the original role names.
         Besides the case that value is: 'some text. escaped_roles (i.e. fake uuids)'
@@ -734,7 +734,7 @@ class Escaper:
             return val
 
     @staticmethod
-    def escape_kwargs(escape_dict: dict, inputs_to_escape: list, **kwargs):
+    def escape_kwargs(escape_dict: dict, _inputs_to_escape: list, **kwargs):
         # Use escape/unescape to avoid unintended parsing of role in user inputs.
         # There are two scenarios to consider for llm/prompt tool:
         # 1. Prompt injection directly from flow input.
@@ -743,17 +743,17 @@ class Escaper:
         for k, v in kwargs.items():
             if isinstance(v, PromptResult) and v.need_to_escape():
                 updated_kwargs[k] = v.get_escape_string()
-            elif inputs_to_escape and k in inputs_to_escape:
-                updated_kwargs[k] = Escaper._escape_roles_in_flow_input(v, escape_dict)
+            elif _inputs_to_escape and k in _inputs_to_escape:
+                updated_kwargs[k] = Escaper.escape_roles_in_flow_input(v, escape_dict)
             else:
                 updated_kwargs[k] = v
 
         return updated_kwargs
 
     @staticmethod
-    def build_escape_dict_from_kwargs(inputs_to_escape: list, **kwargs):
+    def build_escape_dict_from_kwargs(_inputs_to_escape: list, **kwargs):
         prompt_result_escape_dict = Escaper.merge_escape_mapping_of_prompt_results(**kwargs)
-        flow_inputs_escape_dict = Escaper.build_flow_inputs_escape_dict(inputs_to_escape=inputs_to_escape, **kwargs)
+        flow_inputs_escape_dict = Escaper.build_flow_inputs_escape_dict(_inputs_to_escape=_inputs_to_escape, **kwargs)
         escape_dict = {**prompt_result_escape_dict, **flow_inputs_escape_dict}
 
         return escape_dict
@@ -766,8 +766,8 @@ def build_messages(
     **kwargs,
 ):
     inputs_to_escape = kwargs.pop(INPUTS_TO_ESCAPE_PARAM_KEY, None)
-    escape_dict = Escaper.build_escape_dict_from_kwargs(inputs_to_escape=inputs_to_escape, **kwargs)
-    updated_kwargs = Escaper.escape_kwargs(escape_dict, inputs_to_escape, **kwargs)
+    escape_dict = Escaper.build_escape_dict_from_kwargs(_inputs_to_escape=inputs_to_escape, **kwargs)
+    updated_kwargs = Escaper.escape_kwargs(escape_dict=escape_dict, _inputs_to_escape=inputs_to_escape, **kwargs)
 
     # keep_trailing_newline=True is to keep the last \n in the prompt to avoid converting "user:\t\n" to "user:".
     chat_str = render_jinja_template(
@@ -780,7 +780,7 @@ def build_messages(
             if not isinstance(message, dict):
                 continue
             for key, val in message.items():
-                message[key] = Escaper._unescape_roles(val, escape_dict)
+                message[key] = Escaper.unescape_roles(val, escape_dict)
 
     return messages
 
