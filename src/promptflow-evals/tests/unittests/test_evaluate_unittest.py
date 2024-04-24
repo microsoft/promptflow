@@ -7,11 +7,9 @@ import pathlib
 import pytest
 
 from pandas.testing import assert_frame_equal
-from unittest.mock import patch
 
 from promptflow.client import PFClient
 from promptflow.evals.evaluate._evaluate import _apply_target_to_data, evaluate
-from promptflow.evals.evaluate._utils import save_function_as_flow
 from promptflow.evals.evaluators.f1_score import F1ScoreEvaluator
 
 
@@ -68,14 +66,6 @@ class TestEvaluateUnittest:
             evaluate(data=questions_file, evaluators={"g": F1ScoreEvaluator()}, target=_target_fn)
 
         assert "Missing required inputs for evaluator g : ['ground_truth']." in exc_info.value.args[0]
-
-    @pytest.mark.parametrize('script_is_file', [True, False])
-    def test_save_fun_as_flow(self, tmpdir, pf_client, script_is_file):
-        """Test saving function as flow."""
-        with patch('promptflow.evals.evaluate._utils.os') as mock_os:
-            mock_os.path.isfile.return_value = script_is_file
-            save_function_as_flow(_target_fn, tmpdir, pf_client)
-        assert os.path.isfile(os.path.join(tmpdir, 'flow.flex.yaml'))
 
     def test_apply_target_to_data(self, pf_client, questions_file, questions_answers_file):
         """Test that target was applied correctly."""

@@ -4,7 +4,6 @@
 import inspect
 import os
 import re
-import shutil
 import uuid
 
 from types import FunctionType
@@ -15,7 +14,6 @@ import pandas as pd
 from promptflow.client import PFClient
 
 from ._code_client import CodeClient
-from ._utils import save_function_as_flow
 
 from promptflow._sdk._constants import LINE_NUMBER
 
@@ -123,22 +121,12 @@ def _apply_target_to_data(
     # We are manually creating the temporary directory for the flow
     # because the way tempdir remove temporary directories will
     # hang the debugger, because promptflow will keep flow directory.
-    saved_flow = f'flow_{uuid.uuid1()}'
-    os.makedirs(saved_flow)
-    save_function_as_flow(fun=target, target_dir=saved_flow, pf=pf_client)
     run = pf_client.run(
-        flow=saved_flow,
+        flow=target,
         data=data,
         name=f'preprocess_{uuid.uuid1()}'
     )
     run = pf_client.stream(run)
-    # Delete temporary directory if we can.
-    try:
-        shutil.rmtree(saved_flow)
-    except BaseException:
-        # Exception means, we are running in debugger. In this case we can keep the
-        # directory.
-        pass
     function_output = pf_client.runs.get_details(run, all_results=True)
     # Remove input and output prefix
     re_prefix = re.compile('(outputs[.])|(inputs[.])')
