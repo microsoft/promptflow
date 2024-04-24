@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 import logging
 import os.path
+from contextlib import contextmanager
 from itertools import product
 from os import PathLike
 from pathlib import Path
@@ -39,7 +40,8 @@ class InvalidConfigValue(ValidationException):
 
 
 class Configuration(object):
-    CONFIG_PATH = Path(HOME_PROMPT_FLOW_DIR) / SERVICE_CONFIG_FILE
+    GLOBAL_CONFIG_PATH = Path(HOME_PROMPT_FLOW_DIR) / SERVICE_CONFIG_FILE
+    CONFIG_PATH = GLOBAL_CONFIG_PATH
     COLLECT_TELEMETRY = "telemetry.enabled"
     EXTENSION_COLLECT_TELEMETRY = "extension.telemetry_enabled"
     INSTALLATION_ID = "cli.installation_id"
@@ -51,20 +53,29 @@ class Configuration(object):
     _instance = None
 
     def __init__(self, overrides=None):
-        if not os.path.exists(self.CONFIG_PATH.parent):
-            os.makedirs(self.CONFIG_PATH.parent, exist_ok=True)
-        if not os.path.exists(self.CONFIG_PATH):
-            self.CONFIG_PATH.touch(mode=read_write_by_user(), exist_ok=True)
-            with open(self.CONFIG_PATH, "w", encoding=DEFAULT_ENCODING) as f:
-                dump_yaml({}, f)
-        self._config = load_yaml(self.CONFIG_PATH)
-        if not self._config:
-            self._config = {}
+        self._config = self._get_cwd_config()
         # Allow config override by kwargs
         overrides = overrides or {}
         for key, value in overrides.items():
             self._validate(key, value)
             pydash.set_(self._config, key, value)
+
+    def _get_cwd_config(self):
+        cwd_config_path = Path.cwd().absolute().resolve()
+        file_name = self.CONFIG_PATH.name
+        while not (cwd_config_path / file_name).is_file() and cwd_config_path.parent != cwd_config_path:
+            cwd_config_path = cwd_config_path.parent
+
+        if (cwd_config_path / file_name).is_file():
+            cwd_config = load_yaml(cwd_config_path / file_name)
+        else:
+            cwd_config = {}
+
+        if self.CONFIG_PATH.is_file():
+            global_config = load_yaml(self.CONFIG_PATH)
+            cwd_config.update(global_config)
+
+        return cwd_config
 
     @property
     def config(self):
@@ -80,9 +91,23 @@ class Configuration(object):
     def set_config(self, key, value):
         """Store config in file to avoid concurrent write."""
         self._validate(key, value)
-        pydash.set_(self._config, key, value)
+        if self.CONFIG_PATH.is_file():
+            config = load_yaml(self.CONFIG_PATH)
+        else:
+            os.makedirs(self.CONFIG_PATH.parent, exist_ok=True)
+            self.CONFIG_PATH.touch(mode=read_write_by_user(), exist_ok=True)
+            config = {}
+
+        pydash.set_(config, key, value)
         with open(self.CONFIG_PATH, "w", encoding=DEFAULT_ENCODING) as f:
-            dump_yaml(self._config, f)
+            dump_yaml(config, f)
+
+        # If this config is added to the global config file or the parent directory config file of cwd,
+        # then (key, value) needs to be added to cwd config content.
+        if self.CONFIG_PATH == self.GLOBAL_CONFIG_PATH or Path().cwd().absolute().resolve().as_posix().startswith(
+            self.CONFIG_PATH.parent.absolute().resolve().as_posix()
+        ):
+            pydash.set_(self._config, key, value)
 
     def get_config(self, key):
         try:
@@ -245,3 +270,17 @@ class Configuration(object):
         if isinstance(result, str):
             return result.lower() == "true"
         return result is True
+
+    @classmethod
+    @contextmanager
+    def set_temp_config_path(cls, temp_path: Union[str, Path]):
+        temp_path = Path(temp_path).resolve().absolute()
+        if temp_path.is_file():
+            raise InvalidConfigFile(
+                "The configuration file folder is not set correctly. " "It cannot be a file, it can only be a folder"
+            )
+        original_path = cls.CONFIG_PATH
+        file_name = cls.CONFIG_PATH.name
+        cls.CONFIG_PATH = temp_path / file_name
+        yield
+        cls.CONFIG_PATH = original_path
