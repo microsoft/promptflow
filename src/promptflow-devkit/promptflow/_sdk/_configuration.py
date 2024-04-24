@@ -67,14 +67,14 @@ class Configuration(object):
             cwd_config_path = cwd_config_path.parent
 
         if self.CONFIG_PATH.is_file():
-            global_config = load_yaml(self.CONFIG_PATH)
+            all_configs = load_yaml(self.CONFIG_PATH)
         else:
-            global_config = {}
+            all_configs = {}
         if (cwd_config_path / file_name).is_file():
             cwd_config = load_yaml(cwd_config_path / file_name)
-            global_config.update(cwd_config)
+            all_configs.update(cwd_config)
 
-        return global_config
+        return all_configs
 
     @property
     def config(self):
