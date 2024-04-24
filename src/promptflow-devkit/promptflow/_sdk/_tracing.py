@@ -557,7 +557,7 @@ def process_otlp_trace_request(
     get_created_by_info_with_cache: typing.Callable,
     logger: logging.Logger,
     cloud_trace_only: bool = False,
-    credential: typing.Optional[object] = None,
+    get_credential: typing.Optional[typing.Callable] = None,
 ):
     """Process ExportTraceServiceRequest and write data to local/remote storage.
 
@@ -571,8 +571,8 @@ def process_otlp_trace_request(
     :type logger: logging.Logger
     :param cloud_trace_only: If True, only write trace to cosmosdb and skip local trace. Default is False.
     :type cloud_trace_only: bool
-    :param credential: The credential object used to authenticate with cosmosdb. Default is None.
-    :type credential: Optional[object]
+    :param get_credential: A function that gets credential for Cosmos DB operation. Default is None.
+    :type get_credential: Optional[Callable]
     """
     from promptflow._sdk.entities._trace import Span
 
@@ -602,12 +602,14 @@ def process_otlp_trace_request(
 
     if cloud_trace_only:
         # If we only trace to cloud, we should make sure the data writing is success before return.
-        _try_write_trace_to_cosmosdb(all_spans, get_created_by_info_with_cache, logger, credential, is_cloud_trace=True)
+        _try_write_trace_to_cosmosdb(
+            all_spans, get_created_by_info_with_cache, logger, get_credential, is_cloud_trace=True
+        )
     else:
         # Create a new thread to write trace to cosmosdb to avoid blocking the main thread
         ThreadWithContextVars(
             target=_try_write_trace_to_cosmosdb,
-            args=(all_spans, get_created_by_info_with_cache, logger, credential, False),
+            args=(all_spans, get_created_by_info_with_cache, logger, get_credential, False),
         ).start()
 
     return
@@ -617,7 +619,7 @@ def _try_write_trace_to_cosmosdb(
     all_spans: typing.List,
     get_created_by_info_with_cache: typing.Callable,
     logger: logging.Logger,
-    credential: typing.Optional[object] = None,
+    get_credential: typing.Optional[typing.Callable] = None,
     is_cloud_trace: bool = False,
 ):
     if not all_spans:
@@ -636,6 +638,15 @@ def _try_write_trace_to_cosmosdb(
         logger.info(f"Start writing trace to cosmosdb, total spans count: {len(all_spans)}.")
         start_time = datetime.now()
 
+        # use Azure CLI credential init as default get credential function
+        # outside this function, or say before this line, we might be in an environment with only promptflow-devkit
+        # we cannot import `AzureCliCredential` from `azure-identity`, so it might be None
+        # for other usages like runtime, or PRS, they should pass the function to get credential
+        if get_credential is None:
+            from azure.identity import AzureCliCredential
+
+            get_credential = AzureCliCredential
+
         from promptflow.azure._storage.cosmosdb.client import get_client
         from promptflow.azure._storage.cosmosdb.collection import CollectionCosmosDB
         from promptflow.azure._storage.cosmosdb.span import Span as SpanCosmosDB
@@ -645,19 +656,31 @@ def _try_write_trace_to_cosmosdb(
         # So, we load clients in parallel for warm up.
         span_client_thread = ThreadWithContextVars(
             target=get_client,
-            args=(CosmosDBContainerName.SPAN, subscription_id, resource_group_name, workspace_name, credential),
+            args=(CosmosDBContainerName.SPAN, subscription_id, resource_group_name, workspace_name, get_credential),
         )
         span_client_thread.start()
 
         collection_client_thread = ThreadWithContextVars(
             target=get_client,
-            args=(CosmosDBContainerName.COLLECTION, subscription_id, resource_group_name, workspace_name, credential),
+            args=(
+                CosmosDBContainerName.COLLECTION,
+                subscription_id,
+                resource_group_name,
+                workspace_name,
+                get_credential,
+            ),
         )
         collection_client_thread.start()
 
         line_summary_client_thread = ThreadWithContextVars(
             target=get_client,
-            args=(CosmosDBContainerName.LINE_SUMMARY, subscription_id, resource_group_name, workspace_name, credential),
+            args=(
+                CosmosDBContainerName.LINE_SUMMARY,
+                subscription_id,
+                resource_group_name,
+                workspace_name,
+                get_credential,
+            ),
         )
         line_summary_client_thread.start()
 
@@ -673,7 +696,7 @@ def _try_write_trace_to_cosmosdb(
             subscription_id=subscription_id,
             resource_group_name=resource_group_name,
             workspace_name=workspace_name,
-            credential=credential,
+            get_credential=get_credential,
         )
 
         span_client_thread.join()
@@ -683,7 +706,7 @@ def _try_write_trace_to_cosmosdb(
 
         created_by = get_created_by_info_with_cache()
         collection_client = get_client(
-            CosmosDBContainerName.COLLECTION, subscription_id, resource_group_name, workspace_name, credential
+            CosmosDBContainerName.COLLECTION, subscription_id, resource_group_name, workspace_name, get_credential
         )
 
         collection_db = CollectionCosmosDB(first_span, is_cloud_trace, created_by)
@@ -695,7 +718,7 @@ def _try_write_trace_to_cosmosdb(
 
         for span in all_spans:
             span_client = get_client(
-                CosmosDBContainerName.SPAN, subscription_id, resource_group_name, workspace_name, credential
+                CosmosDBContainerName.SPAN, subscription_id, resource_group_name, workspace_name, get_credential
             )
             result = SpanCosmosDB(span, collection_id, created_by).persist(
                 span_client, blob_container_client, blob_base_uri
@@ -707,7 +730,7 @@ def _try_write_trace_to_cosmosdb(
                     subscription_id,
                     resource_group_name,
                     workspace_name,
-                    credential,
+                    get_credential,
                 )
                 Summary(span, collection_id, created_by, logger).persist(line_summary_client)
         collection_db.update_collection_updated_at_info(collection_client)

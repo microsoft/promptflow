@@ -46,7 +46,6 @@ def trace_collector(
             get_created_by_info_with_cache=get_created_by_info_with_cache,
             logger=logger,
             cloud_trace_only=cloud_trace_only,
-            credential=credential,
         )
         return "Traces received", 200
 
