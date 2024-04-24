@@ -38,6 +38,8 @@ except ImportError:
         return False
 
     # copy lines from /src/promptflow-recording/promptflow/recording/local/test_utils.py
+    import time
+
     from promptflow._cli._pf._service import _start_background_service_on_unix, _start_background_service_on_windows
     from promptflow._sdk._service.utils.utils import get_pfs_port
 
@@ -47,6 +49,7 @@ except ImportError:
             _start_background_service_on_windows(port)
         else:
             _start_background_service_on_unix(port)
+        time.sleep(20)
         response = requests.get(f"http://localhost:{port}/heartbeat")
         assert response.status_code == 200, "prompt flow service is not healthy via /heartbeat"
         return port

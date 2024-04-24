@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import platform
+import time
 
 import requests
 
@@ -19,6 +20,7 @@ def invoke_prompt_flow_service() -> str:
         _start_background_service_on_windows(port)
     else:
         _start_background_service_on_unix(port)
+    time.sleep(20)  # we need some seconds to start the service
     response = requests.get(f"http://localhost:{port}/heartbeat")
     assert response.status_code == 200, "prompt flow service is not healthy via /heartbeat"
     return port
