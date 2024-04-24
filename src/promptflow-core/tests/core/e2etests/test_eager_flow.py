@@ -39,7 +39,7 @@ function_entries = [
 ]
 
 
-@pytest.mark.usefixtures("setup_connection_provider")
+@pytest.mark.usefixtures("recording_injection", "setup_connection_provider")
 @pytest.mark.e2etest
 class TestEagerFlow:
     @pytest.mark.parametrize(

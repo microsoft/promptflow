@@ -10,7 +10,7 @@ TEST_CONFIGS = PROMPTFLOW_ROOT / "tests" / "test_configs" / "eager_flows"
 
 
 @pytest.mark.e2etest
-@pytest.mark.usefixtures("serving_inject_dict_provider")
+@pytest.mark.usefixtures("recording_injection", "serving_inject_dict_provider")
 class TestEagerFlowServe:
     def test_eager_flow_serve(self, simple_eager_flow):
         response = simple_eager_flow.post("/score", data=json.dumps({"input_val": "hi"}))
