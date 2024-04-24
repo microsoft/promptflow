@@ -63,6 +63,7 @@ from promptflow._utils.exception_utils import (
 )
 from promptflow._utils.execution_utils import handle_line_failures
 from promptflow._utils.feature_utils import Feature, FeatureState, get_feature_list
+from promptflow._utils.flow_utils import is_prompty_flow
 from promptflow._utils.inputs_mapping_utils import apply_inputs_mapping
 from promptflow._utils.logger_utils import (
     DATETIME_FORMAT,
