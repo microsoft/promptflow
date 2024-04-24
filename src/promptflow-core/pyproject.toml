@@ -77,6 +77,8 @@ promptflow-recording = {path = "../promptflow-recording"}
 pytest = "*"
 pytest-cov = "*"
 pytest-xdist = "*"
+pytest-mock = "*"
+mock = "*"
 
 [build-system]
 requires = [
