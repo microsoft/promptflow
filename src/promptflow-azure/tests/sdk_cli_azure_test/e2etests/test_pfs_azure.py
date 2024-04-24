@@ -17,7 +17,7 @@ def app() -> Flask:
 
 
 @pytest.fixture
-def pfs_op(app: Flask) -> PFSOperations:
+def pfs_op(app: Flask):
     # Hack to import the pfs test utils from the devkit tests
     import sys
 
