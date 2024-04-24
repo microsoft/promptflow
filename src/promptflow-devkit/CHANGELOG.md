@@ -2,10 +2,6 @@
 
 ## v1.10.0 (Upcoming)
 
-### Features Added
-
-- Support search experience with Python expression in trace UI, see [here](https://microsoft.github.io/promptflow/how-to-guides/tracing/index.html#search) for more details.
-
 ## v1.9.0 (2024.04.17)
 
 ### Features Added
