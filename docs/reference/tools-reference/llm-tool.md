@@ -11,7 +11,7 @@ Prompt flow provides a few different LLM APIs:
 
 
 ## Prerequisite
-Create OpenAI, Azure OpenAI resources and Serverless deployment for models in Azure AI Studio Model catalog:
+Create OpenAI, Azure OpenAI resources or Serverless deployment for models in Azure AI Studio Model catalog:
 
 - **OpenAI**
 
