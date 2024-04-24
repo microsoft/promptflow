@@ -29,9 +29,12 @@ def get_datastore_container_client(
 ) -> Tuple[ContainerClient, str]:
     try:
         if credential is None:
-            from azure.identity import DefaultAzureCredential
+            # in cloud scenario, runtime will pass in credential
+            # so this is local to cloud only code, happens in prompt flow service
+            # which should rely on Azure CLI credential only
+            from azure.identity import AzureCliCredential
 
-            credential = DefaultAzureCredential()
+            credential = AzureCliCredential()
 
         datastore_definition, datastore_credential = _get_default_datastore(
             subscription_id, resource_group_name, workspace_name, credential

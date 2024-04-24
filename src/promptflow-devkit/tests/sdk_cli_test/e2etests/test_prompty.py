@@ -243,7 +243,9 @@ class TestPrompty:
 
     def test_prompty_with_stream(self, pf: PFClient):
         if is_live():
-            stream_type = Stream
+            # When running multiple test cases, the type is generator type.
+            # When running alone this case, the type is Stream.
+            stream_type = (types.GeneratorType, Stream)
         elif is_record() or is_replay():
             stream_type = types.GeneratorType
         # Test text format with stream=true
@@ -319,21 +321,22 @@ class TestPrompty:
         assert "2" in result
 
         prompty = Flow.load(
-            source=f"{PROMPTY_DIR}/prompty_example_with_sample.prompty", sample=f"{DATA_DIR}/prompty_inputs.json"
+            source=f"{PROMPTY_DIR}/prompty_example_with_sample.prompty", sample=f"file:{DATA_DIR}/prompty_inputs.json"
         )
         result = prompty()
         assert "2" in result
 
         with pytest.raises(InvalidSampleError) as ex:
             prompty = Flow.load(
-                source=f"{PROMPTY_DIR}/prompty_example_with_sample.prompty", sample=f"{DATA_DIR}/invalid_path.json"
+                source=f"{PROMPTY_DIR}/prompty_example_with_sample.prompty", sample=f"file:{DATA_DIR}/invalid_path.json"
             )
             prompty()
         assert "Cannot find sample file" in ex.value.message
 
         with pytest.raises(InvalidSampleError) as ex:
             prompty = Flow.load(
-                source=f"{PROMPTY_DIR}/prompty_example_with_sample.prompty", sample=f"{DATA_DIR}/prompty_inputs.jsonl"
+                source=f"{PROMPTY_DIR}/prompty_example_with_sample.prompty",
+                sample=f"file:{DATA_DIR}/prompty_inputs.jsonl",
             )
             prompty()
         assert "Only dict and json file are supported as sample in prompty" in ex.value.message

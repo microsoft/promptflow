@@ -18,11 +18,11 @@ from promptflow.core._prompty_utils import (
     convert_prompt_template,
     format_llm_response,
     get_open_ai_client_by_connection,
-    load_inputs_from_sample,
     prepare_open_ai_request_params,
     send_request_to_llm,
     update_dict_recursively,
 )
+from promptflow.core._utils import load_inputs_from_sample
 from promptflow.exceptions import UserErrorException
 from promptflow.tracing._experimental import enrich_prompt_template
 from promptflow.tracing._trace import _traced
