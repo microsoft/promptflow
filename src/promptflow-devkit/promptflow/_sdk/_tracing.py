@@ -577,6 +577,9 @@ def process_otlp_trace_request(
     :param credential: The credential object used to authenticate with cosmosdb. Default is None.
     :type credential: Optional[object]
     """
+
+    logger.info("Start parse trace data")
+    start_time = datetime.now()
     from promptflow._sdk.entities._trace import Span
     from promptflow._sdk.operations._trace_operations import TraceOperations
 
@@ -604,6 +607,7 @@ def process_otlp_trace_request(
                 else:
                     all_spans.append(span)
 
+    logger.info(f"Finish parse trace data. Duration {datetime.now() - start_time}")
     if cloud_trace_only:
         # If we only trace to cloud, we should make sure the data writing is success before return.
         _try_write_trace_to_cosmosdb(all_spans, get_created_by_info_with_cache, logger, credential, is_cloud_trace=True)
@@ -685,9 +689,16 @@ def _try_write_trace_to_cosmosdb(
         line_summary_client_thread.join()
         created_by_thread.join()
 
+        logger.info(f"All clients are ready, start writing trace to cosmosdb. Duration {datetime.now() - start_time}.")
+        collection_start_time = datetime.now()
+
         created_by = get_created_by_info_with_cache()
         collection_client = get_client(
-            CosmosDBContainerName.COLLECTION, subscription_id, resource_group_name, workspace_name, credential
+            CosmosDBContainerName.COLLECTION,
+            subscription_id,
+            resource_group_name,
+            workspace_name,
+            credential,
         )
 
         collection_db = CollectionCosmosDB(first_span, is_cloud_trace, created_by)
@@ -697,13 +708,23 @@ def _try_write_trace_to_cosmosdb(
         # We assign it to LineSummary and Span and use it as partition key.
         collection_id = collection_db.collection_id
 
+        logger.info(f"Finish creating collection, duration {datetime.now() - collection_start_time}.")
+
         for span in all_spans:
+            span_start_time = datetime.now()
             span_client = get_client(
-                CosmosDBContainerName.SPAN, subscription_id, resource_group_name, workspace_name, credential
+                CosmosDBContainerName.SPAN,
+                subscription_id,
+                resource_group_name,
+                workspace_name,
+                credential,
             )
             result = SpanCosmosDB(span, collection_id, created_by).persist(
                 span_client, blob_container_client, blob_base_uri
             )
+            logger.info(f"Finish writing span {span.span_id} to cosmosdb, duration {datetime.now() - span_start_time}.")
+            line_summary_start_time = datetime.now()
+
             # None means the span already exists, then we don't need to persist the summary also.
             if result is not None:
                 line_summary_client = get_client(
@@ -714,7 +735,13 @@ def _try_write_trace_to_cosmosdb(
                     credential,
                 )
                 Summary(span, collection_id, created_by, logger).persist(line_summary_client)
+            logger.info(
+                f"Finish writing summary of span {span.span_id}, duration {datetime.now() - line_summary_start_time}."
+            )
+
+        collection_start_time = datetime.now()
         collection_db.update_collection_updated_at_info(collection_client)
+        logger.info(f"Finish updating collection, duration {datetime.now() - collection_start_time}.")
         logger.info(
             (
                 f"Finish writing trace to cosmosdb, total spans count: {len(all_spans)}."
