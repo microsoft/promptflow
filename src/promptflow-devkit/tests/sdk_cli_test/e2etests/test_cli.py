@@ -1333,7 +1333,8 @@ class TestCli:
             assert (temp / "flow").is_dir()
             assert (temp / "runit").is_dir()
             assert (temp / "Dockerfile").is_file()
-            assert (temp / "Dockerfile").is_file()
+            with open(temp / "Dockerfile", "r") as f:
+                assert r"connections/" in f.read()
 
             origin_flow = Path(f"{EAGER_FLOWS_DIR}/chat-basic")
             temp_flow = temp / "flow"
