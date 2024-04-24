@@ -47,7 +47,7 @@ pf flow test --flow text_format.prompty
 pf flow test --flow json_format.prompty
 ```
 
-- [all response](./all_resonse.prompty)
+- [all response](./all_response.prompty)
 ```bash
 # TODO
 # pf flow test --flow all_response.prompty
