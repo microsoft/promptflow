@@ -4,23 +4,25 @@
 This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
 :::
 
-Promptflow provides the `prompty` feature to provide customers with a simple way to develop prompt template.
+Promptflow introduces the `prompty` feature, it is designed to simplify the development of prompt templates for customers.
 
 ## Create a prompty
-In promptflow, a file with a `.prompty` extension will be treated as a prompty.
+
 
 ### Prompty specification
-The prompty asset is a markdown file with a modified front matter. 
-The front matter is in yaml format that contains a number of metadata fields which defines model configuration and expected inputs of the prompty. And the following content is the prompt template in jinja format.
+In promptflow, file bearing the `.prompty` extension is recognized as a prompty. This unique file type facilitates the development of prompt template.
+
+Prompty is a markdown file, this front matter, structured in `YAML`, encapsulates a series of metadata fields pivotal for defining the model’s configuration and the inputs for the prompty.
+After this front matter is the prompt template, articulated in the `Jinja` format.
 
 Fields in the front matter:
 
-| Field       | Description                                                                             |
-|-------------|-----------------------------------------------------------------------------------------|
-| name        | The name of the prompt.                                                                 |
-| description | A description of the prompt.                                                            |
-| model       | Model configuration of prompty, contains connection info and LLM request parameters.    |
-| sample      | A dict or json file of inputs/outputs sample data.                                      |
+| Field       | Description                                                                                              |
+|-------------|----------------------------------------------------------------------------------------------------------|
+| name        | The name of the prompt.                                                                                  |
+| description | A description of the prompt.                                                                             |
+| model       | Details the prompty's model configuration, including connection info and parameters for the LLM request. |
+| sample      | Offers a dictionary or JSON file containing sample data for inputs and outputs.                          |
 
 ```yaml
 ---
@@ -58,7 +60,7 @@ user:
 ```
 
 ## Load a prompty
-User can override the configuration in the model during load prompty.
+prompty are designed with flexibility in mind, allowing users to override the default model configuration during the loading process.
 
 ::::{tab-set}
 :::{tab-item} Azure OpenAI
@@ -100,10 +102,10 @@ Use their name to address them in your responses.
 user:
 {{question}}
 ```
-Users can override prompty's configuration and LLM parameters when loading prompty.
-Users can also use this format `${env:ENV_NAME}` to pass configuration through environment variables.
 
-#### Override model by dict
+Users can specify alternative parameters or utilize environment variables to adjust the model settings. The format `${env:ENV_NAME}` is used to reference environment variables.
+
+#### Using a dictionary
 
 ```python
 from promptflow.core import Prompty
@@ -120,12 +122,12 @@ override_model = {
 prompty = Prompty.load(source="path/to/prompty.prompty", model=override_model)
 ```
 
-#### Override model by AzureOpenAIModelConfiguration
+#### Using AzureOpenAIModelConfiguration:
 
 ```python
 from promptflow.core import Prompty, AzureOpenAIModelConfiguration
 
-# Load prompty with dict override
+# Load prompty with AzureOpenAIModelConfiguration override
 configuration = AzureOpenAIModelConfiguration(
     azure_deployment="gpt-3.5-turbo",
     api_key="${env:AZURE_OPENAI_API_KEY}",
@@ -178,10 +180,9 @@ Use their name to address them in your responses.
 user:
   {{question}}
 ```
-Users can override prompty's configuration and LLM parameters when loading prompty.
-Users can also use this format `${env:ENV_NAME}` to pass configuration through environment variables.
+Users can specify alternative parameters or utilize environment variables to adjust the model settings. The format `${env:ENV_NAME}` is used to reference environment variables.
 
-#### Override model by dict
+#### Using a dictionary
 
 ```python
 from promptflow.core import Prompty
@@ -197,12 +198,12 @@ override_model = {
 prompty = Prompty.load(source="path/to/prompty.prompty", model=override_model)
 ```
 
-#### Override model by OpenAIModelConfiguration
+#### Using OpenAIModelConfiguration
 
 ```python
 from promptflow.core import Prompty, OpenAIModelConfiguration
 
-# Load prompty with dict override
+# Load prompty with OpenAIModelConfiguration override
 configuration = OpenAIModelConfiguration(
     model="gpt-35-turbo",
     base_url="${env:OPENAI_BASE_URL}",
@@ -220,10 +221,12 @@ prompty = Prompty.load(source="path/to/prompty.prompty", model=override_model)
 
 ## Execute a prompty
 
-Prompty can be executed in these ways to meet the needs of customers in different scenarios.
+Promptflow offers versatile methods for executing a prompty to meet the needs of customers in different scenarios.
 
-### Prompty as a call
-After the customer loads the prompty, the loaded prompty object can be called directly as a function. The return value is the content of the LLM response.
+### Direct function call
+
+Once loaded, the Prompty object can be invoked directly as a function, returning the content of the first choice in the LLM response.
+
 ```python
 from promptflow.core import Prompty
 
@@ -231,10 +234,11 @@ prompty_obj = Prompty.load(source="path/to/prompty.prompty")
 result = prompty_obj(first_name="John", last_name="Doh", question="What is the capital of France?")
 ```
 
-### Test prompty
+### Testing prompty
 
-#### Test as a flow
+#### Flow test
 
+Execute and test your Prompty with inputs or a sample file.
 ::::{tab-set}
 :::{tab-item} CLI
 :sync: CLI
@@ -249,8 +253,8 @@ pf flow test --flow path/to/prompty.prompty --inputs first_name=John last_name=D
 # Test prompty with sample file
 pf flow test --flow path/to/prompty.prompty --inputs path/to/sample.json
 ```
-There will be a trace link shown in terminal to visualize the internal execution details for this run.
-For prompty, user can find the generated prompt and llm request parameter and other information in the trace ui. Learn [more](../tracing/index.md).
+A trace link will be provided in the terminal to visualize the internal execution details for this run.
+For Prompty, users can find the generated prompt, LLM request parameters, and other information in the trace UI. Learn [more](../tracing/index.md).
 
 ![prompty_test_trace.png](../../media/how-to-guides/prompty/prompty_test_trace.png)
 
@@ -276,7 +280,7 @@ result = pf.test(flow="path/to/prompty.prompty", inputs="path/to/sample.json")
 
 #### Test with interactive mode
 
-Promptflow CLI provides a way to start an interactive chat session for chat flow. Customer can use below command to start an interactive chat session:
+Promptflow CLI also provides an interactive chat session for testing chat flows.
 
 ```bash
 pf flow test --flow path/to/prompty.prompty --interactive
@@ -334,6 +338,8 @@ Terminal outputs:
 :::{tab-item} CLI
 :sync: CLI
 
+To execute a batch run of a Prompty in Promptflow, you can use the following commands:
+
 ```bash
 pf run create --flow path/to/prompty.prompty --data path/to/inputs.jsonl
 ```
@@ -343,6 +349,9 @@ pf run create --flow path/to/prompty.prompty --data path/to/inputs.jsonl
 
 :::{tab-item} SDK
 :sync: SDK
+
+To execute a batch run of a Prompty in Promptflow, you can use the following SDK:
+
 ```python
 from promptflow.client import PFClient
 
@@ -358,17 +367,17 @@ pf.stream(prompty_run)
 :::
 ::::
 
-When executing a batch run, promptflow will provide a trace ui to visualize the internal execution details for this run. Learn [more](../tracing/index.md).
+When executing a batch run, Promptflow provides a trace UI to visualize the internal execution details of the run. This feature allows you to track the execution details of each line in the data file, including the prompt and LLM request parameters. Learn [more](../tracing/index.md).
 
+For example, after starting the Prompt flow service, you might see output like this in your terminal:
 ```text
 Prompt flow service has started...
 You can view the traces from local: http://localhost:49240/v1.0/ui/traces/?#run=prompty_variant_0_20240424_152808_282517
 [2024-04-24 15:28:12,597][promptflow._sdk._orchestrator.run_submitter][INFO] - Submitting run prompty_variant_0_20240424_152808_282517, log path: .promptflow\.runs\prompty_variant_0_20240424_152808_282517\logs.txt
 ```
 
-For propmty batch run, trace ui will record the execution details of each line in the data file.
+The trace UI will record the execution details of each line in the data file, providing a comprehensive view of the batch run’s performance and outcomes.
 ![batch_run_list.png](../../media/how-to-guides/prompty/batch_run_list.png)
 
-Execution information such as prompt and LLm request parameters will be shown here.
 
 ![batch_run_details.png](../../media/how-to-guides/prompty/batch_run_details.png)
