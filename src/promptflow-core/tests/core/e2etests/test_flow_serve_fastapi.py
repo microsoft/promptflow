@@ -19,10 +19,10 @@ from promptflow.tracing._operation_context import OperationContext
 TEST_CONFIGS = PROMPTFLOW_ROOT / "tests" / "test_configs" / "eager_flows"
 
 
-@pytest.mark.usefixtures("recording_injection", "setup_local_connection")
+@pytest.mark.usefixtures("recording_injection", "serving_inject_dict_provider")
 @pytest.mark.e2etest
-def test_swagger(flow_serving_client):
-    swagger_dict = json.loads(flow_serving_client.get("/swagger.json").data.decode())
+def test_swagger(fastapi_flow_serving_client):
+    swagger_dict = fastapi_flow_serving_client.get("/swagger.json").json()
     expected_swagger = {
         "components": {"securitySchemes": {"bearerAuth": {"scheme": "bearer", "type": "http"}}},
         "info": {
@@ -71,9 +71,9 @@ def test_swagger(flow_serving_client):
     assert swagger_dict == expected_swagger
 
 
-@pytest.mark.usefixtures("recording_injection", "setup_local_connection")
+@pytest.mark.usefixtures("recording_injection", "serving_inject_dict_provider")
 @pytest.mark.e2etest
-def test_feedback_flatten(flow_serving_client):
+def test_feedback_flatten(fastapi_flow_serving_client):
     resource = Resource(
         attributes={
             SERVICE_NAME: "promptflow",
@@ -85,16 +85,16 @@ def test_feedback_flatten(flow_serving_client):
     provider.add_span_processor(SimpleSpanProcessor(exporter))
     data_field_name = "comment"
     feedback_data = {data_field_name: "positive"}
-    response = flow_serving_client.post("/feedback?flatten=true", data=json.dumps(feedback_data))
+    response = fastapi_flow_serving_client.post("/feedback?flatten=true", data=json.dumps(feedback_data))
     assert response.status_code == 200
     spans = exporter.get_finished_spans()
     assert len(spans) == 1
     assert spans[0].attributes[data_field_name] == feedback_data[data_field_name]
 
 
-@pytest.mark.usefixtures("recording_injection", "setup_local_connection")
+@pytest.mark.usefixtures("serving_inject_dict_provider")
 @pytest.mark.e2etest
-def test_feedback_with_trace_context(flow_serving_client):
+def test_feedback_with_trace_context(fastapi_flow_serving_client):
     resource = Resource(
         attributes={
             SERVICE_NAME: "promptflow",
@@ -110,7 +110,7 @@ def test_feedback_with_trace_context(flow_serving_client):
     trace_ctx_parent_id = "f3f3f3f3f3f3f3f3"
     trace_ctx_flags = "01"
     trace_parent = f"{trace_ctx_version}-{trace_ctx_trace_id}-{trace_ctx_parent_id}-{trace_ctx_flags}"
-    response = flow_serving_client.post(
+    response = fastapi_flow_serving_client.post(
         "/feedback", headers={"traceparent": trace_parent, "baggage": "userId=alice"}, data=feedback_data
     )
     assert response.status_code == 200
@@ -124,10 +124,10 @@ def test_feedback_with_trace_context(flow_serving_client):
     assert spans[0].attributes["userId"] == "alice"
 
 
-@pytest.mark.usefixtures("recording_injection", "setup_local_connection")
+@pytest.mark.usefixtures("recording_injection", "serving_inject_dict_provider")
 @pytest.mark.e2etest
-def test_chat_swagger(serving_client_llm_chat):
-    swagger_dict = json.loads(serving_client_llm_chat.get("/swagger.json").data.decode())
+def test_chat_swagger(fastapi_serving_client_llm_chat):
+    swagger_dict = fastapi_serving_client_llm_chat.get("/swagger.json").json()
     expected_swagger = {
         "components": {"securitySchemes": {"bearerAuth": {"scheme": "bearer", "type": "http"}}},
         "info": {
@@ -186,52 +186,53 @@ def test_chat_swagger(serving_client_llm_chat):
     assert swagger_dict == expected_swagger
 
 
-@pytest.mark.usefixtures("recording_injection", "setup_local_connection")
+@pytest.mark.usefixtures("recording_injection", "serving_inject_dict_provider")
 @pytest.mark.e2etest
-def test_user_agent(flow_serving_client):
+def test_user_agent(fastapi_flow_serving_client):
     operation_context = OperationContext.get_instance()
     assert "test-user-agent" in operation_context.get_user_agent()
     assert "promptflow-local-serving" in operation_context.get_user_agent()
 
 
-@pytest.mark.usefixtures("recording_injection", "setup_local_connection")
+@pytest.mark.usefixtures("recording_injection", "serving_inject_dict_provider")
 @pytest.mark.e2etest
-def test_serving_api(flow_serving_client):
-    response = flow_serving_client.get("/health")
-    assert b"Healthy" in response.data
-    response = flow_serving_client.get("/")
-    print(response.data)
+def test_serving_api(fastapi_flow_serving_client):
+    response = fastapi_flow_serving_client.get("/health")
+    assert b"Healthy" in response.content
+    response = fastapi_flow_serving_client.get("/")
     assert response.status_code == 200
-    response = flow_serving_client.post("/score", data=json.dumps({"text": "hi"}))
+    response = fastapi_flow_serving_client.post("/score", data=json.dumps({"text": "hi"}))
     assert (
         response.status_code == 200
-    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
-    assert "output_prompt" in json.loads(response.data.decode())
+    ), f"Response code indicates error {response.status_code} - {response.content.decode()}"
+    assert "output_prompt" in response.json()
     # Assert environment variable resolved
     assert os.environ["API_TYPE"] == "azure"
 
 
-@pytest.mark.usefixtures("recording_injection", "setup_local_connection")
+@pytest.mark.usefixtures("recording_injection", "serving_inject_dict_provider")
 @pytest.mark.e2etest
-def test_evaluation_flow_serving_api(evaluation_flow_serving_client):
-    response = evaluation_flow_serving_client.post("/score", data=json.dumps({"url": "https://www.microsoft.com/"}))
+def test_evaluation_flow_serving_api(fastapi_evaluation_flow_serving_client):
+    response = fastapi_evaluation_flow_serving_client.post(
+        "/score", data=json.dumps({"url": "https://www.microsoft.com/"})
+    )
     assert (
         response.status_code == 200
-    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
-    assert "category" in json.loads(response.data.decode())
+    ), f"Response code indicates error {response.status_code} - {response.content.decode()}"
+    assert "category" in response.json()
 
 
 @pytest.mark.e2etest
-def test_unknown_api(flow_serving_client):
-    response = flow_serving_client.get("/unknown")
-    assert b"not supported by current app" in response.data
+def test_unknown_api(fastapi_flow_serving_client):
+    response = fastapi_flow_serving_client.get("/unknown")
+    assert b"not supported by current app" in response.content
     assert response.status_code == 404
-    response = flow_serving_client.post("/health")  # health api should be GET
-    assert b"not supported by current app" in response.data
-    assert response.status_code == 404
+    response = fastapi_flow_serving_client.post("/health")  # health api should be GET
+    assert b"Method Not Allowed" in response.content
+    assert response.status_code == 405
 
 
-@pytest.mark.usefixtures("recording_injection", "setup_local_connection")
+@pytest.mark.usefixtures("recording_injection", "serving_inject_dict_provider")
 @pytest.mark.e2etest
 @pytest.mark.parametrize(
     "accept, expected_status_code, expected_content_type",
@@ -246,7 +247,7 @@ def test_unknown_api(flow_serving_client):
     ],
 )
 def test_stream_llm_chat(
-    serving_client_llm_chat,
+    fastapi_serving_client_llm_chat,
     accept,
     expected_status_code,
     expected_content_type,
@@ -259,22 +260,24 @@ def test_stream_llm_chat(
         "Content-Type": "application/json",
         "Accept": accept,
     }
-    response = serving_client_llm_chat.post("/score", json=payload, headers=headers)
+    response = fastapi_serving_client_llm_chat.post("/score", json=payload, headers=headers)
+    res_content_type = response.headers.get("content-type")
     assert response.status_code == expected_status_code
-    assert response.content_type == expected_content_type
+    assert res_content_type == expected_content_type
 
     if response.status_code == 406:
-        assert response.json["error"]["code"] == "UserError"
+        data = response.json()
+        assert data["error"]["code"] == "UserError"
         assert (
             f"Media type {accept} in Accept header is not acceptable. Supported media type(s) -"
-            in response.json["error"]["message"]
+            in data["error"]["message"]
         )
 
-    if "text/event-stream" in response.content_type:
-        for line in response.data.decode().split("\n"):
+    if "text/event-stream" in res_content_type:
+        for line in response.content.decode().split("\n"):
             print(line)
     else:
-        result = response.json
+        result = response.json()
         print(result)
 
 
@@ -292,7 +295,7 @@ def test_stream_llm_chat(
     ],
 )
 def test_stream_python_stream_tools(
-    serving_client_python_stream_tools,
+    fastapi_serving_client_python_stream_tools,
     accept,
     expected_status_code,
     expected_content_type,
@@ -304,9 +307,10 @@ def test_stream_python_stream_tools(
         "Content-Type": "application/json",
         "Accept": accept,
     }
-    response = serving_client_python_stream_tools.post("/score", json=payload, headers=headers)
+    response = fastapi_serving_client_python_stream_tools.post("/score", json=payload, headers=headers)
+    res_content_type = response.headers.get("content-type")
     assert response.status_code == expected_status_code
-    assert response.content_type == expected_content_type
+    assert res_content_type == expected_content_type
 
     # The predefined flow in this test case is echo flow, which will return the input text.
     # Check output as test logic validation.
@@ -317,9 +321,9 @@ def test_stream_python_stream_tools(
     # - Generator will yield the event data for each word
     if response.status_code == 200:
         expected_output = f"Echo: {payload.get('text')}"
-        if "text/event-stream" in response.content_type:
+        if "text/event-stream" in res_content_type:
             words = expected_output.split()
-            lines = response.data.decode().split("\n\n")
+            lines = response.content.decode().split("\n\n")
 
             # The last line is empty
             lines = lines[:-1]
@@ -329,13 +333,14 @@ def test_stream_python_stream_tools(
             words = expected_output.split()
             merged_text = "".join(word + " " for word in words)
             expected_json = {"output_echo": merged_text}
-            result = response.json
+            result = response.json()
             assert expected_json == result
     elif response.status_code == 406:
-        assert response.json["error"]["code"] == "UserError"
+        data = response.json()
+        assert data["error"]["code"] == "UserError"
         assert (
             f"Media type {accept} in Accept header is not acceptable. Supported media type(s) -"
-            in response.json["error"]["message"]
+            in data["error"]["message"]
         )
 
 
@@ -353,7 +358,7 @@ def test_stream_python_stream_tools(
     ],
 )
 def test_stream_python_nonstream_tools(
-    flow_serving_client,
+    fastapi_flow_serving_client,
     accept,
     expected_status_code,
     expected_content_type,
@@ -365,62 +370,65 @@ def test_stream_python_nonstream_tools(
         "Content-Type": "application/json",
         "Accept": accept,
     }
-    response = flow_serving_client.post("/score", json=payload, headers=headers)
-    if "text/event-stream" in response.content_type:
-        for line in response.data.decode().split("\n"):
+    response = fastapi_flow_serving_client.post("/score", json=payload, headers=headers)
+    res_content_type = response.headers.get("content-type")
+    if "text/event-stream" in res_content_type:
+        for line in response.content.decode().split("\n"):
             print(line)
     else:
-        result = response.json
+        result = response.json()
         print(result)
     assert response.status_code == expected_status_code
-    assert response.content_type == expected_content_type
+    assert res_content_type == expected_content_type
 
 
-@pytest.mark.usefixtures("serving_client_image_python_flow", "recording_injection", "setup_local_connection")
+@pytest.mark.usefixtures("recording_injection", "serving_client_image_python_flow", "serving_inject_dict_provider")
 @pytest.mark.e2etest
-def test_image_flow(serving_client_image_python_flow, sample_image):
-    response = serving_client_image_python_flow.post("/score", data=json.dumps({"image": sample_image}))
+def test_image_flow(fastapi_serving_client_image_python_flow, sample_image):
+    response = fastapi_serving_client_image_python_flow.post("/score", data=json.dumps({"image": sample_image}))
     assert (
         response.status_code == 200
     ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
-    response = json.loads(response.data.decode())
+    response = response.json()
     assert {"output"} == response.keys()
     key_regex = re.compile(r"data:image/(.*);base64")
     assert re.match(key_regex, list(response["output"].keys())[0])
 
 
-@pytest.mark.usefixtures("serving_client_composite_image_flow", "recording_injection", "setup_local_connection")
+@pytest.mark.usefixtures("recording_injection", "serving_client_composite_image_flow", "serving_inject_dict_provider")
 @pytest.mark.e2etest
-def test_list_image_flow(serving_client_composite_image_flow, sample_image):
+def test_list_image_flow(fastapi_serving_client_composite_image_flow, sample_image):
     image_dict = {"data:image/jpg;base64": sample_image}
-    response = serving_client_composite_image_flow.post(
+    response = fastapi_serving_client_composite_image_flow.post(
         "/score", data=json.dumps({"image_list": [image_dict], "image_dict": {"my_image": image_dict}})
     )
     assert (
         response.status_code == 200
     ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
-    response = json.loads(response.data.decode())
+    response = response.json()
     assert {"output"} == response.keys()
     assert (
         "data:image/jpg;base64" in response["output"][0]
     ), f"data:image/jpg;base64 not in output list {response['output']}"
 
 
-@pytest.mark.usefixtures("serving_client_openai_vision_image_flow", "recording_injection", "setup_local_connection")
+@pytest.mark.usefixtures(
+    "recording_injection", "serving_client_openai_vision_image_flow", "serving_inject_dict_provider"
+)
 @pytest.mark.e2etest
-def test_openai_vision_image_flow(serving_client_openai_vision_image_flow, sample_image):
-    response = serving_client_openai_vision_image_flow.post("/score", data=json.dumps({"image": sample_image}))
+def test_openai_vision_image_flow(fastapi_serving_client_openai_vision_image_flow, sample_image):
+    response = fastapi_serving_client_openai_vision_image_flow.post("/score", data=json.dumps({"image": sample_image}))
     assert (
         response.status_code == 200
     ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
-    response = json.loads(response.data.decode())
+    response = response.json()
     assert {"output"} == response.keys()
     assert OpenaiVisionMultimediaProcessor.is_multimedia_dict(response["output"])
 
 
 @pytest.mark.usefixtures("serving_client_with_environment_variables")
 @pytest.mark.e2etest
-def test_flow_with_environment_variables(serving_client_with_environment_variables):
+def test_flow_with_environment_variables(fastapi_serving_client_with_environment_variables):
     except_environment_variables = {
         "env1": "2",
         "env2": "runtime_env2",
@@ -429,28 +437,28 @@ def test_flow_with_environment_variables(serving_client_with_environment_variabl
         "env10": "aaaaa",
     }
     for key, value in except_environment_variables.items():
-        response = serving_client_with_environment_variables.post("/score", data=json.dumps({"key": key}))
+        response = fastapi_serving_client_with_environment_variables.post("/score", data=json.dumps({"key": key}))
         assert (
             response.status_code == 200
         ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
-        response = json.loads(response.data.decode())
+        response = response.json()
         assert {"output"} == response.keys()
         assert response["output"] == value
 
 
 @pytest.mark.e2etest
-def test_eager_flow_serve(simple_eager_flow):
-    response = simple_eager_flow.post("/score", data=json.dumps({"input_val": "hi"}))
+def test_eager_flow_serve(fastapi_simple_eager_flow):
+    response = fastapi_simple_eager_flow.post("/score", data=json.dumps({"input_val": "hi"}))
     assert (
         response.status_code == 200
-    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
-    response = json.loads(response.data.decode())
+    ), f"Response code indicates error {response.status_code} - {response.content.decode()}"
+    response = response.json()
     assert response == {"output": "Hello world! hi"}
 
 
 @pytest.mark.e2etest
-def test_eager_flow_swagger(simple_eager_flow):
-    swagger_dict = json.loads(simple_eager_flow.get("/swagger.json").data.decode())
+def test_eager_flow_swagger(fastapi_simple_eager_flow):
+    swagger_dict = fastapi_simple_eager_flow.get("/swagger.json").json()
     expected_swagger = {
         "components": {"securitySchemes": {"bearerAuth": {"scheme": "bearer", "type": "http"}}},
         "info": {
@@ -503,19 +511,19 @@ def test_eager_flow_swagger(simple_eager_flow):
 
 
 @pytest.mark.e2etest
-def test_eager_flow_serve_primitive_output(simple_eager_flow_primitive_output):
-    response = simple_eager_flow_primitive_output.post("/score", data=json.dumps({"input_val": "hi"}))
+def test_eager_flow_serve_primitive_output(fastapi_simple_eager_flow_primitive_output):
+    response = fastapi_simple_eager_flow_primitive_output.post("/score", data=json.dumps({"input_val": "hi"}))
     assert (
         response.status_code == 200
-    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
-    response = json.loads(response.data.decode())
+    ), f"Response code indicates error {response.status_code} - {response.content.decode()}"
+    response = response.json()
     # response original value
     assert response == "Hello world! hi"
 
 
 @pytest.mark.e2etest
-def test_eager_flow_primitive_output_swagger(simple_eager_flow_primitive_output):
-    swagger_dict = json.loads(simple_eager_flow_primitive_output.get("/swagger.json").data.decode())
+def test_eager_flow_primitive_output_swagger(fastapi_simple_eager_flow_primitive_output):
+    swagger_dict = fastapi_simple_eager_flow_primitive_output.get("/swagger.json").json()
     expected_swagger = {
         "components": {"securitySchemes": {"bearerAuth": {"scheme": "bearer", "type": "http"}}},
         "info": {"title": "Promptflow[primitive_output] API", "version": "1.0.0", "x-flow-name": "primitive_output"},
@@ -557,14 +565,14 @@ def test_eager_flow_primitive_output_swagger(simple_eager_flow_primitive_output)
 
 
 @pytest.mark.e2etest
-def test_eager_flow_serve_dataclass_output(simple_eager_flow_dataclass_output):
-    response = simple_eager_flow_dataclass_output.post(
+def test_eager_flow_serve_dataclass_output(fastapi_simple_eager_flow_dataclass_output):
+    response = fastapi_simple_eager_flow_dataclass_output.post(
         "/score", data=json.dumps({"text": "my_text", "models": ["my_model"]})
     )
     assert (
         response.status_code == 200
-    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
-    response = json.loads(response.data.decode())
+    ), f"Response code indicates error {response.status_code} - {response.content.decode()}"
+    response = response.json()
     # response dict of dataclass
     assert response == {"models": ["my_model"], "text": "my_text"}
 
@@ -574,9 +582,9 @@ def test_eager_flow_serve_non_json_serializable_output(mocker):
     with pytest.raises(UserErrorException, match="Parse interface for 'my_flow' failed:"):
         # instead of giving 400 response for all requests, we raise user error on serving now
 
-        from ..conftest import create_client_by_model
+        from tests.conftest import fastapi_create_client_by_model
 
-        create_client_by_model(
+        fastapi_create_client_by_model(
             "non_json_serializable_output",
             mocker,
             model_root=TEST_CONFIGS,
@@ -597,7 +605,7 @@ def test_eager_flow_serve_non_json_serializable_output(mocker):
     ],
 )
 def test_eager_flow_stream_output(
-    stream_output,
+    fastapi_stream_output,
     accept,
     expected_status_code,
     expected_content_type,
@@ -609,97 +617,99 @@ def test_eager_flow_stream_output(
         "Content-Type": "application/json",
         "Accept": accept,
     }
-    response = stream_output.post("/score", json=payload, headers=headers)
-    error_msg = f"Response code indicates error {response.status_code} - {response.data.decode()}"
+    response = fastapi_stream_output.post("/score", json=payload, headers=headers)
+    error_msg = f"Response code indicates error {response.status_code} - {response.content.decode()}"
+    res_content_type = response.headers.get("content-type")
     assert response.status_code == expected_status_code, error_msg
-    assert response.content_type == expected_content_type
+    assert res_content_type == expected_content_type
 
     if response.status_code == 406:
-        assert response.json["error"]["code"] == "UserError"
+        data = response.json()
+        assert data["error"]["code"] == "UserError"
         assert (
             f"Media type {accept} in Accept header is not acceptable. Supported media type(s) -"
-            in response.json["error"]["message"]
+            in data["error"]["message"]
         )
 
-    if "text/event-stream" in response.content_type:
-        for line in response.data.decode().split("\n"):
+    if "text/event-stream" in res_content_type:
+        for line in response.content.decode().split("\n"):
             print(line)
     else:
-        result = response.json
+        result = response.json()
         print(result)
 
 
 @pytest.mark.e2etest
-def test_eager_flow_multiple_stream_output(multiple_stream_outputs):
+def test_eager_flow_multiple_stream_output(fastapi_multiple_stream_outputs):
     headers = {
         "Content-Type": "application/json",
         "Accept": "text/event-stream",
     }
-    response = multiple_stream_outputs.post("/score", data=json.dumps({"input_val": 1}), headers=headers)
+    response = fastapi_multiple_stream_outputs.post("/score", data=json.dumps({"input_val": 1}), headers=headers)
     assert (
         response.status_code == 400
-    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
-    response = json.loads(response.data.decode())
+    ), f"Response code indicates error {response.status_code} - {response.content.decode()}"
+    response = response.json()
     assert response == {"error": {"code": "UserError", "message": "Multiple stream output fields not supported."}}
 
 
 @pytest.mark.e2etest
-def test_eager_flow_evc(eager_flow_evc):
+def test_eager_flow_evc(fastapi_eager_flow_evc):
     # Supported: flow with EVC in definition
-    response = eager_flow_evc.post("/score", data=json.dumps({}))
+    response = fastapi_eager_flow_evc.post("/score", data=json.dumps({}))
     assert (
         response.status_code == 200
-    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
-    response = json.loads(response.data.decode())
+    ), f"Response code indicates error {response.status_code} - {response.content.decode()}"
+    response = response.json()
     assert response == "Hello world! azure"
 
 
 @pytest.mark.e2etest
-def test_eager_flow_evc_override(eager_flow_evc_override):
+def test_eager_flow_evc_override(fastapi_eager_flow_evc_override):
     # Supported: EVC's connection exist in flow definition
-    response = eager_flow_evc_override.post("/score", data=json.dumps({}))
+    response = fastapi_eager_flow_evc_override.post("/score", data=json.dumps({}))
     assert (
         response.status_code == 200
-    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
-    response = json.loads(response.data.decode())
+    ), f"Response code indicates error {response.status_code} - {response.content.decode()}"
+    response = response.json()
     assert response != "Hello world! ${azure_open_ai_connection.api_base}"
 
 
 @pytest.mark.e2etest
-def test_eager_flow_evc_override_not_exist(eager_flow_evc_override_not_exist):
+def test_eager_flow_evc_override_not_exist(fastapi_eager_flow_evc_override_not_exist):
     # EVC's connection not exist in flow definition, will resolve it.
-    response = eager_flow_evc_override_not_exist.post("/score", data=json.dumps({}))
+    response = fastapi_eager_flow_evc_override_not_exist.post("/score", data=json.dumps({}))
     assert (
         response.status_code == 200
-    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
-    response = json.loads(response.data.decode())
+    ), f"Response code indicates error {response.status_code} - {response.content.decode()}"
+    response = response.json()
     # EVC not resolved since the connection not exist in flow definition
     assert response == "Hello world! azure"
 
 
 @pytest.mark.e2etest
-def test_eager_flow_evc_connection_not_exist(eager_flow_evc_connection_not_exist):
+def test_eager_flow_evc_connection_not_exist(fastapi_eager_flow_evc_connection_not_exist):
     # Won't get not existed connection since it's override
-    response = eager_flow_evc_connection_not_exist.post("/score", data=json.dumps({}))
+    response = fastapi_eager_flow_evc_connection_not_exist.post("/score", data=json.dumps({}))
     assert (
         response.status_code == 200
-    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
-    response = json.loads(response.data.decode())
+    ), f"Response code indicates error {response.status_code} - {response.content.decode()}"
+    response = response.json()
     # EVC not resolved since the connection not exist in flow definition
     assert response == "Hello world! VALUE"
 
 
 @pytest.mark.e2etest
-def test_eager_flow_with_init(callable_class):
-    response1 = callable_class.post("/score", data=json.dumps({"func_input": "input2"}))
+def test_eager_flow_with_init(fastapi_callable_class):
+    response1 = fastapi_callable_class.post("/score", data=json.dumps({"func_input": "input2"}))
     assert (
         response1.status_code == 200
-    ), f"Response code indicates error {response1.status_code} - {response1.data.decode()}"
-    response1 = json.loads(response1.data.decode())
+    ), f"Response code indicates error {response1.status_code} - {response1.content.decode()}"
+    response1 = response1.json()
 
-    response2 = callable_class.post("/score", data=json.dumps({"func_input": "input2"}))
+    response2 = fastapi_callable_class.post("/score", data=json.dumps({"func_input": "input2"}))
     assert (
         response2.status_code == 200
-    ), f"Response code indicates error {response2.status_code} - {response2.data.decode()}"
-    response2 = json.loads(response2.data.decode())
+    ), f"Response code indicates error {response2.status_code} - {response2.content.decode()}"
+    response2 = response2.json()
     assert response1 == response2
