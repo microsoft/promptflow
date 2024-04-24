@@ -1,4 +1,4 @@
-# Prompty
+# Develop a prompty
 
 :::{admonition} Experimental feature
 This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
@@ -381,3 +381,12 @@ The trace UI will record the execution details of each line in the data file, pr
 
 
 ![batch_run_details.png](../../media/how-to-guides/prompty/batch_run_details.png)
+
+
+```{toctree}
+:maxdepth: 1
+:hidden:
+
+prompty-output-format
+use-prompty-in-flex-flow
+```

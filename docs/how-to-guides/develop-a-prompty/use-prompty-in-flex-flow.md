@@ -4,12 +4,14 @@
 This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
 :::
 
-Because Prompty can be called as a function, user can use prompty in flex flow.
+Because Prompty can be called as a function, user can use prompty in a `flex flow` which is can be a python function or class.
+This allows user to do more custmization logic with prompty.
 
 
-## Create a flex flow with prompty
+## Consume prompty in code
 
-prompty
+Example prompty: 
+
 ```text
 ---
 name: Stream Chat
@@ -39,7 +41,7 @@ user:
 {{question}}
 ```
 
-entry code of flex flow:
+Example python code:
 ```python
 from promptflow.tracing import trace
 from promptflow.core import AzureOpenAIModelConfiguration, Prompty
@@ -83,21 +85,26 @@ if __name__ == "__main__":
         print(result, end="")
 ```
 
-## Test flex flow with prompty
+## Run as normal python file
 
-- Run as normal python file
+User can run above code as noremal python file.
+
 ```batch
 python path/to/entry.py
 ```
 
-- Test flex flow
+## Test the class as a flex flow
+
+User can also leverage promptflow to test the class as a `flex flow`.
 
 ```bash
-pf flow test --flow path/to/flow.flex.yaml --inputs "question=What is ChatGPT?"
+pf flow test --flow file:ChatFlow --init init.json --inputs "question=What is ChatGPT?"
 ```
 
-- Batch run flex flow
+With the `flow` concept, user can further do a rich set of tasks, like:
+- Batch run a flow in parallel against multile lines of data, see [Run and evaluate a flow](../run-and-evaluate-a-flow/index.md).
+- Chat with a flow using an UI, see [Chat with a flow](../chat-with-a-flow/index.md).
+- Deploy the flow to multiple platforms, see [Deploy a flow](../deploy-a-flow/index.md).
 
-```bash
-pf run create --flow path/to/flow.flex.yaml --data path/to/data.jsonl --column-mapping question='${data.question}' 
-```
+Check the next section to learn more on flow.
+

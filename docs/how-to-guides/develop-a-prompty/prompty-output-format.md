@@ -5,8 +5,8 @@ This is an experimental feature, and may change at any time. Learn [more](../faq
 :::
 
 In this doc, you will learn:
-- Understand how to handle output format of prompty like: text, json_object.
-- Understand how to consume stream output of prompty
+- Understand how to handle output format of prompty like: `text`, `json_object`.
+- Understand how to consume **stream** output of prompty
 
 ## Formatting prompty output
 
