@@ -2632,6 +2632,37 @@ class TestCli:
         assert "Hello world" in stdout
         assert "val1" in stdout
 
+    def test_class_based_eager_flow_test_without_yaml(self, pf, capsys):
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            "simple_callable_class:MyFlow",
+            "--inputs",
+            "func_input=input",
+            "--init",
+            "obj_input=val",
+            cwd=f"{EAGER_FLOWS_DIR}/basic_callable_class_without_yaml",
+        )
+        stdout, _ = capsys.readouterr()
+        assert "obj_input" in stdout
+        assert "func_input" in stdout
+
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            "simple_callable_class:MyFlow",
+            "--inputs",
+            f"{EAGER_FLOWS_DIR}/basic_callable_class_without_yaml/inputs.jsonl",
+            "--init",
+            f"{EAGER_FLOWS_DIR}/basic_callable_class_without_yaml/init.json",
+            cwd=f"{EAGER_FLOWS_DIR}/basic_callable_class_without_yaml",
+        )
+        stdout, _ = capsys.readouterr()
+        assert "obj_input" in stdout
+        assert "func_input" in stdout
+
     def test_eager_flow_test_without_yaml_ui(self, pf, capsys):
         run_pf_command(
             "flow",
