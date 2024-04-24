@@ -52,12 +52,8 @@ from promptflow._sdk._service.utils.utils import (
     is_run_from_built_binary,
 )
 from promptflow._sdk._tracing_utils import get_workspace_kind
-from promptflow._sdk._utils import (
-    add_executable_script_to_env_path,
-    extract_workspace_triad_from_trace_provider,
-    parse_kv_from_pb_attribute,
-)
-from promptflow._sdk._utils.tracing import parse_protobuf_span
+from promptflow._sdk._utils import add_executable_script_to_env_path, extract_workspace_triad_from_trace_provider
+from promptflow._sdk._utils.tracing import parse_kv_from_pb_attribute, parse_protobuf_span
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.thread_utils import ThreadWithContextVars
 from promptflow.tracing._integrations._openai_injector import inject_openai_api

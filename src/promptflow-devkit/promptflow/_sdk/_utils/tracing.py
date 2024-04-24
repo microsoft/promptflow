@@ -40,7 +40,7 @@ def format_trace_id(trace_id: bytes) -> str:
     return f"0x{otel_format_trace_id(int.from_bytes(trace_id, byteorder='big', signed=False))}"
 
 
-def _parse_kv_from_pb_attribute(attribute: typing.Dict) -> typing.Tuple[str, str]:
+def parse_kv_from_pb_attribute(attribute: typing.Dict) -> typing.Tuple[str, str]:
     attr_key = attribute["key"]
     # suppose all values are flattened here
     # so simply regard the first value as the attribute value
@@ -51,7 +51,7 @@ def _parse_kv_from_pb_attribute(attribute: typing.Dict) -> typing.Tuple[str, str
 def _flatten_pb_attributes(attributes: typing.List[typing.Dict]) -> typing.Dict:
     flattened_attributes = {}
     for attribute in attributes:
-        attr_key, attr_value = _parse_kv_from_pb_attribute(attribute)
+        attr_key, attr_value = parse_kv_from_pb_attribute(attribute)
         flattened_attributes[attr_key] = attr_value
     return flattened_attributes
 
