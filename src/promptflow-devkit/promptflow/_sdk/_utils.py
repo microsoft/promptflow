@@ -968,7 +968,8 @@ def overwrite_null_std_logger():
         sys.stderr = sys.stdout
 
 
-def generate_yaml_entry_core(entry: Union[str, PathLike, Callable], code: Path = None):
+def generate_yaml_entry_without_recover(entry: Union[str, PathLike, Callable], code: Path = None):
+    """Generate yaml entry to run, will directly overwrite yaml if it already exists and not delete generated yaml."""
     from promptflow._proxy import ProxyFactory
 
     executor_proxy = ProxyFactory().get_executor_proxy_cls(FlowLanguage.Python)
