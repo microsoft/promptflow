@@ -64,39 +64,63 @@ def _validation(target, data, evaluators, output_path, tracking_uri, evaluation_
     for evaluator_name, evaluator in evaluators.items():
         # Apply column mapping
         mapping_config = evaluator_config.get(evaluator_name, evaluator_config.get("default", None))
-        renamed_data_df = _apply_column_mapping(data_df, "data", mapping_config)
+        new_data_df = _apply_column_mapping(data_df, mapping_config)
 
         # Validate input data for evaluator
-        _validate_input_data_for_evaluator(evaluator, evaluator_name, renamed_data_df)
+        _validate_input_data_for_evaluator(evaluator, evaluator_name, new_data_df)
 
 
-def _apply_column_mapping(source_df, source_name, mapping_config, inplace=False):
-    SUPPORTED_SOURCE_NAMES = ["data", "target"]
-
+def _apply_column_mapping(source_df: pd.DataFrame, mapping_config: dict, inplace: bool = False):
+    """
+    Apply column mapping to source_df based on mapping_config.
+    This function is used for pre-validation of input data for evaluators
+    """
     result_df = source_df
+
     if mapping_config:
         column_mapping = {}
+        pattern_prefix = "data."
+
         for map_to_key, map_value in mapping_config.items():
             match = re.search(r"^\${([^{}]+)}$", map_value)
-
             if match is not None:
                 pattern = match.group(1)
-
-                # Check if source reference is valid
-                source_reference = pattern.split(".")[0]
-                if source_reference not in SUPPORTED_SOURCE_NAMES:
-                    raise ValueError(
-                        f"'{source_reference}' is not a valid source reference. "
-                        + f"It should be one of {SUPPORTED_SOURCE_NAMES}."
-                    )
-
-                if pattern.startswith(f"{source_name}."):
-                    map_from_key = pattern.split(f"{source_name}.")[1]
+                if pattern.startswith(pattern_prefix):
+                    map_from_key = pattern.split(pattern_prefix)[1]
                     column_mapping[map_from_key] = map_to_key
 
         result_df = source_df.rename(columns=column_mapping, inplace=inplace)
 
     return result_df
+
+
+def _process_evaluator_config(evaluator_config: Dict[str, Dict[str, str]]):
+    """Process evaluator_config to replace ${target.} with ${data.}"""
+
+    processed_config = {}
+
+    if evaluator_config is None:
+        return processed_config
+
+    unexpected_references = re.compile(r"\${(?!target\.|data\.).+?}")
+
+    for evaluator, mapping_config in evaluator_config.items():
+        if isinstance(mapping_config, dict):
+            processed_config[evaluator] = {}
+
+            for map_to_key, map_value in mapping_config.items():
+
+                # Check if there's any unexpected reference other than ${target.} or ${data.}
+                if unexpected_references.search(map_value):
+                    raise ValueError(
+                        "Unexpected references detected in 'evaluator_config'. "
+                        "Ensure only ${target.} and ${data.} are used."
+                    )
+
+                # Replace ${target.} with ${data.}
+                processed_config[evaluator][map_to_key] = map_value.replace("${target.", "${data.")
+
+    return processed_config
 
 
 def evaluate(
@@ -129,6 +153,8 @@ def evaluate(
     :rtype: ~azure.ai.generative.evaluate.EvaluationResult
     """
 
+    evaluator_config = _process_evaluator_config(evaluator_config)
+
     _validation(target, data, evaluators, output_path, tracking_uri, evaluation_name, evaluator_config)
 
     pf_client = PFClient()
@@ -136,9 +162,8 @@ def evaluate(
     evaluator_info = {}
 
     for evaluator_name, evaluator in evaluators.items():
-        evaluator_info.update({evaluator_name: {"client": pf_client, "evaluator": evaluator}})
-
-        evaluator_info[evaluator_name]["run"] = evaluator_info[evaluator_name]["client"].run(
+        evaluator_info[evaluator_name] = {}
+        evaluator_info[evaluator_name]["run"] = pf_client.run(
             flow=evaluator,
             column_mapping=evaluator_config.get(evaluator_name, evaluator_config.get("default", None)),
             data=data,
@@ -147,7 +172,7 @@ def evaluate(
 
     evaluators_result_df = None
     for evaluator_name, evaluator_info in evaluator_info.items():
-        evaluator_result_df = evaluator_info["client"].get_details(evaluator_info["run"], all_results=True)
+        evaluator_result_df = pf_client.get_details(evaluator_info["run"], all_results=True)
 
         # drop input columns
         evaluator_result_df = evaluator_result_df.drop(

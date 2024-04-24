@@ -64,7 +64,7 @@ class TestEvaluate:
 
         assert "Missing required inputs for evaluator g : ['ground_truth']." in exc_info.value.args[0]
 
-    def test_apply_column_mapping_normal(self):
+    def test_apply_column_mapping(self):
         json_data = [
             {
                 "question": "How are you?",
@@ -77,7 +77,7 @@ class TestEvaluate:
         }
 
         data_df = pd.DataFrame(json_data)
-        new_data_df = _apply_column_mapping(data_df, "data", inputs_mapping)
+        new_data_df = _apply_column_mapping(data_df, inputs_mapping)
 
         assert "question" in new_data_df.columns
         assert "answer" in new_data_df.columns
@@ -85,23 +85,15 @@ class TestEvaluate:
         assert new_data_df["question"][0] == "How are you?"
         assert new_data_df["answer"][0] == "I'm fine"
 
-    def test_apply_column_mapping_invalid_source_reference(self):
-        json_data = [
-            {
-                "question": "How are you?",
-                "ground_truth": "I'm fine",
-            }
-        ]
-        inputs_mapping = {
-            "question": "${foo.question}",
-            "answer": "${foo.ground_truth}",
-        }
-
-        data_df = pd.DataFrame(json_data)
-
+    def test_evaluate_invalid_evaluator_config(self, mock_model_config):
         with pytest.raises(ValueError) as exc_info:
-            _apply_column_mapping(data_df, "data", inputs_mapping)
+            evaluate(
+                data="data.jsonl",
+                evaluators={"g": GroundednessEvaluator(model_config=mock_model_config)},
+                evaluator_config={"g": {"question": "${foo.question}"}},
+            )
 
         assert (
-            "'foo' is not a valid source reference. It should be one of ['data', 'target']." in exc_info.value.args[0]
+            "Unexpected references detected in 'evaluator_config'. Ensure only ${target.} and ${data.} are used."
+            in exc_info.value.args[0]
         )
