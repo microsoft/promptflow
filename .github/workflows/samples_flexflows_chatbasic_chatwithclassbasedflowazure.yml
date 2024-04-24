@@ -21,6 +21,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      - name: Generate config.json for canary workspace (scheduled runs only)
+        if: github.event_name == 'schedule'
+        run: echo '${{ secrets.TEST_WORKSPACE_CONFIG_JSON_CANARY }}' > ${{ github.workspace }}/examples/config.json
+      - name: Generate config.json for production workspace
+        if: github.event_name != 'schedule'
+        run: echo '${{ secrets.EXAMPLE_WORKSPACE_CONFIG_JSON_PROD }}' > ${{ github.workspace }}/examples/config.json
       - name: Azure Login
         uses: azure/login@v1
         with:
@@ -34,22 +40,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r ${{ github.workspace }}/examples/requirements.txt
           pip install -r ${{ github.workspace }}/examples/dev_requirements.txt
-      - name: setup .env file
-        working-directory: examples/flex-flows/chat-basic
-        run: |
-          AOAI_API_KEY=${{ secrets.AOAI_API_KEY_TEST }}
-          AOAI_API_ENDPOINT=${{ secrets.AOAI_API_ENDPOINT_TEST }}
-          AOAI_API_ENDPOINT=$(echo ${AOAI_API_ENDPOINT//\//\\/})
-          if [[ -e .env.example ]]; then
-            echo "env replacement"
-            sed -i -e "s/<your_AOAI_key>/$AOAI_API_KEY/g" -e "s/<your_AOAI_endpoint>/$AOAI_API_ENDPOINT/g" .env.example
-            mv .env.example .env
-          fi
-          if [[ -e ../.env.example ]]; then
-            echo "env replacement"
-            sed -i -e "s/<your_AOAI_key>/$AOAI_API_KEY/g" -e "s/<your_AOAI_endpoint>/$AOAI_API_ENDPOINT/g" ../.env.example
-            mv ../.env.example ../.env
-          fi
       - name: Create Aoai Connection
         run: pf connection create -f ${{ github.workspace }}/examples/connections/azure_openai.yml --set api_key="${{ secrets.AOAI_API_KEY_TEST }}" api_base="${{ secrets.AOAI_API_ENDPOINT_TEST }}"
       - name: Test Notebook
