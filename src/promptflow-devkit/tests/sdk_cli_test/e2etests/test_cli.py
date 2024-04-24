@@ -28,7 +28,7 @@ from promptflow._sdk._constants import LOGGER_NAME, SCRUBBED_VALUE, ExperimentSt
 from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
-from promptflow._utils.context_utils import _change_working_dir
+from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil, setup_user_agent_to_operation_context
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
@@ -2730,6 +2730,35 @@ class TestCli:
                 f"{DATAS_DIR}/logo.jpg",
             )
         assert "Only support jsonl or json file as input" in ex.value.args[0]
+
+    def test_pf_run_without_yaml(self, pf):
+        run_id = str(uuid.uuid4())
+        with inject_sys_path(f"{EAGER_FLOWS_DIR}/basic_callable_class"):
+            run_pf_command(
+                "run",
+                "create",
+                "--flow",
+                "simple_callable_class:MyFlow",
+                "--data",
+                f"{EAGER_FLOWS_DIR}/basic_callable_class/inputs.jsonl",
+                "--name",
+                run_id,
+                "--init",
+                "obj_input=val",
+                cwd=f"{EAGER_FLOWS_DIR}/basic_callable_class",
+            )
+
+        def assert_func(details_dict):
+            return details_dict["outputs.func_input"] == [
+                "func_input",
+                "func_input",
+                "func_input",
+                "func_input",
+            ] and details_dict["outputs.obj_input"] == ["val", "val", "val", "val"]
+
+        # check run results
+        run = pf.runs.get(run_id)
+        assert_batch_run_result(run, pf, assert_func)
 
 
 def assert_batch_run_result(run, pf, assert_func):
