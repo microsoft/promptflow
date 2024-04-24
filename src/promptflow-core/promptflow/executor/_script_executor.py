@@ -461,6 +461,6 @@ class ScriptExecutor(FlowExecutor):
             self._inputs_sign = flow.inputs
             self._init_sign = flow.init
         else:
-            # For function entry there is no need to parse the flow file to get the inputs and init sign.
+            # For function entry there is no yaml file to get the inputs and init signature.
             self._inputs_sign = {}
             self._init_sign = {}

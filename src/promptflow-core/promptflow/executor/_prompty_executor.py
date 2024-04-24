@@ -52,5 +52,6 @@ class PromptyExecutor(ScriptExecutor):
         return self._func
 
     def _init_input_sign(self):
+        # For prompty there is no need to get the inputs and init signature.
         self._inputs_sign = {}
         self._init_sign = {}

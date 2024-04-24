@@ -6,7 +6,12 @@ import pytest
 from promptflow._core.tool_meta_generator import PythonLoadError
 from promptflow.contracts.run_info import Status
 from promptflow.core import AzureOpenAIModelConfiguration, OpenAIModelConfiguration
-from promptflow.executor._errors import FlowEntryInitializationError, InputNotFound, InvalidFlexFlowEntry
+from promptflow.executor._errors import (
+    FlowEntryInitializationError,
+    InputNotFound,
+    InputTypeError,
+    InvalidFlexFlowEntry,
+)
 from promptflow.executor._result import LineResult
 from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import FlowExecutor
@@ -151,11 +156,19 @@ class TestEagerFlow:
         assert 0 <= delta_sec < 0.1, msg
 
     def test_flow_run_with_invalid_inputs(self):
+        # Case 1: input not found
         flow_file = get_yaml_file("flow_with_signature", root=EAGER_FLOW_ROOT)
         executor = FlowExecutor.create(flow_file=flow_file, connections={}, init_kwargs=None)
         with pytest.raises(InputNotFound) as e:
             executor.exec_line(inputs={}, index=0)
         assert "The input for flow is incorrect." in str(e.value)
+
+        # Case 2: input type mismatch
+        flow_file = get_yaml_file("flow_with_wrong_type", root=EAGER_FLOW_ROOT)
+        executor = FlowExecutor.create(flow_file=flow_file, connections={}, init_kwargs=None)
+        with pytest.raises(InputTypeError) as e:
+            executor.exec_line(inputs={"input_1": 1}, index=0)
+        assert "does not match the expected type" in str(e.value)
 
     def test_flow_run_with_invalid_case(self):
         flow_folder = "dummy_flow_with_exception"
