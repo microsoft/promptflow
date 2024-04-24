@@ -124,29 +124,29 @@ def _apply_target_to_data(
     run = pf_client.run(
         flow=target,
         data=data,
-        name=f'preprocess_{uuid.uuid1()}'
+        name=f'preprocess_{uuid.uuid1()}',
+        stream=True
     )
-    run = pf_client.stream(run)
-    function_output = pf_client.runs.get_details(run, all_results=True)
+    target_output = pf_client.runs.get_details(run, all_results=True)
     # Remove input and output prefix
     re_prefix = re.compile('(outputs[.])|(inputs[.])')
     added_columns = {
         re_prefix.sub('', col) for col in filter(
-            lambda x: x.startswith('outputs.'), function_output.columns)}
+            lambda x: x.startswith('outputs.'), target_output.columns)}
 
-    rename_dict = {col: re_prefix.sub('', col) for col in function_output.columns}
-    function_output.rename(columns=rename_dict, inplace=True)
-    drop_columns = set(function_output.columns) - added_columns
-    function_output.set_index(LINE_NUMBER, inplace=True)
-    function_output.sort_index(inplace=True)
-    function_output.reset_index(inplace=True, drop=False)
-    # function_output contains only input columns, taken by function,
+    rename_dict = {col: re_prefix.sub('', col) for col in target_output.columns}
+    target_output.rename(columns=rename_dict, inplace=True)
+    drop_columns = set(target_output.columns) - added_columns
+    target_output.set_index(LINE_NUMBER, inplace=True)
+    target_output.sort_index(inplace=True)
+    target_output.reset_index(inplace=True, drop=False)
+    # target_output contains only input columns, taken by function,
     # so we need to concatenate it to the input data frame.
-    function_output.drop(drop_columns, inplace=True, axis=1)
-    function_output = pd.concat([function_output, initial_data], axis=1)
+    target_output.drop(drop_columns, inplace=True, axis=1)
+    target_output = pd.concat([target_output, initial_data], axis=1)
     new_data_name = f'{uuid.uuid1()}.jsonl'
-    function_output.to_json(new_data_name, orient='records', lines=True)
-    return new_data_name, function_output, added_columns
+    target_output.to_json(new_data_name, orient='records', lines=True)
+    return new_data_name, target_output, added_columns
 
 
 def evaluate(
