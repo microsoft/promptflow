@@ -11,7 +11,7 @@ In promptflow, a file with a `.prompty` extension will be treated as a prompty.
 
 ### Prompty specification
 The prompty asset is a markdown file with a modified front matter. 
-The front matter is in yaml format that contains a number of metadata fields which defines model configuration and expected inputs of the prompty.
+The front matter is in yaml format that contains a number of metadata fields which defines model configuration and expected inputs of the prompty. And the following content is the prompt template in jinja2 format.
 
 Fields in the front matter:
 
@@ -20,8 +20,6 @@ Fields in the front matter:
 | name        | The name of the prompt.                                                                 |
 | description | A description of the prompt.                                                            |
 | model       | Model configuration of prompty, contains connection info and LLM request parameters.    |
-| inputs      | Define the inputs received by the prompt template.                                      |
-| outputs     | Specify the fields in prompty result. (Only works when response format is json_object.) |
 | sample      | A dict or json file of inputs/outputs sample data.                                      |
 
 ```yaml
@@ -29,23 +27,19 @@ Fields in the front matter:
 name: Basic Prompt
 description: A basic prompt that uses the GPT-3 chat API to answer questions
 model:
-    api: chat
-    configuration:
-      type: azure_openai
-      azure_deployment: gpt-35-turbo
-      connection: azure_open_ai_connection
-    parameters:
-      max_tokens: 128
-      temperature: 0.2
-inputs:
-  first_name:
-    type: string
-    default: John
-  last_name:
-    type: string
-    default: Doh
-  question:
-    type: string
+  api: chat
+  configuration:
+    type: azure_openai
+    azure_deployment: gpt-35-turbo
+    connection: azure_open_ai_connection
+  parameters:
+    max_tokens: 128
+    temperature: 0.2
+sample:
+  inputs:
+    first_name: John
+    last_name: Doe
+    question: Who is the most famous person in the world?
 ---
 system:
 You are an AI assistant who helps people find information.
@@ -60,7 +54,7 @@ You are helping {{first_name}} {{last_name}} to find answers to their questions.
 Use their name to address them in your responses.
 
 user:
-{{question}}
+  {{question}}
 ```
 
 ## Load a prompty
@@ -75,25 +69,21 @@ User can override the configuration in the model during load prompty.
 name: Basic Prompt
 description: A basic prompt that uses the GPT-3 chat API to answer questions
 model:
-    api: chat
-    configuration:
-      type: azure_openai
-      azure_deployment: gpt-35-turbo
-      api_key: <api-key>
-      api_version: <api-version>
-      azure_endpoint: <azure-endpoint>
-    parameters:
-      max_tokens: 128
-      temperature: 0.2
-inputs:
-  first_name:
-    type: string
-    default: John
-  last_name:
-    type: string
-    default: Doh
-  question:
-    type: string
+  api: chat
+  configuration:
+    type: azure_openai
+    azure_deployment: gpt-35-turbo
+    api_key: <api-key>
+    api_version: <api-version>
+    azure_endpoint: <azure-endpoint>
+  parameters:
+    max_tokens: 128
+    temperature: 0.2
+sample:
+  inputs:
+    first_name: John
+    last_name: Doe
+    question: Who is the most famous person in the world?
 ---
 system:
 You are an AI assistant who helps people find information.
@@ -125,7 +115,7 @@ override_model = {
         "api_version": "${env:AZURE_OPENAI_API_VERSION}",
         "azure_endpoint": "${env:AZURE_OPENAI_ENDPOINT}"
     },
-    "parameters": {"max_token": 512}
+    "parameters": {"max_tokens": 512}
 }
 prompty = Prompty.load(source="path/to/prompty.prompty", model=override_model)
 ```
@@ -144,7 +134,7 @@ configuration = AzureOpenAIModelConfiguration(
 )
 override_model = {
     "configuration": configuration,
-    "parameters": {"max_token": 512}
+    "parameters": {"max_tokens": 512}
 }
 prompty = Prompty.load(source="path/to/prompty.prompty", model=override_model)
 ```
@@ -158,24 +148,20 @@ prompty = Prompty.load(source="path/to/prompty.prompty", model=override_model)
 name: Basic Prompt
 description: A basic prompt that uses the GPT-3 chat API to answer questions
 model:
-    api: chat
-    configuration:
-      type: openai
-      model: gpt-3.5-turbo
-      api_key: <api-key>
-      base_url: <api_base>
-    parameters:
-      max_tokens: 128
-      temperature: 0.2
-inputs:
-  first_name:
-    type: string
-    default: John
-  last_name:
-    type: string
-    default: Doh
-  question:
-    type: string
+  api: chat
+  configuration:
+    type: openai
+    model: gpt-3.5-turbo
+    api_key: <api-key>
+    base_url: <api_base>
+  parameters:
+    max_tokens: 128
+    temperature: 0.2
+sample:
+  inputs:
+    first_name: John
+    last_name: Doe
+    question: Who is the most famous person in the world?
 ---
 system:
 You are an AI assistant who helps people find information.
@@ -190,7 +176,7 @@ You are helping {{first_name}} {{last_name}} to find answers to their questions.
 Use their name to address them in your responses.
 
 user:
-{{question}}
+  {{question}}
 ```
 Users can override prompty's configuration and LLM parameters when loading prompty.
 Users can also use this format `${env:ENV_NAME}` to pass configuration through environment variables.
@@ -206,7 +192,7 @@ override_model = {
         "api_key": "${env:OPENAI_API_KEY}",
         "base_url": "${env:OPENAI_BASE_URL}",
     },
-    "parameters": {"max_token": 512}
+    "parameters": {"max_tokens": 512}
 }
 prompty = Prompty.load(source="path/to/prompty.prompty", model=override_model)
 ```
@@ -224,7 +210,7 @@ configuration = OpenAIModelConfiguration(
 )
 override_model = {
     "configuration": configuration,
-    "parameters": {"max_token": 512}
+    "parameters": {"max_tokens": 512}
 }
 prompty = Prompty.load(source="path/to/prompty.prompty", model=override_model)
 ```
@@ -263,6 +249,10 @@ pf flow test --flow path/to/prompty.prompty --inputs first_name=John last_name=D
 # Test prompty with sample file
 pf flow test --flow path/to/prompty.prompty --inputs path/to/sample.json
 ```
+There will be a trace link shown in terminal to visualize the internal execution details for this run.
+For prompty, user can find the generated prompt and llm request parameter and other information in the trace ui. Learn [more](../tracing/index.md).
+
+![prompty_test_trace.png](../../media/how-to-guides/prompty/prompty_test_trace.png)
 
 :::
 
@@ -297,28 +287,21 @@ pf flow test --flow path/to/prompty.prompty --interactive
 name: Basic Prompt With Chat History
 description: A basic prompt that uses the GPT-3 chat API to answer questions
 model:
-    api: chat
-    configuration:
-      type: azure_open_ai
-      azure_deployment: gpt-35-turbo
-      connection: azure_open_ai_connection
+  api: chat
+  configuration:
+    type: azure_open_ai
+    azure_deployment: gpt-35-turbo
+    connection: azure_open_ai_connection
 
-    parameters:
-      max_tokens: 128
-      temperature: 0.2
-inputs:
-  first_name:
-    type: string
-    default: John
-  last_name:
-    type: string
-    default: Doh
-  question:
-    type: string
-    is_chat_input: true
-  chat_history:
-    is_chat_history: true
-    type: list
+  parameters:
+    max_tokens: 128
+    temperature: 0.2
+sample:
+  inputs:
+    first_name: John
+    last_name: Doe
+    question: Who is the most famous person in the world?
+    chat_history: [ { "role": "user", "content": "what's the capital of France?" }, { "role": "assistant", "content": "Paris" } ]
 ---
 system:
 You are an AI assistant who helps people find information.
@@ -338,7 +321,7 @@ Here is a chat history you had with the user:
 {% endfor %}
 
 user:
-{{question}}
+  {{question}}
 ```
 
 Terminal outputs:
@@ -366,8 +349,8 @@ from promptflow.client import PFClient
 pf = PFClient() 
 # create run
 prompty_run = pf.run(
-    flow=r"C:\project\promptflow\src\promptflow\tests\test_configs\prompty\prompty_example.prompty",
-    data=r"C:\project\promptflow\src\promptflow\tests\test_configs\datas\prompty_inputs.jsonl",
+    flow="path/to/prompty.prompty",
+    data="path/to/inputs.jsonl",
 )
 pf.stream(prompty_run)
 ```
@@ -382,3 +365,10 @@ Prompt flow service has started...
 You can view the traces from local: http://localhost:49240/v1.0/ui/traces/?#run=prompty_variant_0_20240424_152808_282517
 [2024-04-24 15:28:12,597][promptflow._sdk._orchestrator.run_submitter][INFO] - Submitting run prompty_variant_0_20240424_152808_282517, log path: .promptflow\.runs\prompty_variant_0_20240424_152808_282517\logs.txt
 ```
+
+For propmty batch run, trace ui will record the execution details of each line in the data file.
+![batch_run_list.png](../../media/how-to-guides/prompty/batch_run_list.png)
+
+Execution information such as prompt and LLm request parameters will be shown here.
+
+![batch_run_details.png](../../media/how-to-guides/prompty/batch_run_details.png)

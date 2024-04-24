@@ -57,7 +57,7 @@ When the user meets the following conditions, prompty returns content of first c
 - Define response_format to type: json_object in parameters
 - Specify the return json format in template.
 
-**Note**: response_format is compatible with GPT-4 Turbo and all GPT-3.5 Turbo models newer than gpt-3.5-turbo-1106. For more details, refer to this [document](https://platform.openai.com/docs/api-reference/chat/create#chat-create-response_format).
+**Note**: response_format is compatible with `GPT-4 Turbo` and all GPT-3.5 Turbo models newer than `gpt-3.5-turbo-1106`. For more details, refer to this [document](https://platform.openai.com/docs/api-reference/chat/create#chat-create-response_format).
 
 ```yaml
 ---
@@ -116,14 +116,13 @@ model:
       temperature: 0.2
       response_format:
         type: json_object
-outputs:
-  answer:
-    type: string
 sample:
   inputs:
     first_name: John
     last_name: Doh
     question: what is the meaning of life?
+  outputs:
+    answer: The meaning of life is a philosophical question
 ---
 system:
 You are an AI assistant who helps people find information.

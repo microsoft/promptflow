@@ -22,16 +22,11 @@ model:
   parameters:
     temperature: 0.2
     stream: true
-inputs: 
-  question:
-    type: string
-  chat_history:
-    type: list
 sample:
   inputs:
     question: What is Prompt flow?
+  chat_history: [ { "role": "user", "content": "what's the capital of France?" }, { "role": "assistant", "content": "Paris" } ]
 ---
-
 system:
 You are a helpful assistant.
 Here is a chat history you had with the user:
