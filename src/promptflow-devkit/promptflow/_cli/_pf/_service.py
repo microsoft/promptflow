@@ -4,6 +4,7 @@
 
 import argparse
 import contextlib
+import json
 import logging
 import os
 import platform
@@ -23,7 +24,6 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._service.app import create_app
 from promptflow._sdk._service.utils.utils import (
-    add_executable_script_to_env_path,
     check_pfs_service_status,
     dump_port_to_config,
     get_current_env_pfs_file,
@@ -35,6 +35,7 @@ from promptflow._sdk._service.utils.utils import (
     is_run_from_built_binary,
     kill_exist_service,
 )
+from promptflow._sdk._utils import add_executable_script_to_env_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger  # noqa: E402
 from promptflow.exceptions import UserErrorException
 
@@ -88,10 +89,13 @@ def add_parser_start_service(subparsers):
     # Force restart prompt flow service:
     pf service start --force
     # Start prompt flow service with specific port:
-    pf service start --port 65553
+    pf service start --port 65535
     """  # noqa: E501
     add_param_port = lambda parser: parser.add_argument(  # noqa: E731
-        "-p", "--port", type=int, help="port of the prompt flow service"
+        "-p",
+        "--port",
+        type=int,
+        help="The designated port of the prompt flow service and port number will be remembered if port is available.",
     )
     add_param_force = lambda parser: parser.add_argument(  # noqa: E731
         "--force",
@@ -106,7 +110,9 @@ def add_parser_start_service(subparsers):
     )
     activate_action(
         name="start",
-        description="Start prompt flow service.",
+        description="Prompt Flow attempts to launch the service on the default port 23333. If occupied, it probes "
+        "consecutive ports, increasing by one each time. The port number is retained for future service "
+        "startups.",
         epilog=epilog,
         add_params=[
             add_param_port,
@@ -197,8 +203,9 @@ def start_service(args):
 
 def validate_port(port, force_start):
     if port:
-        dump_port_to_config(port)
         _validate_port(port, force_start)
+        # dump port to config file only when port is valid or force_start is True.
+        dump_port_to_config(port)
     else:
         port = get_port_from_config(create_if_not_exists=True)
         _validate_port(port, force_start)
@@ -247,7 +254,7 @@ def _prepare_app_for_foreground_service(port, force_start):
         app.logger.setLevel(logging.DEBUG)
     else:
         app.logger.setLevel(logging.INFO)
-    message = f"Starting prompt flow Service on {port}, version: {get_pfs_version()}."
+    message = f"Starting prompt flow Service on port {port}, version: {get_pfs_version()}."
     app.logger.info(message)
     print(message)
     return port
@@ -326,7 +333,8 @@ def show_service():
     if status:
         extra_info = {"log_file": log_file.as_posix(), "version": get_pfs_version()}
         status.update(extra_info)
-        print(status)
+        dumped_status = json.dumps(status, ensure_ascii=False, indent=2, sort_keys=True, separators=(",", ": ")) + "\n"
+        print(dumped_status)
         return
     else:
         logger.warning(

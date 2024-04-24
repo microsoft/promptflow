@@ -64,8 +64,6 @@ from promptflow._sdk._errors import (
     UnsecureConnectionError,
 )
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
-from promptflow._sdk.entities._flows.base import FlowBase
-from promptflow._sdk.entities._flows.dag import Flow as DAGFlow
 from promptflow._utils.flow_utils import is_flex_flow, resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
@@ -540,29 +538,6 @@ def _retrieve_tool_func_result(func_call_scenario: str, function_config: Dict):
 
     result_with_log = {"result": result, "logs": {}}
     return result_with_log
-
-
-def _gen_dynamic_list(function_config: Dict) -> List:
-    """Generate dynamic list for a tool input.
-
-    :param function_config: function config in tool meta. Should contain'func_path' and 'func_kwargs'.
-    :return: a list of tool input dynamic enums.
-    """
-    from promptflow._core.tools_manager import gen_dynamic_list
-
-    func_path = function_config.get("func_path", "")
-    func_kwargs = function_config.get("func_kwargs", {})
-    # May call azure control plane api in the custom function to list Azure resources.
-    # which may need Azure workspace triple.
-    # TODO: move this method to a common place.
-    from promptflow._cli._utils import get_workspace_triad_from_local
-
-    workspace_triad = get_workspace_triad_from_local()
-    if workspace_triad.subscription_id and workspace_triad.resource_group_name and workspace_triad.workspace_name:
-        return gen_dynamic_list(func_path, func_kwargs, workspace_triad._asdict())
-    # if no workspace triple available, just skip.
-    else:
-        return gen_dynamic_list(func_path, func_kwargs)
 
 
 def _generate_package_tools(keys: Optional[List[str]] = None) -> dict:
@@ -1071,16 +1046,58 @@ def is_flex_run(run: "Run") -> bool:
     return False
 
 
+def format_signature_type(flow_meta):
+    # signature is language irrelevant, so we apply json type system
+    # TODO: enable this mapping after service supports more types
+    value_type_map = {
+        # ValueType.INT.value: SignatureValueType.INT.value,
+        # ValueType.DOUBLE.value: SignatureValueType.NUMBER.value,
+        # ValueType.LIST.value: SignatureValueType.ARRAY.value,
+        # ValueType.BOOL.value: SignatureValueType.BOOL.value,
+    }
+    for port_type in ["inputs", "outputs", "init"]:
+        if port_type not in flow_meta:
+            continue
+        for port_name, port in flow_meta[port_type].items():
+            if port["type"] in value_type_map:
+                port["type"] = value_type_map[port["type"]]
+
+
 generate_flow_meta = _generate_flow_meta
 # DO NOT remove the following line, it's used by the runtime imports from _sdk/_utils directly
 get_used_connection_names_from_dict = get_used_connection_names_from_dict
 update_dict_value_with_connections = update_dict_value_with_connections
 
 
-def get_flow_name(flow: Union[FlowBase, Path]) -> str:
+def get_flow_name(flow) -> str:
     if isinstance(flow, Path):
         return flow.resolve().name
+
+    from promptflow._sdk.entities._flows.dag import Flow as DAGFlow
+
     if isinstance(flow, DAGFlow):
         return flow.name
-    # others: flex flow, prompty, etc.
+    # should be promptflow._sdk.entities._flows.base.FlowBase: flex flow, prompty, etc.
     return flow.code.name
+
+
+def add_executable_script_to_env_path():
+    # Add executable script dir to PATH to make sure the subprocess can find the executable, especially in notebook
+    # environment which won't add it to system path automatically.
+    python_dir = os.path.dirname(sys.executable)
+    executable_dir = os.path.join(python_dir, "Scripts") if platform.system() == "Windows" else python_dir
+    if executable_dir not in os.environ["PATH"].split(os.pathsep):
+        os.environ["PATH"] = executable_dir + os.pathsep + os.environ["PATH"]
+
+
+def get_flow_path(flow) -> Path:
+    # use public API to get flow path for DAG/flex flow or prompty
+    from promptflow._sdk.entities._flows.dag import Flow as DAGFlow
+    from promptflow._sdk.entities._flows.flex import FlexFlow
+    from promptflow._sdk.entities._flows.prompty import Prompty
+
+    if isinstance(flow, DAGFlow):
+        return flow.flow_dag_path.parent.resolve()
+    if isinstance(flow, (FlexFlow, Prompty)):
+        return flow.path.parent.resolve()
+    raise ValueError(f"Unsupported flow type {type(flow)!r}")

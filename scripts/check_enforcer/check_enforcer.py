@@ -28,7 +28,7 @@ import sys
 github_repository = "microsoft/promptflow"
 snippet_debug = os.getenv("SNIPPET_DEBUG", 0)
 merge_commit = ""
-loop_times = 30
+loop_times = 40  # 40 * 30 seconds = 20 minutes
 github_workspace = os.path.expanduser("~/promptflow/")
 
 # Special cases for pipelines that need to be triggered more or less than default value 1.
@@ -37,6 +37,11 @@ github_workspace = os.path.expanduser("~/promptflow/")
 special_care = {
     "sdk_cli_tests": 4,
     "sdk_cli_azure_test_replay": 4,
+    "sdk_cli_global_config_tests": 1,
+    "tracing-e2e-test": 12,
+    "tracing-unit-test": 12,
+    "core_test": 4,
+    "azureml_serving_test": 4,
     # "samples_connections_connection": 0,
 }
 
@@ -48,22 +53,37 @@ checks = {
         "src/promptflow/**",
         "src/promptflow-tracing/**",
         "scripts/building/**",
-        ".github/workflows/promptflow-sdk-cli-test.yml",
         "src/promptflow-recording/**",
     ],
-    # "sdk_cli_global_config_tests": [
-    #     "src/promptflow/**",
-    #     "scripts/building/**",
-    #     ".github/workflows/promptflow-global-config-test.yml",
-    # ],
+    "sdk_cli_global_config_tests": [
+        "src/promptflow-core/**",
+        "src/promptflow-devkit/**",
+        "src/promptflow-tracing/**",
+        "src/promptflow-azure/**",
+        "src/promptflow/**",
+        "scripts/building/**",
+    ],
     "sdk_cli_azure_test_replay": [
         "src/promptflow/**",
         "scripts/building/**",
-        ".github/workflows/sdk-cli-azure-test-pull-request.yml",
         "src/promptflow-tracing/**",
         "src/promptflow-core/**",
         "src/promptflow-devkit/**",
         "src/promptflow-azure/**",
+    ],
+    "tracing-e2e-test": [
+        "src/promptflow-tracing/**",
+    ],
+    "tracing-unit-test": [
+        "src/promptflow-tracing/**",
+    ],
+    "core_test": [
+        "src/promptflow-tracing/**",
+        "src/promptflow-core/**",
+    ],
+    "azureml_serving_test": [
+        "src/promptflow-tracing/**",
+        "src/promptflow-core/**",
     ],
 }
 
@@ -189,6 +209,11 @@ def trigger_prepare(input_paths):
         # Input pattern /**: input_path should match in the middle.
         # Input pattern /*: input_path should match last but one.
         # Other input pattern: input_path should match last.
+
+        # Skip if input path is a markdown file.
+        if input_path.endswith(".md"):
+            continue
+
         keys = [
             key for key in reverse_checks.keys() if fnmatch.fnmatch(input_path, key)
         ]
@@ -254,7 +279,7 @@ def run_checks():
     if failed_reason != "":
         raise Exception(failed_reason)
 
-    # Loop for 15 minutes at most.
+    # Loop for 20 minutes at most.
     for i in range(loop_times):
         # Wait for 30 seconds.
         time.sleep(30)

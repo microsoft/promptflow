@@ -3,24 +3,22 @@
 import os
 from pprint import pprint
 
-from promptflow.entities import AzureOpenAIConnection
+from promptflow.core import AzureOpenAIModelConfiguration
 from promptflow.evals.evaluate import evaluate
 from promptflow.evals.evaluators import RelevanceEvaluator
 from promptflow.evals.evaluators.content_safety import ViolenceEvaluator
 
 
 def built_in_evaluator():
-    # Initialize Azure OpenAI Connection
-    model_config = AzureOpenAIConnection(
-        api_base=os.environ.get("AZURE_OPENAI_ENDPOINT"),
+    # Initialize Azure OpenAI Model Configuration
+    model_config = AzureOpenAIModelConfiguration(
+        azure_endpoint=os.environ.get("AZURE_OPENAI_ENDPOINT"),
         api_key=os.environ.get("AZURE_OPENAI_KEY"),
-        api_type="azure",
+        azure_deployment=os.environ.get("AZURE_OPENAI_DEPLOYMENT"),
     )
 
-    deployment_name = "GPT-4-Prod"
-
     # Initialzing Relevance Evaluator
-    relevance_eval = RelevanceEvaluator(model_config, deployment_name)
+    relevance_eval = RelevanceEvaluator(model_config)
 
     # Running Relevance Evaluator on single input row
     relevance_score = relevance_eval(
@@ -52,16 +50,14 @@ def answer_length(answer, **kwargs):
 if __name__ == "__main__":
     # Built-in evaluators
     # Initialize Azure OpenAI Connection
-    model_config = AzureOpenAIConnection(
-        api_base=os.environ.get("AZURE_OPENAI_ENDPOINT"),
+    model_config = AzureOpenAIModelConfiguration(
+        azure_endpoint=os.environ.get("AZURE_OPENAI_ENDPOINT"),
         api_key=os.environ.get("AZURE_OPENAI_KEY"),
-        api_type="azure",
+        azure_deployment=os.environ.get("AZURE_OPENAI_DEPLOYMENT"),
     )
 
-    deployment_name = "GPT-4-Prod"
-
     # Initialzing Relevance Evaluator
-    relevance_eval = RelevanceEvaluator(model_config, deployment_name)
+    relevance_eval = RelevanceEvaluator(model_config)
 
     # Running Relevance Evaluator on single input row
     relevance_score = relevance_eval(

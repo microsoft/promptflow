@@ -4,6 +4,7 @@ import os
 import tempfile
 from multiprocessing import Lock
 from pathlib import Path
+from typing import TypedDict
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -25,7 +26,19 @@ from promptflow._core.connection_manager import ConnectionManager
 from promptflow._sdk.entities._connection import AzureOpenAIConnection
 from promptflow._utils.context_utils import _change_working_dir
 
+try:
+    from promptflow.recording.record_mode import is_replay
+except ImportError:
+    # Run test in empty mode if promptflow-recording is not installed
+    def is_replay():
+        return False
+
+
 load_dotenv()
+
+
+def pytest_configure():
+    pytest.is_replay = is_replay()
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -244,3 +257,44 @@ def reset_tracer_provider():
         "opentelemetry.trace._TRACER_PROVIDER_SET_ONCE._done", False
     ):
         yield
+
+
+class CSharpProject(TypedDict):
+    flow_dir: str
+    data: str
+    init: str
+
+
+def construct_csharp_test_project(flow_name: str) -> CSharpProject:
+    root_of_test_cases = os.getenv("CSHARP_TEST_PROJECTS_ROOT", None)
+    if not root_of_test_cases:
+        pytest.skip(reason="No C# test cases found, please set CSHARP_TEST_CASES_ROOT.")
+    root_of_test_cases = Path(root_of_test_cases)
+    return {
+        "flow_dir": (root_of_test_cases / flow_name / "bin" / "Debug" / "net6.0").as_posix(),
+        "data": (root_of_test_cases / flow_name / "data.jsonl").as_posix(),
+        "init": (root_of_test_cases / flow_name / "init.json").as_posix(),
+    }
+
+
+@pytest.fixture
+def csharp_test_project_basic() -> CSharpProject:
+    return construct_csharp_test_project("Basic")
+
+
+@pytest.fixture
+def csharp_test_project_basic_chat() -> CSharpProject:
+    return construct_csharp_test_project("BasicChat")
+
+
+@pytest.fixture
+def csharp_test_project_function_mode_basic() -> CSharpProject:
+    return construct_csharp_test_project("FunctionModeBasic")
+
+
+@pytest.fixture
+def csharp_test_project_class_init_flex_flow() -> CSharpProject:
+    is_in_ci_pipeline = os.getenv("IS_IN_CI_PIPELINE", "false").lower() == "true"
+    if is_in_ci_pipeline:
+        pytest.skip(reason="need to avoid fetching connection from local pfs to enable this in ci")
+    return construct_csharp_test_project("ClassInitFlexFlow")

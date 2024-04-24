@@ -7,8 +7,8 @@ import typing
 
 from azure.ai.ml import MLClient
 from azure.core.exceptions import ResourceNotFoundError
+from azure.identity import AzureCliCredential
 
-from promptflow._cli._utils import get_credentials_for_cli
 from promptflow._constants import AzureWorkspaceKind, CosmosDBContainerName
 from promptflow._sdk._utils import extract_workspace_triad_from_trace_provider
 from promptflow._utils.logger_utils import get_cli_sdk_logger
@@ -22,7 +22,7 @@ COSMOS_INIT_POLL_TIMEOUT_SECOND = 600  # 10 minutes
 COSMOS_INIT_POLL_INTERVAL_SECOND = 30  # 30 seconds
 
 
-def _create_trace_provider_value_user_error(message: str) -> UserErrorException:
+def _create_trace_destination_value_user_error(message: str) -> UserErrorException:
     return UserErrorException(message=message, target=ErrorTarget.CONTROL_PLANE_SDK)
 
 
@@ -55,8 +55,8 @@ def _init_workspace_cosmos_db(init_cosmos_func: typing.Callable) -> None:
     raise Exception(error_msg)
 
 
-def validate_trace_provider(value: str) -> None:
-    """Validate `trace.provider` in pf config.
+def validate_trace_destination(value: str) -> None:
+    """Validate pf.config.trace.destination.
 
     1. the value is a valid ARM resource ID for workspace/project
     2. the resource exists
@@ -64,16 +64,16 @@ def validate_trace_provider(value: str) -> None:
     4. the workspace Cosmos DB is initialized
     """
     # valid workspace/project ARM resource ID; otherwise, a ValueError will be raised
-    _logger.debug("Validating trace provider value...")
+    _logger.debug("Validating pf.config.trace.destination...")
     try:
         workspace_triad = extract_workspace_triad_from_trace_provider(value)
     except ValueError as e:
-        raise _create_trace_provider_value_user_error(str(e))
+        raise _create_trace_destination_value_user_error(str(e))
 
     # the resource exists
     _logger.debug("Validating resource exists...")
     ml_client = MLClient(
-        credential=get_credentials_for_cli(),
+        credential=AzureCliCredential(),  # this validation only happens in CLI, so use CLI credential
         subscription_id=workspace_triad.subscription_id,
         resource_group_name=workspace_triad.resource_group_name,
         workspace_name=workspace_triad.workspace_name,
@@ -81,7 +81,7 @@ def validate_trace_provider(value: str) -> None:
     try:
         workspace = ml_client.workspaces.get(name=workspace_triad.workspace_name)
     except ResourceNotFoundError as e:
-        raise _create_trace_provider_value_user_error(str(e))
+        raise _create_trace_destination_value_user_error(str(e))
     _logger.debug("Resource exists.")
 
     # Azure ML workspace or AI project
@@ -91,7 +91,7 @@ def validate_trace_provider(value: str) -> None:
             f"{workspace.name!r} is an Azure AI hub, which is not a valid type. "
             "Currently we support Azure ML workspace and AI project as trace provider."
         )
-        raise _create_trace_provider_value_user_error(error_msg)
+        raise _create_trace_destination_value_user_error(error_msg)
     _logger.debug("Resource type is valid.")
 
     # the workspace Cosmos DB is initialized
@@ -112,4 +112,4 @@ def validate_trace_provider(value: str) -> None:
         _init_workspace_cosmos_db(init_cosmos_func=pf_client._traces._init_cosmos_db)
     _logger.debug("The workspace Cosmos DB is initialized.")
 
-    _logger.debug("Trace provider value is valid.")
+    _logger.debug("pf.config.trace.destination is valid.")

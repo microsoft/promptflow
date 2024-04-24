@@ -1,0 +1,100 @@
+# https://msdata.visualstudio.com/Vienna/_build?definitionId=33952&_a=summary
+name: $(BuildDefinitionName)_$(Date:yyyyMMdd)$(Rev:.r) # Configure run or build numbers
+
+variables:
+  - group: promptflow-csharp
+  - name: BuildConfiguration
+    value: 'Debug'
+  - name: currentRepoPath
+    value: "csharp"
+  - name: flowProjectRelativePath
+    value: '$(currentRepoPath)/src/TestProjects'
+  - name: system.debug
+    value: 'true'
+
+schedules:
+  - cron: "40 18 * * *" # Every day starting at 2:40 BJT
+    branches:
+      include:
+        - main
+
+pr:
+  branches:
+    include:
+      - main
+      - releases/*
+  paths:
+    include:
+    - src/promptflow-core/**
+    - src/promptflow-devkit/**
+    - src/promptflow/**
+    - src/promptflow-tracing/**
+    - scripts/building/**
+    - .github/pipelines/promptflow-csharp-e2e-test.yml
+    - src/promptflow-recording/**
+
+parameters:
+  - name: githubPromptflowBranch
+    displayName: "Github Promptflow Branch Name"
+    type: string
+    default: main
+
+jobs:
+- job: linux
+  pool:
+    name: promptflow-1ES-ubuntu20
+  steps:
+    - task: Bash@3
+      displayName: 'Set environment variables'
+      inputs:
+        targetType: inline
+        script: |
+          export AOAI_CONNECTION=$(AOAI_CONNECTION)
+          export OPENAI_CONNECTION=$(OPENAI_CONNECTION)
+          export SERP_CONNECTION=$(SERP_CONNECTION)
+          export ACS_CONNECTION=$(ACS_CONNECTION)
+          export IS_IN_CI_PIPELINE=true
+
+    - template: promptflow-csharp-e2e-test-env-setup.yml
+      parameters:
+        flowProjectRelativePath: '$(flowProjectRelativePath)'
+        promptflowCsPat: '$(PROMPTFLOW_CS_PAT)'
+
+    - template: promptflow-csharp-e2e-test-tests.yml
+      parameters:
+        flowProjectRelativePath: '$(flowProjectRelativePath)'
+        azureOpenAiApiBase: '$(AZURE_OPENAI_API_BASE)'
+        azureOpenAiApiKey: '$(AZURE_OPENAI_API_KEY)'
+
+    - publish: $(flowProjectRelativePath)
+      condition: always()
+      artifact: 'BuiltFlows-linux'
+- job: windows
+  pool:
+    name: promptflow-1ES-win
+  steps:
+    - task: PowerShell@2
+      displayName: 'Set environment variables'
+      inputs:
+        targetType: inline
+        script: |
+          setx AOAI_CONNECTION $(AOAI_CONNECTION)
+          setx OPENAI_CONNECTION $(OPENAI_CONNECTION)
+          setx SERP_CONNECTION $(SERP_CONNECTION)
+          setx ACS_CONNECTION $(ACS_CONNECTION)
+          setx IS_IN_CI_PIPELINE true
+
+    - template: promptflow-csharp-e2e-test-env-setup.yml
+      parameters:
+        flowProjectRelativePath: '$(flowProjectRelativePath)'
+        promptflowCsPat: '$(PROMPTFLOW_CS_PAT)'
+
+    - template: promptflow-csharp-e2e-test-tests.yml
+      parameters:
+        flowProjectRelativePath: '$(flowProjectRelativePath)'
+        azureOpenAiApiBase: '$(AZURE_OPENAI_API_BASE)'
+        azureOpenAiApiKey: '$(AZURE_OPENAI_API_KEY)'
+
+    - publish: $(flowProjectRelativePath)
+      condition: always()
+      artifact: 'BuiltFlows-windows'

@@ -8,7 +8,7 @@ import json
 import multiprocessing
 import os
 from datetime import datetime, timedelta
-from typing import Callable
+from typing import Any, Callable, Mapping
 
 from promptflow._core._errors import UnexpectedError
 from promptflow._utils.exception_utils import ExceptionPresenter, JsonSerializedPromptflowException
@@ -17,6 +17,7 @@ from promptflow._utils.process_utils import block_terminate_signal_to_parent
 from promptflow.exceptions import ErrorTarget
 from promptflow.executor._service._errors import ExecutionCanceledError, ExecutionTimeoutError
 from promptflow.executor._service.utils.process_manager import ProcessManager
+from promptflow.executor._service.utils.service_utils import set_environment_variables
 from promptflow.tracing._operation_context import OperationContext
 
 LONG_WAIT_TIMEOUT = timedelta(days=1).total_seconds()
@@ -31,6 +32,7 @@ async def invoke_sync_function_in_process(
     run_id: str = None,
     context_dict: dict = None,
     wait_timeout: int = LONG_WAIT_TIMEOUT,
+    environment_variables: Mapping[str, Any] = None,
 ):
     with multiprocessing.Manager() as manager:
         return_dict = manager.dict()
@@ -38,7 +40,7 @@ async def invoke_sync_function_in_process(
 
         p = multiprocessing.Process(
             target=_execute_target_function,
-            args=(target_function, args, kwargs, return_dict, error_dict, context_dict),
+            args=(target_function, args, kwargs, return_dict, error_dict, context_dict, environment_variables),
         )
         p.start()
         service_logger.info(f"[{os.getpid()}--{p.pid}] Start process to execute the request.")
@@ -88,8 +90,10 @@ def _execute_target_function(
     return_dict: dict,
     error_dict: dict,
     context_dict: dict,
+    environment_variables: Mapping[str, Any],
 ):
     block_terminate_signal_to_parent()
+    set_environment_variables(environment_variables)
     with exception_wrapper(error_dict):
         if context_dict:
             OperationContext.get_instance().update(context_dict)

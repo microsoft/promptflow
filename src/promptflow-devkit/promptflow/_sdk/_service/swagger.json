@@ -13,9 +13,6 @@
                                 "$ref": "#/definitions/Connection"
                             }
                         }
-                    },
-                    "403": {
-                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
                     }
                 },
                 "description": "List all connection",
@@ -66,9 +63,6 @@
                         "schema": {
                             "$ref": "#/definitions/ConnectionDict"
                         }
-                    },
-                    "403": {
-                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
                     }
                 },
                 "description": "Create connection",
@@ -94,9 +88,6 @@
                         "schema": {
                             "$ref": "#/definitions/ConnectionDict"
                         }
-                    },
-                    "403": {
-                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
                     }
                 },
                 "description": "Get connection",
@@ -112,24 +103,6 @@
                     "Connections"
                 ]
             },
-            "delete": {
-                "responses": {
-                    "204": {
-                        "description": "Delete connection",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
-                    },
-                    "403": {
-                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
-                    }
-                },
-                "description": "Delete connection",
-                "operationId": "delete_connection",
-                "tags": [
-                    "Connections"
-                ]
-            },
             "put": {
                 "responses": {
                     "200": {
@@ -137,9 +110,6 @@
                         "schema": {
                             "$ref": "#/definitions/ConnectionDict"
                         }
-                    },
-                    "403": {
-                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
                     }
                 },
                 "description": "Update connection",
@@ -154,6 +124,21 @@
                         }
                     }
                 ],
+                "tags": [
+                    "Connections"
+                ]
+            },
+            "delete": {
+                "responses": {
+                    "204": {
+                        "description": "Delete connection",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    }
+                },
+                "description": "Delete connection",
+                "operationId": "delete_connection",
                 "tags": [
                     "Connections"
                 ]
@@ -296,6 +281,12 @@
                                 },
                                 "inputs": {
                                     "type": "string"
+                                },
+                                "main_flow_run_id": {
+                                    "type": "string"
+                                },
+                                "main_flow_init": {
+                                    "type": "string"
                                 }
                             }
                         }
@@ -307,6 +298,32 @@
                 ],
                 "tags": [
                     "Experiments"
+                ]
+            }
+        },
+        "/Flows/infer_signature": {
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Flow infer signature",
+                        "schema": {
+                            "$ref": "#/definitions/FlowDict"
+                        }
+                    }
+                },
+                "description": "Flow infer signature",
+                "operationId": "post_flow_infer_signature",
+                "parameters": [
+                    {
+                        "name": "source",
+                        "in": "query",
+                        "type": "string",
+                        "required": true,
+                        "description": "Path to flow or prompty."
+                    }
+                ],
+                "tags": [
+                    "Flows"
                 ]
             }
         },
@@ -357,6 +374,12 @@
                                 },
                                 "session": {
                                     "type": "string"
+                                },
+                                "init": {
+                                    "type": "string"
+                                },
+                                "run_id": {
+                                    "type": "string"
                                 }
                             }
                         }
@@ -382,6 +405,26 @@
                 },
                 "description": "List line runs",
                 "operationId": "get_line_runs",
+                "tags": [
+                    "LineRuns"
+                ]
+            }
+        },
+        "/LineRuns/search": {
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/LineRun"
+                            }
+                        }
+                    }
+                },
+                "description": "Search line runs",
+                "operationId": "get_line_run_search",
                 "tags": [
                     "LineRuns"
                 ]
@@ -455,21 +498,6 @@
                     "Runs"
                 ]
             },
-            "delete": {
-                "responses": {
-                    "204": {
-                        "description": "Delete run",
-                        "schema": {
-                            "$ref": "#/definitions/RunDict"
-                        }
-                    }
-                },
-                "description": "Delete run",
-                "operationId": "delete_run",
-                "tags": [
-                    "Runs"
-                ]
-            },
             "put": {
                 "responses": {
                     "200": {
@@ -502,6 +530,21 @@
                     "application/x-www-form-urlencoded",
                     "multipart/form-data"
                 ],
+                "tags": [
+                    "Runs"
+                ]
+            },
+            "delete": {
+                "responses": {
+                    "204": {
+                        "description": "Delete run",
+                        "schema": {
+                            "$ref": "#/definitions/RunDict"
+                        }
+                    }
+                },
+                "description": "Delete run",
+                "operationId": "delete_run",
                 "tags": [
                     "Runs"
                 ]

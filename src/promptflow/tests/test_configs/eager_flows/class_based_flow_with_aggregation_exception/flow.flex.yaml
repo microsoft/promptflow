@@ -1,0 +1,3 @@
+entry: aggregation_exception:MyFlow
+environment:
+  image: promptflow.azurecr.io/promptflow-runtime:bu-20240403-1452

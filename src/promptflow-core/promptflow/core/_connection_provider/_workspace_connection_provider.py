@@ -6,8 +6,9 @@ from typing import Any, Dict, List, Union
 
 import requests
 
-from promptflow._constants import AML_WORKSPACE_TEMPLATE, ConnectionAuthMode
+from promptflow._constants import AML_WORKSPACE_TEMPLATE
 from promptflow._utils.retry_utils import http_retry_wrapper
+from promptflow.constants import ConnectionAuthMode
 from promptflow.core._connection import CustomConnection, _Connection
 from promptflow.core._errors import (
     AccessDeniedError,
@@ -25,12 +26,7 @@ from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorEx
 
 from ..._utils.credential_utils import get_default_azure_credential
 from ._connection_provider import ConnectionProvider
-from ._utils import (
-    check_connection_provider_resource,
-    interactive_credential_disabled,
-    is_from_cli,
-    is_github_codespaces,
-)
+from ._utils import interactive_credential_disabled, is_from_cli, is_github_codespaces
 
 GET_CONNECTION_URL = (
     "/subscriptions/{sub}/resourcegroups/{rg}/providers/Microsoft.MachineLearningServices"
@@ -85,7 +81,6 @@ class WorkspaceConnectionProvider(ConnectionProvider):
         self.resource_id = AML_WORKSPACE_TEMPLATE.format(
             self.subscription_id, self.resource_group_name, self.workspace_name
         )
-        self._workspace_checked = False
 
     @property
     def credential(self):
@@ -167,10 +162,11 @@ class WorkspaceConnectionProvider(ConnectionProvider):
 
     @classmethod
     def validate_and_fallback_connection_type(cls, name, type_name, category, metadata):
+        # Note: Legacy CustomKeys may store different connection types, e.g. openai, serp.
+        # In this case, type name will not be None.
         if type_name:
             return type_name
         # Below category has corresponding connection type in PromptFlow, so we can fall back directly.
-        # Note: CustomKeys may store different connection types for now, e.g. openai, serp.
         if category in [
             ConnectionCategory.AzureOpenAI,
             ConnectionCategory.OpenAI,
@@ -179,6 +175,8 @@ class WorkspaceConnectionProvider(ConnectionProvider):
             ConnectionCategory.Serverless,
         ]:
             return category
+        if category == ConnectionCategory.CustomKeys:
+            return CustomConnection.__name__
         if category == ConnectionCategory.CognitiveService:
             kind = get_case_insensitive_key(metadata, "Kind")
             if kind == "Content Safety":
@@ -343,6 +341,8 @@ class WorkspaceConnectionProvider(ConnectionProvider):
             raise OpenURLUserAuthenticationError(message=auth_error_message)
         except ClientAuthenticationError as e:
             raise UserErrorException(target=ErrorTarget.CORE, message=str(e), error=e)
+        except UserErrorException:
+            raise
         except Exception as e:
             raise SystemErrorException(target=ErrorTarget.CORE, message=str(e), error=e)
 
@@ -435,12 +435,6 @@ class WorkspaceConnectionProvider(ConnectionProvider):
         return rest_list_connection_dict
 
     def list(self) -> List[_Connection]:
-        if not self._workspace_checked:
-            # Check workspace not 'hub'
-            check_connection_provider_resource(
-                resource_id=self.resource_id, credential=self.credential, pkg_name="promptflow-core[azureml-serving]"
-            )
-            self._workspace_checked = True
         rest_list_connection_dict = self._build_list_connection_dict(
             subscription_id=self.subscription_id,
             resource_group_name=self.resource_group_name,
@@ -456,12 +450,6 @@ class WorkspaceConnectionProvider(ConnectionProvider):
         return connection_list
 
     def get(self, name: str, **kwargs) -> _Connection:
-        if not self._workspace_checked:
-            # Check workspace not 'hub'
-            check_connection_provider_resource(
-                resource_id=self.resource_id, credential=self.credential, pkg_name="promptflow-core[azureml-serving]"
-            )
-            self._workspace_checked = True
         connection_dict = self._build_connection_dict(
             name,
             subscription_id=self.subscription_id,
