@@ -18,6 +18,14 @@ run-and-evaluate-a-flow/index
 ```
 
 ```{toctree}
+:caption: Prompty
+:maxdepth: 1
+develop-a-prompty/index
+develop-a-prompty/prompty-output-format
+develop-a-prompty/use-prompty-in-flex-flow
+```
+
+```{toctree}
 :caption: Tool
 :maxdepth: 1
 develop-a-tool/index
