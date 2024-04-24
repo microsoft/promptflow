@@ -66,15 +66,16 @@ class Configuration(object):
         while not (cwd_config_path / file_name).is_file() and cwd_config_path.parent != cwd_config_path:
             cwd_config_path = cwd_config_path.parent
 
-        if self.CONFIG_PATH.is_file():
-            all_configs = load_yaml(self.CONFIG_PATH)
-        else:
-            all_configs = {}
         if (cwd_config_path / file_name).is_file():
             cwd_config = load_yaml(cwd_config_path / file_name)
-            all_configs.update(cwd_config)
+        else:
+            cwd_config = {}
 
-        return all_configs
+        if self.CONFIG_PATH.is_file():
+            global_config = load_yaml(self.CONFIG_PATH)
+            cwd_config.update(global_config)
+
+        return cwd_config
 
     @property
     def config(self):
