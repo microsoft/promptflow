@@ -2,10 +2,20 @@
 
 ## Set up process
 
-- First create a new [conda](https://conda.io/projects/conda/en/latest/user-guide/getting-started.html) environment. Please specify python version as 3.9.
-  `conda create -n <env_name> python=3.9`.
-- Activate the env you created.
-- In root folder, run `python scripts/dev-setup/main.py` to install the packages and dependencies; if you are using Visual Studio Code, it is recommended to add `--vscode` (which is `python scripts/dev-setup/main.py --vscode`) to enable VS Code to recognize the packages.
+Select either Conda or Poetry to set up your development environment.
+
+1. Conda environment setup
+  - First create a new [conda](https://conda.io/projects/conda/en/latest/user-guide/getting-started.html) environment. Please specify python version as 3.8/3.9/3.10/3.11.
+    `conda create -n <env_name> python=3.9`.
+  - Activate the env you created.
+  - In root folder, run `python scripts/dev-setup/main.py` to install the packages and dependencies; if you are using Visual Studio Code, it is recommended to add `--vscode` (which is `python scripts/dev-setup/main.py --vscode`) to enable VS Code to recognize the packages.
+
+2. Poetry environment setup
+  - Install [poetry](https://python-poetry.org/docs/). Please specify python version as 3.8/3.9/3.10/3.11.
+  - Each folder under [src](../../src/) (except the promptflow folder) is a separate package, so you need to install the dependencies for each package.
+    - `poetry install -C promptflow-core -E <extra> --with dev,test`
+    - `poetry install -C promptflow-devkit -E <extra> --with dev,test`
+    - `poetry install -C promptflow-azure -E <extra> --with dev,test`
 
 ## How to run tests
 
@@ -21,10 +31,18 @@ After above setup process is finished. You can use `pytest` command to run test,
 
 ### Run tests via command
 
-- Run all tests under a folder: `pytest src/promptflow/tests -v`
-- Run a single test: ` pytest src/promptflow/tests/promptflow_test/e2etests/test_executor.py::TestExecutor::test_executor_basic_flow -v`
+1. Conda environment
+  - Run all tests under a folder: `pytest src/promptflow/tests -v`, `pytest src/promptflow-devkit/tests -v`
+  - Run a single test: ` pytest src/promptflow/tests/promptflow_test/e2etests/test_executor.py::TestExecutor::test_executor_basic_flow -v`
+
+2. Poetry environment: there is limitation for running tests in src/promptflow folder, you can only run tests under other package folders.
+  - for example: under the target folder `promptflow-devkit`, you can run `poetry run pytest tests/sdk_cli_test -v`
 
 ### Run tests in VSCode
+
+---
+
+#### Conda environment
 
 1. Set up your python interperter
 
@@ -76,6 +94,16 @@ Open `.vscode/settings.json`, write `"--ignore=src/promptflow/tests/sdk_cli_azur
 
 ![img2](../media/dev_setup/set_up_pycharm_2.png)
 
+---
+
+#### Poetry environment
+
+VSCode could pick up the correct environment automatically if you open vscode/pycharm under the package folders.
+
+There are some limitations currently, intellisense may not work properly in poetry environment.
+
+PyCharm behaves differently from VSCode, it will automatically picks up the correct environment.
+
 ## How to write docstring
 
 A clear and consistent API documentation is crucial for the usability and maintainability of our codebase. Please refer to [API Documentation Guidelines](./documentation_guidelines.md) to learn how to write docstring when developing the project.
@@ -90,11 +118,11 @@ A clear and consistent API documentation is crucial for the usability and mainta
   - Flow run: `src/promptflow/tests/sdk_cli_test/e2etests/`
   - Flow run in azure: `src/promptflow/tests/sdk_cli_azure_test/e2etests/`
 - Test file name and the test case name all start with `test_`.
-- A basic test example, see [test_connection.py](../../src/promptflow/tests/sdk_cli_test/e2etests/test_connection.py).
+- A basic test example, see [test_connection.py](../../src/promptflow-devkit/tests/sdk_cli_test/e2etests/test_connection.py).
 
 ### Test structure
 
-In the future, tests will under corresponding source folder, and test_configs are shared among different test folders:
+Tests are under corresponding source folder, and test_configs are shared among different test folders:
 
 - src/promptflow/
   - test_configs/
@@ -117,11 +145,14 @@ In the future, tests will under corresponding source folder, and test_configs ar
       - unittests/
 - src/promptflow-devkit/
   - tests/
-    - executable/ # Test with promptflow-devkit[executable] installed.
+    - sdk_cli_tests/
+      - e2etests/
+      - unittests/
 - src/promptflow-azure/
-  - tests/  # promptflow-azure doesn't have extra-requires, so all tests are under the test folder.
-    - e2etests/
-    - unittests/
+  - tests/
+    - sdk_cli_azure_test/
+      - e2etests/
+      - unittests/
 
 Principal #1: Put the tests in the same folder as the code they are testing, to ensure code can work within minor environment requirements.
 

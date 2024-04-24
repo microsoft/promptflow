@@ -5,7 +5,7 @@ from promptflow.evals.evaluators.content_safety import ContentSafetyEvaluator, V
 from promptflow.evals.evaluators.qa import QAEvaluator
 
 
-@pytest.mark.usefixtures("model_config", "project_scope", "recording_injection")
+@pytest.mark.usefixtures("model_config", "project_scope", "recording_injection", "configure_default_azure_credential")
 @pytest.mark.e2etest
 class TestBuiltInEvaluators:
     def test_individual_evaluator_prompt_based(self, model_config):
@@ -17,7 +17,6 @@ class TestBuiltInEvaluators:
         assert score is not None
         assert score["gpt_fluency"] > 1.0
 
-    @pytest.mark.skip(reason="This test is not ready in ci pipeline due to DefaultAzureCredential.")
     def test_individual_evaluator_service_based(self, project_scope):
         eval_fn = ViolenceEvaluator(project_scope)
         score = eval_fn(
@@ -29,13 +28,7 @@ class TestBuiltInEvaluators:
         assert score["violence_score"] < 1.0
         assert score["violence_reason"], "violence_reason must not be None or empty."
 
-    @pytest.mark.parametrize(
-        "parallel",
-        [
-            (False),
-            (True),
-        ],
-    )
+    @pytest.mark.parametrize("parallel", [False, True])
     def test_composite_evaluator_qa(self, model_config, parallel):
         qa_eval = QAEvaluator(model_config, parallel=parallel)
         score = qa_eval(
@@ -53,7 +46,6 @@ class TestBuiltInEvaluators:
         assert score["gpt_similarity"] > 0.0
         assert score["f1_score"] > 0.0
 
-    @pytest.mark.skip(reason="This test is not ready in ci pipeline due to DefaultAzureCredential.")
     @pytest.mark.parametrize("parallel", [False, True])
     def test_composite_evaluator_content_safety(self, project_scope, parallel):
         safety_eval = ContentSafetyEvaluator(project_scope, parallel)
