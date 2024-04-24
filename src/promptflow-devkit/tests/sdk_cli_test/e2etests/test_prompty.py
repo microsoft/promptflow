@@ -243,7 +243,9 @@ class TestPrompty:
 
     def test_prompty_with_stream(self, pf: PFClient):
         if is_live():
-            stream_type = Stream
+            # When running multiple test cases, the type is generator type.
+            # When running alone this case, the type is Stream.
+            stream_type = (types.GeneratorType, Stream)
         elif is_record() or is_replay():
             stream_type = types.GeneratorType
         # Test text format with stream=true
