@@ -394,7 +394,7 @@ jobs:
         gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[azure,executor-service]"}}
         gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)"}}
         pip freeze
-    - name: Run Executor Test
+    - name: Run Executor Unit Test
       shell: pwsh
       working-directory: ${{ github.workspace }}
       run: |
@@ -402,10 +402,22 @@ jobs:
         pip install numexpr
         python scripts/building/run_coverage_tests.py `
           -p ${{ github.workspace }}/src/promptflow/promptflow `
-          -t ${{ github.workspace }}/src/promptflow/tests/executor/e2etests ${{ github.workspace }}/src/promptflow/tests/executor/unittests `
+          -t ${{ github.workspace }}/src/promptflow/tests/executor/unittests `
           -l eastus `
           -m "all" `
-          -o "${{ github.workspace }}/test-results-executor.xml"
+          -o "${{ github.workspace }}/test-results-executor-unit.xml"
+    - name: Run Executor E2E Test
+      shell: pwsh
+      working-directory: ${{ github.workspace }}
+      run: |
+        pip install langchain
+        pip install numexpr
+        python scripts/building/run_coverage_tests.py `
+          -p ${{ github.workspace }}/src/promptflow/promptflow `
+          -t ${{ github.workspace }}/src/promptflow/tests/executor/e2etests`
+          -l eastus `
+          -m "all" `
+          -o "${{ github.workspace }}/test-results-executor-e2e.xml"
     - name: Upload pytest test results (Python ${{ matrix.pythonVersion }}) (OS ${{ matrix.os }})
       if: ${{ always() }}
       uses: actions/upload-artifact@v3
