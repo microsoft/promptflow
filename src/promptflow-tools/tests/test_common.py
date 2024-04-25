@@ -214,7 +214,10 @@ class TestCommon:
             ("\nsystem:\nname:\n\n content:\nfirst", [
                 {'role': 'system', 'content': 'name:\n\n content:\nfirst'}]),
             ("\nsystem:\nname:\n\n", [
-                {'role': 'system', 'content': 'name:'}])
+                {'role': 'system', 'content': 'name:'}]),
+            # portal may add extra \r to new line character.
+            ("function:\r\nname:\r\n AI\ncontent :\r\nfirst", [
+                {'role': 'function', 'name': 'AI', 'content': 'first'}]),
         ],
     )
     def test_parse_chat_with_name_in_role_prompt(self, chat_str, expected_result):
@@ -239,6 +242,20 @@ class TestCommon:
     def test_try_parse_chat_with_tools(self, example_prompt_template_with_tool, parsed_chat_with_tools):
         actual_result = parse_chat(example_prompt_template_with_tool)
         assert actual_result == parsed_chat_with_tools
+
+    @pytest.mark.parametrize(
+        "chat_str, expected_result",
+        [
+            ("\n#tool:\n## tool_call_id:\nid \n content:\nfirst\n\n#user:\nsecond", [
+                {'role': 'tool', 'tool_call_id': 'id', 'content': 'first'}, {'role': 'user', 'content': 'second'}]),
+            # portal may add extra \r to new line character.
+            ("\ntool:\ntool_call_id :\r\nid\n content:\r\n", [
+                {'role': 'tool', 'tool_call_id': 'id', 'content': ''}]),
+        ],
+    )
+    def test_parse_tool_call_id_and_content(self, chat_str, expected_result):
+        actual_result = parse_chat(chat_str)
+        assert actual_result == expected_result
 
     @pytest.mark.parametrize("chunk, error_msg, success", [
         ("""
@@ -270,6 +287,14 @@ class TestCommon:
             """, "", True),
         ("""
             ## tool_calls:
+            [{
+                "id": "tool_call_id", "type": "function",
+                    "function": {"name": "func1", "arguments": ""}
+            }]
+            """, "", True),
+        # portal may add extra \r to new line character.
+        ("""
+            ## tool_calls:\r
             [{
                 "id": "tool_call_id", "type": "function",
                     "function": {"name": "func1", "arguments": ""}
