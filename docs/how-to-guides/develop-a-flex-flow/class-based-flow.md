@@ -104,9 +104,10 @@ pf.run(flow=flow_obj, data="./data.jsonl")
 
 Learn more on this topic on [Run and evaluate a flow](../run-and-evaluate-a-flow/index.md)
 
-## YAML support
+## Define a flow yaml
 
 User can write a YAML file with name `flow.flex.yaml` manually or save a function/callable entry to YAML file.
+This is required for advanced scenario like deployment or run in cloud.
 A flow YAML may look like this:
 
 ```yaml
