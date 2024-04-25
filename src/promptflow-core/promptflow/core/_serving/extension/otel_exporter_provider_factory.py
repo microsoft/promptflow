@@ -6,6 +6,8 @@ import os
 from abc import abstractmethod
 from enum import Enum
 
+from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_ENDPOINT
+
 from promptflow.core._serving.extension.extension_type import ExtensionType
 from promptflow.core._serving.monitor.mdc_exporter import MdcExporter
 
@@ -83,12 +85,55 @@ class AppInsightMetricsExporterProvider(AppInsightExporterProvider):
             return None
 
 
+class OTLPExporterProvider(OTelExporterProvider):
+    def __init__(self, logger, exporter_type: ExporterType) -> None:
+        super().__init__(logger, exporter_type)
+        self.otel_exporter_endpoint = os.environ.get(OTEL_EXPORTER_OTLP_ENDPOINT, None)
+        if not self.otel_exporter_endpoint:
+            self.logger.info(
+                f"No OTEL_EXPORTER_OTLP_ENDPOINT detected, OTLP {exporter_type.value} exporter is disabled."
+            )  # noqa
+
+    def is_enabled(self, extension: ExtensionType):
+        return self.otel_exporter_endpoint is not None
+
+
+class OTLPTraceExporterProvider(OTLPExporterProvider):
+    def __init__(self, logger) -> None:
+        super().__init__(logger, ExporterType.TRACE)
+
+    def get_exporter(self, **kwargs):
+        try:
+            from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+
+            return OTLPSpanExporter(endpoint=self.otel_exporter_endpoint)
+        except ImportError:
+            return None
+
+
+class OTLPMetricsExporterProvider(OTLPExporterProvider):
+    def __init__(self, logger) -> None:
+        super().__init__(logger, ExporterType.METRIC)
+
+    def get_exporter(self, **kwargs):
+        try:
+            from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
+
+            return OTLPMetricExporter(endpoint=self.otel_exporter_endpoint)
+        except ImportError:
+            return None
+
+
 class OTelExporterProviderFactory:
     """Factory to create OTel trace and metric exporters based on extension type."""
 
     @staticmethod
     def get_trace_exporters(logger, extension: ExtensionType, **kwargs):
-        trace_providers = [AppInsightTraceExporterProvider(logger), MdcTraceExporterProvider(logger)]
+        trace_providers = [
+            AppInsightTraceExporterProvider(logger),
+            MdcTraceExporterProvider(logger),
+            OTLPTraceExporterProvider(logger),
+        ]
         exporters = []
         for provider in trace_providers:
             if provider.is_enabled(extension):
@@ -99,7 +144,7 @@ class OTelExporterProviderFactory:
 
     @staticmethod
     def get_metrics_exporters(logger, extension: ExtensionType, **kwargs):
-        metric_providers = [AppInsightMetricsExporterProvider(logger)]
+        metric_providers = [AppInsightMetricsExporterProvider(logger), OTLPMetricsExporterProvider(logger)]
         exporters = []
         for provider in metric_providers:
             if provider.is_enabled(extension):

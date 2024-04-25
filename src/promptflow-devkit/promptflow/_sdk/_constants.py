@@ -488,7 +488,7 @@ class Local2CloudProperties:
 class Local2CloudUserProperties:
     """Run properties that user can specify when uploading local run to cloud."""
 
-    EVAL_RUN = "_azureml.evaluation_run"
+    RUN_TYPE = "runType"
     EVAL_ARTIFACTS = "_azureml.evaluate_artifacts"
 
     @staticmethod

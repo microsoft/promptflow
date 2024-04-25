@@ -26,22 +26,6 @@ inputs:
     is_chat_history: true
     type: list
     default: [
-        {
-          "role": "user",
-          "content": "what is the result of 1+1?"
-        },
-        {
-          "role": "Assistant",
-          "content": "The result of 1+1 is 2. It's a simple addition!"
-        },
-        {
-          "role": "user",
-          "content": "what is the result of 2+2?"
-        },
-        {
-          "role": "Assistant",
-          "content": "The result of 2+2 is 4. It's a simple addition!"
-        }
     ]
 ---
 system:
