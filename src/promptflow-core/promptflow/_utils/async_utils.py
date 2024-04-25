@@ -4,9 +4,11 @@
 
 import asyncio
 import contextvars
+import functools
 from concurrent.futures import ThreadPoolExecutor
 
 from promptflow._utils.utils import set_context
+from promptflow.tracing import ThreadPoolExecutorWithContext
 
 
 def _has_running_loop() -> bool:
@@ -38,3 +40,19 @@ def async_run_allowing_running_loop(async_func, *args, **kwargs):
             return executor.submit(lambda: asyncio.run(async_func(*args, **kwargs))).result()
     else:
         return asyncio.run(async_func(*args, **kwargs))
+
+
+def run_async_function_sync(func):
+    def wrapper(*args, **kwargs):
+        return async_run_allowing_running_loop(func, *args, **kwargs)
+
+    return wrapper
+
+
+def run_sync_function_async(func):
+    async def wrapper(*args, **kwargs):
+        with ThreadPoolExecutorWithContext() as executor:
+            partial_func = functools.partial(func, *args, **kwargs)
+            return await asyncio.get_event_loop().run_in_executor(executor, partial_func)
+
+    return wrapper
