@@ -201,7 +201,7 @@ class ScriptExecutor(FlowExecutor):
                     log_metric(k, v)
             else:
                 logger.warning("The output of aggregation function isn't a dictionary, skip the metrices update.")
-        except Exception:
+        except Exception as e:
             error_type_and_message = f"({e.__class__.__name__}) {e}"
             e = ScriptExecutionError(
                 message_format="Execution failure in '{func_name}': {error_type_and_message}",
