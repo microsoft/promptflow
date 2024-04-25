@@ -477,7 +477,7 @@ class FlowExecutor:
         :return: A dictionary containing the converted inputs.
         :rtype: Mapping[str, Any]
         """
-        return FlowValidator.resolve_flow_inputs_type(self._flow.inputs, inputs)
+        return FlowValidator.resolve_flow_inputs_type(self._flow, inputs)
 
     @property
     def _default_inputs_mapping(self):
