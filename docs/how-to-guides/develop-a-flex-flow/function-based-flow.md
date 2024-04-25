@@ -39,7 +39,7 @@ if __name__ == "__main__":
 You can also test the flow using CLI:
 ```bash
 # flow entry syntax: path.to.module:function_name
-pf flow test --flow flow_entry:myflow --inputs question="What's the capital of France?"
+pf flow test --flow flow_entry:my_flow --inputs question="What's the capital of France?"
 ```
 
 Check out a full example here: [basic](https://github.com/microsoft/promptflow/tree/main/examples/flex-flows/basic)
@@ -49,7 +49,7 @@ Check out a full example here: [basic](https://github.com/microsoft/promptflow/t
 Start a UI to chat with a flow:
 
 ```bash
-pf flow test --flow flow_entry:myflow --inputs question="What's the capital of France?" --ui
+pf flow test --flow flow_entry:my_flow --inputs question="What's the capital of France?" --ui
 ```
 
 Check [here](../chat-with-a-flow/index.md) for more information.
