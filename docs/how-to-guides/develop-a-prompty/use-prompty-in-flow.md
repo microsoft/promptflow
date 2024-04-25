@@ -1,10 +1,10 @@
-# Using prompty in flex flow
+# Using prompty in flow
 
 :::{admonition} Experimental feature
 This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
 :::
 
-Because Prompty can be called as a function, user can use prompty in a `flex flow` which is can be a python function or class.
+Because Prompty can be called as a function, user can use prompty in a `flow` which is can be a python function or class.
 This allows user to do more customization logic with prompty.
 
 
@@ -104,9 +104,9 @@ User can run above code as normal python file.
 python path/to/entry.py
 ```
 
-## Test the class as a flex flow
+## Test the class as a flow
 
-User can also leverage promptflow to test the class as a `flex flow`.
+User can also leverage promptflow to test the class as a `flow`.
 
 ```bash
 pf flow test --flow file:ChatFlow --init init.json --inputs "question=What is ChatGPT?"
