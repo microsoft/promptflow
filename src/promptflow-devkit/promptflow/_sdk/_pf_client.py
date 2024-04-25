@@ -152,6 +152,7 @@ class PFClient:
                     "connections": connections,
                     "environment_variables": environment_variables,
                     "properties": properties,
+                    "init": init,
                 }.items()
                 if v
             }

@@ -7,7 +7,6 @@ import datetime
 from pathlib import Path
 from typing import Union
 
-from promptflow._constants import FlowType
 from promptflow._proxy import ProxyFactory
 from promptflow._sdk._constants import REMOTE_URI_PREFIX, ContextAttributeKey, FlowRunProperties
 from promptflow._sdk.entities._flows import Flow, Prompty
@@ -258,11 +257,6 @@ class RunSubmitter:
 
     @classmethod
     def _upload_run_to_cloud(cls, run: Run):
-        # skip prompty run for now
-        if run._flow_type == FlowType.PROMPTY:
-            logger.warn("Prompty run is not supported for local to cloud run upload yet, skipped.")
-            return
-
         error_msg_prefix = f"Failed to upload run {run.name!r} to cloud."
         try:
             from promptflow._sdk._tracing import _get_ws_triad_from_pf_config

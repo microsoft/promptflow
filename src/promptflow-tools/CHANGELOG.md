@@ -4,7 +4,7 @@
 
 ### Features Added
 - Add "detail" to "Azure OpenAI GPT-4 Turbo with Vision" and "OpenAI GPT-4V" tool inputs.
-- Avoid unintended parsing by role process to user inputs in prompt templates.
+- Avoid unintended parsing by role process to user flow inputs in prompt templates.
 - Introduce universal contract LLM tool and combine "Azure OpenAI GPT-4 Turbo with Vision" and "OpenAI GPT-4V" tools to "LLM-Vision" tool.
 
 ## 1.4.0 (2024.03.26)

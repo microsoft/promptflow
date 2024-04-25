@@ -9,9 +9,9 @@ tracing/index
 ```
 
 ```{toctree}
-:caption: FlexFlow
+:caption: Prompty
 :maxdepth: 1
-develop-a-flex-flow/index
+develop-a-prompty/index
 ```
 
 ```{toctree}
@@ -41,7 +41,7 @@ enable-streaming-mode
 :caption: FAQ
 :maxdepth: 1
 faq
-set-global-configs
+set-promptflow-configs
 manage-connections
 tune-prompts-with-variants
 ```
