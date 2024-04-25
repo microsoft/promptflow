@@ -83,11 +83,11 @@ Prompt flow tracing works not only for general LLM application, but also for mor
 
 ![llm-trace-detail](../../media/trace/llm-app-trace-detail.png)
 
-2. Example: **[Add trace for Autogen](https://github.com/microsoft/promptflow/tree/main/examples/tutorials/tracing/autogen-groupchat/)**
+2. Example: **[Add trace for Autogen](https://microsoft.github.io/promptflow/tutorials/trace-autogen-groupchat.html)**
 
 ![autogen-trace-detail](../../media/trace/autogen-trace-detail.png)
 
-3. Example: **[Add trace for Langchain](https://github.com/microsoft/promptflow/tree/main/examples/tutorials/tracing/langchain)**
+3. Example: **[Add trace for Langchain](https://microsoft.github.io/promptflow/tutorials/trace-langchain.html)**
 
 ![langchain-trace-detail](../../media/trace/langchain-trace-detail.png)
 
