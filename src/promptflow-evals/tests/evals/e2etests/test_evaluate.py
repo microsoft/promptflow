@@ -16,6 +16,12 @@ def data_file():
 
 
 @pytest.fixture
+def questions_file():
+    data_path = os.path.join(pathlib.Path(__file__).parent.resolve(), "data")
+    return os.path.join(data_path, "questions.jsonl")
+
+
+@pytest.fixture
 def data_file_for_column_mapping():
     data_path = os.path.join(pathlib.Path(__file__).parent.resolve(), "data")
     return os.path.join(data_path, "evaluate_test_data_for_column_mapping.jsonl")
@@ -85,6 +91,29 @@ class TestEvaluate:
         assert "answer.length" in metrics.keys()
         assert metrics.get("answer.length") == np.nanmean(row_result_df["outputs.answer.length"])
         assert row_result_df["outputs.answer.length"][2] == 31
+
+    def test_evaluate_with_target(self, questions_file):
+        """Test evaluation with target function."""
+        # We cannot define target in this file as pytest will load
+        # all modules in test folder and target_fn will be imported from the first
+        # module named test_evaluate and it will be a different module in unit test
+        # folder. By keeping function in separate file we guarantee, it will be loaded
+        # from there.
+        from .function_test import target_fn
+
+        f1_score_eval = F1ScoreEvaluator()
+        # run the evaluation with targets
+        result = evaluate(
+            data=questions_file,
+            target=target_fn,
+            evaluators={"answer": answer_evaluator, "f1": f1_score_eval},
+        )
+        row_result_df = pd.DataFrame(result["rows"])
+        assert "outputs.answer" in row_result_df.columns
+        assert "outputs.answer.length" in row_result_df.columns
+        assert list(row_result_df["outputs.answer.length"]) == [28, 76, 22]
+        assert "outputs.f1.f1_score" in row_result_df.columns
+        assert not any(np.isnan(f1) for f1 in row_result_df["outputs.f1.f1_score"])
 
     @pytest.mark.usefixtures("data_file_for_column_mapping")
     def test_evaluate_with_evaluator_config(self, data_file_for_column_mapping):

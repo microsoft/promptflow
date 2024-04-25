@@ -215,7 +215,10 @@
     "mpnet",
     "wargs",
     "dcid",
-    "cmpop"
+    "piezo",
+    "Piezo",
+    "cmpop",
+    "omap"
   ],
   "flagWords": [
     "Prompt Flow"
