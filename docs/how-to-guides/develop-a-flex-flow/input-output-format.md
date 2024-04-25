@@ -6,7 +6,7 @@ This is an experimental feature, and may change at any time. Learn [more](../faq
 
 ## Supported types
 
-We'll only support the following types in flex flow. Flow inits/inputs/outputs without specification will lead to validation error.
+We'll only support the following types in flow. Flow inits/inputs/outputs without specification will lead to validation error.
 
 Inputs: primitive types(int, float, bool, str), dict, TypedDict, list
 
@@ -17,7 +17,7 @@ Init: primitive types(int, float, bool, str), connection, ModelConfiguration, Ty
 If user has non-supported types in code/YAML, validation error will be raised.
 
 ```python
-# using unsupported types in flex flow will fail with validation error
+# using unsupported types in flow will fail with validation error
 class MyOwnClass:
   pass
 
@@ -37,5 +37,5 @@ Sample validation error: "The input 'my_own_obj' is of a complex python type. Pl
 
 ## Stream
 
-Stream is supported in flex flow.
+Stream is supported in flow.
 Reference this [sample](https://microsoft.github.io/promptflow/tutorials/stream-flex-flow.html) for details.

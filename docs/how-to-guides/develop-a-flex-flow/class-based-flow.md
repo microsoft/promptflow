@@ -4,7 +4,7 @@
 This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
 :::
 
-When user need to persist objects (like connection) in memory during multiple rounds of flow runs, they can write a callable class as flex flow's entry and put persist params in `__init__` method.
+When user need to persist objects (like connection) in memory during multiple rounds of flow runs, they can write a callable class as flow entry and put persist params in `__init__` method.
 
 If user need to log metrics on batch run outputs, they can add an `__aggregate__` method and it will be scheduled after batch run finishes.
 The `__aggregate__` method should only contain 1 params which is list of batch run results.
@@ -34,10 +34,8 @@ class MyFlow:
 
 ## YAML support
 
-Similar as DAG flow. YAML file is identifier for flex flow.
-Flex flow will use `flow.flex.yaml` as it's identifier.
-User can write the YAML file manually or save a function/callable entry to YAML file.
-A flex flow YAML may look like this:
+User can write a YAML file with name `flow.flex.yaml` manually or save a function/callable entry to YAML file.
+A flow YAML may look like this:
 
 ```yaml
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
@@ -46,7 +44,7 @@ entry: path.to.module:ClassName
 
 ## Flow test
 
-Since flex flow's definition is function/callable class. We recommend user directly run it like running other scripts:
+Since flow's definition is function/callable class. We recommend user directly run it like running other scripts:
 
 ```python
 class MyFlow:
@@ -60,7 +58,7 @@ if __name__ == "__main__":
 
 ## Chat with a flow
 
-Chat with flex flow in CLI is supported:
+Chat with flow in CLI is supported:
 
 ```bash
 pf flow test --flow path/to/flow --inputs path/to/inputs --init path/to/init --ui
@@ -70,7 +68,7 @@ Check [here](../chat-with-a-flow/index.md) for more information.
 
 ## Batch run without YAML
 
-User can also batch run a flex flow without YAML.
+User can also batch run a flow without YAML.
 Instead of calling `pf.save` to create flow YAML first.
 
 ::::{tab-set}
@@ -107,7 +105,7 @@ pf.run(flow=flow_obj, data="./data.jsonl")
 
 ## Batch run with YAML
 
-User can batch run a flex flow. Flow init function's param is supported by `init` parameter.
+User can batch run a flow. Flow init function's param is supported by `init` parameter.
 
 ::::{tab-set}
 :::{tab-item} CLI
@@ -159,8 +157,8 @@ pfazure.run(flow="./flow.flex.yaml", init={"model_config": config, "flow_config"
 
 ## Serve
 
-User can serve a flex flow. Flow init function's param is supported by `init` parameter.
-The flex flow should have complete init/inputs/outputs specification in YAML to make sure serving swagger can be generated.
+User can serve a flow. Flow init function's param is supported by `init` parameter.
+The flow should have complete init/inputs/outputs specification in YAML to make sure serving swagger can be generated.
 
 User need to write an JSON file as init's value since it's hard to write model config in command line.
 
@@ -182,7 +180,7 @@ pf flow serve --source "./"  --port 8088 --host localhost --init path/to/init.js
 
 ## Build & deploy
 
-Build & deploy a flex flow is supported like [DAG flow](../deploy-a-flow/index.md).
+Build & deploy a flow is supported: [Deploy a flow](../deploy-a-flow/index.md).
 
 ## Connection support
 
@@ -221,7 +219,7 @@ pfazure.run(flow="./flow.flex.yaml", init={"connection": "my_cloud_connection"},
 
 ### Environment variable connections(EVC)
 
-If flex flow's YAML has `environment_variables` and it's value is a connection reference like this:
+If flow YAML has `environment_variables` and it's value is a connection reference like this:
 
 ```yaml
 environment_variables:
@@ -271,7 +269,6 @@ class MyFlow:
 
 There's several limitations on aggregation support:
 
-- Referencing node outputs is not supported (there’s no node concept in flex flow).
 - The aggregation function will only execute in batch run.
 - Only 1 hard coded `__aggregate__` function is supported.
 - The `__aggregate__` will only be passed **1** positional arguments when executing.
@@ -283,5 +280,5 @@ There's several limitations on aggregation support:
 ## Next steps
 
 - [Input output format](./input-output-format.md)
-- [Class based flex flow sample](https://github.com/microsoft/promptflow/blob/main/examples/flex-flows/chat-basic/README.md)
-- [Class based flex flow evaluation sample](https://github.com/microsoft/promptflow/blob/main/examples/flex-flows/eval-code-quality/README.md)
+- [Class based flow sample](https://github.com/microsoft/promptflow/blob/main/examples/flex-flows/chat-basic/README.md)
+- [Class based flow evaluation sample](https://github.com/microsoft/promptflow/blob/main/examples/flex-flows/eval-code-quality/README.md)
