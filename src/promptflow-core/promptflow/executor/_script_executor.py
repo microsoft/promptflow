@@ -356,6 +356,7 @@ class ScriptExecutor(FlowExecutor):
         if self.is_function_entry:
             if inspect.isfunction(self._entry):
                 return self._entry
+            self._initialize_aggr_function(self._entry)
             return self._entry.__call__
         module_name, func_name = self._parse_flow_file()
         try:
