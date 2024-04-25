@@ -19,19 +19,15 @@ Create OpenAI resources, Azure OpenAI resources or MaaS deployment with the LLM 
 
     Login and [Find personal API key](https://platform.openai.com/account/api-keys)
 
-    Used in OpenAI Connection
-
 - **Azure OpenAI (AOAI)**
 
     Create Azure OpenAI resources with [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal)
 
-    Used in AzureOpenAI Connection
+- **MaaS deployment**
 
-- **Maas deployment**
+    Create MaaS deployment for models in Azure AI Studio model catalog with [instruction](https://learn.microsoft.com/en-us/azure/ai-studio/concepts/deployments-overview#deploy-models-with-model-as-a-service)
 
-    Create Maas deployment for models in Azure AI Studio model catalog with [instruction](https://learn.microsoft.com/en-us/azure/ai-studio/concepts/deployments-overview#deploy-models-with-model-as-a-service)
-
-    Used in Serverless Connection
+    You can create serverless connection to use this MaaS deployment.
 
 ## **Connections**
 
