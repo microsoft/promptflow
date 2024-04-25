@@ -5,3 +5,4 @@ promptflow-azure @ git+https://github.com/microsoft/promptflow/@clwan/sample_1_1
 promptflow @ git+https://github.com/microsoft/promptflow/@clwan/sample_1_10#subdirectory=src/promptflow
 promptflow-tools @ git+https://github.com/microsoft/promptflow/@clwan/sample_1_10#subdirectory=src/promptflow-tools
 python-dotenv
+openai>=1.14.0
