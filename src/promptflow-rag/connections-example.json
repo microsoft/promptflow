@@ -1,0 +1,30 @@
+{
+    "azure_openai_model_config": {
+      "type": "EmbeddingsModelConfig",
+      "value": {
+        "model_name": "text-embedding-ada-002",
+        "deployment_name": "text-embedding-ada-002"
+      },
+      "module": "promptflow.connections"
+    },
+    "azure_openai_connection_config": {
+        "type": "ConnectionConfig",
+        "value": {
+          "subscription": "f375b912-331c-4fc5-8e9f-2d7205e3e036",
+          "resource_group": "rg-jingyizhuai",
+          "workspace": "jingyizhu-project-2",
+          "connection_name": "Default_AzureOpenAI"
+        },
+        "module": "promptflow.connections"
+    },
+    "azure_ai_search_connection_config": {
+      "type": "ConnectionConfig",
+      "value": {
+        "subscription": "f375b912-331c-4fc5-8e9f-2d7205e3e036",
+        "resource_group": "rg-jingyizhuai",
+        "workspace": "jingyizhu-project-2",
+        "connection_name": "AzureAISearch"
+      },
+      "module": "promptflow.connections"
+    }
+}
