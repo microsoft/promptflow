@@ -41,7 +41,7 @@ class SummaryLine:
     start_time: str = None
     end_time: str = None
     status: str = None
-    latency: float = 0.0
+    latency: float = None
     name: str = None
     kind: str = None
     created_by: typing.Dict = field(default_factory=dict)
