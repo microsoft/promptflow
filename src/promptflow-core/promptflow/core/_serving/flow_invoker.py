@@ -117,8 +117,10 @@ class FlowInvoker:
             self.logger.debug(f"Flow invoker connections name overrides: {self.connections_name_overrides.keys()}")
             self.logger.debug(f"Ignoring connections: {connections_to_ignore}")
             if not connection_provider:
+                # If user not pass in connection provider string, get from environment variable.
                 connection_provider = ConnectionProvider.get_instance(credential=self._credential)
             else:
+                # Else, init from the string to parse the provider config.
                 connection_provider = ConnectionProvider.init_from_provider_config(
                     connection_provider, credential=self._credential
                 )
