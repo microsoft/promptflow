@@ -358,7 +358,7 @@ class TestToolsManager:
                 ToolFuncCallScenario.REVERSE_GENERATED_BY,
                 "my_tool_package.tools.tool_with_generated_by_input.generated_by_func",
                 {"index_type": "Azure Cognitive Search"},
-                "response must be a dict.",
+                "ToolFuncCallScenario reverse_generated_by response must be a dict.",
             ),
         ],
     )
