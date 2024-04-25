@@ -10,7 +10,7 @@ Prompt flow provides several trace toolkits in `promptflow-devkit`. This page wi
 
 With `promptflow-devkit` installed, running python script with `start_trace` will produce below example output:
 
-```bash
+```text
 Prompt flow service has started...
 You can view the traces from local: http://localhost:<port>/v1.0/ui/traces/?#collection=basic
 ```
