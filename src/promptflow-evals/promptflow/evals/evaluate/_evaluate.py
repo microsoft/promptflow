@@ -16,6 +16,7 @@ from promptflow.client import PFClient
 from ._code_client import CodeClient
 
 from promptflow._sdk._constants import LINE_NUMBER
+from promptflow.evals._user_agent import USER_AGENT
 
 
 def _calculate_mean(df) -> Dict[str, float]:
@@ -103,7 +104,10 @@ def _apply_target_to_data(
         target: Callable,
         data: str,
         pf_client: PFClient,
-        initial_data: pd.DataFrame) -> Tuple[pd.DataFrame, Set[str]]:
+        initial_data: pd.DataFrame,
+        *,
+        evaluation_name: Optional[str] = None,
+        ) -> Tuple[pd.DataFrame, Set[str]]:
     """
     Apply the target function to the data set and return updated data and generated columns.
 
@@ -124,7 +128,10 @@ def _apply_target_to_data(
     run = pf_client.run(
         flow=target,
         data=data,
-        name=f'preprocess_{uuid.uuid1()}',
+        display_name=evaluation_name if evaluation_name else None,
+        properties={
+            "runType": "eval_run",
+        },
         stream=True
     )
     target_output = pf_client.runs.get_details(run, all_results=True)
@@ -179,7 +186,13 @@ def evaluate(
     input_data_df = _validate_and_load_data(
         target, data, evaluators, output_path, tracking_uri, evaluation_name)
 
-    pf_client = PFClient()
+    pf_client = PFClient(
+        config={
+            "trace.destination": tracking_uri
+        } if tracking_uri else None,
+        user_agent=USER_AGENT,
+
+    )
     code_client = CodeClient()
 
     target_generated_columns = set()
