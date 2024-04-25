@@ -6,6 +6,7 @@ Simple and short articles grouped by topics, each introduces a core feature of p
 :caption: Tracing
 :maxdepth: 1
 tracing/index
+tracing/with-devkit
 ```
 
 ```{toctree}
