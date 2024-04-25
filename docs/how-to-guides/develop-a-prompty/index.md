@@ -42,10 +42,8 @@ model:
 inputs:
   first_name:
     type: string
-    default: John
   last_name:
     type: string
-    default: Doe
   question:
     type: string
 sample:
@@ -66,7 +64,7 @@ You are helping {{first_name}} {{last_name}} to find answers to their questions.
 Use their name to address them in your responses.
 
 user:
-  {{question}}
+{{question}}
 ```
 
 ## Load a prompty
@@ -94,10 +92,8 @@ model:
 inputs:
   first_name:
     type: string
-    default: John
   last_name:
     type: string
-    default: Doe
   question:
     type: string
 sample:
@@ -180,10 +176,8 @@ model:
 inputs:
   first_name:
     type: string
-    default: John
   last_name:
     type: string
-    default: Doe
   question:
     type: string
 sample:
@@ -329,10 +323,8 @@ model:
 inputs:
   first_name:
     type: string
-    default: John
   last_name:
     type: string
-    default: Doe
   question:
     type: string
    chat_history:

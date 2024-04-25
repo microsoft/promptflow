@@ -30,10 +30,8 @@ model:
 inputs:
   first_name:
     type: string
-    default: John
   last_name:
     type: string
-    default: Doe
   question:
     type: string
 sample:
@@ -89,10 +87,8 @@ model:
 inputs:
   first_name:
     type: string
-    default: John
   last_name:
     type: string
-    default: Doe
   question:
     type: string
 sample:
@@ -140,10 +136,8 @@ model:
 inputs:
   first_name:
     type: string
-    default: John
   last_name:
     type: string
-    default: Doe
   question:
     type: string
 outputs:
@@ -194,10 +188,8 @@ model:
 inputs:
   first_name:
     type: string
-    default: John
   last_name:
     type: string
-    default: Doe
   question:
     type: string
 sample:
@@ -242,10 +234,8 @@ model:
 inputs:
   first_name:
     type: string
-    default: John
   last_name:
     type: string
-    default: Doe
   question:
     type: string
 sample:
