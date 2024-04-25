@@ -144,9 +144,9 @@ def enrich_span_with_trace_type(span, inputs, output, trace_type):
     elif trace_type == TraceType.EMBEDDING:
         token_collector.collect_openai_tokens(span, output)
         enrich_span_with_embedding(span, inputs, output)
-    elif trace_type == TraceType.Assistant:
+    elif trace_type == TraceType.ASSISTANT:
         enrich_assistant_span(span, inputs, output)
-    elif trace_type == TraceType.Run:
+    elif trace_type == TraceType.RUN:
         enrich_run_span(span, inputs, output)
 
     enrich_span_with_openai_tokens(span, trace_type)
@@ -280,6 +280,8 @@ def enrich_run_span(span, inputs, output):
             span.set_attribute("assistance.run.id", output.id)
             span.set_attribute("assistance.run.assistant_id", output.assistant_id)
             span.set_attribute("assistance.run.thread_id", output.thread_id)
+            span.set_attribute("assistance.run.tools", serialize_attribute([tool.dict() for tool in output.tools]))
+            span.set_attribute("assistance.run.usage", serialize_attribute(output.usage.dict()))
             span.set_attribute("assistance.run.model", output.model)
             span.set_attribute("assistance.run.instructions", output.instructions)
             span.set_attribute("assistance.run.status", output.status)
@@ -537,4 +539,4 @@ def trace(func: Callable = None) -> Callable:
 
 
 def run(func: Callable = None) -> Callable:
-    return _traced(func, trace_type=TraceType.Run)
+    return _traced(func, trace_type=TraceType.RUN)

@@ -15,8 +15,9 @@ class TraceType(str, Enum):
     LANGCHAIN = "LangChain"
     FLOW = "Flow"
     EMBEDDING = "Embedding"
-    Assistant = ("Assistant",)
-    Run = "Run"
+    ASSISTANT = "Assistant"
+    RUN = "Run"
+    MESSAGE = "Message"
 
 
 @dataclass
