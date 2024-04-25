@@ -42,14 +42,14 @@ def async_run_allowing_running_loop(async_func, *args, **kwargs):
         return asyncio.run(async_func(*args, **kwargs))
 
 
-def run_async_function_sync(func):
+def async_to_sync(func):
     def wrapper(*args, **kwargs):
         return async_run_allowing_running_loop(func, *args, **kwargs)
 
     return wrapper
 
 
-def run_sync_function_async(func):
+def sync_to_async(func):
     async def wrapper(*args, **kwargs):
         with ThreadPoolExecutorWithContext() as executor:
             partial_func = functools.partial(func, *args, **kwargs)

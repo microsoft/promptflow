@@ -13,7 +13,7 @@ from promptflow._constants import LINE_NUMBER_KEY, MessageFormatType
 from promptflow._core.log_manager import NodeLogManager
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool_meta_generator import PythonLoadError
-from promptflow._utils.async_utils import run_async_function_sync, run_sync_function_async
+from promptflow._utils.async_utils import async_to_sync, sync_to_async
 from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import logger
@@ -432,11 +432,11 @@ class ScriptExecutor(FlowExecutor):
         inputs, _, _, _ = function_to_interface(func)
         self._inputs = {k: v.to_flow_input_definition() for k, v in inputs.items()}
         if inspect.iscoroutinefunction(func):
-            self._func = run_async_function_sync(func)
+            self._func = async_to_sync(func)
             self._func_async = func
         else:
             self._func = func
-            self._func_async = run_sync_function_async(func)
+            self._func_async = sync_to_async(func)
         return func
 
     def _initialize_aggr_function(self, flow_obj: object):
@@ -450,11 +450,11 @@ class ScriptExecutor(FlowExecutor):
             if not hasattr(aggr_func, "__original_function"):
                 aggr_func = _traced(aggr_func)
             if inspect.iscoroutinefunction(aggr_func):
-                self._aggr_func = run_async_function_sync(aggr_func)
+                self._aggr_func = async_to_sync(aggr_func)
                 self._aggr_func_async = aggr_func
             else:
                 self._aggr_func = aggr_func
-                self._aggr_func_async = run_sync_function_async(aggr_func)
+                self._aggr_func_async = sync_to_async(aggr_func)
             self._aggr_input_name = list(sign.parameters.keys())[0]
 
     def _parse_flow_file(self):
