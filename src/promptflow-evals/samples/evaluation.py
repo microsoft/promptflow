@@ -9,8 +9,8 @@ from promptflow.evals.evaluators import RelevanceEvaluator
 from promptflow.evals.evaluators.content_safety import ViolenceEvaluator
 
 
-def answer_length(answer, **kwargs):
-    return {"value": len(answer)}
+def answer_length(input, **kwargs):
+    return {"value": len(input)}
 
 
 if __name__ == "__main__":
@@ -69,8 +69,7 @@ if __name__ == "__main__":
             "relevance": relevance_eval,
         },
         evaluator_config={
-            "answer_length": {"answer": "${data.answer}"},
-            "relevance": {"answer": "${data.ground_truth}"},
+            "answer_length": {"input": "${data.answer}"},
         },
     )
 

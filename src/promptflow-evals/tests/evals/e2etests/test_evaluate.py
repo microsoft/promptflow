@@ -99,7 +99,7 @@ class TestEvaluate:
         # module named test_evaluate and it will be a different module in unit test
         # folder. By keeping function in separate file we guarantee, it will be loaded
         # from there.
-        from .function_test import target_fn
+        from .target_fn import target_fn
 
         f1_score_eval = F1ScoreEvaluator()
         # run the evaluation with targets
@@ -115,25 +115,40 @@ class TestEvaluate:
         assert "outputs.f1.f1_score" in row_result_df.columns
         assert not any(np.isnan(f1) for f1 in row_result_df["outputs.f1.f1_score"])
 
-    @pytest.mark.usefixtures("data_file_for_column_mapping")
-    def test_evaluate_with_evaluator_config(self, data_file_for_column_mapping):
-        # data
-        input_data = pd.read_json(data_file_for_column_mapping, lines=True)
-        f1_score_evaluator = F1ScoreEvaluator()
+    @pytest.mark.parametrize(
+        "evaluate_config",
+        [
+            (
+                {
+                    "f1_score": {
+                        "answer": "${data.context}",
+                        "ground_truth": "${data.ground_truth}",
+                    },
+                    "answer": {
+                        "answer": "${target.response}",
+                    },
+                }
+            ),
+            (
+                {
+                    "default": {
+                        "answer": "${target.response}",
+                        "ground_truth": "${data.ground_truth}",
+                    },
+                }
+            ),
+        ],
+    )
+    def test_evaluate_with_evaluator_config(self, questions_file, evaluate_config):
+        input_data = pd.read_json(questions_file, lines=True)
+        from .target_fn import target_fn2
 
         # run the evaluation
         result = evaluate(
-            data=data_file_for_column_mapping,
-            evaluators={"f1_score": f1_score_evaluator, "answer": answer_evaluator},
-            evaluator_config={
-                "f1_score": {
-                    "ground_truth": "${data.ground_truth}",
-                    "answer": "${data.response}",
-                },
-                "answer": {
-                    "answer": "${target.response}",
-                },
-            },
+            data=questions_file,
+            target=target_fn2,
+            evaluators={"f1_score": F1ScoreEvaluator(), "answer": answer_evaluator},
+            evaluator_config=evaluate_config,
         )
 
         row_result_df = pd.DataFrame(result["rows"])

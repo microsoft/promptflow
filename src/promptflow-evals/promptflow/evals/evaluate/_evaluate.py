@@ -68,12 +68,14 @@ def _validate_and_load_data(target, data, evaluators, output_path, tracking_uri,
     except Exception as e:
         raise ValueError(f"Failed to load data from {data}. Please validate it is a valid jsonl data. Error: {str(e)}.")
 
-    _validate_columns(initial_data_df, evaluators, target)
     return initial_data_df
 
 
 def _validate_columns(
-    df: pd.DataFrame, evaluators: Dict[str, Any], target: Optional[Callable], evaluator_config: Dict[Dict[str, str]]
+    df: pd.DataFrame,
+    evaluators: Dict[str, Any],
+    target: Optional[Callable],
+    evaluator_config: Dict[str, Dict[str, str]],
 ) -> None:
     """
     Check that all columns needed by evaluator or target function are present.
@@ -170,26 +172,25 @@ def _process_evaluator_config(evaluator_config: Dict[str, Dict[str, str]]):
 
     processed_config = {}
 
-    if evaluator_config is None:
-        return processed_config
-
     unexpected_references = re.compile(r"\${(?!target\.|data\.).+?}")
 
-    for evaluator, mapping_config in evaluator_config.items():
-        if isinstance(mapping_config, dict):
-            processed_config[evaluator] = {}
+    if evaluator_config:
 
-            for map_to_key, map_value in mapping_config.items():
+        for evaluator, mapping_config in evaluator_config.items():
+            if isinstance(mapping_config, dict):
+                processed_config[evaluator] = {}
 
-                # Check if there's any unexpected reference other than ${target.} or ${data.}
-                if unexpected_references.search(map_value):
-                    raise ValueError(
-                        "Unexpected references detected in 'evaluator_config'. "
-                        "Ensure only ${target.} and ${data.} are used."
-                    )
+                for map_to_key, map_value in mapping_config.items():
 
-                # Replace ${target.} with ${data.}
-                processed_config[evaluator][map_to_key] = map_value.replace("${target.", "${data.")
+                    # Check if there's any unexpected reference other than ${target.} or ${data.}
+                    if unexpected_references.search(map_value):
+                        raise ValueError(
+                            "Unexpected references detected in 'evaluator_config'. "
+                            "Ensure only ${target.} and ${data.} are used."
+                        )
+
+                    # Replace ${target.} with ${data.}
+                    processed_config[evaluator][map_to_key] = map_value.replace("${target.", "${data.")
 
     return processed_config
 
@@ -224,9 +225,10 @@ def evaluate(
     :rtype: ~azure.ai.generative.evaluate.EvaluationResult
     """
 
-    evaluator_config = _process_evaluator_config(evaluator_config)
-
     input_data_df = _validate_and_load_data(target, data, evaluators, output_path, tracking_uri, evaluation_name)
+
+    evaluator_config = _process_evaluator_config(evaluator_config)
+    _validate_columns(input_data_df, evaluators, target, evaluator_config)
 
     pf_client = PFClient()
 
@@ -250,7 +252,7 @@ def evaluate(
             evaluator_info[evaluator_name]["run"] = pf_client.run(
                 flow=evaluator,
                 column_mapping=evaluator_config.get(evaluator_name, evaluator_config.get("default", None)),
-                data=data,
+                data=data_file,
                 stream=True,
             )
 

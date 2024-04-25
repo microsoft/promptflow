@@ -24,6 +24,12 @@ def missing_columns_jsonl_file():
 
 
 @pytest.fixture
+def evaluate_test_data_jsonl_file():
+    data_path = os.path.join(pathlib.Path(__file__).parent.resolve(), "data")
+    return os.path.join(data_path, "evaluate_test_data.jsonl")
+
+
+@pytest.fixture
 def pf_client() -> PFClient:
     """The fixture, returning PRClient"""
     return PFClient()
@@ -142,10 +148,10 @@ class TestEvaluate:
         assert new_data_df["question"][0] == "How are you?"
         assert new_data_df["answer"][0] == "I'm fine"
 
-    def test_evaluate_invalid_evaluator_config(self, mock_model_config):
+    def test_evaluate_invalid_evaluator_config(self, mock_model_config, evaluate_test_data_jsonl_file):
         with pytest.raises(ValueError) as exc_info:
             evaluate(
-                data="data.jsonl",
+                data=evaluate_test_data_jsonl_file,
                 evaluators={"g": GroundednessEvaluator(model_config=mock_model_config)},
                 evaluator_config={"g": {"question": "${foo.question}"}},
             )
