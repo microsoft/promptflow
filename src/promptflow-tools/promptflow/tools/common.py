@@ -249,7 +249,7 @@ def try_parse_tool_calls(role_prompt):
     return None
 
 
-def is_tools_chunk(last_message):
+def is_tool_chunk(last_message):
     return last_message and "role" in last_message and last_message["role"] == "tool" and "content" not in last_message
 
 
@@ -334,7 +334,7 @@ def parse_chat(
 
     for chunk in chunks:
         last_message = chat_list[-1] if len(chat_list) > 0 else None
-        if is_tools_chunk(last_message):
+        if is_tool_chunk(last_message):
             parse_tools(last_message, chunk, hash2images, image_detail)
             continue
 
