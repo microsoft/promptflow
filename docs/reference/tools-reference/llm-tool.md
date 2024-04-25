@@ -1,7 +1,7 @@
 # LLM 
 
 ## Introduction
-Prompt flow LLM tool enables you to leverage widely used large language models like [OpenAI](https://platform.openai.com/), [Azure OpenAI (AOAI)](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/overview), and models in [Azure AI Studio Model catalog](https://learn.microsoft.com/en-us/azure/ai-studio/how-to/model-catalog) for natural language processing. 
+Prompt flow LLM tool enables you to leverage widely used large language models like [OpenAI](https://platform.openai.com/), [Azure OpenAI (AOAI)](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/overview), and models in [Azure AI Studio model catalog](https://learn.microsoft.com/en-us/azure/ai-studio/how-to/model-catalog) for natural language processing. 
 > [!NOTE]
 > The previous version of the LLM tool is now being deprecated. Please upgrade to latest [promptflow-tools](https://pypi.org/project/promptflow-tools/) package to consume new llm tools.
 
@@ -11,7 +11,7 @@ Prompt flow provides a few different LLM APIs:
 
 
 ## Prerequisite
-Create OpenAI, Azure OpenAI resources or Serverless deployment for models in Azure AI Studio Model catalog:
+Create OpenAI resources, Azure OpenAI resources or MaaS deployment with the LLM models (e.g.: llama2, mistral, cohere etc.) in Azure AI Studio model catalog:
 
 - **OpenAI**
 
@@ -19,13 +19,19 @@ Create OpenAI, Azure OpenAI resources or Serverless deployment for models in Azu
 
     Login and [Find personal API key](https://platform.openai.com/account/api-keys)
 
+    Used in OpenAI Connection
+
 - **Azure OpenAI (AOAI)**
 
     Create Azure OpenAI resources with [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal)
 
-- **Serverless deployment**
+    Used in Azure OpenAI Connection
 
-    Create Serverless deployment for models in Azure AI Studio Model catalog with [instruction](https://learn.microsoft.com/en-us/azure/ai-studio/concepts/deployments-overview#deploy-models-with-model-as-a-service)
+- **Maas deployment**
+
+    Create Maas deployment for models in Azure AI Studio model catalog with [instruction](https://learn.microsoft.com/en-us/azure/ai-studio/concepts/deployments-overview#deploy-models-with-model-as-a-service)
+
+    Used in Serverless Connection
 
 ## **Connections**
 
