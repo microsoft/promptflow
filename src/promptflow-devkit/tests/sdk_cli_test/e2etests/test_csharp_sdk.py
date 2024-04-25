@@ -31,7 +31,11 @@ class TestCSharpSdk:
                         "language": {"default": "chinese", "type": "string"},
                         "topic": {"default": "ocean", "type": "string"},
                     },
-                    "outputs": {"output": {"type": "object"}},
+                    "outputs": {
+                        "Answer": {"type": "string"},
+                        "AnswerLength": {"type": "int"},
+                        "PoemLanguage": {"type": "string"},
+                    },
                 },
                 id="function_mode_basic",
             ),
@@ -39,7 +43,7 @@ class TestCSharpSdk:
                 {
                     "init": {"connection": {"type": "AzureOpenAIConnection"}, "name": {"type": "string"}},
                     "inputs": {"question": {"default": "What is Promptflow?", "type": "string"}},
-                    "outputs": {"output": {"type": "object"}},
+                    "outputs": {"output": {"type": "string"}},
                 },
                 id="class_init_flex_flow",
             ),
