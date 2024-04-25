@@ -22,7 +22,7 @@ from azure.ai.ml.entities import IdentityConfiguration
 from sdk_cli_azure_test.conftest import DATAS_DIR, FLOWS_DIR
 
 from promptflow._constants import FLOW_FLEX_YAML
-from promptflow._sdk._constants import DownloadedRun, RunStatus
+from promptflow._sdk._constants import FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME, DownloadedRun, RunStatus
 from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, RunNotFoundError
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk.entities import Run
@@ -78,6 +78,23 @@ class TestFlowRun:
         )
         assert isinstance(run, Run)
         assert run.name == name
+
+    @pytest.mark.skipif(not is_live(), reason="Recording issue.")
+    def test_run_without_generate_tools_json(self, pf, runtime: str, randstr: Callable[[str], str]):
+        name = randstr("name")
+        flow_dir = f"{FLOWS_DIR}/simple_hello_world"
+        tools_json_path = Path(flow_dir) / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
+        if tools_json_path.exists():
+            tools_json_path.unlink()
+        run = pf.run(
+            flow=flow_dir,
+            data=f"{DATAS_DIR}/simple_hello_world.jsonl",
+            column_mapping={"name": "${data.name}"},
+            name=name,
+        )
+        assert isinstance(run, Run)
+        assert run.name == name
+        assert not tools_json_path.exists()
 
     def test_run_resume(self, pf: PFClient, randstr: Callable[[str], str]):
         # Note: Use fixed run name here to ensure resume call has same body then can be recorded.

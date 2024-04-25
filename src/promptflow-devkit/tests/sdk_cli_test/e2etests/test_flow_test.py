@@ -269,11 +269,19 @@ class TestFlowTest:
                 cwd=notebook_path.parent,
             )
 
-    def test_eager_flow_test(self):
+    def test_eager_flow_test_without_yaml(self):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml_return_output/").absolute()
         with _change_working_dir(flow_path):
             result = _client._flows.test(flow="entry:my_flow", inputs={"input_val": "val1"})
             assert result == "Hello world! val1"
+
+    def test_class_based_eager_flow_test_without_yaml(self):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_callable_class_without_yaml/").absolute()
+        with _change_working_dir(flow_path):
+            result = _client._flows.test(
+                flow="simple_callable_class:MyFlow", inputs={"func_input": "input"}, init={"obj_input": "val"}
+            )
+            assert result["func_input"] == "input"
 
     def test_eager_flow_test_with_yaml(self):
         clear_module_cache("entry")
