@@ -254,14 +254,37 @@ def is_tools_chunk(last_message):
 
 
 def is_assistant_tool_calls_chunk(last_message, chunk):
-    return last_message and "role" in last_message and last_message["role"] == "assistant" and "tool_calls" in chunk
+    # An valid tool calls chunk should be like:
+    # ## tool_calls:
+    # [{ id: tool_call_id, type: tool_type, function: {name: function_name, arguments: function_args }]
+    is_candidate = (
+        last_message
+        and "role" in last_message
+        and last_message["role"] == "assistant"
+        and "tool_calls" in chunk
+    )
+    # Check if the chunk is not an llm output like this:
+    # {'content': 'Sorry, ...', 'role': 'assistant', 'function_call': None, 'tool_calls': None}
+    if is_candidate:
+        try:
+            # If the chunk is a serialized dict, it should be an llm output.
+            # Then possibly it is not an assistant tool calls chunk.
+            json.loads(chunk)
+            return False
+        except Exception:
+            return True
+    else:
+        return False
 
 
 def parse_tool_calls_for_assistant(last_message, chunk):
     parsed_result = try_parse_tool_calls(chunk)
-    error_msg = "Failed to parse assistant role prompt with tool_calls. Please make sure the prompt follows the format:"
-    " 'tool_calls:\\n[{ id: tool_call_id, type: tool_type, function: {name: function_name, arguments: function_args }]'"
-    "See more details in https://platform.openai.com/docs/api-reference/chat/create#chat-create-messages"
+    error_msg = (
+        "Failed to parse assistant role prompt with tool_calls. Please make sure the prompt follows the format:"
+        " 'tool_calls:\\n"
+        "[{ id: tool_call_id, type: tool_type, function: {name: function_name, arguments: function_args }]'"
+        "See more details in https://platform.openai.com/docs/api-reference/chat/create#chat-create-messages"
+    )
 
     if parsed_result is None:
         raise ChatAPIAssistantRoleInvalidFormat(message=error_msg)
