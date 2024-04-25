@@ -79,7 +79,7 @@ python math_to_code.py
 
 ## Trace LLM and frameworks
 
-Prompt flow tracing works not only for general LLM application, but also for more frameworks like `autogen` and `langchain`:
+Prompt flow tracing works not only for general LLM application, but also for more frameworks like `autogen` and `langchain`. Besides basic tracing capability, prompt flow also provides several trace toolkits that can improve the tracing experience (e.g., trace UI for visualization).
 
 1. Example: **[Add trace for LLM](https://microsoft.github.io/promptflow/tutorials/trace-llm.html)**
 
