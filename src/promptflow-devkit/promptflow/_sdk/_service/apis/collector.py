@@ -13,7 +13,8 @@ from typing import Callable, Optional
 from flask import request
 from opentelemetry.proto.collector.trace.v1.trace_service_pb2 import ExportTraceServiceRequest
 
-from promptflow._sdk._tracing import process_otlp_trace_request
+from promptflow._sdk._errors import MissingAzurePackage
+from promptflow._sdk._tracing import _is_azure_ext_installed, process_otlp_trace_request
 
 
 def trace_collector(
@@ -41,13 +42,33 @@ def trace_collector(
     if "application/x-protobuf" in content_type:
         trace_request = ExportTraceServiceRequest()
         trace_request.ParseFromString(request.data)
-        process_otlp_trace_request(
-            trace_request=trace_request,
-            get_created_by_info_with_cache=get_created_by_info_with_cache,
-            logger=logger,
-            cloud_trace_only=cloud_trace_only,
-            credential=credential,
-        )
+        # this function will be called in some old runtime versions
+        # where runtime will pass either credential object, or the function to get credential
+        # as we need to be compatible with this, need to handle both cases
+        if credential is not None:
+            # local prompt flow service will not pass credential, so this is runtime scenario
+            get_credential = credential if callable(credential) else lambda: credential  # noqa: F841
+            process_otlp_trace_request(
+                trace_request=trace_request,
+                get_created_by_info_with_cache=get_created_by_info_with_cache,
+                logger=logger,
+                get_credential=get_credential,
+                cloud_trace_only=cloud_trace_only,
+            )
+        else:
+            # if `promptflow-azure` is not installed, pass an exception class to the function
+            get_credential = MissingAzurePackage
+            if _is_azure_ext_installed():
+                from azure.identity import AzureCliCredential
+
+                get_credential = AzureCliCredential
+            process_otlp_trace_request(
+                trace_request=trace_request,
+                get_created_by_info_with_cache=get_created_by_info_with_cache,
+                logger=logger,
+                get_credential=get_credential,
+                cloud_trace_only=cloud_trace_only,
+            )
         return "Traces received", 200
 
     # JSON protobuf encoding
