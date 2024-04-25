@@ -1,4 +1,4 @@
-# Tracing with promptflow-devkit
+# Visualize and manage traces
 
 :::{admonition} Experimental feature
 This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
