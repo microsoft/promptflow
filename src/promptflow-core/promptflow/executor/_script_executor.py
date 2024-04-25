@@ -195,11 +195,22 @@ class ScriptExecutor(FlowExecutor):
         output, metrics = None, {}
         try:
             output = self._aggr_func(**{self._aggr_input_name: inputs})
-            metrics = output if isinstance(output, dict) else {"metrics": output}
-            for k, v in metrics.items():
-                log_metric(k, v)
+            if isinstance(output, dict):
+                metrics = output
+                for k, v in metrics.items():
+                    log_metric(k, v)
+            else:
+                logger.warning("The output of aggregation function isn't a dictionary, skip the metrices update.")
         except Exception:
-            pass
+            error_type_and_message = f"({e.__class__.__name__}) {e}"
+            e = ScriptExecutionError(
+                message_format="Execution failure in '{func_name}': {error_type_and_message}",
+                func_name=self._aggr_func.__name__,
+                error_type_and_message=error_type_and_message,
+            )
+            error = ExceptionPresenter.create(e).to_dict(include_debug_info=True)
+            logger.warning(f"Failed to execute aggregation function with error: {error}")
+            logger.warning("The flow will have empty metrics.")
         return AggregationResult(output, metrics, {})
 
     async def exec_aggregation_async(
@@ -219,9 +230,12 @@ class ScriptExecutor(FlowExecutor):
         output = None
         try:
             output = await self._aggr_func_async(**{self._aggr_input_name: inputs})
-            metrics = output if isinstance(output, dict) else {"metrics": output}
-            for k, v in metrics.items():
-                log_metric(k, v)
+            if isinstance(output, dict):
+                metrics = output
+                for k, v in metrics.items():
+                    log_metric(k, v)
+            else:
+                logger.warning("The output of aggregation function isn't a dictionary, skip the metrices update.")
         except Exception as e:
             error_type_and_message = f"({e.__class__.__name__}) {e}"
             e = ScriptExecutionError(
