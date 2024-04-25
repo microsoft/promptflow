@@ -9,9 +9,11 @@ When user need to persist objects (like connection) in memory during multiple ro
 If user need to log metrics on batch run outputs, they can add an `__aggregate__` method and it will be scheduled after batch run finishes.
 The `__aggregate__` method should only contain 1 params which is list of batch run results.
 
-See [connection support](#connection-support) & [aggregation support](#aggregation-support-metrics) for more details.
+See [connection support](#connection-support) & [aggregation support](#aggregation-support) for more details.
 
-## Authoring
+## Class as a flow
+
+Assume we have a file `flow_entry.py`:
 
 ```python
 class Reply(TypedDict):
@@ -23,7 +25,7 @@ class MyFlow:
       self.model_config = model_config
       self.flow_config = flow_config
 
-    def __call__(text: str) -> Reply:
+    def __call__(question: str) -> Reply:
       """Flow execution logic goes here."""
       return Reply(output=output)
 
@@ -32,15 +34,6 @@ class MyFlow:
       return {"key": val}
 ```
 
-## YAML support
-
-User can write a YAML file with name `flow.flex.yaml` manually or save a function/callable entry to YAML file.
-A flow YAML may look like this:
-
-```yaml
-$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
-entry: path.to.module:ClassName
-```
 
 ## Flow test
 
@@ -50,26 +43,33 @@ Since flow's definition is function/callable class. We recommend user directly r
 class MyFlow:
     pass
 if __name__ == "__main__":
-    flow = MyFlow(**init_args)
-    output = flow(**call_args)
+    flow = MyFlow(model_config, flow_config)
+    output = flow(question)
     metrics = flow.__aggregate__([output])
     # check metrics here
 ```
 
-## Chat with a flow
+You can also test the flow using CLI:
+```bash
+# flow entry syntax: path.to.module:ClassName
+pf flow test --flow flow_entry:MyFlow --inputs question="What's the capital of France?" --init init.json
+```
+
+Check out a full example here: [basic-chat](https://github.com/microsoft/promptflow/tree/main/examples/flex-flows/basic-chat)
+
+### Chat with a flow
 
 Chat with flow in CLI is supported:
 
 ```bash
-pf flow test --flow path/to/flow --inputs path/to/inputs --init path/to/init --ui
+pf flow test --flow flow_entry:MyFlow --inputs inputs.json --init init.json --ui
 ```
 
 Check [here](../chat-with-a-flow/index.md) for more information.
 
-## Batch run without YAML
+## Batch run
 
-User can also batch run a flow without YAML.
-Instead of calling `pf.save` to create flow YAML first.
+User can also batch run a flow.
 
 ::::{tab-set}
 :::{tab-item} CLI
@@ -85,14 +85,13 @@ pf run create --flow "path.to.module:ClassName" --data "./data.jsonl"
 :sync: SDK
 ```python
 # user can also directly use entry in `flow` param for batch run
-pf.run(flow="path.to.module:ClassName", data="./data.jsonl")
+pf.run(flow="path.to.module:ClassName", init="./init.jsonl", data="./data.jsonl")
 ```
 
 :::
 ::::
 
 Or directly run the imported flow class or flow instance.
-**Note**: this only works in local.
 
 ```python
 class MyFlow:
@@ -101,6 +100,18 @@ pf.run(flow=MyFlow, init={"model_config": config, "flow_config": {}}, data="./da
 # or
 flow_obj = MyFlow(model_config=config, flow_config={})
 pf.run(flow=flow_obj, data="./data.jsonl")
+```
+
+Learn more on this topic on [Run and evaluate a flow](../run-and-evaluate-a-flow/index.md)
+
+## YAML support
+
+User can write a YAML file with name `flow.flex.yaml` manually or save a function/callable entry to YAML file.
+A flow YAML may look like this:
+
+```yaml
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+entry: path.to.module:ClassName
 ```
 
 ## Batch run with YAML
@@ -155,7 +166,7 @@ pfazure.run(flow="./flow.flex.yaml", init={"model_config": config, "flow_config"
 :::
 ::::
 
-## Serve
+## Deploy a flow
 
 User can serve a flow. Flow init function's param is supported by `init` parameter.
 The flow should have complete init/inputs/outputs specification in YAML to make sure serving swagger can be generated.
@@ -178,9 +189,7 @@ User need to write an JSON file as init's value since it's hard to write model c
 pf flow serve --source "./"  --port 8088 --host localhost --init path/to/init.json
 ```
 
-## Build & deploy
-
-Build & deploy a flow is supported: [Deploy a flow](../deploy-a-flow/index.md).
+Learn more: [Deploy a flow](../deploy-a-flow/index.md).
 
 ## Connection support
 
@@ -247,7 +256,9 @@ pf run create --flow . --data ./data.jsonl --environment-variables NEW_API_KEY='
 
 The `NEW_API_KEY`'s value won't be resolved to connection's API key.
 
-## Aggregation support (metrics)
+## Aggregation support
+
+Aggregation support is introduce to help user calculate metrics.
 
 ```python
 class MyFlow:

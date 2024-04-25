@@ -6,13 +6,13 @@ This is an experimental feature, and may change at any time. Learn [more](../faq
 
 ## Supported types
 
-We'll only support the following types in flow. Flow inits/inputs/outputs without specification will lead to validation error.
+Promptflow officially support below types in flow. 
 
-Inputs: primitive types(int, float, bool, str), dict, TypedDict, list
+- Inputs: primitive types(`int`, `float`, `bool`, `str`), `dict`, `TypedDict`, `list`
 
-Outputs: primitive types(int, float, bool, str), dict, TypedDict, data class, list
+- Outputs: primitive types(`int`, `float`, `bool`, `str`), `dict`, `TypedDict`, `dataclass`, `list`
 
-Init: primitive types(int, float, bool, str), connection, ModelConfiguration, TypedDict, list
+- Init: primitive types(`int`, `float`, `bool`, `str`), `Connection`, `ModelConfiguration`, `TypedDict`, `list`
 
 If user has non-supported types in code/YAML, validation error will be raised.
 
@@ -37,5 +37,7 @@ Sample validation error: "The input 'my_own_obj' is of a complex python type. Pl
 
 ## Stream
 
-Stream is supported in flow.
-Reference this [sample](https://microsoft.github.io/promptflow/tutorials/stream-flex-flow.html) for details.
+Stream is supported in flow, you just need to return a generator type in your function.
+Reference openai doc on how to do it using plain python code: [how_to_stream_completions](https://cookbook.openai.com/examples/how_to_stream_completions).
+
+Reference this flow [sample](https://microsoft.github.io/promptflow/tutorials/stream-flex-flow.html) for details.
