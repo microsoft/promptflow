@@ -213,7 +213,10 @@ class TestCommon:
             ("\nsystem:\nname:\n\n content:\nfirst", [
                 {'role': 'system', 'content': 'name:\n\n content:\nfirst'}]),
             ("\nsystem:\nname:\n\n", [
-                {'role': 'system', 'content': 'name:'}])
+                {'role': 'system', 'content': 'name:'}]),
+            # portal may add extra \r to new line character.
+            ("function:\r\nname:\r\n AI\ncontent :\r\nfirst", [
+                {'role': 'function', 'name': 'AI', 'content': 'first'}]),
         ],
     )
     def test_parse_chat_with_name_in_role_prompt(self, chat_str, expected_result):
@@ -251,6 +254,20 @@ class TestCommon:
     def test_try_parse_tool_calls(self, role_prompt, expected_result):
         actual = try_parse_tool_calls(role_prompt)
         assert actual == expected_result
+
+    @pytest.mark.parametrize(
+        "chat_str, expected_result",
+        [
+            ("\n#tool:\n## tool_call_id:\nid \n content:\nfirst\n\n#user:\nsecond", [
+                {'role': 'tool', 'tool_call_id': 'id', 'content': 'first'}, {'role': 'user', 'content': 'second'}]),
+            # portal may add extra \r to new line character.
+            ("\ntool:\ntool_call_id :\r\nid\n content:\r\n", [
+                {'role': 'tool', 'tool_call_id': 'id', 'content': ''}]),
+        ],
+    )
+    def test_parse_tool_call_id_and_content(self, chat_str, expected_result):
+        actual_result = parse_chat(chat_str)
+        assert actual_result == expected_result
 
     @pytest.mark.parametrize(
         "kwargs, expected_result",

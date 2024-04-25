@@ -909,34 +909,6 @@ def convert_time_unix_nano_to_timestamp(time_unix_nano: str) -> datetime.datetim
     return datetime.datetime.utcfromtimestamp(seconds)
 
 
-def parse_kv_from_pb_attribute(attribute: Dict) -> Tuple[str, str]:
-    attr_key = attribute["key"]
-    # suppose all values are flattened here
-    # so simply regard the first value as the attribute value
-    attr_value = list(attribute["value"].values())[0]
-    return attr_key, attr_value
-
-
-def flatten_pb_attributes(attributes: List[Dict]) -> Dict:
-    flattened_attributes = {}
-    for attribute in attributes:
-        attr_key, attr_value = parse_kv_from_pb_attribute(attribute)
-        flattened_attributes[attr_key] = attr_value
-    return flattened_attributes
-
-
-def parse_otel_span_status_code(value: int) -> str:
-    # map int value to string
-    # https://github.com/open-telemetry/opentelemetry-specification/blob/v1.22.0/specification/trace/api.md#set-status
-    # https://github.com/open-telemetry/opentelemetry-python/blob/v1.22.0/opentelemetry-api/src/opentelemetry/trace/status.py#L22-L32
-    if value == 0:
-        return "Unset"
-    elif value == 1:
-        return "Ok"
-    else:
-        return "Error"
-
-
 def extract_workspace_triad_from_trace_provider(trace_provider: str) -> AzureMLWorkspaceTriad:
     match = re.match(AZURE_WORKSPACE_REGEX_FORMAT, trace_provider)
     if not match or len(match.groups()) != 5:
