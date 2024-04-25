@@ -17,7 +17,8 @@ develop-a-prompty/index
 ```{toctree}
 :caption: Flow
 :maxdepth: 1
-develop-a-flow/index
+develop-a-flex-flow/index
+develop-a-dag-flow/index
 execute-flow-as-a-function
 chat-with-a-flow/index
 run-and-evaluate-a-flow/index
