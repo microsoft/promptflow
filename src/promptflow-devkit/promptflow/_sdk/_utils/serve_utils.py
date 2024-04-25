@@ -1,4 +1,6 @@
 import abc
+import contextlib
+import json
 import logging
 import os
 import shutil
@@ -160,8 +162,9 @@ class CSharpFlowServiceHelper(BaseFlowServiceHelper):
         self.flow_dir, self.flow_file_name = flow_dir, flow_file_name
         super().__init__()
 
+    @contextlib.contextmanager
     def _construct_command(self):
-        return [
+        cmd = [
             "dotnet",
             EXECUTOR_SERVICE_DLL,
             "--port",
@@ -176,10 +179,21 @@ class CSharpFlowServiceHelper(BaseFlowServiceHelper):
             "",
             "--serving",
         ]
+        if self._init:
+            init_json_path = Path(tempfile.mktemp()).with_suffix(".json")
+            with open(init_json_path, "w") as f:
+                json.dump(self._init, f)
+            cmd.extend(["--init", init_json_path.as_posix()])
+            try:
+                yield cmd
+            finally:
+                os.remove(init_json_path)
+        else:
+            yield cmd
 
     def run(self):
         try:
-            command = self._construct_command()
-            subprocess.run(command, cwd=self.flow_dir, stdout=sys.stdout, stderr=sys.stderr)
+            with self._construct_command() as command:
+                subprocess.run(command, cwd=self.flow_dir, stdout=sys.stdout, stderr=sys.stderr)
         except KeyboardInterrupt:
             pass
