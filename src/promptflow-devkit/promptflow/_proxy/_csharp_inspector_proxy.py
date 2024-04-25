@@ -2,7 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import json
-import logging
 import re
 import subprocess
 import uuid
@@ -15,6 +14,7 @@ import pydash
 from promptflow._constants import FlowEntryRegex
 from promptflow._sdk._constants import ALL_CONNECTION_TYPES, FLOW_META_JSON, FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
 from promptflow._utils.flow_utils import is_flex_flow, read_json_content
+from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.exceptions import UserErrorException
 
@@ -22,7 +22,8 @@ from ._base_inspector_proxy import AbstractInspectorProxy
 
 EXECUTOR_SERVICE_DLL = "Promptflow.dll"
 
-logger = logging.getLogger(__name__)
+# inspector proxy is mainly used in preparation stage instead of execution stage, so we use cli sdk logger here
+logger = get_cli_sdk_logger()
 
 
 class CSharpInspectorProxy(AbstractInspectorProxy):
