@@ -264,7 +264,7 @@ from promptflow.core import Prompty
 prompty_func = Prompty.load("stream_output.prompty")
 # execute the flow as function
 question = "What's the steps to get rich?"
-result = prompty_func(question=question)
+result = prompty_func(first_name="John", last_name="Doh", question=question)
 # Type of the result is generator
 for item in result:
     print(item, end="")
