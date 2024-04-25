@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from promptflow import tool
+from promptflow.core import tool
 from promptflow.contracts.types import AssistantDefinition
 from promptflow.executor._assistant_tool_invoker import AssistantToolInvoker
 

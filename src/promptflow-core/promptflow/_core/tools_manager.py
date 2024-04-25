@@ -10,7 +10,7 @@ import traceback
 import types
 from functools import partial
 from pathlib import Path
-from typing import Callable, Dict, List, Mapping, Optional, Tuple, Union, get_origin, get_args
+from typing import Callable, Dict, List, Mapping, Optional, Tuple, Union, get_args, get_origin
 
 from promptflow._core._errors import (
     InputTypeMismatch,
@@ -30,7 +30,6 @@ from promptflow._utils.connection_utils import (
 )
 from promptflow._utils.tool_utils import (
     _DEPRECATED_TOOLS,
-    DynamicListError,
     RetrieveToolFuncResultError,
     _find_deprecated_tools,
     append_workspace_triple_to_func_input_params,
@@ -38,7 +37,6 @@ from promptflow._utils.tool_utils import (
     function_to_tool_definition,
     get_prompt_param_name_from_func,
     load_function_from_function_path,
-    validate_dynamic_list_func_response_type,
     validate_tool_func_result,
 )
 from promptflow._utils.yaml_utils import load_yaml
@@ -183,25 +181,6 @@ def retrieve_tool_func_result(
         raise RetrieveToolFuncResultError(f"Error when calling function {func_path}: {e}")
 
     validate_tool_func_result(func_call_scenario, result)
-    return result
-
-
-def gen_dynamic_list(func_path: str, func_input_params_dict: Dict, ws_triple_dict: Dict[str, str] = {}):
-    func = load_function_from_function_path(func_path)
-    # get param names from func signature.
-    func_sig_params = inspect.signature(func).parameters
-    module_logger.warning(f"func_sig_params of func_path is: '{func_sig_params}'")
-    module_logger.warning(f"func_input_params_dict is: '{func_input_params_dict}'")
-    combined_func_input_params = append_workspace_triple_to_func_input_params(
-        func_sig_params, func_input_params_dict, ws_triple_dict
-    )
-    try:
-        result = func(**combined_func_input_params)
-    except Exception as e:
-        raise DynamicListError(f"Error when calling function {func_path}: {e}")
-    # validate response is of required format. Throw correct message if response is empty.
-    validate_dynamic_list_func_response_type(result, func.__name__)
-
     return result
 
 

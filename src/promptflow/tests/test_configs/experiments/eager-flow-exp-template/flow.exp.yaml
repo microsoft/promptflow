@@ -9,19 +9,19 @@ data:
 nodes:
   - name: main
     type: flow
-    path: ../../eager_flows/flow_with_dataclass_output/flow.dag.yaml
+    path: ../../eager_flows/flow_with_dataclass_output/flow.flex.yaml
     inputs:
       text: ${data.my_data.text}
       models: ${data.my_data.models}
 
   - name: main2
     type: flow
-    path: ../../eager_flows/primitive_output/flow.dag.yaml
+    path: ../../eager_flows/primitive_output/flow.flex.yaml
     inputs:
       input_val: ${main.outputs.text}  # dataclass reference
 
   - name: main3
     type: flow
-    path: ../../eager_flows/required_inputs/flow.dag.yaml
+    path: ../../eager_flows/required_inputs/flow.flex.yaml
     inputs:
       input_val: ${main2.outputs.output}  # primitive reference

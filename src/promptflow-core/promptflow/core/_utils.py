@@ -1,17 +1,21 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import json
 import os
 import re
+from os import PathLike
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional, Tuple, Union
 
 from jinja2 import Template
 
-from promptflow._utils.flow_utils import is_flex_flow, resolve_entry_file, resolve_flow_path
+from promptflow._constants import AZURE_WORKSPACE_REGEX_FORMAT
+from promptflow._utils.flow_utils import is_flex_flow, resolve_flow_path, resolve_python_entry_file
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.utils import _match_reference
 from promptflow._utils.yaml_utils import load_yaml
+from promptflow.core._errors import InvalidSampleError, MalformedConnectionProviderConfig, MissingRequiredPackage
 from promptflow.exceptions import UserErrorException
 
 logger = LoggerFactory.get_logger(name=__name__)
@@ -36,13 +40,13 @@ def init_executable(*, flow_dag: dict = None, flow_path: Path = None, working_di
         if not working_dir:
             working_dir = flow_dir
 
-    from promptflow.contracts.flow import EagerFlow as ExecutableEagerFlow
+    from promptflow.contracts.flow import FlexFlow as ExecutableEagerFlow
     from promptflow.contracts.flow import Flow as ExecutableFlow
 
     if is_flex_flow(yaml_dict=flow_dag):
 
         entry = flow_dag.get("entry")
-        entry_file = resolve_entry_file(entry=entry, working_dir=working_dir)
+        entry_file = resolve_python_entry_file(entry=entry, working_dir=working_dir)
 
         from promptflow._core.entry_meta_generator import generate_flow_meta
 
@@ -144,3 +148,52 @@ def get_used_connection_names_from_dict(connection_dict: dict):
             connection_names.add(connection_name)
 
     return connection_names
+
+
+def extract_workspace(provider_config) -> Tuple[str, str, str]:
+    match = re.match(AZURE_WORKSPACE_REGEX_FORMAT, provider_config)
+    if not match or len(match.groups()) != 5:
+        raise MalformedConnectionProviderConfig(provider_config=provider_config)
+    subscription_id = match.group(1)
+    resource_group = match.group(3)
+    workspace_name = match.group(5)
+    return subscription_id, resource_group, workspace_name
+
+
+def get_workspace_from_resource_id(resource_id: str, credential, pkg_name: Optional[str] = None):
+    # check azure extension first
+    try:
+        from azure.ai.ml import MLClient
+    except ImportError as e:
+        if pkg_name is not None:
+            error_msg = f"Please install '{pkg_name}' to use Azure related features."
+        else:
+            error_msg = (
+                "Please install Azure extension (e.g. `pip install promptflow-azure`) to use Azure related features."
+            )
+        raise MissingRequiredPackage(message=error_msg) from e
+    # extract workspace triad and get from Azure
+    subscription_id, resource_group_name, workspace_name = extract_workspace(resource_id)
+    ml_client = MLClient(
+        credential=credential,
+        subscription_id=subscription_id,
+        resource_group_name=resource_group_name,
+        workspace_name=workspace_name,
+    )
+    return ml_client.workspaces.get(name=workspace_name)
+
+
+def load_inputs_from_sample(sample: Union[dict, str, PathLike]):
+    if not sample:
+        return {}
+    elif isinstance(sample, dict):
+        return sample
+    elif isinstance(sample, (str, Path)) and str(sample).endswith(".json"):
+        if str(sample).startswith("file:"):
+            sample = sample[len("file:") :]
+        if not Path(sample).exists():
+            raise InvalidSampleError(f"Cannot find sample file {sample}.")
+        with open(sample, "r") as f:
+            return json.load(f)
+    else:
+        raise InvalidSampleError("Only dict and json file are supported as sample in prompty.")

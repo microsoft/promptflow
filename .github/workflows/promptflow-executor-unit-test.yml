@@ -18,6 +18,9 @@ on:
       - src/promptflow/promptflow/storage/**
       - src/promptflow/tests/*
       - src/promptflow/tests/executor/**
+      - src/promptflow-tracing/promptflow/**
+      - src/promptflow-core/promptflow/**
+      - src/promptflow-devkit/promptflow/**
       - scripts/building/**
       - .github/workflows/promptflow-executor-unit-test.yml
   workflow_dispatch:

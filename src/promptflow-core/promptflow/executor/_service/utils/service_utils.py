@@ -17,7 +17,12 @@ from promptflow.tracing._operation_context import OperationContext
 def get_log_context(request: BaseExecutionRequest, enable_service_logger: bool = False) -> LogContext:
     run_mode = request.get_run_mode()
     credential_list = ConnectionManager(request.connections).get_secret_list()
-    log_context = LogContext(file_path=request.log_path, run_mode=run_mode, credential_list=credential_list)
+    log_context = LogContext(
+        file_path=request.log_path,
+        run_mode=run_mode,
+        credential_list=credential_list,
+        flow_logs_folder=request.flow_logs_folder,
+    )
     if enable_service_logger:
         log_context.input_logger = service_logger
     return log_context
@@ -63,9 +68,9 @@ def generate_error_response(ex: Union[dict, Exception]):
     return ErrorResponse.from_error_dict(error_dict)
 
 
-def set_environment_variables(request: BaseExecutionRequest):
-    if isinstance(request.environment_variables, dict) and request.environment_variables:
-        os.environ.update(request.environment_variables)
+def set_environment_variables(environment_variables: Mapping[str, Any]):
+    if isinstance(environment_variables, dict) and environment_variables:
+        os.environ.update(environment_variables)
 
 
 def enable_async_execution():

@@ -3,7 +3,7 @@
 # ---------------------------------------------------------
 
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Mapping, Optional
 
 from promptflow.executor._service.contracts.base_request import BaseRequest
 
@@ -22,3 +22,4 @@ class RetrieveToolFuncResultRequest(BaseRequest):
     func_kwargs: Mapping[str, Any]
     func_call_scenario: str = None
     ws_triple: Mapping[str, str] = None
+    environment_variables: Optional[Mapping[str, Any]] = None

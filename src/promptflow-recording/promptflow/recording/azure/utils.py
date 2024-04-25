@@ -43,6 +43,7 @@ class MockDatastore:
     account_name: str
     container_name: str
     endpoint: str
+    credentials: FakeTokenCredential
 
 
 def mock_datastore_get_default(*args, **kwargs) -> MockDatastore:
@@ -51,6 +52,7 @@ def mock_datastore_get_default(*args, **kwargs) -> MockDatastore:
         account_name=SanitizedValues.FAKE_ACCOUNT_NAME,
         container_name=SanitizedValues.FAKE_CONTAINER_NAME,
         endpoint="core.windows.net",
+        credentials=FakeTokenCredential(),
     )
 
 
@@ -97,8 +99,8 @@ def sanitize_azure_workspace_triad(value: str) -> str:
         flags=re.IGNORECASE,
     )
     sanitized_ws = re.sub(
-        r"/(workspaces)/[-\w\._\(\)]+[/?]",
-        r"/\1/{}/".format("00000"),
+        r"/(workspaces)/[-\w\._\(\)]+([/?][-\w\._\(\)]*)",
+        r"/\1/{}\2".format("00000"),
         sanitized_rg,
         flags=re.IGNORECASE,
     )
@@ -106,7 +108,7 @@ def sanitize_azure_workspace_triad(value: str) -> str:
     # workspace name can be the last part of the string
     # e.g. xxx/Microsoft.MachineLearningServices/workspaces/<workspace-name>
     # apply a special handle here to sanitize
-    if sanitized_ws.startswith("https://"):
+    if sanitized_ws == sanitized_rg and sanitized_ws.startswith("https://"):
         split1, split2 = sanitized_ws.split("/")[-2:]
         if split1 == "workspaces":
             sanitized_ws = sanitized_ws.replace(split2, SanitizedValues.WORKSPACE_NAME)

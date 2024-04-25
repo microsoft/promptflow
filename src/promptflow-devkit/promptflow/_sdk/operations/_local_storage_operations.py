@@ -14,20 +14,19 @@ from typing import Any, Dict, List, NewType, Optional, Tuple, Union
 
 from filelock import FileLock
 
-from promptflow._constants import OUTPUT_FILE_NAME, OutputsFolderName
+from promptflow._constants import FLOW_DAG_YAML, FLOW_FLEX_YAML, OUTPUT_FILE_NAME, OutputsFolderName
 from promptflow._sdk._constants import (
     HOME_PROMPT_FLOW_DIR,
     LINE_NUMBER,
     LOCAL_STORAGE_BATCH_SIZE,
     PROMPT_FLOW_DIR_NAME,
     LocalStorageFilenames,
-    RunInfoSources,
 )
 from promptflow._sdk._errors import BulkRunException, InvalidRunError
-from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._utils import (
     PromptflowIgnoreFile,
     generate_flow_tools_json,
+    is_flex_run,
     json_dump,
     json_load,
     json_loads_parse_const_as_str,
@@ -35,10 +34,11 @@ from promptflow._sdk._utils import (
     read_open,
     write_open,
 )
+from promptflow._sdk._utils.signature_utils import update_signatures
 from promptflow._sdk.entities import Run
-from promptflow._sdk.entities._flows import FlexFlow, Flow
+from promptflow._sdk.entities._flows import Flow
 from promptflow._utils.exception_utils import PromptflowExceptionPresenter
-from promptflow._utils.flow_utils import is_prompty_flow
+from promptflow._utils.flow_utils import dump_flow_dag, is_prompty_flow
 from promptflow._utils.logger_utils import LogContext, get_cli_sdk_logger
 from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow._utils.utils import prepare_folder
@@ -201,9 +201,10 @@ class LocalStorageOperations(AbstractBatchRunStorage):
             run_mode=run_mode,
             flow_logs_folder=self.path / LocalStorageFilenames.FLOW_LOGS_FOLDER,
         )
+        self._eager_mode = is_flex_run(run)
         # snapshot
         self._snapshot_folder_path = prepare_folder(self.path / LocalStorageFilenames.SNAPSHOT_FOLDER)
-        self._dag_path = self._snapshot_folder_path / LocalStorageFilenames.DAG
+        self._dag_path = self._snapshot_folder_path / (FLOW_FLEX_YAML if self._eager_mode else FLOW_DAG_YAML)
         self._flow_tools_json_path = (
             self._snapshot_folder_path / PROMPT_FLOW_DIR_NAME / LocalStorageFilenames.FLOW_TOOLS_JSON
         )
@@ -229,27 +230,11 @@ class LocalStorageOperations(AbstractBatchRunStorage):
         self._exception_path = self.path / LocalStorageFilenames.EXCEPTION
 
         self._dump_meta_file()
-        self._eager_mode = self._calculate_eager_mode(run)
         self._is_prompty_flow = is_prompty_flow(run.flow)
 
     @property
     def eager_mode(self) -> bool:
         return self._eager_mode
-
-    @classmethod
-    def _calculate_eager_mode(cls, run: Run) -> bool:
-        if run._run_source == RunInfoSources.LOCAL:
-            try:
-                flow_obj = load_flow(source=run.flow)
-                return isinstance(flow_obj, FlexFlow)
-            except Exception as e:
-                # For run with incomplete flow snapshot, ignore load flow error to make sure it can still show.
-                logger.debug(f"Failed to load flow from {run.flow} due to {e}.")
-                return False
-        elif run._run_source in [RunInfoSources.INDEX_SERVICE, RunInfoSources.RUN_HISTORY]:
-            return run._properties.get("azureml.promptflow.run_mode") == "Eager"
-        # TODO(2901279): support eager mode for run created from run folder
-        return False
 
     def delete(self) -> None:
         def on_rmtree_error(func, path, exc_info):
@@ -271,8 +256,13 @@ class LocalStorageOperations(AbstractBatchRunStorage):
             ignore=shutil.ignore_patterns(*patterns),
             dirs_exist_ok=True,
         )
-        # replace DAG file with the overwrite one
-        if not self._eager_mode and not self._is_prompty_flow:
+        if self._eager_mode:
+            yaml_dict = copy.deepcopy(flow._data)
+            update_signatures(code=flow.code, data=yaml_dict)
+            # for eager mode, we need to update signature for it
+            dump_flow_dag(flow_dag=yaml_dict, flow_path=self._dag_path)
+        elif not self._is_prompty_flow:
+            # replace DAG file with the overwrite one
             self._dag_path.unlink()
             shutil.copy(flow.path, self._dag_path)
 

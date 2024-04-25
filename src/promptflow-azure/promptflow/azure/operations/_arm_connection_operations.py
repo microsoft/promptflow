@@ -10,6 +10,7 @@ from azure.ai.ml._scope_dependent_operations import (
     _ScopeDependentOperations,
 )
 
+from promptflow._sdk.entities._connection import _Connection
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 from promptflow.core._connection_provider._workspace_connection_provider import WorkspaceConnectionProvider
 from promptflow.core._errors import OpenURLFailedUserError
@@ -44,7 +45,7 @@ class ArmConnectionOperations(_ScopeDependentOperations):
         )
 
     def get(self, name, **kwargs):
-        return self._provider.get(name)
+        return _Connection._from_core_connection(self._provider.get(name))
 
     @classmethod
     def _direct_get(cls, name, subscription_id, resource_group_name, workspace_name, credential):
@@ -53,7 +54,7 @@ class ArmConnectionOperations(_ScopeDependentOperations):
         permission(workspace/list secrets). As create azure pf_client requires workspace read permission.
         """
         provider = WorkspaceConnectionProvider(subscription_id, resource_group_name, workspace_name, credential)
-        return provider.get(name=name)
+        return _Connection._from_core_connection(provider.get(name=name))
 
     # Keep this as promptflow tools is using this method
     _build_connection_dict = WorkspaceConnectionProvider._build_connection_dict

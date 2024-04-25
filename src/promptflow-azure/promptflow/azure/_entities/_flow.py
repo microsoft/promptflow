@@ -11,9 +11,11 @@ from typing import Dict, List, Optional, Union
 import pydash
 
 from promptflow._constants import FlowLanguage
-from promptflow._sdk._constants import DAG_FILE_NAME, SERVICE_FLOW_TYPE_2_CLIENT_FLOW_TYPE, AzureFlowSource, FlowType
+from promptflow._proxy import ProxyFactory
+from promptflow._sdk._constants import SERVICE_FLOW_TYPE_2_CLIENT_FLOW_TYPE, AzureFlowSource, FlowType
 from promptflow._sdk._utils import PromptflowIgnoreFile, load_yaml, remove_empty_element_from_dict
-from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag
+from promptflow._sdk._utils.signature_utils import update_signatures
+from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag, resolve_flow_path
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.azure._ml import AdditionalIncludesMixin, Code
 
@@ -72,11 +74,9 @@ class Flow(AdditionalIncludesMixin):
         :param source: The source of the flow.
         :type source: Union[str, PathLike]
         """
-        absolute_path = Path(source).resolve().absolute()
-        if absolute_path.is_dir():
-            absolute_path = absolute_path / DAG_FILE_NAME
-        if not absolute_path.exists():
-            raise ValueError(f"Flow file {absolute_path.as_posix()} does not exist.")
+        flow_path, flow_file = resolve_flow_path(source)
+        absolute_path = flow_path / flow_file
+
         return absolute_path
 
     def _load_flow_yaml(self, path: Union[str, Path]) -> Dict:
@@ -154,6 +154,14 @@ class Flow(AdditionalIncludesMixin):
                 # promptflow snapshot will always be uploaded to default storage
                 code.datastore = DEFAULT_STORAGE
                 dag_updated = self._resolve_requirements(flow_dir, flow_dag) or dag_updated
+
+                # generate .promptflow/flow.json for csharp flow as it's required to infer signature for csharp flow
+                flow_directory, flow_file = resolve_flow_path(code.path)
+                # TODO: pass in init_kwargs to support csharp class init flex flow
+                ProxyFactory().create_inspector_proxy(self.language).prepare_metadata(
+                    flow_file=flow_directory / flow_file, working_dir=flow_directory
+                )
+                dag_updated = update_signatures(code=flow_dir, data=flow_dag) or dag_updated
                 self._environment = self._resolve_environment(flow_dir, flow_dag)
                 if dag_updated:
                     dump_flow_dag(flow_dag, flow_dir)
@@ -172,7 +180,7 @@ class Flow(AdditionalIncludesMixin):
         """Get all additional include configs.
         For flow, its additional include need to be read from dag with a helper function.
         """
-        from promptflow._sdk._utils import _get_additional_includes
+        from promptflow._sdk._utils.general_utils import _get_additional_includes
 
         return _get_additional_includes(os.path.join(self.code, self.path))
 

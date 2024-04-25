@@ -9,13 +9,15 @@ from jinja2 import TemplateSyntaxError
 
 from promptflow._core._errors import InvalidSource
 from promptflow._core.tools_manager import ToolLoader
+from promptflow._core.tool import INPUTS_TO_ESCAPE_PARAM_KEY
 from promptflow._internal import tool
-from promptflow.connections import CustomConnection, CustomStrongTypeConnection
-from promptflow.connections import AzureOpenAIConnection
+from promptflow.connections import AzureOpenAIConnection, CustomConnection, CustomStrongTypeConnection
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
 from promptflow.contracts.tool import AssistantDefinition, InputDefinition, Secret, Tool, ToolType, ValueType
 from promptflow.contracts.types import PromptTemplate
+from promptflow.core._connection_provider._dict_connection_provider import DictConnectionProvider
 from promptflow.exceptions import UserErrorException
+from promptflow.executor._assistant_tool_invoker import ResolvedAssistantTool
 from promptflow.executor._errors import (
     ConnectionNotFound,
     InvalidConnectionType,
@@ -25,7 +27,7 @@ from promptflow.executor._errors import (
 )
 from promptflow.executor._tool_resolver import ResolvedTool, ToolResolver
 
-from ...utils import DATA_ROOT, FLOW_ROOT
+from ...utils import ASSISTANT_DEFINITION_ROOT, DATA_ROOT, FLOW_ROOT
 
 TEST_ROOT = Path(__file__).parent.parent.parent
 REQUESTS_PATH = TEST_ROOT / "test_configs/executor_api_requests"
@@ -48,7 +50,7 @@ def mock_package_func(prompt: PromptTemplate, **kwargs):
 class TestToolResolver:
     @pytest.fixture
     def resolver(self):
-        return ToolResolver(working_dir=None, connections={})
+        return ToolResolver(working_dir=None)
 
     def test_resolve_tool_by_node_with_diff_type(self, resolver, mocker):
         node = mocker.Mock(name="node", tool=None, inputs={})
@@ -180,7 +182,7 @@ class TestToolResolver:
         assert expected_message in exec_info.value.message
 
     def test_convert_node_literal_input_types_with_invalid_case(self):
-        # Case 1: conn_name not in connections, should raise conn_name not found error
+        # Case 1: conn_name not in connection_provider, should raise conn_name not found error
         tool = Tool(name="mock", type="python", inputs={"conn": InputDefinition(type=["CustomConnection"])})
         node = Node(
             name="mock",
@@ -188,13 +190,13 @@ class TestToolResolver:
             inputs={"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL)},
         )
         with pytest.raises(ConnectionNotFound):
-            tool_resolver = ToolResolver(working_dir=None, connections={})
+            tool_resolver = ToolResolver(working_dir=None, connection_provider=DictConnectionProvider({}))
             tool_resolver._convert_node_literal_input_types(node, tool)
 
-        # Case 2: conn_name in connections, but type not matched
+        # Case 2: conn_name in connection_provider, but type not matched
         connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
         with pytest.raises(NodeInputValidationError) as exe_info:
-            tool_resolver = ToolResolver(working_dir=None, connections=connections)
+            tool_resolver = ToolResolver(working_dir=None, connection_provider=DictConnectionProvider(connections))
             tool_resolver._convert_node_literal_input_types(node, tool)
         message = "'AzureOpenAIConnection' is not supported, valid types ['CustomConnection']"
         assert message in exe_info.value.message, "Expected: {}, Actual: {}".format(message, exe_info.value.message)
@@ -207,7 +209,7 @@ class TestToolResolver:
             inputs={"int_input": InputAssignment(value="invalid", value_type=InputValueType.LITERAL)},
         )
         with pytest.raises(NodeInputValidationError) as exe_info:
-            tool_resolver = ToolResolver(working_dir=None, connections={})
+            tool_resolver = ToolResolver(working_dir=None)
             tool_resolver._convert_node_literal_input_types(node, tool)
         message = "value 'invalid' is not type int"
         assert message in exe_info.value.message, "Expected: {}, Actual: {}".format(message, exe_info.value.message)
@@ -220,7 +222,7 @@ class TestToolResolver:
             inputs={"int_input": InputAssignment(value="invalid", value_type=InputValueType.LITERAL)},
         )
         with pytest.raises(ValueTypeUnresolved):
-            tool_resolver = ToolResolver(working_dir=None, connections={})
+            tool_resolver = ToolResolver(working_dir=None)
             tool_resolver._convert_node_literal_input_types(node, tool)
 
         # Case 5: Literal value, invalid image in list
@@ -232,7 +234,7 @@ class TestToolResolver:
             inputs={"list_input": InputAssignment(value=[invalid_image], value_type=InputValueType.LITERAL)},
         )
         with pytest.raises(NodeInputValidationError) as exe_info:
-            tool_resolver = ToolResolver(working_dir=None, connections={})
+            tool_resolver = ToolResolver(working_dir=None)
             tool_resolver._convert_node_literal_input_types(node, tool)
         message = "Invalid base64 image"
         assert message in exe_info.value.message, "Expected: {}, Actual: {}".format(message, exe_info.value.message)
@@ -249,7 +251,7 @@ class TestToolResolver:
             inputs={"assistant_definition": InputAssignment(value="invalid_path", value_type=InputValueType.LITERAL)},
         )
         with pytest.raises(NodeInputValidationError) as exe_info:
-            tool_resolver = ToolResolver(working_dir=Path(__file__).parent, connections={})
+            tool_resolver = ToolResolver(working_dir=Path(__file__).parent)
             tool_resolver._convert_node_literal_input_types(node, tool)
         assert (
             "Failed to load assistant definition" in exe_info.value.message
@@ -257,6 +259,9 @@ class TestToolResolver:
         ), "Expected: {}, Actual: {}".format(message, exe_info.value.message)
 
     def test_resolve_llm_connection_to_inputs(self):
+        connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
+        connection_provider = DictConnectionProvider(connections)
+
         # Case 1: node.connection is not specified
         tool = Tool(name="mock", type="python", inputs={"conn": InputDefinition(type=["CustomConnection"])})
         node = Node(
@@ -264,9 +269,8 @@ class TestToolResolver:
             tool=tool,
             inputs={"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL)},
         )
-        connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
         with pytest.raises(ConnectionNotFound):
-            tool_resolver = ToolResolver(working_dir=None, connections=connections)
+            tool_resolver = ToolResolver(working_dir=None, connection_provider=connection_provider)
             tool_resolver._resolve_llm_connection_to_inputs(node, tool)
 
         # Case 2: node.connection is not found from connection manager
@@ -277,9 +281,8 @@ class TestToolResolver:
             inputs={"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL)},
             connection="conn_name1",
         )
-        connections = {}
         with pytest.raises(ConnectionNotFound):
-            tool_resolver = ToolResolver(working_dir=None, connections=connections)
+            tool_resolver = ToolResolver(working_dir=None, connection_provider=DictConnectionProvider({}))
             tool_resolver._resolve_llm_connection_to_inputs(node, tool)
 
         # Case 3: Tool definition with bad input type list
@@ -290,9 +293,8 @@ class TestToolResolver:
             inputs={"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL)},
             connection="conn_name",
         )
-        connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
         with pytest.raises(InvalidConnectionType) as exe_info:
-            tool_resolver = ToolResolver(working_dir=None, connections=connections)
+            tool_resolver = ToolResolver(working_dir=None, connection_provider=connection_provider)
             tool_resolver._resolve_llm_connection_to_inputs(node, tool)
         assert "Connection type can not be resolved for tool" in exe_info.value.message
 
@@ -304,9 +306,8 @@ class TestToolResolver:
             inputs={"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL)},
             connection="conn_name",
         )
-        connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
         with pytest.raises(InvalidConnectionType) as exe_info:
-            tool_resolver = ToolResolver(working_dir=None, connections=connections)
+            tool_resolver = ToolResolver(working_dir=None, connection_provider=connection_provider)
             tool_resolver._resolve_llm_connection_to_inputs(node, tool)
         assert "Invalid connection" in exe_info.value.message
 
@@ -322,9 +323,7 @@ class TestToolResolver:
             inputs={"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL)},
             connection="conn_name",
         )
-        connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
-
-        tool_resolver = ToolResolver(working_dir=None, connections=connections)
+        tool_resolver = ToolResolver(working_dir=None, connection_provider=connection_provider)
         key, conn = tool_resolver._resolve_llm_connection_to_inputs(node, tool)
         assert key == "conn"
         assert isinstance(conn, AzureOpenAIConnection)
@@ -345,7 +344,7 @@ class TestToolResolver:
         )
 
         connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
-        tool_resolver = ToolResolver(working_dir=None, connections=connections)
+        tool_resolver = ToolResolver(working_dir=None, connection_provider=DictConnectionProvider(connections))
         tool_resolver._tool_loader = tool_loader
         mocker.patch.object(tool_resolver, "_load_source_content", return_value="{{text}}![image]({{image}})")
 
@@ -383,7 +382,7 @@ class TestToolResolver:
         )
 
         connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
-        tool_resolver = ToolResolver(working_dir=None, connections=connections)
+        tool_resolver = ToolResolver(working_dir=None, connection_provider=DictConnectionProvider(connections))
         tool_resolver._tool_loader = tool_loader
 
         node = Node(
@@ -419,7 +418,7 @@ class TestToolResolver:
             return_value=(mock_python_func, {}),
         )
 
-        tool_resolver = ToolResolver(working_dir=Path(__file__).parent, connections={})
+        tool_resolver = ToolResolver(working_dir=Path(__file__).parent)
         tool_resolver._tool_loader = tool_loader
         mocker.patch("builtins.open", mock_open())
         mocker.patch(
@@ -447,7 +446,7 @@ class TestToolResolver:
         )
 
         connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
-        tool_resolver = ToolResolver(working_dir=None, connections=connections)
+        tool_resolver = ToolResolver(working_dir=None, connection_provider=DictConnectionProvider(connections))
         tool_resolver._tool_loader = tool_loader
 
         node = Node(
@@ -467,7 +466,7 @@ class TestToolResolver:
         assert resolved_tool.callable(**kwargs) == "Hello World!"
 
     def test_integrate_prompt_in_package_node(self, mocker):
-        tool_resolver = ToolResolver(working_dir=None, connections={})
+        tool_resolver = ToolResolver(working_dir=None)
         mocker.patch.object(
             tool_resolver,
             "_load_source_content",
@@ -500,7 +499,7 @@ class TestToolResolver:
     )
     def test_convert_to_custom_strong_type_connection_value(self, conn_types: List[str], expected_type, mocker):
         connections = {"conn_name": {"type": "CustomConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
-        tool_resolver = ToolResolver(working_dir=None, connections=connections)
+        tool_resolver = ToolResolver(working_dir=None, connection_provider=DictConnectionProvider(connections))
 
         node = mocker.Mock(name="node", tool=None, inputs={})
         node.type = ToolType.PYTHON
@@ -564,7 +563,9 @@ class TestToolResolver:
 
         # Test load tools
         connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
-        tool_resolver = ToolResolver(working_dir=Path(__file__).parent, connections=connections)
+        tool_resolver = ToolResolver(
+            working_dir=Path(__file__).parent, connection_provider=DictConnectionProvider(connections)
+        )
         tool_resolver._resolve_assistant_tools("node_name", assistant_definitions)
         invoker = assistant_definitions._tool_invoker
         assert len(invoker._assistant_tools) == len(assistant_definitions.tools) == len(tool_definitions)
@@ -613,3 +614,220 @@ class TestToolResolver:
                     value.pop(input)
                 elif isinstance(value, list):
                     value.remove(input)
+
+    @pytest.mark.parametrize("path", ["assistant_definition_with_connection.yaml"])
+    def test_tool_with_connection_resolve(self, path):
+        connections = {
+            "azure_open_ai_connection": {
+                "type": "AzureOpenAIConnection",
+                "value": {"api_key": "mock", "api_base": "mock"},
+            }
+        }
+        tool_resolver = ToolResolver(
+            working_dir=Path(ASSISTANT_DEFINITION_ROOT), connection_provider=DictConnectionProvider(connections)
+        )
+        assistant_definition = tool_resolver._convert_to_assistant_definition(
+            assistant_definition_path=path, input_name="input_name", node_name="dummy_node"
+        )
+
+        assert assistant_definition.model == "mock_model"
+        assert assistant_definition.instructions == "mock_instructions"
+        assert assistant_definition.tools
+        assert len(assistant_definition._tool_invoker._assistant_tools) == 1
+        for k, v in assistant_definition._tool_invoker._assistant_tools.items():
+            assert v.name == k == "echo"
+            assert isinstance(v, ResolvedAssistantTool)
+            assert isinstance(v.func.keywords["connection"], AzureOpenAIConnection)
+            assert v.openai_definition == {
+                "type": "function",
+                "function": {
+                    "name": "echo",
+                    "description": "This tool is used to echo the message back.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {"message": {"type": "string", "description": "The message to echo."}},
+                        "required": ["message"],
+                    },
+                },
+            }
+
+    @pytest.mark.parametrize("path", ["assistant_definition_without_functions.yaml"])
+    def test_code_interpreter_and_retrieval_tool_resolve(self, path):
+        tool_resolver = ToolResolver(working_dir=Path(ASSISTANT_DEFINITION_ROOT))
+        assistant_definition = tool_resolver._convert_to_assistant_definition(
+            assistant_definition_path=path, input_name="input_name", node_name="dummy_node"
+        )
+
+        assert assistant_definition.model == "mock_model"
+        assert assistant_definition.instructions == "mock_instructions"
+        assert assistant_definition.tools
+        assert len(assistant_definition._tool_invoker._assistant_tools) == 2
+        for k, v in assistant_definition._tool_invoker._assistant_tools.items():
+            if k == "code_interpreter":
+                assert v.name == k
+                assert isinstance(v, ResolvedAssistantTool)
+                assert v.func is None
+                assert v.openai_definition == {"type": "code_interpreter"}
+            else:
+                assert v.name == k
+                assert isinstance(v, ResolvedAssistantTool)
+                assert v.func is None
+                assert v.openai_definition == {"type": "retrieval"}
+
+    @pytest.mark.parametrize("path", ["assistant_definition_partial_description.yaml"])
+    def test_description_resolve(self, path):
+        connections = {
+            "azure_open_ai_connection": {
+                "type": "AzureOpenAIConnection",
+                "value": {"api_key": "mock", "api_base": "mock"},
+            }
+        }
+        tool_resolver = ToolResolver(
+            working_dir=Path(ASSISTANT_DEFINITION_ROOT), connection_provider=DictConnectionProvider(connections)
+        )
+        assistant_definition = tool_resolver._convert_to_assistant_definition(
+            assistant_definition_path=path, input_name="input_name", node_name="dummy_node"
+        )
+
+        assert assistant_definition.model == "mock_model"
+        assert assistant_definition.instructions == "mock_instructions"
+        assert assistant_definition.tools
+        assert len(assistant_definition._tool_invoker._assistant_tools) == 1
+        for k, v in assistant_definition._tool_invoker._assistant_tools.items():
+            assert v.name == k == "echo"
+            assert isinstance(v, ResolvedAssistantTool)
+            assert isinstance(v.func.keywords["connection"], AzureOpenAIConnection)
+            assert v.openai_definition == {
+                "type": "function",
+                "function": {
+                    "name": "echo",
+                    "description": "",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "message": {"type": "string", "description": "The message to echo."},
+                            "message1": {"type": "string", "description": ""},
+                        },
+                        "required": ["message", "message1"],
+                    },
+                },
+            }
+
+    @pytest.mark.parametrize("path", ["assistant_definition_types.yaml"])
+    def test_types_resolve(self, path):
+        connections = {
+            "azure_open_ai_connection": {
+                "type": "AzureOpenAIConnection",
+                "value": {"api_key": "mock", "api_base": "mock"},
+            }
+        }
+        tool_resolver = ToolResolver(
+            working_dir=Path(ASSISTANT_DEFINITION_ROOT), connection_provider=DictConnectionProvider(connections)
+        )
+        assistant_definition = tool_resolver._convert_to_assistant_definition(
+            assistant_definition_path=path, input_name="input_name", node_name="dummy_node"
+        )
+
+        assert assistant_definition.model == "mock_model"
+        assert assistant_definition.instructions == "mock_instructions"
+        assert assistant_definition.tools
+        assert len(assistant_definition._tool_invoker._assistant_tools) == 1
+        for k, v in assistant_definition._tool_invoker._assistant_tools.items():
+            assert v.name == k == "echo"
+            assert isinstance(v, ResolvedAssistantTool)
+            assert isinstance(v.func.keywords["connection"], AzureOpenAIConnection)
+            assert v.openai_definition == {
+                "function": {
+                    "description": "This tool is used to echo the message back.",
+                    "name": "echo",
+                    "parameters": {
+                        "properties": {
+                            "message_bool": {"description": "", "type": "boolean"},
+                            "message_custom_type": {"description": "", "type": "object"},
+                            "message_default": {"description": "", "type": "number"},
+                            "message_dict": {"description": "", "type": "object"},
+                            "message_enum_str": {"description": "", "enum": ["c", "f"], "type": "string"},
+                            "message_float": {"description": "", "type": "number"},
+                            "message_int": {"description": "", "type": "number"},
+                            "message_list": {"description": "", "type": "array"},
+                            "message_no_type": {"description": "", "type": "object"},
+                            "message_none": {"description": "", "type": "object"},
+                            "message_str": {"description": "", "type": "string"},
+                        },
+                        "required": [
+                            "message_str",
+                            "message_float",
+                            "message_int",
+                            "message_bool",
+                            "message_list",
+                            "message_dict",
+                            "message_none",
+                            "message_enum_str",
+                            "message_custom_type",
+                            "message_no_type",
+                        ],
+                        "type": "object",
+                    },
+                },
+                "type": "function",
+            }
+
+    @pytest.mark.parametrize("path", ["assistant_definition_non_existing.yaml"])
+    def test_invalid_assistant_definition_path(self, path):
+        connections = {
+            "azure_open_ai_connection": {
+                "type": "AzureOpenAIConnection",
+                "value": {"api_key": "mock", "api_base": "mock"},
+            }
+        }
+        tool_resolver = ToolResolver(
+            working_dir=Path(ASSISTANT_DEFINITION_ROOT), connection_provider=DictConnectionProvider(connections)
+        )
+        with pytest.raises(InvalidSource) as e:
+            tool_resolver._convert_to_assistant_definition(
+                assistant_definition_path=path, input_name="input_name", node_name="dummy_node"
+            )
+        assert (
+            e.value.message == "Input 'input_name' for node 'dummy_node' of "
+            "value 'assistant_definition_non_existing.yaml' is not a valid path."
+        )
+
+    @pytest.mark.parametrize("tool_type, node_inputs, expected_inputs", [
+        (ToolType.PYTHON, {"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL)},
+         {"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL)}),
+        (ToolType.PYTHON, {"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL),
+                           "text": InputAssignment(value="Hello World!", value_type=InputValueType.FLOW_INPUT)},
+         {"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL),
+          "text": InputAssignment(value="Hello World!", value_type=InputValueType.FLOW_INPUT)}),
+        (ToolType.PROMPT, {"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL),
+                           "text": InputAssignment(value="Hello World!", value_type=InputValueType.FLOW_INPUT)},
+         {"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL),
+          "text": InputAssignment(value="Hello World!", value_type=InputValueType.FLOW_INPUT),
+          INPUTS_TO_ESCAPE_PARAM_KEY: InputAssignment(value=["text"], value_type=InputValueType.LITERAL)}),
+        (ToolType.LLM, {"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL),
+                        "text": InputAssignment(value="Hello World!", value_type=InputValueType.FLOW_INPUT)},
+         {"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL),
+          "text": InputAssignment(value="Hello World!", value_type=InputValueType.FLOW_INPUT),
+          INPUTS_TO_ESCAPE_PARAM_KEY: InputAssignment(value=["text"], value_type=InputValueType.LITERAL)}),
+        (ToolType.CUSTOM_LLM, {"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL),
+                               "text": InputAssignment(value="Hello World!", value_type=InputValueType.FLOW_INPUT)},
+         {"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL),
+          "text": InputAssignment(value="Hello World!", value_type=InputValueType.FLOW_INPUT),
+          INPUTS_TO_ESCAPE_PARAM_KEY: InputAssignment(value=["text"], value_type=InputValueType.LITERAL)}),
+        (ToolType.LLM, {"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL),
+                        "text": InputAssignment(value="Hello World!", value_type=InputValueType.LITERAL)},
+         {"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL),
+          "text": InputAssignment(value="Hello World!", value_type=InputValueType.LITERAL)}),
+    ])
+    def test_update_inputs_to_escape(self, tool_type, node_inputs, expected_inputs):
+        node = Node(
+            name="mock",
+            tool=None,
+            inputs=node_inputs,
+            connection="conn_name",
+            provider="mock",
+            type=tool_type,
+        )
+        tool_resolver = ToolResolver(working_dir=None)
+        tool_resolver._update_inputs_to_escape(node)
+        assert node.inputs == expected_inputs

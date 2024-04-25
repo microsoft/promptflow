@@ -1,9 +1,5 @@
 # Manage flows
 
-:::{admonition} Experimental feature
-This is an experimental feature, and may change at any time. Learn [more](../../how-to-guides/faq.md#stable-vs-experimental).
-:::
-
 This documentation will walk you through how to manage your flow with CLI and SDK on [Azure AI](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/overview-what-is-prompt-flow?view=azureml-api-2). 
 The flow examples in this guide come from [examples/flows/standard](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard).
 
@@ -12,7 +8,7 @@ In general:
 - For `SDK`, you can refer to [Promptflow Python Library Reference](../../reference/python-library-reference/promptflow-azure/promptflow.rst) and check `promptflow.azure.PFClient.flows` for more flow operations.
 
 :::{admonition} Prerequisites
-- Refer to the prerequisites in [Quick start](./quick-start/index.md#prerequisites).
+- Refer to the prerequisites in [Quick start](./run-promptflow-in-azure-ai.md#prerequisites).
 - Use the `az login` command in the command line to log in. This enables promptflow to access your credentials. 
 :::
 
@@ -28,7 +24,7 @@ Let's take a look at the following topics:
 :sync: CLI
 
 To set the target workspace, you can either specify it in the CLI command or set default value in the Azure CLI.
-You can refer to [Quick start](./quick-start/index.md#submit-a-run-to-workspace) for more information.
+You can refer to [Quick start](./run-promptflow-in-azure-ai.md#submit-a-run-to-workspace) for more information.
 
 To create a flow to Azure from local flow directory, you can use 
 

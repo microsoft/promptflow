@@ -29,9 +29,12 @@ def get_client(
             container_client = _get_client_from_map(client_key)
             if container_client is None:
                 if credential is None:
-                    from azure.identity import DefaultAzureCredential
+                    # in cloud scenario, runtime will pass in credential
+                    # so this is local to cloud only code, happens in prompt flow service
+                    # which should rely on Azure CLI credential only
+                    from azure.identity import AzureCliCredential
 
-                    credential = DefaultAzureCredential()
+                    credential = AzureCliCredential()
                 token = _get_resource_token(
                     container_name, subscription_id, resource_group_name, workspace_name, credential
                 )
@@ -78,11 +81,15 @@ def _get_resource_token(
 ) -> object:
     from promptflow.azure import PFClient
 
+    # The default connection_time and read_timeout are both 300s.
+    # The get token operation should be fast, so we set a short timeout.
     pf_client = PFClient(
         credential=credential,
         subscription_id=subscription_id,
         resource_group_name=resource_group_name,
         workspace_name=workspace_name,
+        connection_timeout=15.0,
+        read_timeout=30.0,
     )
 
     token_resp = pf_client._traces._get_cosmos_db_token(container_name=container_name, acquire_write=True)

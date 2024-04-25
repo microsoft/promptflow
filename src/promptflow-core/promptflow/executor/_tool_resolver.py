@@ -4,6 +4,7 @@
 
 import copy
 import inspect
+import logging
 import types
 from dataclasses import dataclass
 from functools import partial
@@ -12,12 +13,16 @@ from typing import Callable, List, Optional
 
 from promptflow._constants import MessageFormatType
 from promptflow._core._errors import InvalidSource
-from promptflow._core.connection_manager import ConnectionManager
-from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
+from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR, INPUTS_TO_ESCAPE_PARAM_KEY, TOOL_TYPE_TO_ESCAPE
 from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping
 from promptflow._utils.multimedia_utils import MultimediaProcessor
-from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
+from promptflow._utils.tool_utils import (
+    function_to_interface,
+    get_inputs_for_prompt_template,
+    get_prompt_param_name_from_func,
+)
 from promptflow._utils.yaml_utils import load_yaml
+from promptflow.connections import ConnectionProvider
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
 from promptflow.contracts.types import AssistantDefinition, PromptTemplate
@@ -27,12 +32,13 @@ from promptflow.executor._assistant_tool_invoker import (
     AssistantToolInvoker,
     AssistantToolResolver,
     ResolvedAssistantTool,
+    to_json_type_mapping,
 )
 from promptflow.executor._docstring_parser import DocstringParser
 from promptflow.executor._errors import (
     ConnectionNotFound,
     EmptyLLMApiMapping,
-    FailedToParseAssistantTool,
+    FailedToGenerateToolDefinition,
     InvalidAssistantTool,
     InvalidConnectionType,
     InvalidCustomLLMTool,
@@ -54,7 +60,7 @@ class ToolResolver:
     def __init__(
         self,
         working_dir: Path,
-        connections: Optional[dict] = None,
+        connection_provider: Optional[ConnectionProvider] = None,
         package_tool_keys: Optional[List[str]] = None,
         message_format: str = MessageFormatType.BASIC,
     ):
@@ -65,7 +71,7 @@ class ToolResolver:
             pass
         self._tool_loader = ToolLoader(working_dir, package_tool_keys=package_tool_keys)
         self._working_dir = working_dir
-        self._connection_manager = ConnectionManager(connections)
+        self._connection_provider = connection_provider
         self._multimedia_processor = MultimediaProcessor.create(message_format)
 
     @classmethod
@@ -77,7 +83,7 @@ class ToolResolver:
         return resolver
 
     def _convert_to_connection_value(self, k: str, v: InputAssignment, node_name: str, conn_types: List[ValueType]):
-        connection_value = self._connection_manager.get(v.value)
+        connection_value = self._connection_provider.get(v.value)
         if not connection_value:
             raise ConnectionNotFound(f"Connection {v.value} not found for node {node_name!r} input {k!r}.")
         # Check if type matched
@@ -102,7 +108,7 @@ class ToolResolver:
         if not conn_types:
             msg = f"Input '{k}' for node '{node_name}' has invalid types: {conn_types}."
             raise NodeInputValidationError(message=msg)
-        connection_value = self._connection_manager.get(v.value)
+        connection_value = self._connection_provider.get(v.value)
         if not connection_value:
             raise ConnectionNotFound(f"Connection {v.value} not found for node {node_name!r} input {k!r}.")
 
@@ -177,7 +183,7 @@ class ToolResolver:
         self, tool: Tool, callable: Callable, predefined_inputs: dict
     ) -> ResolvedAssistantTool:
         func_name = tool.function
-        definition = self._generate_tool_definition(func_name, tool.description, predefined_inputs)
+        definition = self._generate_assistant_tool_definition(tool, callable, predefined_inputs)
         if predefined_inputs:
             inputs = {name: value.value for name, value in predefined_inputs.items()}
             func = partial(callable, **inputs)
@@ -225,33 +231,63 @@ class ToolResolver:
         # Step IV: construct the AssistantTool object from the updated predefined_inputs + Tool object
         return self._construct_assistant_tool(tool, callable, updated_predefined_inputs)
 
-    def _generate_tool_definition(self, func_name: str, description: str, predefined_inputs: list) -> dict:
+    def _generate_assistant_tool_definition(self, tool: Tool, func: Callable, predefined_inputs: dict) -> dict:
         try:
-            to_openai_type = {
-                "str": "string",
-                "int": "number",
-                "float": "number",
-                "bool": "boolean",
-                "list": "array",
-                "dict": "object",
+            # Attempt to extract the description, handling exceptions
+            try:
+                description, param_descriptions = DocstringParser.parse_description(func.__doc__)
+            except Exception as e:
+                # Log the exception if necessary
+                logging.warning(f"Failed to parse docstring for function {func.__name__}: {e}")
+                # Set description to None or an empty string
+                description = None  # or description = ""
+                param_descriptions = {}
+
+            func_definition = {
+                "name": func.__name__,
+                "description": description,
+                "parameters": {"type": "object", "properties": {}, "required": []},
             }
-            description, params = DocstringParser.parse(description)
-            for input in predefined_inputs:
-                if input in params:
-                    params.pop(input)
-            for _, param in params.items():
-                param["type"] = to_openai_type[param["type"]] if param["type"] in to_openai_type else param["type"]
+
+            inputs, _, _, _ = function_to_interface(func)
+            for name, param in inputs.items():
+                if name in predefined_inputs:
+                    # Exclude predefined inputs from definition generation
+                    continue
+                # Determine if parameter is required (has no default value)
+                is_required = param.default is None
+                if is_required:
+                    func_definition["parameters"]["required"].append(name)
+
+                # Get parameter type and convert to JSON type
+                param_type = param.type[0]
+                json_type = to_json_type_mapping.get(param_type, "object")
+
+                # Construct parameter definition
+                func_definition["parameters"]["properties"][name] = {
+                    "type": json_type,
+                    "description": param_descriptions.get(name, {}).get("description", ""),
+                }
+
+                # Handle enums separately to include possible values
+                if tool.inputs[name].enum:
+                    func_definition["parameters"]["properties"][name]["enum"] = tool.inputs[name].enum
 
             return {
                 "type": "function",
-                "function": {
-                    "name": func_name,
-                    "description": description,
-                    "parameters": {"type": "object", "properties": params, "required": list(params.keys())},
-                },
+                "function": func_definition,
             }
         except Exception as e:
-            raise FailedToParseAssistantTool(func_name=func_name) from e
+            error_type_and_message = f"({e.__class__.__name__}) {e}"
+            raise FailedToGenerateToolDefinition(
+                message_format=(
+                    "Failed to generate openai tool definition for function '{func_name}'. "
+                    "Error: {error_type_and_message}."
+                ),
+                func_name=func.__name__,
+                error_type_and_message=error_type_and_message,
+                target=ErrorTarget.EXECUTOR,
+            ) from e
 
     def _convert_literal_input_types(
         self, node_name: str, source: ToolSource, inputs: dict, tool: Tool, module: types.ModuleType = None
@@ -430,6 +466,8 @@ class ToolResolver:
         )
         self._validate_duplicated_inputs(prompt_tpl_inputs_mapping.keys(), param_names, msg)
         node.inputs = self._load_images_for_prompt_tpl(prompt_tpl_inputs_mapping, node.inputs)
+        self._update_inputs_to_escape(node)
+
         callable = partial(render_template_jinja2, template=prompt_tpl)
         return ResolvedTool(node=node, definition=None, callable=callable, init_args={})
 
@@ -440,7 +478,7 @@ class ToolResolver:
                 del node_inputs[k]
 
     def _get_llm_node_connection(self, node: Node):
-        connection = self._connection_manager.get(node.connection)
+        connection = self._connection_provider.get(node.connection)
         if connection is None:
             raise ConnectionNotFound(
                 message_format="Connection '{connection}' of LLM node '{node_name}' is not found.",
@@ -462,9 +500,23 @@ class ToolResolver:
             # This is a fallback for the case that ServerlessConnection related tool is not ready
             # in legacy versions, then we can directly use OpenAIConnection.
             if isinstance(connection, ServerlessConnection):
+                # The ServerlessConnection should be passed into promptflow-tools as it is.
+                # And this append "/v1" logic should exist in promptflow-tools.
+                # But since old version promptflow package doesn't support below things:
+                # 1. There is NO ServerlessConnection;
+                # 2. Register_apis doesn't support Union;
+                # So in order to release this append "/v1" function without breaking old promptflow package.
+                # We move this logic here.
+                # This is a short-term solution. After MaaS supports OpenAI compatible rest API,
+                # we should remove the V1 tricky here.
+                suffix = "/v1"
+                base_url = connection.api_base
+                if not base_url.endswith(suffix):
+                    # append "/v1" to ServerlessConnection api_base so that it can directly use the OpenAI SDK.
+                    base_url += suffix
                 connection = OpenAIConnection(
                     api_key=connection.api_key,
-                    base_url=connection.api_base,
+                    base_url=base_url,
                     name=connection.name,
                 )
                 connection_type = "OpenAIConnection"
@@ -475,6 +527,21 @@ class ToolResolver:
                 )
         provider = connection_type_to_api_mapping[connection_type]
         return connection, provider
+
+    def _update_inputs_to_escape(self, node: Node):
+        # Store flow inputs list as a node input to enable tools to identify these inputs,
+        # and apply escape/unescape to avoid parsing of role in user inputs.
+        inputs_to_escape = []
+        inputs = node.inputs
+        if node.type in TOOL_TYPE_TO_ESCAPE:
+            for k, v in inputs.items():
+                if v.value_type == InputValueType.FLOW_INPUT:
+                    inputs_to_escape.append(k)
+
+        if inputs_to_escape:
+            node.inputs[INPUTS_TO_ESCAPE_PARAM_KEY] = InputAssignment(
+                value=inputs_to_escape, value_type=InputValueType.LITERAL
+            )
 
     def _resolve_llm_node(self, node: Node, convert_input_types=False) -> ResolvedTool:
         connection, provider = self._resolve_llm_connection_with_provider(self._get_llm_node_connection(node))
@@ -487,6 +554,8 @@ class ToolResolver:
         updated_node.inputs[key] = InputAssignment(value=connection, value_type=InputValueType.LITERAL)
         if convert_input_types:
             updated_node = self._convert_node_literal_input_types(updated_node, tool)
+
+        self._update_inputs_to_escape(updated_node)
 
         prompt_tpl = self._load_source_content(node)
         prompt_tpl_inputs_mapping = get_inputs_for_prompt_template(prompt_tpl)
@@ -544,6 +613,8 @@ class ToolResolver:
         updated_node = copy.deepcopy(node)
         if convert_input_types:
             updated_node = self._convert_node_literal_input_types(updated_node, tool)
+        self._update_inputs_to_escape(updated_node)
+
         callable, init_args = BuiltinsManager._load_package_tool(
             tool.name, tool.module, tool.class_name, tool.function, updated_node.inputs
         )

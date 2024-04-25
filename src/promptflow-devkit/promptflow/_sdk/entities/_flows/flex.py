@@ -3,17 +3,16 @@
 # ---------------------------------------------------------
 from os import PathLike
 from pathlib import Path
-from typing import Dict, Optional, Union
+from typing import Dict, Union
 
 from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY
-from promptflow._utils.flow_utils import resolve_entry_file
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
-from .dag import Flow
+from .base import Flow as FlowBase
 
 
-class FlexFlow(Flow):
+class FlexFlow(FlowBase):
     """A FlexFlow represents a flow defined with codes directly. It doesn't involve a directed acyclic graph (DAG)
     explicitly, but its entry function haven't been provided.
     FlexFlow basically behave like a Flow.
@@ -34,8 +33,6 @@ class FlexFlow(Flow):
         code = Path(code)
         # entry function name
         self.entry = entry
-        # entry file name
-        self.entry_file = resolve_entry_file(entry=entry, working_dir=code)
         # TODO(2910062): support non-dag flow execution cache
         super().__init__(code=code, path=path, dag=data, content_hash=None, **kwargs)
 
@@ -47,6 +44,10 @@ class FlexFlow(Flow):
     @property
     def additional_includes(self) -> list:
         return self._data.get("additional_includes", [])
+
+    @property
+    def sample(self):
+        return self._data.get("sample", None)
 
     # endregion
 
@@ -71,9 +72,9 @@ class FlexFlow(Flow):
     @classmethod
     def _create_schema_for_validation(cls, context):
         # import here to avoid circular import
-        from promptflow._sdk.schemas._flow import EagerFlowSchema
+        from promptflow._sdk.schemas._flow import FlexFlowSchema
 
-        return EagerFlowSchema(context=context)
+        return FlexFlowSchema(context=context)
 
     def _default_context(self) -> dict:
         return {BASE_PATH_CONTEXT_KEY: self.code}
@@ -91,27 +92,9 @@ class FlexFlow(Flow):
 
     # endregion SchemaValidatableMixin
 
-    @classmethod
-    def _resolve_entry_file(cls, entry: str, working_dir: Path) -> Optional[str]:
-        """Resolve entry file from entry.
-        If entry is a local file, e.g. my.local.file:entry_function, return the local file: my/local/file.py
-            and executor will import it from local file.
-        Else, assume the entry is from a package e.g. external.module:entry, return None
-            and executor will try import it from package.
-        """
-        try:
-            entry_file = f'{entry.split(":")[0].replace(".", "/")}.py'
-        except Exception as e:
-            raise UserErrorException(f"Entry function {entry} is not valid: {e}")
-        entry_file = working_dir / entry_file
-        if entry_file.exists():
-            return entry_file.resolve().absolute().as_posix()
-        # when entry file not found in working directory, return None since it can come from package
-        return None
-
     def _init_executable(self, **kwargs):
         from promptflow._proxy import ProxyFactory
-        from promptflow.contracts.flow import EagerFlow as ExecutableEagerFlow
+        from promptflow.contracts.flow import FlexFlow as ExecutableEagerFlow
 
         meta_dict = (
             ProxyFactory()

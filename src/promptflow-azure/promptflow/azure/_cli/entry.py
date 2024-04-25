@@ -2,11 +2,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 # pylint: disable=wrong-import-position
-import json
 import time
 
 from promptflow._cli._pf.help import show_privacy_statement, show_welcome_message
-from promptflow._cli._utils import _get_cli_activity_name, cli_exception_and_telemetry_handler, get_client_info_for_cli
+from promptflow._cli._utils import _get_cli_activity_name, cli_exception_and_telemetry_handler
 from promptflow.azure._cli._user_agent import USER_AGENT
 
 # Log the start time
@@ -17,18 +16,12 @@ import argparse  # noqa: E402
 import logging  # noqa: E402
 import sys  # noqa: E402
 
-from promptflow._sdk._utils import (  # noqa: E402
-    get_promptflow_azure_version,
-    get_promptflow_core_version,
-    get_promptflow_devkit_version,
-    get_promptflow_sdk_version,
-    get_promptflow_tracing_version,
-    print_pf_version,
-)
+from promptflow._sdk._utils import print_pf_version, print_promptflow_version_dict_string  # noqa: E402
 from promptflow._utils.logger_utils import get_cli_sdk_logger  # noqa: E402
 from promptflow._utils.user_agent_utils import setup_user_agent_to_operation_context  # noqa: E402
 from promptflow.azure._cli._flow import add_parser_flow, dispatch_flow_commands  # noqa: E402
 from promptflow.azure._cli._run import add_parser_run, dispatch_run_commands  # noqa: E402
+from promptflow.azure._cli._utils import get_client_info_for_cli  # noqa: E402
 
 # get logger for CLI
 logger = get_cli_sdk_logger()
@@ -47,7 +40,7 @@ def run_command(args):
             for handler in logger.handlers:
                 handler.setLevel(logging.DEBUG)
         if args.version:
-            print_pf_version(with_azure=True)
+            print_pf_version(with_azure=True, ignore_none=True)
         elif args.action == "run":
             dispatch_run_commands(args)
         elif args.action == "flow":
@@ -123,24 +116,8 @@ def main():
     """Entrance of pf CLI."""
     command_args = sys.argv[1:]
     if len(command_args) == 1 and command_args[0] == "version":
-        version_dict = {"promptflow": get_promptflow_sdk_version()}
-        # check tracing version
-        version_tracing = get_promptflow_tracing_version()
-        if version_tracing:
-            version_dict["promptflow-tracing"] = version_tracing
-        # check azure version
-        version_azure = get_promptflow_azure_version()
-        if version_azure:
-            version_dict["promptflow-azure"] = version_azure
-        # check core version
-        version_core = get_promptflow_core_version()
-        if version_core:
-            version_dict["promptflow-core"] = version_core
-        # check devkit version
-        version_devkit = get_promptflow_devkit_version()
-        if version_devkit:
-            version_dict["promptflow-devkit"] = version_devkit
-        return json.dumps(version_dict, ensure_ascii=False, indent=2, sort_keys=True, separators=(",", ": ")) + "\n"
+        print_promptflow_version_dict_string(with_azure=True, ignore_none=True)
+        return
     if len(command_args) == 0:
         # print privacy statement & welcome message like azure-cli
         show_privacy_statement()

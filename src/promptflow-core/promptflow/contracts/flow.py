@@ -702,12 +702,16 @@ class Flow(FlowBase):
         sys.path.insert(0, str(working_dir))
 
     @classmethod
-    def from_yaml(cls, flow_file: Path, working_dir=None) -> "Flow":
+    def from_yaml(cls, flow_file: Path, working_dir=None, name=None) -> "Flow":
         """Load flow from yaml file."""
         working_dir = cls._parse_working_dir(flow_file, working_dir)
         with open(working_dir / flow_file, "r", encoding=DEFAULT_ENCODING) as fin:
             flow_dag = load_yaml(fin)
-        flow_dag["name"] = flow_dag.get("name", _sanitize_python_variable_name(working_dir.stem))
+        # Name priority: name from payload > name from yaml content > working_dir.stem
+        # For portal created flow, there is a meaningless predefined name in yaml, use name from payload to override it.
+        if name is None:
+            name = flow_dag.get("name", _sanitize_python_variable_name(working_dir.stem))
+        flow_dag["name"] = name
         return Flow._from_dict(flow_dag=flow_dag, working_dir=working_dir)
 
     @classmethod
@@ -922,8 +926,8 @@ class Flow(FlowBase):
 
 
 @dataclass
-class EagerFlow(FlowBase):
-    """This class represents an eager flow.
+class FlexFlow(FlowBase):
+    """This class represents a flex flow.
 
     :param id: The id of the flow.
     :type id: str
@@ -947,7 +951,7 @@ class EagerFlow(FlowBase):
     message_format: str = MessageFormatType.BASIC
 
     @staticmethod
-    def deserialize(data: dict) -> "EagerFlow":
+    def deserialize(data: dict) -> "FlexFlow":
         """Deserialize the flow from a dict.
 
         :param data: The dict to be deserialized.
@@ -958,11 +962,57 @@ class EagerFlow(FlowBase):
 
         inputs = data.get("inputs") or {}
         outputs = data.get("outputs") or {}
-        return EagerFlow(
+        return FlexFlow(
             id=data.get("id", "default_flow_id"),
             name=data.get("name", "default_flow"),
             inputs={name: FlowInputDefinition.deserialize(i) for name, i in inputs.items()},
             outputs={name: FlowOutputDefinition.deserialize(o) for name, o in outputs.items()},
             program_language=data.get(LANGUAGE_KEY, FlowLanguage.Python),
             environment_variables=data.get("environment_variables") or {},
+        )
+
+
+@dataclass
+class PromptyFlow(FlowBase):
+    """This class represents a prompty flow.
+
+    :param id: The id of the flow.
+    :type id: str
+    :param name: The name of the flow.
+    :type name: str
+    :param inputs: The inputs of the flow.
+    :type inputs: Dict[str, FlowInputDefinition]
+    :param outputs: The outputs of the flow.
+    :type outputs: Dict[str, FlowOutputDefinition]
+    :param program_language: The program language of the flow.
+    :type program_language: str
+    :param environment_variables: The default environment variables of the flow.
+    :type environment_variables: Dict[str, object]
+    :param message_format: The message format type of the flow to represent different multimedia contracts.
+    :type message_format: str
+    """
+
+    program_language: str = FlowLanguage.Python
+    environment_variables: Dict[str, object] = None
+    message_format: str = MessageFormatType.BASIC
+
+    @classmethod
+    def deserialize(cls, data: dict) -> "PromptyFlow":
+        """Deserialize the prompty flow from a dict.
+
+        :param data: The dict to be deserialized.
+        :type data: dict
+        :return: The flow constructed from the dict.
+        :rtype: ~promptflow.contracts.flow.PromptyFlow
+        """
+        inputs = data.get("inputs") or {}
+        outputs = data.get("outputs") or {}
+        return PromptyFlow(
+            id=data.get("id", "default_flow_id"),
+            name=data.get("name", "default_flow"),
+            inputs={name: FlowInputDefinition.deserialize(i) for name, i in inputs.items()},
+            outputs={name: FlowOutputDefinition.deserialize(o) for name, o in outputs.items()},
+            program_language=data.get(LANGUAGE_KEY, FlowLanguage.Python),
+            environment_variables=data.get("environment_variables") or {},
+            message_format=data.get("message_format", MessageFormatType.BASIC),
         )

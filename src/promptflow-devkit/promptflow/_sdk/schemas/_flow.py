@@ -4,11 +4,13 @@
 
 from marshmallow import ValidationError, fields, validate, validates_schema
 
-from promptflow._constants import LANGUAGE_KEY, FlowLanguage
+from promptflow._constants import LANGUAGE_KEY, ConnectionType, FlowLanguage
 from promptflow._proxy import ProxyFactory
 from promptflow._sdk._constants import FlowType
 from promptflow._sdk.schemas._base import PatchedSchemaMeta, YamlFileSchema
 from promptflow._sdk.schemas._fields import NestedField
+from promptflow.contracts.tool import ValueType
+from promptflow.core._model_configuration import MODEL_CONFIG_NAME_2_CLASS
 
 
 class FlowInputSchema(metaclass=PatchedSchemaMeta):
@@ -60,14 +62,53 @@ class FlowSchema(BaseFlowSchema):
     node_variants = fields.Dict(keys=fields.Str(), values=fields.Dict())
 
 
-class EagerFlowSchema(BaseFlowSchema):
+ALLOWED_TYPES = [
+    ValueType.STRING.value,
+    ValueType.INT.value,
+    ValueType.DOUBLE.value,
+    ValueType.BOOL.value,
+    ValueType.LIST.value,
+    ValueType.OBJECT.value,
+]
+
+
+class FlexFlowInputSchema(FlowInputSchema):
+    type = fields.Str(
+        required=True,
+        # TODO 3062609: Flex flow GPT-V support
+        validate=validate.OneOf(ALLOWED_TYPES),
+    )
+
+
+class FlexFlowInitSchema(FlowInputSchema):
+    type = fields.Str(
+        required=True,
+        validate=validate.OneOf(
+            ALLOWED_TYPES
+            + list(
+                map(lambda x: f"{x.value}Connection", filter(lambda x: x != ConnectionType._NOT_SET, ConnectionType))
+            )
+            + list(MODEL_CONFIG_NAME_2_CLASS.keys())
+        ),
+    )
+
+
+class FlexFlowOutputSchema(FlowOutputSchema):
+    type = fields.Str(
+        required=True,
+        validate=validate.OneOf(ALLOWED_TYPES),
+    )
+
+
+class FlexFlowSchema(BaseFlowSchema):
     """Schema for eager flow."""
 
     # entry point for eager flow
     entry = fields.Str(required=True)
-    inputs = fields.Dict(keys=fields.Str(), values=NestedField(FlowInputSchema), required=False)
-    outputs = fields.Dict(keys=fields.Str(), values=NestedField(FlowOutputSchema), required=False)
-    init = fields.Dict(keys=fields.Str(), values=NestedField(FlowInputSchema), required=False)
+    inputs = fields.Dict(keys=fields.Str(), values=NestedField(FlexFlowInputSchema), required=False)
+    outputs = fields.Dict(keys=fields.Str(), values=NestedField(FlexFlowOutputSchema), required=False)
+    init = fields.Dict(keys=fields.Str(), values=NestedField(FlexFlowInitSchema), required=False)
+    sample = fields.Str()
 
     @validates_schema(skip_on_field_errors=False)
     def validate_entry(self, data, **kwargs):

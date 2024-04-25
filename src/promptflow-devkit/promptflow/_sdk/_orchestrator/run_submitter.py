@@ -7,8 +7,8 @@ import datetime
 from pathlib import Path
 from typing import Union
 
-from promptflow._constants import FlowLanguage
-from promptflow._sdk._constants import ContextAttributeKey, FlowRunProperties
+from promptflow._proxy import ProxyFactory
+from promptflow._sdk._constants import REMOTE_URI_PREFIX, ContextAttributeKey, FlowRunProperties
 from promptflow._sdk.entities._flows import Flow, Prompty
 from promptflow._sdk.entities._run import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
@@ -20,6 +20,7 @@ from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException, ValidationException
 from promptflow.tracing._operation_context import OperationContext
+from promptflow.tracing._start_trace import is_collection_writeable, start_trace
 
 from .._configuration import Configuration
 from .._load_functions import load_flow
@@ -34,6 +35,7 @@ class RunSubmitter:
 
     def __init__(self, client):
         self._client = client
+        self._config = Configuration(overrides=self._client._config)
         self.run_operations = self._client.runs
 
     def submit(self, run: Run, stream=False, **kwargs):
@@ -82,12 +84,25 @@ class RunSubmitter:
         if run._resume_from is not None:
             logger.debug(f"Resume from run {run._resume_from!r}...")
             run._resume_from = self._ensure_run_completed(run._resume_from)
-        # Start trace
-        if Configuration(overrides=self._client._config).is_internal_features_enabled():
-            from promptflow.tracing._start_trace import start_trace
+        # start trace
+        logger.debug("start trace for flow run...")
+        flow_path = run._get_flow_dir().resolve()
+        logger.debug("flow path for run.start_trace: %s", flow_path)
+        if is_collection_writeable():
+            logger.debug("trace collection is writeable, will use flow name as collection...")
+            collection_for_run = run._flow_name
+            logger.debug("collection for run: %s", collection_for_run)
+            # pass with internal parameter `_collection`
+            start_trace(
+                attributes=attributes,
+                run=run.name,
+                _collection=collection_for_run,
+                path=flow_path,
+            )
+        else:
+            logger.debug("trace collection is protected, will honor existing collection.")
+            start_trace(attributes=attributes, run=run.name, path=flow_path)
 
-            logger.debug("Starting trace for flow run...")
-            start_trace(session=kwargs.get("session", None), attributes=attributes, run=run.name)
         self._validate_inputs(run=run)
 
         local_storage = LocalStorageOperations(run, stream=stream, run_mode=RunMode.Batch)
@@ -107,13 +122,11 @@ class RunSubmitter:
     ) -> dict:
         logger.info(f"Submitting run {run.name}, log path: {local_storage.logger.file_path}")
         run_id = run.name
-        # for python, we can get metadata in-memory, so no need to dump them first
-        if flow.language != FlowLanguage.Python:
-            from promptflow._proxy import ProxyFactory
-
+        # TODO: unify the logic for prompty and other flows
+        if not isinstance(flow, Prompty):
             # variants are resolved in the context, so we can't move this logic to Operations for now
-            ProxyFactory().get_executor_proxy_cls(flow.language).dump_metadata(
-                flow_file=Path(flow.path), working_dir=Path(flow.code)
+            ProxyFactory().create_inspector_proxy(flow.language).prepare_metadata(
+                flow_file=Path(flow.path), working_dir=Path(flow.code), init_kwargs=run.init
             )
 
         with _change_working_dir(flow.code):
@@ -145,7 +158,7 @@ class RunSubmitter:
         )
         try:
             batch_engine = BatchEngine(
-                flow.path,
+                run._dynamic_callable or flow.path,
                 flow.code,
                 connections=connections,
                 entry=flow.entry if isinstance(flow, FlexFlow) else None,
@@ -200,12 +213,18 @@ class RunSubmitter:
             # system metrics: token related
             system_metrics = batch_result.system_metrics.to_dict() if batch_result else {}
 
-            self.run_operations.update(
+            run = self.run_operations.update(
                 name=run.name,
                 status=status,
                 end_time=datetime.datetime.now(),
                 system_metrics=system_metrics,
             )
+
+            # upload run to cloud if the trace destination is set to cloud
+            trace_destination = self._config.get_trace_destination(path=run._get_flow_dir().resolve())
+            if trace_destination and trace_destination.startswith(REMOTE_URI_PREFIX):
+                logger.debug(f"Trace destination set to {trace_destination!r}, uploading run to cloud...")
+                self._upload_run_to_cloud(run=run)
 
     def _resolve_input_dirs(self, run: Run):
         result = {"data": run.data if run.data else None}
@@ -235,3 +254,24 @@ class RunSubmitter:
                 "Column mapping must contain at least one mapping binding, "
                 f"current column mapping contains all static values: {column_mapping}"
             )
+
+    @classmethod
+    def _upload_run_to_cloud(cls, run: Run):
+        error_msg_prefix = f"Failed to upload run {run.name!r} to cloud."
+        try:
+            from promptflow._sdk._tracing import _get_ws_triad_from_pf_config
+            from promptflow.azure._cli._utils import _get_azure_pf_client
+
+            ws_triad = _get_ws_triad_from_pf_config(path=run._get_flow_dir().resolve())
+            pf = _get_azure_pf_client(
+                subscription_id=ws_triad.subscription_id,
+                resource_group=ws_triad.resource_group_name,
+                workspace_name=ws_triad.workspace_name,
+            )
+            pf.runs._upload(run=run)
+        except ImportError as e:
+            error_message = (
+                f'{error_msg_prefix}. "promptflow[azure]" is required for local to cloud tracing experience, '
+                f'please install it by running "pip install promptflow[azure]". Original error: {str(e)}'
+            )
+            raise UserErrorException(message=error_message) from e

@@ -1,6 +1,36 @@
 # Release History
 
-## 1.8.0 (Upcoming)
+## v1.10.0 (Upcoming)
+### Features Added
+- [promptflow-devkit]: Expose --ui to trigger a chat window, reach [here](https://microsoft.github.io/promptflow/reference/pf-command-reference.html#pf-flow-test) for more details.
+- [promptflow-devkit]: Local serving container support using fastapi engine and tuning worker/thread num via environment variables, reach [here](https://microsoft.github.io/promptflow/how-to-guides/deploy-a-flow/deploy-using-docker.html) for more details.
+- [promptflow-core]: Add fastapi serving engine support.
+
+## v1.9.0 (2024.04.17)
+
+### Features Added
+- [promptflow-devkit]: Added autocomplete feature for linux, reach [here](https://microsoft.github.io/promptflow/reference/pf-command-reference.html#autocomplete) for more details.
+- [promptflow-devkit]: Support trace experience in flow test and batch run. See [here](https://microsoft.github.io/promptflow/how-to-guides/tracing/index.html) for more details.
+
+### Bugs Fixed
+- [promptflow-devkit] Fix run name missing directory name in some scenario of `pf.run`.
+- [promptflow-devkit] Raise not supported instead of 404 when trying to create Azure AI connection.
+
+### Others
+- [promptflow-core] Connection default api version changed:
+  - AzureOpenAIConnection: 2023-07-01-preview -> 2024-02-01
+  - CognitiveSearchConnection: 2023-07-01-preview -> 2023-11-01
+
+
+## v1.8.0 (2024.04.10)
+
+### NOTICES
+- `promptflow` package has been split into multiple packages. When installing `promptflow`, you will get the following packages:
+  - `promptflow`:
+    - `promptflow-tracing`: Tracing capability for promptflow.
+    - `promptflow-core`: Core functionality to run flow.
+    - `promptflow-devkit`: Development kit for promptflow.
+    - `promptflow-azure`: Azure extra requires(`promptflow[azure]`) for promptflow to integrate with Azure.
 
 ### Features Added
 - [SDK/CLI] Create a run with `resume_from`, note that only run created with `promptflow>=1.8.0` can be used as the value of `resume_from`:
@@ -10,8 +40,7 @@
   - CLI: Support `pfazure run create --resume-from <original-run-name>` to create a run resume from another run.
   - SDK: Support `p.run(resume_from=<original-run-name>)` to create a run resume from another run.
 
-
-## 1.7.0 (2024.03.25)
+## v1.7.0 (2024.03.25)
 
 ### NOTICES
 - Import warnings will be printed when importing from `promptflow` namespace, please use imports from new namespaces
@@ -28,12 +57,12 @@
 - [SDK] `connection.provider` config doesn't work when calling flow as a function.
 - [SDK/CLI] Support override unprovided connection inputs in nodes.
 
-## 1.6.0 (2024.03.01)
+## v1.6.0 (2024.03.01)
 
 ### Features Added
 
 - [CLI] Support configuring environment variable to directly use `AzureCliCredential` for `pfazure` commands.
-  ```dotenv
+  ```
   PF_USE_AZURE_CLI_CREDENTIAL=true
   ```
 - [SDK/CLI] Support setting timeout for `pfazure run stream`.
@@ -53,7 +82,7 @@
 
 - [SDK/CLI][azure] Fixed automatic runtime session id cache when image updated.
 
-## 1.5.0 (2024.02.06)
+## v1.5.0 (2024.02.06)
 
 ### Features Added
 
@@ -73,7 +102,7 @@
 - [SDK/CLI] For `pf run delete`, `pf connection delete`, introducing an option to skip confirmation prompts.
 - [SDK/CLI] Move pfs extra dependency to required dependency.
 
-## 1.4.0 (2024.01.22)
+## v1.4.0 (2024.01.22)
 
 ### Features Added
 
@@ -106,7 +135,7 @@
 - [SDK/CLI] For `pf/pfazure run create`, when run has unknown attribute, log warning instead of raising error.
 - Replace `pyyaml` with `ruamel.yaml` to adopt YAML 1.2 specification.
 
-## 1.3.0 (2023.12.27)
+## v1.3.0 (2023.12.27)
 
 ### Features Added
 
@@ -125,7 +154,7 @@
 - [SDK/CLI] Improve `pfazure run download` to handle large run data files.
 - [Executor] Exit the process when all async tools are done or exceeded timeout after cancellation.
 
-## 1.2.0 (2023.12.14)
+## v1.2.0 (2023.12.14)
 
 ### Features Added
 
@@ -139,7 +168,7 @@
 - Hide unnecessary fields in run list for better readability.
 - Fix bug that ignores timeout lines in batch run status summary.
 
-## 1.1.1 (2023.12.1)
+## v1.1.1 (2023.12.1)
 
 ### Bugs Fixed
 
@@ -148,7 +177,7 @@
 - [SDK/CLI] Disable the feature to customize user agent in CLI to avoid changes on operation context.
 - Fix openai metrics calculator to adapt openai v1.
 
-## 1.1.0 (2023.11.30)
+## v1.1.0 (2023.11.30)
 
 ### Features Added
 
@@ -185,7 +214,7 @@
 - Bump `flask` upper bound to 4.0.0, `flask-restx` upper bound to 2.0.0.
 - Bump `ruamel.yaml` upper bound to 1.0.0.
 
-## 1.0.0 (2023.11.09)
+## v1.0.0 (2023.11.09)
 
 ### Features Added
 
@@ -202,7 +231,7 @@
 
 - [Executor] Set the outputs of the bypassed nodes as None
 
-## 0.1.0b8 (2023.10.26)
+## v0.1.0b8 (2023.10.26)
 
 ### Features Added
 
@@ -230,13 +259,13 @@
   - Add column status.
   - Support opening flow file by clicking run id.
 
-## 0.1.0b7.post1 (2023.09.28)
+## v0.1.0b7.post1 (2023.09.28)
 
 ### Bug Fixed
 
 - Fix extra dependency bug when importing `promptflow` without `azure-ai-ml` installed.
 
-## 0.1.0b7 (2023.09.27)
+## v0.1.0b7 (2023.09.27)
 
 ### Features Added
 
@@ -263,7 +292,7 @@
   - Add `--all-results` option to display all results.
 - Add validation for azure `PFClient` constructor in case wrong parameter is passed.
 
-## 0.1.0b6 (2023.09.15)
+## v0.1.0b6 (2023.09.15)
 
 ### Features Added
 
@@ -278,7 +307,7 @@
 - [Executor][Internal] Improve inputs mapping's error message.
 - [API] Resolve warnings/errors of sphinx build
 
-## 0.1.0b5 (2023.09.08)
+## v0.1.0b5 (2023.09.08)
 
 ### Features Added
 
@@ -288,17 +317,17 @@
 
 - Add missing requirement `psutil` in `setup.py`
 
-## 0.1.0b4 (2023.09.04)
+## v0.1.0b4 (2023.09.04)
 
 ### Features added
 
 - Support `pf flow build` commands
 
-## 0.1.0b3 (2023.08.30)
+## v0.1.0b3 (2023.08.30)
 
 - Minor bug fixes.
 
-## 0.1.0b2 (2023.08.29)
+## v0.1.0b2 (2023.08.29)
 
 - First preview version with major CLI & SDK features.
 
@@ -310,6 +339,6 @@
 - Azure AI support:
   - **pfazure run**: create/list/stream/show/show-details/show-metrics/visualize
 
-## 0.1.0b1 (2023.07.20)
+## v0.1.0b1 (2023.07.20)
 
 - Stub version in Pypi.

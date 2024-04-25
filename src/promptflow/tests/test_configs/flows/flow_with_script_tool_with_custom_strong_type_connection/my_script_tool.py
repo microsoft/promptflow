@@ -1,4 +1,4 @@
-from promptflow import tool
+from promptflow.core import tool
 from promptflow.connections import CustomStrongTypeConnection, CustomConnection
 from promptflow.contracts.types import Secret
 

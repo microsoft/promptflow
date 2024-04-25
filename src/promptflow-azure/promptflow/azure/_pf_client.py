@@ -262,9 +262,6 @@ class PFClient:
         :return: flow run info.
         :rtype: ~promptflow.entities.Run
         """
-        # TODO(3047273): support cloud run init
-        if init:
-            raise NotImplementedError("init is not supported for pfazure.")
         if resume_from:
             unsupported = {
                 k: v
@@ -276,6 +273,7 @@ class PFClient:
                     "variant": variant,
                     "connections": connections,
                     "environment_variables": environment_variables,
+                    "init": init,
                 }.items()
                 if v
             }
@@ -301,6 +299,7 @@ class PFClient:
                 flow=flow,
                 connections=connections,
                 environment_variables=environment_variables,
+                init=init,
             )
             return self.runs.create_or_update(run=run, **kwargs)
 

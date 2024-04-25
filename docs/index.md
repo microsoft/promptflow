@@ -40,12 +40,9 @@ This documentation site contains guides for prompt flow [sdk, cli](https://pypi.
   content: "
     Articles guide user to complete a specific task in prompt flow.<br/><br/>
     - [Develop a flow](how-to-guides/develop-a-flow/index.md)<br/>
-    - [Initialize and test a flow](how-to-guides/init-and-test-a-flow.md)<br/>
     - [Run and evaluate a flow](how-to-guides/run-and-evaluate-a-flow/index.md)<br/>
-    - [Tune prompts using variants](how-to-guides/tune-prompts-with-variants.md)<br/>
     - [Develop custom tool](how-to-guides/develop-a-tool/create-and-use-tool-package.md)<br/>
     - [Deploy a flow](how-to-guides/deploy-a-flow/index.md)<br/>
-    - [Process image in flow](how-to-guides/process-image-in-flow.md)
   "
 ```
 
@@ -67,6 +64,7 @@ This documentation site contains guides for prompt flow [sdk, cli](https://pypi.
     - Command line Interface reference: [pf](reference/pf-command-reference.md)<br/>
     - Python library reference: [promptflow](reference/python-library-reference/promptflow-core/promptflow.rst)<br/>
     - Tool reference: [LLM Tool](reference/tools-reference/llm-tool.md), [Python Tool](reference/tools-reference/python-tool.md), [Prompt Tool](reference/tools-reference/prompt-tool.md)<br/>
+    - ChangeLog: [ChangeLog](reference/changelog/promptflow.md)<br/>
   "
 ```
 

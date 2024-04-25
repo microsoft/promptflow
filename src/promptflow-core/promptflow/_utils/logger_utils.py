@@ -5,7 +5,7 @@
 # This file is for open source,
 # so it should not contain any dependency on azure or azureml-related packages.
 
-
+import contextlib
 import json
 import logging
 import os
@@ -372,9 +372,15 @@ def scrub_credentials(s: str):
 
 
 class LoggerFactory:
+    _existing_loggers = [logger, flow_logger, bulk_logger, service_logger]
+    _disabled = False
+
     @staticmethod
     def get_logger(name: str, verbosity: int = logging.INFO, target_stdout: bool = False):
         logger = logging.getLogger(name)
+        if logger not in LoggerFactory._existing_loggers:
+            LoggerFactory._existing_loggers.append(logger)
+            logger.disabled = LoggerFactory._disabled
         logger.propagate = False
         # Set default logger level to debug, we are using handler level to control log by default
         logger.setLevel(logging.DEBUG)
@@ -404,6 +410,24 @@ class LoggerFactory:
         handler.setFormatter(formatter)
         handler.setLevel(verbosity)
         logger.addHandler(handler)
+
+    @staticmethod
+    @contextlib.contextmanager
+    def disable_all_loggers():
+        """Disable all loggers."""
+        #  If LoggerFactory is already disabled, do nothing
+        if LoggerFactory._disabled:
+            yield
+            return
+        try:
+            LoggerFactory._disabled = True
+            for each_logger in LoggerFactory._existing_loggers:
+                each_logger.disabled = True
+            yield
+        finally:
+            for each_logger in LoggerFactory._existing_loggers:
+                each_logger.disabled = False
+            LoggerFactory._disabled = False
 
 
 def get_cli_sdk_logger():

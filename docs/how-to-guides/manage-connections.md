@@ -1,9 +1,5 @@
 # Manage connections
 
-:::{admonition} Experimental feature
-This is an experimental feature, and may change at any time. Learn [more](faq.md#stable-vs-experimental).
-:::
-
 [Connection](../../concepts/concept-connections.md) helps securely store and manage secret keys or other sensitive credentials required for interacting with LLM (Large Language Models) and other external tools, for example, Azure Content Safety.
 
 :::{note}
@@ -226,6 +222,15 @@ Supported types are as follows:
 |  | api_version | OPENAI_API_VERSION |
 
 For example, with `OPENAI_API_KEY` set to environment, an `OpenAIConnection` object can be loaded with `OpenAIConnection.from_env()`.
+
+## Authenticate with Microsoft Entra ID
+[Microsoft Entra ID](https://learn.microsoft.com/entra/fundamentals/whatis) is a cloud-based identity and access management service that enables your employees access external resources.
+
+Some promptflow connection types supports connection authentication with Microsoft Entra ID.
+
+| Connection Type       | Yaml Field | Value     | Package Requirements                                          | VS Code Extension |
+| --------------------- |------------|-----------|---------------------------------------------------------------|------------------|
+| AzureOpenAIConnection | auth_mode  | meid_token | `promptflow[azureml-serving]>=1.7.0, promptflow-tools>=1.4.0` | 1.20.0           |
 
 
 ## Next steps
