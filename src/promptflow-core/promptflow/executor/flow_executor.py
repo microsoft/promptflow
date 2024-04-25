@@ -969,9 +969,7 @@ class FlowExecutor:
         aggregation_inputs = {}
         try:
             if validate_inputs:
-                inputs = FlowValidator.ensure_flow_inputs_type(
-                    flow_inputs=self._flow.inputs, inputs=inputs, idx=run_info.index
-                )
+                inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=run_info.index)
             inputs = self._multimedia_processor.load_multimedia_data(self._flow.inputs, inputs)
             # Inputs are assigned after validation and multimedia data loading, instead of at the start of the flow run.
             # This way, if validation or multimedia data loading fails, we avoid persisting invalid inputs.
@@ -1056,9 +1054,7 @@ class FlowExecutor:
         aggregation_inputs = {}
         try:
             if validate_inputs:
-                inputs = FlowValidator.ensure_flow_inputs_type(
-                    flow_inputs=self._flow.inputs, inputs=inputs, idx=run_info.index
-                )
+                inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=run_info.index)
             # TODO: Consider async implementation for load_multimedia_data
             inputs = self._multimedia_processor.load_multimedia_data(self._flow.inputs, inputs)
             # Inputs are assigned after validation and multimedia data loading, instead of at the start of the flow run.

@@ -120,7 +120,7 @@ class ScriptExecutor(FlowExecutor):
         # Executor will add line_number to batch inputs if there is no line_number in the original inputs,
         # which should be removed, so, we only preserve the inputs that are contained in self._inputs.
         inputs = {k: inputs[k] for k in self._inputs if k in inputs}
-        FlowValidator.ensure_flow_inputs_type(self._inputs_sign, inputs)
+        FlowValidator._ensure_flow_inputs_type_inner(self._inputs_sign, inputs)
         return run_info, inputs, run_tracker, None, []
 
     def _exec_line(
@@ -458,9 +458,12 @@ class ScriptExecutor(FlowExecutor):
             with open(self._working_dir / self._flow_file, "r", encoding="utf-8") as fin:
                 flow_dag = load_yaml(fin)
             flow = FlexFlow.deserialize(flow_dag)
+            # In the yaml file, user can define the inputs and init signature for the flow, also SDK may create
+            # the signature and add them to the yaml file. We need to get the signature from the yaml file and
+            # used for applying default value and ensuring input type.
             self._inputs_sign = flow.inputs
             self._init_sign = flow.init
         else:
-            # For function entry there is no yaml file to get the inputs and init signature.
+            # Since there is no yaml file for function entry, we set the inputs and init signature to empty dict.
             self._inputs_sign = {}
             self._init_sign = {}
