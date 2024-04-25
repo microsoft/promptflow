@@ -10,7 +10,7 @@ In PromptFlow, these functions or classes are referred to as `flow` or `flex flo
 
 Alternatively, you can define a `flow.flex.yaml` that points to these entries (`entry:function_name` or `entry:ClassName`). This enables testing, running, or viewing traces via the [Promptflow VS Code Extension](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow).
 
-Our [examples](https://github.com/microsoft/promptflow/tree/main/examples/flex-flows) should give you a good idea on how to write `flex flows`.
+Our [examples](https://github.com/microsoft/promptflow/tree/main/examples/flex-flows) should give you a good idea on how to write flows.
 
 Note: 
 - The term *Flex* is a shorthand for *flexible*, indicating its adaptability to most scenarios with minimal adjustments.

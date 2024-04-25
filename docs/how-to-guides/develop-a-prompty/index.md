@@ -416,5 +416,5 @@ The trace UI will record the execution details of each line in the data file, pr
 :hidden:
 
 prompty-output-format
-use-prompty-in-flex-flow
+use-prompty-in-flow
 ```

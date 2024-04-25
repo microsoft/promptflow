@@ -11,7 +11,7 @@ A flow is represented as a YAML file and can be visualized with our [Prompt flow
 Please refer to our [examples](https://github.com/microsoft/promptflow/tree/main/examples/flows) and guides in this section to learn how to write a `DAG flow`. 
 
 Note: 
-- promptflow also support user develop a `flex flow`. learn more on comparasion of these two [flow concepts](../../concepts/concept-flows.md).
+- promptflow also support user develop a a flow using code. learn more on comparasion of these two [flow concepts](../../concepts/concept-flows.md).
 
 ```{toctree}
 :maxdepth: 1
