@@ -90,3 +90,9 @@ Prompt flow tracing works not only for general LLM application, but also for mor
 3. Example: **[Add trace for Langchain](https://github.com/microsoft/promptflow/tree/main/examples/tutorials/tracing/langchain)**
 
 ![langchain-trace-detail](../../media/trace/langchain-trace-detail.png)
+
+```{toctree}
+:maxdepth: 1
+
+visualize-and-manage
+```
