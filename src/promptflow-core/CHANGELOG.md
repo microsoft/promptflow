@@ -1,6 +1,7 @@
 # promptflow-core package
 
 ## v1.10.0 (Upcoming)
+- Add fastapi serving engine support.
 
 ## v1.9.0 (2024.04.17)
 

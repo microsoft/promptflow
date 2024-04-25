@@ -372,6 +372,15 @@ def get_promptflow_azure_version() -> Union[str, None]:
         return None
 
 
+def get_promptflow_evals_version() -> Union[str, None]:
+    try:
+        from promptflow.evals._version import __version__
+
+        return __version__
+    except ImportError:
+        return None
+
+
 def print_promptflow_version_dict_string(with_azure: bool = False, ignore_none: bool = False):
     version_dict = {"promptflow": get_promptflow_sdk_version()}
     # check tracing version
@@ -392,6 +401,12 @@ def print_promptflow_version_dict_string(with_azure: bool = False, ignore_none: 
         version_azure = get_promptflow_azure_version()
         if version_azure:
             version_dict["promptflow-azure"] = version_azure
+
+    # check evals version
+    version_evals = get_promptflow_evals_version()
+    if version_evals:
+        version_dict["promptflow-evals"] = version_evals
+
     if ignore_none:
         version_dict = {k: v for k, v in version_dict.items() if v is not None}
     version_dict_string = (
@@ -538,29 +553,6 @@ def _retrieve_tool_func_result(func_call_scenario: str, function_config: Dict):
 
     result_with_log = {"result": result, "logs": {}}
     return result_with_log
-
-
-def _gen_dynamic_list(function_config: Dict) -> List:
-    """Generate dynamic list for a tool input.
-
-    :param function_config: function config in tool meta. Should contain'func_path' and 'func_kwargs'.
-    :return: a list of tool input dynamic enums.
-    """
-    from promptflow._core.tools_manager import gen_dynamic_list
-
-    func_path = function_config.get("func_path", "")
-    func_kwargs = function_config.get("func_kwargs", {})
-    # May call azure control plane api in the custom function to list Azure resources.
-    # which may need Azure workspace triple.
-    # TODO: move this method to a common place.
-    from promptflow._cli._utils import get_workspace_triad_from_local
-
-    workspace_triad = get_workspace_triad_from_local()
-    if workspace_triad.subscription_id and workspace_triad.resource_group_name and workspace_triad.workspace_name:
-        return gen_dynamic_list(func_path, func_kwargs, workspace_triad._asdict())
-    # if no workspace triple available, just skip.
-    else:
-        return gen_dynamic_list(func_path, func_kwargs)
 
 
 def _generate_package_tools(keys: Optional[List[str]] = None) -> dict:
@@ -968,6 +960,20 @@ def overwrite_null_std_logger():
         sys.stderr = sys.stdout
 
 
+def generate_yaml_entry_without_recover(entry: Union[str, PathLike, Callable], code: Path = None):
+    """Generate yaml entry to run, will directly overwrite yaml if it already exists and not delete generated yaml."""
+    from promptflow._proxy import ProxyFactory
+
+    executor_proxy = ProxyFactory().get_executor_proxy_cls(FlowLanguage.Python)
+    if callable(entry) or executor_proxy.is_flex_flow_entry(entry=entry):
+        flow_yaml_path, _ = create_temp_flex_flow_yaml_core(entry, code)
+        return flow_yaml_path
+    else:
+        if code:
+            logger.warning(f"Specify code {code} is only supported for Python flex flow entry, ignoring it.")
+        return entry
+
+
 @contextmanager
 def generate_yaml_entry(entry: Union[str, PathLike, Callable], code: Path = None):
     """Generate yaml entry to run."""
@@ -983,10 +989,7 @@ def generate_yaml_entry(entry: Union[str, PathLike, Callable], code: Path = None
         yield entry
 
 
-@contextmanager
-def create_temp_flex_flow_yaml(entry: Union[str, PathLike, Callable], code: Path = None):
-    """Create a temporary flow.dag.yaml in code folder"""
-
+def create_temp_flex_flow_yaml_core(entry: Union[str, PathLike, Callable], code: Path = None):
     logger.info("Create temporary entry for flex flow.")
     if callable(entry):
         entry = callable_to_entry_string(entry)
@@ -1000,13 +1003,20 @@ def create_temp_flex_flow_yaml(entry: Union[str, PathLike, Callable], code: Path
     flow_yaml_path = code / FLOW_FLEX_YAML
     existing_content = None
 
+    if flow_yaml_path.exists():
+        logger.warning(f"Found existing {flow_yaml_path.as_posix()}, will not respect it in runtime.")
+        with open(flow_yaml_path, "r", encoding=DEFAULT_ENCODING) as f:
+            existing_content = f.read()
+    with open(flow_yaml_path, "w", encoding=DEFAULT_ENCODING) as f:
+        dump_yaml({"entry": entry}, f)
+    return flow_yaml_path, existing_content
+
+
+@contextmanager
+def create_temp_flex_flow_yaml(entry: Union[str, PathLike, Callable], code: Path = None):
+    """Create a temporary flow.dag.yaml in code folder"""
+    flow_yaml_path, existing_content = create_temp_flex_flow_yaml_core(entry, code)
     try:
-        if flow_yaml_path.exists():
-            logger.warning(f"Found existing {flow_yaml_path.as_posix()}, will not respect it in runtime.")
-            with open(flow_yaml_path, "r", encoding=DEFAULT_ENCODING) as f:
-                existing_content = f.read()
-        with open(flow_yaml_path, "w", encoding=DEFAULT_ENCODING) as f:
-            dump_yaml({"entry": entry}, f)
         yield flow_yaml_path
     finally:
         # delete the file or recover the content
@@ -1069,23 +1079,6 @@ def is_flex_run(run: "Run") -> bool:
     return False
 
 
-def format_signature_type(flow_meta):
-    # signature is language irrelevant, so we apply json type system
-    # TODO: enable this mapping after service supports more types
-    value_type_map = {
-        # ValueType.INT.value: SignatureValueType.INT.value,
-        # ValueType.DOUBLE.value: SignatureValueType.NUMBER.value,
-        # ValueType.LIST.value: SignatureValueType.ARRAY.value,
-        # ValueType.BOOL.value: SignatureValueType.BOOL.value,
-    }
-    for port_type in ["inputs", "outputs", "init"]:
-        if port_type not in flow_meta:
-            continue
-        for port_name, port in flow_meta[port_type].items():
-            if port["type"] in value_type_map:
-                port["type"] = value_type_map[port["type"]]
-
-
 generate_flow_meta = _generate_flow_meta
 # DO NOT remove the following line, it's used by the runtime imports from _sdk/_utils directly
 get_used_connection_names_from_dict = get_used_connection_names_from_dict
@@ -1124,3 +1117,17 @@ def get_flow_path(flow) -> Path:
     if isinstance(flow, (FlexFlow, Prompty)):
         return flow.path.parent.resolve()
     raise ValueError(f"Unsupported flow type {type(flow)!r}")
+
+
+def load_input_data(data_path):
+    from promptflow._utils.load_data import load_data
+
+    if not Path(data_path).exists():
+        raise ValueError(f"Cannot find inputs file {data_path}")
+    if data_path.endswith(".jsonl"):
+        return load_data(local_path=data_path)[0]
+    elif data_path.endswith(".json"):
+        with open(data_path, "r") as f:
+            return json.load(f)
+    else:
+        raise ValueError("Only support jsonl or json file as input.")
