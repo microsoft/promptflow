@@ -10,7 +10,7 @@ Prompt flow provides several trace toolkits in `promptflow-devkit`. This page wi
 
 ### Delete
 
-Prompt flow provides capability to delete traces in local storage, user can delete traces by collection, time range or prompt flow run with both CLI and SDK:
+Prompt flow provides capability to delete traces in local storage, user can delete traces by collection (a bucket of traces, can be specified with `start_trace`), time range or prompt flow run with both CLI and SDK:
 
 ::::{tab-set}
 :::{tab-item} CLI
