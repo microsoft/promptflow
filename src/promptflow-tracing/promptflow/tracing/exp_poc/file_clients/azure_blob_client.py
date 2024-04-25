@@ -7,8 +7,6 @@ from ..utils.path_utils import PathUtils
 
 class AzureBlobClient(FileClient):
     def __init__(self, url):
-        
-        
         self.__blob_info = PathUtils.parse_blob_url(url)
         self.__client = BlobServiceClient(
             account_url=self.__blob_info.account_url,
