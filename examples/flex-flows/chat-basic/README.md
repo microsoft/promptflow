@@ -122,4 +122,4 @@ az configure --defaults group=<your_resource_group_name> workspace=<your_workspa
 # run with environment variable reference connection in azureml workspace
 pfazure run create --flow . --init init.json --data ./data.jsonl --column-mapping question='${data.question}' --stream
 # run using yaml file
-pfazure run create --file run.yml --stream
+pfazure run create --file run.yml --init init.json --stream
