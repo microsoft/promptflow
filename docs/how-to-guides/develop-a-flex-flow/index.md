@@ -1,4 +1,4 @@
-# Develop a flex flow
+# Develop a flow
 
 :::{admonition} Experimental feature
 This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
@@ -6,7 +6,7 @@ This is an experimental feature, and may change at any time. Learn [more](../faq
 
 You can create LLM apps using a Python function or class as the entry point, which encapsulating your app logic. You can directly test or run these entries with pure code experience. 
 
-In PromptFlow, these functions or classes are referred to as `flex flow`. 
+In PromptFlow, these functions or classes are referred to as `flow` or `flex flow`. 
 
 Alternatively, you can define a `flow.flex.yaml` that points to these entries (`entry:function_name` or `entry:ClassName`). This enables testing, running, or viewing traces via the [Promptflow VS Code Extension](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow).
 
