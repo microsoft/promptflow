@@ -555,8 +555,8 @@ def process_otlp_trace_request(
     trace_request: ExportTraceServiceRequest,
     get_created_by_info_with_cache: typing.Callable,
     logger: logging.Logger,
+    get_credential: typing.Callable,
     cloud_trace_only: bool = False,
-    get_credential: typing.Optional[typing.Callable] = None,
 ):
     """Process ExportTraceServiceRequest and write data to local/remote storage.
 
@@ -568,10 +568,10 @@ def process_otlp_trace_request(
     :type get_created_by_info_with_cache: Callable
     :param logger: The logger object used for logging.
     :type logger: logging.Logger
+    :param get_credential: A function that gets credential for Cosmos DB operation.
+    :type get_credential: Callable
     :param cloud_trace_only: If True, only write trace to cosmosdb and skip local trace. Default is False.
     :type cloud_trace_only: bool
-    :param get_credential: A function that gets credential for Cosmos DB operation. Default is None.
-    :type get_credential: Optional[Callable]
     """
     from promptflow._sdk.entities._trace import Span
 
@@ -618,7 +618,7 @@ def _try_write_trace_to_cosmosdb(
     all_spans: typing.List,
     get_created_by_info_with_cache: typing.Callable,
     logger: logging.Logger,
-    get_credential: typing.Optional[typing.Callable] = None,
+    get_credential: typing.Callable,
     is_cloud_trace: bool = False,
 ):
     if not all_spans:
@@ -636,15 +636,6 @@ def _try_write_trace_to_cosmosdb(
 
         logger.info(f"Start writing trace to cosmosdb, total spans count: {len(all_spans)}.")
         start_time = datetime.now()
-
-        # use Azure CLI credential init as default get credential function
-        # outside this function, or say before this line, we might be in an environment with only promptflow-devkit
-        # we cannot import `AzureCliCredential` from `azure-identity`, so it might be None
-        # for other usages like runtime, or PRS, they should pass the function to get credential
-        if get_credential is None:
-            from azure.identity import AzureCliCredential
-
-            get_credential = AzureCliCredential
 
         from promptflow.azure._storage.cosmosdb.client import get_client
         from promptflow.azure._storage.cosmosdb.collection import CollectionCosmosDB
