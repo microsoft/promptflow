@@ -37,12 +37,8 @@ Click a record, the trace details will be visualized as tree view.
 
 ### Evaluate against batch data
 
-Keep using **[chat_with_pdf](https://github.com/microsoft/promptflow/tree/main/examples/flows/chat/chat-with-pdf)** as example, to trigger a batch run, you can use below commands:
+Keep using **[chat_with_pdf](https://github.com/microsoft/promptflow/tree/main/examples/flows/chat/chat-with-pdf)** as example, to trigger a batch run, you can use below command:
 
-```shell
-pf run create -f batch_run.yaml
-```
-Or
 ```shell
 pf run create --flow . --data "./data/bert-paper-qna.jsonl" --column-mapping chat_history='${data.chat_history}' pdf_url='${data.pdf_url}' question='${data.question}'
 ```
