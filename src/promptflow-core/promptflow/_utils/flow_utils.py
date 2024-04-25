@@ -16,8 +16,10 @@ from promptflow._constants import (
     FLOW_DAG_YAML,
     FLOW_FILE_SUFFIX,
     FLOW_FLEX_YAML,
+    LANGUAGE_KEY,
     PROMPT_FLOW_DIR_NAME,
     PROMPTY_EXTENSION,
+    FlowLanguage,
 )
 from promptflow._core._errors import MetaFileNotFound, MetaFileReadError
 from promptflow._utils.logger_utils import LoggerFactory
@@ -183,6 +185,25 @@ def is_flex_flow(
             return flow_file == FLOW_FLEX_YAML
 
     return isinstance(yaml_dict, dict) and "entry" in yaml_dict
+
+
+def resolve_flow_language(
+    *,
+    flow_path: Union[str, Path, PathLike, None] = None,
+    yaml_dict: Optional[dict] = None,
+    working_dir: Union[str, Path, PathLike, None] = None,
+) -> str:
+    """Get language of a flow. Will return 'python' for Prompty."""
+    if flow_path is None and yaml_dict is None:
+        raise UserErrorException("Either file_path or yaml_dict should be provided.")
+    if flow_path is not None and yaml_dict is not None:
+        raise UserErrorException("Only one of file_path and yaml_dict should be provided.")
+    if flow_path is not None:
+        flow_path, flow_file = resolve_flow_path(flow_path, base_path=working_dir, check_flow_exist=False)
+        file_path = flow_path / flow_file
+        if file_path.is_file() and file_path.suffix.lower() in (".yaml", ".yml"):
+            yaml_dict = load_yaml(file_path)
+    return yaml_dict.get(LANGUAGE_KEY, FlowLanguage.Python)
 
 
 def is_prompty_flow(file_path: Union[str, Path], raise_error: bool = False):
