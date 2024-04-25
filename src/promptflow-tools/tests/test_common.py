@@ -6,7 +6,7 @@ import pytest
 from promptflow.tools.common import ChatAPIInvalidFunctions, validate_functions, process_function_call, \
     parse_chat, find_referenced_image_set, preprocess_template_string, convert_to_chat_list, ChatInputList, \
     ParseConnectionError, _parse_resource_id, list_deployment_connections, normalize_connection_config, \
-    validate_tools, process_tool_choice, init_azure_openai_client, \
+    validate_tools, process_tool_choice, init_azure_openai_client, try_parse_tool_calls, \
     Escaper, PromptResult, render_jinja_template, build_messages
 from promptflow.tools.exception import (
     ListDeploymentsError,
@@ -234,6 +234,23 @@ class TestCommon:
     def test_try_parse_chat_with_tools(self, example_prompt_template_with_tool, parsed_chat_with_tools):
         actual_result = parse_chat(example_prompt_template_with_tool)
         assert actual_result == parsed_chat_with_tools
+
+    @pytest.mark.parametrize(
+        "role_prompt, expected_result",
+        [("## tool_calls:\n[]", []),
+         ("## tool_calls:\r\n[]", []),
+         ("## tool_calls: \n[]", []),
+         ("## tool_calls  :\r\n[]", []),
+         ("tool_calls:\r\n[]", []),
+         ("some text", None),
+         ("tool_calls:\r\n[", None),
+         ("tool_calls:\r\n[{'id': 'tool_call_id', 'type': 'function', 'function': {'name': 'func1', 'arguments': ''}}]",
+          [{'id': 'tool_call_id', 'type': 'function', 'function': {'name': 'func1', 'arguments': ''}}]),
+         ("tool_calls:\n[{'id': 'tool_call_id', 'type': 'function', 'function': {'name': 'func1', 'arguments': ''}}]",
+          [{'id': 'tool_call_id', 'type': 'function', 'function': {'name': 'func1', 'arguments': ''}}])])
+    def test_try_parse_tool_calls(self, role_prompt, expected_result):
+        actual = try_parse_tool_calls(role_prompt)
+        assert actual == expected_result
 
     @pytest.mark.parametrize(
         "kwargs, expected_result",
