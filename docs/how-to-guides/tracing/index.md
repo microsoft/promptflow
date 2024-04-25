@@ -4,7 +4,7 @@
 This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
 :::
 
-Prompt flow provides the trace feature to enable user to trace LLM call or function, and LLM frameworks like `LangChain` and `AutoGen`, following OpenTelemetry specification.
+Prompt flow provides the trace feature to enable user to trace LLM call or function, and LLM frameworks like `LangChain` and `AutoGen`, following [OpenTelemetry specification](https://opentelemetry.io/docs/specs/otel/).
 
 ## Installing the package
 
