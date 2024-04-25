@@ -149,6 +149,7 @@ class TestEvaluate:
         assert new_data_df["answer"][0] == "I'm fine"
 
     def test_evaluate_invalid_evaluator_config(self, mock_model_config, evaluate_test_data_jsonl_file):
+        # Invalid source reference
         with pytest.raises(ValueError) as exc_info:
             evaluate(
                 data=evaluate_test_data_jsonl_file,
