@@ -160,6 +160,8 @@ class CommandNode(YAMLTranslatableMixin):
         environment_variables=None,
         code=None,
         display_name=None,
+        resources=None,
+        identity=None,
         **kwargs,
     ):
         self.type = ExperimentNodeType.COMMAND
@@ -170,6 +172,8 @@ class CommandNode(YAMLTranslatableMixin):
         self.inputs = inputs or {}
         self.outputs = outputs or {}
         self.runtime = runtime
+        self.resources = resources
+        self.identity = identity
         self.environment_variables = environment_variables or {}
 
     @classmethod

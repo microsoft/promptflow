@@ -30,6 +30,10 @@ window.onload = () => {
     // (B) CLICK TO SHOW IMAGE IN LIGHTBOX
     // * SIMPLY CLONE INTO LIGHTBOX & SHOW
     if (all.length>0) { for (let i of all) {
+        // skip if class contains avatar or img_ev3q(Open on github button)
+         if (i.classList.contains("avatar") || i.classList.contains("img_ev3q")) {
+              continue;
+         }
       i.onclick = () => {
         let clone = i.cloneNode();
         clone.className = "";
