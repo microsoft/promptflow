@@ -41,12 +41,26 @@ def trace_collector(
     if "application/x-protobuf" in content_type:
         trace_request = ExportTraceServiceRequest()
         trace_request.ParseFromString(request.data)
-        process_otlp_trace_request(
-            trace_request=trace_request,
-            get_created_by_info_with_cache=get_created_by_info_with_cache,
-            logger=logger,
-            cloud_trace_only=cloud_trace_only,
-        )
+        # this function will be called in some old runtime versions
+        # where runtime will pass either credential object, or the function to get credential
+        # as we need to be compatible with this, need to handle both cases
+        if credential is not None:
+            # local prompt flow service will not pass credential, so this is runtime scenario
+            get_credential = credential if callable(credential) else lambda: credential  # noqa: F841
+            process_otlp_trace_request(
+                trace_request=trace_request,
+                get_created_by_info_with_cache=get_created_by_info_with_cache,
+                logger=logger,
+                cloud_trace_only=cloud_trace_only,
+                get_credential=get_credential,
+            )
+        else:
+            process_otlp_trace_request(
+                trace_request=trace_request,
+                get_created_by_info_with_cache=get_created_by_info_with_cache,
+                logger=logger,
+                cloud_trace_only=cloud_trace_only,
+            )
         return "Traces received", 200
 
     # JSON protobuf encoding
