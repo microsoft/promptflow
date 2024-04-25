@@ -29,6 +29,7 @@ When combine trace and flow, trace UI provides a more comprehensive view of the 
 If your application is created with DAG flow, all flow test and batch run will be automatically enable trace function. Take the **[chat_with_pdf](https://github.com/microsoft/promptflow/tree/main/examples/flows/chat/chat-with-pdf/)** as example. 
 
 Run `pf flow test --flow .`, each flow test will generate single line in the trace UI:
+
 ![flow-trace-record](../../media/trace/flow-trace-records.png)
 
 Click a record, the trace details will be visualized as tree view.
@@ -37,11 +38,12 @@ Click a record, the trace details will be visualized as tree view.
 
 ### Evaluate against batch data
 
-Keep using **[chat_with_pdf](https://github.com/microsoft/promptflow/tree/main/examples/flows/chat/chat-with-pdf)** as example, to trigger a batch run, you can use below command:
+Keep using **[chat_with_pdf](https://github.com/microsoft/promptflow/tree/main/examples/flows/chat/chat-with-pdf)** as example, to trigger a batch run, you can use below command under the folder (you can learn more from [Run and evaluate a flow](https://microsoft.github.io/promptflow/how-to-guides/run-and-evaluate-a-flow/index.html) to understand what does below command do):
 
 ```shell
 pf run create --flow . --data "./data/bert-paper-qna.jsonl" --column-mapping chat_history='${data.chat_history}' pdf_url='${data.pdf_url}' question='${data.question}'
 ```
+
 Then you will get a run related trace URL, e.g. `http://localhost:<port>/v1.0/ui/traces?run=chat_with_pdf_20240226_181222_219335`
 
 ![batch_run_record](../../media/trace/batch_run_record.png)
