@@ -16,7 +16,6 @@ from promptflow.contracts.types import PromptTemplate
 from promptflow.exceptions import SystemErrorException, UserErrorException
 from promptflow.tools.exception import (
     ToolValidationError,
-    ChatAPIAssistantRoleInvalidFormat,
     ChatAPIFunctionRoleInvalidFormat,
     ChatAPIToolRoleInvalidFormat,
     ChatAPIInvalidFunctions,
@@ -245,56 +244,16 @@ def try_parse_tool_calls(role_prompt):
     pattern = r"\n*#{0,2}\s*tool_calls:\n*\s*(\[.*?\])"
     match = re.search(pattern, role_prompt, re.DOTALL)
     if match:
-        return match.group(1)
+        try:
+            parsed_array = eval(match.group(1))
+            return parsed_array
+        except Exception:
+            None
     return None
 
 
 def is_tool_chunk(last_message):
     return last_message and "role" in last_message and last_message["role"] == "tool" and "content" not in last_message
-
-
-def is_assistant_tool_calls_chunk(last_message, chunk):
-    # An valid tool calls chunk should be like:
-    # ## tool_calls:
-    # [{ id: tool_call_id, type: tool_type, function: {name: function_name, arguments: function_args }]
-    is_candidate = (
-        last_message
-        and "role" in last_message
-        and last_message["role"] == "assistant"
-        and "tool_calls" in chunk
-    )
-    # Check if the chunk is not an llm output like this:
-    # {'content': 'Sorry, ...', 'role': 'assistant', 'function_call': None, 'tool_calls': None}
-    if is_candidate:
-        try:
-            # If the chunk is a serialized dict, it should be an llm output.
-            # Then possibly it is not an assistant tool calls chunk.
-            json.loads(chunk)
-            return False
-        except Exception:
-            return True
-    else:
-        return False
-
-
-def parse_tool_calls_for_assistant(last_message, chunk):
-    parsed_result = try_parse_tool_calls(chunk)
-    error_msg = (
-        "Failed to parse assistant role prompt with tool_calls. Please make sure the prompt follows the format:"
-        " 'tool_calls:\\n"
-        "[{ id: tool_call_id, type: tool_type, function: {name: function_name, arguments: function_args }]'"
-        "See more details in https://platform.openai.com/docs/api-reference/chat/create#chat-create-messages"
-    )
-
-    if parsed_result is None:
-        raise ChatAPIAssistantRoleInvalidFormat(message=error_msg)
-    else:
-        parsed_array = None
-        try:
-            parsed_array = eval(parsed_result)
-            last_message["tool_calls"] = parsed_array
-        except Exception:
-            raise ChatAPIAssistantRoleInvalidFormat(message=error_msg)
 
 
 def parse_tools(last_message, chunk, hash2images, image_detail):
@@ -338,9 +297,11 @@ def parse_chat(
             parse_tools(last_message, chunk, hash2images, image_detail)
             continue
 
-        if is_assistant_tool_calls_chunk(last_message, chunk):
-            parse_tool_calls_for_assistant(last_message, chunk)
-            continue
+        if last_message and "role" in last_message and last_message["role"] == "assistant":
+            parsed_result = try_parse_tool_calls(chunk)
+            if parsed_result is not None:
+                last_message["tool_calls"] = parsed_result
+                continue
 
         if (
             last_message
