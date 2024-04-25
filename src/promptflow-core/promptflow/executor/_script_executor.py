@@ -227,7 +227,7 @@ class ScriptExecutor(FlowExecutor):
             return await self._exec_aggregation_async(aggregation_inputs)
 
     async def _exec_aggregation_async(self, inputs):
-        output = None
+        output, metrics = None, {}
         try:
             output = await self._aggr_func_async(**{self._aggr_input_name: inputs})
             if isinstance(output, dict):
