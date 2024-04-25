@@ -69,6 +69,7 @@ linkcheck_ignore = [
     "https://ms.portal.azure.com/#view/Microsoft_Azure_Marketplace/MarketplaceOffersBlade/searchQuery/machine%20learning",  # noqa: E501,
     # TODO(wanhan): update this link to sample
     "https://microsoft.github.io/promptflow/tutorials/stream-flex-flow.html",
+    "https://github.com/microsoft/promptflow/tree/main/examples/flex-flows/basic-chat",
 ]
 
 linkcheck_exclude_documents = [
