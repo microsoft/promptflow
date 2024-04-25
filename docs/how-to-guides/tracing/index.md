@@ -4,6 +4,8 @@
 This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
 :::
 
+Traces records specific events or the state of an application during execution. It can include data about function calls, variable values, system events and more. Traces help break down an application's components into discrete inputs and outputs, which is crucial for debugging and understanding an application. You can learn more from [here](https://opentelemetry.io/docs/concepts/signals/traces/) on traces.
+
 Prompt flow provides the trace feature to enable user to trace LLM call or function, and LLM frameworks like `LangChain` and `AutoGen`, following [OpenTelemetry specification](https://opentelemetry.io/docs/specs/otel/).
 
 ## Installing the package
