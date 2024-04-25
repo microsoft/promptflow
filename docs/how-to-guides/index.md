@@ -6,7 +6,11 @@ Simple and short articles grouped by topics, each introduces a core feature of p
 :caption: Tracing
 :maxdepth: 1
 tracing/index
-tracing/visualize-and-manage
+tracing/manage
+tracing/trace-ui
+```
+
+```{toctree}
 ```
 
 ```{toctree}

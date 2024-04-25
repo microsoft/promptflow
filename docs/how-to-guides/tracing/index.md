@@ -94,5 +94,6 @@ Prompt flow tracing works not only for general LLM application, but also for mor
 ```{toctree}
 :maxdepth: 1
 
-visualize-and-manage
+manage
+trace-ui
 ```
