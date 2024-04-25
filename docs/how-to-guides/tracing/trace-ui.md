@@ -46,7 +46,7 @@ Or
 ```shell
 pf run create --flow . --data "./data/bert-paper-qna.jsonl" --column-mapping chat_history='${data.chat_history}' pdf_url='${data.pdf_url}' question='${data.question}'
 ```
-Then you will get a run related trace URL, e.g. http://localhost:<port>/v1.0/ui/traces?run=chat_with_pdf_20240226_181222_219335
+Then you will get a run related trace URL, e.g. `http://localhost:<port>/v1.0/ui/traces?run=chat_with_pdf_20240226_181222_219335`
 
 ![batch_run_record](../../media/trace/batch_run_record.png)
 
