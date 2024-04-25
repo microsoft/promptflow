@@ -25,7 +25,7 @@ Create OpenAI resources, Azure OpenAI resources or MaaS deployment with the LLM 
 
     Create Azure OpenAI resources with [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal)
 
-    Used in Azure OpenAI Connection
+    Used in AzureOpenAI Connection
 
 - **Maas deployment**
 
