@@ -19,7 +19,6 @@ from promptflow.core._errors import (
 )
 from promptflow.core._model_configuration import AzureOpenAIModelConfiguration
 from promptflow.core._prompty_utils import convert_model_configuration_to_connection
-from promptflow.recording.record_mode import is_live, is_record, is_replay
 
 TEST_ROOT = PROMPTFLOW_ROOT / "tests"
 DATA_DIR = TEST_ROOT / "test_configs/datas"
@@ -242,11 +241,11 @@ class TestPrompty:
         assert isinstance(result, ChatCompletion)
 
     def test_prompty_with_stream(self, pf: PFClient):
-        if is_live():
+        if pytest.is_live:
             # When running multiple test cases, the type is generator type.
             # When running alone this case, the type is Stream.
             stream_type = (types.GeneratorType, Stream)
-        elif is_record() or is_replay():
+        elif pytest.is_record or pytest.is_replay:
             stream_type = types.GeneratorType
         # Test text format with stream=true
         prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", model={"parameters": {"stream": True}})
