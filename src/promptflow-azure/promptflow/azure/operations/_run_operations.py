@@ -872,6 +872,8 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         rest_obj = run._to_rest_object()
         rest_obj.runtime_name = runtime
         rest_obj.session_id = session_id
+        if not rest_obj.environment_variables:
+            rest_obj.environment_variables = {}
         rest_obj.environment_variables.update(environment_variables)
 
         # TODO(2884482): support force reset & force install
