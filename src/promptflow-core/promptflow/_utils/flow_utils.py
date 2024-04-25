@@ -6,6 +6,7 @@ import itertools
 import json
 import os
 import re
+from collections import OrderedDict
 from os import PathLike
 from pathlib import Path
 from typing import Optional, Tuple, Union
@@ -156,6 +157,8 @@ def dump_flow_dag(flow_dag: dict, flow_path: Path):
     """Dump flow dag to given flow path."""
     flow_dir, flow_filename = resolve_flow_path(flow_path, check_flow_exist=False)
     flow_path = flow_dir / flow_filename
+    if isinstance(flow_dag, OrderedDict):
+        flow_dag = dict(flow_dag)
     with open(flow_path, "w", encoding=DEFAULT_ENCODING) as f:
         dump_yaml(flow_dag, f)
     return flow_path
