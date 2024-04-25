@@ -840,9 +840,21 @@ class FlowExecutor:
     @contextlib.contextmanager
     def _start_flow_span(self, inputs: Mapping[str, Any]):
         otel_tracer = otel_trace.get_tracer("promptflow")
-        with otel_tracer.start_as_current_span(self._flow.name) as span:
+        span_name = self._flow.name
+        with otel_tracer.start_as_current_span(span_name) as span:
             # Store otel trace id in context for correlation
             OperationContext.get_instance()["otel_trace_id"] = f"0x{format_trace_id(span.get_span_context().trace_id)}"
+
+            root_span_name_key = "root_span_name"
+            # We will create placeholder for root span when the process is running.
+            # It's very necessary to show root span name in the running placeholder.
+            # So, we need to add root span name to the attributes of all child spans.
+            attributes = OperationContext.get_instance()._get_otel_attributes()
+            exist_root_span_name = root_span_name_key in attributes
+            # For scenario like chat group, the root span name is already set, we don't need to set it again.
+            if not exist_root_span_name:
+                OperationContext.get_instance()._add_otel_attributes(root_span_name_key, span_name)
+
             # initialize span
             span.set_attributes(
                 {
@@ -853,7 +865,12 @@ class FlowExecutor:
             enrich_span_with_context(span)
             # enrich span with input
             enrich_span_with_input(span, inputs)
-            yield span
+            try:
+                yield span
+            finally:
+                # Remove root span name from attributes to make sure the next execution could set it correctly.
+                if not exist_root_span_name:
+                    OperationContext.get_instance()._remove_otel_attributes(root_span_name_key)
 
     async def _exec_inner_with_trace_async(
         self,

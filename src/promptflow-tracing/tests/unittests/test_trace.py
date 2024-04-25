@@ -12,6 +12,7 @@ from promptflow.tracing._experimental import enrich_prompt_template
 from promptflow.tracing._operation_context import OperationContext
 from promptflow.tracing._trace import (
     TokenCollector,
+    _process_root_span_name,
     _record_keyboard_interrupt_to_span,
     enrich_span_with_context,
     enrich_span_with_embedding,
@@ -326,3 +327,16 @@ def test_record_keyboard_interrupt_to_span():
     assert mock_span.status == StatusCode.ERROR
     assert "Execution cancelled" in mock_span.description
     assert isinstance(mock_span.exception, KeyboardInterrupt)
+
+
+@pytest.mark.unitests
+def test_process_root_span_name():
+    root_span_name_key = "root_span_name"
+    test_root_span_name = "test_root_span_name"
+    try:
+        with _process_root_span_name(test_root_span_name):
+            assert OperationContext.get_instance()._get_otel_attributes()[root_span_name_key] == test_root_span_name
+            raise Exception()
+    except Exception:
+        pass
+    assert root_span_name_key not in OperationContext.get_instance()._get_otel_attributes()

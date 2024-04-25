@@ -39,6 +39,25 @@ def _record_keyboard_interrupt_to_span(span: Span):
         raise
 
 
+@contextlib.contextmanager
+def _process_root_span_name(span_name: str):
+    # We will create placeholder for root span when the process is running.
+    # It's very necessary to show root span name in the running placeholder.
+    # So, we need to add root span name to the attributes of all child spans.
+    root_span_name_key = "root_span_name"
+    attributes = OperationContext.get_instance()._get_otel_attributes()
+    exist_root_span_name = root_span_name_key in attributes
+    if not exist_root_span_name:
+        OperationContext.get_instance()._add_otel_attributes(root_span_name_key, span_name)
+    try:
+        yield
+    finally:
+        # It's critical to remove the root span name from the attributes after the process is done.
+        # If not, the root span name will be added to the attributes of the next process.
+        if not exist_root_span_name:
+            OperationContext.get_instance()._remove_otel_attributes(root_span_name_key)
+
+
 class TokenCollector:
     _lock = Lock()
 
@@ -184,10 +203,10 @@ def traced_generator(original_span: ReadableSpan, inputs, generator):
     # If start_trace is not called, the name of the original_span will be empty.
     # need to get everytime to ensure tracer is latest
     otel_tracer = otel_trace.get_tracer("promptflow")
-    with otel_tracer.start_as_current_span(
-        f"Iterated({original_span.name})",
-        links=[link],
-    ) as span, _record_keyboard_interrupt_to_span(span):
+    span_name = f"Iterated({original_span.name})"
+    with otel_tracer.start_as_current_span(span_name, links=[link],) as span, _process_root_span_name(
+        span_name
+    ), _record_keyboard_interrupt_to_span(span):
         enrich_span_with_original_attributes(span, original_span.attributes)
         # Enrich the new span with input before generator iteration to prevent loss of input information.
         # The input is as an event within this span.
@@ -208,10 +227,10 @@ async def traced_async_generator(original_span: ReadableSpan, inputs, generator)
     # If start_trace is not called, the name of the original_span will be empty.
     # need to get everytime to ensure tracer is latest
     otel_tracer = otel_trace.get_tracer("promptflow")
-    with otel_tracer.start_as_current_span(
-        f"Iterated({original_span.name})",
-        links=[link],
-    ) as span, _record_keyboard_interrupt_to_span(span):
+    span_name = f"Iterated({original_span.name})"
+    with otel_tracer.start_as_current_span(span_name, links=[link],) as span, _process_root_span_name(
+        span_name
+    ), _record_keyboard_interrupt_to_span(span):
         enrich_span_with_original_attributes(span, original_span.attributes)
         # Enrich the new span with input before generator iteration to prevent loss of input information.
         # The input is as an event within this span.
@@ -388,7 +407,9 @@ def _traced_async(
         span_name = get_node_name_from_context(used_for_span_name=True) or trace.name
         # need to get everytime to ensure tracer is latest
         otel_tracer = otel_trace.get_tracer("promptflow")
-        with otel_tracer.start_as_current_span(span_name) as span, _record_keyboard_interrupt_to_span(span):
+        with otel_tracer.start_as_current_span(span_name) as span, _process_root_span_name(
+            span_name
+        ), _record_keyboard_interrupt_to_span(span):
             # Store otel trace id in context for correlation
             OperationContext.get_instance()["otel_trace_id"] = f"0x{format_trace_id(span.get_span_context().trace_id)}"
             enrich_span_with_trace(span, trace)
@@ -454,7 +475,9 @@ def _traced_sync(
         span_name = get_node_name_from_context(used_for_span_name=True) or trace.name
         # need to get everytime to ensure tracer is latest
         otel_tracer = otel_trace.get_tracer("promptflow")
-        with otel_tracer.start_as_current_span(span_name) as span, _record_keyboard_interrupt_to_span(span):
+        with otel_tracer.start_as_current_span(span_name) as span, _process_root_span_name(
+            span_name
+        ), _record_keyboard_interrupt_to_span(span):
             # Store otel trace id in context for correlation
             OperationContext.get_instance()["otel_trace_id"] = f"0x{format_trace_id(span.get_span_context().trace_id)}"
             enrich_span_with_trace(span, trace)

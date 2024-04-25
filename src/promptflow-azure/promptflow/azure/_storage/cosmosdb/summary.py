@@ -99,17 +99,18 @@ class Summary:
         trace_id = self.span.trace_id
         session_id = self.session_id
 
+        attributes: dict = self.span.attributes
         item = SummaryLine(
             id=trace_id,
             partition_key=self.collection_id,
             session_id=session_id,
             trace_id=trace_id,
+            name=attributes.get(SpanAttributeFieldName.ROOT_SPAN_NAME, None),
             status=RUNNING_LINE_RUN_STATUS,
             collection_id=self.collection_id,
             created_by=self.created_by,
             start_time=self.span.start_time.isoformat(),
         )
-        attributes: dict = self.span.attributes
         if SpanAttributeFieldName.LINE_RUN_ID in attributes:
             item.line_run_id = attributes[SpanAttributeFieldName.LINE_RUN_ID]
         elif SpanAttributeFieldName.BATCH_RUN_ID in attributes and SpanAttributeFieldName.LINE_NUMBER in attributes:

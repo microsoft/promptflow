@@ -154,6 +154,7 @@ class SpanAttributeFieldName:
     FUNCTION = "function"
     INPUTS = "inputs"
     OUTPUT = "output"
+    ROOT_SPAN_NAME = "root_span_name"  # Record root span name in all child spans to show correct name for running item
     # token metrics
     COMPLETION_TOKEN_COUNT = "llm.usage.completion_tokens"
     PROMPT_TOKEN_COUNT = "llm.usage.prompt_tokens"
