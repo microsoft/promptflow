@@ -106,7 +106,7 @@ class DictConnectionProvider(ConnectionProvider):
             connection = self._connections.get(name)
         if not connection:
             raise ConnectionNotFound(
-                f"Connection {name!r} not found in dict connection provider."
+                f"Connection {name!r} not found in dict connection provider. "
                 f"Available keys are {list(self._connections.keys())}."
             )
         return connection

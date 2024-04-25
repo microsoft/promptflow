@@ -191,7 +191,10 @@ class TestExecutor:
                 raise_ex=True,
             )
         assert isinstance(e.value.inner_exception, GetConnectionError)
-        assert "Connection 'dummy_connection' of LLM node 'classify_with_llm' is not found." in str(e.value)
+        assert (
+            "Get connection 'dummy_connection' for node 'classify_with_llm' "
+            "error: Connection 'dummy_connection' not found" in str(e.value)
+        )
 
     @pytest.mark.parametrize(
         "flow_folder",

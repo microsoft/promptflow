@@ -55,7 +55,20 @@ class InvalidRequest(ValidationException):
 
 
 class GetConnectionError(InvalidRequest):
-    pass
+    def __init__(
+        self,
+        connection: str,
+        node_name: str,
+        error: Exception,
+        **kwargs,
+    ):
+        super().__init__(
+            message_format="Get connection '{connection}' for node '{node_name}' error: {error}",
+            connection=connection,
+            node_name=node_name,
+            error=str(error),
+            target=ErrorTarget.EXECUTOR,
+        )
 
 
 class InvalidBulkTestRequest(ValidationException):

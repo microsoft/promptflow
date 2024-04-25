@@ -87,7 +87,7 @@ class ToolResolver:
             connection_value = self._connection_provider.get(v.value)
         except Exception as e:  # Cache all exception as different provider raises different exceptions
             # Raise new error with node details
-            raise GetConnectionError(f"Connection {v.value} for node {node_name!r} input {k!r} error: {str(e)}.") from e
+            raise GetConnectionError(v.value, node_name, e) from e
         # Check if type matched
         if not any(type(connection_value).__name__ == typ for typ in conn_types):
             msg = (
@@ -114,7 +114,7 @@ class ToolResolver:
             connection_value = self._connection_provider.get(v.value)
         except Exception as e:  # Cache all exception as different provider raises different exceptions
             # Raise new error with node details
-            raise GetConnectionError(f"Connection {v.value} for node {node_name!r} input {k!r} error: {str(e)}.") from e
+            raise GetConnectionError(v.value, node_name, e) from e
 
         custom_defined_connection_class_name = conn_types[0]
         source_type = getattr(source, "type", None)
@@ -486,7 +486,7 @@ class ToolResolver:
             connection = self._connection_provider.get(node.connection)
         except Exception as e:  # Cache all exception as different provider raises different exceptions
             # Raise new error with node details
-            raise GetConnectionError(f"Connection {node.connection} for node {node.name!r} error: {str(e)}.") from e
+            raise GetConnectionError(node.connection, node.name, e) from e
         return connection
 
     @staticmethod
