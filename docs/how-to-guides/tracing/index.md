@@ -75,7 +75,7 @@ def code_gen(client: AzureOpenAI, question: str) -> str:
 python math_to_code.py
 ```
 
-## Trace with prompt flow
+## Trace LLM and frameworks
 
 Prompt flow tracing works not only for general LLM application, but also for more frameworks like `autogen` and `langchain`:
 
