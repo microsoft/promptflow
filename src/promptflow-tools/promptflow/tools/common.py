@@ -222,7 +222,7 @@ def validate_tools(tools):
 def try_parse_name_and_content(role_prompt):
     # customer can add ## in front of name/content for markdown highlight.
     # and we still support name/content without ## prefix for backward compatibility.
-    pattern = r"\n*#{0,2}\s*name:\n+\s*(\S+)\s*\n*#{0,2}\s*content:\n?(.*)"
+    pattern = r"\n*#{0,2}\s*name\s*:\s*\n+\s*(\S+)\s*\n*#{0,2}\s*content\s*:\s*\n?(.*)"
     match = re.search(pattern, role_prompt, re.DOTALL)
     if match:
         return match.group(1), match.group(2)
@@ -232,7 +232,7 @@ def try_parse_name_and_content(role_prompt):
 def try_parse_tool_call_id_and_content(role_prompt):
     # customer can add ## in front of tool_call_id/content for markdown highlight.
     # and we still support tool_call_id/content without ## prefix for backward compatibility.
-    pattern = r"\n*#{0,2}\s*tool_call_id:\n+\s*(\S+)\s*\n*#{0,2}\s*content:\n?(.*)"
+    pattern = r"\n*#{0,2}\s*tool_call_id\s*:\s*\n+\s*(\S+)\s*\n*#{0,2}\s*content\s*:\s*\n?(.*)"
     match = re.search(pattern, role_prompt, re.DOTALL)
     if match:
         return match.group(1), match.group(2)

@@ -711,7 +711,11 @@ class Run(YAMLTranslatableMixin):
 
         # extract properties that needs to be passed to the request
         total_tokens = self.properties[FlowRunProperties.SYSTEM_METRICS].get("total_tokens", 0)
-        properties = {Local2CloudProperties.TOTAL_TOKENS: total_tokens}
+        properties = {
+            Local2CloudProperties.TOTAL_TOKENS: total_tokens,
+            # add instance_results.jsonl path to run properties, which is required by UI feature.
+            Local2CloudProperties.EVAL_ARTIFACTS: '[{"path": "instance_results.jsonl", "type": "table"}]',
+        }
         for property_key in Local2CloudUserProperties.get_all_values():
             value = self.properties.get(property_key, None)
             if value is not None:
