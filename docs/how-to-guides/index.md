@@ -9,9 +9,6 @@ tracing/index
 ```
 
 ```{toctree}
-```
-
-```{toctree}
 :caption: Prompty
 :maxdepth: 1
 develop-a-prompty/index
