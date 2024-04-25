@@ -215,6 +215,8 @@
     "mpnet",
     "wargs",
     "dcid",
+    "piezo",
+    "Piezo",
     "cmpop"
   ],
   "flagWords": [
