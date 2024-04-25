@@ -108,6 +108,16 @@ class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
         :return: connection object retrieved from the database.
         :rtype: ~promptflow.sdk.entities._connection._Connection
         """
+        return self._get(name, **kwargs)
+
+    def _get(self, name: str, **kwargs) -> _Connection:
+        """Get a connection entity.
+
+        :param name: Name of the connection.
+        :type name: str
+        :return: connection object retrieved from the database.
+        :rtype: ~promptflow.sdk.entities._connection._Connection
+        """
         with_secrets = kwargs.get("with_secrets", False)
         if with_secrets:
             # Do not use pfazure_client here as it requires workspace read permission
