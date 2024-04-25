@@ -414,7 +414,7 @@ jobs:
         pip install numexpr
         python scripts/building/run_coverage_tests.py `
           -p ${{ github.workspace }}/src/promptflow/promptflow `
-          -t ${{ github.workspace }}/src/promptflow/tests/executor/e2etests`
+          -t ${{ github.workspace }}/src/promptflow/tests/executor/e2etests `
           -l eastus `
           -m "all" `
           -o "${{ github.workspace }}/test-results-executor-e2e.xml"
