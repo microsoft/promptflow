@@ -52,6 +52,16 @@ Trace UI supports simple Python expression for search experience, which is demon
 
 ![advanced_search](../../media/trace/advanced-search.gif)
 
-Currently it supports bool operator `and` and `or`, compare operator `==`, `!=`, `>`, `>=`, `<`, `<=`; and the fields that are searchable: `name`, `kind`, `status`, `start_time`, `cumulative_token_count.total`, `cumulative_token_count.prompt` and `cumulative_token_count.completion`. You can find the hints by clicking the button right to the search edit box.
+Currently it supports:
+
+- Operators:
+  - bool: `and` and `or`
+  - compare: `==`, `!=`, `>`, `>=`, `<` and `<=`
+- Searchable fields:
+  - metadata: `name`, `kind` and `status`
+  - time: `start_time`
+  - token count: `cumulative_token_count.total`, `cumulative_token_count.prompt` and `cumulative_token_count.completion`
+  
+You can also find the hints by clicking the button right to the search edit box:
 
 ![search_hint](../../media/trace/trace-ui-search-hint.png)
