@@ -1375,6 +1375,8 @@ class TestFlowRun:
         yaml_dict = load_yaml(local_storage._dag_path)
         assert yaml_dict == expected_snapshot_yaml
 
+        assert not local_storage._dag_path.read_text().startswith("!!omap")
+
         # actual result will be entry2:my_flow2
         details = pf.get_details(run.name)
         # convert DataFrame to dict
