@@ -715,31 +715,37 @@ def _try_write_trace_to_cosmosdb(
         # We assign it to LineSummary and Span and use it as partition key.
         collection_id = collection_db.collection_id
 
+        failed_span_count = 0
         for span in all_spans:
-            span_client = get_client(
-                CosmosDBContainerName.SPAN, subscription_id, resource_group_name, workspace_name, get_credential
-            )
-            result = SpanCosmosDB(span, collection_id, created_by).persist(
-                span_client, blob_container_client, blob_base_uri
-            )
-            # None means the span already exists, then we don't need to persist the summary also.
-            if result is not None:
-                line_summary_client = get_client(
-                    CosmosDBContainerName.LINE_SUMMARY,
-                    subscription_id,
-                    resource_group_name,
-                    workspace_name,
-                    get_credential,
+            try:
+                span_client = get_client(
+                    CosmosDBContainerName.SPAN, subscription_id, resource_group_name, workspace_name, get_credential
                 )
-                Summary(span, collection_id, created_by, logger).persist(line_summary_client)
-        collection_db.update_collection_updated_at_info(collection_client)
+                result = SpanCosmosDB(span, collection_id, created_by).persist(
+                    span_client, blob_container_client, blob_base_uri
+                )
+                # None means the span already exists, then we don't need to persist the summary also.
+                if result is not None:
+                    line_summary_client = get_client(
+                        CosmosDBContainerName.LINE_SUMMARY,
+                        subscription_id,
+                        resource_group_name,
+                        workspace_name,
+                        get_credential,
+                    )
+                    Summary(span, collection_id, created_by, logger).persist(line_summary_client)
+            except Exception as e:
+                failed_span_count += 1
+                stack_trace = traceback.format_exc()
+                logger.error(f"Failed to process span: {span.span_id}, error: {e}, stack trace: {stack_trace}")
+        if failed_span_count < len(all_spans):
+            collection_db.update_collection_updated_at_info(collection_client)
         logger.info(
             (
-                f"Finish writing trace to cosmosdb, total spans count: {len(all_spans)}."
-                f" Duration {datetime.now() - start_time}."
+                f"Finish writing trace to cosmosdb, total spans count: {len(all_spans)}, "
+                f"failed spans count: {failed_span_count}. Duration {datetime.now() - start_time}."
             )
         )
-
     except Exception as e:
         stack_trace = traceback.format_exc()
         logger.error(f"Failed to write trace to cosmosdb: {e}, stack trace is {stack_trace}")
