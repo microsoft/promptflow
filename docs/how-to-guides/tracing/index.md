@@ -79,7 +79,7 @@ python math_to_code.py
 
 Prompt flow tracing works not only for general LLM application, but also for more frameworks like `autogen` and `langchain`:
 
-1. Example: **[Add trace for LLM](https://github.com/microsoft/promptflow/tree/main/examples/tutorials/tracing/llm)**
+1. Example: **[Add trace for LLM](https://microsoft.github.io/promptflow/tutorials/trace-llm.html)**
 
 ![llm-trace-detail](../../media/trace/llm-app-trace-detail.png)
 
