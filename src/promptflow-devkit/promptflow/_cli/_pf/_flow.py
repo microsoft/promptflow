@@ -42,7 +42,7 @@ from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._utils import generate_yaml_entry_without_recover
-from promptflow._sdk._utils.chat_utils import construct_chat_page_url, construct_flow_absolute_path
+from promptflow._sdk._utils.chat_utils import construct_chat_page_url
 from promptflow._sdk._utils.serve_utils import start_flow_service
 from promptflow._utils.flow_utils import is_flex_flow
 from promptflow._utils.logger_utils import get_cli_sdk_logger
@@ -512,22 +512,16 @@ def _test_flow_multi_modal(args, pf_client):
             logger.info("Start streamlit with main script generated at: %s", main_script_path)
             pf_client.flows._chat_with_ui(script=main_script_path, skip_open_browser=args.skip_open_browser)
     else:
-        from promptflow._sdk._load_functions import load_flow
         from promptflow._sdk._tracing import _invoke_pf_svc
 
         pfs_port = _invoke_pf_svc()
         flow = generate_yaml_entry_without_recover(entry=args.flow)
         # flex flow without yaml file doesn't support /eval in chat window
-        enable_internal_features = flow != args.flow or Configuration.get_instance().is_internal_features_enabled()
-
-        # for entry like "package:entry_function", a temp flow.flex.yaml will be generated at flow
-        flow_entity = load_flow(flow)
-        flow_absolute_path = construct_flow_absolute_path(flow)
+        enable_internal_features = Configuration.get_instance().is_internal_features_enabled() or flow != args.flow
         chat_page_url = construct_chat_page_url(
-            flow_absolute_path,
-            flow_dir=flow_entity.code,
-            pfs_port=pfs_port,
-            url_params=list_of_dict_to_dict(args.url_params),
+            flow,
+            pfs_port,
+            list_of_dict_to_dict(args.url_params),
             enable_internal_features=enable_internal_features,
         )
         print(f"You can begin chat flow on {chat_page_url}")

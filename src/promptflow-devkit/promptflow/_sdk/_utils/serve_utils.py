@@ -1,4 +1,3 @@
-import abc
 import contextlib
 import json
 import logging
@@ -8,13 +7,15 @@ import socket
 import subprocess
 import sys
 import tempfile
+import uuid
 import webbrowser
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Generator
 
-from promptflow._constants import FlowLanguage
+from promptflow._constants import PROMPT_FLOW_DIR_NAME, FlowLanguage
 from promptflow._proxy._csharp_inspector_proxy import EXECUTOR_SERVICE_DLL
-from promptflow._utils.flow_utils import resolve_flow_language, resolve_flow_path
+from promptflow._sdk._utils.general_utils import resolve_flow_language
+from promptflow._utils.flow_utils import resolve_flow_path
 
 logger = logging.getLogger(__name__)
 
@@ -65,10 +66,8 @@ def start_flow_service(
     language = resolve_flow_language(flow_path=source)
 
     flow_dir, flow_file_name = resolve_flow_path(source)
-
-    os.environ["PROMPTFLOW_PROJECT_PATH"] = flow_dir.absolute().as_posix()
     if language == FlowLanguage.Python:
-        helper = PythonFlowServiceHelper(
+        serve_python_flow(
             flow_file_name=flow_file_name,
             flow_dir=flow_dir,
             init=init or {},
@@ -80,120 +79,89 @@ def start_flow_service(
             skip_open_browser=skip_open_browser,
         )
     else:
-        helper = CSharpFlowServiceHelper(
+        serve_csharp_flow(
             flow_file_name=flow_file_name,
             flow_dir=flow_dir,
             init=init or {},
             port=port,
         )
-    helper.run()
 
 
-class BaseFlowServiceHelper:
-    def __init__(self):
-        pass
+def serve_python_flow(
+    *,
+    flow_file_name,
+    flow_dir,
+    port,
+    host,
+    static_folder,
+    config,
+    environment_variables,
+    init,
+    skip_open_browser: bool,
+):
+    from promptflow._sdk._configuration import Configuration
+    from promptflow.core._serving.app import create_app
 
-    @abc.abstractmethod
-    def run(self):
-        pass
+    flow_dir = _resolve_python_flow_additional_includes(flow_dir / flow_file_name)
+
+    pf_config = Configuration(overrides=config)
+    logger.info(f"Promptflow config: {pf_config}")
+    connection_provider = pf_config.get_connection_provider()
+    os.environ["PROMPTFLOW_PROJECT_PATH"] = flow_dir.absolute().as_posix()
+    logger.info(f"Change working directory to model dir {flow_dir}")
+    os.chdir(flow_dir)
+    app = create_app(
+        static_folder=Path(static_folder).absolute().as_posix() if static_folder else None,
+        environment_variables=environment_variables,
+        connection_provider=connection_provider,
+        init=init,
+    )
+    if not skip_open_browser:
+        target = f"http://{host}:{port}"
+        logger.info(f"Opening browser {target}...")
+        webbrowser.open(target)
+    # Debug is not supported for now as debug will rerun command, and we changed working directory.
+    app.run(port=port, host=host)
 
 
-class PythonFlowServiceHelper(BaseFlowServiceHelper):
-    def __init__(
-        self,
-        *,
+@contextlib.contextmanager
+def construct_csharp_service_start_up_command(
+    *, port: int, flow_file_name: str, flow_dir: Path, init: Dict[str, Any] = None
+) -> Generator[str, None, None]:
+    cmd = [
+        "dotnet",
+        EXECUTOR_SERVICE_DLL,
+        "--port",
+        str(port),
+        "--yaml_path",
         flow_file_name,
-        flow_dir,
-        port,
-        host,
-        static_folder,
-        config,
-        environment_variables,
-        init,
-        skip_open_browser: bool,
-    ):
-        self._static_folder = static_folder
-        self.flow_file_name = flow_file_name
-        self.flow_dir = flow_dir
-        self.host = host
-        self.port = port
-        self.config = config
-        self.environment_variables = environment_variables
-        self.init = init
-        self.skip_open_browser = skip_open_browser
-        super().__init__()
-
-    @property
-    def static_folder(self):
-        if self._static_folder is None:
-            return None
-        return Path(self._static_folder).absolute().as_posix()
-
-    def run(self):
-        from promptflow._sdk._configuration import Configuration
-        from promptflow.core._serving.app import create_app
-
-        flow_dir = _resolve_python_flow_additional_includes(self.flow_dir / self.flow_file_name)
-
-        pf_config = Configuration(overrides=self.config)
-        logger.info(f"Promptflow config: {pf_config}")
-        connection_provider = pf_config.get_connection_provider()
-        os.environ["PROMPTFLOW_PROJECT_PATH"] = flow_dir.absolute().as_posix()
-        logger.info(f"Change working directory to model dir {flow_dir}")
-        os.chdir(flow_dir)
-        app = create_app(
-            static_folder=self.static_folder,
-            environment_variables=self.environment_variables,
-            connection_provider=connection_provider,
-            init=self.init,
-        )
-        if not self.skip_open_browser:
-            target = f"http://{self.host}:{self.port}"
-            logger.info(f"Opening browser {target}...")
-            webbrowser.open(target)
-        # Debug is not supported for now as debug will rerun command, and we changed working directory.
-        app.run(port=self.port, host=self.host)
-
-
-class CSharpFlowServiceHelper(BaseFlowServiceHelper):
-    def __init__(self, *, flow_file_name, flow_dir, init, port):
-        self.port = port
-        self._init = init
-        self.flow_dir, self.flow_file_name = flow_dir, flow_file_name
-        super().__init__()
-
-    @contextlib.contextmanager
-    def _construct_command(self):
-        cmd = [
-            "dotnet",
-            EXECUTOR_SERVICE_DLL,
-            "--port",
-            str(self.port),
-            "--yaml_path",
-            self.flow_file_name,
-            "--assembly_folder",
-            ".",
-            "--connection_provider_url",
-            "",
-            "--log_path",
-            "",
-            "--serving",
-        ]
-        if self._init:
-            init_json_path = Path(tempfile.mktemp()).with_suffix(".json")
-            with open(init_json_path, "w") as f:
-                json.dump(self._init, f)
-            cmd.extend(["--init", init_json_path.as_posix()])
-            try:
-                yield cmd
-            finally:
-                os.remove(init_json_path)
-        else:
-            yield cmd
-
-    def run(self):
+        "--assembly_folder",
+        ".",
+        "--connection_provider_url",
+        "",
+        "--log_path",
+        "",
+        "--serving",
+    ]
+    if init:
+        init_json_path = flow_dir / PROMPT_FLOW_DIR_NAME / f"init-{uuid.uuid4()}.json"
+        init_json_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(init_json_path, "w") as f:
+            json.dump(init, f)
+        cmd.extend(["--init", init_json_path.as_posix()])
         try:
-            with self._construct_command() as command:
-                subprocess.run(command, cwd=self.flow_dir, stdout=sys.stdout, stderr=sys.stderr)
-        except KeyboardInterrupt:
-            pass
+            yield cmd
+        finally:
+            os.remove(init_json_path)
+    else:
+        yield cmd
+
+
+def serve_csharp_flow(flow_dir: Path, port: int, flow_file_name: str, init: Dict[str, Any] = None):
+    try:
+        with construct_csharp_service_start_up_command(
+            port=port, flow_file_name=flow_file_name, flow_dir=flow_dir, init=init
+        ) as command:
+            subprocess.run(command, cwd=flow_dir, stdout=sys.stdout, stderr=sys.stderr)
+    except KeyboardInterrupt:
+        pass
