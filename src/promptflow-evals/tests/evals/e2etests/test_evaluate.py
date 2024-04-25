@@ -21,12 +21,6 @@ def questions_file():
     return os.path.join(data_path, "questions.jsonl")
 
 
-@pytest.fixture
-def data_file_for_column_mapping():
-    data_path = os.path.join(pathlib.Path(__file__).parent.resolve(), "data")
-    return os.path.join(data_path, "evaluate_test_data_for_column_mapping.jsonl")
-
-
 def answer_evaluator(answer):
     return {"length": len(answer)}
 

@@ -175,7 +175,6 @@ def _process_evaluator_config(evaluator_config: Dict[str, Dict[str, str]]):
     unexpected_references = re.compile(r"\${(?!target\.|data\.).+?}")
 
     if evaluator_config:
-
         for evaluator, mapping_config in evaluator_config.items():
             if isinstance(mapping_config, dict):
                 processed_config[evaluator] = {}
@@ -227,6 +226,7 @@ def evaluate(
 
     input_data_df = _validate_and_load_data(target, data, evaluators, output_path, tracking_uri, evaluation_name)
 
+    # Process evaluator config to replace ${target.} with ${data.}
     evaluator_config = _process_evaluator_config(evaluator_config)
     _validate_columns(input_data_df, evaluators, target, evaluator_config)
 
