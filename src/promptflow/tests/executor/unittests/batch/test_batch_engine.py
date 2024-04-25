@@ -35,7 +35,7 @@ class TestBatchEngine:
                 GetConnectionError(message="Connection 'aoai_conn' not found"),
                 GetConnectionError,
                 ErrorTarget.EXECUTOR,
-                ["UserError", "ValidationError", "InvalidRequest", "ConnectionNotFound"],
+                ["UserError", "ValidationError", "InvalidRequest", "GetConnectionError"],
                 "Connection 'aoai_conn' not found",
             ),
         ],

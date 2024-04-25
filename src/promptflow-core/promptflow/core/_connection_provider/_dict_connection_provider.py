@@ -99,11 +99,14 @@ class DictConnectionProvider(ConnectionProvider):
         return [c for c in self._connections.values()]
 
     def get(self, name: str) -> Any:
-        if isinstance(name, str):
-            return self._connections.get(name)
-        elif ConnectionType.is_connection_value(name):
+        if ConnectionType.is_connection_value(name):
             return name
-        raise ConnectionNotFound(
-            f"Connection {name!r} not found in dict connection provider."
-            f"Available keys are {list(self._connections.keys())}."
-        )
+        connection = None
+        if isinstance(name, str):
+            connection = self._connections.get(name)
+        if not connection:
+            raise ConnectionNotFound(
+                f"Connection {name!r} not found in dict connection provider."
+                f"Available keys are {list(self._connections.keys())}."
+            )
+        return connection

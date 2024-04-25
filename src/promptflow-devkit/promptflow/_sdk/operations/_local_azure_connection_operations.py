@@ -105,7 +105,17 @@ class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
 
         :param name: Name of the connection.
         :type name: str
-        :return: connection object retrieved from the database.
+        :return: connection object retrieved from Azure.
+        :rtype: ~promptflow.sdk.entities._connection._Connection
+        """
+        return self._get(name, **kwargs)
+
+    def _get(self, name: str, **kwargs) -> _Connection:
+        """Get a connection entity.
+
+        :param name: Name of the connection.
+        :type name: str
+        :return: connection object retrieved from Azure.
         :rtype: ~promptflow.sdk.entities._connection._Connection
         """
         with_secrets = kwargs.get("with_secrets", False)
