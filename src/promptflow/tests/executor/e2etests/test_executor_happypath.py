@@ -12,7 +12,7 @@ import pytest
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import UserErrorException
 from promptflow.executor import FlowExecutor
-from promptflow.executor._errors import ConnectionNotFound, InputTypeError, ResolveToolError
+from promptflow.executor._errors import GetConnectionError, InputTypeError, ResolveToolError
 from promptflow.executor.flow_executor import execute_flow
 from promptflow.storage._run_storage import DefaultRunStorage
 
@@ -190,7 +190,7 @@ class TestExecutor:
                 node_override={"classify_with_llm.connection": "dummy_connection"},
                 raise_ex=True,
             )
-        assert isinstance(e.value.inner_exception, ConnectionNotFound)
+        assert isinstance(e.value.inner_exception, GetConnectionError)
         assert "Connection 'dummy_connection' of LLM node 'classify_with_llm' is not found." in str(e.value)
 
     @pytest.mark.parametrize(

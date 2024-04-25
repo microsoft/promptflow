@@ -12,7 +12,7 @@ from promptflow._proxy._python_executor_proxy import PythonExecutorProxy
 from promptflow.batch import BatchEngine
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget
-from promptflow.executor._errors import ConnectionNotFound
+from promptflow.executor._errors import GetConnectionError
 from promptflow.executor._result import AggregationResult
 
 from ...utils import MemoryRunStorage, get_yaml_file, load_jsonl
@@ -32,8 +32,8 @@ class TestBatchEngine:
                 "Unexpected error occurred while executing the batch run. Error: (Exception) test error.",
             ),
             (
-                ConnectionNotFound(message="Connection 'aoai_conn' not found"),
-                ConnectionNotFound,
+                GetConnectionError(message="Connection 'aoai_conn' not found"),
+                GetConnectionError,
                 ErrorTarget.EXECUTOR,
                 ["UserError", "ValidationError", "InvalidRequest", "ConnectionNotFound"],
                 "Connection 'aoai_conn' not found",

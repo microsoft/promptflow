@@ -54,7 +54,7 @@ class InvalidRequest(ValidationException):
         )
 
 
-class ConnectionNotFound(InvalidRequest):
+class GetConnectionError(InvalidRequest):
     pass
 
 

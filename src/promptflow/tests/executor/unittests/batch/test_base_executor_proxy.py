@@ -12,7 +12,7 @@ from promptflow._proxy._errors import ExecutorServiceUnhealthy
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, ValidationException
-from promptflow.executor._errors import ConnectionNotFound
+from promptflow.executor._errors import GetConnectionError
 from promptflow.storage._run_storage import AbstractRunStorage
 
 from ...mock_execution_server import _get_aggr_result_dict, _get_line_result_dict
@@ -89,7 +89,7 @@ class TestAPIBasedExecutorProxy:
         # prepare the error file
         error_file = Path(mkdtemp()) / "error.json"
         error_message = "Connection 'aoai_conn' not found"
-        error_dict = ExceptionPresenter.create(ConnectionNotFound(message=error_message)).to_dict()
+        error_dict = ExceptionPresenter.create(GetConnectionError(message=error_message)).to_dict()
         with open(error_file, "w") as file:
             json.dump(error_dict, file, indent=4)
 
