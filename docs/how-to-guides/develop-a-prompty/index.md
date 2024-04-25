@@ -17,12 +17,14 @@ After this front matter is the prompt template, articulated in the `Jinja` forma
 
 Fields in the front matter:
 
-| Field       | Description                                                                                              |
-|-------------|----------------------------------------------------------------------------------------------------------|
-| name        | The name of the prompt.                                                                                  |
-| description | A description of the prompt.                                                                             |
-| model       | Details the prompty's model configuration, including connection info and parameters for the LLM request. |
-| sample      | Offers a dictionary or JSON file containing sample data for inputs and outputs.                          |
+| Field       | Description                                                                                               |
+|-------------|-----------------------------------------------------------------------------------------------------------|
+| name        | The name of the prompt.                                                                                   |
+| description | A description of the prompt.                                                                              |
+| model       | Details the prompty's model configuration, including connection info and parameters for the LLM request.  |
+| inputs      | The input definition that passed to prompt template.                                                      |
+| outputs     | Specify the fields in prompty result. (Only works when response_format is json_object).                   |
+| sample      | Offers a dictionary or JSON file containing sample data for inputs.                                       |
 
 ```yaml
 ---
@@ -37,11 +39,19 @@ model:
   parameters:
     max_tokens: 128
     temperature: 0.2
+inputs:
+  first_name:
+    type: string
+    default: John
+  last_name:
+    type: string
+    default: Doe
+  question:
+    type: string
 sample:
-  inputs:
-    first_name: John
-    last_name: Doe
-    question: Who is the most famous person in the world?
+  first_name: John
+  last_name: Doe
+  question: Who is the most famous person in the world?
 ---
 system:
 You are an AI assistant who helps people find information.
@@ -81,11 +91,19 @@ model:
   parameters:
     max_tokens: 128
     temperature: 0.2
+inputs:
+  first_name:
+    type: string
+    default: John
+  last_name:
+    type: string
+    default: Doe
+  question:
+    type: string
 sample:
-  inputs:
-    first_name: John
-    last_name: Doe
-    question: Who is the most famous person in the world?
+  first_name: John
+  last_name: Doe
+  question: Who is the most famous person in the world?
 ---
 system:
 You are an AI assistant who helps people find information.
@@ -159,11 +177,19 @@ model:
   parameters:
     max_tokens: 128
     temperature: 0.2
+inputs:
+  first_name:
+    type: string
+    default: John
+  last_name:
+    type: string
+    default: Doe
+  question:
+    type: string
 sample:
-  inputs:
-    first_name: John
-    last_name: Doe
-    question: Who is the most famous person in the world?
+  first_name: John
+  last_name: Doe
+  question: Who is the most famous person in the world?
 ---
 system:
 You are an AI assistant who helps people find information.
@@ -300,12 +326,22 @@ model:
   parameters:
     max_tokens: 128
     temperature: 0.2
+inputs:
+  first_name:
+    type: string
+    default: John
+  last_name:
+    type: string
+    default: Doe
+  question:
+    type: string
+   chat_history:
+    type: list
 sample:
-  inputs:
-    first_name: John
-    last_name: Doe
-    question: Who is the most famous person in the world?
-    chat_history: [ { "role": "user", "content": "what's the capital of France?" }, { "role": "assistant", "content": "Paris" } ]
+  first_name: John
+  last_name: Doe
+  question: Who is the most famous person in the world?
+  chat_history: [ { "role": "user", "content": "what's the capital of France?" }, { "role": "assistant", "content": "Paris" } ]
 ---
 system:
 You are an AI assistant who helps people find information.

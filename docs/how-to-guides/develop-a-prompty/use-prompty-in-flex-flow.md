@@ -24,9 +24,22 @@ model:
   parameters:
     temperature: 0.2
     stream: true
+
+inputs:
+  first_name:
+    type: string
+    default: John
+  last_name:
+    type: string
+    default: Doe
+  question:
+    type: string
+  chat_history:
+    type: list
 sample:
-  inputs:
-    question: What is Prompt flow?
+  first_name: John
+  last_name: Doe
+  question: What is Prompt flow?
   chat_history: [ { "role": "user", "content": "what's the capital of France?" }, { "role": "assistant", "content": "Paris" } ]
 ---
 system:

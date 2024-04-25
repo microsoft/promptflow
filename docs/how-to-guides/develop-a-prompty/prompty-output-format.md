@@ -19,19 +19,27 @@ By default, prompty returns the message from the first choice in the response. B
 name: Text Format Prompt
 description: A basic prompt that uses the GPT-3 chat API to answer questions
 model:
-    api: chat
-    configuration:
-      type: azure_openai
-      connection: <connection_name>
-      azure_deployment: gpt-35-turbo-0125
-    parameters:
-      max_tokens: 128
-      temperature: 0.2
+  api: chat
+  configuration:
+    type: azure_openai
+    connection: <connection_name>
+    azure_deployment: gpt-35-turbo-0125
+  parameters:
+    max_tokens: 128
+    temperature: 0.2
+inputs:
+  first_name:
+    type: string
+    default: John
+  last_name:
+    type: string
+    default: Doe
+  question:
+    type: string
 sample:
-  inputs:
-    first_name: John
-    last_name: Doh
-    question: what is the meaning of life?
+  first_name: John
+  last_name: Doe
+  question: what is the meaning of life?
 ---
 system:
 You are an AI assistant who helps people find information.
@@ -68,21 +76,29 @@ Here’s how to configure a prompty for JSON object output:
 name: Json Format Prompt
 description: A basic prompt that uses the GPT-3 chat API to answer questions
 model:
-    api: chat
-    configuration:
-      type: azure_openai
-      azure_deployment: gpt-35-turbo-0125
-      connection: open_ai_connection
-    parameters:
-      max_tokens: 128
-      temperature: 0.2
-      response_format:
-        type: json_object
+  api: chat
+  configuration:
+    type: azure_openai
+    azure_deployment: gpt-35-turbo-0125
+    connection: open_ai_connection
+  parameters:
+    max_tokens: 128
+    temperature: 0.2
+    response_format:
+      type: json_object
+inputs:
+  first_name:
+    type: string
+    default: John
+  last_name:
+    type: string
+    default: Doe
+  question:
+    type: string
 sample:
-  inputs:
-    first_name: John
-    last_name: Doh
-    question: what is the meaning of life?
+  first_name: John
+  last_name: Doe
+  question: what is the meaning of life?
 ---
 system:
 You are an AI assistant who helps people find information.
@@ -111,23 +127,32 @@ Users can also specify the fields to be returned by configuring the output secti
 name: Json Format Prompt
 description: A basic prompt that uses the GPT-3 chat API to answer questions
 model:
-    api: chat
-    configuration:
-      type: azure_openai
-      azure_deployment: gpt-35-turbo-0125
-      connection: open_ai_connection
-    parameters:
-      max_tokens: 128
-      temperature: 0.2
-      response_format:
-        type: json_object
+  api: chat
+  configuration:
+    type: azure_openai
+    azure_deployment: gpt-35-turbo-0125
+    connection: open_ai_connection
+  parameters:
+    max_tokens: 128
+    temperature: 0.2
+    response_format:
+      type: json_object
+inputs:
+  first_name:
+    type: string
+    default: John
+  last_name:
+    type: string
+    default: Doe
+  question:
+    type: string
+outputs:
+  answer:
+    type: string
 sample:
-  inputs:
-    first_name: John
-    last_name: Doh
-    question: what is the meaning of life?
-  outputs:
-    answer: The meaning of life is a philosophical question
+  first_name: John
+  last_name: Doe
+  question: what is the meaning of life?
 ---
 system:
 You are an AI assistant who helps people find information.
@@ -156,21 +181,29 @@ In certain scenarios, users may require access to the original response from the
 name: All Choices Text Format Prompt
 description: A basic prompt that uses the GPT-3 chat API to answer questions
 model:
-    api: chat
-    configuration:
-      type: azure_openai
-      connection: open_ai_connection
-      azure_deployment: gpt-35-turbo-0125
-    parameters:
-      max_tokens: 128
-      temperature: 0.2
-      n: 3
-    response: all
+  api: chat
+  configuration:
+    type: azure_openai
+    connection: open_ai_connection
+    azure_deployment: gpt-35-turbo-0125
+  parameters:
+    max_tokens: 128
+    temperature: 0.2
+    n: 3
+  response: all
+inputs:
+  first_name:
+    type: string
+    default: John
+  last_name:
+    type: string
+    default: Doe
+  question:
+    type: string
 sample:
-  inputs:
-    first_name: John
-    last_name: Doh
-    question: what is the meaning of life?
+  first_name: John
+  last_name: Doe
+  question: what is the meaning of life?
 ---
 system:
 You are an AI assistant who helps people find information.
@@ -197,17 +230,28 @@ Here’s how to configure a prompty for streaming text output:
 name: Stream Mode Text Format Prompt
 description: A basic prompt that uses the GPT-3 chat API to answer questions
 model:
-    api: chat
-    configuration:
-      type: azure_openai
-      connection: open_ai_connection
-      azure_deployment: gpt-35-turbo-0125
-    parameters:
-      max_tokens: 512
-      temperature: 0.2
-      stream: true
-sample: 
-  "question": "What's the steps to get rich?"
+  api: chat
+  configuration:
+    type: azure_openai
+    connection: open_ai_connection
+    azure_deployment: gpt-35-turbo-0125
+  parameters:
+    max_tokens: 512
+    temperature: 0.2
+    stream: true
+inputs:
+  first_name:
+    type: string
+    default: John
+  last_name:
+    type: string
+    default: Doe
+  question:
+    type: string
+sample:
+  first_name: John
+  last_name: Doe
+  question: What's the steps to get rich?
 ---
 system:
 You are an AI assistant who helps people find information.
