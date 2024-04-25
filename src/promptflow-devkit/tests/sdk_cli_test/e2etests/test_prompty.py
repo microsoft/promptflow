@@ -241,12 +241,10 @@ class TestPrompty:
         assert isinstance(result, ChatCompletion)
 
     def test_prompty_with_stream(self, pf: PFClient):
-        if pytest.is_live:
-            # When running multiple test cases, the type is generator type.
-            # When running alone this case, the type is Stream.
-            stream_type = (types.GeneratorType, Stream)
-        elif pytest.is_record or pytest.is_replay:
+        if pytest.is_record or pytest.is_replay:
             stream_type = types.GeneratorType
+        else:
+            stream_type = (types.GeneratorType, Stream)
         # Test text format with stream=true
         prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", model={"parameters": {"stream": True}})
         result = prompty(question="what is the result of 1+1?")
