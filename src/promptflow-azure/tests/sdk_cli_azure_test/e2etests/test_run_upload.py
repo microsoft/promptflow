@@ -93,7 +93,7 @@ class TestFlowRunUpload:
     ):
         name = randstr("batch_run_name_for_upload")
         local_pf = Local2CloudTestHelper.get_local_pf(name)
-        # submit a local batch run
+        # submit a local batch run.
         run = local_pf.run(
             flow=f"{FLOWS_DIR}/simple_hello_world",
             data=f"{DATAS_DIR}/webClassification3.jsonl",
