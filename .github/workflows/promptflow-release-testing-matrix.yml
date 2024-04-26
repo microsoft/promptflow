@@ -22,6 +22,7 @@ env:
   TOOL_DIRECTORY: ${{ github.workspace }}/src/promptflow-tools
   RECORD_DIRECTORY: ${{ github.workspace }}/src/promptflow-recording
   PROMPT_FLOW_WORKSPACE_NAME: "promptflow-eastus"
+  PF_TRACING_SKIP_LOCAL_SETUP: "true"
 
 jobs:
   id:
