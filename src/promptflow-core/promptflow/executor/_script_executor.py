@@ -420,8 +420,7 @@ class ScriptExecutor(FlowExecutor):
             if inspect.ismethod(func):
                 # For class method, the original function is a function reference that not bound to any object,
                 # so we need to pass the instance to it.
-                if func.__qualname__.endswith(".__call__"):
-                    name = func.__qualname__[: -len(".__call__")]
+                name = name[: -len(".__call__")] if (name := func.__qualname__).endswith(".__call__") else name
                 func = _traced(
                     partial(getattr(func, "__original_function"), self=func.__self__),
                     trace_type=TraceType.FLOW,
