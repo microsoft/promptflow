@@ -1,5 +1,6 @@
 import datetime
 import json
+import platform
 import sys
 import typing
 import uuid
@@ -354,6 +355,10 @@ class TestTraceEntitiesAndOperations:
         line_runs = pf.traces._search_line_runs(expression=expr)
         assert len(line_runs) == 1
 
+    @pytest.mark.skipif(
+        platform.system() == "Windows" and sys.version_info < (3, 9),
+        reason="Windows 3.9+ is required to support json_extract",
+    )
     def test_search_line_runs_with_tokens(self, pf: PFClient) -> None:
         num_line_runs = 5
         trace_ids = list()
