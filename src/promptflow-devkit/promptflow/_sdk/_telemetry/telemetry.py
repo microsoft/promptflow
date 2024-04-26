@@ -62,7 +62,7 @@ def is_telemetry_enabled():
     1. running `pf config set telemetry.enabled=false` command.
     """
     config = Configuration.get_instance()
-    telemetry_consent = config.get_telemetry_consent()
+    telemetry_consent = config._get_telemetry_consent()
     if telemetry_consent is not None:
         return str(telemetry_consent).lower() == "true"
     return True

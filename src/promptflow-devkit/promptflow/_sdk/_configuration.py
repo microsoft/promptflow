@@ -59,6 +59,13 @@ class Configuration(object):
             self._validate(key, value)
             pydash.set_(self._config, key, value)
 
+    @classmethod
+    def get_instance(cls):
+        """Use this to get instance to avoid multiple copies of same global config."""
+        if cls._instance is None:
+            cls._instance = Configuration()
+        return cls._instance
+
     def _get_cwd_config(self):
         cwd_config_path = Path.cwd().absolute().resolve()
         file_name = self.CONFIG_PATH.name
@@ -79,13 +86,6 @@ class Configuration(object):
     @property
     def config(self):
         return self._config
-
-    @classmethod
-    def get_instance(cls):
-        """Use this to get instance to avoid multiple copies of same global config."""
-        if cls._instance is None:
-            cls._instance = Configuration()
-        return cls._instance
 
     def set_config(self, key, value):
         """Store config in file to avoid concurrent write."""
@@ -113,9 +113,6 @@ class Configuration(object):
             return pydash.get(self._config, key, None)
         except Exception:  # pylint: disable=broad-except
             return None
-
-    def get_all(self):
-        return self._config
 
     @classmethod
     def _get_workspace_from_config(
@@ -187,13 +184,13 @@ class Configuration(object):
             )
         return RESOURCE_ID_FORMAT.format(subscription_id, resource_group, AZUREML_RESOURCE_PROVIDER, workspace_name)
 
-    def get_connection_provider(self, path=None) -> Optional[str]:
+    def _get_connection_provider(self, path=None) -> Optional[str]:
         """Get the current connection provider. Default to local if not configured."""
         provider = self.get_config(key=self.CONNECTION_PROVIDER)
-        return self.resolve_connection_provider(provider, path=path)
+        return self._resolve_connection_provider(provider, path=path)
 
     @classmethod
-    def resolve_connection_provider(cls, provider, path=None) -> Optional[str]:
+    def _resolve_connection_provider(cls, provider, path=None) -> Optional[str]:
         if provider is None:
             return ConnectionProviderConfig.LOCAL
         if provider == ConnectionProviderConfig.AZUREML:
@@ -203,7 +200,7 @@ class Configuration(object):
         # It can be the full path of a workspace.
         return provider
 
-    def get_trace_destination(self, path: Optional[Path] = None) -> Optional[str]:
+    def _get_trace_destination(self, path: Optional[Path] = None) -> Optional[str]:
         from promptflow._sdk._tracing import TraceDestinationConfig
 
         value = self.get_config(key=self.TRACE_DESTINATION)
@@ -218,17 +215,17 @@ class Configuration(object):
     def _resolve_trace_destination(self, path: Optional[Path] = None) -> str:
         return "azureml:/" + self._get_workspace_from_config(path=path)
 
-    def get_telemetry_consent(self) -> Optional[bool]:
+    def _get_telemetry_consent(self) -> Optional[bool]:
         """Get the current telemetry consent value. Return None if not configured."""
         if call_from_extension():
             return self.get_config(key=self.EXTENSION_COLLECT_TELEMETRY)
         return self.get_config(key=self.COLLECT_TELEMETRY)
 
-    def set_telemetry_consent(self, value):
+    def _set_telemetry_consent(self, value):
         """Set the telemetry consent value and store in local."""
         self.set_config(key=self.COLLECT_TELEMETRY, value=value)
 
-    def get_or_set_installation_id(self):
+    def _get_or_set_installation_id(self):
         """Get user id if exists, otherwise set installation id and return it."""
         installation_id = self.get_config(key=self.INSTALLATION_ID)
         if installation_id:
@@ -238,12 +235,12 @@ class Configuration(object):
         self.set_config(key=self.INSTALLATION_ID, value=installation_id)
         return installation_id
 
-    def get_run_output_path(self) -> Optional[str]:
+    def _get_run_output_path(self) -> Optional[str]:
         """Get the run output path in local."""
         return self.get_config(key=self.RUN_OUTPUT_PATH)
 
     def _to_dict(self):
-        return self._config
+        return self.config
 
     @staticmethod
     def _validate(key: str, value: str) -> None:
@@ -260,14 +257,14 @@ class Configuration(object):
             TraceDestinationConfig.validate(value)
         return
 
-    def get_user_agent(self) -> Optional[str]:
+    def _get_user_agent(self) -> Optional[str]:
         """Get customer set user agent. If set, will add prefix `PFCustomer_`"""
         user_agent = self.get_config(key=self.USER_AGENT)
         if user_agent:
             return f"PFCustomer_{user_agent}"
         return user_agent
 
-    def is_internal_features_enabled(self) -> Optional[bool]:
+    def _is_internal_features_enabled(self) -> Optional[bool]:
         """Get enable_preview_features"""
         result = self.get_config(key=self.ENABLE_INTERNAL_FEATURES)
         if isinstance(result, str):
@@ -276,7 +273,7 @@ class Configuration(object):
 
     @classmethod
     @contextmanager
-    def set_temp_config_path(cls, temp_path: Union[str, Path]):
+    def _set_temp_config_path(cls, temp_path: Union[str, Path]):
         temp_path = Path(temp_path).resolve().absolute()
         if temp_path.is_file():
             raise InvalidConfigFile(

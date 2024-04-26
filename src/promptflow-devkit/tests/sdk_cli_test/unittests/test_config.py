@@ -35,10 +35,10 @@ class TestConfig:
         assert config.get_config("test_key") == "test_value"
 
     def test_get_or_set_installation_id(self, config):
-        user_id1 = config.get_or_set_installation_id()
+        user_id1 = config._get_or_set_installation_id()
         assert user_id1 is not None
 
-        user_id2 = config.get_or_set_installation_id()
+        user_id2 = config._get_or_set_installation_id()
         assert user_id1 == user_id2
 
     def test_config_instance(self, config):
@@ -62,11 +62,11 @@ class TestConfig:
 
     def test_ua_set_load(self, config: Configuration) -> None:
         config.set_config(key=Configuration.USER_AGENT, value="test/1.0.0")
-        user_agent = config.get_user_agent()
+        user_agent = config._get_user_agent()
         assert user_agent == "PFCustomer_test/1.0.0"
         # load empty ua won't break
         config.set_config(key=Configuration.USER_AGENT, value="")
-        user_agent = config.get_user_agent()
+        user_agent = config._get_user_agent()
         assert user_agent == ""
         # empty ua won't add to context
         ClientUserAgentUtil.update_user_agent_from_config()
@@ -86,7 +86,7 @@ class TestConfig:
             assert (Path(temp) / "pf.yaml").is_file()
 
             # Test the value obtained from pf config show is consistent with config.get_all()
-            all_config = config.get_all()
+            all_config = config.config()
             capsys.readouterr()
             cmd = ("pf", "config", "show")
             sys.argv = list(cmd)

@@ -195,7 +195,7 @@ def _invoke_pf_svc() -> str:
 def _get_ws_triad_from_pf_config(path: typing.Optional[Path]) -> typing.Optional[AzureMLWorkspaceTriad]:
     from promptflow._sdk._configuration import Configuration
 
-    config = Configuration.get_instance().get_trace_destination(path=path)
+    config = Configuration.get_instance()._get_trace_destination(path=path)
     _logger.info("resolved tracing.trace.destination: %s", config)
     if not TraceDestinationConfig.need_to_export_to_azure(config):
         return None

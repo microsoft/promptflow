@@ -70,7 +70,7 @@ def set_config(args):
         logger.debug("Setting config %s to %s", k, v)
         try:
             new_temp_path = path if isinstance(path, str) else Configuration.CONFIG_PATH.parent
-            with Configuration.set_temp_config_path(new_temp_path):
+            with Configuration._set_temp_config_path(new_temp_path):
                 Configuration.get_instance().set_config(k, v)
                 print(f"Set config {args.params_override} successfully.")
         except InvalidConfigValue as e:
@@ -79,5 +79,5 @@ def set_config(args):
 
 
 def show_config():
-    configs = Configuration.get_instance().get_all()
+    configs = Configuration.get_instance().config()
     print(json.dumps(configs, indent=4))

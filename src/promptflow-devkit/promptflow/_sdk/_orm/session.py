@@ -98,7 +98,7 @@ def mgmt_db_session() -> Session:
         create_table_if_not_exists(engine, EXP_NODE_RUN_TABLE_NAME, ExperimentNodeRun)
 
         create_index_if_not_exists(engine, RUN_INFO_CREATED_ON_INDEX_NAME, RUN_INFO_TABLENAME, "created_on")
-        if Configuration.get_instance().is_internal_features_enabled():
+        if Configuration.get_instance()._is_internal_features_enabled():
             create_or_update_table(engine, orm_class=Experiment, tablename=EXPERIMENT_TABLE_NAME)
             create_index_if_not_exists(engine, EXPERIMENT_CREATED_ON_INDEX_NAME, EXPERIMENT_TABLE_NAME, "created_on")
 

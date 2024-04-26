@@ -24,7 +24,7 @@ class TestTelemetry:
         config = Configuration.get_instance()
         custom_dimensions = {
             "python_version": platform.python_version(),
-            "installation_id": config.get_or_set_installation_id(),
+            "installation_id": config._get_or_set_installation_id(),
         }
         log_to_envelope = PromptFlowSDKExporter(
             connection_string="InstrumentationKey=00000000-0000-0000-0000-000000000000",

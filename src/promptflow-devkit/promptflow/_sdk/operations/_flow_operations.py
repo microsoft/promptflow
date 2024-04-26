@@ -109,7 +109,7 @@ class FlowOperations(TelemetryMixin):
         """
         experiment = kwargs.pop("experiment", None)
         flow = generate_yaml_entry_without_recover(entry=flow)
-        if Configuration.get_instance().is_internal_features_enabled() and experiment:
+        if Configuration.get_instance()._is_internal_features_enabled() and experiment:
             if variant is not None or node is not None:
                 error = ValueError("--variant or --node is not supported experiment is specified.")
                 raise UserErrorException(
@@ -207,7 +207,7 @@ class FlowOperations(TelemetryMixin):
             output_path=output_path,
             **kwargs,
         )
-        if Configuration.get_instance().is_internal_features_enabled() and experiment:
+        if Configuration.get_instance()._is_internal_features_enabled() and experiment:
             return_output = {}
             for key in result:
                 detail_path = output_path / key / "flow.detail.json"

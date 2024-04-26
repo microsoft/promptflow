@@ -138,5 +138,5 @@ class FlowContextResolver:
                     flow=resolved_flow,
                     connections=connections,
                     streaming=flow_context.streaming,
-                    connection_provider=Configuration.get_instance().get_connection_provider(),
+                    connection_provider=Configuration.get_instance()._get_connection_provider(),
                 )

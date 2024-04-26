@@ -106,7 +106,7 @@ def serve_python_flow(
 
     pf_config = Configuration(overrides=config)
     logger.info(f"Promptflow config: {pf_config}")
-    connection_provider = pf_config.get_connection_provider()
+    connection_provider = pf_config._get_connection_provider()
     os.environ["PROMPTFLOW_PROJECT_PATH"] = flow_dir.absolute().as_posix()
     logger.info(f"Change working directory to model dir {flow_dir}")
     os.chdir(flow_dir)

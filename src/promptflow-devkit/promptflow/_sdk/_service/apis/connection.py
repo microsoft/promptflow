@@ -66,7 +66,7 @@ connection_spec_model = api.model(
 
 
 def _get_connection_operation(working_directory=None):
-    connection_provider = Configuration().get_connection_provider(path=working_directory)
+    connection_provider = Configuration()._get_connection_provider(path=working_directory)
     # get_connection_operation is a shared function, so we build user agent based on request first and
     # then pass it to the function
     connection_operation = get_client_from_request(connection_provider=connection_provider).connections

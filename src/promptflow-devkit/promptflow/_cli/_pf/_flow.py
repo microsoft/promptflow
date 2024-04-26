@@ -313,7 +313,7 @@ pf flow test --flow my-awesome-flow --init key1=value1 key2=value2
         add_param_url_params,
     ] + base_params
 
-    if Configuration.get_instance().is_internal_features_enabled():
+    if Configuration.get_instance()._is_internal_features_enabled():
         add_params.append(add_param_experiment)
     activate_action(
         name="test",
@@ -391,7 +391,7 @@ def _init_chat_flow(flow_name, flow_path, connection=None, deployment=None):
     deployment = deployment or DEFAULT_DEPLOYMENT
     ChatFlowDAGGenerator(connection=connection, deployment=deployment).generate_to_file(flow_path / "flow.dag.yaml")
     # When customer not configure the remote connection provider, create connection yaml to chat flow.
-    is_local_connection = Configuration.get_instance().get_connection_provider() == ConnectionProviderConfig.LOCAL
+    is_local_connection = Configuration.get_instance()._get_connection_provider() == ConnectionProviderConfig.LOCAL
     if is_local_connection:
         OpenAIConnectionGenerator(connection=connection).generate_to_file(flow_path / "openai.yaml")
         AzureOpenAIConnectionGenerator(connection=connection).generate_to_file(flow_path / "azure_openai.yaml")
@@ -452,7 +452,7 @@ def test_flow(args):
         environment_variables = {}
     inputs = _build_inputs_for_flow_test(args)
     # Select different test mode
-    if Configuration.get_instance().is_internal_features_enabled() and args.experiment:
+    if Configuration.get_instance()._is_internal_features_enabled() and args.experiment:
         _test_flow_experiment(args, pf_client, inputs, environment_variables)
         return
     if args.multi_modal or args.ui:
@@ -517,7 +517,7 @@ def _test_flow_multi_modal(args, pf_client):
         pfs_port = _invoke_pf_svc()
         flow = generate_yaml_entry_without_recover(entry=args.flow)
         # flex flow without yaml file doesn't support /eval in chat window
-        enable_internal_features = Configuration.get_instance().is_internal_features_enabled() or flow != args.flow
+        enable_internal_features = Configuration.get_instance()._is_internal_features_enabled() or flow != args.flow
         chat_page_url = construct_chat_page_url(
             flow,
             pfs_port,

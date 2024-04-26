@@ -43,7 +43,7 @@ class ClientUserAgentUtil:
             from promptflow._sdk._configuration import Configuration
 
             config = Configuration.get_instance()
-            user_agent = config.get_user_agent()
+            user_agent = config._get_user_agent()
             if user_agent:
                 cls.append_user_agent(user_agent)
         except ImportError as e:

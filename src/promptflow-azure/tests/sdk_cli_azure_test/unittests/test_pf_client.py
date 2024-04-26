@@ -28,26 +28,26 @@ class TestPFClient:
     def test_connection_provider(self, subscription_id: str, resource_group_name: str, workspace_name: str):
         target = "promptflow._sdk._pf_client.Configuration"
         with mock.patch(target) as mocked:
-            mocked.return_value.get_connection_provider.return_value = "abc"
+            mocked.return_value._get_connection_provider.return_value = "abc"
             with pytest.raises(UserErrorException) as e:
                 client = PFClient()
                 assert client.connections
             assert "Unsupported connection provider" in str(e.value)
 
         with mock.patch(target) as mocked:
-            mocked.return_value.get_connection_provider.return_value = "azureml:xx"
+            mocked.return_value._get_connection_provider.return_value = "azureml:xx"
             with pytest.raises(MalformedConnectionProviderConfig) as e:
                 client = PFClient()
                 assert client.connections
             assert "Malformed connection provider config" in str(e.value)
 
         with mock.patch(target) as mocked:
-            mocked.return_value.get_connection_provider.return_value = "local"
+            mocked.return_value._get_connection_provider.return_value = "local"
             client = PFClient()
             assert isinstance(client.connections, ConnectionOperations)
 
         with mock.patch(target) as mocked:
-            mocked.return_value.get_connection_provider.return_value = "azureml:" + RESOURCE_ID_FORMAT.format(
+            mocked.return_value._get_connection_provider.return_value = "azureml:" + RESOURCE_ID_FORMAT.format(
                 subscription_id, resource_group_name, AZUREML_RESOURCE_PROVIDER, workspace_name
             )
             client = PFClient()

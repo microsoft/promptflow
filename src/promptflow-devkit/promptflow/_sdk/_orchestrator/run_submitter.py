@@ -221,7 +221,7 @@ class RunSubmitter:
             )
 
             # upload run to cloud if the trace destination is set to cloud
-            trace_destination = self._config.get_trace_destination(path=run._get_flow_dir().resolve())
+            trace_destination = self._config._get_trace_destination(path=run._get_flow_dir().resolve())
             if trace_destination and trace_destination.startswith(REMOTE_URI_PREFIX):
                 logger.debug(f"Trace destination set to {trace_destination!r}, uploading run to cloud...")
                 self._upload_run_to_cloud(run=run)

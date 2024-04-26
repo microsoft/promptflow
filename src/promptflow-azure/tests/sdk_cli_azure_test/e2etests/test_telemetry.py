@@ -45,15 +45,15 @@ RUNS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/runs"
 @contextlib.contextmanager
 def cli_consent_config_overwrite(val):
     config = Configuration.get_instance()
-    original_consent = config.get_telemetry_consent()
-    config.set_telemetry_consent(val)
+    original_consent = config._get_telemetry_consent()
+    config._set_telemetry_consent(val)
     try:
         yield
     finally:
         if original_consent:
-            config.set_telemetry_consent(original_consent)
+            config._set_telemetry_consent(original_consent)
         else:
-            config.set_telemetry_consent(True)
+            config._set_telemetry_consent(True)
 
 
 @contextlib.contextmanager
@@ -107,7 +107,7 @@ class TestTelemetry:
         config = Configuration.get_instance()
         custom_dimensions = {
             "python_version": platform.python_version(),
-            "installation_id": config.get_or_set_installation_id(),
+            "installation_id": config._get_or_set_installation_id(),
         }
         log_to_envelope = PromptFlowSDKExporter(
             connection_string="InstrumentationKey=00000000-0000-0000-0000-000000000000",
@@ -427,7 +427,7 @@ class TestTelemetry:
         config = Configuration.get_instance()
         custom_dimensions = {
             "python_version": platform.python_version(),
-            "installation_id": config.get_or_set_installation_id(),
+            "installation_id": config._get_or_set_installation_id(),
         }
         log_to_envelope = PromptFlowSDKExporter(
             connection_string="InstrumentationKey=00000000-0000-0000-0000-000000000000",

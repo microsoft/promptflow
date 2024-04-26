@@ -107,7 +107,7 @@ def get_parser_args(argv):
     # lexicographical order
     add_config_parser(subparsers)
     add_connection_parser(subparsers)
-    if Configuration.get_instance().is_internal_features_enabled():
+    if Configuration.get_instance()._is_internal_features_enabled():
         add_experiment_parser(subparsers)
 
     add_flow_parser(subparsers)

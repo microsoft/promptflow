@@ -782,7 +782,7 @@ class Run(YAMLTranslatableMixin):
 
     def _generate_output_path(self, config: Optional[Configuration]) -> Path:
         config = config or Configuration.get_instance()
-        path = config.get_run_output_path()
+        path = config._get_run_output_path()
         if path is None:
             path = HOME_PROMPT_FLOW_DIR / ".runs"
         else:
@@ -798,7 +798,7 @@ class Run(YAMLTranslatableMixin):
                 path = HOME_PROMPT_FLOW_DIR / ".runs"
                 warning_message = (
                     "Got unexpected error when parsing specified output path: "
-                    f"{config.get_run_output_path()!r}; "
+                    f"{config._get_run_output_path()!r}; "
                     f"will use default output path: {path!r} instead."
                 )
                 logger.warning(warning_message)

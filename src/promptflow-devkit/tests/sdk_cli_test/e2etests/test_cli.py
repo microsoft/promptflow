@@ -1858,7 +1858,7 @@ class TestCli:
         from promptflow._sdk._configuration import Configuration
 
         config = Configuration.get_instance()
-        assert config.get_run_output_path() is None
+        assert config._get_run_output_path() is None
 
     def test_user_agent_in_cli(self):
         context = OperationContext().get_instance()

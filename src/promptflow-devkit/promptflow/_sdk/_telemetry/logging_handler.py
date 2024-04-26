@@ -145,7 +145,7 @@ def get_promptflow_sdk_log_handler():
     config = Configuration.get_instance()
     custom_dimensions = {
         "python_version": platform.python_version(),
-        "installation_id": config.get_or_set_installation_id(),
+        "installation_id": config._get_or_set_installation_id(),
     }
 
     handler = PromptFlowSDKLogHandler(

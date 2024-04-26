@@ -28,12 +28,12 @@ class TestConfig:
         # Test config within flow folder
         target_folder = CONFIG_DATA_ROOT / "mock_flow1"
         with _change_working_dir(target_folder):
-            config1 = conf.get_connection_provider()
+            config1 = conf._get_connection_provider()
         assert config1 == "azureml:" + RESOURCE_ID_FORMAT.format("sub1", "rg1", AZUREML_RESOURCE_PROVIDER, "ws1")
         # Test config using flow parent folder
         target_folder = CONFIG_DATA_ROOT / "mock_flow2"
         with _change_working_dir(target_folder):
-            config2 = conf.get_connection_provider()
+            config2 = conf._get_connection_provider()
         assert config2 == "azureml:" + RESOURCE_ID_FORMAT.format(
             "sub_default", "rg_default", AZUREML_RESOURCE_PROVIDER, "ws_default"
         )
@@ -44,4 +44,4 @@ class TestConfig:
         target_folder = CONFIG_DATA_ROOT / "mock_flow_empty_config"
         with pytest.raises(InvalidConfigFile):
             with _change_working_dir(target_folder):
-                conf.get_connection_provider()
+                conf._get_connection_provider()
