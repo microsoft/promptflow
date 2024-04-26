@@ -10,6 +10,7 @@ from openai import Stream
 from openai.types.chat import ChatCompletion
 
 from promptflow._sdk._pf_client import PFClient
+from promptflow.client import load_flow
 from promptflow.core import AsyncPrompty, Flow, Prompty
 from promptflow.core._errors import (
     InvalidConnectionError,
@@ -19,6 +20,7 @@ from promptflow.core._errors import (
 )
 from promptflow.core._model_configuration import AzureOpenAIModelConfiguration
 from promptflow.core._prompty_utils import convert_model_configuration_to_connection
+from promptflow.exceptions import UserErrorException
 
 TEST_ROOT = PROMPTFLOW_ROOT / "tests"
 DATA_DIR = TEST_ROOT / "test_configs/datas"
@@ -170,6 +172,14 @@ class TestPrompty:
             }
             Prompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", model=model_dict)
         assert "Cannot configure model config and connection" in ex.value.message
+
+        prompty = load_flow(source=f"{PROMPTY_DIR}/prompty_example.prompty")
+        result = prompty(question="what is the result of 1+1?")
+        assert "2" in result
+
+        with pytest.raises(UserErrorException) as ex:
+            prompty("what is the result of 1+1?")
+        assert "Prompty can only be called with keyword arguments." in ex.value.message
 
     def test_prompty_async_call(self):
         async_prompty = AsyncPrompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty")
