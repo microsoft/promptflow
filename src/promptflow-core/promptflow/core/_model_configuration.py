@@ -21,6 +21,7 @@ class AzureOpenAIModelConfiguration(ModelConfiguration):
     azure_endpoint: str = None
     api_version: str = None
     api_key: str = None
+    azure_ad_token_provider: str = None
     # connection and model configs are exclusive.
     connection: str = None
 
@@ -43,6 +44,7 @@ class AzureOpenAIModelConfiguration(ModelConfiguration):
             azure_endpoint=connection.api_base,
             api_version=connection.api_version,
             api_key=connection.api_key,
+            azure_ad_token_provider="DefaultAzureCredential" if not connection.api_key else None,
         )
 
 

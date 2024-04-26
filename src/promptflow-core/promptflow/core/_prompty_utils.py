@@ -62,9 +62,11 @@ def is_empty_connection_config(connection_dict):
 
 
 def convert_model_configuration_to_connection(model_configuration):
+    azure_ad_token_provider = None
     if isinstance(model_configuration, dict):
         # Get connection from connection field
         connection = model_configuration.get("connection", None)
+        azure_ad_token_provider = model_configuration.get("azure_ad_token_provider", None)
         if connection:
             if isinstance(connection, str):
                 # Get connection by name
@@ -79,6 +81,7 @@ def convert_model_configuration_to_connection(model_configuration):
     elif isinstance(model_configuration, ModelConfiguration):
         # Get connection from model configuration
         connection_type = model_configuration._type
+        azure_ad_token_provider = model_configuration.azure_ad_token_provider
         if model_configuration.connection:
             connection, _ = get_connection_by_name(model_configuration.connection)
         else:
@@ -87,6 +90,8 @@ def convert_model_configuration_to_connection(model_configuration):
     if connection_type in [AzureOpenAIConnection.TYPE, "azure_openai"]:
         if "api_base" not in connection:
             connection["api_base"] = connection.get("azure_endpoint", None)
+        if azure_ad_token_provider == "DefaultAzureCredential":
+            connection["auth_mode"] = "meid_token"
         if is_empty_connection_config(connection):
             return AzureOpenAIConnection.from_env()
         else:
