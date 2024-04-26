@@ -100,7 +100,6 @@ def flow_test(request: FlowExecutionRequest):
             run_id=request.run_id,
             storage=storage,
             name=request.flow_name,
-            init_kwargs=request.init_kwargs,
         )
 
 
