@@ -55,7 +55,7 @@ jobs:
           echo "PROMPT_FLOW_TEST_MODE=$(if [[ "${{ github.event_name }}" == "pull_request" ]]; then echo replay; else echo live; fi)" >> $GITHUB_ENV
       - name: Azure login (non pull_request workflow)
         if: github.event_name != 'pull_request'
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
           subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
           tenant-id: ${{secrets.AZURE_TENANT_ID}}
@@ -111,7 +111,7 @@ jobs:
           echo "PROMPT_FLOW_TEST_MODE=$(if [[ "${{ github.event_name }}" == "pull_request" ]]; then echo replay; else echo live; fi)" >> $GITHUB_ENV
       - name: Azure login (non pull_request workflow)
         if: github.event_name != 'pull_request'
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
           subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
           tenant-id: ${{secrets.AZURE_TENANT_ID}}
