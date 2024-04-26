@@ -79,5 +79,5 @@ def set_config(args):
 
 
 def show_config():
-    configs = Configuration.get_instance().config()
+    configs = Configuration.get_instance().config
     print(json.dumps(configs, indent=4))

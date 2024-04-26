@@ -86,7 +86,7 @@ class TestConfig:
             assert (Path(temp) / "pf.yaml").is_file()
 
             # Test the value obtained from pf config show is consistent with config.get_all()
-            all_config = config.config()
+            all_config = config.config
             capsys.readouterr()
             cmd = ("pf", "config", "show")
             sys.argv = list(cmd)
