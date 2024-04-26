@@ -4,6 +4,7 @@ from pathlib import Path
 
 import mock
 import pytest
+from _constants import PROMPTFLOW_ROOT
 from flask.app import Flask
 
 
@@ -22,8 +23,8 @@ def pfs_op(app: Flask):
     import sys
 
     temp_path = (
-        Path(__file__)
-        .parent.parent.parent.parent.parent.joinpath("promptflow-devkit", "tests", "sdk_pfs_test")
+        Path(PROMPTFLOW_ROOT)
+        .joinpath("..", "promptflow-devkit", "tests", "sdk_pfs_test")
         .resolve()
         .absolute()
         .as_posix()
