@@ -58,7 +58,7 @@ Exception: In tool raise_an_exception_async: dummy_input
 if sys.version_info < (3, 11):
     # Python 3.11 on Mac has an extra line of ^^^^^ to point on the function raising the exception
     for key in expected_stack_traces:
-        expected_stack_traces[key] = [line for line in expected_stack_traces[key] if re.match(r"^\s+^+", line) is None]
+        expected_stack_traces[key] = [line for line in expected_stack_traces[key] if re.match(r"^\s+\^+", line) is None]
 
 
 @pytest.mark.e2etest
