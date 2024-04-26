@@ -17,6 +17,7 @@ from ._code_client import CodeClient
 
 from promptflow._sdk._constants import LINE_NUMBER
 from promptflow.evals._user_agent import USER_AGENT
+from ._utils import _log_metrics_and_instance_results
 
 
 def _calculate_mean(df) -> Dict[str, float]:
@@ -150,7 +151,7 @@ def _apply_target_to_data(
     target_output.rename(columns=rename_dict, inplace=True)
     # Concatenate output to input
     target_output = pd.concat([target_output, initial_data], axis=1)
-    return target_output, set(rename_dict.values())
+    return target_output, set(rename_dict.values()), run
 
 
 def evaluate(
@@ -197,7 +198,7 @@ def evaluate(
 
     target_generated_columns = set()
     if data is not None and target is not None:
-        input_data_df, target_generated_columns = _apply_target_to_data(
+        input_data_df, target_generated_columns, run = _apply_target_to_data(
             target, data, pf_client, input_data_df)
         # After we have generated all columns we can check if we have
         # everything we need for evaluators.
@@ -255,4 +256,18 @@ def evaluate(
 
     result_df = pd.concat([input_data_df, evaluators_result_df], axis=1, verify_integrity=True)
 
-    return {"rows": result_df.to_dict("records"), "metrics": _calculate_mean(evaluators_result_df), "traces": {}}
+    aggregated_metrics = _calculate_mean(evaluators_result_df)
+
+    run = pf_client.run(
+        flow=lambda x:x,
+        data=data,
+    )
+
+    _log_metrics_and_instance_results(
+        metric=aggregated_metrics,
+        instance_results=result_df,
+        tracking_uri=tracking_uri,
+        run=run,
+    )
+
+    return {"rows": result_df.to_dict("records"), "metrics": _calculate_mean(evaluators_result_df)}
