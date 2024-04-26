@@ -32,11 +32,11 @@ class TestBatchEngine:
                 "Unexpected error occurred while executing the batch run. Error: (Exception) test error.",
             ),
             (
-                GetConnectionError(message="Connection 'aoai_conn' not found"),
+                GetConnectionError(connection="aoai_conn", node_name="mock", error=Exception("mock")),
                 GetConnectionError,
                 ErrorTarget.EXECUTOR,
                 ["UserError", "ValidationError", "InvalidRequest", "GetConnectionError"],
-                "Connection 'aoai_conn' not found",
+                "Get connection 'aoai_conn' for node 'mock' error: mock",
             ),
         ],
     )
