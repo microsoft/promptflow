@@ -21,6 +21,8 @@ datas += opentelemetry_datas
 datas += collect_data_files('streamlit_quill')
 datas += collect_data_files('promptflow')
 datas += copy_metadata('promptflow')
+datas += collect_data_files('promptflow-evals')
+datas += copy_metadata('promptflow-evals')
 hidden_imports = ['win32timezone', 'promptflow', 'opentelemetry.context.contextvars_context', 'streamlit.runtime.scriptrunner.magic_funcs'] + {{hidden_imports}}
 
 hidden_imports += opentelemetry_hiddenimports

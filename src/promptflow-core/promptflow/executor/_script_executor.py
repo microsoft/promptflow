@@ -36,6 +36,7 @@ from promptflow.executor._errors import InvalidFlexFlowEntry, InvalidModelConfig
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DefaultRunStorage
+from promptflow.tracing import ThreadPoolExecutorWithContext
 from promptflow.tracing._trace import _traced
 from promptflow.tracing._tracer import Tracer
 from promptflow.tracing.contracts.trace import TraceType
@@ -198,10 +199,31 @@ class ScriptExecutor(FlowExecutor):
     ) -> AggregationResult:
         output, metrics = None, {}
         try:
-            if inspect.iscoroutinefunction(self._aggr_func):
-                output = async_run_allowing_running_loop(self._aggr_func, **{self._aggr_input_name: inputs})
-            else:
-                output = self._aggr_func(**{self._aggr_input_name: inputs})
+            output = self._aggr_func(**{self._aggr_input_name: inputs})
+            metrics = output if isinstance(output, dict) else {"metrics": output}
+            for k, v in metrics.items():
+                log_metric(k, v)
+        except Exception:
+            pass
+        return AggregationResult(output, metrics, {})
+
+    async def exec_aggregation_async(
+        self,
+        inputs: Mapping[str, Any],
+        aggregation_inputs: List[Any],
+        run_id: Optional[str] = None,
+    ):
+        if not self._aggr_func:
+            return AggregationResult({}, {}, {})
+        # Similar to dag flow, add a prefix "reduce" for run id of aggregation function.
+        run_id = f"{run_id}_reduce" if run_id is not None else f"{str(uuid.uuid4())}_reduce"
+        with self._update_operation_context_for_aggregation(run_id):
+            return await self._exec_aggregation_async(aggregation_inputs)
+
+    async def _exec_aggregation_async(self, inputs):
+        output = None
+        try:
+            output = await self._aggr_func_async(**{self._aggr_input_name: inputs})
             metrics = output if isinstance(output, dict) else {"metrics": output}
             for k, v in metrics.items():
                 log_metric(k, v)
@@ -363,6 +385,7 @@ class ScriptExecutor(FlowExecutor):
         if self.is_function_entry:
             if inspect.isfunction(self._entry):
                 return self._entry
+            self._initialize_aggr_function(self._entry)
             return self._entry.__call__
         module_name, func_name = self._parse_flow_file()
         try:
@@ -436,7 +459,22 @@ class ScriptExecutor(FlowExecutor):
                 )
             if not hasattr(aggr_func, "__original_function"):
                 aggr_func = _traced(aggr_func)
-            self._aggr_func = aggr_func
+            if inspect.iscoroutinefunction(aggr_func):
+
+                def run_async_function_sync(*args, **kwargs):
+                    return async_run_allowing_running_loop(aggr_func, *args, **kwargs)
+
+                self._aggr_func = run_async_function_sync
+                self._aggr_func_async = aggr_func
+            else:
+
+                async def run_sync_function_async(*args, **kwargs):
+                    with ThreadPoolExecutorWithContext() as executor:
+                        partial_func = partial(aggr_func, *args, **kwargs)
+                        return await asyncio.get_event_loop().run_in_executor(executor, partial_func)
+
+                self._aggr_func = aggr_func
+                self._aggr_func_async = run_sync_function_async
             self._aggr_input_name = list(sign.parameters.keys())[0]
 
     def _parse_flow_file(self):
