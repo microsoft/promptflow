@@ -357,7 +357,7 @@ class TestTraceEntitiesAndOperations:
 
     @pytest.mark.skipif(
         platform.system() == "Windows" and sys.version_info < (3, 9),
-        reason="Windows 3.9+ is required to support json_extract",
+        reason="Python 3.9+ is required on Windows to support json_extract",
     )
     def test_search_line_runs_with_tokens(self, pf: PFClient) -> None:
         num_line_runs = 5
