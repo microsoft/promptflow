@@ -46,16 +46,16 @@ class ManagedIdentityAPITokenManager(APITokenManager):
         super().__init__(logger, **kwargs)
         self.token_scope = token_scope
 
-    async def get_token(self):
-        async with self.lock:  # prevent multiple threads from refreshing the token at the same time
-            if (
-                self.token is None
-                or self.last_refresh_time is None
-                or time.time() - self.last_refresh_time > AZURE_TOKEN_REFRESH_INTERVAL
-            ):
-                self.last_refresh_time = time.time()
-                self.token = self.credential.get_token(self.token_scope.value).token
-                self.logger.info("Refreshed Azure endpoint token.")
+    def get_token(self):
+
+        if (
+            self.token is None
+            or self.last_refresh_time is None
+            or time.time() - self.last_refresh_time > AZURE_TOKEN_REFRESH_INTERVAL
+        ):
+            self.last_refresh_time = time.time()
+            self.token = self.credential.get_token(self.token_scope.value).token
+            self.logger.info("Refreshed Azure endpoint token.")
 
         return self.token
 

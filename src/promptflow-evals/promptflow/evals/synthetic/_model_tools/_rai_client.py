@@ -45,12 +45,20 @@ class RAIClient:
         self.simulation_submit_endpoint = urljoin(self.api_url, "simulation/chat/completions/submit")
 
     def _get_service_discovery_url(self):
-        bearer_token = self.token_manager.get_token("https://management.azure.com/.default").token
+        bearer_token = self.token_manager.get_token()
         headers = {"Authorization": f"Bearer {bearer_token}", "Content-Type": "application/json"}
-        response = requests.get(self.api_url, headers=headers)
+        response = requests.get(
+            f"https://management.azure.com/subscriptions/{self.project_scope['subscription_id']}/"
+            f"resourceGroups/{self.project_scope['resource_group_name']}/"
+            f"providers/Microsoft.MachineLearningServices/workspaces/{self.project_scope['workspace_name']}?"
+            f"api-version=2023-08-01-preview",
+            headers=headers,
+            timeout=5,
+        )
         if response.status_code != 200:
             raise Exception("Failed to retrieve the discovery service URL")
-        base_url = response.json()["api"]
+        print(response.json())
+        base_url = response.json()["properties"]["discoveryUrl"]
         return base_url
 
     def _create_async_client(self):
