@@ -432,6 +432,7 @@ class AsyncPrompty(Prompty):
 
     """
 
+    @trace
     async def __call__(self, *args, **kwargs) -> Mapping[str, Any]:
         """Calling prompty as a function in async, the inputs should be provided with key word arguments.
         Returns the output of the prompty.
