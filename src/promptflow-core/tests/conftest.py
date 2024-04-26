@@ -10,6 +10,7 @@ from promptflow.core._connection_provider._dict_connection_provider import DictC
 TEST_CONFIG_ROOT = Path(__file__).parent.parent.parent / "promptflow" / "tests" / "test_configs"
 FLOW_ROOT = TEST_CONFIG_ROOT / "flows"
 EAGER_FLOW_ROOT = TEST_CONFIG_ROOT / "eager_flows"
+PROMPTY_FLOW_ROOT = TEST_CONFIG_ROOT / "prompty"
 CONNECTION_FILE = Path(__file__).parent.parent / "connections.json"
 
 

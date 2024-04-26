@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 from promptflow._utils.logger_utils import logger
+from promptflow.contracts.flow import PromptyFlow
 from promptflow.contracts.tool import InputDefinition
 from promptflow.core._flow import Prompty
 from promptflow.storage import AbstractRunStorage
@@ -52,6 +53,8 @@ class PromptyExecutor(ScriptExecutor):
         return self._func
 
     def _init_input_sign(self):
-        # For prompty there is no need to get the inputs and init signature.
-        self._inputs_sign = {}
+        configs, _ = Prompty._parse_prompty(self._working_dir / self._flow_file)
+        flow = PromptyFlow.deserialize(configs)
+        self._inputs_sign = flow.inputs
+        # The init signature only used for flex flow, so we set the _init_sign to empty dict for prompty flow.
         self._init_sign = {}
