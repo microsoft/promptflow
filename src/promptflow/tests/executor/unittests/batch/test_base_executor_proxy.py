@@ -88,8 +88,9 @@ class TestAPIBasedExecutorProxy:
     async def test_ensure_executor_startup_when_existing_validation_error(self):
         # prepare the error file
         error_file = Path(mkdtemp()) / "error.json"
-        error_message = "Connection 'aoai_conn' not found"
-        error_dict = ExceptionPresenter.create(GetConnectionError(message=error_message)).to_dict()
+        error_dict = ExceptionPresenter.create(
+            GetConnectionError(connection="aoai_conn", node_name="mock", error=Exception("mock"))
+        ).to_dict()
         with open(error_file, "w") as file:
             json.dump(error_dict, file, indent=4)
 
@@ -98,7 +99,7 @@ class TestAPIBasedExecutorProxy:
             mock.side_effect = ExecutorServiceUnhealthy("executor unhealthy")
             with pytest.raises(ValidationException) as ex:
                 await mock_executor_proxy.ensure_executor_startup(error_file)
-            assert ex.value.message == error_message
+            assert "Get connection '{aoai_conn}' for node '{mock}' error" in ex.value.message
             assert ex.value.target == ErrorTarget.BATCH
 
     @pytest.mark.asyncio
