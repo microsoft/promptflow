@@ -1,10 +1,5 @@
 # promptflow-devkit package
 
-## v1.11.0 (Upcoming)
-
-### Improvements
-- Interactive browser credential is excluded by default when using Azure AI connections, user could set `PF_NO_INTERACTIVE_LOGIN=False` to enable it.
-
 ## v1.10.0 (2024.04.26)
 
 ### Features Added
