@@ -78,6 +78,6 @@ If you expect to generate a large amount of test data beyond your local compute 
 
     If the validation fails, would lead to empty string `question`/`suggested_answer` which are removed from final output test data set.
 
-- Fill in node inputs including `connection`, `model` or `deployment_name`, `response_format`, `score_threshold` or other parameters. Click run button to test the flow in VSCode Extension by referring to [Test flow with VS Code Extension](../how-to-guides/init-and-test-a-flow.md#visual-editor-on-the-vs-code-for-prompt-flow).
+- Fill in node inputs including `connection`, `model` or `deployment_name`, `response_format`, `score_threshold` or other parameters. Click run button to test the flow in VSCode Extension by referring to [Test flow with VS Code Extension](../how-to-guides/develop-a-dag-flow/init-and-test-a-flow.md#visual-editor-on-the-vs-code-for-prompt-flow).
 
 Once the customized flow has been verified, you can proceed to batch generate test data by following the steps outlined in ["Prerequisites"](#prerequisites) and ["Generate test data"](#generate-test-data).

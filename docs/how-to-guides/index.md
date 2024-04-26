@@ -20,7 +20,6 @@ develop-a-prompty/index
 develop-a-flex-flow/index
 develop-a-dag-flow/index
 execute-flow-as-a-function
-generate-test-data
 chat-with-a-flow/index
 run-and-evaluate-a-flow/index
 generate-test-data
