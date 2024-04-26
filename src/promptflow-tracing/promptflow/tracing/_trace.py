@@ -179,14 +179,14 @@ def enrich_span_with_llm_if_needed(span, original_span, inputs, generator_output
 
 
 def traced_generator(original_span: ReadableSpan, inputs, generator):
-    context = original_span.get_span_context()
-    link = Link(context)
+    # trace context
+    original_context = otel_trace.set_span_in_context(original_span)
     # If start_trace is not called, the name of the original_span will be empty.
     # need to get everytime to ensure tracer is latest
     otel_tracer = otel_trace.get_tracer("promptflow")
     with otel_tracer.start_as_current_span(
         f"Iterated({original_span.name})",
-        links=[link],
+        context=original_context,
     ) as span, _record_keyboard_interrupt_to_span(span):
         enrich_span_with_original_attributes(span, original_span.attributes)
         # Enrich the new span with input before generator iteration to prevent loss of input information.
