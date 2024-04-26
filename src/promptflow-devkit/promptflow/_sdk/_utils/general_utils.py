@@ -32,7 +32,7 @@ from filelock import FileLock
 from keyring.errors import NoKeyringError
 from marshmallow import ValidationError
 
-from promptflow._constants import ENABLE_MULTI_CONTAINER_KEY, EXTENSION_UA, FLOW_FLEX_YAML, FlowLanguage
+from promptflow._constants import ENABLE_MULTI_CONTAINER_KEY, EXTENSION_UA, FLOW_FLEX_YAML, LANGUAGE_KEY, FlowLanguage
 from promptflow._core.entry_meta_generator import generate_flow_meta as _generate_flow_meta
 from promptflow._sdk._constants import (
     AZURE_WORKSPACE_REGEX_FORMAT,
@@ -1103,3 +1103,26 @@ def load_input_data(data_path):
             return json.load(f)
     else:
         raise ValueError("Only support jsonl or json file as input.")
+
+
+def resolve_flow_language(
+    *,
+    flow_path: Union[str, Path, PathLike, None] = None,
+    yaml_dict: Optional[dict] = None,
+    working_dir: Union[str, Path, PathLike, None] = None,
+    # add kwargs given this function will be used in runtime and may have more parameters in the future
+    **kwargs,
+) -> str:
+    """Get language of a flow. Will return 'python' for Prompty."""
+    if flow_path is None and yaml_dict is None:
+        raise UserErrorException("Either flow_path or yaml_dict should be provided.")
+    if flow_path is not None and yaml_dict is not None:
+        raise UserErrorException("Only one of flow_path and yaml_dict should be provided.")
+    if flow_path is not None:
+        flow_path, flow_file = resolve_flow_path(flow_path, base_path=working_dir, check_flow_exist=False)
+        file_path = flow_path / flow_file
+        if file_path.is_file() and file_path.suffix.lower() in (".yaml", ".yml"):
+            yaml_dict = load_yaml(file_path)
+        else:
+            raise UserErrorException(f"Invalid flow path {file_path.as_posix()}, must exist and of suffix yaml or yml.")
+    return yaml_dict.get(LANGUAGE_KEY, FlowLanguage.Python)
