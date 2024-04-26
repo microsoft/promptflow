@@ -15,9 +15,16 @@ env:
   TRACING_DIRECTORY: ${{ github.workspace }}/src/promptflow-tracing
   WORKING_DIRECTORY: ${{ github.workspace }}/src/promptflow-core
   RECORD_DIRECTORY: ${{ github.workspace }}/src/promptflow-recording
+  PROMPTFLOW_DIRECTORY: ${{ github.workspace }}/src/promptflow
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   core_test:
+    environment:
+      internal
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -50,7 +57,9 @@ jobs:
         if: github.event_name != 'pull_request'
         uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
+          tenant-id: ${{secrets.AZURE_TENANT_ID}}
+          client-id: ${{secrets.AZURE_CLIENT_ID}}
       - name: generate live test resources (non pull_request workflow)
         if: github.event_name != 'pull_request'
         uses: "./.github/actions/step_generate_configs"
@@ -73,6 +82,8 @@ jobs:
             ${{ env.WORKING_DIRECTORY }}/core/htmlcov/
 
   azureml_serving_test:
+    environment:
+      internal
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -102,7 +113,9 @@ jobs:
         if: github.event_name != 'pull_request'
         uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
+          tenant-id: ${{secrets.AZURE_TENANT_ID}}
+          client-id: ${{secrets.AZURE_CLIENT_ID}}
       - name: generate live test resources (non pull_request workflow)
         if: github.event_name != 'pull_request'
         uses: "./.github/actions/step_generate_configs"
