@@ -1,4 +1,6 @@
 import json
+import platform
+import signal
 import socket
 import subprocess
 from pathlib import Path
@@ -62,7 +64,10 @@ class TestCSharpExecutorProxy:
         await executor_proxy.destroy()
 
         mock_process.poll.assert_called_once()
-        mock_process.terminate.assert_called_once()
+        if platform.system() != "Windows":
+            mock_process.terminate.assert_called_once()
+        else:
+            mock_process.send_signal.assert_called_once_with(signal.CTRL_BREAK_EVENT)
         mock_process.wait.assert_called_once_with(timeout=5)
         mock_process.kill.assert_not_called()
 
@@ -77,7 +82,10 @@ class TestCSharpExecutorProxy:
         await executor_proxy.destroy()
 
         mock_process.poll.assert_called_once()
-        mock_process.terminate.assert_called_once()
+        if platform.system() != "Windows":
+            mock_process.terminate.assert_called_once()
+        else:
+            mock_process.send_signal.assert_called_once_with(signal.CTRL_BREAK_EVENT)
         mock_process.wait.assert_called_once_with(timeout=5)
         mock_process.kill.assert_called_once()
 
