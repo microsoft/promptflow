@@ -9,14 +9,19 @@ from promptflow.executor._service.apis.batch import router as batch_router
 from promptflow.executor._service.apis.common import router as common_router
 from promptflow.executor._service.apis.execution import router as execution_router
 from promptflow.executor._service.apis.tool import router as tool_router
+from promptflow.executor._service.middlewares.custom_float_middleware import CustomFloatMiddleware
 from promptflow.executor._service.utils.service_utils import generate_error_response
 
 app = FastAPI()
 
+# Register routers
 app.include_router(common_router)
 app.include_router(execution_router)
 app.include_router(tool_router)
 app.include_router(batch_router)
+
+# Register middleware
+app.add_middleware(CustomFloatMiddleware)
 
 
 @app.exception_handler(Exception)
