@@ -22,7 +22,6 @@ PROMPTFLOW_ROOT = Path(__file__).parent.parent.parent / "promptflow"
 TEST_CONFIG_ROOT = Path(__file__).parent.parent.parent / "promptflow" / "tests" / "test_configs"
 FLOW_ROOT = TEST_CONFIG_ROOT / "flows"
 EAGER_FLOW_ROOT = TEST_CONFIG_ROOT / "eager_flows"
-PROMPTY_FLOW_ROOT = TEST_CONFIG_ROOT / "prompty"
 CONNECTION_FILE = PROMPTFLOW_ROOT / "connections.json"
 RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "../promptflow-recording/recordings/local").resolve()
 COUNTER_FILE = (Path(__file__) / "../count.json").resolve()
