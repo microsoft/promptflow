@@ -423,6 +423,7 @@ class TestTraceLifeCycle:
     def _wait_for_traces_exported(self) -> None:
         tracer_provider: TracerProvider = trace.get_tracer_provider()
         while len(tracer_provider._active_span_processor._span_processors[0].queue) > 0:
+            # TODO: add timeout
             time.sleep(1)
         return
 
