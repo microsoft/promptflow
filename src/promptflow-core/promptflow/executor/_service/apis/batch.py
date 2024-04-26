@@ -31,6 +31,7 @@ def initialize(request: InitializationRequest):
         # resolve environment variables
         set_environment_variables(request.environment_variables)
         # init batch coordinator to validate flow and create process pool
+        service_logger.info(f"Received batch init request, init_kwargs: {request.init_kwargs}.")
         batch_coordinator = BatchCoordinator(
             working_dir=request.working_dir,
             flow_file=request.flow_file,
