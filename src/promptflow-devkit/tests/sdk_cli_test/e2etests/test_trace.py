@@ -1,6 +1,7 @@
 import datetime
 import json
 import sys
+import time
 import typing
 import uuid
 from pathlib import Path
@@ -9,6 +10,8 @@ from unittest.mock import patch
 import pytest
 from _constants import PROMPTFLOW_ROOT
 from mock import mock
+from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
 
 from promptflow._constants import (
     RUNNING_LINE_RUN_STATUS,
@@ -19,6 +22,7 @@ from promptflow._constants import (
 from promptflow._sdk._constants import TRACE_DEFAULT_COLLECTION
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk.entities._trace import Span
+from promptflow.core import Flow
 from promptflow.tracing import start_trace
 
 TEST_ROOT = (PROMPTFLOW_ROOT / "tests").resolve().absolute()
@@ -416,6 +420,20 @@ class TestTraceLifeCycle:
         except Exception:  # pylint: disable=broad-except
             pass
 
+    def _wait_for_traces_exported(self) -> None:
+        tracer_provider: TracerProvider = trace.get_tracer_provider()
+        while len(tracer_provider._active_span_processor._span_processors[0].queue) > 0:
+            time.sleep(1)
+        return
+
+    def test_execute_prompty(self, pf: PFClient, collection: str) -> None:
+        prompty_path = Path(f"{PROMPTY_DIR}/prompty_example.prompty").absolute()
+        f = Flow.load(prompty_path)
+        f(first_name="John", last_name="Doe", question="What is the capital of France?")
+        self._wait_for_traces_exported()
+        line_runs = pf.traces.list_line_runs(collection=collection)
+        assert len(line_runs) == 1
+
     def _pf_test_and_assert(
         self,
         pf: PFClient,
@@ -424,6 +442,7 @@ class TestTraceLifeCycle:
         collection: str,
     ) -> None:
         pf.test(flow=flow_path, inputs=inputs)
+        self._wait_for_traces_exported()
         line_runs = pf.traces.list_line_runs(collection=collection)
         assert len(line_runs) == 1
 
@@ -451,6 +470,7 @@ class TestTraceLifeCycle:
         expected_number_lines: int,
     ):
         run = pf.run(flow=flow_path, data=data_path)
+        self._wait_for_traces_exported()
         line_runs = pf.traces.list_line_runs(runs=run.name)
         assert len(line_runs) == expected_number_lines
 
