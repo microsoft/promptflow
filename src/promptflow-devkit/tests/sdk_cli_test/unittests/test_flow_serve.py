@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from _constants import PROMPTFLOW_ROOT
 
-from promptflow._cli._pf._flow import _resolve_python_flow_additional_includes
+from promptflow._sdk._utils.serve_utils import _resolve_python_flow_additional_includes
 
 
 @pytest.mark.unittest

@@ -44,7 +44,7 @@ function_entries = [
 ]
 
 
-@pytest.mark.usefixtures("dev_connections")
+@pytest.mark.usefixtures("recording_injection", "setup_connection_provider")
 @pytest.mark.e2etest
 class TestEagerFlow:
     @pytest.mark.parametrize(
@@ -100,7 +100,7 @@ class TestEagerFlow:
             ),
         ],
     )
-    def test_flow_run(self, flow_folder, inputs, ensure_output, init_kwargs, mock_dict_azure_open_ai_connection):
+    def test_flow_run(self, flow_folder, inputs, ensure_output, init_kwargs):
         flow_file = get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT)
 
         # Test submitting eager flow to script executor
@@ -123,7 +123,7 @@ class TestEagerFlow:
         line_result2 = executor.exec_line(inputs=inputs, index=0)
         assert line_result1.output == line_result2.output
 
-    def test_flow_run_with_openai_chat(self, mock_dict_azure_open_ai_connection):
+    def test_flow_run_with_openai_chat(self):
         flow_file = get_yaml_file("callable_class_with_openai", root=EAGER_FLOW_ROOT, file_name="flow.flex.yaml")
 
         executor = ScriptExecutor(flow_file=flow_file, init_kwargs={"connection": "azure_open_ai_connection"})

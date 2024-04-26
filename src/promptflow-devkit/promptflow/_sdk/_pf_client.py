@@ -152,6 +152,7 @@ class PFClient:
                     "connections": connections,
                     "environment_variables": environment_variables,
                     "properties": properties,
+                    "init": init,
                 }.items()
                 if v
             }
@@ -365,7 +366,11 @@ class PFClient:
         if not self._connection_provider:
             # Get a copy with config override instead of the config instance
             self._connection_provider = Configuration(overrides=self._config).get_connection_provider()
-            logger.debug("PFClient connection provider: %s", self._connection_provider)
+            logger.debug("PFClient connection provider: %s, setting to env.", self._connection_provider)
+            from promptflow.core._connection_provider._connection_provider import ConnectionProvider
+
+            # Set to os.environ for connection provider to use
+            os.environ[ConnectionProvider.PROVIDER_CONFIG_KEY] = self._connection_provider
         return self._connection_provider
 
     @property

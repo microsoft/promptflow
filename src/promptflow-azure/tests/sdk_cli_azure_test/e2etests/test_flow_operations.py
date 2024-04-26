@@ -6,6 +6,7 @@ import json
 import pytest
 from sdk_cli_azure_test.conftest import FLOWS_DIR
 
+from promptflow._sdk._constants import FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
 from promptflow.azure._entities._flow import Flow
 from promptflow.exceptions import UserErrorException
 
@@ -24,6 +25,8 @@ class TestFlow:
     def test_create_flow(self, created_flow: Flow):
         # most of the assertions are in the fixture itself
         assert isinstance(created_flow, Flow)
+        flow_tools_json_path = FLOWS_DIR / "simple_hello_world" / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
+        assert not flow_tools_json_path.exists()
 
     def test_get_flow(self, pf, created_flow: Flow):
         result = pf.flows.get(name=created_flow.name)

@@ -1,8 +1,15 @@
 # Release History
 
+## v1.11.0 (Upcoming)
+
+### Improvements
+- [promptflow-devkit]: Interactive browser credential is excluded by default when using Azure AI connections, user could set `PF_NO_INTERACTIVE_LOGIN=False` to enable it.
+
 ## v1.10.0 (Upcoming)
 ### Features Added
 - [promptflow-devkit]: Expose --ui to trigger a chat window, reach [here](https://microsoft.github.io/promptflow/reference/pf-command-reference.html#pf-flow-test) for more details.
+- [promptflow-devkit]: Local serving container support using fastapi engine and tuning worker/thread num via environment variables, reach [here](https://microsoft.github.io/promptflow/how-to-guides/deploy-a-flow/deploy-using-docker.html) for more details.
+- [promptflow-core]: Add fastapi serving engine support.
 
 ## v1.9.0 (2024.04.17)
 
