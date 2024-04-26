@@ -950,9 +950,10 @@ def generate_yaml_entry_without_recover(entry: Union[str, PathLike, Callable], c
 def generate_yaml_entry(entry: Union[str, PathLike, Callable], code: Path = None):
     """Generate yaml entry to run."""
     from promptflow._proxy import ProxyFactory
+    from promptflow._sdk.entities._flows.base import FlowBase
 
     executor_proxy = ProxyFactory().get_executor_proxy_cls(FlowLanguage.Python)
-    if callable(entry) or executor_proxy.is_flex_flow_entry(entry=entry):
+    if not isinstance(entry, FlowBase) and (callable(entry) or executor_proxy.is_flex_flow_entry(entry=entry)):
         with create_temp_flex_flow_yaml(entry, code) as flow_yaml_path:
             yield flow_yaml_path
     else:
