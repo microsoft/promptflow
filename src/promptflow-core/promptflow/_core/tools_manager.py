@@ -38,6 +38,7 @@ from promptflow._utils.tool_utils import (
     get_prompt_param_name_from_func,
     load_function_from_function_path,
     validate_tool_func_result,
+    validate_groups_if_exist_in_tool_spec
 )
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
@@ -97,6 +98,8 @@ def collect_package_tools(keys: Optional[List[str]] = None) -> dict:
 
                 m = tool["module"]
                 importlib.import_module(m)  # Import the module to make sure it is valid
+                if "groups" in tool.keys():
+                    validate_groups_if_exist_in_tool_spec(tool)
                 tool["package"] = entry_point.dist.metadata["Name"]
                 tool["package_version"] = entry_point.dist.version
                 assign_tool_input_index_for_ux_order_if_needed(tool)
@@ -128,6 +131,8 @@ def collect_package_tools_and_connections(keys: Optional[List[str]] = None) -> d
                     continue
                 m = tool["module"]
                 module = importlib.import_module(m)  # Import the module to make sure it is valid
+                if "groups" in tool.keys():
+                    validate_groups_if_exist_in_tool_spec(tool)
                 tool["package"] = entry_point.dist.metadata["Name"]
                 tool["package_version"] = entry_point.dist.version
                 assign_tool_input_index_for_ux_order_if_needed(tool)

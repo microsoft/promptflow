@@ -18,7 +18,7 @@ from promptflow._core._errors import DuplicateToolMappingError
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.utils import is_json_serializable
 from promptflow.core._model_configuration import MODEL_CONFIG_NAME_2_CLASS
-from promptflow.exceptions import ErrorTarget, UserErrorException
+from promptflow.exceptions import ErrorTarget, UserErrorException, ValidationException
 
 from ..contracts.tool import (
     ConnectionType,
@@ -468,6 +468,53 @@ def _get_function_path(function):
     else:
         raise UserErrorException("Function has invalid type, please provide callable or function name for function.")
     return func, func_path
+
+
+def validate_groups_if_exist_in_tool_spec(tool):
+    """Validate groups if exist in tool spec."""
+    tool_name = tool.get("name", "")
+    groups = tool.get("groups", "")
+    invalid_group_names = ["advanced"]
+    used_group_names = set()
+    used_inputs = set()
+    for group in groups:
+        group_name = group.get("name", "")
+        group_inputs = set(group.get("inputs", []))
+        # Group must have name and inputs
+        if not group_name or not group_inputs:
+            message_format = "Group must have name and inputs, please check the tool '{0}' and rename the group."
+            raise ValidationException(
+                message=message_format.format(tool_name),
+                message_format=message_format,
+                ErrorTarget=ErrorTarget.TOOL)
+
+        # Some group names cannot be used like advanced
+        if group_name.lower() in invalid_group_names:
+            message_format = "The group name '{0}' cannot be used, please check the tool '{1}' and rename the group."
+            raise ValidationException(
+                message=message_format.format(group_name, tool_name),
+                message_format=message_format,
+                ErrorTarget=ErrorTarget.TOOL)
+
+        # Group name should be unique
+        if group_name in used_group_names:
+            message_format = "Group name should be unique, please check the tool '{0}' and rename the group."
+            raise ValidationException(
+                message=message_format.format(tool_name),
+                message_format=message_format,
+                ErrorTarget=ErrorTarget.TOOL)
+        else:
+            used_group_names.add(group_name)
+
+        # Each input shouldn't appear in multiple groups
+        if len(group_inputs.intersection(used_inputs)) > 0:
+            message_format = "Each input shouldn't appear in multiple groups, please check the tool '{0}'."
+            raise ValidationException(
+                message=message_format.format(tool_name),
+                message_format=message_format,
+                ErrorTarget=ErrorTarget.TOOL)
+        else:
+            used_inputs.update(group_inputs)
 
 
 class RetrieveToolFuncResultError(UserErrorException):

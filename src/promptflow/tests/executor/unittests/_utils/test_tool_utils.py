@@ -15,6 +15,7 @@ from promptflow._utils.tool_utils import (
     param_to_definition,
     validate_dynamic_list_func_response_type,
     validate_tool_func_result,
+    validate_groups_if_exist_in_tool_spec
 )
 from promptflow.connections import AzureOpenAIConnection, CustomConnection
 from promptflow.contracts.tool import Tool, ToolFuncCallScenario, ToolType, ValueType
@@ -407,3 +408,44 @@ class TestToolUtils:
         }
         with pytest.raises(DuplicateToolMappingError, match="secure operation"):
             _find_deprecated_tools(package_tools)
+
+    @pytest.mark.parametrize(
+        "is_valid_spec, tool_spec, expected_error_message",
+        [
+            (
+                    False,
+                    {"name": "tool1", "groups": [{"inputs": ["tools", "tool_choice"]}]},
+                    "Group must have name and inputs"
+            ),
+            (
+                    False,
+                    {"name": "tool1", "groups": [{"name": "Tools", "inputs": ["tools", "tool_choice"]},
+                                                 {"name": "Tools", "inputs": ["tools1", "tool_choice1"]}]},
+                    "Group name should be unique"
+            ),
+            (
+                    False,
+                    {"name": "tool1", "groups": [{"name": "Advanced", "inputs": ["tools", "tool_choice"]}]},
+                    "The group name 'Advanced' cannot be used"
+            ),
+            (
+                    False,
+                    {"name": "tool1", "groups": [{"name": "Tools", "inputs": ["tools", "tool_choice"]},
+                                                 {"name": "Tools1", "inputs": ["tools", "tool_choice1"]}]},
+                    "Each input shouldn't appear in multiple groups"
+            ),
+            (
+                    True,
+                    {"name": "tool1", "groups": [{"name": "Tools", "inputs": ["tools", "tool_choice"]}]},
+                    None
+            )
+        ],
+    )
+    def test_validate_groups_if_exist_in_tool_spec(self, is_valid_spec, tool_spec, expected_error_message):
+        if not is_valid_spec:
+            from promptflow.exceptions import ValidationException
+            with pytest.raises(ValidationException) as e:
+                validate_groups_if_exist_in_tool_spec(tool_spec)
+            assert expected_error_message in str(e.value)
+        else:
+            validate_groups_if_exist_in_tool_spec(tool_spec)
