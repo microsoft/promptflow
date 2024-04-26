@@ -929,7 +929,7 @@ class TestCli:
                     assert connection_dict["name"] == connection
 
             shutil.rmtree(flow_folder)
-            target = "promptflow._sdk._pf_client.Configuration.get_connection_provider"
+            target = "promptflow._sdk._pf_client.Configuration._get_connection_provider"
             with mock.patch(target) as mocked:
                 mocked.return_value = "azureml:xx"
                 # When configure azure connection provider, init chat flow without connection and deployment.
@@ -2107,7 +2107,7 @@ class TestCli:
                 experiment = local_client._experiments.get(experiment_name)
             return experiment
 
-        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+        with mock.patch("promptflow._sdk._configuration.Configuration._is_internal_features_enabled") as mock_func:
             mock_func.return_value = True
             exp_name = str(uuid.uuid4())
             run_pf_command(
@@ -2140,7 +2140,7 @@ class TestCli:
     @pytest.mark.skipif(condition=not pytest.is_live, reason="Injection cannot passed to detach process.")
     @pytest.mark.usefixtures("setup_experiment_table")
     def test_experiment_start_anonymous_experiment(self, monkeypatch, local_client):
-        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+        with mock.patch("promptflow._sdk._configuration.Configuration._is_internal_features_enabled") as mock_func:
             from promptflow._sdk.entities._experiment import Experiment
 
             with mock.patch.object(Experiment, "_generate_name") as mock_generate_name:
@@ -2157,7 +2157,7 @@ class TestCli:
 
     @pytest.mark.usefixtures("setup_experiment_table", "recording_injection")
     def test_experiment_test(self, monkeypatch, capfd, local_client, tmpdir):
-        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+        with mock.patch("promptflow._sdk._configuration.Configuration._is_internal_features_enabled") as mock_func:
             mock_func.return_value = True
             run_pf_command(
                 "flow",
@@ -2180,7 +2180,7 @@ class TestCli:
 
     @pytest.mark.usefixtures("setup_experiment_table", "recording_injection")
     def test_experiment_direct_test(self, monkeypatch, capfd, local_client, tmpdir):
-        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+        with mock.patch("promptflow._sdk._configuration.Configuration._is_internal_features_enabled") as mock_func:
             mock_func.return_value = True
             run_pf_command(
                 "experiment",
@@ -2732,7 +2732,7 @@ class TestCli:
 
     @pytest.mark.usefixtures("reset_tracer_provider")
     def test_pf_flow_test_with_collection(self):
-        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+        with mock.patch("promptflow._sdk._configuration.Configuration._is_internal_features_enabled") as mock_func:
             mock_func.return_value = True
             collection = str(uuid.uuid4())
             run_pf_command(

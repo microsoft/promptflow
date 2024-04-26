@@ -245,7 +245,7 @@ class TestExperiment:
             assert "eval" in result, "Node eval not in result"
             assert "grade" in result["eval"], "Node eval.grade not in result"
 
-        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+        with mock.patch("promptflow._sdk._configuration.Configuration._is_internal_features_enabled") as mock_func:
             mock_func.return_value = True
 
             template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"
@@ -299,7 +299,7 @@ class TestExperiment:
         template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"
         target_flow_path = FLOW_ROOT / "chat_flow" / "flow.dag.yaml"
         client = PFClient()
-        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+        with mock.patch("promptflow._sdk._configuration.Configuration._is_internal_features_enabled") as mock_func:
             mock_func.return_value = True
             with pytest.raises(ExperimentValueError) as error:
                 client.flows.test(
@@ -312,7 +312,7 @@ class TestExperiment:
     def test_experiment_test(self):
         template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"
         client = PFClient()
-        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+        with mock.patch("promptflow._sdk._configuration.Configuration._is_internal_features_enabled") as mock_func:
             mock_func.return_value = True
             result = client._experiments.test(
                 experiment=template_path,
@@ -323,7 +323,7 @@ class TestExperiment:
     def test_experiment_test_with_skip_node(self):
         template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"
         client = PFClient()
-        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+        with mock.patch("promptflow._sdk._configuration.Configuration._is_internal_features_enabled") as mock_func:
             mock_func.return_value = True
             result = client._experiments.test(
                 experiment=template_path,
@@ -338,7 +338,7 @@ class TestExperiment:
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
     def test_eager_flow_test_with_experiment(self, monkeypatch):
 
-        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+        with mock.patch("promptflow._sdk._configuration.Configuration._is_internal_features_enabled") as mock_func:
             mock_func.return_value = True
 
             template_path = EXP_ROOT / "eager-flow-exp-template" / "flow.exp.yaml"

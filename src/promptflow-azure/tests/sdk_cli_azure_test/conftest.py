@@ -629,7 +629,7 @@ def mock_trace_destination_to_cloud(subscription_id: str, resource_group_name: s
         f"azureml://subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/"
         f"providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}"
     )
-    with patch("promptflow._sdk._configuration.Configuration.get_trace_destination", return_value=trace_destination):
+    with patch("promptflow._sdk._configuration.Configuration._get_trace_destination", return_value=trace_destination):
         yield
 
 

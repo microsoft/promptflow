@@ -32,7 +32,7 @@ def pfs_op(app: Flask):
 class TestPFSAzure:
     @pytest.mark.skipif(pytest.is_replay, reason="connection provider test, skip in non-live mode.")
     def test_get_connection_by_provider(self, pfs_op, subscription_id, resource_group_name, workspace_name):
-        target = "promptflow._sdk._pf_client.Configuration.get_connection_provider"
+        target = "promptflow._sdk._pf_client.Configuration._get_connection_provider"
         provider_url_target = "promptflow.core._utils.extract_workspace"
         mock_provider_url = (subscription_id, resource_group_name, workspace_name)
         with mock.patch(target) as mocked_config, mock.patch(provider_url_target) as mocked_provider_url:
