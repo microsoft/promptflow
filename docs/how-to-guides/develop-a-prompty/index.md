@@ -83,9 +83,9 @@ model:
   configuration:
     type: azure_openai
     azure_deployment: gpt-35-turbo
-    api_key: <api-key>
-    api_version: <api-version>
-    azure_endpoint: <azure-endpoint>
+    api_key: ${env:AZURE_OPENAI_API_KEY}
+    api_version: ${env:AZURE_OPENAI_API_VERSION}
+    azure_endpoint: ${env:AZURE_OPENAI_ENDPOINT}
   parameters:
     max_tokens: 128
     temperature: 0.2
@@ -168,8 +168,8 @@ model:
   configuration:
     type: openai
     model: gpt-3.5-turbo
-    api_key: <api-key>
-    base_url: <api_base>
+    api_key: ${env:OPENAI_API_KEY}
+    base_url: ${env:OPENAI_BASE_URL}
   parameters:
     max_tokens: 128
     temperature: 0.2
