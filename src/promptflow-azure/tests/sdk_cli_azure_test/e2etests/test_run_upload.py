@@ -10,7 +10,8 @@ import pytest
 from _constants import PROMPTFLOW_ROOT
 from sdk_cli_azure_test.conftest import DATAS_DIR, FLOWS_DIR
 
-from promptflow._sdk._constants import Local2CloudProperties, Local2CloudUserProperties, RunStatus
+from promptflow._constants import TokenKeys
+from promptflow._sdk._constants import FlowRunProperties, Local2CloudProperties, Local2CloudUserProperties, RunStatus
 from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk._pf_client import PFClient as LocalPFClient
 from promptflow._sdk.entities import Run
@@ -50,8 +51,10 @@ class Local2CloudTestHelper:
         assert cloud_run._start_time and cloud_run._end_time
         assert cloud_run.properties["azureml.promptflow.local_to_cloud"] == "true"
         assert cloud_run.properties["azureml.promptflow.snapshot_id"]
-        assert cloud_run.properties[Local2CloudProperties.TOTAL_TOKENS]
         assert cloud_run.properties[Local2CloudProperties.EVAL_ARTIFACTS]
+        for token_key in TokenKeys.get_all_values():
+            cloud_key = f"{Local2CloudProperties.PREFIX}.{token_key}"
+            assert cloud_run.properties[cloud_key] == str(run.properties[FlowRunProperties.SYSTEM_METRICS][token_key])
 
         # if no description or tags, skip the check, since one could be {} but the other is None
         if run.description:
@@ -72,6 +75,8 @@ class Local2CloudTestHelper:
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
 @pytest.mark.e2etest
 @pytest.mark.usefixtures(
+    "use_secrets_config_file",
+    "setup_local_connection",
     "mock_set_headers_with_user_aml_token",
     "single_worker_thread_pool",
     "vcr_recording",
@@ -164,7 +169,6 @@ class TestFlowRunUpload:
         local_pf = Local2CloudTestHelper.get_local_pf(name)
 
         run_type = "test_run_type"
-        eval_artifacts = '[{"path": "instance_results.jsonl", "type": "table"}]'
 
         # submit a local batch run
         run = local_pf._run(
@@ -175,10 +179,7 @@ class TestFlowRunUpload:
             display_name="sdk-cli-test-run-local-to-cloud-with-properties",
             tags={"sdk-cli-test": "true"},
             description="test sdk local to cloud",
-            properties={
-                Local2CloudUserProperties.RUN_TYPE: run_type,
-                Local2CloudUserProperties.EVAL_ARTIFACTS: eval_artifacts,
-            },
+            properties={Local2CloudUserProperties.RUN_TYPE: run_type},
         )
         run = local_pf.runs.stream(run.name)
         assert run.status == RunStatus.COMPLETED
@@ -186,7 +187,6 @@ class TestFlowRunUpload:
         # check the run is uploaded to cloud, and the properties are set correctly
         cloud_run = Local2CloudTestHelper.check_local_to_cloud_run(pf, run)
         assert cloud_run.properties[Local2CloudUserProperties.RUN_TYPE] == run_type
-        assert cloud_run.properties[Local2CloudUserProperties.EVAL_ARTIFACTS] == eval_artifacts
 
     @pytest.mark.skipif(condition=not pytest.is_live, reason="Bug - 3089145 Replay failed for test 'test_upload_run'")
     def test_upload_eval_run(self, pf: PFClient, randstr: Callable[[str], str]):
