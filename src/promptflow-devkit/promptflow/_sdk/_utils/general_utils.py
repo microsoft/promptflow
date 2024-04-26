@@ -1123,4 +1123,6 @@ def resolve_flow_language(
         file_path = flow_path / flow_file
         if file_path.is_file() and file_path.suffix.lower() in (".yaml", ".yml"):
             yaml_dict = load_yaml(file_path)
+        else:
+            raise UserErrorException(f"Invalid flow path {file_path.as_posix()}, must exist and of suffix yaml or yml.")
     return yaml_dict.get(LANGUAGE_KEY, FlowLanguage.Python)
