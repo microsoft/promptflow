@@ -17,6 +17,9 @@ inputs:
     type: string
   messages:
     type: list
+outputs
+  apology:
+    type: string
 sample: sample.json
 ---
 

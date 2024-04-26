@@ -18,6 +18,11 @@ inputs:
         type: string
     question:
         type: string
+outputs:
+    name:
+        type: string
+    answer:
+        type: string
 sample: sample.json
 ---
 system:
