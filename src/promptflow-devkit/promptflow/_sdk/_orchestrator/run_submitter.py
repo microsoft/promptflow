@@ -151,6 +151,8 @@ class RunSubmitter:
         status = Status.Failed.value
         exception = None
         # create run to db when fully prepared to run in executor, otherwise won't create it
+        run._status = Status.Running.value
+        run._start_time = datetime.datetime.now()
         run._dump()  # pylint: disable=protected-access
 
         resume_from_run_storage = (

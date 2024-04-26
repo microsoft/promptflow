@@ -6,8 +6,6 @@ model:
     configuration:
         type: azure_openai
         azure_deployment: gpt-35-turbo-0125
-        api_key: ${env:AZURE_OPENAI_API_KEY}
-        azure_endpoint: ${env:AZURE_OPENAI_ENDPOINT}
     parameters:
         max_tokens: 128
         temperature: 0.2
@@ -19,6 +17,11 @@ inputs:
     last_name: 
         type: string
     question:
+        type: string
+outputs:
+    name:
+        type: string
+    answer:
         type: string
 sample: sample.json
 ---

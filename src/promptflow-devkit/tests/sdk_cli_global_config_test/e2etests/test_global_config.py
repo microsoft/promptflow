@@ -4,13 +4,16 @@ from _constants import PROMPTFLOW_ROOT
 
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk.entities._flows._flow_context_resolver import FlowContextResolver
+from promptflow.contracts.run_info import Status
 from promptflow.core import Prompty
 from promptflow.core._connection_provider._workspace_connection_provider import WorkspaceConnectionProvider
+from promptflow.executor._script_executor import ScriptExecutor
 
 TEST_CONFIG_DIR = PROMPTFLOW_ROOT / "tests" / "test_configs"
 FLOWS_DIR = TEST_CONFIG_DIR / "flows"
 DATAS_DIR = TEST_CONFIG_DIR / "datas"
 PROMPTY_DIR = TEST_CONFIG_DIR / "prompty"
+EAGER_FLOW_ROOT = TEST_CONFIG_DIR / "eager_flows"
 
 
 @pytest.mark.usefixtures("global_config")
@@ -54,3 +57,14 @@ class TestGlobalConfig:
         prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty")
         result = prompty(question="what is the result of 1+1?")
         assert "2" in result
+
+    def test_flex_flow_run_with_openai_chat(self, pf):
+        # Test flex flow run successfully with global config ws connection
+        flow_file = EAGER_FLOW_ROOT / "callable_class_with_openai" / "flow.flex.yaml"
+        pf._ensure_connection_provider()
+        executor = ScriptExecutor(flow_file=flow_file, init_kwargs={"connection": "azure_open_ai_connection"})
+        line_result = executor.exec_line(inputs={"question": "Hello", "stream": False}, index=0)
+        assert line_result.run_info.status == Status.Completed, line_result.run_info.error
+        token_names = ["prompt_tokens", "completion_tokens", "total_tokens"]
+        for token_name in token_names:
+            assert token_name in line_result.run_info.api_calls[0]["children"][0]["system_metrics"]

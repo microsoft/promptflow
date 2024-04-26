@@ -257,6 +257,17 @@ class CustomStrongTypeConnectionConfigs:
         ]
 
 
+class TokenKeys:
+    TOTAL_TOKENS = "total_tokens"
+    COMPLETION_TOKENS = "completion_tokens"
+    PROMPT_TOKENS = "prompt_tokens"
+
+    @staticmethod
+    def get_all_values():
+        values = [value for key, value in vars(TokenKeys).items() if isinstance(value, str) and key.isupper()]
+        return values
+
+
 class ConnectionProviderConfig:
     LOCAL = "local"
     AZUREML = "azureml"

@@ -1,0 +1,6 @@
+{
+    "model_config": {
+        "connection": "open_ai_connection",
+        "azure_deployment": "gpt-35-turbo"
+    }
+}
