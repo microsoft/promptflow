@@ -117,6 +117,7 @@ class TestFlowRunUpload:
             flow=Path(f"{EAGER_FLOWS_DIR}/simple_with_yaml"),
             data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
             name=name,
+            column_mapping={"input_val": "${data.input_val}"},
             display_name="sdk-cli-test-run-local-to-cloud-flex-with-yaml",
             tags={"sdk-cli-test-flex": "true"},
             description="test sdk local to cloud",
@@ -136,6 +137,7 @@ class TestFlowRunUpload:
             flow="entry:my_flow",
             code=f"{EAGER_FLOWS_DIR}/simple_without_yaml",
             data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+            column_mapping={"input_val": "${data.input_val}"},
             name=name,
             display_name="sdk-cli-test-run-local-to-cloud-flex-without-yaml",
             tags={"sdk-cli-test-flex": "true"},
@@ -177,8 +179,6 @@ class TestFlowRunUpload:
             name=name,
             column_mapping={"name": "${data.url}"},
             display_name="sdk-cli-test-run-local-to-cloud-with-properties",
-            tags={"sdk-cli-test": "true"},
-            description="test sdk local to cloud",
             properties={Local2CloudUserProperties.RUN_TYPE: run_type},
         )
         run = local_pf.runs.stream(run.name)
@@ -208,7 +208,6 @@ class TestFlowRunUpload:
             data=f"{DATAS_DIR}/webClassification3.jsonl",
             run=main_run_name,
             name=eval_run_name,
-            # column_mapping={"name": "${run.outputs.result}"},
             column_mapping={"name": "${data.url}"},
         )
         eval_run = Local2CloudTestHelper.check_local_to_cloud_run(pf, eval_run)
@@ -224,10 +223,9 @@ class TestFlowRunUpload:
                 flow="entry:my_flow",
                 code=f"{EAGER_FLOWS_DIR}/simple_with_config_json",
                 data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+                column_mapping={"input_val": "${data.input_val}"},
                 name=name,
                 display_name="sdk-cli-test-run-local-to-cloud-flex-with-global-azureml",
-                tags={"sdk-cli-test-flex": "true"},
-                description="test sdk local to cloud",
             )
             assert run.status == RunStatus.COMPLETED
             assert "error" not in run._to_dict(), f"Error found: {run._to_dict()['error']}"

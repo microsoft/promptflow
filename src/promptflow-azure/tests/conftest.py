@@ -19,12 +19,12 @@ load_dotenv()
 _connection_setup = False
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def local_client() -> LocalClient:
     yield LocalClient()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def setup_local_connection(local_client, azure_open_ai_connection):
     global _connection_setup
     if _connection_setup:
