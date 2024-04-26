@@ -1110,12 +1110,14 @@ def resolve_flow_language(
     flow_path: Union[str, Path, PathLike, None] = None,
     yaml_dict: Optional[dict] = None,
     working_dir: Union[str, Path, PathLike, None] = None,
+    # add kwargs given this function will be used in runtime and may have more parameters in the future
+    **kwargs,
 ) -> str:
     """Get language of a flow. Will return 'python' for Prompty."""
     if flow_path is None and yaml_dict is None:
-        raise UserErrorException("Either file_path or yaml_dict should be provided.")
+        raise UserErrorException("Either flow_path or yaml_dict should be provided.")
     if flow_path is not None and yaml_dict is not None:
-        raise UserErrorException("Only one of file_path and yaml_dict should be provided.")
+        raise UserErrorException("Only one of flow_path and yaml_dict should be provided.")
     if flow_path is not None:
         flow_path, flow_file = resolve_flow_path(flow_path, base_path=working_dir, check_flow_exist=False)
         file_path = flow_path / flow_file
