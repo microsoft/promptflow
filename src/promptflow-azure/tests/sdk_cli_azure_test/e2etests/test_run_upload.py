@@ -116,8 +116,8 @@ class TestFlowRunUpload:
             tags={"sdk-cli-test-flex": "true"},
             description="test sdk local to cloud",
         )
-        assert run.status == "Completed"
-        assert "error" not in run._to_dict()
+        assert run.status == RunStatus.COMPLETED
+        assert "error" not in run._to_dict(), f"Error found: {run._to_dict()['error']}"
 
         # check the run is uploaded to cloud
         Local2CloudTestHelper.check_local_to_cloud_run(pf, run)
@@ -136,8 +136,8 @@ class TestFlowRunUpload:
             tags={"sdk-cli-test-flex": "true"},
             description="test sdk local to cloud",
         )
-        assert run.status == "Completed"
-        assert "error" not in run._to_dict()
+        assert run.status == RunStatus.COMPLETED
+        assert "error" not in run._to_dict(), f"Error found: {run._to_dict()['error']}"
 
         # check the run is uploaded to cloud.
         Local2CloudTestHelper.check_local_to_cloud_run(pf, run)
@@ -153,7 +153,7 @@ class TestFlowRunUpload:
             name=name,
         )
         assert run.status == RunStatus.COMPLETED
-        assert "error" not in run._to_dict()
+        assert "error" not in run._to_dict(), f"Error found: {run._to_dict()['error']}"
 
         # check the run is uploaded to cloud.
         Local2CloudTestHelper.check_local_to_cloud_run(pf, run)
@@ -229,8 +229,8 @@ class TestFlowRunUpload:
                 tags={"sdk-cli-test-flex": "true"},
                 description="test sdk local to cloud",
             )
-            assert run.status == "Completed"
-            assert "error" not in run._to_dict()
+            assert run.status == RunStatus.COMPLETED
+            assert "error" not in run._to_dict(), f"Error found: {run._to_dict()['error']}"
 
             # check the run is uploaded to cloud.
             Local2CloudTestHelper.check_local_to_cloud_run(pf, run)
