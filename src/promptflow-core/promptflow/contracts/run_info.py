@@ -230,6 +230,7 @@ class FlowRunInfo:
             system_metrics=data.get("system_metrics", None),
             result=data.get("result", None),
             upload_metrics=data.get("upload_metrics", False),
+            otel_trace_id=data.get("otel_trace_id", ""),
             message_format=data.get("message_format", MessageFormatType.BASIC),
         )
         return flow_run_info

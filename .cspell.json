@@ -220,7 +220,8 @@
     "dcid",
     "piezo",
     "Piezo",
-    "cmpop"
+    "cmpop",
+    "omap"
   ],
   "flagWords": [
     "Prompt Flow"

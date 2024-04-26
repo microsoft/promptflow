@@ -59,9 +59,9 @@ def is_github_codespaces():
     return os.environ.get("CODESPACES", None) == "true"
 
 
-def interactive_credential_disabled():
-    """Check if interactive login is disabled."""
-    return os.environ.get(PF_NO_INTERACTIVE_LOGIN, "false").lower() == "true"
+def interactive_credential_enabled():
+    """Check if interactive login is enabled."""
+    return os.environ.get(PF_NO_INTERACTIVE_LOGIN, "true").lower() == "false"
 
 
 def is_from_cli():
