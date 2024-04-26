@@ -27,11 +27,11 @@ def initialize(request: InitializationRequest):
         # validate request and get operation context
         request.validate_request()
         operation_context = update_and_get_operation_context(request.operation_context)
+        service_logger.info(f"Received batch init_kwargs, init_kwargs: {request.init_kwargs}.")
         service_logger.info(f"Received batch init request, executor version: {operation_context.get_user_agent()}.")
         # resolve environment variables
         set_environment_variables(request.environment_variables)
         # init batch coordinator to validate flow and create process pool
-        service_logger.info(f"Received batch init request, init_kwargs: {request.init_kwargs}.")
         batch_coordinator = BatchCoordinator(
             working_dir=request.working_dir,
             flow_file=request.flow_file,
