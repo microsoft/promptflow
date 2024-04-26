@@ -25,10 +25,11 @@ router = APIRouter()
 def initialize(request: InitializationRequest):
     with get_log_context(request, enable_service_logger=True):
         # validate request and get operation context
+        service_logger.info("1111111111111.")
+        service_logger.info(f"Received batch init_kwargs, init_kwargs: {request.init_kwargs}.")
+        service_logger.info("2222222222222.")
         request.validate_request()
         operation_context = update_and_get_operation_context(request.operation_context)
-        service_logger.info(f"Received batch init_kwargs, init_kwargs: {request.init_kwargs}.")
-        service_logger.info(f"Received batch init request, executor version: {operation_context.get_user_agent()}.")
         # resolve environment variables
         set_environment_variables(request.environment_variables)
         # init batch coordinator to validate flow and create process pool
