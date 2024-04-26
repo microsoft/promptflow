@@ -1073,7 +1073,7 @@ class TestFlowRun:
         # mock to imitate user specify config run.output_path
         specified_run_output_path = (Path.home() / PROMPT_FLOW_DIR_NAME / ".mock").resolve().as_posix()
         with mocker.patch(
-            "promptflow._sdk._configuration.Configuration.get_run_output_path",
+            "promptflow._sdk._configuration.Configuration._get_run_output_path",
             return_value=specified_run_output_path,
         ):
             run = create_run_against_multi_line_data_without_llm(pf)
@@ -1092,7 +1092,7 @@ class TestFlowRun:
     def test_specify_run_output_path_with_macro(self, pf: PFClient, mocker: MockerFixture) -> None:
         # mock to imitate user specify invalid config run.output_path
         with mocker.patch(
-            "promptflow._sdk._configuration.Configuration.get_run_output_path",
+            "promptflow._sdk._configuration.Configuration._get_run_output_path",
             return_value=f"{FLOW_DIRECTORY_MACRO_IN_CONFIG}/.promptflow",
         ):
             for _ in range(3):
@@ -1105,7 +1105,7 @@ class TestFlowRun:
     def test_specify_run_output_path_with_invalid_macro(self, pf: PFClient, mocker: MockerFixture) -> None:
         # mock to imitate user specify invalid config run.output_path
         with mocker.patch(
-            "promptflow._sdk._configuration.Configuration.get_run_output_path",
+            "promptflow._sdk._configuration.Configuration._get_run_output_path",
             # this case will happen when user manually modifies ~/.promptflow/pf.yaml
             return_value=f"{FLOW_DIRECTORY_MACRO_IN_CONFIG}",
         ):
