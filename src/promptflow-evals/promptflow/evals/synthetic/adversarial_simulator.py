@@ -5,11 +5,19 @@
 import logging
 from typing import Any, Callable, Dict
 
-from ._model_tools import AdversarialTemplateHandler, ManagedIdentityAPITokenManager, RAIClient, TokenScope
+from ._model_tools import (
+    CONTENT_HARM_TEMPLATES_COLLECTION_KEY,
+    AdversarialTemplateHandler,
+    ManagedIdentityAPITokenManager,
+    RAIClient,
+    TokenScope,
+)
 
 
 class AdversarialSimulator:
     def __init__(self, *, template: str, project_scope: Dict[str, Any]):
+        if template not in CONTENT_HARM_TEMPLATES_COLLECTION_KEY:
+            raise ValueError(f"Template {template} is not a valid adversarial template.")
         self.template = template
         self.project_scope = project_scope
         self.token_manager = ManagedIdentityAPITokenManager(
