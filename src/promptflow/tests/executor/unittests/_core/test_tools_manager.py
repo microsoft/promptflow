@@ -366,8 +366,9 @@ class TestToolsManager:
 
     def test_register_apis(self):
         from typing import Union
-        from promptflow._core.tools_manager import register_apis, connection_type_to_api_mapping
+
         from promptflow._core.tool import ToolProvider
+        from promptflow._core.tools_manager import connection_type_to_api_mapping, register_apis
         from promptflow.connections import AzureOpenAIConnection, OpenAIConnection, ServerlessConnection
 
         class MockAI1(ToolProvider):
