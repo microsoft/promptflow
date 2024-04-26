@@ -7,7 +7,7 @@ from promptflow.executor._result import LineResult
 from ...conftest import PROMPTY_FLOW_ROOT
 
 
-@pytest.mark.usefixtures("dev_connections")
+@pytest.mark.usefixtures("setup_connection_provider")
 @pytest.mark.e2etest
 class TestPromptyFlow:
     def test_flow_run(self):
