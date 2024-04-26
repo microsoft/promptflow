@@ -2,10 +2,12 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from pathlib import Path
+import os
+import re
+
+import numpy as np
 
 from promptflow.client import load_flow
-from promptflow.core._prompty_utils import convert_model_configuration_to_connection
 
 
 class GroundednessEvaluator:
@@ -26,20 +28,15 @@ class GroundednessEvaluator:
                 context="Tokyo is Japan's capital, known for its blend of traditional culture \
                     and technological advancements.")
         """
+        # TODO: Remove this block once the bug is fixed
+        # https://msdata.visualstudio.com/Vienna/_workitems/edit/3151324
+        if model_config.api_version is None:
+            model_config.api_version = "2024-02-15-preview"
 
-        # Load the flow as function
-        current_dir = Path(__file__).resolve().parent
-        flow_dir = current_dir / "flow"
-        self._flow = load_flow(source=flow_dir)
-
-        # Override the connection
-        connection = convert_model_configuration_to_connection(model_config)
-        self._flow.context.connections = {
-            "query_llm": {
-                "connection": connection,
-                "deployment_name": model_config.azure_deployment,
-            }
-        }
+        prompty_model_config = {"configuration": model_config}
+        current_dir = os.path.dirname(__file__)
+        prompty_path = os.path.join(current_dir, "groundedness.prompty")
+        self._flow = load_flow(source=prompty_path, model=prompty_model_config)
 
     def __call__(self, *, answer: str, context: str, **kwargs):
         """Evaluate groundedness of the answer in the context.
@@ -51,6 +48,17 @@ class GroundednessEvaluator:
         :return: The groundedness score.
         :rtype: dict
         """
+        # Validate input parameters
+        if not (answer and answer.strip()) or not (context and context.strip()):
+            raise ValueError("Both 'answer' and 'context' must be non-empty strings.")
 
         # Run the evaluation flow
-        return self._flow(answer=answer, context=context)
+        llm_output = self._flow(answer=answer, context=context)
+
+        score = np.nan
+        if llm_output:
+            match = re.search(r"\d", llm_output)
+            if match:
+                score = float(match.group())
+
+        return {"gpt_groundedness": float(score)}
