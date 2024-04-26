@@ -99,7 +99,7 @@ class TestAPIBasedExecutorProxy:
             mock.side_effect = ExecutorServiceUnhealthy("executor unhealthy")
             with pytest.raises(ValidationException) as ex:
                 await mock_executor_proxy.ensure_executor_startup(error_file)
-            assert "Get connection '{aoai_conn}' for node '{mock}' error" in ex.value.message
+            assert "Get connection 'aoai_conn' for node 'mock' error: mock" in ex.value.message
             assert ex.value.target == ErrorTarget.BATCH
 
     @pytest.mark.asyncio
