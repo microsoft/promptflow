@@ -44,7 +44,6 @@ class TestSaveEval:
         pf_client.flows.save(rai_evaluator, path=tmpdir)
         assert os.path.isfile(os.path.join(tmpdir, "flow.flex.yaml"))
 
-    @pytest.mark.skip(reason="TODO: Failed in CI due to SpawnedForkProcessManagerStartFailure")
     def test_load_and_run_evaluators(self, tmpdir, pf_client, data_file) -> None:
         """Test regular evaluator saving."""
         from promptflow.evals.evaluators import F1ScoreEvaluator

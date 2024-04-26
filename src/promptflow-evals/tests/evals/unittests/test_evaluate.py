@@ -111,7 +111,6 @@ class TestEvaluate:
             evaluate(data=questions_wrong_file, evaluators={"g": F1ScoreEvaluator()}, target=_target_fn)
         assert "Missing required inputs for target : ['question']." in exc_info.value.args[0]
 
-    @pytest.mark.skip(reason="TODO: Failed in CI due to SpawnedForkProcessManagerStartFailure")
     def test_wrong_target(self, questions_file):
         """Test error, when target function does not generate required column."""
         with pytest.raises(ValueError) as exc_info:
@@ -120,7 +119,6 @@ class TestEvaluate:
 
         assert "Missing required inputs for evaluator g : ['ground_truth']." in exc_info.value.args[0]
 
-    @pytest.mark.skip(reason="TODO: Failed in CI due to SpawnedForkProcessManagerStartFailure")
     def test_apply_target_to_data(self, pf_client, questions_file, questions_answers_file):
         """Test that target was applied correctly."""
         initial_data = pd.read_json(questions_file, lines=True)
