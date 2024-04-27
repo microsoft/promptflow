@@ -56,7 +56,7 @@ class AdversarialTemplateHandler:
         self.categorized_ch_parameters = None
         self.rai_client = rai_client
 
-    async def _get_ch_template_collections(self, collection_key):
+    async def _get_content_harm_template_collections(self, collection_key):
 
         if self.categorized_ch_parameters is None:
             categorized_parameters = {}
