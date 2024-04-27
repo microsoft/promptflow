@@ -64,7 +64,7 @@ def get_feature_list():
         Feature(
             name="OpenTelemetryTrace",
             description="Support OpenTelemetry trace.",
-            state=FeatureState.E2ETEST,
+            state=FeatureState.READY,
         ),
         Feature(
             name="OpenaiVisionMessageFormat",

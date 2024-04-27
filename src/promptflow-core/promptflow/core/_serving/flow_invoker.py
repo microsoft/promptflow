@@ -116,6 +116,14 @@ class FlowInvoker:
             connections_to_ignore.extend(self.connections_name_overrides.keys())
             self.logger.debug(f"Flow invoker connections name overrides: {self.connections_name_overrides.keys()}")
             self.logger.debug(f"Ignoring connections: {connections_to_ignore}")
+            if not connection_provider:
+                # If user not pass in connection provider string, get from environment variable.
+                connection_provider = ConnectionProvider.get_instance(credential=self._credential)
+            else:
+                # Else, init from the string to parse the provider config.
+                connection_provider = ConnectionProvider.init_from_provider_config(
+                    connection_provider, credential=self._credential
+                )
             # Note: The connection here could be local or workspace, depends on the connection.provider in pf.yaml.
             connections = self.resolve_connections(
                 # use os.environ to override flow definition's connection since
@@ -123,7 +131,7 @@ class FlowInvoker:
                 connection_names=self.flow.get_connection_names(
                     environment_variables_overrides=os.environ,
                 ),
-                provider=ConnectionProvider.init_from_provider_config(connection_provider, credential=self._credential),
+                provider=connection_provider,
                 connections_to_ignore=connections_to_ignore,
                 # fetch connections with name override
                 connections_to_add=list(self.connections_name_overrides.values()),

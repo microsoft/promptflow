@@ -1,4 +1,3 @@
-import asyncio
 import contextlib
 import dataclasses
 import importlib
@@ -14,7 +13,7 @@ from promptflow._constants import LINE_NUMBER_KEY, MessageFormatType
 from promptflow._core.log_manager import NodeLogManager
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool_meta_generator import PythonLoadError
-from promptflow._utils.async_utils import async_run_allowing_running_loop
+from promptflow._utils.async_utils import async_to_sync, sync_to_async
 from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import logger
@@ -134,10 +133,7 @@ class ScriptExecutor(FlowExecutor):
         line_run_id = run_info.run_id
         try:
             Tracer.start_tracing(line_run_id)
-            if self._is_async:
-                output = asyncio.run(self._func(**inputs))
-            else:
-                output = self._func(**inputs)
+            output = self._func(**inputs)
             output = self._stringify_generator_output(output) if not allow_generator_output else output
             traces = Tracer.end_tracing(line_run_id)
             # Should convert output to dict before storing it to run info, since we will add key 'line_number' to it,
@@ -193,13 +189,48 @@ class ScriptExecutor(FlowExecutor):
     ) -> AggregationResult:
         output, metrics = None, {}
         try:
-            if inspect.iscoroutinefunction(self._aggr_func):
-                output = async_run_allowing_running_loop(self._aggr_func, **{self._aggr_input_name: inputs})
+            output = self._aggr_func(**{self._aggr_input_name: inputs})
+            if isinstance(output, dict):
+                metrics = output
+                for k, v in metrics.items():
+                    log_metric(k, v)
             else:
-                output = self._aggr_func(**{self._aggr_input_name: inputs})
-            metrics = output if isinstance(output, dict) else {"metrics": output}
-            for k, v in metrics.items():
-                log_metric(k, v)
+                logger.warning("The output of aggregation function isn't a dictionary, skip the metrices update.")
+        except Exception as e:
+            error_type_and_message = f"({e.__class__.__name__}) {e}"
+            e = ScriptExecutionError(
+                message_format="Execution failure in '{func_name}': {error_type_and_message}",
+                func_name=self._aggr_func.__name__,
+                error_type_and_message=error_type_and_message,
+            )
+            error = ExceptionPresenter.create(e).to_dict(include_debug_info=True)
+            logger.warning(f"Failed to execute aggregation function with error: {error}")
+            logger.warning("The flow will have empty metrics.")
+        return AggregationResult(output, metrics, {})
+
+    async def exec_aggregation_async(
+        self,
+        inputs: Mapping[str, Any],
+        aggregation_inputs: List[Any],
+        run_id: Optional[str] = None,
+    ):
+        if not self._aggr_func:
+            return AggregationResult({}, {}, {})
+        # Similar to dag flow, add a prefix "reduce" for run id of aggregation function.
+        run_id = f"{run_id}_reduce" if run_id is not None else f"{str(uuid.uuid4())}_reduce"
+        with self._update_operation_context_for_aggregation(run_id):
+            return await self._exec_aggregation_async(aggregation_inputs)
+
+    async def _exec_aggregation_async(self, inputs):
+        output, metrics = None, {}
+        try:
+            output = await self._aggr_func_async(**{self._aggr_input_name: inputs})
+            if isinstance(output, dict):
+                metrics = output
+                for k, v in metrics.items():
+                    log_metric(k, v)
+            else:
+                logger.warning("The output of aggregation function isn't a dictionary, skip the metrices update.")
         except Exception as e:
             error_type_and_message = f"({e.__class__.__name__}) {e}"
             e = ScriptExecutionError(
@@ -240,11 +271,7 @@ class ScriptExecutor(FlowExecutor):
         line_run_id = run_info.run_id
         try:
             Tracer.start_tracing(line_run_id)
-            if self._is_async:
-                output = await self._func(**inputs)
-            else:
-                partial_func = partial(self._func, **inputs)
-                output = await asyncio.get_event_loop().run_in_executor(None, partial_func)
+            output = await self._func_async(**inputs)
             output = self._stringify_generator_output(output) if not allow_generator_output else output
             traces = Tracer.end_tracing(line_run_id)
             output_dict = convert_eager_flow_output_to_dict(output)
@@ -356,6 +383,7 @@ class ScriptExecutor(FlowExecutor):
         if self.is_function_entry:
             if inspect.isfunction(self._entry):
                 return self._entry
+            self._initialize_aggr_function(self._entry)
             return self._entry.__call__
         module_name, func_name = self._parse_flow_file()
         try:
@@ -406,17 +434,22 @@ class ScriptExecutor(FlowExecutor):
             if inspect.ismethod(func):
                 # For class method, the original function is a function reference that not bound to any object,
                 # so we need to pass the instance to it.
+                name = name[: -len(".__call__")] if (name := func.__qualname__).endswith(".__call__") else name
                 func = _traced(
                     partial(getattr(func, "__original_function"), self=func.__self__),
                     trace_type=TraceType.FLOW,
-                    name=func.__qualname__,
+                    name=name,
                 )
             else:
                 func = _traced(getattr(func, "__original_function"), trace_type=TraceType.FLOW)
-        self._func = func
-        inputs, _, _, _ = function_to_interface(self._func)
+        inputs, _, _, _ = function_to_interface(func)
         self._inputs = {k: v.to_flow_input_definition() for k, v in inputs.items()}
-        self._is_async = inspect.iscoroutinefunction(self._func)
+        if inspect.iscoroutinefunction(func):
+            self._func = async_to_sync(func)
+            self._func_async = func
+        else:
+            self._func = func
+            self._func_async = sync_to_async(func)
         return func
 
     def _initialize_aggr_function(self, flow_obj: object):
@@ -429,7 +462,12 @@ class ScriptExecutor(FlowExecutor):
                 )
             if not hasattr(aggr_func, "__original_function"):
                 aggr_func = _traced(aggr_func)
-            self._aggr_func = aggr_func
+            if inspect.iscoroutinefunction(aggr_func):
+                self._aggr_func = async_to_sync(aggr_func)
+                self._aggr_func_async = aggr_func
+            else:
+                self._aggr_func = aggr_func
+                self._aggr_func_async = sync_to_async(aggr_func)
             self._aggr_input_name = list(sign.parameters.keys())[0]
 
     def _parse_flow_file(self):

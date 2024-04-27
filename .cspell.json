@@ -216,13 +216,15 @@
     "mpnet",
     "wargs",
     "dcid",
-    "cmpop",
     "aiohttp",
     "endofprompt",
     "tkey",
     "tparam",
-    "ncols"
-
+    "ncols",
+    "piezo",
+    "Piezo",
+    "cmpop",
+    "omap"
   ],
   "flagWords": [
     "Prompt Flow"

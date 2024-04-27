@@ -15,7 +15,7 @@ from promptflow.batch._batch_engine import BatchEngine
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, ValidationException
-from promptflow.executor._errors import ConnectionNotFound
+from promptflow.executor._errors import GetConnectionError
 from promptflow.storage._run_storage import AbstractRunStorage
 
 from ..mock_execution_server import run_executor_server
@@ -45,8 +45,7 @@ class TestCSharpExecutorProxy:
 
     def test_batch_validation_error(self):
         # prepare the init error file to mock the validation error
-        error_message = "'test_connection' not found."
-        test_exception = ConnectionNotFound(message=error_message)
+        test_exception = GetConnectionError(connection="test_connection", node_name="mock", error=Exception("mock"))
         error_dict = ExceptionPresenter.create(test_exception).to_dict()
         init_error_file = Path(mkdtemp()) / "init_error.json"
         with open(init_error_file, "w") as file:
@@ -54,7 +53,7 @@ class TestCSharpExecutorProxy:
         # submit a batch run
         with pytest.raises(ValidationException) as e:
             self._submit_batch_run(init_error_file=init_error_file)
-        assert error_message in e.value.message
+        assert "Get connection 'test_connection' for node 'mock' error: mock" in e.value.message
         assert e.value.error_codes == ["UserError", "ValidationError"]
         assert e.value.target == ErrorTarget.BATCH
 
