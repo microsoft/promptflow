@@ -7,8 +7,7 @@ import logging
 from typing import Any, Callable, List, Tuple
 
 from .._model_tools import RetryClient
-from . import ConversationTurn
-from ._callback_conversation_bot import ConversationBot
+from . import ConversationBot, ConversationTurn
 
 
 def is_closing_message(response: Any, recursion_depth: int = 0):

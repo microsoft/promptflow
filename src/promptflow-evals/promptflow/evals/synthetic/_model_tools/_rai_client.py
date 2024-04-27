@@ -40,6 +40,8 @@ class RAIClient:
             self.project_scope["workspace_name"],
         ]
         self.api_url = "/".join(segments)
+        # add a "/" at the end of the url
+        self.api_url = self.api_url.rstrip("/") + "/"
         self.parameter_json_endpoint = urljoin(self.api_url, "simulation/template/parameters")
         self.jailbreaks_json_endpoint = urljoin(self.api_url, "simulation/jailbreak")
         self.simulation_submit_endpoint = urljoin(self.api_url, "simulation/chat/completions/submit")
@@ -57,9 +59,8 @@ class RAIClient:
         )
         if response.status_code != 200:
             raise Exception("Failed to retrieve the discovery service URL")
-        print(response.json())
         base_url = response.json()["properties"]["discoveryUrl"]
-        return base_url
+        return base_url.replace("discovery", "")
 
     def _create_async_client(self):
         return AsyncHTTPClientWithRetry(n_retry=6, retry_timeout=5, logger=logging.getLogger())
@@ -77,7 +78,7 @@ class RAIClient:
         return self.jailbreaks_dataset
 
     async def get(self, url: str) -> Any:
-        token = await self.token_manager.get_token()
+        token = self.token_manager.get_token()
         headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
@@ -85,6 +86,7 @@ class RAIClient:
 
         async with self._create_async_client().client as session:
             async with session.get(url=url, headers=headers) as response:
+                print(f"GET {url} {response.status}")
                 if response.status == 200:
                     response = await response.json()
                     return response

@@ -83,9 +83,7 @@ class AdversarialTemplateHandler:
                 for p in params:
                     p.update({"ch_template_placeholder": "{{ch_template_placeholder}}"})
 
-                template = Template(
-                    template_name=key, text=None, context_key=[], content_harm=True, template_parameters=params
-                )
+                template = AdversarialTemplate(template_name=key, text=None, context_key=[], template_parameters=params)
 
                 ch_templates.append(template)
         return ch_templates

@@ -1,3 +1,4 @@
+import asyncio
 import os
 from typing import Any, Dict, List, Optional
 
@@ -72,13 +73,16 @@ class TestAdvSimulator:
             }
 
         simulator = AdversarialSimulator(template=template, project_scope=project_scope)
-        outputs = simulator(
-            max_conversation_turns=1,
-            max_simulation_results=1,
-            target=callback,
-            api_call_retry_limit=3,
-            api_call_retry_sleep_sec=1,
-            api_call_delay_sec=30,
-            concurrent_async_task=1,
+
+        outputs = asyncio.run(
+            simulator(
+                max_conversation_turns=1,
+                max_simulation_results=1,
+                target=callback,
+                api_call_retry_limit=3,
+                api_call_retry_sleep_sec=1,
+                api_call_delay_sec=30,
+                concurrent_async_task=1,
+            )
         )
         assert len(outputs) == 1

@@ -8,7 +8,8 @@ from typing import Any, Callable, Dict, List
 
 from tqdm import tqdm
 
-from ._conversation import CallbackConversationBot, ConversationBot, ConversationRole, simulate_conversation
+from ._conversation import CallbackConversationBot, ConversationBot, ConversationRole
+from ._conversation._conversation import simulate_conversation
 from ._model_tools import (
     CONTENT_HARM_TEMPLATES_COLLECTION_KEY,
     AdversarialTemplateHandler,
