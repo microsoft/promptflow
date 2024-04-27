@@ -1,0 +1,19 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+inputs:
+  answer:
+    type: string
+  ground_truth:
+    type: string
+outputs:
+  answer:
+    type: string
+    reference: ${similarity.output}
+nodes:
+- name: similarity
+  type: python
+  source:
+    type: code
+    path: similarity.py
+  inputs:
+    answer: ${inputs.answer}
+    ground_truth: ${inputs.ground_truth}
