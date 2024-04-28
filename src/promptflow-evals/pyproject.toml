@@ -8,7 +8,7 @@ name = "promptflow-evals"
 # This version does not need to be changed, because it is set by the release pipeline.
 # See build-publish-local-wheel-evals.yaml pipeline definition
 # in Vienna PromptFlow repository for reference.
-version = "0.2.0.dev0"
+version = "0.2.0.dev125217915"
 description = "Prompt flow evals"
 license = "MIT"
 authors = [
@@ -40,8 +40,8 @@ packages = [
 [tool.poetry.dependencies]
 python = "<4.0,>=3.8"
 azure-ai-ml = ">=1.14.0"
-promptflow-devkit = "<2.0.0"
-promptflow-core = "<2.0.0"
+promptflow-devkit = ">=1.10.0.dev125217915,<2.0.0"
+promptflow-core = ">=1.10.0.dev125217915,<2.0.0"
 promptflow-tools = "<2.0.0"
 
 [tool.poetry.group.dev.dependencies]
