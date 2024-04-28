@@ -754,10 +754,21 @@ def mock_async_run_uploader_upload_single_blob(tmpdir):
 
     orig_func = AsyncRunUploader._upload_single_blob
 
+    def _is_content_time_sensitive(data_path) -> bool:
+        data_path = Path(data_path).as_posix()
+        return (
+            "flow_artifacts" in Path(data_path).as_posix()
+            or "node_artifacts" in Path(data_path).as_posix()
+            or "logs.txt" in Path(data_path).as_posix()
+            or "flow_logs" in Path(data_path).as_posix()
+            or "instance_results.jsonl" in Path(data_path).as_posix()
+        )
+
     async def mock_upload_single_blob(self, blob_client, data_path, target_datastore):
-        if ".runs" not in Path(data_path).as_posix():
-            return await orig_func(self, blob_client, data_path, target_datastore)
-        await orig_func(self, blob_client, tmp_data_path, target_datastore)
+        if _is_content_time_sensitive(data_path):
+            await orig_func(self, blob_client, tmp_data_path, target_datastore)
+        else:
+            await orig_func(self, blob_client, data_path, target_datastore)
 
     with patch(
         "promptflow.azure.operations._async_run_uploader.AsyncRunUploader._upload_single_blob",
