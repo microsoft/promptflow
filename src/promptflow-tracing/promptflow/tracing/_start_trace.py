@@ -37,7 +37,6 @@ def start_trace(
     :param collection: Specify the collection for current tracing.
     :type collection: typing.Optional[str]
     """
-    from promptflow._sdk.entities import Run
 
     # When PF_TRACING_SKIP_LOCAL_SETUP_ENVIRON is set to true, the start_trace should be skipped.
     # An example is that user call start_trace at cloud mode. Nothing should happen.
@@ -105,7 +104,7 @@ def start_trace(
             _run = kwargs.get("run", None)
             logging.debug("collection: %s", collection)
             logging.debug("attributes: %s", _attributes)
-            logging.debug("run: %s", _run.name if isinstance(_run, Run) else _run)
+            logging.debug("run: %s", _run)
             start_trace_with_devkit(collection=collection, attributes=_attributes, run=_run)
 
 
