@@ -16,7 +16,7 @@ import argparse  # noqa: E402
 import logging  # noqa: E402
 import sys  # noqa: E402
 
-from promptflow._sdk._utils import print_pf_version, print_promptflow_version_dict_string  # noqa: E402
+from promptflow._sdk._utility.general_utils import print_pf_version, print_promptflow_version_dict_string  # noqa: E402
 from promptflow._utils.logger_utils import get_cli_sdk_logger  # noqa: E402
 from promptflow._utils.user_agent_utils import setup_user_agent_to_operation_context  # noqa: E402
 from promptflow.azure._cli._flow import add_parser_flow, dispatch_flow_commands  # noqa: E402

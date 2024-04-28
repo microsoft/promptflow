@@ -33,7 +33,7 @@ from promptflow._constants import LAST_CHECK_TIME, PF_VERSION_CHECK
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, PROMPT_FLOW_HOME_DIR_ENV_VAR
 from promptflow._sdk._errors import GenerateFlowToolsJsonError
 from promptflow._sdk._telemetry.logging_handler import get_scrubbed_cloud_role
-from promptflow._sdk._utils import (
+from promptflow._sdk._utility.general_utils import (
     _generate_connections_dir,
     decrypt_secret_value,
     encrypt_secret_value,

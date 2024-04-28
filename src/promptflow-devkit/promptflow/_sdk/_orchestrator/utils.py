@@ -40,7 +40,7 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import InvalidFlowError, RunOperationError
 from promptflow._sdk._load_functions import load_flow
-from promptflow._sdk._utils import (
+from promptflow._sdk._utility.general_utils import (
     _merge_local_code_and_additional_includes,
     get_used_connection_names_from_dict,
     update_dict_value_with_connections,

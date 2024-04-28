@@ -17,7 +17,7 @@ from ._configuration import Configuration
 from ._constants import MAX_SHOW_DETAILS_RESULTS
 from ._load_functions import load_flow
 from ._user_agent import USER_AGENT
-from ._utils import generate_yaml_entry
+from ._utility.general_utils import generate_yaml_entry
 from .entities import Run
 from .entities._flows import FlexFlow, Prompty
 from .entities._flows.base import FlowBase

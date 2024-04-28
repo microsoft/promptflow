@@ -22,7 +22,7 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import ConnectionClassNotFoundError, SDKError, UnsecureConnectionError
 from promptflow._sdk._orm.connection import Connection as ORMConnection
-from promptflow._sdk._utils import (
+from promptflow._sdk._utility.general_utils import (
     decrypt_secret_value,
     encrypt_secret_value,
     find_type_in_override,
