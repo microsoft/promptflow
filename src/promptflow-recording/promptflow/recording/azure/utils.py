@@ -198,11 +198,6 @@ def sanitize_pfs_request_body(body: str) -> str:
         body_dict["flowLineageId"] = SanitizedValues.FLOW_LINEAGE_ID
     if "flowDefinitionResourceId" in body_dict:
         body_dict["flowDefinitionResourceId"] = sanitize_flow_asset_id(body_dict["flowDefinitionResourceId"])
-    # /BulkRuns/create
-    if "startTimeUtc" in body_dict:
-        body_dict["startTimeUtc"] = SanitizedValues.START_TIME_UTC
-    if "endTimeUtc" in body_dict:
-        body_dict["endTimeUtc"] = SanitizedValues.END_TIME_UTC
     # if properties is a dict, we need to ensure its order
     # otherwise, it might break body match as a string
     if "properties" in body_dict and isinstance(body_dict["properties"], dict):
