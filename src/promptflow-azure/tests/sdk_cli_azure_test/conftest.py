@@ -759,6 +759,7 @@ def mock_async_run_uploader_upload_single_blob(tmpdir):
         return (
             "flow_artifacts" in Path(data_path).as_posix()
             or "node_artifacts" in Path(data_path).as_posix()
+            or "flow_outputs" in Path(data_path).as_posix()
             or "logs.txt" in Path(data_path).as_posix()
             or "flow_logs" in Path(data_path).as_posix()
             or "instance_results.jsonl" in Path(data_path).as_posix()
