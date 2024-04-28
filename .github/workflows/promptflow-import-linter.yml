@@ -71,8 +71,5 @@ jobs:
         echo "=== Add more import linter when facing more import errors ==="
 
         echo "=== promptflow-devkit ==="
-        poetry run python -c $'from promptflow._sdk import *\nfrom promptflow._cli import *'
-
-        echo "=== promptflow-azure ==="
-        poetry run python -c $'from promptflow.azure._cli import *\nfrom promptflow.azure import *'
+        poetry run python ${{ github.workspace }}/scripts/import_linter/import_linter.py
 
