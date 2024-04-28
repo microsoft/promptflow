@@ -23,6 +23,7 @@ from promptflow._sdk._constants import (
     LocalStorageFilenames,
 )
 from promptflow._sdk._errors import BulkRunException, InvalidRunError
+from promptflow._sdk._utility.signature_utils import update_signatures
 from promptflow._sdk._utils import (
     PromptflowIgnoreFile,
     generate_flow_tools_json,
@@ -34,7 +35,6 @@ from promptflow._sdk._utils import (
     read_open,
     write_open,
 )
-from promptflow._sdk._utils.signature_utils import update_signatures
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._flows import Flow
 from promptflow._utils.exception_utils import PromptflowExceptionPresenter

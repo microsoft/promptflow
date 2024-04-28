@@ -13,8 +13,8 @@ import pydash
 from promptflow._constants import FlowLanguage
 from promptflow._proxy import ProxyFactory
 from promptflow._sdk._constants import SERVICE_FLOW_TYPE_2_CLIENT_FLOW_TYPE, AzureFlowSource, FlowType
+from promptflow._sdk._utility.signature_utils import update_signatures
 from promptflow._sdk._utils import PromptflowIgnoreFile, load_yaml, remove_empty_element_from_dict
-from promptflow._sdk._utils.signature_utils import update_signatures
 from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag, resolve_flow_path
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.azure._ml import AdditionalIncludesMixin, Code

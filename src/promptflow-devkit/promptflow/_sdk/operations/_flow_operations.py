@@ -36,6 +36,11 @@ from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._orchestrator import TestSubmitter
 from promptflow._sdk._orchestrator.utils import SubmitterHelper
 from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_operation
+from promptflow._sdk._utility.signature_utils import (
+    format_signature_type,
+    infer_signature_for_flex_flow,
+    merge_flow_signature,
+)
 from promptflow._sdk._utils import (
     _get_additional_includes,
     _merge_local_code_and_additional_includes,
@@ -46,11 +51,6 @@ from promptflow._sdk._utils import (
     generate_yaml_entry_without_recover,
     json_load,
     logger,
-)
-from promptflow._sdk._utils.signature_utils import (
-    format_signature_type,
-    infer_signature_for_flex_flow,
-    merge_flow_signature,
 )
 from promptflow._sdk.entities._flows import FlexFlow, Flow, Prompty
 from promptflow._sdk.entities._validation import ValidationResult
