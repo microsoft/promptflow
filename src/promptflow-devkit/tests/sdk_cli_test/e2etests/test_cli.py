@@ -2347,27 +2347,34 @@ class TestCli:
             run_id = new_run_id
 
     def test_flow_run_resume_from_token(self, local_client) -> None:
-        run_id = str(uuid.uuid4())
-        # fetch std out
-        run_pf_command(
-            "run",
-            "create",
-            "--flow",
-            f"{FLOWS_DIR}/web_classification_random_fail",
-            "--data",
-            f"{FLOWS_DIR}/web_classification_random_fail/data.jsonl",
-            "--column-mapping",
-            "url='${data.url}'",
-            "--name",
-            run_id,
-        )
-        original_run = local_client.runs.get(name=run_id)
-        assert original_run.status == "Completed"
-        output_path = os.path.join(original_run.properties["output_path"], "flow_outputs", "output.jsonl")
-        with open(output_path, "r") as file:
-            original_output = [json.loads(line) for line in file]
-        # Since the data have 15 lines, we can assume the original run has succeeded lines in over 99% cases
-        original_success_count = len(original_output)
+        input_path = f"{FLOWS_DIR}/web_classification_random_fail/data.jsonl"
+        with open(input_path, "r") as file:
+            original_input_count = len(file.readlines())
+
+        while True:
+            run_id = str(uuid.uuid4())
+            # fetch std out
+            run_pf_command(
+                "run",
+                "create",
+                "--flow",
+                f"{FLOWS_DIR}/web_classification_random_fail",
+                "--data",
+                input_path,
+                "--column-mapping",
+                "url='${data.url}'",
+                "--name",
+                run_id,
+            )
+            original_run = local_client.runs.get(name=run_id)
+            assert original_run.status == "Completed"
+            output_path = os.path.join(original_run.properties["output_path"], "flow_outputs", "output.jsonl")
+            with open(output_path, "r") as file:
+                original_output = [json.loads(line) for line in file]
+            original_success_count = len(original_output)
+            # ensure that the run is partially successful
+            if original_input_count > original_success_count > 0:
+                break
 
         new_run_id = str(uuid.uuid4())
         display_name = "test"
@@ -2396,7 +2403,8 @@ class TestCli:
         output_path = os.path.join(resume_run.properties["output_path"], "flow_outputs", "output.jsonl")
         with open(output_path, "r") as file:
             resume_output = [json.loads(line) for line in file]
-        assert len(resume_output) > len(original_output)
+        # it is possible that the all resume runs failed, while we can still gate the token usage
+        assert len(resume_output) >= len(original_output)
 
         log_path = os.path.join(resume_run.properties["output_path"], "logs.txt")
         with open(log_path, "r") as file:
