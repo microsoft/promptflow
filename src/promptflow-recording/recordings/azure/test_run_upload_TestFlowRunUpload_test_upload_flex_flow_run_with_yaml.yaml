@@ -39,7 +39,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.025'
+      - '0.040'
     status:
       code: 200
       message: OK
@@ -91,7 +91,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.079'
+      - '0.048'
     status:
       code: 200
       message: OK
@@ -184,7 +184,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.147'
+      - '0.093'
     status:
       code: 200
       message: OK
@@ -236,7 +236,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.079'
+      - '0.087'
     status:
       code: 200
       message: OK
@@ -277,7 +277,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '1.354'
+      - '0.096'
     status:
       code: 200
       message: OK
@@ -295,7 +295,47 @@ interactions:
       x-ms-blob-type:
       - BlockBlob
       x-ms-date:
-      - Sun, 28 Apr 2024 10:29:46 GMT
+      - Sun, 28 Apr 2024 10:41:41 GMT
+      x-ms-version:
+      - '2023-11-03'
+    method: PUT
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/promptflow/PromptFlowArtifacts/flex_run_name_with_yaml_for_upload/instance_results.jsonl
+  response:
+    body:
+      string: ''
+    headers:
+      content-length:
+      - '0'
+      content-md5:
+      - CgDAHOTBMKo5OQ490a/sjA==
+      last-modified:
+      - Sun, 28 Apr 2024 10:41:42 GMT
+      server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      x-ms-content-crc64:
+      - SwyS4S2e31Y=
+      x-ms-request-server-encrypted:
+      - 'true'
+      x-ms-version:
+      - '2023-11-03'
+    status:
+      code: 201
+      message: Created
+- request:
+    body: THIS IS CONSTANT VALUE!
+    headers:
+      Accept:
+      - application/xml
+      Content-Length:
+      - '23'
+      Content-Type:
+      - application/octet-stream
+      User-Agent:
+      - azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
+      x-ms-blob-type:
+      - BlockBlob
+      x-ms-date:
+      - Sun, 28 Apr 2024 10:41:41 GMT
       x-ms-version:
       - '2023-11-03'
     method: PUT
@@ -309,7 +349,87 @@ interactions:
       content-md5:
       - CgDAHOTBMKo5OQ490a/sjA==
       last-modified:
-      - Sun, 28 Apr 2024 10:29:47 GMT
+      - Sun, 28 Apr 2024 10:41:42 GMT
+      server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      x-ms-content-crc64:
+      - SwyS4S2e31Y=
+      x-ms-request-server-encrypted:
+      - 'true'
+      x-ms-version:
+      - '2023-11-03'
+    status:
+      code: 201
+      message: Created
+- request:
+    body: THIS IS CONSTANT VALUE!
+    headers:
+      Accept:
+      - application/xml
+      Content-Length:
+      - '23'
+      Content-Type:
+      - application/octet-stream
+      User-Agent:
+      - azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
+      x-ms-blob-type:
+      - BlockBlob
+      x-ms-date:
+      - Sun, 28 Apr 2024 10:41:41 GMT
+      x-ms-version:
+      - '2023-11-03'
+    method: PUT
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/promptflow/PromptFlowArtifacts/flex_run_name_with_yaml_for_upload/flow_outputs/output.jsonl
+  response:
+    body:
+      string: ''
+    headers:
+      content-length:
+      - '0'
+      content-md5:
+      - CgDAHOTBMKo5OQ490a/sjA==
+      last-modified:
+      - Sun, 28 Apr 2024 10:41:42 GMT
+      server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      x-ms-content-crc64:
+      - SwyS4S2e31Y=
+      x-ms-request-server-encrypted:
+      - 'true'
+      x-ms-version:
+      - '2023-11-03'
+    status:
+      code: 201
+      message: Created
+- request:
+    body: THIS IS CONSTANT VALUE!
+    headers:
+      Accept:
+      - application/xml
+      Content-Length:
+      - '23'
+      Content-Type:
+      - application/octet-stream
+      User-Agent:
+      - azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
+      x-ms-blob-type:
+      - BlockBlob
+      x-ms-date:
+      - Sun, 28 Apr 2024 10:41:41 GMT
+      x-ms-version:
+      - '2023-11-03'
+    method: PUT
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/promptflow/PromptFlowArtifacts/flex_run_name_with_yaml_for_upload/flow_logs/000000000.log
+  response:
+    body:
+      string: ''
+    headers:
+      content-length:
+      - '0'
+      content-md5:
+      - CgDAHOTBMKo5OQ490a/sjA==
+      last-modified:
+      - Sun, 28 Apr 2024 10:41:42 GMT
       server:
       - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
       x-ms-content-crc64:
@@ -338,7 +458,7 @@ interactions:
       x-ms-blob-type:
       - BlockBlob
       x-ms-date:
-      - Sun, 28 Apr 2024 10:29:46 GMT
+      - Sun, 28 Apr 2024 10:41:41 GMT
       x-ms-version:
       - '2023-11-03'
     method: PUT
@@ -352,7 +472,7 @@ interactions:
       content-md5:
       - UfV0DvOmtniIq6KkV5IQPg==
       last-modified:
-      - Sun, 28 Apr 2024 10:29:47 GMT
+      - Sun, 28 Apr 2024 10:41:42 GMT
       server:
       - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
       x-ms-content-crc64:
@@ -378,7 +498,7 @@ interactions:
       x-ms-blob-type:
       - BlockBlob
       x-ms-date:
-      - Sun, 28 Apr 2024 10:29:46 GMT
+      - Sun, 28 Apr 2024 10:41:41 GMT
       x-ms-version:
       - '2023-11-03'
     method: PUT
@@ -392,89 +512,7 @@ interactions:
       content-md5:
       - CgDAHOTBMKo5OQ490a/sjA==
       last-modified:
-      - Sun, 28 Apr 2024 10:29:47 GMT
-      server:
-      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
-      x-ms-content-crc64:
-      - SwyS4S2e31Y=
-      x-ms-request-server-encrypted:
-      - 'true'
-      x-ms-version:
-      - '2023-11-03'
-    status:
-      code: 201
-      message: Created
-- request:
-    body: '{"line_number": 0, "output": "Hello world! input1"}
-
-      '
-    headers:
-      Accept:
-      - application/xml
-      Content-Length:
-      - '52'
-      Content-Type:
-      - application/octet-stream
-      User-Agent:
-      - azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
-      x-ms-blob-type:
-      - BlockBlob
-      x-ms-date:
-      - Sun, 28 Apr 2024 10:29:46 GMT
-      x-ms-version:
-      - '2023-11-03'
-    method: PUT
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/promptflow/PromptFlowArtifacts/flex_run_name_with_yaml_for_upload/flow_outputs/output.jsonl
-  response:
-    body:
-      string: ''
-    headers:
-      content-length:
-      - '0'
-      content-md5:
-      - e7CC/hOg8uoJ3TK2HaKeZA==
-      last-modified:
-      - Sun, 28 Apr 2024 10:29:47 GMT
-      server:
-      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
-      x-ms-content-crc64:
-      - xHE2C4rvWHw=
-      x-ms-request-server-encrypted:
-      - 'true'
-      x-ms-version:
-      - '2023-11-03'
-    status:
-      code: 201
-      message: Created
-- request:
-    body: THIS IS CONSTANT VALUE!
-    headers:
-      Accept:
-      - application/xml
-      Content-Length:
-      - '23'
-      Content-Type:
-      - application/octet-stream
-      User-Agent:
-      - azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
-      x-ms-blob-type:
-      - BlockBlob
-      x-ms-date:
-      - Sun, 28 Apr 2024 10:29:46 GMT
-      x-ms-version:
-      - '2023-11-03'
-    method: PUT
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/promptflow/PromptFlowArtifacts/flex_run_name_with_yaml_for_upload/flow_logs/000000000.log
-  response:
-    body:
-      string: ''
-    headers:
-      content-length:
-      - '0'
-      content-md5:
-      - CgDAHOTBMKo5OQ490a/sjA==
-      last-modified:
-      - Sun, 28 Apr 2024 10:29:47 GMT
+      - Sun, 28 Apr 2024 10:41:42 GMT
       server:
       - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
       x-ms-content-crc64:
@@ -500,47 +538,7 @@ interactions:
       x-ms-blob-type:
       - BlockBlob
       x-ms-date:
-      - Sun, 28 Apr 2024 10:29:46 GMT
-      x-ms-version:
-      - '2023-11-03'
-    method: PUT
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/promptflow/PromptFlowArtifacts/flex_run_name_with_yaml_for_upload/instance_results.jsonl
-  response:
-    body:
-      string: ''
-    headers:
-      content-length:
-      - '0'
-      content-md5:
-      - CgDAHOTBMKo5OQ490a/sjA==
-      last-modified:
-      - Sun, 28 Apr 2024 10:29:47 GMT
-      server:
-      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
-      x-ms-content-crc64:
-      - SwyS4S2e31Y=
-      x-ms-request-server-encrypted:
-      - 'true'
-      x-ms-version:
-      - '2023-11-03'
-    status:
-      code: 201
-      message: Created
-- request:
-    body: THIS IS CONSTANT VALUE!
-    headers:
-      Accept:
-      - application/xml
-      Content-Length:
-      - '23'
-      Content-Type:
-      - application/octet-stream
-      User-Agent:
-      - azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
-      x-ms-blob-type:
-      - BlockBlob
-      x-ms-date:
-      - Sun, 28 Apr 2024 10:29:47 GMT
+      - Sun, 28 Apr 2024 10:41:42 GMT
       x-ms-version:
       - '2023-11-03'
     method: PUT
@@ -554,7 +552,7 @@ interactions:
       content-md5:
       - CgDAHOTBMKo5OQ490a/sjA==
       last-modified:
-      - Sun, 28 Apr 2024 10:29:47 GMT
+      - Sun, 28 Apr 2024 10:41:42 GMT
       server:
       - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
       x-ms-content-crc64:
@@ -581,7 +579,7 @@ interactions:
       x-ms-blob-type:
       - BlockBlob
       x-ms-date:
-      - Sun, 28 Apr 2024 10:29:47 GMT
+      - Sun, 28 Apr 2024 10:41:42 GMT
       x-ms-version:
       - '2023-11-03'
     method: PUT
@@ -595,7 +593,7 @@ interactions:
       content-md5:
       - pK3vOafKIt0oVBeIUFkdpQ==
       last-modified:
-      - Sun, 28 Apr 2024 10:29:47 GMT
+      - Sun, 28 Apr 2024 10:41:42 GMT
       server:
       - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
       x-ms-content-crc64:
@@ -631,8 +629,8 @@ interactions:
   response:
     content: '{"artifactId": "ExperimentRun/dcid.flex_run_name_with_yaml_for_upload/instance_results.jsonl",
       "origin": "ExperimentRun", "container": "dcid.flex_run_name_with_yaml_for_upload",
-      "path": "instance_results.jsonl", "etag": "\"b200d700-0000-0100-0000-662e251c0000\"",
-      "createdTime": "2024-04-28T10:29:48.9818236+00:00", "dataPath": {"dataStoreName":
+      "path": "instance_results.jsonl", "etag": "\"3301f4d8-0000-0100-0000-662e27e70000\"",
+      "createdTime": "2024-04-28T10:41:43.5824251+00:00", "dataPath": {"dataStoreName":
       "workspaceblobstore", "relativePath": "promptflow/PromptFlowArtifacts/flex_run_name_with_yaml_for_upload/instance_results.jsonl"},
       "tags": {}}'
     headers:
@@ -649,7 +647,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.082'
+      - '0.077'
     http_version: HTTP/1.1
     status_code: 200
 - request:
@@ -695,7 +693,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '1.059'
+      - '1.092'
     status:
       code: 200
       message: OK
@@ -722,7 +720,7 @@ interactions:
         "flowRunId": "flex_run_name_with_yaml_for_upload", "flowRunDisplayName": "sdk-cli-test-run-local-to-cloud-flex-with-yaml",
         "flowRunType": "FlowRun", "flowType": "Default", "outputDatastoreName": "workspaceblobstore",
         "childRunBasePath": "promptflow/PromptFlowArtifacts/flex_run_name_with_yaml_for_upload/flow_artifacts",
-        "flowDagFileRelativePath": "flow.flex.yaml", "flowSnapshotId": "26b7afd8-c2c1-49bd-bccc-a3648158b8e0",
+        "flowDagFileRelativePath": "flow.flex.yaml", "flowSnapshotId": "2c97f45d-90ce-462f-b70d-9a2c509943ce",
         "studioPortalEndpoint": "https://ml.azure.com/runs/flex_run_name_with_yaml_for_upload?wsid=/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}'
     headers:
       connection:
@@ -740,7 +738,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.257'
+      - '0.232'
     status:
       code: 200
       message: OK
@@ -764,26 +762,26 @@ interactions:
     uri: https://eastus.api.azureml.ms/history/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/rundata
   response:
     body:
-      string: '{"runMetadata": {"runNumber": 1714300191, "rootRunId": "flex_run_name_with_yaml_for_upload",
-        "createdUtc": "2024-04-28T10:29:51.4850663+00:00", "createdBy": {"userObjectId":
+      string: '{"runMetadata": {"runNumber": 1714300906, "rootRunId": "flex_run_name_with_yaml_for_upload",
+        "createdUtc": "2024-04-28T10:41:46.0715932+00:00", "createdBy": {"userObjectId":
         "00000000-0000-0000-0000-000000000000", "userPuId": null, "userIdp": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "4cbd0e2e-aae4-4099-b4ba-94d3a4910587",
         "upn": null}, "userId": "00000000-0000-0000-0000-000000000000", "token": null,
         "tokenExpiryTimeUtc": null, "error": null, "warnings": null, "revision": 1,
-        "statusRevision": 0, "runUuid": "53a6fa74-1e47-4737-ab37-0e6ce5b55df2", "parentRunUuid":
-        null, "rootRunUuid": "53a6fa74-1e47-4737-ab37-0e6ce5b55df2", "lastStartTimeUtc":
-        "2024-04-28T18:29:32.795376+00:00", "currentComputeTime": "00:00:00", "computeDuration":
-        "00:00:00", "effectiveStartTimeUtc": "2024-04-28T18:29:32.795376+00:00", "lastModifiedBy":
+        "statusRevision": 0, "runUuid": "a39da5aa-2bc2-49f2-b884-e3c17dcd4641", "parentRunUuid":
+        null, "rootRunUuid": "a39da5aa-2bc2-49f2-b884-e3c17dcd4641", "lastStartTimeUtc":
+        "2024-04-28T18:41:29.162208+00:00", "currentComputeTime": "00:00:00", "computeDuration":
+        "00:00:00", "effectiveStartTimeUtc": "2024-04-28T18:41:29.162208+00:00", "lastModifiedBy":
         {"userObjectId": "00000000-0000-0000-0000-000000000000", "userPuId": null,
         "userIdp": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "4cbd0e2e-aae4-4099-b4ba-94d3a4910587",
-        "upn": null}, "lastModifiedUtc": "2024-04-28T10:29:51.4850663+00:00", "duration":
-        "00:00:03.9331830", "cancelationReason": null, "currentAttemptId": 1, "runId":
+        "upn": null}, "lastModifiedUtc": "2024-04-28T10:41:46.0715932+00:00", "duration":
+        "00:00:03.9170060", "cancelationReason": null, "currentAttemptId": 1, "runId":
         "flex_run_name_with_yaml_for_upload", "parentRunId": null, "experimentId":
         "7aef93df-8351-4163-ba75-9806f29227cc", "status": "Completed", "startTimeUtc":
-        "2024-04-28T18:29:32.795376+00:00", "endTimeUtc": "2024-04-28T18:29:36.728559+00:00",
+        "2024-04-28T18:41:29.162208+00:00", "endTimeUtc": "2024-04-28T18:41:33.079214+00:00",
         "scheduleId": null, "displayName": "sdk-cli-test-run-local-to-cloud-flex-with-yaml",
         "name": null, "dataContainerId": "dcid.flex_run_name_with_yaml_for_upload",
         "description": null, "hidden": false, "runType": "azureml.promptflow.FlowRun",
@@ -793,7 +791,7 @@ interactions:
         "0", "azureml.promptflow.completion_tokens": "0", "azureml.promptflow.prompt_tokens":
         "0", "azureml.promptflow.runtime_name": null, "azureml.promptflow.disable_trace":
         "false", "azureml.promptflow.local_to_cloud": "true", "azureml.promptflow.snapshot_id":
-        "26b7afd8-c2c1-49bd-bccc-a3648158b8e0", "_azureml.evaluation_run": "promptflow.BatchRun"},
+        "2c97f45d-90ce-462f-b70d-9a2c509943ce", "_azureml.evaluation_run": "promptflow.BatchRun"},
         "parameters": {}, "actionUris": {}, "scriptName": null, "target": null, "uniqueChildRunComputeTargets":
         [], "tags": {"sdk-cli-test-flex": "true"}, "settings": {}, "services": {},
         "inputDatasets": [], "outputDatasets": [], "runDefinition": null, "jobSpecification":
@@ -821,7 +819,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.066'
+      - '0.047'
     status:
       code: 200
       message: OK
