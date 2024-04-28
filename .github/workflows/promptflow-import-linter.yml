@@ -29,11 +29,11 @@ jobs:
         poetry install --with dev -C ${{ env.WORKING_DIRECTORY }}/src/promptflow-tracing
         touch src/promptflow-core/promptflow/__init__.py
         poetry install --with dev -C ${{ env.WORKING_DIRECTORY }}/src/promptflow-core
-        touch promptflow/__init__.py
+        touch src/promptflow-devkit/promptflow/__init__.py
         poetry install --with dev -C ${{ env.WORKING_DIRECTORY }}/src/promptflow-devkit
         touch src/promptflow-azure/promptflow/__init__.py
         poetry install --with dev -C ${{ env.WORKING_DIRECTORY }}/src/promptflow-azure
-        touch src/promptflow-azure/promptflow/__init__.py
+        touch src/promptflow-evals/promptflow/__init__.py
         poetry install --with dev -C ${{ env.WORKING_DIRECTORY }}/src/promptflow-evals
       working-directory: ${{ env.WORKING_DIRECTORY }}
     - name: import lint
