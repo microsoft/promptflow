@@ -306,9 +306,6 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
             body1 = sanitize_pfs_request_body(body1)
             body1 = sanitize_upload_hash(body1)
             _r1.body = body1.encode("utf-8")
-            if "BulkRuns/create" in r1.path and "BulkRuns/create" in r2.path:
-                print("r1.body:", _r1.body)
-                print("r2.body:", r2.body)
             try:
                 return matchers.body(_r1, r2)
             except AssertionError:
