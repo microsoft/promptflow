@@ -32,7 +32,7 @@ from filelock import FileLock
 from keyring.errors import NoKeyringError
 from marshmallow import ValidationError
 
-from promptflow._constants import EXTENSION_UA, FLOW_FLEX_YAML, LANGUAGE_KEY, FlowLanguage
+from promptflow._constants import ENABLE_MULTI_CONTAINER_KEY, EXTENSION_UA, FLOW_FLEX_YAML, LANGUAGE_KEY, FlowLanguage
 from promptflow._core.entry_meta_generator import generate_flow_meta as _generate_flow_meta
 from promptflow._sdk._constants import (
     AZURE_WORKSPACE_REGEX_FORMAT,
@@ -778,9 +778,6 @@ def remove_empty_element_from_dict(obj: dict) -> dict:
 
 
 def is_multi_container_enabled():
-    # TODO: use global import after we don't need to ensure backward compatibility of runtime with old sdk
-    from promptflow._constants import ENABLE_MULTI_CONTAINER_KEY
-
     if ENABLE_MULTI_CONTAINER_KEY in os.environ:
         return os.environ[ENABLE_MULTI_CONTAINER_KEY].lower() == "true"
     return None
