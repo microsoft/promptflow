@@ -650,11 +650,14 @@ def _try_write_trace_to_cosmosdb(
         # So, we load clients in parallel for warm up.
         span_client_thread = ThreadWithContextVars(
             target=get_client,
-<<<<<<< HEAD
-            args=(CosmosDBContainerName.SPAN, subscription_id, resource_group_name, workspace_name, get_credential),
-=======
-            args=(CosmosDBContainerName.SPAN, subscription_id, resource_group_name, workspace_name, logger, credential),
->>>>>>> 647c7e398 (add log)
+            args=(
+                CosmosDBContainerName.SPAN,
+                subscription_id,
+                resource_group_name,
+                workspace_name,
+                logger,
+                get_credential,
+            ),
         )
         span_client_thread.start()
 
@@ -665,12 +668,8 @@ def _try_write_trace_to_cosmosdb(
                 subscription_id,
                 resource_group_name,
                 workspace_name,
-<<<<<<< HEAD
-                get_credential,
-=======
                 logger,
-                credential,
->>>>>>> 647c7e398 (add log)
+                get_credential,
             ),
         )
         collection_client_thread.start()
@@ -682,12 +681,8 @@ def _try_write_trace_to_cosmosdb(
                 subscription_id,
                 resource_group_name,
                 workspace_name,
-<<<<<<< HEAD
-                get_credential,
-=======
                 logger,
-                credential,
->>>>>>> 647c7e398 (add log)
+                get_credential,
             ),
         )
         line_summary_client_thread.start()
@@ -736,13 +731,21 @@ def _try_write_trace_to_cosmosdb(
 
         for span in all_spans:
             try:
+                span_start_time = datetime.now()
                 span_client = get_client(
-                    CosmosDBContainerName.SPAN, subscription_id, resource_group_name, workspace_name, logger, get_credential
+                    CosmosDBContainerName.SPAN,
+                    subscription_id,
+                    resource_group_name,
+                    workspace_name,
+                    logger,
+                    get_credential,
                 )
                 result = SpanCosmosDB(span, collection_id, created_by).persist(
                     span_client, blob_container_client, blob_base_uri
                 )
-                logger.info(f"Finish writing span {span.span_id} to cosmosdb, duration {datetime.now() - span_start_time}.")
+                logger.info(
+                    f"Finish writing span {span.span_id} to cosmosdb, duration {datetime.now() - span_start_time}."
+                )
                 line_summary_start_time = datetime.now()
 
                 # None means the span already exists, then we don't need to persist the summary also.
@@ -756,9 +759,8 @@ def _try_write_trace_to_cosmosdb(
                         get_credential,
                     )
                     Summary(span, collection_id, created_by, logger).persist(line_summary_client)
-                logger.info(
-                    f"Finish writing summary of span {span.span_id}, duration {datetime.now() - line_summary_start_time}."
-                )
+                summary_duration = datetime.now() - line_summary_start_time
+                logger.info(f"Finish writing summary of span {span.span_id}, duration {summary_duration}.")
             except Exception as e:
                 failed_span_count += 1
                 stack_trace = traceback.format_exc()
