@@ -748,8 +748,7 @@ def disable_trace_setup():
 def mock_async_run_uploader_upload_single_blob(tmpdir):
     tmp_dir = Path(tmpdir).resolve()
     tmp_data_path = (tmp_dir / "const").resolve()
-    with open(tmp_data_path, "w", newline="\n") as f:
-        f.write("THIS IS CONSTANT VALUE!")
+    tmp_data_path.write_text("THIS IS CONSTANT VALUE!")
 
     from promptflow.azure.operations._async_run_uploader import AsyncRunUploader
 
