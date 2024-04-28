@@ -1,2 +1,1 @@
-promptflow-core
-promptflow-tools
+promptflow

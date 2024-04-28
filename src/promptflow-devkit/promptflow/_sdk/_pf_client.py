@@ -19,7 +19,8 @@ from ._load_functions import load_flow
 from ._user_agent import USER_AGENT
 from ._utils import generate_yaml_entry
 from .entities import Run
-from .entities._flows import FlexFlow
+from .entities._flows import FlexFlow, Prompty
+from .entities._flows.base import FlowBase
 from .operations import RunOperations
 from .operations._connection_operations import ConnectionOperations
 from .operations._experiment_operations import ExperimentOperations
@@ -179,17 +180,23 @@ class PFClient:
         if not run and not data:
             raise ValueError("at least one of data or run must be provided")
 
-        if callable(flow) and not inspect.isclass(flow) and not inspect.isfunction(flow):
+        is_flow_object = isinstance(flow, FlowBase)
+        if not is_flow_object and callable(flow) and not inspect.isclass(flow) and not inspect.isfunction(flow):
             dynamic_callable = flow
             flow = flow.__class__
         else:
             dynamic_callable = None
 
         with generate_yaml_entry(entry=flow, code=code) as flow:
-            # load flow object for validation and early failure
-            flow_obj = load_flow(source=flow)
+            if is_flow_object:
+                flow_obj = flow
+                flow_path = flow.path
+            else:
+                # load flow object for validation and early failure
+                flow_obj = load_flow(source=flow)
+                flow_path = Path(flow)
             # validate param conflicts
-            if isinstance(flow_obj, FlexFlow):
+            if isinstance(flow_obj, (FlexFlow, Prompty)):
                 if variant or connections:
                     logger.warning("variant and connections are not supported for eager flow, will be ignored")
                     variant, connections = None, None
@@ -201,7 +208,7 @@ class PFClient:
                 column_mapping=column_mapping,
                 run=run,
                 variant=variant,
-                flow=Path(flow),
+                flow=flow_path,
                 connections=connections,
                 environment_variables=environment_variables,
                 properties=properties,
