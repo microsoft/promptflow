@@ -24,8 +24,8 @@ export $(grep -v '^#' ../.env | xargs)
 
 - Test prompty
 ```bash
-# test with default sample data (TODO)
-# pf flow test --flow basic.prompty
+# test with default sample data
+pf flow test --flow basic.prompty
 
 # test with flow inputs
 pf flow test --flow basic.prompty --inputs first_name="John" last_name="Doe" question="What is the meaning of life?"

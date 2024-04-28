@@ -482,14 +482,14 @@ class Local2Cloud:
 class Local2CloudProperties:
     """Run properties that server needs when uploading local run to cloud."""
 
-    TOTAL_TOKENS = "azureml.promptflow.total_tokens"
+    PREFIX = "azureml.promptflow"
+    EVAL_ARTIFACTS = "_azureml.evaluate_artifacts"
 
 
 class Local2CloudUserProperties:
     """Run properties that user can specify when uploading local run to cloud."""
 
-    EVAL_RUN = "_azureml.evaluation_run"
-    EVAL_ARTIFACTS = "_azureml.evaluate_artifacts"
+    RUN_TYPE = "runType"
 
     @staticmethod
     def get_all_values():

@@ -6,12 +6,11 @@ import pytest
 from promptflow.tools.common import ChatAPIInvalidFunctions, validate_functions, process_function_call, \
     parse_chat, find_referenced_image_set, preprocess_template_string, convert_to_chat_list, ChatInputList, \
     ParseConnectionError, _parse_resource_id, list_deployment_connections, normalize_connection_config, \
-    parse_tool_calls_for_assistant, validate_tools, process_tool_choice, init_azure_openai_client, \
+    validate_tools, process_tool_choice, init_azure_openai_client, try_parse_tool_calls, \
     Escaper, PromptResult, render_jinja_template, build_messages
 from promptflow.tools.exception import (
     ListDeploymentsError,
     ChatAPIInvalidTools,
-    ChatAPIAssistantRoleInvalidFormat,
     ChatAPIToolRoleInvalidFormat,
 )
 
@@ -214,7 +213,10 @@ class TestCommon:
             ("\nsystem:\nname:\n\n content:\nfirst", [
                 {'role': 'system', 'content': 'name:\n\n content:\nfirst'}]),
             ("\nsystem:\nname:\n\n", [
-                {'role': 'system', 'content': 'name:'}])
+                {'role': 'system', 'content': 'name:'}]),
+            # portal may add extra \r to new line character.
+            ("function:\r\nname:\r\n AI\ncontent :\r\nfirst", [
+                {'role': 'function', 'name': 'AI', 'content': 'first'}]),
         ],
     )
     def test_parse_chat_with_name_in_role_prompt(self, chat_str, expected_result):
@@ -224,10 +226,6 @@ class TestCommon:
     @pytest.mark.parametrize(
         "chat_str, error_message, exception_type",
         [("""
-            # assistant:
-            ## tool_calls:
-        """, "Failed to parse assistant role prompt with tool_calls", ChatAPIAssistantRoleInvalidFormat),
-         ("""
             # tool:
             ## tool_call_id:
         """, "Failed to parse tool role prompt.", ChatAPIToolRoleInvalidFormat,)])
@@ -240,61 +238,36 @@ class TestCommon:
         actual_result = parse_chat(example_prompt_template_with_tool)
         assert actual_result == parsed_chat_with_tools
 
-    @pytest.mark.parametrize("chunk, error_msg, success", [
-        ("""
-            ## tool_calls:
-            """, "Failed to parse assistant role prompt with tool_calls", False),
-        ("""
-            ## tool_calls:
-            tool_calls_str
-            """, "Failed to parse assistant role prompt with tool_calls", False),
-        ("""
-            ## tool_calls:
-            [{"id": "tool_call_id", "type": "function", "function": {"name": "func1", "arguments": ""}}]
-            """, "", True),
-        ("""
-            ## tool_calls:
+    @pytest.mark.parametrize(
+        "role_prompt, expected_result",
+        [("## tool_calls:\n[]", []),
+         ("## tool_calls:\r\n[]", []),
+         ("## tool_calls: \n[]", []),
+         ("## tool_calls  :\r\n[]", []),
+         ("tool_calls:\r\n[]", []),
+         ("some text", None),
+         ("tool_calls:\r\n[", None),
+         ("tool_calls:\r\n[{'id': 'tool_call_id', 'type': 'function', 'function': {'name': 'func1', 'arguments': ''}}]",
+          [{'id': 'tool_call_id', 'type': 'function', 'function': {'name': 'func1', 'arguments': ''}}]),
+         ("tool_calls:\n[{'id': 'tool_call_id', 'type': 'function', 'function': {'name': 'func1', 'arguments': ''}}]",
+          [{'id': 'tool_call_id', 'type': 'function', 'function': {'name': 'func1', 'arguments': ''}}])])
+    def test_try_parse_tool_calls(self, role_prompt, expected_result):
+        actual = try_parse_tool_calls(role_prompt)
+        assert actual == expected_result
 
-            [{"id": "tool_call_id", "type": "function", "function": {"name": "func1", "arguments": ""}}]
-            """, "", True),
-        ("""
-            ## tool_calls:[{"id": "tool_call_id", "type": "function", "function": {"name": "func1", "arguments": ""}}]
-            """, "", True),
-        ("""
-            ## tool_calls:
-            [{
-                "id": "tool_call_id",
-                "type": "function",
-                "function": {"name": "func1", "arguments": ""}
-            }]
-            """, "", True),
-        ("""
-            ## tool_calls:
-            [{
-                "id": "tool_call_id", "type": "function",
-                    "function": {"name": "func1", "arguments": ""}
-            }]
-            """, "", True),
-    ])
-    def test_parse_tool_calls_for_assistant(self, chunk: str, error_msg: str, success: bool):
-        last_message = {'role': 'assistant'}
-        if success:
-            expected_res = [
-                {
-                    "id": "tool_call_id",
-                    "type": "function",
-                    "function": {
-                        "name": "func1",
-                        "arguments": "",
-                    },
-                }
-            ]
-            parse_tool_calls_for_assistant(last_message, chunk)
-            assert last_message["tool_calls"] == expected_res
-        else:
-            with pytest.raises(ChatAPIAssistantRoleInvalidFormat) as exc_info:
-                parse_tool_calls_for_assistant(last_message, chunk)
-            assert error_msg in exc_info.value.message
+    @pytest.mark.parametrize(
+        "chat_str, expected_result",
+        [
+            ("\n#tool:\n## tool_call_id:\nid \n content:\nfirst\n\n#user:\nsecond", [
+                {'role': 'tool', 'tool_call_id': 'id', 'content': 'first'}, {'role': 'user', 'content': 'second'}]),
+            # portal may add extra \r to new line character.
+            ("\ntool:\ntool_call_id :\r\nid\n content:\r\n", [
+                {'role': 'tool', 'tool_call_id': 'id', 'content': ''}]),
+        ],
+    )
+    def test_parse_tool_call_id_and_content(self, chat_str, expected_result):
+        actual_result = parse_chat(chat_str)
+        assert actual_result == expected_result
 
     @pytest.mark.parametrize(
         "kwargs, expected_result",
