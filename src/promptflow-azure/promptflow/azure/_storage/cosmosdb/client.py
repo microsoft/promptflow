@@ -87,8 +87,11 @@ def _get_resource_token(
     workspace_name: str,
     credential,
 ) -> object:
+    from azure.core.pipeline.policies._universal import _LOGGER, NetworkTraceLoggingPolicy
+
     from promptflow.azure import PFClient
 
+    _LOGGER.setLevel(logging.DEBUG)
     # The default connection_time and read_timeout are both 300s.
     # The get token operation should be fast, so we set a short timeout.
     pf_client = PFClient(
@@ -98,6 +101,7 @@ def _get_resource_token(
         workspace_name=workspace_name,
         connection_timeout=15.0,
         read_timeout=30.0,
+        logging_policy=NetworkTraceLoggingPolicy(logging_enable=True),
     )
 
     token_resp = pf_client._traces._get_cosmos_db_token(container_name=container_name, acquire_write=True)
