@@ -28,6 +28,7 @@ def get_datastore_container_client(
     get_credential: Callable,
 ) -> Tuple[ContainerClient, str]:
     try:
+        start_time = datetime.datetime.now()
         credential = get_credential()
         logger.info("get blob client for datastore.")
 

@@ -6,7 +6,7 @@ import ast
 import datetime
 import logging
 import threading
-from typing import Callable
+from typing import Callable, Optional
 
 client_map = {}
 _thread_lock = threading.Lock()
@@ -19,8 +19,8 @@ def get_client(
     subscription_id: str,
     resource_group_name: str,
     workspace_name: str,
-    get_credential: Callable,
     logger: Optional[logging.Logger] = None,
+    get_credential: Callable = None,
 ):
     start_time = datetime.datetime.now()
     logger.info(f"Get cosmosdb client for {container_name}")
