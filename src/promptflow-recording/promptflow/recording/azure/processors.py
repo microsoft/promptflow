@@ -79,6 +79,11 @@ class AzureResourceProcessor(RecordingProcessor):
                 f"blob.core.windows.net/{container_name}/",
                 f"blob.core.windows.net/{SanitizedValues.FAKE_CONTAINER_NAME}/",
             )
+            # observed suffix: ?comp=list
+            uri = uri.replace(
+                f"blob.core.windows.net/{container_name}?",
+                f"blob.core.windows.net/{SanitizedValues.FAKE_CONTAINER_NAME}?",
+            )
         for file_share_name in self.file_share_names:
             uri = uri.replace(file_share_name, SanitizedValues.FAKE_FILE_SHARE_NAME)
         return uri
