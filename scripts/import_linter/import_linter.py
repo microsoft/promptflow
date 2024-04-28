@@ -5,6 +5,7 @@ import importlib
 
 git_base = subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).decode().strip()
 
+
 def walk_and_ignore_pycache(directory):
     list = []
     for root, dirnames, files in os.walk(directory, topdown=True):
@@ -15,6 +16,7 @@ def walk_and_ignore_pycache(directory):
             # Process files as you would like
             list.append(os.path.join(root, filename))
     return list
+
 
 def file_to_import(file):
     push_file = []
@@ -29,13 +31,16 @@ def file_to_import(file):
     push_file.insert(0, "promptflow")
     return ".".join(push_file)
 
+
 def subprocess_check_python_import(file):
     print(f'Checking import of {file} on process ID: {os.getpid()}')
-    module = importlib.import_module(file)
+    importlib.import_module(file)
+
 
 def process_file(file):
     import_name = file_to_import(file)
     subprocess_check_python_import(import_name)
+
 
 if __name__ == '__main__':
     pool = multiprocessing.Pool()
