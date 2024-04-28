@@ -1872,7 +1872,7 @@ class TestFlowRun:
         run_dict = run._to_dict()
         error = run_dict["error"]["additionalInfo"][0]["info"]["errors"][0]["error"]
         assert "Execution failure in 'ChatFlow.__call__" in error["message"]
-        assert "raise Exception" in error["debugInfo"]["stackTrace"]
+        assert "raise Exception" in error["additionalInfo"][0]["info"]["traceback"]
 
 
 def assert_batch_run_result(run: Run, pf: PFClient, assert_func):
