@@ -421,10 +421,13 @@ class TestTraceLifeCycle:
             pass
 
     def _wait_for_traces_exported(self) -> None:
+        count, upper_bound = 0, 60
         tracer_provider: TracerProvider = trace.get_tracer_provider()
         while len(tracer_provider._active_span_processor._span_processors[0].queue) > 0:
-            # TODO: add timeout
+            if count >= upper_bound:
+                raise TimeoutError("traces are not exported in 60 seconds, which is abnormal and need investigation.")
             time.sleep(1)
+            count += 1
         return
 
     def test_execute_prompty(self, pf: PFClient, collection: str) -> None:
