@@ -490,6 +490,7 @@ class Local2CloudUserProperties:
     """Run properties that user can specify when uploading local run to cloud."""
 
     RUN_TYPE = "runType"
+    EVAL_ARTIFACTS = "_azureml.evaluate_artifacts"
 
     @staticmethod
     def get_all_values():
