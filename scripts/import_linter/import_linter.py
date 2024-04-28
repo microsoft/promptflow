@@ -31,7 +31,9 @@ def file_to_import(file):
     push_file.insert(0, "promptflow")
     return ".".join(push_file)
 
-
+# If there is an import error, the process will exit with a non-zero exit code
+# Find this importlib.import_module as the keyword to search for the error
+# The error below this is the import error / circular import error.
 def subprocess_check_python_import(file):
     print(f'Checking import of {file} on process ID: {os.getpid()}')
     importlib.import_module(file)
