@@ -55,13 +55,19 @@ class TestEagerFlow:
             (
                 "basic_callable_class",
                 {"func_input": "func_input"},
-                lambda x: x["func_input"] == "func_input",
+                lambda x: is_dataclass(x) and x.func_input == "func_input",
                 {"obj_input": "obj_input"},
             ),
             (
                 "basic_callable_class_async",
                 {"func_input": "func_input"},
-                lambda x: x["func_input"] == "func_input",
+                lambda x: is_dataclass(x) and x.func_input == "func_input",
+                {"obj_input": "obj_input"},
+            ),
+            (
+                "callable_class_with_primitive",
+                {"func_input": "func_input"},
+                lambda x: x == "The object input is obj_input and the function input is func_input",
                 {"obj_input": "obj_input"},
             ),
             (

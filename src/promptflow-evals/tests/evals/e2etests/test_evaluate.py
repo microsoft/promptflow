@@ -93,13 +93,14 @@ class TestEvaluate:
         # module named test_evaluate and it will be a different module in unit test
         # folder. By keeping function in separate file we guarantee, it will be loaded
         # from there.
-        from .function_test import target_fn
+        from .target_fn import target_fn
+
         f1_score_eval = F1ScoreEvaluator()
         # run the evaluation with targets
         result = evaluate(
             data=questions_file,
             target=target_fn,
-            evaluators={"answer": answer_evaluator, 'f1': f1_score_eval},
+            evaluators={"answer": answer_evaluator, "f1": f1_score_eval},
         )
         row_result_df = pd.DataFrame(result["rows"])
         assert "outputs.answer" in row_result_df.columns
@@ -107,3 +108,53 @@ class TestEvaluate:
         assert list(row_result_df["outputs.answer.length"]) == [28, 76, 22]
         assert "outputs.f1.f1_score" in row_result_df.columns
         assert not any(np.isnan(f1) for f1 in row_result_df["outputs.f1.f1_score"])
+
+    @pytest.mark.parametrize(
+        "evaluate_config",
+        [
+            (
+                {
+                    "f1_score": {
+                        "answer": "${data.context}",
+                        "ground_truth": "${data.ground_truth}",
+                    },
+                    "answer": {
+                        "answer": "${target.response}",
+                    },
+                }
+            ),
+            (
+                {
+                    "default": {
+                        "answer": "${target.response}",
+                        "ground_truth": "${data.ground_truth}",
+                    },
+                }
+            ),
+        ],
+    )
+    def test_evaluate_with_evaluator_config(self, questions_file, evaluate_config):
+        input_data = pd.read_json(questions_file, lines=True)
+        from .target_fn import target_fn2
+
+        # run the evaluation
+        result = evaluate(
+            data=questions_file,
+            target=target_fn2,
+            evaluators={"f1_score": F1ScoreEvaluator(), "answer": answer_evaluator},
+            evaluator_config=evaluate_config,
+        )
+
+        row_result_df = pd.DataFrame(result["rows"])
+        metrics = result["metrics"]
+
+        # validate the results
+        assert result is not None
+        assert result["rows"] is not None
+        assert row_result_df.shape[0] == len(input_data)
+
+        assert "outputs.answer.length" in row_result_df.columns.to_list()
+        assert "outputs.f1_score.f1_score" in row_result_df.columns.to_list()
+
+        assert "answer.length" in metrics.keys()
+        assert "f1_score.f1_score" in metrics.keys()
