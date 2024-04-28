@@ -197,6 +197,11 @@ def sanitize_pfs_request_body(body: str) -> str:
         body_dict["flowLineageId"] = SanitizedValues.FLOW_LINEAGE_ID
     if "flowDefinitionResourceId" in body_dict:
         body_dict["flowDefinitionResourceId"] = sanitize_flow_asset_id(body_dict["flowDefinitionResourceId"])
+    # /BulkRuns/create
+    if "startTimeUtc" in body_dict:
+        body_dict["startTimeUtc"] = SanitizedValues.START_TIME_UTC
+    if "endTimeUtc" in body_dict:
+        body_dict["endTimeUtc"] = SanitizedValues.END_TIME_UTC
     # PFS will help handle this field, so client does not need to pass this value
     if "runExperimentName" in body:
         body_dict["runExperimentName"] = ""

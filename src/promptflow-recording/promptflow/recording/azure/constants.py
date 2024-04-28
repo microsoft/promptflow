@@ -64,6 +64,9 @@ class SanitizedValues:
     USERNAME = "unknown_user"
     # MISC
     EMAIL_USERNAME = "username"
+    # UTC time
+    START_TIME_UTC = "2024-01-01T00:00:00.123456Z"
+    END_TIME_UTC = "2024-01-01T00:00:01.123456Z"
 
 
 class AzureMLResourceTypes:
