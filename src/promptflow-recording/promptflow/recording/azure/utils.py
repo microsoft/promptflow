@@ -202,9 +202,8 @@ def sanitize_pfs_request_body(body: str) -> str:
         body_dict["startTimeUtc"] = SanitizedValues.START_TIME_UTC
     if "endTimeUtc" in body_dict:
         body_dict["endTimeUtc"] = SanitizedValues.END_TIME_UTC
-    if "properties" in body_dict:
-        print(body_dict["properties"])
-        print(type(body_dict["properties"]))
+    if "startTimeUtc" in body_dict:
+        print(body_dict)
     # PFS will help handle this field, so client does not need to pass this value
     if "runExperimentName" in body:
         body_dict["runExperimentName"] = ""
