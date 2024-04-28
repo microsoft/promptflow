@@ -151,9 +151,8 @@ class ScriptExecutor(FlowExecutor):
                 message_format="Execution failure in '{func_name}': {error_type_and_message}",
                 func_name=self._original_function.__qualname__,
                 error_type_and_message=error_type_and_message,
+                error=e,
             )
-            # make sure traceback is from the original exception
-            ex.__traceback__ = e.__traceback__
             if not traces:
                 traces = Tracer.end_tracing(line_run_id)
             run_tracker.end_run(line_run_id, ex=ex, traces=traces)
