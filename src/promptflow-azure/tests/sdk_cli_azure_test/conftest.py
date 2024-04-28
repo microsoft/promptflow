@@ -742,3 +742,26 @@ def csharp_test_project_basic() -> CSharpProject:
 def disable_trace_setup():
     os.environ[PF_TRACING_SKIP_LOCAL_SETUP_ENVIRON] = "true"
     yield
+
+
+@pytest.fixture
+def mock_async_run_uploader_upload_single_blob(tmpdir):
+    tmp_dir = Path(tmpdir).resolve()
+    tmp_data_path = (tmp_dir / "const").resolve()
+    tmp_data_path.write_text("THIS IS CONSTANT VALUE!")
+
+    from promptflow.azure.operations._async_run_uploader import AsyncRunUploader
+
+    orig_func = AsyncRunUploader._upload_single_blob
+
+    async def mock_upload_single_blob(self, blob_client, data_path, target_datastore):
+        if ".runs" not in Path(data_path).as_posix():
+            return await orig_func(self, blob_client, data_path, target_datastore)
+        await orig_func(self, blob_client, tmp_data_path, target_datastore)
+
+    with patch(
+        "promptflow.azure.operations._async_run_uploader.AsyncRunUploader._upload_single_blob",
+        side_effect=mock_upload_single_blob,
+        autospec=True,
+    ):
+        yield
