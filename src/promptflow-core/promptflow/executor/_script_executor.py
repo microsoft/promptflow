@@ -147,14 +147,16 @@ class ScriptExecutor(FlowExecutor):
             # For these cases, raise ScriptExecutionError, which is classified as UserError
             # and shows stack trace in the error message to make it easy for user to troubleshoot.
             error_type_and_message = f"({e.__class__.__name__}) {e}"
-            e = ScriptExecutionError(
+            ex = ScriptExecutionError(
                 message_format="Execution failure in '{func_name}': {error_type_and_message}",
-                func_name=self._func.__qualname__,
+                func_name=self._original_function.__qualname__,
                 error_type_and_message=error_type_and_message,
             )
+            # make sure traceback is from the original exception
+            ex.__traceback__ = e.__traceback__
             if not traces:
                 traces = Tracer.end_tracing(line_run_id)
-            run_tracker.end_run(line_run_id, ex=e, traces=traces)
+            run_tracker.end_run(line_run_id, ex=ex, traces=traces)
         finally:
             run_tracker.persist_flow_run(run_info)
         return self._construct_line_result(output, run_info)
@@ -427,6 +429,8 @@ class ScriptExecutor(FlowExecutor):
 
     def _initialize_function(self):
         func = self._parse_entry_func()
+        # persist original function for detailed error message
+        self._original_function = func
         # If the function is not decorated with trace, add trace for it.
         if not hasattr(func, "__original_function"):
             func = _traced(func, trace_type=TraceType.FLOW)
