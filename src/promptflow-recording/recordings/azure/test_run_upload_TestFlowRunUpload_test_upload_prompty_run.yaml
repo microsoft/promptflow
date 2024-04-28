@@ -9,8 +9,8 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-azure-sdk/0.1.0b1 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.11.8 (Windows-10-10.0.22631-SP0)
+      - promptflow-sdk/1.10.0.dev0 promptflow-azure-sdk/1.10.0.dev0 azure-ai-ml/1.15.0
+        azsdk-python-mgmt-machinelearningservices/0.1.0 Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000
   response:
@@ -39,7 +39,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.029'
+      - '0.033'
     status:
       code: 200
       message: OK
@@ -53,8 +53,8 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-azure-sdk/0.1.0b1 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.11.8 (Windows-10-10.0.22631-SP0)
+      - promptflow-sdk/1.10.0.dev0 promptflow-azure-sdk/1.10.0.dev0 azure-ai-ml/1.15.0
+        azsdk-python-mgmt-machinelearningservices/0.1.0 Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores?count=30&isDefault=true&orderByAsc=false
   response:
@@ -91,7 +91,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.055'
+      - '0.054'
     status:
       code: 200
       message: OK
@@ -105,8 +105,8 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-azure-sdk/0.1.0b1 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.11.8 (Windows-10-10.0.22631-SP0)
+      - promptflow-sdk/1.10.0.dev0 promptflow-azure-sdk/1.10.0.dev0 azure-ai-ml/1.15.0
+        azsdk-python-mgmt-machinelearningservices/0.1.0 Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores?count=30&isDefault=true&orderByAsc=false
   response:
@@ -143,7 +143,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.052'
+      - '0.063'
     status:
       code: 200
       message: OK
@@ -159,8 +159,8 @@ interactions:
       Content-Length:
       - '0'
       User-Agent:
-      - promptflow-azure-sdk/0.1.0b1 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.11.8 (Windows-10-10.0.22631-SP0)
+      - promptflow-sdk/1.10.0.dev0 promptflow-azure-sdk/1.10.0.dev0 azure-ai-ml/1.15.0
+        azsdk-python-mgmt-machinelearningservices/0.1.0 Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
     method: POST
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore/listSecrets
   response:
@@ -184,7 +184,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.090'
+      - '0.133'
     status:
       code: 200
       message: OK
@@ -198,8 +198,8 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-azure-sdk/0.1.0b1 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.11.8 (Windows-10-10.0.22631-SP0)
+      - promptflow-sdk/1.10.0.dev0 promptflow-azure-sdk/1.10.0.dev0 azure-ai-ml/1.15.0
+        azsdk-python-mgmt-machinelearningservices/0.1.0 Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceartifactstore
   response:
@@ -236,7 +236,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.079'
+      - '0.081'
     status:
       code: 200
       message: OK
@@ -252,8 +252,8 @@ interactions:
       Content-Length:
       - '0'
       User-Agent:
-      - promptflow-azure-sdk/0.1.0b1 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.11.8 (Windows-10-10.0.22631-SP0)
+      - promptflow-sdk/1.10.0.dev0 promptflow-azure-sdk/1.10.0.dev0 azure-ai-ml/1.15.0
+        azsdk-python-mgmt-machinelearningservices/0.1.0 Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
     method: POST
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceartifactstore/listSecrets
   response:
@@ -277,7 +277,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.092'
+      - '0.164'
     status:
       code: 200
       message: OK
@@ -291,191 +291,11 @@ interactions:
       Content-Type:
       - application/octet-stream
       User-Agent:
-      - azsdk-python-storage-blob/12.19.1 Python/3.11.8 (Windows-10-10.0.22631-SP0)
+      - azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
       x-ms-blob-type:
       - BlockBlob
       x-ms-date:
-      - Sun, 28 Apr 2024 07:29:28 GMT
-      x-ms-version:
-      - '2023-11-03'
-    method: PUT
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/ExperimentRun/dcid.prompty_run_name_for_upload/logs/azureml/executionlogs.txt
-  response:
-    body:
-      string: ''
-    headers:
-      content-length:
-      - '0'
-      content-md5:
-      - CgDAHOTBMKo5OQ490a/sjA==
-      last-modified:
-      - Sun, 28 Apr 2024 07:29:28 GMT
-      server:
-      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
-      x-ms-content-crc64:
-      - SwyS4S2e31Y=
-      x-ms-request-server-encrypted:
-      - 'true'
-      x-ms-version:
-      - '2023-11-03'
-    status:
-      code: 201
-      message: Created
-- request:
-    body: "{\"line_number\": 0, \"status\": \"Completed\", \"inputs.question\": \"what
-      is the result of 1+1?\", \"inputs.line_number\": 0, \"output\": \"The result
-      of 1+1 is 2. It's a simple addition! \\ud83d\\ude0a\"}\r\n{\"line_number\":
-      1, \"status\": \"Completed\", \"inputs.question\": \"what is the result of 2+2?\",
-      \"inputs.line_number\": 1, \"output\": \"The result of 2+2 is 4. It's a simple
-      addition problem.\"}\r\n{\"line_number\": 2, \"status\": \"Completed\", \"inputs.question\":
-      \"what is the result of 3+3?\", \"inputs.line_number\": 2, \"output\": \"The
-      result of 3+3 is 6.\"}\r\n"
-    headers:
-      Accept:
-      - application/xml
-      Content-Length:
-      - '531'
-      Content-Type:
-      - application/octet-stream
-      User-Agent:
-      - azsdk-python-storage-blob/12.19.1 Python/3.11.8 (Windows-10-10.0.22631-SP0)
-      x-ms-blob-type:
-      - BlockBlob
-      x-ms-date:
-      - Sun, 28 Apr 2024 07:29:28 GMT
-      x-ms-version:
-      - '2023-11-03'
-    method: PUT
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/promptflow/PromptFlowArtifacts/prompty_run_name_for_upload/instance_results.jsonl
-  response:
-    body:
-      string: ''
-    headers:
-      content-length:
-      - '0'
-      content-md5:
-      - JmUYlRz+4KB6ynbCgjCFzA==
-      last-modified:
-      - Sun, 28 Apr 2024 07:29:28 GMT
-      server:
-      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
-      x-ms-content-crc64:
-      - VLWwrs2g6ZM=
-      x-ms-request-server-encrypted:
-      - 'true'
-      x-ms-version:
-      - '2023-11-03'
-    status:
-      code: 201
-      message: Created
-- request:
-    body: "---\r\nname: Basic Prompt\r\ndescription: A basic prompt that uses the
-      GPT-3 chat API to answer questions\r\nmodel:\r\n    api: chat\r\n    configuration:\r\n
-      \     type: azure_openai\r\n      azure_deployment: gpt-35-turbo\r\n      connection:
-      azure_open_ai_connection\r\n    parameters:\r\n      max_tokens: 128\r\n      temperature:
-      0.2\r\ninputs:\r\n  firstName:\r\n    type: string\r\n    default: John\r\n
-      \ lastName:\r\n    type: string\r\n    default: Doh\r\n  question:\r\n    type:
-      string\r\n---\r\nsystem:\r\nYou are an AI assistant who helps people find information.\r\nAs
-      the assistant, you answer questions briefly, succinctly,\r\nand in a personable
-      manner using markdown and even add some personal flair with appropriate emojis.\r\n\r\n#
-      Safety\r\n- You **should always** reference factual statements to search results
-      based on [relevant documents]\r\n- Search results based on [relevant documents]
-      may be incomplete or irrelevant. You do not make assumptions\r\n# Customer\r\nYou
-      are helping {{firstName}} {{lastName}} to find answers to their questions.\r\nUse
-      their name to address them in your responses.\r\n\r\nuser:\r\n{{question}}\r\n"
-    headers:
-      Accept:
-      - application/xml
-      Content-Length:
-      - '1083'
-      Content-Type:
-      - application/octet-stream
-      User-Agent:
-      - azsdk-python-storage-blob/12.19.1 Python/3.11.8 (Windows-10-10.0.22631-SP0)
-      x-ms-blob-type:
-      - BlockBlob
-      x-ms-date:
-      - Sun, 28 Apr 2024 07:29:28 GMT
-      x-ms-version:
-      - '2023-11-03'
-    method: PUT
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/runs/prompty_run_name_for_upload/prompty_example.prompty
-  response:
-    body:
-      string: ''
-    headers:
-      content-length:
-      - '0'
-      content-md5:
-      - BAm3CbJzly/u6m3OEJrVZw==
-      last-modified:
-      - Sun, 28 Apr 2024 07:29:28 GMT
-      server:
-      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
-      x-ms-content-crc64:
-      - gpeeGbmeR/U=
-      x-ms-request-server-encrypted:
-      - 'true'
-      x-ms-version:
-      - '2023-11-03'
-    status:
-      code: 201
-      message: Created
-- request:
-    body: THIS IS CONSTANT VALUE!
-    headers:
-      Accept:
-      - application/xml
-      Content-Length:
-      - '23'
-      Content-Type:
-      - application/octet-stream
-      User-Agent:
-      - azsdk-python-storage-blob/12.19.1 Python/3.11.8 (Windows-10-10.0.22631-SP0)
-      x-ms-blob-type:
-      - BlockBlob
-      x-ms-date:
-      - Sun, 28 Apr 2024 07:29:28 GMT
-      x-ms-version:
-      - '2023-11-03'
-    method: PUT
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/promptflow/PromptFlowArtifacts/prompty_run_name_for_upload/flow_logs/000000000.log
-  response:
-    body:
-      string: ''
-    headers:
-      content-length:
-      - '0'
-      content-md5:
-      - CgDAHOTBMKo5OQ490a/sjA==
-      last-modified:
-      - Sun, 28 Apr 2024 07:29:28 GMT
-      server:
-      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
-      x-ms-content-crc64:
-      - SwyS4S2e31Y=
-      x-ms-request-server-encrypted:
-      - 'true'
-      x-ms-version:
-      - '2023-11-03'
-    status:
-      code: 201
-      message: Created
-- request:
-    body: THIS IS CONSTANT VALUE!
-    headers:
-      Accept:
-      - application/xml
-      Content-Length:
-      - '23'
-      Content-Type:
-      - application/octet-stream
-      User-Agent:
-      - azsdk-python-storage-blob/12.19.1 Python/3.11.8 (Windows-10-10.0.22631-SP0)
-      x-ms-blob-type:
-      - BlockBlob
-      x-ms-date:
-      - Sun, 28 Apr 2024 07:29:27 GMT
+      - Sun, 28 Apr 2024 10:13:56 GMT
       x-ms-version:
       - '2023-11-03'
     method: PUT
@@ -489,7 +309,7 @@ interactions:
       content-md5:
       - CgDAHOTBMKo5OQ490a/sjA==
       last-modified:
-      - Sun, 28 Apr 2024 07:29:28 GMT
+      - Sun, 28 Apr 2024 10:13:58 GMT
       server:
       - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
       x-ms-content-crc64:
@@ -502,21 +322,267 @@ interactions:
       code: 201
       message: Created
 - request:
-    body: "{\"line_number\": 0, \"run_info\": {\"run_id\": \"c9f9054f-3a46-492f-90c3-4ce9bde54eca_0\",
+    body: THIS IS CONSTANT VALUE!
+    headers:
+      Accept:
+      - application/xml
+      Content-Length:
+      - '23'
+      Content-Type:
+      - application/octet-stream
+      User-Agent:
+      - azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
+      x-ms-blob-type:
+      - BlockBlob
+      x-ms-date:
+      - Sun, 28 Apr 2024 10:13:56 GMT
+      x-ms-version:
+      - '2023-11-03'
+    method: PUT
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/ExperimentRun/dcid.prompty_run_name_for_upload/logs/azureml/executionlogs.txt
+  response:
+    body:
+      string: ''
+    headers:
+      content-length:
+      - '0'
+      content-md5:
+      - CgDAHOTBMKo5OQ490a/sjA==
+      last-modified:
+      - Sun, 28 Apr 2024 10:13:58 GMT
+      server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      x-ms-content-crc64:
+      - SwyS4S2e31Y=
+      x-ms-request-server-encrypted:
+      - 'true'
+      x-ms-version:
+      - '2023-11-03'
+    status:
+      code: 201
+      message: Created
+- request:
+    body: "---\nname: Basic Prompt\ndescription: A basic prompt that uses the GPT-3
+      chat API to answer questions\nmodel:\n    api: chat\n    configuration:\n      type:
+      azure_openai\n      azure_deployment: gpt-35-turbo\n      connection: azure_open_ai_connection\n
+      \   parameters:\n      max_tokens: 128\n      temperature: 0.2\ninputs:\n  firstName:\n
+      \   type: string\n    default: John\n  lastName:\n    type: string\n    default:
+      Doh\n  question:\n    type: string\n---\nsystem:\nYou are an AI assistant who
+      helps people find information.\nAs the assistant, you answer questions briefly,
+      succinctly,\nand in a personable manner using markdown and even add some personal
+      flair with appropriate emojis.\n\n# Safety\n- You **should always** reference
+      factual statements to search results based on [relevant documents]\n- Search
+      results based on [relevant documents] may be incomplete or irrelevant. You do
+      not make assumptions\n# Customer\nYou are helping {{firstName}} {{lastName}}
+      to find answers to their questions.\nUse their name to address them in your
+      responses.\n\nuser:\n{{question}}\n"
+    headers:
+      Accept:
+      - application/xml
+      Content-Length:
+      - '1047'
+      Content-Type:
+      - application/octet-stream
+      User-Agent:
+      - azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
+      x-ms-blob-type:
+      - BlockBlob
+      x-ms-date:
+      - Sun, 28 Apr 2024 10:13:56 GMT
+      x-ms-version:
+      - '2023-11-03'
+    method: PUT
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/runs/prompty_run_name_for_upload/prompty_example.prompty
+  response:
+    body:
+      string: ''
+    headers:
+      content-length:
+      - '0'
+      content-md5:
+      - 0I6qYp7ksHSKaUHu1N5SIw==
+      last-modified:
+      - Sun, 28 Apr 2024 10:13:58 GMT
+      server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      x-ms-content-crc64:
+      - UcZeGHUUTxQ=
+      x-ms-request-server-encrypted:
+      - 'true'
+      x-ms-version:
+      - '2023-11-03'
+    status:
+      code: 201
+      message: Created
+- request:
+    body: '{"line_number": 1, "status": "Completed", "inputs.question": "what is the
+      result of 2+2?", "inputs.line_number": 1, "output": "The result of 2+2 is 4.
+      It''s a classic math problem! \ud83e\uddee"}
+
+      {"line_number": 2, "status": "Completed", "inputs.question": "what is the result
+      of 3+3?", "inputs.line_number": 2, "output": "The result of 3+3 is 6."}
+
+      {"line_number": 0, "status": "Completed", "inputs.question": "what is the result
+      of 1+1?", "inputs.line_number": 0, "output": "The result of 1+1 is 2. It''s
+      a simple addition! \ud83d\ude0a"}
+
+      '
+    headers:
+      Accept:
+      - application/xml
+      Content-Length:
+      - '538'
+      Content-Type:
+      - application/octet-stream
+      User-Agent:
+      - azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
+      x-ms-blob-type:
+      - BlockBlob
+      x-ms-date:
+      - Sun, 28 Apr 2024 10:13:56 GMT
+      x-ms-version:
+      - '2023-11-03'
+    method: PUT
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/promptflow/PromptFlowArtifacts/prompty_run_name_for_upload/instance_results.jsonl
+  response:
+    body:
+      string: ''
+    headers:
+      content-length:
+      - '0'
+      content-md5:
+      - BXpUyg2hazRjcdCXo8Cuaw==
+      last-modified:
+      - Sun, 28 Apr 2024 10:13:58 GMT
+      server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      x-ms-content-crc64:
+      - 3VNuFOsRdPY=
+      x-ms-request-server-encrypted:
+      - 'true'
+      x-ms-version:
+      - '2023-11-03'
+    status:
+      code: 201
+      message: Created
+- request:
+    body: THIS IS CONSTANT VALUE!
+    headers:
+      Accept:
+      - application/xml
+      Content-Length:
+      - '23'
+      Content-Type:
+      - application/octet-stream
+      User-Agent:
+      - azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
+      x-ms-blob-type:
+      - BlockBlob
+      x-ms-date:
+      - Sun, 28 Apr 2024 10:13:56 GMT
+      x-ms-version:
+      - '2023-11-03'
+    method: PUT
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/promptflow/PromptFlowArtifacts/prompty_run_name_for_upload/flow_logs/000000000.log
+  response:
+    body:
+      string: ''
+    headers:
+      content-length:
+      - '0'
+      content-md5:
+      - CgDAHOTBMKo5OQ490a/sjA==
+      last-modified:
+      - Sun, 28 Apr 2024 10:13:58 GMT
+      server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      x-ms-content-crc64:
+      - SwyS4S2e31Y=
+      x-ms-request-server-encrypted:
+      - 'true'
+      x-ms-version:
+      - '2023-11-03'
+    status:
+      code: 201
+      message: Created
+- request:
+    body: "---\nname: Basic Prompt With Chat History\ndescription: A basic prompt
+      that uses the GPT-3 chat API to answer questions\nmodel:\n    api: chat\n    configuration:\n
+      \     type: azure_open_ai\n      azure_deployment: gpt-35-turbo\n      connection:
+      azure_open_ai_connection\n\n    parameters:\n      max_tokens: 128\n      temperature:
+      0.2\ninputs:\n  firstName:\n    type: string\n    default: John\n  lastName:\n
+      \   type: string\n    default: Doh\n  question:\n    type: string\n    is_chat_input:
+      true\n  chat_history:\n    is_chat_history: true\n    type: list\n    default:
+      [\n        {\n          \"role\": \"user\",\n          \"content\": \"what is
+      the result of 1+1?\"\n        },\n        {\n          \"role\": \"Assistant\",\n
+      \         \"content\": \"The result of 1+1 is 2. It's a simple addition!\"\n
+      \       },\n        {\n          \"role\": \"user\",\n          \"content\":
+      \"what is the result of 2+2?\"\n        },\n        {\n          \"role\": \"Assistant\",\n
+      \         \"content\": \"The result of 2+2 is 4. It's a simple addition!\"\n
+      \       }\n    ]\n---\nsystem:\nYou are an AI assistant who helps people find
+      information.\nAs the assistant, you answer questions briefly, succinctly,\nand
+      in a personable manner using markdown and even add some personal flair with
+      appropriate emojis.\n\n# Safety\n- You **should always** reference factual statements
+      to search results based on [relevant documents]\n- Search results based on [relevant
+      documents] may be incomplete or irrelevant. You do not make assumptions\n# Customer\nYou
+      are helping {{firstName}} {{lastName}} to find answers to their questions.\nUse
+      their name to address them in your responses.\n\nHere is a chat history you
+      had with the user:\n{% for item in chat_history %}\n   {{item.role}}: {{item.content}}\n{%
+      endfor %}\n\nuser:\n{{question}}\n"
+    headers:
+      Accept:
+      - application/xml
+      Content-Length:
+      - '1734'
+      Content-Type:
+      - application/octet-stream
+      User-Agent:
+      - azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
+      x-ms-blob-type:
+      - BlockBlob
+      x-ms-date:
+      - Sun, 28 Apr 2024 10:13:57 GMT
+      x-ms-version:
+      - '2023-11-03'
+    method: PUT
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/runs/prompty_run_name_for_upload/prompty_with_chat_history.prompty
+  response:
+    body:
+      string: ''
+    headers:
+      content-length:
+      - '0'
+      content-md5:
+      - j3KRkzw8GC7DUb9m/o1EXA==
+      last-modified:
+      - Sun, 28 Apr 2024 10:13:58 GMT
+      server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      x-ms-content-crc64:
+      - RutppkJYZ4A=
+      x-ms-request-server-encrypted:
+      - 'true'
+      x-ms-version:
+      - '2023-11-03'
+    status:
+      code: 201
+      message: Created
+- request:
+    body: "{\"line_number\": 0, \"run_info\": {\"run_id\": \"63439c51-7c56-4d20-ba39-f2694a531ffc_0\",
       \"status\": \"Completed\", \"error\": null, \"inputs\": {\"question\": \"what
       is the result of 1+1?\", \"line_number\": 0}, \"output\": {\"output\": \"The
       result of 1+1 is 2. It's a simple addition! \U0001F60A\"}, \"metrics\": null,
-      \"request\": null, \"parent_run_id\": \"c9f9054f-3a46-492f-90c3-4ce9bde54eca\",
-      \"root_run_id\": \"c9f9054f-3a46-492f-90c3-4ce9bde54eca\", \"source_run_id\":
-      null, \"flow_id\": \"default_flow_id\", \"start_time\": \"2024-04-28T07:29:11.637413Z\",
-      \"end_time\": \"2024-04-28T07:29:13.943638Z\", \"index\": 0, \"api_calls\":
+      \"request\": null, \"parent_run_id\": \"63439c51-7c56-4d20-ba39-f2694a531ffc\",
+      \"root_run_id\": \"63439c51-7c56-4d20-ba39-f2694a531ffc\", \"source_run_id\":
+      null, \"flow_id\": \"default_flow_id\", \"start_time\": \"2024-04-28T10:13:45.327564Z\",
+      \"end_time\": \"2024-04-28T10:13:46.993074Z\", \"index\": 0, \"api_calls\":
       [{\"name\": \"Basic Prompt\", \"type\": \"Function\", \"inputs\": {\"question\":
       \"what is the result of 1+1?\"}, \"output\": \"The result of 1+1 is 2. It's
-      a simple addition! \U0001F60A\", \"start_time\": 1714260551.638424, \"end_time\":
-      1714260553.941649, \"error\": null, \"children\": [{\"name\": \"Prompty\", \"type\":
+      a simple addition! \U0001F60A\", \"start_time\": 1714270425.331896, \"end_time\":
+      1714270426.991358, \"error\": null, \"children\": [{\"name\": \"Prompty\", \"type\":
       \"Function\", \"inputs\": {\"question\": \"what is the result of 1+1?\"}, \"output\":
       \"The result of 1+1 is 2. It's a simple addition! \U0001F60A\", \"start_time\":
-      1714260551.638424, \"end_time\": 1714260553.941649, \"error\": null, \"children\":
+      1714270425.334532, \"end_time\": 1714270426.991232, \"error\": null, \"children\":
       [{\"name\": \"convert_prompt_template\", \"type\": \"Function\", \"inputs\":
       {\"template\": \"system:\\nYou are an AI assistant who helps people find information.\\nAs
       the assistant, you answer questions briefly, succinctly,\\nand in a personable
@@ -536,9 +602,9 @@ interactions:
       incomplete or irrelevant. You do not make assumptions\\n# Customer\\nYou are
       helping John Doh to find answers to their questions.\\nUse their name to address
       them in your responses.\"}, {\"role\": \"user\", \"content\": \"what is the
-      result of 1+1?\"}], \"start_time\": 1714260552.593877, \"end_time\": 1714260552.597761,
-      \"error\": null, \"children\": [], \"node_name\": null, \"parent_id\": \"f42942ca-dd18-4af4-8f10-bcc92384d01c\",
-      \"id\": \"fbd60824-dbc6-4b40-955f-a0a8eab144bf\", \"function\": \"convert_prompt_template\",
+      result of 1+1?\"}], \"start_time\": 1714270425.955362, \"end_time\": 1714270425.958659,
+      \"error\": null, \"children\": [], \"node_name\": null, \"parent_id\": \"e26e38a6-47fc-4972-a696-85ad080aaa79\",
+      \"id\": \"58ba08c6-2d06-4e56-8e7e-7ab15ac2afc7\", \"function\": \"convert_prompt_template\",
       \"system_metrics\": {}}, {\"name\": \"openai_chat\", \"type\": \"LLM\", \"inputs\":
       {\"max_tokens\": 128, \"temperature\": 0.2, \"model\": \"gpt-35-turbo\", \"messages\":
       [{\"role\": \"system\", \"content\": \"You are an AI assistant who helps people
@@ -550,51 +616,44 @@ interactions:
       assumptions\\n# Customer\\nYou are helping John Doh to find answers to their
       questions.\\nUse their name to address them in your responses.\"}, {\"role\":
       \"user\", \"content\": \"what is the result of 1+1?\"}]}, \"output\": {\"id\":
-      \"chatcmpl-9ItGDbjrlgUHLNqGvRZDncFZDSpA9\", \"choices\": [{\"finish_reason\":
+      \"chatcmpl-9IvpSxJFjam6WxTNahM7wsLzTYHj4\", \"choices\": [{\"finish_reason\":
       \"stop\", \"index\": 0, \"logprobs\": null, \"message\": {\"content\": \"The
       result of 1+1 is 2. It's a simple addition! \U0001F60A\", \"role\": \"assistant\",
-      \"function_call\": null, \"tool_calls\": null}, \"content_filter_results\":
-      {\"hate\": {\"filtered\": false, \"severity\": \"safe\"}, \"self_harm\": {\"filtered\":
-      false, \"severity\": \"safe\"}, \"sexual\": {\"filtered\": false, \"severity\":
-      \"safe\"}, \"violence\": {\"filtered\": false, \"severity\": \"safe\"}}}], \"created\":
-      1714289353, \"model\": \"gpt-35-turbo\", \"object\": \"chat.completion\", \"system_fingerprint\":
-      null, \"usage\": {\"completion_tokens\": 19, \"prompt_tokens\": 130, \"total_tokens\":
-      149}, \"prompt_filter_results\": [{\"prompt_index\": 0, \"content_filter_results\":
-      {\"hate\": {\"filtered\": false, \"severity\": \"safe\"}, \"self_harm\": {\"filtered\":
-      false, \"severity\": \"safe\"}, \"sexual\": {\"filtered\": false, \"severity\":
-      \"safe\"}, \"violence\": {\"filtered\": false, \"severity\": \"safe\"}}}]},
-      \"start_time\": 1714260552.915525, \"end_time\": 1714260553.941649, \"error\":
-      null, \"children\": [], \"node_name\": null, \"parent_id\": \"f42942ca-dd18-4af4-8f10-bcc92384d01c\",
-      \"id\": \"67335651-f05d-48d4-93f6-bf6444bde01d\", \"function\": \"openai.resources.chat.completions.Completions.create\",
+      \"function_call\": null, \"tool_calls\": null}}], \"created\": 1714299226, \"model\":
+      \"gpt-35-turbo\", \"object\": \"chat.completion\", \"system_fingerprint\": null,
+      \"usage\": {\"completion_tokens\": 19, \"prompt_tokens\": 130, \"total_tokens\":
+      149}}, \"start_time\": 1714270425.989254, \"end_time\": 1714270426.990977, \"error\":
+      null, \"children\": [], \"node_name\": null, \"parent_id\": \"e26e38a6-47fc-4972-a696-85ad080aaa79\",
+      \"id\": \"61470d33-a74b-46a9-9995-253bc9671381\", \"function\": \"openai.resources.chat.completions.Completions.create\",
       \"system_metrics\": {\"completion_tokens\": 19, \"prompt_tokens\": 130, \"total_tokens\":
-      149}}], \"node_name\": null, \"parent_id\": \"e8074c04-54fb-4da1-a2bd-a610503460e3\",
-      \"id\": \"f42942ca-dd18-4af4-8f10-bcc92384d01c\", \"function\": \"Prompty\",
+      149}}], \"node_name\": null, \"parent_id\": \"50d609c4-f8c3-44f2-a771-56575d6d0c76\",
+      \"id\": \"e26e38a6-47fc-4972-a696-85ad080aaa79\", \"function\": \"Prompty\",
       \"system_metrics\": {\"completion_tokens\": 19, \"prompt_tokens\": 130, \"total_tokens\":
-      149}}], \"node_name\": null, \"parent_id\": \"\", \"id\": \"e8074c04-54fb-4da1-a2bd-a610503460e3\",
+      149}}], \"node_name\": null, \"parent_id\": \"\", \"id\": \"50d609c4-f8c3-44f2-a771-56575d6d0c76\",
       \"function\": \"Prompty\", \"system_metrics\": {\"completion_tokens\": 19, \"prompt_tokens\":
       130, \"total_tokens\": 149}}], \"name\": \"\", \"description\": \"\", \"tags\":
       null, \"system_metrics\": {\"completion_tokens\": 19, \"prompt_tokens\": 130,
-      \"total_tokens\": 149, \"duration\": 2.306225}, \"result\": null, \"upload_metrics\":
+      \"total_tokens\": 149, \"duration\": 1.66551}, \"result\": null, \"upload_metrics\":
       false, \"otel_trace_id\": \"0x00000000000000000000000000000000\", \"message_format\":
-      \"basic\"}, \"start_time\": \"2024-04-28T07:29:11.637413\", \"end_time\": \"2024-04-28T07:29:13.943638\",
+      \"basic\"}, \"start_time\": \"2024-04-28T10:13:45.327564\", \"end_time\": \"2024-04-28T10:13:46.993074\",
       \"name\": \"\", \"description\": \"\", \"status\": \"Completed\", \"tags\":
-      null}\r\n{\"line_number\": 1, \"run_info\": {\"run_id\": \"c9f9054f-3a46-492f-90c3-4ce9bde54eca_1\",
+      null}\n{\"line_number\": 1, \"run_info\": {\"run_id\": \"63439c51-7c56-4d20-ba39-f2694a531ffc_1\",
       \"status\": \"Completed\", \"error\": null, \"inputs\": {\"question\": \"what
       is the result of 2+2?\", \"line_number\": 1}, \"output\": {\"output\": \"The
-      result of 2+2 is 4. It's a simple addition problem.\"}, \"metrics\": null, \"request\":
-      null, \"parent_run_id\": \"c9f9054f-3a46-492f-90c3-4ce9bde54eca\", \"root_run_id\":
-      \"c9f9054f-3a46-492f-90c3-4ce9bde54eca\", \"source_run_id\": null, \"flow_id\":
-      \"default_flow_id\", \"start_time\": \"2024-04-28T07:29:13.422187Z\", \"end_time\":
-      \"2024-04-28T07:29:15.578292Z\", \"index\": 1, \"api_calls\": [{\"name\": \"Basic
-      Prompt\", \"type\": \"Function\", \"inputs\": {\"question\": \"what is the result
-      of 2+2?\"}, \"output\": \"The result of 2+2 is 4. It's a simple addition problem.\",
-      \"start_time\": 1714260553.422187, \"end_time\": 1714260555.577293, \"error\":
-      null, \"children\": [{\"name\": \"Prompty\", \"type\": \"Function\", \"inputs\":
-      {\"question\": \"what is the result of 2+2?\"}, \"output\": \"The result of
-      2+2 is 4. It's a simple addition problem.\", \"start_time\": 1714260553.423186,
-      \"end_time\": 1714260555.577293, \"error\": null, \"children\": [{\"name\":
-      \"convert_prompt_template\", \"type\": \"Function\", \"inputs\": {\"template\":
-      \"system:\\nYou are an AI assistant who helps people find information.\\nAs
+      result of 2+2 is 4. It's a classic math problem! \U0001F9EE\"}, \"metrics\":
+      null, \"request\": null, \"parent_run_id\": \"63439c51-7c56-4d20-ba39-f2694a531ffc\",
+      \"root_run_id\": \"63439c51-7c56-4d20-ba39-f2694a531ffc\", \"source_run_id\":
+      null, \"flow_id\": \"default_flow_id\", \"start_time\": \"2024-04-28T10:13:45.333824Z\",
+      \"end_time\": \"2024-04-28T10:13:47.184630Z\", \"index\": 1, \"api_calls\":
+      [{\"name\": \"Basic Prompt\", \"type\": \"Function\", \"inputs\": {\"question\":
+      \"what is the result of 2+2?\"}, \"output\": \"The result of 2+2 is 4. It's
+      a classic math problem! \U0001F9EE\", \"start_time\": 1714270425.335514, \"end_time\":
+      1714270427.183004, \"error\": null, \"children\": [{\"name\": \"Prompty\", \"type\":
+      \"Function\", \"inputs\": {\"question\": \"what is the result of 2+2?\"}, \"output\":
+      \"The result of 2+2 is 4. It's a classic math problem! \U0001F9EE\", \"start_time\":
+      1714270425.3378, \"end_time\": 1714270427.182888, \"error\": null, \"children\":
+      [{\"name\": \"convert_prompt_template\", \"type\": \"Function\", \"inputs\":
+      {\"template\": \"system:\\nYou are an AI assistant who helps people find information.\\nAs
       the assistant, you answer questions briefly, succinctly,\\nand in a personable
       manner using markdown and even add some personal flair with appropriate emojis.\\n\\n#
       Safety\\n- You **should always** reference factual statements to search results
@@ -612,9 +671,9 @@ interactions:
       incomplete or irrelevant. You do not make assumptions\\n# Customer\\nYou are
       helping John Doh to find answers to their questions.\\nUse their name to address
       them in your responses.\"}, {\"role\": \"user\", \"content\": \"what is the
-      result of 2+2?\"}], \"start_time\": 1714260554.341766, \"end_time\": 1714260554.346273,
-      \"error\": null, \"children\": [], \"node_name\": null, \"parent_id\": \"eb76e895-f9db-400c-9663-670adb43001a\",
-      \"id\": \"378fc341-8fea-4905-a351-ebf93813ca97\", \"function\": \"convert_prompt_template\",
+      result of 2+2?\"}], \"start_time\": 1714270425.910179, \"end_time\": 1714270425.913316,
+      \"error\": null, \"children\": [], \"node_name\": null, \"parent_id\": \"57501269-6063-4349-be2a-6b59e7647bfe\",
+      \"id\": \"d40a502c-2825-42d4-abca-300a46c7e070\", \"function\": \"convert_prompt_template\",
       \"system_metrics\": {}}, {\"name\": \"openai_chat\", \"type\": \"LLM\", \"inputs\":
       {\"max_tokens\": 128, \"temperature\": 0.2, \"model\": \"gpt-35-turbo\", \"messages\":
       [{\"role\": \"system\", \"content\": \"You are an AI assistant who helps people
@@ -626,47 +685,40 @@ interactions:
       assumptions\\n# Customer\\nYou are helping John Doh to find answers to their
       questions.\\nUse their name to address them in your responses.\"}, {\"role\":
       \"user\", \"content\": \"what is the result of 2+2?\"}]}, \"output\": {\"id\":
-      \"chatcmpl-9ItGFlX9UNAMmXE7Lxy1U6TnihLLS\", \"choices\": [{\"finish_reason\":
+      \"chatcmpl-9IvpSaChdy1c1cIF9Sj5jXvUpOUwT\", \"choices\": [{\"finish_reason\":
       \"stop\", \"index\": 0, \"logprobs\": null, \"message\": {\"content\": \"The
-      result of 2+2 is 4. It's a simple addition problem.\", \"role\": \"assistant\",
-      \"function_call\": null, \"tool_calls\": null}, \"content_filter_results\":
-      {\"hate\": {\"filtered\": false, \"severity\": \"safe\"}, \"self_harm\": {\"filtered\":
-      false, \"severity\": \"safe\"}, \"sexual\": {\"filtered\": false, \"severity\":
-      \"safe\"}, \"violence\": {\"filtered\": false, \"severity\": \"safe\"}}}], \"created\":
-      1714289355, \"model\": \"gpt-35-turbo\", \"object\": \"chat.completion\", \"system_fingerprint\":
-      null, \"usage\": {\"completion_tokens\": 18, \"prompt_tokens\": 130, \"total_tokens\":
-      148}, \"prompt_filter_results\": [{\"prompt_index\": 0, \"content_filter_results\":
-      {\"hate\": {\"filtered\": false, \"severity\": \"safe\"}, \"self_harm\": {\"filtered\":
-      false, \"severity\": \"safe\"}, \"sexual\": {\"filtered\": false, \"severity\":
-      \"safe\"}, \"violence\": {\"filtered\": false, \"severity\": \"safe\"}}}]},
-      \"start_time\": 1714260554.683793, \"end_time\": 1714260555.577293, \"error\":
-      null, \"children\": [], \"node_name\": null, \"parent_id\": \"eb76e895-f9db-400c-9663-670adb43001a\",
-      \"id\": \"b8987e0e-90f0-4553-ad70-31f7b378e424\", \"function\": \"openai.resources.chat.completions.Completions.create\",
-      \"system_metrics\": {\"completion_tokens\": 18, \"prompt_tokens\": 130, \"total_tokens\":
-      148}}], \"node_name\": null, \"parent_id\": \"b02b6dd2-a8ce-4a7a-8512-d50ee3fe056a\",
-      \"id\": \"eb76e895-f9db-400c-9663-670adb43001a\", \"function\": \"Prompty\",
-      \"system_metrics\": {\"completion_tokens\": 18, \"prompt_tokens\": 130, \"total_tokens\":
-      148}}], \"node_name\": null, \"parent_id\": \"\", \"id\": \"b02b6dd2-a8ce-4a7a-8512-d50ee3fe056a\",
-      \"function\": \"Prompty\", \"system_metrics\": {\"completion_tokens\": 18, \"prompt_tokens\":
-      130, \"total_tokens\": 148}}], \"name\": \"\", \"description\": \"\", \"tags\":
-      null, \"system_metrics\": {\"completion_tokens\": 18, \"prompt_tokens\": 130,
-      \"total_tokens\": 148, \"duration\": 2.156105}, \"result\": null, \"upload_metrics\":
+      result of 2+2 is 4. It's a classic math problem! \U0001F9EE\", \"role\": \"assistant\",
+      \"function_call\": null, \"tool_calls\": null}}], \"created\": 1714299226, \"model\":
+      \"gpt-35-turbo\", \"object\": \"chat.completion\", \"system_fingerprint\": null,
+      \"usage\": {\"completion_tokens\": 21, \"prompt_tokens\": 130, \"total_tokens\":
+      151}}, \"start_time\": 1714270425.939861, \"end_time\": 1714270427.182648, \"error\":
+      null, \"children\": [], \"node_name\": null, \"parent_id\": \"57501269-6063-4349-be2a-6b59e7647bfe\",
+      \"id\": \"8f28b8ac-ba39-4621-8b87-ac7e1562cef7\", \"function\": \"openai.resources.chat.completions.Completions.create\",
+      \"system_metrics\": {\"completion_tokens\": 21, \"prompt_tokens\": 130, \"total_tokens\":
+      151}}], \"node_name\": null, \"parent_id\": \"cce9347a-59ac-4239-80ea-d55b1dd2b361\",
+      \"id\": \"57501269-6063-4349-be2a-6b59e7647bfe\", \"function\": \"Prompty\",
+      \"system_metrics\": {\"completion_tokens\": 21, \"prompt_tokens\": 130, \"total_tokens\":
+      151}}], \"node_name\": null, \"parent_id\": \"\", \"id\": \"cce9347a-59ac-4239-80ea-d55b1dd2b361\",
+      \"function\": \"Prompty\", \"system_metrics\": {\"completion_tokens\": 21, \"prompt_tokens\":
+      130, \"total_tokens\": 151}}], \"name\": \"\", \"description\": \"\", \"tags\":
+      null, \"system_metrics\": {\"completion_tokens\": 21, \"prompt_tokens\": 130,
+      \"total_tokens\": 151, \"duration\": 1.850806}, \"result\": null, \"upload_metrics\":
       false, \"otel_trace_id\": \"0x00000000000000000000000000000000\", \"message_format\":
-      \"basic\"}, \"start_time\": \"2024-04-28T07:29:13.422187\", \"end_time\": \"2024-04-28T07:29:15.578292\",
+      \"basic\"}, \"start_time\": \"2024-04-28T10:13:45.333824\", \"end_time\": \"2024-04-28T10:13:47.184630\",
       \"name\": \"\", \"description\": \"\", \"status\": \"Completed\", \"tags\":
-      null}\r\n{\"line_number\": 2, \"run_info\": {\"run_id\": \"c9f9054f-3a46-492f-90c3-4ce9bde54eca_2\",
+      null}\n{\"line_number\": 2, \"run_info\": {\"run_id\": \"63439c51-7c56-4d20-ba39-f2694a531ffc_2\",
       \"status\": \"Completed\", \"error\": null, \"inputs\": {\"question\": \"what
       is the result of 3+3?\", \"line_number\": 2}, \"output\": {\"output\": \"The
       result of 3+3 is 6.\"}, \"metrics\": null, \"request\": null, \"parent_run_id\":
-      \"c9f9054f-3a46-492f-90c3-4ce9bde54eca\", \"root_run_id\": \"c9f9054f-3a46-492f-90c3-4ce9bde54eca\",
-      \"source_run_id\": null, \"flow_id\": \"default_flow_id\", \"start_time\": \"2024-04-28T07:29:13.330502Z\",
-      \"end_time\": \"2024-04-28T07:29:15.756535Z\", \"index\": 2, \"api_calls\":
+      \"63439c51-7c56-4d20-ba39-f2694a531ffc\", \"root_run_id\": \"63439c51-7c56-4d20-ba39-f2694a531ffc\",
+      \"source_run_id\": null, \"flow_id\": \"default_flow_id\", \"start_time\": \"2024-04-28T10:13:45.330812Z\",
+      \"end_time\": \"2024-04-28T10:13:47.068117Z\", \"index\": 2, \"api_calls\":
       [{\"name\": \"Basic Prompt\", \"type\": \"Function\", \"inputs\": {\"question\":
       \"what is the result of 3+3?\"}, \"output\": \"The result of 3+3 is 6.\", \"start_time\":
-      1714260553.331518, \"end_time\": 1714260555.755536, \"error\": null, \"children\":
+      1714270425.333969, \"end_time\": 1714270427.067037, \"error\": null, \"children\":
       [{\"name\": \"Prompty\", \"type\": \"Function\", \"inputs\": {\"question\":
       \"what is the result of 3+3?\"}, \"output\": \"The result of 3+3 is 6.\", \"start_time\":
-      1714260553.331518, \"end_time\": 1714260555.755536, \"error\": null, \"children\":
+      1714270425.335579, \"end_time\": 1714270427.06696, \"error\": null, \"children\":
       [{\"name\": \"convert_prompt_template\", \"type\": \"Function\", \"inputs\":
       {\"template\": \"system:\\nYou are an AI assistant who helps people find information.\\nAs
       the assistant, you answer questions briefly, succinctly,\\nand in a personable
@@ -686,9 +738,9 @@ interactions:
       incomplete or irrelevant. You do not make assumptions\\n# Customer\\nYou are
       helping John Doh to find answers to their questions.\\nUse their name to address
       them in your responses.\"}, {\"role\": \"user\", \"content\": \"what is the
-      result of 3+3?\"}], \"start_time\": 1714260554.26167, \"end_time\": 1714260554.265669,
-      \"error\": null, \"children\": [], \"node_name\": null, \"parent_id\": \"32fe9410-dceb-4018-98af-a43efbd4aa97\",
-      \"id\": \"ac392450-61c7-4a53-932c-55211e35e9c6\", \"function\": \"convert_prompt_template\",
+      result of 3+3?\"}], \"start_time\": 1714270426.022704, \"end_time\": 1714270426.026408,
+      \"error\": null, \"children\": [], \"node_name\": null, \"parent_id\": \"5966673f-6d3d-45d5-aae4-9419b789102e\",
+      \"id\": \"453d2a4b-4852-4662-b116-a344b5ee90a9\", \"function\": \"convert_prompt_template\",
       \"system_metrics\": {}}, {\"name\": \"openai_chat\", \"type\": \"LLM\", \"inputs\":
       {\"max_tokens\": 128, \"temperature\": 0.2, \"model\": \"gpt-35-turbo\", \"messages\":
       [{\"role\": \"system\", \"content\": \"You are an AI assistant who helps people
@@ -700,48 +752,41 @@ interactions:
       assumptions\\n# Customer\\nYou are helping John Doh to find answers to their
       questions.\\nUse their name to address them in your responses.\"}, {\"role\":
       \"user\", \"content\": \"what is the result of 3+3?\"}]}, \"output\": {\"id\":
-      \"chatcmpl-9ItGFxhvTS1rYdyWAEeR4ar9AsvHI\", \"choices\": [{\"finish_reason\":
+      \"chatcmpl-9IvpSIwRdooJVXZhYpzUf4nA6csq9\", \"choices\": [{\"finish_reason\":
       \"stop\", \"index\": 0, \"logprobs\": null, \"message\": {\"content\": \"The
       result of 3+3 is 6.\", \"role\": \"assistant\", \"function_call\": null, \"tool_calls\":
-      null}, \"content_filter_results\": {\"hate\": {\"filtered\": false, \"severity\":
-      \"safe\"}, \"self_harm\": {\"filtered\": false, \"severity\": \"safe\"}, \"sexual\":
-      {\"filtered\": false, \"severity\": \"safe\"}, \"violence\": {\"filtered\":
-      false, \"severity\": \"safe\"}}}], \"created\": 1714289355, \"model\": \"gpt-35-turbo\",
-      \"object\": \"chat.completion\", \"system_fingerprint\": null, \"usage\": {\"completion_tokens\":
-      11, \"prompt_tokens\": 130, \"total_tokens\": 141}, \"prompt_filter_results\":
-      [{\"prompt_index\": 0, \"content_filter_results\": {\"hate\": {\"filtered\":
-      false, \"severity\": \"safe\"}, \"self_harm\": {\"filtered\": false, \"severity\":
-      \"safe\"}, \"sexual\": {\"filtered\": false, \"severity\": \"safe\"}, \"violence\":
-      {\"filtered\": false, \"severity\": \"safe\"}}}]}, \"start_time\": 1714260554.609637,
-      \"end_time\": 1714260555.755536, \"error\": null, \"children\": [], \"node_name\":
-      null, \"parent_id\": \"32fe9410-dceb-4018-98af-a43efbd4aa97\", \"id\": \"bb15f33b-08b2-46ee-aafe-884921df0f7e\",
+      null}}], \"created\": 1714299226, \"model\": \"gpt-35-turbo\", \"object\": \"chat.completion\",
+      \"system_fingerprint\": null, \"usage\": {\"completion_tokens\": 11, \"prompt_tokens\":
+      130, \"total_tokens\": 141}}, \"start_time\": 1714270426.053669, \"end_time\":
+      1714270427.0668, \"error\": null, \"children\": [], \"node_name\": null, \"parent_id\":
+      \"5966673f-6d3d-45d5-aae4-9419b789102e\", \"id\": \"0c336d44-e56b-4ef5-b774-f1259a9aeb79\",
       \"function\": \"openai.resources.chat.completions.Completions.create\", \"system_metrics\":
       {\"completion_tokens\": 11, \"prompt_tokens\": 130, \"total_tokens\": 141}}],
-      \"node_name\": null, \"parent_id\": \"0f9ab364-c0b0-47cf-8105-9cf8d150f1c7\",
-      \"id\": \"32fe9410-dceb-4018-98af-a43efbd4aa97\", \"function\": \"Prompty\",
+      \"node_name\": null, \"parent_id\": \"abeb4392-ded6-4b62-9a92-a1a7be99e22c\",
+      \"id\": \"5966673f-6d3d-45d5-aae4-9419b789102e\", \"function\": \"Prompty\",
       \"system_metrics\": {\"completion_tokens\": 11, \"prompt_tokens\": 130, \"total_tokens\":
-      141}}], \"node_name\": null, \"parent_id\": \"\", \"id\": \"0f9ab364-c0b0-47cf-8105-9cf8d150f1c7\",
+      141}}], \"node_name\": null, \"parent_id\": \"\", \"id\": \"abeb4392-ded6-4b62-9a92-a1a7be99e22c\",
       \"function\": \"Prompty\", \"system_metrics\": {\"completion_tokens\": 11, \"prompt_tokens\":
       130, \"total_tokens\": 141}}], \"name\": \"\", \"description\": \"\", \"tags\":
       null, \"system_metrics\": {\"completion_tokens\": 11, \"prompt_tokens\": 130,
-      \"total_tokens\": 141, \"duration\": 2.426033}, \"result\": null, \"upload_metrics\":
+      \"total_tokens\": 141, \"duration\": 1.737305}, \"result\": null, \"upload_metrics\":
       false, \"otel_trace_id\": \"0x00000000000000000000000000000000\", \"message_format\":
-      \"basic\"}, \"start_time\": \"2024-04-28T07:29:13.330502\", \"end_time\": \"2024-04-28T07:29:15.756535\",
+      \"basic\"}, \"start_time\": \"2024-04-28T10:13:45.330812\", \"end_time\": \"2024-04-28T10:13:47.068117\",
       \"name\": \"\", \"description\": \"\", \"status\": \"Completed\", \"tags\":
-      null}\r\n"
+      null}\n"
     headers:
       Accept:
       - application/xml
       Content-Length:
-      - '17412'
+      - '15858'
       Content-Type:
       - application/octet-stream
       User-Agent:
-      - azsdk-python-storage-blob/12.19.1 Python/3.11.8 (Windows-10-10.0.22631-SP0)
+      - azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
       x-ms-blob-type:
       - BlockBlob
       x-ms-date:
-      - Sun, 28 Apr 2024 07:29:27 GMT
+      - Sun, 28 Apr 2024 10:13:56 GMT
       x-ms-version:
       - '2023-11-03'
     method: PUT
@@ -753,13 +798,13 @@ interactions:
       content-length:
       - '0'
       content-md5:
-      - PLSihqWk3XxCG+gJkCmTSw==
+      - 0iOAlQxQqyciBk5zo21C/A==
       last-modified:
-      - Sun, 28 Apr 2024 07:29:28 GMT
+      - Sun, 28 Apr 2024 10:13:58 GMT
       server:
       - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
       x-ms-content-crc64:
-      - B2LbP/5wWgM=
+      - /+6JCzbY5Lo=
       x-ms-request-server-encrypted:
       - 'true'
       x-ms-version:
@@ -777,15 +822,15 @@ interactions:
       Content-Type:
       - application/octet-stream
       User-Agent:
-      - azsdk-python-storage-blob/12.19.1 Python/3.11.8 (Windows-10-10.0.22631-SP0)
+      - azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
       x-ms-blob-type:
       - BlockBlob
       x-ms-date:
-      - Sun, 28 Apr 2024 07:29:29 GMT
+      - Sun, 28 Apr 2024 10:13:58 GMT
       x-ms-version:
       - '2023-11-03'
     method: PUT
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/promptflow/PromptFlowArtifacts/prompty_run_name_for_upload/flow_logs/000000001.log
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/promptflow/PromptFlowArtifacts/prompty_run_name_for_upload/flow_logs/000000002.log
   response:
     body:
       string: ''
@@ -795,7 +840,7 @@ interactions:
       content-md5:
       - CgDAHOTBMKo5OQ490a/sjA==
       last-modified:
-      - Sun, 28 Apr 2024 07:29:30 GMT
+      - Sun, 28 Apr 2024 10:13:58 GMT
       server:
       - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
       x-ms-content-crc64:
@@ -808,37 +853,37 @@ interactions:
       code: 201
       message: Created
 - request:
-    body: "---\r\nname: Basic Prompt\r\ndescription: A basic prompt that uses the
-      GPT-3 chat API to answer questions\r\nmodel:\r\n    api: chat\r\n    configuration:\r\n
-      \     type: azure_openai\r\n      azure_deployment: gpt-35-turbo\r\n    parameters:\r\n
-      \     max_tokens: 128\r\n      temperature: 0.2\r\ninputs:\r\n  firstName:\r\n
-      \   type: string\r\n    default: John\r\n  lastName:\r\n    type: string\r\n
-      \   default: Doh\r\n  question:\r\n    type: string\r\n---\r\nsystem:\r\nYou
-      are an AI assistant who helps people find information.\r\nAs the assistant,
-      you answer questions briefly, succinctly,\r\nand in a personable manner using
-      markdown and even add some personal flair with appropriate emojis.\r\n\r\n#
-      Safety\r\n- You **should always** reference factual statements to search results
-      based on [relevant documents]\r\n- Search results based on [relevant documents]
-      may be incomplete or irrelevant. You do not make assumptions\r\n# Customer\r\nYou
-      are helping {{firstName}} {{lastName}} to find answers to their questions.\r\nUse
-      their name to address them in your responses.\r\n\r\nuser:\r\n{{question}}\r\n"
+    body: "---\nname: Basic Prompt\ndescription: A basic prompt that uses the GPT-3
+      chat API to answer questions\nmodel:\n    api: chat\n    configuration:\n      type:
+      azure_openai\n      azure_deployment: gpt-35-turbo\n      connection: azure_open_ai_connection\n
+      \   parameters:\n      max_tokens: 128\n      temperature: 0.2\ninputs:\n  firstName:\n
+      \   type: string\n    default: John\n  lastName:\n    type: string\n    default:
+      Doh\n  question:\n    type: string\nsample:\n  question: what is the result
+      of 1+1?\n---\nsystem:\nYou are an AI assistant who helps people find information.\nAs
+      the assistant, you answer questions briefly, succinctly,\nand in a personable
+      manner using markdown and even add some personal flair with appropriate emojis.\n\n#
+      Safety\n- You **should always** reference factual statements to search results
+      based on [relevant documents]\n- Search results based on [relevant documents]
+      may be incomplete or irrelevant. You do not make assumptions\n# Customer\nYou
+      are helping {{firstName}} {{lastName}} to find answers to their questions.\nUse
+      their name to address them in your responses.\n\nuser:\n{{question}}\n"
     headers:
       Accept:
       - application/xml
       Content-Length:
-      - '1039'
+      - '1094'
       Content-Type:
       - application/octet-stream
       User-Agent:
-      - azsdk-python-storage-blob/12.19.1 Python/3.11.8 (Windows-10-10.0.22631-SP0)
+      - azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
       x-ms-blob-type:
       - BlockBlob
       x-ms-date:
-      - Sun, 28 Apr 2024 07:29:29 GMT
+      - Sun, 28 Apr 2024 10:13:58 GMT
       x-ms-version:
       - '2023-11-03'
     method: PUT
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/runs/prompty_run_name_for_upload/prompty_example_with_default_connection.prompty
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/runs/prompty_run_name_for_upload/prompty_example_with_sample.prompty
   response:
     body:
       string: ''
@@ -846,13 +891,13 @@ interactions:
       content-length:
       - '0'
       content-md5:
-      - rGLhMBfebgaeVQFU6rbZKw==
+      - PruK+bg+TwDZ1Oc8vpTJrw==
       last-modified:
-      - Sun, 28 Apr 2024 07:29:30 GMT
+      - Sun, 28 Apr 2024 10:13:58 GMT
       server:
       - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
       x-ms-content-crc64:
-      - gZoMLU1mBWc=
+      - fqMCTyB9czk=
       x-ms-request-server-encrypted:
       - 'true'
       x-ms-version:
@@ -870,11 +915,11 @@ interactions:
       Content-Type:
       - application/octet-stream
       User-Agent:
-      - azsdk-python-storage-blob/12.19.1 Python/3.11.8 (Windows-10-10.0.22631-SP0)
+      - azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
       x-ms-blob-type:
       - BlockBlob
       x-ms-date:
-      - Sun, 28 Apr 2024 07:29:29 GMT
+      - Sun, 28 Apr 2024 10:13:58 GMT
       x-ms-version:
       - '2023-11-03'
     method: PUT
@@ -888,7 +933,7 @@ interactions:
       content-md5:
       - /u1NXUpgXMFDmZEw835qnw==
       last-modified:
-      - Sun, 28 Apr 2024 07:29:30 GMT
+      - Sun, 28 Apr 2024 10:13:58 GMT
       server:
       - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
       x-ms-content-crc64:
@@ -910,15 +955,15 @@ interactions:
       Content-Type:
       - application/octet-stream
       User-Agent:
-      - azsdk-python-storage-blob/12.19.1 Python/3.11.8 (Windows-10-10.0.22631-SP0)
+      - azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
       x-ms-blob-type:
       - BlockBlob
       x-ms-date:
-      - Sun, 28 Apr 2024 07:29:30 GMT
+      - Sun, 28 Apr 2024 10:13:58 GMT
       x-ms-version:
       - '2023-11-03'
     method: PUT
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/promptflow/PromptFlowArtifacts/prompty_run_name_for_upload/flow_logs/000000002.log
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/promptflow/PromptFlowArtifacts/prompty_run_name_for_upload/flow_logs/000000001.log
   response:
     body:
       string: ''
@@ -928,7 +973,7 @@ interactions:
       content-md5:
       - CgDAHOTBMKo5OQ490a/sjA==
       last-modified:
-      - Sun, 28 Apr 2024 07:29:30 GMT
+      - Sun, 28 Apr 2024 10:13:58 GMT
       server:
       - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
       x-ms-content-crc64:
@@ -941,31 +986,31 @@ interactions:
       code: 201
       message: Created
 - request:
-    body: "---\r\nname: Basic Prompt\r\ndescription: A basic prompt that uses the
-      GPT-3 chat API to answer questions\r\nmodel:\r\n    api: chat\r\n    configuration:\r\n
-      \     type: azure_openai\r\n      azure_deployment: gpt-35-turbo-0125\r\n      connection:
-      azure_open_ai_connection\r\n    parameters:\r\n      max_tokens: 128\r\n      temperature:
-      0.2\r\n      response_format:\r\n        type: json_object\r\ninputs:\r\n  firstName:\r\n
-      \  type: string\r\n   default: John\r\n  lastName:\r\n   type: string\r\n   default:
-      Doh\r\n  question:\r\n    type: string\r\n---\r\nsystem:\r\nYou are an AI assistant
-      who helps people find information.\r\nAs the assistant, you answer questions
-      briefly, succinctly. Your structured response. Only accepts JSON format, likes
-      below:\r\n{\"name\": customer_name, \"answer\": the answer content}\r\n\r\n#
-      Customer\r\nYou are helping {{firstName}} {{lastName}} to find answers to their
-      questions.\r\nUse their name to address them in your responses.\r\n\r\nuser:\r\n{{question}}\r\n"
+    body: "---\nname: Basic Prompt\ndescription: A basic prompt that uses the GPT-3
+      chat API to answer questions\nmodel:\n    api: chat\n    configuration:\n      type:
+      azure_openai\n      azure_deployment: gpt-35-turbo-0125\n      connection: azure_open_ai_connection\n
+      \   parameters:\n      max_tokens: 128\n      temperature: 0.2\n      response_format:\n
+      \       type: json_object\ninputs:\n  firstName:\n   type: string\n   default:
+      John\n  lastName:\n   type: string\n   default: Doh\n  question:\n    type:
+      string\n---\nsystem:\nYou are an AI assistant who helps people find information.\nAs
+      the assistant, you answer questions briefly, succinctly. Your structured response.
+      Only accepts JSON format, likes below:\n{\"name\": customer_name, \"answer\":
+      the answer content}\n\n# Customer\nYou are helping {{firstName}} {{lastName}}
+      to find answers to their questions.\nUse their name to address them in your
+      responses.\n\nuser:\n{{question}}\n"
     headers:
       Accept:
       - application/xml
       Content-Length:
-      - '933'
+      - '898'
       Content-Type:
       - application/octet-stream
       User-Agent:
-      - azsdk-python-storage-blob/12.19.1 Python/3.11.8 (Windows-10-10.0.22631-SP0)
+      - azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
       x-ms-blob-type:
       - BlockBlob
       x-ms-date:
-      - Sun, 28 Apr 2024 07:29:30 GMT
+      - Sun, 28 Apr 2024 10:13:58 GMT
       x-ms-version:
       - '2023-11-03'
     method: PUT
@@ -977,13 +1022,13 @@ interactions:
       content-length:
       - '0'
       content-md5:
-      - F8F4k/2xXazh7o8nw4tnlA==
+      - cdAw7PXCxr9t6i1bqZBmww==
       last-modified:
-      - Sun, 28 Apr 2024 07:29:30 GMT
+      - Sun, 28 Apr 2024 10:13:58 GMT
       server:
       - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
       x-ms-content-crc64:
-      - jNsMPtjOnfs=
+      - /kTw78YnRFw=
       x-ms-request-server-encrypted:
       - 'true'
       x-ms-version:
@@ -992,38 +1037,36 @@ interactions:
       code: 201
       message: Created
 - request:
-    body: "---\r\nname: Basic Prompt\r\ndescription: A basic prompt that uses the
-      GPT-3 chat API to answer questions\r\nmodel:\r\n    api: chat\r\n    configuration:\r\n
-      \     type: azure_openai\r\n      azure_deployment: gpt-35-turbo\r\n      connection:
-      azure_open_ai_connection\r\n    parameters:\r\n      max_tokens: 128\r\n      temperature:
-      0.2\r\ninputs:\r\n  firstName:\r\n    type: string\r\n    default: John\r\n
-      \ lastName:\r\n    type: string\r\n    default: Doh\r\n  question:\r\n    type:
-      string\r\nsample:\r\n  question: what is the result of 1+1?\r\n---\r\nsystem:\r\nYou
-      are an AI assistant who helps people find information.\r\nAs the assistant,
-      you answer questions briefly, succinctly,\r\nand in a personable manner using
-      markdown and even add some personal flair with appropriate emojis.\r\n\r\n#
-      Safety\r\n- You **should always** reference factual statements to search results
-      based on [relevant documents]\r\n- Search results based on [relevant documents]
-      may be incomplete or irrelevant. You do not make assumptions\r\n# Customer\r\nYou
-      are helping {{firstName}} {{lastName}} to find answers to their questions.\r\nUse
-      their name to address them in your responses.\r\n\r\nuser:\r\n{{question}}\r\n"
+    body: "---\nname: Basic Prompt\ndescription: A basic prompt that uses the GPT-3
+      chat API to answer questions\nmodel:\n    api: chat\n    configuration:\n      type:
+      azure_openai\n      azure_deployment: gpt-35-turbo\n    parameters:\n      max_tokens:
+      128\n      temperature: 0.2\ninputs:\n  firstName:\n    type: string\n    default:
+      John\n  lastName:\n    type: string\n    default: Doh\n  question:\n    type:
+      string\n---\nsystem:\nYou are an AI assistant who helps people find information.\nAs
+      the assistant, you answer questions briefly, succinctly,\nand in a personable
+      manner using markdown and even add some personal flair with appropriate emojis.\n\n#
+      Safety\n- You **should always** reference factual statements to search results
+      based on [relevant documents]\n- Search results based on [relevant documents]
+      may be incomplete or irrelevant. You do not make assumptions\n# Customer\nYou
+      are helping {{firstName}} {{lastName}} to find answers to their questions.\nUse
+      their name to address them in your responses.\n\nuser:\n{{question}}\n"
     headers:
       Accept:
       - application/xml
       Content-Length:
-      - '1132'
+      - '1004'
       Content-Type:
       - application/octet-stream
       User-Agent:
-      - azsdk-python-storage-blob/12.19.1 Python/3.11.8 (Windows-10-10.0.22631-SP0)
+      - azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
       x-ms-blob-type:
       - BlockBlob
       x-ms-date:
-      - Sun, 28 Apr 2024 07:29:30 GMT
+      - Sun, 28 Apr 2024 10:13:58 GMT
       x-ms-version:
       - '2023-11-03'
     method: PUT
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/runs/prompty_run_name_for_upload/prompty_example_with_sample.prompty
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/runs/prompty_run_name_for_upload/prompty_example_with_default_connection.prompty
   response:
     body:
       string: ''
@@ -1031,13 +1074,75 @@ interactions:
       content-length:
       - '0'
       content-md5:
-      - 5S7fo7zIJZuUyI4rsKDu8g==
+      - c2B+NxIHjUCVvLusZDupHA==
       last-modified:
-      - Sun, 28 Apr 2024 07:29:30 GMT
+      - Sun, 28 Apr 2024 10:13:59 GMT
       server:
       - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
       x-ms-content-crc64:
-      - qmt4tD8O0Cs=
+      - WkjW6xHkSJA=
+      x-ms-request-server-encrypted:
+      - 'true'
+      x-ms-version:
+      - '2023-11-03'
+    status:
+      code: 201
+      message: Created
+- request:
+    body: "---\nname: Basic Prompt With Chat History And Stream Output\ndescription:
+      A basic prompt that uses the GPT-3 chat API to answer questions\nmodel:\n    api:
+      chat\n    configuration:\n      type: azure_open_ai\n      azure_deployment:
+      gpt-35-turbo\n      connection: azure_open_ai_connection\n\n    parameters:\n
+      \     max_tokens: 128\n      temperature: 0.2\n      stream: true\ninputs:\n
+      \ firstName:\n    type: string\n    default: John\n  lastName:\n    type: string\n
+      \   default: Doh\n  question:\n    type: string\n    is_chat_input: true\n  chat_history:\n
+      \   is_chat_history: true\n    type: list\n    default: [\n        {\n          \"role\":
+      \"user\",\n          \"content\": \"what is the result of 1+1?\"\n        },\n
+      \       {\n          \"role\": \"Assistant\",\n          \"content\": \"The
+      result of 1+1 is 2. It's a simple addition!\"\n        },\n        {\n          \"role\":
+      \"user\",\n          \"content\": \"what is the result of 2+2?\"\n        },\n
+      \       {\n          \"role\": \"Assistant\",\n          \"content\": \"The
+      result of 2+2 is 4. It's a simple addition!\"\n        }\n    ]\n---\nsystem:\nYou
+      are an AI assistant who helps people find information.\nAs the assistant, you
+      answer questions briefly, succinctly,\nand in a personable manner using markdown
+      and even add some personal flair with appropriate emojis.\n\n# Safety\n- You
+      **should always** reference factual statements to search results based on [relevant
+      documents]\n- Search results based on [relevant documents] may be incomplete
+      or irrelevant. You do not make assumptions\n# Customer\nYou are helping {{firstName}}
+      {{lastName}} to find answers to their questions.\nUse their name to address
+      them in your responses.\n\nHere is a chat history you had with the user:\n{%
+      for item in chat_history %}\n   {{item.role}}: {{item.content}}\n{% endfor %}\n\nuser:\n{{question}}\n"
+    headers:
+      Accept:
+      - application/xml
+      Content-Length:
+      - '1771'
+      Content-Type:
+      - application/octet-stream
+      User-Agent:
+      - azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
+      x-ms-blob-type:
+      - BlockBlob
+      x-ms-date:
+      - Sun, 28 Apr 2024 10:13:59 GMT
+      x-ms-version:
+      - '2023-11-03'
+    method: PUT
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/runs/prompty_run_name_for_upload/prompty_with_chat_history_and_stream_output.prompty
+  response:
+    body:
+      string: ''
+    headers:
+      content-length:
+      - '0'
+      content-md5:
+      - jRdrjo3fMuyxG24vMKbk2Q==
+      last-modified:
+      - Sun, 28 Apr 2024 10:13:59 GMT
+      server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      x-ms-content-crc64:
+      - 0EDyYkqQkI0=
       x-ms-request-server-encrypted:
       - 'true'
       x-ms-version:
@@ -1069,8 +1174,8 @@ interactions:
   response:
     content: '{"artifactId": "ExperimentRun/dcid.prompty_run_name_for_upload/instance_results.jsonl",
       "origin": "ExperimentRun", "container": "dcid.prompty_run_name_for_upload",
-      "path": "instance_results.jsonl", "etag": "\"7e00f78e-0000-0100-0000-662dfada0000\"",
-      "createdTime": "2024-04-28T07:29:30.5752652+00:00", "dataPath": {"dataStoreName":
+      "path": "instance_results.jsonl", "etag": "\"d3002e16-0000-0100-0000-662e21670000\"",
+      "createdTime": "2024-04-28T10:13:59.4541093+00:00", "dataPath": {"dataStoreName":
       "workspaceblobstore", "relativePath": "promptflow/PromptFlowArtifacts/prompty_run_name_for_upload/instance_results.jsonl"},
       "tags": {}}'
     headers:
@@ -1087,193 +1192,20 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.073'
+      - '0.087'
     http_version: HTTP/1.1
     status_code: 200
 - request:
-    body: "---\r\nname: Basic Prompt With Chat History\r\ndescription: A basic prompt
-      that uses the GPT-3 chat API to answer questions\r\nmodel:\r\n    api: chat\r\n
-      \   configuration:\r\n      type: azure_open_ai\r\n      azure_deployment: gpt-35-turbo\r\n
-      \     connection: azure_open_ai_connection\r\n\r\n    parameters:\r\n      max_tokens:
-      128\r\n      temperature: 0.2\r\ninputs:\r\n  firstName:\r\n    type: string\r\n
-      \   default: John\r\n  lastName:\r\n    type: string\r\n    default: Doh\r\n
-      \ question:\r\n    type: string\r\n    is_chat_input: true\r\n  chat_history:\r\n
-      \   is_chat_history: true\r\n    type: list\r\n    default: [\r\n        {\r\n
-      \         \"role\": \"user\",\r\n          \"content\": \"what is the result
-      of 1+1?\"\r\n        },\r\n        {\r\n          \"role\": \"Assistant\",\r\n
-      \         \"content\": \"The result of 1+1 is 2. It's a simple addition!\"\r\n
-      \       },\r\n        {\r\n          \"role\": \"user\",\r\n          \"content\":
-      \"what is the result of 2+2?\"\r\n        },\r\n        {\r\n          \"role\":
-      \"Assistant\",\r\n          \"content\": \"The result of 2+2 is 4. It's a simple
-      addition!\"\r\n        }\r\n    ]\r\n---\r\nsystem:\r\nYou are an AI assistant
-      who helps people find information.\r\nAs the assistant, you answer questions
-      briefly, succinctly,\r\nand in a personable manner using markdown and even add
-      some personal flair with appropriate emojis.\r\n\r\n# Safety\r\n- You **should
-      always** reference factual statements to search results based on [relevant documents]\r\n-
-      Search results based on [relevant documents] may be incomplete or irrelevant.
-      You do not make assumptions\r\n# Customer\r\nYou are helping {{firstName}} {{lastName}}
-      to find answers to their questions.\r\nUse their name to address them in your
-      responses.\r\n\r\nHere is a chat history you had with the user:\r\n{% for item
-      in chat_history %}\r\n   {{item.role}}: {{item.content}}\r\n{% endfor %}\r\n\r\nuser:\r\n{{question}}\r\n"
-    headers:
-      Accept:
-      - application/xml
-      Content-Length:
-      - '1798'
-      Content-Type:
-      - application/octet-stream
-      User-Agent:
-      - azsdk-python-storage-blob/12.19.1 Python/3.11.8 (Windows-10-10.0.22631-SP0)
-      x-ms-blob-type:
-      - BlockBlob
-      x-ms-date:
-      - Sun, 28 Apr 2024 07:29:30 GMT
-      x-ms-version:
-      - '2023-11-03'
-    method: PUT
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/runs/prompty_run_name_for_upload/prompty_with_chat_history.prompty
-  response:
-    body:
-      string: ''
-    headers:
-      content-length:
-      - '0'
-      content-md5:
-      - sdwXeIUUYoMrT6l4GnUBPA==
-      last-modified:
-      - Sun, 28 Apr 2024 07:29:30 GMT
-      server:
-      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
-      x-ms-content-crc64:
-      - /8vIMziZEOQ=
-      x-ms-request-server-encrypted:
-      - 'true'
-      x-ms-version:
-      - '2023-11-03'
-    status:
-      code: 201
-      message: Created
-- request:
-    body: "---\r\nname: Basic Prompt With Chat History And Stream Output\r\ndescription:
-      A basic prompt that uses the GPT-3 chat API to answer questions\r\nmodel:\r\n
-      \   api: chat\r\n    configuration:\r\n      type: azure_open_ai\r\n      azure_deployment:
-      gpt-35-turbo\r\n      connection: azure_open_ai_connection\r\n\r\n    parameters:\r\n
-      \     max_tokens: 128\r\n      temperature: 0.2\r\n      stream: true\r\ninputs:\r\n
-      \ firstName:\r\n    type: string\r\n    default: John\r\n  lastName:\r\n    type:
-      string\r\n    default: Doh\r\n  question:\r\n    type: string\r\n    is_chat_input:
-      true\r\n  chat_history:\r\n    is_chat_history: true\r\n    type: list\r\n    default:
-      [\r\n        {\r\n          \"role\": \"user\",\r\n          \"content\": \"what
-      is the result of 1+1?\"\r\n        },\r\n        {\r\n          \"role\": \"Assistant\",\r\n
-      \         \"content\": \"The result of 1+1 is 2. It's a simple addition!\"\r\n
-      \       },\r\n        {\r\n          \"role\": \"user\",\r\n          \"content\":
-      \"what is the result of 2+2?\"\r\n        },\r\n        {\r\n          \"role\":
-      \"Assistant\",\r\n          \"content\": \"The result of 2+2 is 4. It's a simple
-      addition!\"\r\n        }\r\n    ]\r\n---\r\nsystem:\r\nYou are an AI assistant
-      who helps people find information.\r\nAs the assistant, you answer questions
-      briefly, succinctly,\r\nand in a personable manner using markdown and even add
-      some personal flair with appropriate emojis.\r\n\r\n# Safety\r\n- You **should
-      always** reference factual statements to search results based on [relevant documents]\r\n-
-      Search results based on [relevant documents] may be incomplete or irrelevant.
-      You do not make assumptions\r\n# Customer\r\nYou are helping {{firstName}} {{lastName}}
-      to find answers to their questions.\r\nUse their name to address them in your
-      responses.\r\n\r\nHere is a chat history you had with the user:\r\n{% for item
-      in chat_history %}\r\n   {{item.role}}: {{item.content}}\r\n{% endfor %}\r\n\r\nuser:\r\n{{question}}\r\n"
-    headers:
-      Accept:
-      - application/xml
-      Content-Length:
-      - '1836'
-      Content-Type:
-      - application/octet-stream
-      User-Agent:
-      - azsdk-python-storage-blob/12.19.1 Python/3.11.8 (Windows-10-10.0.22631-SP0)
-      x-ms-blob-type:
-      - BlockBlob
-      x-ms-date:
-      - Sun, 28 Apr 2024 07:29:30 GMT
-      x-ms-version:
-      - '2023-11-03'
-    method: PUT
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/runs/prompty_run_name_for_upload/prompty_with_chat_history_and_stream_output.prompty
-  response:
-    body:
-      string: ''
-    headers:
-      content-length:
-      - '0'
-      content-md5:
-      - crjYxtdKjPudnRInqylbOg==
-      last-modified:
-      - Sun, 28 Apr 2024 07:29:30 GMT
-      server:
-      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
-      x-ms-content-crc64:
-      - BvQfjW/yhUo=
-      x-ms-request-server-encrypted:
-      - 'true'
-      x-ms-version:
-      - '2023-11-03'
-    status:
-      code: 201
-      message: Created
-- request:
-    body: "2024-04-23 15:20:09 +0800   25968 execution          DEBUG    Init params
-      for prompty executor: None\r\n2024-04-23 15:20:09 +0800   25968 execution          DEBUG
-      \   Start initializing the executor with C:\\Users\\zhengfeiwang\\src\\promptflow-microsoft\\src\\promptflow\\tests\\test_configs\\prompty\\prompty_example.prompty.\r\n2024-04-23
-      15:20:09 +0800   25968 execution          DEBUG    Init params for script executor:
-      None\r\n2024-04-23 15:20:09 +0800   25968 execution          DEBUG    Init params
-      for prompty executor: None\r\n2024-04-23 15:20:09 +0800   25968 execution          DEBUG
-      \   Start initializing the executor with C:\\Users\\zhengfeiwang\\src\\promptflow-microsoft\\src\\promptflow\\tests\\test_configs\\prompty\\prompty_example.prompty.\r\n2024-04-23
-      15:20:09 +0800   25968 execution          DEBUG    Init params for script executor:
-      None\r\n"
-    headers:
-      Accept:
-      - application/xml
-      Content-Length:
-      - '834'
-      Content-Type:
-      - application/octet-stream
-      User-Agent:
-      - azsdk-python-storage-blob/12.19.1 Python/3.11.8 (Windows-10-10.0.22631-SP0)
-      x-ms-blob-type:
-      - BlockBlob
-      x-ms-date:
-      - Sun, 28 Apr 2024 07:29:30 GMT
-      x-ms-version:
-      - '2023-11-03'
-    method: PUT
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/runs/prompty_run_name_for_upload/.promptflow%5Cprompty_example%5Cflow.log
-  response:
-    body:
-      string: ''
-    headers:
-      content-length:
-      - '0'
-      content-md5:
-      - APAuVQoUxpuH4MweuVJwlA==
-      last-modified:
-      - Sun, 28 Apr 2024 07:29:30 GMT
-      server:
-      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
-      x-ms-content-crc64:
-      - XHPolkPGsCc=
-      x-ms-request-server-encrypted:
-      - 'true'
-      x-ms-version:
-      - '2023-11-03'
-    status:
-      code: 201
-      message: Created
-- request:
     body: '{"runId": "prompty_run_name_for_upload", "runDisplayName": "prompty_run_name_for_upload",
-      "properties": {"azureml.promptflow.total_tokens": "0", "_azureml.evaluate_artifacts":
-      "[{\"path\": \"instance_results.jsonl\", \"type\": \"table\"}]"}, "runExperimentName":
-      "", "runDisplayNameGenerationType": "UserProvidedMacro", "outputDataStore":
-      "workspaceblobstore", "flowArtifactsRootPath": "promptflow/PromptFlowArtifacts/prompty_run_name_for_upload",
+      "properties": "{\"_azureml.evaluate_artifacts\": \"[{\\\"path\\\": \\\"instance_results.jsonl\\\",
+      \\\"type\\\": \\\"table\\\"}]\", \"azureml.promptflow.completion_tokens\": \"0\",
+      \"azureml.promptflow.prompt_tokens\": \"0\", \"azureml.promptflow.total_tokens\":
+      \"0\"}", "runExperimentName": "", "runDisplayNameGenerationType": "UserProvidedMacro",
+      "outputDataStore": "workspaceblobstore", "flowArtifactsRootPath": "promptflow/PromptFlowArtifacts/prompty_run_name_for_upload",
       "logFileRelativePath": "ExperimentRun/dcid.prompty_run_name_for_upload/logs/azureml/executionlogs.txt",
       "flowDefinitionDataStoreName": "workspaceblobstore", "flowDefinitionBlobPath":
       "runs/prompty_run_name_for_upload/prompty_example.prompty", "runStatus": "Completed",
-      "endTimeUtc": "2024-04-28T15:29:17.073465Z", "startTimeUtc": "2024-04-28T15:29:06.320305Z"}'
+      "endTimeUtc": "2024-01-01T00:00:01.123456Z", "startTimeUtc": "2024-01-01T00:00:00.123456Z"}'
     headers:
       Accept:
       - application/json
@@ -1282,12 +1214,12 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '860'
+      - '946'
       Content-Type:
       - application/json
       User-Agent:
-      - promptflow-azure-sdk/0.1.0b1 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
-        Python/3.11.8 (Windows-10-10.0.22631-SP0)
+      - promptflow-sdk/1.10.0.dev0 promptflow-azure-sdk/1.10.0.dev0 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
+        Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
     method: POST
     uri: https://eastus.api.azureml.ms/flow/api/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/BulkRuns/create
   response:
@@ -1305,7 +1237,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '1.398'
+      - '0.998'
     status:
       code: 200
       message: OK
@@ -1319,8 +1251,8 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-azure-sdk/0.1.0b1 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
-        Python/3.11.8 (Windows-10-10.0.22631-SP0)
+      - promptflow-sdk/1.10.0.dev0 promptflow-azure-sdk/1.10.0.dev0 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
+        Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
     method: GET
     uri: https://eastus.api.azureml.ms/flow/api/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/BulkRuns/prompty_run_name_for_upload
   response:
@@ -1332,7 +1264,7 @@ interactions:
         "flowRunId": "prompty_run_name_for_upload", "flowRunDisplayName": "prompty_run_name_for_upload",
         "flowRunType": "FlowRun", "flowType": "Default", "outputDatastoreName": "workspaceblobstore",
         "childRunBasePath": "promptflow/PromptFlowArtifacts/prompty_run_name_for_upload/flow_artifacts",
-        "flowDagFileRelativePath": "prompty_example.prompty", "flowSnapshotId": "6ffa01fa-cf12-4ed6-98e9-397acdc49ca7",
+        "flowDagFileRelativePath": "prompty_example.prompty", "flowSnapshotId": "0ec231e6-ff1b-498a-9ad9-36ec0c764bde",
         "studioPortalEndpoint": "https://ml.azure.com/runs/prompty_run_name_for_upload?wsid=/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}'
     headers:
       connection:
@@ -1350,7 +1282,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.198'
+      - '0.292'
     status:
       code: 200
       message: OK
@@ -1374,34 +1306,35 @@ interactions:
     uri: https://eastus.api.azureml.ms/history/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/rundata
   response:
     body:
-      string: '{"runMetadata": {"runNumber": 1714289374, "rootRunId": "prompty_run_name_for_upload",
-        "createdUtc": "2024-04-28T07:29:34.5175221+00:00", "createdBy": {"userObjectId":
+      string: '{"runMetadata": {"runNumber": 1714299241, "rootRunId": "prompty_run_name_for_upload",
+        "createdUtc": "2024-04-28T10:14:01.8997271+00:00", "createdBy": {"userObjectId":
         "00000000-0000-0000-0000-000000000000", "userPuId": null, "userIdp": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "4cbd0e2e-aae4-4099-b4ba-94d3a4910587",
         "upn": null}, "userId": "00000000-0000-0000-0000-000000000000", "token": null,
         "tokenExpiryTimeUtc": null, "error": null, "warnings": null, "revision": 1,
-        "statusRevision": 0, "runUuid": "4a34ecc6-bb54-4e5b-b70a-e08fdf2d75f4", "parentRunUuid":
-        null, "rootRunUuid": "4a34ecc6-bb54-4e5b-b70a-e08fdf2d75f4", "lastStartTimeUtc":
-        "2024-04-28T15:29:06.320305+00:00", "currentComputeTime": "00:00:00", "computeDuration":
-        "00:00:00", "effectiveStartTimeUtc": "2024-04-28T15:29:06.320305+00:00", "lastModifiedBy":
+        "statusRevision": 0, "runUuid": "3f57b205-a64e-47bb-8bcf-5fccdb656585", "parentRunUuid":
+        null, "rootRunUuid": "3f57b205-a64e-47bb-8bcf-5fccdb656585", "lastStartTimeUtc":
+        "2024-04-28T18:13:42.598745+00:00", "currentComputeTime": "00:00:00", "computeDuration":
+        "00:00:00", "effectiveStartTimeUtc": "2024-04-28T18:13:42.598745+00:00", "lastModifiedBy":
         {"userObjectId": "00000000-0000-0000-0000-000000000000", "userPuId": null,
         "userIdp": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "4cbd0e2e-aae4-4099-b4ba-94d3a4910587",
-        "upn": null}, "lastModifiedUtc": "2024-04-28T07:29:34.5175221+00:00", "duration":
-        "00:00:10.7531600", "cancelationReason": null, "currentAttemptId": 1, "runId":
+        "upn": null}, "lastModifiedUtc": "2024-04-28T10:14:01.8997271+00:00", "duration":
+        "00:00:05.7559920", "cancelationReason": null, "currentAttemptId": 1, "runId":
         "prompty_run_name_for_upload", "parentRunId": null, "experimentId": "b68728bf-b986-450b-89b6-bb5bedd5d06d",
-        "status": "Completed", "startTimeUtc": "2024-04-28T15:29:06.320305+00:00",
-        "endTimeUtc": "2024-04-28T15:29:17.073465+00:00", "scheduleId": null, "displayName":
+        "status": "Completed", "startTimeUtc": "2024-04-28T18:13:42.598745+00:00",
+        "endTimeUtc": "2024-04-28T18:13:48.354737+00:00", "scheduleId": null, "displayName":
         "prompty_run_name_for_upload", "name": null, "dataContainerId": "dcid.prompty_run_name_for_upload",
         "description": null, "hidden": false, "runType": "azureml.promptflow.FlowRun",
         "runTypeV2": {"orchestrator": null, "traits": [], "attribution": "PromptFlow",
-        "computeType": null}, "properties": {"azureml.promptflow.total_tokens": "0",
-        "_azureml.evaluate_artifacts": "[{\"path\": \"instance_results.jsonl\", \"type\":
-        \"table\"}]", "azureml.promptflow.runtime_name": null, "azureml.promptflow.disable_trace":
+        "computeType": null}, "properties": {"_azureml.evaluate_artifacts": "[{\"path\":
+        \"instance_results.jsonl\", \"type\": \"table\"}]", "azureml.promptflow.total_tokens":
+        "0", "azureml.promptflow.completion_tokens": "0", "azureml.promptflow.prompt_tokens":
+        "0", "azureml.promptflow.runtime_name": null, "azureml.promptflow.disable_trace":
         "false", "azureml.promptflow.local_to_cloud": "true", "azureml.promptflow.snapshot_id":
-        "6ffa01fa-cf12-4ed6-98e9-397acdc49ca7", "_azureml.evaluation_run": "promptflow.BatchRun"},
+        "0ec231e6-ff1b-498a-9ad9-36ec0c764bde", "_azureml.evaluation_run": "promptflow.BatchRun"},
         "parameters": {}, "actionUris": {}, "scriptName": null, "target": null, "uniqueChildRunComputeTargets":
         [], "tags": {}, "settings": {}, "services": {}, "inputDatasets": [], "outputDatasets":
         [], "runDefinition": null, "jobSpecification": null, "primaryMetricName":
@@ -1419,7 +1352,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '4218'
+      - '4316'
       content-type:
       - application/json; charset=utf-8
       strict-transport-security:
@@ -1431,7 +1364,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.052'
+      - '0.048'
     status:
       code: 200
       message: OK
