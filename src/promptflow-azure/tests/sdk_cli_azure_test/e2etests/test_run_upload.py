@@ -78,9 +78,9 @@ class Local2CloudTestHelper:
     "mock_isinstance_for_mock_datastore",
     "mock_get_azure_pf_client",
     "mock_trace_destination_to_cloud",
+    "mock_async_run_uploader_upload_single_blob",
 )
 class TestFlowRunUpload:
-    @pytest.mark.skipif(condition=not pytest.is_live, reason="Bug - 3089145 Replay failed for test 'test_upload_run'")
     def test_upload_run(
         self,
         pf: PFClient,
@@ -103,7 +103,6 @@ class TestFlowRunUpload:
         # check the run is uploaded to cloud
         Local2CloudTestHelper.check_local_to_cloud_run(pf, run, check_run_details_in_cloud=True)
 
-    @pytest.mark.skipif(condition=not pytest.is_live, reason="Bug - 3089145 Replay failed for test 'test_upload_run'")
     def test_upload_flex_flow_run_with_yaml(self, pf: PFClient, randstr: Callable[[str], str]):
         name = randstr("flex_run_name_with_yaml_for_upload")
         local_pf = Local2CloudTestHelper.get_local_pf(name)
@@ -122,7 +121,6 @@ class TestFlowRunUpload:
         # check the run is uploaded to cloud
         Local2CloudTestHelper.check_local_to_cloud_run(pf, run)
 
-    @pytest.mark.skipif(condition=not pytest.is_live, reason="Bug - 3089145 Replay failed for test 'test_upload_run'")
     def test_upload_flex_flow_run_without_yaml(self, pf: PFClient, randstr: Callable[[str], str]):
         name = randstr("flex_run_name_without_yaml_for_upload")
         local_pf = Local2CloudTestHelper.get_local_pf(name)
@@ -142,7 +140,6 @@ class TestFlowRunUpload:
         # check the run is uploaded to cloud.
         Local2CloudTestHelper.check_local_to_cloud_run(pf, run)
 
-    @pytest.mark.skipif(condition=not pytest.is_live, reason="Bug - 3089145 Replay failed for test 'test_upload_run'")
     def test_upload_prompty_run(self, pf: PFClient, randstr: Callable[[str], str]):
         # currently prompty run is skipped for upload, this test should be finished without error
         name = randstr("prompty_run_name_for_upload")
@@ -158,7 +155,6 @@ class TestFlowRunUpload:
         # check the run is uploaded to cloud.
         Local2CloudTestHelper.check_local_to_cloud_run(pf, run)
 
-    @pytest.mark.skipif(condition=not pytest.is_live, reason="Bug - 3089145 Replay failed for test 'test_upload_run'")
     def test_upload_run_with_customized_run_properties(self, pf: PFClient, randstr: Callable[[str], str]):
         name = randstr("batch_run_name_for_upload_with_customized_properties")
         local_pf = Local2CloudTestHelper.get_local_pf(name)
@@ -188,7 +184,6 @@ class TestFlowRunUpload:
         assert cloud_run.properties[Local2CloudUserProperties.RUN_TYPE] == run_type
         assert cloud_run.properties[Local2CloudUserProperties.EVAL_ARTIFACTS] == eval_artifacts
 
-    @pytest.mark.skipif(condition=not pytest.is_live, reason="Bug - 3089145 Replay failed for test 'test_upload_run'")
     def test_upload_eval_run(self, pf: PFClient, randstr: Callable[[str], str]):
         main_run_name = randstr("main_run_name_for_test_upload_eval_run")
         local_pf = Local2CloudTestHelper.get_local_pf(main_run_name)
@@ -214,7 +209,6 @@ class TestFlowRunUpload:
         eval_run = Local2CloudTestHelper.check_local_to_cloud_run(pf, eval_run)
         assert eval_run.properties["azureml.promptflow.variant_run_id"] == main_run_name
 
-    @pytest.mark.skipif(condition=not pytest.is_live, reason="Bug - 3089145 Replay failed for test 'test_upload_run'")
     def test_upload_flex_flow_run_with_global_azureml(self, pf: PFClient, randstr: Callable[[str], str]):
         with patch("promptflow._sdk._configuration.Configuration.get_config", return_value="azureml"):
             name = randstr("flex_run_name_with_global_azureml_for_upload")
