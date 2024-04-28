@@ -26,7 +26,7 @@ from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorEx
 
 from ..._utils.credential_utils import get_default_azure_credential
 from ._connection_provider import ConnectionProvider
-from ._utils import interactive_credential_disabled, is_from_cli, is_github_codespaces
+from ._utils import interactive_credential_enabled, is_from_cli, is_github_codespaces
 
 GET_CONNECTION_URL = (
     "/subscriptions/{sub}/resourcegroups/{rg}/providers/Microsoft.MachineLearningServices"
@@ -111,14 +111,14 @@ class WorkspaceConnectionProvider(ConnectionProvider):
                 get_arm_token(credential=credential)
             except Exception:
                 raise AccountNotSetUp()
-        if interactive_credential_disabled():
-            return DefaultAzureCredential(exclude_interactive_browser_credential=True)
+        if interactive_credential_enabled():
+            return DefaultAzureCredential(exclude_interactive_browser_credential=False)
         if is_github_codespaces():
             # For code spaces, append device code credential as the fallback option.
             credential = DefaultAzureCredential()
             credential.credentials = (*credential.credentials, DeviceCodeCredential())
             return credential
-        return DefaultAzureCredential(exclude_interactive_browser_credential=False)
+        return DefaultAzureCredential(exclude_interactive_browser_credential=True)
 
     @classmethod
     def open_url(cls, token, url, action, host="management.azure.com", method="GET", model=None) -> Union[Any, dict]:

@@ -22,6 +22,7 @@ from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure._storage.blob.client import _get_datastore_credential
+from promptflow.azure.operations._artifact_client import AsyncArtifactClient
 from promptflow.exceptions import UserErrorException
 
 logger = get_cli_sdk_logger()
@@ -39,8 +40,10 @@ class AsyncRunUploader:
         self.overwrite = overwrite
         self.datastore = self._get_datastore_with_secrets()
         self.blob_service_client = self._init_blob_service_client()
+        self.artifact_client = AsyncArtifactClient.from_run_operations(run_ops)
 
     def _get_datastore_with_secrets(self):
+        """Get datastores with secrets."""
         logger.debug("Getting datastores with secrets.")
         operations = self.run_ops._datastore_operations
         default_datastore = operations.get_default(include_secrets=True)
@@ -51,6 +54,7 @@ class AsyncRunUploader:
         }
 
     def _init_blob_service_client(self):
+        """Initialize blob service client."""
         result = {}
         for name, datastore in self.datastore.items():
             logger.debug(f"Initializing blob service client for datastore {name!r}.")
@@ -227,6 +231,15 @@ class AsyncRunUploader:
                     f.write(json.dumps(line_result) + "\n")
             remote_file = f"{Local2Cloud.BLOB_ROOT_PROMPTFLOW}/{Local2Cloud.BLOB_ARTIFACTS}/{self.run.name}/{file_name}"
             await self._upload_local_file_to_blob(local_file, remote_file)
+
+            # registry artifact for instance results
+            await self.artifact_client.register_artifact(
+                run_id=self.run.name,
+                datastore_name=self.datastore[CloudDatastore.DEFAULT].name,
+                relative_path=remote_file,
+                path=file_name,
+            )
+
             return remote_file
 
     async def _upload_local_folder_to_blob(self, local_folder, remote_folder):
