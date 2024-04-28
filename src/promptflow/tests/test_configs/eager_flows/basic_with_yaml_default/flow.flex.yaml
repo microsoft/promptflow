@@ -1,0 +1,12 @@
+entry: simple_callable_class:MyFlow
+environment:
+  image: promptflow.azurecr.io/promptflow-runtime:bu-20240403-1452
+inputs:
+  func_input:
+    type: string
+    default: "default_func_input"
+
+init:
+  obj_input:
+    type: string
+    default: "default_obj_input"
