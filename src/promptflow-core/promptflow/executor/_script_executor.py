@@ -72,6 +72,15 @@ class ScriptExecutor(FlowExecutor):
         self._message_format = MessageFormatType.BASIC
         self._multimedia_processor = BasicMultimediaProcessor()
 
+    def _get_func_name(self):
+        try:
+            original_func = self._func.__original_function
+            if isinstance(original_func, partial):
+                original_func = original_func.func
+            return original_func.__qualname__
+        except AttributeError:
+            return self._func.__qualname__
+
     @contextlib.contextmanager
     def _exec_line_context(self, run_id, line_number):
         # TODO: refactor NodeLogManager, for script executor, we don't have node concept.
@@ -149,7 +158,7 @@ class ScriptExecutor(FlowExecutor):
             error_type_and_message = f"({e.__class__.__name__}) {e}"
             ex = ScriptExecutionError(
                 message_format="Execution failure in '{func_name}': {error_type_and_message}",
-                func_name=self._original_function.__qualname__,
+                func_name=self._get_func_name(),
                 error_type_and_message=error_type_and_message,
                 error=e,
             )
@@ -428,8 +437,6 @@ class ScriptExecutor(FlowExecutor):
 
     def _initialize_function(self):
         func = self._parse_entry_func()
-        # persist original function for detailed error message
-        self._original_function = func
         # If the function is not decorated with trace, add trace for it.
         if not hasattr(func, "__original_function"):
             func = _traced(func, trace_type=TraceType.FLOW)
