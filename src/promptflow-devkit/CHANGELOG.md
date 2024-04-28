@@ -5,7 +5,7 @@
 ### Improvements
 - Interactive browser credential is excluded by default when using Azure AI connections, user could set `PF_NO_INTERACTIVE_LOGIN=False` to enable it.
 
-## v1.10.0 (Upcoming)
+## v1.10.0 (2024.04.26)
 
 ### Features Added
 - Expose --ui to trigger a chat window, reach [here](https://microsoft.github.io/promptflow/reference/pf-command-reference.html#pf-flow-test) for more details.
