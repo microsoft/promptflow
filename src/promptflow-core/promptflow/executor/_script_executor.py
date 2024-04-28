@@ -74,7 +74,7 @@ class ScriptExecutor(FlowExecutor):
 
     def _get_func_name(self):
         try:
-            original_func = self._func.__original_function
+            original_func = getattr(self._func, "__original_function")
             if isinstance(original_func, partial):
                 original_func = original_func.func
             return original_func.__qualname__
