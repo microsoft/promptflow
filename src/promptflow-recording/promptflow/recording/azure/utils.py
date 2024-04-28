@@ -4,6 +4,7 @@
 
 import json
 import re
+from collections import OrderedDict
 from dataclasses import dataclass
 from typing import Dict
 
@@ -202,8 +203,15 @@ def sanitize_pfs_request_body(body: str) -> str:
         body_dict["startTimeUtc"] = SanitizedValues.START_TIME_UTC
     if "endTimeUtc" in body_dict:
         body_dict["endTimeUtc"] = SanitizedValues.END_TIME_UTC
-    if "startTimeUtc" in body_dict:
-        print(body_dict)
+    # if properties is a dict, we need to ensure its order
+    # otherwise, it might break body match as a string
+    if "properties" in body_dict and isinstance(body_dict["properties"], dict):
+        props: dict = body_dict["properties"]
+        ordered_props = OrderedDict()
+        for key in sorted(props.keys()):
+            value = props[key]
+            ordered_props[key] = value
+        body_dict["properties"] = json.dumps(ordered_props)
     # PFS will help handle this field, so client does not need to pass this value
     if "runExperimentName" in body:
         body_dict["runExperimentName"] = ""
