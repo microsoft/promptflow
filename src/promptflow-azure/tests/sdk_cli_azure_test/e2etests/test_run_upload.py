@@ -72,6 +72,9 @@ class Local2CloudTestHelper:
         return cloud_run
 
 
+# due to known line separator issue: BUG 3119166
+# below tests require to record under Linux environment
+# feel free to skip in non-live mode, or contact Zhengfei for assistance
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
 @pytest.mark.e2etest
 @pytest.mark.usefixtures(
