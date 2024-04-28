@@ -1,13 +1,14 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import logging
 from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
 from typing import Any, Dict, Iterator
 
 from promptflow._utils.multimedia_utils import resolve_multimedia_data_recursively
 from promptflow.executor import FlowExecutor
-from promptflow.integrations.parallel_run._model import Row
+from promptflow.parallel._model import Row
 
 
 class InputMapping:
@@ -15,21 +16,23 @@ class InputMapping:
         self._input_dir = input_dir
         self._side_input_dir = side_input_dir
         self._mapping = mapping
+        self._logger = logging.getLogger(self.__class__.__name__)
         self._loading = self._start_load()
 
     def apply(self, row: Row) -> Row:
         mapping_inputs = {"data": row}
-        side_input = self._rows.get(row.row_number, None)
-        if side_input:
-            mapping_inputs["run.outputs"] = side_input
-        else:
-            print(f"Could not find run output for row {row.row_number}")
+        if self._rows:
+            side_input = self._rows.get(row.row_number, None)
+            if side_input:
+                mapping_inputs["run.outputs"] = side_input
+            else:
+                self._logger.warning(f"Could not find run output for row {row.row_number}")
         mapped = FlowExecutor.apply_inputs_mapping(inputs=mapping_inputs, inputs_mapping=self._mapping)
         self._resolve_image_path(mapped)
         return Row.from_dict(mapped, row.row_number)
 
     def _resolve_image_path(self, mapped_row: Dict[str, Any]) -> None:
-        for k, v in mapped_row:
+        for k, v in mapped_row.items():
             mapped_row[k] = resolve_multimedia_data_recursively(self._input_dir, v)
 
     @property
@@ -40,22 +43,22 @@ class InputMapping:
         return ThreadPoolExecutor(max_workers=1).submit(self._load)
 
     def _load(self):
-        print("Loading rows...")
+        self._logger.info(f"Loading rows from side input: {self._side_input_dir}.")
         result = {}
         for index, json_str in enumerate(self._read_from_folder(self._side_input_dir)):
-            row = Row.from_json(json_str, line_number=index)
+            row = Row.from_json(json_str, row_number=index)
             result[row.row_number] = row
+        self._logger.info(f"Loaded {len(result)} rows from side input.")
         return result
 
-    @staticmethod
-    def _read_from_folder(folder: Path) -> Iterator[str]:
+    def _read_from_folder(self, folder: Path) -> Iterator[str]:
         if folder is None or not folder.exists():
             return
 
         for p in folder.iterdir():
             if p.is_dir():
                 continue
-            print(f"Reading file {p}")
+            self._logger.info(f"Reading file {p}")
             with open(p, "r") as f:
                 for line in f:
                     yield line

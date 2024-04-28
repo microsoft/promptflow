@@ -5,6 +5,7 @@ import json
 from dataclasses import dataclass
 from typing import Any, Iterator, Mapping
 
+from promptflow._constants import LINE_NUMBER_KEY
 from promptflow.executor._result import LineResult
 
 
@@ -17,11 +18,11 @@ class Row(Mapping[str, Any]):
 
     @property
     def row_number(self) -> int:
-        return int(self.get("line_number", self._rn))
+        return int(self.get(LINE_NUMBER_KEY, self._rn))
 
     @classmethod
-    def from_json(cls, json_str: str, **kwargs) -> "Row":
-        return cls.from_dict(d=json.loads(json_str), **kwargs)
+    def from_json(cls, json_str: str, row_number: int = None) -> "Row":
+        return cls.from_dict(d=json.loads(json_str), row_number=row_number)
 
     @staticmethod
     def from_dict(d: Mapping[str, Any], row_number: int = None) -> "Row":

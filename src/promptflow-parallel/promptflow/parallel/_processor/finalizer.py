@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from contextlib import ExitStack
 from typing import List
 
-from promptflow.integrations.parallel_run._model import Row
+from promptflow.parallel._model import Row
 
 
 class Finalizer(ABC):

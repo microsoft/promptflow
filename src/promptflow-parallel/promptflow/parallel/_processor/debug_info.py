@@ -8,7 +8,7 @@ import tempfile
 from pathlib import Path
 from typing import IO, Iterable, Tuple
 
-from promptflow.integrations.parallel_run._metrics.metrics import SystemMetrics
+from promptflow.parallel._metrics.metrics import SystemMetrics
 from promptflow.storage.run_records import LineRunRecord, NodeRunRecord
 
 
@@ -39,7 +39,7 @@ class DebugInfo:
         )
 
         with file.open("a") as f:
-            self._write_flow(line_run_record, f)
+            self._write_line(f, line_run_record.serialize())
         system_metrics = self._write_nodes(node_run_records)
         return system_metrics
 
@@ -53,18 +53,13 @@ class DebugInfo:
         system_metrics = SystemMetrics()
         with file.open("w") as f:
             for line_run_record, node_run_records in itertools.chain([(first_line, first_line_nodes)], it):
-                self._write_flow(line_run_record, f)
+                self._write_line(f, line_run_record.serialize())
                 system_metrics.merge_line_run_record(line_run_record)
 
                 node_metrics = self._write_nodes(node_run_records)
                 system_metrics.merge(node_metrics)
 
         return system_metrics
-
-    @staticmethod
-    def _write_flow(line_run_record: LineRunRecord, opened_file: IO):
-        opened_file.write(line_run_record.serialize())
-        opened_file.write("\n")
 
     def _write_nodes(self, node_run_records: Iterable[NodeRunRecord]) -> SystemMetrics:
         system_metrics = SystemMetrics()
@@ -75,9 +70,13 @@ class DebugInfo:
             file.parent.mkdir(parents=True, exist_ok=True)
 
             with file.open("w") as f:
-                f.write(node.serialize())
-                f.write("\n")
+                self._write_line(f, node.serialize())
         return system_metrics
+
+    @staticmethod
+    def _write_line(io: IO, content: str):
+        io.write(content)
+        io.write("\n")
 
     @property
     def flow_output_dir(self):

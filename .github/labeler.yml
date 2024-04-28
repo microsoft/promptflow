@@ -12,6 +12,8 @@ promptflow-azure:
 - src/promptflow-azure/**
 promptflow-evals:
 - src/promptflow-evals/**
+promptflow-parallel:
+- src/promptflow-parallel/**
 promptflow:
 - src/promptflow/**
 promptflow-tools:

@@ -6,7 +6,7 @@ import os
 from typing import Any, Dict
 
 from promptflow.contracts.run_info import Status
-from promptflow.integrations.parallel_run._metrics.sender import MetricsSender
+from promptflow.parallel._metrics.sender import MetricsSender
 from promptflow.storage.run_records import LineRunRecord, NodeRunRecord
 
 
@@ -23,9 +23,6 @@ class Metrics:
 
 
 class SystemMetrics(Metrics):
-    def __init__(self, metrics: Dict[str, Any] = None, sender: MetricsSender = None):
-        super().__init__(metrics, sender)
-
     def merge_line_run_record(self, line_run_record: LineRunRecord):
         completed = 1 if Status(line_run_record.status) == Status.Completed else 0
         self._metrics["__pf__.lines.total"] = self._metrics.get("__pf__.lines.total", 0) + 1

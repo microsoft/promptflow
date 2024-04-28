@@ -12,9 +12,9 @@ from promptflow._utils.execution_utils import set_batch_input_source_from_inputs
 from promptflow._utils.multimedia_utils import persist_multimedia_data
 from promptflow.executor import FlowExecutor, FlowValidator
 from promptflow.executor._result import AggregationResult
-from promptflow.integrations.parallel_run._config.model import ParallelRunConfig
-from promptflow.integrations.parallel_run._input_mapping import InputMapping
-from promptflow.integrations.parallel_run._model import Result, Row
+from promptflow.parallel._config.model import ParallelRunConfig
+from promptflow.parallel._executor.input_mapping import InputMapping
+from promptflow.parallel._model import Result, Row
 from promptflow.tracing._operation_context import OperationContext
 
 
@@ -46,8 +46,6 @@ class AbstractExecutor(ParallelRunExecutor, ABC):
         self._config = config
         self._input_mapping = InputMapping(config.input_dir, config.side_input_dir, config.input_mapping)
         self._flow_executor = self._create_flow_executor(self._resolve_connections_from_env(), config)
-
-        print("PromptFlow executor initiated successfully")
 
     def _validate_config(self, config: ParallelRunConfig):
         assert config.input_dir is not None, "No input asset found."
@@ -81,7 +79,7 @@ class AbstractExecutor(ParallelRunExecutor, ABC):
         inputs = FlowValidator.resolve_flow_inputs_type(self._flow_executor._flow, row)
         executor_result = self._flow_executor.exec_line(inputs, index=row.row_number)
         executor_result.output = persist_multimedia_data(executor_result.output, base_dir=self._config.output_dir)
-        return Result(Row.from_dict(inputs), executor_result)
+        return Result(Row.from_dict(inputs, row_number=row.row_number), executor_result)
 
     def execute_aggregation(
         self, inputs: Mapping[str, Any], aggregation_inputs: Mapping[str, Any]

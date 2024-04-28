@@ -3,13 +3,13 @@
 # ---------------------------------------------------------
 from typing import Any, Iterable, Tuple
 
-from promptflow.integrations.parallel_run._config.model import ParallelRunConfig
-from promptflow.integrations.parallel_run._executor.base import AbstractExecutor
-from promptflow.integrations.parallel_run._executor.component_executor import ComponentRunExecutor
-from promptflow.integrations.parallel_run._model import Result, Row
-from promptflow.integrations.parallel_run._processor.base import AbstractParallelRunProcessor
-from promptflow.integrations.parallel_run._processor.debug_info import DebugInfo
-from promptflow.integrations.parallel_run._processor.finalizer import Finalizer
+from promptflow.parallel._config.model import ParallelRunConfig
+from promptflow.parallel._executor.base import AbstractExecutor
+from promptflow.parallel._executor.component_executor import ComponentRunExecutor
+from promptflow.parallel._model import Result, Row
+from promptflow.parallel._processor.base import AbstractParallelRunProcessor
+from promptflow.parallel._processor.debug_info import DebugInfo
+from promptflow.parallel._processor.finalizer import Finalizer
 from promptflow.storage.run_records import LineRunRecord, NodeRunRecord
 
 

@@ -30,11 +30,11 @@ def create_processor(working_dir: Path, args: Optional[List[str]] = None) -> Par
     parsed, _ = parser.parse_known_args(args)
 
     if parsed.pf_run_mode == _Mode.bulk:
-        from promptflow.integrations.parallel_run._processor.bulk_processor import BulkRunProcessor
+        from promptflow.parallel._processor.bulk_processor import BulkRunProcessor
 
         return BulkRunProcessor(working_dir, args)
     else:
-        from promptflow.integrations.parallel_run._processor.component_processor import ComponentRunProcessor
+        from promptflow.parallel._processor.component_processor import ComponentRunProcessor
 
         return ComponentRunProcessor(working_dir, args)
 

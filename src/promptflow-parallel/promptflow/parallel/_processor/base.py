@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import json
+import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Iterable, List, Optional, Tuple, Union
@@ -9,14 +10,14 @@ from typing import Any, Iterable, List, Optional, Tuple, Union
 from promptflow._utils.multimedia_utils import persist_multimedia_data
 from promptflow._utils.utils import DataClassEncoder
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo
-from promptflow.integrations.parallel_run._config import parser
-from promptflow.integrations.parallel_run._config.model import ParallelRunConfig
-from promptflow.integrations.parallel_run._executor.base import ParallelRunExecutor
-from promptflow.integrations.parallel_run._model import Result, Row
-from promptflow.integrations.parallel_run._processor.aggregation_finalizer import AggregationFinalizer
-from promptflow.integrations.parallel_run._processor.debug_info import DebugInfo
-from promptflow.integrations.parallel_run._processor.finalizer import CompositeFinalizer, Finalizer
-from promptflow.integrations.parallel_run.processor import ParallelRunProcessor
+from promptflow.parallel._config import parser
+from promptflow.parallel._config.model import ParallelRunConfig
+from promptflow.parallel._executor.base import ParallelRunExecutor
+from promptflow.parallel._model import Result, Row
+from promptflow.parallel._processor.aggregation_finalizer import AggregationFinalizer
+from promptflow.parallel._processor.debug_info import DebugInfo
+from promptflow.parallel._processor.finalizer import CompositeFinalizer, Finalizer
+from promptflow.parallel.processor import ParallelRunProcessor
 
 
 class AbstractParallelRunProcessor(ParallelRunProcessor, ABC):
@@ -26,12 +27,14 @@ class AbstractParallelRunProcessor(ParallelRunProcessor, ABC):
         self._config: Optional[ParallelRunConfig] = None
         self._executor: Optional[ParallelRunExecutor] = None
         self._debug_info: Optional[DebugInfo] = None
+        self._logger = logging.getLogger(self.__class__.__name__)
 
     def init(self):
         self._config = parser.parse(self._args)
         self._executor = self._create_executor(self._config)
         self._debug_info = DebugInfo(self._config.debug_output_dir)
-        self._debug_info.prepare()
+        if self._config.is_debug_enabled:
+            self._debug_info.prepare()
 
     @abstractmethod
     def _create_executor(self, config: ParallelRunConfig) -> ParallelRunExecutor:
@@ -39,11 +42,13 @@ class AbstractParallelRunProcessor(ParallelRunProcessor, ABC):
 
     def process(self, mini_batch: List[dict], context) -> List[str]:
         minibatch_id = context.minibatch_index
-        print(f"PromptFlow executor received data index {minibatch_id}")
+        self._logger.info(f"PromptFlow executor received data index {minibatch_id}")
+
         global_row_index_lower_bound = context.global_row_index_lower_bound
-        print(f"PromptFlow executor received global_row_index_lower_bound {global_row_index_lower_bound}")
+        self._logger.info(f"PromptFlow executor received global_row_index_lower_bound {global_row_index_lower_bound}")
+
         row_count = len(mini_batch)
-        print(f"PromptFlow executor received row count {row_count}")
+        self._logger.info(f"PromptFlow executor received row count {row_count}")
 
         rows = (
             Row.from_dict(data, row_number=global_row_index_lower_bound + idx) for idx, data in enumerate(mini_batch)
@@ -86,18 +91,23 @@ class AbstractParallelRunProcessor(ParallelRunProcessor, ABC):
         return []
 
     def _read_outputs(self) -> Iterable[Row]:
+        for index, f_line in enumerate(self._read_output_lines()):
+            file_path, line = f_line
+            try:
+                yield Row.from_json(line, row_number=index)
+            except Exception:
+                self._logger.error(f"Failed to process the line {index} of file {file_path}: {line}.")
+                raise
+
+    def _read_output_lines(self) -> Iterable[Tuple[str, str]]:
         output_files = [f for f in self._config.output_dir.glob(self._config.output_file_pattern)]
         file_count = len(output_files)
-        print(f"There are {file_count} temp files to concat in finalization stage: {output_files}")
+        self._logger.info(f"There are {file_count} temp files to concat in finalization stage: {output_files}")
+
         for file_path in output_files:
             with open(file_path, "r") as f:
-                for index, line in enumerate(f):
-                    try:
-                        row = Row.from_json(line)
-                        yield row
-                    except Exception:
-                        print(f"Failed to process the line {index} of file {file_path}: {line}.")
-                        raise
+                for line in f:
+                    yield f.name, line
 
     @staticmethod
     def _serialize_multimedia_data(run_info: Union[FlowRunInfo, RunInfo], base_dir: Path):

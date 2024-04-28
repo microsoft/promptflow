@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import logging
 import sys
 from typing import Any, Dict
 
@@ -9,6 +10,7 @@ class MetricsSender:
     def __init__(self, to_parent_run=False):
         self._run_context = None
         self._to_parent_run = to_parent_run
+        self._logger = logging.getLogger(self.__class__.__name__)
 
     @property
     def run_context(self):
@@ -18,7 +20,7 @@ class MetricsSender:
         from azureml.core import Run
 
         self._run_context = Run.get_context(allow_offline=False)
-        print(f"Run context: {self._run_context.id}")
+        self._logger.info(f"Run context: {self._run_context.id}")
         if self._to_parent_run:
             self._run_context = self._run_context.parent
             if not self._run_context:
@@ -27,12 +29,12 @@ class MetricsSender:
 
     def send(self, metrics: Dict[str, Any]):
         try:
-            print("Start to push metrics to remote.")
+            self._logger.info("Start to push metrics to remote.")
             if metrics is not None:
                 for k, v in metrics.items():
                     self._send_metric(k, v)
             self.run_context.flush()
-            print("End to push metrics successfully.")
+            self._logger.info("End to push metrics successfully.")
         except BaseException as e:
             sys.stderr.write(f"Failed to push metrics. {e}")
 

@@ -1,18 +1,19 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import logging
 import shutil
 import uuid
 from pathlib import Path
 from typing import Iterable, List, Tuple
 
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo
-from promptflow.integrations.parallel_run._config.model import ParallelRunConfig
-from promptflow.integrations.parallel_run._executor.bulk_executor import BulkRunExecutor
-from promptflow.integrations.parallel_run._metrics.metrics import SystemMetrics
-from promptflow.integrations.parallel_run._model import Result, Row
-from promptflow.integrations.parallel_run._processor.base import AbstractParallelRunProcessor
-from promptflow.integrations.parallel_run._processor.finalizer import Finalizer
+from promptflow.parallel._config.model import ParallelRunConfig
+from promptflow.parallel._executor.bulk_executor import BulkRunExecutor
+from promptflow.parallel._metrics.metrics import SystemMetrics
+from promptflow.parallel._model import Result, Row
+from promptflow.parallel._processor.base import AbstractParallelRunProcessor
+from promptflow.parallel._processor.finalizer import Finalizer
 from promptflow.storage.run_records import LineRunRecord, NodeRunRecord
 
 
@@ -64,6 +65,7 @@ class _BulkRunFinalizer(Finalizer):
     def __init__(self, debug_enabled: bool, system_metrics_dir: Path):
         self._debug_enabled = debug_enabled
         self._system_metrics_dir = system_metrics_dir
+        self._logger = logging.getLogger(self.__class__.__name__)
 
     @property
     def process_enabled(self) -> bool:
@@ -75,7 +77,7 @@ class _BulkRunFinalizer(Finalizer):
     def merge_system_metrics(self):
         if not self._debug_enabled:
             return
-        print("Summarizing system metrics.")
+        self._logger.info("Summarizing system metrics.")
         system_metrics = SystemMetrics.from_files(str(self._system_metrics_dir))
         system_metrics.send()
         shutil.rmtree(self._system_metrics_dir, ignore_errors=True)

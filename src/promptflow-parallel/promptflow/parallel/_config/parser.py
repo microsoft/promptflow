@@ -6,7 +6,7 @@ from argparse import ArgumentParser, Namespace
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple
 
-from promptflow.integrations.parallel_run._config.model import ParallelRunConfig, output_file_pattern
+from promptflow.parallel._config.model import ParallelRunConfig, output_file_pattern
 
 
 def parse(args: List[str]) -> ParallelRunConfig:

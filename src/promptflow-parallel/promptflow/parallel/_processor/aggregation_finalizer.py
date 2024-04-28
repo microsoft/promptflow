@@ -1,12 +1,13 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import logging
 from typing import Any, Dict, List
 
-from promptflow.integrations.parallel_run._executor.base import ParallelRunExecutor
-from promptflow.integrations.parallel_run._metrics.metrics import Metrics
-from promptflow.integrations.parallel_run._model import Row
-from promptflow.integrations.parallel_run._processor.finalizer import Finalizer
+from promptflow.parallel._executor.base import ParallelRunExecutor
+from promptflow.parallel._metrics.metrics import Metrics
+from promptflow.parallel._model import Row
+from promptflow.parallel._processor.finalizer import Finalizer
 
 
 class AggregationFinalizer(Finalizer):
@@ -15,6 +16,7 @@ class AggregationFinalizer(Finalizer):
         self._executor = executor
         self._columned_aggregation_inputs = {}
         self._columned_inputs = {}
+        self._logger = logging.getLogger(self.__class__.__name__)
 
     @property
     def process_enabled(self) -> bool:
@@ -35,7 +37,7 @@ class AggregationFinalizer(Finalizer):
             self.do_aggregation()
 
     def do_aggregation(self):
-        print("Executing aggregation.")
+        self._logger.info("Executing aggregation.")
         result = self._executor.execute_aggregation(
             inputs=self._columned_inputs, aggregation_inputs=self._columned_aggregation_inputs
         )
