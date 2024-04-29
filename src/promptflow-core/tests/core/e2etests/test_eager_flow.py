@@ -203,3 +203,9 @@ class TestEagerFlow:
             aggr_result = executor._exec_aggregation(inputs=[line_result.output])
             # exec aggregation won't fail with error
             assert aggr_result.metrics == {}
+
+    def test_get_function_name(self):
+        expected_names = ["ClassEntry.__call__", "func_entry", "func_entry_async"]
+        for (entry, _, _), expected_name in zip(function_entries, expected_names):
+            executor = FlowExecutor.create(entry, {})
+            assert executor._func_name == expected_name

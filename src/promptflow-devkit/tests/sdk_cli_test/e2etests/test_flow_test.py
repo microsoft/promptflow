@@ -279,7 +279,7 @@ class TestFlowTest:
         flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_callable_class_without_yaml/").absolute()
         with _change_working_dir(flow_path):
             result = _client._flows.test(
-                flow="simple_callable_class:MyFlow", inputs={"func_input": "input"}, init={"obj_input": "val"}
+                flow="callable_without_yaml:MyFlow", inputs={"func_input": "input"}, init={"obj_input": "val"}
             )
             assert result["func_input"] == "input"
 
