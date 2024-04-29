@@ -309,20 +309,82 @@ class TestFlow:
             )
         assert error_message in str(e.value)
 
-    def test_model_config_resolve_signature(self):
+    @pytest.mark.parametrize(
+        "code, data, expected_data",
+        [
+            (
+                Path(f"{EAGER_FLOWS_DIR}/basic_model_config"),
+                {
+                    "entry": "class_with_model_config:MyFlow",
+                },
+                {
+                    "entry": "class_with_model_config:MyFlow",
+                    "init": {
+                        "azure_open_ai_model_config": {"type": "AzureOpenAIModelConfiguration"},
+                        "open_ai_model_config": {"type": "OpenAIModelConfiguration"},
+                    },
+                    "inputs": {"func_input": {"type": "string"}},
+                    "outputs": {
+                        "func_input": {"type": "string"},
+                        "obj_id": {"type": "string"},
+                        "obj_input": {"type": "string"},
+                    },
+                },
+            ),
+            (
+                Path(f"{EAGER_FLOWS_DIR}/code_yaml_signature_merge"),
+                {"entry": "partial_signatures:MyFlow"},
+                {
+                    "entry": "partial_signatures:MyFlow",
+                    "init": {
+                        "obj_input1": {"type": "string"},
+                        "obj_input2": {"type": "bool"},
+                        "obj_input3": {"type": "object"},
+                    },
+                    "inputs": {
+                        "func_input1": {"type": "string"},
+                        "func_input2": {"type": "int"},
+                        "func_input3": {"type": "object"},
+                    },
+                    "outputs": {"output": {"type": "string"}},
+                },
+            ),
+            (
+                Path(f"{EAGER_FLOWS_DIR}/code_yaml_signature_merge"),
+                {
+                    "entry": "partial_signatures:MyFlow",
+                    "init": {
+                        "obj_input1": {"type": "string"},
+                        "obj_input2": {"type": "bool"},
+                        "obj_input3": {"type": "string"},
+                    },
+                    "inputs": {
+                        "func_input1": {"type": "string"},
+                        "func_input2": {"type": "int"},
+                        "func_input3": {"type": "string"},
+                    },
+                    "outputs": {"output": {"type": "string"}},
+                },
+                {
+                    "entry": "partial_signatures:MyFlow",
+                    "init": {
+                        "obj_input1": {"type": "string"},
+                        "obj_input2": {"type": "bool"},
+                        "obj_input3": {"type": "string"},
+                    },
+                    "inputs": {
+                        "func_input1": {"type": "string"},
+                        "func_input2": {"type": "int"},
+                        "func_input3": {"type": "string"},
+                    },
+                    "outputs": {"output": {"type": "string"}},
+                },
+            ),
+        ],
+    )
+    def test_update_signature(self, code, data, expected_data):
         update_signatures(
-            code=Path(f"{EAGER_FLOWS_DIR}/basic_model_config"),
-            data={
-                "entry": "class_with_model_config:MyFlow",
-                "init": {
-                    "azure_open_ai_model_config": {"type": "AzureOpenAIModelConfiguration"},
-                    "open_ai_model_config": {"type": "OpenAIModelConfiguration"},
-                },
-                "inputs": {"func_input": {"type": "string"}},
-                "outputs": {
-                    "func_input": {"type": "string"},
-                    "obj_id": {"type": "string"},
-                    "obj_input": {"type": "string"},
-                },
-            },
+            code=code,
+            data=data,
         )
+        assert data == expected_data

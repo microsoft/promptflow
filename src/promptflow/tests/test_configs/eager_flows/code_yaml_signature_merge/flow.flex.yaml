@@ -1,0 +1,11 @@
+entry: entry:my_flow
+inputs:
+  func_input1:
+    type: string
+  func_input2:
+    type: string
+  func_input3:
+    type: string
+init:
+  obj_input3:
+    type: int
