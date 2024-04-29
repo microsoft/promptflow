@@ -30,16 +30,14 @@ def find_available_port() -> str:
         return str(port)
 
 
-def _resolve_python_flow_additional_includes(source) -> Path:
+def _resolve_python_flow_additional_includes(flow_file_name: str, flow_dir: Path) -> Path:
     # Resolve flow additional includes
-    from promptflow.client import load_flow
-
-    flow = load_flow(source)
     from promptflow._sdk.operations import FlowOperations
 
-    with FlowOperations._resolve_additional_includes(flow.path) as resolved_flow_path:
-        if resolved_flow_path == flow.path:
-            return source
+    flow_path = Path(flow_dir) / flow_file_name
+    with FlowOperations._resolve_additional_includes(flow_path) as resolved_flow_path:
+        if resolved_flow_path == flow_path:
+            return flow_dir
         # Copy resolved flow to temp folder if additional includes exists
         # Note: DO NOT use resolved flow path directly, as when inner logic raise exception,
         # temp dir will fail due to file occupied by other process.
@@ -103,7 +101,8 @@ def serve_python_flow(
     from promptflow._sdk._configuration import Configuration
     from promptflow.core._serving.app import create_app
 
-    flow_dir = _resolve_python_flow_additional_includes(flow_dir / flow_file_name)
+    flow_dir = _resolve_python_flow_additional_includes(flow_file_name, flow_dir)
+    flow_dir, flow_file_name = resolve_flow_path(flow_dir)
 
     pf_config = Configuration(overrides=config)
     logger.info(f"Promptflow config: {pf_config}")
