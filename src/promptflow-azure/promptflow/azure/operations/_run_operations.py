@@ -642,7 +642,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                     file_handler.write(
                         f"The run {run.name!r} is in status {run.status} and produce no new logs for {timeout} seconds,"
                         "streaming is stopped. If the final status is 'NotStarted', "
-                        "Please make sure you are using the latest runtime.\n"
+                        "Please make sure you are using the latest session.\n"
                         f"For {COMPUTE_SESSION} case, please try extending the timeout value.\n"
                     )
                     break
