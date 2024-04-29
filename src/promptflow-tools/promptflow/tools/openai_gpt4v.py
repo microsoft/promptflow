@@ -3,7 +3,8 @@ from promptflow.contracts.types import PromptTemplate
 from promptflow._internal import ToolProvider, tool
 from promptflow.tools.common import handle_openai_error, build_messages, \
     post_process_chat_api_response, preprocess_template_string, \
-    find_referenced_image_set, convert_to_chat_list, init_openai_client
+    find_referenced_image_set, convert_to_chat_list, init_openai_client, \
+    validate_tools, process_tool_choice
 
 
 class OpenAI(ToolProvider):
@@ -27,8 +28,12 @@ class OpenAI(ToolProvider):
         frequency_penalty: float = 0,
         seed: int = None,
         detail: str = 'auto',
+        # tool_choice can be of type str or dict.
+        tool_choice: object = None,
+        tools: list = None,
+        response_format: object = None,
         **kwargs,
-    ) -> [str, dict]:
+    ):
         prompt = preprocess_template_string(prompt)
         referenced_images = find_referenced_image_set(kwargs)
 
@@ -53,6 +58,13 @@ class OpenAI(ToolProvider):
             params["max_tokens"] = max_tokens
         if seed is not None:
             params["seed"] = seed
+
+        if tools:
+            validate_tools(tools)
+            params["tools"] = tools
+            params["tool_choice"] = process_tool_choice(tool_choice)
+        if response_format:
+            params["response_format"] = response_format
 
         completion = self._client.chat.completions.create(**params)
         return post_process_chat_api_response(completion, stream)

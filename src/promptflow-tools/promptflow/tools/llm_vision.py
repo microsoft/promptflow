@@ -29,6 +29,10 @@ def llm_vision(
     frequency_penalty: float = 0,
     seed: int = None,
     detail: str = 'auto',
+    # tool_choice can be of type str or dict.
+    tool_choice: object = None,
+    tools: list = None,
+    response_format: object = None,
     **kwargs,
 ):
     if isinstance(connection, AzureOpenAIConnection):
@@ -44,6 +48,9 @@ def llm_vision(
             frequency_penalty=frequency_penalty,
             seed=seed,
             detail=detail,
+            tool_choice=tool_choice,
+            tools=tools,
+            response_format=response_format,
             **kwargs
         )
     elif isinstance(connection, OpenAIConnection):
@@ -59,6 +66,9 @@ def llm_vision(
             frequency_penalty=frequency_penalty,
             seed=seed,
             detail=detail,
+            tool_choice=tool_choice,
+            tools=tools,
+            response_format=response_format,
             **kwargs
         )
     else:
