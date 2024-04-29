@@ -31,7 +31,7 @@ def get_node_run_infos(node_dict: dict, index=None, api_calls=None, system_metri
     }
 
 
-def get_flow_run_info(status_dict: dict, index: int, api_calls=None):
+def get_flow_run_info(status_dict: dict, index: int, api_calls=None, system_metrics=None):
     status = Status.Failed if any(status == Status.Failed for status in status_dict.values()) else Status.Completed
     error = {"code": "UserError", "message": "test message"} if status == Status.Failed else None
     return FlowRunInfo(
@@ -50,6 +50,7 @@ def get_flow_run_info(status_dict: dict, index: int, api_calls=None):
         end_time=datetime.utcnow(),
         index=index,
         api_calls=api_calls,
+        system_metrics=system_metrics,
     )
 
 
@@ -58,7 +59,7 @@ def get_line_results(line_dict: dict, api_calls=None, system_metrics=None):
         LineResult(
             output={},
             aggregation_inputs={},
-            run_info=get_flow_run_info(status_dict=v, index=k, api_calls=api_calls),
+            run_info=get_flow_run_info(status_dict=v, index=k, api_calls=api_calls, system_metrics=system_metrics),
             node_run_infos=get_node_run_infos(node_dict=v, index=k, api_calls=api_calls, system_metrics=system_metrics),
         )
         for k, v in line_dict.items()

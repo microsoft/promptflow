@@ -127,6 +127,7 @@ class TestEagerFlow:
         token_names = ["prompt_tokens", "completion_tokens", "total_tokens"]
         for token_name in token_names:
             assert token_name in line_result.run_info.api_calls[0]["children"][0]["system_metrics"]
+            assert line_result.run_info.api_calls[0]["children"][0]["system_metrics"][token_name] > 0
 
     @pytest.mark.parametrize("entry, inputs, expected_output", function_entries)
     def test_flow_run_with_function_entry(self, entry, inputs, expected_output):

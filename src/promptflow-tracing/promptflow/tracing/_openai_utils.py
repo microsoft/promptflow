@@ -28,22 +28,31 @@ class OpenAIMetricsCalculator:
         return total_metrics
 
     def get_completion_tokens(self, api_call: dict):
-        # For nodes with streaming output, the completion tokens is zero, so we should call this method to get
-        # completion tokens when the output is consumed.
+        # For nodes with OpenAI streaming output, the completion tokens is zero, so we use this method to collect
+        # completion tokens after the output is consumed.
         completion_tokens = 0
-        if self._need_collect_metrics(api_call):
-            try:
+        try:
+            if self._need_collect_metrics(api_call):
                 completion_tokens += self._get_completion_tokens_for_signal_api(api_call)
-            except Exception as ex:
-                self._log_warning(f"Failed to calculate completion tokens due to exception: {ex}.")
 
-        children = api_call.get("children")
-        if children is not None:
-            for child in children:
-                completion_tokens += self.get_completion_tokens(child)
-        if api_call.get("system_metrics") and "completion_tokens" in api_call["system_metrics"]:
-            api_call["system_metrics"]["completion_tokens"] += completion_tokens
+            children = api_call.get("children")
+            if children is not None:
+                for child in children:
+                    completion_tokens += self.get_completion_tokens(child)
+            if self._contain_openai_metrics(api_call):
+                api_call["system_metrics"]["completion_tokens"] += completion_tokens
+                api_call["system_metrics"]["total_tokens"] += completion_tokens
+        except Exception as ex:
+            self._log_warning(f"Failed to calculate completion tokens due to exception: {ex}.")
         return completion_tokens
+
+    def _contain_openai_metrics(self, api_call: dict):
+        if api_call.get("system_metrics"):
+            for metric in ["total_tokens", "prompt_tokens", "completion_tokens"]:
+                if metric not in api_call["system_metrics"]:
+                    return False
+            return True
+        return False
 
     def _need_collect_metrics(self, api_call: dict):
         if api_call.get("type") != "LLM":
@@ -57,10 +66,11 @@ class OpenAIMetricsCalculator:
         return True
 
     def _get_completion_tokens_for_signal_api(self, api_call: dict):
-        if api_call.get("system_metrics") and (api_call["system_metrics"].get("completion_tokens") == 0):
-            output = api_call.get("output", [])
-            if isinstance(output, list):
-                return len(output)
+        if self._contain_openai_metrics(api_call):
+            if api_call["system_metrics"]["completion_tokens"] == 0:
+                output = api_call.get("output", [])
+                if isinstance(output, list):
+                    return len(output)
         return 0
 
     def _get_openai_metrics_for_signal_api(self, api_call: dict):
@@ -135,9 +145,9 @@ class OpenAIMetricsCalculator:
             else:
                 metrics["completion_tokens"] = self._get_completion_tokens_for_chat_api(output, enc)
             metrics["total_tokens"] = metrics["prompt_tokens"] + metrics["completion_tokens"]
-            return metrics
         except Exception as ex:
             self._log_warning(f"Failed to calculate metrics due to exception: {ex}.")
+        return metrics
 
     def _get_encoding_for_chat_api(self, model):
         try:
@@ -199,9 +209,9 @@ class OpenAIMetricsCalculator:
             else:
                 metrics["completion_tokens"] = self._get_completion_tokens_for_completion_api(output, enc)
             metrics["total_tokens"] = metrics["prompt_tokens"] + metrics["completion_tokens"]
-            return metrics
         except Exception as ex:
             self._log_warning(f"Failed to calculate metrics due to exception: {ex}.")
+        return metrics
 
     def _get_encoding_for_completion_api(self, model):
         try:
