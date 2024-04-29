@@ -52,10 +52,10 @@ def to_openai_error_message(e: Exception) -> str:
         msg = "The response_format parameter needs to be a dictionary such as {\"type\": \"text\"}. " \
               "The value associated with the type key should be either 'text' or 'json_object' " \
               "If you are using openai connection, you can only set response_format to { \"type\": \"json_object\" } " \
-              "when calling gpt-3.5-turbo-1106 or gpt-4-1106-preview to enable JSON mode. You can refer to " \
+              "with models that support JSON mode. You can refer to " \
               "https://platform.openai.com/docs/guides/text-generation/json-mode. If you are using azure openai " \
-              "connection, then please first go to your Azure OpenAI resource, deploy model 'gpt-35-turbo-1106' or " \
-              "'gpt-4-1106-preview'. You can refer to " \
+              "connection, then please first go to your Azure OpenAI resource, deploy model 'gpt-35-turbo' " \
+              "or 'gpt-4' with model version later than 1106'. You can refer to " \
               "https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/json-mode?tabs=python."
         return f"OpenAI API hits {ex_type}: {msg}"
     elif "Principal does not have access to API/Operation" in error_message:
