@@ -36,6 +36,7 @@ promptflow.tools.llm_vision.llm_vision:
         include:
           model_version:
           - vision-preview
+          - turbo-2024-04-09
       allow_manual_entry: true
       is_multi_select: false
       ui_hints:
@@ -102,3 +103,28 @@ promptflow.tools.llm_vision.llm_vision:
       type:
         - string
       default: auto
+    tools:
+      type:
+      - list
+      default: []
+      ui_hints:
+        display_style: reusable_tool
+    tool_choice:
+      type:
+      # 'object' must be set as the first type since executor takes the first type to parse the string value in flow DAG yaml.
+      # Otherwise the tool_choice dict value cannot be correctly parsed.
+      # Related code: https://github.com/microsoft/promptflow/blob/main/src/promptflow-core/promptflow/executor/_tool_resolver.py#L270
+      - object
+      - string
+      default: ""
+    response_format:
+      type:
+      - object
+      advanced: false
+      ui_hints:
+        text_box_size: lg
+      enum:
+      - type: json_object
+      - type: text
+      allow_manual_entry: true
+      default: ""
