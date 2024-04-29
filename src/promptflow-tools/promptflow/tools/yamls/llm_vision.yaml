@@ -20,6 +20,14 @@ promptflow.tools.llm_vision.llm_vision:
     # user:
     Can you tell me what the image depicts?
     ![image]({{image_input}})
+  groups:  
+  - name: Tools
+    description: Configure interactive capabilities by selecting tools for the model to use and guiding its tool call decisions.
+    inputs:  
+    - tools
+    - tool_choice
+    ui_hints:
+      display_style: table
   inputs:
     connection:
       type:
