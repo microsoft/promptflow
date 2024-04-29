@@ -907,6 +907,8 @@ def gen_uuid_by_compute_info() -> Union[str, None]:
 
 def convert_time_unix_nano_to_timestamp(time_unix_nano: str) -> datetime.datetime:
     nanoseconds = int(time_unix_nano)
+    if nanoseconds == 0:
+        return None  # return None if the time is not set
     seconds = nanoseconds / 1_000_000_000
     return datetime.datetime.utcfromtimestamp(seconds)
 
