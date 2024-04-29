@@ -8,6 +8,7 @@ from typing import Dict, Optional, Union
 import yaml  # type: ignore[import]
 from packaging import version
 
+
 from promptflow.rag.constants._common import AZURE_AI_SEARCH_API_VERSION
 from promptflow.rag.resources import EmbeddingsModelConfig, AzureAISearchConfig, AzureAISearchSource, LocalSource
 from promptflow.rag._utils._open_ai_utils import build_open_ai_protocol
@@ -40,8 +41,8 @@ def build_index(
     :paramtype input_source: Union[AzureAISearchSource, LocalSource]
     :keyword index_config: The configuration for Azure Cognitive Search output.
     :paramtype index_config: AzureAISearchConfig
-    :keyword index_config: The configuration for AOAI embedding model.
-    :paramtype index_config: EmbeddingsModelConfig
+    :keyword embeddings_model_config: The configuration for embedding model.
+    :paramtype embeddings_model_config: EmbeddingsModelConfig
     :keyword data_source_url: The URL of the data source.
     :paramtype data_source_url: Optional[str]
     :keyword tokens_per_chunk: The size of each chunk.
@@ -71,7 +72,8 @@ def build_index(
             "In order to use build_index to build an Index locally, you must have azureml-rag installed."
         )
         raise e
-
+    
+    is_serverless_connection = False
     if not embeddings_model_config.model_name:
         raise ValueError("Please specify embeddings_model_config.model_name")
 
@@ -79,18 +81,19 @@ def build_index(
         # If model uri is None, it is *considered* as a serverless endpoint for now.
         # TODO: depends on azureml.rag.Embeddings.from_uri to finalize a scheme for different embeddings
         if not embeddings_model_config.connection_config:
-            raise ValueError("Please specify embeddings_model_config.connection_config to use cohere embedding models")
+            raise ValueError("Please specify embeddings_model_config.connection_config to use serverless embedding models")
         embeddings_model_uri = None
+        is_serverless_connection = True
     else:
         embeddings_model_uri = build_open_ai_protocol(
             embeddings_model_config.deployment_name,
             embeddings_model_config.model_name
         )
 
-    if vector_store == "azure_ai_search" and isinstance(input_source, AzureAISearchSource):
+    if isinstance(input_source, AzureAISearchSource):
         return _create_mlindex_from_existing_ai_search(
             # TODO: Fix Bug 2818331
-            embedding_model=embeddings_model_config.embeddings_model,
+            embedding_model=embeddings_model_config.model_name,
             embedding_model_uri=embeddings_model_uri,
             connection_id=embeddings_model_config.connection_config.build_connection_id(),
             ai_search_config=input_source,
@@ -117,7 +120,7 @@ def build_index(
     )
 
     connection_args = {}
-    if embeddings_model_uri and "open_ai" in embeddings_model_uri:
+    if "open_ai" in embeddings_model_uri:
         if embeddings_model_config.connection_config:
             connection_id = embeddings_model_config.connection_config.build_connection_id()
             aoai_connection = get_connection_by_id_v2(connection_id)
@@ -151,7 +154,7 @@ def build_index(
             embeddings_model_uri,
             **connection_args,
         )
-    elif not embeddings_model_uri:
+    elif is_serverless_connection:
         # cohere connection doesn't support environment variables yet
         # import os
         # api_key = "SERVERLESS_CONNECTION_KEY"
@@ -259,8 +262,14 @@ def _create_mlindex_from_existing_ai_search(
         }
     else:
         ai_search_connection = get_connection_by_id_v2(ai_search_config.ai_search_connection_id)
+        if isinstance(ai_search_connection, dict):
+            endpoint  = ai_search_connection["properties"]["target"]
+        elif ai_search_connection.target:
+            endpoint = ai_search_connection.target
+        else:
+            raise ValueError("Cannot get target from ai search connection")
         connection_info = {
-            "endpoint": ai_search_connection["properties"]["target"],
+            "endpoint": endpoint,
             "connection_type": "workspace_connection",
             "connection": {
                 "id": ai_search_config.ai_search_connection_id,
