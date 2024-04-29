@@ -6,7 +6,12 @@ import pytest
 from promptflow._core.tool_meta_generator import PythonLoadError
 from promptflow.contracts.run_info import Status
 from promptflow.core import AzureOpenAIModelConfiguration, OpenAIModelConfiguration
-from promptflow.executor._errors import FlowEntryInitializationError, InvalidFlexFlowEntry
+from promptflow.executor._errors import (
+    FlowEntryInitializationError,
+    InputNotFound,
+    InputTypeError,
+    InvalidFlexFlowEntry,
+)
 from promptflow.executor._result import LineResult
 from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import FlowExecutor
@@ -93,6 +98,12 @@ class TestEagerFlow:
                     "open_ai_model_config": OpenAIModelConfiguration(model="my_model", base_url="fake_base_url"),
                 },
             ),
+            (
+                "flow_with_signature",
+                {"input_1": "input_1"},
+                lambda x: x["output"] == "input_2",
+                None,
+            ),
         ],
     )
     def test_flow_run(self, flow_folder, inputs, ensure_output, init_kwargs):
@@ -149,6 +160,21 @@ class TestEagerFlow:
         delta_desc = f"{delta_sec}s from {line_result1.run_info.end_time} to {line_result2.run_info.end_time}"
         msg = f"The two tasks should run concurrently, but got {delta_desc}"
         assert 0 <= delta_sec < 0.1, msg
+
+    def test_flow_run_with_invalid_inputs(self):
+        # Case 1: input not found
+        flow_file = get_yaml_file("flow_with_signature", root=EAGER_FLOW_ROOT)
+        executor = FlowExecutor.create(flow_file=flow_file, connections={}, init_kwargs=None)
+        with pytest.raises(InputNotFound) as e:
+            executor.exec_line(inputs={}, index=0)
+        assert "The input for flow is incorrect." in str(e.value)
+
+        # Case 2: input type mismatch
+        flow_file = get_yaml_file("flow_with_wrong_type", root=EAGER_FLOW_ROOT)
+        executor = FlowExecutor.create(flow_file=flow_file, connections={}, init_kwargs=None)
+        with pytest.raises(InputTypeError) as e:
+            executor.exec_line(inputs={"input_1": 1}, index=0)
+        assert "does not match the expected type" in str(e.value)
 
     def test_flow_run_with_invalid_case(self):
         flow_folder = "dummy_flow_with_exception"
