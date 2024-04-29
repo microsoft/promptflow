@@ -47,6 +47,9 @@ def start_trace(
     # openai instrumentation
     logging.debug("injecting OpenAI API...")
     inject_openai_api()
+    from ._event import instrument_events_api
+
+    instrument_events_api()
     logging.debug("OpenAI API injected.")
 
     # prepare resource.attributes and set tracer provider

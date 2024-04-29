@@ -1,6 +1,7 @@
-import tiktoken
 from abc import ABC, abstractmethod
 from importlib.metadata import version
+
+import tiktoken
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
 
@@ -56,15 +57,9 @@ class OpenAIMetricsCalculator:
         # OpenAI v1 api:
         #   https://github.com/openai/openai-python/blob/main/src/openai/resources/chat/completions.py
         #   https://github.com/openai/openai-python/blob/main/src/openai/resources/completions.py
-        if (
-            name == "openai_chat_legacy"
-            or name == "openai_chat"  # openai v1
-        ):
+        if name == "openai_chat_legacy" or name == "openai_chat":  # openai v1
             return self.get_openai_metrics_for_chat_api(inputs, output)
-        elif (
-            name == "openai_completion_legacy"
-            or name == "openai_completion"  # openai v1
-        ):
+        elif name == "openai_completion_legacy" or name == "openai_completion":  # openai v1
             return self.get_openai_metrics_for_completion_api(inputs, output)
         else:
             self._log_warning(f"Calculating metrics for api {name} is not supported.")
@@ -126,7 +121,9 @@ class OpenAIMetricsCalculator:
             tokens_per_message = 3
             tokens_per_name = 1
         else:
-            self._log_warning(f"Calculating metrics for model {model} is not supported.")
+            self._log_warning(f"Calculating metrics for model {model} is not supported, using gpt35 settings.")
+            tokens_per_message = 3
+            tokens_per_name = 1
         return enc, tokens_per_message, tokens_per_name
 
     def _get_prompt_tokens_from_messages(self, messages, enc, tokens_per_message, tokens_per_name):
