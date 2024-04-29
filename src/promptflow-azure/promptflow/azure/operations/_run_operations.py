@@ -643,7 +643,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                         f"The run {run.name!r} is in status {run.status} and produce no new logs for {timeout} seconds,"
                         "streaming is stopped. If the final status is 'NotStarted', "
                         "Please make sure you are using the latest runtime.\n"
-                        "For compute session case, please try extending the timeout value.\n"
+                        f"For {AUTOMATIC_RUNTIME} case, please try extending the timeout value.\n"
                     )
                     break
 
@@ -823,7 +823,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
     def _resolve_automatic_runtime(cls):
         logger.warning(
             f"You're using {AUTOMATIC_RUNTIME}, if it's first time you're using it, "
-            "it may take a while to build runtime and you may see 'NotStarted' status for a while. "
+            "it may take a while to build session and you may see 'NotStarted' status for a while. "
         )
         runtime_name = AUTOMATIC_RUNTIME_NAME
         return runtime_name
