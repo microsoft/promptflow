@@ -26,7 +26,7 @@ import psutil
 from promptflow._constants import LINE_NUMBER_KEY, LINE_TIMEOUT_SEC
 from promptflow._core._errors import ProcessPoolError, UnexpectedError
 from promptflow._core.run_tracker import RunTracker
-from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
+from promptflow._utils.dataclass_serializer import convert_dataclass_to_dict
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.process_utils import (
@@ -790,10 +790,10 @@ def _exec_line(
             line_timeout_sec=line_timeout_sec,
         )
         if line_result is not None:
+            if isinstance(line_result.output, dict):
+                line_result.output.pop(LINE_NUMBER_KEY, None)
             # For eager flow, the output may be a dataclass which is not picklable, we need to convert it to dict.
-            if not isinstance(line_result.output, dict):
-                line_result.output = convert_eager_flow_output_to_dict(line_result.output)
-            line_result.output.pop(LINE_NUMBER_KEY, None)
+            line_result.output = convert_dataclass_to_dict(line_result.output)
         # TODO: Put serialized line result into queue to catch serialization error beforehand.
         # Otherwise it might cause the process to hang, e.g, line failed because output is not seralizable.
         if line_result is not None and line_result.run_info.status == Status.Failed:

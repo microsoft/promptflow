@@ -58,6 +58,7 @@ class AsyncArtifactClient:
                 "relativePath": relative_path,
             },
         }
+        error_msg_prefix = f"Failed to create Artifact for Run {run_id!r}"
         try:
             async with httpx.AsyncClient(verify=False) as client:
                 response = await client.post(url, headers=self._get_header(), json=payload)
@@ -65,11 +66,11 @@ class AsyncArtifactClient:
                     # if it's auth issue, return auth_error_message
                     raise UserAuthenticationError(response.text)
                 elif response.status_code != 200:
-                    error_message = f"Failed to create Artifact for Run {run_id}. Code={response.status_code}."
+                    error_message = f"{error_msg_prefix}. Code={response.status_code}. Message={response.text}"
                     logger.error(error_message)
                     raise ArtifactInternalError(error_message)
         except Exception as e:
-            error_message = f"Failed to create Artifact for Run {run_id}: {str(e)}"
+            error_message = f"{error_msg_prefix}: {str(e)}"
             logger.error(error_message)
             raise ArtifactInternalError(error_message) from e
 

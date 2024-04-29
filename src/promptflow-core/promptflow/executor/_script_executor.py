@@ -75,6 +75,16 @@ class ScriptExecutor(FlowExecutor):
         self._message_format = MessageFormatType.BASIC
         self._multimedia_processor = BasicMultimediaProcessor()
 
+    @classmethod
+    def _get_func_name(cls, func: Callable):
+        try:
+            original_func = getattr(func, "__original_function")
+            if isinstance(original_func, partial):
+                original_func = original_func.func
+            return original_func.__qualname__
+        except AttributeError:
+            return func.__qualname__
+
     @contextlib.contextmanager
     def _exec_line_context(self, run_id, line_number):
         # TODO: refactor NodeLogManager, for script executor, we don't have node concept.
@@ -152,14 +162,15 @@ class ScriptExecutor(FlowExecutor):
             # For these cases, raise ScriptExecutionError, which is classified as UserError
             # and shows stack trace in the error message to make it easy for user to troubleshoot.
             error_type_and_message = f"({e.__class__.__name__}) {e}"
-            e = ScriptExecutionError(
+            ex = ScriptExecutionError(
                 message_format="Execution failure in '{func_name}': {error_type_and_message}",
-                func_name=self._func.__qualname__,
+                func_name=self._func_name,
                 error_type_and_message=error_type_and_message,
+                error=e,
             )
             if not traces:
                 traces = Tracer.end_tracing(line_run_id)
-            run_tracker.end_run(line_run_id, ex=e, traces=traces)
+            run_tracker.end_run(line_run_id, ex=ex, traces=traces)
         finally:
             run_tracker.persist_flow_run(run_info)
         return self._construct_line_result(output, run_info)
@@ -457,6 +468,7 @@ class ScriptExecutor(FlowExecutor):
         else:
             self._func = func
             self._func_async = sync_to_async(func)
+        self._func_name = self._get_func_name(func=func)
         return func
 
     def _initialize_aggr_function(self, flow_obj: object):
