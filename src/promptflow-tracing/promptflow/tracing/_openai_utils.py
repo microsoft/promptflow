@@ -1,6 +1,7 @@
-import tiktoken
 from abc import ABC, abstractmethod
 from importlib.metadata import version
+
+import tiktoken
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
 
@@ -26,6 +27,21 @@ class OpenAIMetricsCalculator:
         api_call["system_metrics"] = total_metrics
         return total_metrics
 
+    def get_completion_tokens(self, api_call: dict):
+        # For nodes with streaming output, the completion tokens is zero, so we should call this method to get
+        # completion tokens when the output is consumed.
+        completion_tokens = 0
+        if self._need_collect_metrics(api_call):
+            completion_tokens += self._get_completion_tokens_for_signal_api(api_call)
+
+        children = api_call.get("children")
+        if children is not None:
+            for child in children:
+                completion_tokens += self.get_completion_tokens(child)
+        if api_call.get("system_metrics") and "completion_tokens" in api_call["system_metrics"]:
+            api_call["system_metrics"]["completion_tokens"] += completion_tokens
+        return completion_tokens
+
     def _need_collect_metrics(self, api_call: dict):
         if api_call.get("type") != "LLM":
             return False
@@ -36,6 +52,13 @@ class OpenAIMetricsCalculator:
         if not isinstance(inputs, dict):
             return False
         return True
+
+    def _get_completion_tokens_for_signal_api(self, api_call: dict):
+        if api_call.get("system_metrics") and (api_call["system_metrics"].get("completion_tokens") == 0):
+            output = api_call.get("output", [])
+            if isinstance(output, list):
+                return len(output)
+        return 0
 
     def _get_openai_metrics_for_signal_api(self, api_call: dict):
         inputs = api_call.get("inputs")
@@ -56,15 +79,9 @@ class OpenAIMetricsCalculator:
         # OpenAI v1 api:
         #   https://github.com/openai/openai-python/blob/main/src/openai/resources/chat/completions.py
         #   https://github.com/openai/openai-python/blob/main/src/openai/resources/completions.py
-        if (
-            name == "openai_chat_legacy"
-            or name == "openai_chat"  # openai v1
-        ):
+        if name == "openai_chat_legacy" or name == "openai_chat":  # openai v1
             return self.get_openai_metrics_for_chat_api(inputs, output)
-        elif (
-            name == "openai_completion_legacy"
-            or name == "openai_completion"  # openai v1
-        ):
+        elif name == "openai_completion_legacy" or name == "openai_completion":  # openai v1
             return self.get_openai_metrics_for_completion_api(inputs, output)
         else:
             self._log_warning(f"Calculating metrics for api {name} is not supported.")

@@ -446,7 +446,16 @@ class RunTracker(ThreadLocalSingleton):
             run_info for run_info in self.collect_child_node_runs(run_id) if run_info.node in node_names
         )
         for node_run_info in selected_node_run_info:
+            self._collect_completion_tokens(node_run_info)
             self.persist_node_run(node_run_info)
+
+    def _collect_completion_tokens(self, run_info: RunInfo):
+        calls = run_info.api_calls or []
+        calculator = OpenAIMetricsCalculator(flow_logger)
+        for call in calls:
+            completion_tokens = calculator.get_completion_tokens(call)
+        if "completion_tokens" in run_info.system_metrics:
+            run_info.system_metrics["completion_tokens"] += completion_tokens
 
     def persist_flow_run(self, run_info: FlowRunInfo):
         self._storage.persist_flow_run(run_info)
