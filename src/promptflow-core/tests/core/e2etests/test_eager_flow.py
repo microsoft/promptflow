@@ -55,13 +55,19 @@ class TestEagerFlow:
             (
                 "basic_callable_class",
                 {"func_input": "func_input"},
-                lambda x: x["func_input"] == "func_input",
+                lambda x: is_dataclass(x) and x.func_input == "func_input",
                 {"obj_input": "obj_input"},
             ),
             (
                 "basic_callable_class_async",
                 {"func_input": "func_input"},
-                lambda x: x["func_input"] == "func_input",
+                lambda x: is_dataclass(x) and x.func_input == "func_input",
+                {"obj_input": "obj_input"},
+            ),
+            (
+                "callable_class_with_primitive",
+                {"func_input": "func_input"},
+                lambda x: x == "The object input is obj_input and the function input is func_input",
                 {"obj_input": "obj_input"},
             ),
             (
@@ -197,3 +203,9 @@ class TestEagerFlow:
             aggr_result = executor._exec_aggregation(inputs=[line_result.output])
             # exec aggregation won't fail with error
             assert aggr_result.metrics == {}
+
+    def test_get_function_name(self):
+        expected_names = ["ClassEntry.__call__", "func_entry", "func_entry_async"]
+        for (entry, _, _), expected_name in zip(function_entries, expected_names):
+            executor = FlowExecutor.create(entry, {})
+            assert executor._func_name == expected_name
