@@ -12,7 +12,7 @@ import pandas as pd
 
 from promptflow._sdk._constants import LINE_NUMBER
 from promptflow.client import PFClient
-from ._utils import _log_metrics_and_instance_results
+from ._utils import _log_metrics_and_instance_results, _get_ai_studio_url
 from .._user_agent import USER_AGENT
 
 
@@ -311,6 +311,6 @@ def evaluate(
 
     result_df = pd.concat([input_data_df, evaluators_result_df], axis=1, verify_integrity=True)
 
-    _log_metrics_and_instance_results(metrics, result_df, tracking_uri, target_run, pf_client, data, evaluation_name)
+    studio_url = _log_metrics_and_instance_results(metrics, result_df, tracking_uri, target_run, pf_client, data, evaluation_name)
 
-    return {"rows": result_df.to_dict("records"), "metrics": metrics}
+    return {"rows": result_df.to_dict("records"), "metrics": metrics, "studio_url": studio_url}
