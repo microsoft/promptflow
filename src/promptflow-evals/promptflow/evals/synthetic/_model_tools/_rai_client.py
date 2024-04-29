@@ -4,7 +4,7 @@
 import logging
 import os
 from typing import Any
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 import requests
 
@@ -59,8 +59,8 @@ class RAIClient:
         )
         if response.status_code != 200:
             raise Exception("Failed to retrieve the discovery service URL")
-        base_url = response.json()["properties"]["discoveryUrl"]
-        return base_url.replace("discovery", "")
+        base_url = urlparse(response.json()["properties"]["discoveryUrl"])
+        return f"{base_url.scheme}://{base_url.netloc}"
 
     def _create_async_client(self):
         return AsyncHTTPClientWithRetry(n_retry=6, retry_timeout=5, logger=logging.getLogger())
@@ -86,7 +86,6 @@ class RAIClient:
 
         async with self._create_async_client().client as session:
             async with session.get(url=url, headers=headers) as response:
-                print(f"GET {url} {response.status}")
                 if response.status == 200:
                     response = await response.json()
                     return response
