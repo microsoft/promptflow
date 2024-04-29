@@ -32,6 +32,7 @@ from promptflow.tools.exception import (
 )
 
 try:
+    # the constant is introduced in promptflow 1.10.0
     from promptflow._core.tool import INPUTS_TO_ESCAPE_PARAM_KEY
 except ImportError:
     INPUTS_TO_ESCAPE_PARAM_KEY = "_inputs_to_escape"
