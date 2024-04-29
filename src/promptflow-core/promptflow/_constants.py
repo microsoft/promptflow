@@ -268,6 +268,12 @@ class TokenKeys:
         return values
 
 
+class SystemMetricKeys:
+    NODE_PREFIX = "__pf__.nodes"
+    LINES_COMPLETED = "__pf__.lines.completed"
+    LINES_FAILED = "__pf__.lines.failed"
+
+
 class ConnectionProviderConfig:
     LOCAL = "local"
     AZUREML = "azureml"
