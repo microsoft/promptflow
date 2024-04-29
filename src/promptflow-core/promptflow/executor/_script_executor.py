@@ -72,14 +72,15 @@ class ScriptExecutor(FlowExecutor):
         self._message_format = MessageFormatType.BASIC
         self._multimedia_processor = BasicMultimediaProcessor()
 
-    def _get_func_name(self):
+    @classmethod
+    def _get_func_name(cls, func: Callable):
         try:
-            original_func = getattr(self._func, "__original_function")
+            original_func = getattr(func, "__original_function")
             if isinstance(original_func, partial):
                 original_func = original_func.func
             return original_func.__qualname__
         except AttributeError:
-            return self._func.__qualname__
+            return func.__qualname__
 
     @contextlib.contextmanager
     def _exec_line_context(self, run_id, line_number):
@@ -158,7 +159,7 @@ class ScriptExecutor(FlowExecutor):
             error_type_and_message = f"({e.__class__.__name__}) {e}"
             ex = ScriptExecutionError(
                 message_format="Execution failure in '{func_name}': {error_type_and_message}",
-                func_name=self._get_func_name(),
+                func_name=self._func_name,
                 error_type_and_message=error_type_and_message,
                 error=e,
             )
@@ -460,6 +461,7 @@ class ScriptExecutor(FlowExecutor):
         else:
             self._func = func
             self._func_async = sync_to_async(func)
+        self._func_name = self._get_func_name(func=func)
         return func
 
     def _initialize_aggr_function(self, flow_obj: object):
