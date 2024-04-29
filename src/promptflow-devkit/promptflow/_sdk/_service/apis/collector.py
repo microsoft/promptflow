@@ -14,7 +14,30 @@ from flask import request
 from opentelemetry.proto.collector.trace.v1.trace_service_pb2 import ExportTraceServiceRequest
 
 from promptflow._sdk._errors import MissingAzurePackage
-from promptflow._sdk._tracing import _is_azure_ext_installed, process_otlp_trace_request
+from promptflow._sdk._tracing import _is_azure_ext_installed, process_event_request, process_otlp_trace_request
+
+
+def event_collector(
+    get_created_by_info_with_cache: Callable,
+    logger: logging.Logger,
+    cloud_trace_only: bool = False,
+    credential: Optional[object] = None,
+):
+    content_type = request.headers.get("Content-Type")
+    if "application/json" not in content_type:
+        raise NotImplementedError("Only JSON encoding is supported.")
+    events_data = request.json
+    if not isinstance(events_data, list):
+        raise NotImplementedError("Only list of events is supported.")
+    get_credential = credential if callable(credential) else lambda: credential
+    process_event_request(
+        events_data,
+        get_created_by_info_with_cache=get_created_by_info_with_cache,
+        logger=logger,
+        get_credential=get_credential,
+        cloud_trace_only=cloud_trace_only,
+    )
+    return "Events received", 200
 
 
 def trace_collector(

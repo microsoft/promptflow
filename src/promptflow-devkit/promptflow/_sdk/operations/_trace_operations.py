@@ -25,6 +25,9 @@ class TraceOperations:
     def get_event(self, event_id: str) -> typing.Dict:
         return Event.get(event_id=event_id)
 
+    def list_events(self, trace_id: str, span_id: typing.Optional[str] = None) -> typing.List[typing.Dict]:
+        return Event.list(trace_id=trace_id, span_id=span_id)
+
     def get_span(
         self,
         span_id: str,

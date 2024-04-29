@@ -124,3 +124,14 @@ class Event(Resource):
     def get(self, event_id: str):
         client: PFClient = get_client_from_request()
         return client.traces.get_event(event_id=event_id)
+
+
+@api.route("/Event/list")
+class EventList(Resource):
+    @api.response(code=200, description="Event list")
+    def get(self):
+        client: PFClient = get_client_from_request()
+        list_event_parser = api.parser()
+        list_event_parser.add_argument("trace_id", type=str, required=True)
+        args = list_event_parser.parse_args()
+        return client.traces.list_events(trace_id=args.trace_id)

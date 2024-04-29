@@ -21,7 +21,7 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import MissingAzurePackage
 from promptflow._sdk._service import Api
-from promptflow._sdk._service.apis.collector import trace_collector
+from promptflow._sdk._service.apis.collector import event_collector, trace_collector
 from promptflow._sdk._service.apis.connection import api as connection_api
 from promptflow._sdk._service.apis.experiment import api as experiment_api
 from promptflow._sdk._service.apis.flow import api as flow_api
@@ -67,6 +67,11 @@ def create_app():
     app.add_url_rule(
         "/v1/traces", view_func=lambda: trace_collector(get_created_by_info_with_cache, app.logger), methods=["POST"]
     )
+
+    def event_entry():
+        return event_collector(get_created_by_info_with_cache, app.logger)
+
+    app.add_url_rule("/v1/events", view_func=event_entry, methods=["POST"])
     app.add_url_rule("/v1.0/ui/traces/", defaults={"path": ""}, view_func=serve_trace_ui, methods=["GET"])
     app.add_url_rule("/v1.0/ui/traces/<path:path>", view_func=serve_trace_ui, methods=["GET"])
     app.add_url_rule("/v1.0/ui/chat/", defaults={"path": ""}, view_func=serve_chat_ui, methods=["GET"])

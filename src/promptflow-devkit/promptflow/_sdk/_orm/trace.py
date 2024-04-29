@@ -67,10 +67,12 @@ class Event(Base):
 
     @staticmethod
     @sqlite_retry
-    def list(trace_id: str, span_id: str) -> typing.List["Event"]:
+    def list(trace_id: str, span_id: typing.Optional[str] = None) -> typing.List["Event"]:
         with trace_mgmt_db_session() as session:
-            events = session.query(Event).filter(Event.trace_id == trace_id, Event.span_id == span_id).all()
-            return events
+            events_query = session.query(Event).filter(Event.trace_id == trace_id)
+            if span_id is not None:
+                events_query = events_query.filter(Event.span_id == span_id)
+            return events_query.all()
 
 
 class Span(Base):

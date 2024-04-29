@@ -333,6 +333,12 @@ def _inject_res_attrs_to_environ(
         otlp_endpoint = f"http://localhost:{pfs_port}/v1/traces"
         _logger.debug("set OTLP endpoint to environ: %s", otlp_endpoint)
         os.environ[OTEL_EXPORTER_OTLP_ENDPOINT] = otlp_endpoint
+    try:
+        from promptflow.tracing._constants import PF_EVENT_LOGGER_ENDPOINT
+
+        os.environ[PF_EVENT_LOGGER_ENDPOINT] = f"http://localhost:{pfs_port}/v1/events"
+    except ImportError:  # Ignore if the constant is not available
+        pass
 
 
 def _create_res(
@@ -458,6 +464,16 @@ def setup_exporter_to_pfs() -> None:
         _logger.info("trace feature is disabled in config, skip setup exporter to PFS.")
         return
 
+    try:
+        from promptflow.tracing._constants import PF_EVENT_LOGGER_ENDPOINT
+        from promptflow.tracing._event import HTTPEventLogger, get_event_logger_provider
+
+        event_logger_endpoint = os.getenv(PF_EVENT_LOGGER_ENDPOINT)
+        if event_logger_endpoint:
+            get_event_logger_provider().add_event_logger(HTTPEventLogger(event_logger_endpoint))
+    except ImportError:
+        pass
+
     _logger.debug("start setup exporter to prompt flow service...")
     # get resource attributes from environment
     # For local trace, collection is the only identifier for name and id
@@ -496,6 +512,7 @@ def setup_exporter_to_pfs() -> None:
         tracer_provider = TracerProvider(resource=res)
         trace.set_tracer_provider(tracer_provider)
         _logger.info("tracer provider is set with resource attributes: %s", res.attributes)
+
     # set exporter to PFS
     # get OTLP endpoint from environment
     endpoint = os.getenv(OTEL_EXPORTER_OTLP_ENDPOINT)
@@ -549,6 +566,19 @@ class OTLPSpanExporterWithTraceURL(OTLPSpanExporter):
         trace_ids = {f"0x{format_trace_id(span.get_span_context().trace_id)}" for span in spans}
         for trace_id in trace_ids:
             self._print_trace_url(trace_id)
+
+
+def process_event_request(
+    events: list,
+    get_created_by_info_with_cache: typing.Callable,
+    logger: logging.Logger,
+    get_credential: typing.Callable,
+    cloud_trace_only: bool = False,
+):
+    from promptflow._sdk.entities._trace import Event
+
+    for event in events:
+        Event.persist(event)
 
 
 def process_otlp_trace_request(

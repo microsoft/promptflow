@@ -12,6 +12,7 @@ from dataclasses import asdict, dataclass
 from promptflow._constants import (
     RUNNING_LINE_RUN_STATUS,
     SPAN_EVENTS_ATTRIBUTES_EVENT_ID,
+    SPAN_EVENTS_ATTRIBUTES_INDEX,
     SpanAttributeFieldName,
     SpanEventFieldName,
     SpanResourceAttributesFieldName,
@@ -36,6 +37,20 @@ class Event:
     def get(event_id: str) -> typing.Dict:
         orm_event = ORMEvent.get(event_id)
         return json.loads(orm_event.data)
+
+    @staticmethod
+    def persist(event: typing.Dict) -> None:
+        ORMEvent(
+            event_id=event.get(SPAN_EVENTS_ATTRIBUTES_EVENT_ID, str(uuid.uuid4())),
+            trace_id=event["trace_id"],
+            span_id=event["span_id"],
+            data=json.dumps(event),
+        ).persist()
+
+    @staticmethod
+    def list(trace_id: str, span_id: typing.Optional[str] = None) -> typing.List[typing.Dict]:
+        orm_events = ORMEvent.list(trace_id, span_id)
+        return [json.loads(orm_event.data) for orm_event in orm_events]
 
 
 class Span:
@@ -84,7 +99,20 @@ class Span:
 
     def _persist_events(self) -> None:
         # persist events to table `events` and update `events.attributes` inplace
+        persisted_events = ORMEvent.list(self.trace_id, self.span_id)
+        id2events = {event.event_id: json.loads(event.data) for event in persisted_events}
+        index2id = {
+            event[SPAN_EVENTS_ATTRIBUTES_INDEX]: event_id
+            for event_id, event in id2events.items()
+            if isinstance(event, dict) and isinstance(event.get(SPAN_EVENTS_ATTRIBUTES_INDEX), int)
+        }
         for i in range(len(self.events)):
+            #  Skip persisted events
+            if i in index2id:
+                self.events[i][SpanEventFieldName.ATTRIBUTES] = {
+                    SPAN_EVENTS_ATTRIBUTES_EVENT_ID: index2id[i],
+                }
+                continue
             event_id = str(uuid.uuid4())
             event = self.events[i]
             ORMEvent(
