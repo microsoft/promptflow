@@ -1,13 +1,13 @@
 # Multi Intent Conversational Language Understanding
 
-A flow that can be used to determine multiple intents in a user query leveraging an LLM with Conversational Language Understanding. 
+A flow that can be used to determine multiple intents in a user query leveraging an LLM with Conversational Language Understanding.
 
 This sample flow utilizes Azure AI Language's Conversational Language Understanding (CLU) to analyze conversational intents. It performs:
 
 - Breakdown of compound multi-intent user queries into single user queries using an LLM.
 - [Conversational Language Understanding](https://learn.microsoft.com/en-us/azure/ai-services/language-service/conversational-language-understanding/overview) on each of those single user queries.
 
-See the [`promptflow-azure-ai-language`](https://pypi.org/project/promptflow-azure-ai-language/) tool package reference documentation for further information. 
+See the [`promptflow-azure-ai-language`](https://pypi.org/project/promptflow-azure-ai-language/) tool package reference documentation for further information.
 
 Tools used in this flow:
 - `LLM` tool.
@@ -28,7 +28,7 @@ pip install -r requirements.txt
 Note: when using the Prompt flow SDK, it may be useful to also install the [`Prompt flow for VS Code`](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) extension (if using VS Code).
 
 ### Azure AI/ML Studio:
-Start an automatic runtime. Required packages will automatically be installed from the `requirements.txt` file.
+Start an compute session. Required packages will automatically be installed from the `requirements.txt` file.
 
 ## Setup connections
 To use the `llm` tool, you must have an [Azure OpenAI Service Resource](https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/create-resource?pivots=web-portal). Create one if necessary. From your Azure OpenAI Service Resource, obtain its `api_key` and `endpoint`.
@@ -89,7 +89,7 @@ Run flow.
 The flow uses a `LLM` node to break down compound user queries into simple user queries. For example, "Play some blues rock and turn up the volume" will be broken down to "["Play some blues rock", "Turn Up the volume"]".
 This is then passed into the `CLU` tool to recognize intents and entities in each of the utterances.
 
-This flow showcases the capabilities of CLU and a simple way to quickly test them on a deployed CLU model. Consider extending this flow to create a media app that acts upon user conversational requests, such as modifying the volume of a speaker, etc. 
+This flow showcases the capabilities of CLU and a simple way to quickly test them on a deployed CLU model. Consider extending this flow to create a media app that acts upon user conversational requests, such as modifying the volume of a speaker, etc.
 
 ## Contact
 Please reach out to Azure AI Language (<taincidents@microsoft.com>) with any issues.

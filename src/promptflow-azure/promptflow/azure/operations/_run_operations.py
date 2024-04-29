@@ -643,7 +643,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                         f"The run {run.name!r} is in status {run.status} and produce no new logs for {timeout} seconds,"
                         "streaming is stopped. If the final status is 'NotStarted', "
                         "Please make sure you are using the latest runtime.\n"
-                        "For automatic runtime case, please try extending the timeout value.\n"
+                        "For compute session case, please try extending the timeout value.\n"
                     )
                     break
 

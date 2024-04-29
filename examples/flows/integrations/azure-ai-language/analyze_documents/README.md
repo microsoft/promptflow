@@ -1,6 +1,6 @@
 # Analyze Documents
 
-A flow that analyzes documents with various language-based Machine Learning models. 
+A flow that analyzes documents with various language-based Machine Learning models.
 
 This sample flow utilizes Azure AI Language's pre-built and optimized language models to perform various analyses on documents. It performs:
 - [Translation](https://learn.microsoft.com/en-us/rest/api/cognitiveservices/translator/translator/translate?view=rest-cognitiveservices-translator-v3.0&tabs=HTTP)
@@ -9,7 +9,7 @@ This sample flow utilizes Azure AI Language's pre-built and optimized language m
 - [Document Summarization](https://learn.microsoft.com/en-us/azure/ai-services/language-service/summarization/overview?tabs=document-summarization)
 - [Sentiment Analysis & Opinion Mining](https://learn.microsoft.com/en-us/azure/ai-services/language-service/sentiment-opinion-mining/overview?tabs=prebuilt)
 
-See the [`promptflow-azure-ai-language`](https://pypi.org/project/promptflow-azure-ai-language/) tool package reference documentation for further information. 
+See the [`promptflow-azure-ai-language`](https://pypi.org/project/promptflow-azure-ai-language/) tool package reference documentation for further information.
 
 Tools used in this flow:
 - `python` tool.
@@ -36,7 +36,7 @@ Note: when using the Prompt flow SDK, it may be useful to also install the [`Pro
 
 
 ### Azure AI/ML Studio:
-Start an automatic runtime. Required packages will automatically be installed from the `requirements.txt` file.
+Start an compute session. Required packages will automatically be installed from the `requirements.txt` file.
 
 ## Setup connections
 To use the `promptflow-azure-ai-language` package, you must have an [Azure AI Language Resource](https://azure.microsoft.com/en-us/products/ai-services/ai-language). [Create a Language Resource](https://portal.azure.com/#create/Microsoft.CognitiveServicesTextAnalytics) if necessary. From your Language Resource, obtain its `api_key` and `endpoint`.
