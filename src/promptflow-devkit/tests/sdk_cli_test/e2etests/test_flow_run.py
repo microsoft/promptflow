@@ -1889,27 +1889,26 @@ class TestFlowRun:
         run = pf.runs.create_or_update(run=run)
         assert_batch_run_result(run, pf, assert_func)
 
-    def test_batch_run_with_default(self, pf):
-        # TODO: pass this after executor change merged.
-        def assert_func(details_dict):
-            return details_dict["outputs.func_input"] == [
-                "func_input",
-                "func_input",
-                "func_input",
-                "func_input",
-            ] and details_dict["outputs.obj_input"] == ["val", "val", "val", "val"]
+    def test_flow_run_with_enriched_error_message(self, pf):
+        config = AzureOpenAIModelConfiguration(
+            connection="azure_open_ai_connection", azure_deployment="gpt-35-turbo-0125"
+        )
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/stream_prompty")
+        init_config = {"model_config": config}
 
-        flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_with_yaml_default")
         run = pf.run(
             flow=flow_path,
-            data=f"{EAGER_FLOWS_DIR}/basic_with_yaml_default/inputs.jsonl",
-            init={},
+            data=f"{EAGER_FLOWS_DIR}/stream_prompty/inputs.jsonl",
+            column_mapping={
+                "question": "${data.question}",
+                "chat_history": "${data.chat_history}",
+            },
+            init=init_config,
         )
-
-        assert_batch_run_result(run, pf, assert_func)
-
-    def test_update_signature_in_flow_run(self):
-        pass
+        run_dict = run._to_dict()
+        error = run_dict["error"]["additionalInfo"][0]["info"]["errors"][0]["error"]
+        assert "Execution failure in 'ChatFlow.__call__" in error["message"]
+        assert "raise Exception" in error["additionalInfo"][0]["info"]["traceback"]
 
 
 def assert_batch_run_result(run: Run, pf: PFClient, assert_func):
