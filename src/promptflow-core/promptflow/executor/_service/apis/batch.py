@@ -39,6 +39,7 @@ def initialize(request: InitializationRequest):
             connections=request.connections,
             worker_count=request.worker_count,
             line_timeout_sec=request.line_timeout_sec,
+            init_kwargs=request.init_kwargs,
         )
         batch_coordinator.start()
         # return json response
