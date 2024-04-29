@@ -1353,6 +1353,42 @@ class TestFlowRun:
                 {"inputs.input2": ["input1"], "inputs.line_number": [0], "outputs.output": ["input1"]},
                 id="with_async_func",
             ),
+            pytest.param(
+                {
+                    "flow": Path(f"{EAGER_FLOWS_DIR}/code_yaml_signature_merge"),
+                    "data": f"{EAGER_FLOWS_DIR}/code_yaml_signature_merge/data.jsonl",
+                    "code": f"{EAGER_FLOWS_DIR}/code_yaml_signature_merge",
+                    "column_mapping": {
+                        "func_input1": "${data.func_input1}",
+                        "func_input3": "${data.func_input3}",
+                        "func_input2": "${data.func_input2}",
+                    },
+                    "init": {"obj_input1": "obj_input1", "obj_input2": 1, "obj_input3": "obj_input3"},
+                },
+                {
+                    "entry": "partial_signatures:MyFlow",
+                    "inputs": {
+                        "func_input1": {"type": "string"},
+                        "func_input2": {"type": "bool"},
+                        "func_input3": {"type": "string"},
+                    },
+                    "init": {
+                        "obj_input1": {"type": "string"},
+                        "obj_input2": {"type": "int"},
+                        "obj_input3": {"type": "string"},
+                    },
+                    "outputs": {"output": {"type": "string"}},
+                },
+                lambda: True,
+                {
+                    "inputs.func_input1": ["func_input"],
+                    "inputs.func_input2": [2],
+                    "inputs.func_input3": [3],
+                    "inputs.line_number": [0],
+                    "outputs.output": ["func_input"],
+                },
+                id="with_signature_merge",
+            ),
         ],
     )
     def test_flex_flow_run(

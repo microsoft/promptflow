@@ -1,11 +1,15 @@
-entry: entry:my_flow
+entry: partial_signatures:MyFlow
 inputs:
   func_input1:
     type: string
   func_input2:
-    type: string
+    type: bool
   func_input3:
     type: string
 init:
-  obj_input3:
+  obj_input1:
+    type: string
+  obj_input2:
     type: int
+  obj_input3:
+    type: string
