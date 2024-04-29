@@ -97,10 +97,16 @@ class LLMBase(ABC):
         self.logger = logging.getLogger(repr(self))
 
         # Metric tracking
-        self.lock = asyncio.Lock()
+        self._lock = None
         self.response_times: Deque[Union[int, float]] = deque(maxlen=MAX_TIME_TAKEN_RECORDS)
         self.step = 0
         self.error_count = 0
+
+    @property
+    async def lock(self):
+        if self._lock is None:
+            self._lock = asyncio.Lock()
+        return self._lock
 
     @abstractmethod
     def get_model_params(self) -> dict:
