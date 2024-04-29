@@ -32,7 +32,7 @@ from filelock import FileLock
 from keyring.errors import NoKeyringError
 from marshmallow import ValidationError
 
-from promptflow._constants import ENABLE_MULTI_CONTAINER_KEY, EXTENSION_UA, FLOW_FLEX_YAML, FlowLanguage
+from promptflow._constants import ENABLE_MULTI_CONTAINER_KEY, EXTENSION_UA, FLOW_FLEX_YAML, LANGUAGE_KEY, FlowLanguage
 from promptflow._core.entry_meta_generator import generate_flow_meta as _generate_flow_meta
 from promptflow._sdk._constants import (
     AZURE_WORKSPACE_REGEX_FORMAT,
@@ -909,34 +909,6 @@ def convert_time_unix_nano_to_timestamp(time_unix_nano: str) -> datetime.datetim
     return datetime.datetime.utcfromtimestamp(seconds)
 
 
-def parse_kv_from_pb_attribute(attribute: Dict) -> Tuple[str, str]:
-    attr_key = attribute["key"]
-    # suppose all values are flattened here
-    # so simply regard the first value as the attribute value
-    attr_value = list(attribute["value"].values())[0]
-    return attr_key, attr_value
-
-
-def flatten_pb_attributes(attributes: List[Dict]) -> Dict:
-    flattened_attributes = {}
-    for attribute in attributes:
-        attr_key, attr_value = parse_kv_from_pb_attribute(attribute)
-        flattened_attributes[attr_key] = attr_value
-    return flattened_attributes
-
-
-def parse_otel_span_status_code(value: int) -> str:
-    # map int value to string
-    # https://github.com/open-telemetry/opentelemetry-specification/blob/v1.22.0/specification/trace/api.md#set-status
-    # https://github.com/open-telemetry/opentelemetry-python/blob/v1.22.0/opentelemetry-api/src/opentelemetry/trace/status.py#L22-L32
-    if value == 0:
-        return "Unset"
-    elif value == 1:
-        return "Ok"
-    else:
-        return "Error"
-
-
 def extract_workspace_triad_from_trace_provider(trace_provider: str) -> AzureMLWorkspaceTriad:
     match = re.match(AZURE_WORKSPACE_REGEX_FORMAT, trace_provider)
     if not match or len(match.groups()) != 5:
@@ -978,9 +950,10 @@ def generate_yaml_entry_without_recover(entry: Union[str, PathLike, Callable], c
 def generate_yaml_entry(entry: Union[str, PathLike, Callable], code: Path = None):
     """Generate yaml entry to run."""
     from promptflow._proxy import ProxyFactory
+    from promptflow._sdk.entities._flows.base import FlowBase
 
     executor_proxy = ProxyFactory().get_executor_proxy_cls(FlowLanguage.Python)
-    if callable(entry) or executor_proxy.is_flex_flow_entry(entry=entry):
+    if not isinstance(entry, FlowBase) and (callable(entry) or executor_proxy.is_flex_flow_entry(entry=entry)):
         with create_temp_flex_flow_yaml(entry, code) as flow_yaml_path:
             yield flow_yaml_path
     else:
@@ -1131,3 +1104,26 @@ def load_input_data(data_path):
             return json.load(f)
     else:
         raise ValueError("Only support jsonl or json file as input.")
+
+
+def resolve_flow_language(
+    *,
+    flow_path: Union[str, Path, PathLike, None] = None,
+    yaml_dict: Optional[dict] = None,
+    working_dir: Union[str, Path, PathLike, None] = None,
+    # add kwargs given this function will be used in runtime and may have more parameters in the future
+    **kwargs,
+) -> str:
+    """Get language of a flow. Will return 'python' for Prompty."""
+    if flow_path is None and yaml_dict is None:
+        raise UserErrorException("Either flow_path or yaml_dict should be provided.")
+    if flow_path is not None and yaml_dict is not None:
+        raise UserErrorException("Only one of flow_path and yaml_dict should be provided.")
+    if flow_path is not None:
+        flow_path, flow_file = resolve_flow_path(flow_path, base_path=working_dir, check_flow_exist=False)
+        file_path = flow_path / flow_file
+        if file_path.is_file() and file_path.suffix.lower() in (".yaml", ".yml"):
+            yaml_dict = load_yaml(file_path)
+        else:
+            raise UserErrorException(f"Invalid flow path {file_path.as_posix()}, must exist and of suffix yaml or yml.")
+    return yaml_dict.get(LANGUAGE_KEY, FlowLanguage.Python)

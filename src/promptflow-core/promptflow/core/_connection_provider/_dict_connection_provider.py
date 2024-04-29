@@ -9,6 +9,7 @@ from promptflow._utils.utils import try_import
 from promptflow.contracts.tool import ConnectionType
 from promptflow.contracts.types import Secret
 
+from .._errors import ConnectionNotFound
 from ._connection_provider import ConnectionProvider
 
 
@@ -98,8 +99,14 @@ class DictConnectionProvider(ConnectionProvider):
         return [c for c in self._connections.values()]
 
     def get(self, name: str) -> Any:
-        if isinstance(name, str):
-            return self._connections.get(name)
-        elif ConnectionType.is_connection_value(name):
+        if ConnectionType.is_connection_value(name):
             return name
-        return None
+        connection = None
+        if isinstance(name, str):
+            connection = self._connections.get(name)
+        if not connection:
+            raise ConnectionNotFound(
+                f"Connection {name!r} not found in dict connection provider. "
+                f"Available keys are {list(self._connections.keys())}."
+            )
+        return connection

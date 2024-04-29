@@ -195,6 +195,7 @@
     "autogen",
     "spawnve",
     "addrs",
+    "pycache",
     "pywin",
     "STARTF",
     "mltable",
@@ -217,7 +218,8 @@
     "dcid",
     "piezo",
     "Piezo",
-    "cmpop"
+    "cmpop",
+    "omap"
   ],
   "flagWords": [
     "Prompt Flow"

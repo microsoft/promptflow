@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from dateutil import parser as date_parser
 
-from promptflow._constants import FlowType, OutputsFolderName
+from promptflow._constants import FlowType, OutputsFolderName, TokenKeys
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
@@ -710,8 +710,18 @@ class Run(YAMLTranslatableMixin):
         end_time = self._end_time.isoformat() + "Z" if self._end_time else None
 
         # extract properties that needs to be passed to the request
-        total_tokens = self.properties[FlowRunProperties.SYSTEM_METRICS].get("total_tokens", 0)
-        properties = {Local2CloudProperties.TOTAL_TOKENS: total_tokens}
+        properties = {
+            # add instance_results.jsonl path to run properties, which is required by UI feature.
+            Local2CloudProperties.EVAL_ARTIFACTS: '[{"path": "instance_results.jsonl", "type": "table"}]',
+        }
+        # add system metrics to run properties
+        for token_key in TokenKeys.get_all_values():
+            final_key = f"{Local2CloudProperties.PREFIX}.{token_key}"
+            value = self.properties[FlowRunProperties.SYSTEM_METRICS].get(token_key, 0)
+            if value is not None:
+                properties[final_key] = value
+
+        # add user properties to run properties
         for property_key in Local2CloudUserProperties.get_all_values():
             value = self.properties.get(property_key, None)
             if value is not None:

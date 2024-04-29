@@ -22,7 +22,7 @@ model:
   api: chat
   configuration:
     type: azure_openai
-    connection: <connection_name>
+    connection: open_ai_connection
     azure_deployment: gpt-35-turbo-0125
   parameters:
     max_tokens: 128
@@ -66,7 +66,7 @@ Prompty can return the content of the first choice as a dictionary object when t
 - The `response_format` is defined as `type: json_object` in the parameters
 - The template specifies the JSON format for the return value.
 
-**Note**: `response_format` is compatible with `GPT-4 Turbo` and all GPT-3.5 Turbo models newer than `gpt-3.5-turbo-1106`. For more details, refer to this [document](https://platform.openai.com/docs/api-reference/chat/create#chat-create-response_format).
+**Note**: `json_object` response_format is compatible with `GPT-4 Turbo` and all GPT-3.5 Turbo models newer than `gpt-3.5-turbo-1106`. For more details, refer to this [document](https://platform.openai.com/docs/api-reference/chat/create#chat-create-response_format).
 
 Here’s how to configure a prompty for JSON object output:
 ```yaml

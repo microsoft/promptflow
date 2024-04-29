@@ -10,6 +10,7 @@ from openai import Stream
 from openai.types.chat import ChatCompletion
 
 from promptflow._sdk._pf_client import PFClient
+from promptflow.client import load_flow
 from promptflow.core import AsyncPrompty, Flow, Prompty
 from promptflow.core._errors import (
     InvalidConnectionError,
@@ -19,7 +20,7 @@ from promptflow.core._errors import (
 )
 from promptflow.core._model_configuration import AzureOpenAIModelConfiguration
 from promptflow.core._prompty_utils import convert_model_configuration_to_connection
-from promptflow.recording.record_mode import is_live, is_record, is_replay
+from promptflow.exceptions import UserErrorException
 
 TEST_ROOT = PROMPTFLOW_ROOT / "tests"
 DATA_DIR = TEST_ROOT / "test_configs/datas"
@@ -172,6 +173,14 @@ class TestPrompty:
             Prompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", model=model_dict)
         assert "Cannot configure model config and connection" in ex.value.message
 
+        prompty = load_flow(source=f"{PROMPTY_DIR}/prompty_example.prompty")
+        result = prompty(question="what is the result of 1+1?")
+        assert "2" in result
+
+        with pytest.raises(UserErrorException) as ex:
+            prompty("what is the result of 1+1?")
+        assert "Prompty can only be called with keyword arguments." in ex.value.message
+
     def test_prompty_async_call(self):
         async_prompty = AsyncPrompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty")
         with pytest.raises(MissingRequiredInputError) as e:
@@ -201,6 +210,13 @@ class TestPrompty:
 
             output = json.loads(f.readline())
             assert "6" in output["output"]
+
+        # test pf run wile loaded prompty
+        prompty = load_flow(source=f"{PROMPTY_DIR}/prompty_example.prompty")
+        run = pf.run(flow=prompty, data=f"{DATA_DIR}/prompty_inputs.jsonl")
+        assert run.status == "Completed"
+        run_dict = run._to_dict()
+        assert not run_dict.get("error", None), f"error in run_dict {run_dict['error']}"
 
     def test_prompty_test(self, pf: PFClient):
         result = pf.test(
@@ -242,12 +258,10 @@ class TestPrompty:
         assert isinstance(result, ChatCompletion)
 
     def test_prompty_with_stream(self, pf: PFClient):
-        if is_live():
-            # When running multiple test cases, the type is generator type.
-            # When running alone this case, the type is Stream.
-            stream_type = (types.GeneratorType, Stream)
-        elif is_record() or is_replay():
+        if pytest.is_record or pytest.is_replay:
             stream_type = types.GeneratorType
+        else:
+            stream_type = (types.GeneratorType, Stream)
         # Test text format with stream=true
         prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", model={"parameters": {"stream": True}})
         result = prompty(question="what is the result of 1+1?")

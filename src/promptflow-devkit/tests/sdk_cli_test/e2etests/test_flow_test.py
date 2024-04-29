@@ -269,11 +269,19 @@ class TestFlowTest:
                 cwd=notebook_path.parent,
             )
 
-    def test_eager_flow_test(self):
+    def test_eager_flow_test_without_yaml(self):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml_return_output/").absolute()
         with _change_working_dir(flow_path):
             result = _client._flows.test(flow="entry:my_flow", inputs={"input_val": "val1"})
             assert result == "Hello world! val1"
+
+    def test_class_based_eager_flow_test_without_yaml(self):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_callable_class_without_yaml/").absolute()
+        with _change_working_dir(flow_path):
+            result = _client._flows.test(
+                flow="callable_without_yaml:MyFlow", inputs={"func_input": "input"}, init={"obj_input": "val"}
+            )
+            assert result["func_input"] == "input"
 
     def test_eager_flow_test_with_yaml(self):
         clear_module_cache("entry")
@@ -448,11 +456,11 @@ class TestFlowTest:
 
         flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_callable_class")
         result1 = pf.test(flow=flow_path, inputs={"func_input": "input"}, init={"obj_input": "val"})
-        assert result1["func_input"] == "input"
+        assert result1.func_input == "input"
 
         result2 = pf.test(flow=flow_path, inputs={"func_input": "input"}, init={"obj_input": "val"})
-        assert result2["func_input"] == "input"
-        assert result1["obj_id"] != result2["obj_id"]
+        assert result2.func_input == "input"
+        assert result1.obj_id != result2.obj_id
 
         with pytest.raises(FlowEntryInitializationError) as ex:
             pf.test(flow=flow_path, inputs={"func_input": "input"}, init={"invalid_init_func": "val"})
@@ -469,15 +477,15 @@ class TestFlowTest:
     def test_flow_flow_with_sample(self, pf):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_callable_class_with_sample_file")
         result1 = pf.test(flow=flow_path, init={"obj_input": "val"})
-        assert result1["func_input"] == "mock_input"
+        assert result1.func_input == "mock_input"
 
         result2 = pf.test(
             flow=flow_path, init={"obj_input": "val"}, inputs=f"{EAGER_FLOWS_DIR}/basic_callable_class/inputs.jsonl"
         )
-        assert result2["func_input"] == "func_input"
+        assert result2.func_input == "func_input"
 
         result3 = pf.test(flow=flow_path, init={"obj_input": "val"}, inputs={"func_input": "mock_func_input"})
-        assert result3["func_input"] == "mock_func_input"
+        assert result3.func_input == "mock_func_input"
 
     def test_flex_flow_with_model_config(self, pf):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_model_config")

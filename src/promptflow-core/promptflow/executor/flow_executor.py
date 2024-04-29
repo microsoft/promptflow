@@ -867,7 +867,7 @@ class FlowExecutor:
         context: FlowExecutionContext,
         stream=False,
     ):
-        with self._start_flow_span(inputs) as span, self._record_keyboard_interrupt_to_span(span):
+        with self._start_flow_span(inputs) as span, self._record_cancellation_exceptions_to_span(span):
             output, nodes_outputs = await self._traverse_nodes_async(inputs, context)
             #  TODO: Also stringify async generator output
             output = self._stringify_generator_output(output) if not stream else output
@@ -882,17 +882,17 @@ class FlowExecutor:
         context: FlowExecutionContext,
         stream=False,
     ):
-        with self._start_flow_span(inputs) as span, self._record_keyboard_interrupt_to_span(span):
+        with self._start_flow_span(inputs) as span, self._record_cancellation_exceptions_to_span(span):
             output, nodes_outputs = self._traverse_nodes(inputs, context)
             output = self._stringify_generator_output(output) if not stream else output
             self._exec_post_process(inputs, output, nodes_outputs, run_info, run_tracker, span, stream)
             return output, extract_aggregation_inputs(self._flow, nodes_outputs)
 
     @contextlib.contextmanager
-    def _record_keyboard_interrupt_to_span(self, span: Span):
+    def _record_cancellation_exceptions_to_span(self, span: Span):
         try:
             yield
-        except KeyboardInterrupt as ex:
+        except (KeyboardInterrupt, asyncio.CancelledError) as ex:
             if span.is_recording():
                 span.record_exception(ex)
                 span.set_status(StatusCode.ERROR, "Execution cancelled.")

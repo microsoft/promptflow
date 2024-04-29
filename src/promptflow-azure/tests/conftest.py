@@ -11,10 +11,30 @@ from pytest_mock import MockerFixture
 
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
 from promptflow._core.connection_manager import ConnectionManager
-from promptflow._sdk.entities._connection import AzureOpenAIConnection
+from promptflow._sdk._pf_client import PFClient as LocalClient
+from promptflow._sdk.entities._connection import AzureOpenAIConnection, _Connection
 from promptflow._utils.context_utils import _change_working_dir
 
 load_dotenv()
+_connection_setup = False
+
+
+@pytest.fixture
+def local_client() -> LocalClient:
+    yield LocalClient()
+
+
+@pytest.fixture
+def setup_local_connection(local_client, azure_open_ai_connection):
+    global _connection_setup
+    if _connection_setup:
+        return
+    connection_dict = json.loads(open(CONNECTION_FILE, "r").read())
+    for name, _dct in connection_dict.items():
+        if _dct["type"] == "BingConnection":
+            continue
+        local_client.connections.create_or_update(_Connection._from_execution_connection_dict(name=name, data=_dct))
+    _connection_setup = True
 
 
 @pytest.fixture(autouse=True, scope="session")
