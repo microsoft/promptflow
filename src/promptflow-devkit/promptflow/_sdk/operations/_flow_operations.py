@@ -525,14 +525,14 @@ class FlowOperations(TelemetryMixin):
         update_flow_tools_json: bool = True,
     ):
         # TODO: confirm if we need to import this
-        from promptflow._sdk._orchestrator import variant_overwrite_context
+        from promptflow._sdk._orchestrator import flow_overwrite_context
 
         flow_copy_target = Path(output)
         flow_copy_target.mkdir(parents=True, exist_ok=True)
 
         # resolve additional includes and copy flow directory first to guarantee there is a final flow directory
         # TODO: shall we pop "node_variants" unless keep-variants is specified?
-        with variant_overwrite_context(
+        with flow_overwrite_context(
             flow=flow,
             tuning_node=tuning_node,
             variant=node_variant,

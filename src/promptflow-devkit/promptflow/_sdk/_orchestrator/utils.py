@@ -45,6 +45,7 @@ from promptflow._sdk._utils import (
     get_used_connection_names_from_dict,
     update_dict_value_with_connections,
 )
+from promptflow._sdk._utils.signature_utils import update_signatures
 from promptflow._sdk.entities._flows import FlexFlow, Flow, Prompty
 from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag
 from promptflow._utils.logger_utils import FileHandler, get_cli_sdk_logger
@@ -202,7 +203,7 @@ def remove_additional_includes(flow_path: Path):
 
 
 @contextlib.contextmanager
-def variant_overwrite_context(
+def flow_overwrite_context(
     flow: Flow,
     tuning_node: str = None,
     variant: str = None,
@@ -214,6 +215,7 @@ def variant_overwrite_context(
     """Override variant and connections in the flow."""
     flow_dag = flow._data
     flow_dir_path = Path(flow.code)
+    # TODO: refine this logic
     if getattr(flow, "additional_includes", []):
         # Merge the flow folder and additional includes to temp folder for both eager flow & dag flow.
         with _merge_local_code_and_additional_includes(code_path=flow_dir_path) as temp_dir:
@@ -222,23 +224,31 @@ def variant_overwrite_context(
                 overwrite_variant(flow_dag, tuning_node, variant, drop_node_variants=drop_node_variants)
                 overwrite_connections(flow_dag, connections, working_dir=flow_dir_path)
                 overwrite_flow(flow_dag, overrides)
+            else:
+                update_signatures(code=flow_dir_path, data=flow_dag)
             flow_dag.pop("additional_includes", None)
             dump_flow_dag(flow_dag, Path(temp_dir))
             flow = load_flow(temp_dir)
             yield flow
-    elif isinstance(flow, (FlexFlow, Prompty)):
-        # eager flow and prompty don't support overwrite variant
+    elif isinstance(flow, Prompty):
+        # prompty don't support override
         yield flow
     else:
         # Generate a flow, the code path points to the original flow folder,
         # the dag path points to the temp dag file after overwriting variant.
         with tempfile.TemporaryDirectory() as temp_dir:
-            overwrite_variant(flow_dag, tuning_node, variant, drop_node_variants=drop_node_variants)
-            overwrite_connections(flow_dag, connections, working_dir=flow_dir_path)
-            overwrite_flow(flow_dag, overrides)
-            flow_path = dump_flow_dag(flow_dag, Path(temp_dir))
-            flow = Flow(code=flow_dir_path, path=flow_path, dag=flow_dag)
-            yield flow
+            if isinstance(flow, FlexFlow):
+                update_signatures(code=flow_dir_path, data=flow_dag)
+                flow_path = dump_flow_dag(flow_dag, Path(temp_dir))
+                flow = FlexFlow(code=flow_dir_path, path=flow_path, data=flow_dag, entry=flow.entry)
+                yield flow
+            else:
+                overwrite_variant(flow_dag, tuning_node, variant, drop_node_variants=drop_node_variants)
+                overwrite_connections(flow_dag, connections, working_dir=flow_dir_path)
+                overwrite_flow(flow_dag, overrides)
+                flow_path = dump_flow_dag(flow_dag, Path(temp_dir))
+                flow = Flow(code=flow_dir_path, path=flow_path, dag=flow_dag)
+                yield flow
 
 
 class SubmitterHelper:
