@@ -8,6 +8,3 @@
 # So we need to rename the directory to _utility to avoid this issue.
 # On the other hand, promptflow-runtime imported some functions from _utils previously, so we need to keep both _utils
 # directory and _utils.py file for backward compatibility.
-
-# TODO: rename _utility to _utils after promptflow-runtime start  to give warning
-#   on environment with lower version of promptflow

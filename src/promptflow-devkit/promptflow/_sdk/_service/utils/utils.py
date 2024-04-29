@@ -31,7 +31,7 @@ from promptflow._sdk._constants import (
     PF_SERVICE_PORT_FILE,
 )
 from promptflow._sdk._errors import ConnectionNotFoundError, RunNotFoundError
-from promptflow._sdk._utility.general_utils import (
+from promptflow._sdk._utilities.general_utils import (
     get_promptflow_devkit_version,
     get_promptflow_sdk_version,
     read_write_by_user,

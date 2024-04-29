@@ -45,7 +45,7 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import InvalidRunStatusError, RunNotFoundError, RunOperationParameterError
 from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, monitor_operation
-from promptflow._sdk._utility.general_utils import (
+from promptflow._sdk._utilities.general_utils import (
     incremental_print,
     is_multi_container_enabled,
     is_remote_uri,

@@ -33,8 +33,8 @@ from promptflow._sdk._errors import (
 from promptflow._sdk._load_functions import load_flow, load_run
 from promptflow._sdk._orchestrator.utils import SubmitterHelper
 from promptflow._sdk._run_functions import create_yaml_run
-from promptflow._sdk._utility.general_utils import _get_additional_includes
-from promptflow._sdk._utility.tracing_utils import _parse_otel_span_status_code
+from promptflow._sdk._utilities.general_utils import _get_additional_includes
+from promptflow._sdk._utilities.tracing_utils import _parse_otel_span_status_code
 from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
