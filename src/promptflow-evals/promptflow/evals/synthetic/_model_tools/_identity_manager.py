@@ -21,10 +21,16 @@ class APITokenManager(ABC):
     def __init__(self, logger, auth_header="Bearer"):
         self.logger = logger
         self.auth_header = auth_header
-        self.lock = asyncio.Lock()
+        self._lock = None
         self.credential = self.get_aad_credential()
         self.token = None
         self.last_refresh_time = None
+
+    @property
+    def lock(self):
+        if self._lock is None:
+            self._lock = asyncio.Lock()
+        return self._lock
 
     def get_aad_credential(self):
         identity_client_id = os.environ.get("DEFAULT_IDENTITY_CLIENT_ID", None)
