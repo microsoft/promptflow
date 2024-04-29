@@ -72,7 +72,7 @@ def build_index(
             "In order to use build_index to build an Index locally, you must have azureml-rag installed."
         )
         raise e
-    
+
     is_serverless_connection = False
     if not embeddings_model_config.model_name:
         raise ValueError("Please specify embeddings_model_config.model_name")
@@ -81,7 +81,9 @@ def build_index(
         # If model uri is None, it is *considered* as a serverless endpoint for now.
         # TODO: depends on azureml.rag.Embeddings.from_uri to finalize a scheme for different embeddings
         if not embeddings_model_config.connection_config:
-            raise ValueError("Please specify embeddings_model_config.connection_config to use serverless embedding models")
+            raise ValueError(
+                "Please specify embeddings_model_config.connection_config to use serverless models"
+            )
         embeddings_model_uri = None
         is_serverless_connection = True
     else:
@@ -263,7 +265,7 @@ def _create_mlindex_from_existing_ai_search(
     else:
         ai_search_connection = get_connection_by_id_v2(ai_search_config.ai_search_connection_id)
         if isinstance(ai_search_connection, dict):
-            endpoint  = ai_search_connection["properties"]["target"]
+            endpoint = ai_search_connection["properties"]["target"]
         elif ai_search_connection.target:
             endpoint = ai_search_connection.target
         else:
