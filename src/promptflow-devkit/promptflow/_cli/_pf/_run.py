@@ -35,7 +35,7 @@ from promptflow._sdk._constants import MAX_SHOW_DETAILS_RESULTS, get_list_view_t
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._run_functions import _create_run, _resume_run
-from promptflow._sdk._utils import generate_yaml_entry, safe_parse_object_list
+from promptflow._sdk._utilities.general_utils import generate_yaml_entry, safe_parse_object_list
 from promptflow._sdk.entities import Run
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import UserErrorException
