@@ -15,10 +15,12 @@ class TraceType(str, Enum):
     LANGCHAIN = "LangChain"
     FLOW = "Flow"
     EMBEDDING = "Embedding"
+    FILE = "File"
     ASSISTANT = "Assistant"
     THREAD = "Thread"
     MESSAGE = "Message"
     RUN = "Run"
+    VECTOR_STORE = "VectorStore"
 
 @dataclass
 class Trace:
