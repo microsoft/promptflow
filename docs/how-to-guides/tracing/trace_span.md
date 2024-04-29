@@ -36,15 +36,15 @@ Each span in PromptFlow is enriched with a set of standard attributes that provi
 
 | Attribute | Type | Description | Examples | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) |
 |---|---|---|---|---|
-| framework | string | Identifies the framework within which the trace is captured.  | promptflow | `Required` |
-| node_name | string | Denotes the name of the flow node. | chat | `Conditionally Required` if the flow is a Directed Acyclic Graph (DAG) flow. |
-| span_type | string | Specifies the type of span, such as LLM or Flow. | LLM | `Required` |
+| framework | string | This attribute specifies the framework in which the trace was recorded. For our project, this value is consistently set to promptflow.  | promptflow | `Required` |
+| node_name | string | Denotes the name of the flow node. | chat | `Conditionally Required` if the flow is a Directed Acyclic Graph ([DAG](https://microsoft.github.io/promptflow/concepts/concept-flows.html#dag-flow)) flow. |
+| span_type | string | Specifies the type of span, such as LLM or Flow. See [this](#promptflow-span-types-detailed-specifications) for details | LLM | `Required` |
 | line_run_id | string | Unique identifier for the execution run within PromptFlow. | d23159d5-cae0-4de6-a175-295c715ce251 | `Required` |
 | function | string | The function associated with the span. | search | `Recommended` |
 | session_id | string | Unique identifier for chat sessions. | 4ea1a462-7617-439f-a40c-12a8b93f51fb | `Opt-In` |
-| referenced.line_run_id | string | Represents the line run ID that is the source of the evaluation run. | f747f7b8-983c-4bf2-95db-0ec3e33d4fd1 | `Conditionally Required`: Only used in evaluation runs |
-| batch_run_id | string | The batch run ID when in batch mode. | 61daff70-80d5-4e79-a50b-11b38bb3d344 | `Conditionally Required`: Only used in batch runs |
-| referenced.batch_run_id | string | Notes the batch run ID against which an evaluation flow ran. | 851b32cb-545c-421d-8e51-0a3ea66f0075 | `Conditionally Required`: Only used in evaluation runs |
+| referenced.line_run_id | string | Represents the line run ID that is the source of the evaluation run. | f747f7b8-983c-4bf2-95db-0ec3e33d4fd1 | `Conditionally Required` only used in evaluation runs - runs on [evaluation flow](https://microsoft.github.io/promptflow/concepts/concept-flows.html#flow-types).|
+| batch_run_id | string | The batch run ID when in batch mode. | 61daff70-80d5-4e79-a50b-11b38bb3d344 | `Conditionally Required` only used in batch runs |
+| referenced.batch_run_id | string | Notes the batch run ID against which an evaluation flow ran. | 851b32cb-545c-421d-8e51-0a3ea66f0075 | `Conditionally Required` only used in evaluation runs |
 | line_number | int | The line number within a batch run, starting from 0. | `1` | `Conditionally Required`: Only used in batch runs |
 | \_\_computed\_\_.cumulative_token_count.prompt | int | Cumulative token count of child nodes for prompts. [1] | `200` | `Recommended` |
 | \_\_computed\_\_.cumulative_token_count.completion | int | Cumulative token count of child nodes for completion responses. [1] | `80` | `Recommended` |
@@ -62,12 +62,12 @@ In promptflow, events emitted by the PromptFlow framework follow the format belo
 
 | Event | Payload Description | Payload Examples | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) |
 |---|---|---|---|
-| promptflow.function.inputs | Input of a span | ```{"chat_history":[],"question":"What is ChatGPT?"}``` | `Required` |
-| promptflow.function.output | Output of span | ```{"answer":"ChatGPT is a conversational AI model developed by OpenAI."}``` | `Required` |
+| promptflow.function.inputs | Input of a function call | ```{"chat_history":[],"question":"What is ChatGPT?"}``` | `Required` |
+| promptflow.function.output | Output of a function call | ```{"answer":"ChatGPT is a conversational AI model developed by OpenAI."}``` | `Required` |
 
 ### PromptFlow Span Types: Detailed Specifications
 
-Within the PromptFlow system, we have delineated several distinct span types to cater to various execution units. Each span type is designed to capture specific execution information, complementing the standard attributes and events. Currently, our system includes the following span types: `LLM`, `Function`, `LangChain`, `Flow`, `Embedding` and `Retrieval`
+Within the PromptFlow system, we have delineated several distinct span types to cater to various execution units. Each span type is designed to capture specific execution information, complementing the standard attributes and events. Currently, our system includes the following span types: `LLM`, `Function`, `LangChain`, `Flow`, `Embedding` and `Retrieval`.
 
 Beyond the standard attributes and events, each span type possesses designated fields to store pertinent information unique to its role within the system. These specialized attributes and events ensure that all relevant data is meticulously traced and available for analysis.
 
@@ -86,6 +86,8 @@ The LLM (Large Language Model) span captures detailed execution information from
 | Event | Payload Description | Payload Examples | Requirement Level |
 |---|---|---|---|
 | promptflow.llm.generated_message | Captures the output message from an LLM call. | ```{"content":"ChatGPT is a conversational AI model developed by OpenAI.","role":"assistant","function_call":null,"tool_calls":null}``` | `Required` |
+
+>Note: OpenTelemetry currently defines several LLM-related span attributes and events as semantic conventions. We plan to align with these conventions in the future. For more information, visit [LLM Semantic Conventions](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/attributes-registry/llm.md).
 
 **Function**
 
