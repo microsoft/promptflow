@@ -32,7 +32,7 @@ For more resources on Azure AI, visit the cloud documentation site: [Build AI so
 :maxdepth: 2
 azureai/manage-flows
 azureai/run-promptflow-in-azure-ai
-azureai/create-run-with-automatic-runtime
+azureai/create-run-with-compute-session
 azureai/use-flow-in-azure-ml-pipeline
 ```
 

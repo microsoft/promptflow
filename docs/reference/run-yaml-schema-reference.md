@@ -23,18 +23,18 @@ The source JSON schema can be found at [Run.schema.json](https://azuremlschemas.
 | `environment_variables` | object/string | Environment variables to set by specifying a property path and value. Example: `{"key1"="${my_connection.api_key}"}`. The value reference to connection keys will be resolved to the actual value, and all environment variables specified will be set into os.environ. |
 | `properties`            | object        | Dictionary of properties of the run.                                                                                                                                                                                                                                    |
 | `tags`                  | object        | Dictionary of tags of the run.                                                                                                                                                                                                                                          |
-| `resources`             | object        | Dictionary of resources used for automatic runtime. Only supported for cloud run. See [Resources Schema](#resources-schema) for the set of configurable properties.                                                                                                     |
+| `resources`             | object        | Dictionary of resources used for compute session. Only supported for cloud run. See [Resources Schema](#resources-schema) for the set of configurable properties.                                                                                                     |
 | `variant`               | string        | The variant for the run.                                                                                                                                                                                                                                                |
 | `status`                | string        | The status of the run. Only available for when getting an existing run. Won't take affect if set when creating a run.                                                                                                                                                   |
-|`identity`| object | Dictionary of identity configuration for automatic runtime. Only supported for cloud run. See [Identity Schema](#identity-schema) for the set of configurable properties.
+|`identity`| object | Dictionary of identity configuration for compute session. Only supported for cloud run. See [Identity Schema](#identity-schema) for the set of configurable properties.
 
 
-### Resources Schema  
+### Resources Schema
 
 | Key             | Type   | Description                                         |
 |-----------------|--------|-----------------------------------------------------|
-| `instance_type` | string | The instance type for automatic runtime of the run. |
-| `compute`       | string | The compute instance for automatic runtime session. |
+| `instance_type` | string | The instance type for compute session of the run. |
+| `compute`       | string | The compute instance for compute session session. |
 
 
 ### Identity Schema
@@ -57,12 +57,12 @@ Run examples are available in the [GitHub repository](https://github.com/microso
 ```yaml
 # default value
 identity:
-  type: user_identity 
+  type: user_identity
 
 # use workspace primary UAI
 identity:
   type: managed
-  
+
 # use specified client_id's UAI
 identity:
   type: managed

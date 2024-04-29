@@ -29,6 +29,6 @@ BASE_IMAGE = "image"
 
 
 AUTOMATIC_RUNTIME_NAME = "automatic"
-AUTOMATIC_RUNTIME = "automatic runtime"
+AUTOMATIC_RUNTIME = "compute session"
 SESSION_ID_PROPERTY = "azureml.promptflow.session_id"
 RUNTIME_PROPERTY = "azureml.promptflow.runtime_name"

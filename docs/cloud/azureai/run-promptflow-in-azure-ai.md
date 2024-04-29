@@ -46,7 +46,7 @@ az login
 Submit a run to workspace.
 
 ```sh
-pfazure run create --subscription <my_sub> -g <my_resource_group> -w <my_workspace> --flow web-classification --data web-classification/data.jsonl --stream 
+pfazure run create --subscription <my_sub> -g <my_resource_group> -w <my_workspace> --flow web-classification --data web-classification/data.jsonl --stream
 ```
 
 **Default subscription/resource-group/workspace**
@@ -123,7 +123,7 @@ pf = PFClient(
 flow = "web-classification"
 data = "web-classification/data.jsonl"
 runtime = "example-runtime-ci" # assume you have existing runtime with this name provisioned
-# runtime = None # un-comment use automatic runtime
+# runtime = None # un-comment use compute session
 
 # create run
 base_run = pf.run(
