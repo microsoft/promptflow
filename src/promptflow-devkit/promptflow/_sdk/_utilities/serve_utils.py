@@ -14,8 +14,9 @@ from typing import Any, Dict, Generator
 
 from promptflow._constants import PROMPT_FLOW_DIR_NAME, FlowLanguage
 from promptflow._proxy._csharp_inspector_proxy import EXECUTOR_SERVICE_DLL
-from promptflow._sdk._utils.general_utils import resolve_flow_language
 from promptflow._utils.flow_utils import resolve_flow_path
+
+from .general_utils import resolve_flow_language
 
 logger = logging.getLogger(__name__)
 

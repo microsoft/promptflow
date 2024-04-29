@@ -33,7 +33,6 @@ from keyring.errors import NoKeyringError
 from marshmallow import ValidationError
 
 from promptflow._constants import ENABLE_MULTI_CONTAINER_KEY, EXTENSION_UA, FLOW_FLEX_YAML, LANGUAGE_KEY, FlowLanguage
-from promptflow._core.entry_meta_generator import generate_flow_meta as _generate_flow_meta
 from promptflow._sdk._constants import (
     AZURE_WORKSPACE_REGEX_FORMAT,
     DEFAULT_ENCODING,
@@ -69,11 +68,7 @@ from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
 from promptflow.contracts.tool import ToolType
-from promptflow.core._utils import (
-    get_used_connection_names_from_dict,
-    render_jinja_template_content,
-    update_dict_value_with_connections,
-)
+from promptflow.core._utils import render_jinja_template_content
 from promptflow.exceptions import ErrorTarget, UserErrorException, ValidationException
 
 logger = get_cli_sdk_logger()
@@ -1050,12 +1045,6 @@ def is_flex_run(run: "Run") -> bool:
         return run._properties.get("azureml.promptflow.run_mode") == RunMode.EAGER
     # TODO(2901279): support eager mode for run created from run folder
     return False
-
-
-generate_flow_meta = _generate_flow_meta
-# DO NOT remove the following line, it's used by the runtime imports from _sdk/_utils directly
-get_used_connection_names_from_dict = get_used_connection_names_from_dict
-update_dict_value_with_connections = update_dict_value_with_connections
 
 
 def get_flow_name(flow) -> str:

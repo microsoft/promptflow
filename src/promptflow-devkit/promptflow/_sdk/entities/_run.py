@@ -44,7 +44,7 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, MissingAzurePackage
 from promptflow._sdk._orm import RunInfo as ORMRun
-from promptflow._sdk._utils import (
+from promptflow._sdk._utilities.general_utils import (
     _sanitize_python_variable_name,
     is_multi_container_enabled,
     is_remote_uri,
