@@ -4,12 +4,14 @@
 import logging
 import json
 import os
+import re
 import tempfile
 from pathlib import Path
 
 import mlflow
 
 from promptflow._sdk._constants import Local2Cloud
+from promptflow._sdk._utils import extract_workspace_triad_from_trace_provider
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow.azure.operations._async_run_uploader import AsyncRunUploader
 
@@ -85,7 +87,7 @@ def _get_trace_destination_config(tracking_uri):
 
 
 def _log_metrics_and_instance_results(metrics, instance_results, tracking_uri, run, pf_client, data,
-                                      evaluation_name=None):
+                                      evaluation_name=None) -> str:
     run_id = None
     trace_destination = _get_trace_destination_config(tracking_uri=tracking_uri)
     tracking_uri = _get_mlflow_tracking_uri(trace_destination=trace_destination)
@@ -130,3 +132,16 @@ def _log_metrics_and_instance_results(metrics, instance_results, tracking_uri, r
     client = mlflow.tracking.MlflowClient(tracking_uri=tracking_uri)
     for metric_name, metric_value in metrics.items():
         client.log_metric(run_id, metric_name, metric_value)
+
+    return _get_ai_studio_url(trace_destination=trace_destination, evaluation_id=run_id)
+
+
+def _get_ai_studio_url(trace_destination: str, evaluation_id: str) -> str:
+    ws_triad = extract_workspace_triad_from_trace_provider(trace_destination)
+    studio_base_url = os.getenv("AI_STUDIO_BASE_URL", "https://ai.azure.com")
+
+    studio_url = f"{studio_base_url}/build/evaluation/{evaluation_id}?wsid=/subscriptions/{ws_triad.subscription_id}" \
+                 f"/resourceGroups/{ws_triad.resource_group_name}/providers/Microsoft.MachineLearningServices/workspaces" \
+                 f"/{ws_triad.workspace_name}"
+
+    return studio_url
