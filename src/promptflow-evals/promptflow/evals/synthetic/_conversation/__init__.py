@@ -222,11 +222,6 @@ class CallbackConversationBot(ConversationBot):
         for _, m in enumerate(conversation_history):
             messages.append({"content": m.message, "role": m.role.value})
 
-        if template_parameters.get("file_content", None) and any(
-            "File contents:" not in message["content"] for message in messages
-        ):
-            messages.append({"content": f"File contents: {template_parameters['file_content']}", "role": "user"})
-
         return {
             "template_parameters": template_parameters,
             "messages": messages,
