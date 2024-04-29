@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 import asyncio
 import copy
+import json
 import logging
 import time
 import uuid
@@ -12,6 +13,22 @@ from aiohttp.web import HTTPException
 from aiohttp_retry import JitterRetry, RetryClient
 
 from .models import AsyncHTTPClientWithRetry, OpenAIChatCompletionsModel
+
+
+class SimulationRequestDTO:
+    def __init__(self, url, headers, payload, params, templatekey, template_parameters):
+        self.url = url
+        self.headers = headers
+        self.json = json.dumps(payload)
+        self.params = params
+        self.templatekey = templatekey
+        self.templateParameters = template_parameters
+
+    def to_dict(self):
+        return self.__dict__
+
+    def to_json(self):
+        return json.dumps(self.__dict__)
 
 
 class ProxyChatCompletionsModel(OpenAIChatCompletionsModel):
@@ -80,7 +97,7 @@ class ProxyChatCompletionsModel(OpenAIChatCompletionsModel):
 
         self._log_request(request_data)
 
-        token = await self.token_manager.get_token()
+        token = self.token_manager.get_token()
 
         proxy_headers = {
             "Authorization": f"Bearer {token}",
@@ -99,19 +116,21 @@ class ProxyChatCompletionsModel(OpenAIChatCompletionsModel):
         if self.api_version:
             params["api-version"] = self.api_version
 
-        sim_request_dict = {
-            "url": self.endpoint_url,
-            "headers": headers,
-            "payload": request_data,
-            "params": params,
-            "templatekey": self.tkey,
-            "template_parameters": self.tparam,
-        }
+        sim_request_dto = SimulationRequestDTO(
+            url=self.endpoint_url,
+            headers=headers,
+            payload=request_data,
+            params=params,
+            templatekey=self.tkey,
+            template_parameters=self.tparam,
+        )
 
         time_start = time.time()
         full_response = None
 
-        async with session.post(url=self.endpoint_url, headers=proxy_headers, json=sim_request_dict) as response:
+        async with session.post(
+            url=self.endpoint_url, headers=proxy_headers, json=sim_request_dto.to_dict()
+        ) as response:
             if response.status == 202:
                 response = await response.json()
                 self.result_url = response["location"]
