@@ -51,12 +51,11 @@ from promptflow._sdk._service.utils.utils import (
     is_port_in_use,
     is_run_from_built_binary,
 )
-from promptflow._sdk._tracing_utils import get_workspace_kind
-from promptflow._sdk._utils import (
+from promptflow._sdk._utilities.general_utils import (
     add_executable_script_to_env_path,
     extract_workspace_triad_from_trace_provider,
-    parse_kv_from_pb_attribute,
 )
+from promptflow._sdk._utilities.tracing_utils import get_workspace_kind, parse_kv_from_pb_attribute, parse_protobuf_span
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.thread_utils import ThreadWithContextVars
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
@@ -559,8 +558,8 @@ def process_otlp_trace_request(
     trace_request: ExportTraceServiceRequest,
     get_created_by_info_with_cache: typing.Callable,
     logger: logging.Logger,
+    get_credential: typing.Callable,
     cloud_trace_only: bool = False,
-    credential: typing.Optional[object] = None,
 ):
     """Process ExportTraceServiceRequest and write data to local/remote storage.
 
@@ -572,13 +571,12 @@ def process_otlp_trace_request(
     :type get_created_by_info_with_cache: Callable
     :param logger: The logger object used for logging.
     :type logger: logging.Logger
+    :param get_credential: A function that gets credential for Cosmos DB operation.
+    :type get_credential: Callable
     :param cloud_trace_only: If True, only write trace to cosmosdb and skip local trace. Default is False.
     :type cloud_trace_only: bool
-    :param credential: The credential object used to authenticate with cosmosdb. Default is None.
-    :type credential: Optional[object]
     """
     from promptflow._sdk.entities._trace import Span
-    from promptflow._sdk.operations._trace_operations import TraceOperations
 
     all_spans = []
     for resource_span in trace_request.resource_spans:
@@ -596,7 +594,7 @@ def process_otlp_trace_request(
         for scope_span in resource_span.scope_spans:
             for span in scope_span.spans:
                 # TODO: persist with batch
-                span: Span = TraceOperations._parse_protobuf_span(span, resource=resource, logger=logger)
+                span: Span = parse_protobuf_span(span, resource=resource, logger=logger)
                 if not cloud_trace_only:
                     all_spans.append(copy.deepcopy(span))
                     span._persist()
@@ -606,12 +604,14 @@ def process_otlp_trace_request(
 
     if cloud_trace_only:
         # If we only trace to cloud, we should make sure the data writing is success before return.
-        _try_write_trace_to_cosmosdb(all_spans, get_created_by_info_with_cache, logger, credential, is_cloud_trace=True)
+        _try_write_trace_to_cosmosdb(
+            all_spans, get_created_by_info_with_cache, logger, get_credential, is_cloud_trace=True
+        )
     else:
         # Create a new thread to write trace to cosmosdb to avoid blocking the main thread
         ThreadWithContextVars(
             target=_try_write_trace_to_cosmosdb,
-            args=(all_spans, get_created_by_info_with_cache, logger, credential, False),
+            args=(all_spans, get_created_by_info_with_cache, logger, get_credential, False),
         ).start()
 
     return
@@ -621,7 +621,7 @@ def _try_write_trace_to_cosmosdb(
     all_spans: typing.List,
     get_created_by_info_with_cache: typing.Callable,
     logger: logging.Logger,
-    credential: typing.Optional[object] = None,
+    get_credential: typing.Callable,
     is_cloud_trace: bool = False,
 ):
     if not all_spans:
@@ -649,19 +649,31 @@ def _try_write_trace_to_cosmosdb(
         # So, we load clients in parallel for warm up.
         span_client_thread = ThreadWithContextVars(
             target=get_client,
-            args=(CosmosDBContainerName.SPAN, subscription_id, resource_group_name, workspace_name, credential),
+            args=(CosmosDBContainerName.SPAN, subscription_id, resource_group_name, workspace_name, get_credential),
         )
         span_client_thread.start()
 
         collection_client_thread = ThreadWithContextVars(
             target=get_client,
-            args=(CosmosDBContainerName.COLLECTION, subscription_id, resource_group_name, workspace_name, credential),
+            args=(
+                CosmosDBContainerName.COLLECTION,
+                subscription_id,
+                resource_group_name,
+                workspace_name,
+                get_credential,
+            ),
         )
         collection_client_thread.start()
 
         line_summary_client_thread = ThreadWithContextVars(
             target=get_client,
-            args=(CosmosDBContainerName.LINE_SUMMARY, subscription_id, resource_group_name, workspace_name, credential),
+            args=(
+                CosmosDBContainerName.LINE_SUMMARY,
+                subscription_id,
+                resource_group_name,
+                workspace_name,
+                get_credential,
+            ),
         )
         line_summary_client_thread.start()
 
@@ -677,7 +689,7 @@ def _try_write_trace_to_cosmosdb(
             subscription_id=subscription_id,
             resource_group_name=resource_group_name,
             workspace_name=workspace_name,
-            credential=credential,
+            get_credential=get_credential,
         )
 
         span_client_thread.join()
@@ -687,7 +699,7 @@ def _try_write_trace_to_cosmosdb(
 
         created_by = get_created_by_info_with_cache()
         collection_client = get_client(
-            CosmosDBContainerName.COLLECTION, subscription_id, resource_group_name, workspace_name, credential
+            CosmosDBContainerName.COLLECTION, subscription_id, resource_group_name, workspace_name, get_credential
         )
 
         collection_db = CollectionCosmosDB(first_span, is_cloud_trace, created_by)
@@ -697,31 +709,37 @@ def _try_write_trace_to_cosmosdb(
         # We assign it to LineSummary and Span and use it as partition key.
         collection_id = collection_db.collection_id
 
+        failed_span_count = 0
         for span in all_spans:
-            span_client = get_client(
-                CosmosDBContainerName.SPAN, subscription_id, resource_group_name, workspace_name, credential
-            )
-            result = SpanCosmosDB(span, collection_id, created_by).persist(
-                span_client, blob_container_client, blob_base_uri
-            )
-            # None means the span already exists, then we don't need to persist the summary also.
-            if result is not None:
-                line_summary_client = get_client(
-                    CosmosDBContainerName.LINE_SUMMARY,
-                    subscription_id,
-                    resource_group_name,
-                    workspace_name,
-                    credential,
+            try:
+                span_client = get_client(
+                    CosmosDBContainerName.SPAN, subscription_id, resource_group_name, workspace_name, get_credential
                 )
-                Summary(span, collection_id, created_by, logger).persist(line_summary_client)
-        collection_db.update_collection_updated_at_info(collection_client)
+                result = SpanCosmosDB(span, collection_id, created_by).persist(
+                    span_client, blob_container_client, blob_base_uri
+                )
+                # None means the span already exists, then we don't need to persist the summary also.
+                if result is not None:
+                    line_summary_client = get_client(
+                        CosmosDBContainerName.LINE_SUMMARY,
+                        subscription_id,
+                        resource_group_name,
+                        workspace_name,
+                        get_credential,
+                    )
+                    Summary(span, collection_id, created_by, logger).persist(line_summary_client)
+            except Exception as e:
+                failed_span_count += 1
+                stack_trace = traceback.format_exc()
+                logger.error(f"Failed to process span: {span.span_id}, error: {e}, stack trace: {stack_trace}")
+        if failed_span_count < len(all_spans):
+            collection_db.update_collection_updated_at_info(collection_client)
         logger.info(
             (
-                f"Finish writing trace to cosmosdb, total spans count: {len(all_spans)}."
-                f" Duration {datetime.now() - start_time}."
+                f"Finish writing trace to cosmosdb, total spans count: {len(all_spans)}, "
+                f"failed spans count: {failed_span_count}. Duration {datetime.now() - start_time}."
             )
         )
-
     except Exception as e:
         stack_trace = traceback.format_exc()
         logger.error(f"Failed to write trace to cosmosdb: {e}, stack trace is {stack_trace}")

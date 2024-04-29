@@ -14,7 +14,7 @@ import uuid
 from contextlib import contextmanager
 from pathlib import Path
 from threading import current_thread
-from types import GeneratorType
+from types import AsyncGeneratorType, GeneratorType
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 
 import opentelemetry.trace as otel_trace
@@ -837,17 +837,10 @@ class FlowExecutor:
                 node_referenced_flow_inputs[value.value] = flow_inputs[value.value]
         return node_referenced_flow_inputs
 
-    def _exec_inner_with_trace(
-        self,
-        inputs: Mapping[str, Any],
-        run_info: FlowRunInfo,
-        run_tracker: RunTracker,
-        context: FlowExecutionContext,
-        allow_generator_output=False,
-    ):
-        # need to get everytime to ensure tracer is latest
+    @contextlib.contextmanager
+    def _start_flow_span(self, inputs: Mapping[str, Any]):
         otel_tracer = otel_trace.get_tracer("promptflow")
-        with otel_tracer.start_as_current_span(self._flow.name) as span, self._record_keyboard_interrupt_to_span(span):
+        with otel_tracer.start_as_current_span(self._flow.name) as span:
             # Store otel trace id in context for correlation
             OperationContext.get_instance()["otel_trace_id"] = f"0x{format_trace_id(span.get_span_context().trace_id)}"
             # initialize span
@@ -860,49 +853,69 @@ class FlowExecutor:
             enrich_span_with_context(span)
             # enrich span with input
             enrich_span_with_input(span, inputs)
-            # invoke
-            output, aggregation_inputs = self._exec_inner(
-                inputs,
-                run_info,
-                run_tracker,
-                context,
-                allow_generator_output,
-            )
-            # enrich span with trace type
-            enrich_span_with_trace_type(span, inputs, output, trace_type=TraceType.FLOW)
-            # set status
-            span.set_status(StatusCode.OK)
-            return output, aggregation_inputs
+            yield span
 
-    @contextlib.contextmanager
-    def _record_keyboard_interrupt_to_span(self, span: Span):
-        try:
-            yield
-        except KeyboardInterrupt as ex:
-            if span.is_recording():
-                span.record_exception(ex)
-                span.set_status(StatusCode.ERROR, "Execution cancelled.")
-            raise
-
-    def _exec_inner(
+    async def _exec_inner_with_trace_async(
         self,
         inputs: Mapping[str, Any],
         run_info: FlowRunInfo,
         run_tracker: RunTracker,
         context: FlowExecutionContext,
-        allow_generator_output=False,
+        stream=False,
     ):
-        output, nodes_outputs = self._traverse_nodes(inputs, context)
-        output = self._stringify_generator_output(output) if not allow_generator_output else output
+        with self._start_flow_span(inputs) as span, self._record_cancellation_exceptions_to_span(span):
+            output, nodes_outputs = await self._traverse_nodes_async(inputs, context)
+            #  TODO: Also stringify async generator output
+            output = self._stringify_generator_output(output) if not stream else output
+            self._exec_post_process(inputs, output, nodes_outputs, run_info, run_tracker, span, stream)
+            return output, extract_aggregation_inputs(self._flow, nodes_outputs)
+
+    def _exec_inner_with_trace(
+        self,
+        inputs: Mapping[str, Any],
+        run_info: FlowRunInfo,
+        run_tracker: RunTracker,
+        context: FlowExecutionContext,
+        stream=False,
+    ):
+        with self._start_flow_span(inputs) as span, self._record_cancellation_exceptions_to_span(span):
+            output, nodes_outputs = self._traverse_nodes(inputs, context)
+            output = self._stringify_generator_output(output) if not stream else output
+            self._exec_post_process(inputs, output, nodes_outputs, run_info, run_tracker, span, stream)
+            return output, extract_aggregation_inputs(self._flow, nodes_outputs)
+
+    @contextlib.contextmanager
+    def _record_cancellation_exceptions_to_span(self, span: Span):
+        try:
+            yield
+        except (KeyboardInterrupt, asyncio.CancelledError) as ex:
+            if span.is_recording():
+                span.record_exception(ex)
+                span.set_status(StatusCode.ERROR, "Execution cancelled.")
+            raise
+
+    def _exec_post_process(
+        self,
+        inputs,
+        output,
+        nodes_outputs,
+        run_info: FlowRunInfo,
+        run_tracker: RunTracker,
+        span: Span,
+        stream: bool,
+    ):
         # Persist the node runs for the nodes that have a generator output
         generator_output_nodes = [
-            nodename for nodename, output in nodes_outputs.items() if isinstance(output, GeneratorType)
+            nodename
+            for nodename, output in nodes_outputs.items()
+            if isinstance(output, GeneratorType) or isinstance(output, AsyncGeneratorType)
         ]
         run_tracker.persist_selected_node_runs(run_info, generator_output_nodes)
-        run_tracker.allow_generator_types = allow_generator_output
+        # When stream is True, we allow generator output in the flow output
+        run_tracker.allow_generator_types = stream
         run_tracker.end_run(run_info.run_id, result=output)
-        aggregation_inputs = extract_aggregation_inputs(self._flow, nodes_outputs)
-        return output, aggregation_inputs
+        enrich_span_with_trace_type(span, inputs, output, trace_type=TraceType.FLOW)
+        span.set_status(StatusCode.OK)
 
     def _exec(
         self,
@@ -1041,24 +1054,19 @@ class FlowExecutor:
         aggregation_inputs = {}
         try:
             if validate_inputs:
-                inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=line_number)
+                inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=run_info.index)
             # TODO: Consider async implementation for load_multimedia_data
             inputs = self._multimedia_processor.load_multimedia_data(self._flow.inputs, inputs)
-            # Make sure the run_info with converted inputs results rather than original inputs
+            # Inputs are assigned after validation and multimedia data loading, instead of at the start of the flow run.
+            # This way, if validation or multimedia data loading fails, we avoid persisting invalid inputs.
             run_info.inputs = inputs
-            output, nodes_outputs = await self._traverse_nodes_async(inputs, context)
-            # TODO: Consider async implementation for _stringify_generator_output
-            output = self._stringify_generator_output(output) if not allow_generator_output else output
-            # Persist the node runs for the nodes that have a generator output
-            generator_output_nodes = [
-                nodename for nodename, output in nodes_outputs.items() if isinstance(output, GeneratorType)
-            ]
-            # TODO: Consider async implementation for persist_selected_node_runs
-            run_tracker.persist_selected_node_runs(run_info, generator_output_nodes)
-            run_tracker.allow_generator_types = allow_generator_output
-            # TODO: Consider async implementation for end_run
-            run_tracker.end_run(line_run_id, result=output)
-            aggregation_inputs = extract_aggregation_inputs(self._flow, nodes_outputs)
+            output, aggregation_inputs = await self._exec_inner_with_trace_async(
+                inputs,
+                run_info,
+                run_tracker,
+                context,
+                allow_generator_output,
+            )
         except KeyboardInterrupt as ex:
             # Run will be cancelled when the process receives a SIGINT signal.
             # KeyboardInterrupt will be raised after asyncio finishes its signal handling
@@ -1094,9 +1102,11 @@ class FlowExecutor:
                         "The output type '{output_type}' is currently unsupported. "
                         "Please choose from available types: '{supported_output_type}' and try again."
                     ),
-                    output_type=output.reference.value_type.value
-                    if hasattr(output.reference.value_type, "value")
-                    else output.reference.value_type,
+                    output_type=(
+                        output.reference.value_type.value
+                        if hasattr(output.reference.value_type, "value")
+                        else output.reference.value_type
+                    ),
                     supported_output_type=[output_type.value for output_type in InputValueType],
                 )
             node = next((n for n in self._flow.nodes if n.name == output.reference.value), None)
