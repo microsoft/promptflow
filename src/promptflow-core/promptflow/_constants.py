@@ -104,6 +104,7 @@ DEFAULT_SPAN_TYPE = "default"
 RUNNING_LINE_RUN_STATUS = "Running"
 OK_LINE_RUN_STATUS = "Ok"
 SPAN_EVENTS_ATTRIBUTES_EVENT_ID = "event.id"
+SPAN_EVENTS_ATTRIBUTES_INDEX = "index"
 
 
 class TraceEnvironmentVariableName:
