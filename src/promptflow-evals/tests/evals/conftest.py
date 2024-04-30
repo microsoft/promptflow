@@ -58,8 +58,9 @@ def configure_default_azure_credential():
         creds = dev_connections["pf-evals-sp"]["value"]
         for key, value in creds.items():
             os.environ[key] = value
-        login_output = subprocess.check_output(["az", "login", "--service-principal", "-u", creds["AZURE_CLIENT_ID"],
-                                               "-p", creds["AZURE_CLIENT_SECRET"], "--tenant", creds["AZURE_TENANT_ID"]], shell=True)
+        login_output = subprocess.check_output(
+            ["az", "login", "--service-principal", "-u", creds["AZURE_CLIENT_ID"],
+             "-p", creds["AZURE_CLIENT_SECRET"], "--tenant", creds["AZURE_TENANT_ID"]], shell=True)
         print("loging_output")
         print(login_output)
 
