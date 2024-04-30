@@ -6,26 +6,16 @@ from dataclasses import dataclass
 
 from promptflow.tracing import trace
 
-@dataclass
-class FlowOutput:
-    obj_input: str
-    func_input: str
-    obj_id: str
-
 
 class MyFlow:
-    def __init__(self, obj_input: str):
+    def __init__(self, obj_input: str = "code_default"):
         self.obj_input = obj_input
 
     @trace
-    def __call__(self, func_input: str) -> FlowOutput:
-        return FlowOutput(obj_input=self.obj_input, func_input=func_input, obj_id=id(self))
+    def __call__(self, func_input1: str, func_input2: str = "code_default") -> str:
+        return "_".join([self.obj_input, func_input1, func_input2])
 
     def __aggregate__(self, results: list) -> dict:
-        # Try attribute-style access for the datacalss
-        obj_inputs = [r.obj_input for r in results]
-        func_inputs = [r.func_input for r in results]
-        obj_ids = [r.obj_id for r in results]
 
         return {"length": len(results)}
 

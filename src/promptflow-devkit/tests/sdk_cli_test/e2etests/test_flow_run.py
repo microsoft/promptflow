@@ -1910,6 +1910,52 @@ class TestFlowRun:
         assert "Execution failure in 'ChatFlow.__call__" in error["message"]
         assert "raise Exception" in error["additionalInfo"][0]["info"]["traceback"]
 
+    def test_run_with_yaml_default(self, pf):
+        def assert_func(details_dict):
+            return details_dict == {
+                "inputs.func_input1": ["func_input"],
+                "inputs.func_input2": ["default_func_input"],
+                "inputs.line_number": [0],
+                "outputs.output": ["default_obj_input_func_input_default_func_input"],
+            }
+
+        def assert_metrics(metrics_dict):
+            return metrics_dict == {"length": 1}
+
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_with_yaml_default")
+        run = pf.run(
+            flow=flow_path,
+            data=f"{EAGER_FLOWS_DIR}/basic_with_yaml_default/inputs.jsonl",
+            input_mapping={"func_input1": "${data.func_input1}"},
+        )
+        assert_batch_run_result(run, pf, assert_func)
+        assert_run_metrics(run, pf, assert_metrics)
+
+        run = load_run(
+            source=f"{EAGER_FLOWS_DIR}/basic_with_yaml_default/run.yaml",
+        )
+        run = pf.runs.create_or_update(run=run)
+        assert_batch_run_result(run, pf, assert_func)
+        assert_run_metrics(run, pf, assert_metrics)
+
+    def test_run_with_yaml_default_override(self, pf):
+        def assert_func(details_dict):
+            return details_dict == {
+                "inputs.func_input1": ["func_input"],
+                "inputs.func_input2": ["override_func_input"],
+                "inputs.line_number": [0],
+                "outputs.output": ["obj_input_func_input_func_input"],
+            }
+
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_with_yaml_default")
+
+        run = pf.run(
+            flow=flow_path,
+            data=f"{EAGER_FLOWS_DIR}/basic_with_yaml_default/inputs_override.jsonl",
+            init={"obj_input": "obj_input"},
+        )
+        assert_batch_run_result(run, pf, assert_func)
+
 
 def assert_batch_run_result(run: Run, pf: PFClient, assert_func):
     assert run.status == "Completed"
