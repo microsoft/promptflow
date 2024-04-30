@@ -21,7 +21,6 @@ def questions_file():
     return os.path.join(data_path, "questions.jsonl")
 
 
-
 def answer_evaluator(answer):
     return {"length": len(answer)}
 
@@ -114,23 +113,23 @@ class TestEvaluate:
         "evaluate_config",
         [
             (
-                {
-                    "f1_score": {
-                        "answer": "${data.context}",
-                        "ground_truth": "${data.ground_truth}",
-                    },
-                    "answer": {
-                        "answer": "${target.response}",
-                    },
-                }
+                    {
+                        "f1_score": {
+                            "answer": "${data.context}",
+                            "ground_truth": "${data.ground_truth}",
+                        },
+                        "answer": {
+                            "answer": "${target.response}",
+                        },
+                    }
             ),
             (
-                {
-                    "default": {
-                        "answer": "${target.response}",
-                        "ground_truth": "${data.ground_truth}",
-                    },
-                }
+                    {
+                        "default": {
+                            "answer": "${target.response}",
+                            "ground_truth": "${data.ground_truth}",
+                        },
+                    }
             ),
         ],
     )
@@ -177,9 +176,18 @@ class TestEvaluate:
             evaluators={"answer": answer_evaluator, "f1": f1_score_eval},
         )
         row_result_df = pd.DataFrame(result["rows"])
+
         assert "outputs.answer" in row_result_df.columns
         assert "outputs.answer.length" in row_result_df.columns
         assert list(row_result_df["outputs.answer.length"]) == [28, 76, 22]
         assert "outputs.f1.f1_score" in row_result_df.columns
         assert not any(np.isnan(f1) for f1 in row_result_df["outputs.f1.f1_score"])
         assert result["studio_url"] is not None
+
+        # get remote run and validate if it exists
+        run_id = result["studio_url"].split("?")[0].split("/")[5]
+        remote_run = azure_pf_client.runs.get(run_id)
+
+        assert remote_run is not None
+        assert remote_run.properties["azureml.promptflow.local_to_cloud"] == "true"
+        assert remote_run.properties["runType"] == "eval_run"

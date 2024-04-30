@@ -11,7 +11,7 @@ from pathlib import Path
 import mlflow
 
 from promptflow._sdk._constants import Local2Cloud
-from promptflow._sdk._utils import extract_workspace_triad_from_trace_provider
+from promptflow._sdk._utilities.general_utils import extract_workspace_triad_from_trace_provider
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow.azure.operations._async_run_uploader import AsyncRunUploader
 
@@ -51,7 +51,7 @@ def _write_properties_to_run_history(properties: dict) -> None:
 
 
 def _azure_pf_client(trace_destination):
-    from promptflow._sdk._utils import extract_workspace_triad_from_trace_provider
+    from promptflow._sdk._utilities.general_utils import extract_workspace_triad_from_trace_provider
     from promptflow.azure._cli._utils import _get_azure_pf_client
 
     ws_triad = extract_workspace_triad_from_trace_provider(trace_destination)
@@ -65,7 +65,7 @@ def _azure_pf_client(trace_destination):
 
 
 def _get_mlflow_tracking_uri(trace_destination):
-    from promptflow._sdk._utils import extract_workspace_triad_from_trace_provider
+    from promptflow._sdk._utilities.general_utils import extract_workspace_triad_from_trace_provider
 
     azure_pf_client = _azure_pf_client(trace_destination)
     ws_triad = extract_workspace_triad_from_trace_provider(trace_destination)

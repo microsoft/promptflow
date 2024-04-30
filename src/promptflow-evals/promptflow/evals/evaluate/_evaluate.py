@@ -307,10 +307,10 @@ def evaluate(
         inplace=True,
     )
 
+    result_df = pd.concat([input_data_df, evaluators_result_df], axis=1, verify_integrity=True)
     metrics = _calculate_mean(evaluators_result_df)
 
-    result_df = pd.concat([input_data_df, evaluators_result_df], axis=1, verify_integrity=True)
-
-    studio_url = _log_metrics_and_instance_results(metrics, result_df, tracking_uri, target_run, pf_client, data, evaluation_name)
+    studio_url = _log_metrics_and_instance_results(
+        metrics, result_df, tracking_uri, target_run, pf_client, data, evaluation_name)
 
     return {"rows": result_df.to_dict("records"), "metrics": metrics, "studio_url": studio_url}
