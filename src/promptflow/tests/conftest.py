@@ -7,19 +7,20 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-from _constants import CONNECTION_FILE, ENV_FILE
 from _pytest.monkeypatch import MonkeyPatch
 from dotenv import load_dotenv
 from filelock import FileLock
 from pytest_mock import MockerFixture
 
-from promptflow._cli._utils import AzureMLWorkspaceTriad
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
 from promptflow._core.connection_manager import ConnectionManager
+from promptflow._sdk._constants import AzureMLWorkspaceTriad
 from promptflow._sdk.entities._connection import AzureOpenAIConnection
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow.connections import ConnectionProvider
 from promptflow.core._connection_provider._dict_connection_provider import DictConnectionProvider
+
+from ._constants import CONNECTION_FILE, ENV_FILE
 
 load_dotenv()
 

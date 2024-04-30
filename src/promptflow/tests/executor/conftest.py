@@ -2,13 +2,6 @@ import multiprocessing
 from pathlib import Path
 
 import pytest
-from executor.process_utils import (
-    MockForkServerProcess,
-    MockSpawnProcess,
-    current_process_manager_var,
-    current_process_wrapper_var,
-    override_process_class,
-)
 from fastapi.testclient import TestClient
 
 from promptflow.executor._line_execution_process_pool import _process_wrapper
@@ -16,6 +9,13 @@ from promptflow.executor._process_manager import create_spawned_fork_process_man
 from promptflow.executor._service.app import app
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
 
+from .process_utils import (
+    MockForkServerProcess,
+    MockSpawnProcess,
+    current_process_manager_var,
+    current_process_wrapper_var,
+    override_process_class,
+)
 from .record_utils import setup_recording
 
 try:

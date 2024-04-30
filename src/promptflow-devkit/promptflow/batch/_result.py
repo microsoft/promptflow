@@ -133,9 +133,8 @@ class SystemMetrics:
         openai_metrics = {}
         if run_info.system_metrics:
             for metric in TokenKeys.get_all_values():
-                if metric not in run_info.system_metrics:
-                    return False
-                openai_metrics[metric] = run_info.system_metrics[metric]
+                if metric in run_info.system_metrics:
+                    openai_metrics[metric] = run_info.system_metrics[metric]
         return openai_metrics
 
     def to_dict(self):
