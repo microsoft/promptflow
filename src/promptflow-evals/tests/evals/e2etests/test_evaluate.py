@@ -29,7 +29,7 @@ def answer_evaluator(answer):
 
 def _get_run_from_run_history(flow_run_id, runs_operation):
     """Get run info from run history"""
-    headers = custom_header = {
+    headers = {
             "Authorization": get_authorization(credential=runs_operation._credential),
             "Content-Type": "application/json",
         }
