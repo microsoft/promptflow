@@ -9,7 +9,7 @@ from promptflow._constants import FlowEntryRegex
 from promptflow._core._errors import UnexpectedError
 from promptflow._core.run_tracker import RunTracker
 from promptflow._sdk._constants import FLOW_META_JSON_GEN_TIMEOUT, FLOW_TOOLS_JSON_GEN_TIMEOUT
-from promptflow._sdk._utils import can_accept_kwargs
+from promptflow._sdk._utilities.general_utils import can_accept_kwargs
 from promptflow._utils.flow_utils import resolve_python_entry_file
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.yaml_utils import load_yaml
@@ -138,7 +138,7 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         timeout: int = FLOW_TOOLS_JSON_GEN_TIMEOUT,
         load_in_subprocess: bool = True,
     ) -> dict:
-        from promptflow._sdk._utils import generate_flow_tools_json
+        from promptflow._sdk._utilities.general_utils import generate_flow_tools_json
 
         return generate_flow_tools_json(
             flow_directory=working_dir,

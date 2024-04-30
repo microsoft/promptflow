@@ -6,7 +6,7 @@ from typing import Dict
 import httpx
 
 from promptflow._sdk._errors import MetricInternalError, SDKError, UserAuthenticationError
-from promptflow._sdk._utils import get_promptflow_sdk_version
+from promptflow._sdk._utilities.general_utils import get_promptflow_sdk_version
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure._utils.general import get_authorization
 

@@ -16,12 +16,13 @@ from promptflow._core.tool_meta_generator import PythonLoadError
 from promptflow._utils.async_utils import async_to_sync, sync_to_async
 from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
 from promptflow._utils.exception_utils import ExceptionPresenter
+from promptflow._utils.execution_utils import apply_default_value_for_input
 from promptflow._utils.logger_utils import logger
 from promptflow._utils.multimedia_utils import BasicMultimediaProcessor
 from promptflow._utils.tool_utils import function_to_interface
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.connections import ConnectionProvider
-from promptflow.contracts.flow import Flow
+from promptflow.contracts.flow import FlexFlow, Flow
 from promptflow.contracts.tool import ConnectionType
 from promptflow.core import log_metric
 from promptflow.core._connection_provider._dict_connection_provider import DictConnectionProvider
@@ -41,6 +42,7 @@ from promptflow.tracing.contracts.trace import TraceType
 
 from ._errors import FlowEntryInitializationError, InvalidAggregationFunction, ScriptExecutionError
 from .flow_executor import FlowExecutor
+from .flow_validator import FlowValidator
 
 
 class ScriptExecutor(FlowExecutor):
@@ -67,6 +69,7 @@ class ScriptExecutor(FlowExecutor):
             self._working_dir = Flow._resolve_working_dir(entry, working_dir)
         else:
             self._working_dir = working_dir or Path.cwd()
+        self._init_input_sign()
         self._initialize_function()
         self._storage = storage or DefaultRunStorage()
         self._flow_id = "default_flow_id"
@@ -103,6 +106,7 @@ class ScriptExecutor(FlowExecutor):
         **kwargs,
     ) -> LineResult:
         run_id = run_id or str(uuid.uuid4())
+        inputs = apply_default_value_for_input(self._inputs_sign, inputs)
         with self._exec_line_context(run_id, index):
             return self._exec_line(inputs, index, run_id, allow_generator_output=allow_generator_output)
 
@@ -128,6 +132,7 @@ class ScriptExecutor(FlowExecutor):
         # Executor will add line_number to batch inputs if there is no line_number in the original inputs,
         # which should be removed, so, we only preserve the inputs that are contained in self._inputs.
         inputs = {k: inputs[k] for k in self._inputs if k in inputs}
+        FlowValidator._ensure_flow_inputs_type_inner(self._inputs_sign, inputs)
         return run_info, inputs, run_tracker, None, []
 
     def _exec_line(
@@ -266,6 +271,7 @@ class ScriptExecutor(FlowExecutor):
         **kwargs,
     ) -> LineResult:
         run_id = run_id or str(uuid.uuid4())
+        inputs = apply_default_value_for_input(self._inputs_sign, inputs)
         with self._exec_line_context(run_id, index):
             return await self._exec_line_async(inputs, index, run_id, allow_generator_output=allow_generator_output)
 
@@ -324,6 +330,7 @@ class ScriptExecutor(FlowExecutor):
     def _resolve_init_kwargs(self, c: type, init_kwargs: dict):
         """Resolve init kwargs, the connection names will be resolved to connection objects."""
         logger.debug(f"Resolving init kwargs: {init_kwargs.keys()}.")
+        init_kwargs = apply_default_value_for_input(self._init_sign, init_kwargs)
         sig = inspect.signature(c.__init__)
         connection_params = []
         model_config_param_name_2_cls = {}
@@ -497,3 +504,18 @@ class ScriptExecutor(FlowExecutor):
                 target=ErrorTarget.EXECUTOR,
             ) from e
         return module_name, func_name
+
+    def _init_input_sign(self):
+        if not self.is_function_entry:
+            with open(self._working_dir / self._flow_file, "r", encoding="utf-8") as fin:
+                flow_dag = load_yaml(fin)
+            flow = FlexFlow.deserialize(flow_dag)
+            # In the yaml file, user can define the inputs and init signature for the flow, also SDK may create
+            # the signature and add them to the yaml file. We need to get the signature from the yaml file and
+            # used for applying default value and ensuring input type.
+            self._inputs_sign = flow.inputs
+            self._init_sign = flow.init
+        else:
+            # Since there is no yaml file for function entry, we set the inputs and init signature to empty dict.
+            self._inputs_sign = {}
+            self._init_sign = {}

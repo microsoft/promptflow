@@ -35,7 +35,7 @@ from promptflow._sdk._service.utils.utils import (
     is_run_from_built_binary,
     kill_exist_service,
 )
-from promptflow._sdk._utils import add_executable_script_to_env_path
+from promptflow._sdk._utilities.general_utils import add_executable_script_to_env_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger  # noqa: E402
 from promptflow.exceptions import UserErrorException
 

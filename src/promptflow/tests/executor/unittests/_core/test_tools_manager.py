@@ -272,7 +272,7 @@ class TestToolsManager:
     def test_retrieve_tool_func_result_dynamic_list_scenario(
         self, mocked_ws_triple, mock_module_with_for_retrieve_tool_func_result
     ):
-        from promptflow._sdk._utils import _retrieve_tool_func_result
+        from promptflow._sdk._utilities.general_utils import _retrieve_tool_func_result
 
         func_path = "my_tool_package.tools.tool_with_dynamic_list_input.my_list_func"
         func_kwargs = {"prefix": "My"}
@@ -319,7 +319,7 @@ class TestToolsManager:
         mocked_ws_triple,
         mock_module_with_for_retrieve_tool_func_result,
     ):
-        from promptflow._sdk._utils import _retrieve_tool_func_result
+        from promptflow._sdk._utilities.general_utils import _retrieve_tool_func_result
 
         result = _retrieve_tool_func_result(func_call_scenario, {"func_path": func_path, "func_kwargs": func_kwargs})
         assert isinstance(result["result"], expected)
@@ -358,7 +358,7 @@ class TestToolsManager:
         mocked_ws_triple,
         mock_module_with_for_retrieve_tool_func_result,
     ):
-        from promptflow._sdk._utils import _retrieve_tool_func_result
+        from promptflow._sdk._utilities.general_utils import _retrieve_tool_func_result
 
         with pytest.raises(Exception) as e:
             _retrieve_tool_func_result(func_call_scenario, {"func_path": func_path, "func_kwargs": func_kwargs})
