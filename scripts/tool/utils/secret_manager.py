@@ -14,7 +14,6 @@ KVUri = f"https://{key_vault_name}.vault.azure.net"
 
 
 def get_secret_client() -> SecretClient:
-    # credential = ClientSecretCredential(tenant_id, client_id, client_secret)
     credential = AzureCliCredential()
     client = SecretClient(vault_url=KVUri, credential=credential)
 

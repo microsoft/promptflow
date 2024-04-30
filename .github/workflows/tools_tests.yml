@@ -1,6 +1,8 @@
 name: tools_tests
 permissions:
+  # This is required for requesting the JWT
   id-token: write
+  # This is required for actions/checkout
   contents: read
 on:
   pull_request_target:
