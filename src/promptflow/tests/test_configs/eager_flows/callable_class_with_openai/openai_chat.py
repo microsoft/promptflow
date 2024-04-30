@@ -36,8 +36,7 @@ class MyClass:
                         yield chunk.choices[0].delta.content or ""
             # We must return the generator object, not using yield directly here.
             # Otherwise, the function itself will become a generator, despite whether stream is True or False.
-            # return generator()
-            return "".join(generator())
+            return generator()
         else:
             # chat api may return message with no content.
             return completion.choices[0].message.content or ""
