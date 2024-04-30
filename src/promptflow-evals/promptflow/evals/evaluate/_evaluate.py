@@ -73,10 +73,10 @@ def _validate_and_load_data(target, data, evaluators, output_path, tracking_uri,
 
 
 def _validate_columns(
-        df: pd.DataFrame,
-        evaluators: Dict[str, Any],
-        target: Optional[Callable],
-        evaluator_config: Dict[str, Dict[str, str]],
+    df: pd.DataFrame,
+    evaluators: Dict[str, Any],
+    target: Optional[Callable],
+    evaluator_config: Dict[str, Dict[str, str]],
 ) -> None:
     """
     Check that all columns needed by evaluator or target function are present.
@@ -105,8 +105,8 @@ def _validate_columns(
 
 
 def _apply_target_to_data(
-        target: Callable, data: str, pf_client: PFClient, initial_data: pd.DataFrame,
-        evaluation_name: Optional[str] = None
+    target: Callable, data: str, pf_client: PFClient, initial_data: pd.DataFrame,
+    evaluation_name: Optional[str] = None
 ) -> Tuple[pd.DataFrame, Set[str]]:
     """
     Apply the target function to the data set and return updated data and generated columns.
@@ -203,15 +203,15 @@ def _process_evaluator_config(evaluator_config: Dict[str, Dict[str, str]]):
 
 
 def evaluate(
-        *,
-        evaluation_name: Optional[str] = None,
-        target: Optional[Callable] = None,
-        data: Optional[str] = None,
-        evaluators: Optional[Dict[str, Callable]] = None,
-        evaluator_config: Optional[Dict[str, Dict[str, str]]] = {},
-        tracking_uri: Optional[str] = None,
-        output_path: Optional[str] = None,
-        **kwargs,
+    *,
+    evaluation_name: Optional[str] = None,
+    target: Optional[Callable] = None,
+    data: Optional[str] = None,
+    evaluators: Optional[Dict[str, Callable]] = None,
+    evaluator_config: Optional[Dict[str, Dict[str, str]]] = {},
+    tracking_uri: Optional[str] = None,
+    output_path: Optional[str] = None,
+    **kwargs,
 ):
     """Evaluates target or data with built-in evaluation metrics
 

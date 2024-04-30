@@ -144,23 +144,23 @@ class TestEvaluate:
         "evaluate_config",
         [
             (
-                    {
-                        "f1_score": {
-                            "answer": "${data.context}",
-                            "ground_truth": "${data.ground_truth}",
-                        },
-                        "answer": {
-                            "answer": "${target.response}",
-                        },
-                    }
+                {
+                    "f1_score": {
+                        "answer": "${data.context}",
+                        "ground_truth": "${data.ground_truth}",
+                    },
+                    "answer": {
+                        "answer": "${target.response}",
+                    },
+                }
             ),
             (
-                    {
-                        "default": {
-                            "answer": "${target.response}",
-                            "ground_truth": "${data.ground_truth}",
-                        },
-                    }
+                {
+                    "default": {
+                        "answer": "${target.response}",
+                        "ground_truth": "${data.ground_truth}",
+                    },
+                }
             ),
         ],
     )
