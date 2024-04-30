@@ -21,7 +21,7 @@ def to_openai_error_message(e: Exception) -> str:
               "https://platform.openai.com/docs/guides/gpt/function-calling. If you are using azure openai " \
               "connection, then please first go to your Azure OpenAI resource, deploy model 'gpt-35-turbo' or " \
               "'gpt-4' with version 0613, then go to prompt flow connection page, upgrade connection api version to " \
-              "'2023-07-01-preview'. You can refer to " \
+              "a version later than '2023-07-01-preview'. You can refer to " \
               "https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/function-calling."
         return f"OpenAI API hits {ex_type}: {msg}"
     elif "The completion operation does not work with the specified model" in error_message or \
