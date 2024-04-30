@@ -1,13 +1,10 @@
 from dataclasses import dataclass
-from pathlib import Path
 
-from promptflow.tracing import trace
-from promptflow.connections import CustomConnection
-
-
-from langchain.evaluation import load_evaluator
 from langchain.chat_models import AzureChatOpenAI, ChatAnthropic
+from langchain.evaluation import load_evaluator
 
+from promptflow.connections import CustomConnection
+from promptflow.tracing import trace
 
 
 @dataclass
@@ -23,7 +20,9 @@ class LangChainEvaluator:
 
         # create llm according to the secrets in custom connection
         if "anthropic_api_key" in self.custom_connection.secrets:
-            self.llm = ChatAnthropic(temperature=0, anthropic_api_key=self.custom_connection.secrets["anthropic_api_key"])
+            self.llm = ChatAnthropic(
+                temperature=0, anthropic_api_key=self.custom_connection.secrets["anthropic_api_key"]
+            )
         elif "openai_api_key" in self.custom_connection.secrets:
             self.llm = AzureChatOpenAI(
                 deployment_name="gpt-35-turbo",
@@ -35,17 +34,16 @@ class LangChainEvaluator:
             )
         else:
             raise ValueError("No valid API key found in the connection.")
-        
+
         self.evaluator = load_evaluator("criteria", llm=self.llm, criteria="conciseness")
 
     @trace
     def __call__(
-        self, input: str, prediction: str, 
+        self,
+        input: str,
+        prediction: str,
     ) -> Result:
         """Evaluate with langchain evaluator."""
 
-        eval_result = self.evaluator.evaluate_strings(
-            prediction=prediction, input=input
-        )
+        eval_result = self.evaluator.evaluate_strings(prediction=prediction, input=input)
         return Result(**eval_result)
-
