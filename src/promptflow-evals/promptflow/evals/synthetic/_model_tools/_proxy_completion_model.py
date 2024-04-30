@@ -82,17 +82,12 @@ class ProxyChatCompletionsModel(OpenAIChatCompletionsModel):
         """
         Request the model with a body of data.
 
-        Parameters
-        ----------
-        session: HTTPS Session for invoking the endpoint.
-        request_data: Prompt dictionary to query the model with. (Pass {"prompt": prompt} instead of prompt.)
-
         :param session: HTTPS Session for invoking the endpoint.
         :type session: RetryClient
         :param request_data: Prompt dictionary to query the model with. (Pass {"prompt": prompt} instead of prompt.)
-        :type request_data: dict
-        :return: A body of data.
-        :rtype: dict
+        :type request_data: Dict[str, Any]
+        :return: A body of data resulting from the model query.
+        :rtype: Dict[str, Any]
         """
 
         self._log_request(request_data)

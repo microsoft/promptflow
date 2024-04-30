@@ -26,6 +26,18 @@ logger = logging.getLogger(__name__)
 
 class AdversarialSimulator:
     def __init__(self, *, template: str, project_scope: Dict[str, Any]):
+        """
+        Initializes the adversarial simulator with a template and project scope.
+
+        :param template: Template string used for generating adversarial inputs.
+        :type template: str
+        :param project_scope: Dictionary defining the scope of the project. It must include the following keys:
+            - "subscription_id": Azure subscription ID.
+            - "resource_group_name": Name of the Azure resource group.
+            - "workspace_name": Name of the Azure Machine Learning workspace.
+            - "credential": Azure credentials object for authentication.
+        :type project_scope: Dict[str, Any]
+        """
         if template not in CONTENT_HARM_TEMPLATES_COLLECTION_KEY:
             raise ValueError(f"Template {template} is not a valid adversarial template.")
         self.template = template
@@ -67,6 +79,35 @@ class AdversarialSimulator:
         concurrent_async_task: int = 3,
         jailbreak: bool = False,
     ):
+        """
+        Executes the adversarial simulation against a specified target function asynchronously.
+
+        :param target: The target function to simulate adversarial inputs against.
+        This function should be asynchronous and accept a dictionary representing the adversarial input.
+        :type target: Callable
+        :param max_conversation_turns: The maximum number of conversation turns to simulate.
+        Defaults to 1.
+        :type max_conversation_turns: int
+        :param max_simulation_results: The maximum number of simulation results to return.
+        Defaults to 3.
+        :type max_simulation_results: int
+        :param api_call_retry_limit: The maximum number of retries for each API call within the simulation.
+        Defaults to 3.
+        :type api_call_retry_limit: int
+        :param api_call_retry_sleep_sec: The sleep duration (in seconds) between retries for API calls.
+        Defaults to 1 second.
+        :type api_call_retry_sleep_sec: int
+        :param api_call_delay_sec: The delay (in seconds) before making an API call.
+        This can be used to avoid hitting rate limits. Defaults to 0 seconds.
+        :type api_call_delay_sec: int
+        :param concurrent_async_task: The number of asynchronous tasks to run concurrently during the simulation.
+        Defaults to 3.
+        :type concurrent_async_task: int
+        :param jailbreak: If set to True, allows breaking out of the conversation flow defined by the template.
+        Defaults to False.
+        :type jailbreak: bool
+        :return: None
+        """
         # validate the inputs
         if "conversation" not in self.template:
             max_conversation_turns = 2
