@@ -29,6 +29,7 @@ from promptflow._core.metric_logger import add_metric_logger, remove_metric_logg
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import ToolsManager
+from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
     apply_default_value_for_input,
@@ -692,10 +693,15 @@ class FlowExecutor:
         """
         if self._should_use_async():
             #  Use async exec_line when the tools are async
-            return asyncio.run(
-                self.exec_line_async(
-                    inputs, index, run_id, validate_inputs, node_concurrency, allow_generator_output, line_timeout_sec
-                )
+            return async_run_allowing_running_loop(
+                self.exec_line_async,
+                inputs,
+                index,
+                run_id,
+                validate_inputs,
+                node_concurrency,
+                allow_generator_output,
+                line_timeout_sec,
             )
         # TODO: Call exec_line_async in exec_line when async is mature.
         self._node_concurrency = node_concurrency
@@ -876,7 +882,6 @@ class FlowExecutor:
     ):
         with self._start_flow_span(inputs) as span, self._record_keyboard_interrupt_to_span(span):
             output, nodes_outputs = await self._traverse_nodes_async(inputs, context)
-            #  TODO: Also stringify async generator output
             output = await self._stringify_generator_output_async(output) if not stream else output
             self._exec_post_process(inputs, output, nodes_outputs, run_info, run_tracker, span, stream)
             return output, extract_aggregation_inputs(self._flow, nodes_outputs)
