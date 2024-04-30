@@ -460,6 +460,39 @@ class FlowOutputDefinition:
 
 
 @dataclass
+class FlowInitDefinition(FlowInputDefinition):
+    """This class represents the definition of a callable class flow's init kwargs."""
+
+    @staticmethod
+    def deserialize(data: dict) -> "FlowInputDefinition":
+        """Deserialize the flow init definition from a dict.
+
+        :param data: The dict to be deserialized.
+        :type data: dict
+        :return: The flow input definition constructed from the dict.
+        :rtype: ~promptflow.contracts.flow.FlowInitDefinition
+        """
+        from promptflow.core._model_configuration import MODEL_CONFIG_NAME_2_CLASS
+
+        # support connection & model config type
+        def _get_type(data_type: str):
+            if ConnectionType.is_connection_class_name(data_type):
+                return data_type
+            elif data_type in MODEL_CONFIG_NAME_2_CLASS:
+                return data_type
+            return ValueType(data_type)
+
+        return FlowInitDefinition(
+            _get_type(data["type"]),
+            data.get("default", None),
+            data.get("description", ""),
+            data.get("enum", []),
+            data.get("is_chat_input", False),
+            data.get("is_chat_history", None),
+        )
+
+
+@dataclass
 class NodeVariant:
     """This class represents a node variant.
 
@@ -969,7 +1002,7 @@ class FlexFlow(FlowBase):
             name=data.get("name", "default_flow"),
             inputs={name: FlowInputDefinition.deserialize(i) for name, i in inputs.items()},
             outputs={name: FlowOutputDefinition.deserialize(o) for name, o in outputs.items()},
-            init={name: FlowInputDefinition.deserialize(i) for name, i in init.items()},
+            init={name: FlowInitDefinition.deserialize(i) for name, i in init.items()},
             program_language=data.get(LANGUAGE_KEY, FlowLanguage.Python),
             environment_variables=data.get("environment_variables") or {},
         )
