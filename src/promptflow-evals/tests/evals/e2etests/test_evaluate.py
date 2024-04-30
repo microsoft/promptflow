@@ -169,8 +169,10 @@ class TestEvaluate:
         from .target_fn import target_fn
 
         f1_score_eval = F1ScoreEvaluator()
+        evaluation_name = "test_evaluate_track_in_cloud"
         # run the evaluation with targets
         result = evaluate(
+            evaluation_name=evaluation_name,
             data=questions_file,
             target=target_fn,
             evaluators={"answer": answer_evaluator, "f1": f1_score_eval},
@@ -191,3 +193,4 @@ class TestEvaluate:
         assert remote_run is not None
         assert remote_run.properties["azureml.promptflow.local_to_cloud"] == "true"
         assert remote_run.properties["runType"] == "eval_run"
+        assert remote_run.display_name == evaluation_name
