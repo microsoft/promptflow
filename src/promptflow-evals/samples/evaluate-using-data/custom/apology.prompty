@@ -9,7 +9,7 @@ model:
     azure_deployment: gpt-4
   parameters:
     temperature: 0.2
-    response_format: { "type": "json_object" }
+    response_format: { "type": "text" }
 inputs:
   question:
     type: string
@@ -36,5 +36,4 @@ result:
 **Here the actual conversation to be scored:**
 user: {{question}}
 assistant: {{answer}}
-
-**result**
+output:
