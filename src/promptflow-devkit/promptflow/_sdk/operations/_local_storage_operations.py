@@ -258,7 +258,11 @@ class LocalStorageOperations(AbstractBatchRunStorage):
         if not self._is_prompty_flow:
             # for flex flow and DAG flow, the YAML will be updated.
             # replace the YAML file with the override one
-            self._dag_path.unlink()
+            try:
+                self._dag_path.unlink()
+            except Exception as e:
+                logger.warning(f"Failed to remove the existing DAG file due to {e}")
+                pass
             shutil.copy(flow.path, self._dag_path)
 
     def load_dag_as_string(self) -> str:
