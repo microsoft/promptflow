@@ -12,6 +12,7 @@ import pandas as pd
 
 from promptflow._sdk._constants import LINE_NUMBER
 from promptflow.client import PFClient
+from promptflow._utils.logger_utils import LoggerFactory
 
 
 def _calculate_mean(df) -> Dict[str, float]:
@@ -234,7 +235,8 @@ def evaluate(
 
     target_generated_columns = set()
     if data is not None and target is not None:
-        input_data_df, target_generated_columns = _apply_target_to_data(target, data, pf_client, input_data_df)
+        with LoggerFactory.disable_all_loggers():
+            input_data_df, target_generated_columns = _apply_target_to_data(target, data, pf_client, input_data_df)
         # After we have generated all columns we can check if we have
         # everything we need for evaluators.
         _validate_columns(input_data_df, evaluators, target=None, evaluator_config=evaluator_config)
