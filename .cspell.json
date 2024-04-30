@@ -196,6 +196,7 @@
     "autogen",
     "spawnve",
     "addrs",
+    "pycache",
     "pywin",
     "STARTF",
     "mltable",

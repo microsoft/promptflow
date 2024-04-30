@@ -6,7 +6,12 @@ import pytest
 from promptflow._core.tool_meta_generator import PythonLoadError
 from promptflow.contracts.run_info import Status
 from promptflow.core import AzureOpenAIModelConfiguration, OpenAIModelConfiguration
-from promptflow.executor._errors import FlowEntryInitializationError, InvalidFlexFlowEntry
+from promptflow.executor._errors import (
+    FlowEntryInitializationError,
+    InputNotFound,
+    InputTypeError,
+    InvalidFlexFlowEntry,
+)
 from promptflow.executor._result import LineResult
 from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import FlowExecutor
@@ -55,13 +60,19 @@ class TestEagerFlow:
             (
                 "basic_callable_class",
                 {"func_input": "func_input"},
-                lambda x: x["func_input"] == "func_input",
+                lambda x: is_dataclass(x) and x.func_input == "func_input",
                 {"obj_input": "obj_input"},
             ),
             (
                 "basic_callable_class_async",
                 {"func_input": "func_input"},
-                lambda x: x["func_input"] == "func_input",
+                lambda x: is_dataclass(x) and x.func_input == "func_input",
+                {"obj_input": "obj_input"},
+            ),
+            (
+                "callable_class_with_primitive",
+                {"func_input": "func_input"},
+                lambda x: x == "The object input is obj_input and the function input is func_input",
                 {"obj_input": "obj_input"},
             ),
             (
@@ -86,6 +97,12 @@ class TestEagerFlow:
                     ),
                     "open_ai_model_config": OpenAIModelConfiguration(model="my_model", base_url="fake_base_url"),
                 },
+            ),
+            (
+                "flow_with_signature",
+                {"input_1": "input_1"},
+                lambda x: x["output"] == "input_2",
+                None,
             ),
         ],
     )
@@ -144,6 +161,21 @@ class TestEagerFlow:
         msg = f"The two tasks should run concurrently, but got {delta_desc}"
         assert 0 <= delta_sec < 0.1, msg
 
+    def test_flow_run_with_invalid_inputs(self):
+        # Case 1: input not found
+        flow_file = get_yaml_file("flow_with_signature", root=EAGER_FLOW_ROOT)
+        executor = FlowExecutor.create(flow_file=flow_file, connections={}, init_kwargs=None)
+        with pytest.raises(InputNotFound) as e:
+            executor.exec_line(inputs={}, index=0)
+        assert "The input for flow is incorrect." in str(e.value)
+
+        # Case 2: input type mismatch
+        flow_file = get_yaml_file("flow_with_wrong_type", root=EAGER_FLOW_ROOT)
+        executor = FlowExecutor.create(flow_file=flow_file, connections={}, init_kwargs=None)
+        with pytest.raises(InputTypeError) as e:
+            executor.exec_line(inputs={"input_1": 1}, index=0)
+        assert "does not match the expected type" in str(e.value)
+
     def test_flow_run_with_invalid_case(self):
         flow_folder = "dummy_flow_with_exception"
         flow_file = get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT)
@@ -197,3 +229,9 @@ class TestEagerFlow:
             aggr_result = executor._exec_aggregation(inputs=[line_result.output])
             # exec aggregation won't fail with error
             assert aggr_result.metrics == {}
+
+    def test_get_function_name(self):
+        expected_names = ["ClassEntry.__call__", "func_entry", "func_entry_async"]
+        for (entry, _, _), expected_name in zip(function_entries, expected_names):
+            executor = FlowExecutor.create(entry, {})
+            assert executor._func_name == expected_name

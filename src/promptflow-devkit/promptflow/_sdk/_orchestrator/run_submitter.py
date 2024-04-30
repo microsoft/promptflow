@@ -7,6 +7,7 @@ import datetime
 from pathlib import Path
 from typing import Union
 
+from promptflow._constants import SystemMetricKeys
 from promptflow._proxy import ProxyFactory
 from promptflow._sdk._constants import REMOTE_URI_PREFIX, ContextAttributeKey, FlowRunProperties
 from promptflow._sdk.entities._flows import Flow, Prompty
@@ -151,6 +152,8 @@ class RunSubmitter:
         status = Status.Failed.value
         exception = None
         # create run to db when fully prepared to run in executor, otherwise won't create it
+        run._status = Status.Running.value
+        run._start_time = datetime.datetime.now()
         run._dump()  # pylint: disable=protected-access
 
         resume_from_run_storage = (
@@ -210,8 +213,19 @@ class RunSubmitter:
             local_storage.persist_result(batch_result)
             # exceptions
             local_storage.dump_exception(exception=exception, batch_result=batch_result)
-            # system metrics: token related
-            system_metrics = batch_result.system_metrics.to_dict() if batch_result else {}
+            # system metrics
+            system_metrics = {}
+            if batch_result:
+                system_metrics.update(batch_result.system_metrics.to_dict())  # token related
+                system_metrics.update(
+                    {f"{SystemMetricKeys.NODE_PREFIX}.{k}": v for k, v in batch_result.node_status.items()}
+                )
+                system_metrics.update(
+                    {
+                        SystemMetricKeys.LINES_COMPLETED: batch_result.completed_lines,
+                        SystemMetricKeys.LINES_FAILED: batch_result.failed_lines,
+                    }
+                )
 
             run = self.run_operations.update(
                 name=run.name,
