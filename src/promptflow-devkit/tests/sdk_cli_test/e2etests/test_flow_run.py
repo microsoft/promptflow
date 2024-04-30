@@ -1942,7 +1942,7 @@ class TestFlowRun:
         def assert_func(details_dict):
             return details_dict == {
                 "inputs.func_input1": ["func_input"],
-                "inputs.func_input2": ["override_func_input"],
+                "inputs.func_input2": ["func_input"],
                 "inputs.line_number": [0],
                 "outputs.output": ["obj_input_func_input_func_input"],
             }
@@ -1952,6 +1952,7 @@ class TestFlowRun:
         run = pf.run(
             flow=flow_path,
             data=f"{EAGER_FLOWS_DIR}/basic_with_yaml_default/inputs_override.jsonl",
+            column_mapping={"func_input1": "${data.func_input1}", "func_input2": "${data.func_input2}"},
             init={"obj_input": "obj_input"},
         )
         assert_batch_run_result(run, pf, assert_func)
