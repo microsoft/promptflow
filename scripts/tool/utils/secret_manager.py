@@ -1,13 +1,5 @@
-import re
-
-from azure.core.exceptions import HttpResponseError, ResourceExistsError
 from azure.identity import AzureCliCredential
 from azure.keyvault.secrets import SecretClient
-from exceptions import (
-    SecretNameAlreadyExistsException,
-    SecretNameInvalidException,
-    SecretNoSetPermissionException,
-)
 
 key_vault_name = "github-promptflow"
 KVUri = f"https://{key_vault_name}.vault.azure.net"
