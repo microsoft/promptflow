@@ -50,6 +50,7 @@ from promptflow._proxy._base_executor_proxy import APIBasedExecutorProxy
 from promptflow._proxy._csharp_executor_proxy import CSharpBaseExecutorProxy
 from promptflow._sdk._constants import LOCAL_MGMT_DB_PATH, CreatedByFieldName
 from promptflow._sdk._service.apis.collector import trace_collector
+from promptflow._sdk._trace_telemetry import aggregate_trace_count
 from promptflow._sdk._tracing import process_otlp_trace_request
 from promptflow._sdk._utilities.general_utils import resolve_flow_language
 from promptflow._sdk._version import VERSION
