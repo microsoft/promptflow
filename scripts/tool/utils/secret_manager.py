@@ -1,7 +1,7 @@
 import re
 
 from azure.core.exceptions import HttpResponseError, ResourceExistsError
-from azure.identity import ClientSecretCredential
+from azure.identity import AzureCliCredential
 from azure.keyvault.secrets import SecretClient
 from exceptions import (
     SecretNameAlreadyExistsException,
@@ -19,10 +19,9 @@ def init_used_secret_names(client: SecretClient):
     reserved_secret_names = list_secret_names(client)
 
 
-def get_secret_client(
-    tenant_id: str, client_id: str, client_secret: str
-) -> SecretClient:
-    credential = ClientSecretCredential(tenant_id, client_id, client_secret)
+def get_secret_client() -> SecretClient:
+    # credential = ClientSecretCredential(tenant_id, client_id, client_secret)
+    credential = AzureCliCredential()
     client = SecretClient(vault_url=KVUri, credential=credential)
 
     return client

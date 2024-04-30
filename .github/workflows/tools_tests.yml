@@ -1,4 +1,7 @@
 name: tools_tests
+permissions:
+  id-token: write
+  contents: read
 on:
   pull_request_target:
     paths:
@@ -53,9 +56,17 @@ jobs:
             pip install azure-mgmt-cognitiveservices==13.5.0
           fi
           pip list
+
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.CLIENT_ID }}
+          tenant-id: ${{ secrets.TENANT_ID }}
+          subscription-id: "96aede12-2f73-41cb-b983-6d11a904839b"
+
       - name: Generate configs
         run: |
-          python ./scripts/tool/generate_connection_config.py --tenant_id ${{ secrets.TENANT_ID }} --client_id ${{ secrets.CLIENT_ID }} --client_secret ${{ secrets.CLIENT_SECRET }}
+          python ./scripts/tool/generate_connection_config.py
 
       - name: Run tests
         run: |
