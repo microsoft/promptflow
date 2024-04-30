@@ -94,8 +94,18 @@ pf.run(flow="path.to.module:ClassName", init="./init.jsonl", data="./data.jsonl"
 Or directly run the imported flow class or flow instance.
 
 ```python
+from promptflow.core import AzureOpenAIModelConfiguration
+
+
 class MyFlow:
     pass
+
+config = AzureOpenAIModelConfiguration(
+  azure_deployment="my_deployment",
+  # connection and api_key configs are exclusive
+  connection="my_aoai_connection",
+  api_key="actual_key",
+)
 pf.run(flow=MyFlow, init={"model_config": config, "flow_config": {}}, data="./data.jsonl")
 # or
 flow_obj = MyFlow(model_config=config, flow_config={})
