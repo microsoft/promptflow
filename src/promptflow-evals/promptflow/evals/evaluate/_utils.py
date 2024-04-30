@@ -121,7 +121,7 @@ def _log_metrics_and_instance_results(metrics, instance_results, tracking_uri, r
                 run_id = run.info.run_id
     else:
         azure_pf_client = _azure_pf_client(trace_destination=trace_destination)
-        with (tempfile.TemporaryDirectory() as temp_dir):
+        with tempfile.TemporaryDirectory() as temp_dir:
             file_name = Local2Cloud.FLOW_INSTANCE_RESULTS_FILE_NAME
             local_file = Path(temp_dir) / file_name
             instance_results.to_json(local_file, orient="records", lines=True)
