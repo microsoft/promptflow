@@ -602,17 +602,11 @@ def process_otlp_trace_request(
                 else:
                     all_spans.append(span)
 
-    if cloud_trace_only:
-        # If we only trace to cloud, we should make sure the data writing is success before return.
-        _try_write_trace_to_cosmosdb(
-            all_spans, get_created_by_info_with_cache, logger, get_credential, is_cloud_trace=True
-        )
-    else:
-        # Create a new thread to write trace to cosmosdb to avoid blocking the main thread
-        ThreadWithContextVars(
-            target=_try_write_trace_to_cosmosdb,
-            args=(all_spans, get_created_by_info_with_cache, logger, get_credential, False),
-        ).start()
+    # Create a new thread to write trace to cosmosdb to avoid blocking the main thread
+    ThreadWithContextVars(
+        target=_try_write_trace_to_cosmosdb,
+        args=(all_spans, get_created_by_info_with_cache, logger, get_credential, cloud_trace_only),
+    ).start()
 
     return
 
