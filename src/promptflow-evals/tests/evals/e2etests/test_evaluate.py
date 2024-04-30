@@ -6,9 +6,9 @@ import pandas as pd
 import pytest
 import requests
 
-from promptflow.azure._utils.general import get_authorization
 from promptflow.evals.evaluate import evaluate
 from promptflow.evals.evaluators import F1ScoreEvaluator, GroundednessEvaluator
+from azure.identity import DefaultAzureCredential
 
 
 @pytest.fixture
@@ -29,8 +29,9 @@ def answer_evaluator(answer):
 
 def _get_run_from_run_history(flow_run_id, runs_operation):
     """Get run info from run history"""
+    token = "Bearer " + DefaultAzureCredential().get_token("https://management.azure.com/.default").token
     headers = {
-            "Authorization": get_authorization(credential=runs_operation._credential),
+            "Authorization": token,
             "Content-Type": "application/json",
         }
     url = runs_operation._run_history_endpoint_url + "/rundata"
@@ -190,7 +191,8 @@ class TestEvaluate:
         assert "answer.length" in metrics.keys()
         assert "f1_score.f1_score" in metrics.keys()
 
-    def test_evaluate_track_in_cloud(self, questions_file, azure_pf_client, mock_trace_destination_to_cloud):
+    def test_evaluate_track_in_cloud(self, questions_file, azure_pf_client, mock_trace_destination_to_cloud,
+                                     configure_default_azure_credential):
         """Test evaluation with target function."""
         # We cannot define target in this file as pytest will load
         # all modules in test folder and target_fn will be imported from the first
@@ -226,7 +228,8 @@ class TestEvaluate:
         assert remote_run.properties["runType"] == "eval_run"
         assert remote_run.display_name == evaluation_name
 
-    def test_evaluate_track_in_cloud_no_target(self, data_file, azure_pf_client, mock_trace_destination_to_cloud):
+    def test_evaluate_track_in_cloud_no_target(self, data_file, azure_pf_client, mock_trace_destination_to_cloud,
+                                               configure_default_azure_credential):
         # data
         input_data = pd.read_json(data_file, lines=True)
 
