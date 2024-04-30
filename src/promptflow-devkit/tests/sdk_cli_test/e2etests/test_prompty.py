@@ -211,6 +211,13 @@ class TestPrompty:
             output = json.loads(f.readline())
             assert "6" in output["output"]
 
+        # test pf run wile loaded prompty
+        prompty = load_flow(source=f"{PROMPTY_DIR}/prompty_example.prompty")
+        run = pf.run(flow=prompty, data=f"{DATA_DIR}/prompty_inputs.jsonl")
+        assert run.status == "Completed"
+        run_dict = run._to_dict()
+        assert not run_dict.get("error", None), f"error in run_dict {run_dict['error']}"
+
     def test_prompty_test(self, pf: PFClient):
         result = pf.test(
             flow=f"{PROMPTY_DIR}/prompty_example.prompty", inputs={"question": "what is the result of 1+1?"}

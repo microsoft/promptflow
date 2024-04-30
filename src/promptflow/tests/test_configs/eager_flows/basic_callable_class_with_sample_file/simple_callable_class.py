@@ -1,11 +1,14 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from typing import TypedDict
+
+from dataclasses import dataclass
 
 from promptflow.tracing import trace
 
-class FlowOutput(TypedDict):
+
+@dataclass
+class FlowOutput:
     obj_input: str
     func_input: str
     obj_id: str
@@ -17,13 +20,14 @@ class MyFlow:
 
     @trace
     def __call__(self, func_input: str) -> FlowOutput:
-        return {
-            "obj_input": self.obj_input,
-            "func_input": func_input,
-            "obj_id": id(self),
-        }
+        return FlowOutput(obj_input=self.obj_input, func_input=func_input, obj_id=id(self))
 
     def __aggregate__(self, results: list) -> dict:
+        # Try attribute-style access for the datacalss
+        obj_inputs = [r.obj_input for r in results]
+        func_inputs = [r.func_input for r in results]
+        obj_ids = [r.obj_id for r in results]
+
         return {"length": len(results)}
 
 

@@ -18,8 +18,7 @@ from promptflow._sdk._constants import (
     HOME_PROMPT_FLOW_DIR,
     SERVICE_CONFIG_FILE,
 )
-from promptflow._sdk._tracing import TraceDestinationConfig
-from promptflow._sdk._utils import call_from_extension, gen_uuid_by_compute_info, read_write_by_user
+from promptflow._sdk._utilities.general_utils import call_from_extension, gen_uuid_by_compute_info, read_write_by_user
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.exceptions import ErrorTarget, ValidationException
@@ -205,6 +204,8 @@ class Configuration(object):
         return provider
 
     def get_trace_destination(self, path: Optional[Path] = None) -> Optional[str]:
+        from promptflow._sdk._tracing import TraceDestinationConfig
+
         value = self.get_config(key=self.TRACE_DESTINATION)
         logger.info("pf.config.trace.destination: %s", value)
         if TraceDestinationConfig.need_to_resolve(value):
@@ -254,6 +255,8 @@ class Configuration(object):
                     "please use its child folder, e.g. '${flow_directory}/.runs'."
                 )
         elif key == Configuration.TRACE_DESTINATION:
+            from promptflow._sdk._tracing import TraceDestinationConfig
+
             TraceDestinationConfig.validate(value)
         return
 
