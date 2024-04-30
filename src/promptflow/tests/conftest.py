@@ -52,9 +52,8 @@ def dev_connections() -> dict:
 
 @pytest.fixture
 def setup_connection_provider():
-    if not ConnectionProvider._instance:
-        connection_dict = json.loads(open(CONNECTION_FILE, "r").read())
-        ConnectionProvider._instance = DictConnectionProvider(connection_dict)
+    connection_dict = json.loads(open(CONNECTION_FILE, "r").read())
+    ConnectionProvider._instance = DictConnectionProvider(connection_dict)
     # patch get instance as executor run with sub-process and lost class instance
     with patch(
         "promptflow.connections.ConnectionProvider.get_instance",
