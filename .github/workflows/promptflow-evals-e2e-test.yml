@@ -62,6 +62,7 @@ jobs:
           poetry run pip install -e ../promptflow-tools
           poetry run pip install -e ../promptflow-azure
           poetry run pip install mlflow
+          poetry run pip install azureml-mlflow
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: install promptflow-evals from wheel
         # wildcard expansion (*) does not work in Windows, so leverage python to find and install
