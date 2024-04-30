@@ -15,6 +15,7 @@ from typing import Any, Dict, Generator
 from promptflow._constants import PROMPT_FLOW_DIR_NAME, FlowLanguage
 from promptflow._proxy._csharp_inspector_proxy import EXECUTOR_SERVICE_DLL
 from promptflow._utils.flow_utils import resolve_flow_path
+from promptflow.exceptions import UserErrorException
 
 from .general_utils import resolve_flow_language
 
@@ -66,6 +67,11 @@ def start_flow_service(
 
     flow_dir, flow_file_name = resolve_flow_path(source)
     if language == FlowLanguage.Python:
+        if not os.path.isdir(source):
+            raise UserErrorException(
+                message_format="Support directory `source` for Python flow only for now, but got {source}.",
+                source=source,
+            )
         serve_python_flow(
             flow_file_name=flow_file_name,
             flow_dir=flow_dir,
@@ -101,8 +107,8 @@ def serve_python_flow(
     from promptflow._sdk._configuration import Configuration
     from promptflow.core._serving.app import create_app
 
+    # if no additional includes, flow_dir keeps the same; if additional includes, flow_dir is a temp dir
     flow_dir = _resolve_python_flow_additional_includes(flow_file_name, flow_dir)
-    flow_dir, flow_file_name = resolve_flow_path(flow_dir)
 
     pf_config = Configuration(overrides=config)
     logger.info(f"Promptflow config: {pf_config}")
