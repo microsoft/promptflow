@@ -18,12 +18,13 @@ from promptflow.core._prompty_utils import (
     convert_prompt_template,
     format_llm_response,
     get_open_ai_client_by_connection,
-    load_inputs_from_sample,
     prepare_open_ai_request_params,
     send_request_to_llm,
     update_dict_recursively,
 )
+from promptflow.core._utils import load_inputs_from_sample
 from promptflow.exceptions import UserErrorException
+from promptflow.tracing import trace
 from promptflow.tracing._experimental import enrich_prompt_template
 from promptflow.tracing._trace import _traced
 
@@ -373,6 +374,7 @@ class Prompty(FlowBase):
             raise MissingRequiredInputError(f"Missing required inputs: {missing_inputs}")
         return resolved_inputs
 
+    @trace
     def __call__(self, *args, **kwargs):
         """Calling flow as a function, the inputs should be provided with key word arguments.
         Returns the output of the prompty.
@@ -430,6 +432,7 @@ class AsyncPrompty(Prompty):
 
     """
 
+    @trace
     async def __call__(self, *args, **kwargs) -> Mapping[str, Any]:
         """Calling prompty as a function in async, the inputs should be provided with key word arguments.
         Returns the output of the prompty.

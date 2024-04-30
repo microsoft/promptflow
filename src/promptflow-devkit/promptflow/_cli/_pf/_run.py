@@ -4,6 +4,7 @@
 
 import argparse
 import json
+from contextlib import contextmanager
 from typing import Callable, Dict, List, Optional, Tuple
 
 from promptflow._cli._params import (
@@ -34,7 +35,7 @@ from promptflow._sdk._constants import MAX_SHOW_DETAILS_RESULTS, get_list_view_t
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._run_functions import _create_run, _resume_run
-from promptflow._sdk._utils import safe_parse_object_list
+from promptflow._sdk._utilities.general_utils import generate_yaml_entry, safe_parse_object_list
 from promptflow._sdk.entities import Run
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import UserErrorException
@@ -43,9 +44,9 @@ logger = get_cli_sdk_logger()
 
 
 def add_run_parser(subparsers):
-    run_parser = subparsers.add_parser("run",
-                                       description="A CLI tool to manage runs for prompt flow.",
-                                       help="Manage runs.")
+    run_parser = subparsers.add_parser(
+        "run", description="A CLI tool to manage runs for prompt flow.", help="Manage runs."
+    )
     subparsers = run_parser.add_subparsers()
     add_run_create(subparsers)
     # add_run_cancel(subparsers)
@@ -575,6 +576,29 @@ def _parse_kv_pair(kv_pairs: str) -> Dict[str, str]:
     return result
 
 
+@contextmanager
+def _build_run_obj_context(file, flow, run_source, run_params, params_override):
+    if file:
+        for param_key, param in run_params.items():
+            params_override.append({param_key: param})
+
+        yield load_run(source=file, params_override=params_override)
+    if flow:
+        with generate_yaml_entry(entry=flow) as generated_flow_yaml:
+            run_params["flow"] = generated_flow_yaml
+            yield Run._load(data=run_params, params_override=params_override)
+    if run_source:
+        display_name, description, tags = _parse_metadata_args(params_override)
+        processed_params = {
+            "display_name": display_name,
+            "description": description,
+            "tags": tags,
+        }
+        yield Run._load_from_source(source=run_source, params_override=processed_params)
+    if not file and not flow and not run_source:
+        raise UserErrorException("To create a run, one of [file, flow, source] must be specified.")
+
+
 def create_run(create_func: Callable, resume_func: Callable, args):
     file = args.file
     flow = args.flow
@@ -622,24 +646,6 @@ def create_run(create_func: Callable, resume_func: Callable, args):
             f"{', source' if has_source else ''}, resume-from]"
         )
 
-    def _build_run_obj():
-        if file:
-            for param_key, param in run_params.items():
-                params_override.append({param_key: param})
-
-            return load_run(source=file, params_override=params_override)
-        if flow:
-            return Run._load(data=run_params, params_override=params_override)
-        if run_source:
-            display_name, description, tags = _parse_metadata_args(params_override)
-            processed_params = {
-                "display_name": display_name,
-                "description": description,
-                "tags": tags,
-            }
-            return Run._load_from_source(source=run_source, params_override=processed_params)
-        raise UserErrorException("To create a run, one of [file, flow, source] must be specified.")
-
     if resume_from:
         if params_override:
             logger.debug(f"resume_from specified, append params override {params_override} to run params.")
@@ -647,7 +653,10 @@ def create_run(create_func: Callable, resume_func: Callable, args):
         logger.debug(f"Run params: {run_params}")
         run = resume_func(**run_params, stream=stream)
     else:
-        run = create_func(run=_build_run_obj(), stream=stream)
+        with _build_run_obj_context(
+            file=file, flow=flow, run_source=run_source, run_params=run_params, params_override=params_override
+        ) as run_obj:
+            run = create_func(run=run_obj, stream=stream)
     if stream:
         print("\n")  # change new line to show run info
     print(json.dumps(run._to_dict(), indent=4))

@@ -28,7 +28,7 @@ from promptflow._sdk._constants import LOGGER_NAME, SCRUBBED_VALUE, ExperimentSt
 from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
-from promptflow._utils.context_utils import _change_working_dir
+from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil, setup_user_agent_to_operation_context
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
@@ -2568,6 +2568,60 @@ class TestCli:
         run = pf.runs.get(run_id)
         assert_batch_run_result(run, pf, assert_func)
 
+    def test_pf_run_with_init_resume(self, pf):
+        original_run_id = str(uuid.uuid4())
+        run_pf_command(
+            "run",
+            "create",
+            "--flow",
+            f"{EAGER_FLOWS_DIR}/basic_callable_class",
+            "--data",
+            f"{EAGER_FLOWS_DIR}/basic_callable_class/inputs.jsonl",
+            "--name",
+            original_run_id,
+            "--init",
+            "obj_input=val",
+        )
+
+        def assert_func(details_dict):
+            return details_dict["outputs.func_input"] == [
+                "func_input",
+                "func_input",
+                "func_input",
+                "func_input",
+            ] and details_dict["outputs.obj_input"] == ["val", "val", "val", "val"]
+
+        # check run results
+        run = pf.runs.get(original_run_id)
+        assert run.status == "Completed"
+        assert_batch_run_result(run, pf, assert_func)
+
+        resume_run_id_fail = str(uuid.uuid4())
+        with pytest.raises(ValueError):
+            run_pf_command(
+                "run",
+                "create",
+                "--resume-from",
+                original_run_id,
+                "--name",
+                resume_run_id_fail,
+                "--init",
+                "obj_input=val",
+            )
+
+        resume_run_id = str(uuid.uuid4())
+        run_pf_command(
+            "run",
+            "create",
+            "--resume-from",
+            original_run_id,
+            "--name",
+            resume_run_id,
+        )
+        resume_run = pf.runs.get(resume_run_id)
+        assert resume_run.status == "Completed"
+        assert_batch_run_result(resume_run, pf, assert_func)
+
     def test_pf_flow_save(self, pf):
         with tempfile.TemporaryDirectory() as temp_dir:
             run_pf_command(
@@ -2617,6 +2671,64 @@ class TestCli:
         stdout, _ = capsys.readouterr()
         assert "obj_input" in stdout
         assert "func_input" in stdout
+
+    def test_eager_flow_test_without_yaml(self, pf, capsys):
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            "entry:my_flow",
+            "--inputs",
+            "input_val=val1",
+            cwd=f"{EAGER_FLOWS_DIR}/simple_without_yaml_return_output",
+        )
+        stdout, _ = capsys.readouterr()
+        assert "Hello world" in stdout
+        assert "val1" in stdout
+
+    def test_class_based_eager_flow_test_without_yaml(self, pf, capsys):
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            "simple_callable_class:MyFlow",
+            "--inputs",
+            "func_input=input",
+            "--init",
+            "obj_input=val",
+            cwd=f"{EAGER_FLOWS_DIR}/basic_callable_class_without_yaml",
+        )
+        stdout, _ = capsys.readouterr()
+        assert "obj_input" in stdout
+        assert "func_input" in stdout
+
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            "simple_callable_class:MyFlow",
+            "--inputs",
+            f"{EAGER_FLOWS_DIR}/basic_callable_class_without_yaml/inputs.jsonl",
+            "--init",
+            f"{EAGER_FLOWS_DIR}/basic_callable_class_without_yaml/init.json",
+            cwd=f"{EAGER_FLOWS_DIR}/basic_callable_class_without_yaml",
+        )
+        stdout, _ = capsys.readouterr()
+        assert "obj_input" in stdout
+        assert "func_input" in stdout
+
+    def test_eager_flow_test_without_yaml_ui(self, pf, capsys):
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            "entry:my_flow",
+            "--ui",
+            cwd=f"{EAGER_FLOWS_DIR}/simple_without_yaml_return_output",
+        )
+        stdout, _ = capsys.readouterr()
+        assert "You can begin chat flow" in stdout
+        assert Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml_return_output/flow.flex.yaml").exists()
 
     @pytest.mark.usefixtures("reset_tracer_provider")
     def test_pf_flow_test_with_collection(self):
@@ -2703,6 +2815,35 @@ class TestCli:
                 f"{DATAS_DIR}/logo.jpg",
             )
         assert "Only support jsonl or json file as input" in ex.value.args[0]
+
+    def test_pf_run_without_yaml(self, pf):
+        run_id = str(uuid.uuid4())
+        with inject_sys_path(f"{EAGER_FLOWS_DIR}/basic_callable_class"):
+            run_pf_command(
+                "run",
+                "create",
+                "--flow",
+                "simple_callable_class:MyFlow",
+                "--data",
+                f"{EAGER_FLOWS_DIR}/basic_callable_class/inputs.jsonl",
+                "--name",
+                run_id,
+                "--init",
+                "obj_input=val",
+                cwd=f"{EAGER_FLOWS_DIR}/basic_callable_class",
+            )
+
+        def assert_func(details_dict):
+            return details_dict["outputs.func_input"] == [
+                "func_input",
+                "func_input",
+                "func_input",
+                "func_input",
+            ] and details_dict["outputs.obj_input"] == ["val", "val", "val", "val"]
+
+        # check run results
+        run = pf.runs.get(run_id)
+        assert_batch_run_result(run, pf, assert_func)
 
 
 def assert_batch_run_result(run, pf, assert_func):

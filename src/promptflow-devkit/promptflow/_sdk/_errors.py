@@ -259,6 +259,18 @@ class LineRunNotFoundError(SDKError):
     pass
 
 
+class ArtifactInternalError(SDKInternalError):
+    """Exception raised if artifact internal error."""
+
+    pass
+
+
+class MetricInternalError(SDKInternalError):
+    """Exception raised if metric internal error."""
+
+    pass
+
+
 class MissingAzurePackage(SDKError):
     """Exception raised if missing required package."""
 

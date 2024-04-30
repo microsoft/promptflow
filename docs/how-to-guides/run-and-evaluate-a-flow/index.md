@@ -1,6 +1,6 @@
 # Run and evaluate a flow
 
-After you have developed and tested the flow in [init and test a flow](../develop-a-flow/init-and-test-a-flow.md), this guide will help you learn how to run a flow with a larger dataset and then evaluate the flow you have created.
+After you have developed and tested the flow in [init and test a flow](../develop-a-dag-flow/init-and-test-a-flow.md), this guide will help you learn how to run a flow with a larger dataset and then evaluate the flow you have created.
 
 ## Create a batch run
 
@@ -113,7 +113,7 @@ We also have a more detailed documentation  [Manage runs](./manage-runs.md) demo
 
 ## Evaluate your flow
 
-You can use an evaluation method to evaluate your flow. The evaluation methods are also flows which use Python or LLM etc., to calculate metrics like accuracy, relevance score. Please refer to [Develop evaluation flow](../develop-a-flow/develop-evaluation-flow.md) to learn how to develop an evaluation flow.
+You can use an evaluation method to evaluate your flow. The evaluation methods are also flows which use Python or LLM etc., to calculate metrics like accuracy, relevance score. Please refer to [Develop evaluation flow](../develop-a-dag-flow/develop-evaluation-flow.md) to learn how to develop an evaluation flow.
 
 In this guide, we use [eval-classification-accuracy](https://github.com/microsoft/promptflow/tree/main/examples/flows/evaluation/eval-classification-accuracy) flow to evaluate. This is a flow illustrating how to evaluate the performance of a classification system. It involves comparing each prediction to the groundtruth and assigns a `Correct` or `Incorrect` grade, and aggregating the results to produce metrics such as `accuracy`, which reflects how good the system is at classifying the data.
 

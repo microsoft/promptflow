@@ -10,7 +10,7 @@ from promptflow._utils.logger_utils import bulk_logger, flow_logger, logger, ser
 from promptflow._version import VERSION as PF_VERSION
 from promptflow.core._version import __version__ as PF_CORE_VERSION
 from promptflow.executor._service._errors import ExecutionTimeoutError
-from promptflow.executor._service.contracts.execution_request import BaseExecutionRequest, FlowExecutionRequest
+from promptflow.executor._service.contracts.execution_request import FlowExecutionRequest
 from promptflow.executor._service.utils.service_utils import (
     generate_error_response,
     get_commit_id,
@@ -103,9 +103,8 @@ class TestServiceUtils:
         assert json_ser_error_response.innermost_error_code == "ExecutionTimeoutError"
 
     def test_set_environment_variables(self):
-        execution_request = BaseExecutionRequest(**MOCK_REQUEST)
-        execution_request.environment_variables = {
+        environment_variables = {
             "PF_TEST_ENV": "dummy_value",
         }
-        set_environment_variables(execution_request)
+        set_environment_variables(environment_variables)
         assert os.environ.get("PF_TEST_ENV") == "dummy_value"

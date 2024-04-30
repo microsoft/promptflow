@@ -8,6 +8,7 @@ from typing import TypedDict
 import pytest
 
 from promptflow._cli._pf.entry import main
+from promptflow._sdk._utilities.serve_utils import find_available_port
 
 
 # TODO: move this to a shared utility module
@@ -104,6 +105,58 @@ class TestCSharpCli:
             cmd.extend(["--init", test_case["init"]])
         run_pf_command(*cmd)
 
+    @pytest.mark.skip(reason="need to figure out how to check serve status in subprocess")
+    def test_flow_serve(self, csharp_test_project_class_init_flex_flow: CSharpProject):
+        port = find_available_port()
+        run_pf_command(
+            "flow",
+            "serve",
+            "--source",
+            csharp_test_project_class_init_flex_flow["flow_dir"],
+            "--port",
+            str(port),
+            "--init",
+            "connection=azure_open_ai_connection",
+            "name=Promptflow",
+        )
+
+    @pytest.mark.skip(reason="need to figure out how to check serve status in subprocess")
+    def test_flow_serve_init_json(self, csharp_test_project_class_init_flex_flow: CSharpProject):
+        port = find_available_port()
+        run_pf_command(
+            "flow",
+            "serve",
+            "--source",
+            csharp_test_project_class_init_flex_flow["flow_dir"],
+            "--port",
+            str(port),
+            "--init",
+            csharp_test_project_class_init_flex_flow["init"],
+        )
+
+    def test_flow_test_include_log(self, csharp_test_project_basic: CSharpProject, capfd):
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            csharp_test_project_basic["flow_dir"],
+        )
+        # use capfd to capture stdout and stderr redirected from subprocess
+        captured = capfd.readouterr()
+        assert "[TOOL.HelloWorld]" in captured.out
+
+        run_pf_command(
+            "run",
+            "create",
+            "--flow",
+            csharp_test_project_basic["flow_dir"],
+            "--data",
+            csharp_test_project_basic["data"],
+        )
+        captured = capfd.readouterr()
+        # info log shouldn't be printed
+        assert "[TOOL.HelloWorld]" not in captured.out
+
     def test_flow_chat(self, monkeypatch, capsys, csharp_test_project_basic_chat: CSharpProject):
         flow_dir = csharp_test_project_basic_chat["flow_dir"]
         # mock user input with pop so make chat list reversed
@@ -129,10 +182,10 @@ class TestCSharpCli:
         detail_path = Path(flow_dir) / ".promptflow" / "chat.detail.json"
         assert detail_path.exists()
 
-        outerr = capsys.readouterr()
+        captured = capsys.readouterr()
         # Check node output
-        assert "Hello world round 0: hi" in outerr.out
-        assert "Hello world round 1: what is chat gpt?" in outerr.out
+        assert "Hello world round 0: hi" in captured.out
+        assert "Hello world round 1: what is chat gpt?" in captured.out
 
     @pytest.mark.skip(reason="need to update the test case")
     def test_pf_run_create_with_connection_override(self, csharp_test_project_basic):

@@ -27,11 +27,16 @@ class Prompty(FlowBase):
         path = Path(path)
         # prompty folder path
         code = Path(code)
+        self._core_prompty = CorePrompty(path=path, **kwargs)
         super().__init__(code=code, path=path, data=data, content_hash=None, **kwargs)
 
     @property
     def language(self) -> str:
         return self._data.get(LANGUAGE_KEY, FlowLanguage.Python)
+
+    @property
+    def sample(self):
+        return self._data.get("sample", None)
 
     # region overrides
 
@@ -47,6 +52,9 @@ class Prompty(FlowBase):
                 core_prompty._data, unknown=INCLUDE
             )
         return cls(path=path, code=path.parent, data=data, **kwargs)
+
+    def __call__(self, *args, **kwargs):
+        return self._core_prompty(*args, **kwargs)
 
     # endregion overrides
 

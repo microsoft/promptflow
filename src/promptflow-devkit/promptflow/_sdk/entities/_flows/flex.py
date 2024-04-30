@@ -45,6 +45,10 @@ class FlexFlow(FlowBase):
     def additional_includes(self) -> list:
         return self._data.get("additional_includes", [])
 
+    @property
+    def sample(self):
+        return self._data.get("sample", None)
+
     # endregion
 
     # region overrides

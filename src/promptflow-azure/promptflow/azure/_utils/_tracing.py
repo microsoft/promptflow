@@ -7,12 +7,12 @@ import typing
 
 from azure.ai.ml import MLClient
 from azure.core.exceptions import ResourceNotFoundError
+from azure.identity import AzureCliCredential
 
 from promptflow._constants import AzureWorkspaceKind, CosmosDBContainerName
-from promptflow._sdk._utils import extract_workspace_triad_from_trace_provider
+from promptflow._sdk._utilities.general_utils import extract_workspace_triad_from_trace_provider
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure import PFClient
-from promptflow.azure._cli._utils import get_credentials_for_cli
 from promptflow.azure._restclient.flow_service_caller import FlowRequestException
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
@@ -73,7 +73,7 @@ def validate_trace_destination(value: str) -> None:
     # the resource exists
     _logger.debug("Validating resource exists...")
     ml_client = MLClient(
-        credential=get_credentials_for_cli(),
+        credential=AzureCliCredential(),  # this validation only happens in CLI, so use CLI credential
         subscription_id=workspace_triad.subscription_id,
         resource_group_name=workspace_triad.resource_group_name,
         workspace_name=workspace_triad.workspace_name,
