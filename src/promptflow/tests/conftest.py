@@ -18,8 +18,6 @@ from promptflow._core.connection_manager import ConnectionManager
 from promptflow._sdk._constants import AzureMLWorkspaceTriad
 from promptflow._sdk.entities._connection import AzureOpenAIConnection
 from promptflow._utils.context_utils import _change_working_dir
-from promptflow.connections import ConnectionProvider
-from promptflow.core._connection_provider._dict_connection_provider import DictConnectionProvider
 
 load_dotenv()
 
@@ -48,18 +46,6 @@ def mock_build_info():
 def dev_connections() -> dict:
     with open(CONNECTION_FILE, "r") as f:
         return json.load(f)
-
-
-@pytest.fixture
-def setup_connection_provider():
-    connection_dict = json.loads(open(CONNECTION_FILE, "r").read())
-    ConnectionProvider._instance = DictConnectionProvider(connection_dict)
-    # patch get instance as executor run with sub-process and lost class instance
-    with patch(
-        "promptflow.connections.ConnectionProvider.get_instance",
-        return_value=ConnectionProvider._instance,
-    ):
-        yield
 
 
 @pytest.fixture

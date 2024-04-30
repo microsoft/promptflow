@@ -38,7 +38,7 @@ def validate_batch_result(batch_result: BatchResult, flow_folder, output_dir, en
         assert ensure_output(output)
 
 
-@pytest.mark.usefixtures("setup_connection_provider")
+@pytest.mark.usefixtures("dev_connections")
 @pytest.mark.e2etest
 class TestEagerFlow:
     @pytest.mark.parametrize(
@@ -81,13 +81,14 @@ class TestEagerFlow:
         batch_result = batch_engine.run(input_dirs, inputs_mapping, output_dir)
         validate_batch_result(batch_result, flow_folder, output_dir, ensure_output)
 
-    def test_batch_run_with_openai(self):
+    def test_batch_run_with_openai(self, dev_connections):
         flow_folder = "callable_class_with_openai"
         inputs_mapping = {"question": "${data.question}", "stream": "${data.stream}"}
         batch_engine = BatchEngine(
             get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT),
             get_flow_folder(flow_folder, root=EAGER_FLOW_ROOT),
             init_kwargs={"connection": "azure_open_ai_connection"},
+            connections=dev_connections,
         )
         input_dirs = {"data": get_flow_inputs_file(flow_folder, root=EAGER_FLOW_ROOT)}
         output_dir = Path(mkdtemp())
