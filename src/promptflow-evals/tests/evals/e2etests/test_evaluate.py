@@ -21,6 +21,7 @@ def questions_file():
     return os.path.join(data_path, "questions.jsonl")
 
 
+
 def answer_evaluator(answer):
     return {"length": len(answer)}
 
@@ -158,3 +159,27 @@ class TestEvaluate:
 
         assert "answer.length" in metrics.keys()
         assert "f1_score.f1_score" in metrics.keys()
+
+    def test_evaluate_track_in_cloud(self, questions_file, azure_pf_client, mock_trace_destination_to_cloud):
+        """Test evaluation with target function."""
+        # We cannot define target in this file as pytest will load
+        # all modules in test folder and target_fn will be imported from the first
+        # module named test_evaluate and it will be a different module in unit test
+        # folder. By keeping function in separate file we guarantee, it will be loaded
+        # from there.
+        from .target_fn import target_fn
+
+        f1_score_eval = F1ScoreEvaluator()
+        # run the evaluation with targets
+        result = evaluate(
+            data=questions_file,
+            target=target_fn,
+            evaluators={"answer": answer_evaluator, "f1": f1_score_eval},
+        )
+        row_result_df = pd.DataFrame(result["rows"])
+        assert "outputs.answer" in row_result_df.columns
+        assert "outputs.answer.length" in row_result_df.columns
+        assert list(row_result_df["outputs.answer.length"]) == [28, 76, 22]
+        assert "outputs.f1.f1_score" in row_result_df.columns
+        assert not any(np.isnan(f1) for f1 in row_result_df["outputs.f1.f1_score"])
+        assert result["studio_url"] is not None

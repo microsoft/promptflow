@@ -90,6 +90,10 @@ def _log_metrics_and_instance_results(metrics, instance_results, tracking_uri, r
                                       evaluation_name=None) -> str:
     run_id = None
     trace_destination = _get_trace_destination_config(tracking_uri=tracking_uri)
+
+    if trace_destination is None:
+        return None
+
     tracking_uri = _get_mlflow_tracking_uri(trace_destination=trace_destination)
 
     # Adding line_number as index column this is needed by UI to form link to individual instance run
