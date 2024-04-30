@@ -8,7 +8,7 @@ import requests
 
 from promptflow.evals.evaluate import evaluate
 from promptflow.evals.evaluators import F1ScoreEvaluator, GroundednessEvaluator
-from azure.identity import DefaultAzureCredential
+from azure.identity import AzureCliCredential
 
 
 @pytest.fixture
@@ -29,7 +29,7 @@ def answer_evaluator(answer):
 
 def _get_run_from_run_history(flow_run_id, runs_operation):
     """Get run info from run history"""
-    token = "Bearer " + DefaultAzureCredential().get_token("https://management.azure.com/.default").token
+    token = "Bearer " + AzureCliCredential().get_token("https://management.azure.com/.default").token
     headers = {
             "Authorization": token,
             "Content-Type": "application/json",
