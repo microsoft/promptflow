@@ -526,7 +526,7 @@ def setup_exporter_to_pfs() -> None:
 
 
 class PFBatchSpanProcessor(BatchSpanProcessor):
-    def on_start(self, span, parent_context: trace.Context | None = None) -> None:
+    def on_start(self, span, parent_context: typing.Union[trace.Context, None] = None) -> None:
         super().on_start(span, parent_context)
         #  Process the span when it starts, so a running span could be shown.
         self.on_end(span)
