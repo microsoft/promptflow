@@ -92,9 +92,6 @@ A flow YAML may look like this:
 ```yaml
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 entry: path.to.module:function_name
-sample:
-    inputs:
-        question: "what's the capital of France?"
 ```
 
 ## Batch run with YAML
