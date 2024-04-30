@@ -1,6 +1,7 @@
 import json
 import multiprocessing
 import os
+import subprocess
 from pathlib import Path
 from typing import Dict
 from unittest.mock import patch
@@ -57,6 +58,8 @@ def configure_default_azure_credential():
         creds = dev_connections["pf-evals-sp"]["value"]
         for key, value in creds.items():
             os.environ[key] = value
+        subprocess.run(["az", "login", "--service-principal", "-u", creds["AZURE_CLIENT_ID"],
+                        "-p", creds["AZURE_CLIENT_SECRET"], "--tenant", creds["AZURE_TENANT_ID"]], shell=True)
 
 
 def pytest_configure():
