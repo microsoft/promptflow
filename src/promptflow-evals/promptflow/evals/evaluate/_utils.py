@@ -4,7 +4,6 @@
 import logging
 import json
 import os
-import re
 import tempfile
 from pathlib import Path
 
@@ -77,9 +76,9 @@ def _get_mlflow_tracking_uri(trace_destination):
 def _get_trace_destination_config(tracking_uri):
     from promptflow._sdk._configuration import Configuration
     pf_config = Configuration(overrides={
-            "trace.destination": tracking_uri
-        } if tracking_uri is not None else {}
-    )
+        "trace.destination": tracking_uri
+    } if tracking_uri is not None else {}
+                              )
 
     trace_destination = pf_config.get_trace_destination()
 
@@ -122,14 +121,15 @@ def _log_metrics_and_instance_results(metrics, instance_results, tracking_uri, r
                 run_id = run.info.run_id
     else:
         azure_pf_client = _azure_pf_client(trace_destination=trace_destination)
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with (tempfile.TemporaryDirectory() as temp_dir):
             file_name = Local2Cloud.FLOW_INSTANCE_RESULTS_FILE_NAME
             local_file = Path(temp_dir) / file_name
             instance_results.to_json(local_file, orient="records", lines=True)
 
             # overriding instance_results.jsonl file
             async_uploader = AsyncRunUploader._from_run_operations(run, azure_pf_client.runs)
-            remote_file = f"{Local2Cloud.BLOB_ROOT_PROMPTFLOW}/{Local2Cloud.BLOB_ARTIFACTS}/{run.name}/{Local2Cloud.FLOW_INSTANCE_RESULTS_FILE_NAME}"
+            remote_file = (f"{Local2Cloud.BLOB_ROOT_PROMPTFLOW}"
+                           f"/{Local2Cloud.BLOB_ARTIFACTS}/{run.name}/{Local2Cloud.FLOW_INSTANCE_RESULTS_FILE_NAME}")
             async_run_allowing_running_loop(async_uploader._upload_local_file_to_blob, local_file, remote_file)
             run_id = run.name
 
@@ -145,7 +145,7 @@ def _get_ai_studio_url(trace_destination: str, evaluation_id: str) -> str:
     studio_base_url = os.getenv("AI_STUDIO_BASE_URL", "https://ai.azure.com")
 
     studio_url = f"{studio_base_url}/build/evaluation/{evaluation_id}?wsid=/subscriptions/{ws_triad.subscription_id}" \
-                 f"/resourceGroups/{ws_triad.resource_group_name}/providers/Microsoft.MachineLearningServices/workspaces" \
-                 f"/{ws_triad.workspace_name}"
+                 f"/resourceGroups/{ws_triad.resource_group_name}/providers/Microsoft.MachineLearningServices/" \
+                 f"workspaces/{ws_triad.workspace_name}"
 
     return studio_url

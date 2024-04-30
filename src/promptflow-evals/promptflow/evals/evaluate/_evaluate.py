@@ -5,14 +5,13 @@ import inspect
 import os
 import re
 import tempfile
-import uuid
 from typing import Any, Callable, Dict, Optional, Set, Tuple
 
 import pandas as pd
 
 from promptflow._sdk._constants import LINE_NUMBER
 from promptflow.client import PFClient
-from ._utils import _log_metrics_and_instance_results, _get_ai_studio_url
+from ._utils import _log_metrics_and_instance_results
 from .._user_agent import USER_AGENT
 
 
