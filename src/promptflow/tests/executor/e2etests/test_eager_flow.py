@@ -94,7 +94,7 @@ class TestEagerFlow:
         batch_result = batch_engine.run(input_dirs, inputs_mapping, output_dir)
         for token_name in ["prompt_tokens", "completion_tokens", "total_tokens"]:
             assert getattr(batch_result.system_metrics, token_name, 0) > 0
-        validate_batch_result(batch_result, flow_folder, output_dir, lambda x: isinstance(x, str))
+        validate_batch_result(batch_result, flow_folder, output_dir, lambda x: isinstance(x, dict))
 
     def test_batch_run_with_invalid_case(self):
         flow_folder = "dummy_flow_with_exception"
