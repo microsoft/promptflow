@@ -22,10 +22,11 @@ from promptflow._constants import (
     SpanStatusFieldName,
 )
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, AzureMLWorkspaceTriad
-from promptflow._sdk._utils import convert_time_unix_nano_to_timestamp, json_load
 from promptflow._sdk.entities._trace import Span
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.core._errors import MissingRequiredPackage
+
+from .general_utils import convert_time_unix_nano_to_timestamp, json_load
 
 _logger = get_cli_sdk_logger()
 
