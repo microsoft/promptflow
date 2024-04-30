@@ -6,6 +6,7 @@ import pytest
 from promptflow._core.tool_meta_generator import PythonLoadError
 from promptflow.contracts.run_info import Status
 from promptflow.core import AzureOpenAIModelConfiguration, OpenAIModelConfiguration
+from promptflow.core._connection_provider._dict_connection_provider import DictConnectionProvider
 from promptflow.executor._errors import (
     FlowEntryInitializationError,
     InputNotFound,
@@ -44,7 +45,7 @@ function_entries = [
 ]
 
 
-@pytest.mark.usefixtures("recording_injection", "setup_connection_provider")
+@pytest.mark.usefixtures("recording_injection", "setup_connection_provider", "dev_connections")
 @pytest.mark.e2etest
 class TestEagerFlow:
     @pytest.mark.parametrize(
@@ -138,6 +139,28 @@ class TestEagerFlow:
         token_names = ["prompt_tokens", "completion_tokens", "total_tokens"]
         for token_name in token_names:
             assert token_name in line_result.run_info.api_calls[0]["children"][0]["system_metrics"]
+            assert line_result.run_info.api_calls[0]["children"][0]["system_metrics"][token_name] > 0
+
+    def test_flow_run_with_connection(self, dev_connections):
+        flow_file = get_yaml_file(
+            "dummy_callable_class_with_connection", root=EAGER_FLOW_ROOT, file_name="flow.flex.yaml"
+        )
+
+        # Test submitting eager flow to script executor with connection dictionary
+        executor = ScriptExecutor(
+            flow_file=flow_file, connections=dev_connections, init_kwargs={"connection": "azure_open_ai_connection"}
+        )
+        line_result = executor.exec_line(inputs={}, index=0)
+        assert line_result.run_info.status == Status.Completed, line_result.run_info.error
+
+        # Test submitting eager flow to script executor with connection provider
+        executor = ScriptExecutor(
+            flow_file=flow_file,
+            connections=DictConnectionProvider(dev_connections),
+            init_kwargs={"connection": "azure_open_ai_connection"},
+        )
+        line_result = executor.exec_line(inputs={}, index=0)
+        assert line_result.run_info.status == Status.Completed, line_result.run_info.error
 
     @pytest.mark.parametrize("entry, inputs, expected_output", function_entries)
     def test_flow_run_with_function_entry(self, entry, inputs, expected_output):
