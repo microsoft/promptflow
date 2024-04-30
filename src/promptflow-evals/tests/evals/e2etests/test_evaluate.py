@@ -4,7 +4,9 @@ import pathlib
 import numpy as np
 import pandas as pd
 import pytest
+import requests
 
+from promptflow.azure._utils.general import get_authorization
 from promptflow.evals.evaluate import evaluate
 from promptflow.evals.evaluators import F1ScoreEvaluator, GroundednessEvaluator
 
@@ -23,6 +25,34 @@ def questions_file():
 
 def answer_evaluator(answer):
     return {"length": len(answer)}
+
+
+def _get_run_from_run_history(flow_run_id, runs_operation):
+    """Get run info from run history"""
+    headers = custom_header = {
+            "Authorization": get_authorization(credential=runs_operation._credential),
+            "Content-Type": "application/json",
+        }
+    url = runs_operation._run_history_endpoint_url + "/rundata"
+
+    payload = {
+        "runId": flow_run_id,
+        "selectRunMetadata": True,
+        "selectRunDefinition": True,
+        "selectJobSpecification": True,
+    }
+
+    response = requests.post(url, headers=headers, json=payload)
+    if response.status_code == 200:
+        run = response.json()
+        # if original_form is True, return the original run data from run history, mainly for test use
+        return run
+    elif response.status_code == 404:
+        raise Exception(f"Run {flow_run_id!r} not found.")
+    else:
+        raise Exception(
+            f"Failed to get run from service. Code: {response.status_code}, text: {response.text}"
+        )
 
 
 @pytest.mark.usefixtures("model_config", "recording_injection", "data_file")
@@ -62,6 +92,7 @@ class TestEvaluate:
 
         assert row_result_df["outputs.grounded.gpt_groundedness"][2] in [4, 5]
         assert row_result_df["outputs.f1_score.f1_score"][2] == 1
+        assert result["studio_url"] is None
 
     def test_evaluate_python_function(self, data_file):
         # data
@@ -194,3 +225,38 @@ class TestEvaluate:
         assert remote_run.properties["azureml.promptflow.local_to_cloud"] == "true"
         assert remote_run.properties["runType"] == "eval_run"
         assert remote_run.display_name == evaluation_name
+
+    def test_evaluate_track_in_cloud_no_target(self, data_file, azure_pf_client, mock_trace_destination_to_cloud):
+        # data
+        input_data = pd.read_json(data_file, lines=True)
+
+        f1_score_eval = F1ScoreEvaluator()
+        evaluation_name = "test_evaluate_track_in_cloud_no_target"
+
+        # run the evaluation
+        result = evaluate(
+            evaluation_name=evaluation_name,
+            data=data_file,
+            evaluators={"f1_score": f1_score_eval},
+        )
+
+        row_result_df = pd.DataFrame(result["rows"])
+        metrics = result["metrics"]
+
+        # validate the results
+        assert result is not None
+        assert result["rows"] is not None
+        assert row_result_df.shape[0] == len(input_data)
+        assert "outputs.f1_score.f1_score" in row_result_df.columns.to_list()
+        assert "f1_score.f1_score" in metrics.keys()
+        assert metrics.get("f1_score.f1_score") == np.nanmean(row_result_df["outputs.f1_score.f1_score"])
+        assert row_result_df["outputs.f1_score.f1_score"][2] == 1
+        assert result["studio_url"] is not None
+
+        # get remote run and validate if it exists
+        run_id = result["studio_url"].split("?")[0].split("/")[5]
+        remote_run = _get_run_from_run_history(run_id, azure_pf_client.runs)
+
+        assert remote_run is not None
+        assert remote_run["runMetadata"]["properties"]["_azureml.evaluation_run"] == "azure-ai-generative-parent"
+        assert remote_run["runMetadata"]["displayName"] == evaluation_name
