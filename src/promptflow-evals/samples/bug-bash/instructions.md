@@ -31,7 +31,6 @@ Note: You need the new [gpt-35-turbo (0125) version](https://learn.microsoft.com
    # Install packages in this order
    pip install promptflow==1.10.0.dev125439426 --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
    pip install promptflow-evals==0.2.0.dev125439426 --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
-   pip install pip install promptflow-azure==1.11.0.dev125439426 --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
    pip install azure_ai_ml==1.16.0a20240501004 --extra-index-url https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-python/pypi/simple/
 
    # Dependencies needed for some of the notebooks
