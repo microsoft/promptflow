@@ -55,5 +55,5 @@ Please use the following template to report bugs : [**Bug Template**](https://ak
 
 1. Evaluate existing dataset - [Notebook Link]()
 2. Evaluate Target. Target can be a chat app locally or deployed to an endpoint. - [Notebook Link]()
-3. Create new evaluators and registering them in cloud - [Notebook Link](https://github.com/microsoft/promptflow/blob/user/singankit/pf-evals-bug-bash/src/promptflow-evals/samples/LoadSaveEvals/Load_saved_evaluator.ipynb)
+3. Create new evaluators and registering them in cloud - [Notebook Link](https://github.com/microsoft/promptflow/blob/user/singankit/pf-evals-bug-bash/src/promptflow-evals/samples/bug-bash/LoadSaveEvals/Load_saved_evaluator.ipynb)
 
