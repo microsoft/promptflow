@@ -48,6 +48,6 @@ Please use the following template to report bugs : [**Bug Template**](https://ak
 ### Sample Notebooks
 
 1. Evaluate existing dataset - [Notebook Link]()
-2. Evaluate Target. Target can be a chat app locally or deployed to an endpoint. - [Notebook Link]()
+2. Evaluate Target. Target can be a chat app locally or deployed to an endpoint. - [Notebook Link](./evaluate-target/evaluate-target.ipynb)
 3. Create new evaluators and registering them in cloud - [Notebook Link]()
 
