@@ -13,6 +13,8 @@
     - `UK South`
   - For local to remote tracking
 
+Note: You need the new [gpt-35-turbo (0125) version](https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/models#gpt-35-models) to use the json_object response_format feature. This might be needed for some prompty based evaluators.
+
 ### Installation Instructions:
 
 1. Create a virtual environment of you choice. To create one using conda, run the following command:
