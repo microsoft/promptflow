@@ -50,6 +50,9 @@ git checkout -b user/singankit/pf-evals-bug-bash
    ```bash
    pf config set trace.destination=azureml://subscriptions/<subscription_id>/resourceGroups/<resource_group_name>/providers/Microsoft.MachineLearningServices/workspaces/<project_name>
    ```
+   ```bash
+   az login
+   ```
    To remote tracking config navigate to `C:\Users\<user>\.promptflow` and locate `py.yaml` file and delete the `trace:` section
 4. To run the examples from the notebook, please install the kernel in your environment:
    ```bash
