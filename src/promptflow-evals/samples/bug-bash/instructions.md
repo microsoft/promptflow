@@ -40,6 +40,7 @@ Note: You need the new [gpt-35-turbo (0125) version](https://learn.microsoft.com
    ```bash
    pf config set trace.destination=azureml://subscriptions/<subscription_id>/resourceGroups/<resource_group_name>/providers/Microsoft.MachineLearningServices/workspaces/<project_name>
    ```
+   To remote tracking config navigate to `C:\Users\<user>\.promptflow` and locate `py.yaml` file and delete the `trace:` section
 
 ### Report Bugs
 
@@ -48,5 +49,5 @@ Please use the following template to report bugs : [**Bug Template**](https://ak
 ### Sample Notebooks
 
 1. Evaluate existing dataset - [Notebook Link](./evaluate-using-data/evaluate-using-data.ipynb)
-2. Evaluate Target. Target can be a chat app locally or deployed to an endpoint. - [Notebook Link]()
+2. Evaluate Target. Target can be a chat app locally or deployed to an endpoint. - [Notebook Link](./evaluate-target/evaluate-target.ipynb)
 3. Create new evaluators and registering them in cloud - [Notebook Link]()
