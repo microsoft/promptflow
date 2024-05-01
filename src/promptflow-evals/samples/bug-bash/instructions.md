@@ -15,6 +15,13 @@
 
 Note: You need the new [gpt-35-turbo (0125) version](https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/models#gpt-35-models) to use the json_object response_format feature. This might be needed for some prompty based evaluators.
 
+### Clone the repo
+```bash
+git clone https://github.com/microsoft/promptflow.git
+git pull
+git checkout -b user/singankit/pf-evals-bug-bash
+```
+
 ### Installation Instructions:
 
 1. Create a **virtual environment of you choice**. To create one using conda, run the following command:
