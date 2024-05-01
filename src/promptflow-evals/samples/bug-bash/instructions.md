@@ -27,7 +27,7 @@ Note: You need the new [gpt-35-turbo (0125) version](https://learn.microsoft.com
    # This is important since older version of promptflow has one package.
    # Now it is split into number of them.
     pip uninstall promptflow promptflow-azure promptflow-core promptflow-devkit promptflow-tools promptflow-evals
-   
+
    # Install packages in this order
    pip install promptflow==1.10.0.dev125439426 --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
    pip install promptflow-evals==0.2.0.dev125439426 --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
@@ -35,12 +35,13 @@ Note: You need the new [gpt-35-turbo (0125) version](https://learn.microsoft.com
 
    # Dependencies needed for some of the notebooks
    pip install bs4
-   pip install ipykernel 
+   pip install ipykernel
     ```
 4. To track your local evaluations in cloud run following command to set tracking config after replacing the placeholder values
    ```bash
    pf config set trace.destination=azureml://subscriptions/<subscription_id>/resourceGroups/<resource_group_name>/providers/Microsoft.MachineLearningServices/workspaces/<project_name>
    ```
+   To remote tracking config navigate to `C:\Users\<user>\.promptflow` and locate `py.yaml` file and delete the `trace:` section
 4. To run the examples from the notebook, please install the kernel in your environment:
    ```bash
    python -m ipykernel install --user --name promptflow-evals-bug-bash --display-name "promptflow-evals-bug-bash"
@@ -53,7 +54,6 @@ Please use the following template to report bugs : [**Bug Template**](https://ak
 
 ### Sample Notebooks
 
-1. Evaluate existing dataset - [Notebook Link]()
-2. Evaluate Target. Target can be a chat app locally or deployed to an endpoint. - [Notebook Link]()
-3. Create new evaluators and registering them in cloud - [Notebook Link](https://github.com/microsoft/promptflow/blob/user/singankit/pf-evals-bug-bash/src/promptflow-evals/samples/bug-bash/LoadSaveEvals/Load_saved_evaluator.ipynb)
-
+1. Evaluate existing dataset - [Notebook Link](./evaluate-using-data/evaluate-using-data.ipynb)
+2. Evaluate Target. Target can be a chat app locally or deployed to an endpoint. - [Notebook Link](./evaluate-target/evaluate-target.ipynb)
+3. Create new evaluators and registering them in cloud - [Notebook Link](./LoadSaveEvals/Load_saved_evaluator.ipynb)
