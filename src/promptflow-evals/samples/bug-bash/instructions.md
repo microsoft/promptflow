@@ -31,9 +31,16 @@ Note: You need the new [gpt-35-turbo (0125) version](https://learn.microsoft.com
    # Install packages in this order
    pip install promptflow==1.10.0.dev125439426 --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
    pip install promptflow-evals==0.2.0.dev125439426 --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
+<<<<<<< HEAD
    pip install azure_ai_ml==1.16.0a20240501004 --extra-index-url https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-python/pypi/simple/
+=======
+
+   # Dependencies needed for some of the notebooks
+   pip install bs4
+   pip install ipykernel 
+>>>>>>> 39f798d3f2a2ad2a13b0b2ce2b5d95eea3e5c204
     ```
-3. To track your local evaluations in cloud run following command to set tracking config after replacing the placeholder values
+4. To track your local evaluations in cloud run following command to set tracking config after replacing the placeholder values
    ```bash
    pf config set trace.destination=azureml://subscriptions/<subscription_id>/resourceGroups/<resource_group_name>/providers/Microsoft.MachineLearningServices/workspaces/<project_name>
    ```
