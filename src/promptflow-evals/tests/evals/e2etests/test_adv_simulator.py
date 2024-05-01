@@ -11,7 +11,7 @@ from azure.identity import DefaultAzureCredential
 )
 @pytest.mark.e2etest
 class TestAdvSimulator:
-    def test_adv_sim_init_with_int_url(self, model_config, ml_client_config):
+    def test_adv_sim_init_with_int_url(self, model_config, ml_client_config, configure_default_azure_credential):
         os.environ["rai_svc_url"] = "https://int.api.azureml-test.ms"
         from promptflow.evals.synthetic import AdversarialSimulator
 
@@ -25,7 +25,7 @@ class TestAdvSimulator:
         simulator = AdversarialSimulator(template=template, project_scope=project_scope)
         assert callable(simulator)
 
-    def test_adv_sim_init_with_prod_url(self, model_config, ml_client_config):
+    def test_adv_sim_init_with_prod_url(self, model_config, ml_client_config, configure_default_azure_credential):
         from promptflow.evals.synthetic import AdversarialSimulator
 
         template = "adv_conversation"
@@ -38,7 +38,12 @@ class TestAdvSimulator:
         simulator = AdversarialSimulator(template=template, project_scope=project_scope)
         assert callable(simulator)
 
-    def test_adv_qa_sim_responds_with_one_response(self, model_config, ml_client_config):
+    def test_adv_qa_sim_responds_with_one_response(
+        self,
+        model_config,
+        ml_client_config,
+        configure_default_azure_credential
+    ):
         from promptflow.evals.synthetic import AdversarialSimulator
 
         template = "adv_qa"
@@ -81,7 +86,7 @@ class TestAdvSimulator:
         )
         assert len(outputs) == 1
 
-    def test_adv_conversation_sim_responds_with_responses(self, model_config, ml_client_config):
+    def test_adv_conversation_sim_responds_with_responses(self, model_config, ml_client_config, configure_default_azure_credential):
         from promptflow.evals.synthetic import AdversarialSimulator
 
         template = "adv_conversation"
@@ -120,7 +125,7 @@ class TestAdvSimulator:
         print(outputs)
         assert len(outputs[0]["messages"]) == 4
 
-    def test_adv_summarization_sim_responds_with_responses(self, model_config, ml_client_config):
+    def test_adv_summarization_sim_responds_with_responses(self, model_config, ml_client_config, configure_default_azure_credential):
         from promptflow.evals.synthetic import AdversarialSimulator
 
         template = "adv_summarization"
