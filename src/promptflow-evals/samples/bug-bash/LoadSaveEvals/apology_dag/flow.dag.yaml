@@ -1,0 +1,17 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+inputs:
+  answer:
+    type: string
+outputs:
+  answer:
+    type: string
+    reference: ${apology.output}
+nodes:
+- name: apology
+  type: python
+  source:
+    type: code
+    path: apology.py
+  inputs:
+    answer: ${inputs.answer}
+

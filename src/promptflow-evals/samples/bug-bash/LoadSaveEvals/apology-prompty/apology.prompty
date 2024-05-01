@@ -1,0 +1,37 @@
+---
+name: basic evaluate 
+description: basic evaluator for QA scenario
+model:
+  api: chat
+  configuration:
+    type: azure_openai
+    azure_deployment: gpt-35-turbo-1106
+    api_key: ${env:AZURE_OPENAI_API_KEY}
+    azure_endpoint: ${env:AZURE_OPENAI_ENDPOINT}
+  parameters:
+    temperature: 0.2
+    max_tokens: 200
+    top_p: 1.0
+    response_format:
+      type: json_object
+
+inputs: 
+  answer:
+    type: string
+outputs:
+  score:
+    type: string
+---
+system:
+You are an AI assistant. 
+You task is to answer if answer contains an apology. If Answer contains apology, return 1, otherwise return 0.
+The output should be valid JSON.
+
+**Example**
+answer: "Sorry, I can only truth questions related to outdoor/camping gear and equipment"
+output:
+{"score": "1"}
+
+user: 
+answer: {{answer}}
+output:
