@@ -19,7 +19,7 @@ from promptflow._sdk._constants import (
     SPAN_EVENTS_NAME_PF_OUTPUT,
     TRACE_DEFAULT_COLLECTION,
 )
-from promptflow._sdk._utils import json_loads_parse_const_as_str
+from promptflow._sdk._utilities.general_utils import json_loads_parse_const_as_str
 from promptflow._sdk.entities._trace import Span
 from promptflow.azure._storage.cosmosdb.cosmosdb_utils import safe_create_cosmosdb_item
 
@@ -41,7 +41,7 @@ class SummaryLine:
     start_time: str = None
     end_time: str = None
     status: str = None
-    latency: float = 0.0
+    latency: float = None
     name: str = None
     kind: str = None
     created_by: typing.Dict = field(default_factory=dict)

@@ -1,4 +1,5 @@
 import json
+import os
 import sys
 import time
 from unittest.mock import patch
@@ -31,6 +32,10 @@ def target_function(request: int):
     # sleep for the request seconds to simulate the timeout case
     time.sleep(request)
     return request
+
+
+def target_function_get_env(environment_variable: str):
+    return os.getenv(environment_variable)
 
 
 @pytest.mark.unittest
@@ -75,11 +80,25 @@ class TestProcessUtils:
             mock_logger.error.assert_not_called()
 
     @pytest.mark.asyncio
+    async def test_invoke_sync_function_in_process_set_env(self):
+        with patch("promptflow.executor._service.utils.process_utils.service_logger") as mock_logger:
+            environment_variables = {"test_env_name": "test_env_value"}
+            result = await invoke_sync_function_in_process(
+                target_function_get_env,
+                args=("test_env_name",),
+                context_dict=MOCK_CONTEXT_DICT,
+                environment_variables=environment_variables,
+            )
+            assert result == "test_env_value"
+            assert mock_logger.info.call_count == 2
+            mock_logger.error.assert_not_called()
+
+    @pytest.mark.asyncio
     async def test_execute_target_function_completed(self):
         return_dict = {}
         error_dict = {}
         with patch("promptflow.executor._service.utils.process_utils.service_logger") as mock_logger:
-            _execute_target_function(target_function, (1,), {}, return_dict, error_dict, MOCK_CONTEXT_DICT)
+            _execute_target_function(target_function, (1,), {}, return_dict, error_dict, MOCK_CONTEXT_DICT, None)
             mock_logger.info.assert_called_once()
 
     @pytest.mark.asyncio
@@ -88,7 +107,7 @@ class TestProcessUtils:
         error_dict = {}
         with patch("promptflow.executor._service.utils.process_utils.service_logger") as mock_logger:
             with pytest.raises(JsonSerializedPromptflowException) as exc_info:
-                _execute_target_function(target_function, (0,), {}, return_dict, error_dict, MOCK_CONTEXT_DICT)
+                _execute_target_function(target_function, (0,), {}, return_dict, error_dict, MOCK_CONTEXT_DICT, None)
             assert json.loads(exc_info.value.message)["message"] == "Test exception"
             mock_logger.info.assert_called_once()
 

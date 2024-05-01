@@ -22,7 +22,7 @@ from azure.ai.ml.entities import IdentityConfiguration
 from sdk_cli_azure_test.conftest import DATAS_DIR, FLOWS_DIR
 
 from promptflow._constants import FLOW_FLEX_YAML
-from promptflow._sdk._constants import DownloadedRun, RunStatus
+from promptflow._sdk._constants import FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME, DownloadedRun, RunStatus
 from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, RunNotFoundError
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk.entities import Run
@@ -37,6 +37,7 @@ from promptflow.azure._constants._flow import (
 )
 from promptflow.azure._entities._flow import Flow
 from promptflow.azure._load_functions import load_flow
+from promptflow.core import AzureOpenAIModelConfiguration, OpenAIModelConfiguration
 from promptflow.exceptions import UserErrorException
 from promptflow.recording.record_mode import is_live
 
@@ -77,6 +78,23 @@ class TestFlowRun:
         )
         assert isinstance(run, Run)
         assert run.name == name
+
+    @pytest.mark.skipif(not is_live(), reason="Recording issue.")
+    def test_run_without_generate_tools_json(self, pf, runtime: str, randstr: Callable[[str], str]):
+        name = randstr("name")
+        flow_dir = f"{FLOWS_DIR}/simple_hello_world"
+        tools_json_path = Path(flow_dir) / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
+        if tools_json_path.exists():
+            tools_json_path.unlink()
+        run = pf.run(
+            flow=flow_dir,
+            data=f"{DATAS_DIR}/simple_hello_world.jsonl",
+            column_mapping={"name": "${data.name}"},
+            name=name,
+        )
+        assert isinstance(run, Run)
+        assert run.name == name
+        assert not tools_json_path.exists()
 
     def test_run_resume(self, pf: PFClient, randstr: Callable[[str], str]):
         # Note: Use fixed run name here to ensure resume call has same body then can be recorded.
@@ -1344,6 +1362,44 @@ class TestFlowRun:
         )
         assert run.properties["azureml.promptflow.init_kwargs"] == '{"obj_input":"val"}'
 
+        assert_batch_run_result(run, pf, assert_func)
+
+    @pytest.mark.skip(reason="Content change in submission time which lead to recording issue.")
+    def test_model_config_obj_in_init(self, pf):
+        def assert_func(details_dict):
+            return details_dict["outputs.azure_open_ai_model_config_azure_endpoint"] != [None, None,] and details_dict[
+                "outputs.azure_open_ai_model_config_connection"
+            ] == [None, None]
+
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_model_config")
+        # init with model config object
+        config1 = AzureOpenAIModelConfiguration(azure_deployment="my_deployment", connection="azure_open_ai")
+        config2 = OpenAIModelConfiguration(model="my_model", base_url="fake_base_url")
+        run = pf.run(
+            flow=flow_path,
+            data=f"{EAGER_FLOWS_DIR}/basic_model_config/inputs.jsonl",
+            init={"azure_open_ai_model_config": config1, "open_ai_model_config": config2},
+        )
+        assert "azure_open_ai_model_config" in run.properties["azureml.promptflow.init_kwargs"]
+        assert_batch_run_result(run, pf, assert_func)
+
+    @pytest.mark.skip(reason="Content change in submission time which lead to recording issue.")
+    def test_model_config_dict_in_init(self, pf):
+        def assert_func(details_dict):
+            return details_dict["outputs.azure_open_ai_model_config_azure_endpoint"] != [None, None,] and details_dict[
+                "outputs.azure_open_ai_model_config_connection"
+            ] == [None, None]
+
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_model_config")
+        # init with model config dict
+        config1 = dict(azure_deployment="my_deployment", connection="azure_open_ai")
+        config2 = dict(model="my_model", base_url="fake_base_url")
+        run = pf.run(
+            flow=flow_path,
+            data=f"{EAGER_FLOWS_DIR}/basic_model_config/inputs.jsonl",
+            init={"azure_open_ai_model_config": config1, "open_ai_model_config": config2},
+        )
+        assert "azure_open_ai_model_config" in run.properties["azureml.promptflow.init_kwargs"]
         assert_batch_run_result(run, pf, assert_func)
 
 

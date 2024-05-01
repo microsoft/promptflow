@@ -7,7 +7,7 @@ import datetime
 from pathlib import Path
 from typing import Union
 
-from promptflow._constants import FlowType
+from promptflow._constants import SystemMetricKeys
 from promptflow._proxy import ProxyFactory
 from promptflow._sdk._constants import REMOTE_URI_PREFIX, ContextAttributeKey, FlowRunProperties
 from promptflow._sdk.entities._flows import Flow, Prompty
@@ -87,15 +87,22 @@ class RunSubmitter:
             run._resume_from = self._ensure_run_completed(run._resume_from)
         # start trace
         logger.debug("start trace for flow run...")
+        flow_path = run._get_flow_dir().resolve()
+        logger.debug("flow path for run.start_trace: %s", flow_path)
         if is_collection_writeable():
             logger.debug("trace collection is writeable, will use flow name as collection...")
             collection_for_run = run._flow_name
             logger.debug("collection for run: %s", collection_for_run)
             # pass with internal parameter `_collection`
-            start_trace(attributes=attributes, run=run.name, _collection=collection_for_run)
+            start_trace(
+                attributes=attributes,
+                run=run.name,
+                _collection=collection_for_run,
+                path=flow_path,
+            )
         else:
             logger.debug("trace collection is protected, will honor existing collection.")
-            start_trace(attributes=attributes, run=run.name)
+            start_trace(attributes=attributes, run=run.name, path=flow_path)
 
         self._validate_inputs(run=run)
 
@@ -145,6 +152,8 @@ class RunSubmitter:
         status = Status.Failed.value
         exception = None
         # create run to db when fully prepared to run in executor, otherwise won't create it
+        run._status = Status.Running.value
+        run._start_time = datetime.datetime.now()
         run._dump()  # pylint: disable=protected-access
 
         resume_from_run_storage = (
@@ -204,8 +213,19 @@ class RunSubmitter:
             local_storage.persist_result(batch_result)
             # exceptions
             local_storage.dump_exception(exception=exception, batch_result=batch_result)
-            # system metrics: token related
-            system_metrics = batch_result.system_metrics.to_dict() if batch_result else {}
+            # system metrics
+            system_metrics = {}
+            if batch_result:
+                system_metrics.update(batch_result.system_metrics.to_dict())  # token related
+                system_metrics.update(
+                    {f"{SystemMetricKeys.NODE_PREFIX}.{k}": v for k, v in batch_result.node_status.items()}
+                )
+                system_metrics.update(
+                    {
+                        SystemMetricKeys.LINES_COMPLETED: batch_result.completed_lines,
+                        SystemMetricKeys.LINES_FAILED: batch_result.failed_lines,
+                    }
+                )
 
             run = self.run_operations.update(
                 name=run.name,
@@ -214,10 +234,10 @@ class RunSubmitter:
                 system_metrics=system_metrics,
             )
 
-            # upload run to cloud if the trace provider is set to cloud
-            trace_provider = self._config.get_trace_provider()
-            if trace_provider and trace_provider.startswith(REMOTE_URI_PREFIX):
-                logger.debug(f"Trace provider set to {trace_provider!r}, uploading run to cloud...")
+            # upload run to cloud if the trace destination is set to cloud
+            trace_destination = self._config.get_trace_destination(path=run._get_flow_dir().resolve())
+            if trace_destination and trace_destination.startswith(REMOTE_URI_PREFIX):
+                logger.debug(f"Trace destination set to {trace_destination!r}, uploading run to cloud...")
                 self._upload_run_to_cloud(run=run)
 
     def _resolve_input_dirs(self, run: Run):
@@ -251,17 +271,12 @@ class RunSubmitter:
 
     @classmethod
     def _upload_run_to_cloud(cls, run: Run):
-        # skip prompty run for now
-        if run._flow_type == FlowType.PROMPTY:
-            logger.warn("Prompty run is not supported for local to cloud run upload yet, skipped.")
-            return
-
         error_msg_prefix = f"Failed to upload run {run.name!r} to cloud."
         try:
             from promptflow._sdk._tracing import _get_ws_triad_from_pf_config
             from promptflow.azure._cli._utils import _get_azure_pf_client
 
-            ws_triad = _get_ws_triad_from_pf_config()
+            ws_triad = _get_ws_triad_from_pf_config(path=run._get_flow_dir().resolve())
             pf = _get_azure_pf_client(
                 subscription_id=ws_triad.subscription_id,
                 resource_group=ws_triad.resource_group_name,

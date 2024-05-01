@@ -12,7 +12,6 @@ on:
 env:
   IS_IN_CI_PIPELINE: "true"
   WORKING_DIRECTORY: ${{ github.workspace }}/src/promptflow-evals
-  RECORD_DIRECTORY: ${{ github.workspace }}/src/promptflow-recording
 
 jobs:
   build:
@@ -32,7 +31,7 @@ jobs:
     needs: build
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-13]
         python-version: ['3.8', '3.9', '3.10', '3.11']
       fail-fast: false
     # snok/install-poetry need this to support Windows
@@ -70,8 +69,8 @@ jobs:
         run: poetry install --only test
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: install recording
-        run: poetry install
-        working-directory: ${{ env.RECORD_DIRECTORY }}
+        run: poetry run pip install -e ../promptflow-recording
+        working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: generate end-to-end test config from secret
         run: echo '${{ secrets.PF_EVALS_E2E_TEST_CONFIG }}' >> connections.json
         working-directory: ${{ env.WORKING_DIRECTORY }}

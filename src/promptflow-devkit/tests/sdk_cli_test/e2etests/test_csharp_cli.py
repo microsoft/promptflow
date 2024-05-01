@@ -1,76 +1,14 @@
-import dataclasses
 import json
 import os
 import os.path
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import TypedDict
 
 import pytest
 
 from promptflow._cli._pf.entry import main
-
-
-class TestCase:
-    def __init__(self, root_of_test_cases: Path, flow_name: str, skip_reason: str = None):
-        self._flow_dir = (root_of_test_cases / flow_name / "bin" / "Debug" / "net6.0").as_posix()
-        self.data = (root_of_test_cases / flow_name / "data.jsonl").as_posix()
-        self.init = (root_of_test_cases / flow_name / "init.json").as_posix()
-        self._skip_reason = skip_reason
-
-    @property
-    def flow_dir(self):
-        if self._skip_reason:
-            pytest.skip(self._skip_reason)
-        return self._flow_dir
-
-
-@dataclasses.dataclass
-class TestCases:
-    basic: TestCase
-    function_mode_basic: TestCase
-    basic_with_builtin_llm: TestCase
-    class_init_flex_flow: TestCase
-    basic_chat: TestCase
-
-    def __init__(self, root_of_test_cases: Path):
-        is_in_ci_pipeline = os.getenv("IS_IN_CI_PIPELINE", "false").lower() == "true"
-        self.basic = TestCase(root_of_test_cases, "Basic")
-        self.function_mode_basic = TestCase(root_of_test_cases, "FunctionModeBasic")
-        self.class_init_flex_flow = TestCase(
-            root_of_test_cases,
-            "ClassInitFlexFlow",
-            "need to avoid fetching connection from local pfs to enable this in ci" if is_in_ci_pipeline else None,
-        )
-        self.basic_chat = TestCase(root_of_test_cases, "BasicChat")
-
-        package_root = Path(__file__).parent.parent.parent.parent.parent / "promptflow"
-        dev_connections_path = package_root / "connections.json"
-
-        if is_in_ci_pipeline and not dev_connections_path.exists():
-            dev_connections_path.write_text(
-                json.dumps(
-                    {
-                        "azure_open_ai_connection": {
-                            "type": "AzureOpenAIConnection",
-                            "value": {
-                                "api_key": os.getenv("AZURE_OPENAI_API_KEY", "00000000000000000000000000000000"),
-                                "api_base": os.getenv("AZURE_OPENAI_ENDPOINT", "https://openai.azure.com/"),
-                                "api_type": "azure",
-                                "api_version": "2023-07-01-preview",
-                            },
-                            "module": "promptflow.connections",
-                        }
-                    }
-                )
-            )
-            print(f"Using dev connections file: {dev_connections_path}")
-
-
-def get_root_test_cases() -> Optional[TestCases]:
-    target_path = os.getenv("CSHARP_TEST_CASES_ROOT", None)
-    target_path = Path(target_path or Path(__file__).parent)
-    return TestCases(target_path)
+from promptflow._sdk._utilities.serve_utils import find_available_port
 
 
 # TODO: move this to a shared utility module
@@ -91,51 +29,57 @@ def run_pf_command(*args, cwd=None):
         os.chdir(origin_cwd)
 
 
-root_test_cases = get_root_test_cases()
+class CSharpProject(TypedDict):
+    flow_dir: str
+    data: str
+    init: str
 
 
 @pytest.mark.usefixtures(
-    "use_secrets_config_file", "recording_injection", "setup_local_connection", "install_custom_tool_pkg"
+    "use_secrets_config_file",
+    "recording_injection",
+    "setup_local_connection",
+    "install_custom_tool_pkg",
 )
 @pytest.mark.cli_test
 @pytest.mark.e2etest
-@pytest.mark.skipif(
-    not os.getenv("CSHARP_TEST_CASES_ROOT", None), reason="No C# test cases found, please set CSHARP_TEST_CASES_ROOT."
-)
+@pytest.mark.csharp
 class TestCSharpCli:
     @pytest.mark.parametrize(
-        "test_case",
+        "target_fixture_name",
         [
-            pytest.param(root_test_cases.basic, id="basic"),
-            pytest.param(root_test_cases.basic_chat, id="basic_chat"),
-            pytest.param(root_test_cases.function_mode_basic, id="function_mode_basic"),
-            pytest.param(root_test_cases.class_init_flex_flow, id="class_init_flex_flow"),
+            pytest.param("csharp_test_project_basic", id="basic"),
+            pytest.param("csharp_test_project_basic_chat", id="basic_chat"),
+            pytest.param("csharp_test_project_function_mode_basic", id="function_mode_basic"),
+            pytest.param("csharp_test_project_class_init_flex_flow", id="class_init_flex_flow"),
         ],
     )
-    def test_pf_run_create(self, test_case: TestCase):
+    def test_pf_run_create(self, request, target_fixture_name: str):
+        test_case: CSharpProject = request.getfixturevalue(target_fixture_name)
         cmd = [
             "run",
             "create",
             "--flow",
-            test_case.flow_dir,
+            test_case["flow_dir"],
             "--data",
-            test_case.data,
+            test_case["data"],
         ]
-        if os.path.exists(test_case.init):
-            cmd.extend(["--init", test_case.init])
+        if os.path.exists(test_case["init"]):
+            cmd.extend(["--init", test_case["init"]])
         run_pf_command(*cmd)
 
     @pytest.mark.parametrize(
-        "test_case",
+        "target_fixture_name",
         [
-            pytest.param(root_test_cases.basic, id="basic"),
-            pytest.param(root_test_cases.basic_chat, id="basic_chat"),
-            pytest.param(root_test_cases.function_mode_basic, id="function_mode_basic"),
-            pytest.param(root_test_cases.class_init_flex_flow, id="class_init_flex_flow"),
+            pytest.param("csharp_test_project_basic", id="basic"),
+            pytest.param("csharp_test_project_basic_chat", id="basic_chat"),
+            pytest.param("csharp_test_project_function_mode_basic", id="function_mode_basic"),
+            pytest.param("csharp_test_project_class_init_flex_flow", id="class_init_flex_flow"),
         ],
     )
-    def test_pf_flow_test(self, test_case: TestCase):
-        with open(test_case.data, "r") as f:
+    def test_pf_flow_test(self, request, target_fixture_name: str):
+        test_case: CSharpProject = request.getfixturevalue(target_fixture_name)
+        with open(test_case["data"], "r") as f:
             lines = f.readlines()
         if len(lines) == 0:
             pytest.skip("No data provided for the test case.")
@@ -147,7 +91,7 @@ class TestCSharpCli:
             "flow",
             "test",
             "--flow",
-            test_case.flow_dir,
+            test_case["flow_dir"],
             "--inputs",
         ]
         for key, value in inputs.items():
@@ -157,12 +101,64 @@ class TestCSharpCli:
                 value = f'"{value}"'
             cmd.extend([f"{key}={value}"])
 
-        if os.path.exists(test_case.init):
-            cmd.extend(["--init", test_case.init])
+        if os.path.exists(test_case["init"]):
+            cmd.extend(["--init", test_case["init"]])
         run_pf_command(*cmd)
 
-    def test_flow_chat(self, monkeypatch, capsys):
-        flow_dir = root_test_cases.basic_chat.flow_dir
+    @pytest.mark.skip(reason="need to figure out how to check serve status in subprocess")
+    def test_flow_serve(self, csharp_test_project_class_init_flex_flow: CSharpProject):
+        port = find_available_port()
+        run_pf_command(
+            "flow",
+            "serve",
+            "--source",
+            csharp_test_project_class_init_flex_flow["flow_dir"],
+            "--port",
+            str(port),
+            "--init",
+            "connection=azure_open_ai_connection",
+            "name=Promptflow",
+        )
+
+    @pytest.mark.skip(reason="need to figure out how to check serve status in subprocess")
+    def test_flow_serve_init_json(self, csharp_test_project_class_init_flex_flow: CSharpProject):
+        port = find_available_port()
+        run_pf_command(
+            "flow",
+            "serve",
+            "--source",
+            csharp_test_project_class_init_flex_flow["flow_dir"],
+            "--port",
+            str(port),
+            "--init",
+            csharp_test_project_class_init_flex_flow["init"],
+        )
+
+    def test_flow_test_include_log(self, csharp_test_project_basic: CSharpProject, capfd):
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            csharp_test_project_basic["flow_dir"],
+        )
+        # use capfd to capture stdout and stderr redirected from subprocess
+        captured = capfd.readouterr()
+        assert "[TOOL.HelloWorld]" in captured.out
+
+        run_pf_command(
+            "run",
+            "create",
+            "--flow",
+            csharp_test_project_basic["flow_dir"],
+            "--data",
+            csharp_test_project_basic["data"],
+        )
+        captured = capfd.readouterr()
+        # info log shouldn't be printed
+        assert "[TOOL.HelloWorld]" not in captured.out
+
+    def test_flow_chat(self, monkeypatch, capsys, csharp_test_project_basic_chat: CSharpProject):
+        flow_dir = csharp_test_project_basic_chat["flow_dir"]
         # mock user input with pop so make chat list reversed
         chat_list = ["what is chat gpt?", "hi"]
 
@@ -186,38 +182,27 @@ class TestCSharpCli:
         detail_path = Path(flow_dir) / ".promptflow" / "chat.detail.json"
         assert detail_path.exists()
 
-        outerr = capsys.readouterr()
+        captured = capsys.readouterr()
         # Check node output
-        assert "Hello world round 0: hi" in outerr.out
-        assert "Hello world round 1: what is chat gpt?" in outerr.out
+        assert "Hello world round 0: hi" in captured.out
+        assert "Hello world round 1: what is chat gpt?" in captured.out
 
     @pytest.mark.skip(reason="need to update the test case")
-    def test_pf_run_create_with_connection_override(self):
+    def test_pf_run_create_with_connection_override(self, csharp_test_project_basic):
         run_pf_command(
             "run",
             "create",
             "--flow",
-            root_test_cases.basic_with_builtin_llm.flow_dir,
+            csharp_test_project_basic["flow_dir"],
             "--data",
-            root_test_cases.basic_with_builtin_llm.data,
+            csharp_test_project_basic["data"],
             "--connections",
             "get_answer.connection=azure_open_ai_connection",
         )
 
     @pytest.mark.skip(reason="need to update the test case")
     def test_flow_chat_ui_streaming(self):
-        """Note that this test won't pass. Instead, it will hang and pop up a web page for user input.
-        Leave it here for debugging purpose.
-        """
-        # The test need to interact with user input in ui
-        flow_dir = f"{root_test_cases}\\examples\\BasicChatFlowWithBuiltinLLM\\bin\\Debug\\net6.0"
-        run_pf_command(
-            "flow",
-            "test",
-            "--flow",
-            flow_dir,
-            "--ui",
-        )
+        pass
 
     @pytest.mark.skip(reason="need to update the test case")
     def test_flow_run_from_resume(self):

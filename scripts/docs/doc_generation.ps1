@@ -44,6 +44,7 @@ if (-not $SkipInstall){
     pip install myst-parser==0.18.1
     pip install matplotlib==3.4.3
     pip install jinja2==3.0.1
+    pip install jupyter-sphinx==0.4.0
     Write-Host "===============Finished install requirements==============="
 }
 
@@ -133,11 +134,107 @@ function Add-Api-Reference {
     }
 }
 
+function Add-Metadata{
+    param (
+        [string] $NotebookPath,
+        [string] $NotebookRepoPath,
+        [System.Collections.ArrayList] $AuthorList
+    )
+    if (-not $AuthorList){
+        # Skip insert if author list not set
+        throw "Skip Add Metadata: $NotebookPath - Author list not set"
+        return
+    }
+    $NotebookContent = Get-Content $NotebookPath -Raw | ConvertFrom-Json
+    # Covert to System.Collections.ArrayList to avoid 'Collection was of a fixed size' error.
+    $NotebookContent.cells = [System.Collections.ArrayList]::new($NotebookContent.cells)
+    if($NotebookContent.cells[0].source.Length -gt 1){
+        # If the first cell length > 1, indicate there are more things than title it self in the first cell
+        throw "Skip Add Metadata: $NotebookPath - First cell length > 1, only leave title to that cell."
+        return
+    }
+    $MetadataFormat = "Authored by:&nbsp;{0}{1}"
+    $SingleAuthor = "&nbsp;<a href='https://github.com/{0}' target='_blank'><img src='https://github.com/{0}.png' alt='Avatar' class='avatar dark-light'></a>"
+    $JumpLink = "<a href='{0}' target='_blank'><img decoding='async' loading='lazy' src='https://img.shields.io/badge/Open%20on%20GitHub-grey?logo=github' alt='Open on GitHub' class='img_ev3q' style='float: right;'></a>" -f $NotebookRepoPath
+    $Authors = $AuthorList | ForEach-Object { $SingleAuthor -f $_.replace("@github.com", "") }
+    $Metadata = $MetadataFormat -f ($Authors -join ""), $JumpLink
+    # Insert metadata to cells
+    $MetadataCell = @{
+        "cell_type" = "markdown";
+        "metadata" = @{};
+        "source" = @($Metadata)
+    }
+    $NotebookContent.cells.Insert(1, $MetadataCell)
+    $NotebookContent | ConvertTo-Json -Depth 100 | Set-Content $NotebookPath
+}
+
+function Add-Notebook
+{
+    Write-Host "===============Collect Package Notebooks==============="
+    $NotebookRootPath = [System.IO.Path]::Combine($RepoRootPath, "examples")
+    $TargetNotebookPath = [System.IO.Path]::Combine($TempDocPath, "tutorials")
+    # Create section list
+    $SectionNames = "Tracing", "Prompty", "Flow"
+    $Sections = [ordered]@{
+        Tracing=[System.Collections.ArrayList]::new();
+        Prompty=[System.Collections.ArrayList]::new();
+        Flow=[System.Collections.ArrayList]::new()
+    }
+    foreach($Item in Get-Childitem -path $NotebookRootPath -Recurse -Filter "*.ipynb")
+    {
+        # Notebook to build must have metadata: {"build_doc": {"category": "local/azure"}}
+        $NotebookContent = Get-Content $Item.FullName -Raw | ConvertFrom-Json
+        if(-not $NotebookContent.metadata.build_doc){
+            continue
+        }
+        $RepoPath = $Item.FullName.Replace($RepoRootPath, "https://github.com/microsoft/promptflow/tree/main/")
+        $SectionName = $NotebookContent.metadata.build_doc.section
+        [int]$Weight = $NotebookContent.metadata.build_doc.weight
+        $Category = $NotebookContent.metadata.build_doc.category
+        $AuthorList = $NotebookContent.metadata.build_doc.author
+        # If category is 'azure', add 1000 to weight
+        if($Category -eq "azure"){
+            $Weight += 1000
+        }
+        # Add ItemName, Category tuple to sections
+        $Sections[$SectionName].Add([Tuple]::Create($Item.Name.Replace(".ipynb", ""), $Weight))
+        # Copy notebook to doc path
+        Write-Host "Adding Notebook $Item ..."
+        $MediaDir = $Item.FullName + '\..\media'
+        Copy-Item -Path $Item.FullName -Destination $TargetNotebookPath
+        if(Test-Path $MediaDir){
+            # copy image referenced in notebook
+            Write-Host "Copying media files from $MediaDir ..."
+            Copy-Item -Path $MediaDir -Destination $TargetNotebookPath -Recurse -Force
+        }
+        # Append metadata to notebook
+        $CopiedNotebookPath = [System.IO.Path]::Combine($TargetNotebookPath, $Item.Name)
+        Add-Metadata $CopiedNotebookPath $RepoPath $AuthorList
+    }
+    # Reverse sort each section list by Weight
+    foreach($SectionName in $SectionNames){
+        $Sections[$SectionName] = $Sections[$SectionName] | Sort-Object -Property { $_.Item2 }
+    }
+    $TocTreeContent = @("", "``````{{toctree}}", ":caption: {0}", ":hidden:", ":maxdepth: 1", "", "{1}", "``````")
+    # Build toctree content for each section, append to tutorials index.md
+    $TutorialIndex = [System.IO.Path]::Combine($TargetNotebookPath, "index.md")
+    foreach($SectionName in $SectionNames){
+        $SectionTocTree = $TocTreeContent -join "`n"
+        # Join Item1 to a string in list
+        $ExampleList = ($Sections[$SectionName] | ForEach-Object { $_.Item1 }) -join "`n"
+        $SectionTocTree = $SectionTocTree -f $SectionName, $ExampleList
+        Write-Debug $SectionTocTree
+        Add-Content -Path $TutorialIndex -Value $SectionTocTree
+    }
+}
+
 if($WithReferenceDoc){
     Add-Api-Reference
 }
-
+# Build subpackage changelog
 Add-Changelog
+# Build notebook examples
+Add-Notebook
 
 Write-Host "===============Build Documentation with internal=${Internal}==============="
 $BuildParams = [System.Collections.ArrayList]::new()
@@ -148,7 +245,7 @@ if($WarningAsError){
 if($BuildLinkCheck){
     $BuildParams.Add("-blinkcheck")
 }
-sphinx-build $TempDocPath $OutPath -c $ScriptPath $BuildParams | Tee-Object -FilePath $SphinxBuildDoc
+sphinx-build $TempDocPath $OutPath -c $ScriptPath $BuildParams -v | Tee-Object -FilePath $SphinxBuildDoc
 $buildWarningsAndErrors = Select-String -Path $SphinxBuildDoc -Pattern $WarningErrorPattern
 
 Write-Host "Clean path: $TempDocPath"

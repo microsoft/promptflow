@@ -22,7 +22,10 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import ExperimentValidationError, ExperimentValueError
 from promptflow._sdk._orm.experiment import Experiment as ORMExperiment
-from promptflow._sdk._utils import _merge_local_code_and_additional_includes, _sanitize_python_variable_name
+from promptflow._sdk._utilities.general_utils import (
+    _merge_local_code_and_additional_includes,
+    _sanitize_python_variable_name,
+)
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._validation import MutableValidationResult, SchemaValidatableMixin
 from promptflow._sdk.entities._yaml_translatable import YAMLTranslatableMixin
@@ -101,6 +104,7 @@ class FlowNode(YAMLTranslatableMixin):
         environment_variables: Optional[Dict[str, str]] = None,
         connections: Optional[Dict[str, Dict]] = None,
         properties: Optional[Dict[str, Any]] = None,
+        init: Optional[dict] = None,
         **kwargs,
     ):
         self.type = ExperimentNodeType.FLOW
@@ -118,6 +122,7 @@ class FlowNode(YAMLTranslatableMixin):
         self.path = path
         # default run name: flow directory name + timestamp
         self.name = name
+        self.init = init or {}
         self._runtime = kwargs.get("runtime", None)
         self._resources = kwargs.get("resources", None)
 
@@ -158,6 +163,8 @@ class CommandNode(YAMLTranslatableMixin):
         environment_variables=None,
         code=None,
         display_name=None,
+        resources=None,
+        identity=None,
         **kwargs,
     ):
         self.type = ExperimentNodeType.COMMAND
@@ -168,6 +175,8 @@ class CommandNode(YAMLTranslatableMixin):
         self.inputs = inputs or {}
         self.outputs = outputs or {}
         self.runtime = runtime
+        self.resources = resources
+        self.identity = identity
         self.environment_variables = environment_variables or {}
 
     @classmethod

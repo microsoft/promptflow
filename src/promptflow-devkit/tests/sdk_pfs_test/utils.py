@@ -78,8 +78,10 @@ class PFSOperations:
         return self._client.get("/")
 
     # connection APIs
-    def connection_operation_with_invalid_user(self, status_code=None):
-        response = self._client.get(f"{self.CONNECTION_URL_PREFIX}/", headers={"X-Remote-User": "invalid_user"})
+    def connection_operation_with_invalid_user(self, name, status_code=None):
+        response = self._client.get(
+            f"{self.CONNECTION_URL_PREFIX}/{name}/listsecrets", headers={"X-Remote-User": "invalid_user"}
+        )
         if status_code:
             assert status_code == response.status_code, response.text
         return response

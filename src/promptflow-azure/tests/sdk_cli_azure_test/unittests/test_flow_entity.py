@@ -13,6 +13,7 @@ from mock.mock import Mock
 from sdk_cli_azure_test.conftest import EAGER_FLOWS_DIR, FLOWS_DIR
 
 from promptflow import load_run
+from promptflow._sdk._utilities.signature_utils import update_signatures
 from promptflow._sdk._vendor import get_upload_files_from_folder
 from promptflow._utils.flow_utils import load_flow_dag
 from promptflow.azure._constants._flow import ENVIRONMENT, PYTHON_REQUIREMENTS_TXT
@@ -302,8 +303,26 @@ class TestFlow:
     )
     def test_flex_flow_run_unsupported_types(self, exception_type, data, error_message):
         with pytest.raises(exception_type) as e:
-            Flow._resolve_signature(
+            update_signatures(
                 code=Path(f"{EAGER_FLOWS_DIR}/invalid_illegal_input_type"),
                 data=data,
             )
         assert error_message in str(e.value)
+
+    def test_model_config_resolve_signature(self):
+        update_signatures(
+            code=Path(f"{EAGER_FLOWS_DIR}/basic_model_config"),
+            data={
+                "entry": "class_with_model_config:MyFlow",
+                "init": {
+                    "azure_open_ai_model_config": {"type": "AzureOpenAIModelConfiguration"},
+                    "open_ai_model_config": {"type": "OpenAIModelConfiguration"},
+                },
+                "inputs": {"func_input": {"type": "string"}},
+                "outputs": {
+                    "func_input": {"type": "string"},
+                    "obj_id": {"type": "string"},
+                    "obj_input": {"type": "string"},
+                },
+            },
+        )

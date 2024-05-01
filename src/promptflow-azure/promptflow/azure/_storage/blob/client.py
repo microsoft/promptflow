@@ -2,7 +2,7 @@ import datetime
 import logging
 import threading
 import traceback
-from typing import Optional, Tuple
+from typing import Callable, Tuple
 
 from azure.ai.ml import MLClient
 from azure.ai.ml._azure_environments import _get_storage_endpoint_from_metadata
@@ -25,14 +25,10 @@ def get_datastore_container_client(
     subscription_id: str,
     resource_group_name: str,
     workspace_name: str,
-    credential: Optional[object] = None,
+    get_credential: Callable,
 ) -> Tuple[ContainerClient, str]:
     try:
-        if credential is None:
-            from azure.identity import DefaultAzureCredential
-
-            credential = DefaultAzureCredential()
-
+        credential = get_credential()
         datastore_definition, datastore_credential = _get_default_datastore(
             subscription_id, resource_group_name, workspace_name, credential
         )
@@ -65,7 +61,7 @@ def get_datastore_container_client(
 
 
 def _get_default_datastore(
-    subscription_id: str, resource_group_name: str, workspace_name: str, credential: Optional[object]
+    subscription_id: str, resource_group_name: str, workspace_name: str, credential
 ) -> Tuple[Datastore, str]:
 
     datastore_key = _get_datastore_client_key(subscription_id, resource_group_name, workspace_name)
@@ -100,7 +96,7 @@ def _get_datastore_client_key(subscription_id: str, resource_group_name: str, wo
 
 
 def _get_aml_default_datastore(
-    subscription_id: str, resource_group_name: str, workspace_name: str, credential: Optional[object]
+    subscription_id: str, resource_group_name: str, workspace_name: str, credential
 ) -> Tuple[Datastore, str]:
 
     ml_client = MLClient(

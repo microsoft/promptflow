@@ -1,18 +1,19 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
+import dataclasses
 import datetime
 import functools
 import json
 import uuid
+from dataclasses import asdict
 from os import PathLike
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 from dateutil import parser as date_parser
 
-from promptflow._constants import FlowType, OutputsFolderName
+from promptflow._constants import FlowType, OutputsFolderName, TokenKeys
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
@@ -43,7 +44,7 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, MissingAzurePackage
 from promptflow._sdk._orm import RunInfo as ORMRun
-from promptflow._sdk._utils import (
+from promptflow._sdk._utilities.general_utils import (
     _sanitize_python_variable_name,
     is_multi_container_enabled,
     is_remote_uri,
@@ -134,10 +135,10 @@ class Run(YAMLTranslatableMixin):
         properties: Optional[Dict[str, Any]] = None,
         source: Optional[Union[Path, str]] = None,
         init: Optional[Dict[str, Any]] = None,
-        **kwargs,
-    ):
         # !!! Caution !!!: Please update self._copy() if you add new fields to init
         # TODO: remove when RUN CRUD don't depend on this
+        **kwargs,
+    ):
         self.type = kwargs.get("type", RunTypes.BATCH)
         self.data = data
         self.column_mapping = column_mapping
@@ -203,6 +204,34 @@ class Run(YAMLTranslatableMixin):
         self._dynamic_callable = kwargs.get("dynamic_callable", None)
         if init:
             self._properties[FlowRunProperties.INIT_KWARGS] = init
+
+    def _copy(self, **kwargs):
+        """Copy a new run object.
+
+        This is used for resume run scenario, a new run will be created with the same properties as the original run.
+        Allowed to override some properties with kwargs. Supported properties are:
+        Meta: name, display_name, description, tags.
+        Run setting: runtime, resources, identity.
+        """
+        init_properties = {"init_kwargs": self.properties["init_kwargs"]} if "init_kwargs" in self.properties else {}
+        init_params = {
+            "flow": self.flow,
+            "data": self.data,
+            "variant": self.variant,
+            "run": self.run,
+            "column_mapping": self.column_mapping,
+            "display_name": self.display_name,
+            "description": self.description,
+            "tags": self.tags,
+            "environment_variables": self.environment_variables,
+            "connections": self.connections,
+            "properties": init_properties,  # copy no properties except init_kwargs
+            "source": self.source,
+            "identity": self._identity,
+            **kwargs,
+        }
+        logger.debug(f"Run init params: {init_params}")
+        return Run(**init_params)
 
     @property
     def created_on(self) -> str:
@@ -376,7 +405,7 @@ class Run(YAMLTranslatableMixin):
             display_name=display_name,
             description=self.description,
             tags=json.dumps(self.tags) if self.tags else None,
-            properties=json.dumps(self.properties),
+            properties=json.dumps(self.properties, default=asdict),
             data=Path(self.data).resolve().absolute().as_posix() if self.data else None,
             run_source=self._run_source,
         )
@@ -533,13 +562,19 @@ class Run(YAMLTranslatableMixin):
     def _get_schema_cls(self):
         return RunSchema
 
+    @classmethod
+    def _to_rest_init(cls, init):
+        """Convert init to rest object."""
+        if not init:
+            return None
+        return {k: asdict(v) if dataclasses.is_dataclass(v) else v for k, v in init.items()}
+
     def _to_rest_object(self):
         try:
             from azure.ai.ml._utils._storage_utils import AzureMLDatastorePathUri
 
             from promptflow.azure._restclient.flow.models import (
                 BatchDataInput,
-                CreateExistingBulkRunRequest,
                 RunDisplayNameGenerationType,
                 SessionSetupModeEnum,
                 SubmitBulkRunRequest,
@@ -616,7 +651,7 @@ class Run(YAMLTranslatableMixin):
             compute_name=compute_name,
             identity=identity_resource_id,
             enable_multi_container=is_multi_container_enabled(),
-            init_k_wargs=self.init,
+            init_k_wargs=self._to_rest_init(self.init),
         )
 
         # use when uploading a local existing run to cloud
@@ -649,51 +684,67 @@ class Run(YAMLTranslatableMixin):
                 )
         elif local_to_cloud_info:
             # register local run to cloud
-
-            # parse local_to_cloud_info to get necessary information
-            flow_artifact_path = local_to_cloud_info[OutputsFolderName.FLOW_ARTIFACTS]
-            flow_artifact_root_path = Path(flow_artifact_path).parent.as_posix()
-            log_file_relative_path = local_to_cloud_info[LocalStorageFilenames.LOG]
-            snapshot_file_path = local_to_cloud_info[LocalStorageFilenames.SNAPSHOT_FOLDER]
-
-            # get the start and end time. Plus "Z" to specify the timezone is UTC, otherwise there will be warning
-            # when sending the request to the server.
-            # e.g. WARNING:msrest.serialization:Datetime with no tzinfo will be considered UTC.
-            # for start_time, switch to "_start_time" once the bug item is fixed: BUG - 3085432.
-            start_time = self._created_on.isoformat() + "Z" if self._created_on else None
-            end_time = self._end_time.isoformat() + "Z" if self._end_time else None
-
-            # extract properties that needs to be passed to the request
-            total_tokens = self.properties[FlowRunProperties.SYSTEM_METRICS].get("total_tokens", 0)
-            properties = {Local2CloudProperties.TOTAL_TOKENS: total_tokens}
-            for property_key in Local2CloudUserProperties.get_all_values():
-                value = self.properties.get(property_key, None)
-                if value is not None:
-                    properties[property_key] = value
-
-            return CreateExistingBulkRunRequest(
-                run_id=self.name,
-                run_status=self.status,
-                start_time_utc=start_time,
-                end_time_utc=end_time,
-                run_display_name=self._get_default_display_name(),
-                description=self.description,
-                tags=self.tags,
-                properties=properties,
-                run_experiment_name=self._experiment_name,
-                run_display_name_generation_type=RunDisplayNameGenerationType.USER_PROVIDED_MACRO,
-                output_data_store=CloudDatastore.DEFAULT,
-                flow_artifacts_root_path=flow_artifact_root_path,
-                log_file_relative_path=log_file_relative_path,
-                flow_definition_data_store_name=CloudDatastore.DEFAULT,
-                flow_definition_blob_path=snapshot_file_path,
-            )
+            return self._to_rest_object_for_local_to_cloud(local_to_cloud_info, variant)
         else:
             # upload via CodeOperations.create_or_update
             # submit with param FlowDefinitionDataUri
             return common_submit_bulk_run_request(
                 flow_definition_data_uri=str(self.flow),
             )
+
+    def _to_rest_object_for_local_to_cloud(self, local_to_cloud_info: dict, variant_run_id=None):
+        """Convert run object to CreateExistingBulkRunRequest object for local to cloud operation."""
+        from promptflow.azure._restclient.flow.models import CreateExistingBulkRunRequest, RunDisplayNameGenerationType
+
+        # parse local_to_cloud_info to get necessary information
+        flow_artifact_path = local_to_cloud_info[OutputsFolderName.FLOW_ARTIFACTS]
+        flow_artifact_root_path = Path(flow_artifact_path).parent.as_posix()
+        log_file_relative_path = local_to_cloud_info[LocalStorageFilenames.LOG]
+        snapshot_file_path = local_to_cloud_info[LocalStorageFilenames.SNAPSHOT_FOLDER]
+
+        # get the start and end time. Plus "Z" to specify the timezone is UTC, otherwise there will be warning
+        # when sending the request to the server.
+        # e.g. WARNING:msrest.serialization:Datetime with no tzinfo will be considered UTC.
+        # for start_time, switch to "_start_time" once the bug item is fixed: BUG - 3085432.
+        start_time = self._created_on.isoformat() + "Z" if self._created_on else None
+        end_time = self._end_time.isoformat() + "Z" if self._end_time else None
+
+        # extract properties that needs to be passed to the request
+        properties = {
+            # add instance_results.jsonl path to run properties, which is required by UI feature.
+            Local2CloudProperties.EVAL_ARTIFACTS: '[{"path": "instance_results.jsonl", "type": "table"}]',
+        }
+        # add system metrics to run properties
+        for token_key in TokenKeys.get_all_values():
+            final_key = f"{Local2CloudProperties.PREFIX}.{token_key}"
+            value = self.properties[FlowRunProperties.SYSTEM_METRICS].get(token_key, 0)
+            if value is not None:
+                properties[final_key] = value
+
+        # add user properties to run properties
+        for property_key in Local2CloudUserProperties.get_all_values():
+            value = self.properties.get(property_key, None)
+            if value is not None:
+                properties[property_key] = value
+
+        return CreateExistingBulkRunRequest(
+            run_id=self.name,
+            run_status=self.status,
+            start_time_utc=start_time,
+            end_time_utc=end_time,
+            run_display_name=self._get_default_display_name(),
+            description=self.description,
+            tags=self.tags,
+            variant_run_id=variant_run_id,
+            properties=properties,
+            run_experiment_name=self._experiment_name,
+            run_display_name_generation_type=RunDisplayNameGenerationType.USER_PROVIDED_MACRO,
+            output_data_store=CloudDatastore.DEFAULT,
+            flow_artifacts_root_path=flow_artifact_root_path,
+            log_file_relative_path=log_file_relative_path,
+            flow_definition_data_store_name=CloudDatastore.DEFAULT,
+            flow_definition_blob_path=snapshot_file_path,
+        )
 
     def _check_run_status_is_completed(self) -> None:
         if self.status != RunStatus.COMPLETED:
@@ -788,33 +839,6 @@ class Run(YAMLTranslatableMixin):
             end_time=datetime.datetime.fromisoformat(run_info["end_time"]),
             **kwargs,
         )
-
-    def _copy(self, **kwargs):
-        """Copy a new run object.
-
-        This is used for resume run scenario, a new run will be created with the same properties as the original run.
-        Allowed to override some properties with kwargs. Supported properties are:
-        Meta: name, display_name, description, tags.
-        Run setting: runtime, resources, identity.
-        """
-        init_params = {
-            "flow": self.flow,
-            "data": self.data,
-            "variant": self.variant,
-            "run": self.run,
-            "column_mapping": self.column_mapping,
-            "display_name": self.display_name,
-            "description": self.description,
-            "tags": self.tags,
-            "environment_variables": self.environment_variables,
-            "connections": self.connections,
-            # "properties": self._properties,  # Do not copy system metrics
-            "source": self.source,
-            "identity": self._identity,
-            **kwargs,
-        }
-        logger.debug(f"Run init params: {init_params}")
-        return Run(**init_params)
 
     @functools.cached_property
     def _flow_type(self) -> str:

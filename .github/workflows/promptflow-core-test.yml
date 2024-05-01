@@ -40,6 +40,27 @@ jobs:
           poetry run pip show promptflow-tracing
           poetry run pip show promptflow-core
         working-directory: ${{ env.WORKING_DIRECTORY }}
+      - name: generate end-to-end test config from secret
+        run: echo '${{ secrets.PF_TRACING_E2E_TEST_CONFIG }}' >> connections.json
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+      - name: set test mode
+        run: |
+          echo "PROMPT_FLOW_TEST_MODE=$(if [[ "${{ github.event_name }}" == "pull_request" ]]; then echo replay; else echo live; fi)" >> $GITHUB_ENV
+      - name: Azure login (non pull_request workflow)
+        if: github.event_name != 'pull_request'
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: generate live test resources (non pull_request workflow)
+        if: github.event_name != 'pull_request'
+        uses: "./.github/actions/step_generate_configs"
+        with:
+          targetFolder: ${{ env.PROMPTFLOW_DIRECTORY }}
+      - name: generate live test resources (pull_request workflow)
+        if: github.event_name == 'pull_request'
+        working-directory: ${{ env.PROMPTFLOW_DIRECTORY }}
+        run: |
+          cp ${{ github.workspace }}/src/promptflow/dev-connections.json.example ${{ github.workspace }}/src/promptflow/connections.json
       - name: run core tests
         run: poetry run pytest ./tests/core --cov=promptflow --cov-config=pyproject.toml --cov-report=term --cov-report=html --cov-report=xml
         working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -74,6 +95,24 @@ jobs:
           poetry run pip show promptflow-tracing
           poetry run pip show promptflow-core
         working-directory: ${{ env.WORKING_DIRECTORY }}
+      - name: set test mode
+        run: |
+          echo "PROMPT_FLOW_TEST_MODE=$(if [[ "${{ github.event_name }}" == "pull_request" ]]; then echo replay; else echo live; fi)" >> $GITHUB_ENV
+      - name: Azure login (non pull_request workflow)
+        if: github.event_name != 'pull_request'
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: generate live test resources (non pull_request workflow)
+        if: github.event_name != 'pull_request'
+        uses: "./.github/actions/step_generate_configs"
+        with:
+          targetFolder: ${{ env.PROMPTFLOW_DIRECTORY }}
+      - name: generate live test resources (pull_request workflow)
+        if: github.event_name == 'pull_request'
+        working-directory: ${{ env.PROMPTFLOW_DIRECTORY }}
+        run: |
+          cp ${{ github.workspace }}/src/promptflow/dev-connections.json.example ${{ github.workspace }}/src/promptflow/connections.json
       - name: run azureml-serving tests
         run: poetry run pytest ./tests/azureml-serving --cov=promptflow --cov-config=pyproject.toml --cov-report=term --cov-report=html --cov-report=xml
         working-directory: ${{ env.WORKING_DIRECTORY }}

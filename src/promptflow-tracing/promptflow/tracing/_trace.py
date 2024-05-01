@@ -2,6 +2,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import asyncio
+import contextlib
 import functools
 import inspect
 import json
@@ -13,7 +15,7 @@ from typing import Callable, Dict, List, Optional
 
 import opentelemetry.trace as otel_trace
 from opentelemetry.sdk.trace import ReadableSpan
-from opentelemetry.trace import Link
+from opentelemetry.trace import Link, Span
 from opentelemetry.trace.span import NonRecordingSpan, format_trace_id
 from opentelemetry.trace.status import StatusCode
 
@@ -25,6 +27,17 @@ from .contracts.generator_proxy import AsyncGeneratorProxy, GeneratorProxy
 from .contracts.trace import Trace, TraceType
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
+
+
+@contextlib.contextmanager
+def _record_cancellation_exceptions_to_span(span: Span):
+    try:
+        yield
+    except (KeyboardInterrupt, asyncio.CancelledError) as ex:
+        if span.is_recording():
+            span.record_exception(ex)
+            span.set_status(StatusCode.ERROR, "Execution cancelled.")
+        raise
 
 
 class TokenCollector:
@@ -144,13 +157,13 @@ def enrich_span_with_trace_type(span, inputs, output, trace_type):
         enrich_span_with_assistant_output(span, output)
     if trace_type == TraceType.THREAD:
         token_collector.collect_openai_tokens(span, output)
-        enrich_span_with_thread_output(span, output)   
+        enrich_span_with_thread_output(span, output)
     if trace_type == TraceType.MESSAGE:
         token_collector.collect_openai_tokens(span, output)
-        enrich_span_with_message_output(span, output)   
+        enrich_span_with_message_output(span, output)
     if trace_type == TraceType.RUN:
         token_collector.collect_openai_tokens(span, output)
-        enrich_span_with_run_output(span, output)   
+        enrich_span_with_run_output(span, output)
     elif trace_type == TraceType.EMBEDDING:
         token_collector.collect_openai_tokens(span, output)
         enrich_span_with_embedding(span, inputs, output)
@@ -187,7 +200,7 @@ def traced_generator(original_span: ReadableSpan, inputs, generator):
     with otel_tracer.start_as_current_span(
         f"Iterated({original_span.name})",
         links=[link],
-    ) as span:
+    ) as span, _record_cancellation_exceptions_to_span(span):
         enrich_span_with_original_attributes(span, original_span.attributes)
         # Enrich the new span with input before generator iteration to prevent loss of input information.
         # The input is as an event within this span.
@@ -211,7 +224,7 @@ async def traced_async_generator(original_span: ReadableSpan, inputs, generator)
     with otel_tracer.start_as_current_span(
         f"Iterated({original_span.name})",
         links=[link],
-    ) as span:
+    ) as span, _record_cancellation_exceptions_to_span(span):
         enrich_span_with_original_attributes(span, original_span.attributes)
         # Enrich the new span with input before generator iteration to prevent loss of input information.
         # The input is as an event within this span.
@@ -314,41 +327,42 @@ def enrich_span_with_llm_output(span, output):
                 generated_message = None
             enrich_span_with_llm(span, model, generated_message)
 
+
 def enrich_span_with_assistant_output(span, output):
-    model = None
     generated_message = None
     try:
-        #span.set_attribute("attribute.name", "Attribute value")
+        # span.set_attribute("attribute.name", "Attribute value")
         span.add_event("promptflow.assistant.created_assistant", {"payload": serialize_attribute(generated_message)})
     except Exception as e:
         logging.warning(f"Failed to enrich span with assistant: {e}")
 
+
 def enrich_span_with_thread_output(span, output):
-    model = None
     generated_message = None
     try:
-        #span.set_attribute("attribute.name", "Attribute value")
+        # span.set_attribute("attribute.name", "Attribute value")
         span.add_event("promptflow.thread.created_thread", {"payload": serialize_attribute(generated_message)})
     except Exception as e:
         logging.warning(f"Failed to enrich span with thread: {e}")
 
+
 def enrich_span_with_message_output(span, output):
-    model = None
     generated_message = None
     try:
-        #span.set_attribute("attribute.name", "Attribute value")
+        # span.set_attribute("attribute.name", "Attribute value")
         span.add_event("promptflow.message.created_message", {"payload": serialize_attribute(generated_message)})
     except Exception as e:
         logging.warning(f"Failed to enrich span with message: {e}")
 
+
 def enrich_span_with_run_output(span, output):
-    model = None
     generated_message = None
     try:
-        #span.set_attribute("attribute.name", "Attribute value")
+        # span.set_attribute("attribute.name", "Attribute value")
         span.add_event("promptflow.message.created_run", {"payload": serialize_attribute(generated_message)})
     except Exception as e:
         logging.warning(f"Failed to enrich span with run: {e}")
+
 
 def serialize_attribute(value):
     """Serialize values that can be used as attributes in span."""
@@ -423,7 +437,7 @@ def _traced_async(
         span_name = get_node_name_from_context(used_for_span_name=True) or trace.name
         # need to get everytime to ensure tracer is latest
         otel_tracer = otel_trace.get_tracer("promptflow")
-        with otel_tracer.start_as_current_span(span_name) as span:
+        with otel_tracer.start_as_current_span(span_name) as span, _record_cancellation_exceptions_to_span(span):
             # Store otel trace id in context for correlation
             OperationContext.get_instance()["otel_trace_id"] = f"0x{format_trace_id(span.get_span_context().trace_id)}"
             enrich_span_with_trace(span, trace)
@@ -489,7 +503,7 @@ def _traced_sync(
         span_name = get_node_name_from_context(used_for_span_name=True) or trace.name
         # need to get everytime to ensure tracer is latest
         otel_tracer = otel_trace.get_tracer("promptflow")
-        with otel_tracer.start_as_current_span(span_name) as span:
+        with otel_tracer.start_as_current_span(span_name) as span, _record_cancellation_exceptions_to_span(span):
             # Store otel trace id in context for correlation
             OperationContext.get_instance()["otel_trace_id"] = f"0x{format_trace_id(span.get_span_context().trace_id)}"
             enrich_span_with_trace(span, trace)
