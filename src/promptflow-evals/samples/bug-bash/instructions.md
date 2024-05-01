@@ -17,7 +17,7 @@ Note: You need the new [gpt-35-turbo (0125) version](https://learn.microsoft.com
 
 ### Installation Instructions:
 
-1. Create a virtual environment of you choice. To create one using conda, run the following command:
+1. Create a **virtual environment of you choice**. To create one using conda, run the following command:
     ```bash
     conda create -n promptflow-evals-bug-bash python=3.10
     ```
@@ -39,7 +39,7 @@ Note: You need the new [gpt-35-turbo (0125) version](https://learn.microsoft.com
 
 ### Report Bugs
 
-Please use the following template to report bugs : [**Bug Template**](https)
+Please use the following template to report bugs : [**Bug Template**]([https](https://aka.ms/aicodefirst/createbug))
 
 ### Sample Notebooks
 
