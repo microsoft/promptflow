@@ -8,6 +8,8 @@ from typing import Any, Callable, Dict, List
 
 from tqdm import tqdm
 
+from promptflow._sdk._telemetry import ActivityType, monitor_operation
+
 from ._conversation import CallbackConversationBot, ConversationBot, ConversationRole
 from ._conversation._conversation import simulate_conversation
 from ._model_tools import (
@@ -25,6 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 class AdversarialSimulator:
+    @monitor_operation(activity_name="adversarial.simulator.init", activity_type=ActivityType.PUBLICAPI)
     def __init__(self, *, template: str, project_scope: Dict[str, Any]):
         """
         Initializes the adversarial simulator with a template and project scope.
@@ -67,6 +70,7 @@ class AdversarialSimulator:
         if self.rai_client is None:
             raise ValueError("Simulation options require rai services but ai client is not provided.")
 
+    @monitor_operation(activity_name="adversarial.simulator.call", activity_type=ActivityType.PUBLICAPI)
     async def __call__(
         self,
         *,
