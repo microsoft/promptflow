@@ -1,0 +1,4 @@
+inputs:
+  answer:
+    type: object
+entry: answer:answer_len
