@@ -1,10 +1,13 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-import asyncio
-from typing import TypedDict
 
-class FlowOutput(TypedDict):
+import asyncio
+from dataclasses import dataclass
+
+
+@dataclass
+class FlowOutput:
     obj_input: str
     func_input: str
     obj_id: str
@@ -16,14 +19,15 @@ class MyFlow:
 
     async def __call__(self, func_input: str) -> FlowOutput:
         await asyncio.sleep(1)
-        return {
-            "obj_input": self.obj_input,
-            "func_input": func_input,
-            "obj_id": id(self),
-        }
+        return FlowOutput(obj_input=self.obj_input, func_input=func_input, obj_id=id(self))
 
     async def __aggregate__(self, results: list) -> dict:
         await asyncio.sleep(1)
+        # Try attribute-style access for the datacalss
+        obj_inputs = [r.obj_input for r in results]
+        func_inputs = [r.func_input for r in results]
+        obj_ids = [r.obj_id for r in results]
+
         return {"length": len(results)}
 
 
