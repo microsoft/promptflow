@@ -39,7 +39,7 @@ Note: You need the new [gpt-35-turbo (0125) version](https://learn.microsoft.com
 
 ### Report Bugs
 
-Please use the following template to report bugs : [**Bug Template**]([https](https://aka.ms/aicodefirst/createbug))
+Please use the following template to report bugs : [**Bug Template**](https://aka.ms/aicodefirst/createbug)
 
 ### Sample Notebooks
 
