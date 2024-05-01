@@ -18,6 +18,7 @@ Note: You need the new [gpt-35-turbo (0125) version](https://learn.microsoft.com
 ### Clone the repo
 ```bash
 git clone https://github.com/microsoft/promptflow.git
+# Navigate to cloned repo folder
 git pull
 git checkout -b user/singankit/pf-evals-bug-bash
 ```
