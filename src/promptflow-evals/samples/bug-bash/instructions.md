@@ -31,14 +31,11 @@ Note: You need the new [gpt-35-turbo (0125) version](https://learn.microsoft.com
    # Install packages in this order
    pip install promptflow==1.10.0.dev125439426 --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
    pip install promptflow-evals==0.2.0.dev125439426 --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
-<<<<<<< HEAD
    pip install azure_ai_ml==1.16.0a20240501004 --extra-index-url https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-python/pypi/simple/
-=======
 
    # Dependencies needed for some of the notebooks
    pip install bs4
    pip install ipykernel 
->>>>>>> 39f798d3f2a2ad2a13b0b2ce2b5d95eea3e5c204
     ```
 4. To track your local evaluations in cloud run following command to set tracking config after replacing the placeholder values
    ```bash
@@ -46,7 +43,6 @@ Note: You need the new [gpt-35-turbo (0125) version](https://learn.microsoft.com
    ```
 4. To run the examples from the notebook, please install the kernel in your environment:
    ```bash
-   pip install jupyter
    python -m ipykernel install --user --name promptflow-evals-bug-bash --display-name "promptflow-evals-bug-bash"
    ```
 6. Select the newly installed kernel in the Jupyter notebook.
@@ -59,5 +55,5 @@ Please use the following template to report bugs : [**Bug Template**](https://ak
 
 1. Evaluate existing dataset - [Notebook Link]()
 2. Evaluate Target. Target can be a chat app locally or deployed to an endpoint. - [Notebook Link]()
-3. Create new evaluators and registering them in cloud - [Notebook Link]()
+3. Create new evaluators and registering them in cloud - [Notebook Link](https://github.com/microsoft/promptflow/blob/user/singankit/pf-evals-bug-bash/src/promptflow-evals/samples/LoadSaveEvals/Load_saved_evaluator.ipynb)
 
