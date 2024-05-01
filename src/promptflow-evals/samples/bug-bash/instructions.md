@@ -28,6 +28,7 @@ git checkout -b user/singankit/pf-evals-bug-bash
 1. Create a **virtual environment of you choice**. To create one using conda, run the following command:
     ```bash
     conda create -n promptflow-evals-bug-bash python=3.10
+    conda activate promptflow-evals-bug-bash
     ```
 2. Install the required packages by running the following command:
     ```bash
