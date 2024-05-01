@@ -40,6 +40,7 @@ Note: You need the new [gpt-35-turbo (0125) version](https://learn.microsoft.com
    ```bash
    pf config set trace.destination=azureml://subscriptions/<subscription_id>/resourceGroups/<resource_group_name>/providers/Microsoft.MachineLearningServices/workspaces/<project_name>
    ```
+   To remote tracking config navigate to `C:\Users\<user>\.promptflow` and locate `py.yaml` file and delete the `trace:` section
 
 ### Report Bugs
 
