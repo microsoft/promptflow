@@ -4,14 +4,12 @@
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from promptflow.evals.evaluators import (
-    CoherenceEvaluator,
-    F1ScoreEvaluator,
-    FluencyEvaluator,
-    GroundednessEvaluator,
-    RelevanceEvaluator,
-    SimilarityEvaluator,
-)
+from ..coherence import CoherenceEvaluator
+from ..f1_score import F1ScoreEvaluator
+from ..fluency import FluencyEvaluator
+from ..groundedness import GroundednessEvaluator
+from ..relevance import RelevanceEvaluator
+from ..similarity import SimilarityEvaluator
 
 
 class QAEvaluator:

@@ -9,15 +9,16 @@ from typing import Dict, List
 
 import numpy as np
 
-from promptflow.evals.evaluators import CoherenceEvaluator, FluencyEvaluator, GroundednessEvaluator, RelevanceEvaluator
+from ..coherence import CoherenceEvaluator
+from ..fluency import FluencyEvaluator
+from ..groundedness import GroundednessEvaluator
+from ..relevance import RelevanceEvaluator
 
 logger = logging.getLogger(__name__)
 
 
 class ChatEvaluator:
-    def __init__(
-        self, model_config, eval_last_turn: bool = False, parallel: bool = True
-    ):
+    def __init__(self, model_config, eval_last_turn: bool = False, parallel: bool = True):
         """
         Initialize an evaluator configured for a specific Azure OpenAI model.
 
