@@ -4,6 +4,7 @@
 # flake8: noqa: F401
 # flake8: noqa: F841
 
+import asyncio
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
@@ -44,12 +45,23 @@ class TestSimulator:
             assert mock_get_service_discovery_url.called
             assert callable(simulator)
 
-    def test_simulator_raises_validation_error_with_unsupported_template(self):
+    @patch("promptflow.evals.synthetic._model_tools._rai_client.RAIClient._get_service_discovery_url")
+    @patch("promptflow.evals.synthetic._model_tools.AdversarialTemplateHandler._get_content_harm_template_collections")
+    def test_simulator_raises_validation_error_with_unsupported_template(
+        self, _get_content_harm_template_collections, _get_service_discovery_url
+    ):
+        _get_content_harm_template_collections.return_value = []
+        _get_service_discovery_url.return_value = "some-url"
         project_scope = {
             "subscription_id": "test_subscription",
             "resource_group_name": "test_resource_group",
             "workspace_name": "test_workspace",
             "credential": "test_credential",
         }
+
+        async def callback(x):
+            return x
+
+        simulator = AdversarialSimulator(template="unsupported_template", project_scope=project_scope)
         with pytest.raises(ValueError):
-            AdversarialSimulator(template="unsupported_template", project_scope=project_scope)
+            outputs = asyncio.run(simulator(max_conversation_turns=1, max_simulation_results=3, target=callback))

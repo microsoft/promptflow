@@ -41,7 +41,6 @@ CONNECTION_FILE = (PROMPTFLOW_ROOT / "promptflow-evals/connections.json").resolv
 RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "promptflow-recording/recordings/local").resolve()
 
 
-@pytest.fixture
 def configure_default_azure_credential():
     with open(
         file=CONNECTION_FILE,
@@ -54,6 +53,9 @@ def configure_default_azure_credential():
         creds = dev_connections["pf-evals-sp"]["value"]
         for key, value in creds.items():
             os.environ[key] = value
+
+
+configure_default_azure_credential()
 
 
 def pytest_configure():

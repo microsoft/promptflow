@@ -13,7 +13,6 @@ from promptflow._sdk._telemetry import ActivityType, monitor_operation
 from ._conversation import CallbackConversationBot, ConversationBot, ConversationRole
 from ._conversation._conversation import simulate_conversation
 from ._model_tools import (
-    CONTENT_HARM_TEMPLATES_COLLECTION_KEY,
     AdversarialTemplateHandler,
     AsyncHTTPClientWithRetry,
     ManagedIdentityAPITokenManager,
@@ -41,8 +40,6 @@ class AdversarialSimulator:
             - "credential": Azure credentials object for authentication.
         :type project_scope: Dict[str, Any]
         """
-        if template not in CONTENT_HARM_TEMPLATES_COLLECTION_KEY:
-            raise ValueError(f"Template {template} is not a valid adversarial template.")
         self.template = template
         # check if project_scope has the keys: subscription_id, resource_group_name, workspace_name, credential
         if not all(
@@ -119,6 +116,8 @@ class AdversarialSimulator:
             max_conversation_turns = max_conversation_turns * 2
         self._ensure_service_dependencies()
         templates = await self.adversarial_template_handler._get_content_harm_template_collections(self.template)
+        if len(templates) == 0:
+            raise ValueError(f"No templates found for {self.template}")
         concurrent_async_task = min(concurrent_async_task, 1000)
         semaphore = asyncio.Semaphore(concurrent_async_task)
         sim_results = []

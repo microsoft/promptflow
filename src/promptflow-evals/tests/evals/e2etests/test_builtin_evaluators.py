@@ -5,7 +5,7 @@ from promptflow.evals.evaluators.content_safety import ContentSafetyEvaluator, V
 from promptflow.evals.evaluators.qa import QAEvaluator
 
 
-@pytest.mark.usefixtures("model_config", "project_scope", "recording_injection", "configure_default_azure_credential")
+@pytest.mark.usefixtures("model_config", "project_scope", "recording_injection")
 @pytest.mark.e2etest
 class TestBuiltInEvaluators:
     def test_individual_evaluator_prompt_based(self, model_config):
