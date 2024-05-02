@@ -2,3 +2,8 @@
 promptflow_rag-0.0b1-py3-none-any.whl
 azure_ai_ml-1.16.0-py3-none-any.whl
 azureml_rag-0.1.0.0-py3-none-any.whl
+
+# azureml-rag[cognitive_search,document_parsing]
+langchain>=0.0.236,<0.2
+langchain-community<=0.0.33
+azure-search-documents>=11.4.0
