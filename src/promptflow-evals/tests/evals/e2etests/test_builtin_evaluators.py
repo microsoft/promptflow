@@ -1,7 +1,12 @@
 import pytest
 
-from promptflow.evals.evaluators import ChatEvaluator, ContentSafetyEvaluator, FluencyEvaluator, ViolenceEvaluator
-from promptflow.evals.evaluators.qa import QAEvaluator
+from promptflow.evals.evaluators import (
+    ChatEvaluator,
+    ContentSafetyEvaluator,
+    FluencyEvaluator,
+    QAEvaluator,
+    ViolenceEvaluator,
+)
 
 
 @pytest.mark.usefixtures("model_config", "project_scope", "recording_injection", "configure_default_azure_credential")

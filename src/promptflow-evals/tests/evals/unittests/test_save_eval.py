@@ -6,7 +6,6 @@ from typing import Any, List, Optional, Type
 import pytest
 
 from promptflow.evals import evaluators
-from promptflow.evals.evaluators import content_safety
 
 
 @pytest.fixture
@@ -30,18 +29,11 @@ class TestSaveEval:
     """Test saving evaluators."""
 
     EVALUATORS = get_evaluators_from_module(evaluators)
-    RAI_EVALUATORS = get_evaluators_from_module(content_safety)
 
     @pytest.mark.parametrize("evaluator", EVALUATORS)
     def test_save_evaluators(self, tmpdir, pf_client, evaluator) -> None:
         """Test regular evaluator saving."""
         pf_client.flows.save(evaluator, path=tmpdir)
-        assert os.path.isfile(os.path.join(tmpdir, "flow.flex.yaml"))
-
-    @pytest.mark.parametrize("rai_evaluator", RAI_EVALUATORS)
-    def test_save_rai_evaluators(self, tmpdir, pf_client, rai_evaluator):
-        """Test saving of RAI evaluators"""
-        pf_client.flows.save(rai_evaluator, path=tmpdir)
         assert os.path.isfile(os.path.join(tmpdir, "flow.flex.yaml"))
 
     def test_load_and_run_evaluators(self, tmpdir, pf_client, data_file) -> None:
