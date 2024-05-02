@@ -1,7 +1,6 @@
 import pytest
 
-from promptflow.evals.evaluators import ChatEvaluator, FluencyEvaluator
-from promptflow.evals.evaluators.content_safety import ContentSafetyEvaluator, ViolenceEvaluator
+from promptflow.evals.evaluators import ChatEvaluator, ContentSafetyEvaluator, FluencyEvaluator, ViolenceEvaluator
 from promptflow.evals.evaluators.qa import QAEvaluator
 
 
