@@ -17,7 +17,7 @@ from promptflow.rag._utils._open_ai_utils import build_open_ai_protocol
 def build_index(
     *,
     name: str,
-    vector_store: str,
+    vector_store: str = "azure_ai_search",
     input_source: Union[AzureAISearchSource, LocalSource],
     index_config: AzureAISearchConfig,  # todo better name?
     embeddings_model_config: EmbeddingsModelConfig,
@@ -82,10 +82,11 @@ def build_index(
         # TODO: depends on azureml.rag.Embeddings.from_uri to finalize a scheme for different embeddings
         if not embeddings_model_config.connection_config and not embeddings_model_config.connection_id:
             raise ValueError(
-                "Please specify embeddings_model_config.connection_config or embeddings_model_config.connection_id to use cohere embedding models"
+                "Please specify embeddings_model_config.connection_config or embeddings_model_config.connection_id to use embedding models via serverless connection"
             )
         embeddings_model_uri = None
         is_serverless_connection = True
+        print("Using serverless connection.")
     else:
         embeddings_model_uri = build_open_ai_protocol(
             embeddings_model_config.deployment_name,
@@ -110,6 +111,7 @@ def build_index(
     if chunk_prepend_summary is not None:
         splitter_args["chunk_preprend_summary"] = chunk_prepend_summary
 
+    print(f"Crack and chunk files from local path: {input_source.input_data_path}")
     chunked_docs = DocumentChunksIterator(
         files_source=input_source.input_data_path,
         glob=input_glob,
@@ -139,6 +141,7 @@ def build_index(
                 "connection": {"id": connection_id},
                 "endpoint": endpoint,
             }
+            print(f"Start embedding using connection with id = {connection_id}")
         else:
             import openai
             import os
@@ -153,11 +156,13 @@ def build_index(
                 "connection": {"key": api_key},
                 "endpoint": os.getenv(api_base),
             }
+            print(f"Start embedding using api_key and api_base from environment variables.")
         embedder = EmbeddingsContainer.from_uri(
             embeddings_model_uri,
             **connection_args,
         )
     elif is_serverless_connection:
+        print(f"Start embedding using serverless connection with id = {connection_id}.")
         connection_args = {
             "connection_type": "workspace_connection",
             "connection": {"id": connection_id},
@@ -220,13 +225,16 @@ def build_index(
                 "connection": {"id": ai_search_connection_id},
                 "endpoint": endpoint,
             }
+
+        print(f"Start creating index from embeddings.")
         create_index_from_raw_embeddings(
             emb=embedder,
             acs_config=ai_search_args,
             connection=connection_args,
             output_path=save_path,
         )
-
+        
+    print(f"Successfully created index at {save_path}")
     return save_path
 
 
@@ -242,7 +250,7 @@ def _create_mlindex_from_existing_ai_search(
         from azureml.rag.utils.connections import get_connection_by_id_v2
     except ImportError as e:
         print(
-            "In order to use build_index to build an Index locally, you must have azure-ai-generative[index] installed"
+            "In order to use build_index to build an Index locally, you must have azureml.rag installed"
         )
         raise e
     mlindex_config = {}
