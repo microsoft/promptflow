@@ -31,7 +31,7 @@ from promptflow._sdk._constants import (
     TRACE_MGMT_DB_PATH,
     TRACE_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH,
 )
-from promptflow._sdk._utils import (
+from promptflow._sdk._utilities.general_utils import (
     get_promptflow_sdk_version,
     print_red_error,
     print_yellow_warning,
