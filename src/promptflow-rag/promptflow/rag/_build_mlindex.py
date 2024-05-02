@@ -80,9 +80,9 @@ def build_index(
     if "cohere" in embeddings_model_config.model_name:
         # If model uri is None, it is *considered* as a serverless endpoint for now.
         # TODO: depends on azureml.rag.Embeddings.from_uri to finalize a scheme for different embeddings
-        if not embeddings_model_config.connection_config:
+        if not embeddings_model_config.connection_config and not embeddings_model_config.connection_id:
             raise ValueError(
-                "Please specify embeddings_model_config.connection_config to use serverless models"
+                "Please specify embeddings_model_config.connection_config or embeddings_model_config.connection_id to use cohere embedding models"
             )
         embeddings_model_uri = None
         is_serverless_connection = True
@@ -91,13 +91,15 @@ def build_index(
             embeddings_model_config.deployment_name,
             embeddings_model_config.model_name
         )
+    connection_id = embeddings_model_config.get_connection_id()
 
     if isinstance(input_source, AzureAISearchSource):
         return _create_mlindex_from_existing_ai_search(
             # TODO: Fix Bug 2818331
             embedding_model=embeddings_model_config.model_name,
             embedding_model_uri=embeddings_model_uri,
-            connection_id=embeddings_model_config.connection_config.build_connection_id(),
+            is_serverless_connection=is_serverless_connection,
+            connection_id=connection_id,
             ai_search_config=input_source,
         )
     embeddings_cache_path = str(Path(embeddings_cache_path) if embeddings_cache_path else Path.cwd())
@@ -122,9 +124,8 @@ def build_index(
     )
 
     connection_args = {}
-    if "open_ai" in embeddings_model_uri:
-        if embeddings_model_config.connection_config:
-            connection_id = embeddings_model_config.connection_config.build_connection_id()
+    if embeddings_model_uri and "open_ai" in embeddings_model_uri:
+        if connection_id:
             aoai_connection = get_connection_by_id_v2(connection_id)
             if isinstance(aoai_connection, dict):
                 if "properties" in aoai_connection and "target" in aoai_connection["properties"]:
@@ -157,18 +158,9 @@ def build_index(
             **connection_args,
         )
     elif is_serverless_connection:
-        # cohere connection doesn't support environment variables yet
-        # import os
-        # api_key = "SERVERLESS_CONNECTION_KEY"
-        # api_base = "SERVERLESS_CONNECTION_ENDPOINT"
-        # connection_args = {
-        #     "connection_type": "environment",
-        #     "connection": {"key": api_key},
-        #     "endpoint": os.getenv(api_base),
-        # }
         connection_args = {
             "connection_type": "workspace_connection",
-            "connection": {"id": embeddings_model_config.connection_config.build_connection_id()},
+            "connection": {"id": connection_id},
         }
         embedder = EmbeddingsContainer.from_uri(None, credential=None, **connection_args)
     else:
@@ -182,7 +174,8 @@ def build_index(
         ai_search_args = {
             "index_name": index_config.ai_search_index_name,
         }
-        if not index_config.ai_search_connection_config:
+        ai_search_connection_id = index_config.get_connection_id()
+        if not ai_search_connection_id:
             import os
 
             ai_search_args = {
@@ -196,9 +189,9 @@ def build_index(
             }
             connection_args = {"connection_type": "environment", "connection": {"key": "AZURE_AI_SEARCH_KEY"}}
         else:
-            connection_id = index_config.ai_search_connection_config.build_connection_id()
-            ai_search_connection = get_connection_by_id_v2(connection_id)
+            ai_search_connection = get_connection_by_id_v2(ai_search_connection_id)
             if isinstance(ai_search_connection, dict):
+                endpoint = ai_search_connection["properties"]["target"]
                 ai_search_args = {
                     **ai_search_args,
                     **{
@@ -210,6 +203,7 @@ def build_index(
                 }
             elif ai_search_connection.target:
                 api_version = AZURE_AI_SEARCH_API_VERSION
+                endpoint = ai_search_connection.target
                 if ai_search_connection.tags and "ApiVersion" in ai_search_connection.tags:
                     api_version = ai_search_connection.tags["ApiVersion"]
                 ai_search_args = {
@@ -223,9 +217,9 @@ def build_index(
                 raise ValueError("Cannot get target from ai search connection")
             connection_args = {
                 "connection_type": "workspace_connection",
-                "connection": {"id": connection_id},
+                "connection": {"id": ai_search_connection_id},
+                "endpoint": endpoint,
             }
-
         create_index_from_raw_embeddings(
             emb=embedder,
             acs_config=ai_search_args,
@@ -240,6 +234,7 @@ def _create_mlindex_from_existing_ai_search(
     embedding_model: str,
     embedding_model_uri: Optional[str],
     connection_id: Optional[str],
+    is_serverless_connection: bool,
     ai_search_config: AzureAISearchSource,
 ) -> str:
     try:
@@ -295,14 +290,7 @@ def _create_mlindex_from_existing_ai_search(
         mlindex_config["index"]["field_mapping"]["metadata"] = ai_search_config.ai_search_metadata_key
 
     model_connection_args: Dict[str, Optional[Union[str, Dict]]]
-    if "cohere" in embedding_model:
-        # api_key = "SERVERLESS_CONNECTION_KEY"
-        # api_base = "SERVERLESS_CONNECTION_ENDPOINT"
-        # connection_args = {
-        #     "connection_type": "environment",
-        #     "connection": {"key": api_key},
-        #     "endpoint": os.getenv(api_base),
-        # }
+    if is_serverless_connection:
         connection_args = {
             "connection_type": "workspace_connection",
             "connection": {"id": connection_id},

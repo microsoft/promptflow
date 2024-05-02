@@ -1,2 +1,2 @@
-azureml-rag[cognitive_search,document_parsing]
+azureml-rag[cognitive_search,document_parsing,langchain]
 openai

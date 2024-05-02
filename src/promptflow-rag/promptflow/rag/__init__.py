@@ -5,7 +5,9 @@
 __path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
 
 from ._build_mlindex import build_index
+from ._get_langchain_retriever import get_langchain_retriever_from_index
 
 __all__ = [
-    "build_index"
+    "build_index",
+    "get_langchain_retriever_from_index"
 ]
