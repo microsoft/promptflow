@@ -1,7 +1,7 @@
 import uuid
 from typing import List
 
-from promptflow import tool
+from promptflow.core import tool
 
 
 def get_question_from_conversation_history(conversation_history: List, question: str) -> str:

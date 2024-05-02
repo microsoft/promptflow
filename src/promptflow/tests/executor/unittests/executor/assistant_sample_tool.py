@@ -1,5 +1,5 @@
-from promptflow import tool
 from promptflow.connections import AzureOpenAIConnection
+from promptflow.core import tool
 
 
 @tool

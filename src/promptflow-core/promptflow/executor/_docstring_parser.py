@@ -15,7 +15,7 @@ class DocstringParser:
         found_param_or_type = False
 
         # Traverse the document tree to process nodes
-        for node in doctree.traverse():
+        for node in doctree.findall():
             if isinstance(node, docutils.nodes.field):
                 found_param_or_type = True  # Mark when we encounter parameter or type fields
                 field_name = node.children[0].astext().strip()

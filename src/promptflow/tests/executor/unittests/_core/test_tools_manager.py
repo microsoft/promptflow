@@ -7,7 +7,6 @@ from unittest.mock import patch
 import pytest
 from mock import MagicMock
 
-from promptflow import tool
 from promptflow._core._errors import InputTypeMismatch, InvalidSource, PackageToolNotFoundError
 from promptflow._core.tools_manager import (
     BuiltinsManager,
@@ -18,6 +17,7 @@ from promptflow._core.tools_manager import (
 from promptflow._utils.yaml_utils import load_yaml_string
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
 from promptflow.contracts.tool import Tool, ToolFuncCallScenario, ToolType
+from promptflow.core import tool
 from promptflow.exceptions import UserErrorException
 
 

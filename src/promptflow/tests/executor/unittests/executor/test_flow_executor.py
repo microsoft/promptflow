@@ -2,10 +2,9 @@ from unittest.mock import Mock
 
 import pytest
 
-from promptflow import tool
 from promptflow.contracts.flow import FlowInputDefinition
 from promptflow.contracts.tool import ValueType
-
+from promptflow.core import tool
 from promptflow.executor.flow_executor import (
     FlowExecutor,
     _ensure_node_result_is_serializable,

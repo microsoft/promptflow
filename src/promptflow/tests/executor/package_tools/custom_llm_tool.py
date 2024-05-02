@@ -1,8 +1,8 @@
 from jinja2 import Template
 
-from promptflow import ToolProvider, tool
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.contracts.types import PromptTemplate
+from promptflow.core import ToolProvider, tool
 
 
 class TestCustomLLMTool(ToolProvider):

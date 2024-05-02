@@ -1,7 +1,6 @@
 import bs4
 import requests
-import random
-from promptflow import tool
+from promptflow.core import tool
 
 
 @tool
