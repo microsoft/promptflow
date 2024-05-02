@@ -191,7 +191,7 @@ class TestEvaluate:
         assert "answer.length" in metrics.keys()
         assert "f1_score.f1_score" in metrics.keys()
 
-    @pytest.skip(reason="az login in fixture is not working on ubuntu and mac.Works on windows")
+    @pytest.mark.skip(reason="az login in fixture is not working on ubuntu and mac.Works on windows")
     def test_evaluate_track_in_cloud(self, questions_file, azure_pf_client, mock_trace_destination_to_cloud,
                                      configure_default_azure_credential):
         """Test evaluation with target function."""
@@ -229,7 +229,7 @@ class TestEvaluate:
         assert remote_run.properties["runType"] == "eval_run"
         assert remote_run.display_name == evaluation_name
 
-    @pytest.skip(reason="az login in fixture is not working on ubuntu and mac.Works on windows")
+    @pytest.mark.skip(reason="az login in fixture is not working on ubuntu and mac.Works on windows")
     def test_evaluate_track_in_cloud_no_target(self, data_file, azure_pf_client, mock_trace_destination_to_cloud,
                                                configure_default_azure_credential):
         # data
