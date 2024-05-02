@@ -1,7 +1,7 @@
 # local build-index
-promptflow_rag-0.0b1-py3-none-any.whl
-azure_ai_ml-1.16.0-py3-none-any.whl
-azureml_rag-0.1.0.0-py3-none-any.whl
+bdist_wheel/promptflow_rag-0.0b1-py3-none-any.whl
+bdist_wheel/azure_ai_ml-1.16.0-py3-none-any.whl
+bdist_wheel/azureml_rag-0.1.0.0-py3-none-any.whl
 
 # azureml-rag[cognitive_search,document_parsing]
 langchain>=0.0.236,<0.2
