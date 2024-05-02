@@ -8,7 +8,7 @@ import time
 from abc import ABC, abstractmethod
 from enum import Enum
 
-from azure.identity import AzureCliCredential, ManagedIdentityCredential
+from azure.identity import DefaultAzureCredential, ManagedIdentityCredential
 
 AZURE_TOKEN_REFRESH_INTERVAL = 600  # seconds
 
@@ -39,7 +39,7 @@ class APITokenManager(ABC):
             credential = ManagedIdentityCredential(client_id=identity_client_id)
         else:
             self.logger.info("Environment variable DEFAULT_IDENTITY_CLIENT_ID is not set, using DefaultAzureCredential")
-            credential = AzureCliCredential()
+            credential = DefaultAzureCredential()
         return credential
 
     @abstractmethod
