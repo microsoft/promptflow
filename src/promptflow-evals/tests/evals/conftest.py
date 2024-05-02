@@ -42,17 +42,15 @@ RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "promptflow-recording/reco
 
 
 def configure_default_azure_credential():
-    with open(
-        file=CONNECTION_FILE,
-        mode="r",
-    ) as f:
-        dev_connections = json.load(f)
+    if os.path.exists(CONNECTION_FILE):
+        with open(file=CONNECTION_FILE, mode="r") as f:
+            dev_connections = json.load(f)
 
-    # for running e2e test which uses DefaultAzureCredential in ci pipeline
-    if "pf-evals-sp" in dev_connections:
-        creds = dev_connections["pf-evals-sp"]["value"]
-        for key, value in creds.items():
-            os.environ[key] = value
+        # for running e2e test which uses DefaultAzureCredential in ci pipeline
+        if "pf-evals-sp" in dev_connections:
+            creds = dev_connections["pf-evals-sp"]["value"]
+            for key, value in creds.items():
+                os.environ[key] = value
 
 
 configure_default_azure_credential()

@@ -308,13 +308,6 @@ class OpenAICompletionsModel(LLMBase):
         """
         Format the request data for the OpenAI API.
         """
-        # Caption images if available
-        if len(self.image_captions.keys()):
-            prompt = replace_prompt_captions(
-                prompt=prompt,
-                captions=self.image_captions,
-            )
-
         request_data = {"prompt": prompt, **self.get_model_params()}
         request_data.update(request_params)
         return request_data
@@ -561,14 +554,6 @@ class OpenAIChatCompletionsModel(OpenAICompletionsModel):
         super().__init__(name=name, *args, **kwargs)
 
     def format_request_data(self, messages: List[dict], **request_params):  # type: ignore[override]
-        # Caption images if available
-        if len(self.image_captions.keys()):
-            for message in messages:
-                message["content"] = replace_prompt_captions(
-                    message["content"],
-                    captions=self.image_captions,
-                )
-
         request_data = {"messages": messages, **self.get_model_params()}
         request_data.update(request_params)
         return request_data
