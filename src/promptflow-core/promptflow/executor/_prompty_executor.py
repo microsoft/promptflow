@@ -1,7 +1,9 @@
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+from promptflow._constants import FlowType
 from promptflow._utils.logger_utils import logger
+from promptflow.contracts.flow import PromptyFlow
 from promptflow.contracts.tool import InputDefinition
 from promptflow.core._flow import Prompty
 from promptflow.storage import AbstractRunStorage
@@ -30,6 +32,8 @@ class PromptyExecutor(ScriptExecutor):
         self.prompty = Prompty.load(source=flow_file, **self._init_kwargs)
         super().__init__(flow_file=flow_file, connections=connections, working_dir=working_dir, storage=storage)
 
+    _execution_target = FlowType.PROMPTY
+
     @property
     def has_aggregation_node(self):
         return False
@@ -50,3 +54,10 @@ class PromptyExecutor(ScriptExecutor):
         self._inputs = {k: v.to_flow_input_definition() for k, v in inputs.items()}
         self._is_async = False
         return self._func
+
+    def _init_input_sign(self):
+        configs, _ = Prompty._parse_prompty(self._working_dir / self._flow_file)
+        flow = PromptyFlow.deserialize(configs)
+        self._inputs_sign = flow.inputs
+        # The init signature only used for flex flow, so we set the _init_sign to empty dict for prompty flow.
+        self._init_sign = {}

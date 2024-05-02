@@ -48,6 +48,7 @@ from promptflow.batch._errors import BatchRunTimeoutError
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.run_info import FlowRunInfo, Status
+from promptflow.contracts.types import AttrDict
 from promptflow.exceptions import ErrorTarget, PromptflowException
 from promptflow.executor._line_execution_process_pool import signal_handler
 from promptflow.executor._result import AggregationResult, LineResult
@@ -485,12 +486,15 @@ class BatchEngine:
             await self._exec_batch(line_results, inputs_to_run, run_id)
 
         handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
-        # persist outputs to output dir
+        # Flex flow may return primitive types as output, so we need to wrap them in a dictionary.
         outputs = [
             {LINE_NUMBER_KEY: r.run_info.index, **r.output}
+            if isinstance(r.output, dict)
+            else {LINE_NUMBER_KEY: r.run_info.index, "output": r.output}
             for r in line_results
             if r.run_info.status == Status.Completed
         ]
+        # persist outputs to output dir
         outputs.sort(key=lambda x: x[LINE_NUMBER_KEY])
         self._persist_outputs(outputs, output_dir)
 
@@ -571,7 +575,9 @@ class BatchEngine:
         succeeded = [i for i, r in enumerate(run_infos) if r.status == Status.Completed]
 
         if self._is_eager_flow:
-            return None, [line_results[i].output for i in succeeded]
+            return None, [
+                AttrDict(output) if isinstance((output := line_results[i].output), dict) else output for i in succeeded
+            ]
 
         succeeded_batch_inputs = [batch_inputs[i] for i in succeeded]
         resolved_succeeded_batch_inputs = [

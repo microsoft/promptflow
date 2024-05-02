@@ -28,7 +28,7 @@ from promptflow._cli._utils import (
 )
 from promptflow._sdk._constants import MAX_SHOW_DETAILS_RESULTS, ListViewType
 from promptflow._sdk._errors import InvalidRunStatusError
-from promptflow._sdk._utils import print_red_error
+from promptflow._sdk._utilities.general_utils import print_red_error
 from promptflow.azure._cli._utils import _get_azure_pf_client
 from promptflow.azure._restclient.flow_service_caller import FlowRequestException
 
