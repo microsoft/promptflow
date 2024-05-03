@@ -90,4 +90,7 @@ class RAIClient:
                     response = await response.json()
                     return response
 
-        raise ValueError("Unable to retrieve requested resource from rai service.")
+        raise ValueError(
+            "Azure safety evaluation service is not available in your current region, "
+            "please go to <link to docs> to see which regions are supported"
+        )
