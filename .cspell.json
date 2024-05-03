@@ -225,7 +225,8 @@
     "piezo",
     "Piezo",
     "cmpop",
-    "omap"
+    "omap",
+    "Machinal"
   ],
   "flagWords": [
     "Prompt Flow"
