@@ -19,7 +19,7 @@ def build_index(
     name: str,
     vector_store: str = "azure_ai_search",
     input_source: Union[AzureAISearchSource, LocalSource],
-    index_config: AzureAISearchConfig,  # todo better name?
+    index_config: Optional[AzureAISearchConfig] = None,  # todo better name?
     embeddings_model_config: EmbeddingsModelConfig,
     data_source_url: Optional[str] = None,
     tokens_per_chunk: int = 1024,
@@ -97,12 +97,15 @@ def build_index(
     if isinstance(input_source, AzureAISearchSource):
         return _create_mlindex_from_existing_ai_search(
             # TODO: Fix Bug 2818331
-            embedding_model=embeddings_model_config.model_name,
+            name=name,
             embedding_model_uri=embeddings_model_uri,
             is_serverless_connection=is_serverless_connection,
             connection_id=connection_id,
             ai_search_config=input_source,
         )
+    
+    if not index_config:
+        raise ValueError("Please provide index_config details")
     embeddings_cache_path = str(Path(embeddings_cache_path) if embeddings_cache_path else Path.cwd())
     save_path = str(Path(embeddings_cache_path) / f"{name}-mlindex")
     splitter_args = {"chunk_size": tokens_per_chunk, "chunk_overlap": token_overlap_across_chunks, "use_rcts": True}
@@ -227,6 +230,8 @@ def build_index(
             }
 
         print(f"Start creating index from embeddings.")
+        print(f"acs_config is {ai_search_args}")
+        print(f"connection_args is {connection_args}")
         create_index_from_raw_embeddings(
             emb=embedder,
             acs_config=ai_search_args,
@@ -239,7 +244,7 @@ def build_index(
 
 
 def _create_mlindex_from_existing_ai_search(
-    embedding_model: str,
+    name: str,
     embedding_model_uri: Optional[str],
     connection_id: Optional[str],
     is_serverless_connection: bool,
@@ -316,10 +321,11 @@ def _create_mlindex_from_existing_ai_search(
         embedding = EmbeddingsContainer.from_uri(embedding_model_uri, credential=None, **model_connection_args)
     mlindex_config["embeddings"] = embedding.get_metadata()
 
-    path = Path.cwd() / f"import-ai_search-{ai_search_config.ai_search_index_name}-mlindex"
+    path = Path.cwd() / f"{name}-mlindex"
 
     path.mkdir(exist_ok=True)
     with open(path / "MLIndex", "w", encoding="utf-8") as f:
         yaml.dump(mlindex_config, f)
 
+    print(f"Successfully created index at {path}")
     return path
