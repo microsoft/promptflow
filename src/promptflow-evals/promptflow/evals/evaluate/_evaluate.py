@@ -5,13 +5,14 @@ import inspect
 import os
 import re
 import tempfile
-import uuid
 from typing import Any, Callable, Dict, Optional, Set, Tuple
 
 import pandas as pd
 
 from promptflow._sdk._constants import LINE_NUMBER
 from promptflow.client import PFClient
+from ._utils import _log_metrics_and_instance_results
+from .._user_agent import USER_AGENT
 
 
 def _calculate_mean(df) -> Dict[str, float]:
@@ -104,7 +105,8 @@ def _validate_columns(
 
 
 def _apply_target_to_data(
-    target: Callable, data: str, pf_client: PFClient, initial_data: pd.DataFrame
+    target: Callable, data: str, pf_client: PFClient, initial_data: pd.DataFrame,
+    evaluation_name: Optional[str] = None
 ) -> Tuple[pd.DataFrame, Set[str]]:
     """
     Apply the target function to the data set and return updated data and generated columns.
@@ -123,11 +125,17 @@ def _apply_target_to_data(
     # We are manually creating the temporary directory for the flow
     # because the way tempdir remove temporary directories will
     # hang the debugger, because promptflow will keep flow directory.
-    run = pf_client.run(flow=target, data=data, name=f"preprocess_{uuid.uuid1()}", stream=True)
+    run = pf_client.run(
+        flow=target,
+        display_name=evaluation_name,
+        data=data,
+        properties={"runType": "eval_run"},
+        stream=True
+    )
     target_output = pf_client.runs.get_details(run, all_results=True)
     # Remove input and output prefix
     prefix = "outputs."
-    rename_dict = {col: col[len(prefix) :] for col in target_output.columns if col.startswith(prefix)}
+    rename_dict = {col: col[len(prefix):] for col in target_output.columns if col.startswith(prefix)}
     # Sort output by line numbers
     target_output.set_index(f"inputs.{LINE_NUMBER}", inplace=True)
     target_output.sort_index(inplace=True)
@@ -140,7 +148,7 @@ def _apply_target_to_data(
     target_output.rename(columns=rename_dict, inplace=True)
     # Concatenate output to input
     target_output = pd.concat([target_output, initial_data], axis=1)
-    return target_output, set(rename_dict.values())
+    return target_output, set(rename_dict.values()), run
 
 
 def _apply_column_mapping(source_df: pd.DataFrame, mapping_config: dict, inplace: bool = False):
@@ -230,11 +238,19 @@ def evaluate(
     evaluator_config = _process_evaluator_config(evaluator_config)
     _validate_columns(input_data_df, evaluators, target, evaluator_config)
 
-    pf_client = PFClient()
+    pf_client = PFClient(
+        config={
+            "trace.destination": tracking_uri
+        } if tracking_uri else None,
+        user_agent=USER_AGENT,
+
+    )
+    target_run = None
 
     target_generated_columns = set()
     if data is not None and target is not None:
-        input_data_df, target_generated_columns = _apply_target_to_data(target, data, pf_client, input_data_df)
+        input_data_df, target_generated_columns, target_run = _apply_target_to_data(target, data, pf_client,
+                                                                                    input_data_df, evaluation_name)
         # After we have generated all columns we can check if we have
         # everything we need for evaluators.
         _validate_columns(input_data_df, evaluators, target=None, evaluator_config=evaluator_config)
@@ -251,6 +267,7 @@ def evaluate(
             evaluator_info[evaluator_name] = {}
             evaluator_info[evaluator_name]["run"] = pf_client.run(
                 flow=evaluator,
+                run=target_run,
                 column_mapping=evaluator_config.get(evaluator_name, evaluator_config.get("default", None)),
                 data=data_file,
                 stream=True,
@@ -290,5 +307,9 @@ def evaluate(
     )
 
     result_df = pd.concat([input_data_df, evaluators_result_df], axis=1, verify_integrity=True)
+    metrics = _calculate_mean(evaluators_result_df)
 
-    return {"rows": result_df.to_dict("records"), "metrics": _calculate_mean(evaluators_result_df), "traces": {}}
+    studio_url = _log_metrics_and_instance_results(
+        metrics, result_df, tracking_uri, target_run, pf_client, data, evaluation_name)
+
+    return {"rows": result_df.to_dict("records"), "metrics": metrics, "studio_url": studio_url}
