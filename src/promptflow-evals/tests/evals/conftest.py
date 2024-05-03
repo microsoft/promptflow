@@ -7,15 +7,15 @@ from typing import Dict
 from unittest.mock import patch
 
 import pytest
+from azure.identity import DefaultAzureCredential
 from pytest_mock import MockerFixture
 
+from promptflow.azure import PFClient as AzurePFClient
 from promptflow.client import PFClient
 from promptflow.core import AzureOpenAIModelConfiguration
 from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
-from promptflow.azure import PFClient as AzurePFClient
-from azure.identity import DefaultAzureCredential
 
 try:
     from promptflow.recording.local import recording_array_reset
@@ -56,11 +56,25 @@ def configure_default_azure_credential():
             for key, value in creds.items():
                 os.environ[key] = value
             login_output = subprocess.check_output(
-            ["az", "login", "--service-principal", "-u", creds["AZURE_CLIENT_ID"],
-             "-p", creds["AZURE_CLIENT_SECRET"], "--tenant", creds["AZURE_TENANT_ID"]], shell=True)
+                [
+                    "az",
+                    "login",
+                    "--service-principal",
+                    "-u",
+                    creds["AZURE_CLIENT_ID"],
+                    "-p",
+                    creds["AZURE_CLIENT_SECRET"],
+                    "--tenant",
+                    creds["AZURE_TENANT_ID"],
+                ],
+                shell=True,
+            )
+            print("loging_output")
+            print(login_output)
 
 
 configure_default_azure_credential()
+
 
 def pytest_configure():
     pytest.is_live = is_live()
@@ -144,7 +158,7 @@ def azure_pf_client(project_scope: Dict):
         subscription_id=project_scope["subscription_id"],
         resource_group_name=project_scope["resource_group_name"],
         workspace_name=project_scope["project_name"],
-        credential=DefaultAzureCredential()
+        credential=DefaultAzureCredential(),
     )
 
 
