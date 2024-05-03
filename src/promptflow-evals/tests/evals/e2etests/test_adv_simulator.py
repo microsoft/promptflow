@@ -54,9 +54,7 @@ class TestAdvSimulator:
         }
 
         async def callback(
-            messages: List[Dict],
-            stream: bool = False,
-            session_state: Any = None,
+            messages: List[Dict], stream: bool = False, session_state: Any = None, context: Dict[str, Any] = None
         ) -> dict:
             question = messages["messages"][0]["content"]
             response_from_acs, temperature = question, 0.0
@@ -68,7 +66,12 @@ class TestAdvSimulator:
                 },
             }
             messages["messages"].append(formatted_response)
-            return {"messages": messages["messages"], "stream": stream, "session_state": session_state}
+            return {
+                "messages": messages["messages"],
+                "stream": stream,
+                "session_state": session_state,
+                "context": context,
+            }
 
         simulator = AdversarialSimulator(template=template, project_scope=project_scope)
 
@@ -98,15 +101,18 @@ class TestAdvSimulator:
         }
 
         async def callback(
-            messages: List[Dict],
-            stream: bool = False,
-            session_state: Any = None,
+            messages: List[Dict], stream: bool = False, session_state: Any = None, context: Dict[str, Any] = None
         ) -> dict:
             question = messages["messages"][0]["content"]
 
             formatted_response = {"content": question, "role": "assistant"}
             messages["messages"].append(formatted_response)
-            return {"messages": messages["messages"], "stream": stream, "session_state": session_state}
+            return {
+                "messages": messages["messages"],
+                "stream": stream,
+                "session_state": session_state,
+                "context": context,
+            }
 
         simulator = AdversarialSimulator(template=template, project_scope=project_scope)
 
@@ -138,15 +144,18 @@ class TestAdvSimulator:
         }
 
         async def callback(
-            messages: List[Dict],
-            stream: bool = False,
-            session_state: Any = None,
+            messages: List[Dict], stream: bool = False, session_state: Any = None, context: Dict[str, Any] = None
         ) -> dict:
             question = messages["messages"][0]["content"]
 
             formatted_response = {"content": question, "role": "assistant"}
             messages["messages"].append(formatted_response)
-            return {"messages": messages["messages"], "stream": stream, "session_state": session_state}
+            return {
+                "messages": messages["messages"],
+                "stream": stream,
+                "session_state": session_state,
+                "context": context,
+            }
 
         simulator = AdversarialSimulator(template=template, project_scope=project_scope)
 
