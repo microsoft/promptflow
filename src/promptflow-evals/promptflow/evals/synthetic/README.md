@@ -8,7 +8,9 @@ Ensure you have Python installed on your system. If not, you can download it fro
 
 ## Installation
 
-Install the `promptflow-evals` extra while installing promptflow.
+Install the `promptflow-evals` package.
+
+`pip install promptflow-evals`
 
 ## Usage
 
