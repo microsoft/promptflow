@@ -9,7 +9,7 @@ from pathlib import Path
 from types import GeneratorType
 from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 
-from promptflow._constants import LINE_NUMBER_KEY, MessageFormatType
+from promptflow._constants import LINE_NUMBER_KEY, FlowType, MessageFormatType
 from promptflow._core.log_manager import NodeLogManager
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool_meta_generator import PythonLoadError
@@ -25,6 +25,7 @@ from promptflow.connections import ConnectionProvider
 from promptflow.contracts.flow import FlexFlow, Flow
 from promptflow.contracts.tool import ConnectionType
 from promptflow.core import log_metric
+from promptflow.core._connection_provider._dict_connection_provider import DictConnectionProvider
 from promptflow.core._model_configuration import (
     MODEL_CONFIG_NAME_2_CLASS,
     AzureOpenAIModelConfiguration,
@@ -48,7 +49,7 @@ class ScriptExecutor(FlowExecutor):
     def __init__(
         self,
         flow_file: Union[Path, str, Callable],
-        connections: Optional[dict] = None,
+        connections: Optional[Union[dict, ConnectionProvider]] = None,
         working_dir: Optional[Path] = None,
         *,
         storage: Optional[AbstractRunStorage] = None,
@@ -58,6 +59,9 @@ class ScriptExecutor(FlowExecutor):
         logger.debug(f"Init params for script executor: {init_kwargs}")
 
         self._flow_file = flow_file
+        if connections and isinstance(connections, dict):
+            connections = DictConnectionProvider(connections)
+        self._connections = connections
         entry = flow_file  # Entry could be both a path or a callable
         self._entry = entry
         self._init_kwargs = init_kwargs or {}
@@ -67,7 +71,6 @@ class ScriptExecutor(FlowExecutor):
             self._working_dir = working_dir or Path.cwd()
         self._init_input_sign()
         self._initialize_function()
-        self._connections = connections
         self._storage = storage or DefaultRunStorage()
         self._flow_id = "default_flow_id"
         self._log_interval = 60
@@ -93,6 +96,8 @@ class ScriptExecutor(FlowExecutor):
         log_manager.set_node_context(run_id, "Flex", line_number)
         with log_manager, self._update_operation_context(run_id, line_number):
             yield
+
+    _execution_target = FlowType.FLEX_FLOW
 
     def exec_line(
         self,
@@ -353,9 +358,8 @@ class ScriptExecutor(FlowExecutor):
 
         return resolved_init_kwargs
 
-    @classmethod
-    def _resolve_connection_params(cls, connection_params: list, init_kwargs: dict, resolved_init_kwargs: dict):
-        provider = ConnectionProvider.get_instance()
+    def _resolve_connection_params(self, connection_params: list, init_kwargs: dict, resolved_init_kwargs: dict):
+        provider = self._connections or ConnectionProvider.get_instance()
         # parse connection
         logger.debug(f"Resolving connection params: {connection_params}")
         for key in connection_params:
