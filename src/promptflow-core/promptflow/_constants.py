@@ -171,6 +171,9 @@ class SpanAttributeFieldName:
     COMPLETION_TOKEN_COUNT = "__computed__.cumulative_token_count.completion"
     PROMPT_TOKEN_COUNT = "__computed__.cumulative_token_count.prompt"
     TOTAL_TOKEN_COUNT = "__computed__.cumulative_token_count.total"
+    # Execution target, e.g. prompty, flex, dag, code.
+    # We may need another field to indicate the language, e.g. python, csharp.
+    EXECUTION_TARGET = "execution_target"
 
     SESSION_ID = "session_id"
 
