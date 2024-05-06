@@ -1,6 +1,6 @@
 # Use connections in flow
 
-The [`connection`](../concepts/concept-connections.md) helps securely store and manage secret keys or other sensitive credentials required for interacting with LLM and other external tools for example Azure Content Safety.
+The [`connection`](../../concepts/concept-connections.md) helps securely store and manage secret keys or other sensitive credentials required for interacting with LLM and other external tools for example Azure Content Safety.
 The following usage of connections is supported in prompt flow.
 
 ## Model config in `__init__`
