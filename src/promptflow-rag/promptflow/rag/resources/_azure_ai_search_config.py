@@ -34,7 +34,6 @@ class AzureAISearchConfig:
         self.ai_search_connection_config = ai_search_connection_config
         self.connection_id = connection_id
 
-
     def get_connection_id(self) -> Optional[str]:
         """Get connection id from connection config or connection id"""
         import re
