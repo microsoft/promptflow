@@ -1,13 +1,17 @@
 {% extends "workflow_skeleton.yml.jinja2" %}
 {% block steps %}
 runs-on: ubuntu-latest
+environment:
+  internal
 steps:
   - name: Checkout repository
     uses: actions/checkout@v4
   - name: Azure Login
-    uses: azure/login@v1
+    uses: azure/login@v2
     with:
-      creds: ${{ '{{' }} secrets.AZURE_CREDENTIALS }}
+      subscription-id: ${{ '{{' }}secrets.AZURE_SUBSCRIPTION_ID}}
+      tenant-id: ${{ '{{' }}secrets.AZURE_TENANT_ID}}
+      client-id: ${{ '{{' }}secrets.AZURE_CLIENT_ID}}
   - name: Setup Python 3.9 environment
     uses: actions/setup-python@v4
     with:

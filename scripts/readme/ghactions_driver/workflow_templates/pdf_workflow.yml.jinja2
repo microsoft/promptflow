@@ -1,6 +1,8 @@
 {% extends "workflow_skeleton.yml.jinja2" %}
 {% block steps %}
 runs-on: ubuntu-latest
+environment:
+  internal
 steps:
   - name: Checkout repository
     uses: actions/checkout@v4
@@ -47,9 +49,11 @@ steps:
         pf connection create --file azure_openai.yml --set api_key=$AOAI_API_KEY api_base=$AOAI_API_ENDPOINT
       fi
   - name: Azure Login
-    uses: azure/login@v1
+    uses: azure/login@v2
     with:
-      creds: ${{ '{{' }} secrets.AZURE_CREDENTIALS }}
+      subscription-id: ${{ '{{' }}secrets.AZURE_SUBSCRIPTION_ID}}
+      tenant-id: ${{ '{{' }}secrets.AZURE_TENANT_ID}}
+      client-id: ${{ '{{' }}secrets.AZURE_CLIENT_ID}}
   - name: Test Notebook
     working-directory: {{ gh_working_dir }}
     run: |

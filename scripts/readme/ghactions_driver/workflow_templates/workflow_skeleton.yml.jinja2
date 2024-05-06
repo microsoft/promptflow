@@ -15,6 +15,10 @@ on:
 env:
   IS_IN_CI_PIPELINE: "true"
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   {{ workflow_name }}:
 {%- filter indent(width=4) -%}
