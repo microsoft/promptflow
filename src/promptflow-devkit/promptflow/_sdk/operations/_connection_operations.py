@@ -8,7 +8,7 @@ from promptflow._sdk._constants import MAX_LIST_CLI_RESULTS
 from promptflow._sdk._errors import ConnectionNameNotSetError
 from promptflow._sdk._orm import Connection as ORMConnection
 from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_operation
-from promptflow._sdk._utils import safe_parse_object_list
+from promptflow._sdk._utilities.general_utils import safe_parse_object_list
 from promptflow._sdk.entities._connection import _Connection
 from promptflow.connections import _Connection as _CoreConnection
 
