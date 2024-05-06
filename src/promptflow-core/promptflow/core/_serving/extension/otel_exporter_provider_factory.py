@@ -6,6 +6,7 @@ import os
 from abc import abstractmethod
 from enum import Enum
 
+from azure.identity import DefaultAzureCredential
 from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_ENDPOINT
 
 from promptflow.core._serving.extension.extension_type import ExtensionType
@@ -58,6 +59,10 @@ class AppInsightTraceExporterProvider(AppInsightExporterProvider):
 
             return AzureMonitorTraceExporter.from_connection_string(self.app_insight_connection_string)
         except ImportError:
+            self.logger.warning(
+                "azure-monitor-opentelemetry-exporter(>=1.0.0b21,<2.0.0) is not installed, \
+                                 AzureMonitorTraceExporter will not be enabled!"
+            )
             return None
 
 
@@ -82,7 +87,15 @@ class AppInsightMetricsExporterProvider(AppInsightExporterProvider):
 
             return AzureMonitorMetricExporter.from_connection_string(self.app_insight_connection_string)
         except ImportError:
+            self.logger.warning(
+                "azure-monitor-opentelemetry-exporter(>=1.0.0b21,<2.0.0) is not installed, \
+                                 AzureMonitorMetricExporter will not be enabled!"
+            )
             return None
+
+
+OTEL_EXPORTER_OTLP_AAD_AUTH_ENABLE = "OTEL_EXPORTER_OTLP_AAD_AUTH_ENABLE"
+OTEL_EXPORTER_OTLP_AAD_AUTH_SCOPE = "OTEL_EXPORTER_OTLP_AAD_AUTH_SCOPE"
 
 
 class OTLPExporterProvider(OTelExporterProvider):
@@ -106,8 +119,28 @@ class OTLPTraceExporterProvider(OTLPExporterProvider):
         try:
             from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 
-            return OTLPSpanExporter(endpoint=self.otel_exporter_endpoint)
+            class AADAuthOTLPSpanExporter(OTLPSpanExporter):
+                def __init__(self, *args, **kwargs):
+                    super().__init__(*args, **kwargs)
+                    self.aad_auth = os.environ.get(OTEL_EXPORTER_OTLP_AAD_AUTH_ENABLE, "false").lower() == "true"
+                    self.aad_auth_scope = os.environ.get(
+                        OTEL_EXPORTER_OTLP_AAD_AUTH_SCOPE, "https://management.azure.com/.default"
+                    )  # noqa
+                    self.credential = DefaultAzureCredential() if self.aad_auth else None
+
+                def _export(self, serialized_data: str):
+                    if self.aad_auth:
+                        token = self.credential.get_token(self.aad_auth_scope).token
+                        auth_header = {"Authorization": f"Bearer {token}"}
+                        self._session.headers.update(auth_header)
+                    return super()._export(serialized_data)
+
+            return AADAuthOTLPSpanExporter(endpoint=self.otel_exporter_endpoint)
         except ImportError:
+            self.logger.warning(
+                "opentelemetry-exporter-otlp-proto-http(>=1.22.0,<2.0.0) is not installed, \
+                                 OTLPSpanExporter will not be enabled!"
+            )
             return None
 
 
@@ -119,8 +152,28 @@ class OTLPMetricsExporterProvider(OTLPExporterProvider):
         try:
             from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
 
-            return OTLPMetricExporter(endpoint=self.otel_exporter_endpoint)
+            class AADAuthOTLPMetricExporter(OTLPMetricExporter):
+                def __init__(self, *args, **kwargs):
+                    super().__init__(*args, **kwargs)
+                    self.aad_auth = os.environ.get(OTEL_EXPORTER_OTLP_AAD_AUTH_ENABLE, "false").lower() == "true"
+                    self.aad_auth_scope = os.environ.get(
+                        OTEL_EXPORTER_OTLP_AAD_AUTH_SCOPE, "https://management.azure.com/.default"
+                    )  # noqa
+                    self.credential = DefaultAzureCredential() if self.aad_auth else None
+
+                def _export(self, serialized_data: str):
+                    if self.aad_auth:
+                        token = self.credential.get_token(self.aad_auth_scope).token
+                        auth_header = {"Authorization": f"Bearer {token}"}
+                        self._session.headers.update(auth_header)
+                    return super()._export(serialized_data)
+
+            return AADAuthOTLPMetricExporter(endpoint=self.otel_exporter_endpoint)
         except ImportError:
+            self.logger.warning(
+                "opentelemetry-exporter-otlp-proto-http(>=1.22.0,<2.0.0) is not installed, \
+                                 OTLPMetricExporter will not be enabled!"
+            )
             return None
 
 
