@@ -6,7 +6,6 @@ import os
 from abc import abstractmethod
 from enum import Enum
 
-from azure.identity import DefaultAzureCredential
 from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_ENDPOINT
 
 from promptflow.core._serving.extension.extension_type import ExtensionType
@@ -125,11 +124,21 @@ class OTLPTraceExporterProvider(OTLPExporterProvider):
                     self.aad_auth = os.environ.get(OTEL_EXPORTER_OTLP_AAD_AUTH_ENABLE, "false").lower() == "true"
                     self.aad_auth_scope = os.environ.get(
                         OTEL_EXPORTER_OTLP_AAD_AUTH_SCOPE, "https://management.azure.com/.default"
-                    )  # noqa
-                    self.credential = DefaultAzureCredential() if self.aad_auth else None
+                    )
+                    self.credential = None
+                    if self.aad_auth:
+                        try:
+                            from azure.identity import DefaultAzureCredential
+
+                            self.credential = DefaultAzureCredential()
+                        except ImportError:
+                            self.logger.warning(
+                                "azure-identity is not installed, \
+                                             AAD auth for OTLPSpanExporter will not be enabled!"
+                            )
 
                 def _export(self, serialized_data: str):
-                    if self.aad_auth:
+                    if self.aad_auth and self.credential:
                         token = self.credential.get_token(self.aad_auth_scope).token
                         auth_header = {"Authorization": f"Bearer {token}"}
                         self._session.headers.update(auth_header)
@@ -158,11 +167,21 @@ class OTLPMetricsExporterProvider(OTLPExporterProvider):
                     self.aad_auth = os.environ.get(OTEL_EXPORTER_OTLP_AAD_AUTH_ENABLE, "false").lower() == "true"
                     self.aad_auth_scope = os.environ.get(
                         OTEL_EXPORTER_OTLP_AAD_AUTH_SCOPE, "https://management.azure.com/.default"
-                    )  # noqa
-                    self.credential = DefaultAzureCredential() if self.aad_auth else None
+                    )
+                    self.credential = None
+                    if self.aad_auth:
+                        try:
+                            from azure.identity import DefaultAzureCredential
+
+                            self.credential = DefaultAzureCredential()
+                        except ImportError:
+                            self.logger.warning(
+                                "azure-identity is not installed, \
+                                             AAD auth for OTLPMetricExporter will not be enabled!"
+                            )
 
                 def _export(self, serialized_data: str):
-                    if self.aad_auth:
+                    if self.aad_auth and self.credential:
                         token = self.credential.get_token(self.aad_auth_scope).token
                         auth_header = {"Authorization": f"Bearer {token}"}
                         self._session.headers.update(auth_header)
