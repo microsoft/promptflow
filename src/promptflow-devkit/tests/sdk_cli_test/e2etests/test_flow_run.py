@@ -1382,7 +1382,7 @@ class TestFlowRun:
                 lambda: True,
                 {
                     "inputs.func_input1": ["func_input"],
-                    "inputs.func_input2": [2],
+                    "inputs.func_input2": [False],
                     "inputs.func_input3": [3],
                     "inputs.line_number": [0],
                     "outputs.output": ["func_input"],
