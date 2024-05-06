@@ -22,16 +22,9 @@ def pfs_op(app: Flask):
     # Hack to import the pfs test utils from the devkit tests
     import sys
 
-    temp_path = (
-        Path(PROMPTFLOW_ROOT)
-        .joinpath("..", "promptflow-devkit", "tests", "sdk_pfs_test")
-        .resolve()
-        .absolute()
-        .as_posix()
-    )
+    temp_path = Path(PROMPTFLOW_ROOT).joinpath("..", "promptflow-devkit", "tests").resolve().absolute().as_posix()
     sys.path.append(temp_path)
-    # TODO: avoid doing this as utils is a widely used module name
-    from utils import PFSOperations
+    from sdk_pfs_test.utils import PFSOperations
 
     client = app.test_client()
     return PFSOperations(client)

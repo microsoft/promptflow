@@ -80,11 +80,17 @@ jobs:
           poetry run pip show promptflow-azure
           poetry run pip show promptflow-tools
 
-      - name: Run SDK CLI Azure Test
+      - name: Run SDK CLI Azure Test Unit Tests
         shell: pwsh
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: |
-          poetry run pytest ${{ inputs.filepath }} -n auto -m "unittest or e2etest"
+          poetry run pytest ${{ inputs.filepath }} -n auto -m "unittest"
+
+      - name: Run SDK CLI Azure Test Unit Tests
+        shell: pwsh
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: |
+          poetry run pytest ${{ inputs.filepath }} -n auto -m "e2etest"
 
       - name: Upload Test Results
         if: always()
