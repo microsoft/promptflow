@@ -177,7 +177,7 @@ class WorkspaceConnectionProvider(ConnectionProvider):
         ]:
             return category
         if category == ConnectionCategory.AIServices:
-            return "AzureAIService"
+            return "AzureAIServices"
         if category == ConnectionCategory.CustomKeys:
             return CustomConnection.__name__
         if category == ConnectionCategory.CognitiveService:
