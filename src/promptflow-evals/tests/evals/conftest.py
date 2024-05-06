@@ -1,7 +1,9 @@
 import json
 import multiprocessing
 import os
+import subprocess
 from pathlib import Path
+from typing import Dict
 from unittest.mock import patch
 
 import pytest
@@ -12,6 +14,8 @@ from promptflow.core import AzureOpenAIModelConfiguration
 from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
+from promptflow.azure import PFClient as AzurePFClient
+from azure.identity import DefaultAzureCredential
 
 try:
     from promptflow.recording.local import recording_array_reset
@@ -54,6 +58,11 @@ def configure_default_azure_credential():
         creds = dev_connections["pf-evals-sp"]["value"]
         for key, value in creds.items():
             os.environ[key] = value
+        login_output = subprocess.check_output(
+            ["az", "login", "--service-principal", "-u", creds["AZURE_CLIENT_ID"],
+             "-p", creds["AZURE_CLIENT_SECRET"], "--tenant", creds["AZURE_TENANT_ID"]], shell=True)
+        print("loging_output")
+        print(login_output)
 
 
 def pytest_configure():
@@ -113,6 +122,33 @@ def project_scope() -> dict:
         raise ValueError(f"Connection '{conn_name}' not found in dev connections.")
 
     return dev_connections[conn_name]["value"]
+
+
+@pytest.fixture
+def mock_trace_destination_to_cloud(project_scope: dict):
+    """Mock trace destination to cloud."""
+
+    subscription_id = project_scope["subscription_id"]
+    resource_group_name = project_scope["resource_group_name"]
+    workspace_name = project_scope["project_name"]
+
+    trace_destination = (
+        f"azureml://subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/"
+        f"providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}"
+    )
+    with patch("promptflow._sdk._configuration.Configuration.get_trace_destination", return_value=trace_destination):
+        yield
+
+
+@pytest.fixture
+def azure_pf_client(project_scope: Dict):
+    """The fixture, returning AzurePFClient"""
+    return AzurePFClient(
+        subscription_id=project_scope["subscription_id"],
+        resource_group_name=project_scope["resource_group_name"],
+        workspace_name=project_scope["project_name"],
+        credential=DefaultAzureCredential()
+    )
 
 
 @pytest.fixture
