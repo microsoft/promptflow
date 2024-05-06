@@ -15,9 +15,15 @@ on:
 env:
   IS_IN_CI_PIPELINE: "true"
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   samples_flexflows_chatbasic_chatwithclassbasedflowazure:
     runs-on: ubuntu-latest
+    environment:
+      internal
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -28,9 +34,11 @@ jobs:
         if: github.event_name != 'schedule'
         run: echo '${{ secrets.EXAMPLE_WORKSPACE_CONFIG_JSON_PROD }}' > ${{ github.workspace }}/examples/config.json
       - name: Azure Login
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
+          tenant-id: ${{secrets.AZURE_TENANT_ID}}
+          client-id: ${{secrets.AZURE_CLIENT_ID}}
       - name: Setup Python 3.9 environment
         uses: actions/setup-python@v4
         with:
