@@ -34,7 +34,7 @@ class LangChainEvaluator:
             )
         else:
             raise ValueError("No valid API key found in the connection.")
-
+        # evaluate with langchain evaluator for conciseness
         self.evaluator = load_evaluator("criteria", llm=self.llm, criteria="conciseness")
 
     @trace
