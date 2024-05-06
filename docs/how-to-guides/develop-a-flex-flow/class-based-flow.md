@@ -37,6 +37,8 @@ class MyFlow:
 
 ## Flow test
 
+### Test with original code
+
 Since flow's definition is function/callable class. We recommend user directly run it like running other scripts:
 
 ```python
@@ -49,11 +51,18 @@ if __name__ == "__main__":
     # check metrics here
 ```
 
-You can also test the flow using CLI:
+### Convert to a flow and test
+
+It's also supported to convert your class entry to a flow and test with prompt flow's ability.
+
+You can test with the following CLI:
+
 ```bash
 # flow entry syntax: path.to.module:ClassName
 pf flow test --flow flow_entry:MyFlow --inputs question="What's the capital of France?" --init init.json
 ```
+
+**Note**: currently this command will generate a flow.flex.yaml in your working directory. Which will become the flow's entry.
 
 Check out a full example here: [basic-chat](https://github.com/microsoft/promptflow/tree/main/examples/flex-flows/basic-chat)
 
