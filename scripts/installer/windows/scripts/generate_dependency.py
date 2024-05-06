@@ -128,10 +128,10 @@ if __name__ == '__main__':
         else:
             hidden_imports[i] = hidden_imports[i].replace('-', '.').lower()
 
-    hidden_imports.remove("azure.storage.file.share")
-    hidden_imports.append("azure.storage.fileshare")
-    hidden_imports.remove("azure.storage.file.datalake")
-    hidden_imports.append("azure.storage.filedatalake")
+    # hidden_imports.remove("azure.storage.file.share")
+    # hidden_imports.append("azure.storage.fileshare")
+    # hidden_imports.remove("azure.storage.file.datalake")
+    # hidden_imports.append("azure.storage.filedatalake")
 
     render_context = {
         "hidden_imports": hidden_imports,
