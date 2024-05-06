@@ -34,7 +34,6 @@ def my_flow(my_own_obj: MyOwnClass):
 Sample validation error: "The input 'my_own_obj' is of a complex python type. Please use a dict instead."
 
 
-
 ## Stream
 
 Stream is supported in flow, you just need to return a generator type in your function.
