@@ -424,9 +424,10 @@ class TestFlowTest:
 
     def test_stream_output_with_builtin_llm(self):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/builtin_llm/").absolute()
+        # TODO(3171565): support default value for list & dict
         result = _client._flows._test(
             flow=flow_path,
-            inputs={"stream": True},
+            inputs={"stream": True, "chat_history": []},
             environment_variables={
                 "OPENAI_API_KEY": "${azure_open_ai_connection.api_key}",
                 "AZURE_OPENAI_ENDPOINT": "${azure_open_ai_connection.api_base}",
@@ -470,9 +471,9 @@ class TestFlowTest:
             pf.test(flow=flow_path, inputs={"func_input": "input"})
         assert "__init__() missing 1 required positional argument: 'obj_input'" in ex.value.message
 
-        with pytest.raises(UserErrorException) as ex:
+        with pytest.raises(InputNotFound) as ex:
             pf.test(flow=flow_path, inputs={"invalid_input_func": "input"}, init={"obj_input": "val"})
-        assert "__call__() missing 1 required positional argument: 'func_input'" in ex.value.message
+        assert "The value for flow input 'func_input' is not provided in input data" in str(ex.value)
 
     def test_flow_flow_with_sample(self, pf):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_callable_class_with_sample_file")
