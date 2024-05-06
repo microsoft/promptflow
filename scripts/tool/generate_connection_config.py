@@ -21,9 +21,6 @@ def fill_key_to_dict(template_dict, keys_dict):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--tenant_id", type=str, help="The tenant id of the service principal")
-    parser.add_argument("--client_id", type=str, help="The client id of the service principal")
-    parser.add_argument("--client_secret", type=str, help="The client secret of the service principal")
     parser.add_argument("--local", action='store_true', help="local debug mode")
     args = parser.parse_args()
 
@@ -32,7 +29,7 @@ if __name__ == "__main__":
     print(f"file_path: {file_path}")
 
     if not args.local:
-        client = get_secret_client(tenant_id=args.tenant_id, client_id=args.client_id, client_secret=args.client_secret)
+        client = get_secret_client()
         all_secret_names = list_secret_names(client)
         data = {secret_name: get_secret(secret_name, client) for secret_name in all_secret_names}
 
