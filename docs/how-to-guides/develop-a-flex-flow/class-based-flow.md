@@ -64,7 +64,7 @@ pf flow test --flow flow_entry:MyFlow --inputs question="What's the capital of F
 
 **Note**: currently this command will generate a flow.flex.yaml in your working directory. Which will become the flow's entry.
 
-Check out a full example here: [basic-chat](https://github.com/microsoft/promptflow/tree/main/examples/flex-flows/basic-chat)
+Check out a full example here: [basic-chat](https://github.com/microsoft/promptflow/tree/main/examples/flex-flows/chat-basic)
 
 ### Chat with a flow
 
