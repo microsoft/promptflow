@@ -17,7 +17,7 @@ This guide will help you learn how to generate test data on Azure AI, so that yo
 4. Prepare Azure AI resources in cloud.
     - An Azure AI ML workspace - [Create workspace resources you need to get started with Azure AI](https://learn.microsoft.com/en-us/azure/machine-learning/quickstart-create-resources?view=azureml-api-2).
     - A compute target - [Learn more about compute cluster](https://learn.microsoft.com/en-us/azure/machine-learning/concept-compute-target?view=azureml-api-2).
-5. [Create cloud AzureOpenAI or OpenAI connection](https://microsoft.github.io/promptflow/cloud/azureai/quick-start/index.html#create-necessary-connections)
+5. [Create cloud AzureOpenAI or OpenAI connection](https://microsoft.github.io/promptflow/cloud/azureai/run-promptflow-in-azure-ai.html#create-necessary-connections)
 
 6. Prepare test data generation setting.
     - Navigate to [example_gen_test_data](https://github.com/microsoft/promptflow/blob/53a685dbff920e891ef61cacb5f2f19e761ee809/examples/gen_test_data) folder.
@@ -31,6 +31,6 @@ For handling larger test data, you can leverage the PRS component to run flow in
 - After configuration, run the following command to generate the test data set:
   ```bash
   python -m gen_test_data.run --cloud
-  ``` 
-  
+  ```
+
 - The generated test data will be a data asset which can be found in the output of the last node. You can register this data asset for future use.
