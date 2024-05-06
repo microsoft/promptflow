@@ -23,11 +23,14 @@ nodes:
     context: ${inputs.context}
     question: ${inputs.question}
 - name: query_llm
-  type: llm
+  type: custom_llm
   source:
-    type: code
+    type: package_with_prompt
+    tool: promptflow.tools.llm.llm
     path: prompt.jinja2
   inputs:
+    connection: open_ai_connection
+    api: chat
     deployment_name: gpt-4
     temperature: 0
     top_p: 1
@@ -37,9 +40,6 @@ nodes:
     question: ${inputs.question}
     answer: ${inputs.answer}
     context: ${inputs.context}
-  connection: open_ai_connection
-  api: chat
-  use_variants: false
   activate:
     when: ${validate_inputs.output}
     is: true
