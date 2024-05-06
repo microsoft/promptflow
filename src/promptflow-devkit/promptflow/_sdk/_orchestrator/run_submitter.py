@@ -23,7 +23,6 @@ from promptflow.exceptions import UserErrorException, ValidationException
 from promptflow.tracing._operation_context import OperationContext
 from promptflow.tracing._start_trace import is_collection_writeable, start_trace
 
-from .._configuration import Configuration
 from .._load_functions import load_flow
 from ..entities._flows import FlexFlow
 from .utils import SubmitterHelper, variant_overwrite_context
@@ -36,7 +35,7 @@ class RunSubmitter:
 
     def __init__(self, client):
         self._client = client
-        self._config = Configuration(overrides=self._client._config)
+        self._config = self._client._config
         self.run_operations = self._client.runs
 
     def submit(self, run: Run, stream=False, **kwargs):
@@ -96,13 +95,13 @@ class RunSubmitter:
             # pass with internal parameter `_collection`
             start_trace(
                 attributes=attributes,
-                run=run.name,
+                run=run,
                 _collection=collection_for_run,
                 path=flow_path,
             )
         else:
             logger.debug("trace collection is protected, will honor existing collection.")
-            start_trace(attributes=attributes, run=run.name, path=flow_path)
+            start_trace(attributes=attributes, run=run, path=flow_path)
 
         self._validate_inputs(run=run)
 
@@ -276,7 +275,7 @@ class RunSubmitter:
             from promptflow._sdk._tracing import _get_ws_triad_from_pf_config
             from promptflow.azure._cli._utils import _get_azure_pf_client
 
-            ws_triad = _get_ws_triad_from_pf_config(path=run._get_flow_dir().resolve())
+            ws_triad = _get_ws_triad_from_pf_config(path=run._get_flow_dir().resolve(), config=run._config)
             pf = _get_azure_pf_client(
                 subscription_id=ws_triad.subscription_id,
                 resource_group=ws_triad.resource_group_name,

@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+from promptflow._constants import FlowType
 from promptflow._utils.logger_utils import logger
 from promptflow.contracts.flow import PromptyFlow
 from promptflow.contracts.tool import InputDefinition
@@ -30,6 +31,8 @@ class PromptyExecutor(ScriptExecutor):
         logger.debug(f"Init params for prompty executor: {init_kwargs}")
         self.prompty = Prompty.load(source=flow_file, **self._init_kwargs)
         super().__init__(flow_file=flow_file, connections=connections, working_dir=working_dir, storage=storage)
+
+    _execution_target = FlowType.PROMPTY
 
     @property
     def has_aggregation_node(self):
