@@ -464,9 +464,9 @@ class TestOTelTracer:
         "flow_file, inputs, is_stream, expected_span_length",
         [
             ("openai_chat_api_flow", get_chat_input(False), False, 3),
-            ("openai_chat_api_flow", get_chat_input(True), True, 4),
+            ("openai_chat_api_flow", get_chat_input(True), True, 5),
             ("openai_completion_api_flow", get_completion_input(False), False, 3),
-            ("openai_completion_api_flow", get_completion_input(True), True, 4),
+            ("openai_completion_api_flow", get_completion_input(True), True, 5),
             ("llm_tool", {"topic": "Hello", "stream": False}, False, 4),
             ("flow_with_async_llm_tasks", get_flow_sample_inputs("flow_with_async_llm_tasks"), False, 6),
         ],

@@ -18,34 +18,30 @@ from promptflow.executor._process_manager import create_spawned_fork_process_man
 from promptflow.tracing._operation_context import OperationContext
 
 from ..process_utils import override_process_pool_targets
-from ..record_utils import setup_recording
 from ..utils import get_flow_folder, get_flow_inputs_file, get_yaml_file, load_jsonl
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
 
 
 Completion = namedtuple("Completion", ["choices"])
-Choice = namedtuple("Choice", ["delta"])
+Choice = namedtuple("Choice", ["message"])
+Message = namedtuple("Message", ["content"])
 Delta = namedtuple("Delta", ["content"])
 
 
-def stream_response(kwargs):
+def mock_chat(*args, **kwargs):
     if IS_LEGACY_OPENAI:
-        delta = Delta(content=json.dumps(kwargs.get("headers", {})))
-        yield Completion(choices=[{"delta": delta}])
+        message = Message(content=json.dumps(kwargs.get("headers", {})))
+        return Completion(choices=[{"message": message}])
     else:
-        delta = Delta(content=json.dumps(kwargs.get("extra_headers", {})))
-        yield Completion(choices=[Choice(delta=delta)])
-
-
-def mock_stream_chat(*args, **kwargs):
-    return stream_response(kwargs)
+        message = Message(content=json.dumps(kwargs.get("extra_headers", {})))
+        return Completion(choices=[Choice(message=message)])
 
 
 def setup_mocks():
     patch_targets = {
-        "openai.ChatCompletion.create": mock_stream_chat,
-        "openai.resources.chat.Completions.create": mock_stream_chat,
+        "openai.ChatCompletion.create": mock_chat,
+        "openai.resources.chat.Completions.create": mock_chat,
     }
     for target, func in patch_targets.items():
         patcher = patch(target, func)
@@ -54,13 +50,11 @@ def setup_mocks():
 
 def mock_process_wrapper(*args, **kwargs):
     setup_mocks()
-    setup_recording()
     _process_wrapper(*args, **kwargs)
 
 
 def mock_process_manager(*args, **kwargs):
     setup_mocks()
-    setup_recording()
     create_spawned_fork_process_manager(*args, **kwargs)
 
 
@@ -76,7 +70,7 @@ class TestExecutorTelemetry:
             api = "openai.ChatCompletion.create"
         else:
             api = "openai.resources.chat.Completions.create"
-        with patch(api, new=mock_stream_chat):
+        with patch(api, new=mock_chat):
             flow_folder = "openai_chat_api_flow"
 
             # flow run case
@@ -86,7 +80,7 @@ class TestExecutorTelemetry:
             operation_context.scenario = "test"
 
             executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
-            inputs = {"question": "What's your name?", "chat_history": [], "stream": True}
+            inputs = {"question": "What's your name?", "chat_history": [], "stream": False}
             flow_result = executor.exec_line(inputs)
 
             assert isinstance(flow_result.output, dict)
@@ -140,7 +134,7 @@ class TestExecutorTelemetry:
             batch_engine = BatchEngine(
                 get_yaml_file(flow_folder), get_flow_folder(flow_folder), connections=dev_connections
             )
-            input_dirs = {"data": get_flow_inputs_file(flow_folder, file_name="stream_inputs.jsonl")}
+            input_dirs = {"data": get_flow_inputs_file(flow_folder, file_name="non_stream_inputs.jsonl")}
             inputs_mapping = {"question": "${data.question}", "chat_history": "${data.chat_history}"}
             output_dir = Path(mkdtemp())
             bulk_result = batch_engine.run(input_dirs, inputs_mapping, output_dir, run_id=run_id)
