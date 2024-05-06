@@ -1449,10 +1449,10 @@ class TestFlowRun:
         # run eager flow against a function from module
         run = pf.run(
             flow=_parse_otel_span_status_code,
-            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+            data=f"{DATAS_DIR}/simple_eager_flow_data_numbers.jsonl",
             # set code folder to avoid snapshot too big
             code=f"{EAGER_FLOWS_DIR}/multiple_entries",
-            column_mapping={"value": "${data.input_val}"},
+            column_mapping={"value": "${data.value}"},
         )
         assert run.status == "Completed"
         assert "error" not in run._to_dict()
@@ -1461,7 +1461,7 @@ class TestFlowRun:
         details = pf.get_details(run.name)
         # convert DataFrame to dict
         details_dict = details.to_dict(orient="list")
-        assert details_dict == {"inputs.line_number": [0], "inputs.value": ["input1"], "outputs.output": ["Error"]}
+        assert details_dict == {"inputs.line_number": [0], "inputs.value": [0], "outputs.output": ["Unset"]}
 
     def test_eager_flow_run_in_working_dir(self, pf):
         working_dir = f"{EAGER_FLOWS_DIR}/multiple_entries"

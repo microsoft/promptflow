@@ -17,7 +17,7 @@ from promptflow._utils.context_utils import _change_working_dir
 from promptflow.core import AzureOpenAIModelConfiguration, OpenAIModelConfiguration
 from promptflow.core._utils import init_executable
 from promptflow.exceptions import UserErrorException
-from promptflow.executor._errors import FlowEntryInitializationError
+from promptflow.executor._errors import FlowEntryInitializationError, InputNotFound
 
 TEST_ROOT = PROMPTFLOW_ROOT / "tests"
 CONNECTION_FILE = (PROMPTFLOW_ROOT / "connections.json").resolve().absolute().as_posix()
@@ -312,9 +312,9 @@ class TestFlowTest:
         clear_module_cache("entry")
         flow_path = Path(f"{EAGER_FLOWS_DIR}/required_inputs/").absolute()
 
-        result = _client._flows._test(flow=flow_path)
-        assert result.run_info.status.value == "Failed"
-        assert "my_flow() missing 1 required positional argument: 'input_val'" in str(result.run_info.error)
+        with pytest.raises(InputNotFound) as e:
+            _client._flows._test(flow=flow_path)
+        assert "The value for flow input 'input_val' is not provided" in str(e.value)
 
     def test_eager_flow_test_with_additional_includes(self):
         # in this case, flow's entry will be {EAGER_FLOWS_DIR}/flow_with_additional_includes
