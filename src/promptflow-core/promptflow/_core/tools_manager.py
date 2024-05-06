@@ -89,21 +89,30 @@ def collect_package_tools(keys: Optional[List[str]] = None) -> dict:
             list_tool_func = entry_point.load()
             package_tools = list_tool_func()
             for identifier, tool in package_tools.items():
-                #  Only load required tools to avoid unnecessary loading when keys is provided
-                if isinstance(keys, set) and identifier not in keys:
-                    # Support to collect new tool id if node source tool is a deprecated tool.
-                    deprecated_tool_ids = tool.get(_DEPRECATED_TOOLS, [])
-                    if not set(deprecated_tool_ids).intersection(keys):
-                        continue
+                try:
+                    #  Only load required tools to avoid unnecessary loading when keys is provided
+                    if isinstance(keys, set) and identifier not in keys:
+                        # Support to collect new tool id if node source tool is a deprecated tool.
+                        deprecated_tool_ids = tool.get(_DEPRECATED_TOOLS, [])
+                        if not set(deprecated_tool_ids).intersection(keys):
+                            continue
 
-                m = tool["module"]
-                importlib.import_module(m)  # Import the module to make sure it is valid
-                if "groups" in tool.keys():
-                    validate_groups_if_exist_in_tool_spec(tool)
-                tool["package"] = entry_point.dist.metadata["Name"]
-                tool["package_version"] = entry_point.dist.version
-                assign_tool_input_index_for_ux_order_if_needed(tool)
-                all_package_tools[identifier] = tool
+                    m = tool["module"]
+                    importlib.import_module(m)  # Import the module to make sure it is valid
+                    if "groups" in tool.keys():
+                        validate_groups_if_exist_in_tool_spec(tool)
+                    tool["package"] = entry_point.dist.metadata["Name"]
+                    tool["package_version"] = entry_point.dist.version
+                    assign_tool_input_index_for_ux_order_if_needed(tool)
+                    all_package_tools[identifier] = tool
+                except Exception as e:
+                    # expect to collect all valid tools in package
+                    msg = (
+                            f"Failed to collect tool {tool['name']} "
+                            f"from package {entry_point.dist.metadata['Name']}: {e},"
+                            + f" traceback: {traceback.format_exc()}"
+                    )
+                    module_logger.warning(msg)
         except Exception as e:
             msg = (
                 f"Failed to load tools from package {entry_point.dist.metadata['Name']}: {e},"
@@ -126,37 +135,46 @@ def collect_package_tools_and_connections(keys: Optional[List[str]] = None) -> d
             list_tool_func = entry_point.load()
             package_tools = list_tool_func()
             for identifier, tool in package_tools.items():
-                #  Only load required tools to avoid unnecessary loading when keys is provided
-                if isinstance(keys, set) and identifier not in keys:
-                    continue
-                m = tool["module"]
-                module = importlib.import_module(m)  # Import the module to make sure it is valid
-                if "groups" in tool.keys():
-                    validate_groups_if_exist_in_tool_spec(tool)
-                tool["package"] = entry_point.dist.metadata["Name"]
-                tool["package_version"] = entry_point.dist.version
-                assign_tool_input_index_for_ux_order_if_needed(tool)
-                all_package_tools[identifier] = tool
+                try:
+                    #  Only load required tools to avoid unnecessary loading when keys is provided
+                    if isinstance(keys, set) and identifier not in keys:
+                        continue
+                    m = tool["module"]
+                    module = importlib.import_module(m)  # Import the module to make sure it is valid
+                    if "groups" in tool.keys():
+                        validate_groups_if_exist_in_tool_spec(tool)
+                    tool["package"] = entry_point.dist.metadata["Name"]
+                    tool["package_version"] = entry_point.dist.version
+                    assign_tool_input_index_for_ux_order_if_needed(tool)
+                    all_package_tools[identifier] = tool
 
-                # Get custom strong type connection definition
-                custom_strong_type_connections_classes = [
-                    obj
-                    for name, obj in inspect.getmembers(module)
-                    if inspect.isclass(obj)
-                    and ConnectionType.is_custom_strong_type(obj)
-                    and (not ConnectionType.is_connection_class_name(name))
-                ]
+                    # Get custom strong type connection definition
+                    custom_strong_type_connections_classes = [
+                        obj
+                        for name, obj in inspect.getmembers(module)
+                        if inspect.isclass(obj)
+                        and ConnectionType.is_custom_strong_type(obj)
+                        and (not ConnectionType.is_connection_class_name(name))
+                    ]
 
-                if custom_strong_type_connections_classes:
-                    for cls in custom_strong_type_connections_classes:
-                        identifier = f"{cls.__module__}.{cls.__name__}"
-                        connection_spec = generate_custom_strong_type_connection_spec(
-                            cls, entry_point.dist.metadata["Name"], entry_point.dist.version
-                        )
-                        all_package_connection_specs[identifier] = connection_spec
-                        all_package_connection_templates[identifier] = generate_custom_strong_type_connection_template(
-                            cls, connection_spec, entry_point.dist.metadata["Name"], entry_point.dist.version
-                        )
+                    if custom_strong_type_connections_classes:
+                        for cls in custom_strong_type_connections_classes:
+                            identifier = f"{cls.__module__}.{cls.__name__}"
+                            connection_spec = generate_custom_strong_type_connection_spec(
+                                cls, entry_point.dist.metadata["Name"], entry_point.dist.version
+                            )
+                            all_package_connection_specs[identifier] = connection_spec
+                            all_package_connection_templates[identifier] = generate_custom_strong_type_connection_template(
+                                cls, connection_spec, entry_point.dist.metadata["Name"], entry_point.dist.version
+                            )
+                except Exception as e:
+                    # expect to collect all valid tools in package
+                    msg = (
+                            f"Failed to collect tool {tool['name']}"
+                            f"from package {entry_point.dist.metadata['Name']}: {e},"
+                            + f" traceback: {traceback.format_exc()}"
+                    )
+                    module_logger.warning(msg)
         except Exception as e:
             msg = (
                 f"Failed to load tools from package {entry_point.dist.metadata['Name']}: {e},"
