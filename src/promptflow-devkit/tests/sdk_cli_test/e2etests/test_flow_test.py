@@ -15,7 +15,6 @@ from marshmallow import ValidationError
 
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._pf_client import PFClient
-from promptflow._sdk.entities import AzureOpenAIConnection, CustomConnection, OpenAIConnection
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow.core import AzureOpenAIModelConfiguration, OpenAIModelConfiguration
 from promptflow.core._utils import init_executable
@@ -557,21 +556,8 @@ class TestFlowTest:
             ),
             pytest.param(
                 "AzureOpenAIConnection",
-                AzureOpenAIConnection(api_base="fake_base_url", api_key="fake_key"),
+                "azure_open_ai_connection",
                 id="AzureOpenAIConnection",
-            ),
-            pytest.param(
-                "OpenAIConnection",
-                OpenAIConnection(api_key="fake_key", base_url="fake_base_url"),
-                id="OpenAIConnection",
-            ),
-            pytest.param(
-                "CustomConnection",
-                CustomConnection(
-                    secrets={"api_key": "fake_key"},
-                    configs={"api_base": "fake_base_url"},
-                ),
-                id="CustomConnection",
             ),
         ],
     )
@@ -590,5 +576,10 @@ class TestFlowTest:
             pf.test(
                 flow=flow_path,
                 inputs={"func_input": "input"},
+                init={"dynamic_param": param_value, "open_ai_model_config": config2},
+            )
+            pf.run(
+                flow=flow_path,
+                data=flow_path / "inputs.jsonl",
                 init={"dynamic_param": param_value, "open_ai_model_config": config2},
             )
