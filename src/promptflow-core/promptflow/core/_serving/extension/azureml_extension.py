@@ -97,7 +97,7 @@ class AzureMLExtension(AppExtension):
                         conn = WorkspaceConnectionProvider._convert_to_connection_dict(connection_name, conn_data)
                         connections[connection_name] = conn
                     except Exception as e:
-                        self.logger.warn(f"Failed to convert connection data to connection: {e}")
+                        self.logger.warning(f"Failed to convert connection data to connection: {e}")
                         raise InvalidConnectionData(connection_name)
         if len(connections_name_overrides) > 0:
             self.logger.info(f"Connection name overrides: {connections_name_overrides}")
