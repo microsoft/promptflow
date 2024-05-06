@@ -65,7 +65,7 @@ jobs:
         with:
           client-id: ${{ secrets.CLIENT_ID }}
           tenant-id: ${{ secrets.TENANT_ID }}
-          subscription-id: "96aede12-2f73-41cb-b983-6d11a904839b"
+          subscription-id: ${{ secrets.TEST_WORKSPACE_SUB_ID }}
 
       - name: Generate configs
         run: |
