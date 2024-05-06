@@ -22,7 +22,7 @@ Or use CLI to create connection:
 
 ```bash
 # Override keys with --set to avoid yaml file changes
-pf connection create --file ../../connections/custom.yml --set secrets.openai_api_key=<your_api_key> configs.azure_endpoint=<your_api_base> --name my_llm_connection
+pf connection create --file ../../connections/custom.yml --set secrets.openai_api_key=<your_api_key> secrets.azure_endpoint=<your_api_base> --name my_llm_connection
 ```
 
 Note in [flow.flex.yaml](flow.flex.yaml) we are using connection named `my_llm_connection`.
