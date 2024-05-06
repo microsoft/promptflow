@@ -5,8 +5,7 @@ from pprint import pprint
 
 from promptflow.core import AzureOpenAIModelConfiguration
 from promptflow.evals.evaluate import evaluate
-from promptflow.evals.evaluators import RelevanceEvaluator
-from promptflow.evals.evaluators.content_safety import ViolenceEvaluator
+from promptflow.evals.evaluators import RelevanceEvaluator, ViolenceEvaluator
 
 
 def answer_length(input, **kwargs):
