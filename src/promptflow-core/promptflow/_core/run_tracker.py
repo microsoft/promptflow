@@ -216,7 +216,10 @@ class RunTracker(ThreadLocalSingleton):
 
     def _node_run_postprocess(self, run_info: RunInfo, output, ex: Optional[Exception]):
         run_id = run_info.run_id
-        self.set_openai_metrics(run_id)
+        if not inspect.isgenerator(output) and not inspect.isasyncgen(output):
+            # Only set openai metrics for non-generator output.
+            # For generator output, it will be set after the output is consumed.
+            self.set_openai_metrics(run_id)
         logs = self.node_log_manager.get_logs(run_id)
         run_info.logs = logs
         self.node_log_manager.clear_node_context(run_id)
@@ -448,6 +451,10 @@ class RunTracker(ThreadLocalSingleton):
             # This is because the output in the trace would includes the generated items.
             output_in_trace = node_run_info.api_calls[0]["output"]
             node_run_info.output = output_in_trace
+            # Update the openai metrics for the node run, since we can calculator the
+            # completion tokens from the generated output.
+            self.set_openai_metrics(node_run_info.run_id)
+            # Persist the updated node run.
             self.persist_node_run(node_run_info)
 
     def persist_flow_run(self, run_info: FlowRunInfo):
