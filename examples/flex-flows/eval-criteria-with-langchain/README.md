@@ -57,7 +57,7 @@ pf run list
 
 # get a sample run name
 
-name=$(pf run list -r 10 | jq '.[] | select(.name | contains("eval_code_quality_")) | .name'| head -n 1 | tr -d '"')
+name=$(pf run list -r 10 | jq '.[] | select(.name | contains("eval_criteria_with_langchain_")) | .name'| head -n 1 | tr -d '"')
 # show specific run detail
 pf run show --name $name
 
