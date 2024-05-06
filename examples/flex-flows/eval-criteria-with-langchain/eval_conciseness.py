@@ -1,10 +1,11 @@
 from dataclasses import dataclass
 
-from langchain.chat_models import AzureChatOpenAI, ChatAnthropic
+from langchain_community.chat_models import AzureChatOpenAI, ChatAnthropic
 from langchain.evaluation import load_evaluator
 
 from promptflow.connections import CustomConnection
 from promptflow.tracing import trace
+from promptflow.client import PFClient
 
 
 @dataclass
@@ -47,3 +48,17 @@ class LangChainEvaluator:
 
         eval_result = self.evaluator.evaluate_strings(prediction=prediction, input=input)
         return Result(**eval_result)
+
+
+if __name__ == "__main__":
+    from promptflow.tracing import start_trace
+
+    start_trace()
+    pf = PFClient()
+    connection = pf.connections.get(name="my_llm_connection", with_secrets=True)
+    evaluator = LangChainEvaluator(custom_connection=connection)
+    result = evaluator(
+        prediction="What's 2+2? That's an elementary question. The answer you're looking for is that two and two is four.",
+        input="What's 2+2?",
+    )
+    print(result)
