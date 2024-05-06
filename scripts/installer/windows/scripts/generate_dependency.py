@@ -103,13 +103,9 @@ if __name__ == '__main__':
     dependencies = list(set(dependencies))
     direct_package_dependencies = get_toml_dependencies(dependencies)
 
-    # Remove this line since some pakages in toml rely on many packages which results in msi package size too large.
-    # We have addd collect_all opentelemetry in spec and no need the line below for now
-
-    # go one step further for direct package dependencies, some packages like opentelemetry-exporter-otlp-proto-http
-    # need this step to get dependencies
-    # dependencies = list(set(direct_package_dependencies))
-    # direct_package_dependencies = get_package_dependencies(dependencies)
+    # get one step furture for dependencies
+    dependencies = list(set(direct_package_dependencies))
+    direct_package_dependencies = get_package_dependencies(dependencies)
 
     # get all dependencies
     all_packages = list(set(dependencies) | set(direct_package_dependencies))
@@ -128,10 +124,10 @@ if __name__ == '__main__':
         else:
             hidden_imports[i] = hidden_imports[i].replace('-', '.').lower()
 
-    # hidden_imports.remove("azure.storage.file.share")
-    # hidden_imports.append("azure.storage.fileshare")
-    # hidden_imports.remove("azure.storage.file.datalake")
-    # hidden_imports.append("azure.storage.filedatalake")
+    hidden_imports.remove("azure.storage.file.share")
+    hidden_imports.append("azure.storage.fileshare")
+    hidden_imports.remove("azure.storage.file.datalake")
+    hidden_imports.append("azure.storage.filedatalake")
 
     render_context = {
         "hidden_imports": hidden_imports,
