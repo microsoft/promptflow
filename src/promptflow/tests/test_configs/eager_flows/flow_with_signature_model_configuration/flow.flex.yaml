@@ -1,0 +1,9 @@
+entry: class_with_model_config:MyFlow
+init:
+  dynamic_param:
+    type: AzureOpenAIModelConfiguration
+  open_ai_model_config:
+    type: OpenAIModelConfiguration
+environment:
+  image: promptflow.azurecr.io/promptflow-runtime:pr-1316971-v19
+  python_requirements_txt: requirements.txt

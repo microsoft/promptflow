@@ -1,4 +1,5 @@
 import logging
+import shutil
 import sys
 import tempfile
 from dataclasses import is_dataclass
@@ -8,11 +9,13 @@ from types import GeneratorType
 import papermill
 import pydash
 import pytest
+import yaml
 from _constants import PROMPTFLOW_ROOT
 from marshmallow import ValidationError
 
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._pf_client import PFClient
+from promptflow._sdk.entities import AzureOpenAIConnection, CustomConnection, OpenAIConnection
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow.core import AzureOpenAIModelConfiguration, OpenAIModelConfiguration
 from promptflow.core._utils import init_executable
@@ -535,3 +538,57 @@ class TestFlowTest:
                 init={"azure_open_ai_model_config": config1, "open_ai_model_config": config2},
             )
         assert "'AzureOpenAIConnection' object has no attribute 'base_url'" in str(e.value)
+
+    @pytest.mark.parametrize(
+        "param_type, param_value",
+        [
+            pytest.param(
+                "AzureOpenAIModelConfiguration",
+                AzureOpenAIModelConfiguration(
+                    azure_deployment="my_deployment",
+                    azure_endpoint="fake_endpoint",
+                ),
+                id="AzureOpenAIModelConfiguration",
+            ),
+            pytest.param(
+                "OpenAIModelConfiguration",
+                OpenAIModelConfiguration(model="my_model", base_url="fake_base_url"),
+                id="OpenAIModelConfiguration",
+            ),
+            pytest.param(
+                "AzureOpenAIConnection",
+                AzureOpenAIConnection(api_base="fake_base_url", api_key="fake_key"),
+                id="AzureOpenAIConnection",
+            ),
+            pytest.param(
+                "OpenAIConnection",
+                OpenAIConnection(api_key="fake_key", base_url="fake_base_url"),
+                id="OpenAIConnection",
+            ),
+            pytest.param(
+                "CustomConnection",
+                CustomConnection(
+                    secrets={"api_key": "fake_key"},
+                    configs={"api_base": "fake_base_url"},
+                ),
+                id="CustomConnection",
+            ),
+        ],
+    )
+    def test_override_signature_for_param_without_annotation(self, pf, param_type: str, param_value):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/flow_with_signature_model_configuration")
+        config2 = OpenAIModelConfiguration(model="my_model", connection="open_ai_connection")
+        with open(flow_path / "flow.flex.yaml", "r") as f:
+            yaml_dict = yaml.safe_load(f)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            shutil.copytree(flow_path, Path(temp_dir) / "flow_with_signature_model_configuration")
+            flow_path = Path(temp_dir) / "flow_with_signature_model_configuration"
+            with open(flow_path / "flow.flex.yaml", "w") as f:
+                yaml_dict["init"]["dynamic_param"]["type"] = param_type
+                yaml.dump(yaml_dict, f)
+            pf.test(
+                flow=flow_path,
+                inputs={"func_input": "input"},
+                init={"dynamic_param": param_value, "open_ai_model_config": config2},
+            )

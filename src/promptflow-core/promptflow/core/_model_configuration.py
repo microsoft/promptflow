@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Union
 
 from promptflow._constants import ConnectionType
+from promptflow.contracts.flow import InitParamType
 from promptflow.core._connection import AzureOpenAIConnection, OpenAIConnection
 from promptflow.core._errors import InvalidConnectionError
 
@@ -117,6 +118,6 @@ class PromptyModelConfiguration:
 
 
 MODEL_CONFIG_NAME_2_CLASS = {
-    AzureOpenAIModelConfiguration.__name__: AzureOpenAIModelConfiguration,
-    OpenAIModelConfiguration.__name__: OpenAIModelConfiguration,
+    InitParamType.AZURE_OPEN_API_MODEL_CONFIGURATION: AzureOpenAIModelConfiguration,
+    InitParamType.OPEN_AI_MODEL_CONFIGURATION: OpenAIModelConfiguration,
 }

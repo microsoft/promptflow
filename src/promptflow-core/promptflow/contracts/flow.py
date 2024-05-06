@@ -8,7 +8,7 @@ import sys
 from dataclasses import asdict, dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from promptflow._constants import DEFAULT_ENCODING, LANGUAGE_KEY, FlowLanguage, MessageFormatType
 from promptflow._utils.utils import _match_reference, _sanitize_python_variable_name, try_import
@@ -393,6 +393,68 @@ class FlowInputDefinition:
         """
         return FlowInputDefinition(
             ValueType(data["type"]),
+            data.get("default", None),
+            data.get("description", ""),
+            data.get("enum", []),
+            data.get("is_chat_input", False),
+            data.get("is_chat_history", None),
+        )
+
+
+class InitParamType(str, Enum):
+    """Value types."""
+
+    AZURE_OPEN_API_MODEL_CONFIGURATION = "AzureOpenAIModelConfiguration"
+    OPEN_AI_MODEL_CONFIGURATION = "OpenAIModelConfiguration"
+
+    AZURE_OPEN_AI_CONNECTION = "AzureOpenAIConnection"
+    OPEN_AI_CONNECTION = "OpenAIConnection"
+    QDRANT_CONNECTION = "QdrantConnection"
+    COGNITIVE_SEARCH_CONNECTION = "CognitiveSearchConnection"
+    SERP_CONNECTION = "SerpConnection"
+    AZURE_CONTENT_SAFETY_CONNECTION = "AzureContentSafetyConnection"
+    FORM_RECOGNIZER_CONNECTION = "FormRecognizerConnection"
+    WEAVIATE_CONNECTION = "WeaviateConnection"
+    SERVERLESS_CONNECTION = "ServerlessConnection"
+    CUSTOM_CONNECTION = "CustomConnection"
+
+
+@dataclass
+class FlowInitDefinition(FlowInputDefinition):
+    """This class represents the definition of an init of a flex flow.
+
+    :param type: The type of the flow input.
+    :type type: ~promptflow.contracts.tool.ValueType
+    :param default: The default value of the flow input.
+    :type default: str
+    :param description: The description of the flow input.
+    :type description: str
+    :param enum: The enum of the flow input.
+    :type enum: List[str]
+    :param is_chat_input: Whether the flow input is a chat input.
+    :type is_chat_input: bool
+    :param is_chat_history: Whether the flow input is a chat history.
+    :type is_chat_history: bool
+    """
+
+    type: Union[ValueType, InitParamType]
+
+    @staticmethod
+    def deserialize(data: dict) -> "FlowInitDefinition":
+        """Deserialize the flow input definition from a dict.
+
+        :param data: The dict to be deserialized.
+        :type data: dict
+        :return: The flow input definition constructed from the dict.
+        :rtype: ~promptflow.contracts.flow.FlowInputDefinition
+        """
+        try:
+            _type = ValueType(data["type"])
+        except ValueError:
+            _type = InitParamType(data["type"])
+
+        return FlowInitDefinition(
+            _type,
             data.get("default", None),
             data.get("description", ""),
             data.get("enum", []),
@@ -945,7 +1007,7 @@ class FlexFlow(FlowBase):
     :type message_format: str
     """
 
-    init: Dict[str, FlowInputDefinition] = None
+    init: Dict[str, FlowInitDefinition] = None
     program_language: str = FlowLanguage.Python
     environment_variables: Dict[str, object] = None
     # eager flow does not support multimedia contract currently, it is set to basic by default.
@@ -969,7 +1031,7 @@ class FlexFlow(FlowBase):
             name=data.get("name", "default_flow"),
             inputs={name: FlowInputDefinition.deserialize(i) for name, i in inputs.items()},
             outputs={name: FlowOutputDefinition.deserialize(o) for name, o in outputs.items()},
-            init={name: FlowInputDefinition.deserialize(i) for name, i in init.items()},
+            init={name: FlowInitDefinition.deserialize(i) for name, i in init.items()},
             program_language=data.get(LANGUAGE_KEY, FlowLanguage.Python),
             environment_variables=data.get("environment_variables") or {},
         )
