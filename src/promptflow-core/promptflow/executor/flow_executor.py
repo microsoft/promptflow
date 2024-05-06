@@ -21,7 +21,7 @@ import opentelemetry.trace as otel_trace
 from opentelemetry.trace.span import Span, format_trace_id
 from opentelemetry.trace.status import StatusCode
 
-from promptflow._constants import LINE_NUMBER_KEY
+from promptflow._constants import LINE_NUMBER_KEY, FlowType
 from promptflow._core._errors import NotSupported, UnexpectedError
 from promptflow._core.cache_manager import AbstractCacheManager
 from promptflow._core.flow_execution_context import FlowExecutionContext
@@ -67,6 +67,8 @@ from promptflow.tracing._operation_context import OperationContext
 from promptflow.tracing._start_trace import setup_exporter_from_environ
 from promptflow.tracing._trace import enrich_span_with_context, enrich_span_with_input, enrich_span_with_trace_type
 from promptflow.tracing.contracts.trace import TraceType
+
+DEFAULT_TRACING_KEYS = {"run_mode", "root_run_id", "flow_id", "batch_input_source", "execution_target"}
 
 
 class FlowExecutor:
@@ -164,6 +166,10 @@ class FlowExecutor:
         self._node_concurrency = DEFAULT_CONCURRENCY_BULK
         self._message_format = flow.message_format
         self._multimedia_processor = MultimediaProcessor.create(flow.message_format)
+
+    # This field is used to distinguish the execution target of the flow.
+    # Candidate value for executors are dag, flex adn prompty.
+    _execution_target = FlowType.DAG_FLOW
 
     @classmethod
     def create(
@@ -348,7 +354,8 @@ class FlowExecutor:
             original_context = operation_context.copy()
             try:
                 append_promptflow_package_ua(operation_context)
-                operation_context.set_default_tracing_keys({"run_mode", "root_run_id", "flow_id", "batch_input_source"})
+                operation_context.set_execution_target(cls._execution_target)
+                operation_context.set_default_tracing_keys(DEFAULT_TRACING_KEYS)
                 operation_context["run_mode"] = RunMode.SingleNode.name
                 # Inject OpenAI API to make sure traces and headers injection works and
                 # update OpenAI API configs from environment variables.
@@ -788,7 +795,8 @@ class FlowExecutor:
             values_for_otel = {"line_run_id": run_id}
         try:
             append_promptflow_package_ua(operation_context)
-            operation_context.set_default_tracing_keys({"run_mode", "root_run_id", "flow_id", "batch_input_source"})
+            operation_context.set_execution_target(execution_target=self._execution_target)
+            operation_context.set_default_tracing_keys(DEFAULT_TRACING_KEYS)
             operation_context.run_mode = original_mode
             operation_context.update(values_for_context)
             for k, v in values_for_otel.items():
@@ -817,7 +825,8 @@ class FlowExecutor:
             )
         try:
             append_promptflow_package_ua(operation_context)
-            operation_context.set_default_tracing_keys({"run_mode", "root_run_id", "flow_id", "batch_input_source"})
+            operation_context.set_execution_target(self._execution_target)
+            operation_context.set_default_tracing_keys(DEFAULT_TRACING_KEYS)
             operation_context.run_mode = original_mode
             operation_context.update(values_for_context)
             for k, v in values_for_otel.items():
