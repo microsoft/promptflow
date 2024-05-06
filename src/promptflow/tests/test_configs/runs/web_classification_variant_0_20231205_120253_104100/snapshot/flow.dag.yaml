@@ -31,11 +31,14 @@ nodes:
   inputs: {}
   aggregation: false
 - name: classify_with_llm
-  type: llm
+  type: custom_llm
   source:
-    type: code
+    type: package_with_prompt
+    tool: promptflow.tools.llm.llm
     path: classify_with_llm.jinja2
   inputs:
+    api: chat
+    connection: open_ai_connection
     deployment_name: "gpt-35-turbo"
     model: "gpt-3.5-turbo"
     max_tokens: 128
@@ -43,8 +46,6 @@ nodes:
     url: "${inputs.url}"
     text_content: "${summarize_text_content.output}"
     examples: "${prepare_examples.output}"
-  api: chat
-  connection: open_ai_connection
   aggregation: false
 - name: convert_to_dict
   type: python
@@ -55,18 +56,19 @@ nodes:
     input_str: "${classify_with_llm.output}"
   aggregation: false
 - name: summarize_text_content
-  type: llm
+  type: custom_llm
   source:
-    type: code
+    type: package_with_prompt
+    tool: promptflow.tools.llm.llm
     path: summarize_text_content.jinja2
   inputs:
+    api: chat
+    connection: open_ai_connection
     deployment_name: "gpt-35-turbo"
     model: "gpt-3.5-turbo"
     max_tokens: 128
     temperature: 0.2
     text: "${fetch_text_content_from_url.output}"
-  api: chat
-  connection: open_ai_connection
   aggregation: false
 environment:
   python_requirements_txt: requirements.txt

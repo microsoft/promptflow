@@ -2,8 +2,7 @@ $schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 inputs:
   url:
     type: string
-    default: 
-      https://www.microsoft.com/en-us/d/xbox-wireless-controller-stellar-shift-special-edition/94fbjc7h0h6h
+    default: https://www.microsoft.com/en-us/d/xbox-wireless-controller-stellar-shift-special-edition/94fbjc7h0h6h
 outputs:
   category:
     type: string
@@ -20,22 +19,7 @@ nodes:
   inputs:
     fetch_url: ${inputs.url}
 - name: summarize_text_content
-  type: llm
-  source: &id001
-    type: code
-    path: summarize_text_content__variant_1.jinja2
-  inputs: &id002
-    deployment_name: gpt-35-turbo
-    max_tokens: 256
-    temperature: 0.3
-    top_p: 1
-    presence_penalty: 0
-    frequency_penalty: 0
-    text: ${fetch_text_content_from_url.output}
-  provider: AzureOpenAI
-  connection: azure_open_ai_connection
-  api: chat
-  module: promptflow.tools.aoai
+  use_variants: true
 - name: prepare_examples
   type: python
   source:
@@ -43,11 +27,14 @@ nodes:
     path: prepare_examples.py
   inputs: {}
 - name: classify_with_llm
-  type: llm
+  type: custom_llm
   source:
-    type: code
+    type: package_with_prompt
+    tool: promptflow.tools.llm.llm
     path: classify_with_llm.jinja2
   inputs:
+    connection: azure_open_ai_connection
+    api: chat
     deployment_name: gpt-35-turbo
     max_tokens: 128
     temperature: 0.1
@@ -57,10 +44,7 @@ nodes:
     url: ${inputs.url}
     examples: ${prepare_examples.output}
     text_content: ${summarize_text_content.output}
-  provider: AzureOpenAI
-  connection: azure_open_ai_connection
-  api: chat
-  module: promptflow.tools.aoai
+  module: promptflow.tools.llm
 - name: convert_to_dict
   type: python
   source:
@@ -74,11 +58,14 @@ node_variants:
     variants:
       variant_0:
         node:
-          type: llm
+          type: custom_llm
           source:
-            type: code
+            type: package_with_prompt
+            tool: promptflow.tools.llm.llm
             path: summarize_text_content.jinja2
           inputs:
+            connection: azure_open_ai_connection
+            api: chat
             deployment_name: gpt-35-turbo
             max_tokens: 128
             temperature: 0.2
@@ -86,16 +73,8 @@ node_variants:
             presence_penalty: 0
             frequency_penalty: 0
             text: ${fetch_text_content_from_url.output}
-          provider: AzureOpenAI
-          connection: azure_open_ai_connection
-          api: chat
-          module: promptflow.tools.aoai
       variant_1:
         node:
-          type: llm
+          type: custom_llm
           source: *id001
           inputs: *id002
-          provider: AzureOpenAI
-          connection: azure_open_ai_connection
-          api: chat
-          module: promptflow.tools.aoai

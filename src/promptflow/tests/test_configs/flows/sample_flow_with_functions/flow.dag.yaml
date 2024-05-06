@@ -40,11 +40,14 @@ nodes:
     response_message: ${use_functions_with_chat_models.output}
   use_variants: false
 - name: use_functions_with_chat_models
-  type: llm
+  type: custom_llm
   source:
-    type: code
+    type: package_with_prompt
+    tool: promptflow.tools.llm.llm
     path: use_functions_with_chat_models.jinja2
   inputs:
+    connection: azure_open_ai_connection
+    api: chat
     deployment_name: gpt-35-turbo
     temperature: 0.7
     top_p: 1
@@ -94,10 +97,6 @@ nodes:
       name: get_current_weather
     chat_history: ${inputs.chat_history}
     question: ${inputs.question}
-  provider: AzureOpenAI
-  connection: azure_open_ai_connection
-  api: chat
-  module: promptflow.tools.aoai
   use_variants: false
 node_variants: {}
 environment:

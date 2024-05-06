@@ -12,19 +12,19 @@ outputs:
     is_chat_output: true
 nodes:
 - inputs:
+    api: chat
+    connection: azure_open_ai_connection
     deployment_name: gpt-35-turbo
     max_tokens: "256"
     temperature: "0.7"
     chat_history: ${inputs.chat_history}
     question: ${inputs.question}
   name: chat
-  type: llm
+  type: custom_llm
   source:
-    type: code
+    type: package_with_prompt
+    tool: promptflow.tools.llm.llm
     path: chat.jinja2
-  api: chat
-  provider: AzureOpenAI
-  connection: azure_open_ai_connection
 - name: show_answer
   type: python
   source:

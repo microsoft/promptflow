@@ -16,15 +16,16 @@ nodes:
     type: code
     path: hello.jinja2
 - name: llm
-  type: llm
+  type: custom_llm
+  source:
+    type: package_with_prompt
+    tool: promptflow.tools.llm.llm
+    path: hello.jinja2
   inputs:
+    connection: azure_open_ai_connection
+    api: chat
     prompt: ${hello_prompt.output}
     deployment_name: gpt-35-turbo
     model: gpt-3.5-turbo
     max_tokens: '120'
-  source:
-    type: code
-    path: hello.jinja2
-  connection: azure_open_ai_connection
-  api: chat
 node_variants: {}

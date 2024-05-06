@@ -2,9 +2,10 @@ inputs: {}
 outputs: {}
 nodes:
 - name: wrong_llm
-  type: llm
+  type: custom_llm
   source:
-    type: code
+    type: package_with_prompt
+    tool: promptflow.tools.llm.llm
     path: wrong_llm.jinja2
-  inputs: {}
-  connection: custom_connection
+  inputs:
+    connection: custom_connection

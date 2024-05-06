@@ -7,11 +7,14 @@ outputs:
     reference: ${summarize_text_content.output}
 nodes:
 - name: summarize_text_content
-  type: llm
+  type: custom_llm
   source:
-    type: code
+    type: package_with_prompt
+    tool: promptflow.tools.llm.llm
     path: summarize_text_content__variant_1.jinja2
   inputs:
+    connection: azure_open_ai_connection_111
+    api: completion
     deployment_name: gpt-35-turbo
     suffix: ''
     max_tokens: '256'
@@ -25,7 +28,3 @@ nodes:
     best_of: '1'
     logit_bias: ''
     text: ${inputs.text}
-  provider: AzureOpenAI
-  connection: azure_open_ai_connection_111
-  api: completion
-  module: promptflow.tools.aoai

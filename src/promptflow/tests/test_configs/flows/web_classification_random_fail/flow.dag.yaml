@@ -18,11 +18,14 @@ nodes:
   inputs:
     url: ${random_fail.output}
 - name: summarize_text_content
-  type: llm
+  type: custom_llm
   source:
-    type: code
+    type: package_with_prompt
+    tool: promptflow.tools.llm.llm
     path: summarize_text_content__variant_1.jinja2
   inputs:
+    connection: azure_open_ai_connection
+    api: chat
     deployment_name: gpt-35-turbo
     max_tokens: 256
     temperature: 0.2
@@ -32,8 +35,6 @@ nodes:
     frequency_penalty: 0
     best_of: "1"
     text: ${fetch_text_content_from_url.output}
-  connection: azure_open_ai_connection
-  api: chat
 - name: prepare_examples
   type: python
   source:
@@ -41,11 +42,14 @@ nodes:
     path: prepare_examples.py
   inputs: {}
 - name: classify_with_llm
-  type: llm
+  type: custom_llm
   source:
-    type: code
+    type: package_with_prompt
+    tool: promptflow.tools.llm.llm
     path: classify_with_llm.jinja2
   inputs:
+    connection: azure_open_ai_connection
+    api: chat
     deployment_name: gpt-35-turbo
     max_tokens: 128
     temperature: 0.2
@@ -57,8 +61,6 @@ nodes:
     url: ${inputs.url}
     examples: ${prepare_examples.output}
     text_content: ${summarize_text_content.output}
-  connection: azure_open_ai_connection
-  api: chat
 - name: convert_to_dict
   type: python
   source:

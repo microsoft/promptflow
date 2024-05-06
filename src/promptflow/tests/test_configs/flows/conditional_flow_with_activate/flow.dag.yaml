@@ -69,11 +69,14 @@ nodes:
     when: ${incident_info_extractor.output.retriever}
     is: tsg
 - name: investigation_steps
-  type: llm
+  type: custom_llm
   source:
-    type: code
+    type: package_with_prompt
+    tool: promptflow.tools.llm.llm
     path: investigation_steps.jinja2
   inputs:
+    connection: azure_open_ai_connection
+    api: chat
     deployment_name: gpt-35-turbo
     temperature: 0.7
     top_p: 1
@@ -85,10 +88,6 @@ nodes:
     first_method: ${icm_retriever.output}
     second_method: ${tsg_retriever.output}
     third_method: ${kql_tsg_retriever.output}
-  provider: AzureOpenAI
-  connection: azure_open_ai_connection
-  api: chat
-  module: promptflow.tools.aoai
 - name: retriever_summary
   type: python
   source:

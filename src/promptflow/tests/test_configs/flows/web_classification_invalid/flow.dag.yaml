@@ -16,11 +16,14 @@ nodes:
   inputs:
     url: ${inputs.url}
 - name: summarize_text_content
-  type: llm
+  type: custom_llm
   source:
-    type: code
+    type: package_with_prompt
+    tool: promptflow.tools.llm.llm
     path: summarize_text_content.jinja2
   inputs:
+    connection: azure_open_ai_connection
+    api: completion
     deployment_name: gpt-35-turbo
     suffix: ''
     max_tokens: '128'
@@ -34,11 +37,6 @@ nodes:
     best_of: '1'
     logit_bias: ''
     text: ${fetch_text_content_from_url.output}
-  provider: AzureOpenAI
-  connection: azure_open_ai_connection
-  api: completion
-  module: promptflow.tools.aoai
-
   use_variants: true
 - name: prepare_examples
   type: python
@@ -47,11 +45,14 @@ nodes:
     path: prepare_examples.py
   inputs:
 - name: classify_with_llm
-  type: llm
+  type: custom_llm
   source:
-    type: code
+    type: package_with_prompt
+    tool: promptflow.tools.llm.llm
     path: ./classify_with_llm.jinja2
   inputs:
+    connection: azure_open_ai_connection
+    api: completion
     deployment_name: gpt-35-turbo
     suffix: ''
     max_tokens: '128'
@@ -67,10 +68,6 @@ nodes:
     url: ${inputs.url}
     examples: ${prepare_examples.output}
     text_content: ${summarize_text_content.output}
-  provider: AzureOpenAI
-  connection: azure_open_ai_connection
-  api: completion
-  module: promptflow.tools.aoai
 - name: convert_to_dict
   type: python
   source:
@@ -90,11 +87,14 @@ node_variants:
     variants:
       variant_0:
         node:
-          type: llm
+          type: custom_llm
           source:
-            type: code
+            type: package_with_prompt
+            tool: promptflow.tools.llm.llm
             path: summarize_text_content.jinja2
           inputs:
+            connection: azure_open_ai_connection
+            api: completion
             deployment_name: gpt-35-turbo
             suffix: ''
             max_tokens: '128'
@@ -108,17 +108,16 @@ node_variants:
             best_of: '1'
             logit_bias: ''
             text: ${fetch_text_content_from_url.output}
-          provider: AzureOpenAI
-          connection: azure_open_ai_connection
-          api: completion
-          module: promptflow.tools.aoai
       variant_1:
         node:
-          type: llm
+          type: custom_llm
           source:
-            type: code
+            type: package_with_prompt
+            tool: promptflow.tools.llm.llm
             path: summarize_text_content__variant_1.jinja2
           inputs:
+            connection: azure_open_ai_connection
+            api: completion
             deployment_name: gpt-35-turbo
             suffix: ''
             max_tokens: '256'
@@ -132,9 +131,5 @@ node_variants:
             best_of: '1'
             logit_bias: ''
             text: ${fetch_text_content_from_url.output}
-          provider: AzureOpenAI
-          connection: azure_open_ai_connection
-          api: completion
-          module: promptflow.tools.aoai
 additional_includes:
   - ../external_files/fetch_text_content_from_url.py
