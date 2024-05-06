@@ -1,8 +1,12 @@
-# Connection support
+# Use connections in flow
+
+The [`connection`](../concepts/concept-connections.md) helps securely store and manage secret keys or other sensitive credentials required for interacting with LLM and other external tools for example Azure Content Safety.
+The following usage of connections is supported in prompt flow.
 
 ## Model config in `__init__`
 
-Just like example in [batch run](#batch-run-with-yaml), it's supported to reference connection in ModelConfig.
+Just like example in [class based flow batch run](./class-based-flow.md#batch-run-with-yaml), it's supported to reference connection in ModelConfig.
+Reference [here](./model-config.md) for more information about ModelConfig.
 And connection will be resolved and flatten connection's fields to ModelConfig.
 **Note**: Currently model config only support OpenAI and AzureOpenAI connection.
 For custom connection, please use [connection in init](#connection-in-__init__).
@@ -35,7 +39,7 @@ pf.run(flow="./flow.flex.yaml", init={"connection": "my_connection"}, data="./da
 pfazure.run(flow="./flow.flex.yaml", init={"connection": "my_cloud_connection"}, data="./data.jsonl")
 ```
 
-## Environment variable connections(EVC)
+## Environment variable connections
 
 If flow YAML has `environment_variables` and it's value is a connection reference like this:
 

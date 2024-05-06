@@ -20,19 +20,19 @@ If user has non-supported types in code/YAML, validation error will be raised.
 
 Here's a mapping from python types to YAML types:
 
-Python Type                     | YAML type                                           | Description
---------------------------------|-----------------------------------------------------|----------------------------------------------------
-`int`                           | int                                                 | Integer type
-`float`                         | double                                              | Double type
-`bool`                          | bool                                                | Boolean type
-`str`                           | string                                              | String type
-`list`                          | list                                                | List type
-`dict`                          | object                                              | Dictionary type
-`TypedDict`                     | object                                              | Typed dictionary type
-`dataclass`                     | object                                              | Data class type
-`CustomConnection`              | [Connection](../../concepts/concept-connections.md) | Connection type, will be handled specially
-`OpenAIModelConfiguration`      | OpenAIModelConfiguration                            | Model configuration type, will be handled specially
-`AzureOpenAIModelConfiguration` | AzureOpenAIModelConfiguration                       | Model configuration type, will be handled specially
+Python Type                     | YAML type                                                                        | Description
+--------------------------------|----------------------------------------------------------------------------------|----------------------------------------------------
+`int`                           | int                                                                              | Integer type
+`float`                         | double                                                                           | Double type
+`bool`                          | bool                                                                             | Boolean type
+`str`                           | string                                                                           | String type
+`list`                          | list                                                                             | List type
+`dict`                          | object                                                                           | Dictionary type
+`TypedDict`                     | object                                                                           | Typed dictionary type
+`dataclass`                     | object                                                                           | Data class type
+`CustomConnection`              | [Connection](../../concepts/concept-connections.md)                              | Connection type, will be handled specially
+`OpenAIModelConfiguration`      | [OpenAIModelConfiguration](./model-config.md#openaimodelconfiguration)           | Model configuration type, will be handled specially
+`AzureOpenAIModelConfiguration` | [AzureOpenAIModelConfiguration](./model-config.md#azureopenaimodelconfiguration) | Model configuration type, will be handled specially
 
 Here's an sample YAML for above supported types.
 

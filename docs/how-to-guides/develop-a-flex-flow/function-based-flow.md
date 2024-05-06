@@ -26,7 +26,7 @@ def my_flow(question: str) -> Reply:
 
 ## Flow test
 
-### Test with original code
+### Test via function call
 
 Since flow's definition is normal python function/callable class. We recommend user directly run it like running other scripts:
 

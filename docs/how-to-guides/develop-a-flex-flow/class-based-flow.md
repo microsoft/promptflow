@@ -51,7 +51,7 @@ if __name__ == "__main__":
     # check metrics here
 ```
 
-### Convert to a flow and test
+### Test via function call
 
 It's also supported to convert your class entry to a flow and test with prompt flow's ability.
 
