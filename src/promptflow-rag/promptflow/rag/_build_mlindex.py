@@ -10,7 +10,7 @@ from packaging import version
 
 
 from promptflow.rag.constants._common import AZURE_AI_SEARCH_API_VERSION
-from promptflow.rag.resources import EmbeddingsModelConfig, AzureAISearchConfig, AzureAISearchSource, LocalSource
+from promptflow.rag.config import EmbeddingsModelConfig, AzureAISearchConfig, AzureAISearchSource, LocalSource
 from promptflow.rag._utils._open_ai_utils import build_open_ai_protocol
 
 
