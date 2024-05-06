@@ -27,33 +27,6 @@ class OpenAIMetricsCalculator:
         api_call["system_metrics"] = total_metrics
         return total_metrics
 
-    def get_completion_tokens(self, api_call: dict):
-        # For nodes with OpenAI streaming output, the completion tokens is zero, so we use this method to collect
-        # completion tokens after the output is consumed.
-        completion_tokens = 0
-        try:
-            if self._need_collect_metrics(api_call):
-                completion_tokens += self._get_completion_tokens_for_signal_api(api_call)
-
-            children = api_call.get("children")
-            if children is not None:
-                for child in children:
-                    completion_tokens += self.get_completion_tokens(child)
-            if self._contain_openai_metrics(api_call):
-                api_call["system_metrics"]["completion_tokens"] += completion_tokens
-                api_call["system_metrics"]["total_tokens"] += completion_tokens
-        except Exception as ex:
-            self._log_warning(f"Failed to calculate completion tokens due to exception: {ex}.")
-        return completion_tokens
-
-    def _contain_openai_metrics(self, api_call: dict):
-        if api_call.get("system_metrics"):
-            for metric in ["total_tokens", "prompt_tokens", "completion_tokens"]:
-                if metric not in api_call["system_metrics"]:
-                    return False
-            return True
-        return False
-
     def _need_collect_metrics(self, api_call: dict):
         if api_call.get("type") != "LLM":
             return False
@@ -64,14 +37,6 @@ class OpenAIMetricsCalculator:
         if not isinstance(inputs, dict):
             return False
         return True
-
-    def _get_completion_tokens_for_signal_api(self, api_call: dict):
-        if self._contain_openai_metrics(api_call):
-            if api_call["system_metrics"]["completion_tokens"] == 0:
-                output = api_call.get("output", [])
-                if isinstance(output, list):
-                    return len(output)
-        return 0
 
     def _get_openai_metrics_for_signal_api(self, api_call: dict):
         inputs = api_call.get("inputs")

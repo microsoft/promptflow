@@ -1,7 +1,6 @@
 from openai import AzureOpenAI
 
 from promptflow.connections import AzureOpenAIConnection
-from promptflow.tracing import trace
 
 
 class MyClass:

@@ -206,9 +206,8 @@ class TestExecutorTraces:
         assert flow_result.run_info.status == Status.Completed
         assert flow_result.run_info.api_calls is not None
 
-        for token_name in ["prompt_tokens", "completion_tokens", "total_tokens"]:
-            assert token_name in flow_result.run_info.system_metrics
-            assert flow_result.run_info.system_metrics[token_name] > 0
+        assert "total_tokens" in flow_result.run_info.system_metrics
+        assert flow_result.run_info.system_metrics["total_tokens"] > 0
 
         get_traced = False
         for api_call in flow_result.run_info.api_calls:
