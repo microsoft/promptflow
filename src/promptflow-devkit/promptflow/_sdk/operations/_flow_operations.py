@@ -36,7 +36,7 @@ from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._orchestrator import TestSubmitter
 from promptflow._sdk._orchestrator.utils import SubmitterHelper
 from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_operation
-from promptflow._sdk._utils import (
+from promptflow._sdk._utilities.general_utils import (
     _get_additional_includes,
     _merge_local_code_and_additional_includes,
     add_executable_script_to_env_path,
@@ -47,7 +47,7 @@ from promptflow._sdk._utils import (
     json_load,
     logger,
 )
-from promptflow._sdk._utils.signature_utils import (
+from promptflow._sdk._utilities.signature_utils import (
     format_signature_type,
     infer_signature_for_flex_flow,
     merge_flow_signature,
@@ -589,7 +589,6 @@ class FlowOperations(TelemetryMixin):
             import bs4  # noqa: F401
             import PyInstaller  # noqa: F401
             import streamlit
-            import streamlit_quill  # noqa: F401
         except ImportError as ex:
             raise UserErrorException(
                 f"Please try 'pip install promptflow[executable]' to install dependency, {ex.msg}."

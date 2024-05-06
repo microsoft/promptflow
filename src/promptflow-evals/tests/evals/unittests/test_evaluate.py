@@ -122,7 +122,7 @@ class TestEvaluate:
     def test_apply_target_to_data(self, pf_client, questions_file, questions_answers_file):
         """Test that target was applied correctly."""
         initial_data = pd.read_json(questions_file, lines=True)
-        qa_df, columns = _apply_target_to_data(_target_fn, questions_file, pf_client, initial_data)
+        qa_df, columns, target_run = _apply_target_to_data(_target_fn, questions_file, pf_client, initial_data)
         assert columns == {"answer"}
         ground_truth = pd.read_json(questions_answers_file, lines=True)
         assert_frame_equal(qa_df, ground_truth, check_like=True)

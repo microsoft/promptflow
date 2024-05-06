@@ -7,7 +7,7 @@ from json import JSONDecodeError
 from typing import Any, List, Mapping, Optional
 
 from promptflow._utils.logger_utils import logger
-from promptflow.contracts.flow import Flow, InputValueType, Node
+from promptflow.contracts.flow import Flow, FlowInputDefinition, InputValueType, Node
 from promptflow.contracts.tool import ValueType
 from promptflow.executor._errors import (
     DuplicateNodeName,
@@ -197,8 +197,14 @@ class FlowValidator:
             in the `flow` object.
         :rtype: Mapping[str, Any]
         """
+        return FlowValidator._resolve_flow_inputs_type_inner(flow.inputs, inputs, idx)
+
+    @staticmethod
+    def _resolve_flow_inputs_type_inner(
+        flow_inputs: FlowInputDefinition, inputs: Mapping[str, Any], idx: Optional[int] = None
+    ) -> Mapping[str, Any]:
         updated_inputs = {k: v for k, v in inputs.items()}
-        for k, v in flow.inputs.items():
+        for k, v in flow_inputs.items():
             if k in inputs:
                 updated_inputs[k] = FlowValidator._parse_input_value(k, inputs[k], v.type, idx)
         return updated_inputs
@@ -219,7 +225,13 @@ class FlowValidator:
             type specified in the `flow` object.
         :rtype: Mapping[str, Any]
         """
-        for k, v in flow.inputs.items():
+        return FlowValidator._ensure_flow_inputs_type_inner(flow.inputs, inputs, idx)
+
+    @staticmethod
+    def _ensure_flow_inputs_type_inner(
+        flow_inputs: FlowInputDefinition, inputs: Mapping[str, Any], idx: Optional[int] = None
+    ) -> Mapping[str, Any]:
+        for k, _ in flow_inputs.items():
             if k not in inputs:
                 line_info = "in input data" if idx is None else f"in line {idx} of input data"
                 msg_format = (
@@ -228,7 +240,7 @@ class FlowValidator:
                     "if it's no longer needed."
                 )
                 raise InputNotFound(message_format=msg_format, input_name=k, line_info=line_info)
-        return FlowValidator.resolve_flow_inputs_type(flow, inputs, idx)
+        return FlowValidator._resolve_flow_inputs_type_inner(flow_inputs, inputs, idx)
 
     @staticmethod
     def convert_flow_inputs_for_node(flow: Flow, node: Node, inputs: Mapping[str, Any]) -> Mapping[str, Any]:

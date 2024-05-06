@@ -33,7 +33,7 @@ from promptflow._sdk._constants import (
     ContextAttributeKey,
 )
 from promptflow._sdk._tracing import start_trace_with_devkit
-from promptflow._sdk._utils.tracing import WorkspaceKindLocalCache, append_conditions, parse_protobuf_span
+from promptflow._sdk._utilities.tracing_utils import WorkspaceKindLocalCache, append_conditions, parse_protobuf_span
 from promptflow.client import PFClient
 from promptflow.exceptions import UserErrorException
 from promptflow.tracing._operation_context import OperationContext
@@ -264,7 +264,7 @@ class TestWorkspaceKindLocalCache:
         # mock `WorkspaceKindLocalCache._get_workspace_kind_from_azure`
         mock_kind = str(uuid.uuid4())
         with patch(
-            "promptflow._sdk._utils.tracing.WorkspaceKindLocalCache._get_workspace_kind_from_azure"
+            "promptflow._sdk._utilities.tracing_utils.WorkspaceKindLocalCache._get_workspace_kind_from_azure"
         ) as mock_get_kind:
             mock_get_kind.return_value = mock_kind
             assert ws_local_cache.get_kind() == mock_kind
@@ -305,7 +305,7 @@ class TestWorkspaceKindLocalCache:
         # mock `WorkspaceKindLocalCache._get_workspace_kind_from_azure`
         kind = str(uuid.uuid4())
         with patch(
-            "promptflow._sdk._utils.tracing.WorkspaceKindLocalCache._get_workspace_kind_from_azure"
+            "promptflow._sdk._utilities.tracing_utils.WorkspaceKindLocalCache._get_workspace_kind_from_azure"
         ) as mock_get_kind:
             mock_get_kind.return_value = kind
             assert ws_local_cache.get_kind() == kind
