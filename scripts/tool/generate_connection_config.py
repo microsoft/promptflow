@@ -26,7 +26,7 @@ if __name__ == "__main__":
 
     template_dict = json.loads(open(CONNECTION_TPL_FILE_PATH.resolve().absolute(), "r").read())
     file_path = (PROMPTFLOW_TOOLS_ROOT / CONNECTION_FILE_NAME).resolve().absolute().as_posix()
-    print(f"file_path: {file_path}")
+    print(f"file_path: {file_path}, abc")
 
     if not args.local:
         client = get_secret_client()
