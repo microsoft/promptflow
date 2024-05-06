@@ -87,6 +87,9 @@ class TestAdvSimulator:
             )
         )
         assert len(outputs) == 1
+        # assert topic and target_population is not present in outpts[0]["template_parameters"]
+        assert "topic" not in outputs[0]["template_parameters"]
+        assert "target_population" not in outputs[0]["template_parameters"]
 
     def test_adv_conversation_sim_responds_with_responses(self, model_config, ml_client_config):
         os.environ.pop("rai_svc_url", None)
