@@ -115,6 +115,7 @@ class OTLPTraceExporterProvider(OTLPExporterProvider):
         super().__init__(logger, ExporterType.TRACE)
 
     def get_exporter(self, **kwargs):
+        logger = self.logger
         try:
             from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 
@@ -122,7 +123,7 @@ class OTLPTraceExporterProvider(OTLPExporterProvider):
                 def __init__(self, *args, **kwargs):
                     super().__init__(*args, **kwargs)
                     self.aad_auth, self.aad_auth_scope, self.credential = try_parse_otlp_aad_auth_info(
-                        self.logger, "OTLPSpanExporter"
+                        logger, "OTLPSpanExporter"
                     )
 
                 def _export(self, serialized_data: str):
@@ -146,6 +147,7 @@ class OTLPMetricsExporterProvider(OTLPExporterProvider):
         super().__init__(logger, ExporterType.METRIC)
 
     def get_exporter(self, **kwargs):
+        logger = self.logger
         try:
             from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
 
@@ -153,7 +155,7 @@ class OTLPMetricsExporterProvider(OTLPExporterProvider):
                 def __init__(self, *args, **kwargs):
                     super().__init__(*args, **kwargs)
                     self.aad_auth, self.aad_auth_scope, self.credential = try_parse_otlp_aad_auth_info(
-                        self.logger, "OTLPMetricExporter"
+                        logger, "OTLPMetricExporter"
                     )
 
                 def _export(self, serialized_data: str):
