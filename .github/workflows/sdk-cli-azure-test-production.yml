@@ -86,7 +86,7 @@ jobs:
         run: |
           poetry run pytest ${{ inputs.filepath }} -n auto -m "unittest"
 
-      - name: Run SDK CLI Azure Test Unit Tests
+      - name: Run SDK CLI Azure Test E2E Tests
         shell: pwsh
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: |
