@@ -12,7 +12,7 @@ Promptflow officially support below types in flow.
 
 - Outputs: primitive types(`int`, `float`, `bool`, `str`), `dict`, `TypedDict`, `dataclass`, `list`
 
-- Init: primitive types(`int`, `float`, `bool`, `str`), `Connection`, `ModelConfiguration`, `TypedDict`, `list`
+- Init: primitive types(`int`, `float`, `bool`, `str`), `Connection`(including custom connections), `ModelConfiguration`, `TypedDict`, `list`
 
 If user has non-supported types in code/YAML, validation error will be raised.
 

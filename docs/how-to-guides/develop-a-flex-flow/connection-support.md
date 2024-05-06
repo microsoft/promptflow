@@ -4,10 +4,12 @@
 
 Just like example in [batch run](#batch-run-with-yaml), it's supported to reference connection in ModelConfig.
 And connection will be resolved and flatten connection's fields to ModelConfig.
+**Note**: Currently model config only support OpenAI and AzureOpenAI connection.
+For custom connection, please use [connection in init](#connection-in-__init__).
 
 ## Connection in `__init__`
 
-It's also supported to directly pass connection by **name** in `__init__`. 
+It's also supported to directly pass connection by **name** in `__init__`.
 
 ```python
 class MyFlow:
