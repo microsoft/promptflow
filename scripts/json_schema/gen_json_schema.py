@@ -163,7 +163,7 @@ python scripts/json_schema/gen_json_schema.py -a # Generate all schema files
         args.output_file = ["Run", "Flow", "AzureOpenAIConnection", "OpenAIConnection", "QdrantConnection",
                             "CognitiveSearchConnection", "SerpConnection", "AzureContentSafetyConnection",
                             "FormRecognizerConnection", "CustomConnection", "WeaviateConnection", "ServerlessConnection",
-                            "CustomStrongTypeConnection", "AzureAIServicesConnectionSchema"]
+                            "CustomStrongTypeConnection", "AzureAIServicesConnection"]
 
     # Special case for Flow and EagerFlow
     if "Flow" in args.output_file:
