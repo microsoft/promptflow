@@ -356,7 +356,7 @@ class TestHandleOpenAIError:
         """
         raw_message = (
             "OpenAI API hits BadRequestError: Invalid parameter: messages with role 'tool' must be a "
-            "response to a preceeding message with 'tool_calls'. Please make sure your chat prompt"
+            "response to a preceding message with 'tool_calls'. Please make sure your chat prompt"
             " includes 'tool_calls' under the role 'assistant'."
         )
         error_codes = "UserError/OpenAIError/BadRequestError"
