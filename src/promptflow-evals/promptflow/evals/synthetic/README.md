@@ -25,7 +25,7 @@ import asyncio
 azure_ai_project = {
     "subscription_id": <subscription_id>,
     "resource_group_name": <resource_group_name>,
-    "workspace_name": <project_name>,
+    "project_name": <project_name>,
     "credential": DefaultAzureCredential(),
 }
 
@@ -255,10 +255,10 @@ from promptflow.evals.evaluators.content_safety import ViolenceEvaluator, Sexual
 
 
 # Initialzing Content harm Evaluators
-violence_eval = ViolenceEvaluator(azure_ai_project)
-sexual_eval = SexualEvaluator(azure_ai_project)
-hate_unfairness_eval = HateUnfairnessEvaluator(azure_ai_project)
-self_harm_eval = SelfHarmEvaluator(azure_ai_project)
+violence_eval = ViolenceEvaluator(azure_ai_project, DefaultAzureCredential())
+sexual_eval = SexualEvaluator(azure_ai_project, DefaultAzureCredential())
+hate_unfairness_eval = HateUnfairnessEvaluator(azure_ai_project, DefaultAzureCredential())
+self_harm_eval = SelfHarmEvaluator(azure_ai_project, DefaultAzureCredential())
 
 # assuming eval after adversarial simulation
 

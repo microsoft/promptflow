@@ -16,7 +16,7 @@ class TestAdvSimulator:
         azure_ai_project = {
             "subscription_id": ml_client_config["subscription_id"],
             "resource_group_name": ml_client_config["resource_group_name"],
-            "workspace_name": ml_client_config["project_name"],
+            "project_name": ml_client_config["project_name"],
             "credential": DefaultAzureCredential(),
         }
         simulator = AdversarialSimulator(azure_ai_project=azure_ai_project)
@@ -29,7 +29,7 @@ class TestAdvSimulator:
         azure_ai_project = {
             "subscription_id": ml_client_config["subscription_id"],
             "resource_group_name": ml_client_config["resource_group_name"],
-            "workspace_name": ml_client_config["project_name"],
+            "project_name": ml_client_config["project_name"],
             "credential": DefaultAzureCredential(),
         }
 
@@ -55,7 +55,7 @@ class TestAdvSimulator:
         azure_ai_project = {
             "subscription_id": ml_client_config["subscription_id"],
             "resource_group_name": ml_client_config["resource_group_name"],
-            "workspace_name": ml_client_config["project_name"],
+            "project_name": ml_client_config["project_name"],
             "credential": DefaultAzureCredential(),
         }
 
@@ -106,7 +106,7 @@ class TestAdvSimulator:
         azure_ai_project = {
             "subscription_id": ml_client_config["subscription_id"],
             "resource_group_name": ml_client_config["resource_group_name"],
-            "workspace_name": ml_client_config["project_name"],
+            "project_name": ml_client_config["project_name"],
             "credential": DefaultAzureCredential(),
         }
 
@@ -150,7 +150,7 @@ class TestAdvSimulator:
         azure_ai_project = {
             "subscription_id": ml_client_config["subscription_id"],
             "resource_group_name": ml_client_config["resource_group_name"],
-            "workspace_name": ml_client_config["project_name"],
+            "project_name": ml_client_config["project_name"],
             "credential": DefaultAzureCredential(),
         }
 

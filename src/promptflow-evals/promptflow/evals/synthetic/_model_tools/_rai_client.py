@@ -37,7 +37,7 @@ class RAIClient:
             "resourceGroups",
             self.azure_ai_project["resource_group_name"],
             "providers/Microsoft.MachineLearningServices/workspaces",
-            self.azure_ai_project["workspace_name"],
+            self.azure_ai_project["project_name"],
         ]
         self.api_url = "/".join(segments)
         # add a "/" at the end of the url
@@ -52,7 +52,7 @@ class RAIClient:
         response = requests.get(
             f"https://management.azure.com/subscriptions/{self.azure_ai_project['subscription_id']}/"
             f"resourceGroups/{self.azure_ai_project['resource_group_name']}/"
-            f"providers/Microsoft.MachineLearningServices/workspaces/{self.azure_ai_project['workspace_name']}?"
+            f"providers/Microsoft.MachineLearningServices/workspaces/{self.azure_ai_project['project_name']}?"
             f"api-version=2023-08-01-preview",
             headers=headers,
             timeout=5,

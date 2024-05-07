@@ -34,23 +34,22 @@ class AdversarialSimulator:
         :param azure_ai_project: Dictionary defining the scope of the project. It must include the following keys:
             - "subscription_id": Azure subscription ID.
             - "resource_group_name": Name of the Azure resource group.
-            - "workspace_name": Name of the Azure Machine Learning workspace.
+            - "project_name": Name of the Azure Machine Learning workspace.
             - "credential": Azure credentials object for authentication.
         :type azure_ai_project: Dict[str, Any]
         """
-        # check if azure_ai_project has the keys: subscription_id, resource_group_name, workspace_name, credential
+        # check if azure_ai_project has the keys: subscription_id, resource_group_name, project_name, credential
         if not all(
-            key in azure_ai_project
-            for key in ["subscription_id", "resource_group_name", "workspace_name", "credential"]
+            key in azure_ai_project for key in ["subscription_id", "resource_group_name", "project_name", "credential"]
         ):
             raise ValueError(
-                "azure_ai_project must contain keys: subscription_id, resource_group_name, workspace_name, credential"
+                "azure_ai_project must contain keys: subscription_id, resource_group_name, project_name, credential"
             )
         # check the value of the keys in azure_ai_project is not none
         if not all(
-            azure_ai_project[key] for key in ["subscription_id", "resource_group_name", "workspace_name", "credential"]
+            azure_ai_project[key] for key in ["subscription_id", "resource_group_name", "project_name", "credential"]
         ):
-            raise ValueError("subscription_id, resource_group_name, workspace_name, and credential must not be None")
+            raise ValueError("subscription_id, resource_group_name, project_name, and credential must not be None")
         self.azure_ai_project = azure_ai_project
         self.token_manager = ManagedIdentityAPITokenManager(
             token_scope=TokenScope.DEFAULT_AZURE_MANAGEMENT,

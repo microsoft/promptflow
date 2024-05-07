@@ -28,7 +28,7 @@ class TestSimulator:
         azure_ai_project = {
             "subscription_id": "test_subscription",
             "resource_group_name": "test_resource_group",
-            "workspace_name": "test_workspace",
+            "project_name": "test_workspace",
             "credential": "test_credential",
         }
         available_scenarios = [
@@ -55,7 +55,7 @@ class TestSimulator:
         azure_ai_project = {
             "subscription_id": "test_subscription",
             "resource_group_name": "test_resource_group",
-            "workspace_name": "test_workspace",
+            "project_name": "test_workspace",
             "credential": "test_credential",
         }
 
