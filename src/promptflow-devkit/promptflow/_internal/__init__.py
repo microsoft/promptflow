@@ -52,6 +52,7 @@ from promptflow._sdk._constants import LOCAL_MGMT_DB_PATH, CreatedByFieldName
 from promptflow._sdk._service.apis.collector import trace_collector
 from promptflow._sdk._tracing import process_otlp_trace_request
 from promptflow._sdk._utilities.general_utils import resolve_flow_language
+from promptflow._sdk._utilities.tracing_utils import aggregate_trace_count
 from promptflow._sdk._version import VERSION
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.credential_scrubber import CredentialScrubber
