@@ -32,6 +32,7 @@ class BatchCoordinator:
         connections: Optional[Mapping[str, Any]] = None,
         worker_count: Optional[int] = None,
         line_timeout_sec: Optional[int] = None,
+        init_kwargs: Optional[Mapping[str, Any]] = None,
     ):
         if self._init:
             return
@@ -47,7 +48,13 @@ class BatchCoordinator:
         # So we pass DummyRunStorage to FlowExecutor because we don't need to
         # persist the run infos during execution in server mode.
         self._flow_executor = FlowExecutor.create(
-            flow_file, connections, working_dir, storage=DummyRunStorage(), raise_ex=False, name=flow_name
+            flow_file,
+            connections,
+            working_dir,
+            storage=DummyRunStorage(),
+            raise_ex=False,
+            name=flow_name,
+            init_kwargs=init_kwargs,
         )
 
         # Init line execution process pool and set serialize_multimedia_during_execution to True

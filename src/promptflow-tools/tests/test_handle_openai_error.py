@@ -261,6 +261,7 @@ class TestHandleOpenAIError:
             )
         assert "'name' is required if role is function," in exc_info.value.message
 
+    @pytest.mark.skip(reason="Skip temporarily because there is something issue with test AOAI resource response.")
     def test_completion_with_chat_model(self, azure_open_ai_connection):
         with pytest.raises(UserErrorException) as exc_info:
             completion(connection=azure_open_ai_connection, prompt="hello", deployment_name="gpt-35-turbo")

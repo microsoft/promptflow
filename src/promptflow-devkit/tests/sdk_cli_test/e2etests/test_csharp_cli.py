@@ -8,6 +8,7 @@ from typing import TypedDict
 import pytest
 
 from promptflow._cli._pf.entry import main
+from promptflow._sdk._utilities.serve_utils import find_available_port
 
 
 # TODO: move this to a shared utility module
@@ -103,6 +104,35 @@ class TestCSharpCli:
         if os.path.exists(test_case["init"]):
             cmd.extend(["--init", test_case["init"]])
         run_pf_command(*cmd)
+
+    @pytest.mark.skip(reason="need to figure out how to check serve status in subprocess")
+    def test_flow_serve(self, csharp_test_project_class_init_flex_flow: CSharpProject):
+        port = find_available_port()
+        run_pf_command(
+            "flow",
+            "serve",
+            "--source",
+            csharp_test_project_class_init_flex_flow["flow_dir"],
+            "--port",
+            str(port),
+            "--init",
+            "connection=azure_open_ai_connection",
+            "name=Promptflow",
+        )
+
+    @pytest.mark.skip(reason="need to figure out how to check serve status in subprocess")
+    def test_flow_serve_init_json(self, csharp_test_project_class_init_flex_flow: CSharpProject):
+        port = find_available_port()
+        run_pf_command(
+            "flow",
+            "serve",
+            "--source",
+            csharp_test_project_class_init_flex_flow["flow_dir"],
+            "--port",
+            str(port),
+            "--init",
+            csharp_test_project_class_init_flex_flow["init"],
+        )
 
     def test_flow_test_include_log(self, csharp_test_project_basic: CSharpProject, capfd):
         run_pf_command(

@@ -1,28 +1,14 @@
 import json
 from pathlib import Path
 
-from jinja2 import Template
-
 from promptflow.tracing import trace
-from promptflow.connections import AzureOpenAIConnection
-from promptflow.tools.aoai import chat
+from promptflow.core import Prompty, AzureOpenAIModelConfiguration
 
 BASE_DIR = Path(__file__).absolute().parent
 
 
 @trace
-def load_prompt(
-    jinja2_template: str, answer: str, statement: str, examples: list
-) -> str:
-    """Load prompt function."""
-    with open(BASE_DIR / jinja2_template, "r", encoding="utf-8") as f:
-        tmpl = Template(f.read(), trim_blocks=True, keep_trailing_newline=True)
-        prompt = tmpl.render(answer=answer, statement=statement, examples=examples)
-        return prompt
-
-
-@trace
-def check(answer: str, statement: str, connection: AzureOpenAIConnection):
+def check(answer: str, statement: str, model_config: AzureOpenAIModelConfiguration):
     """Check the answer applies for the check statement."""
     examples = [
         {
@@ -33,22 +19,18 @@ def check(answer: str, statement: str, connection: AzureOpenAIConnection):
         }
     ]
 
-    prompt = load_prompt("prompt.md", answer, statement, examples)
-
-    output = chat(
-        connection=connection,
-        prompt=prompt,
-        deployment_name="gpt-35-turbo",
-        max_tokens=256,
-        temperature=0.7,
+    prompty = Prompty.load(
+        source=BASE_DIR / "eval.prompty",
+        model={"configuration": model_config},
     )
-    output = json.loads(output)
+    output = prompty(examples=examples, answer=answer, statement=statement)
+
     return output
 
 
 class EvalFlow:
-    def __init__(self, connection: AzureOpenAIConnection):
-        self.connection = connection
+    def __init__(self, model_config: AzureOpenAIModelConfiguration):
+        self.model_config = model_config
 
     def __call__(self, answer: str, statements: dict):
         """Check the answer applies for a collection of check statement."""
@@ -57,14 +39,26 @@ class EvalFlow:
 
         results = {}
         for key, statement in statements.items():
-            r = check(answer=answer, statement=statement, connection=self.connection)
+            r = check(
+                answer=answer, statement=statement, model_config=self.model_config
+            )
             results[key] = r
         return results
+
+    def __aggregate__(self, line_results: list) -> dict:
+        """Aggregate the results."""
+        total = len(line_results)
+        avg_correctness = (
+            sum(int(r["correctness"]["score"]) for r in line_results) / total
+        )
+        return {
+            "average_correctness": avg_correctness,
+            "total": total,
+        }
 
 
 if __name__ == "__main__":
     from promptflow.tracing import start_trace
-    from promptflow.client import PFClient
 
     start_trace()
 
@@ -80,12 +74,17 @@ if __name__ == "__main__":
         "consise": "It is a consise statement.",
     }
 
-    pf = PFClient()
-    connection = pf.connections.get("open_ai_connection", with_secrets=True)
-    flow = EvalFlow(connection=connection)
+    config = AzureOpenAIModelConfiguration(
+        connection="open_ai_connection", azure_deployment="gpt-35-turbo-0125"
+    )
+    flow = EvalFlow(config)
 
     result = flow(
         answer=answer,
         statements=statements,
     )
     print(result)
+
+    # run aggregation
+    aggregation_result = flow.__aggregate__([result])
+    print(aggregation_result)

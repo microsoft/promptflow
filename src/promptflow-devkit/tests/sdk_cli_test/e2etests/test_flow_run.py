@@ -33,7 +33,8 @@ from promptflow._sdk._errors import (
 from promptflow._sdk._load_functions import load_flow, load_run
 from promptflow._sdk._orchestrator.utils import SubmitterHelper
 from promptflow._sdk._run_functions import create_yaml_run
-from promptflow._sdk._utils import _get_additional_includes, parse_otel_span_status_code
+from promptflow._sdk._utilities.general_utils import _get_additional_includes
+from promptflow._sdk._utilities.tracing_utils import _parse_otel_span_status_code
 from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
@@ -1375,6 +1376,8 @@ class TestFlowRun:
         yaml_dict = load_yaml(local_storage._dag_path)
         assert yaml_dict == expected_snapshot_yaml
 
+        assert not local_storage._dag_path.read_text().startswith("!!omap")
+
         # actual result will be entry2:my_flow2
         details = pf.get_details(run.name)
         # convert DataFrame to dict
@@ -1409,7 +1412,7 @@ class TestFlowRun:
     def test_flex_flow_with_imported_func(self, pf):
         # run eager flow against a function from module
         run = pf.run(
-            flow=parse_otel_span_status_code,
+            flow=_parse_otel_span_status_code,
             data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
             # set code folder to avoid snapshot too big
             code=f"{EAGER_FLOWS_DIR}/multiple_entries",
@@ -1849,6 +1852,27 @@ class TestFlowRun:
         )
         run = pf.runs.create_or_update(run=run)
         assert_batch_run_result(run, pf, assert_func)
+
+    def test_flow_run_with_enriched_error_message(self, pf):
+        config = AzureOpenAIModelConfiguration(
+            connection="azure_open_ai_connection", azure_deployment="gpt-35-turbo-0125"
+        )
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/stream_prompty")
+        init_config = {"model_config": config}
+
+        run = pf.run(
+            flow=flow_path,
+            data=f"{EAGER_FLOWS_DIR}/stream_prompty/inputs.jsonl",
+            column_mapping={
+                "question": "${data.question}",
+                "chat_history": "${data.chat_history}",
+            },
+            init=init_config,
+        )
+        run_dict = run._to_dict()
+        error = run_dict["error"]["additionalInfo"][0]["info"]["errors"][0]["error"]
+        assert "Execution failure in 'ChatFlow.__call__" in error["message"]
+        assert "raise Exception" in error["additionalInfo"][0]["info"]["traceback"]
 
 
 def assert_batch_run_result(run: Run, pf: PFClient, assert_func):

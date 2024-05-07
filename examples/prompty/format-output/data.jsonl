@@ -1,0 +1,3 @@
+{"firstName": "John", "lastName": "Doe", "question": "What's chat-GPT?", "chat_history": []}
+{"firstName": "John", "lastName": "Doe", "question": "How many questions did the user ask?", "chat_history": []}
+{"firstName": "John", "lastName": "Doe", "question": "How many questions did the user ask?", "chat_history": [{"role": "user","content": "where is the nearest coffee shop?"},{"role": "system","content": "I'm sorry, I don't know that. Would you like me to look it up for you?"}]}

@@ -37,11 +37,13 @@ jobs:
           echo "replaced src/promptflow/promptflow/_version.py:"
           cat src/promptflow/promptflow/_version.py
 
-          git add src/promptflow/promptflow/_version.py
-          git config --global user.name 'promptflow release'
-          git config --global user.email 'aml-pt-eng@microsoft.com'
-          git commit -m "update version in _version.py for promptflow"
-          git push --set-upstream origin $branch_name
+          if [[ $(git diff --name-only) == *"src/promptflow/promptflow/_version.py"* ]]; then
+            git add src/promptflow/promptflow/_version.py
+            git config --global user.name 'promptflow release'
+            git config --global user.email 'aml-pt-eng@microsoft.com'
+            git commit -m "update version in _version.py for promptflow"
+            git push --set-upstream origin $branch_name
+          fi
 
           git tag promptflow_$release_version
           git push origin --tags

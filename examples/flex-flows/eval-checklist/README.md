@@ -40,13 +40,13 @@ python check_list.py
 You'll need to write flow entry `flow.flex.yaml` to test with prompt flow.
 
 ```bash
-pf flow test --flow . --init connection=open_ai_connection --inputs sample.json
+pf flow test --flow . --init init.json --inputs sample.json
 ```
 
 - Create run with multiple lines data
 
 ```bash
-pf run create --flow . --init connection=open_ai_connection --data ./data.jsonl --stream
+pf run create --flow . --init init.json --data ./data.jsonl --stream
 ```
 
 Reference [here](https://aka.ms/pf/column-mapping) for default behavior when `column-mapping` not provided in CLI.
@@ -84,6 +84,6 @@ az configure --defaults group=<your_resource_group_name> workspace=<your_workspa
 
 ```bash
 # run with environment variable reference connection in azureml workspace
-pfazure run create --flow . --init connection=open_ai_connection --data ./data.jsonl --stream
+pfazure run create --flow . --init init.json --data ./data.jsonl --stream
 # run using yaml file
 pfazure run create --file run.yml --stream

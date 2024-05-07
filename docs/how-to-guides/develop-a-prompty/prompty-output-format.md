@@ -22,7 +22,7 @@ model:
   api: chat
   configuration:
     type: azure_openai
-    connection: <connection_name>
+    connection: open_ai_connection
     azure_deployment: gpt-35-turbo-0125
   parameters:
     max_tokens: 128

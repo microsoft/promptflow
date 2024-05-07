@@ -3,7 +3,6 @@
 # ---------------------------------------------------------
 
 import os
-import platform
 import subprocess
 import sys
 
@@ -62,7 +61,8 @@ class TestPromptflowServiceCLI:
             # previous pfs is killed
             assert start_pfs.poll() is not None
             python_dir = os.path.dirname(sys.executable)
-            executable_dir = os.path.join(python_dir, "Scripts") if platform.system() == "Windows" else python_dir
+            # python directory will be changed to Scripts directory after we switched to poetry in ci
+            executable_dir = python_dir
             assert executable_dir in os.environ["PATH"].split(os.pathsep)
         finally:
             port = get_port_from_config()

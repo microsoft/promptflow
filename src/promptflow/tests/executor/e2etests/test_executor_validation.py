@@ -12,9 +12,9 @@ from promptflow.batch import BatchEngine
 from promptflow.contracts._errors import FailedToImportModule
 from promptflow.executor import FlowExecutor
 from promptflow.executor._errors import (
-    ConnectionNotFound,
     DuplicateNodeName,
     EmptyOutputReference,
+    GetConnectionError,
     InputNotFound,
     InputReferenceNotFound,
     InputTypeError,
@@ -177,7 +177,7 @@ class TestValidation:
     @pytest.mark.parametrize(
         "flow_folder, error_class, inner_class",
         [
-            ("invalid_connection", ResolveToolError, ConnectionNotFound),
+            ("invalid_connection", ResolveToolError, GetConnectionError),
             ("tool_type_missing", ResolveToolError, NotImplementedError),
             ("wrong_module", FailedToImportModule, None),
             ("wrong_api", ResolveToolError, APINotFound),

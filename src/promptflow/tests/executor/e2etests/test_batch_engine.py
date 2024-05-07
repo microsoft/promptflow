@@ -12,6 +12,7 @@ import pytest
 from promptflow._constants import OUTPUT_FILE_NAME
 from promptflow._proxy._chat_group_orchestrator_proxy import ChatGroupOrchestratorProxy
 from promptflow._proxy._proxy_factory import ProxyFactory
+from promptflow._proxy._python_executor_proxy import PythonExecutorProxy
 from promptflow._sdk.entities._chat_group._chat_role import ChatRole
 from promptflow._sdk.entities._run import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
@@ -595,6 +596,9 @@ class TestBatch:
         assert all(flow_run_info.status == Status.Completed for flow_run_info in mem_run_storage._flow_runs.values())
         assert all(node_run_info.status == Status.Completed for node_run_info in mem_run_storage._node_runs.values())
 
+        # reset the executor proxy to avoid affecting other tests
+        ProxyFactory.register_executor("python", PythonExecutorProxy)
+
     @pytest.mark.parametrize(
         "simulation_flow, copilot_flow, max_turn, simulation_input_file_name, copilot_input_file_name",
         [
@@ -680,6 +684,9 @@ class TestBatch:
         assert all(flow_run_info.status == Status.Completed for flow_run_info in mem_run_storage._flow_runs.values())
         assert all(node_run_info.status == Status.Completed for node_run_info in mem_run_storage._node_runs.values())
 
+        # reset the executor proxy to avoid affecting other tests
+        ProxyFactory.register_executor("python", PythonExecutorProxy)
+
     @pytest.mark.parametrize(
         "simulation_flow, copilot_flow, max_turn, input_file_name",
         [
@@ -752,6 +759,9 @@ class TestBatch:
         assert all(flow_run_info.status == Status.Completed for flow_run_info in mem_run_storage._flow_runs.values())
         assert all(node_run_info.status == Status.Completed for node_run_info in mem_run_storage._node_runs.values())
 
+        # reset the executor proxy to avoid affecting other tests
+        ProxyFactory.register_executor("python", PythonExecutorProxy)
+
     @pytest.mark.parametrize(
         "simulation_flow, copilot_flow, max_turn, input_file_name",
         [
@@ -816,3 +826,6 @@ class TestBatch:
         # all the line run failed and will not output to file
         outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
         assert len(outputs) == 0
+
+        # reset the executor proxy to avoid affecting other tests
+        ProxyFactory.register_executor("python", PythonExecutorProxy)

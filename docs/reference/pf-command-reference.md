@@ -15,6 +15,7 @@ Manage prompt flow resources with the prompt flow CLI.
 | [pf config](#pf-config)         | Manage config for current user. |
 | [pf service](#pf-service)       | Manage prompt flow service. |
 | [pf upgrade](#pf-upgrade)       | Upgrade prompt flow CLI.       |
+| [pf trace](#pf-trace)           | Manage traces.                 |
 
 ## pf flow
 
@@ -1017,6 +1018,45 @@ Upgrade prompt flow without prompt and run non-interactively.
 
 ```bash
 pf upgrade --yes
+```
+
+## pf trace
+
+Manage prompt flow traces.
+
+| Command                             | Description   |
+| ----------------------------------- | ------------- |
+| [pf trace delete](#pf-trace-delete) | Delete traces |
+
+### pf trace delete
+
+Delete traces.
+
+```bash
+pf trace delete [--run]
+                [--collection]
+                [--started-before]  # should combine with `collection`
+```
+
+#### Examples
+
+Delete traces comes from a specific run.
+
+```bash
+pf trace delete --run <run-name>
+```
+
+Delete traces in a specific collection.
+
+```bash
+pf trace delete --collection <collection>
+```
+
+Delete traces in a specific collection started before a specific time.
+
+```bash
+# `started-before` should be in ISO 8601 format
+pf trace delete --collection <collection> --started-before '2024-03-19T15:17:23.807563'
 ```
 
 ## Autocomplete
