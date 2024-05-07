@@ -1876,7 +1876,7 @@ class TestFlowRun:
         assert "raise Exception" in error["additionalInfo"][0]["info"]["traceback"]
 
     def test_visualize_different_runs(self, pf: PFClient) -> None:
-        # prepare a DAG flow run and a flex flow run
+        # prepare a DAG flow run, a flex flow run and a prompty run
         # DAG flow run
         dag_flow_run = pf.run(
             flow=Path(f"{FLOWS_DIR}/simple_hello_world").absolute(),
@@ -1888,6 +1888,11 @@ class TestFlowRun:
             flow=Path(f"{EAGER_FLOWS_DIR}/simple_with_yaml").absolute(),
             data=Path(f"{DATAS_DIR}/simple_eager_flow_data.jsonl").absolute(),
         )
+        # prompty run
+        prompty_run = pf.run(
+            flow=Path(f"{TEST_ROOT / 'test_configs/prompty'}/prompty_example.prompty").absolute(),
+            data=Path(f"{DATAS_DIR}/prompty_inputs.jsonl").absolute(),
+        )
 
         with patch.object(pf.runs, "_visualize") as static_vis_func, patch.object(
             pf.runs, "_visualize_with_trace_ui"
@@ -1898,9 +1903,12 @@ class TestFlowRun:
             # visualize flex flow run, will use trace UI visualize
             pf.visualize(runs=flex_flow_run)
             assert static_vis_func.call_count == 1 and trace_ui_vis_func.call_count == 1
-            # visualize both runs, will use trace UI visualize
-            pf.visualize(runs=[dag_flow_run, flex_flow_run])
+            # visualize prompty run, will use trace UI visualize
+            pf.visualize(runs=prompty_run)
             assert static_vis_func.call_count == 1 and trace_ui_vis_func.call_count == 2
+            # visualize both runs, will use trace UI visualize
+            pf.visualize(runs=[dag_flow_run, flex_flow_run, prompty_run])
+            assert static_vis_func.call_count == 1 and trace_ui_vis_func.call_count == 3
 
 
 def assert_batch_run_result(run: Run, pf: PFClient, assert_func):
