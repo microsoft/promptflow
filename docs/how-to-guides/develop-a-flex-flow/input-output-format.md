@@ -103,11 +103,9 @@ def my_flow(my_own_obj: MyOwnClass):
 
 Sample validation error: "The input 'my_own_obj' is of a complex python type. Please use a dict instead."
 
-
-
 ## Stream
 
 Stream is supported in flow, you just need to return a generator type in your function.
 Reference openai doc on how to do it using plain python code: [how_to_stream_completions](https://cookbook.openai.com/examples/how_to_stream_completions).
 
-Reference this flow [sample](https://microsoft.github.io/promptflow/tutorials/chat-stream-with-flex-flow.html) for details.
+Reference this flow [sample](../../tutorials/chat-stream-with-flex-flow.ipynb) for details.
