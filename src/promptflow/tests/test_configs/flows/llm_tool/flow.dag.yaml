@@ -21,14 +21,11 @@ nodes:
     input: ${joke.output}
   use_variants: false
 - name: joke
-  type: custom_llm
+  type: llm
   source:
-    type: package_with_prompt
-    tool: promptflow.tools.llm.llm
+    type: code
     path: joke.jinja2
   inputs:
-    connection: azure_open_ai_connection
-    api: chat
     deployment_name: gpt-35-turbo
     temperature: 1
     top_p: 1
@@ -37,4 +34,8 @@ nodes:
     frequency_penalty: 0
     stream: ${inputs.stream}
     topic: ${inputs.topic}
+  provider: AzureOpenAI
+  connection: azure_open_ai_connection
+  api: chat
+  module: promptflow.tools.aoai
   use_variants: false

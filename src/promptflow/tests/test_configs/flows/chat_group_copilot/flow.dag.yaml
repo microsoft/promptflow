@@ -22,15 +22,14 @@ nodes:
     type: code
     path: prompt.jinja2
 - name: llm
-  type: custom_llm
-  source:
-    type: package_with_prompt
-    tool: promptflow.tools.llm.llm
-    path: prompt.jinja2
+  type: llm
   inputs:
-    connection: azure_open_ai_connection
-    api: chat
     prompt: ${prompt.output}
     deployment_name: gpt-35-turbo
     model: ${inputs.model}
     max_tokens: '120'
+  source:
+    type: code
+    path: prompt.jinja2
+  connection: azure_open_ai_connection
+  api: chat

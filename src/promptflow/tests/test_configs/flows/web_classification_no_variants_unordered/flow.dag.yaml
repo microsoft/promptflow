@@ -18,14 +18,11 @@ nodes:
   inputs:
     input_str: ${classify_with_llm.output}
 - name: summarize_text_content
-  type: custom_llm
+  type: llm
   source:
-    type: package_with_prompt
-    tool: promptflow.tools.llm.llm
+    type: code
     path: summarize_text_content__variant_1.jinja2
   inputs:
-    connection: azure_open_ai_connection
-    api: completion
     deployment_name: gpt-35-turbo
     suffix: ''
     max_tokens: '256'
@@ -39,15 +36,16 @@ nodes:
     best_of: '1'
     logit_bias: ''
     text: ${fetch_text_content_from_url.output}
+  provider: AzureOpenAI
+  connection: azure_open_ai_connection
+  api: completion
+  module: promptflow.tools.aoai
 - name: classify_with_llm
-  type: custom_llm
+  type: llm
   source:
-    type: package_with_prompt
-    tool: promptflow.tools.llm.llm
+    type: code
     path: classify_with_llm.jinja2
   inputs:
-    connection: azure_open_ai_connection
-    api: completion
     deployment_name: gpt-35-turbo
     suffix: ''
     max_tokens: '128'
@@ -63,6 +61,9 @@ nodes:
     url: ${inputs.url}
     examples: ${prepare_examples.output}
     text_content: ${summarize_text_content.output}
+  provider: AzureOpenAI
+  connection: azure_open_ai_connection
+  api: completion
 - name: fetch_text_content_from_url
   type: python
   source:

@@ -7,14 +7,15 @@ outputs:
     reference: ${llm_tool_with_duplicated_inputs.output}
 nodes:
 - name: llm_tool_with_duplicated_inputs
-  type: custom_llm
+  type: llm
+  provider: AzureOpenAI
+  api: completion
+  module: promptflow.tools.aoai
+  connection: azure_open_ai_connection
   source:
-    type: package_with_prompt
-    tool: promptflow.tools.llm.llm
+    type: code
     path: prompt_with_duplicated_inputs.jinja2
   inputs:
-    api: completion
-    connection: azure_open_ai_connection
     deployment_name: text-ada-001
     max_tokens: 16
     text: ${inputs.text}
