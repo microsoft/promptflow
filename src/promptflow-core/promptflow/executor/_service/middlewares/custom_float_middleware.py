@@ -1,5 +1,6 @@
 import json
 
+from fastapi.responses import StreamingResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 
@@ -11,7 +12,9 @@ class CustomFloatMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
 
         # Ensure the response content type is JSON
-        if "application/json" in response.headers.get("content-type", ""):
+        if not isinstance(response, StreamingResponse) and "application/json" in response.headers.get(
+            "content-type", ""
+        ):
             data = json.loads(response.body)
             # Modify the JSON data by handling NaN values and serialize it back to JSON string
             modified_body = json.dumps(data, default=self.handle_nan)
