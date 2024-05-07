@@ -20,7 +20,7 @@ from tabulate import tabulate
 
 from promptflow._sdk._constants import DEFAULT_ENCODING, AzureMLWorkspaceTriad, CLIListOutputFormat
 from promptflow._sdk._telemetry import ActivityType, get_telemetry_logger, log_activity
-from promptflow._sdk._utils import print_red_error, print_yellow_warning
+from promptflow._sdk._utilities.general_utils import print_red_error, print_yellow_warning
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import PromptflowException, UserErrorException

@@ -7,7 +7,7 @@ from typing import List
 from promptflow._sdk._constants import MAX_LIST_CLI_RESULTS
 from promptflow._sdk._errors import MissingAzurePackage
 from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, monitor_operation
-from promptflow._sdk._utils import print_red_error
+from promptflow._sdk._utilities.general_utils import print_red_error
 from promptflow._sdk.entities._connection import _Connection
 from promptflow._utils.credential_utils import get_default_azure_credential
 from promptflow._utils.logger_utils import get_cli_sdk_logger

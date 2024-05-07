@@ -2,11 +2,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from traceback import TracebackException
 
 from promptflow._utils.exception_utils import (
     ADDITIONAL_INFO_USER_EXECUTION_ERROR,
-    is_pf_core_frame,
+    extract_stack_trace_without_core_frame,
     last_frame_info,
     remove_suffix,
 )
@@ -92,22 +91,7 @@ class ToolExecutionError(UserErrorException):
 
         The traceback inside the promptflow's internal code will be taken off.
         """
-        exc = self.inner_exception
-        if exc and exc.__traceback__ is not None:
-            tb = exc.__traceback__.tb_next
-            if tb is not None:
-                # The first frames are always our code invoking the tool.
-                # We do not want to dump it to user code's traceback.
-                # So, skip these frames from pf core module.
-                while is_pf_core_frame(tb.tb_frame) and tb.tb_next is not None:
-                    tb = tb.tb_next
-                # We don't use traceback.format_exception since its interface differs between 3.8 and 3.10.
-                # Use this internal class to adapt to different python versions.
-                te = TracebackException(type(exc), exc, tb)
-                formatted_tb = "".join(te.format())
-                return formatted_tb
-
-        return None
+        return extract_stack_trace_without_core_frame(exc=self.inner_exception)
 
     @property
     def additional_info(self):

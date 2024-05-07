@@ -27,6 +27,9 @@ class TestCSharpExecutorProxy:
     def setup_method(self):
         ProxyFactory.register_executor(FlowLanguage.CSharp, MockCSharpExecutorProxy)
 
+    def teardown_method(self):
+        del ProxyFactory.executor_proxy_classes[FlowLanguage.CSharp]
+
     def test_batch(self):
         # submit a batch run
         _, batch_result = self._submit_batch_run()

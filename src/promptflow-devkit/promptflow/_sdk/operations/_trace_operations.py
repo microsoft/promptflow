@@ -12,7 +12,7 @@ from promptflow._sdk._orm.trace import Event as ORMEvent
 from promptflow._sdk._orm.trace import LineRun as ORMLineRun
 from promptflow._sdk._orm.trace import Span as ORMSpan
 from promptflow._sdk._telemetry import ActivityType, monitor_operation
-from promptflow._sdk._utils.tracing import append_conditions
+from promptflow._sdk._utilities.tracing_utils import append_conditions
 from promptflow._sdk.entities._trace import Event, LineRun, Span
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import UserErrorException

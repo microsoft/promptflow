@@ -265,6 +265,12 @@ class ArtifactInternalError(SDKInternalError):
     pass
 
 
+class MetricInternalError(SDKInternalError):
+    """Exception raised if metric internal error."""
+
+    pass
+
+
 class MissingAzurePackage(SDKError):
     """Exception raised if missing required package."""
 

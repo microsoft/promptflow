@@ -71,6 +71,27 @@ class Local2CloudTestHelper:
 
         return cloud_run
 
+    @staticmethod
+    def check_run_metrics(pf: PFClient, local_pf: LocalPFClient, run: Run):
+        """Check the metrics of the run are uploaded to cloud."""
+        local_metrics = local_pf.runs.get_metrics(run.name)
+        with patch.object(pf.runs, "_is_system_metric", return_value=False):
+            # get the metrics of the run
+            cloud_metrics = pf.runs.get_metrics(run.name)
+
+        # check all the user metrics are uploaded to cloud
+        for k, v in local_metrics.items():
+            assert cloud_metrics.pop(k) == v
+
+        # check all the rest system metrics are uploaded to cloud
+        assert cloud_metrics == {
+            "__pf__.nodes.grade.completed": 3.0,
+            "__pf__.nodes.calculate_accuracy.completed": 1.0,
+            "__pf__.nodes.aggregation_assert.completed": 1.0,
+            "__pf__.lines.completed": 3.0,
+            "__pf__.lines.failed": 0.0,
+        }
+
 
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
 @pytest.mark.e2etest
@@ -204,12 +225,19 @@ class TestFlowRunUpload:
         eval_run_name = randstr("eval_run_name_for_test_upload_eval_run")
         local_pf = Local2CloudTestHelper.get_local_pf(eval_run_name)
         eval_run = local_pf.run(
-            flow=f"{FLOWS_DIR}/simple_hello_world",
-            data=f"{DATAS_DIR}/webClassification3.jsonl",
+            flow=f"{FLOWS_DIR}/classification_accuracy_evaluation",
             run=main_run_name,
             name=eval_run_name,
-            column_mapping={"name": "${data.url}"},
+            column_mapping={
+                "prediction": "${run.outputs.result}",
+                "variant_id": "${run.outputs.result}",
+                "groundtruth": "${run.outputs.result}",
+            },
         )
+        # check the run metrics are uploaded to cloud
+        Local2CloudTestHelper.check_run_metrics(pf, local_pf, eval_run)
+
+        # check other run details are uploaded to cloud
         eval_run = Local2CloudTestHelper.check_local_to_cloud_run(pf, eval_run)
         assert eval_run.properties["azureml.promptflow.variant_run_id"] == main_run_name
 

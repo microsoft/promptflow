@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Optional
 
 from promptflow._sdk._constants import VIS_HTML_TMPL
-from promptflow._sdk._utils import render_jinja_template
+from promptflow._sdk._utilities.general_utils import render_jinja_template
 from promptflow.contracts._run_management import VisualizationRender
 
 
