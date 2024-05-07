@@ -45,7 +45,7 @@ from promptflow._sdk._utilities.signature_utils import update_signatures
 from promptflow._sdk.entities._flows import FlexFlow, Flow, Prompty
 from promptflow._utils.flow_utils import (
     dump_flow_dag_according_to_content,
-    dump_flow_dag_to_existing_path,
+    dump_flow_yaml_to_existing_path,
     load_flow_dag,
 )
 from promptflow._utils.logger_utils import FileHandler, get_cli_sdk_logger
@@ -200,10 +200,10 @@ def overwrite_flow(flow_dag: dict, params_overrides: dict):
 def remove_additional_includes(flow_path: Path):
     flow_path, flow_dag = load_flow_dag(flow_path=flow_path)
     flow_dag.pop("additional_includes", None)
-    dump_flow_dag_to_existing_path(flow_dag, flow_path)
+    dump_flow_yaml_to_existing_path(flow_dag, flow_path)
 
 
-def override_flow_dag(
+def override_flow_yaml(
     flow: Flow,
     flow_dag: dict,
     flow_dir_path: Path,
@@ -243,7 +243,7 @@ def flow_overwrite_context(
     elif getattr(flow, "additional_includes", []):
         # Merge the flow folder and additional includes to temp folder for both eager flow & dag flow.
         with _merge_local_code_and_additional_includes(code_path=flow_dir_path) as temp_dir:
-            override_flow_dag(
+            override_flow_yaml(
                 flow=flow,
                 flow_dag=flow_dag,
                 flow_dir_path=flow_dir_path,
@@ -261,7 +261,7 @@ def flow_overwrite_context(
         # Generate a flow, the code path points to the original flow folder,
         # the dag path points to the temp dag file after overwriting variant.
         with tempfile.TemporaryDirectory() as temp_dir:
-            override_flow_dag(
+            override_flow_yaml(
                 flow=flow,
                 flow_dag=flow_dag,
                 flow_dir_path=flow_dir_path,

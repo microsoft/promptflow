@@ -152,7 +152,7 @@ def load_flow_dag(flow_path: Path):
     return flow_path, flow_dag
 
 
-def dump_flow_dag_to_existing_path(flow_dag: dict, flow_path: Path):
+def dump_flow_yaml_to_existing_path(flow_dag: dict, flow_path: Path):
     """Dump flow dag to existing flow path (flow.dag.yaml or flow.flex.yaml). The YAML file is required to exist."""
     flow_dir, flow_filename = resolve_flow_path(flow_path, check_flow_exist=True)
     flow_path = flow_dir / flow_filename

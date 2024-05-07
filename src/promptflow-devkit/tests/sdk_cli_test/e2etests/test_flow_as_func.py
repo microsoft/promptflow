@@ -15,7 +15,7 @@ from _constants import PROMPTFLOW_ROOT
 from promptflow._sdk._errors import ConnectionNotFoundError, InvalidFlowError
 from promptflow._sdk.entities import CustomConnection
 from promptflow._sdk.entities._flows._flow_context_resolver import FlowContextResolver
-from promptflow._utils.flow_utils import dump_flow_dag_to_existing_path, load_flow_dag
+from promptflow._utils.flow_utils import dump_flow_yaml_to_existing_path, load_flow_dag
 from promptflow.client import load_flow
 from promptflow.entities import FlowContext
 from promptflow.exceptions import UserErrorException
@@ -272,7 +272,7 @@ class TestFlowAsFunc:
             # update content
             _, flow_dag = load_flow_dag(flow_path)
             flow_dag["inputs"] = {"key": {"type": "string", "default": "key1"}}
-            dump_flow_dag_to_existing_path(flow_dag, flow_path)
+            dump_flow_yaml_to_existing_path(flow_dag, flow_path)
             flow2 = load_flow(f"{tmp_dir}/print_env_var")
             flow_executor1 = FlowContextResolver.resolve(
                 flow=flow1,
