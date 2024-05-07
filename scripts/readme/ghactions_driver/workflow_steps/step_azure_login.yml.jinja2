@@ -1,5 +1,5 @@
 - name: {{ step_name }}
-  uses: azure/login@v2
+  uses: azure/login@v1
   with:
     subscription-id: ${{ '{{' }}secrets.AZURE_SUBSCRIPTION_ID}}
     tenant-id: ${{ '{{' }}secrets.AZURE_TENANT_ID}}

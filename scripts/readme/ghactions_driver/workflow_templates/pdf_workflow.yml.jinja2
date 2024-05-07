@@ -49,7 +49,7 @@ steps:
         pf connection create --file azure_openai.yml --set api_key=$AOAI_API_KEY api_base=$AOAI_API_ENDPOINT
       fi
   - name: Azure Login
-    uses: azure/login@v2
+    uses: azure/login@v1
     with:
       subscription-id: ${{ '{{' }}secrets.AZURE_SUBSCRIPTION_ID}}
       tenant-id: ${{ '{{' }}secrets.AZURE_TENANT_ID}}

@@ -154,7 +154,7 @@ jobs:
           name: wheel
           path: ${{ env.WORKING_DIRECTORY }}/artifacts
       - name: Azure Login
-        uses: azure/login@v2
+        uses: azure/login@v1
         with:
           subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
           tenant-id: ${{secrets.AZURE_TENANT_ID}}
@@ -261,7 +261,7 @@ jobs:
           name: wheel
           path: ${{ env.WORKING_DIRECTORY }}/artifacts
       - name: Azure Login
-        uses: azure/login@v2
+        uses: azure/login@v1
         with:
           subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
           tenant-id: ${{secrets.AZURE_TENANT_ID}}
@@ -323,7 +323,7 @@ jobs:
           name: wheel
           path: ${{ env.WORKING_DIRECTORY }}/artifacts
       - name: Azure Login
-        uses: azure/login@v2
+        uses: azure/login@v1
         with:
           subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
           tenant-id: ${{secrets.AZURE_TENANT_ID}}
@@ -392,7 +392,7 @@ jobs:
         pip install -e .
       working-directory: ${{ env.RECORD_DIRECTORY }}
     - name: Azure Login
-      uses: azure/login@v2
+      uses: azure/login@v1
       with:
         subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
         tenant-id: ${{secrets.AZURE_TENANT_ID}}

@@ -64,7 +64,7 @@ jobs:
           python-version: ${{ matrix.pythonVersion }}
       - uses: snok/install-poetry@v1
       - name: Azure Login
-        uses: azure/login@v2
+        uses: azure/login@v1
         with:
           subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
           tenant-id: ${{secrets.AZURE_TENANT_ID}}
