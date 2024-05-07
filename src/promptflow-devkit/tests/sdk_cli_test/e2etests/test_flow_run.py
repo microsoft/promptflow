@@ -6,6 +6,7 @@ import tempfile
 import uuid
 from pathlib import Path
 from typing import Callable
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -1873,6 +1874,33 @@ class TestFlowRun:
         error = run_dict["error"]["additionalInfo"][0]["info"]["errors"][0]["error"]
         assert "Execution failure in 'ChatFlow.__call__" in error["message"]
         assert "raise Exception" in error["additionalInfo"][0]["info"]["traceback"]
+
+    def test_visualize_different_runs(self, pf: PFClient) -> None:
+        # prepare a DAG flow run and a flex flow run
+        # DAG flow run
+        dag_flow_run = pf.run(
+            flow=Path(f"{FLOWS_DIR}/simple_hello_world").absolute(),
+            data=Path(f"{DATAS_DIR}/webClassification3.jsonl").absolute(),
+            column_mapping={"name": "${data.url}"},
+        )
+        # flex flow run
+        flex_flow_run = pf.run(
+            flow=Path(f"{EAGER_FLOWS_DIR}/simple_with_yaml").absolute(),
+            data=Path(f"{DATAS_DIR}/simple_eager_flow_data.jsonl").absolute(),
+        )
+
+        with patch.object(pf.runs, "_visualize") as static_vis_func, patch.object(
+            pf.runs, "_visualize_with_trace_ui"
+        ) as trace_ui_vis_func:
+            # visualize DAG flow run, will use legacy static visualize
+            pf.visualize(runs=dag_flow_run)
+            assert static_vis_func.call_count == 1 and trace_ui_vis_func.call_count == 0
+            # visualize flex flow run, will use trace UI visualize
+            pf.visualize(runs=flex_flow_run)
+            assert static_vis_func.call_count == 1 and trace_ui_vis_func.call_count == 1
+            # visualize both runs, will use trace UI visualize
+            pf.visualize(runs=[dag_flow_run, flex_flow_run])
+            assert static_vis_func.call_count == 1 and trace_ui_vis_func.call_count == 2
 
 
 def assert_batch_run_result(run: Run, pf: PFClient, assert_func):
