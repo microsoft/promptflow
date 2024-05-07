@@ -11,7 +11,7 @@ This section contains a collection of flow samples and step-by-step tutorials.
 |CLI|[Working with connection](https://github.com/microsoft/promptflow/blob/main/examples/connections/README.md)| Manage various types of connections using cli
 |SDK|[Run prompt flow in Azure AI](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/get-started/quickstart-azure.ipynb)| A quick start tutorial to run a flow in Azure AI and evaluate it.
 |SDK|[Flow run management in Azure AI](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/run-management/cloud-run-management.ipynb)| Flow run management in azure AI
-|SDK|[Develop promptflow copilot](https://github.com/microsoft/promptflow/blob/ce376aa6473774f93918e0a638c77c1151c82e29/examples/tutorials/develop-promptflow-copilot/develop-promptflow-copilot.md)| A step by step guidance to develop a promptflow copilot.
+|AZURE|[Develop promptflow copilot](https://github.com/microsoft/promptflow/blob/ce376aa6473774f93918e0a638c77c1151c82e29/examples/tutorials/develop-promptflow-copilot/develop-promptflow-copilot.md)| A step by step guidance to develop a promptflow copilot.
 
 ## Samples
 
