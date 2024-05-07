@@ -1123,5 +1123,7 @@ def resolve_flow_language(
         elif file_path.is_file() and file_path.suffix.lower() == PROMPTY_EXTENSION:
             return FlowLanguage.Python
         else:
-            raise UserErrorException(f"Invalid flow path {file_path.as_posix()}, must exist and of suffix yaml or yml.")
+            raise UserErrorException(
+                f"Invalid flow path {file_path.as_posix()}, must exist and of suffix yaml, yml or prompty."
+            )
     return yaml_dict.get(LANGUAGE_KEY, FlowLanguage.Python)

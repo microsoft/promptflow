@@ -373,7 +373,7 @@ class TestUtils:
 
         with pytest.raises(UserErrorException) as ex:
             resolve_flow_language(flow_path="mock_path")
-        assert "must exist and of suffix yaml or yml." in ex.value.message
+        assert "must exist and of suffix yaml, yml or prompty." in ex.value.message
 
 
 @pytest.mark.unittest
