@@ -16,7 +16,6 @@ Install the `promptflow-evals` package.
 
 ```python
 from promptflow.evals.synthetic import AdversarialSimulator
-import config
 from azure.identity import DefaultAzureCredential
 from typing import Any, Dict, List, Optional
 import asyncio
@@ -24,9 +23,9 @@ import asyncio
 
 
 project_scope = {
-    "subscription_id": config.sub,
-    "resource_group_name": config.rg,
-    "workspace_name": config.project_name,
+    "subscription_id": <subscription_id>,
+    "resource_group_name": <resource_group_name>,
+    "workspace_name": <project_name>,
     "credential": DefaultAzureCredential(),
 }
 
@@ -40,15 +39,17 @@ async def callback(
     context = None
     if 'file_content' in messages["template_parameters"]:
         question += messages["template_parameters"]['file_content']
+    # the next few lines explains how to use the AsyncAzureOpenAI's chat.completions
+    # to respond to the simulator. You should replace it with a call to your model/endpoint/application
+    # make sure you pass the `question` and format the response as we have shown below
     from openai import AsyncAzureOpenAI
-
     oai_client = AsyncAzureOpenAI(
-        api_key=config.api_key,
-        azure_endpoint=config.endpoint,
+        api_key=<api_key>,
+        azure_endpoint=<Endpoint>,
         api_version="2023-12-01-preview",
     )
     try:
-        response_from_acs = await oai_client.chat.completions.create(messages=[{"content": question, "role": "user"}], model="gpt-4", max_tokens=300)
+        response_from_oai_chat_completions = await oai_client.chat.completions.create(messages=[{"content": question, "role": "user"}], model="gpt-4", max_tokens=300)
     except Exception as e:
         print(f"Error: {e}")
         # to continue the conversation, return the messages, else you can fail the adversarial with an exception
@@ -63,7 +64,7 @@ async def callback(
             "stream": stream,
             "session_state": session_state
         }
-    response_result = response_from_acs.choices[0].message.content
+    response_result = response_from_oai_chat_completions.choices[0].message.content
     formatted_response = {
         "content": response_result,
         "role": "assistant",
@@ -81,11 +82,12 @@ async def callback(
 
 ### Adversarial QA:
 ```python
-template = "adv_qa"
-simulator = AdversarialSimulator(template=template, project_scope=project_scope)
+scenario = "adv_qa"
+simulator = AdversarialSimulator(project_scope=project_scope)
 
 outputs = asyncio.run(
     simulator(
+        scenario=scenario,
         max_conversation_turns=1,
         max_simulation_results=3,
         target=callback,
@@ -105,10 +107,11 @@ The response looks something like this:
 ### Adversarial conversation
 
 ```python
-template = "adv_conversation"
-simulator = AdversarialSimulator(template=template, project_scope=project_scope)
+scenario = "adv_conversation"
+simulator = AdversarialSimulator(project_scope=project_scope)
 outputs = asyncio.run(
     simulator(
+        scenario=scenario,
         max_conversation_turns=2,
         max_simulation_results=1,
         target=callback,
@@ -123,10 +126,11 @@ That should output something like:
 ```
 ### Adversarial Summarization:
 ```python
-template = "adv_summarization"
-simulator = AdversarialSimulator(template=template, project_scope=project_scope)
+scenario = "adv_summarization"
+simulator = AdversarialSimulator(project_scope=project_scope)
 outputs = asyncio.run(
     simulator(
+        scenario=scenario,
         max_conversation_turns=1,
         max_simulation_results=2,
         target=callback,
@@ -144,10 +148,11 @@ print(outputs.to_json_lines())
 ### Adversarial search
 
 ```python
-template = "adv_search"
-simulator = AdversarialSimulator(template=template, project_scope=project_scope)
+scenario = "adv_search"
+simulator = AdversarialSimulator(project_scope=project_scope)
 outputs = asyncio.run(
     simulator(
+        scenario=scenario,
         max_conversation_turns=1,
         max_simulation_results=2,
         target=callback,
@@ -164,10 +169,11 @@ This should result in something like:
 
 ### Adversarial rewrite
 ```python
-template = "adv_rewrite"
-simulator = AdversarialSimulator(template=template, project_scope=project_scope)
+scenario = "adv_rewrite"
+simulator = AdversarialSimulator(project_scope=project_scope)
 outputs = asyncio.run(
     simulator(
+        scenario=scenario,
         max_conversation_turns=1,
         max_simulation_results=2,
         target=callback,
@@ -185,10 +191,11 @@ This should result in something like:
 ### Adversarial content generation
 #### ungrounded
 ```python
-template = "adv_content_gen_ungrounded"
-simulator = AdversarialSimulator(template=template, project_scope=project_scope)
+scenario = "adv_content_gen_ungrounded"
+simulator = AdversarialSimulator(project_scope=project_scope)
 outputs = asyncio.run(
     simulator(
+        scenario=scenario,
         max_conversation_turns=1,
         max_simulation_results=2,
         target=callback,
@@ -205,18 +212,15 @@ This should result in something like:
 #### grounded
 
 ```python
-template = "adv_content_gen_grounded"
-simulator = AdversarialSimulator(template=template, project_scope=project_scope)
+scenario = "adv_content_gen_grounded"
+simulator = AdversarialSimulator(project_scope=project_scope)
 outputs = asyncio.run(
     simulator(
+        scenario=scenario,
         max_conversation_turns=1,
         max_simulation_results=2,
         target=callback,
-        api_call_retry_limit=3,
-        api_call_retry_sleep_sec=1,
-        api_call_delay_sec=30,
-        concurrent_async_task=1,
-        jailbreak=False,
+        jailbreak=False
     )
 )
 print(outputs.to_json_lines())
