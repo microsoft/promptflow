@@ -19,6 +19,7 @@ def generate_html_string(data: dict) -> str:
 
 
 def generate_trace_ui_html_string(trace_ui_url: str) -> str:
+    # this HTML will automatically redirect to the trace UI page when opened
     return f'<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; URL=\'{trace_ui_url}\'" /></head><body></body></html>'  # noqa: E501
 
 
