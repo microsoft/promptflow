@@ -1,6 +1,6 @@
 # Eval Conciseness Criteria with LangChain
 
-A example flow of converting LangChain criteria evaluator application to flex flow.
+A example flow of converting [LangChain criteria evaluator](https://python.langchain.com/docs/guides/productionization/evaluation/string/criteria_eval_chain/) application to flex flow.
 
 ## Prerequisites
 
@@ -11,7 +11,7 @@ pip install -r requirements.txt
 
 ## Run flow
 
-- Prepare your Azure Open AI resource follow this [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal) and get your `api_key` if you don't have one. 
+- Prepare your Azure Open AI resource follow this [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal) and get your `api_key` if you don't have one.
 - Or prepare your Anthropic resource follow this [instruction](https://python.langchain.com/docs/integrations/platforms/anthropic/) and get your `api_key` if you don't have one.
 
 - Setup connection
