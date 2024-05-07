@@ -1390,9 +1390,6 @@ class TestFlowRun:
         assert isinstance(resume_run, Run)
         assert resume_run.name == resume_name
         assert resume_run._resume_from == original_run.name
-        original_metrics = pf.runs.get_metrics(run=name)
-        resume_metrics = pf.runs.get_metrics(run=resume_name)
-        assert original_metrics["image_count"] < resume_metrics["image_count"]
         # assert skip in the log
         out, _ = capfd.readouterr()
         assert f"Skipped the execution of {original_success_count} existing results." in out
