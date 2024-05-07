@@ -33,8 +33,8 @@ packages = [
 # dependencies
 [tool.poetry.dependencies]
 python = "<4.0,>=3.8"
-azureml-rag[cognitive_search,document_parsing]
-openai
+azureml-rag[cognitive_search,document_parsing] = ">= 0.2.30.2"
+openai = "*"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "*"
