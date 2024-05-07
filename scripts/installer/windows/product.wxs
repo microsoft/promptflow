@@ -84,12 +84,20 @@
           <Custom Action="Set_WIXUI_EXITDIALOGOPTIONALTEXT" After="CostFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED</Custom>
         </InstallUISequence>
 
+        <Property Id="WixQuietExec64CmdLine" Value="&quot;[APPLICATIONFOLDER]pfcli.exe&quot; pf service stop"/>
+        <CustomAction Id="StopPromptFlowService"
+              Execute="immediate"
+              Return="ignore"
+              BinaryKey="WixCA"
+              DllEntry="WixQuietExec64"
+              Impersonate="yes"/>
         <CustomAction Id="StartPromptFlowService"
             Directory="APPLICATIONFOLDER"
             Execute="deferred"
             ExeCommand="wscript.exe promptflow_service.vbs"
             Return="asyncNoWait" />
         <InstallExecuteSequence>
+            <Custom Action="StopPromptFlowService" Before="InstallInitialize">Installed OR WIX_UPGRADE_DETECTED</Custom>
             <Custom Action="StartPromptFlowService" Before="InstallFinalize">NOT Installed OR WIX_UPGRADE_DETECTED</Custom>
         </InstallExecuteSequence>
     </Product>
@@ -136,7 +144,7 @@
                           <Icon Id="PromptflowServiceIcon" SourceFile="$(var.ProductResources)logo32.ico" />
                 </Shortcut>
                 <RemoveFile Id="CleanUpShortCut" Directory="StartupFolder" Name="Prompt flow service" On="uninstall"/>
-                <RegistryKey Root="HKCU" Key="Software\Microsoft\$(var.ProductName)" Action="createAndRemoveOnUninstall">
+                <RegistryKey Root="HKCU" Key="Software\Microsoft\$(var.ProductName)" Action="createAndRemoveOnUninstall" ForceDeleteOnUninstall="yes">
                     <RegistryValue Name="installed" Type="integer" Value="1" />
                     <RegistryValue Name="version" Type="string" Value="$(var.ProductVersion)" KeyPath="yes"/>
                 </RegistryKey>

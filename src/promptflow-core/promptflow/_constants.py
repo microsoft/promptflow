@@ -167,9 +167,13 @@ class SpanAttributeFieldName:
     BATCH_RUN_ID = "batch_run_id"
     LINE_NUMBER = "line_number"
     REFERENCED_BATCH_RUN_ID = "referenced.batch_run_id"
+    IS_AGGREGATION = "is_aggregation"
     COMPLETION_TOKEN_COUNT = "__computed__.cumulative_token_count.completion"
     PROMPT_TOKEN_COUNT = "__computed__.cumulative_token_count.prompt"
     TOTAL_TOKEN_COUNT = "__computed__.cumulative_token_count.total"
+    # Execution target, e.g. prompty, flex, dag, code.
+    # We may need another field to indicate the language, e.g. python, csharp.
+    EXECUTION_TARGET = "execution_target"
 
     SESSION_ID = "session_id"
 
@@ -235,18 +239,6 @@ class ConnectionType(str, Enum):
     CUSTOM = "Custom"
 
 
-class ConnectionAuthMode:
-    KEY = "key"
-    MEID_TOKEN = "meid_token"  # Microsoft Entra ID
-
-
-class ConnectionDefaultApiVersion:
-    AZURE_OPEN_AI = "2024-02-01"
-    COGNITIVE_SEARCH = "2023-11-01"
-    AZURE_CONTENT_SAFETY = "2023-10-01"
-    FORM_RECOGNIZER = "2023-07-31"
-
-
 class CustomStrongTypeConnectionConfigs:
     PREFIX = "promptflow.connection."
     TYPE = "custom_type"
@@ -268,6 +260,23 @@ class CustomStrongTypeConnectionConfigs:
         ]
 
 
+class TokenKeys:
+    TOTAL_TOKENS = "total_tokens"
+    COMPLETION_TOKENS = "completion_tokens"
+    PROMPT_TOKENS = "prompt_tokens"
+
+    @staticmethod
+    def get_all_values():
+        values = [value for key, value in vars(TokenKeys).items() if isinstance(value, str) and key.isupper()]
+        return values
+
+
+class SystemMetricKeys:
+    NODE_PREFIX = "__pf__.nodes"
+    LINES_COMPLETED = "__pf__.lines.completed"
+    LINES_FAILED = "__pf__.lines.failed"
+
+
 class ConnectionProviderConfig:
     LOCAL = "local"
     AZUREML = "azureml"
@@ -286,14 +295,21 @@ class AzureWorkspaceKind:
     HUB = "hub"
     PROJECT = "project"
 
+    # obj can be string or azure.ai.ml.entities.Workspace
     @staticmethod
     def is_workspace(obj) -> bool:
+        if isinstance(obj, str):
+            return obj == AzureWorkspaceKind.DEFAULT
         return obj._kind == AzureWorkspaceKind.DEFAULT
 
     @staticmethod
     def is_hub(obj) -> bool:
+        if isinstance(obj, str):
+            return obj == AzureWorkspaceKind.HUB
         return obj._kind == AzureWorkspaceKind.HUB
 
     @staticmethod
     def is_project(obj) -> bool:
+        if isinstance(obj, str):
+            return obj == AzureWorkspaceKind.PROJECT
         return obj._kind == AzureWorkspaceKind.PROJECT

@@ -10,6 +10,7 @@ from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_
 from promptflow._utils.flow_utils import dump_flow_result, is_executable_chat_flow
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.multimedia_utils import MultimediaProcessor
+from promptflow.contracts.run_info import Status
 from promptflow.core._connection import _Connection
 from promptflow.core._connection_provider._connection_provider import ConnectionProvider
 from promptflow.core._flow import AbstractFlowBase
@@ -116,6 +117,14 @@ class FlowInvoker:
             connections_to_ignore.extend(self.connections_name_overrides.keys())
             self.logger.debug(f"Flow invoker connections name overrides: {self.connections_name_overrides.keys()}")
             self.logger.debug(f"Ignoring connections: {connections_to_ignore}")
+            if not connection_provider:
+                # If user not pass in connection provider string, get from environment variable.
+                connection_provider = ConnectionProvider.get_instance(credential=self._credential)
+            else:
+                # Else, init from the string to parse the provider config.
+                connection_provider = ConnectionProvider.init_from_provider_config(
+                    connection_provider, credential=self._credential
+                )
             # Note: The connection here could be local or workspace, depends on the connection.provider in pf.yaml.
             connections = self.resolve_connections(
                 # use os.environ to override flow definition's connection since
@@ -123,7 +132,7 @@ class FlowInvoker:
                 connection_names=self.flow.get_connection_names(
                     environment_variables_overrides=os.environ,
                 ),
-                provider=ConnectionProvider.init_from_provider_config(connection_provider, credential=self._credential),
+                provider=connection_provider,
                 connections_to_ignore=connections_to_ignore,
                 # fetch connections with name override
                 connections_to_add=list(self.connections_name_overrides.values()),
@@ -193,7 +202,6 @@ class FlowInvoker:
         :return: The result of executor.
         :rtype: ~promptflow.executor._result.LineResult
         """
-
         self._invoke_context(data, disable_input_output_logging)
         return self.executor.exec_line(data, run_id=run_id, allow_generator_output=self.streaming())
 
@@ -215,8 +223,11 @@ class FlowInvoker:
             returned_non_dict_output = False
         resolved_outputs = self._convert_multimedia_data_to_base64(output_dict)
         self._dump_invoke_result(result)
-        log_outputs = "<REDACTED>" if disable_input_output_logging else result.output
-        self.logger.info(f"Flow run result: {log_outputs}")
+        if result.run_info.status != Status.Completed:
+            self.logger.error(f"Flow run failed with error: {result.run_info.error}")
+        else:
+            log_outputs = "<REDACTED>" if disable_input_output_logging else result.output
+            self.logger.info(f"Flow run result: {log_outputs}")
         if not self.raise_ex:
             # If raise_ex is False, we will return the trace flow & node run info.
             return FlowResult(
@@ -252,15 +263,24 @@ class AsyncFlowInvoker(FlowInvoker):
             data, run_id=run_id, disable_input_output_logging=disable_input_output_logging
         )
         # Get base64 for multi modal object
-        resolved_outputs = self._convert_multimedia_data_to_base64(result)
+        output_dict = convert_eager_flow_output_to_dict(result.output)
+        if not isinstance(result.output, dict) and not dataclasses.is_dataclass(result.output):
+            returned_non_dict_output = True
+        else:
+            returned_non_dict_output = False
+        resolved_outputs = self._convert_multimedia_data_to_base64(output_dict)
         self._dump_invoke_result(result)
-        log_outputs = "<REDACTED>" if disable_input_output_logging else result.output
-        self.logger.info(f"Flow run result: {log_outputs}")
+        if result.run_info.status != Status.Completed:
+            self.logger.error(f"Flow run failed with error: {result.run_info.error}")
+        else:
+            log_outputs = "<REDACTED>" if disable_input_output_logging else result.output
+            self.logger.info(f"Flow run result: {log_outputs}")
         if not self.raise_ex:
             # If raise_ex is False, we will return the trace flow & node run info.
             return FlowResult(
                 output=resolved_outputs or {},
                 run_info=result.run_info,
                 node_run_infos=result.node_run_infos,
+                response_original_value=returned_non_dict_output,
             )
         return resolved_outputs

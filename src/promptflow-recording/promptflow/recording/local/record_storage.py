@@ -451,11 +451,16 @@ class Counter:
     def is_non_zero_file(self, fpath):
         return os.path.isfile(fpath) and os.path.getsize(fpath) > 0
 
-    def set_file_record_count(self, file, obj):
+    def set_record_count(self, obj):
         """
         Just count how many tokens are calculated. Different from
         openai_metric_calculator, this is directly returned from AOAI.
         """
+
+        # If file is not set, just return the original llm call return object.
+        # Counting is not necessary.
+        if self.file is None:
+            return obj
         output_value, output_generator, output_type = RecordCache._parse_output(obj)
         if "generator" in output_type:
             count = len(output_value)
@@ -465,16 +470,15 @@ class Counter:
             # This is error. Suppress it.
             count = 0
 
-        self.file = file
-        with FileLock(str(file) + ".lock"):
-            is_non_zero_file = self.is_non_zero_file(file)
+        with FileLock(str(self.file) + ".lock"):
+            is_non_zero_file = self.is_non_zero_file(self.file)
             if is_non_zero_file:
-                with open(file, "r", encoding="utf-8") as f:
+                with open(self.file, "r", encoding="utf-8") as f:
                     number = json.load(f)
                     number["count"] += count
             else:
                 number = {"count": count}
-            with open(file, "w", encoding="utf-8") as f:
+            with open(self.file, "w", encoding="utf-8") as f:
                 number_str = json.dumps(number, ensure_ascii=False)
                 f.write(number_str)
 
@@ -488,3 +492,16 @@ class Counter:
         if cls._instance is None:
             cls._instance = Counter()
         return cls._instance
+
+    @classmethod
+    def set_file(cls, file):
+        cls.get_instance().file = file
+
+    @classmethod
+    def delete_count_lock_file(cls, default_path=None):
+        file = cls.get_instance().file
+        if file is None:
+            file = default_path
+        lock_file = str(file) + ".lock"
+        if os.path.isfile(lock_file):
+            os.remove(lock_file)

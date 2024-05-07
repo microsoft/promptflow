@@ -1,0 +1,3 @@
+{"question": "What is Prompt flow?", "chat_history":[], "statements": {"correctness": "should explain what's 'Prompt flow'", "consise": "It is a consise statement."}}
+{"question": "What is ChatGPT? Please explain with consise statement", "chat_history":[],  "statements": { "correctness": "should explain what's ChatGPT", "consise": "It is a consise statement."}}
+{"question": "How many questions did user ask?", "chat_history": [{"role": "user","content": "where is the nearest coffee shop?"},{"role": "system","content": "I'm sorry, I don't know that. Would you like me to look it up for you?"}], "statements": { "correctness": "result should be 2", "consise": "It is a consise statement."}}

@@ -15,6 +15,7 @@ Manage prompt flow resources with the prompt flow CLI.
 | [pf config](#pf-config)         | Manage config for current user. |
 | [pf service](#pf-service)       | Manage prompt flow service. |
 | [pf upgrade](#pf-upgrade)       | Upgrade prompt flow CLI.       |
+| [pf trace](#pf-trace)           | Manage traces.                 |
 
 ## pf flow
 
@@ -100,6 +101,7 @@ pf flow test --flow
              [--debug]
              [--interactive]
              [--verbose]
+             [--ui]
 ```
 
 #### Examples
@@ -110,7 +112,19 @@ Test the flow.
 pf flow test --flow <path-to-flow-directory>
 ```
 
-Test the flow with single line from input file.
+Test the flow from `json` file.
+
+```bash
+pf flow test --flow <path-to-flow-directory> --inputs inputs.json
+```
+
+Test the flow with first line from `jsonl` file.
+
+```bash
+pf flow test --flow <path-to-flow-directory> --inputs inputs.jsonl
+```
+
+Test the flow with input values.
 
 ```bash
 pf flow test --flow <path-to-flow-directory> --inputs data_key1=data_val1 data_key2=data_val2
@@ -138,6 +152,12 @@ Chat in the flow.
 
 ```bash
 pf flow test --flow <path-to-flow-directory> --node <node_name> --interactive
+```
+
+Chat in the chat window.
+
+```bash
+pf flow test --flow <path-to-flow-directory> --ui
 ```
 
 #### Required Parameter
@@ -171,6 +191,10 @@ Start a interactive chat session for chat flow.
 `--verbose`
 
 Displays the output for each step in the chat flow.
+
+`--ui`
+
+The flag to start an interactive chat experience in local chat window.
 
 ### pf flow validate
 
@@ -896,7 +920,7 @@ Manage prompt flow service.
 
 ### pf service start
 
-Start prompt flow service.
+Start the prompt flow service.
 
 ```bash
 pf service start [--port]
@@ -905,17 +929,25 @@ pf service start [--port]
 ```
 
 #### Examples
-Start prompt flow service.
+Prompt flow will try to start the service on the default port 23333. If the port is already taken, prompt flow will 
+sequentially probe new ports, incrementing by one each time. Prompt flow retains the port number for future reference 
+and will utilize it for subsequent service startups.
+
 ```bash
 pf service start
 ```
 
-Force restart promptflow service.
+Forcefully start the prompt flow service. If the port is already in use, the existing service will be terminated and 
+restart a new service
+
 ```bash
 pf service start --force
 ```
 
-Start promptflow service with specific port.
+Start the prompt flow service with a specified port. If the port is already taken, prompt flow will raise an error 
+unless forcefully start the service with the `--force` flag. Upon availability, prompt flow retains the port number for 
+future reference and will utilize it for subsequent service startups.
+
 ```bash
 pf service start --port 65553
 ```
@@ -929,7 +961,7 @@ pf service start --debug
 
 `--port -p`
 
-Port of the promptflow service.
+The designated port of the prompt flow service and port number will be remembered if port is available.
 
 `--force`
 
@@ -986,6 +1018,45 @@ Upgrade prompt flow without prompt and run non-interactively.
 
 ```bash
 pf upgrade --yes
+```
+
+## pf trace
+
+Manage prompt flow traces.
+
+| Command                             | Description   |
+| ----------------------------------- | ------------- |
+| [pf trace delete](#pf-trace-delete) | Delete traces |
+
+### pf trace delete
+
+Delete traces.
+
+```bash
+pf trace delete [--run]
+                [--collection]
+                [--started-before]  # should combine with `collection`
+```
+
+#### Examples
+
+Delete traces comes from a specific run.
+
+```bash
+pf trace delete --run <run-name>
+```
+
+Delete traces in a specific collection.
+
+```bash
+pf trace delete --collection <collection>
+```
+
+Delete traces in a specific collection started before a specific time.
+
+```bash
+# `started-before` should be in ISO 8601 format
+pf trace delete --collection <collection> --started-before '2024-03-19T15:17:23.807563'
 ```
 
 ## Autocomplete

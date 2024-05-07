@@ -7,17 +7,15 @@ import threading
 import time
 from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
-from pathlib import WindowsPath
+from pathlib import PurePath
 
 from flask import Blueprint, Flask, current_app, g, jsonify, redirect, request, url_for
 from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
 
 from promptflow._sdk._constants import (
-    HOME_PROMPT_FLOW_DIR,
     PF_SERVICE_DEBUG,
     PF_SERVICE_HOUR_TIMEOUT,
-    PF_SERVICE_LOG_FILE,
     PF_SERVICE_MONITOR_SECOND,
     CreatedByFieldName,
 )
@@ -35,13 +33,13 @@ from promptflow._sdk._service.apis.ui import api as ui_api
 from promptflow._sdk._service.apis.ui import serve_chat_ui, serve_trace_ui
 from promptflow._sdk._service.utils.utils import (
     FormattedException,
-    get_current_env_pfs_file,
+    get_log_file_location,
     get_pfs_version,
     get_port_from_config,
     is_run_from_built_binary,
     kill_exist_service,
 )
-from promptflow._sdk._utils import overwrite_null_std_logger, read_write_by_user
+from promptflow._sdk._utilities.general_utils import overwrite_null_std_logger
 from promptflow._utils.thread_utils import ThreadWithContextVars
 
 overwrite_null_std_logger()
@@ -93,12 +91,7 @@ def create_app():
 
         # Enable log
         app.logger.setLevel(logging.INFO)
-        # each env will have its own log file
-        if is_run_from_built_binary():
-            log_file = HOME_PROMPT_FLOW_DIR / PF_SERVICE_LOG_FILE
-            log_file.touch(mode=read_write_by_user(), exist_ok=True)
-        else:
-            log_file = get_current_env_pfs_file(PF_SERVICE_LOG_FILE)
+        log_file = get_log_file_location()
         # Create a rotating file handler with a max size of 1 MB and keeping up to 1 backup files
         handler = RotatingFileHandler(filename=log_file, maxBytes=1_000_000, backupCount=1)
         formatter = logging.Formatter("[%(asctime)s][%(name)s][%(levelname)s] - %(message)s")
@@ -128,18 +121,18 @@ def create_app():
             app.logger.error(e, exc_info=True, stack_info=True)
             formatted_exception = FormattedException(e)
 
-            def handle_windows_path(obj):
-                if isinstance(obj, WindowsPath):
+            def handle_path_object(obj):
+                if isinstance(obj, PurePath):
                     return str(obj)
                 elif isinstance(obj, dict):
-                    return {k: handle_windows_path(v) for k, v in obj.items()}
+                    return {k: handle_path_object(v) for k, v in obj.items()}
                 elif isinstance(obj, list):
-                    return [handle_windows_path(v) for v in obj]
+                    return [handle_path_object(v) for v in obj]
                 else:
                     return obj
 
             return (
-                handle_windows_path(asdict(formatted_exception, dict_factory=lambda x: {k: v for (k, v) in x if v})),
+                handle_path_object(asdict(formatted_exception, dict_factory=lambda x: {k: v for (k, v) in x if v})),
                 formatted_exception.status_code,
             )
 
@@ -185,7 +178,7 @@ def create_app():
                         if port:
                             app.logger.info(
                                 f"Try auto stop promptflow service in port {port} since no request to app within "
-                                f"{PF_SERVICE_HOUR_TIMEOUT}h"
+                                f"{PF_SERVICE_HOUR_TIMEOUT}h."
                             )
                             kill_exist_service(port)
                         break
@@ -209,13 +202,11 @@ def get_created_by_info_with_cache():
         try:
             # The total time of collecting info is about 3s.
             import jwt
-            from azure.identity import DefaultAzureCredential
+            from azure.identity import AzureCliCredential
 
             from promptflow.azure._utils.general import get_arm_token
 
-            default_credential = DefaultAzureCredential()
-
-            token = get_arm_token(credential=default_credential)
+            token = get_arm_token(credential=AzureCliCredential())
             decoded_token = jwt.decode(token, options={"verify_signature": False})
             created_by_for_local_to_cloud_trace.update(
                 {

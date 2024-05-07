@@ -945,6 +945,7 @@ class FlexFlow(FlowBase):
     :type message_format: str
     """
 
+    init: Dict[str, FlowInputDefinition] = None
     program_language: str = FlowLanguage.Python
     environment_variables: Dict[str, object] = None
     # eager flow does not support multimedia contract currently, it is set to basic by default.
@@ -962,11 +963,59 @@ class FlexFlow(FlowBase):
 
         inputs = data.get("inputs") or {}
         outputs = data.get("outputs") or {}
+        init = data.get("init") or {}
         return FlexFlow(
+            id=data.get("id", "default_flow_id"),
+            name=data.get("name", "default_flow"),
+            inputs={name: FlowInputDefinition.deserialize(i) for name, i in inputs.items()},
+            outputs={name: FlowOutputDefinition.deserialize(o) for name, o in outputs.items()},
+            init={name: FlowInputDefinition.deserialize(i) for name, i in init.items()},
+            program_language=data.get(LANGUAGE_KEY, FlowLanguage.Python),
+            environment_variables=data.get("environment_variables") or {},
+        )
+
+
+@dataclass
+class PromptyFlow(FlowBase):
+    """This class represents a prompty flow.
+
+    :param id: The id of the flow.
+    :type id: str
+    :param name: The name of the flow.
+    :type name: str
+    :param inputs: The inputs of the flow.
+    :type inputs: Dict[str, FlowInputDefinition]
+    :param outputs: The outputs of the flow.
+    :type outputs: Dict[str, FlowOutputDefinition]
+    :param program_language: The program language of the flow.
+    :type program_language: str
+    :param environment_variables: The default environment variables of the flow.
+    :type environment_variables: Dict[str, object]
+    :param message_format: The message format type of the flow to represent different multimedia contracts.
+    :type message_format: str
+    """
+
+    program_language: str = FlowLanguage.Python
+    environment_variables: Dict[str, object] = None
+    message_format: str = MessageFormatType.BASIC
+
+    @classmethod
+    def deserialize(cls, data: dict) -> "PromptyFlow":
+        """Deserialize the prompty flow from a dict.
+
+        :param data: The dict to be deserialized.
+        :type data: dict
+        :return: The flow constructed from the dict.
+        :rtype: ~promptflow.contracts.flow.PromptyFlow
+        """
+        inputs = data.get("inputs") or {}
+        outputs = data.get("outputs") or {}
+        return PromptyFlow(
             id=data.get("id", "default_flow_id"),
             name=data.get("name", "default_flow"),
             inputs={name: FlowInputDefinition.deserialize(i) for name, i in inputs.items()},
             outputs={name: FlowOutputDefinition.deserialize(o) for name, o in outputs.items()},
             program_language=data.get(LANGUAGE_KEY, FlowLanguage.Python),
             environment_variables=data.get("environment_variables") or {},
+            message_format=data.get("message_format", MessageFormatType.BASIC),
         )

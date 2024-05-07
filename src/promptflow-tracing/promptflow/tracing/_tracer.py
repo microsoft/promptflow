@@ -2,14 +2,19 @@ import inspect
 import json
 import logging
 import uuid
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
 from contextvars import ContextVar
 from datetime import datetime
 from typing import Dict, List, Optional
 
 from ._thread_local_singleton import ThreadLocalSingleton
 from ._utils import serialize
-from .contracts.generator_proxy import GeneratorProxy, generate_from_proxy
+from .contracts.generator_proxy import (
+    AsyncGeneratorProxy,
+    GeneratorProxy,
+    generate_from_async_proxy,
+    generate_from_proxy,
+)
 from .contracts.trace import Trace, TraceType
 
 
@@ -61,7 +66,7 @@ class Tracer(ThreadLocalSingleton):
     def to_serializable(obj):
         if isinstance(obj, dict) and all(isinstance(k, str) for k in obj.keys()):
             return {k: Tracer.to_serializable(v) for k, v in obj.items()}
-        if isinstance(obj, GeneratorProxy):
+        if isinstance(obj, (GeneratorProxy, AsyncGeneratorProxy)):
             return obj
         try:
             obj = serialize(obj)
@@ -113,6 +118,8 @@ class Tracer(ThreadLocalSingleton):
             return output
         if isinstance(output, Iterator):
             output = GeneratorProxy(output)
+        if isinstance(output, AsyncIterator):
+            output = AsyncGeneratorProxy(output)
         if output is not None:
             last_trace.output = self.to_serializable(output)
         if error is not None:
@@ -122,6 +129,8 @@ class Tracer(ThreadLocalSingleton):
 
         if isinstance(output, GeneratorProxy):
             return generate_from_proxy(output)
+        elif isinstance(output, AsyncGeneratorProxy):
+            return generate_from_async_proxy(output)
         else:
             return output
 
@@ -188,6 +197,8 @@ def _create_trace_from_function_call(
     else:
         # Get __qualname__ from callable class
         function = f.__call__.__qualname__
+    if function.endswith(".__call__"):
+        function = function[: -len(".__call__")]
     if trace_type in [TraceType.LLM, TraceType.EMBEDDING] and f.__module__:
         function = f"{f.__module__}.{function}"
 

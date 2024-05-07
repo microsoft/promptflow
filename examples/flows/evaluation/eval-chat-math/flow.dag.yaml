@@ -1,3 +1,4 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 inputs:
   groundtruth:
     type: string
@@ -31,4 +32,5 @@ nodes:
   aggregation: true
   use_variants: false
 node_variants: {}
-$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+environment:
+  python_requirements_txt: requirements.txt

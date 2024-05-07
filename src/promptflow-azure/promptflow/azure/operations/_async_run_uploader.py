@@ -3,13 +3,13 @@ import json
 import shutil
 import tempfile
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List
 
 from azure.core.exceptions import HttpResponseError, ResourceExistsError
 from azure.storage.blob.aio import BlobServiceClient
 
-from promptflow._cli._utils import merge_jsonl_files
-from promptflow._constants import OutputsFolderName
+from promptflow._cli._utils import get_instance_results, merge_jsonl_files
+from promptflow._constants import PROMPTY_EXTENSION, OutputsFolderName
 from promptflow._sdk._constants import (
     DEFAULT_ENCODING,
     CloudDatastore,
@@ -22,6 +22,8 @@ from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure._storage.blob.client import _get_datastore_credential
+from promptflow.azure.operations._artifact_client import AsyncArtifactClient
+from promptflow.azure.operations._metrics_client import AsyncMetricClient
 from promptflow.exceptions import UserErrorException
 
 logger = get_cli_sdk_logger()
@@ -39,8 +41,11 @@ class AsyncRunUploader:
         self.overwrite = overwrite
         self.datastore = self._get_datastore_with_secrets()
         self.blob_service_client = self._init_blob_service_client()
+        self.artifact_client = AsyncArtifactClient.from_run_operations(run_ops)
+        self.metric_client = AsyncMetricClient.from_run_operations(run_ops)
 
     def _get_datastore_with_secrets(self):
+        """Get datastores with secrets."""
         logger.debug("Getting datastores with secrets.")
         operations = self.run_ops._datastore_operations
         default_datastore = operations.get_default(include_secrets=True)
@@ -51,6 +56,7 @@ class AsyncRunUploader:
         }
 
     def _init_blob_service_client(self):
+        """Initialize blob service client."""
         result = {}
         for name, datastore in self.datastore.items():
             logger.debug(f"Initializing blob service client for datastore {name!r}.")
@@ -94,8 +100,10 @@ class AsyncRunUploader:
                     self._upload_flow_artifacts(),
                     self._upload_node_artifacts(),
                     self._upload_run_outputs(),
-                    self._upload_logs(),
+                    self._upload_logs(),  # overall logs
                     self._upload_snapshot(),
+                    self._upload_flow_logs(),  # detailed logs for each line run
+                    self._upload_instance_results(),
                 ]
                 results = await asyncio.gather(*tasks)
 
@@ -106,12 +114,12 @@ class AsyncRunUploader:
                     OutputsFolderName.FLOW_OUTPUTS: results[2],
                     LocalStorageFilenames.LOG: results[3],
                     LocalStorageFilenames.SNAPSHOT_FOLDER: results[4],
+                    LocalStorageFilenames.FLOW_LOGS_FOLDER: results[5],
+                    Local2Cloud.FLOW_INSTANCE_RESULTS_FILE_NAME: results[6],
                 }
                 return result_dict
 
-        except UserAuthenticationError:
-            raise
-        except UploadUserError:
+        except UserErrorException:
             raise
         except Exception as e:
             raise UploadInternalError(f"{error_msg_prefix}. Error: {e}") from e
@@ -130,8 +138,7 @@ class AsyncRunUploader:
             await self._upload_local_folder_to_blob(temp_local_folder, remote_folder)
             # upload updated meta.json to cloud
             await self._upload_meta_json(temp_local_folder)
-
-        return f"{remote_folder}/{OutputsFolderName.FLOW_ARTIFACTS}"
+            return f"{remote_folder}/{OutputsFolderName.FLOW_ARTIFACTS}"
 
     async def _upload_meta_json(self, temp_dir: Path):
         """
@@ -166,9 +173,9 @@ class AsyncRunUploader:
         return f"{remote_folder}/{OutputsFolderName.FLOW_OUTPUTS}"
 
     async def _upload_logs(self) -> str:
-        """Upload logs to cloud. Return the cloud relative path of logs file"""
+        """Upload overall logs to cloud. Return the cloud relative path of logs file"""
         logger.debug(f"Uploading logs for run {self.run.name!r}.")
-        local_file = self.run_output_path / "logs.txt"
+        local_file = self.run_output_path / LocalStorageFilenames.LOG
         remote_file = f"{Local2Cloud.BLOB_EXPERIMENT_RUN}/dcid.{self.run.name}/{Local2Cloud.EXECUTION_LOG}"
         await self._upload_local_file_to_blob(local_file, remote_file, target_datastore=CloudDatastore.ARTIFACT)
         return remote_file
@@ -177,22 +184,83 @@ class AsyncRunUploader:
         """Upload run snapshot to cloud. Return the cloud relative path of flow definition file."""
         logger.debug(f"Uploading snapshot for run {self.run.name!r}.")
         local_folder = self.run_output_path / LocalStorageFilenames.SNAPSHOT_FOLDER
-        # for some types of flex flow, even there is no flow.flex.yaml in the original flow folder,
-        # it will be generated in the snapshot folder in the .runs folder, so we can upload it to cloud as well.
-        _, flow_file = resolve_flow_path(local_folder)
+
+        # parse the flow definition file
+        run_flow_path = Path(self.run.properties[FlowRunProperties.FLOW_PATH]).name
+        if str(run_flow_path).endswith(PROMPTY_EXTENSION):
+            # for prompty flow run, get prompty file name from properties/flow_path
+            flow_file = run_flow_path
+        else:
+            # for some types of flex flow, even there is no flow.flex.yaml in the original flow folder,
+            # it will be generated in the snapshot folder in the .runs folder, so we can upload it to cloud as well.
+            _, flow_file = resolve_flow_path(local_folder)
+
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_local_folder = Path(temp_dir) / self.run.name
             shutil.copytree(local_folder, temp_local_folder)
             remote_folder = f"{Local2Cloud.BLOB_ROOT_RUNS}"
             await self._upload_local_folder_to_blob(temp_local_folder, remote_folder)
-        return f"{remote_folder}/{self.run.name}/{flow_file}"
+            return f"{remote_folder}/{self.run.name}/{flow_file}"
 
-    async def _upload_metrics(self) -> None:
-        """Upload run metrics to cloud."""
-        logger.debug(f"Uploading metrics for run {self.run.name!r}.")
-        local_folder = self.run_output_path / LocalStorageFilenames.METRICS
-        remote_folder = f"{Local2Cloud.BLOB_ROOT_PROMPTFLOW}/{Local2Cloud.BLOB_METRICS}/{self.run.name}"
+    async def _upload_flow_logs(self) -> str:
+        """Upload flow logs for each line run to cloud."""
+        logger.debug(f"Uploading flow logs for run {self.run.name!r}.")
+        local_folder = self.run_output_path / LocalStorageFilenames.FLOW_LOGS_FOLDER
+        remote_folder = f"{Local2Cloud.BLOB_ROOT_PROMPTFLOW}/{Local2Cloud.BLOB_ARTIFACTS}/{self.run.name}"
         await self._upload_local_folder_to_blob(local_folder, remote_folder)
+        return f"{remote_folder}/{LocalStorageFilenames.FLOW_LOGS_FOLDER}"
+
+    async def _upload_instance_results(self) -> str:
+        """Upload instance results to cloud."""
+        logger.debug(f"Uploading instance results for run {self.run.name!r}.")
+        flow_artifacts_folder = self.run_output_path / f"{OutputsFolderName.FLOW_ARTIFACTS}"
+        instance_results = get_instance_results(flow_artifacts_folder)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            file_name = Local2Cloud.FLOW_INSTANCE_RESULTS_FILE_NAME
+            local_file = Path(temp_dir) / file_name
+            # write instance results to a temp local file
+            with open(local_file, "w", encoding=DEFAULT_ENCODING) as f:
+                for line_result in instance_results:
+                    f.write(json.dumps(line_result) + "\n")
+            remote_file = f"{Local2Cloud.BLOB_ROOT_PROMPTFLOW}/{Local2Cloud.BLOB_ARTIFACTS}/{self.run.name}/{file_name}"
+            await self._upload_local_file_to_blob(local_file, remote_file)
+
+            # registry artifact for instance results
+            await self.artifact_client.register_artifact(
+                run_id=self.run.name,
+                datastore_name=self.datastore[CloudDatastore.DEFAULT].name,
+                relative_path=remote_file,
+                path=file_name,
+            )
+
+            return remote_file
+
+    async def _upload_metrics(self) -> Dict:
+        """Write run metrics to metric service."""
+        logger.debug(f"Uploading metrics for run {self.run.name!r}.")
+        # system metrics that starts with "__pf__" are reserved for promptflow internal use
+        metrics = {
+            k: v for k, v in self.run.properties[FlowRunProperties.SYSTEM_METRICS].items() if k.startswith("__pf__")
+        }
+
+        # add user metrics from local metric file
+        metric_file = self.run_output_path / LocalStorageFilenames.METRICS
+        if metric_file.is_file():
+            with open(metric_file, "r", encoding=DEFAULT_ENCODING) as f:
+                user_metrics = json.load(f)
+                if isinstance(user_metrics, dict):
+                    metrics.update(user_metrics)
+
+        # convert metrics to float values
+        try:
+            metrics = {k: float(v) for k, v in metrics.items()}
+        except Exception as e:
+            raise UserErrorException(f"Failed to convert metrics {metrics!r} to float values. Error: {e}") from e
+
+        # write metrics to metric service
+        for k, v in metrics.items():
+            await self.metric_client.log_metric(self.run.name, k, v)
+        return metrics
 
     async def _upload_local_folder_to_blob(self, local_folder, remote_folder):
         """Upload local folder to remote folder in blob.
@@ -287,3 +355,49 @@ class AsyncRunUploader:
                 f"Cannot upload run {run.name!r} because the workspace default datastore is not supported. "
                 f"Supported ones are ['AzureBlobDatastore'], got {type(datastore).__name__!r}."
             )
+
+    async def _check_run_details_exist_in_cloud(self, blob_path: List = None):
+        """Check if run details exist in cloud, mainly for test use."""
+        flow_artifacts_prefix = f"{Local2Cloud.BLOB_ROOT_PROMPTFLOW}/{Local2Cloud.BLOB_ARTIFACTS}/{self.run.name}"
+        default_targets = [
+            f"{flow_artifacts_prefix}/{OutputsFolderName.FLOW_ARTIFACTS}",
+            f"{flow_artifacts_prefix}/{OutputsFolderName.NODE_ARTIFACTS}",
+            f"{flow_artifacts_prefix}/{OutputsFolderName.FLOW_OUTPUTS}",
+            f"{Local2Cloud.BLOB_EXPERIMENT_RUN}/dcid.{self.run.name}/{Local2Cloud.EXECUTION_LOG}",
+            f"{Local2Cloud.BLOB_ROOT_RUNS}/{self.run.name}",
+            f"{flow_artifacts_prefix}/{LocalStorageFilenames.FLOW_LOGS_FOLDER}",
+            f"{flow_artifacts_prefix}/{Local2Cloud.FLOW_INSTANCE_RESULTS_FILE_NAME}",
+        ]
+        targets = blob_path or default_targets
+        target_files = [item for item in targets if "." in Path(item).name]
+        target_folders = [item for item in targets if item not in target_files]
+        results = {target: False for target in targets}
+
+        default_service_client = self.blob_service_client[CloudDatastore.DEFAULT]
+        artifact_service_client = self.blob_service_client[CloudDatastore.ARTIFACT]
+        async with default_service_client, artifact_service_client:
+            default_container_client = default_service_client.get_container_client(
+                self.datastore[CloudDatastore.DEFAULT].container_name
+            )
+            artifact_container_client = artifact_service_client.get_container_client(
+                self.datastore[CloudDatastore.ARTIFACT].container_name
+            )
+            async with default_container_client, artifact_container_client:
+                # check blob existence
+                for target in target_files:
+                    container_client = (
+                        default_container_client
+                        if not target.endswith(Local2Cloud.EXECUTION_LOG)
+                        else artifact_container_client
+                    )
+                    blob_client = container_client.get_blob_client(target)
+                    if await blob_client.exists():
+                        results[target] = True
+
+                # check folder existence
+                for target in target_folders:
+                    # all folder targets should be in default container
+                    async for _ in default_container_client.list_blobs(name_starts_with=target):
+                        results[target] = True
+                        break
+        return results

@@ -1,0 +1,9 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Run.schema.json
+flow: .
+data: data.jsonl
+init:
+  model_config:
+    connection: open_ai_connection
+    azure_deployment: gpt-35-turbo
+column_mapping:
+  question: ${data.question}

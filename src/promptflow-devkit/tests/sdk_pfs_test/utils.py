@@ -78,8 +78,10 @@ class PFSOperations:
         return self._client.get("/")
 
     # connection APIs
-    def connection_operation_with_invalid_user(self, status_code=None):
-        response = self._client.get(f"{self.CONNECTION_URL_PREFIX}/", headers={"X-Remote-User": "invalid_user"})
+    def connection_operation_with_invalid_user(self, name, status_code=None):
+        response = self._client.get(
+            f"{self.CONNECTION_URL_PREFIX}/{name}/listsecrets", headers={"X-Remote-User": "invalid_user"}
+        )
         if status_code:
             assert status_code == response.status_code, response.text
         return response
@@ -240,13 +242,15 @@ class PFSOperations:
         return response
 
     # trace APIs
-    # LineRuns
+    # LineRuns/list
     def list_line_runs(
         self,
         *,
         collection: Optional[str] = None,
         runs: Optional[List[str]] = None,
         trace_ids: Optional[List[str]] = None,
+        session_id: Optional[str] = None,
+        line_run_ids: Optional[List[str]] = None,
     ):
         query_string = {}
         if collection is not None:
@@ -255,8 +259,35 @@ class PFSOperations:
             query_string["run"] = ",".join(runs)
         if trace_ids is not None:
             query_string["trace_ids"] = ",".join(trace_ids)
+        if line_run_ids is not None:
+            query_string["line_run_ids"] = ",".join(line_run_ids)
+        if session_id is not None:
+            query_string["session"] = session_id
         response = self._client.get(
             f"{self.LINE_RUNS_PREFIX}/list",
+            query_string=query_string,
+            headers=self.remote_user_header(),
+        )
+        return response
+
+    # LineRuns/search
+    def search_line_runs(
+        self,
+        *,
+        expression: str,
+        collection: Optional[str] = None,
+        runs: Optional[List[str]] = None,
+        session_id: Optional[str] = None,
+    ):
+        query_string = {"expression": expression}
+        if collection is not None:
+            query_string["collection"] = collection
+        if runs is not None:
+            query_string["run"] = ",".join(runs)
+        if session_id is not None:
+            query_string["session"] = session_id
+        response = self._client.get(
+            f"{self.LINE_RUNS_PREFIX}/search",
             query_string=query_string,
             headers=self.remote_user_header(),
         )
@@ -282,6 +313,14 @@ class PFSOperations:
         flow_path = encrypt_flow_path(flow_path)
         query_string = {"flow": flow_path}
         response = self._client.post(f"{self.Flow_URL_PREFIX}/test", json=request_body, query_string=query_string)
+        if status_code:
+            assert status_code == response.status_code, response.text
+        return response
+
+    def test_flow_infer_signature(self, flow_path, include_primitive_output, status_code=None):
+        flow_path = encrypt_flow_path(flow_path)
+        query_string = {"source": flow_path, "include_primitive_output": include_primitive_output}
+        response = self._client.post(f"{self.Flow_URL_PREFIX}/infer_signature", query_string=query_string)
         if status_code:
             assert status_code == response.status_code, response.text
         return response

@@ -1,5 +1,7 @@
 import datetime
 import json
+import platform
+import sys
 import typing
 import uuid
 from pathlib import Path
@@ -18,9 +20,13 @@ from promptflow._constants import (
 from promptflow._sdk._constants import TRACE_DEFAULT_COLLECTION
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk.entities._trace import Span
+from promptflow.tracing import start_trace
 
-TEST_ROOT = PROMPTFLOW_ROOT / "tests"
+TEST_ROOT = (PROMPTFLOW_ROOT / "tests").resolve().absolute()
 FLOWS_DIR = (TEST_ROOT / "test_configs/flows").resolve().absolute().as_posix()
+FLEX_FLOWS_DIR = (TEST_ROOT / "test_configs/eager_flows").resolve().absolute().as_posix()
+PROMPTY_DIR = (TEST_ROOT / "test_configs/prompty").resolve().absolute().as_posix()
+DATA_DIR = (TEST_ROOT / "test_configs/datas").resolve().absolute().as_posix()
 
 
 def load_and_override_span_example(
@@ -99,9 +105,92 @@ def assert_span_equals(span: Span, expected_span_dict: typing.Dict) -> None:
     assert span_dict == expected_span_dict
 
 
+@pytest.fixture
+def collection() -> str:
+    _collection = str(uuid.uuid4())
+    start_trace(collection=_collection)
+    return _collection
+
+
 @pytest.mark.e2etest
 @pytest.mark.sdk_test
 class TestTraceEntitiesAndOperations:
+    def test_span_to_dict(self) -> None:
+        # this should be the groundtruth as OpenTelemetry span spec
+        otel_span_path = TEST_ROOT / "test_configs/traces/large-data-span-example.json"
+        with open(otel_span_path, mode="r", encoding="utf-8") as f:
+            span_dict = json.load(f)
+        span_entity = Span(
+            name=span_dict["name"],
+            trace_id=span_dict["context"]["trace_id"],
+            span_id=span_dict["context"]["span_id"],
+            parent_id=span_dict["parent_id"],
+            context=span_dict["context"],
+            kind=span_dict["kind"],
+            start_time=datetime.datetime.fromisoformat(span_dict["start_time"]),
+            end_time=datetime.datetime.fromisoformat(span_dict["end_time"]),
+            status=span_dict["status"],
+            attributes=span_dict["attributes"],
+            links=span_dict["links"],
+            events=span_dict["events"],
+            resource=span_dict["resource"],
+        )
+        otel_span_dict = {
+            "name": "openai.resources.chat.completions.Completions.create",
+            "context": {
+                "trace_id": "32a6fb50e281736543979ce5b929dfdc",
+                "span_id": "3a3596a19efef900",
+                "trace_state": "",
+            },
+            "kind": "1",
+            "parent_id": "9c63581c6da66596",
+            "start_time": "2024-03-21T06:37:22.332582Z",
+            "end_time": "2024-03-21T06:37:26.445007Z",
+            "status": {
+                "status_code": "Ok",
+                "description": "",
+            },
+            "attributes": {
+                "framework": "promptflow",
+                "span_type": "LLM",
+                "function": "openai.resources.chat.completions.Completions.create",
+                "node_name": "Azure_OpenAI_GPT_4_Turbo_with_Vision_mrr4",
+                "line_run_id": "277fab99-d26e-4c43-8ec4-b0c61669fd68",
+                "llm.response.model": "gpt-4",
+                "__computed__.cumulative_token_count.completion": "14",
+                "__computed__.cumulative_token_count.prompt": "1497",
+                "__computed__.cumulative_token_count.total": "1511",
+                "llm.usage.completion_tokens": "14",
+                "llm.usage.prompt_tokens": "1497",
+                "llm.usage.total_tokens": "1511",
+            },
+            "events": [
+                {
+                    "name": "promptflow.function.inputs",
+                    "timestamp": "2024-03-21T06:37:22.332582Z",
+                    "attributes": {
+                        "payload": '{"input1": "value1", "input2": "value2"}',
+                    },
+                },
+                {
+                    "name": "promptflow.function.output",
+                    "timestamp": "2024-03-21T06:37:26.445007Z",
+                    "attributes": {
+                        "payload": '{"output1": "val1", "output2": "val2"}',
+                    },
+                },
+            ],
+            "links": [],
+            "resource": {
+                "attributes": {
+                    "service.name": "promptflow",
+                    "collection": "default",
+                },
+                "schema_url": "",
+            },
+        }
+        assert span_entity.to_dict() == otel_span_dict
+
     def test_span_persist_and_gets(self, pf: PFClient) -> None:
         trace_id = str(uuid.uuid4())
         span_id = str(uuid.uuid4())
@@ -254,6 +343,42 @@ class TestTraceEntitiesAndOperations:
         num_traces = pf.traces.delete(run=mock_run, dry_run=True)
         assert num_traces == 1
 
+    def test_basic_search_line_runs(self, pf: PFClient) -> None:
+        trace_id = str(uuid.uuid4())
+        span_id = str(uuid.uuid4())
+        line_run_id = str(uuid.uuid4())
+        span = mock_span(trace_id=trace_id, span_id=span_id, parent_id=None, line_run_id=line_run_id)
+        name = str(uuid.uuid4())
+        span.name = name
+        span._persist()
+        expr = f"name == '{name}'"
+        line_runs = pf.traces._search_line_runs(expression=expr)
+        assert len(line_runs) == 1
+
+    @pytest.mark.skipif(
+        platform.system() == "Windows" and sys.version_info < (3, 9),
+        reason="Python 3.9+ is required on Windows to support json_extract",
+    )
+    def test_search_line_runs_with_tokens(self, pf: PFClient) -> None:
+        num_line_runs = 5
+        trace_ids = list()
+        name = str(uuid.uuid4())
+        for _ in range(num_line_runs):
+            trace_id = str(uuid.uuid4())
+            span_id = str(uuid.uuid4())
+            line_run_id = str(uuid.uuid4())
+            span = mock_span(trace_id=trace_id, span_id=span_id, parent_id=None, line_run_id=line_run_id)
+            span.name = name
+            span.attributes.update({"__computed__.cumulative_token_count.total": "42"})
+            span._persist()
+            trace_ids.append(trace_id)
+        expr = f"name == '{name}' and total < 100"
+        line_runs = pf.traces._search_line_runs(expression=expr)
+        assert len(line_runs) == num_line_runs
+        # assert these line runs are exactly the ones we just persisted
+        line_run_trace_ids = {line_run.trace_id for line_run in line_runs}
+        assert len(set(trace_ids) & line_run_trace_ids) == num_line_runs
+
 
 @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
 @pytest.mark.e2etest
@@ -281,3 +406,70 @@ class TestTraceWithDevKit:
                     node="fetch_text_content_from_url",
                 )
                 assert mock_start_trace.call_count == 0
+
+
+@pytest.mark.usefixtures("otlp_collector", "recording_injection", "setup_local_connection", "use_secrets_config_file")
+@pytest.mark.e2etest
+@pytest.mark.sdk_test
+class TestTraceLifeCycle:
+    """End-to-end tests that cover the trace lifecycle."""
+
+    def _clear_module_cache(self, module_name) -> None:
+        # referenced from test_flow_test.py::clear_module_cache
+        try:
+            del sys.modules[module_name]
+        except Exception:  # pylint: disable=broad-except
+            pass
+
+    def _pf_test_and_assert(
+        self,
+        pf: PFClient,
+        flow_path: Path,
+        inputs: typing.Dict[str, str],
+        collection: str,
+    ) -> None:
+        pf.test(flow=flow_path, inputs=inputs)
+        line_runs = pf.traces.list_line_runs(collection=collection)
+        assert len(line_runs) == 1
+
+    def test_flow_test_dag_flow(self, pf: PFClient, collection: str) -> None:
+        flow_path = Path(f"{FLOWS_DIR}/web_classification").absolute()
+        inputs = {"url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g", "answer": "Channel", "evidence": "Url"}
+        self._pf_test_and_assert(pf, flow_path, inputs, collection)
+
+    def test_flow_test_flex_flow(self, pf: PFClient, collection: str) -> None:
+        self._clear_module_cache("entry")
+        flow_path = Path(f"{FLEX_FLOWS_DIR}/simple_with_yaml").absolute()
+        inputs = {"input_val": "val1"}
+        self._pf_test_and_assert(pf, flow_path, inputs, collection)
+
+    def test_flow_test_prompty(self, pf: PFClient, collection: str) -> None:
+        flow_path = Path(f"{PROMPTY_DIR}/prompty_example.prompty").absolute()
+        inputs = {"question": "what is the result of 1+1?"}
+        self._pf_test_and_assert(pf, flow_path, inputs, collection)
+
+    def _pf_run_and_assert(
+        self,
+        pf: PFClient,
+        flow_path: Path,
+        data_path: Path,
+        expected_number_lines: int,
+    ):
+        run = pf.run(flow=flow_path, data=data_path)
+        line_runs = pf.traces.list_line_runs(runs=run.name)
+        assert len(line_runs) == expected_number_lines
+
+    def test_batch_run_dag_flow(self, pf: PFClient) -> None:
+        flow_path = Path(f"{FLOWS_DIR}/web_classification").absolute()
+        data_path = Path(f"{DATA_DIR}/webClassification3.jsonl").absolute()
+        self._pf_run_and_assert(pf, flow_path, data_path, expected_number_lines=3)
+
+    def test_batch_run_flex_flow(self, pf: PFClient) -> None:
+        flow_path = Path(f"{FLEX_FLOWS_DIR}/simple_with_yaml").absolute()
+        data_path = Path(f"{DATA_DIR}/simple_eager_flow_data.jsonl").absolute()
+        self._pf_run_and_assert(pf, flow_path, data_path, expected_number_lines=1)
+
+    def test_batch_run_prompty(self, pf: PFClient) -> None:
+        flow_path = Path(f"{PROMPTY_DIR}/prompty_example.prompty").absolute()
+        data_path = Path(f"{DATA_DIR}/prompty_inputs.jsonl").absolute()
+        self._pf_run_and_assert(pf, flow_path, data_path, expected_number_lines=3)

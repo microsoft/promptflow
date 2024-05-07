@@ -40,15 +40,12 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import InvalidFlowError, RunOperationError
 from promptflow._sdk._load_functions import load_flow
-from promptflow._sdk._utils import (
-    _merge_local_code_and_additional_includes,
-    get_used_connection_names_from_dict,
-    update_dict_value_with_connections,
-)
+from promptflow._sdk._utilities.general_utils import _merge_local_code_and_additional_includes
 from promptflow._sdk.entities._flows import FlexFlow, Flow, Prompty
 from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag
 from promptflow._utils.logger_utils import FileHandler, get_cli_sdk_logger
 from promptflow.contracts.flow import Flow as ExecutableFlow
+from promptflow.core._utils import get_used_connection_names_from_dict, update_dict_value_with_connections
 from promptflow.exceptions import UserErrorException
 
 logger = get_cli_sdk_logger()
@@ -446,7 +443,10 @@ def resolve_generator(flow_result, generator_record):
             )
             flow_result.run_info.output[k] = flow_output
             flow_result.run_info.result[k] = flow_output
-            flow_result.output[k] = flow_output
+            if isinstance(flow_result.output, dict):
+                flow_result.output[k] = flow_output
+            else:
+                flow_result.output = flow_output
 
     # resolve generator in node outputs
     for node_name, node in flow_result.node_run_infos.items():

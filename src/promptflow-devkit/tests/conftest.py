@@ -1,12 +1,15 @@
 import importlib
 import json
 import os
+import platform
 import tempfile
 from multiprocessing import Lock
 from pathlib import Path
+from typing import TypedDict
 from unittest.mock import MagicMock, patch
 
 import pytest
+import requests
 from _constants import (
     CONNECTION_FILE,
     DEFAULT_RESOURCE_GROUP_NAME,
@@ -18,6 +21,7 @@ from _constants import (
 from _pytest.monkeypatch import MonkeyPatch
 from dotenv import load_dotenv
 from filelock import FileLock
+from mock import mock
 from pytest_mock import MockerFixture
 
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
@@ -25,7 +29,37 @@ from promptflow._core.connection_manager import ConnectionManager
 from promptflow._sdk.entities._connection import AzureOpenAIConnection
 from promptflow._utils.context_utils import _change_working_dir
 
+try:
+    from promptflow.recording.local import invoke_prompt_flow_service
+    from promptflow.recording.record_mode import is_replay
+except ImportError:
+    # Run test in empty mode if promptflow-recording is not installed
+    def is_replay():
+        return False
+
+    # copy lines from /src/promptflow-recording/promptflow/recording/local/test_utils.py
+    import time
+
+    from promptflow._cli._pf._service import _start_background_service_on_unix, _start_background_service_on_windows
+    from promptflow._sdk._service.utils.utils import get_pfs_port
+
+    def invoke_prompt_flow_service() -> str:
+        port = str(get_pfs_port())
+        if platform.system() == "Windows":
+            _start_background_service_on_windows(port)
+        else:
+            _start_background_service_on_unix(port)
+        time.sleep(20)
+        response = requests.get(f"http://localhost:{port}/heartbeat")
+        assert response.status_code == 200, "prompt flow service is not healthy via /heartbeat"
+        return port
+
+
 load_dotenv()
+
+
+def pytest_configure():
+    pytest.is_replay = is_replay()
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -242,5 +276,57 @@ def reset_tracer_provider():
     """Force reset tracer provider."""
     with patch("opentelemetry.trace._TRACER_PROVIDER", None), patch(
         "opentelemetry.trace._TRACER_PROVIDER_SET_ONCE._done", False
+    ):
+        yield
+
+
+class CSharpProject(TypedDict):
+    flow_dir: str
+    data: str
+    init: str
+
+
+def construct_csharp_test_project(flow_name: str) -> CSharpProject:
+    root_of_test_cases = os.getenv("CSHARP_TEST_PROJECTS_ROOT", None)
+    if not root_of_test_cases:
+        pytest.skip(reason="No C# test cases found, please set CSHARP_TEST_CASES_ROOT.")
+    root_of_test_cases = Path(root_of_test_cases)
+    return {
+        "flow_dir": (root_of_test_cases / flow_name / "bin" / "Debug" / "net6.0").as_posix(),
+        "data": (root_of_test_cases / flow_name / "data.jsonl").as_posix(),
+        "init": (root_of_test_cases / flow_name / "init.json").as_posix(),
+    }
+
+
+@pytest.fixture
+def csharp_test_project_basic() -> CSharpProject:
+    return construct_csharp_test_project("Basic")
+
+
+@pytest.fixture
+def csharp_test_project_basic_chat() -> CSharpProject:
+    return construct_csharp_test_project("BasicChat")
+
+
+@pytest.fixture
+def csharp_test_project_function_mode_basic() -> CSharpProject:
+    return construct_csharp_test_project("FunctionModeBasic")
+
+
+@pytest.fixture
+def csharp_test_project_class_init_flex_flow() -> CSharpProject:
+    is_in_ci_pipeline = os.getenv("IS_IN_CI_PIPELINE", "false").lower() == "true"
+    if is_in_ci_pipeline:
+        pytest.skip(reason="need to avoid fetching connection from local pfs to enable this in ci")
+    return construct_csharp_test_project("ClassInitFlexFlow")
+
+
+@pytest.fixture(scope="session")
+def otlp_collector():
+    """A session scope fixture, a separate standby prompt flow service serves as OTLP collector."""
+    port = invoke_prompt_flow_service()
+    # mock invoke prompt flow service as it has been invoked already
+    with mock.patch("promptflow._sdk._tracing._invoke_pf_svc", return_value=port), mock.patch(
+        "promptflow._sdk._tracing.is_pfs_service_healthy", return_value=True
     ):
         yield

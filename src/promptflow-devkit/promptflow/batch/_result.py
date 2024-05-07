@@ -7,6 +7,7 @@ from datetime import datetime
 from itertools import chain
 from typing import Any, List, Mapping
 
+from promptflow._constants import TokenKeys
 from promptflow._utils.exception_utils import ExceptionPresenter, RootErrorCode
 from promptflow.contracts.run_info import RunInfo, Status
 from promptflow.executor._result import AggregationResult, LineResult
@@ -129,7 +130,7 @@ class SystemMetrics:
     def _try_get_openai_metrics(run_info: RunInfo):
         openai_metrics = {}
         if run_info.system_metrics:
-            for metric in ["total_tokens", "prompt_tokens", "completion_tokens"]:
+            for metric in TokenKeys.get_all_values():
                 if metric not in run_info.system_metrics:
                     return False
                 openai_metrics[metric] = run_info.system_metrics[metric]

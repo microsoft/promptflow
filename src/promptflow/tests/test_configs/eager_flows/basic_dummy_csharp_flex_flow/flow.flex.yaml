@@ -1,0 +1,4 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/flow.schema.json
+
+language: csharp
+entry: (FlexFlowClassInit)FunctionModeBasic.MyEntry.HelloWorldAsync

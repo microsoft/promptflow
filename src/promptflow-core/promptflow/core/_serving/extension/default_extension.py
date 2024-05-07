@@ -11,11 +11,12 @@ from typing import Tuple
 from promptflow._constants import DEFAULT_ENCODING
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import Flow
-from promptflow.core._serving.blueprint.monitor_blueprint import construct_monitor_blueprint
-from promptflow.core._serving.blueprint.static_web_blueprint import construct_staticweb_blueprint
 from promptflow.core._serving.extension.extension_type import ExtensionType
 from promptflow.core._serving.extension.otel_exporter_provider_factory import OTelExporterProviderFactory
+from promptflow.core._serving.monitor.context_data_provider import ContextDataProvider
 from promptflow.core._serving.monitor.flow_monitor import FlowMonitor
+from promptflow.core._serving.v1.blueprint.monitor_blueprint import construct_monitor_blueprint
+from promptflow.core._serving.v1.blueprint.static_web_blueprint import construct_staticweb_blueprint
 from promptflow.core._version import __version__
 
 USER_AGENT = f"promptflow-local-serving/{__version__}"
@@ -45,7 +46,7 @@ class AppExtension(ABC):
         pass
 
     @abstractmethod
-    def get_blueprints(self):
+    def get_blueprints(self, flow_monitor: FlowMonitor):
         """Get blueprints for current extension."""
         pass
 
@@ -82,7 +83,7 @@ class AppExtension(ABC):
         """Get common dimensions for metrics if exist."""
         return self._get_common_dimensions_from_env()
 
-    def get_flow_monitor(self) -> FlowMonitor:
+    def get_flow_monitor(self, ctx_data_provider: ContextDataProvider) -> FlowMonitor:
         """Get flow monitor for current extension."""
         if self.flow_monitor:
             return self.flow_monitor
@@ -90,7 +91,13 @@ class AppExtension(ABC):
         metric_exporters = OTelExporterProviderFactory.get_metrics_exporters(self.logger, self.extension_type)
         trace_exporters = OTelExporterProviderFactory.get_trace_exporters(self.logger, self.extension_type)
         self.flow_monitor = FlowMonitor(
-            self.logger, self.get_flow_name(), self.data_collector, custom_dimensions, metric_exporters, trace_exporters
+            self.logger,
+            self.get_flow_name(),
+            self.data_collector,
+            ctx_data_provider,
+            custom_dimensions,
+            metric_exporters,
+            trace_exporters,
         )  # noqa: E501
         return self.flow_monitor
 
@@ -116,9 +123,9 @@ class AppExtension(ABC):
                 self.logger.warn(f"Failed to parse common dimensions with value={common_dimensions_str}: {ex}")
         return {}
 
-    def _get_default_blueprints(self, static_folder=None):
+    def _get_default_blueprints(self, flow_monitor, static_folder=None):
         static_web_blueprint = construct_staticweb_blueprint(static_folder)
-        monitor_print = construct_monitor_blueprint(self.get_flow_monitor())
+        monitor_print = construct_monitor_blueprint(flow_monitor)
         return [static_web_blueprint, monitor_print]
 
 
@@ -142,5 +149,5 @@ class DefaultAppExtension(AppExtension):
     def get_connection_provider(self) -> str:
         return self.connection_provider
 
-    def get_blueprints(self):
-        return self._get_default_blueprints(self.static_folder)
+    def get_blueprints(self, flow_monitor: FlowMonitor):
+        return self._get_default_blueprints(flow_monitor, self.static_folder)

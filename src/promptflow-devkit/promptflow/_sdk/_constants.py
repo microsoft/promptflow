@@ -12,10 +12,10 @@ from promptflow._constants import (
     CONNECTION_SCRUBBED_VALUE,
     CONNECTION_SCRUBBED_VALUE_NO_CHANGE,
     PROMPT_FLOW_DIR_NAME,
-    ConnectionAuthMode,
     ConnectionType,
     CustomStrongTypeConnectionConfigs,
 )
+from promptflow.constants import ConnectionAuthMode
 
 LOGGER_NAME = "promptflow"
 
@@ -88,6 +88,7 @@ SERVICE_CONFIG_FILE = "pf.yaml"
 PF_SERVICE_PORT_DIT_NAME = "pfs"
 PF_SERVICE_PORT_FILE = "pfs.port"
 PF_SERVICE_LOG_FILE = "pfs.log"
+PF_SERVICE_DEFAULT_PORT = 23333
 PF_SERVICE_HOUR_TIMEOUT = 1
 PF_SERVICE_MONITOR_SECOND = 60
 PF_SERVICE_WORKER_NUM = 16
@@ -467,8 +468,6 @@ class LineRunFieldName:
 
 
 class Local2Cloud:
-    EXPERIMENT_NAME = "local_to_cloud"
-    PROPERTY_KEY = "azureml.promptflow.local_to_cloud"
     BLOB_ROOT_PROMPTFLOW = "promptflow"
     BLOB_ROOT_RUNS = "runs"
     BLOB_ARTIFACTS = "PromptFlowArtifacts"
@@ -476,6 +475,28 @@ class Local2Cloud:
     ASSET_NAME_DEBUG_INFO = "debug_info"
     ASSET_NAME_FLOW_OUTPUTS = "flow_outputs"
     EXECUTION_LOG = "logs/azureml/executionlogs.txt"
+    # instance_results.jsonl contains the inputs and outputs of all lines
+    FLOW_INSTANCE_RESULTS_FILE_NAME = "instance_results.jsonl"
+
+
+class Local2CloudProperties:
+    """Run properties that server needs when uploading local run to cloud."""
+
+    PREFIX = "azureml.promptflow"
+    EVAL_ARTIFACTS = "_azureml.evaluate_artifacts"
+
+
+class Local2CloudUserProperties:
+    """Run properties that user can specify when uploading local run to cloud."""
+
+    RUN_TYPE = "runType"
+
+    @staticmethod
+    def get_all_values():
+        values = [
+            value for key, value in vars(Local2CloudUserProperties).items() if isinstance(value, str) and key.isupper()
+        ]
+        return values
 
 
 class CloudDatastore:

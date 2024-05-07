@@ -77,5 +77,21 @@
       "name": "prompt-flow-acs-tool-test"
     },
     "module": "promptflow.connections"
+  },
+  "serverless_connection": {
+    "type": "ServerlessConnection",
+    "value": {
+      "api_key": "serverless-api-key",
+      "api_base": "serverless-endpoint-url"
+    },
+    "module": "promptflow.connections"
+  },
+  "serverless_connection_embedding": {
+    "type": "ServerlessConnection",
+    "value": {
+      "api_key": "serverless-embedding-api-key",
+      "api_base": "serverless-embedding-endpoint-url"
+    },
+    "module": "promptflow.connections"
   }
 }

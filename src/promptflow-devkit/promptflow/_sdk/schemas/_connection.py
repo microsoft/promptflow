@@ -5,16 +5,12 @@ import copy
 
 from marshmallow import ValidationError, fields, post_load, pre_dump, validates
 
-from promptflow._constants import (
-    ConnectionAuthMode,
-    ConnectionDefaultApiVersion,
-    ConnectionType,
-    CustomStrongTypeConnectionConfigs,
-)
+from promptflow._constants import ConnectionType, CustomStrongTypeConnectionConfigs
 from promptflow._sdk._constants import SCHEMA_KEYS_CONTEXT_CONFIG_KEY, SCHEMA_KEYS_CONTEXT_SECRET_KEY
 from promptflow._sdk.schemas._base import YamlFileSchema
 from promptflow._sdk.schemas._fields import StringTransformedEnum
 from promptflow._utils.utils import camel_to_snake
+from promptflow.constants import ConnectionAuthMode, ConnectionDefaultApiVersion
 
 
 class ConnectionSchema(YamlFileSchema):
@@ -42,6 +38,7 @@ class AzureOpenAIConnectionSchema(ConnectionSchema):
     api_base = fields.Str(required=True)
     api_type = fields.Str(dump_default="azure")
     api_version = fields.Str(dump_default=ConnectionDefaultApiVersion.AZURE_OPEN_AI)
+    resource_id = fields.Str()
     auth_mode = StringTransformedEnum(
         allowed_values=[ConnectionAuthMode.MEID_TOKEN, ConnectionAuthMode.KEY],
         allow_none=True,

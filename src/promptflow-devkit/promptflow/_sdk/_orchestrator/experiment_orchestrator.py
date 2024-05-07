@@ -53,7 +53,7 @@ from promptflow._sdk._orm.experiment import Experiment as ORMExperiment
 from promptflow._sdk._orm.experiment_node_run import ExperimentNodeRun as ORMExperimentNodeRun
 from promptflow._sdk._orm.orchestrator import Orchestrator as ORMOrchestrator
 from promptflow._sdk._orm.run_info import RunInfo as ORMRunInfo
-from promptflow._sdk._utils import overwrite_null_std_logger
+from promptflow._sdk._utilities.general_utils import overwrite_null_std_logger
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._experiment import Experiment, ExperimentTemplate
 from promptflow._sdk.operations import RunOperations
@@ -170,15 +170,18 @@ class ExperimentOrchestrator:
 
         skip_node_name = None
         override_node_name = None
+        main_node_name = None
         if context_flow:
             for node in nodes_to_test:
                 # only support skip/override the first flow node which matches the ux passed flow path for now.
                 if Path(context_flow).as_posix() == Path(node.path).as_posix():
-                    if context_run_id:
+                    if "outputs" in context:
                         skip_node_name = node.name
                     else:
                         override_node_name = node.name
+                        main_node_name = node.name if context_run_id else None
                     break
+
         # If inputs, use the inputs as experiment data, else read the first line in template data
         test_context = ExperimentTemplateTestContext(
             template,
@@ -187,7 +190,7 @@ class ExperimentOrchestrator:
             output_path=kwargs.get("output_path"),
             session=kwargs.get("session"),
             context_run_id=context_run_id,
-            skip_node_name=skip_node_name,
+            context_node_name=skip_node_name if skip_node_name else main_node_name,
         )
 
         for node in nodes_to_test:
@@ -198,6 +201,7 @@ class ExperimentOrchestrator:
             if node in start_nodes:
                 if override_node_name and override_node_name == node.name:
                     node.inputs = {**node.inputs, **{k: v for k, v in context.get("inputs", {}).items()}}
+                    node.init = {**node.init, **{k: v for k, v in context.get("init", {}).items()}}
                 else:
                     # Start nodes inputs should be updated, as original value could be a constant without data
                     # reference. Filter unknown key out to avoid warning (case: user input with eval key to override
@@ -244,6 +248,7 @@ class ExperimentOrchestrator:
             stream_output=False,
             run_id=test_context.node_name_to_id[node.name],
             session=test_context.session,
+            init=node.init,
         )
 
     def _test_command_node(self, *args, **kwargs):
@@ -762,10 +767,12 @@ class ExperimentTemplateContext:
         # Generate line run id for node
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
         self.node_name_to_id = {node.name: f"{node.name}_attempt{timestamp}" for node in template.nodes}
-        skip_node_name = kwargs.get("skip_node_name", None)
+        # context_node_name is the skip node name, overwrite input/run_id node name
+        context_node_name = kwargs.get("context_node_name", None)
+        # context_run_id is the respective run id of flow naming context_node_name
         context_run_id = kwargs.get("context_run_id", None)
-        if context_run_id and skip_node_name:
-            self.node_name_to_id[skip_node_name] = context_run_id
+        if context_run_id and context_node_name:
+            self.node_name_to_id[context_node_name] = context_run_id
         self.node_name_to_referenced_id = self._prepare_referenced_ids()
         # All run/line run in experiment should use same session
         self.session = session or str(uuid.uuid4())

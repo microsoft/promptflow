@@ -1,9 +1,11 @@
+import json
 import os
 import shutil
 import sys
 import tempfile
 import uuid
 from pathlib import Path
+from typing import Callable
 
 import numpy as np
 import pandas as pd
@@ -31,13 +33,15 @@ from promptflow._sdk._errors import (
 from promptflow._sdk._load_functions import load_flow, load_run
 from promptflow._sdk._orchestrator.utils import SubmitterHelper
 from promptflow._sdk._run_functions import create_yaml_run
-from promptflow._sdk._utils import _get_additional_includes, parse_otel_span_status_code
+from promptflow._sdk._utilities.general_utils import _get_additional_includes
+from promptflow._sdk._utilities.tracing_utils import _parse_otel_span_status_code
 from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.client import PFClient
 from promptflow.connections import AzureOpenAIConnection
+from promptflow.core import AzureOpenAIModelConfiguration, OpenAIModelConfiguration
 from promptflow.exceptions import UserErrorException
 
 TEST_ROOT = PROMPTFLOW_ROOT / "tests"
@@ -1266,73 +1270,119 @@ class TestFlowRun:
 
         monkeypatch.delenv("PF_BATCH_METHOD")
 
-    def test_eager_flow_run_without_yaml(self, pf):
-        run = pf.run(
-            flow="entry:my_flow",
-            code=f"{EAGER_FLOWS_DIR}/simple_without_yaml",
-            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
-        )
+    @pytest.mark.parametrize(
+        "run_params, expected_snapshot_yaml, extra_check, expected_details",
+        [
+            pytest.param(
+                {
+                    "flow": "entry:my_flow",
+                    "code": f"{EAGER_FLOWS_DIR}/simple_without_yaml",
+                    "data": f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+                },
+                {
+                    "entry": "entry:my_flow",
+                    "inputs": {"input_val": {"type": "string"}},
+                    "outputs": {"output": {"type": "string"}},
+                },
+                # the YAML file will not exist in user's folder
+                lambda: not Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/flow.flex.yaml").exists(),
+                {"inputs.input_val": ["input1"], "inputs.line_number": [0], "outputs.output": ["(Failed)"]},
+                id="without_yaml",
+            ),
+            pytest.param(
+                {
+                    "flow": Path(f"{EAGER_FLOWS_DIR}/simple_with_yaml"),
+                    "data": f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+                },
+                {
+                    "entry": "entry:my_flow",
+                    "inputs": {"input_val": {"type": "string", "default": "gpt"}},
+                    "outputs": {"output": {"type": "string"}},
+                },
+                # signature not in original YAML
+                lambda: "inputs" not in load_yaml(f"{EAGER_FLOWS_DIR}/simple_with_yaml/flow.flex.yaml"),
+                {"inputs.input_val": ["input1"], "inputs.line_number": [0], "outputs.output": ["Hello world! input1"]},
+                id="with_yaml",
+            ),
+            pytest.param(
+                {
+                    "flow": "entry2:my_flow2",
+                    "code": f"{EAGER_FLOWS_DIR}/multiple_entries",
+                    "data": f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+                },
+                {
+                    "entry": "entry2:my_flow2",
+                    "outputs": {"output": {"type": "string"}},
+                },
+                # entry is not changed in original YAML
+                lambda: load_yaml(f"{EAGER_FLOWS_DIR}/multiple_entries/flow.flex.yaml")["entry"] == "entry1:my_flow1",
+                {"inputs.line_number": [0], "outputs.output": ["entry2flow2"]},
+                id="entry_override",
+            ),
+            pytest.param(
+                {
+                    "flow": my_entry,
+                    "data": f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+                    # set code folder to avoid snapshot too big
+                    "code": f"{EAGER_FLOWS_DIR}/multiple_entries",
+                    "column_mapping": {"input1": "${data.input_val}"},
+                },
+                {
+                    "entry": "sdk_cli_test.e2etests.test_flow_run:my_entry",
+                    "inputs": {"input1": {"type": "string"}},
+                    "outputs": {"output": {"type": "string"}},
+                },
+                lambda: True,
+                {"inputs.input1": ["input1"], "inputs.line_number": [0], "outputs.output": ["input1"]},
+                id="with_func",
+            ),
+            pytest.param(
+                {
+                    "flow": my_async_entry,
+                    "data": f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+                    # set code folder to avoid snapshot too big
+                    "code": f"{EAGER_FLOWS_DIR}/multiple_entries",
+                    "column_mapping": {"input2": "${data.input_val}"},
+                },
+                {
+                    "entry": "sdk_cli_test.e2etests.test_flow_run:my_async_entry",
+                    "inputs": {"input2": {"type": "string"}},
+                    "outputs": {"output": {"type": "string"}},
+                },
+                lambda: True,
+                {"inputs.input2": ["input1"], "inputs.line_number": [0], "outputs.output": ["input1"]},
+                id="with_async_func",
+            ),
+        ],
+    )
+    def test_flex_flow_run(
+        self,
+        pf,
+        run_params: dict,
+        expected_snapshot_yaml: dict,
+        extra_check: Callable[[], bool],
+        expected_details: dict,
+    ) -> None:
+        run = pf.run(**run_params)
         assert run.status == "Completed"
         assert "error" not in run._to_dict()
+
+        assert extra_check()
+
         # will create a YAML in run snapshot
         local_storage = LocalStorageOperations(run=run)
         assert local_storage._dag_path.exists()
-        # the YAML file will not exist in user's folder
-        assert not Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/flow.flex.yaml").exists()
 
-    def test_eager_flow_yaml_override(self, pf):
-        run = pf.run(
-            flow="entry2:my_flow2",
-            code=f"{EAGER_FLOWS_DIR}/multiple_entries",
-            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
-        )
-        assert run.status == "Completed"
-        assert "error" not in run._to_dict()
-        # will create a YAML in run snapshot
-        local_storage = LocalStorageOperations(run=run)
-        assert local_storage._dag_path.exists()
-        # original YAMl content not changed
-        original_dict = load_yaml(f"{EAGER_FLOWS_DIR}/multiple_entries/flow.flex.yaml")
-        assert original_dict["entry"] == "entry1:my_flow1"
+        yaml_dict = load_yaml(local_storage._dag_path)
+        assert yaml_dict == expected_snapshot_yaml
+
+        assert not local_storage._dag_path.read_text().startswith("!!omap")
 
         # actual result will be entry2:my_flow2
         details = pf.get_details(run.name)
         # convert DataFrame to dict
         details_dict = details.to_dict(orient="list")
-        assert details_dict == {"inputs.line_number": [0], "outputs.output": ["entry2flow2"]}
-
-    def test_flex_flow_with_func(self, pf):
-        run = pf.run(
-            flow=my_entry,
-            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
-            # set code folder to avoid snapshot too big
-            code=f"{EAGER_FLOWS_DIR}/multiple_entries",
-            column_mapping={"input1": "${data.input_val}"},
-        )
-        assert run.status == "Completed"
-        assert "error" not in run._to_dict()
-
-        # actual result will be entry2:my_flow2
-        details = pf.get_details(run.name)
-        # convert DataFrame to dict
-        details_dict = details.to_dict(orient="list")
-        assert details_dict == {"inputs.input1": ["input1"], "inputs.line_number": [0], "outputs.output": ["input1"]}
-
-        run = pf.run(
-            flow=my_async_entry,
-            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
-            # set code folder to avoid snapshot too big
-            code=f"{EAGER_FLOWS_DIR}/multiple_entries",
-            column_mapping={"input2": "${data.input_val}"},
-        )
-        assert run.status == "Completed"
-        assert "error" not in run._to_dict()
-
-        # actual result will be entry2:my_flow2
-        details = pf.get_details(run.name)
-        # convert DataFrame to dict
-        details_dict = details.to_dict(orient="list")
-        assert details_dict == {"inputs.input2": ["input1"], "inputs.line_number": [0], "outputs.output": ["input1"]}
+        assert details_dict == expected_details
 
     def test_flex_flow_with_local_imported_func(self, pf):
         # run eager flow against a function from local file
@@ -1362,7 +1412,7 @@ class TestFlowRun:
     def test_flex_flow_with_imported_func(self, pf):
         # run eager flow against a function from module
         run = pf.run(
-            flow=parse_otel_span_status_code,
+            flow=_parse_otel_span_status_code,
             data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
             # set code folder to avoid snapshot too big
             code=f"{EAGER_FLOWS_DIR}/multiple_entries",
@@ -1400,14 +1450,37 @@ class TestFlowRun:
         details_dict = details.to_dict(orient="list")
         assert details_dict == {"inputs.line_number": [0], "outputs.output": ["entry2flow1"]}
 
-    def test_eager_flow_run_with_yaml(self, pf):
-        flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_with_yaml")
-        run = pf.run(
+    def test_eager_flow_run_batch_resume(self, pf):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_with_random_fail")
+        original_name = str(uuid.uuid4())
+        original_run = pf.run(
             flow=flow_path,
-            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+            data=f"{EAGER_FLOWS_DIR}/simple_with_random_fail/inputs.jsonl",
+            name=original_name,
         )
-        assert run.status == "Completed"
-        assert "error" not in run._to_dict()
+        assert original_run.status == "Completed"
+        output_path = os.path.join(original_run.properties["output_path"], "flow_outputs", "output.jsonl")
+        with open(output_path, "r") as file:
+            original_output = [json.loads(line) for line in file]
+        original_success_count = len(original_output)
+
+        resume_name = str(uuid.uuid4())
+        resume_run = pf.run(
+            resume_from=original_run,
+            name=resume_name,
+        )
+        assert resume_run.name == resume_name
+        assert resume_run._resume_from == original_name
+        # assert new run resume from the original run
+        output_path = os.path.join(resume_run.properties["output_path"], "flow_outputs", "output.jsonl")
+        with open(output_path, "r") as file:
+            resume_output = [json.loads(line) for line in file]
+        assert len(original_output) < len(resume_output)
+
+        log_path = os.path.join(resume_run.properties["output_path"], "logs.txt")
+        with open(log_path, "r") as file:
+            log_text = file.read()
+        assert f"Skipped the execution of {original_success_count} existing results." in log_text
 
     def test_eager_flow_test_invalid_cases(self, pf):
         # incorrect entry provided
@@ -1677,17 +1750,22 @@ class TestFlowRun:
                 "func_input",
             ] and details_dict["outputs.obj_input"] == ["val", "val", "val", "val"]
 
+        def assert_metrics(metrics_dict):
+            return metrics_dict == {"length": 4}
+
         flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_callable_class")
         run = pf.run(
             flow=flow_path, data=f"{EAGER_FLOWS_DIR}/basic_callable_class/inputs.jsonl", init={"obj_input": "val"}
         )
         assert_batch_run_result(run, pf, assert_func)
+        assert_run_metrics(run, pf, assert_metrics)
 
         run = load_run(
             source=f"{EAGER_FLOWS_DIR}/basic_callable_class/run.yaml",
         )
         run = pf.runs.create_or_update(run=run)
         assert_batch_run_result(run, pf, assert_func)
+        assert_run_metrics(run, pf, assert_metrics)
 
     def test_run_with_init_class(self, pf):
         def assert_func(details_dict):
@@ -1708,8 +1786,6 @@ class TestFlowRun:
                 # set code folder to avoid snapshot too big
                 code=f"{EAGER_FLOWS_DIR}/basic_callable_class",
             )
-            assert run.status == "Completed"
-            assert "error" not in run._to_dict()
 
             assert_batch_run_result(run, pf, assert_func)
 
@@ -1719,10 +1795,84 @@ class TestFlowRun:
                 # set code folder to avoid snapshot too big
                 code=f"{EAGER_FLOWS_DIR}/basic_callable_class",
             )
-            assert run.status == "Completed"
-            assert "error" not in run._to_dict()
 
             assert_batch_run_result(run, pf, assert_func)
+
+    def test_model_config_in_init(self, pf):
+        def assert_func(details_dict):
+            keys_to_omit = [
+                "inputs.line_number",
+                "inputs.func_input",
+                "outputs.func_input",
+                "outputs.obj_id",
+                "outputs.azure_open_ai_model_config_azure_endpoint",
+            ]
+            omitted_output = {k: v for k, v in details_dict.items() if k not in keys_to_omit}
+            return omitted_output == {
+                "outputs.azure_open_ai_model_config_deployment": ["my_deployment", "my_deployment"],
+                "outputs.azure_open_ai_model_config_connection": ["(Failed)", "(Failed)"],
+                "outputs.open_ai_model_config_model": ["my_model", "my_model"],
+                "outputs.open_ai_model_config_base_url": ["fake_base_url", "fake_base_url"],
+                "outputs.open_ai_model_config_connection": ["(Failed)", "(Failed)"],
+            }
+
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_model_config")
+
+        # init with model config object
+        config1 = AzureOpenAIModelConfiguration(azure_deployment="my_deployment", connection="azure_open_ai_connection")
+        config2 = OpenAIModelConfiguration(model="my_model", base_url="fake_base_url")
+        run = pf.run(
+            flow=flow_path,
+            data=f"{EAGER_FLOWS_DIR}/basic_model_config/inputs.jsonl",
+            init={"azure_open_ai_model_config": config1, "open_ai_model_config": config2},
+        )
+        assert_batch_run_result(run, pf, assert_func)
+
+        # init with model config dict
+        config1 = dict(azure_deployment="my_deployment", connection="azure_open_ai_connection")
+        config2 = dict(model="my_model", base_url="fake_base_url")
+        run = pf.run(
+            flow=flow_path,
+            data=f"{EAGER_FLOWS_DIR}/basic_model_config/inputs.jsonl",
+            init={"azure_open_ai_model_config": config1, "open_ai_model_config": config2},
+        )
+        assert_batch_run_result(run, pf, assert_func)
+
+    def test_run_yaml_with_init_file(self, pf):
+        def assert_func(details_dict):
+            return details_dict["outputs.func_input"] == [
+                "func_input",
+                "func_input",
+                "func_input",
+                "func_input",
+            ] and details_dict["outputs.obj_input"] == ["val", "val", "val", "val"]
+
+        run = load_run(
+            source=f"{EAGER_FLOWS_DIR}/basic_callable_class/run.yaml",
+        )
+        run = pf.runs.create_or_update(run=run)
+        assert_batch_run_result(run, pf, assert_func)
+
+    def test_flow_run_with_enriched_error_message(self, pf):
+        config = AzureOpenAIModelConfiguration(
+            connection="azure_open_ai_connection", azure_deployment="gpt-35-turbo-0125"
+        )
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/stream_prompty")
+        init_config = {"model_config": config}
+
+        run = pf.run(
+            flow=flow_path,
+            data=f"{EAGER_FLOWS_DIR}/stream_prompty/inputs.jsonl",
+            column_mapping={
+                "question": "${data.question}",
+                "chat_history": "${data.chat_history}",
+            },
+            init=init_config,
+        )
+        run_dict = run._to_dict()
+        error = run_dict["error"]["additionalInfo"][0]["info"]["errors"][0]["error"]
+        assert "Execution failure in 'ChatFlow.__call__" in error["message"]
+        assert "raise Exception" in error["additionalInfo"][0]["info"]["traceback"]
 
 
 def assert_batch_run_result(run: Run, pf: PFClient, assert_func):
@@ -1732,3 +1882,10 @@ def assert_batch_run_result(run: Run, pf: PFClient, assert_func):
     # convert DataFrame to dict
     details_dict = details.to_dict(orient="list")
     assert assert_func(details_dict), details_dict
+
+
+def assert_run_metrics(run: Run, pf: PFClient, assert_func):
+    assert run.status == "Completed"
+    assert "error" not in run._to_dict(), run._to_dict()["error"]
+    metrics = pf.runs.get_metrics(run.name)
+    assert assert_func(metrics), metrics

@@ -11,7 +11,7 @@ from promptflow._sdk._constants import MAX_LIST_CLI_RESULTS, ExperimentStatus, L
 from promptflow._sdk._errors import ExperimentExistsError, RunOperationError
 from promptflow._sdk._orm.experiment import Experiment as ORMExperiment
 from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_operation
-from promptflow._sdk._utils import json_load, safe_parse_object_list
+from promptflow._sdk._utilities.general_utils import json_load, safe_parse_object_list
 from promptflow._sdk.entities._experiment import Experiment
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 
@@ -170,9 +170,14 @@ class ExperimentOperations(TelemetryMixin):
         experiment_template = _load_experiment_template(experiment)
         output_path = kwargs.pop("output_path", None)
         session = kwargs.pop("session", None)
-
         return ExperimentOrchestrator(client=self._client, experiment=None).test(
-            experiment_template, None, inputs, environment_variables, output_path=output_path, session=session, **kwargs
+            experiment_template,
+            flow=None,
+            inputs=inputs,
+            environment_variables=environment_variables,
+            output_path=output_path,
+            session=session,
+            **kwargs,
         )
 
     def _test_with_ui(
@@ -200,7 +205,7 @@ class ExperimentOperations(TelemetryMixin):
             return_output[key] = {
                 "detail": detail_content,
                 "log": log_content,
-                "output_path": (output_path / key).as_posix(),
+                "output_path": str(output_path / key),
             }
         return return_output
 

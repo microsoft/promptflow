@@ -12,7 +12,7 @@ from promptflow._proxy._python_executor_proxy import PythonExecutorProxy
 from promptflow.batch import BatchEngine
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget
-from promptflow.executor._errors import ConnectionNotFound
+from promptflow.executor._errors import GetConnectionError
 from promptflow.executor._result import AggregationResult
 
 from ...utils import MemoryRunStorage, get_yaml_file, load_jsonl
@@ -32,11 +32,11 @@ class TestBatchEngine:
                 "Unexpected error occurred while executing the batch run. Error: (Exception) test error.",
             ),
             (
-                ConnectionNotFound(message="Connection 'aoai_conn' not found"),
-                ConnectionNotFound,
+                GetConnectionError(connection="aoai_conn", node_name="mock", error=Exception("mock")),
+                GetConnectionError,
                 ErrorTarget.EXECUTOR,
-                ["UserError", "ValidationError", "InvalidRequest", "ConnectionNotFound"],
-                "Connection 'aoai_conn' not found",
+                ["UserError", "ValidationError", "InvalidRequest", "GetConnectionError"],
+                "Get connection 'aoai_conn' for node 'mock' error: mock",
             ),
         ],
     )
@@ -66,6 +66,9 @@ class TestBatchEngine:
         ProxyFactory.register_executor("js", MockJSExecutorProxy)
         assert ProxyFactory.executor_proxy_classes["js"] == MockJSExecutorProxy
         assert len(ProxyFactory.executor_proxy_classes) == 3
+
+        # reset to original values
+        del ProxyFactory.executor_proxy_classes["js"]
 
     def test_cancel(self):
         batch_engine = BatchEngine(get_yaml_file("print_input_flow"))

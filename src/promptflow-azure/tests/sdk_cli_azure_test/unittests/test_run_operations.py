@@ -9,7 +9,7 @@ from pytest_mock import MockerFixture
 from sdk_cli_azure_test.conftest import DATAS_DIR, EAGER_FLOWS_DIR, FLOWS_DIR
 
 from promptflow._sdk._errors import RunOperationParameterError, UploadUserError, UserAuthenticationError
-from promptflow._sdk._utils import parse_otel_span_status_code
+from promptflow._sdk._utilities.tracing_utils import _parse_otel_span_status_code
 from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.async_utils import async_run_allowing_running_loop
@@ -88,7 +88,7 @@ class TestRunOperations:
         # TODO(3017093): won't support this for now
         with pytest.raises(UserErrorException) as e:
             pf.run(
-                flow=parse_otel_span_status_code,
+                flow=_parse_otel_span_status_code,
                 data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
                 # set code folder to avoid snapshot too big
                 code=f"{EAGER_FLOWS_DIR}/multiple_entries",
@@ -126,6 +126,7 @@ class TestRunOperations:
         from promptflow._sdk.operations import RunOperations
 
         mocked = mocker.patch.object(RunOperations, "get")
+        mocked.return_value.run = None
         mocked.return_value.status = "Completed"
         mocker.patch.object(pf.runs, "_workspace_default_datastore", "test")
         with pytest.raises(UserErrorException, match="workspace default datastore is not supported"):

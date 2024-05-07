@@ -9,8 +9,8 @@ from promptflow._constants import FlowEntryRegex
 from promptflow._core._errors import UnexpectedError
 from promptflow._core.run_tracker import RunTracker
 from promptflow._sdk._constants import FLOW_META_JSON_GEN_TIMEOUT, FLOW_TOOLS_JSON_GEN_TIMEOUT
-from promptflow._sdk._utils import can_accept_kwargs
-from promptflow._utils.flow_utils import resolve_entry_file
+from promptflow._sdk._utilities.general_utils import can_accept_kwargs
+from promptflow._utils.flow_utils import resolve_python_entry_file
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.run_mode import RunMode
@@ -44,7 +44,7 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         # generate flow.json only for eager flow for now
         return generate_flow_meta(
             flow_directory=working_dir,
-            source_path=resolve_entry_file(entry=flow_dag.get("entry"), working_dir=working_dir),
+            source_path=resolve_python_entry_file(entry=flow_dag.get("entry"), working_dir=working_dir),
             data=flow_dag,
             dump=dump,
             timeout=timeout,
@@ -73,14 +73,17 @@ class PythonExecutorProxy(AbstractExecutorProxy):
             )
         return cls(flow_executor)
 
+    @property
+    def has_aggregation(self) -> bool:
+        return self._flow_executor.has_aggregation_node
+
     async def exec_aggregation_async(
         self,
         batch_inputs: Mapping[str, Any],
         aggregation_inputs: Mapping[str, Any],
         run_id: Optional[str] = None,
     ) -> AggregationResult:
-        with self._flow_executor._run_tracker.node_log_manager:
-            return self._flow_executor._exec_aggregation(batch_inputs, aggregation_inputs, run_id=run_id)
+        return self._flow_executor.exec_aggregation(batch_inputs, aggregation_inputs, run_id=run_id)
 
     async def _exec_batch(
         self,
@@ -135,7 +138,7 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         timeout: int = FLOW_TOOLS_JSON_GEN_TIMEOUT,
         load_in_subprocess: bool = True,
     ) -> dict:
-        from promptflow._sdk._utils import generate_flow_tools_json
+        from promptflow._sdk._utilities.general_utils import generate_flow_tools_json
 
         return generate_flow_tools_json(
             flow_directory=working_dir,

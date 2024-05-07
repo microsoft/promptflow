@@ -21,7 +21,7 @@ from promptflow._constants import (
 )
 from promptflow._core._errors import MetaFileNotFound, MetaFileReadError
 from promptflow._utils.logger_utils import LoggerFactory
-from promptflow._utils.utils import strip_quotation
+from promptflow._utils.utils import convert_ordered_dict_to_dict, strip_quotation
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.exceptions import ErrorTarget, UserErrorException, ValidationException
@@ -113,7 +113,7 @@ def resolve_flow_path(
     file_path = flow_folder / flow_file
     if file_path.suffix.lower() not in FLOW_FILE_SUFFIX:
         raise UserErrorException(
-            error_format=f"The flow file suffix must be yaml or yml, " f"and cannot be {file_path.suffix}"
+            error_format=f"The flow file suffix must be yaml or yml, and cannot be {file_path.suffix}"
         )
 
     if not check_flow_exist:
@@ -126,10 +126,17 @@ def resolve_flow_path(
         )
 
     if not file_path.is_file():
-        raise UserErrorException(
-            f"Flow file {file_path.absolute().as_posix()} does not exist.",
-            privacy_info=[file_path.absolute().as_posix()],
-        )
+        if flow_folder == flow_path:
+            raise UserErrorException(
+                f"Flow path {flow_path.absolute().as_posix()} "
+                f"must have postfix either {FLOW_DAG_YAML} or {FLOW_FLEX_YAML}",
+                privacy_info=[flow_path.absolute().as_posix()],
+            )
+        else:
+            raise UserErrorException(
+                f"Flow file {file_path.absolute().as_posix()} does not exist.",
+                privacy_info=[file_path.absolute().as_posix()],
+            )
 
     return flow_folder.resolve().absolute(), flow_file
 
@@ -150,7 +157,8 @@ def dump_flow_dag(flow_dag: dict, flow_path: Path):
     flow_dir, flow_filename = resolve_flow_path(flow_path, check_flow_exist=False)
     flow_path = flow_dir / flow_filename
     with open(flow_path, "w", encoding=DEFAULT_ENCODING) as f:
-        dump_yaml(flow_dag, f)
+        # directly dumping ordered dict will bring !!omap tag in yaml
+        dump_yaml(convert_ordered_dict_to_dict(flow_dag, remove_empty=False), f)
     return flow_path
 
 
@@ -187,7 +195,7 @@ def is_prompty_flow(file_path: Union[str, Path], raise_error: bool = False):
     return Path(file_path).suffix.lower() == PROMPTY_EXTENSION
 
 
-def resolve_entry_file(entry: str, working_dir: Path) -> Optional[str]:
+def resolve_python_entry_file(entry: str, working_dir: Path) -> Optional[str]:
     """Resolve entry file from entry.
     If entry is a local file, e.g. my.local.file:entry_function, return the local file: my/local/file.py
         and executor will import it from local file.
@@ -288,9 +296,12 @@ def is_executable_chat_flow(flow: ExecutableFlow):
     if len(chat_inputs) != 1:
         _is_chat_flow = False
         error_msg = "chat flow does not support multiple chat inputs"
-    elif len(chat_outputs) != 1:
+    elif len(chat_outputs) > 1:
         _is_chat_flow = False
         error_msg = "chat flow does not support multiple chat outputs"
+    elif not chat_outputs and len(flow.outputs.values()) > 0:
+        _is_chat_flow = False
+        error_msg = "chat output is not configured"
     elif not chat_history_input_name:
         _is_chat_flow = False
         error_msg = "chat_history is required in the inputs of chat flow"

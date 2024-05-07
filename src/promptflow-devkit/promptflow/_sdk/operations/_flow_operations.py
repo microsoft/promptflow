@@ -7,11 +7,13 @@ import glob
 import inspect
 import json
 import os
+import platform
 import shutil
 import stat
 import subprocess
 import sys
 import uuid
+from dataclasses import MISSING, fields
 from importlib.metadata import version
 from os import PathLike
 from pathlib import Path
@@ -34,14 +36,21 @@ from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._orchestrator import TestSubmitter
 from promptflow._sdk._orchestrator.utils import SubmitterHelper
 from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_operation
-from promptflow._sdk._utils import (
+from promptflow._sdk._utilities.general_utils import (
     _get_additional_includes,
     _merge_local_code_and_additional_includes,
+    add_executable_script_to_env_path,
     copy_tree_respect_template_and_ignore_file,
     generate_flow_tools_json,
     generate_random_string,
+    generate_yaml_entry_without_recover,
     json_load,
     logger,
+)
+from promptflow._sdk._utilities.signature_utils import (
+    format_signature_type,
+    infer_signature_for_flex_flow,
+    merge_flow_signature,
 )
 from promptflow._sdk.entities._flows import FlexFlow, Flow, Prompty
 from promptflow._sdk.entities._validation import ValidationResult
@@ -54,6 +63,7 @@ from promptflow._utils.flow_utils import (
     parse_variant,
 )
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
+from promptflow.core._utils import load_inputs_from_sample
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 
@@ -98,6 +108,7 @@ class FlowOperations(TelemetryMixin):
         :rtype: dict
         """
         experiment = kwargs.pop("experiment", None)
+        flow = generate_yaml_entry_without_recover(entry=flow)
         if Configuration.get_instance().is_internal_features_enabled() and experiment:
             if variant is not None or node is not None:
                 error = ValueError("--variant or --node is not supported experiment is specified.")
@@ -207,7 +218,7 @@ class FlowOperations(TelemetryMixin):
                 return_output[key] = {
                     "detail": detail_content,
                     "log": log_content,
-                    "output_path": (output_path / key).as_posix(),
+                    "output_path": str(output_path / key),
                 }
         else:
             if node:
@@ -223,9 +234,7 @@ class FlowOperations(TelemetryMixin):
             detail_content = json_load(detail_path)
             with open(log_path, "r") as file:
                 log_content = file.read()
-            return_output = {
-                "flow": {"detail": detail_content, "log": log_content, "output_path": output_path.as_posix()}
-            }
+            return_output = {"flow": {"detail": detail_content, "log": log_content, "output_path": str(output_path)}}
         return return_output
 
     def _test(
@@ -259,7 +268,6 @@ class FlowOperations(TelemetryMixin):
         :param init: Initialization parameters for flex flow, only supported when flow is callable class.
         :return: Executor result
         """
-        inputs = inputs or {}
         output_path = kwargs.get("output_path", None)
         session = kwargs.pop("session", None)
         collection = kwargs.pop("collection", None)
@@ -283,6 +291,7 @@ class FlowOperations(TelemetryMixin):
             init_kwargs=init,
             collection=collection,
         ) as submitter:
+            inputs = inputs or load_inputs_from_sample(submitter.flow.sample)
             if isinstance(flow, FlexFlow) or isinstance(flow, Prompty):
                 # TODO(2897153): support chat eager flow
                 # set is chat flow to True to allow generator output
@@ -328,6 +337,7 @@ class FlowOperations(TelemetryMixin):
         """
         from promptflow._sdk._load_functions import load_flow
 
+        flow = generate_yaml_entry_without_recover(entry=flow)
         flow = load_flow(flow)
         flow.context.variant = variant
 
@@ -579,7 +589,6 @@ class FlowOperations(TelemetryMixin):
             import bs4  # noqa: F401
             import PyInstaller  # noqa: F401
             import streamlit
-            import streamlit_quill  # noqa: F401
         except ImportError as ex:
             raise UserErrorException(
                 f"Please try 'pip install promptflow[executable]' to install dependency, {ex.msg}."
@@ -653,11 +662,14 @@ class FlowOperations(TelemetryMixin):
         with open(Path(__file__).parent.parent / "data" / "executable" / "requirements.txt", "r") as f:
             all_packages = f.read().splitlines()
 
+        if platform.system() != "Windows":
+            all_packages = [pkg for pkg in all_packages if pkg.lower() != "pywin32"]
+
         hidden_imports = copy.deepcopy(all_packages)
         meta_packages = copy.deepcopy(all_packages)
         special_packages = ["streamlit-quill", "flask-cors", "flask-restx"]
         for i in range(len(hidden_imports)):
-            # need special handeling because it use _ to import
+            # need special handling because it uses _ to import
             if hidden_imports[i] in special_packages:
                 hidden_imports[i] = hidden_imports[i].replace("-", "_").lower()
             else:
@@ -666,6 +678,7 @@ class FlowOperations(TelemetryMixin):
         return hidden_imports, all_packages, meta_packages
 
     def _run_pyinstaller(self, output_dir):
+        add_executable_script_to_env_path()
         with _change_working_dir(output_dir, mkdir=False):
             try:
                 subprocess.run(["pyinstaller", "app.spec"], check=True)
@@ -987,129 +1000,59 @@ class FlowOperations(TelemetryMixin):
         return None
 
     @staticmethod
-    def _merge_signature(extracted, signature_overrides):
-        if not signature_overrides:
-            signature_overrides = {}
+    def _infer_signature(entry: Union[Callable, FlexFlow, Flow, Prompty], include_primitive_output: bool = False):
+        if isinstance(entry, Prompty):
+            from promptflow.contracts.tool import ValueType
+            from promptflow.core._model_configuration import PromptyModelConfiguration
 
-        signature = {}
-        for key in ["inputs", "outputs", "init"]:
-            if key in extracted:
-                signature[key] = extracted[key]
-            elif key in signature_overrides:
-                raise UserErrorException(
-                    f"Provided signature for {key}, which can't be overridden according to the entry."
-                )
-
-            if key not in signature_overrides:
-                continue
-
-            if set(extracted[key].keys()) != set(signature_overrides[key].keys()):
-                raise UserErrorException(
-                    f"Provided signature of {key} does not match the entry.\n"
-                    f"Ports from signature: {', '.join(signature_overrides[key].keys())}\n"
-                    f"Ports from entry: {', '.join(signature[key].keys())}\n"
-                )
-
-            # TODO: merge the signature
-            signature[key] = signature_overrides[key]
-
-        return signature
-
-    @staticmethod
-    def _infer_signature(
-        entry: Union[Callable, str],
-        *,
-        code: str = None,
-        keep_entry: bool = False,
-        validate: bool = True,
-        language: str = FlowLanguage.Python,
-        include_primitive_output: bool = False,
-    ) -> Tuple[dict, Path, List[str]]:
-        """Infer signature of a flow entry.
-
-        Note that this is a Python only feature.
-        """
-        snapshot_list = None
-        # resolve entry and code
-        if isinstance(entry, str):
-            if not code:
-                raise UserErrorException("Code path is required when entry is a string.")
-            code = Path(code)
-            if not code.exists():
-                raise UserErrorException(f"Specified code {code} does not exist.")
-            if code.is_file():
-                snapshot_list = [code.name]
-                entry = f"{code.stem}:{entry}"
-                code = code.parent
-
-            inspector_proxy = ProxyFactory().create_inspector_proxy(language=language)
-            if not inspector_proxy.is_flex_flow_entry(entry):
-                raise UserErrorException(f"Entry {entry} is not a valid entry for flow.")
-
-            # TODO: extract description?
-            flow_meta = inspector_proxy.get_entry_meta(entry=entry, working_dir=code)
-        elif code is not None:
-            # TODO: support specifying code when inferring signature?
-            raise UserErrorException(
-                "Code path will be the parent of entry source " "and can't be customized when entry is a callable."
+            flow_meta = {"inputs": entry._data.get("inputs", {})}
+            if "outputs" in entry._data:
+                flow_meta["outputs"] = entry._data.get("outputs")
+            elif include_primitive_output:
+                flow_meta["outputs"] = {"output": {"type": "string"}}
+            init_dict = {}
+            for field in fields(PromptyModelConfiguration):
+                init_dict[field.name] = {"type": ValueType.from_type(field.type).value}
+                if field.default != MISSING:
+                    init_dict[field.name]["default"] = field.default
+            flow_meta["init"] = init_dict
+            format_signature_type(flow_meta)
+        elif isinstance(entry, FlexFlow):
+            # non-python flow depends on dumped flow meta to infer signature
+            ProxyFactory().create_inspector_proxy(language=entry.language).prepare_metadata(
+                flow_file=entry.path,
+                working_dir=entry.code,
+            )
+            flow_meta, _, _ = infer_signature_for_flex_flow(
+                entry=entry.entry,
+                code=entry.code.as_posix(),
+                language=entry.language,
+                include_primitive_output=include_primitive_output,
             )
         elif inspect.isclass(entry) or inspect.isfunction(entry):
-            if inspect.isclass(entry):
-                if not hasattr(entry, "__call__"):
-                    raise UserErrorException("Class entry must have a __call__ method.")
-                f, cls = entry.__call__, entry
-            else:
-                f, cls = entry, None
-
-            # callable entry must be of python, so we directly import from promptflow._core locally here
-            from promptflow._core.tool_meta_generator import generate_flow_meta_dict_by_object
-
-            flow_meta = generate_flow_meta_dict_by_object(f, cls)
-            source_path = Path(inspect.getfile(entry))
-            code = source_path.parent
-            # TODO: should we handle the case that entry is not defined in root level of the source?
-            flow_meta["entry"] = f"{source_path.stem}:{entry.__name__}"
+            flow_meta, _, _ = infer_signature_for_flex_flow(
+                entry=entry, include_primitive_output=include_primitive_output, language=FlowLanguage.Python
+            )
         else:
-            raise UserErrorException("Entry must be a function or a class.")
-
-        # signature is language irrelevant, so we apply json type system
-        # TODO: enable this mapping after service supports more types
-        value_type_map = {
-            # ValueType.INT.value: SignatureValueType.INT.value,
-            # ValueType.DOUBLE.value: SignatureValueType.NUMBER.value,
-            # ValueType.LIST.value: SignatureValueType.ARRAY.value,
-            # ValueType.BOOL.value: SignatureValueType.BOOL.value,
-        }
-        for port_type in ["inputs", "outputs", "init"]:
-            if port_type not in flow_meta:
-                continue
-            for port_name, port in flow_meta[port_type].items():
-                if port["type"] in value_type_map:
-                    port["type"] = value_type_map[port["type"]]
-
-        if validate:
-            # this path is actually not used
-            flow = FlexFlow(path=code / FLOW_FLEX_YAML, code=code, data=flow_meta, entry=flow_meta["entry"])
-            flow._validate(raise_error=True)
-
-        if include_primitive_output and "outputs" not in flow_meta:
-            flow_meta["outputs"] = {
-                "output": {
-                    "type": "string",
-                }
-            }
-
-        if not keep_entry:
-            flow_meta.pop("entry", None)
-        return flow_meta, code, snapshot_list
+            # TODO support to get infer signature of dag flow
+            raise UserErrorException(f"Invalid entry {type(entry).__name__}, only support callable object or prompty.")
+        return flow_meta
 
     @monitor_operation(activity_name="pf.flows.infer_signature", activity_type=ActivityType.PUBLICAPI)
-    def infer_signature(self, entry: Callable) -> dict:
-        """Extract signature for a callable class or a function. Signature indicates the ports of a flex flow using
-        the callable as entry.
+    def infer_signature(self, entry: Union[Callable, FlexFlow, Flow, Prompty], **kwargs) -> dict:
+        """Extract signature for a callable class or a function or a flow. Signature indicates the ports of a flex flow
+        using the callable as entry.
 
-        If entry is a callable function, the signature includes inputs and outputs.
-        If entry is a callable class, the signature includes inputs, outputs, and init.
+        For flex flow:
+            If entry is a callable function, the signature includes inputs and outputs.
+            If entry is a callable class, the signature includes inputs, outputs, and init.
+
+        For prompty flow:
+            The signature includes inputs, outputs, and init. Init refers to PromptyModelConfiguration.
+
+        For dag flow:
+            The signature includes inputs and outputs.
+
         Type of each port is inferred from the type hints of the callable and follows type system of json schema.
         Given flow accepts json input in batch run and serve, we support only a part of types for those ports.
         Complicated types must be decorated with dataclasses.dataclass.
@@ -1121,7 +1064,8 @@ class FlowOperations(TelemetryMixin):
         :rtype: dict
         """
         # TODO: should we support string entry? If so, we should also add a parameter to specify the working directory
-        flow_meta, _, _ = self._infer_signature(entry=entry)
+        include_primitive_output = kwargs.get("include_primitive_output", False)
+        flow_meta = self._infer_signature(entry=entry, include_primitive_output=include_primitive_output)
         return flow_meta
 
     def _save(
@@ -1139,11 +1083,11 @@ class FlowOperations(TelemetryMixin):
         # hide the language field before csharp support go public
         language: str = kwargs.get(LANGUAGE_KEY, FlowLanguage.Python)
 
-        entry_meta, code, snapshot_list = self._infer_signature(
+        entry_meta, code, snapshot_list = infer_signature_for_flex_flow(
             entry, code=code, keep_entry=True, validate=False, language=language
         )
 
-        data = self._merge_signature(entry_meta, signature)
+        data = merge_flow_signature(entry_meta, signature)
         data["entry"] = entry_meta["entry"]
 
         # python_requirements_txt
@@ -1256,18 +1200,3 @@ class FlowOperations(TelemetryMixin):
             sample=sample,
             **kwargs,
         )
-
-    def _update_signatures(self, code: Path, data: dict) -> bool:
-        """Update signatures for flex flow. Raise validation error if signature is not valid."""
-        if not is_flex_flow(yaml_dict=data):
-            return False
-        entry = data.get("entry")
-        signatures, _, _ = self._infer_signature(entry=entry, code=code)
-        merged_signatures = self._merge_signature(extracted=signatures, signature_overrides=data)
-        FlexFlow(path=code / FLOW_FLEX_YAML, code=code, data=data, entry=entry)._validate()
-        updated = False
-        for field in ["inputs", "outputs", "init"]:
-            if merged_signatures.get(field) != data.get(field):
-                updated = True
-        data.update(merged_signatures)
-        return updated

@@ -1,0 +1,28 @@
+---
+name: Stream Chat
+description: Chat with stream enabled.
+model:
+  api: chat
+  configuration:
+    type: azure_openai
+    azure_deployment: gpt-35-turbo
+  parameters:
+    temperature: 0.2    
+inputs: 
+  question:
+    type: string
+  chat_history:
+    type: list
+sample: sample.json
+---
+
+system:
+You are a helpful assistant.
+
+{% for item in chat_history %}
+{{item.role}}:
+{{item.content}}
+{% endfor %}
+
+user:
+{{question}}

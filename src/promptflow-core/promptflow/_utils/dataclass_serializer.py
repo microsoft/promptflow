@@ -91,3 +91,10 @@ def convert_eager_flow_output_to_dict(value: Any):
         return {f.name: getattr(value, f.name) for f in fields(value)}
     else:
         return {DEFAULT_OUTPUT_NAME: value}
+
+
+def convert_dataclass_to_dict(value: Any):
+    if is_dataclass(value):
+        return {f.name: getattr(value, f.name) for f in fields(value)}
+    else:
+        return value

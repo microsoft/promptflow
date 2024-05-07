@@ -1,35 +1,43 @@
 # LLM 
 
 ## Introduction
-Prompt flow LLM tool enables you to leverage widely used large language models like [OpenAI](https://platform.openai.com/) or [Azure OpenAI (AOAI)](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/overview) for natural language processing. 
+Prompt flow LLM tool enables you to leverage widely used large language models like [OpenAI](https://platform.openai.com/), [Azure OpenAI (AOAI)](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/overview), and models in [Azure AI Studio model catalog](https://learn.microsoft.com/en-us/azure/ai-studio/how-to/model-catalog) for natural language processing. 
+> [!NOTE]
+> The previous version of the LLM tool is now being deprecated. Please upgrade to latest [promptflow-tools](https://pypi.org/project/promptflow-tools/) package to consume new llm tools.
 
 Prompt flow provides a few different LLM APIs:
 - **[Completion](https://platform.openai.com/docs/api-reference/completions)**: OpenAI's completion models generate text based on provided prompts.
 - **[Chat](https://platform.openai.com/docs/api-reference/chat)**: OpenAI's chat models facilitate interactive conversations with text-based inputs and responses.
-> [!NOTE]
-> We now remove the `embedding` option from LLM tool api setting. You can use embedding api with [Embedding tool](https://github.com/microsoft/promptflow/blob/main/docs/reference/tools-reference/embedding_tool.md).
 
 
 ## Prerequisite
-Create OpenAI resources:
+Create OpenAI resources, Azure OpenAI resources or MaaS deployment with the LLM models (e.g.: llama2, mistral, cohere etc.) in Azure AI Studio model catalog:
 
 - **OpenAI**
 
     Sign up account [OpenAI website](https://openai.com/)
+
     Login and [Find personal API key](https://platform.openai.com/account/api-keys)
 
 - **Azure OpenAI (AOAI)**
 
     Create Azure OpenAI resources with [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal)
 
+- **MaaS deployment**
+
+    Create MaaS deployment for models in Azure AI Studio model catalog with [instruction](https://learn.microsoft.com/en-us/azure/ai-studio/concepts/deployments-overview#deploy-models-with-model-as-a-service)
+
+    You can create serverless connection to use this MaaS deployment.
+
 ## **Connections**
 
 Setup connections to provisioned resources in prompt flow.
 
-| Type        | Name     | API KEY  | API Type | API Version |
-|-------------|----------|----------|----------|-------------|
-| OpenAI      | Required | Required | -        | -           |
-| AzureOpenAI | Required | Required | Required | Required    |
+| Type        | Name     | API KEY  | API BASE |  API Type | API Version |
+|-------------|----------|----------|----------|-----------|-------------|
+| OpenAI      | Required | Required | -        | -         | -           |
+| AzureOpenAI | Required | Required | Required | Required  | Required    |
+| Serverless  | Required | Required | Required | -         | -           |
 
 
 ## Inputs
@@ -66,16 +74,15 @@ Setup connections to provisioned resources in prompt flow.
 | presence\_penalty      | float       | value that controls the model's behavior with regards to repeating phrases. Default is 0.      | No       |
 | frequency\_penalty     | float       | value that controls the model's behavior with regards to generating rare phrases. Default is 0.| No       |
 | logit\_bias            | dictionary  | the logit bias for the language model. Default is empty dictionary.                            | No       |
-| function\_call         | object      | value that controls which function is called by the model. Default is null.                    | No       |
-| functions              | list        | a list of functions the model may generate JSON inputs for. Default is null.                   | No       |
+| tool\_choice           | object      | value that controls which tool is called by the model. Default is null.                        | No       |
+| tools                  | list        | a list of tools the model may generate JSON inputs for. Default is null.                       | No       |
 | response_format        | object      | an object specifying the format that the model must output. Default is null.                   | No       |
 
 ## Outputs
 
-| API        | Return Type | Description                              |
-|------------|-------------|------------------------------------------|
-| Completion | string      | The text of one predicted completion     |
-| Chat       | string      | The text of one response of conversation |
+| Return Type | Description                                                          |
+|-------------|----------------------------------------------------------------------|
+| string      | The text of one predicted completion or response of conversation     |
 
 
 ## How to use LLM Tool?
