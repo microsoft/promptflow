@@ -216,6 +216,24 @@ class TestTraceEntitiesAndOperations:
             expected_span_dict["events"][i]["attributes"] = dict()
         assert_span_equals(lazy_load_span, expected_span_dict)
 
+    def test_aggregation_node_in_eval_run(self, pf: PFClient) -> None:
+        # mock a span generated from an aggregation node in an eval run
+        # whose attributes has `referenced.batch_run_id`, no `line_number`
+        span = mock_span(
+            trace_id=str(uuid.uuid4()),
+            span_id=str(uuid.uuid4()),
+            parent_id=None,
+            line_run_id=str(uuid.uuid4()),
+        )
+        batch_run_id = str(uuid.uuid4())
+        span.attributes.pop(SpanAttributeFieldName.LINE_RUN_ID)
+        span.attributes[SpanAttributeFieldName.BATCH_RUN_ID] = batch_run_id
+        span.attributes[SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID] = str(uuid.uuid4())
+        span._persist()
+        # list and assert to ensure the persist is successful
+        line_runs = pf.traces.list_line_runs(runs=[batch_run_id])
+        assert len(line_runs) == 1
+
     def test_spans_persist_and_line_run_gets(self, pf: PFClient) -> None:
         trace_id = str(uuid.uuid4())
         non_root_span_id = str(uuid.uuid4())
