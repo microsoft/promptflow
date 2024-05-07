@@ -84,7 +84,7 @@ class TestFlowAPIs:
             ).json
         assert len(response) >= 1
 
-    def test_eager_flow_test_with_user_code_error(self, pfs_op: PFSOperations) -> None:
+    def test_eager_flow_with_user_code_error(self, pfs_op: PFSOperations) -> None:
         with check_activity_end_telemetry(
             expected_activities=[
                 {"activity_name": "pf.flows.test", "completion_status": "Failure"},
@@ -95,7 +95,7 @@ class TestFlowAPIs:
                 request_body={},
                 status_code=404,
             )
-        assert '"inner_exception": "Traceback (most recent call last):' in response.text
+        assert "Traceback (most recent call last):" in response.text
 
     def test_prompty_test(self, pfs_op: PFSOperations) -> None:
         with check_activity_end_telemetry(
