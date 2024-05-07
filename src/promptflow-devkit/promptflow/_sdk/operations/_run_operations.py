@@ -455,6 +455,7 @@ class RunOperations(TelemetryMixin):
         # maybe we can fully switch to trace UI for DAG flow run in the future
         has_flex_flow_run = any([run._flow_type == FlowType.FLEX_FLOW for run in validated_runs])
         if has_flex_flow_run is True:
+            logger.debug("there exists flex flow run(s), will use trace UI for visualization.")
             self._visualize_with_trace_ui(runs=validated_runs, open_html=html_path is None)
         else:
             try:
