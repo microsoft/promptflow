@@ -6,7 +6,8 @@
 import copy
 import logging
 import time
-from typing import Any, Dict, List, Tuple, Union
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import jinja2
 
@@ -14,22 +15,22 @@ from .._model_tools import LLMBase, OpenAIChatCompletionsModel, RetryClient
 from .constants import ConversationRole
 
 
-class ConversationTurn(object):
-    def __init__(self, role: ConversationRole, name=None, message="", full_response=None, request=None):
-        self.role = role
-        self.name = name
-        self.message = message
-        self.full_response = full_response
-        self.request = request
+@dataclass
+class ConversationTurn:
+    role: "ConversationRole"
+    name: Optional[str] = None
+    message: str = ""
+    full_response: Optional[Any] = None
+    request: Optional[Any] = None
 
-    def to_openai_chat_format(self, reverse=False):
+    def to_openai_chat_format(self, reverse: bool = False) -> dict:
         if reverse is False:
             return {"role": self.role.value, "content": self.message}
         if self.role == ConversationRole.ASSISTANT:
             return {"role": ConversationRole.USER.value, "content": self.message}
         return {"role": ConversationRole.ASSISTANT.value, "content": self.message}
 
-    def to_annotation_format(self, turn_number: int):
+    def to_annotation_format(self, turn_number: int) -> dict:
         return {
             "turn_number": turn_number,
             "response": self.message,
@@ -40,9 +41,6 @@ class ConversationTurn(object):
 
     def __str__(self) -> str:
         return f"({self.role.value}): {self.message}"
-
-    def __repr__(self) -> str:
-        return f"CoversationTurn(role={self.role.value}, message={self.message})"
 
 
 class ConversationBot:
