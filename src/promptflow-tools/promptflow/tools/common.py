@@ -519,7 +519,7 @@ def is_retriable_api_connection_error(e: APIConnectionError):
 
 
 # TODO(2971352): revisit this tries=100 when there is any change to the 10min timeout logic
-def handle_openai_error(tries: int = 100, conn_error_tries: int = 10):
+def handle_openai_error(tries: int = 100, unprocessable_entity_error_tries: int = 3):
     """
     A decorator function for handling OpenAI errors.
 
@@ -527,17 +527,17 @@ def handle_openai_error(tries: int = 100, conn_error_tries: int = 10):
 
     For retriable errors, the decorator uses the following parameters to control its retry behavior:
     `tries`: max times for the function invocation, type is int
-    `conn_error_tries`: max times for the function invocation when consecutive connection error occurs,
-                        type is int
+    `unprocessable_entity_error_tries`: max times for the function invocation when consecutive
+        422 error occurs, type is int
 
     Note:
-    - The retry policy for APIConnectionError is different because retrying may not be beneficial
-      if there is a genuine connection issue. So small threshold and requiring consecutive errors.
+    - The retry policy for UnprocessableEntityError is different because retrying may not be beneficial,
+      so small threshold and requiring consecutive errors.
     """
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            consecutive_conn_error_count = 0
+            consecutive_422_error_count = 0
             for i in range(tries + 1):
                 try:
                     return func(*args, **kwargs)
@@ -565,7 +565,11 @@ def handle_openai_error(tries: int = 100, conn_error_tries: int = 10):
                     if isinstance(e, APIConnectionError) and not isinstance(e, APITimeoutError) \
                             and not is_retriable_api_connection_error(e):
                         raise WrappedOpenAIError(e)
+
                     # Retry InternalServerError(>=500), RateLimitError(429), UnprocessableEntityError(422)
+                    # Solution references:
+                    # https://platform.openai.com/docs/guides/error-codes/api-errors
+                    # https://platform.openai.com/docs/guides/error-codes/python-library-error-types
                     if isinstance(e, APIStatusError):
                         status_code = e.response.status_code
                         if status_code < 500 and status_code not in [429, 422]:
@@ -577,13 +581,13 @@ def handle_openai_error(tries: int = 100, conn_error_tries: int = 10):
 
                     # Retriable errors.
                     # To fix issue #2296, retry on api connection error, but with a separate retry policy.
-                    if isinstance(e, APIConnectionError):
-                        consecutive_conn_error_count += 1
+                    if isinstance(e, APIStatusError) and e.response.status_code == 422:
+                        consecutive_422_error_count += 1
                     else:
-                        # If other retriable errors, reset consecutive_conn_error_count.
-                        consecutive_conn_error_count = 0
+                        # If other retriable errors, reset consecutive_422_error_count.
+                        consecutive_422_error_count = 0
 
-                    if i == tries or consecutive_conn_error_count == conn_error_tries:
+                    if i == tries or consecutive_422_error_count == unprocessable_entity_error_tries:
                         # Exit retry if max retry reached
                         print(f"{type(e).__name__} reached max retry. Exit retry with user error.", file=sys.stderr)
                         raise ExceedMaxRetryTimes(e)
