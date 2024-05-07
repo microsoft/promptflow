@@ -38,8 +38,7 @@ git checkout -b user/singankit/pf-evals-bug-bash
     pip uninstall promptflow promptflow-azure promptflow-core promptflow-devkit promptflow-tools promptflow-evals
 
    # Install packages in this order
-   pip install pip install promptflow-evals==0.2.0.dev125831637 --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
-   pip install promptflow-evals==0.2.0.dev125439426 --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
+   pip install promptflow-evals==0.2.0.dev125831637 --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
    pip install azure_ai_ml==1.16.0a20240501004 --extra-index-url https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-python/pypi/simple/
 
    # Dependencies needed for some of the notebooks
