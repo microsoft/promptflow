@@ -342,3 +342,47 @@ class TestHandleOpenAIError:
 
         assert "extra fields not permitted" in exc_info.value.message
         assert "Please kindly avoid using vision model in LLM tool" in exc_info.value.message
+
+    def test_chat_prompt_with_invalid_assistant_message(self, azure_open_ai_connection):
+        prompt_template = """
+            # assistant:
+            How can I assist you?
+
+            # tool:
+            ## tool_call_id:
+            fake_tool_call_id
+            ## content:
+            fake_content
+        """
+        raw_message = (
+            "OpenAI API hits BadRequestError: Invalid parameter: messages with role 'tool' must be a "
+            "response to a preceeding message with 'tool_calls'. Please make sure your chat prompt"
+            " includes 'tool_calls' under the role 'assistant'."
+        )
+        error_codes = "UserError/OpenAIError/BadRequestError"
+        with pytest.raises(WrappedOpenAIError) as exc_info:
+            chat(azure_open_ai_connection, prompt=f"{prompt_template}", deployment_name="gpt-35-turbo")
+        assert raw_message in exc_info.value.message
+        assert exc_info.value.error_codes == error_codes.split("/")
+
+    def test_chat_prompt_with_invalid_tool_message(self, azure_open_ai_connection):
+        prompt_template = """
+            # assistant:
+            ## tool_calls:
+            [{'id': 'fake_tool_id', 'type': 'function', 'function': {'name': 'get_current_weather', 'arguments': '{}'}}]
+
+            # tool_1:
+            ## tool_call_id:
+            fake_tool_call_id
+            ## content:
+            fake_content
+        """
+        raw_message = (
+            "make sure your chat prompt includes 'tool' role with 'tool_call_id's responding "
+            "to those in the assistant message"
+        )
+        error_codes = "UserError/OpenAIError/BadRequestError"
+        with pytest.raises(WrappedOpenAIError) as exc_info:
+            chat(azure_open_ai_connection, prompt=f"{prompt_template}", deployment_name="gpt-35-turbo")
+        assert raw_message in exc_info.value.message
+        assert exc_info.value.error_codes == error_codes.split("/")

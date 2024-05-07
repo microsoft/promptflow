@@ -58,6 +58,18 @@ def to_openai_error_message(e: Exception) -> str:
               "please make sure you have proper role assignment on your azure openai resource. You can refer to " \
               "https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/role-based-access-control"
         return f"OpenAI API hits {ex_type}: {msg}"
+    elif "messages with role 'tool' must be a response to a preceeding message with 'tool_calls'" in error_message:
+        msg = "Invalid parameter: messages with role 'tool' must be a response to a preceeding message with " \
+              "'tool_calls'. Please make sure your chat prompt includes 'tool_calls' under the role 'assistant'. " \
+              "You could refer to guideline at https://aka.ms/pfdoc/chat-prompt"
+        return f"OpenAI API hits {ex_type}: {msg}"
+    elif (
+        "assistant message with 'tool_calls' must be followed by tool messages responding to each 'tool_call_id'"
+        in error_message
+    ):
+        msg = "Please make sure your chat prompt includes 'tool' role with 'tool_call_id's responding to those "\
+              "in the assistant message. You could refer to guideline at https://aka.ms/pfdoc/chat-prompt"
+        return f"OpenAI API hits {ex_type}: {msg}. Original error: {error_message}"
     else:
         return f"OpenAI API hits {ex_type}: {error_message} [{openai_error_code_ref_message}]"
 

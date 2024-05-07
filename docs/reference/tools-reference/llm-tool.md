@@ -158,3 +158,75 @@ In LLM tool, the prompt is transformed to match the [openai messages](https://pl
     }
 ]
 ```
+
+### Sample 3
+```jinja
+# system:
+You are a helpful assistant.
+
+{% for item in chat_history %}
+# user:
+{{item.inputs.question}}
+
+{% if 'tool_calls' in item.outputs.llm_output  and item.outputs.llm_output.tool_calls is not none %}
+# assistant:
+## tool_calls:
+{{item.outputs.llm_output.tool_calls}}
+
+{% for tool_call_item in item.outputs.llm_output.tool_calls %}
+# tool:
+## tool_call_id:
+{{tool_call_item.id}}
+## content:
+{{item.outputs.answer}}
+
+{% endfor %}
+
+{% else %}
+# assistant:
+{{item.outputs.llm_output}}
+
+{% endif %}
+
+{% endfor %}
+
+# user:
+{{question}}
+```
+
+In LLM tool, the prompt is transformed to match the [openai messages](https://platform.openai.com/docs/api-reference/chat/create#chat-create-messages) structure before sending to openai chat API.
+
+```
+[
+    {
+        "role": "system",
+        "content": "You are a helpful assistant."
+    },
+    {
+        "role": "user",
+        "content": "<question-of-chat-history-round-1>"
+    },
+    {
+        "role": "assistant",
+        "content": null,
+        "function_call": null,
+        "tool_calls": [
+            {
+                "id": "<tool-call-id-for-question-of-chat-history-round-1>",
+                "type": "function",
+                "function": "<function-to-call-for-question-of-chat-history-round-1>"
+            }
+        ]
+    },
+    {
+        "role": "tool",
+        "tool_call_id": "<tool-call-id-for-question-of-chat-history-round-1>",
+        "content": "<tool-response-for-question-of-chat-history-round-1>"
+    }
+    ...
+    {
+        "role": "user",
+        "content": "<question>"
+    }
+]
+```
