@@ -4,9 +4,7 @@ import os
 import re
 import uuid
 from dataclasses import asdict
-from os import PathLike
-from pathlib import Path
-from typing import List, Mapping, Union
+from typing import List, Mapping
 
 from promptflow.contracts.types import PromptTemplate
 from promptflow.core._connection import AzureOpenAIConnection, OpenAIConnection, _Connection
@@ -15,7 +13,6 @@ from promptflow.core._errors import (
     ChatAPIToolRoleInvalidFormat,
     CoreError,
     InvalidOutputKeyError,
-    InvalidSampleError,
     UnknownConnectionType,
 )
 from promptflow.core._model_configuration import ModelConfiguration
@@ -48,20 +45,6 @@ def parse_environment_variable(value):
         return os.environ.get(env_name, value)
     else:
         return value
-
-
-def load_inputs_from_sample(sample: Union[dict, str, PathLike]):
-    if not sample:
-        return {}
-    elif isinstance(sample, dict):
-        return sample
-    elif isinstance(sample, (str, Path)) and Path(sample).suffix.lower() == ".json":
-        if not Path(sample).exists():
-            raise InvalidSampleError(f"Cannot find sample file {sample}.")
-        with open(sample, "r") as f:
-            return json.load(f)
-    else:
-        raise InvalidSampleError("Only dict and json file are supported as sample in prompty.")
 
 
 def get_connection_by_name(connection_name):

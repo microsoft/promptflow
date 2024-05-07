@@ -142,7 +142,7 @@ class PatchedJSONSchema(JSONSchema):
 from promptflow._sdk.schemas._connection import AzureOpenAIConnectionSchema, OpenAIConnectionSchema, \
 QdrantConnectionSchema, CognitiveSearchConnectionSchema, SerpConnectionSchema, AzureContentSafetyConnectionSchema, \
 FormRecognizerConnectionSchema, CustomConnectionSchema, WeaviateConnectionSchema, ServerlessConnectionSchema, \
-CustomStrongTypeConnectionSchema
+CustomStrongTypeConnectionSchema, AzureAIServicesConnectionSchema
 from promptflow._sdk.schemas._run import RunSchema
 from promptflow._sdk.schemas._flow import FlowSchema, FlexFlowSchema
 
@@ -163,7 +163,7 @@ python scripts/json_schema/gen_json_schema.py -a # Generate all schema files
         args.output_file = ["Run", "Flow", "AzureOpenAIConnection", "OpenAIConnection", "QdrantConnection",
                             "CognitiveSearchConnection", "SerpConnection", "AzureContentSafetyConnection",
                             "FormRecognizerConnection", "CustomConnection", "WeaviateConnection", "ServerlessConnection",
-                            "CustomStrongTypeConnection"]
+                            "CustomStrongTypeConnection", "AzureAIServicesConnection"]
 
     # Special case for Flow and EagerFlow
     if "Flow" in args.output_file:

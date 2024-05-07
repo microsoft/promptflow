@@ -611,8 +611,8 @@ class TestFlowSave:
             "init": {
                 "configuration": {"type": "object"},
                 "parameters": {"type": "object"},
-                "api": {"type": "object", "default": "chat"},
-                "response": {"type": "object", "default": "first"},
+                "api": {"type": "string", "default": "chat"},
+                "response": {"type": "string", "default": "first"},
             },
         }
 
@@ -626,8 +626,8 @@ class TestFlowSave:
             "init": {
                 "configuration": {"type": "object"},
                 "parameters": {"type": "object"},
-                "api": {"type": "object", "default": "chat"},
-                "response": {"type": "object", "default": "first"},
+                "api": {"type": "string", "default": "chat"},
+                "response": {"type": "string", "default": "first"},
             },
         }
         # Flex flow
@@ -654,3 +654,35 @@ class TestFlowSave:
         with pytest.raises(UserErrorException) as ex:
             pf.flows.infer_signature(entry="invalid_entry")
         assert "only support callable object or prompty" in ex.value.message
+
+        # Test update flex flow
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with open(Path(temp_dir) / "flow.flex.yaml", "w") as f:
+                f.write("entry: entry:my_flow")
+
+            with open(Path(temp_dir) / "entry.py", "w") as f:
+                f.write(
+                    """
+def my_flow(input_val: str = "gpt") -> str:
+    pass
+"""
+                )
+            flex_flow = load_flow(source=temp_dir)
+            meta = pf.flows.infer_signature(entry=flex_flow, include_primitive_output=True)
+            assert meta == {
+                "inputs": {"input_val": {"default": "gpt", "type": "string"}},
+                "outputs": {"output": {"type": "string"}},
+            }
+            # Update flex flow
+            with open(Path(temp_dir) / "entry.py", "w") as f:
+                f.write(
+                    """
+def my_flow(input_val: str, new_input_val: str) -> str:
+    pass
+"""
+                )
+            meta = pf.flows.infer_signature(entry=flex_flow, include_primitive_output=True)
+            assert meta == {
+                "inputs": {"input_val": {"type": "string"}, "new_input_val": {"type": "string"}},
+                "outputs": {"output": {"type": "string"}},
+            }

@@ -171,6 +171,9 @@ class SpanAttributeFieldName:
     COMPLETION_TOKEN_COUNT = "__computed__.cumulative_token_count.completion"
     PROMPT_TOKEN_COUNT = "__computed__.cumulative_token_count.prompt"
     TOTAL_TOKEN_COUNT = "__computed__.cumulative_token_count.total"
+    # Execution target, e.g. prompty, flex, dag, code.
+    # We may need another field to indicate the language, e.g. python, csharp.
+    EXECUTION_TARGET = "execution_target"
 
     SESSION_ID = "session_id"
 
@@ -230,6 +233,7 @@ class ConnectionType(str, Enum):
     COGNITIVE_SEARCH = "CognitiveSearch"
     SERP = "Serp"
     AZURE_CONTENT_SAFETY = "AzureContentSafety"
+    AZURE_AI_SERVICES = "AzureAIServices"
     FORM_RECOGNIZER = "FormRecognizer"
     WEAVIATE = "Weaviate"
     SERVERLESS = "Serverless"
@@ -255,6 +259,23 @@ class CustomStrongTypeConnectionConfigs:
             CustomStrongTypeConnectionConfigs.PROMPTFLOW_PACKAGE_KEY,
             CustomStrongTypeConnectionConfigs.PROMPTFLOW_PACKAGE_VERSION_KEY,
         ]
+
+
+class TokenKeys:
+    TOTAL_TOKENS = "total_tokens"
+    COMPLETION_TOKENS = "completion_tokens"
+    PROMPT_TOKENS = "prompt_tokens"
+
+    @staticmethod
+    def get_all_values():
+        values = [value for key, value in vars(TokenKeys).items() if isinstance(value, str) and key.isupper()]
+        return values
+
+
+class SystemMetricKeys:
+    NODE_PREFIX = "__pf__.nodes"
+    LINES_COMPLETED = "__pf__.lines.completed"
+    LINES_FAILED = "__pf__.lines.failed"
 
 
 class ConnectionProviderConfig:

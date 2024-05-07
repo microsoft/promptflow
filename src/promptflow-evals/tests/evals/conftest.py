@@ -1,6 +1,9 @@
 import json
 import multiprocessing
+import os
+import subprocess
 from pathlib import Path
+from typing import Dict
 from unittest.mock import patch
 
 import pytest
@@ -11,11 +14,15 @@ from promptflow.core import AzureOpenAIModelConfiguration
 from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
+from promptflow.azure import PFClient as AzurePFClient
+from azure.identity import DefaultAzureCredential
 
 try:
     from promptflow.recording.local import recording_array_reset
     from promptflow.recording.record_mode import is_in_ci_pipeline, is_live, is_record, is_replay
-except ImportError:
+except ImportError as e:
+    print(f"Failed to import promptflow-recording: {e}")
+
     # Run test in empty mode if promptflow-recording is not installed
     def recording_array_reset():
         pass
@@ -38,11 +45,37 @@ CONNECTION_FILE = (PROMPTFLOW_ROOT / "promptflow-evals/connections.json").resolv
 RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "promptflow-recording/recordings/local").resolve()
 
 
+@pytest.fixture
+def configure_default_azure_credential():
+    with open(
+        file=CONNECTION_FILE,
+        mode="r",
+    ) as f:
+        dev_connections = json.load(f)
+
+    # for running e2e test which uses DefaultAzureCredential in ci pipeline
+    if "pf-evals-sp" in dev_connections:
+        creds = dev_connections["pf-evals-sp"]["value"]
+        for key, value in creds.items():
+            os.environ[key] = value
+        login_output = subprocess.check_output(
+            ["az", "login", "--service-principal", "-u", creds["AZURE_CLIENT_ID"],
+             "-p", creds["AZURE_CLIENT_SECRET"], "--tenant", creds["AZURE_TENANT_ID"]], shell=True)
+        print("loging_output")
+        print(login_output)
+
+
 def pytest_configure():
     pytest.is_live = is_live()
     pytest.is_record = is_record()
     pytest.is_replay = is_replay()
     pytest.is_in_ci_pipeline = is_in_ci_pipeline()
+
+    print()
+    print(f"pytest.is_live: {pytest.is_live}")
+    print(f"pytest.is_record: {pytest.is_record}")
+    print(f"pytest.is_replay: {pytest.is_replay}")
+    print(f"pytest.is_in_ci_pipeline: {pytest.is_in_ci_pipeline}")
 
 
 @pytest.fixture
@@ -70,7 +103,52 @@ def model_config() -> dict:
 
     model_config = AzureOpenAIModelConfiguration(**dev_connections[conn_name]["value"])
 
+    AzureOpenAIModelConfiguration.__repr__ = lambda self: "<sensitive data redacted>"
+
     return model_config
+
+
+@pytest.fixture
+def project_scope() -> dict:
+    conn_name = "azure_ai_project_scope"
+
+    with open(
+        file=CONNECTION_FILE,
+        mode="r",
+    ) as f:
+        dev_connections = json.load(f)
+
+    if conn_name not in dev_connections:
+        raise ValueError(f"Connection '{conn_name}' not found in dev connections.")
+
+    return dev_connections[conn_name]["value"]
+
+
+@pytest.fixture
+def mock_trace_destination_to_cloud(project_scope: dict):
+    """Mock trace destination to cloud."""
+
+    subscription_id = project_scope["subscription_id"]
+    resource_group_name = project_scope["resource_group_name"]
+    workspace_name = project_scope["project_name"]
+
+    trace_destination = (
+        f"azureml://subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/"
+        f"providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}"
+    )
+    with patch("promptflow._sdk._configuration.Configuration.get_trace_destination", return_value=trace_destination):
+        yield
+
+
+@pytest.fixture
+def azure_pf_client(project_scope: Dict):
+    """The fixture, returning AzurePFClient"""
+    return AzurePFClient(
+        subscription_id=project_scope["subscription_id"],
+        resource_group_name=project_scope["resource_group_name"],
+        workspace_name=project_scope["project_name"],
+        credential=DefaultAzureCredential()
+    )
 
 
 @pytest.fixture

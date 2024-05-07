@@ -27,7 +27,14 @@ async def retrieve_tool_func_result(request: RetrieveToolFuncResultRequest):
     from promptflow._core.tools_manager import retrieve_tool_func_result
 
     args = (request.func_call_scenario, request.func_path, request.func_kwargs, request.ws_triple)
-    return await invoke_sync_function_in_process(retrieve_tool_func_result, args=args, wait_timeout=SHORT_WAIT_TIMEOUT)
+    # To support dynamic list, runtime put PF_HTTP_CONNECTION_PROVIDER_ENDPOINT in request.environment_variables,
+    # executor should set it to environment variables in subprocess for init http connection provider later.
+    return await invoke_sync_function_in_process(
+        retrieve_tool_func_result,
+        args=args,
+        wait_timeout=SHORT_WAIT_TIMEOUT,
+        environment_variables=request.environment_variables,
+    )
 
 
 @router.post("/meta")

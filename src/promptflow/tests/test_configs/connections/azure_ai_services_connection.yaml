@@ -1,0 +1,5 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/AzureAIServicesConnection.schema.json
+name: my_ai_services_connection
+type: azure_ai_services  # snake case
+api_key: "<to-be-replaced>"
+endpoint: "endpoint"

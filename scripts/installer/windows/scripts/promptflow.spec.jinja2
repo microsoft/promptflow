@@ -17,15 +17,19 @@ for package in meta_packages:
     datas += copy_metadata(package)
 
 opentelemetry_datas, opentelemetry_binaries, opentelemetry_hiddenimports = collect_all('opentelemetry')
+promptflow_datas, promptflow_binaries, promptflow_hiddenimports = collect_all('promptflow')
 datas += opentelemetry_datas
+datas += promptflow_datas
 datas += collect_data_files('streamlit_quill')
-datas += collect_data_files('promptflow')
-datas += copy_metadata('promptflow')
+
 hidden_imports = ['win32timezone', 'promptflow', 'opentelemetry.context.contextvars_context', 'streamlit.runtime.scriptrunner.magic_funcs'] + {{hidden_imports}}
 
 hidden_imports += opentelemetry_hiddenimports
+hidden_imports += promptflow_hiddenimports
+
 binaries = []
 binaries += opentelemetry_binaries
+binaries += promptflow_binaries
 
 block_cipher = None
 

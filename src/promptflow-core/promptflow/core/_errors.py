@@ -108,6 +108,11 @@ class ChatAPIToolRoleInvalidFormat(CoreError):
     pass
 
 
+class ConnectionNotFound(CoreError):
+
+    pass
+
+
 class OpenURLUserAuthenticationError(UserAuthenticationError):
     def __init__(self, **kwargs):
         super().__init__(target=ErrorTarget.CORE, **kwargs)

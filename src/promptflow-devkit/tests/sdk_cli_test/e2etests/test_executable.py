@@ -1,9 +1,6 @@
-import subprocess
-import sys
 import tempfile
 from pathlib import Path
 
-import mock
 import pytest
 from _constants import PROMPTFLOW_ROOT
 
@@ -19,44 +16,27 @@ DATAS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/datas"
 @pytest.mark.cli_test
 @pytest.mark.e2etest
 class TestExecutable:
-    @pytest.mark.skipif(
-        sys.platform == "win32" or sys.platform == "darwin",
-        reason="Raise Exception: Process terminated with exit code 4294967295",
-    )
     def test_flow_build_executable(self):
         source = f"{FLOWS_DIR}/web_classification/flow.dag.yaml"
-        target = "promptflow._sdk.operations._flow_operations.FlowOperations._run_pyinstaller"
-        with mock.patch(target) as mocked:
-            mocked.return_value = None
-
-            with tempfile.TemporaryDirectory() as temp_dir:
-                run_pf_command(
-                    "flow",
-                    "build",
-                    "--source",
-                    source,
-                    "--output",
-                    temp_dir,
-                    "--format",
-                    "executable",
-                )
-                # Start the Python script as a subprocess
-                app_file = Path(temp_dir, "app.py").as_posix()
-                process = subprocess.Popen(["python", app_file], stderr=subprocess.PIPE)
-                try:
-                    # Wait for a specified time (in seconds)
-                    wait_time = 5
-                    process.wait(timeout=wait_time)
-                    if process.returncode == 0:
-                        pass
-                    else:
-                        raise Exception(
-                            f"Process terminated with exit code {process.returncode}, "
-                            f"{process.stderr.read().decode('utf-8')}"
-                        )
-                except (subprocess.TimeoutExpired, KeyboardInterrupt):
-                    pass
-                finally:
-                    # Kill the process
-                    process.terminate()
-                    process.wait()  # Ensure the process is fully terminated
+        with tempfile.TemporaryDirectory() as temp_dir:
+            run_pf_command(
+                "flow",
+                "build",
+                "--source",
+                source,
+                "--output",
+                temp_dir,
+                "--format",
+                "executable",
+            )
+            check_path_list = [
+                "flow/flow.dag.yaml",
+                "connections/azure_open_ai_connection.yaml",
+                "pf.bat",
+                "pf",
+                "start_pfs.vbs",
+            ]
+            output_path = Path(temp_dir).resolve()
+            for check_path in check_path_list:
+                check_path = output_path / check_path
+                assert check_path.exists()

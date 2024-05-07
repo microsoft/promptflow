@@ -39,10 +39,10 @@ class TestFlowAPIs:
         ).json
         assert response == {
             "init": {
-                "api": {"default": "chat", "type": "object"},
+                "api": {"default": "chat", "type": "string"},
                 "configuration": {"type": "object"},
                 "parameters": {"type": "object"},
-                "response": {"default": "first", "type": "object"},
+                "response": {"default": "first", "type": "string"},
             },
             "inputs": {
                 "firstName": {"default": "John", "type": "string"},

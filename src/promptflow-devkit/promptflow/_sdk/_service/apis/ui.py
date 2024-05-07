@@ -14,7 +14,7 @@ from werkzeug.utils import safe_join
 from promptflow._sdk._constants import DEFAULT_ENCODING, PROMPT_FLOW_DIR_NAME, UX_INPUTS_JSON
 from promptflow._sdk._service import Namespace, Resource, fields
 from promptflow._sdk._service.utils.utils import decrypt_flow_path
-from promptflow._sdk._utils import json_load, read_write_by_user
+from promptflow._sdk._utilities.general_utils import json_load, read_write_by_user
 from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
 from promptflow.exceptions import UserErrorException

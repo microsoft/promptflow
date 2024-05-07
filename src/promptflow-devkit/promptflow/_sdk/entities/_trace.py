@@ -235,10 +235,14 @@ class LineRun:
     def _determine_parent_id(span: Span) -> typing.Optional[str]:
         # for test, `attributes.referenced.line_run_id` should be the parent id
         # for batch run, we need to query line run with run name and line number
+        # however, one exception is aggregation node, which does not have line number attribute
         # otherwise, there will be no parent id
         if SpanAttributeFieldName.REFERENCED_LINE_RUN_ID in span.attributes:
             return span.attributes[SpanAttributeFieldName.REFERENCED_LINE_RUN_ID]
-        elif SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID in span.attributes:
+        elif (
+            SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID in span.attributes
+            and SpanAttributeFieldName.LINE_NUMBER in span.attributes
+        ):
             line_run = ORMLineRun._get_with_run_and_line_number(
                 run=span.attributes[SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID],
                 line_number=span.attributes[SpanAttributeFieldName.LINE_NUMBER],
