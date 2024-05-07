@@ -1879,7 +1879,7 @@ class TestFlowRun:
         # prepare a DAG flow run, a flex flow run and a prompty run
         # DAG flow run
         dag_flow_run = pf.run(
-            flow=Path(f"{FLOWS_DIR}/simple_hello_world").absolute(),
+            flow=Path(f"{FLOWS_DIR}/web_classification").absolute(),
             data=Path(f"{DATAS_DIR}/webClassification3.jsonl").absolute(),
             column_mapping={"name": "${data.url}"},
         )
