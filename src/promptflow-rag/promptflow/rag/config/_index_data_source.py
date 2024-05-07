@@ -1,7 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from typing import Union
+from typing import Optional, Union
 
 from promptflow.rag.constants import IndexInputType
 
@@ -46,7 +46,7 @@ class AzureAISearchSource(IndexDataSource):
         ai_search_embedding_key: str,
         ai_search_title_key: str,
         ai_search_metadata_key: str,
-        ai_search_connection_id: str,
+        ai_search_connection_id: Optional[str] = None,
         num_docs_to_import: int = 50,
     ):
         self.ai_search_index_name = ai_search_index_name
