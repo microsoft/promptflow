@@ -66,15 +66,14 @@ Create a new python file with any name you want. Paste the following snippet:
 
 ```python
 from promptflow.evals.synthetic import AdversarialSimulator
-import config
 from azure.identity import DefaultAzureCredential
 from typing import Any, Dict, List, Optional
 import asyncio
 
-project_scope = {
-    "subscription_id": config.sub,
-    "resource_group_name": config.rg,
-    "workspace_name": config.project_name,
+azure_ai_project = {
+    "subscription_id": <sub_id>,
+    "resource_group_name": <resource_group>,
+    "workspace_name": <project_name>,
     "credential": DefaultAzureCredential(),
 }
 
@@ -87,15 +86,17 @@ async def callback(
     context = None
     if 'file_content' in messages["template_parameters"]:
         question += messages["template_parameters"]['file_content']
+    # the next few lines explains how to use the AsyncAzureOpenAI's chat.completions
+    # to respond to the simulator. You should replace it with a call to your model/endpoint/application
+    # make sure you pass the `question` and format the response as we have shown below
     from openai import AsyncAzureOpenAI
-
     oai_client = AsyncAzureOpenAI(
-        api_key=config.api_key,
-        azure_endpoint=config.endpoint,
+        api_key=<api_key>,
+        azure_endpoint=<Endpoint>,
         api_version="2023-12-01-preview",
     )
     try:
-        response_from_acs = await oai_client.chat.completions.create(messages=[{"content": question, "role": "user"}], model="gpt-4", max_tokens=300)
+        response_from_oai_chat_completions = await oai_client.chat.completions.create(messages=[{"content": question, "role": "user"}], model="gpt-4", max_tokens=300)
     except Exception as e:
         print(f"Error: {e}")
         # to continue the conversation, return the messages, else you can fail the adversarial with an exception
