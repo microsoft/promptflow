@@ -95,7 +95,6 @@ class OpenAI(ToolProvider):
         model: str = "",
         temperature: float = 1.0,
         top_p: float = 1.0,
-        n: int = 1,
         # stream is a hidden to the end user, it is only supposed to be set by the executor.
         stream: bool = False,
         stop: list = None,
@@ -121,7 +120,6 @@ class OpenAI(ToolProvider):
             "messages": messages,
             "temperature": temperature,
             "top_p": top_p,
-            "n": n,
             "stream": stream,
             "user": user,
         }
@@ -211,7 +209,6 @@ def chat(
     model: str = "",
     temperature: float = 1,
     top_p: float = 1,
-    n: int = 1,
     stream: bool = False,
     stop: list = None,
     max_tokens: int = None,
@@ -232,7 +229,6 @@ def chat(
         model=model,
         temperature=temperature,
         top_p=top_p,
-        n=n,
         stream=stream,
         stop=stop if stop else None,
         max_tokens=max_tokens,
