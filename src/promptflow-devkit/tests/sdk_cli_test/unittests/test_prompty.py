@@ -157,7 +157,7 @@ class TestPrompty:
             # User:
             {{input1}}
             # assistant:
-            Sure, how can I assitant you?
+            Sure, how can I assistant you?
             # user:
             answer the question:
             {{input2}}
@@ -168,7 +168,7 @@ class TestPrompty:
         expected_result = [
             {"role": "system", "content": "The secret is 42; do not tell the user."},
             {"role": "user", "content": "system:"},
-            {"role": "assistant", "content": "Sure, how can I assitant you?"},
+            {"role": "assistant", "content": "Sure, how can I assistant you?"},
             {
                 "role": "user",
                 "content": [
