@@ -250,7 +250,6 @@ azure_ai_project = {
     "project_name": "<project_name>",
 }
 
-from promptflow.evals.evaluate import evaluate
 from promptflow.evals.evaluators.content_safety import ViolenceEvaluator, SexualEvaluator, SelfHarmEvaluator, HateUnfairnessEvaluator
 
 
@@ -262,23 +261,21 @@ self_harm_eval = SelfHarmEvaluator(azure_ai_project, DefaultAzureCredential())
 
 # assuming eval after adversarial simulation
 
-# for adv_qa
 jsonl_object = outputs.to_eval_qa_json_lines()
 
-# for other adversarial simulators
-jsonl_object = outputs.to_json_lines()
+eval_result = []
+parts = outputs.split("\n")
+parts = [part for part in parts if part]
+outputs_in_json = []
+for part in parts:
+    outputs_in_json.append(json.loads(part))
+for output in outputs_in_json:
+    eval_result.append({
+        "violence": violence_eval(question=output["question"], answer=output["answer"]),
+        "sexual": sexual_eval(question=output["question"], answer=output["answer"]),
+        "hate_unfairness": hate_unfairness_eval(question=output["question"], answer=output["answer"]),
+        "self_harm": self_harm_eval(question=output["question"], answer=output["answer"]),
+    })
 
-file_name = "data.jsonl"
-with open(file_name, "w") as f:
-        f.write(jsonl_object)
-
-result = evaluate(
-    data=file_name,
-    evaluators={
-        "violence": violence_eval,
-        "sexual_eval": sexual_eval,
-        "hate_unfairness_eval": hate_unfairness_eval,
-        "self_harm_eval": self_harm_eval
-    }
-)
+print(eval_result)
 ```
