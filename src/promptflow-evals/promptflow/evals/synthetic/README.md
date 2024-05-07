@@ -45,7 +45,7 @@ async def callback(
     from openai import AsyncAzureOpenAI
     oai_client = AsyncAzureOpenAI(
         api_key=<api_key>,
-        azure_endpoint=<Endpoint>,
+        azure_endpoint=<endpoint>,
         api_version="2023-12-01-preview",
     )
     try:

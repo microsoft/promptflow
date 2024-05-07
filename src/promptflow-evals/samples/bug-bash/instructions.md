@@ -86,13 +86,14 @@ async def callback(
     context = None
     if 'file_content' in messages["template_parameters"]:
         question += messages["template_parameters"]['file_content']
+
     # the next few lines explains how to use the AsyncAzureOpenAI's chat.completions
     # to respond to the simulator. You should replace it with a call to your model/endpoint/application
     # make sure you pass the `question` and format the response as we have shown below
     from openai import AsyncAzureOpenAI
     oai_client = AsyncAzureOpenAI(
         api_key=<api_key>,
-        azure_endpoint=<Endpoint>,
+        azure_endpoint=<endpoint>,
         api_version="2023-12-01-preview",
     )
     try:
