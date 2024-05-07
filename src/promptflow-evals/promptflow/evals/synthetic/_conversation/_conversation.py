@@ -51,7 +51,6 @@ async def simulate_conversation(
     history_limit: int = 5,
     api_call_delay_sec: float = 0,
     logger: logging.Logger = logging.getLogger(__name__),
-    mlflow_logger=None,
 ) -> Tuple:
     """
     Simulate a conversation between the given bots.
@@ -70,12 +69,9 @@ async def simulate_conversation(
     :type api_call_delay_sec: float
     :param logger: The logger to use for logging. Defaults to the logger named after the current module.
     :type logger: logging.Logger
-    :param mlflow_logger: MLflow logger instance. Defaults to None.
-    :type mlflow_logger: Any
     :return: Simulation a conversation between the given bots.
     :rtype: Tuple
     """
-    logger_tasks = []
 
     # Read the first prompt.
     (first_response, request, _, full_response) = await bots[0].generate_response(
@@ -133,16 +129,8 @@ async def simulate_conversation(
                     request=request,
                 )
             )
-            if mlflow_logger is not None:
-                logger_tasks.append(  # schedule logging but don't get blocked by it
-                    asyncio.create_task(mlflow_logger.log_successful_response(time_taken))
-                )
         except Exception as e:  # pylint: disable=broad-except
             logger.warning("Error: %s", str(e))
-            if mlflow_logger is not None:
-                logger_tasks.append(  # schedule logging but don't get blocked by it
-                    asyncio.create_task(mlflow_logger.log_error())
-                )
 
         # Increment outside the try block so we don't get stuck if
         # an exception is thrown
@@ -151,6 +139,4 @@ async def simulate_conversation(
         # Sleep between consecutive requests to avoid rate limit
         await asyncio.sleep(api_call_delay_sec)
 
-    if mlflow_logger is not None:
-        return conversation_id, conversation_history, logger_tasks
     return conversation_id, conversation_history
