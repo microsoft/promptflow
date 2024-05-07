@@ -1,0 +1,31 @@
+# system:
+Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous.
+
+{% for item in chat_history %}
+# user:
+{{item.inputs.question}}
+
+{% if 'tool_calls' in item.outputs.llm_output  and item.outputs.llm_output.tool_calls is not none %}
+# assistant:
+## tool_calls:
+{{item.outputs.llm_output.tool_calls}}
+
+{% for tool_call_item in item.outputs.llm_output.tool_calls %}
+# tooll:
+## tool_call_id:
+{{tool_call_item.id}}
+## content:
+{{item.outputs.answer}}
+
+{% endfor %}
+
+{% else %}
+# assistant:
+{{item.outputs.llm_output}}
+
+{% endif %}
+
+{% endfor %}
+
+# user:
+{{question}}

@@ -1,0 +1,114 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+environment:
+  python_requirements_txt: requirements.txt
+inputs:
+  chat_history:
+    type: list
+    default:
+    - inputs:
+        question: What is the current weather like in Boston?
+      outputs:
+        answer: '[{"location":"Boston","temperature":"72","unit":"fahrenheit","forecast":["sunny","windy"]}]'
+        llm_output:
+          content: null
+          function_call: null
+          tool_calls:
+          - id: call_ERCQdmIU4WcJR6KJ2uc5RFmi
+            type: function
+            function:
+              name: get_current_weather
+              arguments: |-
+                {
+                  "location": "Boston"
+                }
+          role: assistant
+    is_chat_history: true
+  question:
+    type: string
+    default: What's the current weather like in San Francisco, Tokyo and Paris in
+      Fahrenheit?
+    is_chat_input: true
+outputs:
+  answer:
+    type: string
+    reference: ${run_function.output}
+    is_chat_output: true
+  llm_output:
+    type: object
+    reference: ${use_tools_with_chat_models.output}
+nodes:
+- name: run_function
+  type: python
+  source:
+    type: code
+    path: run_function.py
+  inputs:
+    response_message: ${use_tools_with_chat_models.output}
+- name: use_tools_with_chat_models
+  type: custom_llm
+  source:
+    type: package_with_prompt
+    tool: promptflow.tools.llm.llm
+    path: use_tools_with_chat_models.jinja2
+  inputs:
+    connection: azure_open_ai_connection
+    api: chat
+    deployment_name: gpt-35-turbo-1106
+    temperature: 0.7
+    top_p: 1
+    max_tokens: 256
+    question: ${inputs.question}
+    chat_history: ${inputs.chat_history}
+    tools:
+    - type: function
+      function:
+        name: get_current_weather
+        description: Get the current weather in a given location
+        parameters:
+          type: object
+          properties:
+            location:
+              type: string
+              description: ""
+            unit:
+              type: string
+              description: ""
+          required:
+          - location
+          - unit
+    - type: function
+      function:
+        name: get_n_day_weather_forecast
+        description: Get next num_days weather in a given location
+        parameters:
+          type: object
+          properties:
+            location:
+              type: string
+              description: ""
+            format:
+              type: string
+              description: ""
+            num_days:
+              type: string
+              description: ""
+          required:
+          - location
+          - format
+          - num_days
+- name: get_current_weather
+  type: python
+  source:
+    type: code
+    path: get_current_weather.py
+  inputs:
+    location: '""'
+- name: get_n_day_weather_forecast
+  type: python
+  source:
+    type: code
+    path: get_n_day_weather_forecast.py
+  inputs:
+    location: '""'
+    format: '""'
+    num_days: '""'
