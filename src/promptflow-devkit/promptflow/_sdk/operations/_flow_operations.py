@@ -498,7 +498,7 @@ class FlowOperations(TelemetryMixin):
                 return self._migrate_connections(
                     connection_names=SubmitterHelper.get_used_connection_names(
                         tools_meta=CSharpExecutorProxy.generate_flow_tools_json(
-                            flow_file=flow.flow_dag_path,
+                            flow_file=flow.flow_file_path,
                             working_dir=flow.code,
                         ),
                         flow_dag=flow._data,
@@ -791,7 +791,7 @@ class FlowOperations(TelemetryMixin):
 
         if is_yaml_file(flow_dag_path) and _get_additional_includes(flow_dag_path):
             # Merge the flow folder and additional includes to temp folder.
-            # TODO: support a flow_dag_path with a name different from flow.dag.yaml
+            # TODO: support a flow_file_path with a name different from flow.dag.yaml
             with _merge_local_code_and_additional_includes(code_path=flow_dag_path.parent) as temp_dir:
                 remove_additional_includes(Path(temp_dir))
                 yield Path(temp_dir) / flow_dag_path.name
@@ -891,7 +891,7 @@ class FlowOperations(TelemetryMixin):
                 },
             }, {}
 
-        with self._resolve_additional_includes(flow.flow_dag_path) as new_flow_dag_path:
+        with self._resolve_additional_includes(flow.flow_file_path) as new_flow_dag_path:
             flow_tools = generate_flow_tools_json(
                 flow_directory=new_flow_dag_path.parent,
                 dump=False,
@@ -910,7 +910,7 @@ class FlowOperations(TelemetryMixin):
         for node_name in nodes_with_error:
             tools_errors[node_name] = flow_tools_meta.pop(node_name)
 
-        additional_includes = _get_additional_includes(flow.flow_dag_path)
+        additional_includes = _get_additional_includes(flow.flow_file_path)
         if additional_includes:
             additional_files = {}
             for include in additional_includes:

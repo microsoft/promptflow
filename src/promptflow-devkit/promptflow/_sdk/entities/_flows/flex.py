@@ -34,13 +34,17 @@ class FlexFlow(FlowBase):
         code = Path(code)
         # entry function name
         self.entry = entry
-        self._flow_dir, self._flex_file_name = resolve_flow_path(path)
+        self._flow_dir, self._flow_file_name = resolve_flow_path(path)
         # TODO(2910062): support non-dag flow execution cache
         super().__init__(code=code, path=path, dag=data, content_hash=None, **kwargs)
 
     @property
     def name(self) -> str:
         return self._flow_dir.name
+
+    @property
+    def flow_file_path(self) -> Path:
+        return self._flow_dir / self._flow_file_name
 
     # region properties
     @property
