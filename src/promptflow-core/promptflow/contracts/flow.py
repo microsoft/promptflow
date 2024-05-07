@@ -945,6 +945,7 @@ class FlexFlow(FlowBase):
     :type message_format: str
     """
 
+    init: Dict[str, FlowInputDefinition] = None
     program_language: str = FlowLanguage.Python
     environment_variables: Dict[str, object] = None
     # eager flow does not support multimedia contract currently, it is set to basic by default.
@@ -962,11 +963,13 @@ class FlexFlow(FlowBase):
 
         inputs = data.get("inputs") or {}
         outputs = data.get("outputs") or {}
+        init = data.get("init") or {}
         return FlexFlow(
             id=data.get("id", "default_flow_id"),
             name=data.get("name", "default_flow"),
             inputs={name: FlowInputDefinition.deserialize(i) for name, i in inputs.items()},
             outputs={name: FlowOutputDefinition.deserialize(o) for name, o in outputs.items()},
+            init={name: FlowInputDefinition.deserialize(i) for name, i in init.items()},
             program_language=data.get(LANGUAGE_KEY, FlowLanguage.Python),
             environment_variables=data.get("environment_variables") or {},
         )

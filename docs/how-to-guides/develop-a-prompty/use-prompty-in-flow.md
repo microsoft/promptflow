@@ -109,7 +109,7 @@ python path/to/entry.py
 User can also leverage promptflow to test the class as a `flow`.
 
 ```bash
-pf flow test --flow file:ChatFlow --init init.json --inputs "question=What is ChatGPT?"
+pf flow test --flow file:ChatFlow --init init.json --inputs question="What is ChatGPT?"
 ```
 
 With the `flow` concept, user can further do a rich set of tasks, like:

@@ -14,7 +14,7 @@ from promptflow.core._utils import extract_workspace
 class ConnectionProvider(ABC):
     """The connection provider interface to list/get connections in the current environment."""
 
-    PROVIDER_CONFIG_KEY = "CONNECTION_PROVIDER_CONFIG"
+    PROVIDER_CONFIG_KEY = "PF_CONNECTION_PROVIDER"
     _instance = None
 
     @abstractmethod
@@ -28,12 +28,12 @@ class ConnectionProvider(ABC):
         raise NotImplementedError("Method 'list' is not implemented.")
 
     @classmethod
-    def get_instance(cls) -> "ConnectionProvider":
+    def get_instance(cls, **kwargs) -> "ConnectionProvider":
         """Get the connection provider instance in the current environment.
         It will return different implementations based on the current environment.
         """
         if not cls._instance:
-            cls._instance = cls._init_from_env()
+            cls._instance = cls._init_from_env(**kwargs)
         return cls._instance
 
     @classmethod
@@ -63,7 +63,7 @@ class ConnectionProvider(ABC):
         )
 
     @classmethod
-    def _init_from_env(cls) -> "ConnectionProvider":
+    def _init_from_env(cls, **kwargs) -> "ConnectionProvider":
         """Initialize the connection provider from environment variables."""
         from ._http_connection_provider import HttpConnectionProvider
 
@@ -71,4 +71,4 @@ class ConnectionProvider(ABC):
         if endpoint:
             return HttpConnectionProvider(endpoint)
         provider_config = os.getenv(cls.PROVIDER_CONFIG_KEY, "")
-        return ConnectionProvider.init_from_provider_config(provider_config)
+        return ConnectionProvider.init_from_provider_config(provider_config, credential=kwargs.get("credential"))

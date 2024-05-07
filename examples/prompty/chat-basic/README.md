@@ -55,8 +55,8 @@ pf connection show --name open_ai_connection
 
 - Test flow: single turn
 ```bash
-# run chat flow with default question in flow.flex.yaml TODO
-# pf flow test --flow chat.prompty
+# run chat flow with default question in flow.flex.yaml
+pf flow test --flow chat.prompty
 
 # run chat flow with new question
 pf flow test --flow chat.prompty --inputs question="What's Azure Machine Learning?"
@@ -70,7 +70,7 @@ pf flow test --flow chat.prompty --inputs sample.json
 # start test in interactive terminal (TODO)
 pf flow test --flow chat.prompty --interactive
 
-# start test in chat ui (TODO)
+# start test in chat ui
 pf flow test --flow chat.prompty --ui
 ```
 

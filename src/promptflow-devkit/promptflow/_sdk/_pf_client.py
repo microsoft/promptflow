@@ -17,9 +17,10 @@ from ._configuration import Configuration
 from ._constants import MAX_SHOW_DETAILS_RESULTS
 from ._load_functions import load_flow
 from ._user_agent import USER_AGENT
-from ._utils import generate_yaml_entry
+from ._utilities.general_utils import generate_yaml_entry
 from .entities import Run
-from .entities._flows import FlexFlow
+from .entities._flows import FlexFlow, Prompty
+from .entities._flows.base import FlowBase
 from .operations import RunOperations
 from .operations._connection_operations import ConnectionOperations
 from .operations._experiment_operations import ExperimentOperations
@@ -43,7 +44,7 @@ class PFClient:
         # when this is set, telemetry from this client will use this user agent and ignore the one from OperationContext
         self._user_agent_override = kwargs.pop(USER_AGENT_OVERRIDE_KEY, None)
         self._connection_provider = kwargs.pop("connection_provider", None)
-        self._config = kwargs.get("config", None) or {}
+        self._config = Configuration(overrides=kwargs.get("config", None) or {})
         # The credential is used as an option to override
         # DefaultAzureCredential when using workspace connection provider
         self._credential = kwargs.get("credential", None)
@@ -179,17 +180,23 @@ class PFClient:
         if not run and not data:
             raise ValueError("at least one of data or run must be provided")
 
-        if callable(flow) and not inspect.isclass(flow) and not inspect.isfunction(flow):
+        is_flow_object = isinstance(flow, FlowBase)
+        if not is_flow_object and callable(flow) and not inspect.isclass(flow) and not inspect.isfunction(flow):
             dynamic_callable = flow
             flow = flow.__class__
         else:
             dynamic_callable = None
 
         with generate_yaml_entry(entry=flow, code=code) as flow:
-            # load flow object for validation and early failure
-            flow_obj = load_flow(source=flow)
+            if is_flow_object:
+                flow_obj = flow
+                flow_path = flow.path
+            else:
+                # load flow object for validation and early failure
+                flow_obj = load_flow(source=flow)
+                flow_path = Path(flow)
             # validate param conflicts
-            if isinstance(flow_obj, FlexFlow):
+            if isinstance(flow_obj, (FlexFlow, Prompty)):
                 if variant or connections:
                     logger.warning("variant and connections are not supported for eager flow, will be ignored")
                     variant, connections = None, None
@@ -201,11 +208,11 @@ class PFClient:
                 column_mapping=column_mapping,
                 run=run,
                 variant=variant,
-                flow=Path(flow),
+                flow=flow_path,
                 connections=connections,
                 environment_variables=environment_variables,
                 properties=properties,
-                config=Configuration(overrides=self._config),
+                config=self._config,
                 init=init,
                 dynamic_callable=dynamic_callable,
             )
@@ -365,8 +372,12 @@ class PFClient:
     def _ensure_connection_provider(self) -> str:
         if not self._connection_provider:
             # Get a copy with config override instead of the config instance
-            self._connection_provider = Configuration(overrides=self._config).get_connection_provider()
-            logger.debug("PFClient connection provider: %s", self._connection_provider)
+            self._connection_provider = self._config.get_connection_provider()
+            logger.debug("PFClient connection provider: %s, setting to env.", self._connection_provider)
+            from promptflow.core._connection_provider._connection_provider import ConnectionProvider
+
+            # Set to os.environ for connection provider to use
+            os.environ[ConnectionProvider.PROVIDER_CONFIG_KEY] = self._connection_provider
         return self._connection_provider
 
     @property

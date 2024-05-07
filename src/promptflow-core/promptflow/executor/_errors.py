@@ -4,7 +4,13 @@
 
 from jinja2 import TemplateSyntaxError
 
-from promptflow._utils.exception_utils import ExceptionPresenter, infer_error_code_from_class, remove_suffix
+from promptflow._utils.exception_utils import (
+    ADDITIONAL_INFO_FLEX_FLOW_ERROR,
+    ExceptionPresenter,
+    extract_stack_trace_without_core_frame,
+    infer_error_code_from_class,
+    remove_suffix,
+)
 from promptflow.exceptions import (
     ErrorTarget,
     PromptflowException,
@@ -54,8 +60,21 @@ class InvalidRequest(ValidationException):
         )
 
 
-class ConnectionNotFound(InvalidRequest):
-    pass
+class GetConnectionError(InvalidRequest):
+    def __init__(
+        self,
+        connection: str,
+        node_name: str,
+        error: Exception,
+        **kwargs,
+    ):
+        super().__init__(
+            message_format="Get connection '{connection}' for node '{node_name}' error: {error}",
+            connection=connection,
+            node_name=node_name,
+            error=str(error),
+            target=ErrorTarget.EXECUTOR,
+        )
 
 
 class InvalidBulkTestRequest(ValidationException):
@@ -83,7 +102,30 @@ class InvalidFlowRequest(ValidationException):
 
 
 class ScriptExecutionError(UserErrorException):
-    pass
+    @property
+    def flow_traceback(self):
+        """Return the traceback inside the flow's source code scope.
+
+        The traceback inside the promptflow's internal code will be taken off.
+        """
+        return extract_stack_trace_without_core_frame(self.inner_exception)
+
+    @property
+    def additional_info(self):
+        """Set the exception details as additional info."""
+        if not self.inner_exception:
+            # Only populate additional info when inner exception is present.
+            return None
+
+        info = {
+            "type": self.inner_exception.__class__.__name__,
+            "message": str(self.inner_exception),
+            "traceback": self.flow_traceback,
+        }
+
+        return {
+            ADDITIONAL_INFO_FLEX_FLOW_ERROR: info,
+        }
 
 
 class NodeInputValidationError(InvalidFlowRequest):

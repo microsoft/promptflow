@@ -10,7 +10,7 @@ from azure.core.exceptions import ResourceNotFoundError
 from azure.identity import AzureCliCredential
 
 from promptflow._constants import AzureWorkspaceKind, CosmosDBContainerName
-from promptflow._sdk._utils import extract_workspace_triad_from_trace_provider
+from promptflow._sdk._utilities.general_utils import extract_workspace_triad_from_trace_provider
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure import PFClient
 from promptflow.azure._restclient.flow_service_caller import FlowRequestException

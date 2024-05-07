@@ -125,6 +125,7 @@ class TestFlowRunInfo:
             "system_metrics": {"duration": "00:00:00.0154544", "total_tokens": 0},
             "result": {"answer": "Hello world: What's promptflow?"},
             "upload_metrics": False,
+            "otel_trace_id": "test_otel_trace_id",
         }
         flow_run_info = FlowRunInfo.deserialize(flow_run_info_dict)
         assert flow_run_info.index == 0
@@ -134,3 +135,4 @@ class TestFlowRunInfo:
         assert flow_run_info.api_calls is None
         assert flow_run_info.system_metrics == {"duration": "00:00:00.0154544", "total_tokens": 0}
         assert flow_run_info.output == {"answer": "Hello world: What's promptflow?"}
+        assert flow_run_info.otel_trace_id == "test_otel_trace_id"

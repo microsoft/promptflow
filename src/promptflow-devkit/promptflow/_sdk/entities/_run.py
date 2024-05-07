@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from dateutil import parser as date_parser
 
-from promptflow._constants import FlowType, OutputsFolderName
+from promptflow._constants import FlowType, OutputsFolderName, TokenKeys
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
@@ -44,7 +44,7 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, MissingAzurePackage
 from promptflow._sdk._orm import RunInfo as ORMRun
-from promptflow._sdk._utils import (
+from promptflow._sdk._utilities.general_utils import (
     _sanitize_python_variable_name,
     is_multi_container_enabled,
     is_remote_uri,
@@ -172,15 +172,14 @@ class Run(YAMLTranslatableMixin):
         # default run name: flow directory name + timestamp
         self.name = name or self._generate_run_name()
         experiment_name = kwargs.get("experiment_name", None)
+        self._config: Configuration = kwargs.get("config", Configuration.get_instance())
         if self._run_source == RunInfoSources.LOCAL and not self._use_remote_flow:
             self.flow = Path(str(flow)).resolve().absolute()
             flow_dir = self._get_flow_dir()
             # sanitize flow_dir to avoid invalid experiment name
             self._experiment_name = _sanitize_python_variable_name(flow_dir.name)
             self._lineage_id = get_flow_lineage_id(flow_dir=flow_dir)
-            self._output_path = Path(
-                kwargs.get("output_path", self._generate_output_path(config=kwargs.get("config", None)))
-            )
+            self._output_path = Path(kwargs.get("output_path", self._generate_output_path(config=self._config)))
             if is_prompty_flow(self.flow):
                 self._flow_name = Path(self.flow).stem
             else:
@@ -710,12 +709,18 @@ class Run(YAMLTranslatableMixin):
         end_time = self._end_time.isoformat() + "Z" if self._end_time else None
 
         # extract properties that needs to be passed to the request
-        total_tokens = self.properties[FlowRunProperties.SYSTEM_METRICS].get("total_tokens", 0)
         properties = {
-            Local2CloudProperties.TOTAL_TOKENS: total_tokens,
             # add instance_results.jsonl path to run properties, which is required by UI feature.
             Local2CloudProperties.EVAL_ARTIFACTS: '[{"path": "instance_results.jsonl", "type": "table"}]',
         }
+        # add system metrics to run properties
+        for token_key in TokenKeys.get_all_values():
+            final_key = f"{Local2CloudProperties.PREFIX}.{token_key}"
+            value = self.properties[FlowRunProperties.SYSTEM_METRICS].get(token_key, 0)
+            if value is not None:
+                properties[final_key] = value
+
+        # add user properties to run properties
         for property_key in Local2CloudUserProperties.get_all_values():
             value = self.properties.get(property_key, None)
             if value is not None:
@@ -780,8 +785,7 @@ class Run(YAMLTranslatableMixin):
         if not self.run and not self.data:
             raise UserErrorException("at least one of data or run must be provided")
 
-    def _generate_output_path(self, config: Optional[Configuration]) -> Path:
-        config = config or Configuration.get_instance()
+    def _generate_output_path(self, config: Configuration) -> Path:
         path = config.get_run_output_path()
         if path is None:
             path = HOME_PROMPT_FLOW_DIR / ".runs"

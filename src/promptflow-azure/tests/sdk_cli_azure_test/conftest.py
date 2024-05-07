@@ -30,6 +30,7 @@ from promptflow._sdk.entities import Run
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 from promptflow.azure import PFClient
 from promptflow.azure._entities._flow import Flow
+from promptflow.tracing._constants import PF_TRACING_SKIP_LOCAL_SETUP_ENVIRON
 
 try:
     from promptflow.recording.record_mode import is_in_ci_pipeline, is_live, is_record, is_replay
@@ -735,3 +736,9 @@ def construct_csharp_test_project(flow_name: str) -> CSharpProject:
 @pytest.fixture
 def csharp_test_project_basic() -> CSharpProject:
     return construct_csharp_test_project("Basic")
+
+
+@pytest.fixture(autouse=True)
+def disable_trace_setup():
+    os.environ[PF_TRACING_SKIP_LOCAL_SETUP_ENVIRON] = "true"
+    yield

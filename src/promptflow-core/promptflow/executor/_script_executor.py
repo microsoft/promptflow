@@ -1,4 +1,3 @@
-import asyncio
 import contextlib
 import dataclasses
 import importlib
@@ -10,21 +9,23 @@ from pathlib import Path
 from types import GeneratorType
 from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 
-from promptflow._constants import LINE_NUMBER_KEY, MessageFormatType
+from promptflow._constants import LINE_NUMBER_KEY, FlowType, MessageFormatType
 from promptflow._core.log_manager import NodeLogManager
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool_meta_generator import PythonLoadError
-from promptflow._utils.async_utils import async_run_allowing_running_loop
+from promptflow._utils.async_utils import async_to_sync, sync_to_async
 from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
 from promptflow._utils.exception_utils import ExceptionPresenter
+from promptflow._utils.execution_utils import apply_default_value_for_input
 from promptflow._utils.logger_utils import logger
 from promptflow._utils.multimedia_utils import BasicMultimediaProcessor
 from promptflow._utils.tool_utils import function_to_interface
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.connections import ConnectionProvider
-from promptflow.contracts.flow import Flow
+from promptflow.contracts.flow import FlexFlow, Flow
 from promptflow.contracts.tool import ConnectionType
 from promptflow.core import log_metric
+from promptflow.core._connection_provider._dict_connection_provider import DictConnectionProvider
 from promptflow.core._model_configuration import (
     MODEL_CONFIG_NAME_2_CLASS,
     AzureOpenAIModelConfiguration,
@@ -35,20 +36,20 @@ from promptflow.executor._errors import InvalidFlexFlowEntry, InvalidModelConfig
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DefaultRunStorage
-from promptflow.tracing import ThreadPoolExecutorWithContext
 from promptflow.tracing._trace import _traced
 from promptflow.tracing._tracer import Tracer
 from promptflow.tracing.contracts.trace import TraceType
 
 from ._errors import FlowEntryInitializationError, InvalidAggregationFunction, ScriptExecutionError
 from .flow_executor import FlowExecutor
+from .flow_validator import FlowValidator
 
 
 class ScriptExecutor(FlowExecutor):
     def __init__(
         self,
         flow_file: Union[Path, str, Callable],
-        connections: Optional[dict] = None,
+        connections: Optional[Union[dict, ConnectionProvider]] = None,
         working_dir: Optional[Path] = None,
         *,
         storage: Optional[AbstractRunStorage] = None,
@@ -58,6 +59,9 @@ class ScriptExecutor(FlowExecutor):
         logger.debug(f"Init params for script executor: {init_kwargs}")
 
         self._flow_file = flow_file
+        if connections and isinstance(connections, dict):
+            connections = DictConnectionProvider(connections)
+        self._connections = connections
         entry = flow_file  # Entry could be both a path or a callable
         self._entry = entry
         self._init_kwargs = init_kwargs or {}
@@ -65,14 +69,24 @@ class ScriptExecutor(FlowExecutor):
             self._working_dir = Flow._resolve_working_dir(entry, working_dir)
         else:
             self._working_dir = working_dir or Path.cwd()
+        self._init_input_sign()
         self._initialize_function()
-        self._connections = connections
         self._storage = storage or DefaultRunStorage()
         self._flow_id = "default_flow_id"
         self._log_interval = 60
         self._line_timeout_sec = 600
         self._message_format = MessageFormatType.BASIC
         self._multimedia_processor = BasicMultimediaProcessor()
+
+    @classmethod
+    def _get_func_name(cls, func: Callable):
+        try:
+            original_func = getattr(func, "__original_function")
+            if isinstance(original_func, partial):
+                original_func = original_func.func
+            return original_func.__qualname__
+        except AttributeError:
+            return func.__qualname__
 
     @contextlib.contextmanager
     def _exec_line_context(self, run_id, line_number):
@@ -83,6 +97,8 @@ class ScriptExecutor(FlowExecutor):
         with log_manager, self._update_operation_context(run_id, line_number):
             yield
 
+    _execution_target = FlowType.FLEX_FLOW
+
     def exec_line(
         self,
         inputs: Mapping[str, Any],
@@ -92,6 +108,7 @@ class ScriptExecutor(FlowExecutor):
         **kwargs,
     ) -> LineResult:
         run_id = run_id or str(uuid.uuid4())
+        inputs = apply_default_value_for_input(self._inputs_sign, inputs)
         with self._exec_line_context(run_id, index):
             return self._exec_line(inputs, index, run_id, allow_generator_output=allow_generator_output)
 
@@ -117,6 +134,7 @@ class ScriptExecutor(FlowExecutor):
         # Executor will add line_number to batch inputs if there is no line_number in the original inputs,
         # which should be removed, so, we only preserve the inputs that are contained in self._inputs.
         inputs = {k: inputs[k] for k in self._inputs if k in inputs}
+        FlowValidator._ensure_flow_inputs_type_inner(self._inputs_sign, inputs)
         return run_info, inputs, run_tracker, None, []
 
     def _exec_line(
@@ -135,10 +153,7 @@ class ScriptExecutor(FlowExecutor):
         line_run_id = run_info.run_id
         try:
             Tracer.start_tracing(line_run_id)
-            if self._is_async:
-                output = asyncio.run(self._func(**inputs))
-            else:
-                output = self._func(**inputs)
+            output = self._func(**inputs)
             output = self._stringify_generator_output(output) if not allow_generator_output else output
             traces = Tracer.end_tracing(line_run_id)
             # Should convert output to dict before storing it to run info, since we will add key 'line_number' to it,
@@ -152,14 +167,15 @@ class ScriptExecutor(FlowExecutor):
             # For these cases, raise ScriptExecutionError, which is classified as UserError
             # and shows stack trace in the error message to make it easy for user to troubleshoot.
             error_type_and_message = f"({e.__class__.__name__}) {e}"
-            e = ScriptExecutionError(
+            ex = ScriptExecutionError(
                 message_format="Execution failure in '{func_name}': {error_type_and_message}",
-                func_name=self._func.__qualname__,
+                func_name=self._func_name,
                 error_type_and_message=error_type_and_message,
+                error=e,
             )
             if not traces:
                 traces = Tracer.end_tracing(line_run_id)
-            run_tracker.end_run(line_run_id, ex=e, traces=traces)
+            run_tracker.end_run(line_run_id, ex=ex, traces=traces)
         finally:
             run_tracker.persist_flow_run(run_info)
         return self._construct_line_result(output, run_info)
@@ -195,11 +211,22 @@ class ScriptExecutor(FlowExecutor):
         output, metrics = None, {}
         try:
             output = self._aggr_func(**{self._aggr_input_name: inputs})
-            metrics = output if isinstance(output, dict) else {"metrics": output}
-            for k, v in metrics.items():
-                log_metric(k, v)
-        except Exception:
-            pass
+            if isinstance(output, dict):
+                metrics = output
+                for k, v in metrics.items():
+                    log_metric(k, v)
+            else:
+                logger.warning("The output of aggregation function isn't a dictionary, skip the metrices update.")
+        except Exception as e:
+            error_type_and_message = f"({e.__class__.__name__}) {e}"
+            e = ScriptExecutionError(
+                message_format="Execution failure in '{func_name}': {error_type_and_message}",
+                func_name=self._aggr_func.__name__,
+                error_type_and_message=error_type_and_message,
+            )
+            error = ExceptionPresenter.create(e).to_dict(include_debug_info=True)
+            logger.warning(f"Failed to execute aggregation function with error: {error}")
+            logger.warning("The flow will have empty metrics.")
         return AggregationResult(output, metrics, {})
 
     async def exec_aggregation_async(
@@ -216,12 +243,15 @@ class ScriptExecutor(FlowExecutor):
             return await self._exec_aggregation_async(aggregation_inputs)
 
     async def _exec_aggregation_async(self, inputs):
-        output = None
+        output, metrics = None, {}
         try:
             output = await self._aggr_func_async(**{self._aggr_input_name: inputs})
-            metrics = output if isinstance(output, dict) else {"metrics": output}
-            for k, v in metrics.items():
-                log_metric(k, v)
+            if isinstance(output, dict):
+                metrics = output
+                for k, v in metrics.items():
+                    log_metric(k, v)
+            else:
+                logger.warning("The output of aggregation function isn't a dictionary, skip the metrices update.")
         except Exception as e:
             error_type_and_message = f"({e.__class__.__name__}) {e}"
             e = ScriptExecutionError(
@@ -243,6 +273,7 @@ class ScriptExecutor(FlowExecutor):
         **kwargs,
     ) -> LineResult:
         run_id = run_id or str(uuid.uuid4())
+        inputs = apply_default_value_for_input(self._inputs_sign, inputs)
         with self._exec_line_context(run_id, index):
             return await self._exec_line_async(inputs, index, run_id, allow_generator_output=allow_generator_output)
 
@@ -262,11 +293,7 @@ class ScriptExecutor(FlowExecutor):
         line_run_id = run_info.run_id
         try:
             Tracer.start_tracing(line_run_id)
-            if self._is_async:
-                output = await self._func(**inputs)
-            else:
-                partial_func = partial(self._func, **inputs)
-                output = await asyncio.get_event_loop().run_in_executor(None, partial_func)
+            output = await self._func_async(**inputs)
             output = self._stringify_generator_output(output) if not allow_generator_output else output
             traces = Tracer.end_tracing(line_run_id)
             output_dict = convert_eager_flow_output_to_dict(output)
@@ -305,6 +332,7 @@ class ScriptExecutor(FlowExecutor):
     def _resolve_init_kwargs(self, c: type, init_kwargs: dict):
         """Resolve init kwargs, the connection names will be resolved to connection objects."""
         logger.debug(f"Resolving init kwargs: {init_kwargs.keys()}.")
+        init_kwargs = apply_default_value_for_input(self._init_sign, init_kwargs)
         sig = inspect.signature(c.__init__)
         connection_params = []
         model_config_param_name_2_cls = {}
@@ -330,9 +358,8 @@ class ScriptExecutor(FlowExecutor):
 
         return resolved_init_kwargs
 
-    @classmethod
-    def _resolve_connection_params(cls, connection_params: list, init_kwargs: dict, resolved_init_kwargs: dict):
-        provider = ConnectionProvider.get_instance()
+    def _resolve_connection_params(self, connection_params: list, init_kwargs: dict, resolved_init_kwargs: dict):
+        provider = self._connections or ConnectionProvider.get_instance()
         # parse connection
         logger.debug(f"Resolving connection params: {connection_params}")
         for key in connection_params:
@@ -429,17 +456,23 @@ class ScriptExecutor(FlowExecutor):
             if inspect.ismethod(func):
                 # For class method, the original function is a function reference that not bound to any object,
                 # so we need to pass the instance to it.
+                name = name[: -len(".__call__")] if (name := func.__qualname__).endswith(".__call__") else name
                 func = _traced(
                     partial(getattr(func, "__original_function"), self=func.__self__),
                     trace_type=TraceType.FLOW,
-                    name=func.__qualname__,
+                    name=name,
                 )
             else:
                 func = _traced(getattr(func, "__original_function"), trace_type=TraceType.FLOW)
-        self._func = func
-        inputs, _, _, _ = function_to_interface(self._func)
+        inputs, _, _, _ = function_to_interface(func)
         self._inputs = {k: v.to_flow_input_definition() for k, v in inputs.items()}
-        self._is_async = inspect.iscoroutinefunction(self._func)
+        if inspect.iscoroutinefunction(func):
+            self._func = async_to_sync(func)
+            self._func_async = func
+        else:
+            self._func = func
+            self._func_async = sync_to_async(func)
+        self._func_name = self._get_func_name(func=func)
         return func
 
     def _initialize_aggr_function(self, flow_obj: object):
@@ -453,21 +486,11 @@ class ScriptExecutor(FlowExecutor):
             if not hasattr(aggr_func, "__original_function"):
                 aggr_func = _traced(aggr_func)
             if inspect.iscoroutinefunction(aggr_func):
-
-                def run_async_function_sync(*args, **kwargs):
-                    return async_run_allowing_running_loop(aggr_func, *args, **kwargs)
-
-                self._aggr_func = run_async_function_sync
+                self._aggr_func = async_to_sync(aggr_func)
                 self._aggr_func_async = aggr_func
             else:
-
-                async def run_sync_function_async(*args, **kwargs):
-                    with ThreadPoolExecutorWithContext() as executor:
-                        partial_func = partial(aggr_func, *args, **kwargs)
-                        return await asyncio.get_event_loop().run_in_executor(executor, partial_func)
-
                 self._aggr_func = aggr_func
-                self._aggr_func_async = run_sync_function_async
+                self._aggr_func_async = sync_to_async(aggr_func)
             self._aggr_input_name = list(sign.parameters.keys())[0]
 
     def _parse_flow_file(self):
@@ -483,3 +506,18 @@ class ScriptExecutor(FlowExecutor):
                 target=ErrorTarget.EXECUTOR,
             ) from e
         return module_name, func_name
+
+    def _init_input_sign(self):
+        if not self.is_function_entry:
+            with open(self._working_dir / self._flow_file, "r", encoding="utf-8") as fin:
+                flow_dag = load_yaml(fin)
+            flow = FlexFlow.deserialize(flow_dag)
+            # In the yaml file, user can define the inputs and init signature for the flow, also SDK may create
+            # the signature and add them to the yaml file. We need to get the signature from the yaml file and
+            # used for applying default value and ensuring input type.
+            self._inputs_sign = flow.inputs
+            self._init_sign = flow.init
+        else:
+            # Since there is no yaml file for function entry, we set the inputs and init signature to empty dict.
+            self._inputs_sign = {}
+            self._init_sign = {}

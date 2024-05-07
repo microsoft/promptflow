@@ -1,6 +1,8 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import os
+
 import mock
 import pytest
 
@@ -20,6 +22,8 @@ RESOURCE_ID_FORMAT = "/subscriptions/{}/resourceGroups/{}/providers/{}/workspace
 class TestPFClient:
     # Test pf client when connection provider is azureml.
     # This tests suites need azure dependencies.
+    # Mock os.environ to avoid this test affecting other tests
+    @mock.patch.dict(os.environ, {}, clear=True)
     @pytest.mark.skipif(condition=not pytest.is_live, reason="This test requires an actual PFClient")
     def test_connection_provider(self, subscription_id: str, resource_group_name: str, workspace_name: str):
         target = "promptflow._sdk._pf_client.Configuration"

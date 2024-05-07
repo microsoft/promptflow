@@ -3,19 +3,16 @@
 # ---------------------------------------------------------
 import inspect
 import os
+import re
 import tempfile
-import uuid
-
-from types import FunctionType
 from typing import Any, Callable, Dict, Optional, Set, Tuple
 
 import pandas as pd
 
-from promptflow.client import PFClient
-
-from ._code_client import CodeClient
-
 from promptflow._sdk._constants import LINE_NUMBER
+from promptflow.client import PFClient
+from ._utils import _log_metrics_and_instance_results
+from .._user_agent import USER_AGENT
 
 
 def _calculate_mean(df) -> Dict[str, float]:
@@ -70,14 +67,17 @@ def _validate_and_load_data(target, data, evaluators, output_path, tracking_uri,
     try:
         initial_data_df = pd.read_json(data, lines=True)
     except Exception as e:
-        raise ValueError(
-            f"Failed to load data from {data}. Please validate it is a valid jsonl data. Error: {str(e)}.")
+        raise ValueError(f"Failed to load data from {data}. Please validate it is a valid jsonl data. Error: {str(e)}.")
 
-    _validate_columns(initial_data_df, evaluators, target)
     return initial_data_df
 
 
-def _validate_columns(df: pd.DataFrame, evaluators: Dict[str, Any], target: Optional[Callable]) -> None:
+def _validate_columns(
+    df: pd.DataFrame,
+    evaluators: Dict[str, Any],
+    target: Optional[Callable],
+    evaluator_config: Dict[str, Dict[str, str]],
+) -> None:
     """
     Check that all columns needed by evaluator or target function are present.
 
@@ -96,14 +96,18 @@ def _validate_columns(df: pd.DataFrame, evaluators: Dict[str, Any], target: Opti
         _validate_input_data_for_evaluator(target, None, df, is_target_fn=True)
     else:
         for evaluator_name, evaluator in evaluators.items():
-            _validate_input_data_for_evaluator(evaluator, evaluator_name, df)
+            # Apply column mapping
+            mapping_config = evaluator_config.get(evaluator_name, evaluator_config.get("default", None))
+            new_df = _apply_column_mapping(df, mapping_config)
+
+            # Validate input data for evaluator
+            _validate_input_data_for_evaluator(evaluator, evaluator_name, new_df)
 
 
 def _apply_target_to_data(
-        target: Callable,
-        data: str,
-        pf_client: PFClient,
-        initial_data: pd.DataFrame) -> Tuple[pd.DataFrame, Set[str]]:
+    target: Callable, data: str, pf_client: PFClient, initial_data: pd.DataFrame,
+    evaluation_name: Optional[str] = None
+) -> Tuple[pd.DataFrame, Set[str]]:
     """
     Apply the target function to the data set and return updated data and generated columns.
 
@@ -123,16 +127,17 @@ def _apply_target_to_data(
     # hang the debugger, because promptflow will keep flow directory.
     run = pf_client.run(
         flow=target,
+        display_name=evaluation_name,
         data=data,
-        name=f'preprocess_{uuid.uuid1()}',
+        properties={"runType": "eval_run"},
         stream=True
     )
     target_output = pf_client.runs.get_details(run, all_results=True)
     # Remove input and output prefix
-    prefix = 'outputs.'
+    prefix = "outputs."
     rename_dict = {col: col[len(prefix):] for col in target_output.columns if col.startswith(prefix)}
     # Sort output by line numbers
-    target_output.set_index(f'inputs.{LINE_NUMBER}', inplace=True)
+    target_output.set_index(f"inputs.{LINE_NUMBER}", inplace=True)
     target_output.sort_index(inplace=True)
     target_output.reset_index(inplace=True, drop=False)
     # target_output contains only input columns, taken by function,
@@ -143,7 +148,58 @@ def _apply_target_to_data(
     target_output.rename(columns=rename_dict, inplace=True)
     # Concatenate output to input
     target_output = pd.concat([target_output, initial_data], axis=1)
-    return target_output, set(rename_dict.values())
+    return target_output, set(rename_dict.values()), run
+
+
+def _apply_column_mapping(source_df: pd.DataFrame, mapping_config: dict, inplace: bool = False):
+    """
+    Apply column mapping to source_df based on mapping_config.
+    This function is used for pre-validation of input data for evaluators
+    """
+    result_df = source_df
+
+    if mapping_config:
+        column_mapping = {}
+        pattern_prefix = "data."
+
+        for map_to_key, map_value in mapping_config.items():
+            match = re.search(r"^\${([^{}]+)}$", map_value)
+            if match is not None:
+                pattern = match.group(1)
+                if pattern.startswith(pattern_prefix):
+                    map_from_key = pattern.split(pattern_prefix)[1]
+                    column_mapping[map_from_key] = map_to_key
+
+        result_df = source_df.rename(columns=column_mapping, inplace=inplace)
+
+    return result_df
+
+
+def _process_evaluator_config(evaluator_config: Dict[str, Dict[str, str]]):
+    """Process evaluator_config to replace ${target.} with ${data.}"""
+
+    processed_config = {}
+
+    unexpected_references = re.compile(r"\${(?!target\.|data\.).+?}")
+
+    if evaluator_config:
+        for evaluator, mapping_config in evaluator_config.items():
+            if isinstance(mapping_config, dict):
+                processed_config[evaluator] = {}
+
+                for map_to_key, map_value in mapping_config.items():
+
+                    # Check if there's any unexpected reference other than ${target.} or ${data.}
+                    if unexpected_references.search(map_value):
+                        raise ValueError(
+                            "Unexpected references detected in 'evaluator_config'. "
+                            "Ensure only ${target.} and ${data.} are used."
+                        )
+
+                    # Replace ${target.} with ${data.}
+                    processed_config[evaluator][map_to_key] = map_value.replace("${target.", "${data.")
+
+    return processed_config
 
 
 def evaluate(
@@ -176,35 +232,42 @@ def evaluate(
     :rtype: ~azure.ai.generative.evaluate.EvaluationResult
     """
 
-    input_data_df = _validate_and_load_data(
-        target, data, evaluators, output_path, tracking_uri, evaluation_name)
+    input_data_df = _validate_and_load_data(target, data, evaluators, output_path, tracking_uri, evaluation_name)
 
-    pf_client = PFClient()
-    code_client = CodeClient()
+    # Process evaluator config to replace ${target.} with ${data.}
+    evaluator_config = _process_evaluator_config(evaluator_config)
+    _validate_columns(input_data_df, evaluators, target, evaluator_config)
+
+    pf_client = PFClient(
+        config={
+            "trace.destination": tracking_uri
+        } if tracking_uri else None,
+        user_agent=USER_AGENT,
+
+    )
+    target_run = None
 
     target_generated_columns = set()
     if data is not None and target is not None:
-        input_data_df, target_generated_columns = _apply_target_to_data(
-            target, data, pf_client, input_data_df)
+        input_data_df, target_generated_columns, target_run = _apply_target_to_data(target, data, pf_client,
+                                                                                    input_data_df, evaluation_name)
         # After we have generated all columns we can check if we have
         # everything we need for evaluators.
-        _validate_columns(input_data_df, evaluators, None)
+        _validate_columns(input_data_df, evaluators, target=None, evaluator_config=evaluator_config)
 
     evaluator_info = {}
 
     with tempfile.TemporaryDirectory() as d:
         data_file = data
         if target_generated_columns:
-            data_file = os.path.join(d, 'input.jsonl')
-            input_data_df.to_json(data_file, orient='records', lines=True)
-        for evaluator_name, evaluator in evaluators.items():
-            if isinstance(evaluator, FunctionType):
-                evaluator_info.update({evaluator_name: {"client": pf_client, "evaluator": evaluator}})
-            else:
-                evaluator_info.update({evaluator_name: {"client": code_client, "evaluator": evaluator}})
+            data_file = os.path.join(d, "input.jsonl")
+            input_data_df.to_json(data_file, orient="records", lines=True)
 
-            evaluator_info[evaluator_name]["run"] = evaluator_info[evaluator_name]["client"].run(
+        for evaluator_name, evaluator in evaluators.items():
+            evaluator_info[evaluator_name] = {}
+            evaluator_info[evaluator_name]["run"] = pf_client.run(
                 flow=evaluator,
+                run=target_run,
                 column_mapping=evaluator_config.get(evaluator_name, evaluator_config.get("default", None)),
                 data=data_file,
                 stream=True,
@@ -212,7 +275,7 @@ def evaluate(
 
         evaluators_result_df = None
         for evaluator_name, evaluator_info in evaluator_info.items():
-            evaluator_result_df = evaluator_info["client"].get_details(evaluator_info["run"], all_results=True)
+            evaluator_result_df = pf_client.get_details(evaluator_info["run"], all_results=True)
 
             # drop input columns
             evaluator_result_df = evaluator_result_df.drop(
@@ -223,8 +286,8 @@ def evaluate(
             # Assuming after removing inputs columns, all columns are output columns
             evaluator_result_df.rename(
                 columns={
-                    col: "outputs."
-                         f"{evaluator_name}.{col.replace('outputs.', '')}" for col in evaluator_result_df.columns
+                    col: "outputs." f"{evaluator_name}.{col.replace('outputs.', '')}"
+                    for col in evaluator_result_df.columns
                 },
                 inplace=True,
             )
@@ -236,10 +299,17 @@ def evaluate(
             )
 
     # Rename columns, generated by template function to outputs instead of inputs.
-    input_data_df.rename(columns={
-        col: f"{'outputs' if col in target_generated_columns else 'inputs'}.{col}" for col in input_data_df.columns},
-        inplace=True)
+    input_data_df.rename(
+        columns={
+            col: f"{'outputs' if col in target_generated_columns else 'inputs'}.{col}" for col in input_data_df.columns
+        },
+        inplace=True,
+    )
 
     result_df = pd.concat([input_data_df, evaluators_result_df], axis=1, verify_integrity=True)
+    metrics = _calculate_mean(evaluators_result_df)
 
-    return {"rows": result_df.to_dict("records"), "metrics": _calculate_mean(evaluators_result_df), "traces": {}}
+    studio_url = _log_metrics_and_instance_results(
+        metrics, result_df, tracking_uri, target_run, pf_client, data, evaluation_name)
+
+    return {"rows": result_df.to_dict("records"), "metrics": metrics, "studio_url": studio_url}

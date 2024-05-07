@@ -35,7 +35,7 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import FlowOperationError
 from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, monitor_operation
-from promptflow._sdk._utils import PromptflowIgnoreFile
+from promptflow._sdk._utilities.general_utils import PromptflowIgnoreFile
 from promptflow._sdk._vendor._asset_utils import traverse_directory
 from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
