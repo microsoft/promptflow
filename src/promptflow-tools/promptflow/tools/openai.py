@@ -150,9 +150,9 @@ class OpenAI(ToolProvider):
             params["response_format"] = response_format
         if seed is not None:
             params["seed"] = seed
-        if presence_penalty:
+        if presence_penalty is not None:
             params["presence_penalty"] = presence_penalty
-        if frequency_penalty:
+        if frequency_penalty is not None:
             params["frequency_penalty"] = frequency_penalty
 
         completion = self._client.chat.completions.create(**params)
