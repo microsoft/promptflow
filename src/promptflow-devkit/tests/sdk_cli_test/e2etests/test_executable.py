@@ -1,4 +1,3 @@
-import shutil
 import tempfile
 from pathlib import Path
 
@@ -19,28 +18,25 @@ DATAS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/datas"
 class TestExecutable:
     def test_flow_build_executable(self):
         source = f"{FLOWS_DIR}/web_classification/flow.dag.yaml"
-        try:
-            with tempfile.TemporaryDirectory() as temp_dir:
-                run_pf_command(
-                    "flow",
-                    "build",
-                    "--source",
-                    source,
-                    "--output",
-                    temp_dir,
-                    "--format",
-                    "executable",
-                )
-                check_path_list = [
-                    "flow/flow.dag.yaml",
-                    "connections/azure_open_ai_connection.yaml",
-                    "pf.bat",
-                    "pf",
-                    "start_pfs.vbs",
-                ]
-                output_path = Path(temp_dir).resolve()
-                for check_path in check_path_list:
-                    check_path = output_path / check_path
-                    assert check_path.exists()
-        finally:
-            shutil.rmtree(output_path, ignore_errors=True)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            run_pf_command(
+                "flow",
+                "build",
+                "--source",
+                source,
+                "--output",
+                temp_dir,
+                "--format",
+                "executable",
+            )
+            check_path_list = [
+                "flow/flow.dag.yaml",
+                "connections/azure_open_ai_connection.yaml",
+                "pf.bat",
+                "pf",
+                "start_pfs.vbs",
+            ]
+            output_path = Path(temp_dir).resolve()
+            for check_path in check_path_list:
+                check_path = output_path / check_path
+                assert check_path.exists()

@@ -1,5 +1,6 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+from promptflow.evals._version import VERSION
 
-VERSION = "1.11.0.dev0"
+USER_AGENT = "{}/{}".format("promptflow-evals", VERSION)

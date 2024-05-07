@@ -172,15 +172,14 @@ class Run(YAMLTranslatableMixin):
         # default run name: flow directory name + timestamp
         self.name = name or self._generate_run_name()
         experiment_name = kwargs.get("experiment_name", None)
+        self._config: Configuration = kwargs.get("config", Configuration.get_instance())
         if self._run_source == RunInfoSources.LOCAL and not self._use_remote_flow:
             self.flow = Path(str(flow)).resolve().absolute()
             flow_dir = self._get_flow_dir()
             # sanitize flow_dir to avoid invalid experiment name
             self._experiment_name = _sanitize_python_variable_name(flow_dir.name)
             self._lineage_id = get_flow_lineage_id(flow_dir=flow_dir)
-            self._output_path = Path(
-                kwargs.get("output_path", self._generate_output_path(config=kwargs.get("config", None)))
-            )
+            self._output_path = Path(kwargs.get("output_path", self._generate_output_path(config=self._config)))
             if is_prompty_flow(self.flow):
                 self._flow_name = Path(self.flow).stem
             else:
@@ -786,8 +785,7 @@ class Run(YAMLTranslatableMixin):
         if not self.run and not self.data:
             raise UserErrorException("at least one of data or run must be provided")
 
-    def _generate_output_path(self, config: Optional[Configuration]) -> Path:
-        config = config or Configuration.get_instance()
+    def _generate_output_path(self, config: Configuration) -> Path:
         path = config.get_run_output_path()
         if path is None:
             path = HOME_PROMPT_FLOW_DIR / ".runs"
