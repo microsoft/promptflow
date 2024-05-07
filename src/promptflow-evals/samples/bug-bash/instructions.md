@@ -81,6 +81,7 @@ async def callback(
     messages: List[Dict],
     stream: bool = False,
     session_state: Any = None,
+    context: Dict[str, Any] = None
 ) -> dict:
     question = messages["messages"][0]["content"]
     context = None
@@ -122,7 +123,8 @@ async def callback(
     return {
         "messages": messages["messages"],
         "stream": stream,
-        "session_state": session_state
+        "session_state": session_state,
+        "context": context
     }
 ```
 Based on the template you selected, paste the appropriate snippet from [Readme.md](https://github.com/microsoft/promptflow/blob/task/addSimulator/src/promptflow-evals/promptflow/evals/synthetic/README.md) into your python script which has the `callback`
