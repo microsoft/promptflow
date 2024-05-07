@@ -32,7 +32,14 @@ from filelock import FileLock
 from keyring.errors import NoKeyringError
 from marshmallow import ValidationError
 
-from promptflow._constants import ENABLE_MULTI_CONTAINER_KEY, EXTENSION_UA, FLOW_FLEX_YAML, LANGUAGE_KEY, FlowLanguage
+from promptflow._constants import (
+    ENABLE_MULTI_CONTAINER_KEY,
+    EXTENSION_UA,
+    FLOW_FLEX_YAML,
+    LANGUAGE_KEY,
+    PROMPTY_EXTENSION,
+    FlowLanguage,
+)
 from promptflow._sdk._constants import (
     AZURE_WORKSPACE_REGEX_FORMAT,
     DEFAULT_ENCODING,
@@ -1113,6 +1120,10 @@ def resolve_flow_language(
         file_path = flow_path / flow_file
         if file_path.is_file() and file_path.suffix.lower() in (".yaml", ".yml"):
             yaml_dict = load_yaml(file_path)
+        elif file_path.is_file() and file_path.suffix.lower() == PROMPTY_EXTENSION:
+            return FlowLanguage.Python
         else:
-            raise UserErrorException(f"Invalid flow path {file_path.as_posix()}, must exist and of suffix yaml or yml.")
+            raise UserErrorException(
+                f"Invalid flow path {file_path.as_posix()}, must exist and of suffix yaml, yml or prompty."
+            )
     return yaml_dict.get(LANGUAGE_KEY, FlowLanguage.Python)
