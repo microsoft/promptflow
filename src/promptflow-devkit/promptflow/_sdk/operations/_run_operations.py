@@ -10,7 +10,7 @@ import webbrowser
 from dataclasses import asdict
 from typing import Any, Dict, List, Optional, Union
 
-from promptflow._constants import LANGUAGE_KEY, AvailableIDE, FlowLanguage
+from promptflow._constants import LANGUAGE_KEY, AvailableIDE, FlowLanguage, FlowType
 from promptflow._sdk._constants import (
     MAX_RUN_LIST_RESULTS,
     MAX_SHOW_DETAILS_RESULTS,
@@ -444,17 +444,24 @@ class RunOperations(TelemetryMixin):
         if not isinstance(runs, list):
             runs = [runs]
 
-        validated_runs = []
+        validated_runs: List[Run] = []
         for run in runs:
             run_name = Run._validate_and_return_run_name(run)
             validated_runs.append(self.get(name=run_name))
 
         html_path = kwargs.pop("html_path", None)
-        try:
-            self._visualize(validated_runs, html_path=html_path)
-        except InvalidRunStatusError as e:
-            error_message = f"Cannot visualize non-completed run. {str(e)}"
-            logger.error(error_message)
+
+        # if there exists flex flow run, use trace UI to visualize
+        # maybe we can fully switch to trace UI for DAG flow run in the future
+        has_flex_flow_run = any([run._flow_type == FlowType.FLEX_FLOW for run in validated_runs])
+        if has_flex_flow_run is True:
+            self._visualize_with_trace_ui(runs=validated_runs, open_html=html_path is None)
+        else:
+            try:
+                self._visualize(validated_runs, html_path=html_path)
+            except InvalidRunStatusError as e:
+                error_message = f"Cannot visualize non-completed run. {str(e)}"
+                logger.error(error_message)
 
     def _get_outputs(self, run: Union[str, Run]) -> List[Dict[str, Any]]:
         """Get the outputs of the run, load from local storage."""
