@@ -25,7 +25,7 @@ class TestSimulator:
     @patch("promptflow.evals.synthetic._model_tools._rai_client.RAIClient._get_service_discovery_url")
     def test_initialization_with_all_valid_scenarios(self, mock_get_service_discovery_url):
         mock_get_service_discovery_url.return_value = "some-url"
-        project_scope = {
+        azure_ai_project = {
             "subscription_id": "test_subscription",
             "resource_group_name": "test_resource_group",
             "workspace_name": "test_workspace",
@@ -41,7 +41,7 @@ class TestSimulator:
             "adv_content_gen_grounded",
         ]
         for scenario in available_scenarios:
-            simulator = AdversarialSimulator(project_scope=project_scope)
+            simulator = AdversarialSimulator(azure_ai_project=azure_ai_project)
             assert mock_get_service_discovery_url.called
             assert callable(simulator)
 
@@ -52,7 +52,7 @@ class TestSimulator:
     ):
         _get_content_harm_template_collections.return_value = []
         _get_service_discovery_url.return_value = "some-url"
-        project_scope = {
+        azure_ai_project = {
             "subscription_id": "test_subscription",
             "resource_group_name": "test_resource_group",
             "workspace_name": "test_workspace",
@@ -62,7 +62,7 @@ class TestSimulator:
         async def callback(x):
             return x
 
-        simulator = AdversarialSimulator(project_scope=project_scope)
+        simulator = AdversarialSimulator(azure_ai_project=azure_ai_project)
         with pytest.raises(ValueError):
             outputs = asyncio.run(
                 simulator(

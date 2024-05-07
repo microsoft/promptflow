@@ -22,7 +22,7 @@ import asyncio
 
 
 
-project_scope = {
+azure_ai_project = {
     "subscription_id": <subscription_id>,
     "resource_group_name": <resource_group_name>,
     "workspace_name": <project_name>,
@@ -83,7 +83,7 @@ async def callback(
 ### Adversarial QA:
 ```python
 scenario = "adv_qa"
-simulator = AdversarialSimulator(project_scope=project_scope)
+simulator = AdversarialSimulator(azure_ai_project=azure_ai_project)
 
 outputs = asyncio.run(
     simulator(
@@ -108,7 +108,7 @@ The response looks something like this:
 
 ```python
 scenario = "adv_conversation"
-simulator = AdversarialSimulator(project_scope=project_scope)
+simulator = AdversarialSimulator(azure_ai_project=azure_ai_project)
 outputs = asyncio.run(
     simulator(
         scenario=scenario,
@@ -127,7 +127,7 @@ That should output something like:
 ### Adversarial Summarization:
 ```python
 scenario = "adv_summarization"
-simulator = AdversarialSimulator(project_scope=project_scope)
+simulator = AdversarialSimulator(azure_ai_project=azure_ai_project)
 outputs = asyncio.run(
     simulator(
         scenario=scenario,
@@ -149,7 +149,7 @@ print(outputs.to_json_lines())
 
 ```python
 scenario = "adv_search"
-simulator = AdversarialSimulator(project_scope=project_scope)
+simulator = AdversarialSimulator(azure_ai_project=azure_ai_project)
 outputs = asyncio.run(
     simulator(
         scenario=scenario,
@@ -170,7 +170,7 @@ This should result in something like:
 ### Adversarial rewrite
 ```python
 scenario = "adv_rewrite"
-simulator = AdversarialSimulator(project_scope=project_scope)
+simulator = AdversarialSimulator(azure_ai_project=azure_ai_project)
 outputs = asyncio.run(
     simulator(
         scenario=scenario,
@@ -192,7 +192,7 @@ This should result in something like:
 #### ungrounded
 ```python
 scenario = "adv_content_gen_ungrounded"
-simulator = AdversarialSimulator(project_scope=project_scope)
+simulator = AdversarialSimulator(azure_ai_project=azure_ai_project)
 outputs = asyncio.run(
     simulator(
         scenario=scenario,
@@ -213,7 +213,7 @@ This should result in something like:
 
 ```python
 scenario = "adv_content_gen_grounded"
-simulator = AdversarialSimulator(project_scope=project_scope)
+simulator = AdversarialSimulator(azure_ai_project=azure_ai_project)
 outputs = asyncio.run(
     simulator(
         scenario=scenario,
@@ -244,7 +244,7 @@ os.environ["AZURE_OPENAI_ENDPOINT"] = "<endpoint>"
 
 #### Content safety evaluators
 ```python
-project_scope = {
+azure_ai_project = {
     "subscription_id": "<subscription_id>",
     "resource_group_name": "<resource_group_name>",
     "project_name": "<project_name>",
@@ -255,10 +255,10 @@ from promptflow.evals.evaluators.content_safety import ViolenceEvaluator, Sexual
 
 
 # Initialzing Content harm Evaluators
-violence_eval = ViolenceEvaluator(project_scope)
-sexual_eval = SexualEvaluator(project_scope)
-hate_unfairness_eval = HateUnfairnessEvaluator(project_scope)
-self_harm_eval = SelfHarmEvaluator(project_scope)
+violence_eval = ViolenceEvaluator(azure_ai_project)
+sexual_eval = SexualEvaluator(azure_ai_project)
+hate_unfairness_eval = HateUnfairnessEvaluator(azure_ai_project)
+self_harm_eval = SelfHarmEvaluator(azure_ai_project)
 
 # assuming eval after adversarial simulation
 

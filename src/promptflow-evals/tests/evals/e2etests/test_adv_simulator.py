@@ -13,20 +13,20 @@ class TestAdvSimulator:
         os.environ.pop("rai_svc_url", None)
         from promptflow.evals.synthetic import AdversarialSimulator
 
-        project_scope = {
+        azure_ai_project = {
             "subscription_id": ml_client_config["subscription_id"],
             "resource_group_name": ml_client_config["resource_group_name"],
             "workspace_name": ml_client_config["project_name"],
             "credential": DefaultAzureCredential(),
         }
-        simulator = AdversarialSimulator(project_scope=project_scope)
+        simulator = AdversarialSimulator(azure_ai_project=azure_ai_project)
         assert callable(simulator)
 
     def test_incorrect_scenario_raises_error(self, model_config, ml_client_config):
         os.environ.pop("rai_svc_url", None)
         from promptflow.evals.synthetic import AdversarialSimulator
 
-        project_scope = {
+        azure_ai_project = {
             "subscription_id": ml_client_config["subscription_id"],
             "resource_group_name": ml_client_config["resource_group_name"],
             "workspace_name": ml_client_config["project_name"],
@@ -36,7 +36,7 @@ class TestAdvSimulator:
         async def callback(x):
             return x
 
-        simulator = AdversarialSimulator(project_scope=project_scope)
+        simulator = AdversarialSimulator(azure_ai_project=azure_ai_project)
         with pytest.raises(ValueError):
             asyncio.run(
                 simulator(
@@ -52,7 +52,7 @@ class TestAdvSimulator:
         from promptflow.evals.synthetic import AdversarialSimulator
 
         scenario = "adv_qa"
-        project_scope = {
+        azure_ai_project = {
             "subscription_id": ml_client_config["subscription_id"],
             "resource_group_name": ml_client_config["resource_group_name"],
             "workspace_name": ml_client_config["project_name"],
@@ -79,7 +79,7 @@ class TestAdvSimulator:
                 "context": context,
             }
 
-        simulator = AdversarialSimulator(project_scope=project_scope)
+        simulator = AdversarialSimulator(azure_ai_project=azure_ai_project)
 
         outputs = asyncio.run(
             simulator(
@@ -103,7 +103,7 @@ class TestAdvSimulator:
         from promptflow.evals.synthetic import AdversarialSimulator
 
         scenario = "adv_conversation"
-        project_scope = {
+        azure_ai_project = {
             "subscription_id": ml_client_config["subscription_id"],
             "resource_group_name": ml_client_config["resource_group_name"],
             "workspace_name": ml_client_config["project_name"],
@@ -124,7 +124,7 @@ class TestAdvSimulator:
                 "context": context,
             }
 
-        simulator = AdversarialSimulator(project_scope=project_scope)
+        simulator = AdversarialSimulator(azure_ai_project=azure_ai_project)
 
         outputs = asyncio.run(
             simulator(
@@ -147,7 +147,7 @@ class TestAdvSimulator:
         from promptflow.evals.synthetic import AdversarialSimulator
 
         scenario = "adv_summarization"
-        project_scope = {
+        azure_ai_project = {
             "subscription_id": ml_client_config["subscription_id"],
             "resource_group_name": ml_client_config["resource_group_name"],
             "workspace_name": ml_client_config["project_name"],
@@ -168,7 +168,7 @@ class TestAdvSimulator:
                 "context": context,
             }
 
-        simulator = AdversarialSimulator(project_scope=project_scope)
+        simulator = AdversarialSimulator(azure_ai_project=azure_ai_project)
 
         outputs = asyncio.run(
             simulator(

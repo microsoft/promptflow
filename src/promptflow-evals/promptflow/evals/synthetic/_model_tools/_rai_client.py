@@ -18,8 +18,8 @@ if "rai_svc_url" in os.environ:
 
 
 class RAIClient:
-    def __init__(self, project_scope: dict, token_manager: Any) -> None:
-        self.project_scope = project_scope
+    def __init__(self, azure_ai_project: dict, token_manager: Any) -> None:
+        self.azure_ai_project = azure_ai_project
         self.token_manager = token_manager
 
         self.contentharm_parameters = None
@@ -33,11 +33,11 @@ class RAIClient:
         segments = [
             host.rstrip("/"),
             "raisvc/v1.0/subscriptions",
-            self.project_scope["subscription_id"],
+            self.azure_ai_project["subscription_id"],
             "resourceGroups",
-            self.project_scope["resource_group_name"],
+            self.azure_ai_project["resource_group_name"],
             "providers/Microsoft.MachineLearningServices/workspaces",
-            self.project_scope["workspace_name"],
+            self.azure_ai_project["workspace_name"],
         ]
         self.api_url = "/".join(segments)
         # add a "/" at the end of the url
@@ -50,9 +50,9 @@ class RAIClient:
         bearer_token = self.token_manager.get_token()
         headers = {"Authorization": f"Bearer {bearer_token}", "Content-Type": "application/json"}
         response = requests.get(
-            f"https://management.azure.com/subscriptions/{self.project_scope['subscription_id']}/"
-            f"resourceGroups/{self.project_scope['resource_group_name']}/"
-            f"providers/Microsoft.MachineLearningServices/workspaces/{self.project_scope['workspace_name']}?"
+            f"https://management.azure.com/subscriptions/{self.azure_ai_project['subscription_id']}/"
+            f"resourceGroups/{self.azure_ai_project['resource_group_name']}/"
+            f"providers/Microsoft.MachineLearningServices/workspaces/{self.azure_ai_project['workspace_name']}?"
             f"api-version=2023-08-01-preview",
             headers=headers,
             timeout=5,

@@ -27,37 +27,38 @@ logger = logging.getLogger(__name__)
 
 class AdversarialSimulator:
     @monitor_operation(activity_name="adversarial.simulator.init", activity_type=ActivityType.PUBLICAPI)
-    def __init__(self, *, project_scope: Dict[str, Any]):
+    def __init__(self, *, azure_ai_project: Dict[str, Any]):
         """
         Initializes the adversarial simulator with a project scope.
 
-        :param project_scope: Dictionary defining the scope of the project. It must include the following keys:
+        :param azure_ai_project: Dictionary defining the scope of the project. It must include the following keys:
             - "subscription_id": Azure subscription ID.
             - "resource_group_name": Name of the Azure resource group.
             - "workspace_name": Name of the Azure Machine Learning workspace.
             - "credential": Azure credentials object for authentication.
-        :type project_scope: Dict[str, Any]
+        :type azure_ai_project: Dict[str, Any]
         """
-        # check if project_scope has the keys: subscription_id, resource_group_name, workspace_name, credential
+        # check if azure_ai_project has the keys: subscription_id, resource_group_name, workspace_name, credential
         if not all(
-            key in project_scope for key in ["subscription_id", "resource_group_name", "workspace_name", "credential"]
+            key in azure_ai_project
+            for key in ["subscription_id", "resource_group_name", "workspace_name", "credential"]
         ):
             raise ValueError(
-                "project_scope must contain keys: subscription_id, resource_group_name, workspace_name, credential"
+                "azure_ai_project must contain keys: subscription_id, resource_group_name, workspace_name, credential"
             )
-        # check the value of the keys in project_scope is not none
+        # check the value of the keys in azure_ai_project is not none
         if not all(
-            project_scope[key] for key in ["subscription_id", "resource_group_name", "workspace_name", "credential"]
+            azure_ai_project[key] for key in ["subscription_id", "resource_group_name", "workspace_name", "credential"]
         ):
             raise ValueError("subscription_id, resource_group_name, workspace_name, and credential must not be None")
-        self.project_scope = project_scope
+        self.azure_ai_project = azure_ai_project
         self.token_manager = ManagedIdentityAPITokenManager(
             token_scope=TokenScope.DEFAULT_AZURE_MANAGEMENT,
             logger=logging.getLogger("AdversarialSimulator"),
         )
-        self.rai_client = RAIClient(project_scope=project_scope, token_manager=self.token_manager)
+        self.rai_client = RAIClient(azure_ai_project=azure_ai_project, token_manager=self.token_manager)
         self.adversarial_template_handler = AdversarialTemplateHandler(
-            project_scope=project_scope, rai_client=self.rai_client
+            azure_ai_project=azure_ai_project, rai_client=self.rai_client
         )
 
     def _ensure_service_dependencies(self):

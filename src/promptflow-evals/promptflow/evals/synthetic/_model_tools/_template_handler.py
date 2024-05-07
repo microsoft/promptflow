@@ -49,10 +49,10 @@ class AdversarialTemplate:
 
 
 class AdversarialTemplateHandler:
-    def __init__(self, project_scope, rai_client):
+    def __init__(self, azure_ai_project, rai_client):
         self.cached_templates_source = {}
         # self.template_env = JinjaEnvironment(loader=JinjaFileSystemLoader(searchpath=template_dir))
-        self.project_scope = project_scope
+        self.azure_ai_project = azure_ai_project
         self.categorized_ch_parameters = None
         self.rai_client = rai_client
 
