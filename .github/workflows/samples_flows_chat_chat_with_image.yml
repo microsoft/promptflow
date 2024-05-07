@@ -90,12 +90,12 @@ jobs:
         with:
           azPSVersion: "latest"
           inlineScript: |
-            cd $GITHUB_WORKSPACE/examples/flows/chat/chat-with-image
-            export aoai_api_key=${{secrets.AOAI_GPT_4V_KEY }}
-            export aoai_api_endpoint=${{ secrets.AOAI_GPT_4V_ENDPOINT }}
-            export test_workspace_sub_id=${{ secrets.TEST_WORKSPACE_SUB_ID }}
-            export test_workspace_rg=${{ secrets.TEST_WORKSPACE_RG }}
-            export test_workspace_name=${{ secrets.TEST_WORKSPACE_NAME_CANARY }}
+            cd $Env:GITHUB_WORKSPACE/examples/flows/chat/chat-with-image
+            $Env:aoai_api_key=${{secrets.AOAI_GPT_4V_KEY }}
+            $Env:aoai_api_endpoint=${{ secrets.AOAI_GPT_4V_ENDPOINT }}
+            $Env:test_workspace_sub_id=${{ secrets.TEST_WORKSPACE_SUB_ID }}
+            $Env:test_workspace_rg=${{ secrets.TEST_WORKSPACE_RG }}
+            $Env:test_workspace_name=${{ secrets.TEST_WORKSPACE_NAME_CANARY }}
             bash bash_script.sh
       - name: Run scripts against production workspace
         uses: azure/powershell@v1
@@ -103,11 +103,12 @@ jobs:
         with:
           azPSVersion: "latest"
           inlineScript: |
-            export aoai_api_key=${{secrets.AOAI_GPT_4V_KEY }}
-            export aoai_api_endpoint=${{ secrets.AOAI_GPT_4V_ENDPOINT }}
-            export test_workspace_sub_id=${{ secrets.TEST_WORKSPACE_SUB_ID }}
-            export test_workspace_rg=${{ secrets.TEST_WORKSPACE_RG }}
-            export test_workspace_name=${{ secrets.TEST_WORKSPACE_NAME_PROD }}
+            cd $Env:GITHUB_WORKSPACE/examples/flows/chat/chat-with-image
+            $Env:aoai_api_key=${{secrets.AOAI_GPT_4V_KEY }}
+            $Env:aoai_api_endpoint=${{ secrets.AOAI_GPT_4V_ENDPOINT }}
+            $Env:test_workspace_sub_id=${{ secrets.TEST_WORKSPACE_SUB_ID }}
+            $Env:test_workspace_rg=${{ secrets.TEST_WORKSPACE_RG }}
+            $Env:test_workspace_name=${{ secrets.TEST_WORKSPACE_NAME_PROD }}
             bash bash_script.sh
       - name: Pip List for Debug
         if : ${{ always() }}
