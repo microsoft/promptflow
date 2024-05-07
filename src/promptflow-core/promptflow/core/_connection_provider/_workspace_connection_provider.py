@@ -52,6 +52,7 @@ class ConnectionCategory:
     Serp = "Serp"
     Serverless = "Serverless"
     BingLLMSearch = "BingLLMSearch"
+    AIServices = "AIServices"
 
 
 class ConnectionAuthType:
@@ -175,6 +176,8 @@ class WorkspaceConnectionProvider(ConnectionProvider):
             ConnectionCategory.Serverless,
         ]:
             return category
+        if category == ConnectionCategory.AIServices:
+            return "AzureAIServices"
         if category == ConnectionCategory.CustomKeys:
             return CustomConnection.__name__
         if category == ConnectionCategory.CognitiveService:
@@ -270,6 +273,11 @@ class WorkspaceConnectionProvider(ConnectionProvider):
                 **get_auth_config(properties, support_aad=True),
                 "endpoint": properties.target,
                 "api_version": get_case_insensitive_key(properties.metadata, "ApiVersion"),
+            }
+        elif properties.category == ConnectionCategory.AIServices:
+            value = {
+                **get_auth_config(properties, support_aad=True),
+                "endpoint": properties.target,
             }
         elif properties.category == ConnectionCategory.OpenAI:
             value = {

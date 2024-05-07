@@ -30,6 +30,7 @@ from promptflow._sdk._utilities.general_utils import (
 )
 from promptflow._sdk.entities._yaml_translatable import YAMLTranslatableMixin
 from promptflow._sdk.schemas._connection import (
+    AzureAIServicesConnectionSchema,
     AzureContentSafetyConnectionSchema,
     AzureOpenAIConnectionSchema,
     CognitiveSearchConnectionSchema,
@@ -45,6 +46,7 @@ from promptflow._sdk.schemas._connection import (
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.utils import snake_to_camel
 from promptflow.contracts.types import Secret
+from promptflow.core._connection import AzureAIServicesConnection as _CoreAzureAIServicesConnection
 from promptflow.core._connection import AzureContentSafetyConnection as _CoreAzureContentSafetyConnection
 from promptflow.core._connection import AzureOpenAIConnection as _CoreAzureOpenAIConnection
 from promptflow.core._connection import CognitiveSearchConnection as _CoreCognitiveSearchConnection
@@ -72,6 +74,7 @@ class _Connection(_CoreConnection, YAMLTranslatableMixin):
         type_dict = {
             "azure_open_ai": ConnectionType.AZURE_OPEN_AI.value,
             "open_ai": ConnectionType.OPEN_AI.value,
+            "azure_ai_services": ConnectionType.AZURE_AI_SERVICES.value,
         }
 
         if typ in type_dict:
@@ -218,8 +221,10 @@ class _Connection(_CoreConnection, YAMLTranslatableMixin):
             data=data,
             context=context,
             unknown=INCLUDE,
-            additional_message=f"If you are trying to configure a job that is not of type {type_str}, please specify "
-            f"the correct connection type in the 'type' property.",
+            additional_message=(
+                f"If you are trying to configure a connection that is not of type {type_str}, please specify "
+                "the correct connection type in the 'type' property."
+            ),
             **kwargs,
         )
         return connection
@@ -333,6 +338,15 @@ class CognitiveSearchConnection(_CoreCognitiveSearchConnection, _StrongTypeConne
     @classmethod
     def _get_schema_cls(cls):
         return CognitiveSearchConnectionSchema
+
+
+class AzureAIServicesConnection(_CoreAzureAIServicesConnection, _StrongTypeConnection):
+    __doc__ = _CoreAzureAIServicesConnection.__doc__
+    DATA_CLASS = _CoreAzureAIServicesConnection
+
+    @classmethod
+    def _get_schema_cls(cls):
+        return AzureAIServicesConnectionSchema
 
 
 class AzureContentSafetyConnection(_CoreAzureContentSafetyConnection, _StrongTypeConnection):

@@ -285,6 +285,36 @@ class TestWorkspaceConnectionProvider:
         }
         build_from_data_and_assert(data, expected)
 
+    def test_build_cognitive_search_aad_connection_from_rest_object(self):
+        # Test on AAD type with CognitiveSearch category
+        data = {
+            "tags": None,
+            "location": None,
+            "id": "mock_id",
+            "name": "test",
+            "type": "Microsoft.MachineLearningServices/workspaces/connections",
+            "properties": {
+                "authType": "AAD",
+                "category": "CognitiveSearch",
+                "expiryTime": None,
+                "target": "mock_target",
+                "metadata": {
+                    "ApiVersion": "2023-07-01-Preview",
+                },
+            },
+        }
+        expected = {
+            "type": "CognitiveSearchConnection",
+            "module": "promptflow.connections",
+            "name": "test",
+            "value": {
+                "api_base": "mock_target",
+                "api_version": "2023-07-01-Preview",
+                "auth_mode": "meid_token",
+            },
+        }
+        build_from_data_and_assert(data, expected)
+
     def test_build_cognitive_service_category_connection_from_rest_object(self):
         # Test on Api type with CognitiveService category
         data = {
@@ -383,6 +413,51 @@ class TestWorkspaceConnectionProvider:
             "module": "promptflow.connections",
             "name": "test_serverless_connection",
             "value": {"api_key": "***", "api_base": "mock_base", "auth_mode": "key"},
+        }
+        build_from_data_and_assert(data, expected)
+
+    def test_build_ai_services_connection_from_rest_object(self):
+        data = {
+            "id": "mock_id",
+            "name": "test",
+            "type": "Microsoft.MachineLearningServices/workspaces/connections",
+            "properties": {
+                "authType": "ApiKey",
+                "credentials": {"key": "***"},
+                "group": "AzureAI",
+                "category": "AIServices",
+                "target": "mock_base",
+                "sharedUserList": [],
+                "metadata": {},
+            },
+        }
+        expected = {
+            "type": "AzureAIServicesConnection",
+            "module": "promptflow.connections",
+            "name": "test",
+            "value": {"api_key": "***", "endpoint": "mock_base", "auth_mode": "key"},
+        }
+        build_from_data_and_assert(data, expected)
+
+    def test_build_ai_services_aad_connection_from_rest_object(self):
+        data = {
+            "id": "mock_id",
+            "name": "test",
+            "type": "Microsoft.MachineLearningServices/workspaces/connections",
+            "properties": {
+                "authType": "AAD",
+                "group": "AzureAI",
+                "category": "AIServices",
+                "target": "mock_base",
+                "sharedUserList": [],
+                "metadata": {},
+            },
+        }
+        expected = {
+            "type": "AzureAIServicesConnection",
+            "module": "promptflow.connections",
+            "name": "test",
+            "value": {"endpoint": "mock_base", "auth_mode": "meid_token"},
         }
         build_from_data_and_assert(data, expected)
 

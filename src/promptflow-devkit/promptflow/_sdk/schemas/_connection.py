@@ -7,7 +7,7 @@ from marshmallow import ValidationError, fields, post_load, pre_dump, validates
 
 from promptflow._constants import ConnectionType, CustomStrongTypeConnectionConfigs
 from promptflow._sdk._constants import SCHEMA_KEYS_CONTEXT_CONFIG_KEY, SCHEMA_KEYS_CONTEXT_SECRET_KEY
-from promptflow._sdk.schemas._base import YamlFileSchema
+from promptflow._sdk.schemas._base import PatchedSchemaMeta, YamlFileSchema
 from promptflow._sdk.schemas._fields import StringTransformedEnum
 from promptflow._utils.utils import camel_to_snake
 from promptflow.constants import ConnectionAuthMode, ConnectionDefaultApiVersion
@@ -32,13 +32,7 @@ class ConnectionSchema(YamlFileSchema):
         return copied
 
 
-class AzureOpenAIConnectionSchema(ConnectionSchema):
-    type = StringTransformedEnum(allowed_values="azure_open_ai", required=True)
-    api_key = fields.Str()
-    api_base = fields.Str(required=True)
-    api_type = fields.Str(dump_default="azure")
-    api_version = fields.Str(dump_default=ConnectionDefaultApiVersion.AZURE_OPEN_AI)
-    resource_id = fields.Str()
+class AADSupportedSchemaMixin(metaclass=PatchedSchemaMeta):
     auth_mode = StringTransformedEnum(
         allowed_values=[ConnectionAuthMode.MEID_TOKEN, ConnectionAuthMode.KEY],
         allow_none=True,
@@ -51,6 +45,15 @@ class AzureOpenAIConnectionSchema(ConnectionSchema):
         if data.get("auth_mode") != ConnectionAuthMode.MEID_TOKEN and not data.get("api_key"):
             raise ValidationError("'api_key' is required for key auth mode connection.")
         return data
+
+
+class AzureOpenAIConnectionSchema(ConnectionSchema, AADSupportedSchemaMixin):
+    type = StringTransformedEnum(allowed_values="azure_open_ai", required=True)
+    api_key = fields.Str()
+    api_base = fields.Str(required=True)
+    api_type = fields.Str(dump_default="azure")
+    api_version = fields.Str(dump_default=ConnectionDefaultApiVersion.AZURE_OPEN_AI)
+    resource_id = fields.Str()
 
 
 class OpenAIConnectionSchema(ConnectionSchema):
@@ -80,12 +83,12 @@ class WeaviateConnectionSchema(EmbeddingStoreConnectionSchema):
     type = StringTransformedEnum(allowed_values=camel_to_snake(ConnectionType.WEAVIATE), required=True)
 
 
-class CognitiveSearchConnectionSchema(ConnectionSchema):
+class CognitiveSearchConnectionSchema(ConnectionSchema, AADSupportedSchemaMixin):
     type = StringTransformedEnum(
         allowed_values=camel_to_snake(ConnectionType.COGNITIVE_SEARCH),
         required=True,
     )
-    api_key = fields.Str(required=True)
+    api_key = fields.Str()
     api_base = fields.Str(required=True)
     api_version = fields.Str(dump_default=ConnectionDefaultApiVersion.COGNITIVE_SEARCH)
 
@@ -93,6 +96,15 @@ class CognitiveSearchConnectionSchema(ConnectionSchema):
 class SerpConnectionSchema(ConnectionSchema):
     type = StringTransformedEnum(allowed_values=camel_to_snake(ConnectionType.SERP), required=True)
     api_key = fields.Str(required=True)
+
+
+class AzureAIServicesConnectionSchema(ConnectionSchema, AADSupportedSchemaMixin):
+    type = StringTransformedEnum(
+        allowed_values=camel_to_snake(ConnectionType.AZURE_AI_SERVICES),
+        required=True,
+    )
+    api_key = fields.Str()
+    endpoint = fields.Str(required=True)
 
 
 class AzureContentSafetyConnectionSchema(ConnectionSchema):
