@@ -26,7 +26,7 @@ class ParallelRunProcessor(ABC):
 def create_processor(working_dir: Path, args: Optional[List[str]] = None) -> ParallelRunProcessor:
     args = args or sys.argv[1:]
     parser = ArgumentParser(description="Prompt Flow Parallel Run Config")
-    parser.add_argument("--pf_run_mode", dest="pf_run_mode", required=False, type=_Mode, default=_Mode.component)
+    parser.add_argument("--amlbi_pf_run_mode", dest="pf_run_mode", required=False, type=_Mode, default=_Mode.component)
     parsed, _ = parser.parse_known_args(args)
 
     if parsed.pf_run_mode == _Mode.bulk:

@@ -19,7 +19,12 @@ class InputMapping:
         self._logger = logging.getLogger(self.__class__.__name__)
         self._loading = self._start_load()
 
+    def is_enabled(self):
+        return self._mapping and True
+
     def apply(self, row: Row) -> Row:
+        if not self.is_enabled():
+            return row
         mapping_inputs = {"data": row}
         if self._rows:
             side_input = self._rows.get(row.row_number, None)
@@ -40,7 +45,11 @@ class InputMapping:
         return self._loading.result()
 
     def _start_load(self) -> Future:
-        return ThreadPoolExecutor(max_workers=1).submit(self._load)
+        if self.is_enabled():
+            return ThreadPoolExecutor(max_workers=1).submit(self._load)
+        f = Future()
+        f.set_result({})
+        return f
 
     def _load(self):
         self._logger.info(f"Loading rows from side input: {self._side_input_dir}.")

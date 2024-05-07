@@ -3,14 +3,14 @@
 # ---------------------------------------------------------
 import json
 import os
-from typing import Any, Dict
+from typing import Any, Dict, Mapping
 
 from promptflow.contracts.run_info import Status
 from promptflow.parallel._metrics.sender import MetricsSender
 from promptflow.storage.run_records import LineRunRecord, NodeRunRecord
 
 
-class Metrics:
+class Metrics(Mapping[str, Any]):
     def __init__(self, metrics: Dict[str, Any] = None, sender: MetricsSender = None):
         self._metrics = metrics or {}
         self._sender: MetricsSender = sender or MetricsSender()
@@ -20,6 +20,15 @@ class Metrics:
 
     def __str__(self):
         return json.dumps(self._metrics)
+
+    def __getitem__(self, __key):
+        return self._metrics.__getitem__(__key)
+
+    def __len__(self):
+        return self._metrics.__len__()
+
+    def __iter__(self):
+        return self._metrics.__iter__()
 
 
 class SystemMetrics(Metrics):

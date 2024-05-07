@@ -37,6 +37,9 @@ class Row(Mapping[str, Any]):
     def __iter__(self) -> Iterator[str]:
         return self._source.__iter__()
 
+    def __str__(self):
+        return f"{self.row_number}:" + str(self._source)
+
 
 @dataclass
 class Result:

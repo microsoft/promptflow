@@ -32,6 +32,7 @@ class AbstractParallelRunProcessor(ParallelRunProcessor, ABC):
     def init(self):
         self._config = parser.parse(self._args)
         self._executor = self._create_executor(self._config)
+        self._executor.init()
         self._debug_info = DebugInfo(self._config.debug_output_dir)
         if self._config.is_debug_enabled:
             self._debug_info.prepare()
@@ -68,7 +69,7 @@ class AbstractParallelRunProcessor(ParallelRunProcessor, ABC):
         yield "output", result.output.output
         if self._executor.has_aggregation_node:
             yield "aggregation_inputs", result.output.aggregation_inputs
-            yield "inputs", result.input
+            yield "inputs", dict(result.input)  # Mapping is not serializable
         yield from self._extract_result(result)
 
     def _extract_result(self, result: Result) -> Iterable[Tuple[str, Any]]:

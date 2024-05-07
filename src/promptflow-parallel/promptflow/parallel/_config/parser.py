@@ -17,7 +17,7 @@ def parse(args: List[str]) -> ParallelRunConfig:
 def _to_parallel_run_config(parsed_args: Namespace) -> ParallelRunConfig:
     return ParallelRunConfig(
         pf_model_dir=parsed_args.pf_model,
-        input_dir=next(iter(parsed_args.input_assets.values()), None),
+        input_dir=next(map(Path, iter(parsed_args.input_assets.values())), None),
         output_dir=parsed_args.output_uri_file or parsed_args.output,
         output_file_pattern=output_file_pattern(parsed_args.append_row_file_name),
         input_mapping=parsed_args.input_mapping,
@@ -40,8 +40,8 @@ def _get_connection_overrides(parsed_args: Namespace) -> Dict[str, str]:
 
 def _retrieve_connection_overrides(arg: str) -> Iterable[Tuple[str, str]]:
     connection = arg.strip().strip('"') if arg else None
-    if connection:
-        yield from {}
+    if not connection:
+        return
     connection_params = connection.split(",")
     for connection_param in connection_params:
         if connection_param.strip() == "":
@@ -52,17 +52,17 @@ def _retrieve_connection_overrides(arg: str) -> Iterable[Tuple[str, str]]:
 
 def _do_parse(args: List[str]) -> Namespace:
     parser = ArgumentParser(description="Prompt Flow Parallel Run Config")
-    parser.add_argument("--pf_model", dest="pf_model", type=Path, required=False, default=None)
-    parser.add_argument("--pf_connections", dest="pf_connections", required=False)
-    parser.add_argument("--pf_deployment_names", dest="pf_deployment_names", required=False)
-    parser.add_argument("--pf_model_names", dest="pf_model_names", required=False)
+    parser.add_argument("--amlbi_pf_model", dest="pf_model", type=Path, required=False, default=None)
+    parser.add_argument("--amlbi_pf_connections", dest="pf_connections", required=False)
+    parser.add_argument("--amlbi_pf_deployment_names", dest="pf_deployment_names", required=False)
+    parser.add_argument("--amlbi_pf_model_names", dest="pf_model_names", required=False)
     parser.add_argument("--output_uri_file", dest="output_uri_file", type=Path, required=False, default=None)
     parser.add_argument("--output", dest="output", type=Path, required=False, default=None)
     parser.add_argument(
         "--append_row_file_name", dest="append_row_file_name", required=False, default="parallel_run_step.jsonl"
     )
-    parser.add_argument("--pf_run_outputs", dest="pf_run_outputs", type=Path, required=False, default=None)
-    parser.add_argument("--pf_debug_info", dest="pf_debug_info", type=Path, required=False, default=None)
+    parser.add_argument("--amlbi_pf_run_outputs", dest="pf_run_outputs", type=Path, required=False, default=None)
+    parser.add_argument("--amlbi_pf_debug_info", dest="pf_debug_info", type=Path, required=False, default=None)
     parser.add_argument("--logging_level", dest="logging_level", required=False, default="INFO")
     parsed_args, unknown_args = parser.parse_known_args(args)
 
