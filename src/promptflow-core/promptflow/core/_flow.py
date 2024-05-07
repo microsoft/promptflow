@@ -422,11 +422,12 @@ class Prompty(FlowBase):
         )
 
     def render(self, *args, **kwargs):
-        """Render the prompt template.
+        """Render the prompt content.
 
         :param args: positional arguments are not supported.
         :param kwargs: prompty inputs with key word arguments.
-        :return:
+        :return: Prompt content
+        :rtype: Union[str, list]
         """
         if args:
             raise UserErrorException("Prompty can only be rendered with keyword arguments.")
