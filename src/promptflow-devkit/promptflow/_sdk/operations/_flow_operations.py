@@ -63,7 +63,7 @@ from promptflow._utils.flow_utils import (
     parse_variant,
 )
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
-from promptflow.core._utils import load_inputs_from_sample
+from promptflow.core._utils import init_executable, load_inputs_from_sample
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 
@@ -506,10 +506,7 @@ class FlowOperations(TelemetryMixin):
                     output_dir=output_dir,
                 )
             else:
-                # TODO: avoid using executable here
-                from promptflow.contracts.flow import Flow as ExecutableFlow
-
-                executable = ExecutableFlow.from_yaml(flow_file=flow.path, working_dir=flow.code)
+                executable = init_executable(flow_path=flow.path, working_dir=flow.code)
                 return self._migrate_connections(
                     connection_names=executable.get_connection_names(),
                     output_dir=output_dir,

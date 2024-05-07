@@ -709,15 +709,15 @@ class Flow(FlowBase):
             flow_dag = load_yaml(fin)
         # Name priority: name from payload > name from yaml content > working_dir.stem
         # For portal created flow, there is a meaningless predefined name in yaml, use name from payload to override it.
+        return Flow._from_dict(flow_dag=flow_dag, working_dir=working_dir, name=name)
+
+    @classmethod
+    def _from_dict(cls, flow_dag: dict, working_dir: Path, name=None) -> "Flow":
+        """Load flow from dict."""
+        cls._update_working_dir(working_dir)
         if name is None:
             name = flow_dag.get("name", _sanitize_python_variable_name(working_dir.stem))
         flow_dag["name"] = name
-        return Flow._from_dict(flow_dag=flow_dag, working_dir=working_dir)
-
-    @classmethod
-    def _from_dict(cls, flow_dag: dict, working_dir: Path) -> "Flow":
-        """Load flow from dict."""
-        cls._update_working_dir(working_dir)
         flow = Flow.deserialize(flow_dag)
         flow._set_tool_loader(working_dir)
         return flow
@@ -973,6 +973,32 @@ class FlexFlow(FlowBase):
             program_language=data.get(LANGUAGE_KEY, FlowLanguage.Python),
             environment_variables=data.get("environment_variables") or {},
         )
+
+    @classmethod
+    def _from_dict(cls, flow_dag: dict, working_dir: Path, name=None) -> "FlexFlow":
+        """Load flow from dict."""
+        from promptflow._core.entry_meta_generator import generate_flow_meta
+
+        from .._utils.flow_utils import resolve_python_entry_file
+
+        Flow._update_working_dir(working_dir)
+        if name is None:
+            name = flow_dag.get("name", _sanitize_python_variable_name(working_dir.stem))
+        flow_dag["name"] = name
+
+        entry = flow_dag.get("entry")
+        entry_file = resolve_python_entry_file(entry=entry, working_dir=working_dir)
+
+        meta_dict = generate_flow_meta(
+            flow_directory=working_dir,
+            source_path=entry_file,
+            data=flow_dag,
+        )
+        return cls.deserialize(meta_dict)
+
+    def get_connection_names(self, environment_variables_overrides: Dict[str, str] = None):
+        """Return connection names."""
+        return set()
 
 
 @dataclass

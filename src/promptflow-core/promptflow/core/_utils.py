@@ -11,7 +11,7 @@ from typing import Dict, Optional, Tuple, Union
 from jinja2 import Template
 
 from promptflow._constants import AZURE_WORKSPACE_REGEX_FORMAT
-from promptflow._utils.flow_utils import is_flex_flow, resolve_flow_path, resolve_python_entry_file
+from promptflow._utils.flow_utils import is_flex_flow, resolve_flow_path
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.utils import _match_reference
 from promptflow._utils.yaml_utils import load_yaml
@@ -44,18 +44,7 @@ def init_executable(*, flow_dag: dict = None, flow_path: Path = None, working_di
     from promptflow.contracts.flow import Flow as ExecutableFlow
 
     if is_flex_flow(yaml_dict=flow_dag):
-
-        entry = flow_dag.get("entry")
-        entry_file = resolve_python_entry_file(entry=entry, working_dir=working_dir)
-
-        from promptflow._core.entry_meta_generator import generate_flow_meta
-
-        meta_dict = generate_flow_meta(
-            flow_directory=working_dir,
-            source_path=entry_file,
-            data=flow_dag,
-        )
-        return ExecutableEagerFlow.deserialize(meta_dict)
+        return ExecutableEagerFlow._from_dict(flow_dag=flow_dag, working_dir=working_dir)
 
     # for DAG flow, use data to init executable to improve performance
     return ExecutableFlow._from_dict(flow_dag=flow_dag, working_dir=working_dir)
