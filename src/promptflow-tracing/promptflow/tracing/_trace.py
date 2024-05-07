@@ -15,7 +15,7 @@ from typing import Callable, Dict, List, Optional
 
 import opentelemetry.trace as otel_trace
 from opentelemetry.trace import Span
-from opentelemetry.trace.span import NonRecordingSpan, format_trace_id
+from opentelemetry.trace.span import format_trace_id
 from opentelemetry.trace.status import StatusCode
 
 from ._openai_utils import OpenAIMetricsCalculator, OpenAIResponseParser
@@ -158,15 +158,8 @@ def enrich_span_with_trace_type(span, inputs, output, trace_type):
     enrich_span_with_output(span, output)
 
 
-def trace_iterator_if_needed(span, inputs, output, trace_type):
-    if isinstance(output, (Iterator, AsyncIterator)) and not isinstance(span, NonRecordingSpan):
-        trace_func = traced_generator if isinstance(output, Iterator) else traced_async_generator
-        output = trace_func(span, inputs, output, trace_type)
-    return output
-
-
 def enrich_span_with_llm_if_needed(span, inputs, generator_output):
-    if span.attributes["span_type"] == "LLM" and not IS_LEGACY_OPENAI:
+    if span.is_recording() and span.attributes["span_type"] == "LLM" and not IS_LEGACY_OPENAI:
         from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
         from openai.types.completion import Completion
 
@@ -384,7 +377,7 @@ def _traced_async(
                 enrich_span_with_input(span, trace.inputs)
                 output = await func(*args, **kwargs)
                 if isinstance(output, AsyncIterator):
-                    output = trace_iterator_if_needed(span, trace.inputs, output, trace_type)
+                    output = traced_async_generator(span, trace.inputs, output, trace_type)
                 else:
                     enrich_span_with_trace_type(span, trace.inputs, output, trace_type)
                     span.set_status(StatusCode.OK)
@@ -457,7 +450,7 @@ def _traced_sync(
                 enrich_span_with_input(span, trace.inputs)
                 output = func(*args, **kwargs)
                 if isinstance(output, Iterator):
-                    output = trace_iterator_if_needed(span, trace.inputs, output, trace_type)
+                    output = traced_generator(span, trace.inputs, output, trace_type)
                 else:
                     enrich_span_with_trace_type(span, trace.inputs, output, trace_type)
                     span.set_status(StatusCode.OK)
