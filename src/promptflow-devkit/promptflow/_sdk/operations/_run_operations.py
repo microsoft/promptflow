@@ -458,6 +458,8 @@ class RunOperations(TelemetryMixin):
         )
         if has_flex_or_prompty is True:
             logger.debug("there exists flex flow or prompty run(s), will use trace UI for visualization.")
+            # if `html_path` is specified, which means the call comes from VS Code extension
+            # in that case, we should not open browser inside SDK/CLI
             self._visualize_with_trace_ui(runs=validated_runs, open_html=html_path is None)
         else:
             try:
