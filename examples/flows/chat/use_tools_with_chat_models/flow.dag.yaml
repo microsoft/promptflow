@@ -51,7 +51,7 @@ nodes:
     tool: promptflow.tools.llm.llm
     path: use_tools_with_chat_models.jinja2
   inputs:
-    connection: azure_open_ai_connection
+    connection: open_ai_connection
     api: chat
     deployment_name: gpt-35-turbo-1106
     temperature: 0.7
