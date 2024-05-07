@@ -17,7 +17,7 @@ class AsyncHTTPClientWithRetry:
         trace_config.on_request_end.append(self.delete_auth_header)
         if retry_options is None:
             retry_options = RandomRetry(  # set up retry configuration
-                statuses=[104, 408, 409, 424, 429, 500, 502, 503, 504],  # on which statuses to retry
+                statuses=[104, 408, 409, 429, 500, 502, 503, 504],  # on which statuses to retry
                 attempts=n_retry,
                 min_timeout=retry_timeout,
                 max_timeout=retry_timeout,
