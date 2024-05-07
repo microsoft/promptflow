@@ -451,11 +451,13 @@ class RunOperations(TelemetryMixin):
 
         html_path = kwargs.pop("html_path", None)
 
-        # if there exists flex flow run, use trace UI to visualize
+        # if there exists flex flow or prompty run, use trace UI to visualize
         # maybe we can fully switch to trace UI for DAG flow run in the future
-        has_flex_flow_run = any([run._flow_type == FlowType.FLEX_FLOW for run in validated_runs])
-        if has_flex_flow_run is True:
-            logger.debug("there exists flex flow run(s), will use trace UI for visualization.")
+        has_flex_or_prompty = any(
+            [run._flow_type == FlowType.FLEX_FLOW or run._flow_type == FlowType.PROMPTY for run in validated_runs]
+        )
+        if has_flex_or_prompty is True:
+            logger.debug("there exists flex flow or prompty run(s), will use trace UI for visualization.")
             self._visualize_with_trace_ui(runs=validated_runs, open_html=html_path is None)
         else:
             try:
