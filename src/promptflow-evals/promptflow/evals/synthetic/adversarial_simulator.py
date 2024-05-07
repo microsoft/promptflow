@@ -27,12 +27,10 @@ logger = logging.getLogger(__name__)
 
 class AdversarialSimulator:
     @monitor_operation(activity_name="adversarial.simulator.init", activity_type=ActivityType.PUBLICAPI)
-    def __init__(self, *, template: str, project_scope: Dict[str, Any]):
+    def __init__(self, *, project_scope: Dict[str, Any]):
         """
-        Initializes the adversarial simulator with a template and project scope.
+        Initializes the adversarial simulator with a project scope.
 
-        :param template: Template string used for generating adversarial inputs.
-        :type template: str
         :param project_scope: Dictionary defining the scope of the project. It must include the following keys:
             - "subscription_id": Azure subscription ID.
             - "resource_group_name": Name of the Azure resource group.
@@ -40,7 +38,6 @@ class AdversarialSimulator:
             - "credential": Azure credentials object for authentication.
         :type project_scope: Dict[str, Any]
         """
-        self.template = template
         # check if project_scope has the keys: subscription_id, resource_group_name, workspace_name, credential
         if not all(
             key in project_scope for key in ["subscription_id", "resource_group_name", "workspace_name", "credential"]
@@ -71,6 +68,7 @@ class AdversarialSimulator:
     async def __call__(
         self,
         *,
+        scenario: str,
         target: Callable,
         max_conversation_turns: int = 1,
         max_simulation_results: int = 3,
@@ -83,6 +81,8 @@ class AdversarialSimulator:
         """
         Executes the adversarial simulation against a specified target function asynchronously.
 
+        :param scenario: Scenario string used for generating adversarial inputs.
+        :type scenario: str
         :param target: The target function to simulate adversarial inputs against.
         This function should be asynchronous and accept a dictionary representing the adversarial input.
         :type target: Callable
@@ -104,20 +104,20 @@ class AdversarialSimulator:
         :param concurrent_async_task: The number of asynchronous tasks to run concurrently during the simulation.
         Defaults to 3.
         :type concurrent_async_task: int
-        :param jailbreak: If set to True, allows breaking out of the conversation flow defined by the template.
+        :param jailbreak: If set to True, allows breaking out of the conversation flow defined by the scenario.
         Defaults to False.
         :type jailbreak: bool
         :return: None
         """
         # validate the inputs
-        if "conversation" not in self.template:
+        if "conversation" not in scenario:
             max_conversation_turns = 2
         else:
             max_conversation_turns = max_conversation_turns * 2
         self._ensure_service_dependencies()
-        templates = await self.adversarial_template_handler._get_content_harm_template_collections(self.template)
+        templates = await self.adversarial_template_handler._get_content_harm_template_collections(scenario)
         if len(templates) == 0:
-            raise ValueError(f"No templates found for {self.template}")
+            raise ValueError(f"No templates found for {scenario}")
         concurrent_async_task = min(concurrent_async_task, 1000)
         semaphore = asyncio.Semaphore(concurrent_async_task)
         sim_results = []

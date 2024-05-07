@@ -13,17 +13,16 @@ class TestAdvSimulator:
         os.environ.pop("rai_svc_url", None)
         from promptflow.evals.synthetic import AdversarialSimulator
 
-        template = "adv_conversation"
         project_scope = {
             "subscription_id": ml_client_config["subscription_id"],
             "resource_group_name": ml_client_config["resource_group_name"],
             "workspace_name": ml_client_config["project_name"],
             "credential": DefaultAzureCredential(),
         }
-        simulator = AdversarialSimulator(template=template, project_scope=project_scope)
+        simulator = AdversarialSimulator(project_scope=project_scope)
         assert callable(simulator)
 
-    def test_incorrect_template_raises_error(self, model_config, ml_client_config):
+    def test_incorrect_scenario_raises_error(self, model_config, ml_client_config):
         os.environ.pop("rai_svc_url", None)
         from promptflow.evals.synthetic import AdversarialSimulator
 
@@ -37,15 +36,22 @@ class TestAdvSimulator:
         async def callback(x):
             return x
 
-        simulator = AdversarialSimulator(template="adv_conversation_wrong", project_scope=project_scope)
+        simulator = AdversarialSimulator(project_scope=project_scope)
         with pytest.raises(ValueError):
-            asyncio.run(simulator(max_conversation_turns=1, max_simulation_results=1, target=callback))
+            asyncio.run(
+                simulator(
+                    max_conversation_turns=1,
+                    max_simulation_results=1,
+                    target=callback,
+                    scenario="adv_conversation_wrong",
+                )
+            )
 
     def test_adv_qa_sim_responds_with_one_response(self, model_config, ml_client_config):
         os.environ.pop("rai_svc_url", None)
         from promptflow.evals.synthetic import AdversarialSimulator
 
-        template = "adv_qa"
+        scenario = "adv_qa"
         project_scope = {
             "subscription_id": ml_client_config["subscription_id"],
             "resource_group_name": ml_client_config["resource_group_name"],
@@ -73,10 +79,11 @@ class TestAdvSimulator:
                 "context": context,
             }
 
-        simulator = AdversarialSimulator(template=template, project_scope=project_scope)
+        simulator = AdversarialSimulator(project_scope=project_scope)
 
         outputs = asyncio.run(
             simulator(
+                scenario=scenario,
                 max_conversation_turns=1,
                 max_simulation_results=1,
                 target=callback,
@@ -87,7 +94,7 @@ class TestAdvSimulator:
             )
         )
         assert len(outputs) == 1
-        # assert topic and target_population is not present in outpts[0]["template_parameters"]
+        # assert topic and target_population is not present in outpts[0]["scenario_parameters"]
         assert "topic" not in outputs[0]["template_parameters"]
         assert "target_population" not in outputs[0]["template_parameters"]
 
@@ -95,7 +102,7 @@ class TestAdvSimulator:
         os.environ.pop("rai_svc_url", None)
         from promptflow.evals.synthetic import AdversarialSimulator
 
-        template = "adv_conversation"
+        scenario = "adv_conversation"
         project_scope = {
             "subscription_id": ml_client_config["subscription_id"],
             "resource_group_name": ml_client_config["resource_group_name"],
@@ -117,10 +124,11 @@ class TestAdvSimulator:
                 "context": context,
             }
 
-        simulator = AdversarialSimulator(template=template, project_scope=project_scope)
+        simulator = AdversarialSimulator(project_scope=project_scope)
 
         outputs = asyncio.run(
             simulator(
+                scenario=scenario,
                 max_conversation_turns=2,
                 max_simulation_results=1,
                 target=callback,
@@ -138,7 +146,7 @@ class TestAdvSimulator:
         os.environ.pop("rai_svc_url", None)
         from promptflow.evals.synthetic import AdversarialSimulator
 
-        template = "adv_summarization"
+        scenario = "adv_summarization"
         project_scope = {
             "subscription_id": ml_client_config["subscription_id"],
             "resource_group_name": ml_client_config["resource_group_name"],
@@ -160,10 +168,11 @@ class TestAdvSimulator:
                 "context": context,
             }
 
-        simulator = AdversarialSimulator(template=template, project_scope=project_scope)
+        simulator = AdversarialSimulator(project_scope=project_scope)
 
         outputs = asyncio.run(
             simulator(
+                scenario=scenario,
                 max_conversation_turns=1,
                 max_simulation_results=1,
                 target=callback,

@@ -23,7 +23,7 @@ def async_callback():
 @pytest.mark.unittest
 class TestSimulator:
     @patch("promptflow.evals.synthetic._model_tools._rai_client.RAIClient._get_service_discovery_url")
-    def test_initialization_with_all_valid_templates(self, mock_get_service_discovery_url):
+    def test_initialization_with_all_valid_scenarios(self, mock_get_service_discovery_url):
         mock_get_service_discovery_url.return_value = "some-url"
         project_scope = {
             "subscription_id": "test_subscription",
@@ -31,7 +31,7 @@ class TestSimulator:
             "workspace_name": "test_workspace",
             "credential": "test_credential",
         }
-        available_templates = [
+        available_scenarios = [
             "adv_conversation",
             "adv_qa",
             "adv_summarization",
@@ -40,14 +40,14 @@ class TestSimulator:
             "adv_content_gen_ungrounded",
             "adv_content_gen_grounded",
         ]
-        for template in available_templates:
-            simulator = AdversarialSimulator(template=template, project_scope=project_scope)
+        for scenario in available_scenarios:
+            simulator = AdversarialSimulator(project_scope=project_scope)
             assert mock_get_service_discovery_url.called
             assert callable(simulator)
 
     @patch("promptflow.evals.synthetic._model_tools._rai_client.RAIClient._get_service_discovery_url")
     @patch("promptflow.evals.synthetic._model_tools.AdversarialTemplateHandler._get_content_harm_template_collections")
-    def test_simulator_raises_validation_error_with_unsupported_template(
+    def test_simulator_raises_validation_error_with_unsupported_scenario(
         self, _get_content_harm_template_collections, _get_service_discovery_url
     ):
         _get_content_harm_template_collections.return_value = []
@@ -62,6 +62,10 @@ class TestSimulator:
         async def callback(x):
             return x
 
-        simulator = AdversarialSimulator(template="unsupported_template", project_scope=project_scope)
+        simulator = AdversarialSimulator(project_scope=project_scope)
         with pytest.raises(ValueError):
-            outputs = asyncio.run(simulator(max_conversation_turns=1, max_simulation_results=3, target=callback))
+            outputs = asyncio.run(
+                simulator(
+                    scenario="unknown-scenario", max_conversation_turns=1, max_simulation_results=3, target=callback
+                )
+            )
