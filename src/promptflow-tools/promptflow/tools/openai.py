@@ -100,8 +100,8 @@ class OpenAI(ToolProvider):
         stream: bool = False,
         stop: list = None,
         max_tokens: int = None,
-        presence_penalty: float = 0,
-        frequency_penalty: float = 0,
+        presence_penalty: float = None,
+        frequency_penalty: float = None,
         logit_bias: dict = {},
         user: str = "",
         # function_call can be of type str or dict.
@@ -123,8 +123,6 @@ class OpenAI(ToolProvider):
             "top_p": top_p,
             "n": n,
             "stream": stream,
-            "presence_penalty": presence_penalty,
-            "frequency_penalty": frequency_penalty,
             "user": user,
         }
 
@@ -152,6 +150,10 @@ class OpenAI(ToolProvider):
             params["response_format"] = response_format
         if seed is not None:
             params["seed"] = seed
+        if presence_penalty:
+            params["presence_penalty"] = presence_penalty
+        if frequency_penalty:
+            params["frequency_penalty"] = frequency_penalty
 
         completion = self._client.chat.completions.create(**params)
         return post_process_chat_api_response(completion, stream, functions, tools)
@@ -206,15 +208,15 @@ def completion(
 def chat(
     connection: OpenAIConnection,
     prompt: PromptTemplate,
-    model: str = "gpt-3.5-turbo",
+    model: str = "",
     temperature: float = 1,
     top_p: float = 1,
     n: int = 1,
     stream: bool = False,
     stop: list = None,
     max_tokens: int = None,
-    presence_penalty: float = 0,
-    frequency_penalty: float = 0,
+    presence_penalty: float = None,
+    frequency_penalty: float = None,
     logit_bias: dict = {},
     user: str = "",
     function_call: object = None,
