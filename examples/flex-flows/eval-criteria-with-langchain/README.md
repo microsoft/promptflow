@@ -1,6 +1,7 @@
 # Eval Conciseness Criteria with LangChain
 
-A example flow of converting [LangChain criteria evaluator](https://python.langchain.com/docs/guides/productionization/evaluation/string/criteria_eval_chain/) application to flex flow.
+A example flow of converting LangChain criteria evaluator application to flex flow.
+Reference [here](https://python.langchain.com/docs/guides/productionization/evaluation/string/criteria_eval_chain/) for more information.
 
 ## Prerequisites
 
