@@ -6,7 +6,6 @@ import copy
 import os.path
 import sys
 import time
-import webbrowser
 from dataclasses import asdict
 from typing import Any, Dict, List, Optional, Union
 
@@ -32,7 +31,7 @@ from promptflow._sdk._service.utils.utils import is_pfs_service_healthy
 from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_operation
 from promptflow._sdk._tracing import _invoke_pf_svc
 from promptflow._sdk._utilities.general_utils import incremental_print, print_red_error, safe_parse_object_list
-from promptflow._sdk._visualize_functions import dump_html, generate_html_string
+from promptflow._sdk._visualize_functions import dump_html, generate_html_string, generate_trace_ui_html_string
 from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.logger_utils import get_cli_sdk_logger
@@ -414,7 +413,7 @@ class RunOperations(TelemetryMixin):
         # if html_path is specified, not open it in webbrowser(as it comes from VSC)
         dump_html(html_string, html_path=html_path, open_html=html_path is None)
 
-    def _visualize_with_trace_ui(self, runs: List[Run], open_html: bool) -> None:
+    def _visualize_with_trace_ui(self, runs: List[Run], html_path: Optional[str] = None) -> None:
         # ensure prompt flow service is running
         pfs_port = _invoke_pf_svc()
         if not is_pfs_service_healthy(pfs_port):
@@ -422,17 +421,8 @@ class RunOperations(TelemetryMixin):
         # concat run names
         runs_query = ",".join([run.name for run in runs])
         trace_ui_url = f"http://localhost:{pfs_port}/v1.0/ui/traces/?#run={runs_query}"
-        if open_html is True:
-            print("Trying to open the trace UI in a web browser...")
-            web_browser_opened = False
-            web_browser_opened = webbrowser.open(trace_ui_url)
-            if not web_browser_opened:
-                print(
-                    "Failed to open the web browser, you can manually open trace UI page "
-                    f"with the url: {trace_ui_url}."
-                )
-            else:
-                print("Successfully opened the web browser, you can visualize run(s) there.")
+        html_string = generate_trace_ui_html_string(trace_ui_url)
+        dump_html(html_string, html_path=html_path, open_html=html_path is None)
 
     @monitor_operation(activity_name="pf.runs.visualize", activity_type=ActivityType.PUBLICAPI)
     def visualize(self, runs: Union[str, Run, List[str], List[Run]], **kwargs) -> None:
@@ -460,7 +450,7 @@ class RunOperations(TelemetryMixin):
             logger.debug("there exists flex flow or prompty run(s), will use trace UI for visualization.")
             # if `html_path` is specified, which means the call comes from VS Code extension
             # in that case, we should not open browser inside SDK/CLI
-            self._visualize_with_trace_ui(runs=validated_runs, open_html=html_path is None)
+            self._visualize_with_trace_ui(runs=validated_runs, html_path=html_path)
         else:
             try:
                 self._visualize(validated_runs, html_path=html_path)
