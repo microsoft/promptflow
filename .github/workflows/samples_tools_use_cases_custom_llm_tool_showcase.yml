@@ -89,13 +89,13 @@ jobs:
           azPSVersion: "latest"
           inlineScript: |
             cd $Env:GITHUB_WORKSPACE/examples/tools/use-cases/custom_llm_tool_showcase
-            $Env:aoai_api_key=${{secrets.AOAI_API_KEY_TEST }}
-            $Env:aoai_api_endpoint=${{ secrets.AOAI_API_ENDPOINT_TEST }}
-            $Env:AZURE_OPENAI_API_KEY=${{secrets.AOAI_API_KEY_TEST }}
-            $Env:AZURE_OPENAI_ENDPOINT=${{ secrets.AOAI_API_ENDPOINT_TEST }}
-            $Env:test_workspace_sub_id=${{ secrets.TEST_WORKSPACE_SUB_ID }}
-            $Env:test_workspace_rg=${{ secrets.TEST_WORKSPACE_RG }}
-            $Env:test_workspace_name=${{ secrets.TEST_WORKSPACE_NAME_CANARY }}
+            $Env:aoai_api_key='${{secrets.AOAI_API_KEY_TEST }}'
+            $Env:aoai_api_endpoint='${{ secrets.AOAI_API_ENDPOINT_TEST }}'
+            $Env:AZURE_OPENAI_API_KEY='${{secrets.AOAI_API_KEY_TEST }}'
+            $Env:AZURE_OPENAI_ENDPOINT='${{ secrets.AOAI_API_ENDPOINT_TEST }}'
+            $Env:test_workspace_sub_id='${{ secrets.TEST_WORKSPACE_SUB_ID }}'
+            $Env:test_workspace_rg='${{ secrets.TEST_WORKSPACE_RG }}'
+            $Env:test_workspace_name='${{ secrets.TEST_WORKSPACE_NAME_CANARY }}'
             bash bash_script.sh
       - name: Run scripts against production workspace
         uses: azure/powershell@v1
@@ -104,13 +104,13 @@ jobs:
           azPSVersion: "latest"
           inlineScript: |
             cd $Env:GITHUB_WORKSPACE/examples/tools/use-cases/custom_llm_tool_showcase
-            $Env:aoai_api_key=${{secrets.AOAI_API_KEY_TEST }}
-            $Env:aoai_api_endpoint=${{ secrets.AOAI_API_ENDPOINT_TEST }}
-            $Env:AZURE_OPENAI_API_KEY=${{secrets.AOAI_API_KEY_TEST }}
-            $Env:AZURE_OPENAI_ENDPOINT=${{ secrets.AOAI_API_ENDPOINT_TEST }}
-            $Env:test_workspace_sub_id=${{ secrets.TEST_WORKSPACE_SUB_ID }}
-            $Env:test_workspace_rg=${{ secrets.TEST_WORKSPACE_RG }}
-            $Env:test_workspace_name=${{ secrets.TEST_WORKSPACE_NAME_PROD }}
+            $Env:aoai_api_key='${{secrets.AOAI_API_KEY_TEST }}'
+            $Env:aoai_api_endpoint='${{ secrets.AOAI_API_ENDPOINT_TEST }}'
+            $Env:AZURE_OPENAI_API_KEY='${{secrets.AOAI_API_KEY_TEST }}'
+            $Env:AZURE_OPENAI_ENDPOINT='${{ secrets.AOAI_API_ENDPOINT_TEST }}'
+            $Env:test_workspace_sub_id='${{ secrets.TEST_WORKSPACE_SUB_ID }}'
+            $Env:test_workspace_rg='${{ secrets.TEST_WORKSPACE_RG }}'
+            $Env:test_workspace_name='${{ secrets.TEST_WORKSPACE_NAME_PROD }}'
             bash bash_script.sh
       - name: Pip List for Debug
         if : ${{ always() }}
