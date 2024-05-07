@@ -338,7 +338,30 @@ class Node:
 
 
 @dataclass
-class FlowInputDefinition:
+class FlowParamDefinitionBase:
+    """Base class for the definition of a flow param (input & init kwargs)."""
+
+    type: ValueType
+    default: str = None
+    description: str = None
+
+    def serialize(self):
+        """Serialize the flow param definition to a dict.
+
+        :return: The dict of the flow param definition.
+        :rtype: dict
+        """
+        data = {}
+        data["type"] = self.type.value
+        if self.default:
+            data["default"] = str(self.default)
+        if self.description:
+            data["description"] = self.description
+        return data
+
+
+@dataclass
+class FlowInputDefinition(FlowParamDefinitionBase):
     """This class represents the definition of a flow input.
 
     :param type: The type of the flow input.
@@ -355,9 +378,6 @@ class FlowInputDefinition:
     :type is_chat_history: bool
     """
 
-    type: ValueType
-    default: str = None
-    description: str = None
     enum: List[str] = None
     is_chat_input: bool = False
     is_chat_history: bool = None
@@ -368,12 +388,7 @@ class FlowInputDefinition:
         :return: The dict of the flow input definition.
         :rtype: dict
         """
-        data = {}
-        data["type"] = self.type.value
-        if self.default:
-            data["default"] = str(self.default)
-        if self.description:
-            data["description"] = self.description
+        data = super().serialize()
         if self.enum:
             data["enum"] = self.enum
         if self.is_chat_input:
@@ -460,11 +475,11 @@ class FlowOutputDefinition:
 
 
 @dataclass
-class FlowInitDefinition(FlowInputDefinition):
+class FlowInitDefinition(FlowParamDefinitionBase):
     """This class represents the definition of a callable class flow's init kwargs."""
 
     @staticmethod
-    def deserialize(data: dict) -> "FlowInputDefinition":
+    def deserialize(data: dict) -> "FlowInitDefinition":
         """Deserialize the flow init definition from a dict.
 
         :param data: The dict to be deserialized.
@@ -483,12 +498,9 @@ class FlowInitDefinition(FlowInputDefinition):
             return ValueType(data_type)
 
         return FlowInitDefinition(
-            _get_type(data["type"]),
-            data.get("default", None),
-            data.get("description", ""),
-            data.get("enum", []),
-            data.get("is_chat_input", False),
-            data.get("is_chat_history", None),
+            type=_get_type(data["type"]),
+            default=data.get("default", None),
+            description=data.get("description", ""),
         )
 
 
