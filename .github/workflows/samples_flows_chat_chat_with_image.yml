@@ -75,6 +75,7 @@ jobs:
           subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
           tenant-id: ${{secrets.AZURE_TENANT_ID}}
           client-id: ${{secrets.AZURE_CLIENT_ID}}
+          enable-AzPSSession: true
       - name: Extract Steps examples/flows/chat/chat-with-image/README.md
         working-directory: ${{ github.workspace }}
         run: |
@@ -84,10 +85,10 @@ jobs:
         run: |
           cat bash_script.sh
       - name: Run scripts against canary workspace (scheduled runs only)
-        uses: azure/CLI@v2
+        uses: azure/powershell@v1
         if: github.event_name == 'schedule'
         with:
-          azcliversion: latest
+          azPSVersion: "latest"
           inlineScript: |
             cd $GITHUB_WORKSPACE/examples/flows/chat/chat-with-image
             export aoai_api_key=${{secrets.AOAI_GPT_4V_KEY }}
@@ -97,10 +98,10 @@ jobs:
             export test_workspace_name=${{ secrets.TEST_WORKSPACE_NAME_CANARY }}
             bash bash_script.sh
       - name: Run scripts against production workspace
-        uses: azure/CLI@v2
+        uses: azure/powershell@v1
         if: github.event_name != 'schedule'
         with:
-          azcliversion: latest
+          azPSVersion: "latest"
           inlineScript: |
             export aoai_api_key=${{secrets.AOAI_GPT_4V_KEY }}
             export aoai_api_endpoint=${{ secrets.AOAI_GPT_4V_ENDPOINT }}

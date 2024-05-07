@@ -73,6 +73,7 @@ jobs:
           subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
           tenant-id: ${{secrets.AZURE_TENANT_ID}}
           client-id: ${{secrets.AZURE_CLIENT_ID}}
+          enable-AzPSSession: true
       - name: Extract Steps examples/flows/evaluation/eval-summarization/README.md
         working-directory: ${{ github.workspace }}
         run: |
@@ -82,10 +83,10 @@ jobs:
         run: |
           cat bash_script.sh
       - name: Run scripts against canary workspace (scheduled runs only)
-        uses: azure/CLI@v2
+        uses: azure/powershell@v1
         if: github.event_name == 'schedule'
         with:
-          azcliversion: latest
+          azPSVersion: "latest"
           inlineScript: |
             cd $GITHUB_WORKSPACE/examples/flows/evaluation/eval-summarization
             export aoai_api_key=${{secrets.AOAI_API_KEY_TEST }}
@@ -96,10 +97,10 @@ jobs:
             export test_workspace_rg=${{ secrets.TEST_WORKSPACE_RG }}
             export test_workspace_name=${{ secrets.TEST_WORKSPACE_NAME_CANARY }}
       - name: Run scripts against production workspace
-        uses: azure/CLI@v2
+        uses: azure/powershell@v1
         if: github.event_name != 'schedule'
         with:
-          azcliversion: latest
+          azPSVersion: "latest"
           inlineScript: |
             cd $GITHUB_WORKSPACE/examples/flows/evaluation/eval-summarization
             export aoai_api_key=${{secrets.AOAI_API_KEY_TEST }}
