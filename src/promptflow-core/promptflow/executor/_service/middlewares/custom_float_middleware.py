@@ -21,8 +21,7 @@ class CustomFloatMiddleware(BaseHTTPMiddleware):
         return response
 
     def handle_nan(self, obj):
-        # Custom handler for JSON serialization: Converts NaN values to None (which becomes "NaN" in JSON)
+        # Converts float NaN values to None (which becomes "NaN" in JSON)
         if isinstance(obj, float) and obj != obj:
             return str(obj)
-        # Raise an error if obj is not serializable
-        raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
+        return obj
