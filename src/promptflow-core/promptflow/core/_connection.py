@@ -142,7 +142,37 @@ class _StrongTypeConnection(_Connection):
         self.secrets["api_key"] = value
 
 
-class AzureOpenAIConnection(_StrongTypeConnection):
+class _StrongTypeAADSupportedConnection(_StrongTypeConnection):
+    """Base class for strong type connection that supports AAD token."""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._token_provider = None
+
+    @property
+    def _has_api_key(self):
+        """Return if the connection has api key."""
+        return self.auth_mode == ConnectionAuthMode.KEY
+
+    @property
+    def auth_mode(self):
+        """Return the connection auth mode."""
+        return self.configs.get("auth_mode", ConnectionAuthMode.KEY)
+
+    @auth_mode.setter
+    def auth_mode(self, value):
+        """Set the connection auth mode."""
+        self.configs["auth_mode"] = value
+
+    def get_token(self):
+        """Return the connection token."""
+        if not self._token_provider:
+            self._token_provider = AzureTokenProvider()
+
+        return self._token_provider.get_token()
+
+
+class AzureOpenAIConnection(_StrongTypeAADSupportedConnection):
     """Azure Open AI connection.
 
     :param api_key: The api key.
@@ -181,8 +211,9 @@ class AzureOpenAIConnection(_StrongTypeConnection):
             "resource_id": resource_id,
         }
         secrets = {"api_key": api_key} if auth_mode == ConnectionAuthMode.KEY else {}
-        self._token_provider = kwargs.get("token_provider")
         super().__init__(configs=configs, secrets=secrets, **kwargs)
+        # Leave this line to ensure backward compatibility.
+        self._token_provider = kwargs.get("token_provider")
 
     @property
     def api_base(self):
@@ -215,16 +246,6 @@ class AzureOpenAIConnection(_StrongTypeConnection):
         self.configs["api_version"] = value
 
     @property
-    def auth_mode(self):
-        """Return the connection auth mode."""
-        return self.configs.get("auth_mode", ConnectionAuthMode.KEY)
-
-    @auth_mode.setter
-    def auth_mode(self, value):
-        """Set the connection auth mode."""
-        self.configs["auth_mode"] = value
-
-    @property
     def resource_id(self):
         """Return the connection resource id."""
         return self.configs.get("resource_id")
@@ -233,18 +254,6 @@ class AzureOpenAIConnection(_StrongTypeConnection):
     def resource_id(self, value):
         """Set the resource id."""
         self.configs["resource_id"] = value
-
-    @property
-    def _has_api_key(self):
-        """Return if the connection has api key."""
-        return self.auth_mode == ConnectionAuthMode.KEY
-
-    def get_token(self):
-        """Return the connection token."""
-        if not self._token_provider:
-            self._token_provider = AzureTokenProvider()
-
-        return self._token_provider.get_token()
 
     @classmethod
     def from_env(cls, name=None):
@@ -425,7 +434,7 @@ class WeaviateConnection(_EmbeddingStoreConnection):
     TYPE = ConnectionType.WEAVIATE.value
 
 
-class CognitiveSearchConnection(_StrongTypeConnection):
+class CognitiveSearchConnection(_StrongTypeAADSupportedConnection):
     """Cognitive Search connection.
 
     :param api_key: The api key.
@@ -434,6 +443,8 @@ class CognitiveSearchConnection(_StrongTypeConnection):
     :type api_base: str
     :param api_version: The api version, default "2023-11-01".
     :type api_version: str
+    :param auth_mode: The auth mode, supported values see: :class:`~.constants.ConnectionAuthMode`.
+    :type auth_mode: str
     :param name: Connection name.
     :type name: str
     """
@@ -441,10 +452,15 @@ class CognitiveSearchConnection(_StrongTypeConnection):
     TYPE = ConnectionType.COGNITIVE_SEARCH.value
 
     def __init__(
-        self, api_key: str, api_base: str, api_version: str = ConnectionDefaultApiVersion.COGNITIVE_SEARCH, **kwargs
+        self,
+        api_base: str,
+        api_key: str = None,
+        api_version: str = ConnectionDefaultApiVersion.COGNITIVE_SEARCH,
+        auth_mode: str = ConnectionAuthMode.KEY,
+        **kwargs,
     ):
-        configs = {"api_base": api_base, "api_version": api_version}
-        secrets = {"api_key": api_key}
+        configs = {"api_base": api_base, "api_version": api_version, "auth_mode": auth_mode}
+        secrets = {"api_key": api_key} if auth_mode == ConnectionAuthMode.KEY else {}
         super().__init__(configs=configs, secrets=secrets, **kwargs)
 
     @property
@@ -466,6 +482,43 @@ class CognitiveSearchConnection(_StrongTypeConnection):
     def api_version(self, value):
         """Set the connection api version."""
         self.configs["api_version"] = value
+
+
+class AzureAIServicesConnection(_StrongTypeAADSupportedConnection):
+    """Azure AI Services connection.
+
+    :param api_key: The api key.
+    :type api_key: str
+    :param endpoint: The api endpoint.
+    :type endpoint: str
+    :param auth_mode: The auth mode, supported values see: :class:`~.constants.ConnectionAuthMode`.
+    :type auth_mode: str
+    :param name: Connection name.
+    :type name: str
+    """
+
+    TYPE = ConnectionType.AZURE_AI_SERVICES.value
+
+    def __init__(
+        self,
+        endpoint: str,
+        api_key: str = None,
+        auth_mode: str = ConnectionAuthMode.KEY,
+        **kwargs,
+    ):
+        configs = {"endpoint": endpoint, "auth_mode": auth_mode}
+        secrets = {"api_key": api_key} if auth_mode == ConnectionAuthMode.KEY else {}
+        super().__init__(configs=configs, secrets=secrets, **kwargs)
+
+    @property
+    def endpoint(self):
+        """Return the connection endpoint."""
+        return self.configs.get("endpoint")
+
+    @endpoint.setter
+    def endpoint(self, value):
+        """Set the connection endpoint."""
+        self.configs["endpoint"] = value
 
 
 class AzureContentSafetyConnection(_StrongTypeConnection):

@@ -233,6 +233,7 @@ class ConnectionType(str, Enum):
     COGNITIVE_SEARCH = "CognitiveSearch"
     SERP = "Serp"
     AZURE_CONTENT_SAFETY = "AzureContentSafety"
+    AZURE_AI_SERVICES = "AzureAIServices"
     FORM_RECOGNIZER = "FormRecognizer"
     WEAVIATE = "Weaviate"
     SERVERLESS = "Serverless"
