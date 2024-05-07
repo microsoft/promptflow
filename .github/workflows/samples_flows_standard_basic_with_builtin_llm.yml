@@ -90,6 +90,7 @@ jobs:
         with:
           azcliversion: latest
           inlineScript: |
+            cd $GITHUB_WORKSPACE/examples/flows/standard/basic-with-builtin-llm
             export aoai_api_key=${{secrets.AOAI_API_KEY_TEST }}
             export aoai_api_endpoint=${{ secrets.AOAI_API_ENDPOINT_TEST }}
             export AZURE_OPENAI_API_KEY=${{secrets.AOAI_API_KEY_TEST }}
@@ -103,6 +104,7 @@ jobs:
         with:
           azcliversion: latest
           inlineScript: |
+            cd $GITHUB_WORKSPACE/examples/flows/standard/basic-with-builtin-llm
             export aoai_api_key=${{secrets.AOAI_API_KEY_TEST }}
             export aoai_api_endpoint=${{ secrets.AOAI_API_ENDPOINT_TEST }}
             export AZURE_OPENAI_API_KEY=${{secrets.AOAI_API_KEY_TEST }}
