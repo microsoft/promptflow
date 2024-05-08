@@ -7,6 +7,12 @@ DUMMY_TRACE_DESTINATION = ("azureml://subscriptions/sub_id/resourceGroups/resour
                      "/providers/Microsoft.MachineLearningServices/workspaces/workspace_name")
 
 
+@pytest.fixture
+def patch_config_validation():
+    with patch("promptflow._sdk._configuration.Configuration._validate", return_value=None):
+        yield
+
+
 @pytest.mark.unittest
 class TestPromptflowEvalsDependencies:
 
@@ -16,7 +22,6 @@ class TestPromptflowEvalsDependencies:
         assert Local2Cloud.BLOB_ROOT_PROMPTFLOW == "promptflow"
         assert Local2Cloud.BLOB_ARTIFACTS == "PromptFlowArtifacts"
 
-    def test_pf_eval_configuration_dependencies(self):
-        with patch("promptflow._sdk._configuration.Configuration._validate", return_value=None):
-            config = Configuration(overrides={"trace.destination": DUMMY_TRACE_DESTINATION})
-        assert config.get_trace_destination() == DUMMY_TRACE_DESTINATION # noqa: E128
+    def test_pf_eval_configuration_dependencies(self, patch_config_validation):
+        config = Configuration(overrides={"trace.destination": DUMMY_TRACE_DESTINATION})
+        assert config.get_trace_destination() == DUMMY_TRACE_DESTINATION
