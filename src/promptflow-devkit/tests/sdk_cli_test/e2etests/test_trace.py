@@ -302,7 +302,6 @@ class TestTraceEntitiesAndOperations:
         }
         assert terminated_line_run._to_rest_object() == expected_terminated_line_run_dict
 
-    @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
     def test_delete_traces_three_tables(self, pf: PFClient) -> None:
         # trace operation does not expose API for events and spans
         # so directly use ORM class to list and assert events and spans existence and deletion
@@ -336,7 +335,6 @@ class TestTraceEntitiesAndOperations:
         pf.traces.delete(collection=mock_collection)
         assert len(pf.traces.list_line_runs(collection=mock_collection)) == 0
 
-    @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
     def test_delete_traces_with_collection_and_started_before(self, pf: PFClient) -> None:
         # mock some traces that start 2 days before, and delete those start 1 days before
         mock_start_time = datetime.datetime.now() - datetime.timedelta(days=2)
