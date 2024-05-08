@@ -144,7 +144,7 @@ class ExtractStepsAndRunGPTFour(Step):
 
 class ExecuteCommand(Step):
     def __init__(self) -> None:
-        Step.__init__(self, f"Execute Command")
+        Step.__init__(self, "Execute Command")
 
     def get_workflow_step(self) -> str:
         template = Step.get_workflow_template(
