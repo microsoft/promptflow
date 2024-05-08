@@ -102,6 +102,38 @@ class InvalidSampleError(CoreError):
     pass
 
 
+class ListDeploymentsError(UserErrorException):
+    """Exception raise when list deployments."""
+
+    pass
+
+
+class ParseConnectionError(ListDeploymentsError):
+    """Exception raise when connection resourceId format invalid."""
+
+    pass
+
+
+class LLMError(UserErrorException):
+    """Base exception raised when failed to call openai api with non-OpenAIError."""
+
+    pass
+
+
+class WrappedOpenAIError(UserErrorException):
+    """Refine error messages on top of native openai errors."""
+
+    pass
+
+
+class ExceedMaxRetryTimes(WrappedOpenAIError):
+    """Base exception raised when retry exceeds max times."""
+
+    @property
+    def message(self):
+        return "Exceed max retry times. " + super().message
+
+
 class ConnectionNotFound(CoreError):
     pass
 
