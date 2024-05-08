@@ -3,20 +3,20 @@
 # Any manual changes to this file may cause incorrect behavior.
 # Any manual changes will be overwritten if the code is regenerated.
 
-name: samples_flows_chat_use_functions_with_chat_models
+name: samples_flows_chat_use_tools_with_chat_models
 on:
   schedule:
     - cron: "7 21 * * *" # Every day starting at 5:7 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/flows/chat/use_functions_with_chat_models/**, examples/*requirements.txt, .github/workflows/samples_flows_chat_use_functions_with_chat_models.yml ]
+    paths: [ examples/flows/chat/use_tools_with_chat_models/**, examples/*requirements.txt, .github/workflows/samples_flows_chat_use_tools_with_chat_models.yml ]
   workflow_dispatch:
 
 env:
   IS_IN_CI_PIPELINE: "true"
 
 jobs:
-  samples_flows_chat_use_functions_with_chat_models:
+  samples_flows_chat_use_tools_with_chat_models:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -38,7 +38,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r dev_requirements.txt
       - name: Refine .env file
-        working-directory: examples/flows/chat/use_functions_with_chat_models
+        working-directory: examples/flows/chat/use_tools_with_chat_models
         run: |
           AOAI_API_KEY=${{ secrets.AOAI_API_KEY_TEST }}
           AOAI_API_ENDPOINT=${{ secrets.AOAI_API_ENDPOINT_TEST }}
@@ -54,7 +54,7 @@ jobs:
             mv ../.env.example ../.env
           fi
       - name: Create run.yml
-        working-directory: examples/flows/chat/use_functions_with_chat_models
+        working-directory: examples/flows/chat/use_tools_with_chat_models
         run: |
           gpt_base=${{ secrets.AOAI_API_ENDPOINT_TEST }}
           gpt_base=$(echo ${gpt_base//\//\\/})
@@ -65,17 +65,17 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Extract Steps examples/flows/chat/use_functions_with_chat_models/README.md
+      - name: Extract Steps examples/flows/chat/use_tools_with_chat_models/README.md
         working-directory: ${{ github.workspace }}
         run: |
-          python scripts/readme/extract_steps_from_readme.py -f examples/flows/chat/use_functions_with_chat_models/README.md -o examples/flows/chat/use_functions_with_chat_models
+          python scripts/readme/extract_steps_from_readme.py -f examples/flows/chat/use_tools_with_chat_models/README.md -o examples/flows/chat/use_tools_with_chat_models
       - name: Cat script
-        working-directory: examples/flows/chat/use_functions_with_chat_models
+        working-directory: examples/flows/chat/use_tools_with_chat_models
         run: |
           cat bash_script.sh
       - name: Run scripts against canary workspace (scheduled runs only)
         if: github.event_name == 'schedule'
-        working-directory: examples/flows/chat/use_functions_with_chat_models
+        working-directory: examples/flows/chat/use_tools_with_chat_models
         run: |
           export aoai_api_key=${{secrets.AOAI_API_KEY_TEST }}
           export aoai_api_endpoint=${{ secrets.AOAI_API_ENDPOINT_TEST }}
@@ -87,7 +87,7 @@ jobs:
           bash bash_script.sh
       - name: Run scripts against production workspace
         if: github.event_name != 'schedule'
-        working-directory: examples/flows/chat/use_functions_with_chat_models
+        working-directory: examples/flows/chat/use_tools_with_chat_models
         run: |
           export aoai_api_key=${{secrets.AOAI_API_KEY_TEST }}
           export aoai_api_endpoint=${{ secrets.AOAI_API_ENDPOINT_TEST }}
@@ -99,7 +99,7 @@ jobs:
           bash bash_script.sh
       - name: Pip List for Debug
         if : ${{ always() }}
-        working-directory: examples/flows/chat/use_functions_with_chat_models
+        working-directory: examples/flows/chat/use_tools_with_chat_models
         run: |
           pip list
       - name: Upload artifact
@@ -107,4 +107,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: artifact
-          path: examples/flows/chat/use_functions_with_chat_models/bash_script.sh
+          path: examples/flows/chat/use_tools_with_chat_models/bash_script.sh
