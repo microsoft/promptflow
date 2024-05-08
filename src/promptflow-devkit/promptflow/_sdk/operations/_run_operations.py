@@ -443,9 +443,14 @@ class RunOperations(TelemetryMixin):
 
         # if there exists flex flow or prompty run, use trace UI to visualize
         # maybe we can fully switch to trace UI for DAG flow run in the future
-        has_flex_or_prompty = any(
-            [run._flow_type == FlowType.FLEX_FLOW or run._flow_type == FlowType.PROMPTY for run in validated_runs]
-        )
+        has_flex_or_prompty = False
+        for run in validated_runs:
+            # for existing run source run, will raise type error when call `_flow_type`, so skip it
+            if run._run_source == RunInfoSources.EXISTING_RUN:
+                continue
+            if run._flow_type == FlowType.FLEX_FLOW or run._flow_type == FlowType.PROMPTY:
+                has_flex_or_prompty = True
+                break
         if has_flex_or_prompty is True:
             logger.debug("there exists flex flow or prompty run(s), will use trace UI for visualization.")
             # if `html_path` is specified, which means the call comes from VS Code extension
