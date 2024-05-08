@@ -14,7 +14,7 @@ from promptflow.parallel._executor.component_executor import ComponentRunExecuto
 
 
 @pytest.fixture
-def hello_world_flow_config(save_jsonl, flow_dir):
+def hello_world_flow_config(flow_dir):
     wd = flow_dir / "simple_hello_world"
     with TemporaryDirectory() as input_dir, TemporaryDirectory() as output_dir:
         yield wd, ParallelRunConfig(

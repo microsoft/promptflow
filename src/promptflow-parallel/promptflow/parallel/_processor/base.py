@@ -33,9 +33,10 @@ class AbstractParallelRunProcessor(ParallelRunProcessor, ABC):
         self._config = parser.parse(self._args)
         self._executor = self._create_executor(self._config)
         self._executor.init()
-        self._debug_info = DebugInfo(self._config.debug_output_dir)
-        if self._config.is_debug_enabled:
-            self._debug_info.prepare()
+        self._debug_info = (
+            DebugInfo(self._config.debug_output_dir) if self._config.is_debug_enabled else DebugInfo.temporary()
+        )
+        self._debug_info.prepare()
 
     @abstractmethod
     def _create_executor(self, config: ParallelRunConfig) -> ParallelRunExecutor:
@@ -95,7 +96,9 @@ class AbstractParallelRunProcessor(ParallelRunProcessor, ABC):
         for index, f_line in enumerate(self._read_output_lines()):
             file_path, line = f_line
             try:
-                yield Row.from_json(line, row_number=index)
+                data = json.loads(line)
+                row_number = data["output"].get("line_number", index)
+                yield Row.from_json(line, row_number=row_number)
             except Exception:
                 self._logger.error(f"Failed to process the line {index} of file {file_path}: {line}.")
                 raise

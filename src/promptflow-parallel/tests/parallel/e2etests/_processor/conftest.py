@@ -13,7 +13,7 @@ from promptflow.parallel import processor
 
 
 @pytest.fixture
-def simple_flow_with_python_tool_and_aggregate(save_jsonl, flow_dir):
+def simple_flow_with_python_tool_and_aggregate(flow_dir):
     wd = flow_dir / "simple_flow_with_python_tool_and_aggregate"
     data = [{"num": random.randint(i, i + 10)} for i in range(0, 100, 10)]
     with TemporaryDirectory() as input_dir, TemporaryDirectory() as output_dir:
@@ -26,7 +26,7 @@ def simple_flow_with_python_tool_and_aggregate(save_jsonl, flow_dir):
             output_dir,
         ]
         with patch.object(sys, "argv", sys.argv + args):
-            yield wd, data
+            yield wd, Path(output_dir), data
 
 
 @pytest.fixture
@@ -39,13 +39,13 @@ def enable_debug():
 
 @pytest.fixture
 def bulk_run_processor():
-    with patch.object(sys, "argv", sys.argv + ["--amlbi_pf_model", processor._Mode.bulk.value]):
+    with patch.object(sys, "argv", sys.argv + ["--amlbi_pf_run_mode", processor._Mode.bulk.value]):
         yield
 
 
 @pytest.fixture
 def component_run_processor():
-    with patch.object(sys, "argv", sys.argv + ["--amlbi_pf_model", processor._Mode.component.value]):
+    with patch.object(sys, "argv", sys.argv + ["--amlbi_pf_run_mode", processor._Mode.component.value]):
         yield
 
 

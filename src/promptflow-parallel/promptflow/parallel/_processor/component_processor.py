@@ -18,7 +18,7 @@ class ComponentRunProcessor(AbstractParallelRunProcessor):
         return ComponentRunExecutor(self._working_dir, config)
 
     def _finalizers(self) -> Iterable[Finalizer]:
-        yield _ComponentRunFinalizer(self._config.is_debug_enabled, self._config.debug_output_dir)
+        yield _ComponentRunFinalizer(self._config.is_debug_enabled, self._debug_info)
 
     def _extract_result(self, result: Result) -> Iterable[Tuple[str, Any]]:
         if not self._config.is_debug_enabled:
@@ -42,7 +42,7 @@ class _ComponentRunFinalizer(Finalizer):
     def process(self, row: Row) -> None:
         line_run_record = LineRunRecord(**row["run_info"])
         node_run_records = [NodeRunRecord(**n) for n in row["node_run_infos"]]
-        self._debug_info.write(line_run_record, node_run_records)
+        self._local_temp_debug_dir.write(line_run_record, node_run_records)
 
     def cleanup(self) -> None:
         if not self._debug_enabled:
