@@ -1,7 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
+import json
 import mimetypes
 import os
 from abc import ABC, abstractmethod
@@ -17,6 +17,7 @@ from promptflow.core._serving.utils import get_output_fields_to_remove, get_samp
 from promptflow.core._utils import init_executable
 from promptflow.storage._run_storage import DummyRunStorage
 
+from ..._constants import PROMPTFLOW_FLOW_INIT_CONFIG
 from .swagger import generate_swagger
 
 
@@ -55,7 +56,15 @@ class PromptflowServingAppBasic(ABC):
         self.sample = get_sample_json(self.project_path, logger)
 
         self.init = kwargs.get("init", {})
-        logger.info("Init params: " + str(self.init))
+        try:
+            init_params = os.environ.get(PROMPTFLOW_FLOW_INIT_CONFIG, "{}")
+            init_dict: dict = json.loads(init_params)
+            init_dict.update(self.init)
+            self.init = init_dict
+        except Exception as e:
+            print("Failed to retrieve init params from environment variable PROMPTFLOW_FLOW_INIT_CONFIG: ", e)
+
+        logger.debug("Init params: " + str(self.init))
 
         self.init_swagger()
         # try to initialize the flow invoker
