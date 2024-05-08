@@ -34,7 +34,7 @@ class FlexFlow(FlowBase):
         code = Path(code)
         # entry function name
         self.entry = entry
-        self._flow_dir, self._flow_file_name = resolve_flow_path(path)
+        self._flow_dir, self._flow_file_name = resolve_flow_path(path, check_flow_exist=False)
         # TODO(2910062): support non-dag flow execution cache
         super().__init__(code=code, path=path, dag=data, content_hash=None, **kwargs)
 
