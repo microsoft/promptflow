@@ -383,7 +383,9 @@ class LineExecutionProcessPool:
             crashed = False
             returned_node_run_infos = {}
 
-            self._processing_idx[line_number] = format_current_process_info(process_name, process_id, line_number)
+            self._processing_idx[origin_line_number] = format_current_process_info(
+                process_name, process_id, line_number
+            )
             log_process_status(process_name, process_id, line_number)
             # Responsible for checking the output queue messages and processing them within a specified timeout period.
             while not self._line_timeout_expired(start_time, line_timeout_sec=line_timeout_sec):
@@ -403,14 +405,16 @@ class LineExecutionProcessPool:
 
             # Handle line execution completed.
             if completed:
-                self._completed_idx[line_number] = format_current_process_info(process_name, process_id, line_number)
+                self._completed_idx[origin_line_number] = format_current_process_info(
+                    process_name, process_id, line_number
+                )
                 log_process_status(process_name, process_id, line_number, is_completed=True)
             # Handle line execution is not completed.
             else:
                 ex = None
                 # Handle process crashed.
                 if crashed:
-                    bulk_logger.warning(f"Process crashed while executing line {line_number}.")
+                    bulk_logger.warning(f"Process crashed while executing line {origin_line_number}.")
                     log_path = get_subprocess_log_path(index)
                     # In fork mode, if the child process fails to start, its error information
                     # will be written to the parent process log file.
@@ -419,27 +423,27 @@ class LineExecutionProcessPool:
                     if not log_errors_from_file(log_path) and self._use_fork:
                         log_path = get_manager_process_log_path()
                         log_errors_from_file(log_path)
-                    ex = ProcessCrashError(line_number)
+                    ex = ProcessCrashError(origin_line_number)
                 elif self._line_timeout_expired(start_time, line_timeout_sec=line_timeout_sec):
                     # Handle line execution timeout.
-                    bulk_logger.warning(f"Line {line_number} timeout after {line_timeout_sec} seconds.")
+                    bulk_logger.warning(f"Line {origin_line_number} timeout after {line_timeout_sec} seconds.")
                     if line_timeout_sec < self._line_timeout_sec:
                         # If execution times out with a timeout lower than the default (self._line_timeout_sec),
                         # it indicates the _batch_timeout_sec has been reached.
                         # We should use the exception of BatchExecutionTimeoutError.
-                        ex = BatchExecutionTimeoutError(line_number, self._batch_timeout_sec)
+                        ex = BatchExecutionTimeoutError(origin_line_number, self._batch_timeout_sec)
                     else:
-                        ex = LineExecutionTimeoutError(line_number, line_timeout_sec)
+                        ex = LineExecutionTimeoutError(origin_line_number, line_timeout_sec)
                 else:
                     # This branch should not be reached, add this warning for the case.
-                    msg = f"Unexpected error occurred while monitoring line execution at line {line_number}."
+                    msg = f"Unexpected error occurred while monitoring line execution at line {origin_line_number}."
                     bulk_logger.warning(msg)
                     ex = UnexpectedError(msg)
 
                 result = self._generate_line_result_for_exception(
                     inputs,
                     run_id,
-                    line_number,
+                    origin_line_number,
                     self._flow_id,
                     start_time,
                     ex,
@@ -447,7 +451,9 @@ class LineExecutionProcessPool:
                 )
                 result_dict[line_number] = result
 
-                self._completed_idx[line_number] = format_current_process_info(process_name, process_id, line_number)
+                self._completed_idx[origin_line_number] = format_current_process_info(
+                    process_name, process_id, line_number
+                )
                 log_process_status(process_name, process_id, line_number, is_failed=True)
 
                 self._processes_manager.restart_process(index)
@@ -457,7 +463,7 @@ class LineExecutionProcessPool:
                 self._processes_manager.ensure_process_terminated_within_timeout(process_id)
                 index, process_id, process_name = self._processes_manager.get_process_info(index)
 
-            self._processing_idx.pop(line_number)
+            self._processing_idx.pop(origin_line_number)
 
     # endregion
 
