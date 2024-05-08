@@ -15,7 +15,7 @@ from promptflow._proxy import ProxyFactory
 from promptflow._sdk._constants import SERVICE_FLOW_TYPE_2_CLIENT_FLOW_TYPE, AzureFlowSource, FlowType
 from promptflow._sdk._utilities.general_utils import PromptflowIgnoreFile, load_yaml, remove_empty_element_from_dict
 from promptflow._sdk._utilities.signature_utils import update_signatures
-from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag, resolve_flow_path
+from promptflow._utils.flow_utils import dump_flow_yaml_to_existing_path, load_flow_dag, resolve_flow_path
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.azure._ml import AdditionalIncludesMixin, Code
 
@@ -164,12 +164,12 @@ class Flow(AdditionalIncludesMixin):
                 dag_updated = update_signatures(code=flow_dir, data=flow_dag) or dag_updated
                 self._environment = self._resolve_environment(flow_dir, flow_dag)
                 if dag_updated:
-                    dump_flow_dag(flow_dag, flow_dir)
+                    dump_flow_yaml_to_existing_path(flow_dag, flow_dir)
             try:
                 yield code
             finally:
                 if dag_updated:
-                    dump_flow_dag(original_flow_dag, flow_dir)
+                    dump_flow_yaml_to_existing_path(original_flow_dag, flow_dir)
 
     def _get_base_path_for_code(self) -> Path:
         """Get base path for additional includes."""
