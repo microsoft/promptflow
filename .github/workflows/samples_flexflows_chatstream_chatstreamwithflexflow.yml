@@ -27,12 +27,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Azure Login
-        uses: azure/login@v1
-        with:
-          subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
-          tenant-id: ${{secrets.AZURE_TENANT_ID}}
-          client-id: ${{secrets.AZURE_CLIENT_ID}}
       - name: Setup Python 3.9 environment
         uses: actions/setup-python@v4
         with:
@@ -60,6 +54,12 @@ jobs:
           fi
       - name: Create Aoai Connection
         run: pf connection create -f ${{ github.workspace }}/examples/connections/azure_openai.yml --set api_key="${{ secrets.AOAI_API_KEY_TEST }}" api_base="${{ secrets.AOAI_API_ENDPOINT_TEST }}"
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
+          tenant-id: ${{secrets.AZURE_TENANT_ID}}
+          client-id: ${{secrets.AZURE_CLIENT_ID}}
       - name: Test Notebook
         working-directory: examples/flex-flows/chat-stream
         run: |

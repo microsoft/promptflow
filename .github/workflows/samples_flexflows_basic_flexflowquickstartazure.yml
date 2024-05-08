@@ -33,12 +33,6 @@ jobs:
       - name: Generate config.json for production workspace
         if: github.event_name != 'schedule'
         run: echo '${{ secrets.EXAMPLE_WORKSPACE_CONFIG_JSON_PROD }}' > ${{ github.workspace }}/examples/config.json
-      - name: Azure Login
-        uses: azure/login@v1
-        with:
-          subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
-          tenant-id: ${{secrets.AZURE_TENANT_ID}}
-          client-id: ${{secrets.AZURE_CLIENT_ID}}
       - name: Setup Python 3.9 environment
         uses: actions/setup-python@v4
         with:
@@ -50,6 +44,12 @@ jobs:
           pip install -r ${{ github.workspace }}/examples/dev_requirements.txt
       - name: Create Aoai Connection
         run: pf connection create -f ${{ github.workspace }}/examples/connections/azure_openai.yml --set api_key="${{ secrets.AOAI_API_KEY_TEST }}" api_base="${{ secrets.AOAI_API_ENDPOINT_TEST }}"
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
+          tenant-id: ${{secrets.AZURE_TENANT_ID}}
+          client-id: ${{secrets.AZURE_CLIENT_ID}}
       - name: Test Notebook
         working-directory: examples/flex-flows/basic
         run: |
