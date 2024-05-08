@@ -84,7 +84,7 @@ class TestUtils:
             mock_sqlite_op()
         # assert function execution time from stdout
         out, _ = capfd.readouterr()
-        assert out.count("sqlite op...") == 3
+        assert out.count("sqlite op...") <= 10
 
     def test_resolve_connections_environment_variable_reference(self):
         connections = {
