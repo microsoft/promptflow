@@ -11,6 +11,7 @@ import shutil
 import signal
 import sys
 import threading
+import uuid
 from contextlib import nullcontext
 from datetime import datetime
 from functools import partial
@@ -252,6 +253,7 @@ class LineExecutionProcessPool:
 
     async def submit(self, run_id: str, line_number: int, inputs: dict):
         """Submit a line execution request to the process pool and return the line result."""
+        line_number = self._process_line_number(line_number)
         self._task_queue.put((run_id, line_number, inputs))
         start_time = datetime.utcnow()
         line_result = None
@@ -367,7 +369,8 @@ class LineExecutionProcessPool:
             else:
                 # If the task is a line execution request, put the request into the input queue.
                 run_id, line_number, inputs = data
-                args = (run_id, line_number, inputs, line_timeout_sec)
+                real_line_number = self._get_line_number(line_number)
+                args = (run_id, real_line_number, inputs, line_timeout_sec)
                 input_queue.put(args)
 
             if terminated:
@@ -675,6 +678,16 @@ class LineExecutionProcessPool:
         # We need to find a way to avoid this.
         self._storage.persist_flow_run(result.run_info)
         return result
+
+    def _process_line_number(self, line_number: int) -> Union[int, str]:
+        if self._is_chat_group_run:
+            return f"{line_number}_{str(uuid.uuid4())}"
+        return line_number
+
+    def _get_line_number(self, line_number: Union[int, str]) -> int:
+        if self._is_chat_group_run:
+            return int(line_number.split("_")[0])
+        return line_number
 
     # endregion
 
