@@ -4,17 +4,39 @@
 import logging
 import json
 import os
+import re
 import tempfile
+from collections import namedtuple
 from pathlib import Path
 
 import mlflow
 
 from promptflow._sdk._constants import Local2Cloud
-from promptflow._sdk._utilities.general_utils import extract_workspace_triad_from_trace_provider
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow.azure.operations._async_run_uploader import AsyncRunUploader
 
 LOGGER = logging.getLogger(__name__)
+
+AZURE_WORKSPACE_REGEX_FORMAT = (
+    "^azureml:[/]{1,2}subscriptions/([^/]+)/resource(groups|Groups)/([^/]+)"
+    "(/providers/Microsoft.MachineLearningServices)?/workspaces/([^/]+)$"
+)
+
+AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])
+
+
+def extract_workspace_triad_from_trace_provider(trace_provider: str):
+    match = re.match(AZURE_WORKSPACE_REGEX_FORMAT, trace_provider)
+    if not match or len(match.groups()) != 5:
+        raise ValueError(
+            "Malformed trace provider string, expected azureml://subscriptions/<subscription_id>/"
+            "resourceGroups/<resource_group>/providers/Microsoft.MachineLearningServices/"
+            f"workspaces/<workspace_name>, got {trace_provider}"
+        )
+    subscription_id = match.group(1)
+    resource_group_name = match.group(3)
+    workspace_name = match.group(5)
+    return AzureMLWorkspaceTriad(subscription_id, resource_group_name, workspace_name)
 
 
 def load_jsonl(path):
@@ -50,7 +72,6 @@ def _write_properties_to_run_history(properties: dict) -> None:
 
 
 def _azure_pf_client(trace_destination):
-    from promptflow._sdk._utilities.general_utils import extract_workspace_triad_from_trace_provider
     from promptflow.azure._cli._utils import _get_azure_pf_client
 
     ws_triad = extract_workspace_triad_from_trace_provider(trace_destination)
@@ -64,8 +85,6 @@ def _azure_pf_client(trace_destination):
 
 
 def _get_mlflow_tracking_uri(trace_destination):
-    from promptflow._sdk._utilities.general_utils import extract_workspace_triad_from_trace_provider
-
     azure_pf_client = _azure_pf_client(trace_destination)
     ws_triad = extract_workspace_triad_from_trace_provider(trace_destination)
 
