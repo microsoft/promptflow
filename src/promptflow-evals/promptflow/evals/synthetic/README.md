@@ -250,7 +250,7 @@ azure_ai_project = {
     "project_name": "<project_name>",
 }
 
-from promptflow.evals.evaluators.content_safety import ViolenceEvaluator, SexualEvaluator, SelfHarmEvaluator, HateUnfairnessEvaluator
+from promptflow.evals.evaluators import ViolenceEvaluator, SexualEvaluator, SelfHarmEvaluator, HateUnfairnessEvaluator
 
 
 # Initialzing Content harm Evaluators
