@@ -1060,7 +1060,9 @@ class FlexFlow(FlowBase):
                 if val.type in MODEL_CONFIG_NAME_2_CLASS:
                     connection_names.add(init_dict.get(key, {}).get("connection", None))
         except Exception as e:
-            print("Failed to retrieve connection_names from environment variable PROMPTFLOW_FLOW_INIT_CONFIG: ", e)
+            logger.error(
+                "Failed to retrieve connection_names from environment variable PROMPTFLOW_FLOW_INIT_CONFIG: ", e
+            )
 
         logger.debug("connection_names: ", connection_names)
 

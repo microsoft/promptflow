@@ -62,7 +62,7 @@ class PromptflowServingAppBasic(ABC):
             init_dict.update(self.init)
             self.init = init_dict
         except Exception as e:
-            print("Failed to retrieve init params from environment variable PROMPTFLOW_FLOW_INIT_CONFIG: ", e)
+            logger.error("Failed to retrieve init params from environment variable PROMPTFLOW_FLOW_INIT_CONFIG: ", e)
 
         logger.debug("Init params: " + str(self.init))
 
