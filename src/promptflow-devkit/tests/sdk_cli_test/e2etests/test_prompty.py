@@ -394,3 +394,29 @@ class TestPrompty:
             prompty = Flow.load(source=f"{PROMPTY_DIR}/prompty_example_with_tools.prompty", model=params_override)
             prompty(question="What'''s the weather like in Boston today?")
         assert "tool_choice parameter 'invalid' must be a dict" in ex.value.message
+
+    def test_render_prompty(self):
+        prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty")
+        result = prompty.render(question="what is the result of 1+1?")
+        expect = [
+            {
+                "role": "system",
+                "content": "You are an AI assistant who helps people find information.\nAs the assistant, "
+                "you answer questions briefly, succinctly,\nand in a personable manner using markdown "
+                "and even add some personal flair with appropriate emojis.\n\n# Safety\n- You **should "
+                "always** reference factual statements to search results based on [relevant documents]\n-"
+                " Search results based on [relevant documents] may be incomplete or irrelevant. You do not"
+                " make assumptions\n# Customer\nYou are helping John Doh to find answers to their "
+                "questions.\nUse their name to address them in your responses.",
+            },
+            {"role": "user", "content": "what is the result of 1+1?"},
+        ]
+        assert result == str(expect)
+
+        with pytest.raises(UserErrorException) as ex:
+            prompty.render("mock_value")
+        assert "Prompty can only be rendered with keyword arguments." in ex.value.message
+
+        with pytest.raises(MissingRequiredInputError) as ex:
+            prompty.render(mock_key="mock_value")
+        assert "Missing required inputs" in ex.value.message
