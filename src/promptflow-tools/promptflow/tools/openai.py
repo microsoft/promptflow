@@ -41,8 +41,8 @@ class OpenAI(ToolProvider):
         logprobs: int = None,
         echo: bool = False,
         stop: list = None,
-        presence_penalty: float = 0,
-        frequency_penalty: float = 0,
+        presence_penalty: float = None,
+        frequency_penalty: float = None,
         best_of: int = 1,
         logit_bias: dict = {},
         user: str = "",
@@ -65,8 +65,8 @@ class OpenAI(ToolProvider):
             logprobs=int(logprobs) if logprobs else None,
             echo=echo,
             stop=stop if stop else None,
-            presence_penalty=float(presence_penalty),
-            frequency_penalty=float(frequency_penalty),
+            presence_penalty=float(presence_penalty) if presence_penalty is not None else None,
+            frequency_penalty=float(frequency_penalty) if frequency_penalty is not None else None,
             best_of=int(best_of),
             # Logit bias must be a dict if we passed it to openai api.
             logit_bias=logit_bias if logit_bias else {},
@@ -91,16 +91,15 @@ class OpenAI(ToolProvider):
     def chat(
         self,
         prompt: PromptTemplate,
-        model: str = "gpt-3.5-turbo",
+        model: str = "",
         temperature: float = 1.0,
         top_p: float = 1.0,
-        n: int = 1,
         # stream is a hidden to the end user, it is only supposed to be set by the executor.
         stream: bool = False,
         stop: list = None,
         max_tokens: int = None,
-        presence_penalty: float = 0,
-        frequency_penalty: float = 0,
+        presence_penalty: float = None,
+        frequency_penalty: float = None,
         logit_bias: dict = {},
         user: str = "",
         # function_call can be of type str or dict.
@@ -120,10 +119,7 @@ class OpenAI(ToolProvider):
             "messages": messages,
             "temperature": temperature,
             "top_p": top_p,
-            "n": n,
             "stream": stream,
-            "presence_penalty": presence_penalty,
-            "frequency_penalty": frequency_penalty,
             "user": user,
         }
 
@@ -151,6 +147,10 @@ class OpenAI(ToolProvider):
             params["response_format"] = response_format
         if seed is not None:
             params["seed"] = seed
+        if presence_penalty is not None:
+            params["presence_penalty"] = presence_penalty
+        if frequency_penalty is not None:
+            params["frequency_penalty"] = frequency_penalty
 
         completion = self._client.chat.completions.create(**params)
         return post_process_chat_api_response(completion, stream, functions, tools)
@@ -173,8 +173,8 @@ def completion(
     logprobs: int = None,
     echo: bool = False,
     stop: list = None,
-    presence_penalty: float = 0,
-    frequency_penalty: float = 0,
+    presence_penalty: float = None,
+    frequency_penalty: float = None,
     best_of: int = 1,
     logit_bias: dict = {},
     user: str = "",
@@ -205,15 +205,14 @@ def completion(
 def chat(
     connection: OpenAIConnection,
     prompt: PromptTemplate,
-    model: str = "gpt-3.5-turbo",
+    model: str = "",
     temperature: float = 1,
     top_p: float = 1,
-    n: int = 1,
     stream: bool = False,
     stop: list = None,
     max_tokens: int = None,
-    presence_penalty: float = 0,
-    frequency_penalty: float = 0,
+    presence_penalty: float = None,
+    frequency_penalty: float = None,
     logit_bias: dict = {},
     user: str = "",
     function_call: object = None,
@@ -229,7 +228,6 @@ def chat(
         model=model,
         temperature=temperature,
         top_p=top_p,
-        n=n,
         stream=stream,
         stop=stop if stop else None,
         max_tokens=max_tokens,
