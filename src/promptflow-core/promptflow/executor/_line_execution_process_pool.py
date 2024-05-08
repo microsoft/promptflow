@@ -332,7 +332,7 @@ class LineExecutionProcessPool:
     def _monitor_workers_and_process_tasks_in_thread(
         self,
         task_queue: Queue,
-        result_dict: Dict[int, LineResult],
+        result_dict: Dict[str, LineResult],
         index: int,
         input_queue: Queue,
         output_queue: Queue,
