@@ -994,7 +994,10 @@ class FlexFlow(FlowBase):
             source_path=entry_file,
             data=flow_dag,
         )
-        return cls.deserialize(meta_dict)
+        # Use cls.deserialize will raise Error: "ValueError: 'AzureOpenAIModelConfiguration' is not a valid ValueType"
+        # flake8: noqa: E501, Waiting for this PR fix: https://github.com/microsoft/promptflow/pull/3063/files#diff-db2454c528ba24a2269febf93d5d70ff56f6a67a3fcf68259af1630d78f6f080
+        # return cls.deserialize(meta_dict)
+        return Flow.deserialize(meta_dict)
 
     def get_connection_names(self, environment_variables_overrides: Dict[str, str] = None):
         """Return connection names."""
