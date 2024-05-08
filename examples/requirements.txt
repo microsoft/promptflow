@@ -1,5 +1,4 @@
 promptflow[azure]
 promptflow-tools
-promptflow-vectordb
 python-dotenv
 bs4
