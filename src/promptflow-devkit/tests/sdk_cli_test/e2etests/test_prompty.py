@@ -13,6 +13,7 @@ from promptflow._sdk._pf_client import PFClient
 from promptflow.client import load_flow
 from promptflow.core import AsyncPrompty, Flow, Prompty
 from promptflow.core._errors import (
+    ChatAPIInvalidTools,
     InvalidConnectionError,
     InvalidOutputKeyError,
     InvalidSampleError,
@@ -362,3 +363,34 @@ class TestPrompty:
         prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example_with_default_connection.prompty")
         result = prompty(question="what is the result of 1+1?")
         assert "2" in result
+
+    def test_prompty_with_tools(self):
+        prompty = Flow.load(source=f"{PROMPTY_DIR}/prompty_example_with_tools.prompty")
+        result = prompty(question="What'''s the weather like in Boston today?")
+        assert "tool_calls" in result
+        assert result["tool_calls"][0]["function"]["name"] == "get_current_weather"
+        assert "Boston" in result["tool_calls"][0]["function"]["arguments"]
+
+        with pytest.raises(ChatAPIInvalidTools) as ex:
+            params_override = {"parameters": {"tools": []}}
+            prompty = Flow.load(source=f"{PROMPTY_DIR}/prompty_example_with_tools.prompty", model=params_override)
+            prompty(question="What'''s the weather like in Boston today?")
+        assert "tools cannot be an empty list" in ex.value.message
+
+        with pytest.raises(ChatAPIInvalidTools) as ex:
+            params_override = {"parameters": {"tools": ["invalid_tool"]}}
+            prompty = Flow.load(source=f"{PROMPTY_DIR}/prompty_example_with_tools.prompty", model=params_override)
+            prompty(question="What'''s the weather like in Boston today?")
+        assert "tool 0 'invalid_tool' is not a dict" in ex.value.message
+
+        with pytest.raises(ChatAPIInvalidTools) as ex:
+            params_override = {"parameters": {"tools": [{"key": "val"}]}}
+            prompty = Flow.load(source=f"{PROMPTY_DIR}/prompty_example_with_tools.prompty", model=params_override)
+            prompty(question="What'''s the weather like in Boston today?")
+        assert "does not have 'type' property" in ex.value.message
+
+        with pytest.raises(ChatAPIInvalidTools) as ex:
+            params_override = {"parameters": {"tool_choice": "invalid"}}
+            prompty = Flow.load(source=f"{PROMPTY_DIR}/prompty_example_with_tools.prompty", model=params_override)
+            prompty(question="What'''s the weather like in Boston today?")
+        assert "tool_choice parameter 'invalid' must be a dict" in ex.value.message
