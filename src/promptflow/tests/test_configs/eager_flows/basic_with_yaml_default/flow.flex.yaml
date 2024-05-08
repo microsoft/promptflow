@@ -1,0 +1,11 @@
+entry: yaml_default:MyFlow
+inputs:
+  func_input1:
+    type: string
+  func_input2:
+    type: string
+    default: "default_func_input"
+init:
+  obj_input:
+    type: string
+    default: "default_obj_input"
