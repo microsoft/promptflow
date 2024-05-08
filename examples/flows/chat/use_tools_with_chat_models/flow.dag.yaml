@@ -53,7 +53,7 @@ nodes:
   inputs:
     connection: open_ai_connection
     api: chat
-    deployment_name: gpt-35-turbo
+    deployment_name: gpt-35-turbo-0125
     temperature: 0.7
     top_p: 1
     max_tokens: 256

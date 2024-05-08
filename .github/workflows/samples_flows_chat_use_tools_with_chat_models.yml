@@ -6,7 +6,7 @@
 name: samples_flows_chat_use_tools_with_chat_models
 on:
   schedule:
-    - cron: "7 21 * * *" # Every day starting at 5:7 BJT
+    - cron: "2 20 * * *" # Every day starting at 4:2 BJT
   pull_request:
     branches: [ main ]
     paths: [ examples/flows/chat/use_tools_with_chat_models/**, examples/*requirements.txt, .github/workflows/samples_flows_chat_use_tools_with_chat_models.yml ]
