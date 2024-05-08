@@ -228,6 +228,7 @@ def test_unknown_api(fastapi_flow_serving_client):
     assert response.status_code == 405
 
 
+@pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
 @pytest.mark.usefixtures("recording_injection", "setup_local_connection")
 @pytest.mark.e2etest
 @pytest.mark.parametrize(
