@@ -71,7 +71,7 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: pf connection create --file examples/connections/azure_openai.yml --set api_key=${{ secrets.AOAI_API_KEY_TEST }} api_base=${{ secrets.AOAI_API_ENDPOINT_TEST }}
       - name: Random Wait
-        uses: AliSajid/random-wait-action@v1
+        uses: AliSajid/random-wait-action@main
         with:
           minimum: 0
           maximum: 10

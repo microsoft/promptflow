@@ -49,7 +49,7 @@ steps:
         pf connection create --file azure_openai.yml --set api_key=$AOAI_API_KEY api_base=$AOAI_API_ENDPOINT
       fi
   - name: Random Wait
-    uses: AliSajid/random-wait-action@v1
+    uses: AliSajid/random-wait-action@main
     with:
       minimum: 1
       maximum: 10
