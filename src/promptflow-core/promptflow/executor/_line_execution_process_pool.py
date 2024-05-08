@@ -89,6 +89,7 @@ class LineExecutionProcessPool:
         run_id: Optional[str] = None,
         nlines: Optional[int] = None,
         serialize_multimedia_during_execution: bool = False,
+        is_chat_group_run: bool = False,
     ):
         # Determine whether to use fork to create process.
         multiprocessing_start_method = os.environ.get("PF_BATCH_METHOD", multiprocessing.get_start_method())
@@ -109,6 +110,7 @@ class LineExecutionProcessPool:
         self._batch_timeout_sec = batch_timeout_sec
         self._line_timeout_sec = line_timeout_sec or LINE_TIMEOUT_SEC
         self._worker_count = self._determine_worker_count(worker_count)
+        self._is_chat_group_run = is_chat_group_run
 
         # - If it is False, we will use QueueRunStorage as the storage during execution.
         # It will only put the original run info into the output queue to wait for processing.

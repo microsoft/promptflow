@@ -33,6 +33,7 @@ class BatchCoordinator:
         worker_count: Optional[int] = None,
         line_timeout_sec: Optional[int] = None,
         init_kwargs: Optional[Mapping[str, Any]] = None,
+        is_chat_group_run: Optional[bool] = False,
     ):
         if self._init:
             return
@@ -65,6 +66,7 @@ class BatchCoordinator:
             worker_count=worker_count,
             line_timeout_sec=line_timeout_sec,
             serialize_multimedia_during_execution=True,
+            is_chat_group_run=is_chat_group_run,
         )
         self._init = True
 

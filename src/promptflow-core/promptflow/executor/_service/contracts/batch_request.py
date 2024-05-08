@@ -16,6 +16,7 @@ class InitializationRequest(BaseExecutionRequest):
     worker_count: Optional[int] = None
     line_timeout_sec: Optional[int] = LINE_TIMEOUT_SEC
     init_kwargs: Optional[Mapping[str, Any]] = None
+    is_chat_group_run: Optional[bool] = False
 
     def get_run_mode(self):
         return RunMode.Batch
