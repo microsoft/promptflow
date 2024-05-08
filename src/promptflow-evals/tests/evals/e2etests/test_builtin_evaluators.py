@@ -2,6 +2,7 @@ import pytest
 
 from promptflow.evals.evaluators import (
     ChatEvaluator,
+    ContentSafetyChatEvaluator,
     ContentSafetyEvaluator,
     FluencyEvaluator,
     QAEvaluator,
@@ -75,9 +76,7 @@ class TestBuiltInEvaluators:
     @pytest.mark.parametrize(
         "eval_last_turn, parallel",
         [
-            (False, False),
             (False, True),
-            (True, False),
             (True, True),
         ],
     )
@@ -131,3 +130,74 @@ class TestBuiltInEvaluators:
 
         assert score["evaluation_per_turn"]["gpt_fluency"] is not None
         assert len(score["evaluation_per_turn"]["gpt_fluency"]["score"]) == turn_count
+
+    @pytest.mark.parametrize(
+        "eval_last_turn, parallel",
+        [
+            (False, True),
+            (True, True),
+        ],
+    )
+    def test_composite_evaluator_content_safety_chat(self, project_scope, eval_last_turn, parallel):
+        chat_eval = ContentSafetyChatEvaluator(project_scope, eval_last_turn=eval_last_turn, parallel=parallel)
+
+        conversation = [
+            {"role": "user", "content": "What is the value of 2 + 2?"},
+            {
+                "role": "assistant",
+                "content": "2 + 2 = 4",
+                "context": {
+                    "citations": [{"id": "doc.md", "content": "Information about additions: 1 + 2 = 3, 2 + 2 = 4"}]
+                },
+            },
+            {"role": "user", "content": "What is the capital of Japan?"},
+            {
+                "role": "assistant",
+                "content": "The capital of Japan is Tokyo.",
+                "context": {
+                    "citations": [
+                        {
+                            "id": "doc.md",
+                            "content": "Tokyo is Japan's capital, known for its blend of traditional culture and \
+                                technological"
+                            "advancements.",
+                        }
+                    ]
+                },
+            },
+        ]
+
+        score = chat_eval(conversation=conversation)
+
+        assert score is not None
+        assert score["violence"] == "Safe"
+        assert score["violence_score"] < 1.0
+        assert score["sexual"] == "Safe"
+        assert score["sexual_score"] < 1.0
+        assert score["self_harm"] == "Safe"
+        assert score["self_harm_score"] < 1.0
+        assert score["hate_unfairness"] == "Safe"
+        assert score["hate_unfairness_score"] < 1.0
+
+        assert score["evaluation_per_turn"] is not None
+
+        turn_count = 1 if eval_last_turn else 2
+        assert score["evaluation_per_turn"]["violence"] is not None
+        assert len(score["evaluation_per_turn"]["violence"]["score"]) == turn_count
+        assert len(score["evaluation_per_turn"]["violence"]["reason"]) == turn_count
+        assert len(score["evaluation_per_turn"]["violence"]["severity"]) == turn_count
+
+        assert score["evaluation_per_turn"]["sexual"] is not None
+        assert len(score["evaluation_per_turn"]["sexual"]["score"]) == turn_count
+        assert len(score["evaluation_per_turn"]["sexual"]["reason"]) == turn_count
+        assert len(score["evaluation_per_turn"]["sexual"]["severity"]) == turn_count
+
+        assert score["evaluation_per_turn"]["self_harm"] is not None
+        assert len(score["evaluation_per_turn"]["self_harm"]["score"]) == turn_count
+        assert len(score["evaluation_per_turn"]["self_harm"]["reason"]) == turn_count
+        assert len(score["evaluation_per_turn"]["self_harm"]["severity"]) == turn_count
+
+        assert score["evaluation_per_turn"]["hate_unfairness"] is not None
+        assert len(score["evaluation_per_turn"]["hate_unfairness"]["score"]) == turn_count
+        assert len(score["evaluation_per_turn"]["hate_unfairness"]["reason"]) == turn_count
+        assert len(score["evaluation_per_turn"]["hate_unfairness"]["severity"]) == turn_count

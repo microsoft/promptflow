@@ -152,7 +152,7 @@ class ContentSafetyChatEvaluator:
 
             # Prepare per-turn evaluations
             evaluation_per_turn[metric] = {"severity": values}
-            evaluation_per_turn[metric]["scores"] = scores[score_key]
+            evaluation_per_turn[metric]["score"] = scores[score_key]
             evaluation_per_turn[metric]["reason"] = reasons[reason_key]
 
         aggregated["evaluation_per_turn"] = evaluation_per_turn
