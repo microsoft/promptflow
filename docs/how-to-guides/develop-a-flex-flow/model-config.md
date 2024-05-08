@@ -1,6 +1,6 @@
 # Model Configuration
 
-Tailoring your AI applications to use specific models with desired parameters is now easier than ever with the Promptflow SDK's new Model Configuration feature. Whether you're engaging with chatbots, generating text, or building complex AI workflows, our unified configuration approach allows you to set up and switch between models from OpenAI, AzureOpenAI, MistralAI, and other LLM endpoints seamlessly.
+Tailoring your AI applications to use specific models with desired parameters is now easier than ever with the Promptflow SDK's new Model Configuration feature. Whether you're engaging with chatbots, generating text, or building complex AI workflows, our unified configuration approach allows you to set up and switch between models from OpenAI, AzureOpenAI seamlessly.
 
 ## Model Configuration at a Glance
 
