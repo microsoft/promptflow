@@ -73,6 +73,7 @@ linkcheck_ignore = [
     "https://microsoft.github.io/promptflow/tutorials/stream-flex-flow.html",
     "https://github.com/microsoft/promptflow/tree/main/examples/flex-flows/chat-stream",
     "https://github.com/microsoft/promptflow/tree/main/examples/flex-flows/basic-chat",
+    "https://github.com/microsoft/promptflow/blob/main/examples/flex-flows/eval-criteria-with-langchain/flow.flex.yaml"
 ]
 
 linkcheck_exclude_documents = [
