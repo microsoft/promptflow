@@ -58,7 +58,7 @@ def completion(connection: AzureOpenAIConnection, prompt: str, stream: bool) -> 
                     else:
                         yield chunk.choices[0].text or ""
 
-        return "".join(generator())
+        return generator()
     else:
         if IS_LEGACY_OPENAI:
             return getattr(completion.choices[0], "text", "")

@@ -69,8 +69,7 @@ def chat(connection: AzureOpenAIConnection, question: str, chat_history: List, s
 
         # We must return the generator object, not using yield directly here.
         # Otherwise, the function itself will become a generator, despite whether stream is True or False.
-        # return generator()
-        return "".join(generator())
+        return generator()
     else:
         # chat api may return message with no content.
         if IS_LEGACY_OPENAI:
