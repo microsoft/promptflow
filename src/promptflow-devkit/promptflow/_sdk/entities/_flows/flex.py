@@ -5,7 +5,7 @@ from os import PathLike
 from pathlib import Path
 from typing import Dict, Union
 
-from promptflow._constants import LANGUAGE_KEY, FlowLanguage
+from promptflow._constants import LANGUAGE_KEY, FlowLanguage, FLOW_FLEX_YAML
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY
 from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow.exceptions import ErrorTarget, UserErrorException
@@ -34,7 +34,9 @@ class FlexFlow(FlowBase):
         code = Path(code)
         # entry function name
         self.entry = entry
-        self._flow_dir, self._flow_file_name = resolve_flow_path(path, check_flow_exist=False)
+        self._flow_dir, self._flow_file_name = resolve_flow_path(path,
+                                                                 check_flow_exist=False,
+                                                                 default_flow_file=FLOW_FLEX_YAML)
         # TODO(2910062): support non-dag flow execution cache
         super().__init__(code=code, path=path, dag=data, content_hash=None, **kwargs)
 
