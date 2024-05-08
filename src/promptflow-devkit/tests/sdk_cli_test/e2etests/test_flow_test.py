@@ -17,7 +17,7 @@ from promptflow._utils.context_utils import _change_working_dir
 from promptflow.core import AzureOpenAIModelConfiguration, OpenAIModelConfiguration
 from promptflow.core._utils import init_executable
 from promptflow.exceptions import UserErrorException
-from promptflow.executor._errors import FlowEntryInitializationError
+from promptflow.executor._errors import FlowEntryInitializationError, InputNotFound
 
 TEST_ROOT = PROMPTFLOW_ROOT / "tests"
 CONNECTION_FILE = (PROMPTFLOW_ROOT / "connections.json").resolve().absolute().as_posix()
@@ -313,9 +313,9 @@ class TestFlowTest:
         clear_module_cache("entry")
         flow_path = Path(f"{EAGER_FLOWS_DIR}/required_inputs/").absolute()
 
-        result = _client._flows._test(flow=flow_path)
-        assert result.run_info.status.value == "Failed"
-        assert "my_flow() missing 1 required positional argument: 'input_val'" in str(result.run_info.error)
+        with pytest.raises(InputNotFound) as e:
+            _client._flows._test(flow=flow_path)
+        assert "The value for flow input 'input_val' is not provided" in str(e.value)
 
     def test_eager_flow_test_with_additional_includes(self):
         # in this case, flow's entry will be {EAGER_FLOWS_DIR}/flow_with_additional_includes
@@ -426,9 +426,10 @@ class TestFlowTest:
     @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
     def test_stream_output_with_builtin_llm(self):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/builtin_llm/").absolute()
+        # TODO(3171565): support default value for list & dict
         result = _client._flows._test(
             flow=flow_path,
-            inputs={"stream": True},
+            inputs={"stream": True, "chat_history": []},
             environment_variables={
                 "OPENAI_API_KEY": "${azure_open_ai_connection.api_key}",
                 "AZURE_OPENAI_ENDPOINT": "${azure_open_ai_connection.api_base}",
@@ -472,9 +473,9 @@ class TestFlowTest:
             pf.test(flow=flow_path, inputs={"func_input": "input"})
         assert "__init__() missing 1 required positional argument: 'obj_input'" in ex.value.message
 
-        with pytest.raises(UserErrorException) as ex:
+        with pytest.raises(InputNotFound) as ex:
             pf.test(flow=flow_path, inputs={"invalid_input_func": "input"}, init={"obj_input": "val"})
-        assert "__call__() missing 1 required positional argument: 'func_input'" in ex.value.message
+        assert "The value for flow input 'func_input' is not provided in input data" in str(ex.value)
 
     def test_flow_flow_with_sample(self, pf):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_callable_class_with_sample_file")
@@ -537,3 +538,18 @@ class TestFlowTest:
                 init={"azure_open_ai_model_config": config1, "open_ai_model_config": config2},
             )
         assert "'AzureOpenAIConnection' object has no attribute 'base_url'" in str(e.value)
+
+    def test_yaml_default(self, pf):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_with_yaml_default")
+        result = pf.test(flow=flow_path, inputs={"func_input1": "input1"})
+        assert result == "default_obj_input_input1_default_func_input"
+
+        # override default input value
+        result = pf.test(flow=flow_path, inputs={"func_input1": "input1", "func_input2": "input2"})
+        assert result == "default_obj_input_input1_input2"
+
+        # override default init value
+        result = pf.test(
+            flow=flow_path, inputs={"func_input1": "input1", "func_input2": "input2"}, init={"obj_input": "val"}
+        )
+        assert result == "val_input1_input2"
