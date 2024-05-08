@@ -543,7 +543,7 @@ def _test_flow_interactive(args, pf_client, inputs, environment_variables):
 
 def _test_flow_standard(args, pf_client, inputs, environment_variables):
     """Test flow with standard mode."""
-    result = pf_client.flows.test(
+    result = pf_client.flows.test_flow(
         flow=args.flow,
         inputs=inputs,
         environment_variables=environment_variables,
@@ -572,7 +572,7 @@ def _test_flow_experiment(args, pf_client, inputs, environment_variables):
             message=str(error),
             error=error,
         )
-    node_results = pf_client.flows.test(
+    node_results = pf_client.flows.test_flow(
         flow=args.flow,
         inputs=inputs,
         environment_variables=environment_variables,

@@ -117,7 +117,7 @@ class FlowOperations(TelemetryMixin):
                     message=str(error),
                     error=error,
                 )
-            return self._client._experiments._test(
+            return self._client._experiments._test_flow(
                 flow=flow,
                 inputs=inputs,
                 environment_variables=environment_variables,

@@ -14,7 +14,7 @@ class TestChatWithPDF(BaseTest):
         return super().tearDown()
 
     def test_run_chat_with_pdf(self):
-        result = self.pf.test(
+        result = self.pf.test_flow(
             flow=self.flow_path,
             inputs={
                 "chat_history": [],

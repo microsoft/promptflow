@@ -253,7 +253,7 @@ def test_experiment(args: argparse.Namespace):
     if args.template:
         logger.debug(f"Testing an anonymous experiment {args.template}.")
         inputs = list_of_dict_to_dict(args.inputs)
-        result = _get_pf_client()._experiments.test(experiment=args.template, inputs=inputs)
+        result = _get_pf_client()._experiments.test_flow(experiment=args.template, inputs=inputs)
     else:
         raise UserErrorException("To test an experiment, template must be specified.")
     print(json.dumps(result, indent=4))
