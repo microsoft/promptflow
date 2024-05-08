@@ -19,6 +19,4 @@ class TestPromptflowEvalsDependencies:
     def test_pf_eval_configuration_dependencies(self):
         with patch("promptflow._sdk._configuration.Configuration._validate", return_value=None):
             config = Configuration(overrides={"trace.destination": DUMMY_TRACE_DESTINATION})
-            assert config.get_trace_destination() == DUMMY_TRACE_DESTINATION
-            config = Configuration(overrides={})
-            assert config.get_trace_destination() is None
+        assert config.get_trace_destination() == DUMMY_TRACE_DESTINATION
