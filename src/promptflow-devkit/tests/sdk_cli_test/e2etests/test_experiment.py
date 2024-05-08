@@ -314,7 +314,7 @@ class TestExperiment:
         client = PFClient()
         with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
             mock_func.return_value = True
-            result = client._experiments.test_flow(
+            result = client._experiments.test(
                 experiment=template_path,
             )
             assert len(result) == 2
@@ -344,7 +344,7 @@ class TestExperiment:
         client = PFClient()
         with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
             mock_func.return_value = True
-            result = client._experiments.test_flow(
+            result = client._experiments._test_flow(
                 experiment=template_path,
                 context={
                     "node": FLOW_ROOT / "web_classification" / "flow.dag.yaml",

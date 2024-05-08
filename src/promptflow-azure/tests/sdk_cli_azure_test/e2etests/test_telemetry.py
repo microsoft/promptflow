@@ -406,12 +406,12 @@ class TestTelemetry:
             with patch.object(PromptFlowSDKLogHandler, "emit") as mock_logger:
                 mock_logger.side_effect = assert_node_run
 
-                pf.flows.test_flow(temp_dir, node="print_env", inputs={"key": "API_BASE"})
+                pf.flows.test(temp_dir, node="print_env", inputs={"key": "API_BASE"})
 
             with patch.object(PromptFlowSDKLogHandler, "emit") as mock_logger:
                 mock_logger.side_effect = assert_flow_test
 
-                pf.flows.test_flow(temp_dir, inputs={"key": "API_BASE"})
+                pf.flows.test(temp_dir, inputs={"key": "API_BASE"})
 
     @pytest.mark.skipif(
         condition=not pytest.is_live,

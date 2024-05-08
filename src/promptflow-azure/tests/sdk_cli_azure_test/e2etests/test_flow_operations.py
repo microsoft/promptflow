@@ -63,7 +63,7 @@ class TestFlow:
         from promptflow import PFClient
 
         client = PFClient(config={"connection.provider": remote_workspace_resource_id})
-        output = client.test_flow(flow=FLOWS_DIR / "web_classification")
+        output = client.test(flow=FLOWS_DIR / "web_classification")
         assert output.keys() == {"category", "evidence"}
 
     @pytest.mark.usefixtures("mock_get_user_identity_info")
