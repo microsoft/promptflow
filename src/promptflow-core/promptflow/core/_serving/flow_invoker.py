@@ -181,6 +181,7 @@ class FlowInvoker:
             raise_ex=self.raise_ex,
             storage=storage,
             init_kwargs=self._init_kwargs,
+            only_inject_openai=True,
         )
         self.executor.enable_streaming_for_llm_flow(self.streaming)
         self.logger.info("Promptflow executor initiated successfully.")
