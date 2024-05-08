@@ -1,6 +1,7 @@
-import tiktoken
 from abc import ABC, abstractmethod
 from importlib.metadata import version
+
+import tiktoken
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
 
@@ -56,15 +57,9 @@ class OpenAIMetricsCalculator:
         # OpenAI v1 api:
         #   https://github.com/openai/openai-python/blob/main/src/openai/resources/chat/completions.py
         #   https://github.com/openai/openai-python/blob/main/src/openai/resources/completions.py
-        if (
-            name == "openai_chat_legacy"
-            or name == "openai_chat"  # openai v1
-        ):
+        if name == "openai_chat_legacy" or name == "openai_chat":  # openai v1
             return self.get_openai_metrics_for_chat_api(inputs, output)
-        elif (
-            name == "openai_completion_legacy"
-            or name == "openai_completion"  # openai v1
-        ):
+        elif name == "openai_completion_legacy" or name == "openai_completion":  # openai v1
             return self.get_openai_metrics_for_completion_api(inputs, output)
         else:
             self._log_warning(f"Calculating metrics for api {name} is not supported.")
@@ -208,9 +203,14 @@ class OpenAIResponseParser(ABC):
 
     @property
     def model(self):
-        for item in self._response:
-            if hasattr(item, "model"):
-                return item.model
+        """
+        This method iterates over each item in the _response list.
+        If the item has a non-empty 'model' attribute, it returns the model.
+        If no such item is found, it returns None.
+        """
+        for response_item in self._response:
+            if hasattr(response_item, "model") and bool(response_item.model):
+                return response_item.model
         return None
 
     @property
