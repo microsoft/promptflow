@@ -8,7 +8,7 @@ from azure.core.credentials import TokenCredential
 from azure.identity import DefaultAzureCredential
 from constants import RAIService, Tasks
 from utils import get_harm_severity_level
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urlparse
 
 from promptflow.core import tool
 
