@@ -26,7 +26,6 @@ logger = logging.getLogger(__name__)
 
 
 class AdversarialSimulator:
-    @monitor_operation(activity_name="adversarial.simulator.init", activity_type=ActivityType.PUBLICAPI)
     def __init__(self, *, azure_ai_project: Dict[str, Any]):
         """
         Initializes the adversarial simulator with a project scope.
@@ -107,7 +106,15 @@ class AdversarialSimulator:
         :param jailbreak: If set to True, allows breaking out of the conversation flow defined by the scenario.
         Defaults to False.
         :type jailbreak: bool
-        :return: None
+        :return: A list of dictionaries, each representing a simulated conversation. Each dictionary contains:
+         - 'template_parameters': A dictionary with parameters used in the conversation template,
+            including 'conversation_starter'.
+         - 'messages': A list of dictionaries, each representing a turn in the conversation.
+            Each message dictionary includes 'content' (the message text) and
+            'role' (indicating whether the message is from the 'user' or the 'assistant').
+         - '$schema': A string indicating the schema URL for the conversation format.
+         The 'content' for 'assistant' role messages may includes the messages that your callback returned.
+        :rtype: List[Dict[str, Any]]
         """
         # validate the inputs
         if "conversation" not in scenario:
