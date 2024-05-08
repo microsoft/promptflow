@@ -108,16 +108,11 @@ def start_trace(
             start_trace_with_devkit(collection=collection, attributes=_attributes, run=_run)
 
 
-def setup_exporter_from_environ(only_inject_openai: bool = False) -> None:
+def setup_exporter_from_environ() -> None:
     # openai instrumentation
     logging.debug("injecting OpenAI API...")
     inject_openai_api()
     logging.debug("OpenAI API injected.")
-
-    if only_inject_openai:
-        # only inject OpenAI API, skip the following setup, this is useful for serving scenario
-        # because serving also support OTEL_EXPORTER_OTLP_ENDPOINT and have devkit installed now.
-        return
 
     # Ignore all the setup if the endpoint is not set
     endpoint = os.getenv(OTEL_EXPORTER_OTLP_ENDPOINT)
