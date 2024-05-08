@@ -98,6 +98,7 @@ class ChatGroupOrchestrator:
                 worker_count=chat_role._worker_count,
                 line_timeout_sec=chat_role._line_timeout_sec,
                 init_kwargs=chat_role._init_kwargs,
+                is_chat_group_run=True,
                 **kwargs,
             )
             bulk_logger.info(f"Created executor proxy for role:{chat_role.role}. name: {chat_role._name}")
