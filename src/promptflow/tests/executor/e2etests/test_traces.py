@@ -206,8 +206,9 @@ class TestExecutorTraces:
         assert flow_result.run_info.status == Status.Completed
         assert flow_result.run_info.api_calls is not None
 
-        assert "total_tokens" in flow_result.run_info.system_metrics
-        assert flow_result.run_info.system_metrics["total_tokens"] > 0
+        for token_name in ["prompt_tokens", "completion_tokens", "total_tokens"]:
+            assert token_name in flow_result.run_info.system_metrics
+            assert flow_result.run_info.system_metrics[token_name] > 0
 
         get_traced = False
         for api_call in flow_result.run_info.api_calls:
@@ -463,9 +464,9 @@ class TestOTelTracer:
         "flow_file, inputs, is_stream, expected_span_length",
         [
             ("openai_chat_api_flow", get_chat_input(False), False, 3),
-            ("openai_chat_api_flow", get_chat_input(True), True, 4),
+            ("openai_chat_api_flow", get_chat_input(True), True, 5),
             ("openai_completion_api_flow", get_completion_input(False), False, 3),
-            ("openai_completion_api_flow", get_completion_input(True), True, 4),
+            ("openai_completion_api_flow", get_completion_input(True), True, 5),
             ("llm_tool", {"topic": "Hello", "stream": False}, False, 4),
             ("flow_with_async_llm_tasks", get_flow_sample_inputs("flow_with_async_llm_tasks"), False, 6),
         ],
