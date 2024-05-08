@@ -41,9 +41,8 @@ git checkout task/addSimulator
 2. Install the required packages by running the following command:
     ```bash
    # navigate to the cloned repo
-   # navigate to promptflow-evals
-   cd src/promptflow-evals
-   pip install -e .
+   # this will install all the dependencies locally
+   python ./scripts/dev-setup/main.py
     ```
 
 ### Report Bugs
