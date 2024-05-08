@@ -29,7 +29,7 @@ from promptflow._core.metric_logger import add_metric_logger, remove_metric_logg
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import ToolsManager
-from promptflow._utils.async_utils import async_run_allowing_running_loop
+from promptflow._utils.async_utils import async_run_allowing_running_loop, sync_generator_to_async
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
     apply_default_value_for_input,
@@ -724,6 +724,7 @@ class FlowExecutor:
                 node_concurrency,
                 allow_generator_output,
                 line_timeout_sec,
+                convert_generator=False,
             )
         # TODO: Call exec_line_async in exec_line when async is mature.
         self._node_concurrency = node_concurrency
@@ -754,6 +755,7 @@ class FlowExecutor:
         node_concurrency=DEFAULT_CONCURRENCY_FLOW,
         allow_generator_output: bool = False,
         line_timeout_sec: Optional[int] = None,
+        convert_generator: bool = True,
     ) -> LineResult:
         """Execute a single line of the flow.
 
@@ -769,6 +771,8 @@ class FlowExecutor:
         :type node_concurrency: int
         :param allow_generator_output: Whether to allow generator output.
         :type allow_generator_output: bool
+        :param convert_generator: Whether to convert generator output to async generator.
+        :type convert_generator: bool
         :return: The result of executing the line.
         :rtype: ~promptflow.executor._result.LineResult
         """
@@ -786,6 +790,8 @@ class FlowExecutor:
                 validate_inputs=validate_inputs,
                 allow_generator_output=allow_generator_output,
             )
+            if convert_generator:
+                line_result.output = self._convert_generators_to_async(line_result.output)
         #  Return line result with index
         if index is not None and isinstance(line_result.output, dict):
             line_result.output[LINE_NUMBER_KEY] = index
@@ -889,6 +895,12 @@ class FlowExecutor:
             # enrich span with input
             enrich_span_with_input(span, inputs)
             yield span
+
+    def _convert_generators_to_async(self, output: dict):
+        for k, v in output.items():
+            if isinstance(v, GeneratorType):
+                output[k] = sync_generator_to_async(v)
+        return output
 
     async def _exec_inner_with_trace_async(
         self,

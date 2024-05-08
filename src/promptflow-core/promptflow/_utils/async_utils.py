@@ -6,6 +6,7 @@ import asyncio
 import functools
 import signal
 import threading
+from types import GeneratorType
 
 from promptflow.tracing import ThreadPoolExecutorWithContext
 
@@ -109,3 +110,15 @@ def sync_to_async(func):
             return await asyncio.get_event_loop().run_in_executor(executor, partial_func)
 
     return wrapper
+
+
+async def sync_generator_to_async(g: GeneratorType):
+    with ThreadPoolExecutorWithContext(max_workers=1) as pool:
+        loop = asyncio.get_running_loop()
+        # Use object() as a default value to distinguish from None
+        default_value = object()
+        while True:
+            resp = await loop.run_in_executor(pool, next, g, default_value)
+            if resp is default_value:
+                return
+            yield resp
