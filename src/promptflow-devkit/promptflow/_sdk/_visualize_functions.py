@@ -18,6 +18,11 @@ def generate_html_string(data: dict) -> str:
     return render_jinja_template(VIS_HTML_TMPL, **asdict(visualization_render))
 
 
+def generate_trace_ui_html_string(trace_ui_url: str) -> str:
+    # this HTML will automatically redirect to the trace UI page when opened
+    return f'<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; URL=\'{trace_ui_url}\'" /></head><body></body></html>'  # noqa: E501
+
+
 def try_to_open_html(html_path: str) -> None:
     print(f"The HTML file is generated at {str(Path(html_path).resolve().absolute())!r}.")
     print("Trying to view the result in a web browser...")
