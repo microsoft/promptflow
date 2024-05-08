@@ -208,6 +208,7 @@ class ExperimentOperations(TelemetryMixin):
             }
         return return_output
 
+    @monitor_operation(activity_name="pf.experiment._test_flow", activity_type=ActivityType.INTERNALCALL)
     def _test_flow(
         self,
         experiment: Union[Path, str],
