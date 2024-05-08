@@ -95,7 +95,7 @@ Setup connections to provisioned resources in prompt flow.
 
 _To grasp the fundamentals of creating a chat prompt, begin with [this section](./prompt-tool.md#how-to-write-prompt) for an introductory understanding of jinja._
 
-We offer a method to distinguish between different roles in a chat prompt, such as "system", "user", "assistant". Each role can have "name" and "content" properties.
+We offer a method to distinguish between different roles in a chat prompt, such as "system", "user", "assistant" and "tool". For "system", "user", "assistant" role can have "name" and "content" properties. Additionally, we also support role "tool", which should include "tool_call_id" and "content". For tool chat, check sample 3.
 
 ### Sample 1
 ```jinja
@@ -160,33 +160,24 @@ In LLM tool, the prompt is transformed to match the [openai messages](https://pl
 ```
 
 ### Sample 3
+explain teach how to write tool chat prompt.
 ```jinja
 # system:
 You are a helpful assistant.
 
-{% for item in chat_history %}
 # user:
-{{item.inputs.question}}
+{{inputs.question}}
 
-{% if 'tool_calls' in item.outputs.llm_output  and item.outputs.llm_output.tool_calls is not none %}
 # assistant:
-## tool_calls:
-{{item.outputs.llm_output.tool_calls}}
+## tool_calls:  {# assistant with 'tool_calls' must be followed by a tool block. #}
+{{outputs.llm_output.tool_calls}}
 
 {% for tool_call_item in item.outputs.llm_output.tool_calls %}
-# tool:
+# tool:  {# Role tool must follow an assistant block with 'tool_calls'. #}
 ## tool_call_id:
-{{tool_call_item.id}}
+{{tool_call_item.id}}  {# Each tool_call_id should correspond to assistant tool_calls. #}
 ## content:
-{{item.outputs.answer}}
-
-{% endfor %}
-
-{% else %}
-# assistant:
-{{item.outputs.llm_output}}
-
-{% endif %}
+{{outputs.answer}}
 
 {% endfor %}
 

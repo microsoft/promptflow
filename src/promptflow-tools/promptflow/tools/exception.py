@@ -63,10 +63,7 @@ def to_openai_error_message(e: Exception) -> str:
               "'tool_calls'. Please make sure your chat prompt includes 'tool_calls' under the role 'assistant'. " \
               "You could refer to guideline at https://aka.ms/pfdoc/chat-prompt"
         return f"OpenAI API hits {ex_type}: {msg}"
-    elif (
-        "assistant message with 'tool_calls' must be followed by tool messages responding to each 'tool_call_id'"
-        in error_message
-    ):
+    elif "'tool_calls' must be followed by tool messages responding to each 'tool_call_id'" in error_message:
         msg = "Please make sure your chat prompt includes 'tool' role with 'tool_call_id's responding to those "\
               "in the assistant message. You could refer to guideline at https://aka.ms/pfdoc/chat-prompt"
         return f"OpenAI API hits {ex_type}: {msg}. Original error: {error_message}"
