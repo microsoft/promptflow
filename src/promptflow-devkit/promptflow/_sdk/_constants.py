@@ -516,6 +516,7 @@ class ChatGroupSpeakOrder(str, Enum):
 
 
 TRACE_LIST_DEFAULT_LIMIT = 1000
+TRACE_COLLECTION_LIST_DEFAULT_LIMIT = 100
 
 
 class IdentityKeys(str, Enum):

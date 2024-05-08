@@ -25,7 +25,7 @@ from promptflow.tracing._start_trace import is_collection_writeable, start_trace
 
 from .._load_functions import load_flow
 from ..entities._flows import FlexFlow
-from .utils import SubmitterHelper, variant_overwrite_context
+from .utils import SubmitterHelper, flow_overwrite_context
 
 logger = LoggerFactory.get_logger(name=__name__)
 
@@ -108,7 +108,7 @@ class RunSubmitter:
         local_storage = LocalStorageOperations(run, stream=stream, run_mode=RunMode.Batch)
         with local_storage.logger:
             flow_obj = load_flow(source=run.flow)
-            with variant_overwrite_context(flow_obj, tuning_node, variant, connections=run.connections) as flow:
+            with flow_overwrite_context(flow_obj, tuning_node, variant, connections=run.connections) as flow:
                 self._submit_bulk_run(flow=flow, run=run, local_storage=local_storage)
 
     @classmethod

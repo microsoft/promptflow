@@ -106,7 +106,8 @@
     "Bhavik",
     "meid",
     "Entra",
-    "uvicorn"
+    "uvicorn",
+    "MistralAI"
   ],
   "ignoreWords": [
     "openmpi",
@@ -226,7 +227,9 @@
     "Piezo",
     "cmpop",
     "omap",
-    "Machinal"
+    "Machinal",
+    "azureopenaimodelconfiguration",
+    "openaimodelconfiguration"
   ],
   "flagWords": [
     "Prompt Flow"
