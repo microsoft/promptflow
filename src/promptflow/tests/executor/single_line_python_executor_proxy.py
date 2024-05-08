@@ -39,9 +39,7 @@ class SingleLinePythonExecutorProxy(AbstractExecutorProxy):
     ) -> "SingleLinePythonExecutorProxy":
 
         flow_executor = FlowExecutor.create(flow_file, connections, working_dir, storage=storage, raise_ex=False)
-        line_execution_process_pool = LineExecutionProcessPool(
-            output_dir, flow_executor, run_id=run_id, is_chat_group_run=True
-        )
+        line_execution_process_pool = LineExecutionProcessPool(output_dir, flow_executor, run_id=run_id)
         line_execution_process_pool.start()
         return cls(flow_executor, line_execution_process_pool)
 
