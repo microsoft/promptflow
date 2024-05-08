@@ -25,6 +25,7 @@ from promptflow._sdk._constants import (
     DEFAULT_ENCODING,
     HOME_PROMPT_FLOW_DIR,
     PF_SERVICE_DEFAULT_PORT,
+    PF_SERVICE_HOST,
     PF_SERVICE_HOUR_TIMEOUT,
     PF_SERVICE_LOG_FILE,
     PF_SERVICE_PORT_DIT_NAME,
@@ -129,7 +130,7 @@ def is_port_in_use(port: int):
         # OS will wait for timeout when connecting to an unused port, so it will take about 2s. Set timeout here to
         # avoid long waiting time
         s.settimeout(0.1)
-        return s.connect_ex(("localhost", port)) == 0
+        return s.connect_ex((PF_SERVICE_HOST, port)) == 0
 
 
 def get_pfs_port():
@@ -137,7 +138,7 @@ def get_pfs_port():
     while True:
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.bind(("localhost", port))
+                s.bind((PF_SERVICE_HOST, port))
                 return s.getsockname()[1]
         except OSError:
             port += 1
@@ -210,7 +211,7 @@ def get_pfs_version():
 def is_pfs_service_healthy(pfs_port) -> bool:
     """Check if pfs service is running and pfs version matches pf version."""
     try:
-        response = requests.get("http://127.0.0.1:{}/heartbeat".format(pfs_port))
+        response = requests.get(f"http://{PF_SERVICE_HOST}:{pfs_port}/heartbeat")
         if response.status_code == 200:
             logger.debug(f"Prompt flow service is already running on port {pfs_port}, {response.text}")
             match = re.search(r'"promptflow":"(.*?)"', response.text)
