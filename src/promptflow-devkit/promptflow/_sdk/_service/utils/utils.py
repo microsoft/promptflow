@@ -279,6 +279,7 @@ class ErrorInfo:
             self.target = exception.target
             self.module = exception.module
             self.reference_code = exception.reference_code
+            # If not inner_exception here, directly get traceback here
             self.inner_exception = (
                 str(exception.inner_exception) if exception.inner_exception else traceback.format_exc()
             )
