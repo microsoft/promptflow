@@ -134,7 +134,7 @@ promptflow.tools.llm.llm:
       ui_hints:
         text_box_size: xs
     presence_penalty:
-      default: 0
+      default: ""
       type:
         - double
       advanced: true
@@ -155,7 +155,7 @@ promptflow.tools.llm.llm:
     frequency_penalty:
       type:
       - int
-      default: 0
+      default: ""
       advanced: true
       ui_hints:
         text_box_size: xs
