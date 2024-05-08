@@ -19,6 +19,11 @@ steps:
     run: pf connection create -f ${{ '{{' }} github.workspace }}/examples/connections/azure_openai.yml --set api_key="${{ '{{' }} secrets.AOAI_API_KEY_TEST }}" api_base="${{ '{{' }} secrets.AOAI_API_ENDPOINT_TEST }}"
   - name: Create new Aoai Connection
     run: pf connection create -f ${{ '{{' }} github.workspace }}/examples/connections/azure_openai.yml --set api_key="${{ '{{' }} secrets.AOAI_API_KEY_TEST }}" api_base="${{ '{{' }} secrets.AOAI_API_ENDPOINT_TEST }}" name=new_ai_connection
+  - name: Random Wait
+    uses: AliSajid/random-wait-action@v1
+    with:
+      minimum: 1
+      maximum: 10
   - name: Azure Login
     uses: azure/login@v1
     with:
