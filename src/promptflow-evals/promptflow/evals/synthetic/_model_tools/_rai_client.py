@@ -11,10 +11,10 @@ import requests
 from ._async_http_client import AsyncHTTPClientWithRetry
 
 api_url = None
-if "rai_svc_url" in os.environ:
-    api_url = os.environ["rai_svc_url"]
+if "RAI_SVC_URL" in os.environ:
+    api_url = os.environ["RAI_SVC_URL"]
     api_url = api_url.rstrip("/")
-    print(f"Found rai_svc_url in environment variable, using {api_url} for rai service endpoint.")
+    print(f"Found RAI_SVC_URL in environment variable, using {api_url} for the service endpoint.")
 
 
 class RAIClient:

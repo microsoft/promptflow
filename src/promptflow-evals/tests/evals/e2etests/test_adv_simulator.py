@@ -10,7 +10,7 @@ from azure.identity import DefaultAzureCredential
 @pytest.mark.e2etest
 class TestAdvSimulator:
     def test_adv_sim_init_with_prod_url(self, model_config, ml_client_config):
-        os.environ.pop("rai_svc_url", None)
+        os.environ.pop("RAI_SVC_URL", None)
         from promptflow.evals.synthetic import AdversarialSimulator
 
         azure_ai_project = {
@@ -23,7 +23,7 @@ class TestAdvSimulator:
         assert callable(simulator)
 
     def test_incorrect_scenario_raises_error(self, model_config, ml_client_config):
-        os.environ.pop("rai_svc_url", None)
+        os.environ.pop("RAI_SVC_URL", None)
         from promptflow.evals.synthetic import AdversarialSimulator
 
         azure_ai_project = {
@@ -48,7 +48,7 @@ class TestAdvSimulator:
             )
 
     def test_adv_qa_sim_responds_with_one_response(self, model_config, ml_client_config):
-        os.environ.pop("rai_svc_url", None)
+        os.environ.pop("RAI_SVC_URL", None)
         from promptflow.evals.synthetic import AdversarialSimulator
 
         scenario = "adv_qa"
@@ -99,7 +99,7 @@ class TestAdvSimulator:
         assert "target_population" not in outputs[0]["template_parameters"]
 
     def test_adv_conversation_sim_responds_with_responses(self, model_config, ml_client_config):
-        os.environ.pop("rai_svc_url", None)
+        os.environ.pop("RAI_SVC_URL", None)
         from promptflow.evals.synthetic import AdversarialSimulator
 
         scenario = "adv_conversation"
@@ -143,7 +143,7 @@ class TestAdvSimulator:
         assert len(outputs[0]["messages"]) == 4
 
     def test_adv_summarization_sim_responds_with_responses(self, model_config, ml_client_config):
-        os.environ.pop("rai_svc_url", None)
+        os.environ.pop("RAI_SVC_URL", None)
         from promptflow.evals.synthetic import AdversarialSimulator
 
         scenario = "adv_summarization"
