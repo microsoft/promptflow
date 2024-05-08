@@ -11,6 +11,7 @@ import socket
 import subprocess
 import sys
 import time
+import traceback
 from dataclasses import InitVar, dataclass, field
 from datetime import datetime
 from functools import wraps
@@ -278,7 +279,9 @@ class ErrorInfo:
             self.target = exception.target
             self.module = exception.module
             self.reference_code = exception.reference_code
-            self.inner_exception = str(exception.inner_exception)
+            self.inner_exception = (
+                str(exception.inner_exception) if exception.inner_exception else traceback.format_exc()
+            )
             self.additional_info = exception.additional_info
             self.error_codes = exception.error_codes
         else:
