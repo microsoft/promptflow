@@ -25,7 +25,7 @@ class TestChatEvaluator:
 
         chat_eval(conversation=conversation)
 
-    def test_conversation_validation_missing_role(self, project_scope):
+    def test_conversation_validation_missing_role(self, mock_project_scope):
         conversation = [
             {"role": "user", "content": "question 1"},
             {"content": "answer 1"},
