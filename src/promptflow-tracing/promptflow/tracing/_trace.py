@@ -170,7 +170,7 @@ def enrich_span_with_llm_if_needed(span, inputs, generator_output):
 
 
 def traced_generator(span, inputs, generator, trace_type):
-    generator_proxy = GeneratorProxy(Tracer.pop(generator))
+    generator_proxy = GeneratorProxy(generator)
     yield from generator_proxy
 
     generator_output = generator_proxy.items
@@ -185,7 +185,7 @@ def traced_generator(span, inputs, generator, trace_type):
 
 
 async def traced_async_generator(span, inputs, generator, trace_type):
-    generator_proxy = AsyncGeneratorProxy(Tracer.pop(generator))
+    generator_proxy = AsyncGeneratorProxy(generator)
     async for item in generator_proxy:
         yield item
 
@@ -377,6 +377,7 @@ def _traced_async(
                 enrich_span_with_input(span, trace.inputs)
                 output = await func(*args, **kwargs)
                 if isinstance(output, AsyncIterator):
+                    output = Tracer.pop(output)
                     output = traced_async_generator(span, trace.inputs, output, trace_type)
                 else:
                     enrich_span_with_trace_type(span, trace.inputs, output, trace_type)
@@ -450,6 +451,7 @@ def _traced_sync(
                 enrich_span_with_input(span, trace.inputs)
                 output = func(*args, **kwargs)
                 if isinstance(output, Iterator):
+                    output = Tracer.pop(output)
                     output = traced_generator(span, trace.inputs, output, trace_type)
                 else:
                     enrich_span_with_trace_type(span, trace.inputs, output, trace_type)
