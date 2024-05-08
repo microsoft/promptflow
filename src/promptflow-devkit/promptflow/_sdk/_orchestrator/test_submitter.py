@@ -35,10 +35,10 @@ from promptflow.tracing._start_trace import is_collection_writeable, start_trace
 from ..entities._flows import FlexFlow
 from .utils import (
     SubmitterHelper,
+    flow_overwrite_context,
     print_chat_output,
     resolve_generator,
     show_node_log_and_output,
-    variant_overwrite_context,
 )
 
 logger = get_cli_sdk_logger()
@@ -144,7 +144,7 @@ class TestSubmitter:
         else:
             tuning_node, node_variant = None, None
 
-        with variant_overwrite_context(
+        with flow_overwrite_context(
             flow=self._origin_flow,
             tuning_node=tuning_node,
             variant=node_variant,

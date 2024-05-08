@@ -106,7 +106,8 @@
     "meid",
     "Entra",
     "uvicorn",
-    "attribited"
+    "attribited",
+    "MistralAI"
   ],
   "ignoreWords": [
     "openmpi",
@@ -222,7 +223,9 @@
     "piezo",
     "Piezo",
     "cmpop",
-    "omap"
+    "omap",
+    "azureopenaimodelconfiguration",
+    "openaimodelconfiguration"
   ],
   "flagWords": [
     "Prompt Flow"
