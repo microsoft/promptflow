@@ -26,6 +26,8 @@ def my_flow(question: str) -> Reply:
 
 ## Flow test
 
+### Test via function call
+
 Since flow's definition is normal python function/callable class. We recommend user directly run it like running other scripts:
 
 ```python
@@ -36,11 +38,18 @@ if __name__ == "__main__":
     print(output)
 ```
 
-You can also test the flow using CLI:
+### Convert to a flow and test
+
+It's also supported to convert your function entry to a flow and test with prompt flow's ability.
+
+You can test with the following CLI:
+
 ```bash
 # flow entry syntax: path.to.module:function_name
 pf flow test --flow flow_entry:my_flow --inputs question="What's the capital of France?"
 ```
+
+**Note**: currently this command will generate a flow.flex.yaml in your working directory. Which will become the flow's entry.
 
 Check out a full example here: [basic](https://github.com/microsoft/promptflow/tree/main/examples/flex-flows/basic)
 
@@ -93,7 +102,8 @@ A flow YAML may look like this:
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 entry: path.to.module:function_name
 sample:
-  question: "what's the capital of France?"
+    inputs:
+        question: "what's the capital of France?"
 ```
 
 ## Batch run with YAML
