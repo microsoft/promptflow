@@ -121,7 +121,7 @@ class LineExecutionProcessPool:
         self._serialize_multimedia_during_execution = serialize_multimedia_during_execution
 
         # Initialize the results dictionary that stores line results.
-        self._result_dict: Dict[int, LineResult] = {}
+        self._result_dict: Dict[str, LineResult] = {}
 
         # Initialize some fields from flow_executor and construct flow_create_kwargs
         self._flow_id = flow_executor._flow_id
@@ -253,12 +253,12 @@ class LineExecutionProcessPool:
 
     async def submit(self, run_id: str, line_number: int, inputs: dict):
         """Submit a line execution request to the process pool and return the line result."""
-        line_number = self._process_line_number(line_number)
-        self._task_queue.put((run_id, line_number, inputs))
+        request_id = get_request_id()
+        self._task_queue.put((request_id, run_id, line_number, inputs))
         start_time = datetime.utcnow()
         line_result = None
         while not self._line_timeout_expired(start_time, buffer_sec=20) and not line_result:
-            line_result = self._result_dict.get(line_number, None)
+            line_result = self._result_dict.get(request_id, None)
             # Check monitor status every 1 second
             self._monitor_thread_pool_status()
             await asyncio.sleep(1)
@@ -283,6 +283,7 @@ class LineExecutionProcessPool:
                 for index, inputs in batch_inputs:
                     self._task_queue.put(
                         (
+                            get_request_id(),
                             self._run_id,
                             index,
                             inputs,
@@ -326,7 +327,7 @@ class LineExecutionProcessPool:
             # Set the timeout flag to True and log the warning.
             self._is_timeout = True
             bulk_logger.warning(f"The batch run timed out, with {len(self._result_dict)} line results processed.")
-        return [self._result_dict[key] for key in sorted(self._result_dict)]
+        return [line_result for line_result in sorted(self._result_dict.values(), key=lambda item: item.run_info.index)]
 
     # region monitor thread target function
 
@@ -368,11 +369,8 @@ class LineExecutionProcessPool:
                 terminated = True
             else:
                 # If the task is a line execution request, put the request into the input queue.
-                run_id, line_number, inputs = data
-                # The line_number is index + uuid in a chat group run, so we should retrieve
-                # the original line_number and put it into the input_queue for processing.
-                origin_line_number = self._retrieve_line_number(line_number)
-                args = (run_id, origin_line_number, inputs, line_timeout_sec)
+                request_id, run_id, line_number, inputs = data
+                args = (run_id, line_number, inputs, line_timeout_sec)
                 input_queue.put(args)
 
             if terminated:
@@ -383,9 +381,7 @@ class LineExecutionProcessPool:
             crashed = False
             returned_node_run_infos = {}
 
-            self._processing_idx[origin_line_number] = format_current_process_info(
-                process_name, process_id, line_number
-            )
+            self._processing_idx[line_number] = format_current_process_info(process_name, process_id, line_number)
             log_process_status(process_name, process_id, line_number)
             # Responsible for checking the output queue messages and processing them within a specified timeout period.
             while not self._line_timeout_expired(start_time, line_timeout_sec=line_timeout_sec):
@@ -397,7 +393,7 @@ class LineExecutionProcessPool:
                 # Handle output queue message.
                 message = self._handle_output_queue_messages(output_queue)
                 if isinstance(message, LineResult):
-                    result_dict[line_number] = message
+                    result_dict[request_id] = message
                     completed = True
                     break
                 if isinstance(message, NodeRunInfo):
@@ -405,16 +401,14 @@ class LineExecutionProcessPool:
 
             # Handle line execution completed.
             if completed:
-                self._completed_idx[origin_line_number] = format_current_process_info(
-                    process_name, process_id, line_number
-                )
+                self._completed_idx[line_number] = format_current_process_info(process_name, process_id, line_number)
                 log_process_status(process_name, process_id, line_number, is_completed=True)
             # Handle line execution is not completed.
             else:
                 ex = None
                 # Handle process crashed.
                 if crashed:
-                    bulk_logger.warning(f"Process crashed while executing line {origin_line_number}.")
+                    bulk_logger.warning(f"Process crashed while executing line {line_number}.")
                     log_path = get_subprocess_log_path(index)
                     # In fork mode, if the child process fails to start, its error information
                     # will be written to the parent process log file.
@@ -423,37 +417,35 @@ class LineExecutionProcessPool:
                     if not log_errors_from_file(log_path) and self._use_fork:
                         log_path = get_manager_process_log_path()
                         log_errors_from_file(log_path)
-                    ex = ProcessCrashError(origin_line_number)
+                    ex = ProcessCrashError(line_number)
                 elif self._line_timeout_expired(start_time, line_timeout_sec=line_timeout_sec):
                     # Handle line execution timeout.
-                    bulk_logger.warning(f"Line {origin_line_number} timeout after {line_timeout_sec} seconds.")
+                    bulk_logger.warning(f"Line {line_number} timeout after {line_timeout_sec} seconds.")
                     if line_timeout_sec < self._line_timeout_sec:
                         # If execution times out with a timeout lower than the default (self._line_timeout_sec),
                         # it indicates the _batch_timeout_sec has been reached.
                         # We should use the exception of BatchExecutionTimeoutError.
-                        ex = BatchExecutionTimeoutError(origin_line_number, self._batch_timeout_sec)
+                        ex = BatchExecutionTimeoutError(line_number, self._batch_timeout_sec)
                     else:
-                        ex = LineExecutionTimeoutError(origin_line_number, line_timeout_sec)
+                        ex = LineExecutionTimeoutError(line_number, line_timeout_sec)
                 else:
                     # This branch should not be reached, add this warning for the case.
-                    msg = f"Unexpected error occurred while monitoring line execution at line {origin_line_number}."
+                    msg = f"Unexpected error occurred while monitoring line execution at line {line_number}."
                     bulk_logger.warning(msg)
                     ex = UnexpectedError(msg)
 
                 result = self._generate_line_result_for_exception(
                     inputs,
                     run_id,
-                    origin_line_number,
+                    line_number,
                     self._flow_id,
                     start_time,
                     ex,
                     returned_node_run_infos,
                 )
-                result_dict[line_number] = result
+                result_dict[request_id] = result
 
-                self._completed_idx[origin_line_number] = format_current_process_info(
-                    process_name, process_id, line_number
-                )
+                self._completed_idx[line_number] = format_current_process_info(process_name, process_id, line_number)
                 log_process_status(process_name, process_id, line_number, is_failed=True)
 
                 self._processes_manager.restart_process(index)
@@ -463,7 +455,7 @@ class LineExecutionProcessPool:
                 self._processes_manager.ensure_process_terminated_within_timeout(process_id)
                 index, process_id, process_name = self._processes_manager.get_process_info(index)
 
-            self._processing_idx.pop(origin_line_number)
+            self._processing_idx.pop(line_number)
 
     # endregion
 
@@ -687,29 +679,6 @@ class LineExecutionProcessPool:
         self._storage.persist_flow_run(result.run_info)
         return result
 
-    def _process_line_number(self, line_number: int) -> Union[int, str]:
-        """Add a uuid to line number to make it unique in chat group run.
-
-        During chat group runs, line numbers remain constant across rounds.This could lead to incorrect results
-        stored in the result_dict, potentially reflecting outcomes from previous executions instead of the current ones.
-
-        By appending a uuid to each line number, we ensure uniqueness within each round of the chat group run,
-        preventing confusion and ensuring accurate result tracking.
-        """
-        if self._is_chat_group_run:
-            return f"{line_number}_{str(uuid.uuid4())}"
-        return line_number
-
-    def _retrieve_line_number(self, line_number: Union[int, str]) -> int:
-        """Extract the original line number from a string containing line number and uuid.
-
-        During chat group runs, line numbers are appended with a uuid to ensure uniqueness.
-        This method extracts the original line number from a string that combines the line number and uuid.
-        """
-        if self._is_chat_group_run:
-            return int(line_number.split("_")[0])
-        return line_number
-
     # endregion
 
 
@@ -876,6 +845,14 @@ def log_process_status(process_name, pid, line_number: int, is_completed=False, 
 
 def format_current_process_info(process_name, pid, line_number: int):
     return f"Process name({process_name})-Process id({pid})-Line number({line_number})"
+
+
+def get_request_id() -> str:
+    """
+    Treat each input as a request to the line process pool and
+    get the id of each request to use it as the key for the result_dict.
+    """
+    return str(uuid.uuid4())
 
 
 # endregion
