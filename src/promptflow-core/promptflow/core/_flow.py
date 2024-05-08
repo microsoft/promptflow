@@ -427,12 +427,14 @@ class Prompty(FlowBase):
         :param args: positional arguments are not supported.
         :param kwargs: prompty inputs with key word arguments.
         :return: Prompt content
-        :rtype: Union[str, list]
+        :rtype: str
         """
         if args:
             raise UserErrorException("Prompty can only be rendered with keyword arguments.")
         inputs = self._resolve_inputs(kwargs)
-        return convert_prompt_template(self._template, inputs, self._model.api)
+        prompt = convert_prompt_template(self._template, inputs, self._model.api)
+        # For chat mode, the message generated is list type. Convert to string type and return to user.
+        return str(prompt)
 
 
 class AsyncPrompty(Prompty):

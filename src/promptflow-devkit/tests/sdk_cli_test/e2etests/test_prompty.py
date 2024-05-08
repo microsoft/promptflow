@@ -366,8 +366,7 @@ class TestPrompty:
     def test_render_prompty(self):
         prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty")
         result = prompty.render(question="what is the result of 1+1?")
-
-        assert result == [
+        expect = [
             {
                 "role": "system",
                 "content": "You are an AI assistant who helps people find information.\nAs the assistant, "
@@ -380,6 +379,7 @@ class TestPrompty:
             },
             {"role": "user", "content": "what is the result of 1+1?"},
         ]
+        assert result == str(expect)
 
         with pytest.raises(UserErrorException) as ex:
             prompty.render("mock_value")
