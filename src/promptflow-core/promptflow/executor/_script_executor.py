@@ -9,7 +9,7 @@ from pathlib import Path
 from types import GeneratorType
 from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 
-from promptflow._constants import LINE_NUMBER_KEY, MessageFormatType
+from promptflow._constants import LINE_NUMBER_KEY, FlowType, MessageFormatType
 from promptflow._core.log_manager import NodeLogManager
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool_meta_generator import PythonLoadError
@@ -96,6 +96,8 @@ class ScriptExecutor(FlowExecutor):
         log_manager.set_node_context(run_id, "Flex", line_number)
         with log_manager, self._update_operation_context(run_id, line_number):
             yield
+
+    _execution_target = FlowType.FLEX_FLOW
 
     def exec_line(
         self,

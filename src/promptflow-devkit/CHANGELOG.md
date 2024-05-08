@@ -7,6 +7,7 @@
 
 ### Bugs Fixed
 - Fix the issue that import error will be raised after downgrading promptflow from >=1.10.0 to <1.8.0.
+- Fix the issue that `pf flow serve` is broken with exception `NotADirectoryError`.
 
 ## v1.10.0 (2024.04.26)
 

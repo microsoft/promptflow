@@ -589,7 +589,6 @@ class FlowOperations(TelemetryMixin):
             import bs4  # noqa: F401
             import PyInstaller  # noqa: F401
             import streamlit
-            import streamlit_quill  # noqa: F401
         except ImportError as ex:
             raise UserErrorException(
                 f"Please try 'pip install promptflow[executable]' to install dependency, {ex.msg}."
