@@ -3,10 +3,10 @@ import pytest
 from promptflow.evals.evaluators import ContentSafetyChatEvaluator
 
 
-@pytest.mark.usefixtures("project_scope")
+@pytest.mark.usefixtures("mock_project_scope")
 @pytest.mark.unittest
 class TestChatEvaluator:
-    def test_conversation_validation_normal(self, project_scope):
+    def test_conversation_validation_normal(self, mock_project_scope):
         conversation = [
             {"role": "user", "content": "What is the value of 2 + 2?"},
             {
@@ -20,7 +20,7 @@ class TestChatEvaluator:
             },
         ]
 
-        chat_eval = ContentSafetyChatEvaluator(project_scope)
+        chat_eval = ContentSafetyChatEvaluator(mock_project_scope)
         chat_eval._evaluators = []
 
         chat_eval(conversation=conversation)
@@ -31,29 +31,29 @@ class TestChatEvaluator:
             {"content": "answer 1"},
         ]
 
-        chat_eval = ContentSafetyChatEvaluator(project_scope)
+        chat_eval = ContentSafetyChatEvaluator(mock_project_scope)
         chat_eval._evaluators = []
 
         with pytest.raises(ValueError) as e:
             chat_eval(conversation=conversation)
         assert str(e.value) == "Each turn in 'conversation' must have 'role' and 'content' keys. Turn number: 2"
 
-    def test_conversation_validation_question_answer_not_paired(self, project_scope):
+    def test_conversation_validation_question_answer_not_paired(self, mock_project_scope):
         conversation = [
             {"role": "user", "content": "question 1"},
             {"role": "assistant", "content": "answer 1"},
             {"role": "assistant", "content": "answer 2"},
         ]
 
-        chat_eval = ContentSafetyChatEvaluator(project_scope)
+        chat_eval = ContentSafetyChatEvaluator(mock_project_scope)
         chat_eval._evaluators = []
 
         with pytest.raises(ValueError) as e:
             chat_eval(conversation=conversation)
         assert str(e.value) == "Expected role user but got assistant. Turn number: 3"
 
-    def test_per_turn_results_aggregation(self, project_scope):
-        chat_eval = ContentSafetyChatEvaluator(project_scope)
+    def test_per_turn_results_aggregation(self, mock_project_scope):
+        chat_eval = ContentSafetyChatEvaluator(mock_project_scope)
 
         per_turn_results = [
             {
