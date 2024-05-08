@@ -59,6 +59,8 @@ source_suffix = [".rst", ".md", ".ipynb"]
 
 # Options for the linkcheck builder
 linkcheck_ignore = [
+    # openai related sites blocks the IP of the CI server.
+    r"https://openai\.com/",
     r"https://platform\.openai\.com/",
     r"https://help\.openai\.com/",
     # These are used in card links, for example 'xx.html', .md can't be resolved.
@@ -71,6 +73,7 @@ linkcheck_ignore = [
     "https://microsoft.github.io/promptflow/tutorials/stream-flex-flow.html",
     "https://github.com/microsoft/promptflow/tree/main/examples/flex-flows/chat-stream",
     "https://github.com/microsoft/promptflow/tree/main/examples/flex-flows/basic-chat",
+    "https://github.com/microsoft/promptflow/blob/main/examples/flex-flows/eval-criteria-with-langchain/flow.flex.yaml"
 ]
 
 linkcheck_exclude_documents = [

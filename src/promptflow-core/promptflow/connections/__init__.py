@@ -6,6 +6,7 @@ from dataclasses import dataclass, is_dataclass
 from promptflow._core.tools_manager import register_connections
 from promptflow.contracts.types import Secret
 from promptflow.core._connection import (
+    AzureAIServicesConnection,
     AzureContentSafetyConnection,
     AzureOpenAIConnection,
     CognitiveSearchConnection,
@@ -40,6 +41,7 @@ __all__ = [
     "CustomConnection",
     "CustomStrongTypeConnection",
     "ServerlessConnection",
+    "AzureAIServicesConnection",
     "ConnectionProvider",
 ]
 
