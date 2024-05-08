@@ -23,4 +23,6 @@ Note:
 function-based-flow
 class-based-flow
 input-output-format
+model-config
+connection-support
 ```
