@@ -1,8 +1,8 @@
-How to add e2e test cases using the test framrwork?
+# How to add e2e test cases using the test framrwork?
 
 This document is mainly used to introduce how to use the new test framework (in ADO repo) to add the gated e2e scenarios tests.
 
-Steps:
+## Steps:
 
 1. Add the test flow folder under `src/promptflow/tests/test_configs/e2e_test_flows`
 ![add_test_flow_folder](add_test_flow_folder.png)
