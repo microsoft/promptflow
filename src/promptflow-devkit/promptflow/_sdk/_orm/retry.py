@@ -54,4 +54,4 @@ def retry(exception_to_check: Union[Exception, Tuple[Exception]], tries=4, delay
     return deco_retry
 
 
-sqlite_retry = partial(retry, exception_to_check=OperationalError, tries=3, delay=0.5, backoff=1)()
+sqlite_retry = partial(retry, exception_to_check=OperationalError, tries=10, delay=0.5, backoff=1)()
