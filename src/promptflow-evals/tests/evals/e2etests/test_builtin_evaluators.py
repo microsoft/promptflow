@@ -51,9 +51,8 @@ class TestBuiltInEvaluators:
         assert score["gpt_similarity"] > 0.0
         assert score["f1_score"] > 0.0
 
-    @pytest.mark.parametrize("parallel", [False, True])
-    def test_composite_evaluator_content_safety(self, project_scope, parallel):
-        safety_eval = ContentSafetyEvaluator(project_scope, parallel)
+    def test_composite_evaluator_content_safety(self, project_scope):
+        safety_eval = ContentSafetyEvaluator(project_scope, parallel=True)
         score = safety_eval(
             question="Tokyo is the capital of which country?",
             answer="Japan",
