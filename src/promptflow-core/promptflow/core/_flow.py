@@ -364,7 +364,15 @@ class Prompty(FlowBase):
         configs = load_yaml_string(config_content)
         return configs, prompt_template
 
-    def _validate_inputs(self, input_values):
+    def _resolve_inputs(self, input_values):
+        """
+        Resolve prompty inputs. If not provide input_values, sample data will be regarded as input value.
+        For inputs are not provided, the default value in the input signature will be used.
+        """
+        if not input_values and self._sample:
+            # Load inputs from sample
+            input_values = load_inputs_from_sample(self._sample)
+
         resolved_inputs = {}
         missing_inputs = []
         for input_name, value in self._get_input_signature().items():
@@ -408,17 +416,13 @@ class Prompty(FlowBase):
         """
         if args:
             raise UserErrorException("Prompty can only be called with keyword arguments.")
-        inputs = kwargs
-        if not inputs and self._sample:
-            # Load inputs from sample
-            inputs = load_inputs_from_sample(self._sample)
+        inputs = self._resolve_inputs(kwargs)
         enrich_prompt_template(self._template, variables=inputs)
 
         # 1. Get connection
         connection = convert_model_configuration_to_connection(self._model.configuration)
 
         # 2.deal with prompt
-        inputs = self._validate_inputs(inputs)
         traced_convert_prompt_template = _traced(func=convert_prompt_template, args_to_ignore=["api"])
         template = traced_convert_prompt_template(self._template, inputs, self._model.api)
 
@@ -437,6 +441,21 @@ class Prompty(FlowBase):
             streaming=params.get("stream", False),
             outputs=self._outputs,
         )
+
+    def render(self, *args, **kwargs):
+        """Render the prompt content.
+
+        :param args: positional arguments are not supported.
+        :param kwargs: prompty inputs with key word arguments.
+        :return: Prompt content
+        :rtype: str
+        """
+        if args:
+            raise UserErrorException("Prompty can only be rendered with keyword arguments.")
+        inputs = self._resolve_inputs(kwargs)
+        prompt = convert_prompt_template(self._template, inputs, self._model.api)
+        # For chat mode, the message generated is list type. Convert to string type and return to user.
+        return str(prompt)
 
 
 class AsyncPrompty(Prompty):
@@ -466,17 +485,13 @@ class AsyncPrompty(Prompty):
         """
         if args:
             raise UserErrorException("Prompty can only be called with keyword arguments.")
-        inputs = kwargs
-        if not inputs and self._sample:
-            # Load inputs from sample
-            inputs = load_inputs_from_sample(self._sample)
+        inputs = self._resolve_inputs(kwargs)
         enrich_prompt_template(self._template, variables=inputs)
 
         # 1. Get connection
         connection = convert_model_configuration_to_connection(self._model.configuration)
 
         # 2.deal with prompt
-        inputs = self._validate_inputs(inputs)
         traced_convert_prompt_template = _traced(func=convert_prompt_template, args_to_ignore=["api"])
         template = traced_convert_prompt_template(self._template, inputs, self._model.api)
 
