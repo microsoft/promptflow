@@ -108,11 +108,14 @@ def start_trace(
             start_trace_with_devkit(collection=collection, attributes=_attributes, run=_run)
 
 
-def setup_exporter_from_environ() -> None:
+def setup_exporter_from_environ(only_inject_openai: bool = False) -> None:
     # openai instrumentation
     logging.debug("injecting OpenAI API...")
     inject_openai_api()
     logging.debug("OpenAI API injected.")
+
+    if only_inject_openai:
+        return
 
     # Ignore all the setup if the endpoint is not set
     endpoint = os.getenv(OTEL_EXPORTER_OTLP_ENDPOINT)

@@ -10,6 +10,7 @@ from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_
 from promptflow._utils.flow_utils import dump_flow_result, is_executable_chat_flow
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.multimedia_utils import MultimediaProcessor
+from promptflow.contracts.flow import Flow
 from promptflow.contracts.run_info import Status
 from promptflow.core._connection import _Connection
 from promptflow.core._connection_provider._connection_provider import ConnectionProvider
@@ -52,6 +53,7 @@ class FlowInvoker:
     def __init__(
         self,
         flow: AbstractFlowBase,
+        flow_executable: Flow = None,
         connection_provider: [str, Callable] = None,
         streaming: Union[Callable[[], bool], bool] = False,
         connections: dict = None,
@@ -64,7 +66,11 @@ class FlowInvoker:
         self._init_kwargs = init_kwargs or {}
         self.logger.debug(f"Init flow invoker with init kwargs: {self._init_kwargs}")
         # TODO: avoid to use private attribute after we finalize the inheritance
-        self.flow = init_executable(working_dir=flow._code, flow_path=flow._path)
+        if flow_executable:
+            # no need to re-init flow if it's already a Flow object
+            self.flow = flow_executable
+        else:
+            self.flow = init_executable(working_dir=flow._code, flow_path=flow._path)
         self.connections = connections or {}
         self.connections_name_overrides = connections_name_overrides or {}
         self.raise_ex = raise_ex

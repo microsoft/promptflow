@@ -209,7 +209,8 @@ class FlowExecutor:
         :return: A new instance of FlowExecutor.
         :rtype: ~promptflow.executor.flow_executor.FlowExecutor
         """
-        setup_exporter_from_environ()
+        only_inject_openai = kwargs.get("only_inject_openai", False)
+        setup_exporter_from_environ(only_inject_openai)
         if hasattr(flow_file, "__call__") or inspect.isfunction(flow_file):
             from ._script_executor import ScriptExecutor
 

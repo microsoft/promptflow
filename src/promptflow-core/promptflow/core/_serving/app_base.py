@@ -28,8 +28,9 @@ class PromptflowServingAppBasic(ABC):
         self.logger = logger
         # default to local, can be override when creating the app
         self.extension = ExtensionFactory.create_extension(logger, **kwargs)
-
+        self.flow_monitor = self.extension.get_flow_monitor(self.get_context_data_provider())
         self.flow_invoker: AsyncFlowInvoker = None
+
         # parse promptflow project path
         self.project_path = self.extension.get_flow_project_path()
         logger.info(f"Project path: {self.project_path}")
@@ -47,8 +48,6 @@ class PromptflowServingAppBasic(ABC):
         conn_data_override, conn_name_override = self.extension.get_override_connections(self.flow)
         self.connections_override = conn_data_override
         self.connections_name_override = conn_name_override
-
-        self.flow_monitor = self.extension.get_flow_monitor(self.get_context_data_provider())
 
         self.connection_provider = self.extension.get_connection_provider()
         self.credential = self.extension.get_credential()
