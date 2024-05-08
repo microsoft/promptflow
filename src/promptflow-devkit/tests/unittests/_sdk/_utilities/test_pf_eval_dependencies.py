@@ -1,5 +1,5 @@
 import pytest
-from promptflow._sdk._pf_evals_dependencies import _get_pf_evals_dependencies
+from promptflow._dependencies._pf_evals import _get_pf_evals_dependencies
 
 
 @pytest.mark.unittest

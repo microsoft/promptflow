@@ -287,7 +287,7 @@ class TestFlowRunUpload:
         # check the run is uploaded to cloud
         Local2CloudTestHelper.check_local_to_cloud_run(pf, run, check_run_details_in_cloud=True)
 
-        from promptflow.azure._pf_eval_dependencies import _get_pf_evals_dependencies
+        from promptflow.azure._dependencies._pf_evals import _get_pf_evals_dependencies
         from promptflow._sdk._constants import Local2Cloud
 
         async_uploader = _get_pf_evals_dependencies()._from_run_operations(run, pf.runs)
