@@ -369,8 +369,10 @@ class LineExecutionProcessPool:
             else:
                 # If the task is a line execution request, put the request into the input queue.
                 run_id, line_number, inputs = data
-                real_line_number = self._get_line_number(line_number)
-                args = (run_id, real_line_number, inputs, line_timeout_sec)
+                # The line_number is index + uuid in a chat group run, so we should retrieve
+                # the original line_number and put it into the input_queue for processing.
+                origin_line_number = self._retrieve_line_number(line_number)
+                args = (run_id, origin_line_number, inputs, line_timeout_sec)
                 input_queue.put(args)
 
             if terminated:
@@ -692,7 +694,7 @@ class LineExecutionProcessPool:
             return f"{line_number}_{str(uuid.uuid4())}"
         return line_number
 
-    def _get_line_number(self, line_number: Union[int, str]) -> int:
+    def _retrieve_line_number(self, line_number: Union[int, str]) -> int:
         """Extracts the original line number from a string containing line number and uuid.
 
         During chat group runs, line numbers are appended with a uuid to ensure uniqueness.
