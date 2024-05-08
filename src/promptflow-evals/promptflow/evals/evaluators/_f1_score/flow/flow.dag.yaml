@@ -1,0 +1,34 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+environment:
+  python_requirements_txt: requirements.txt
+inputs:
+  answer:
+    type: string
+    default: Paris
+  ground_truth:
+    type: string
+    default: Paris is the capital city of France
+outputs:
+  f1_score:
+    type: string
+    reference: ${compute_f1_score.output}
+nodes:
+- name: validate_inputs
+  type: python
+  source:
+    type: code
+    path: validate_inputs.py
+  inputs:
+    answer: ${inputs.answer}
+    ground_truth: ${inputs.ground_truth}
+- name: compute_f1_score
+  type: python
+  source:
+    type: code
+    path: f1_score.py
+  inputs:
+    answer: ${inputs.answer}
+    ground_truth: ${inputs.ground_truth}
+  activate:
+    when: ${validate_inputs.output}
+    is: true
