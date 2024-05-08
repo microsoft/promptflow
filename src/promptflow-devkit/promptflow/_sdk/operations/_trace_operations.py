@@ -5,7 +5,11 @@
 import datetime
 import typing
 
-from promptflow._sdk._constants import TRACE_DEFAULT_COLLECTION, TRACE_LIST_DEFAULT_LIMIT
+from promptflow._sdk._constants import (
+    TRACE_COLLECTION_LIST_DEFAULT_LIMIT,
+    TRACE_DEFAULT_COLLECTION,
+    TRACE_LIST_DEFAULT_LIMIT,
+)
 from promptflow._sdk._orm.retry import sqlite_retry
 from promptflow._sdk._orm.session import trace_mgmt_db_session
 from promptflow._sdk._orm.trace import Event as ORMEvent
@@ -243,3 +247,24 @@ class TraceOperations:
             session.commit()
         self._logger.debug("deleted %d line runs, %d spans, and %d events", line_run_cnt, span_cnt, event_cnt)
         return len(trace_ids)
+
+    @sqlite_retry
+    def _list_collections(self, limit: typing.Optional[int] = None) -> typing.List[str]:
+        from sqlalchemy import func
+
+        if limit is None:
+            self._logger.debug("use default limit %d for collection list", TRACE_COLLECTION_LIST_DEFAULT_LIMIT)
+            limit = TRACE_COLLECTION_LIST_DEFAULT_LIMIT
+        with trace_mgmt_db_session() as session:
+            subquery = (
+                session.query(
+                    ORMLineRun.collection,
+                    func.max(ORMLineRun.start_time).label("max_start_time"),
+                )
+                .group_by(ORMLineRun.collection)
+                .subquery()
+            )
+            collections = (
+                session.query(subquery.c.collection).order_by(subquery.c.max_start_time.desc()).limit(limit).all()
+            )
+        return [collection[0] for collection in collections]
