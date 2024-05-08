@@ -63,6 +63,7 @@ class FlowInvoker:
         self.logger = kwargs.get("logger", LoggerFactory.get_logger("flowinvoker"))
         self._init_kwargs = init_kwargs or {}
         self.logger.debug(f"Init flow invoker with init kwargs: {self._init_kwargs}")
+        # TODO: avoid to use private attribute after we finalize the inheritance
         self.flow = init_executable(working_dir=flow._code, flow_path=flow._path)
         self.connections = connections or {}
         self.connections_name_overrides = connections_name_overrides or {}

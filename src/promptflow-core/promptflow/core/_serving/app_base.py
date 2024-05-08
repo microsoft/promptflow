@@ -28,6 +28,7 @@ class PromptflowServingAppBasic(ABC):
         self.logger = logger
         # default to local, can be override when creating the app
         self.extension = ExtensionFactory.create_extension(logger, **kwargs)
+        # make sure pfserving exporters initiated before any customer code loading
         self.flow_monitor = self.extension.get_flow_monitor(self.get_context_data_provider())
         self.flow_invoker: AsyncFlowInvoker = None
 

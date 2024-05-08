@@ -115,6 +115,8 @@ def setup_exporter_from_environ(only_inject_openai: bool = False) -> None:
     logging.debug("OpenAI API injected.")
 
     if only_inject_openai:
+        # only inject OpenAI API, skip the following setup, this is useful for serving scenario
+        # because serving also support OTEL_EXPORTER_OTLP_ENDPOINT and have devkit installed now.
         return
 
     # Ignore all the setup if the endpoint is not set

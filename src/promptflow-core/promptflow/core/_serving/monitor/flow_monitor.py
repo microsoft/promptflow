@@ -2,9 +2,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import os
 from typing import Dict
 
 from promptflow._utils.exception_utils import ErrorResponse
+from promptflow.core._serving.constants import PF_BUILTIN_TRACE_EXPORTERS_ENABLE
 from promptflow.core._serving.monitor.context_data_provider import ContextDataProvider
 from promptflow.core._serving.monitor.data_collector import FlowDataCollector
 from promptflow.core._serving.monitor.metrics import MetricsRecorder, ResponseType
@@ -48,7 +50,10 @@ class FlowMonitor:
         return None
 
     def setup_trace_exporters(self, trace_exporters):
-        if not trace_exporters:
+        # This is to support customer customize their own spanprocessor, in that case customer can disable the built-in
+        # trace exporters by setting the environment variable PF_BUILTIN_TRACE_EXPORTERS_ENABLE to false.
+        builtin_trace_exporters_enable = os.environ.get(PF_BUILTIN_TRACE_EXPORTERS_ENABLE, "true").lower() == "true"
+        if not trace_exporters or not builtin_trace_exporters_enable:
             self.logger.warning("No trace exporter enabled.")
             return
         try:
