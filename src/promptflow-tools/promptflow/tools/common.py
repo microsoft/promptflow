@@ -519,19 +519,25 @@ def is_retriable_api_connection_error(e: APIConnectionError):
 
 
 # TODO(2971352): revisit this tries=100 when there is any change to the 10min timeout logic
-def handle_openai_error(tries: int = 100):
+def handle_openai_error(tries: int = 100, unprocessable_entity_error_tries: int = 3):
     """
-    A decorator function that used to handle OpenAI error.
-    OpenAI Error falls into retriable vs non-retriable ones.
+    A decorator function for handling OpenAI errors.
 
-    For retriable error, the decorator use below parameters to control its retry activity with exponential backoff:
-     `tries` : max times for the function invocation, type is int
-     'delay': base delay seconds for exponential delay, type is float
+    OpenAI errors are categorized into retriable and non-retriable.
+
+    For retriable errors, the decorator uses the following parameters to control its retry behavior:
+    `tries`: max times for the function invocation, type is int
+    `unprocessable_entity_error_tries`: max times for the function invocation when consecutive
+        422 error occurs, type is int
+
+    Note:
+    - The retry policy for UnprocessableEntityError is different because retrying may not be beneficial,
+      so small threshold and requiring consecutive errors.
     """
-
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
+            consecutive_422_error_count = 0
             for i in range(tries + 1):
                 try:
                     return func(*args, **kwargs)
@@ -542,6 +548,7 @@ def handle_openai_error(tries: int = 100):
                     #  Handle retriable exception, please refer to
                     #  https://platform.openai.com/docs/guides/error-codes/api-errors
                     print(f"Exception occurs: {type(e).__name__}: {str(e)}", file=sys.stderr)
+                    # Firstly, exclude some non-retriable errors.
                     # Vision model does not support all chat api parameters, e.g. response_format and function_call.
                     # Recommend user to use vision model in vision tools, rather than LLM tool.
                     # Related issue https://github.com/microsoft/promptflow/issues/1683
@@ -558,7 +565,11 @@ def handle_openai_error(tries: int = 100):
                     if isinstance(e, APIConnectionError) and not isinstance(e, APITimeoutError) \
                             and not is_retriable_api_connection_error(e):
                         raise WrappedOpenAIError(e)
+
                     # Retry InternalServerError(>=500), RateLimitError(429), UnprocessableEntityError(422)
+                    # Solution references:
+                    # https://platform.openai.com/docs/guides/error-codes/api-errors
+                    # https://platform.openai.com/docs/guides/error-codes/python-library-error-types
                     if isinstance(e, APIStatusError):
                         status_code = e.response.status_code
                         if status_code < 500 and status_code not in [429, 422]:
@@ -567,7 +578,16 @@ def handle_openai_error(tries: int = 100):
                         # Exit retry if this is quota insufficient error
                         print(f"{type(e).__name__} with insufficient quota. Throw user error.", file=sys.stderr)
                         raise WrappedOpenAIError(e)
-                    if i == tries:
+
+                    # Retriable errors.
+                    # To fix issue #2296, retry on api connection error, but with a separate retry policy.
+                    if isinstance(e, APIStatusError) and e.response.status_code == 422:
+                        consecutive_422_error_count += 1
+                    else:
+                        # If other retriable errors, reset consecutive_422_error_count.
+                        consecutive_422_error_count = 0
+
+                    if i == tries or consecutive_422_error_count == unprocessable_entity_error_tries:
                         # Exit retry if max retry reached
                         print(f"{type(e).__name__} reached max retry. Exit retry with user error.", file=sys.stderr)
                         raise ExceedMaxRetryTimes(e)
