@@ -210,7 +210,7 @@ def get_pfs_version():
 def is_pfs_service_healthy(pfs_port) -> bool:
     """Check if pfs service is running and pfs version matches pf version."""
     try:
-        response = requests.get("http://localhost:{}/heartbeat".format(pfs_port))
+        response = requests.get("http://127.0.0.1:{}/heartbeat".format(pfs_port))
         if response.status_code == 200:
             logger.debug(f"Prompt flow service is already running on port {pfs_port}, {response.text}")
             match = re.search(r'"promptflow":"(.*?)"', response.text)
