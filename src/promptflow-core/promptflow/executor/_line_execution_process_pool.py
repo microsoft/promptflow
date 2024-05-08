@@ -695,7 +695,7 @@ class LineExecutionProcessPool:
         return line_number
 
     def _retrieve_line_number(self, line_number: Union[int, str]) -> int:
-        """Extracts the original line number from a string containing line number and uuid.
+        """Extract the original line number from a string containing line number and uuid.
 
         During chat group runs, line numbers are appended with a uuid to ensure uniqueness.
         This method extracts the original line number from a string that combines the line number and uuid.
