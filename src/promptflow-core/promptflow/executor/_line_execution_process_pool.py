@@ -680,11 +680,24 @@ class LineExecutionProcessPool:
         return result
 
     def _process_line_number(self, line_number: int) -> Union[int, str]:
+        """Add a uuid to line number to make it unique in chat group run.
+
+        During chat group runs, line numbers remain constant across rounds.This could lead to incorrect results
+        stored in the result_dict, potentially reflecting outcomes from previous executions instead of the current ones.
+
+        By appending a uuid to each line number, we ensure uniqueness within each round of the chat group run,
+        preventing confusion and ensuring accurate result tracking.
+        """
         if self._is_chat_group_run:
             return f"{line_number}_{str(uuid.uuid4())}"
         return line_number
 
     def _get_line_number(self, line_number: Union[int, str]) -> int:
+        """Extracts the original line number from a string containing line number and uuid.
+
+        During chat group runs, line numbers are appended with a uuid to ensure uniqueness.
+        This method extracts the original line number from a string that combines the line number and uuid.
+        """
         if self._is_chat_group_run:
             return int(line_number.split("_")[0])
         return line_number
