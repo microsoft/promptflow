@@ -615,7 +615,7 @@ def process_otlp_trace_request(
         args=(all_spans, get_created_by_info_with_cache, logger, get_credential, cloud_trace_only),
     ).start()
 
-    return
+    return all_spans
 
 
 def _try_write_trace_to_cosmosdb(
