@@ -4,7 +4,7 @@ import pytest
 from promptflow._dependencies._pf_evals import LINE_NUMBER, Local2Cloud, Configuration
 
 DUMMY_TRACE_DESTINATION = ("azureml://subscriptions/sub_id/resourceGroups/resource_group_name"
-                     "/providers/Microsoft.MachineLearningServices/workspaces/workspace_name")
+                           "/providers/Microsoft.MachineLearningServices/workspaces/workspace_name")
 
 
 @pytest.fixture
