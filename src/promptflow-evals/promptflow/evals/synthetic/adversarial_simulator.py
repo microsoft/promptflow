@@ -4,6 +4,7 @@
 # noqa: E501
 import asyncio
 import logging
+import random
 from typing import Any, Callable, Dict, List
 
 from tqdm import tqdm
@@ -149,7 +150,7 @@ class AdversarialSimulator:
             for parameter in template.template_parameters:
                 if jailbreak:
                     jailbreak_dataset = await self.rai_client.get_jailbreaks_dataset()
-                    parameter = self._join_conversation_starter(jailbreak_dataset, parameter)
+                    parameter = self._join_conversation_starter(parameter, random.choice(jailbreak_dataset))
                 tasks.append(
                     asyncio.create_task(
                         self._simulate_async(
