@@ -1,1 +1,2 @@
-promptflow[azure]>=1.10.0
+--extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
+promptflow==1.11.0.dev125998521
