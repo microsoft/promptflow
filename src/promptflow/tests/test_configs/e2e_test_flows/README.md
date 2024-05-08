@@ -13,4 +13,7 @@ Please follow the file naming convention to add a test.
 - **Single node run:** Name the test config file starting with `single_node_run_config_`, followed by any name, which can be a number or a brief description of the test cases, eg. single_node_run_config_1.json.
 - **Batch run:** Name the test config file starting with `batch_run_config_`, followed by any name, which can be a number or a brief description of the test cases, eg. batch_run_config_1.json.
 
-3. Fill the test config json file with following field.
+3. Fill the test config json file with following fields.
+``` json
+
+```
