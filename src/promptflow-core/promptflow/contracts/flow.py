@@ -4,13 +4,20 @@
 
 import json
 import logging
+import os
 import sys
 from dataclasses import asdict, dataclass
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from promptflow._constants import DEFAULT_ENCODING, LANGUAGE_KEY, FlowLanguage, MessageFormatType
+from promptflow._constants import (
+    DEFAULT_ENCODING,
+    LANGUAGE_KEY,
+    PROMPTFLOW_FLOW_INIT_CONFIG,
+    FlowLanguage,
+    MessageFormatType,
+)
 from promptflow._utils.utils import _match_reference, _sanitize_python_variable_name, try_import
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts._errors import FlowDefinitionError
@@ -1039,14 +1046,25 @@ class FlexFlow(FlowBase):
             source_path=entry_file,
             data=flow_dag,
         )
-        # Use cls.deserialize will raise Error: "ValueError: 'AzureOpenAIModelConfiguration' is not a valid ValueType"
-        # flake8: noqa: E501, Waiting for this PR fix: https://github.com/microsoft/promptflow/pull/3063/files#diff-db2454c528ba24a2269febf93d5d70ff56f6a67a3fcf68259af1630d78f6f080
-        # return cls.deserialize(meta_dict)
-        return Flow.deserialize(meta_dict)
+        return cls.deserialize(meta_dict)
 
     def get_connection_names(self, environment_variables_overrides: Dict[str, str] = None):
         """Return connection names."""
-        return set()
+        from promptflow.core._model_configuration import MODEL_CONFIG_NAME_2_CLASS
+
+        connection_names = super().get_connection_names(environment_variables_overrides=environment_variables_overrides)
+        try:
+            init_params = os.environ.get(PROMPTFLOW_FLOW_INIT_CONFIG, "{}")
+            init_dict: dict = json.loads(init_params)
+            for key, val in self.init.items():
+                if val.type in MODEL_CONFIG_NAME_2_CLASS:
+                    connection_names.add(init_dict.get(key, {}).get("connection", None))
+        except Exception as e:
+            print("Failed to retrieve connection_names from environment variable PROMPTFLOW_FLOW_INIT_CONFIG: ", e)
+
+        logger.debug("connection_names: ", connection_names)
+
+        return set({item for item in connection_names if item})
 
 
 @dataclass
