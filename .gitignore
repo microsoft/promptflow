@@ -177,6 +177,7 @@ hello-world-proj/**
 **/connections.json
 
 **/bash_script.sh
+**/bash_script_pytest.sh
 
 .index
 .pdfs
