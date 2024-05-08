@@ -2,6 +2,7 @@ import datetime
 import json
 import platform
 import sys
+import time
 import typing
 import uuid
 from pathlib import Path
@@ -396,6 +397,37 @@ class TestTraceEntitiesAndOperations:
         # assert these line runs are exactly the ones we just persisted
         line_run_trace_ids = {line_run.trace_id for line_run in line_runs}
         assert len(set(trace_ids) & line_run_trace_ids) == num_line_runs
+
+    def test_list_collection(self, pf: PFClient) -> None:
+        collection = str(uuid.uuid4())
+        span = mock_span(
+            trace_id=str(uuid.uuid4()), span_id=str(uuid.uuid4()), parent_id=None, line_run_id=str(uuid.uuid4())
+        )
+        # make span start time a week later, so that it can be the latest collection
+        span.start_time = datetime.datetime.now() + datetime.timedelta(days=7)
+        span.start_time = datetime.datetime.now() + datetime.timedelta(days=8)
+        span.resource[SpanResourceFieldName.ATTRIBUTES][SpanResourceAttributesFieldName.COLLECTION] = collection
+        span._persist()
+        collections = pf.traces._list_collections(limit=1)
+        assert len(collections) == 1 and collections[0] == collection
+
+    def test_list_collection_with_time_priority(self, pf: PFClient) -> None:
+        collection1, collection2 = str(uuid.uuid4()), str(uuid.uuid4())
+        for collection in (collection1, collection2):
+            span = mock_span(
+                trace_id=str(uuid.uuid4()), span_id=str(uuid.uuid4()), parent_id=None, line_run_id=str(uuid.uuid4())
+            )
+            # make span start time a week later, so that it can be the latest collection
+            span.start_time = datetime.datetime.now() + datetime.timedelta(days=7)
+            span.start_time = datetime.datetime.now() + datetime.timedelta(days=8)
+            span.resource[SpanResourceFieldName.ATTRIBUTES][SpanResourceAttributesFieldName.COLLECTION] = collection
+            span._persist()
+            # sleep 1 second to ensure the second span is later than the first
+            time.sleep(1)
+        collections = pf.traces._list_collections(limit=1)
+        assert len(collections) == 1 and collections[0] == collection2
+        collections = pf.traces._list_collections(limit=2)
+        assert len(collections) == 2 and collections == [collection2, collection1]
 
 
 @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
