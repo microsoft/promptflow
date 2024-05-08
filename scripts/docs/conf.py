@@ -69,10 +69,6 @@ linkcheck_ignore = [
     "deploy-using-kubernetes.html",
     "https://portal.azure.com/#create/Microsoft.CognitiveServicesTextAnalytics",  # sphinx recognizes #create as an anchor while it's not. # noqa: E501
     "https://ms.portal.azure.com/#view/Microsoft_Azure_Marketplace/MarketplaceOffersBlade/searchQuery/machine%20learning",  # noqa: E501
-    # TODO(wanhan): update this link to sample
-    "https://microsoft.github.io/promptflow/tutorials/stream-flex-flow.html",
-    "https://github.com/microsoft/promptflow/tree/main/examples/flex-flows/chat-stream",
-    "https://github.com/microsoft/promptflow/tree/main/examples/flex-flows/basic-chat",
 ]
 
 linkcheck_exclude_documents = [

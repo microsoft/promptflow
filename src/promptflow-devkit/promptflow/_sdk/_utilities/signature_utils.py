@@ -152,7 +152,11 @@ def update_signatures(code: Path, data: dict) -> bool:
         validate=False,
         include_primitive_output=True,
     )
-    merged_signatures = merge_flow_signature(extracted=signatures, signature_overrides=data)
+    # TODO: allow user only specify partial signatures in the yaml
+    merged_signatures = merge_flow_signature(
+        extracted=signatures,
+        signature_overrides=data,
+    )
     updated = False
     for field in ["inputs", "outputs", "init"]:
         if merged_signatures.get(field) != data.get(field):
