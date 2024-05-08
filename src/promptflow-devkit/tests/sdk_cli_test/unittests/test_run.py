@@ -11,7 +11,7 @@ import pytest
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY, NODES
 from promptflow._sdk._errors import InvalidFlowError
 from promptflow._sdk._load_functions import load_flow, load_run
-from promptflow._sdk._orchestrator import RunSubmitter, overwrite_variant, variant_overwrite_context
+from promptflow._sdk._orchestrator import RunSubmitter, flow_overwrite_context, overwrite_variant
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._run_functions import create_yaml_run
 from promptflow._sdk._utilities.general_utils import callable_to_entry_string
@@ -42,9 +42,7 @@ async def my_async_func():
 @pytest.mark.unittest
 class TestRun:
     def test_overwrite_variant_context(self, test_flow: Flow):
-        with variant_overwrite_context(
-            flow=test_flow, tuning_node="summarize_text_content", variant="variant_0"
-        ) as flow:
+        with flow_overwrite_context(flow=test_flow, tuning_node="summarize_text_content", variant="variant_0") as flow:
             with open(flow.path) as f:
                 flow_dag = load_yaml(f)
             node_name_2_node = {node["name"]: node for node in flow_dag[NODES]}
@@ -52,7 +50,7 @@ class TestRun:
             assert node["inputs"]["temperature"] == "0.2"
 
     def test_overwrite_connections(self, test_flow: Flow):
-        with variant_overwrite_context(
+        with flow_overwrite_context(
             flow=test_flow,
             connections={"classify_with_llm": {"connection": "azure_open_ai", "deployment_name": "gpt-35-turbo"}},
         ) as flow:
@@ -83,7 +81,7 @@ class TestRun:
     )
     def test_overwrite_connections_invalid(self, connections, error_message, test_flow: Flow):
         with pytest.raises(InvalidFlowError) as e:
-            with variant_overwrite_context(
+            with flow_overwrite_context(
                 flow=test_flow,
                 connections=connections,
             ):
