@@ -20,7 +20,7 @@ example:
 **Run flex flow** with docker run by flask serving engine:
 `docker run -p 8080:8080 -e PROMPTFLOW_WORKER_NUM=<expect-worker-num> -e PROMPTFLOW_WORKER_THREADS=<expect-thread-num-per-worker> -e PROMPTFLOW_FLOW_INIT_CONFIG=<init config with json string> <image_name>`
 example:
-docker run -p 8080:8080 -e PROMPTFLOW_WORKER_NUM=1 -e PROMPTFLOW_WORKER_THREADS=1 -e PROMPTFLOW_FLOW_INIT_CONFIG="{'model_config': {'api_key': "111", "azure_endpoint": "https://test.openai.azure.com/", "azure_deployment": "gpt-35-turbo"}}" flex_flow_image
+`docker run -p 8080:8080 -e PROMPTFLOW_WORKER_NUM=1 -e PROMPTFLOW_WORKER_THREADS=1 -e PROMPTFLOW_FLOW_INIT_CONFIG='{"model_config": {"api_key": "111", "azure_endpoint": "https://test.openai.azure.com/", "azure_deployment": "gpt-35-turbo"}}' flex_flow_image`
 
 
 Test the endpoint:
