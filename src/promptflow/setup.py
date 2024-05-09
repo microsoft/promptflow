@@ -54,6 +54,7 @@ setup(
             "promptflow-core[executor-service]",
             "promptflow-devkit[all]",
             "promptflow-azure",
+            "promptflow-parallel",
         ],
         "azure": ["promptflow-azure"],
         "executable": ["promptflow-devkit[executable]"],
