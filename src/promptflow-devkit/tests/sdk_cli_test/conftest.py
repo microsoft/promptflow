@@ -274,6 +274,11 @@ def fastapi_create_client_by_model(
 
 
 @pytest.fixture
+def fastapi_async_generator_serving_client(mocker: MockerFixture):
+    return fastapi_create_client_by_model("async_generator_tools", mocker)
+
+
+@pytest.fixture
 def fastapi_evaluation_flow_serving_client(mocker: MockerFixture):
     return fastapi_create_client_by_model("web_classification", mocker)
 
