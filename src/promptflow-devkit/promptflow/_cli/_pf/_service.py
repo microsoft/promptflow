@@ -19,6 +19,7 @@ from promptflow._constants import PF_NO_INTERACTIVE_LOGIN
 from promptflow._sdk._constants import (
     HOME_PROMPT_FLOW_DIR,
     PF_SERVICE_DEBUG,
+    PF_SERVICE_HOST,
     PF_SERVICE_LOG_FILE,
     PF_SERVICE_WORKER_NUM,
 )
@@ -35,7 +36,7 @@ from promptflow._sdk._service.utils.utils import (
     is_run_from_built_binary,
     kill_exist_service,
 )
-from promptflow._sdk._utils import add_executable_script_to_env_path
+from promptflow._sdk._utilities.general_utils import add_executable_script_to_env_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger  # noqa: E402
 from promptflow.exceptions import UserErrorException
 
@@ -173,7 +174,7 @@ def start_service(args):
         if not is_run_from_built_binary():
             add_executable_script_to_env_path()
         port = _prepare_app_for_foreground_service(port, args.force)
-        waitress.serve(app, host="127.0.0.1", port=port, threads=PF_SERVICE_WORKER_NUM)
+        waitress.serve(app, host=PF_SERVICE_HOST, port=port, threads=PF_SERVICE_WORKER_NUM)
     else:
         if is_run_from_built_binary():
             # For msi installer/executable, use sdk api to start pfs since it's not supported to invoke waitress by cli
@@ -182,7 +183,7 @@ def start_service(args):
             output_path = os.path.join(parent_dir, "output.txt")
             with redirect_stdout_to_file(output_path):
                 port = _prepare_app_for_foreground_service(port, args.force)
-            waitress.serve(app, host="127.0.0.1", port=port, threads=PF_SERVICE_WORKER_NUM)
+            waitress.serve(app, host=PF_SERVICE_HOST, port=port, threads=PF_SERVICE_WORKER_NUM)
         else:
             port = validate_port(port, args.force)
             add_executable_script_to_env_path()
@@ -271,7 +272,7 @@ def _start_background_service_on_windows(port):
             f"service start depends on pywin32.. {ex}"
         )
     command = (
-        f"waitress-serve --listen=127.0.0.1:{port} --threads={PF_SERVICE_WORKER_NUM} "
+        f"waitress-serve --listen={PF_SERVICE_HOST}:{port} --threads={PF_SERVICE_WORKER_NUM} "
         "promptflow._cli._pf._service:get_app"
     )
     logger.debug(f"Start prompt flow service in Windows: {command}")
@@ -301,10 +302,10 @@ def _start_background_service_on_windows(port):
 
 
 def _start_background_service_on_unix(port):
-    # Set host to localhost, only allow request from localhost.
+    # Set host to PF_SERVICE_HOST, only allow request from PF_SERVICE_HOST.
     cmd = [
         "waitress-serve",
-        f"--listen=127.0.0.1:{port}",
+        f"--listen={PF_SERVICE_HOST}:{port}",
         f"--threads={PF_SERVICE_WORKER_NUM}",
         "promptflow._cli._pf._service:get_app",
     ]

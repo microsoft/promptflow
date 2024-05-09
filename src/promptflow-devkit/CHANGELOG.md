@@ -1,12 +1,24 @@
 # promptflow-devkit package
 
-## v1.10.0 (Upcoming)
+## v1.11.0 (Upcoming)
+
+### Improvements
+- Interactive browser credential is excluded by default when using Azure AI connections, user could set `PF_NO_INTERACTIVE_LOGIN=False` to enable it.
+- Visualize flex flow run(s) switches to trace UI page.
+
+### Bugs Fixed
+- Fix the issue that import error will be raised after downgrading promptflow from >=1.10.0 to <1.8.0.
+- Fix the issue that `pf flow serve` is broken with exception `NotADirectoryError`.
+
+## v1.10.0 (2024.04.26)
 
 ### Features Added
 - Expose --ui to trigger a chat window, reach [here](https://microsoft.github.io/promptflow/reference/pf-command-reference.html#pf-flow-test) for more details.
 - The `pf config set <key=value>` support set the folder where the config is saved by `--path config_folder` parameter,
   and the config will take effect when **os.getcwd** is a subdirectory of the specified folder.
 - Local serving container support using fastapi engine and tuning worker/thread num via environment variables, reach [here](https://microsoft.github.io/promptflow/how-to-guides/deploy-a-flow/deploy-using-docker.html) for more details.
+- Prompty supports to flow test and batch run, reach [here](https://microsoft.github.io/promptflow/how-to-guides/develop-a-prompty/index.html#testing-prompty) for more details.
+
 
 ## v1.9.0 (2024.04.17)
 

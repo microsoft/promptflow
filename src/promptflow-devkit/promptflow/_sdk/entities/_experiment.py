@@ -22,7 +22,10 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import ExperimentValidationError, ExperimentValueError
 from promptflow._sdk._orm.experiment import Experiment as ORMExperiment
-from promptflow._sdk._utils import _merge_local_code_and_additional_includes, _sanitize_python_variable_name
+from promptflow._sdk._utilities.general_utils import (
+    _merge_local_code_and_additional_includes,
+    _sanitize_python_variable_name,
+)
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._validation import MutableValidationResult, SchemaValidatableMixin
 from promptflow._sdk.entities._yaml_translatable import YAMLTranslatableMixin

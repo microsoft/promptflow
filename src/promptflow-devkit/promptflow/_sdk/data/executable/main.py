@@ -7,7 +7,6 @@ from types import GeneratorType
 
 import streamlit as st
 from PIL import Image
-from streamlit_quill import st_quill
 from utils import dict_iter_render_message, parse_image_content, parse_list_from_html, render_single_dict_message
 
 from promptflow._constants import STREAMING_ANIMATION_TIME
@@ -156,6 +155,8 @@ def start():
         for flow_input, (default_value, value_type) in flow_inputs.items():
             if value_type == "list":
                 st.text(flow_input)
+                from streamlit_quill import st_quill
+
                 input = st_quill(
                     html=True,
                     toolbar=["image"],

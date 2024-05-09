@@ -105,7 +105,9 @@
     "Bhavik",
     "meid",
     "Entra",
-    "uvicorn"
+    "uvicorn",
+    "attribited",
+    "MistralAI"
   ],
   "ignoreWords": [
     "openmpi",
@@ -195,6 +197,7 @@
     "autogen",
     "spawnve",
     "addrs",
+    "pycache",
     "pywin",
     "STARTF",
     "mltable",
@@ -206,6 +209,8 @@
     "wscript",
     "raisvc",
     "evals",
+    "setenv",
+    "pypdf",
     "redoc",
     "starlette",
     "mlindex",
@@ -220,7 +225,11 @@
     "cmpop",
     "finalizer",
     "finalizers",
-    "amlbi"
+    "amlbi",
+    "cmpop",
+    "omap",
+    "azureopenaimodelconfiguration",
+    "openaimodelconfiguration"
   ],
   "flagWords": [
     "Prompt Flow"

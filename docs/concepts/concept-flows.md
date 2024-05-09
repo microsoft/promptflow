@@ -12,13 +12,24 @@ Our [examples](https://github.com/microsoft/promptflow/tree/main/examples/flex-f
 
 Thus LLM apps can be defined as Directed Acyclic Graphs (DAGs) of function calls. These DAGs are flows in prompt flow.
 
-A flow in prompt flow is a DAG of functions (we call them [tools](./concept-tools.md)). These functions/tools connected via input/output dependencies and executed based on the topology by prompt flow executor.
+A `DAG flow` in prompt flow is a DAG of functions (we call them [tools](./concept-tools.md)). These functions/tools connected via input/output dependencies and executed based on the topology by prompt flow executor.
 
 A flow is represented as a YAML file and can be visualized with our [Prompt flow for VS Code extension](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow). Here is an example `flow.dag.yaml`:
 
 ![flow_dag](../media/how-to-guides/quick-start/flow_dag.png)
 
 Please refer to our [examples](https://github.com/microsoft/promptflow/tree/main/examples/flows) to learn how to write a `DAG flow`. 
+
+## When to use Flex or DAG flow
+
+`Dag flow` provides a UI-friendly way to develop your LLM app, which has the following benifits:
+- **Low code**: user can drag-and-drop in UI to create a LLM app.
+- **DAG Visualization**: user can easily understand the logic structure of the app with DAG view.
+
+`Flex flow` provides a code-friendly way to develop your LLM app, which has the following benifits:
+- **Quick start**: Users can quickly test with a simple prompt, then customize with python code with Tracing visualization UI.
+- **More advanced orchestration**: Users can write complex flow with Python built-in control operators (if-else, foreach) or other 3rd party / open-source library. 
+- **Easy onboard from other platforms**: user might already onboard platforms like `langchain` and `sematic kernel` with existing code. User can easily onboard promptflow with a few code changes.
 
 ## Flow types
 
@@ -42,6 +53,6 @@ DAG flow [examples](https://github.com/microsoft/promptflow/tree/main/examples/f
 ## Next steps
 
 - [Quick start](../how-to-guides/quick-start.md)
-- [Initialize and test a flow](../how-to-guides/develop-a-flow/init-and-test-a-flow.md)
+- [Initialize and test a flow](../how-to-guides/develop-a-dag-flow/init-and-test-a-flow.md)
 - [Run and evaluate a flow](../how-to-guides/run-and-evaluate-a-flow/index.md)
 - [Tune prompts using variants](../how-to-guides/tune-prompts-with-variants.md)

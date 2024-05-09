@@ -55,7 +55,7 @@ class AbstractInspectorProxy:
         3) before flow upload.
 
         For dag flow, it will generate flow.tools.json;
-        For python flex flow, it will do nothing;
-        For csharp flex flow, it will generate metadata based on a dotnet command.
+        For flex flow, it will generate metadata based on a dotnet command.
+        For python flow, we have a runtime to gather metadata in both local and cloud, so we don't prepare anything
         """
         return

@@ -235,10 +235,14 @@ class LineRun:
     def _determine_parent_id(span: Span) -> typing.Optional[str]:
         # for test, `attributes.referenced.line_run_id` should be the parent id
         # for batch run, we need to query line run with run name and line number
+        # however, one exception is aggregation node, which does not have line number attribute
         # otherwise, there will be no parent id
         if SpanAttributeFieldName.REFERENCED_LINE_RUN_ID in span.attributes:
             return span.attributes[SpanAttributeFieldName.REFERENCED_LINE_RUN_ID]
-        elif SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID in span.attributes:
+        elif (
+            SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID in span.attributes
+            and SpanAttributeFieldName.LINE_NUMBER in span.attributes
+        ):
             line_run = ORMLineRun._get_with_run_and_line_number(
                 run=span.attributes[SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID],
                 line_number=span.attributes[SpanAttributeFieldName.LINE_NUMBER],
@@ -329,10 +333,23 @@ class LineRun:
             self._to_orm_object().persist()
 
     @staticmethod
+    def _parse_io_from_span_attributes(value: str) -> typing.Union[typing.Dict, str]:
+        # use try-catch to parse value in case it is not a JSON string
+        # for example, user generates traces with code like:
+        # `span.set_attributes("inputs", str(dict(x=1)))`
+        try:
+            return json.loads(value)
+        except json.JSONDecodeError:
+            return value
+
+    @staticmethod
     def _get_inputs_from_span(span: Span) -> typing.Optional[typing.Dict]:
         for event in span.events:
             if event[SpanEventFieldName.NAME] == SPAN_EVENTS_NAME_PF_INPUTS:
                 return json.loads(event[SpanEventFieldName.ATTRIBUTES][SPAN_EVENTS_ATTRIBUTE_PAYLOAD])
+        # 3rd-party traces may not follow prompt flow way to persist inputs in events
+        if SpanAttributeFieldName.INPUTS in span.attributes:
+            return LineRun._parse_io_from_span_attributes(span.attributes[SpanAttributeFieldName.INPUTS])
         return None
 
     @staticmethod
@@ -340,6 +357,9 @@ class LineRun:
         for event in span.events:
             if event[SpanEventFieldName.NAME] == SPAN_EVENTS_NAME_PF_OUTPUT:
                 return json.loads(event[SpanEventFieldName.ATTRIBUTES][SPAN_EVENTS_ATTRIBUTE_PAYLOAD])
+        # 3rd-party traces may not follow prompt flow way to persist output in events
+        if SpanAttributeFieldName.OUTPUT in span.attributes:
+            return LineRun._parse_io_from_span_attributes(span.attributes[SpanAttributeFieldName.OUTPUT])
         return None
 
     @staticmethod

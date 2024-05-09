@@ -62,6 +62,12 @@ class TestEagerFlow:
                 lambda x: x["obj_input"] == "obj_input" and x["func_input"] == "func_input",
                 {"obj_input": "obj_input"},
             ),
+            (
+                "callable_class_with_primitive",
+                {"func_input": "${data.func_input}"},
+                lambda x: x["output"] == "The object input is obj_input and the function input is func_input",
+                {"obj_input": "obj_input"},
+            ),
         ],
     )
     def test_batch_run(self, flow_folder, inputs_mapping, ensure_output, init_kwargs):
@@ -126,3 +132,33 @@ class TestEagerFlow:
         batch_engine.run(input_dirs, {"func_input": "${data.func_input}"}, output_dir)
         outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
         assert ensure_output(outputs), outputs
+
+    def test_batch_run_with_callable_entry(self):
+        flow_folder = "basic_callable_class"
+        batch_engine = BatchEngine(MyFlow("obj_input"), get_flow_folder(flow_folder, root=EAGER_FLOW_ROOT))
+        input_dirs = {"data": get_flow_inputs_file(flow_folder, root=EAGER_FLOW_ROOT)}
+        output_dir = Path(mkdtemp())
+        batch_result = batch_engine.run(input_dirs, {"func_input": "${data.func_input}"}, output_dir)
+        validate_batch_result(
+            batch_result,
+            flow_folder,
+            output_dir,
+            lambda x: x["obj_input"] == "obj_input" and x["func_input"] == "func_input",
+        )
+        assert batch_result.metrics == {"length": 4}
+
+
+# Used for testing callable entry
+class MyFlow:
+    def __init__(self, obj_input: str):
+        self.obj_input = obj_input
+
+    def __call__(self, func_input: str) -> dict:
+        return {
+            "obj_input": self.obj_input,
+            "func_input": func_input,
+            "obj_id": id(self),
+        }
+
+    def __aggregate__(self, results: list) -> dict:
+        return {"length": len(results)}

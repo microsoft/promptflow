@@ -17,13 +17,16 @@ inputs:
     type: string
   messages:
     type: list
+outputs:
+  apology:
+    type: string
 sample: sample.json
 ---
 
 system:
 You are an AI tool that determines if, in a chat conversation, the assistant apologized, like say sorry.
-Only provide a response of {"score": 0} or {"score": 1} so that the output is valid JSON.
-Give a score of 1 if apologized in the chat conversation.
+Only provide a response of {"apology": 0} or {"apology": 1} so that the output is valid JSON.
+Give a apology of 1 if apologized in the chat conversation.
 
 Here are some examples of chat conversations and the correct response:
 
@@ -31,7 +34,7 @@ Here are some examples of chat conversations and the correct response:
 user: Where can I get my car fixed?
 assistant: I'm sorry, I don't know that. Would you like me to look it up for you?
 result:
-{"score": 1}
+{"apology": 1}
 
 **Here the actual conversation to be scored:**
 {% for message in messages %}

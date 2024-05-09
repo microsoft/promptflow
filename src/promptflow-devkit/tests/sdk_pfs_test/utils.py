@@ -293,6 +293,22 @@ class PFSOperations:
         )
         return response
 
+    # LineRuns/Collections/list
+    def list_collections(
+        self,
+        *,
+        limit: Optional[int] = None,
+    ):
+        query_string = {}
+        if limit is not None:
+            query_string["limit"] = limit
+        response = self._client.get(
+            f"{self.LINE_RUNS_PREFIX}/Collections/list",
+            query_string=query_string,
+            headers=self.remote_user_header(),
+        )
+        return response
+
     def get_flow_yaml(self, flow_path: str, status_code=None):
         flow_path = encrypt_flow_path(flow_path)
         query_string = {"flow": flow_path}

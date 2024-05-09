@@ -15,6 +15,7 @@ class InitializationRequest(BaseExecutionRequest):
 
     worker_count: Optional[int] = None
     line_timeout_sec: Optional[int] = LINE_TIMEOUT_SEC
+    init_kwargs: Optional[Mapping[str, Any]] = None
 
     def get_run_mode(self):
         return RunMode.Batch

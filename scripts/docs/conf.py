@@ -59,6 +59,8 @@ source_suffix = [".rst", ".md", ".ipynb"]
 
 # Options for the linkcheck builder
 linkcheck_ignore = [
+    # openai related sites blocks the IP of the CI server.
+    r"https://openai\.com/",
     r"https://platform\.openai\.com/",
     r"https://help\.openai\.com/",
     # These are used in card links, for example 'xx.html', .md can't be resolved.

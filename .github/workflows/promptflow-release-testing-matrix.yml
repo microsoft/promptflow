@@ -75,7 +75,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-13]
         pythonVersion: ['3.8', '3.9', '3.10', '3.11']
     defaults:
       run:
@@ -129,7 +129,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-13]
         pythonVersion: ['3.8', '3.9', '3.10', '3.11']
     # snok/install-poetry need this to support Windows
     defaults:
@@ -160,13 +160,11 @@ jobs:
         run: |
           poetry run pip install $(python -c "import glob; print(glob.glob('**/promptflow_tracing-*.whl', recursive=True)[0])")
           poetry run pip install $(python -c "import glob; print(glob.glob('**/promptflow_core-*.whl', recursive=True)[0])")
+          poetry run pip install -e ../promptflow-recording
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: install test dependency group
         run: poetry install --only test
         working-directory: ${{ env.WORKING_DIRECTORY }}
-      - name: install recording
-        run: poetry install
-        working-directory: ${{ env.RECORD_DIRECTORY }}
       - name: run core tests
         run: poetry run pytest ./tests/core
         working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -186,7 +184,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-13]
         pythonVersion: ['3.8', '3.9', '3.10', '3.11']
     # snok/install-poetry need this to support Windows
     defaults:
@@ -209,13 +207,11 @@ jobs:
         run: |
           poetry run pip install $(python -c "import glob; print(glob.glob('**/promptflow_tracing-*.whl', recursive=True)[0])")
           poetry run pip install $(python -c "import glob; print(glob.glob('**/promptflow_core-*.whl', recursive=True)[0]+'[azureml-serving]')")
+          poetry run pip install -e ../promptflow-recording
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: install test dependency group
         run: poetry install --only test
         working-directory: ${{ env.WORKING_DIRECTORY }}
-      - name: install recording
-        run: poetry install
-        working-directory: ${{ env.RECORD_DIRECTORY }}
       - name: run azureml-serving tests
         run: poetry run pytest ./tests/azureml-serving
         working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -236,7 +232,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-13]
         pythonVersion: ['3.8', '3.9', '3.10', '3.11']
     # snok/install-poetry need this to support Windows
     defaults:
@@ -274,9 +270,6 @@ jobs:
       - name: install test dependency group
         run: poetry install --only test
         working-directory: ${{ env.WORKING_DIRECTORY }}
-      - name: install recording
-        run: poetry install
-        working-directory: ${{ env.RECORD_DIRECTORY }}
       - name: run devkit tests
         run: poetry run pytest ./tests/sdk_cli_test ./tests/sdk_pfs_test -n auto -m "unittest or e2etest"
         working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -293,7 +286,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-13]
         pythonVersion: ['3.8', '3.9', '3.10', '3.11']
     env:
       PROMPT_FLOW_TEST_MODE: "live"
@@ -356,7 +349,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-13]
         pythonVersion: ['3.8', '3.9', '3.10', '3.11']
     runs-on: ${{ matrix.os }}
     steps:
@@ -401,7 +394,7 @@ jobs:
         gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[azure,executor-service]"}}
         gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)"}}
         pip freeze
-    - name: Run Executor Test
+    - name: Run Executor Unit Test
       shell: pwsh
       working-directory: ${{ github.workspace }}
       run: |
@@ -409,10 +402,22 @@ jobs:
         pip install numexpr
         python scripts/building/run_coverage_tests.py `
           -p ${{ github.workspace }}/src/promptflow/promptflow `
-          -t ${{ github.workspace }}/src/promptflow/tests/executor/e2etests ${{ github.workspace }}/src/promptflow/tests/executor/unittests `
+          -t ${{ github.workspace }}/src/promptflow/tests/executor/unittests `
           -l eastus `
           -m "all" `
-          -o "${{ github.workspace }}/test-results-executor.xml"
+          -o "${{ github.workspace }}/test-results-executor-unit.xml"
+    - name: Run Executor E2E Test
+      shell: pwsh
+      working-directory: ${{ github.workspace }}
+      run: |
+        pip install langchain
+        pip install numexpr
+        python scripts/building/run_coverage_tests.py `
+          -p ${{ github.workspace }}/src/promptflow/promptflow `
+          -t ${{ github.workspace }}/src/promptflow/tests/executor/e2etests `
+          -l eastus `
+          -m "all" `
+          -o "${{ github.workspace }}/test-results-executor-e2e.xml"
     - name: Upload pytest test results (Python ${{ matrix.pythonVersion }}) (OS ${{ matrix.os }})
       if: ${{ always() }}
       uses: actions/upload-artifact@v3

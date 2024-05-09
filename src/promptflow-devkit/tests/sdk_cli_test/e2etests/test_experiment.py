@@ -320,12 +320,31 @@ class TestExperiment:
             assert len(result) == 2
 
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
+    def test_experiment_test_with_script_node(self):
+        template_path = EXP_ROOT / "basic-script-template" / "basic-script.exp.yaml"
+        client = PFClient()
+        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+            mock_func.return_value = True
+            result = client._experiments.test(
+                experiment=template_path,
+                # Test only read 1 line
+                inputs={"count": 1},  # To replace experiment.inputs
+            )
+            assert len(result) == 4
+            assert "output_path" in result["gen_data"]
+            assert "category" in result["main"]
+            assert "grade" in result["eval"]
+            assert "output_path" in result["echo"]
+            # Assert reference resolved for command node
+            assert "main.json" in open(Path(result["echo"]["output_path"]) / "output.txt", "r").read()
+
+    @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
     def test_experiment_test_with_skip_node(self):
         template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"
         client = PFClient()
         with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
             mock_func.return_value = True
-            result = client._experiments.test(
+            result = client._experiments._test_flow(
                 experiment=template_path,
                 context={
                     "node": FLOW_ROOT / "web_classification" / "flow.dag.yaml",
@@ -378,6 +397,7 @@ class TestExperiment:
             exp = pf._experiments.get(exp.name)
             exp = ExperimentOrchestrator(pf, exp).start()
 
+    @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
     def test_experiment_test_chat_group_node(self, pf: PFClient):
         template_path = EXP_ROOT / "chat-group-node-exp-template" / "exp.yaml"

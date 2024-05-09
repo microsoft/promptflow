@@ -5,8 +5,8 @@ import pytest
 
 from promptflow._core._errors import DuplicateToolMappingError
 from promptflow._utils.tool_utils import (
-    RetrieveToolFuncResultError,
     ListFunctionResponseError,
+    RetrieveToolFuncResultError,
     RetrieveToolFuncResultValidationError,
     _find_deprecated_tools,
     append_workspace_triple_to_func_input_params,
@@ -376,7 +376,7 @@ class TestToolUtils:
             (
                 ToolFuncCallScenario.REVERSE_GENERATED_BY,
                 "dummy_result",
-                f"ToolFuncCallScenario {ToolFuncCallScenario.REVERSE_GENERATED_BY} response must be a dict. "
+                f"ToolFuncCallScenario {ToolFuncCallScenario.REVERSE_GENERATED_BY.value} response must be a dict. "
                 f"dummy_result is not a dict.",
             ),
             (

@@ -6,6 +6,7 @@ import argparse
 import os
 import site
 import typing
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -76,7 +77,7 @@ def install_pkg_editable(pkg: str, verbose: bool, is_vscode: bool = False) -> No
 
         # pip install -e . from pyproject.toml/setup.py
         print_blue(f"- Installing {pkg} from source")
-        cmd = ["pip", "install", "--editable", f".{extras}"]
+        cmd = [sys.executable, "-m", "pip", "install", "--editable", f".{extras}"]
         run_cmd(cmd, verbose=verbose)
 
         # dev and test dependencies
