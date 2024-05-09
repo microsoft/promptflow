@@ -2,13 +2,14 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from typing import Any, AsyncIterator, Iterator
+from typing import Any, AsyncIterator, ContextManager, Iterator
 
 
 class GeneratorProxy:
     """A proxy for an iterator that can record all items that have been yielded."""
 
     def __init__(self, iterator: Iterator[Any]):
+        self.is_context_manager = isinstance(iterator, ContextManager)
         self._iterator = iterator
         self._items = []
 
@@ -19,6 +20,14 @@ class GeneratorProxy:
         item = next(self._iterator)
         self._items.append(item)
         return item
+
+    def __enter__(self):
+        if self.is_context_manager:
+            return self._iterator.__enter__()
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if self.is_context_manager:
+            return self._iterator.__exit__(exc_type, exc_value, traceback)
 
     @property
     def items(self) -> list:

@@ -9,12 +9,7 @@ from typing import Dict, List, Optional
 
 from ._thread_local_singleton import ThreadLocalSingleton
 from ._utils import serialize
-from .contracts.generator_proxy import (
-    AsyncGeneratorProxy,
-    GeneratorProxy,
-    generate_from_async_proxy,
-    generate_from_proxy,
-)
+from .contracts.generator_proxy import AsyncGeneratorProxy, GeneratorProxy
 from .contracts.trace import Trace, TraceType
 
 
@@ -127,10 +122,8 @@ class Tracer(ThreadLocalSingleton):
         last_trace.end_time = datetime.utcnow().timestamp()
         self._current_trace_id.set(last_trace.parent_id)
 
-        if isinstance(output, GeneratorProxy):
-            return generate_from_proxy(output)
-        elif isinstance(output, AsyncGeneratorProxy):
-            return generate_from_async_proxy(output)
+        if isinstance(output, (GeneratorProxy, AsyncGeneratorProxy)):
+            return output
         else:
             return output
 
