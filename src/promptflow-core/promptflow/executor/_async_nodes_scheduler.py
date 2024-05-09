@@ -54,7 +54,6 @@ class AsyncNodesScheduler:
             flow_logger.info(
                 "Current thread is not main thread, skip signal handler registration in AsyncNodesScheduler."
             )
-
         # Semaphore should be created in the loop, otherwise it will not work.
         loop = asyncio.get_running_loop()
         self._semaphore = asyncio.Semaphore(self._node_concurrency)
@@ -62,7 +61,11 @@ class AsyncNodesScheduler:
             monitor = ThreadWithContextVars(
                 target=monitor_long_running_coroutine,
                 args=(
-                    interval, loop, self._task_start_time, self._task_last_log_time, self._dag_manager_completed_event
+                    interval,
+                    loop,
+                    self._task_start_time,
+                    self._task_last_log_time,
+                    self._dag_manager_completed_event,
                 ),
                 daemon=True,
             )
@@ -180,7 +183,6 @@ def signal_handler(sig, frame):
     loop = asyncio.get_running_loop()
     monitor = ThreadWithContextVars(target=monitor_coroutine_after_cancellation, args=(loop,))
     monitor.start()
-    raise KeyboardInterrupt
 
 
 def log_stack_recursively(task: asyncio.Task, elapse_time: float):
