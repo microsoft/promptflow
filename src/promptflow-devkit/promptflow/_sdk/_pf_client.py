@@ -181,9 +181,10 @@ class PFClient:
             raise ValueError("at least one of data or run must be provided")
 
         is_flow_object = isinstance(flow, FlowBase)
-        if not is_flow_object and callable(flow) and not inspect.isclass(flow) and not inspect.isfunction(flow):
+        if callable(flow) and not inspect.isclass(flow) and not inspect.isfunction(flow):
             dynamic_callable = flow
-            flow = flow.__class__
+            if not is_flow_object:
+                flow = flow.__class__
         else:
             dynamic_callable = None
 
