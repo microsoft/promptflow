@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
+import pydash
 import pytest
 from _constants import PROMPTFLOW_ROOT
 from marshmallow import ValidationError
@@ -1411,6 +1412,7 @@ class TestFlowRun:
         assert local_storage._dag_path.exists()
 
         yaml_dict = load_yaml(local_storage._dag_path)
+        yaml_dict = pydash.omit(yaml_dict, "code")
         assert yaml_dict == expected_snapshot_yaml
 
         assert not local_storage._dag_path.read_text().startswith("!!omap")
