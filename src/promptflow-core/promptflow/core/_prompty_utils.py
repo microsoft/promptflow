@@ -136,11 +136,11 @@ def prepare_open_ai_request_params(model_config, template, connection):
     # if both are provided, tools and tool_choice are used and functions and function_call are ignored.
     if "tools" in params:
         validate_tools(params["tools"])
-        params["tool_choice"] = process_tool_choice(params.get("tool_choice", None))
+        params["tool_choice"] = validate_tool_choice(params.get("tool_choice", None))
     else:
         if "functions" in params:
             validate_functions(params["functions"])
-            params["function_call"] = process_function_call(params.get("function_call", None))
+            params["function_call"] = validate_function_call(params.get("function_call", None))
 
     return params
 
@@ -564,7 +564,7 @@ def validate_tools(tools):
         validate_function(common_tsg, i, tool["function"], ChatAPIInvalidTools)
 
 
-def process_function_call(function_call):
+def validate_function_call(function_call):
     if function_call is None:
         param = "auto"
     elif function_call == "auto" or function_call == "none":
@@ -589,7 +589,7 @@ def process_function_call(function_call):
     return param
 
 
-def process_tool_choice(tool_choice):
+def validate_tool_choice(tool_choice):
     if tool_choice is None:
         param = "auto"
     elif tool_choice == "auto" or tool_choice == "none":
