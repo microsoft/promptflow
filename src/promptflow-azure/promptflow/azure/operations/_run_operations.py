@@ -971,7 +971,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         logger.debug(f"Successfully uploaded run details of {run!r} to cloud.")
 
         # registry the run in the cloud
-        self._registry_existing_bulk_run(run=run)
+        self._register_existing_bulk_run(run=run)
 
         # post process after run upload, it can only be done after the run history record is created
         async_run_allowing_running_loop(run_uploader.post_process)
@@ -980,7 +980,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         if in_jupyter_notebook():
             print(f"Portal url: {self._get_run_portal_url(run_id=run.name)}")
 
-    def _registry_existing_bulk_run(self, run: Run):
+    def _register_existing_bulk_run(self, run: Run):
         """Register the run in the cloud"""
         rest_obj = run._to_rest_object()
         self._service_caller.create_existing_bulk_run(
