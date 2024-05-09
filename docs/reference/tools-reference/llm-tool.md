@@ -169,14 +169,14 @@ You are a helpful assistant.
 What is the current weather like in Boston?
 
 # assistant:
-{# assistant with 'tool_calls' must be followed by a tool block. #}
+{# The assistant message with 'tool_calls' must be followed by a tool message. #}
 ## tool_calls:
 {{outputs.llm_output.tool_calls}}
  
-{# Role tool must follow an assistant block with 'tool_calls'. #}
+{# The tool message must follow an assistant message with 'tool_calls'. #}
 {% for item in outputs.llm_output.tool_calls %}
 # tool:
-{# Each tool_call_id should correspond to assistant tool_calls. #}
+{# 'tool_call_id's should match assistant tool_calls. #}
 ## tool_call_id:
 {{item.id}}
 ## content:

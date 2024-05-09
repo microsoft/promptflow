@@ -344,7 +344,7 @@ class TestHandleOpenAIError:
         assert "Please kindly avoid using vision model in LLM tool" in exc_info.value.message
 
     @pytest.mark.parametrize(
-        "prompt_template, raw_message",
+        "prompt_template",
         [
             (
                 """
@@ -356,7 +356,7 @@ class TestHandleOpenAIError:
                     fake_tool_call_id
                     ## content:
                     fake_content
-                """, "Please make sure your chat prompt includes 'tool_calls' within the 'assistant' role"
+                """
             ),
             (
                 """
@@ -369,12 +369,17 @@ class TestHandleOpenAIError:
                     fake_tool_call_id
                     ## content:
                     fake_content
-                """, "the assistant message must be followed by a tool message"
+                """
             ),
         ],
     )
-    def test_chat_prompt_with_invalid_tool_message(self, azure_open_ai_connection, prompt_template, raw_message):
+    def test_chat_prompt_with_invalid_tool_message(self, azure_open_ai_connection, prompt_template):
         error_codes = "UserError/OpenAIError/BadRequestError"
+        raw_message = (
+            "Please make sure your chat prompt includes 'tool_calls' within the 'assistant' role. Also, the "
+            "assistant message must be followed by a tool message, with 'tool_call_id's matching the assistant message."
+            " You could refer to guideline at https://aka.ms/pfdoc/chat-prompt"
+        )
         with pytest.raises(WrappedOpenAIError) as exc_info:
             chat(azure_open_ai_connection, prompt=f"{prompt_template}", deployment_name="gpt-35-turbo")
         assert raw_message in exc_info.value.message

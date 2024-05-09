@@ -63,11 +63,9 @@ def to_openai_error_message(e: Exception) -> str:
               "please make sure you have proper role assignment on your azure openai resource. You can refer to " \
               "https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/role-based-access-control"
         return f"OpenAI API hits {ex_type}: {msg}"
-    # missing 'tool_calls' under assistant role.
-    elif "messages with role 'tool' must be a response" in error_message:
-        return f"OpenAI API hits {ex_type}: {tool_chat_prompt_tsg}. Original error: {error_message}"
-    # missing 'tool' role after assistant role with tool_calls.
-    elif "'tool_calls' must be followed by tool messages responding to each 'tool_call_id'" in error_message:
+    # invalid tool chat prompt.
+    elif ("messages with role 'tool' must be a response" in error_message or
+          "'tool_calls' must be followed by tool messages responding to each 'tool_call_id'" in error_message):
         return f"OpenAI API hits {ex_type}: {tool_chat_prompt_tsg}. Original error: {error_message}"
     else:
         return f"OpenAI API hits {ex_type}: {error_message} [{openai_error_code_ref_message}]"
