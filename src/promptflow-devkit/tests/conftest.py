@@ -41,6 +41,7 @@ except ImportError:
     import time
 
     from promptflow._cli._pf._service import _start_background_service_on_unix, _start_background_service_on_windows
+    from promptflow._sdk._constants import PF_SERVICE_HOST
     from promptflow._sdk._service.utils.utils import get_pfs_port
 
     def invoke_prompt_flow_service() -> str:
@@ -50,7 +51,7 @@ except ImportError:
         else:
             _start_background_service_on_unix(port)
         time.sleep(20)
-        response = requests.get(f"http://localhost:{port}/heartbeat")
+        response = requests.get(f"http://{PF_SERVICE_HOST}:{port}/heartbeat")
         assert response.status_code == 200, "prompt flow service is not healthy via /heartbeat"
         return port
 

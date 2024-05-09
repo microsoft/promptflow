@@ -119,7 +119,7 @@ class Flow(FlowBase):
 
     # region overrides:
     def _init_executable(self, tuning_node=None, variant=None):
-        from promptflow._sdk._orchestrator import variant_overwrite_context
+        from promptflow._sdk._orchestrator import flow_overwrite_context
         from promptflow.contracts.flow import Flow as ExecutableFlow
 
         if not tuning_node and not variant:
@@ -130,7 +130,7 @@ class Flow(FlowBase):
         # this is a little wired:
         # 1. the executable is created from a temp folder when there is additional includes
         # 2. after the executable is returned, the temp folder is deleted
-        with variant_overwrite_context(self, tuning_node, variant) as flow:
+        with flow_overwrite_context(self, tuning_node, variant) as flow:
 
             return ExecutableFlow.from_yaml(flow_file=flow.path, working_dir=flow.code)
 

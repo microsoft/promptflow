@@ -117,7 +117,7 @@ class FlowOperations(TelemetryMixin):
                     message=str(error),
                     error=error,
                 )
-            return self._client._experiments._test(
+            return self._client._experiments._test_flow(
                 flow=flow,
                 inputs=inputs,
                 environment_variables=environment_variables,
@@ -525,14 +525,14 @@ class FlowOperations(TelemetryMixin):
         update_flow_tools_json: bool = True,
     ):
         # TODO: confirm if we need to import this
-        from promptflow._sdk._orchestrator import variant_overwrite_context
+        from promptflow._sdk._orchestrator import flow_overwrite_context
 
         flow_copy_target = Path(output)
         flow_copy_target.mkdir(parents=True, exist_ok=True)
 
         # resolve additional includes and copy flow directory first to guarantee there is a final flow directory
         # TODO: shall we pop "node_variants" unless keep-variants is specified?
-        with variant_overwrite_context(
+        with flow_overwrite_context(
             flow=flow,
             tuning_node=tuning_node,
             variant=node_variant,
@@ -1005,11 +1005,12 @@ class FlowOperations(TelemetryMixin):
             from promptflow.contracts.tool import ValueType
             from promptflow.core._model_configuration import PromptyModelConfiguration
 
-            flow_meta = {"inputs": entry._data.get("inputs", {})}
-            if "outputs" in entry._data:
-                flow_meta["outputs"] = entry._data.get("outputs")
-            elif include_primitive_output:
-                flow_meta["outputs"] = {"output": {"type": "string"}}
+            flow_meta = {
+                "inputs": entry._core_prompty._get_input_signature(),
+            }
+            output_signature = entry._core_prompty._get_output_signature(include_primitive_output)
+            if output_signature:
+                flow_meta["outputs"] = output_signature
             init_dict = {}
             for field in fields(PromptyModelConfiguration):
                 init_dict[field.name] = {"type": ValueType.from_type(field.type).value}

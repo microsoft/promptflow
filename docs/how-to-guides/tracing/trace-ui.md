@@ -12,7 +12,7 @@ With `promptflow-devkit` installed, running python script with `start_trace` wil
 
 ```text
 Prompt flow service has started...
-You can view the traces from local: http://localhost:<port>/v1.0/ui/traces/?#collection=basic
+You can view the traces from local: http://127.0.0.1:<port>/v1.0/ui/traces/?#collection=basic
 ```
 
 Click the url, user will see a trace list that corresponding to each LLM calls:
@@ -44,7 +44,7 @@ Keep using **[chat_with_pdf](https://github.com/microsoft/promptflow/tree/main/e
 pf run create --flow . --data "./data/bert-paper-qna.jsonl" --column-mapping chat_history='${data.chat_history}' pdf_url='${data.pdf_url}' question='${data.question}'
 ```
 
-Then you will get a run related trace URL, e.g. `http://localhost:<port>/v1.0/ui/traces?run=chat_with_pdf_20240226_181222_219335`
+Then you will get a run related trace URL, e.g. `http://127.0.0.1:<port>/v1.0/ui/traces?run=chat_with_pdf_20240226_181222_219335`
 
 ![batch_run_record](../../media/trace/batch_run_record.png)
 

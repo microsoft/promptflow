@@ -655,6 +655,7 @@ class ConnectionType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     WEAVIATE = "Weaviate"
     FORM_RECOGNIZER = "FormRecognizer"
     SERVERLESS = "Serverless"
+    AI_SERVICES = "AIServices"
 
 class ConsumeMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
@@ -865,6 +866,7 @@ class ExperimentNodeType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
     FLOW = "Flow"
     CHAT_GROUP = "ChatGroup"
+    COMMAND = "Command"
 
 class FeaturizationMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
@@ -907,6 +909,7 @@ class FlowRunMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     EXPERIMENT_EVAL = "ExperimentEval"
     CHAT_GROUP = "ChatGroup"
     CHAT_GROUP_ROLE = "ChatGroupRole"
+    COMMAND = "Command"
 
 class FlowRunStatusEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
@@ -926,6 +929,7 @@ class FlowRunStatusEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     FINALIZING = "Finalizing"
     CANCELED = "Canceled"
     BYPASSED = "Bypassed"
+    UNAVAILABLE = "Unavailable"
 
 class FlowRunTypeEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
@@ -1466,6 +1470,11 @@ class RecurrenceFrequency(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     WEEK = "Week"
     MONTH = "Month"
 
+class ResourceType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
+
+    ATTACH = "Attach"
+    HOBO = "HOBO"
+
 class RunDisplayNameGenerationType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
     AUTO_APPEND = "AutoAppend"
@@ -1735,6 +1744,25 @@ class ToolType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     CSHARP = "csharp"
     TYPESCRIPT = "typescript"
 
+class TraceCosmosConfiguration(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
+
+    NONE = "None"
+    READ_DISABLED = "ReadDisabled"
+    WRITE_DISABLED = "WriteDisabled"
+    DISABLED = "Disabled"
+    DIAGNOSTIC_DISABLED = "DiagnosticDisabled"
+    DATA_CLEANED = "DataCleaned"
+    ACCOUNT_DELETED = "AccountDeleted"
+
+class TraceCosmosStatus(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
+
+    NOT_EXISTS = "NotExists"
+    INITIALIZING = "Initializing"
+    INITIALIZED = "Initialized"
+    DELETING = "Deleting"
+    DELETED = "Deleted"
+    NOT_AVAILABLE = "NotAvailable"
+
 class TrainingOutputType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
     METRICS = "Metrics"
@@ -1842,6 +1870,7 @@ class ValueType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     IMAGE = "image"
     ASSISTANT_DEFINITION = "assistant_definition"
     SERVERLESS_CONNECTION = "ServerlessConnection"
+    AI_SERVICES_CONNECTION = "AIServicesConnection"
 
 class VmPriority(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
