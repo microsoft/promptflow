@@ -219,14 +219,7 @@ class TestCliWithAzure:
             f"{DATAS_DIR}/prompty_inputs.jsonl",
             "--name",
             name,
-            "--subscription",
-            "96aede12-2f73-41cb-b983-6d11a904839b",
-            "-g",
-            "promptflow",
-            "-w",
-            "promptflow-canary",
             pf=pf,
-            # runtime=runtime,
         )
         run = pf.runs.get(run=name)
         assert isinstance(run, Run)
