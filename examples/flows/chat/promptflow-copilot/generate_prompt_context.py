@@ -5,6 +5,7 @@ from typing import List
 from promptflow import tool
 import re
 
+
 @tool
 def generate_prompt_context(search_result: List[dict]) -> str:
     """Generate the context for the prompt."""
