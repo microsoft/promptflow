@@ -99,15 +99,15 @@ az account set -s <your_subscription_id>
 az configure --defaults group=<your_resource_group_name> workspace=<your_workspace_name>
 
 # create run
-pfazure run create --flow . --data ./data.jsonl --column-mapping url='${data.url}' --stream --runtime example-runtime-ci
-# pfazure run create --flow . --data ./data.jsonl --column-mapping url='${data.url}' --stream # compute session
+pfazure run create --flow . --data ./data.jsonl --column-mapping url='${data.url}' --stream --runtime example-runtime-ci 
+# pfazure run create --flow . --data ./data.jsonl --column-mapping url='${data.url}' --stream # automatic runtime
 
 # (Optional) create a new random run name for further use
 run_name="web_classification_"$(openssl rand -hex 12)
 
 # create run using yaml file, --name is optional
 pfazure run create --file run.yml --runtime example-runtime-ci --name $run_name
-# pfazure run create --file run.yml --stream --name $run_name # compute session
+# pfazure run create --file run.yml --stream --name $run_name # automatic runtime
 
 
 pfazure run stream --name $run_name
