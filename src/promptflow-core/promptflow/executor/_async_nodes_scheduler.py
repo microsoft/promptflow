@@ -6,7 +6,6 @@ import asyncio
 import contextvars
 import inspect
 import os
-import signal
 import threading
 import time
 import traceback
@@ -46,14 +45,7 @@ class AsyncNodesScheduler:
         inputs: Dict[str, Any],
         context: FlowExecutionContext,
     ) -> Tuple[dict, dict]:
-        # TODO: Provide cancel API
-        if threading.current_thread() is threading.main_thread():
-            signal.signal(signal.SIGINT, signal_handler)
-            signal.signal(signal.SIGTERM, signal_handler)
-        else:
-            flow_logger.info(
-                "Current thread is not main thread, skip signal handler registration in AsyncNodesScheduler."
-            )
+        flow_logger.info("Current thread is not main thread, skip signal handler registration in AsyncNodesScheduler.")
         # Semaphore should be created in the loop, otherwise it will not work.
         loop = asyncio.get_running_loop()
         self._semaphore = asyncio.Semaphore(self._node_concurrency)
@@ -83,7 +75,11 @@ class AsyncNodesScheduler:
         # This is because it will always call `executor.shutdown()` when exiting the `with` block.
         # Then the event loop will wait for all tasks to be completed before raising the cancellation error.
         # See reference: https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Executor
-        outputs = await self._execute_with_thread_pool(executor, nodes, inputs, context)
+        try:
+            outputs = await self._execute_with_thread_pool(executor, nodes, inputs, context)
+        except asyncio.CancelledError:
+            await self.cancel()
+            raise
         executor.shutdown()
         return outputs
 
@@ -174,15 +170,11 @@ class AsyncNodesScheduler:
         # The task will not be executed before calling create_task.
         return await asyncio.get_running_loop().run_in_executor(executor, context.invoke_tool, node, f, kwargs)
 
-
-def signal_handler(sig, frame):
-    """
-    Start a thread to monitor coroutines after receiving signal.
-    """
-    flow_logger.info(f"Received signal {sig}({signal.Signals(sig).name}), start coroutine monitor thread.")
-    loop = asyncio.get_running_loop()
-    monitor = ThreadWithContextVars(target=monitor_coroutine_after_cancellation, args=(loop,))
-    monitor.start()
+    async def cancel(self):
+        flow_logger.info("Cancel requested, monitoring coroutines after cancellation.")
+        loop = asyncio.get_running_loop()
+        monitor = ThreadWithContextVars(target=monitor_coroutine_after_cancellation, args=(loop,))
+        monitor.start()
 
 
 def log_stack_recursively(task: asyncio.Task, elapse_time: float):
