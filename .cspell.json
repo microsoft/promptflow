@@ -28,6 +28,7 @@
     "examples/flex-flows/README.md",
     "examples/prompty/README.md",
     "scripts/docs/_build/**",
+    "scripts/readme/**",
     "src/promptflow-azure/promptflow/azure/_restclient/flow/**",
     "src/promptflow-azure/promptflow/azure/_restclient/swagger.json",
     "src/promptflow-azure/promptflow/azure/_models/**",
@@ -107,6 +108,7 @@
     "meid",
     "Entra",
     "uvicorn",
+    "attribited",
     "MistralAI"
   ],
   "ignoreWords": [
@@ -209,6 +211,8 @@
     "wscript",
     "raisvc",
     "evals",
+    "setenv",
+    "pypdf",
     "redoc",
     "starlette",
     "mlindex",
