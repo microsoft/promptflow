@@ -1,9 +1,10 @@
-- name: Random Wait
-  uses: AliSajid/random-wait-action@main
-  with:
-    minimum: 0
-    maximum: 300
 - name: {{ step_name }}
+  uses: azure/powershell@v1
+  with:
+    azPSVersion: "latest"
+    inlineScript: |
+      Disconnect-AzAccount
+- name: {{ step_name }}_login
   uses: azure/login@v1
   with:
     subscription-id: ${{ '{{' }}secrets.AZURE_SUBSCRIPTION_ID}}
