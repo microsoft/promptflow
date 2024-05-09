@@ -342,22 +342,24 @@ class LineRun:
         except json.JSONDecodeError:
             return value
 
-    def _get_inputs_from_span(self, span: Span) -> typing.Optional[typing.Dict]:
+    @staticmethod
+    def _get_inputs_from_span(span: Span) -> typing.Optional[typing.Dict]:
         for event in span.events:
             if event[SpanEventFieldName.NAME] == SPAN_EVENTS_NAME_PF_INPUTS:
                 return json.loads(event[SpanEventFieldName.ATTRIBUTES][SPAN_EVENTS_ATTRIBUTE_PAYLOAD])
         # 3rd-party traces may not follow prompt flow way to persist inputs in events
         if SpanAttributeFieldName.INPUTS in span.attributes:
-            return self._parse_io_from_span_attributes(span.attributes[SpanAttributeFieldName.INPUTS])
+            return LineRun._parse_io_from_span_attributes(span.attributes[SpanAttributeFieldName.INPUTS])
         return None
 
-    def _get_outputs_from_span(self, span: Span) -> typing.Optional[typing.Dict]:
+    @staticmethod
+    def _get_outputs_from_span(span: Span) -> typing.Optional[typing.Dict]:
         for event in span.events:
             if event[SpanEventFieldName.NAME] == SPAN_EVENTS_NAME_PF_OUTPUT:
                 return json.loads(event[SpanEventFieldName.ATTRIBUTES][SPAN_EVENTS_ATTRIBUTE_PAYLOAD])
         # 3rd-party traces may not follow prompt flow way to persist output in events
         if SpanAttributeFieldName.OUTPUT in span.attributes:
-            return self._parse_io_from_span_attributes(span.attributes[SpanAttributeFieldName.OUTPUT])
+            return LineRun._parse_io_from_span_attributes(span.attributes[SpanAttributeFieldName.OUTPUT])
         return None
 
     @staticmethod
