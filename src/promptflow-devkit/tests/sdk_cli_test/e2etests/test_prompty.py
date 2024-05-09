@@ -432,3 +432,26 @@ class TestPrompty:
         with pytest.raises(MissingRequiredInputError) as ex:
             prompty.render(mock_key="mock_value")
         assert "Missing required inputs" in ex.value.message
+
+    def test_prompty_with_reference_file(self, caplog):
+        # Test run prompty with reference file
+        prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_with_reference_file.prompty")
+        result = prompty(question="What'''s the weather like in Boston today?")
+        assert "tool_calls" in result
+        assert result["tool_calls"][0]["function"]["name"] == "get_current_weather"
+        assert "Boston" in result["tool_calls"][0]["function"]["arguments"]
+
+        # Test override prompty with reference file
+        prompty = Flow.load(
+            source=f"{PROMPTY_DIR}/prompty_example_with_tools.prompty", sample="${file:../datas/prompty_sample.json}"
+        )
+        with open(DATA_DIR / "prompty_sample.json", "r") as f:
+            expect_sample = json.load(f)
+        assert prompty._data["sample"] == expect_sample
+
+        # Test reference file doesn't exist
+        with pytest.raises(UserErrorException) as ex:
+            Flow.load(
+                source=f"{PROMPTY_DIR}/prompty_example_with_tools.prompty", sample="${file:../datas/invalid_path.json}"
+            )
+        assert "Cannot find the reference file" in ex.value.message

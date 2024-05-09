@@ -3,8 +3,10 @@ import json
 import os
 import re
 from dataclasses import asdict
+from pathlib import Path
 from typing import List, Mapping
 
+from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.core._connection import AzureOpenAIConnection, OpenAIConnection, _Connection
 from promptflow.core._errors import (
     ChatAPIFunctionRoleInvalidFormatError,
@@ -18,6 +20,9 @@ from promptflow.core._errors import (
 )
 from promptflow.core._model_configuration import ModelConfiguration
 from promptflow.core._utils import render_jinja_template_content
+from promptflow.exceptions import UserErrorException
+
+logger = LoggerFactory.get_logger(name=__name__)
 
 
 def update_dict_recursively(origin_dict, overwrite_dict):
@@ -262,6 +267,43 @@ def format_llm_response(response, api, is_first_choice, response_format=None, st
             response_content = getattr(response.choices[0].message, "content", "")
         result = format_choice(response_content)
     return result
+
+
+def resolve_references(origin):
+    """Resolve all reference in the object."""
+    if isinstance(origin, str):
+        return resolve_reference(origin)
+    elif isinstance(origin, list):
+        return [resolve_references(item) for item in origin]
+    elif isinstance(origin, dict):
+        return {key: resolve_references(value) for key, value in origin.items()}
+    else:
+        return origin
+
+
+def resolve_reference(reference):
+    """
+    Resolve the reference, two types are supported, env, file.
+    When the string format is ${env:ENV_NAME}, the environment variable value will be returned.
+    When the string format is ${file:file_path}, return the loaded json object.
+    """
+    pattern = r"\$\{(\w+):(.*)\}"
+    match = re.match(pattern, reference)
+    if match:
+        reference_type, value = match.groups()
+        if reference_type == "env":
+            return os.environ.get(value)
+        elif reference_type == "file":
+            if not Path(value).exists():
+                raise UserErrorException(f"Cannot find the reference file {value}.")
+            # TODO: support load other type files.
+            with open(value, "r") as f:
+                return json.load(f)
+        else:
+            logger.warning(f"Unknown reference type {reference_type}, return original value {reference}.")
+            return reference
+    else:
+        return reference
 
 
 # region: Copied from promptflow-tools
