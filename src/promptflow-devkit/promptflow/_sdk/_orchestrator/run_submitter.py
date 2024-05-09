@@ -7,6 +7,7 @@ import datetime
 from pathlib import Path
 from typing import Union
 
+from promptflow._constants import SystemMetricKeys
 from promptflow._proxy import ProxyFactory
 from promptflow._sdk._constants import REMOTE_URI_PREFIX, ContextAttributeKey, FlowRunProperties
 from promptflow._sdk.entities._flows import Flow, Prompty
@@ -22,10 +23,9 @@ from promptflow.exceptions import UserErrorException, ValidationException
 from promptflow.tracing._operation_context import OperationContext
 from promptflow.tracing._start_trace import is_collection_writeable, start_trace
 
-from .._configuration import Configuration
 from .._load_functions import load_flow
 from ..entities._flows import FlexFlow
-from .utils import SubmitterHelper, variant_overwrite_context
+from .utils import SubmitterHelper, flow_overwrite_context
 
 logger = LoggerFactory.get_logger(name=__name__)
 
@@ -35,7 +35,7 @@ class RunSubmitter:
 
     def __init__(self, client):
         self._client = client
-        self._config = Configuration(overrides=self._client._config)
+        self._config = self._client._config
         self.run_operations = self._client.runs
 
     def submit(self, run: Run, stream=False, **kwargs):
@@ -95,20 +95,20 @@ class RunSubmitter:
             # pass with internal parameter `_collection`
             start_trace(
                 attributes=attributes,
-                run=run.name,
+                run=run,
                 _collection=collection_for_run,
                 path=flow_path,
             )
         else:
             logger.debug("trace collection is protected, will honor existing collection.")
-            start_trace(attributes=attributes, run=run.name, path=flow_path)
+            start_trace(attributes=attributes, run=run, path=flow_path)
 
         self._validate_inputs(run=run)
 
         local_storage = LocalStorageOperations(run, stream=stream, run_mode=RunMode.Batch)
         with local_storage.logger:
             flow_obj = load_flow(source=run.flow)
-            with variant_overwrite_context(flow_obj, tuning_node, variant, connections=run.connections) as flow:
+            with flow_overwrite_context(flow_obj, tuning_node, variant, connections=run.connections) as flow:
                 self._submit_bulk_run(flow=flow, run=run, local_storage=local_storage)
 
     @classmethod
@@ -151,6 +151,8 @@ class RunSubmitter:
         status = Status.Failed.value
         exception = None
         # create run to db when fully prepared to run in executor, otherwise won't create it
+        run._status = Status.Running.value
+        run._start_time = datetime.datetime.now()
         run._dump()  # pylint: disable=protected-access
 
         resume_from_run_storage = (
@@ -210,8 +212,19 @@ class RunSubmitter:
             local_storage.persist_result(batch_result)
             # exceptions
             local_storage.dump_exception(exception=exception, batch_result=batch_result)
-            # system metrics: token related
-            system_metrics = batch_result.system_metrics.to_dict() if batch_result else {}
+            # system metrics
+            system_metrics = {}
+            if batch_result:
+                system_metrics.update(batch_result.system_metrics.to_dict())  # token related
+                system_metrics.update(
+                    {f"{SystemMetricKeys.NODE_PREFIX}.{k}": v for k, v in batch_result.node_status.items()}
+                )
+                system_metrics.update(
+                    {
+                        SystemMetricKeys.LINES_COMPLETED: batch_result.completed_lines,
+                        SystemMetricKeys.LINES_FAILED: batch_result.failed_lines,
+                    }
+                )
 
             run = self.run_operations.update(
                 name=run.name,
@@ -262,7 +275,7 @@ class RunSubmitter:
             from promptflow._sdk._tracing import _get_ws_triad_from_pf_config
             from promptflow.azure._cli._utils import _get_azure_pf_client
 
-            ws_triad = _get_ws_triad_from_pf_config(path=run._get_flow_dir().resolve())
+            ws_triad = _get_ws_triad_from_pf_config(path=run._get_flow_dir().resolve(), config=run._config)
             pf = _get_azure_pf_client(
                 subscription_id=ws_triad.subscription_id,
                 resource_group=ws_triad.resource_group_name,

@@ -7,12 +7,12 @@ from typing import List
 from promptflow._sdk._constants import MAX_LIST_CLI_RESULTS
 from promptflow._sdk._errors import MissingAzurePackage
 from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, monitor_operation
-from promptflow._sdk._utils import print_red_error
+from promptflow._sdk._utilities.general_utils import print_red_error
 from promptflow._sdk.entities._connection import _Connection
 from promptflow._utils.credential_utils import get_default_azure_credential
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.core._connection_provider._utils import (
-    interactive_credential_disabled,
+    interactive_credential_enabled,
     is_from_cli,
     is_github_codespaces,
 )
@@ -73,14 +73,14 @@ class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
                     "See https://docs.microsoft.com/cli/azure/authenticate-azure-cli for more details."
                 )
                 sys.exit(1)
-        if interactive_credential_disabled():
-            return DefaultAzureCredential(exclude_interactive_browser_credential=True)
+        if interactive_credential_enabled():
+            return DefaultAzureCredential(exclude_interactive_browser_credential=False)
         if is_github_codespaces():
             # For code spaces, append device code credential as the fallback option.
-            credential = DefaultAzureCredential()
+            credential = DefaultAzureCredential(exclude_interactive_browser_credential=True)
             credential.credentials = (*credential.credentials, DeviceCodeCredential())
             return credential
-        return DefaultAzureCredential(exclude_interactive_browser_credential=False)
+        return DefaultAzureCredential(exclude_interactive_browser_credential=True)
 
     @monitor_operation(activity_name="pf.connections.azure.list", activity_type=ActivityType.PUBLICAPI)
     def list(

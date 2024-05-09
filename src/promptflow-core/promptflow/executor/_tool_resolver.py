@@ -13,7 +13,7 @@ from typing import Callable, List, Optional
 
 from promptflow._constants import MessageFormatType
 from promptflow._core._errors import InvalidSource
-from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR, INPUTS_TO_ESCAPE_PARAM_KEY, TOOL_TYPE_TO_ESCAPE
+from promptflow._core.tool import INPUTS_TO_ESCAPE_PARAM_KEY, STREAMING_OPTION_PARAMETER_ATTR, TOOL_TYPE_TO_ESCAPE
 from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping
 from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow._utils.tool_utils import (
@@ -36,9 +36,9 @@ from promptflow.executor._assistant_tool_invoker import (
 )
 from promptflow.executor._docstring_parser import DocstringParser
 from promptflow.executor._errors import (
-    ConnectionNotFound,
     EmptyLLMApiMapping,
     FailedToGenerateToolDefinition,
+    GetConnectionError,
     InvalidAssistantTool,
     InvalidConnectionType,
     InvalidCustomLLMTool,
@@ -83,9 +83,11 @@ class ToolResolver:
         return resolver
 
     def _convert_to_connection_value(self, k: str, v: InputAssignment, node_name: str, conn_types: List[ValueType]):
-        connection_value = self._connection_provider.get(v.value)
-        if not connection_value:
-            raise ConnectionNotFound(f"Connection {v.value} not found for node {node_name!r} input {k!r}.")
+        try:
+            connection_value = self._connection_provider.get(v.value)
+        except Exception as e:  # Cache all exception as different provider raises different exceptions
+            # Raise new error with node details
+            raise GetConnectionError(v.value, node_name, e) from e
         # Check if type matched
         if not any(type(connection_value).__name__ == typ for typ in conn_types):
             msg = (
@@ -108,9 +110,11 @@ class ToolResolver:
         if not conn_types:
             msg = f"Input '{k}' for node '{node_name}' has invalid types: {conn_types}."
             raise NodeInputValidationError(message=msg)
-        connection_value = self._connection_provider.get(v.value)
-        if not connection_value:
-            raise ConnectionNotFound(f"Connection {v.value} not found for node {node_name!r} input {k!r}.")
+        try:
+            connection_value = self._connection_provider.get(v.value)
+        except Exception as e:  # Cache all exception as different provider raises different exceptions
+            # Raise new error with node details
+            raise GetConnectionError(v.value, node_name, e) from e
 
         custom_defined_connection_class_name = conn_types[0]
         source_type = getattr(source, "type", None)
@@ -478,14 +482,11 @@ class ToolResolver:
                 del node_inputs[k]
 
     def _get_llm_node_connection(self, node: Node):
-        connection = self._connection_provider.get(node.connection)
-        if connection is None:
-            raise ConnectionNotFound(
-                message_format="Connection '{connection}' of LLM node '{node_name}' is not found.",
-                connection=node.connection,
-                node_name=node.name,
-                target=ErrorTarget.EXECUTOR,
-            )
+        try:
+            connection = self._connection_provider.get(node.connection)
+        except Exception as e:  # Cache all exception as different provider raises different exceptions
+            # Raise new error with node details
+            raise GetConnectionError(node.connection, node.name, e) from e
         return connection
 
     @staticmethod

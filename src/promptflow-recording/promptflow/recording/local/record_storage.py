@@ -456,6 +456,11 @@ class Counter:
         Just count how many tokens are calculated. Different from
         openai_metric_calculator, this is directly returned from AOAI.
         """
+
+        # If file is not set, just return the original llm call return object.
+        # Counting is not necessary.
+        if self.file is None:
+            return obj
         output_value, output_generator, output_type = RecordCache._parse_output(obj)
         if "generator" in output_type:
             count = len(output_value)

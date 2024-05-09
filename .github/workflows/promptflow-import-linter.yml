@@ -25,21 +25,16 @@ jobs:
     - uses: snok/install-poetry@v1
     - name: Install all packages
       run: |
-        cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-tracing
-        touch promptflow/__init__.py
-        poetry install --with dev
-        cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-core
-        touch promptflow/__init__.py
-        poetry install --with dev
-        cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-devkit
-        touch promptflow/__init__.py
-        poetry install --with dev
-        cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-azure
-        touch promptflow/__init__.py
-        poetry install --with dev
-        cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-evals
-        touch promptflow/__init__.py
-        poetry install --with dev
+        touch src/promptflow-tracing/promptflow/__init__.py
+        poetry install --with dev -C ${{ env.WORKING_DIRECTORY }}/src/promptflow-tracing
+        touch src/promptflow-core/promptflow/__init__.py
+        poetry install --with dev -C ${{ env.WORKING_DIRECTORY }}/src/promptflow-core
+        touch src/promptflow-devkit/promptflow/__init__.py
+        poetry install --with dev -C ${{ env.WORKING_DIRECTORY }}/src/promptflow-devkit
+        touch src/promptflow-azure/promptflow/__init__.py
+        poetry install --with dev -C ${{ env.WORKING_DIRECTORY }}/src/promptflow-azure
+        touch src/promptflow-evals/promptflow/__init__.py
+        poetry install --with dev -C ${{ env.WORKING_DIRECTORY }}/src/promptflow-evals
       working-directory: ${{ env.WORKING_DIRECTORY }}
     - name: import lint
       run: |
@@ -59,4 +54,18 @@ jobs:
         cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-evals
         poetry run lint-imports
       working-directory: ${{ env.WORKING_DIRECTORY }}
+    - name: import lint testing private imports from global
+      working-directory: ${{ env.WORKING_DIRECTORY }}/src/promptflow-azure
+      run: |
+        set -xe
+        rm ${{ env.WORKING_DIRECTORY }}/src/promptflow-tracing/promptflow/__init__.py
+        rm ${{ env.WORKING_DIRECTORY }}/src/promptflow-core/promptflow/__init__.py
+        rm ${{ env.WORKING_DIRECTORY }}/src/promptflow-devkit/promptflow/__init__.py
+        rm ${{ env.WORKING_DIRECTORY }}/src/promptflow-azure/promptflow/__init__.py
+        rm ${{ env.WORKING_DIRECTORY }}/src/promptflow-evals/promptflow/__init__.py
+        echo "=== Add more import linter when facing more import errors ==="
+
+        echo "=== promptflow-azure full lints ==="
+        poetry run pip install langchain
+        poetry run python ${{ github.workspace }}/scripts/import_linter/import_linter.py
 

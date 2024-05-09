@@ -7,7 +7,7 @@ original function/module names the same as before, otherwise mlflow will be brok
 """
 from promptflow._constants import FLOW_DAG_YAML as DAG_FILE_NAME
 from promptflow._sdk._orchestrator import remove_additional_includes
-from promptflow._sdk._utils import _merge_local_code_and_additional_includes
+from promptflow._sdk._utilities.general_utils import _merge_local_code_and_additional_includes
 from promptflow._sdk.entities._flows import Flow
 from promptflow.core._serving.flow_invoker import FlowInvoker
 

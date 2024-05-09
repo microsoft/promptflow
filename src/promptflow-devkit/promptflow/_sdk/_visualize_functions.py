@@ -9,13 +9,18 @@ from pathlib import Path
 from typing import Optional
 
 from promptflow._sdk._constants import VIS_HTML_TMPL
-from promptflow._sdk._utils import render_jinja_template
+from promptflow._sdk._utilities.general_utils import render_jinja_template
 from promptflow.contracts._run_management import VisualizationRender
 
 
 def generate_html_string(data: dict) -> str:
     visualization_render = VisualizationRender(data=data)
     return render_jinja_template(VIS_HTML_TMPL, **asdict(visualization_render))
+
+
+def generate_trace_ui_html_string(trace_ui_url: str) -> str:
+    # this HTML will automatically redirect to the trace UI page when opened
+    return f'<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; URL=\'{trace_ui_url}\'" /></head><body></body></html>'  # noqa: E501
 
 
 def try_to_open_html(html_path: str) -> None:

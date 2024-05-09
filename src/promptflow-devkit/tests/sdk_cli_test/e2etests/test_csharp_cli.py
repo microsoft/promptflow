@@ -8,7 +8,7 @@ from typing import TypedDict
 import pytest
 
 from promptflow._cli._pf.entry import main
-from promptflow._sdk._utils.serve_utils import find_available_port
+from promptflow._sdk._utilities.serve_utils import find_available_port
 
 
 # TODO: move this to a shared utility module

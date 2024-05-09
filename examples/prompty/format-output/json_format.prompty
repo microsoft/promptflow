@@ -1,0 +1,50 @@
+---
+name: Json Format Prompt
+description: A basic prompt that uses the GPT-3 chat API to answer questions
+model:
+    api: chat
+    configuration:
+      type: azure_openai
+      azure_deployment: gpt-35-turbo-0125
+      connection: open_ai_connection
+    parameters:
+      max_tokens: 128
+      temperature: 0.2
+      response_format:
+        type: json_object
+inputs:
+  first_name:
+   type: string
+   default: John
+  last_name:
+   type: string
+   default: Doh
+  question:
+    type: string
+  chat_history:
+    type: list
+    default: []
+outputs: 
+  name:
+    type: string
+  answer:
+    type: string
+
+sample: sample.json
+---
+system:
+You are an AI assistant who helps people find information.
+As the assistant, you answer questions briefly, succinctly. Your structured response. Only accepts JSON format, likes below:
+{"name": customer_name, "answer": the answer content}
+
+# Customer
+You are helping {{first_name}} {{last_name}} to find answers to their questions.
+Use their name to address them in your responses.
+
+{% for item in chat_history %}
+{{item.role}}:
+{{item.content}}
+{% endfor %}
+
+user:
+{{question}}

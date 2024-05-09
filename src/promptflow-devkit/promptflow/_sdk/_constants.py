@@ -482,7 +482,7 @@ class Local2Cloud:
 class Local2CloudProperties:
     """Run properties that server needs when uploading local run to cloud."""
 
-    TOTAL_TOKENS = "azureml.promptflow.total_tokens"
+    PREFIX = "azureml.promptflow"
     EVAL_ARTIFACTS = "_azureml.evaluate_artifacts"
 
 
@@ -516,6 +516,7 @@ class ChatGroupSpeakOrder(str, Enum):
 
 
 TRACE_LIST_DEFAULT_LIMIT = 1000
+TRACE_COLLECTION_LIST_DEFAULT_LIMIT = 100
 
 
 class IdentityKeys(str, Enum):

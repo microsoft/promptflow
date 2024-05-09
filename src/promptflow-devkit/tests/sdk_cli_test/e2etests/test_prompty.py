@@ -211,6 +211,13 @@ class TestPrompty:
             output = json.loads(f.readline())
             assert "6" in output["output"]
 
+        # test pf run wile loaded prompty
+        prompty = load_flow(source=f"{PROMPTY_DIR}/prompty_example.prompty")
+        run = pf.run(flow=prompty, data=f"{DATA_DIR}/prompty_inputs.jsonl")
+        assert run.status == "Completed"
+        run_dict = run._to_dict()
+        assert not run_dict.get("error", None), f"error in run_dict {run_dict['error']}"
+
     def test_prompty_test(self, pf: PFClient):
         result = pf.test(
             flow=f"{PROMPTY_DIR}/prompty_example.prompty", inputs={"question": "what is the result of 1+1?"}
@@ -348,6 +355,18 @@ class TestPrompty:
             prompty()
         assert "Only dict and json file are supported as sample in prompty" in ex.value.message
 
+        # Test sample field as input signature
+        prompty = Flow.load(source=f"{PROMPTY_DIR}/sample_as_input_signature.prompty")
+        result = prompty()
+        assert "2" in result
+
+        input_signature = prompty._get_input_signature()
+        assert input_signature == {
+            "firstName": {"type": "string"},
+            "lastName": {"type": "string"},
+            "question": {"type": "string"},
+        }
+
     def test_prompty_with_default_connection(self, pf: PFClient):
         connection = pf.connections.get(name="azure_open_ai_connection", with_secrets=True)
         os.environ["AZURE_OPENAI_ENDPOINT"] = connection.api_base
@@ -355,3 +374,29 @@ class TestPrompty:
         prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example_with_default_connection.prompty")
         result = prompty(question="what is the result of 1+1?")
         assert "2" in result
+
+    def test_render_prompty(self):
+        prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty")
+        result = prompty.render(question="what is the result of 1+1?")
+        expect = [
+            {
+                "role": "system",
+                "content": "You are an AI assistant who helps people find information.\nAs the assistant, "
+                "you answer questions briefly, succinctly,\nand in a personable manner using markdown "
+                "and even add some personal flair with appropriate emojis.\n\n# Safety\n- You **should "
+                "always** reference factual statements to search results based on [relevant documents]\n-"
+                " Search results based on [relevant documents] may be incomplete or irrelevant. You do not"
+                " make assumptions\n# Customer\nYou are helping John Doh to find answers to their "
+                "questions.\nUse their name to address them in your responses.",
+            },
+            {"role": "user", "content": "what is the result of 1+1?"},
+        ]
+        assert result == str(expect)
+
+        with pytest.raises(UserErrorException) as ex:
+            prompty.render("mock_value")
+        assert "Prompty can only be rendered with keyword arguments." in ex.value.message
+
+        with pytest.raises(MissingRequiredInputError) as ex:
+            prompty.render(mock_key="mock_value")
+        assert "Missing required inputs" in ex.value.message

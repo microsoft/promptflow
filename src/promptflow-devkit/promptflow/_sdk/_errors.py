@@ -259,6 +259,30 @@ class LineRunNotFoundError(SDKError):
     pass
 
 
+class ArtifactInternalError(SDKInternalError):
+    """Exception raised if artifact internal error."""
+
+    pass
+
+
+class AssetInternalError(SDKInternalError):
+    """Exception raised if asset internal error."""
+
+    pass
+
+
+class RunHistoryInternalError(SDKInternalError):
+    """Exception raised if run history internal error."""
+
+    pass
+
+
+class MetricInternalError(SDKInternalError):
+    """Exception raised if metric internal error."""
+
+    pass
+
+
 class MissingAzurePackage(SDKError):
     """Exception raised if missing required package."""
 
@@ -275,5 +299,11 @@ class MissingAzurePackage(SDKError):
 
 class WrongTraceSearchExpressionError(SDKError):
     """Exception raised if the trace search expression is wrong."""
+
+    pass
+
+
+class PromptFlowServiceInvocationError(SDKError):
+    """Exception raised if prompt flow service invocation failed."""
 
     pass

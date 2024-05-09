@@ -22,7 +22,11 @@ inputs:
     type: string
   ground_truth:
     type: string
-
+outputs:
+  score:
+    type: string
+  explanation:
+    type: string
 ---
 system:
 You are an AI assistant. 

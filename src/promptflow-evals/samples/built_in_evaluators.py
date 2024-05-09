@@ -6,18 +6,16 @@ from promptflow.core import AzureOpenAIModelConfiguration
 from promptflow.evals.evaluators import (
     ChatEvaluator,
     CoherenceEvaluator,
+    ContentSafetyEvaluator,
     F1ScoreEvaluator,
     FluencyEvaluator,
     GroundednessEvaluator,
+    HateUnfairnessEvaluator,
     QAEvaluator,
     RelevanceEvaluator,
-    SimilarityEvaluator,
-)
-from promptflow.evals.evaluators.content_safety import (
-    ContentSafetyEvaluator,
-    HateUnfairnessEvaluator,
     SelfHarmEvaluator,
     SexualEvaluator,
+    SimilarityEvaluator,
     ViolenceEvaluator,
 )
 

@@ -42,4 +42,5 @@ cat ../.env
 ```bash
 # sample.json contains messages field which contains the chat conversation.
 pf flow test --flow apology.prompty --inputs sample.json
+pf flow test --flow apology.prompty --inputs sample_no_apology.json
 ```
