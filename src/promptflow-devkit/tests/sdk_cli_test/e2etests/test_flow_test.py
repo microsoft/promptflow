@@ -302,6 +302,13 @@ class TestFlowTest:
         result = _client._flows._test(flow=flow_path, inputs={"input_val": "val1"})
         assert result.run_info.status.value == "Completed"
 
+    def test_eager_flow_test_with_user_code_error(self):
+        clear_module_cache("entry")
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/exception_in_user_code/").absolute()
+        result = _client._flows._test(flow=flow_path)
+        assert result.run_info.status.value == "Failed"
+        assert "FlexFlowExecutionErrorDetails" in str(result.run_info.error)
+
     def test_eager_flow_test_invalid_cases(self):
         # wrong entry provided
         flow_path = Path(f"{EAGER_FLOWS_DIR}/incorrect_entry/").absolute()

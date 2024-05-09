@@ -1003,11 +1003,12 @@ class FlowOperations(TelemetryMixin):
             from promptflow.contracts.tool import ValueType
             from promptflow.core._model_configuration import PromptyModelConfiguration
 
-            flow_meta = {"inputs": entry._data.get("inputs", {})}
-            if "outputs" in entry._data:
-                flow_meta["outputs"] = entry._data.get("outputs")
-            elif include_primitive_output:
-                flow_meta["outputs"] = {"output": {"type": "string"}}
+            flow_meta = {
+                "inputs": entry._core_prompty._get_input_signature(),
+            }
+            output_signature = entry._core_prompty._get_output_signature(include_primitive_output)
+            if output_signature:
+                flow_meta["outputs"] = output_signature
             init_dict = {}
             for field in fields(PromptyModelConfiguration):
                 init_dict[field.name] = {"type": ValueType.from_type(field.type).value}

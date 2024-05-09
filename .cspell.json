@@ -106,6 +106,7 @@
     "meid",
     "Entra",
     "uvicorn",
+    "attribited",
     "MistralAI"
   ],
   "ignoreWords": [
@@ -208,6 +209,8 @@
     "wscript",
     "raisvc",
     "evals",
+    "setenv",
+    "pypdf",
     "redoc",
     "starlette",
     "mlindex",
