@@ -2,10 +2,8 @@
 # Licensed under the MIT License.
 """File for context getting tool."""
 from typing import List
-from promptflow.core import tool
-from promptflow_vectordb.core.contracts import SearchResultEntity
+from promptflow import tool
 import re
-
 
 @tool
 def generate_prompt_context(search_result: List[dict]) -> str:
@@ -23,16 +21,17 @@ def generate_prompt_context(search_result: List[dict]) -> str:
     retrieved_docs = []
     for item in search_result:
 
-        entity = SearchResultEntity.from_dict(item)
-        content = entity.text or ""
+        metadata = item.get("metadata", None)
+        content = item.get("text", "")
 
         source = ""
-        if entity.metadata is not None:
-            if SOURCE_KEY in entity.metadata:
-                if URL_KEY in entity.metadata[SOURCE_KEY]:
-                    source = entity.metadata[SOURCE_KEY][URL_KEY] or ""
+        if metadata is not None:
+            if SOURCE_KEY in metadata:
+                if URL_KEY in metadata[SOURCE_KEY]:
+                    source = metadata[SOURCE_KEY][URL_KEY] or ""
 
-        source = re.sub(pattern, replacement_text, source)
+            source = re.sub(pattern, replacement_text, source)
+
         retrieved_docs.append({
             "Content": content,
             "Source": source
