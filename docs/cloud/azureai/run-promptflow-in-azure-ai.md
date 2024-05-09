@@ -58,14 +58,6 @@ az account set --subscription <my-sub>
 az configure --defaults group=<my_resource_group> workspace=<my_workspace>
 ```
 
-**Serverless runtime and named runtime**
-
-Runtimes serve as computing resources so that the flow can be executed in workspace. Above command does not specify any runtime which means it will run in serverless mode. In this mode the workspace will automatically create a runtime and you can use it as the default runtime for any flow run later.
-
-Instead, you can also [create a runtime](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/how-to-create-manage-runtime?view=azureml-api-2) and use it with `--runtime <my-runtime>`:
-```sh
-pfazure run create --flow web-classification --data web-classification/data.jsonl --stream --runtime <my-runtime>
-```
 
 **Specify run name and view a run**
 
@@ -122,14 +114,11 @@ pf = PFClient(
 # load flow
 flow = "web-classification"
 data = "web-classification/data.jsonl"
-runtime = "example-runtime-ci" # assume you have existing runtime with this name provisioned
-# runtime = None # un-comment use compute session
 
 # create run
 base_run = pf.run(
     flow=flow,
     data=data,
-    runtime=runtime,
 )
 
 pf.stream(base_run)

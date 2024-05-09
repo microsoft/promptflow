@@ -4,13 +4,12 @@
 This is an experimental feature, and may change at any time. Learn [more](../../how-to-guides/faq.md#stable-vs-experimental).
 :::
 
-A prompt flow runtime provides computing resources that are required for the application to run, including a Docker image that contains all necessary dependency packages. This reliable and scalable runtime environment enables prompt flow to efficiently execute its tasks and functions for a seamless user experience.
+A prompt flow compute session provides computing resources that are required for the application to run, including a Docker image that contains all necessary dependency packages. This reliable and scalable compute session environment enables prompt flow to efficiently execute its tasks and functions for a seamless user experience.
 
 If you're a new user, we recommend that you use the compute session (preview). You can easily customize the environment by adding packages in the requirements.txt file in flow.dag.yaml in the flow folder.
 
 ## Create a run with compute session
 
-Create a run with compute session is simple, just omit the `runtime` field and system will use compute session to create a session to execute.
 
 ::::{tab-set}
 :::{tab-item} CLI
@@ -72,7 +71,7 @@ data: <path_to_flow>/data.jsonl
 column_mapping:
   url: ${data.url}
 
-# define instance type only work for compute session, will be ignored if you specify the runtime name.
+# define instance type only work for compute session.
 resources:
   instance_type: <instance_type>
 ```
