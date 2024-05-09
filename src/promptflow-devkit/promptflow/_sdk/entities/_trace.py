@@ -424,5 +424,5 @@ class Collection:
     def _to_dict(self) -> typing.Dict[str, str]:
         return {
             "name": self.name,
-            "update_time": self.update_time,
+            "update_time": self.update_time.isoformat(),
         }
