@@ -8,7 +8,7 @@ from promptflow._constants import LANGUAGE_KEY, ConnectionType, FlowLanguage
 from promptflow._proxy import ProxyFactory
 from promptflow._sdk._constants import FlowType
 from promptflow._sdk.schemas._base import PatchedSchemaMeta, YamlFileSchema
-from promptflow._sdk.schemas._fields import NestedField
+from promptflow._sdk.schemas._fields import LocalPathField, NestedField
 from promptflow.contracts.tool import ValueType
 from promptflow.core._model_configuration import MODEL_CONFIG_NAME_2_CLASS
 
@@ -109,6 +109,7 @@ class FlexFlowSchema(BaseFlowSchema):
     outputs = fields.Dict(keys=fields.Str(), values=NestedField(FlexFlowOutputSchema), required=False)
     init = fields.Dict(keys=fields.Str(), values=NestedField(FlexFlowInitSchema), required=False)
     sample = fields.Str()
+    code = LocalPathField()
 
     @validates_schema(skip_on_field_errors=False)
     def validate_entry(self, data, **kwargs):

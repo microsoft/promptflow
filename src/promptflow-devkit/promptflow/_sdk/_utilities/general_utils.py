@@ -934,13 +934,13 @@ def overwrite_null_std_logger():
         sys.stderr = sys.stdout
 
 
-def generate_yaml_entry_without_recover(entry: Union[str, PathLike, Callable], code: Path = None):
-    """Generate yaml entry to run, will directly overwrite yaml if it already exists and not delete generated yaml."""
+def generate_yaml_entry_without_delete(entry: Union[str, PathLike, Callable], code: Path = None):
+    """Generate a flex flow yaml in temp folder and won't delete it."""
     from promptflow._proxy import ProxyFactory
 
     executor_proxy = ProxyFactory().get_executor_proxy_cls(FlowLanguage.Python)
     if callable(entry) or executor_proxy.is_flex_flow_entry(entry=entry):
-        flow_yaml_path, _ = create_temp_flex_flow_yaml_core(entry, code)
+        flow_yaml_path = create_temp_flex_flow_yaml_without_delete(entry, code)
         return flow_yaml_path
     else:
         if code:
@@ -964,8 +964,7 @@ def generate_yaml_entry(entry: Union[str, PathLike, Callable], code: Path = None
         yield entry
 
 
-def create_temp_flex_flow_yaml_core(entry: Union[str, PathLike, Callable], code: Path = None):
-    logger.info("Create temporary entry for flex flow.")
+def resolve_entry_and_code(entry: Union[str, PathLike, Callable], code: Path = None):
     if callable(entry):
         entry = callable_to_entry_string(entry)
     if not code:
@@ -975,6 +974,30 @@ def create_temp_flex_flow_yaml_core(entry: Union[str, PathLike, Callable], code:
         code = Path(code)
         if not code.exists():
             raise UserErrorException(f"Code path {code.as_posix()} does not exist.")
+    return entry, code
+
+
+def create_temp_flex_flow_yaml_without_delete(entry: Union[str, PathLike, Callable], code: Path = None):
+    """
+    Generate a flex flow yaml in temp folder and won't delete it. In flex yaml, the code path points to the original
+    flow folder.
+    """
+
+    from promptflow._sdk._utilities.signature_utils import update_signatures
+    from promptflow._utils.flow_utils import dump_flow_dag_according_to_content
+
+    logger.info("Create temporary entry for flex flow.")
+    entry, code = resolve_entry_and_code(entry, code)
+    flow_dag = {"entry": entry, "code": str(code.resolve())}
+    temp_dir = tempfile.mkdtemp()
+    update_signatures(code=code, data=flow_dag)
+    flow_yaml_path = dump_flow_dag_according_to_content(flow_dag=flow_dag, flow_path=Path(temp_dir))
+    return flow_yaml_path
+
+
+def create_temp_flex_flow_yaml_core(entry: Union[str, PathLike, Callable], code: Path = None):
+    logger.info("Create temporary entry for flex flow.")
+    entry, code = resolve_entry_and_code(entry, code)
     flow_yaml_path = code / FLOW_FLEX_YAML
     existing_content = None
 
