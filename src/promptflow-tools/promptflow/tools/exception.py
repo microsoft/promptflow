@@ -10,6 +10,11 @@ def to_openai_error_message(e: Exception) -> str:
     error_message = str(e)
     # https://learn.microsoft.com/en-gb/azure/ai-services/openai/reference
     params_chat_model_cannot_accept = ["best_of", "echo", "logprobs"]
+    tool_chat_prompt_tsg = (
+        "Please make sure your chat prompt includes 'tool_calls' within the 'assistant' role. Also, the assistant "
+        "message must be followed by a tool message, with 'tool_call_id's matching the assistant message. "
+        "You could refer to guideline at https://aka.ms/pfdoc/chat-prompt"
+    )
     if error_message == "<empty message>":
         msg = "The api key is invalid or revoked. " \
               "You can correct or regenerate the api key of your connection."
@@ -58,18 +63,12 @@ def to_openai_error_message(e: Exception) -> str:
               "please make sure you have proper role assignment on your azure openai resource. You can refer to " \
               "https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/role-based-access-control"
         return f"OpenAI API hits {ex_type}: {msg}"
+    # missing 'tool_calls' under assistant role.
     elif "messages with role 'tool' must be a response" in error_message:
-        msg = "Invalid parameter: messages with role 'tool' must be a response to a preceding message with " \
-              "'tool_calls'. Please make sure your chat prompt includes 'tool_calls' under the role 'assistant'. " \
-              "You could refer to guideline at https://aka.ms/pfdoc/chat-prompt"
-        return f"OpenAI API hits {ex_type}: {msg}"
-    elif (
-        "assistant message with 'tool_calls' must be followed by tool messages responding to each 'tool_call_id'"
-        in error_message
-    ):
-        msg = "Please make sure your chat prompt includes 'tool' role with 'tool_call_id's responding to those "\
-              "in the assistant message. You could refer to guideline at https://aka.ms/pfdoc/chat-prompt"
-        return f"OpenAI API hits {ex_type}: {msg}. Original error: {error_message}"
+        return f"OpenAI API hits {ex_type}: {tool_chat_prompt_tsg}. Original error: {error_message}"
+    # missing 'tool' role after assistant role with tool_calls.
+    elif "'tool_calls' must be followed by tool messages responding to each 'tool_call_id'" in error_message:
+        return f"OpenAI API hits {ex_type}: {tool_chat_prompt_tsg}. Original error: {error_message}"
     else:
         return f"OpenAI API hits {ex_type}: {error_message} [{openai_error_code_ref_message}]"
 

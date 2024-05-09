@@ -95,7 +95,7 @@ Setup connections to provisioned resources in prompt flow.
 
 _To grasp the fundamentals of creating a chat prompt, begin with [this section](./prompt-tool.md#how-to-write-prompt) for an introductory understanding of jinja._
 
-We offer a method to distinguish between different roles in a chat prompt, such as "system", "user", "assistant". Each role can have "name" and "content" properties.
+We offer a method to distinguish between different roles in a chat prompt, such as "system", "user", "assistant" and "tool". The "system", "user", "assistant" roles can have "name" and "content" properties. The "tool" role, however, should have "tool_call_id" and "content" properties. For an example of a tool chat prompt, please refer to Sample 3.
 
 ### Sample 1
 ```jinja
@@ -160,33 +160,27 @@ In LLM tool, the prompt is transformed to match the [openai messages](https://pl
 ```
 
 ### Sample 3
+This sample illustrates how to write a tool chat prompt.
 ```jinja
 # system:
 You are a helpful assistant.
 
-{% for item in chat_history %}
 # user:
-{{item.inputs.question}}
+What is the current weather like in Boston?
 
-{% if 'tool_calls' in item.outputs.llm_output  and item.outputs.llm_output.tool_calls is not none %}
 # assistant:
+{# assistant with 'tool_calls' must be followed by a tool block. #}
 ## tool_calls:
-{{item.outputs.llm_output.tool_calls}}
-
-{% for tool_call_item in item.outputs.llm_output.tool_calls %}
+{{outputs.llm_output.tool_calls}}
+ 
+{# Role tool must follow an assistant block with 'tool_calls'. #}
+{% for item in outputs.llm_output.tool_calls %}
 # tool:
+{# Each tool_call_id should correspond to assistant tool_calls. #}
 ## tool_call_id:
-{{tool_call_item.id}}
+{{item.id}}
 ## content:
-{{item.outputs.answer}}
-
-{% endfor %}
-
-{% else %}
-# assistant:
-{{item.outputs.llm_output}}
-
-{% endif %}
+{{outputs.answer}}
 
 {% endfor %}
 
@@ -204,7 +198,7 @@ In LLM tool, the prompt is transformed to match the [openai messages](https://pl
     },
     {
         "role": "user",
-        "content": "<question-of-chat-history-round-1>"
+        "content": "<first-question: What is the current weather like in Boston?>"
     },
     {
         "role": "assistant",
@@ -212,16 +206,16 @@ In LLM tool, the prompt is transformed to match the [openai messages](https://pl
         "function_call": null,
         "tool_calls": [
             {
-                "id": "<tool-call-id-for-question-of-chat-history-round-1>",
+                "id": "<tool-call-id-for-first-question>",
                 "type": "function",
-                "function": "<function-to-call-for-question-of-chat-history-round-1>"
+                "function": "<function-to-call-for-first-question>"
             }
         ]
     },
     {
         "role": "tool",
-        "tool_call_id": "<tool-call-id-for-question-of-chat-history-round-1>",
-        "content": "<tool-response-for-question-of-chat-history-round-1>"
+        "tool_call_id": "<tool-call-id-for-first-question>",
+        "content": "<tool-response-for-first-question>"
     }
     ...
     {
