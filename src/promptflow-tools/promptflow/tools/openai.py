@@ -53,6 +53,12 @@ class OpenAI(ToolProvider):
         # TODO: remove below type conversion after client can pass json rather than string.
         echo = to_bool(echo)
         stream = to_bool(stream)
+        params = {}
+        if presence_penalty is not None:
+            params["presence_penalty"] = presence_penalty
+        if frequency_penalty is not None:
+            params["frequency_penalty"] = frequency_penalty
+
         response = self._client.completions.create(
             prompt=prompt,
             model=model.value if isinstance(model, Enum) else model,
@@ -66,12 +72,11 @@ class OpenAI(ToolProvider):
             logprobs=int(logprobs) if logprobs else None,
             echo=echo,
             stop=stop if stop else None,
-            presence_penalty=float(presence_penalty) if presence_penalty is not None else None,
-            frequency_penalty=float(frequency_penalty) if frequency_penalty is not None else None,
             best_of=int(best_of),
             # Logit bias must be a dict if we passed it to openai api.
             logit_bias=logit_bias if logit_bias else {},
-            user=user
+            user=user,
+            **params
         )
 
         if stream:
