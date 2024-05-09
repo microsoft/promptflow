@@ -135,14 +135,14 @@ def serve_python_flow(
         target = f"http://{host}:{port}"
         logger.info(f"Opening browser {target}...")
         webbrowser.open(target)
+    # Debug is not supported for now as debug will rerun command, and we changed working directory.
     if engine == "flask":
-        # Debug is not supported for now as debug will rerun command, and we changed working directory.
         app.run(port=port, host=host)
     else:
         try:
             import uvicorn
 
-            uvicorn.run(app, host=host, port=port)
+            uvicorn.run(app, host=host, port=port, access_log=False, log_config=None)
         except ImportError:
             raise UserErrorException(
                 message_format="FastAPI engine requires uvicorn, please install uvicorn by `pip install uvicorn`."
