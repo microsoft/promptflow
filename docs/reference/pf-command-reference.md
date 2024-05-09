@@ -102,6 +102,7 @@ pf flow test --flow
              [--interactive]
              [--verbose]
              [--ui]
+             [--collection]
 ```
 
 #### Examples
@@ -158,6 +159,12 @@ Chat in the chat window.
 
 ```bash
 pf flow test --flow <path-to-flow-directory> --ui
+```
+
+Test the flow while log traces to a specific collection.
+
+```bash
+pf flow test --flow <path-to-flow-directory> --collection <collection>
 ```
 
 #### Required Parameter
