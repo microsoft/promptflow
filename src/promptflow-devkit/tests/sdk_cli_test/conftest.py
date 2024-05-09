@@ -168,6 +168,11 @@ def evaluation_flow_serving_client(mocker: MockerFixture):
     return app.test_client()
 
 
+@pytest.fixture
+def async_generator_serving_client(mocker: MockerFixture):
+    return create_client_by_model("async_generator_tools", mocker)
+
+
 def create_client_by_model(
     model_name: str,
     mocker: MockerFixture,
