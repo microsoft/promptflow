@@ -56,7 +56,6 @@ nodes:
     deployment_name: gpt-35-turbo-0125
     temperature: 0.7
     top_p: 1
-    max_tokens: 256
     question: ${inputs.question}
     chat_history: ${inputs.chat_history}
     tools:

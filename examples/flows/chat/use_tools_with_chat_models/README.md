@@ -3,16 +3,16 @@
 This flow covers how to use the LLM tool chat API in combination with external functions to extend the 
 capabilities of GPT models. 
 
-`tools` is an optional parameter in the <a href='https://platform.openai.com/docs/api-reference/chat/create' target='_blank'>Chat Completion API</a> which can be used to provide tool 
+`tools` is an optional parameter in the <a href='https://platform.openai.com/docs/api-reference/chat/create' target='_blank'>Chat Completion API</a> which can be used to provide function 
 specifications. The purpose of this is to enable models to generate function arguments which adhere to the provided 
-specifications. Note that the API will not actually execute any tool calls. It is up to developers to execute 
-tool calls using model outputs. 
+specifications. Note that the API will not actually execute any function calls. It is up to developers to execute 
+function calls using model outputs. 
 
-If the `tools` parameter is provided then by default the model will decide when it is appropriate to use one of the 
-tools. The API can be forced to use a specific tool by setting the `tool_choice` parameter to 
-`{"type": "function", "function": {"name": "<insert-function-name>"}}`. The API can also be forced to not use any tool by setting the `tool_choice` 
-parameter to `"none"`. If a tool is used, the output will contain `"finish_reason": "tool_choice"` in the 
-response, as well as a `tool_choice` object that has the name of the tool and the generated function arguments. 
+Within the `tools` parameter, if the `functions` parameter is provided then by default the model will decide when it is appropriate to use one of the 
+functions. The API can be forced to use a specific function by setting the `tool_choice` parameter to 
+`{"type": "function", "function": {"name": "<insert-function-name>"}}`. The API can also be forced to not use any function by setting the `tool_choice` 
+parameter to `"none"`. If a function is used, the output will contain `"finish_reason": "tool_calls"` in the 
+response, as well as a `tool_calls` object that has the name of the function and the generated function arguments. 
 You can refer to <a href='https://github.com/openai/openai-cookbook/blob/main/examples/How_to_call_functions_with_chat_models.ipynb' target='_blank'>openai sample</a> for more details.
 
 
