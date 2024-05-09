@@ -35,7 +35,6 @@ from marshmallow import ValidationError
 from promptflow._constants import (
     ENABLE_MULTI_CONTAINER_KEY,
     EXTENSION_UA,
-    FLOW_FLEX_YAML,
     LANGUAGE_KEY,
     PROMPTY_EXTENSION,
     FlowLanguage,
@@ -940,7 +939,8 @@ def generate_yaml_entry_without_delete(entry: Union[str, PathLike, Callable], co
 
     executor_proxy = ProxyFactory().get_executor_proxy_cls(FlowLanguage.Python)
     if callable(entry) or executor_proxy.is_flex_flow_entry(entry=entry):
-        flow_yaml_path = create_temp_flex_flow_yaml_without_delete(entry, code)
+        temp_dir = tempfile.mkdtemp()
+        flow_yaml_path = create_temp_flex_flow_yaml_core(entry, temp_dir, code)
         return flow_yaml_path
     else:
         if code:
@@ -977,56 +977,26 @@ def resolve_entry_and_code(entry: Union[str, PathLike, Callable], code: Path = N
     return entry, code
 
 
-def create_temp_flex_flow_yaml_without_delete(entry: Union[str, PathLike, Callable], code: Path = None):
+def create_temp_flex_flow_yaml_core(entry: Union[str, PathLike, Callable], target_dir: str, code: Path = None):
     """
-    Generate a flex flow yaml in temp folder and won't delete it. In flex yaml, the code path points to the original
+    Generate a flex flow yaml in target folder. The code path points to the original in flex yaml.
     flow folder.
     """
-
-    from promptflow._sdk._utilities.signature_utils import update_signatures
     from promptflow._utils.flow_utils import dump_flow_dag_according_to_content
 
     logger.info("Create temporary entry for flex flow.")
     entry, code = resolve_entry_and_code(entry, code)
     flow_dag = {"entry": entry, "code": str(code.resolve())}
-    temp_dir = tempfile.mkdtemp()
-    update_signatures(code=code, data=flow_dag)
-    flow_yaml_path = dump_flow_dag_according_to_content(flow_dag=flow_dag, flow_path=Path(temp_dir))
+    flow_yaml_path = dump_flow_dag_according_to_content(flow_dag=flow_dag, flow_path=Path(target_dir))
     return flow_yaml_path
-
-
-def create_temp_flex_flow_yaml_core(entry: Union[str, PathLike, Callable], code: Path = None):
-    logger.info("Create temporary entry for flex flow.")
-    entry, code = resolve_entry_and_code(entry, code)
-    flow_yaml_path = code / FLOW_FLEX_YAML
-    existing_content = None
-
-    if flow_yaml_path.exists():
-        logger.warning(f"Found existing {flow_yaml_path.as_posix()}, will not respect it in runtime.")
-        with open(flow_yaml_path, "r", encoding=DEFAULT_ENCODING) as f:
-            existing_content = f.read()
-    with open(flow_yaml_path, "w", encoding=DEFAULT_ENCODING) as f:
-        dump_yaml({"entry": entry}, f)
-    return flow_yaml_path, existing_content
 
 
 @contextmanager
 def create_temp_flex_flow_yaml(entry: Union[str, PathLike, Callable], code: Path = None):
-    """Create a temporary flow.dag.yaml in code folder"""
-    flow_yaml_path, existing_content = create_temp_flex_flow_yaml_core(entry, code)
-    try:
+    """Create a temporary flow.dag.yaml in temp folder"""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        flow_yaml_path = create_temp_flex_flow_yaml_core(entry, temp_dir, code)
         yield flow_yaml_path
-    finally:
-        # delete the file or recover the content
-        if flow_yaml_path.exists():
-            if existing_content:
-                with open(flow_yaml_path, "w", encoding=DEFAULT_ENCODING) as f:
-                    f.write(existing_content)
-            else:
-                try:
-                    flow_yaml_path.unlink()
-                except Exception as e:
-                    logger.warning(f"Failed to delete generated: {flow_yaml_path.as_posix()}, error: {e}")
 
 
 def can_accept_kwargs(func):
