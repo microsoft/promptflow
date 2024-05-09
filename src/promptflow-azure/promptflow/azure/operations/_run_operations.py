@@ -732,6 +732,8 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         if run._use_remote_flow:
             return self._resolve_flow_definition_resource_id(run=run), None
         flow = load_flow(run.flow)
+        # set init kwargs for validation
+        flow._init_kwargs = run.init
         self._flow_operations._resolve_arm_id_or_upload_dependencies(
             flow=flow,
             # ignore .promptflow/dag.tools.json only for run submission scenario in python

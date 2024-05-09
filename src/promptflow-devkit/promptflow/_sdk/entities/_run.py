@@ -202,6 +202,8 @@ class Run(YAMLTranslatableMixin):
         # TODO: such run is not resumable, not sure if we need specific error message for this case.
         self._dynamic_callable = kwargs.get("dynamic_callable", None)
         if init:
+            # validate if provided init kwargs for early exception
+            self._validate_init(init)
             self._properties[FlowRunProperties.INIT_KWARGS] = init
 
     def _copy(self, **kwargs):
@@ -560,6 +562,19 @@ class Run(YAMLTranslatableMixin):
     @classmethod
     def _get_schema_cls(self):
         return RunSchema
+
+    @classmethod
+    def _validate_init(cls, init: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate and parse init kwargs."""
+        if not init:
+            return {}
+        if not isinstance(init, dict):
+            raise UserErrorException(f"Invalid init kwargs: {init}. Expecting a dictionary.")
+
+        try:
+            json.dumps(init, default=asdict)
+        except Exception as e:
+            raise UserErrorException(f"Invalid init kwargs: {init}. Expecting a json serializable dictionary.") from e
 
     @classmethod
     def _to_rest_init(cls, init):
