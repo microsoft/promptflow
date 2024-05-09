@@ -258,6 +258,9 @@ class Flow(AdditionalIncludesMixin):
 
     @classmethod
     def _validate_init_kwargs(cls, init_signatures: dict, init_kwargs: dict):
+        init_kwargs = init_kwargs or {}
+        if not isinstance(init_kwargs, dict):
+            raise UserErrorException(f"Init kwargs should be a dict, got {type(init_kwargs)}")
         # validate init kwargs against signature
         for param_name, param_value in init_kwargs.items():
             if param_name not in init_signatures:
