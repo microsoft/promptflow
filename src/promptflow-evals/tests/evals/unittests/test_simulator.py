@@ -11,7 +11,7 @@ from unittest.mock import AsyncMock, MagicMock, Mock, patch
 import pytest
 
 os.environ["RAI_SVC_URL"] = "https://int.api.azureml-test.ms"
-from promptflow.evals.synthetic import AdversarialScenarios, AdversarialSimulator
+from promptflow.evals.synthetic import AdversarialScenario, AdversarialSimulator
 
 
 @pytest.fixture()
@@ -46,13 +46,13 @@ class TestSimulator:
             "credential": "test_credential",
         }
         available_scenarios = [
-            AdversarialScenarios.ADVERSARIAL_CONVERSATION,
-            AdversarialScenarios.ADVERSARIAL_QA,
-            AdversarialScenarios.ADVERSARIAL_SUMMARIZATION,
-            AdversarialScenarios.ADVERSARIAL_SEARCH,
-            AdversarialScenarios.ADVERSARIAL_REWRITE,
-            AdversarialScenarios.ADVERSARIAL_CONTENT_GEN_UNGROUNDED,
-            AdversarialScenarios.ADVERSARIAL_CONTENT_GEN_GROUNDED,
+            AdversarialScenario.ADVERSARIAL_CONVERSATION,
+            AdversarialScenario.ADVERSARIAL_QA,
+            AdversarialScenario.ADVERSARIAL_SUMMARIZATION,
+            AdversarialScenario.ADVERSARIAL_SEARCH,
+            AdversarialScenario.ADVERSARIAL_REWRITE,
+            AdversarialScenario.ADVERSARIAL_CONTENT_GEN_UNGROUNDED,
+            AdversarialScenario.ADVERSARIAL_CONTENT_GEN_GROUNDED,
         ]
         for scenario in available_scenarios:
             simulator = AdversarialSimulator(azure_ai_project=azure_ai_project)

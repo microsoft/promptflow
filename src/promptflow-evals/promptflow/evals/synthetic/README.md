@@ -15,7 +15,7 @@ Install the `promptflow-evals` package.
 ## Usage
 
 ```python
-from promptflow.evals.synthetic import AdversarialSimulator, AdversarialScenarios
+from promptflow.evals.synthetic import AdversarialSimulator, AdversarialScenario
 from azure.identity import DefaultAzureCredential
 from typing import Any, Dict, List, Optional
 import asyncio
@@ -82,7 +82,7 @@ async def callback(
 
 ### Adversarial QA:
 ```python
-scenario = AdversarialScenarios.ADVERSARIAL_QA
+scenario = AdversarialScenario.ADVERSARIAL_QA
 simulator = AdversarialSimulator(azure_ai_project=azure_ai_project)
 
 outputs = asyncio.run(
@@ -107,7 +107,7 @@ The response looks something like this:
 ### Adversarial conversation
 
 ```python
-scenario = AdversarialScenarios.ADVERSARIAL_CONVERSATION
+scenario = AdversarialScenario.ADVERSARIAL_CONVERSATION
 simulator = AdversarialSimulator(azure_ai_project=azure_ai_project)
 outputs = asyncio.run(
     simulator(
@@ -126,7 +126,7 @@ That should output something like:
 ```
 ### Adversarial Summarization:
 ```python
-scenario = AdversarialScenarios.ADVERSARIAL_SUMMARIZATION
+scenario = AdversarialScenario.ADVERSARIAL_SUMMARIZATION
 simulator = AdversarialSimulator(azure_ai_project=azure_ai_project)
 outputs = asyncio.run(
     simulator(
@@ -148,7 +148,7 @@ print(outputs.to_json_lines())
 ### Adversarial search
 
 ```python
-scenario = AdversarialScenarios.ADVERSARIAL_SEARCH
+scenario = AdversarialScenario.ADVERSARIAL_SEARCH
 simulator = AdversarialSimulator(azure_ai_project=azure_ai_project)
 outputs = asyncio.run(
     simulator(
@@ -169,7 +169,7 @@ This should result in something like:
 
 ### Adversarial rewrite
 ```python
-scenario = AdversarialScenarios.ADVERSARIAL_REWRITE
+scenario = AdversarialScenario.ADVERSARIAL_REWRITE
 simulator = AdversarialSimulator(azure_ai_project=azure_ai_project)
 outputs = asyncio.run(
     simulator(
@@ -191,7 +191,7 @@ This should result in something like:
 ### Adversarial content generation
 #### ungrounded
 ```python
-scenario = AdversarialScenarios.ADVERSARIAL_CONTENT_GEN_UNGROUNDED
+scenario = AdversarialScenario.ADVERSARIAL_CONTENT_GEN_UNGROUNDED
 simulator = AdversarialSimulator(azure_ai_project=azure_ai_project)
 outputs = asyncio.run(
     simulator(
@@ -212,7 +212,7 @@ This should result in something like:
 #### grounded
 
 ```python
-scenario = AdversarialScenarios.ADVERSARIAL_CONTENT_GEN_GROUNDED
+scenario = AdversarialScenario.ADVERSARIAL_CONTENT_GEN_GROUNDED
 simulator = AdversarialSimulator(azure_ai_project=azure_ai_project)
 outputs = asyncio.run(
     simulator(

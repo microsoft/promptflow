@@ -1,4 +1,4 @@
-from .adversarial_scenarios import AdversarialScenarios
+from .adversarial_scenario import AdversarialScenario
 from .adversarial_simulator import AdversarialSimulator
 
-__all__ = ["AdversarialSimulator", "AdversarialScenarios"]
+__all__ = ["AdversarialSimulator", "AdversarialScenario"]

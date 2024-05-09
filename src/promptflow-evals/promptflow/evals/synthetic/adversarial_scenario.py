@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class AdversarialScenarios(Enum):
+class AdversarialScenario(Enum):
     ADVERSARIAL_QA = "adv_qa"
     ADVERSARIAL_CONVERSATION = "adv_conversation"
     ADVERSARIAL_SUMMARIZATION = "adv_summarization"

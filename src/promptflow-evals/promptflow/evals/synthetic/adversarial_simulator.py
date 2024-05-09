@@ -10,7 +10,7 @@ from typing import Any, Callable, Dict, List
 from tqdm import tqdm
 
 from promptflow._sdk._telemetry import ActivityType, monitor_operation
-from promptflow.evals.synthetic.adversarial_scenarios import AdversarialScenarios
+from promptflow.evals.synthetic.adversarial_scenarios import AdversarialScenario
 
 from ._conversation import CallbackConversationBot, ConversationBot, ConversationRole
 from ._conversation._conversation import simulate_conversation
@@ -70,7 +70,7 @@ class AdversarialSimulator:
     async def __call__(
         self,
         *,
-        scenario: AdversarialScenarios,
+        scenario: AdversarialScenario,
         target: Callable,
         max_conversation_turns: int = 1,
         max_simulation_results: int = 3,
@@ -84,8 +84,8 @@ class AdversarialSimulator:
         Executes the adversarial simulation against a specified target function asynchronously.
 
         :param scenario: Enum value specifying the adversarial scenario used for generating inputs.
-        :type scenario: AdversarialScenarios
-        :example: AdversarialScenarios.ADVERSARIAL_QA, AdversarialScenarios.ADVERSARIAL_CONVERSATION
+        :type scenario: AdversarialScenario
+        :example: AdversarialScenario.ADVERSARIAL_QA, AdversarialScenario.ADVERSARIAL_CONVERSATION
         :param target: The target function to simulate adversarial inputs against.
         This function should be asynchronous and accept a dictionary representing the adversarial input.
         :type target: Callable
@@ -121,11 +121,11 @@ class AdversarialSimulator:
         :rtype: List[Dict[str, Any]]
         """
         # validate the inputs
-        if scenario != AdversarialScenarios.ADVERSARIAL_CONVERSATION:
+        if scenario != AdversarialScenario.ADVERSARIAL_CONVERSATION:
             max_conversation_turns = 2
         else:
             max_conversation_turns = max_conversation_turns * 2
-        if scenario not in AdversarialScenarios.__members__.values():
+        if scenario not in AdversarialScenario.__members__.values():
             raise ValueError("Invalid adversarial scenario")
         self._ensure_service_dependencies()
         templates = await self.adversarial_template_handler._get_content_harm_template_collections(scenario.value)
