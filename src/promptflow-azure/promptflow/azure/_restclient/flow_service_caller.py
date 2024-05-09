@@ -789,6 +789,7 @@ class FlowServiceCaller(RequestTelemetryMixin):
             content_type=content_type,
             json=_json,
             template_url=self.caller.trace_sessions.setup_trace_session_async.metadata["url"],
+            headers=headers,
         )
         request = _convert_request(request)
         request.url = self.caller.trace_sessions._client.format_url(request.url)
