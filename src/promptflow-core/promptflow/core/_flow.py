@@ -19,6 +19,7 @@ from promptflow.core._prompty_utils import (
     convert_prompt_template,
     format_llm_response,
     get_open_ai_client_by_connection,
+    num_tokens_from_messages,
     prepare_open_ai_request_params,
     send_request_to_llm,
     update_dict_recursively,
@@ -456,6 +457,22 @@ class Prompty(FlowBase):
         prompt = convert_prompt_template(self._template, inputs, self._model.api)
         # For chat mode, the message generated is list type. Convert to string type and return to user.
         return str(prompt)
+
+    def estimate_token_count(self, *args, **kwargs):
+        """Estimate the token count.
+
+        :param args: positional arguments are not supported.
+        :param kwargs: prompty inputs with key word arguments.
+        :return: Total token count
+        :rtype: int
+        """
+        if args:
+            raise UserErrorException("Prompty can only be rendered with keyword arguments.")
+        inputs = self._resolve_inputs(kwargs)
+        prompt = convert_prompt_template(self._template, inputs, self._model.api)
+        response_max_token = self._model.get("parameters", {}).get("max_token", 0)
+        total_token = num_tokens_from_messages(prompt) + response_max_token
+        return total_token
 
 
 class AsyncPrompty(Prompty):
