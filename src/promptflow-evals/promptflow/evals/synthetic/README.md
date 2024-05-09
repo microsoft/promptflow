@@ -80,6 +80,10 @@ async def callback(
 
 ```
 
+### On jupyter notebooks
+
+Make sure you change the snippets below to remove the `asyncio.run` wrapper and `await` the calls to the simulator.
+
 ### Adversarial QA:
 ```python
 scenario = AdversarialScenario.ADVERSARIAL_QA

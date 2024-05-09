@@ -10,7 +10,7 @@ from typing import Any, Callable, Dict, List
 from tqdm import tqdm
 
 from promptflow._sdk._telemetry import ActivityType, monitor_operation
-from promptflow.evals.synthetic.adversarial_scenarios import AdversarialScenario
+from promptflow.evals.synthetic.adversarial_scenario import AdversarialScenario
 
 from ._conversation import CallbackConversationBot, ConversationBot, ConversationRole
 from ._conversation._conversation import simulate_conversation
