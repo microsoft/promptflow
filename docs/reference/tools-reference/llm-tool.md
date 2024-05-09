@@ -169,19 +169,19 @@ You are a helpful assistant.
 What is the current weather like in Boston?
 
 # assistant:
-{# The assistant message with 'tool_calls' must be followed by a tool message. #}
+{# The assistant message with 'tool_calls' must be followed by messages with role 'tool'. #}
 ## tool_calls:
 {{llm_output.tool_calls}}
 
 # tool:
 {#
 Messages with role 'tool' must be a response to a preceding message with 'tool_calls'.
-Additionally, 'tool_call_id's should match assistant tool_calls.
+Additionally, 'tool_call_id's should match ids of assistant message 'tool_calls'.
 #}
 ## tool_call_id:
 {{llm_output.tool_calls[0].id}}
 ## content:
-{{answer}}
+{{tool-answer-of-last-question}}
 
 # user:
 {{question}}
@@ -197,7 +197,7 @@ In LLM tool, the prompt is transformed to match the [openai messages](https://pl
     },
     {
         "role": "user",
-        "content": "<first-question: What is the current weather like in Boston?>"
+        "content": "What is the current weather like in Boston?"
     },
     {
         "role": "assistant",
@@ -205,16 +205,16 @@ In LLM tool, the prompt is transformed to match the [openai messages](https://pl
         "function_call": null,
         "tool_calls": [
             {
-                "id": "<tool-call-id-for-first-question>",
+                "id": "<tool-call-id-of-last-question>",
                 "type": "function",
-                "function": "<function-to-call-for-first-question>"
+                "function": "<function-to-call-of-last-question>"
             }
         ]
     },
     {
         "role": "tool",
-        "tool_call_id": "<tool-call-id-for-first-question>",
-        "content": "<tool-answer-for-first-question>"
+        "tool_call_id": "<tool-call-id-of-last-question>",
+        "content": "<tool-answer-of-last-question>"
     }
     ...
     {
