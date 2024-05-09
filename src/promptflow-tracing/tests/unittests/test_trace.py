@@ -1,3 +1,4 @@
+import asyncio
 import json
 import time
 from enum import Enum
@@ -12,7 +13,7 @@ from promptflow.tracing._experimental import enrich_prompt_template
 from promptflow.tracing._operation_context import OperationContext
 from promptflow.tracing._trace import (
     TokenCollector,
-    _record_keyboard_interrupt_to_span,
+    _record_cancellation_exceptions_to_span,
     enrich_span_with_context,
     enrich_span_with_embedding,
     enrich_span_with_input,
@@ -316,13 +317,23 @@ def test_set_enrich_prompt_template():
 
 
 @pytest.mark.unitests
-def test_record_keyboard_interrupt_to_span():
+def test_record_cancellation():
     mock_span = MockSpan(MockSpanContext(1))
     try:
-        with _record_keyboard_interrupt_to_span(mock_span):
+        with _record_cancellation_exceptions_to_span(mock_span):
             raise KeyboardInterrupt
     except KeyboardInterrupt:
         pass
     assert mock_span.status == StatusCode.ERROR
     assert "Execution cancelled" in mock_span.description
     assert isinstance(mock_span.exception, KeyboardInterrupt)
+
+    mock_span = MockSpan(MockSpanContext(1))
+    try:
+        with _record_cancellation_exceptions_to_span(mock_span):
+            raise asyncio.CancelledError
+    except asyncio.CancelledError:
+        pass
+    assert mock_span.status == StatusCode.ERROR
+    assert "Execution cancelled" in mock_span.description
+    assert isinstance(mock_span.exception, asyncio.CancelledError)

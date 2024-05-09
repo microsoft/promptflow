@@ -34,6 +34,10 @@ def target_function(request: int):
     return request
 
 
+def target_function_get_env(environment_variable: str):
+    return os.getenv(environment_variable)
+
+
 @pytest.mark.unittest
 class TestProcessUtils:
     @pytest.mark.asyncio
@@ -77,16 +81,13 @@ class TestProcessUtils:
 
     @pytest.mark.asyncio
     async def test_invoke_sync_function_in_process_set_env(self):
-        def target_function_get_env(environment_variable: str):
-            return os.getenv(environment_variable)
-
         with patch("promptflow.executor._service.utils.process_utils.service_logger") as mock_logger:
             environment_variables = {"test_env_name": "test_env_value"}
             result = await invoke_sync_function_in_process(
                 target_function_get_env,
                 args=("test_env_name",),
                 context_dict=MOCK_CONTEXT_DICT,
-                environment_variables=environment_variables
+                environment_variables=environment_variables,
             )
             assert result == "test_env_value"
             assert mock_logger.info.call_count == 2

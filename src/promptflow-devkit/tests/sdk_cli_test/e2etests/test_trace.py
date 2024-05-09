@@ -1,6 +1,8 @@
 import datetime
 import json
+import platform
 import sys
+import time
 import typing
 import uuid
 from pathlib import Path
@@ -211,6 +213,24 @@ class TestTraceEntitiesAndOperations:
             expected_span_dict["events"][i]["attributes"] = dict()
         assert_span_equals(lazy_load_span, expected_span_dict)
 
+    def test_aggregation_node_in_eval_run(self, pf: PFClient) -> None:
+        # mock a span generated from an aggregation node in an eval run
+        # whose attributes has `referenced.batch_run_id`, no `line_number`
+        span = mock_span(
+            trace_id=str(uuid.uuid4()),
+            span_id=str(uuid.uuid4()),
+            parent_id=None,
+            line_run_id=str(uuid.uuid4()),
+        )
+        batch_run_id = str(uuid.uuid4())
+        span.attributes.pop(SpanAttributeFieldName.LINE_RUN_ID)
+        span.attributes[SpanAttributeFieldName.BATCH_RUN_ID] = batch_run_id
+        span.attributes[SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID] = str(uuid.uuid4())
+        span._persist()
+        # list and assert to ensure the persist is successful
+        line_runs = pf.traces.list_line_runs(runs=[batch_run_id])
+        assert len(line_runs) == 1
+
     def test_spans_persist_and_line_run_gets(self, pf: PFClient) -> None:
         trace_id = str(uuid.uuid4())
         non_root_span_id = str(uuid.uuid4())
@@ -354,6 +374,10 @@ class TestTraceEntitiesAndOperations:
         line_runs = pf.traces._search_line_runs(expression=expr)
         assert len(line_runs) == 1
 
+    @pytest.mark.skipif(
+        platform.system() == "Windows" and sys.version_info < (3, 9),
+        reason="Python 3.9+ is required on Windows to support json_extract",
+    )
     def test_search_line_runs_with_tokens(self, pf: PFClient) -> None:
         num_line_runs = 5
         trace_ids = list()
@@ -373,6 +397,37 @@ class TestTraceEntitiesAndOperations:
         # assert these line runs are exactly the ones we just persisted
         line_run_trace_ids = {line_run.trace_id for line_run in line_runs}
         assert len(set(trace_ids) & line_run_trace_ids) == num_line_runs
+
+    def test_list_collection(self, pf: PFClient) -> None:
+        collection = str(uuid.uuid4())
+        span = mock_span(
+            trace_id=str(uuid.uuid4()), span_id=str(uuid.uuid4()), parent_id=None, line_run_id=str(uuid.uuid4())
+        )
+        # make span start time a week later, so that it can be the latest collection
+        span.start_time = datetime.datetime.now() + datetime.timedelta(days=7)
+        span.start_time = datetime.datetime.now() + datetime.timedelta(days=8)
+        span.resource[SpanResourceFieldName.ATTRIBUTES][SpanResourceAttributesFieldName.COLLECTION] = collection
+        span._persist()
+        collections = pf.traces._list_collections(limit=1)
+        assert len(collections) == 1 and collections[0] == collection
+
+    def test_list_collection_with_time_priority(self, pf: PFClient) -> None:
+        collection1, collection2 = str(uuid.uuid4()), str(uuid.uuid4())
+        for collection in (collection1, collection2):
+            span = mock_span(
+                trace_id=str(uuid.uuid4()), span_id=str(uuid.uuid4()), parent_id=None, line_run_id=str(uuid.uuid4())
+            )
+            # make span start time a week later, so that it can be the latest collection
+            span.start_time = datetime.datetime.now() + datetime.timedelta(days=7)
+            span.start_time = datetime.datetime.now() + datetime.timedelta(days=8)
+            span.resource[SpanResourceFieldName.ATTRIBUTES][SpanResourceAttributesFieldName.COLLECTION] = collection
+            span._persist()
+            # sleep 1 second to ensure the second span is later than the first
+            time.sleep(1)
+        collections = pf.traces._list_collections(limit=1)
+        assert len(collections) == 1 and collections[0] == collection2
+        collections = pf.traces._list_collections(limit=2)
+        assert len(collections) == 2 and collections == [collection2, collection1]
 
 
 @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")

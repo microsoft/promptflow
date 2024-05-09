@@ -156,6 +156,12 @@ def setup_connection_provider():
         yield
 
 
+@pytest.fixture
+def dev_connections() -> dict:
+    with open(CONNECTION_FILE, "r") as f:
+        return json.load(f)
+
+
 # ==================== serving fixtures ====================
 
 

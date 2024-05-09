@@ -25,11 +25,12 @@ from azure.core.exceptions import ResourceNotFoundError
 from mock import MagicMock, mock
 from pytest_mock import MockerFixture
 
-from promptflow._sdk._constants import FlowType, RunStatus
+from promptflow._sdk._constants import FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME, FlowType, RunStatus
 from promptflow._sdk.entities import Run
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 from promptflow.azure import PFClient
 from promptflow.azure._entities._flow import Flow
+from promptflow.tracing._constants import PF_TRACING_SKIP_LOCAL_SETUP_ENVIRON
 
 try:
     from promptflow.recording.record_mode import is_in_ci_pipeline, is_live, is_record, is_replay
@@ -450,6 +451,9 @@ def created_flow(pf: PFClient, randstr: Callable[[str], str], variable_recorder)
     """Create a flow for test."""
     flow_display_name = randstr("flow_display_name")
     flow_source = FLOWS_DIR / "simple_hello_world"
+    tool_json_path = f"{flow_source}/{PROMPT_FLOW_DIR_NAME}/{FLOW_TOOLS_JSON}"
+    if os.path.isfile(tool_json_path):
+        os.remove(tool_json_path)
     description = "test flow description"
     tags = {"owner": "sdk-test"}
     result = pf.flows.create_or_update(
@@ -732,3 +736,9 @@ def construct_csharp_test_project(flow_name: str) -> CSharpProject:
 @pytest.fixture
 def csharp_test_project_basic() -> CSharpProject:
     return construct_csharp_test_project("Basic")
+
+
+@pytest.fixture(autouse=True)
+def disable_trace_setup():
+    os.environ[PF_TRACING_SKIP_LOCAL_SETUP_ENVIRON] = "true"
+    yield

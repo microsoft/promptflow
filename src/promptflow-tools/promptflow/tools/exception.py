@@ -140,11 +140,6 @@ class ChatAPIToolRoleInvalidFormat(ToolValidationError):
     pass
 
 
-class ChatAPIAssistantRoleInvalidFormat(ToolValidationError):
-    """Base exception raised when failed to validate chat api assistant role format."""
-    pass
-
-
 class ChatAPIInvalidFunctions(ToolValidationError):
     """Base exception raised when failed to validate functions when call chat api."""
     pass

@@ -11,7 +11,7 @@ from promptflow._sdk._constants import MAX_LIST_CLI_RESULTS, ExperimentStatus, L
 from promptflow._sdk._errors import ExperimentExistsError, RunOperationError
 from promptflow._sdk._orm.experiment import Experiment as ORMExperiment
 from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_operation
-from promptflow._sdk._utils import json_load, safe_parse_object_list
+from promptflow._sdk._utilities.general_utils import json_load, safe_parse_object_list
 from promptflow._sdk.entities._experiment import Experiment
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 

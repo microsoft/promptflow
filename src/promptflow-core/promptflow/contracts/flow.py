@@ -338,7 +338,30 @@ class Node:
 
 
 @dataclass
-class FlowInputDefinition:
+class FlowParamDefinitionBase:
+    """Base class for the definition of a flow param (input & init kwargs)."""
+
+    type: ValueType
+    default: str = None
+    description: str = None
+
+    def serialize(self):
+        """Serialize the flow param definition to a dict.
+
+        :return: The dict of the flow param definition.
+        :rtype: dict
+        """
+        data = {}
+        data["type"] = self.type.value
+        if self.default:
+            data["default"] = str(self.default)
+        if self.description:
+            data["description"] = self.description
+        return data
+
+
+@dataclass
+class FlowInputDefinition(FlowParamDefinitionBase):
     """This class represents the definition of a flow input.
 
     :param type: The type of the flow input.
@@ -355,9 +378,6 @@ class FlowInputDefinition:
     :type is_chat_history: bool
     """
 
-    type: ValueType
-    default: str = None
-    description: str = None
     enum: List[str] = None
     is_chat_input: bool = False
     is_chat_history: bool = None
@@ -368,12 +388,7 @@ class FlowInputDefinition:
         :return: The dict of the flow input definition.
         :rtype: dict
         """
-        data = {}
-        data["type"] = self.type.value
-        if self.default:
-            data["default"] = str(self.default)
-        if self.description:
-            data["description"] = self.description
+        data = super().serialize()
         if self.enum:
             data["enum"] = self.enum
         if self.is_chat_input:
@@ -456,6 +471,36 @@ class FlowOutputDefinition:
             data.get("description", ""),
             data.get("evaluation_only", False),
             data.get("is_chat_output", False),
+        )
+
+
+@dataclass
+class FlowInitDefinition(FlowParamDefinitionBase):
+    """This class represents the definition of a callable class flow's init kwargs."""
+
+    @staticmethod
+    def deserialize(data: dict) -> "FlowInitDefinition":
+        """Deserialize the flow init definition from a dict.
+
+        :param data: The dict to be deserialized.
+        :type data: dict
+        :return: The flow input definition constructed from the dict.
+        :rtype: ~promptflow.contracts.flow.FlowInitDefinition
+        """
+        from promptflow.core._model_configuration import MODEL_CONFIG_NAME_2_CLASS
+
+        # support connection & model config type
+        def _get_type(data_type: str):
+            if ConnectionType.is_connection_class_name(data_type):
+                return data_type
+            elif data_type in MODEL_CONFIG_NAME_2_CLASS:
+                return data_type
+            return ValueType(data_type)
+
+        return FlowInitDefinition(
+            type=_get_type(data["type"]),
+            default=data.get("default", None),
+            description=data.get("description", ""),
         )
 
 
@@ -945,6 +990,7 @@ class FlexFlow(FlowBase):
     :type message_format: str
     """
 
+    init: Dict[str, FlowInputDefinition] = None
     program_language: str = FlowLanguage.Python
     environment_variables: Dict[str, object] = None
     # eager flow does not support multimedia contract currently, it is set to basic by default.
@@ -962,11 +1008,13 @@ class FlexFlow(FlowBase):
 
         inputs = data.get("inputs") or {}
         outputs = data.get("outputs") or {}
+        init = data.get("init") or {}
         return FlexFlow(
             id=data.get("id", "default_flow_id"),
             name=data.get("name", "default_flow"),
             inputs={name: FlowInputDefinition.deserialize(i) for name, i in inputs.items()},
             outputs={name: FlowOutputDefinition.deserialize(o) for name, o in outputs.items()},
+            init={name: FlowInitDefinition.deserialize(i) for name, i in init.items()},
             program_language=data.get(LANGUAGE_KEY, FlowLanguage.Python),
             environment_variables=data.get("environment_variables") or {},
         )

@@ -10,7 +10,7 @@ from azure.ai.ml._scope_dependent_operations import (
     _ScopeDependentOperations,
 )
 
-from promptflow._sdk._utils import safe_parse_object_list
+from promptflow._sdk._utilities.general_utils import safe_parse_object_list
 from promptflow._sdk.entities._connection import _Connection
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure._entities._workspace_connection_spec import WorkspaceConnectionSpec

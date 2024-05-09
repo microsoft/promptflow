@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 
+import sys
 from pathlib import Path
 
 import pytest
@@ -16,6 +17,13 @@ IMAGE_PATH = "./tests/test_configs/datas/logo.jpg"
 FLOW_WITH_IMAGE_PATH = "./tests/test_configs/flows/chat_flow_with_image"
 EAGER_FLOW_ROOT = TEST_ROOT / "test_configs/eager_flows"
 PROMPTY_ROOT = TEST_ROOT / "test_configs/prompty"
+
+
+def clear_module_cache(module_name):
+    try:
+        del sys.modules[module_name]
+    except Exception:
+        pass
 
 
 @pytest.mark.usefixtures("use_secrets_config_file")
@@ -68,6 +76,7 @@ class TestFlowAPIs:
         }
 
     def test_eager_flow_test_with_yaml(self, pfs_op: PFSOperations) -> None:
+        clear_module_cache("entry")
         with check_activity_end_telemetry(activity_name="pf.flows.test"):
             response = pfs_op.test_flow(
                 flow_path=Path(f"{EAGER_FLOW_ROOT}/simple_with_yaml/").absolute().as_posix(),
@@ -83,6 +92,20 @@ class TestFlowAPIs:
                 request_body={"inputs": {"func_input": "input"}, "init": {"obj_input": "val"}},
             ).json
         assert len(response) >= 1
+
+    def test_eager_flow_with_user_code_error(self, pfs_op: PFSOperations) -> None:
+        clear_module_cache("entry")
+        with check_activity_end_telemetry(
+            expected_activities=[
+                {"activity_name": "pf.flows.test", "completion_status": "Failure"},
+            ]
+        ):
+            response = pfs_op.test_flow(
+                flow_path=Path(f"{EAGER_FLOW_ROOT}/exception_in_user_code/").absolute().as_posix(),
+                request_body={},
+                status_code=404,
+            )
+        assert "Traceback (most recent call last):" in response.text
 
     def test_prompty_test(self, pfs_op: PFSOperations) -> None:
         with check_activity_end_telemetry(

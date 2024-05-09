@@ -434,3 +434,48 @@ def strip_quotation(value):
         return value[1:-1]
     else:
         return value
+
+
+def is_empty_target(obj: Optional[Dict]) -> bool:
+    """Determines if it's empty target
+
+    :param obj: The object to check
+    :type obj: Optional[Dict]
+    :return: True if obj is None or an empty Dict
+    :rtype: bool
+    """
+    return (
+        obj is None
+        # some objs have overloaded "==" and will cause error. e.g CommandComponent obj
+        or (isinstance(obj, dict) and len(obj) == 0)
+    )
+
+
+def convert_ordered_dict_to_dict(target_object: Union[Dict, List], remove_empty: bool = True) -> Union[Dict, List]:
+    """Convert ordered dict to dict. Remove keys with None value.
+    This is a workaround for rest request must be in dict instead of
+    ordered dict.
+
+    :param target_object: The object to convert
+    :type target_object: Union[Dict, List]
+    :param remove_empty: Whether to omit values that are None or empty dictionaries. Defaults to True.
+    :type remove_empty: bool
+    :return: Converted ordered dict with removed None values
+    :rtype: Union[Dict, List]
+    """
+    # OrderedDict can appear nested in a list
+    if isinstance(target_object, list):
+        new_list = []
+        for item in target_object:
+            item = convert_ordered_dict_to_dict(item, remove_empty=remove_empty)
+            if not is_empty_target(item) or not remove_empty:
+                new_list.append(item)
+        return new_list
+    if isinstance(target_object, dict):
+        new_dict = {}
+        for key, value in target_object.items():
+            value = convert_ordered_dict_to_dict(value, remove_empty=remove_empty)
+            if not is_empty_target(value) or not remove_empty:
+                new_dict[key] = value
+        return new_dict
+    return target_object

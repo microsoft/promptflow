@@ -39,7 +39,7 @@ from promptflow._sdk._service.utils.utils import (
     is_run_from_built_binary,
     kill_exist_service,
 )
-from promptflow._sdk._utils import overwrite_null_std_logger
+from promptflow._sdk._utilities.general_utils import overwrite_null_std_logger
 from promptflow._utils.thread_utils import ThreadWithContextVars
 
 overwrite_null_std_logger()

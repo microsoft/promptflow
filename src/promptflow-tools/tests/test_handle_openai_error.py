@@ -12,7 +12,7 @@ from openai import (
 from promptflow.tools.aoai import chat, completion
 from promptflow.tools.common import handle_openai_error
 from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, to_openai_error_message, \
-    JinjaTemplateError, LLMError, ChatAPIFunctionRoleInvalidFormat
+    JinjaTemplateError, LLMError, ChatAPIFunctionRoleInvalidFormat, ExceedMaxRetryTimes
 from promptflow.tools.openai import chat as openai_chat
 from promptflow.tools.aoai_gpt4v import AzureOpenAI as AzureOpenAIVision
 from pytest_mock import MockerFixture
@@ -115,8 +115,6 @@ class TestHandleOpenAIError:
                     create_api_connection_error_with_cause(),
                     InternalServerError("Something went wrong", response=httpx.Response(
                         503, request=httpx.Request('GET', 'https://www.example.com')), body=None),
-                    UnprocessableEntityError("Something went wrong", response=httpx.Response(
-                        422, request=httpx.Request('GET', 'https://www.example.com')), body=None)
                 ]
             ),
         ],
@@ -155,9 +153,6 @@ class TestHandleOpenAIError:
                     InternalServerError("Something went wrong", response=httpx.Response(
                         503, request=httpx.Request('GET', 'https://www.example.com'), headers={"retry-after": "0.3"}),
                                         body=None),
-                    UnprocessableEntityError("Something went wrong", response=httpx.Response(
-                        422, request=httpx.Request('GET', 'https://www.example.com'), headers={"retry-after": "0.3"}),
-                                             body=None)
                 ]
             ),
         ],
@@ -188,6 +183,23 @@ class TestHandleOpenAIError:
             ]
             mock_sleep.assert_has_calls(expected_calls)
 
+    def test_unprocessable_entity_error(self, mocker: MockerFixture):
+        unprocessable_entity_error = UnprocessableEntityError(
+            "Something went wrong", response=httpx.Response(
+                422, request=httpx.Request('GET', 'https://www.example.com')), body=None)
+        rate_limit_error = RateLimitError("Something went wrong", response=httpx.Response(
+            429, request=httpx.Request('GET', 'https://www.example.com'), headers={"retry-after": "0.3"}),
+            body=None)
+        # for below exception sequence, "consecutive_422_error_count" changes: 0 -> 1 -> 0 -> 1 -> 2.
+        exception_sequence = [
+            unprocessable_entity_error, rate_limit_error, unprocessable_entity_error, unprocessable_entity_error]
+        patched_test_method = mocker.patch("promptflow.tools.aoai.AzureOpenAI.chat", side_effect=exception_sequence)
+        # limit api connection error retry threshold to 2.
+        decorated_test_method = handle_openai_error(unprocessable_entity_error_tries=2)(patched_test_method)
+        with pytest.raises(ExceedMaxRetryTimes):
+            decorated_test_method()
+        assert patched_test_method.call_count == 4
+
     @pytest.mark.parametrize(
         "dummyExceptionList",
         [
@@ -197,8 +209,6 @@ class TestHandleOpenAIError:
                                         body=None),
                     BadRequestError("Something went wrong", response=httpx.get('https://www.example.com'),
                                     body=None),
-                    APIConnectionError(message="Something went wrong",
-                                       request=httpx.Request('GET', 'https://www.example.com')),
                 ]
             ),
         ],
@@ -261,6 +271,7 @@ class TestHandleOpenAIError:
             )
         assert "'name' is required if role is function," in exc_info.value.message
 
+    @pytest.mark.skip(reason="Skip temporarily because there is something issue with test AOAI resource response.")
     def test_completion_with_chat_model(self, azure_open_ai_connection):
         with pytest.raises(UserErrorException) as exc_info:
             completion(connection=azure_open_ai_connection, prompt="hello", deployment_name="gpt-35-turbo")

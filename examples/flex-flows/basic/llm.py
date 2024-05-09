@@ -51,7 +51,6 @@ def my_llm_tool(
         )
     messages = [{"content": prompt, "role": "system"}]
     response = get_client().chat.completions.create(
-        # prompt=prompt,
         messages=messages,
         model=deployment_name,
         max_tokens=int(max_tokens),
