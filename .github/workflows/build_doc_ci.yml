@@ -69,11 +69,12 @@ jobs:
         shell: pwsh
         # Note: Use -e to avoid duplicate object warning when build apidoc.
         run: |
-          pip uninstall -y promptflow-tracing promptflow-core promptflow-devkit promptflow-azure
+          pip uninstall -y promptflow-tracing promptflow-core promptflow-devkit promptflow-azure promptflow-rag
           pip install -e ${{ github.workspace }}/src/promptflow-tracing
           pip install -e ${{ github.workspace }}/src/promptflow-core
           pip install -e ${{ github.workspace }}/src/promptflow-devkit
           pip install -e ${{ github.workspace }}/src/promptflow-azure
+          pip install -e ${{ github.workspace }}/src/promptflow-rag
           pip freeze
 
       - name: Build LinkCheck
