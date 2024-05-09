@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Any, Iterable, List, Optional, Tuple, Union
 
 from promptflow._utils.multimedia_utils import persist_multimedia_data
-from promptflow._utils.utils import DataClassEncoder
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo
 from promptflow.parallel._config import parser
 from promptflow.parallel._config.model import ParallelRunConfig
@@ -18,6 +17,7 @@ from promptflow.parallel._processor.aggregation_finalizer import AggregationFina
 from promptflow.parallel._processor.debug_info import DebugInfo
 from promptflow.parallel._processor.finalizer import CompositeFinalizer, Finalizer
 from promptflow.parallel.processor import ParallelRunProcessor
+from promptflow.parallel.utils import DataClassEncoder
 
 
 class AbstractParallelRunProcessor(ParallelRunProcessor, ABC):
