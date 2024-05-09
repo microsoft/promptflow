@@ -10,6 +10,7 @@ from typing import Any, Callable, Dict, List
 from tqdm import tqdm
 
 from promptflow._sdk._telemetry import ActivityType, monitor_operation
+from promptflow.evals.synthetic.adversarial_scenarios import AdversarialScenarios
 
 from ._conversation import CallbackConversationBot, ConversationBot, ConversationRole
 from ._conversation._conversation import simulate_conversation
@@ -54,6 +55,7 @@ class AdversarialSimulator:
         self.token_manager = ManagedIdentityAPITokenManager(
             token_scope=TokenScope.DEFAULT_AZURE_MANAGEMENT,
             logger=logging.getLogger("AdversarialSimulator"),
+            credential=self.azure_ai_project["credential"],
         )
         self.rai_client = RAIClient(azure_ai_project=azure_ai_project, token_manager=self.token_manager)
         self.adversarial_template_handler = AdversarialTemplateHandler(
@@ -68,7 +70,7 @@ class AdversarialSimulator:
     async def __call__(
         self,
         *,
-        scenario: str,
+        scenario: AdversarialScenarios,
         target: Callable,
         max_conversation_turns: int = 1,
         max_simulation_results: int = 3,
@@ -81,8 +83,9 @@ class AdversarialSimulator:
         """
         Executes the adversarial simulation against a specified target function asynchronously.
 
-        :param scenario: Scenario string used for generating adversarial inputs.
-        :type scenario: str
+        :param scenario: Enum value specifying the adversarial scenario used for generating inputs.
+        :type scenario: AdversarialScenarios
+        :example: AdversarialScenarios.ADVERSARIAL_QA, AdversarialScenarios.ADVERSARIAL_CONVERSATION
         :param target: The target function to simulate adversarial inputs against.
         This function should be asynchronous and accept a dictionary representing the adversarial input.
         :type target: Callable
@@ -122,6 +125,8 @@ class AdversarialSimulator:
             max_conversation_turns = 2
         else:
             max_conversation_turns = max_conversation_turns * 2
+        if scenario not in AdversarialScenarios.__members__.values():
+            raise ValueError("Invalid adversarial scenario")
         self._ensure_service_dependencies()
         templates = await self.adversarial_template_handler._get_content_harm_template_collections(scenario)
         if len(templates) == 0:

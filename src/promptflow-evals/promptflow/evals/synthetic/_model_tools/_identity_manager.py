@@ -18,11 +18,14 @@ class TokenScope(Enum):
 
 
 class APITokenManager(ABC):
-    def __init__(self, logger, auth_header="Bearer"):
+    def __init__(self, logger, auth_header="Bearer", credential=None):
         self.logger = logger
         self.auth_header = auth_header
         self._lock = None
-        self.credential = self.get_aad_credential()
+        if credential is not None:
+            self.credential = credential
+        else:
+            self.credential = self.get_aad_credential()
         self.token = None
         self.last_refresh_time = None
 
