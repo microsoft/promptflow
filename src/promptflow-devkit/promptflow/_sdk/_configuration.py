@@ -18,7 +18,7 @@ from promptflow._sdk._constants import (
     HOME_PROMPT_FLOW_DIR,
     SERVICE_CONFIG_FILE,
 )
-from promptflow._sdk._utils import call_from_extension, gen_uuid_by_compute_info, read_write_by_user
+from promptflow._sdk._utilities.general_utils import call_from_extension, gen_uuid_by_compute_info, read_write_by_user
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.exceptions import ErrorTarget, ValidationException

@@ -41,9 +41,9 @@ from promptflow._constants import ConnectionProviderConfig
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._pf_client import PFClient
-from promptflow._sdk._utils import generate_yaml_entry_without_recover
-from promptflow._sdk._utils.chat_utils import construct_chat_page_url
-from promptflow._sdk._utils.serve_utils import start_flow_service
+from promptflow._sdk._utilities.chat_utils import construct_chat_page_url
+from promptflow._sdk._utilities.general_utils import generate_yaml_entry_without_recover
+from promptflow._sdk._utilities.serve_utils import start_flow_service
 from promptflow._utils.flow_utils import is_flex_flow
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import ErrorTarget, UserErrorException

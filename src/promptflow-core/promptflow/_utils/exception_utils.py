@@ -14,6 +14,7 @@ from promptflow.tracing._operation_context import OperationContext
 
 ADDITIONAL_INFO_USER_EXECUTION_ERROR = "ToolExecutionErrorDetails"
 ADDITIONAL_INFO_USER_CODE_STACKTRACE = "UserCodeStackTrace"
+ADDITIONAL_INFO_FLEX_FLOW_ERROR = "FlexFlowExecutionErrorDetails"
 
 CAUSE_MESSAGE = "\nThe above exception was the direct cause of the following exception:\n\n"
 CONTEXT_MESSAGE = "\nDuring handling of the above exception, another exception occurred:\n\n"
@@ -102,7 +103,9 @@ class ErrorResponse:
 
     def get_user_execution_error_info(self):
         """Get user tool execution error info from additional info."""
-        user_execution_error_info = self.get_additional_info(ADDITIONAL_INFO_USER_EXECUTION_ERROR)
+        user_execution_error_info = self.get_additional_info(
+            ADDITIONAL_INFO_USER_EXECUTION_ERROR
+        ) or self.get_additional_info(ADDITIONAL_INFO_FLEX_FLOW_ERROR)
         if not user_execution_error_info or not isinstance(user_execution_error_info, dict):
             return {}
         return user_execution_error_info
@@ -410,3 +413,21 @@ def remove_suffix(text: str, suffix: str = None):
         return text
 
     return text[: -len(suffix)]
+
+
+def extract_stack_trace_without_core_frame(exc: Exception):
+    """Extract the stack trace without the core frame."""
+    if exc and exc.__traceback__ is not None:
+        tb = exc.__traceback__.tb_next
+        if tb is not None:
+            # The first frames are always our code invoking the tool.
+            # We do not want to dump it to user code's traceback.
+            # So, skip these frames from pf core module.
+            while is_pf_core_frame(tb.tb_frame) and tb.tb_next is not None:
+                tb = tb.tb_next
+            # We don't use traceback.format_exception since its interface differs between 3.8 and 3.10.
+            # Use this internal class to adapt to different python versions.
+            te = TracebackException(type(exc), exc, tb)
+            formatted_tb = "".join(te.format())
+            return formatted_tb
+    return None

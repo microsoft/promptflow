@@ -36,7 +36,7 @@ from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._orchestrator import TestSubmitter
 from promptflow._sdk._orchestrator.utils import SubmitterHelper
 from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_operation
-from promptflow._sdk._utils import (
+from promptflow._sdk._utilities.general_utils import (
     _get_additional_includes,
     _merge_local_code_and_additional_includes,
     add_executable_script_to_env_path,
@@ -47,7 +47,7 @@ from promptflow._sdk._utils import (
     json_load,
     logger,
 )
-from promptflow._sdk._utils.signature_utils import (
+from promptflow._sdk._utilities.signature_utils import (
     format_signature_type,
     infer_signature_for_flex_flow,
     merge_flow_signature,
@@ -525,14 +525,14 @@ class FlowOperations(TelemetryMixin):
         update_flow_tools_json: bool = True,
     ):
         # TODO: confirm if we need to import this
-        from promptflow._sdk._orchestrator import variant_overwrite_context
+        from promptflow._sdk._orchestrator import flow_overwrite_context
 
         flow_copy_target = Path(output)
         flow_copy_target.mkdir(parents=True, exist_ok=True)
 
         # resolve additional includes and copy flow directory first to guarantee there is a final flow directory
         # TODO: shall we pop "node_variants" unless keep-variants is specified?
-        with variant_overwrite_context(
+        with flow_overwrite_context(
             flow=flow,
             tuning_node=tuning_node,
             variant=node_variant,
@@ -589,7 +589,6 @@ class FlowOperations(TelemetryMixin):
             import bs4  # noqa: F401
             import PyInstaller  # noqa: F401
             import streamlit
-            import streamlit_quill  # noqa: F401
         except ImportError as ex:
             raise UserErrorException(
                 f"Please try 'pip install promptflow[executable]' to install dependency, {ex.msg}."
@@ -1006,11 +1005,12 @@ class FlowOperations(TelemetryMixin):
             from promptflow.contracts.tool import ValueType
             from promptflow.core._model_configuration import PromptyModelConfiguration
 
-            flow_meta = {"inputs": entry._data.get("inputs", {})}
-            if "outputs" in entry._data:
-                flow_meta["outputs"] = entry._data.get("outputs")
-            elif include_primitive_output:
-                flow_meta["outputs"] = {"output": {"type": "string"}}
+            flow_meta = {
+                "inputs": entry._core_prompty._get_input_signature(),
+            }
+            output_signature = entry._core_prompty._get_output_signature(include_primitive_output)
+            if output_signature:
+                flow_meta["outputs"] = output_signature
             init_dict = {}
             for field in fields(PromptyModelConfiguration):
                 init_dict[field.name] = {"type": ValueType.from_type(field.type).value}

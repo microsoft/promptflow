@@ -22,6 +22,7 @@ develop-a-dag-flow/index
 execute-flow-as-a-function
 chat-with-a-flow/index
 run-and-evaluate-a-flow/index
+generate-test-data
 ```
 
 ```{toctree}

@@ -4,7 +4,7 @@ import subprocess
 import copy
 from pip._vendor import tomli as toml
 from pathlib import Path
-from promptflow._sdk._utils import render_jinja_template
+from promptflow._sdk._utilities.general_utils import render_jinja_template
 
 
 def get_git_base_dir():

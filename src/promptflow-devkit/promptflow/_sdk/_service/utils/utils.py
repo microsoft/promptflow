@@ -11,6 +11,7 @@ import socket
 import subprocess
 import sys
 import time
+import traceback
 from dataclasses import InitVar, dataclass, field
 from datetime import datetime
 from functools import wraps
@@ -31,7 +32,11 @@ from promptflow._sdk._constants import (
     PF_SERVICE_PORT_FILE,
 )
 from promptflow._sdk._errors import ConnectionNotFoundError, RunNotFoundError
-from promptflow._sdk._utils import get_promptflow_devkit_version, get_promptflow_sdk_version, read_write_by_user
+from promptflow._sdk._utilities.general_utils import (
+    get_promptflow_devkit_version,
+    get_promptflow_sdk_version,
+    read_write_by_user,
+)
 from promptflow._sdk._version import VERSION
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
@@ -274,7 +279,10 @@ class ErrorInfo:
             self.target = exception.target
             self.module = exception.module
             self.reference_code = exception.reference_code
-            self.inner_exception = str(exception.inner_exception)
+            # If not inner_exception here, directly get traceback here
+            self.inner_exception = (
+                str(exception.inner_exception) if exception.inner_exception else traceback.format_exc()
+            )
             self.additional_info = exception.additional_info
             self.error_codes = exception.error_codes
         else:

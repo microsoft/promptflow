@@ -51,8 +51,12 @@ from promptflow._sdk._service.utils.utils import (
     is_port_in_use,
     is_run_from_built_binary,
 )
-from promptflow._sdk._utils import add_executable_script_to_env_path, extract_workspace_triad_from_trace_provider
-from promptflow._sdk._utils.tracing import get_workspace_kind, parse_kv_from_pb_attribute, parse_protobuf_span
+from promptflow._sdk._utilities.general_utils import (
+    add_executable_script_to_env_path,
+    extract_workspace_triad_from_trace_provider,
+)
+from promptflow._sdk._utilities.tracing_utils import get_workspace_kind, parse_kv_from_pb_attribute, parse_protobuf_span
+from promptflow._sdk.entities import Run
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.thread_utils import ThreadWithContextVars
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
@@ -192,14 +196,15 @@ def _invoke_pf_svc() -> str:
     return port
 
 
-def _get_ws_triad_from_pf_config(path: typing.Optional[Path]) -> typing.Optional[AzureMLWorkspaceTriad]:
+def _get_ws_triad_from_pf_config(path: typing.Optional[Path], config=None) -> typing.Optional[AzureMLWorkspaceTriad]:
     from promptflow._sdk._configuration import Configuration
 
-    config = Configuration.get_instance()._get_trace_destination(path=path)
-    _logger.info("resolved tracing.trace.destination: %s", config)
-    if not TraceDestinationConfig.need_to_export_to_azure(config):
+    config = config or Configuration.get_instance()
+    trace_destination = config._get_trace_destination(path=path)
+    _logger.info("resolved tracing.trace.destination: %s", trace_destination)
+    if not TraceDestinationConfig.need_to_export_to_azure(trace_destination):
         return None
-    return extract_workspace_triad_from_trace_provider(config)
+    return extract_workspace_triad_from_trace_provider(trace_destination)
 
 
 # priority: run > experiment > collection
@@ -365,6 +370,11 @@ def start_trace_with_devkit(collection: str, **kwargs: typing.Any) -> None:
     _logger.debug("kwargs: %s", kwargs)
     attrs = kwargs.get("attributes", None)
     run = kwargs.get("run", None)
+    if isinstance(run, Run):
+        run_config = run._config
+        run = run.name
+    else:
+        run_config = None
     path = kwargs.get("path", None)
 
     # honor and set attributes if user has specified
@@ -392,7 +402,7 @@ def start_trace_with_devkit(collection: str, **kwargs: typing.Any) -> None:
 
     # local to cloud feature
     _logger.debug("start_trace_with_devkit.path(from kwargs): %s", path)
-    ws_triad = _get_ws_triad_from_pf_config(path=path)
+    ws_triad = _get_ws_triad_from_pf_config(path=path, config=run_config)
     is_azure_ext_installed = _is_azure_ext_installed()
     if ws_triad is not None and not is_azure_ext_installed:
         warning_msg = (
@@ -599,19 +609,13 @@ def process_otlp_trace_request(
                 else:
                     all_spans.append(span)
 
-    if cloud_trace_only:
-        # If we only trace to cloud, we should make sure the data writing is success before return.
-        _try_write_trace_to_cosmosdb(
-            all_spans, get_created_by_info_with_cache, logger, get_credential, is_cloud_trace=True
-        )
-    else:
-        # Create a new thread to write trace to cosmosdb to avoid blocking the main thread
-        ThreadWithContextVars(
-            target=_try_write_trace_to_cosmosdb,
-            args=(all_spans, get_created_by_info_with_cache, logger, get_credential, False),
-        ).start()
+    # Create a new thread to write trace to cosmosdb to avoid blocking the main thread
+    ThreadWithContextVars(
+        target=_try_write_trace_to_cosmosdb,
+        args=(all_spans, get_created_by_info_with_cache, logger, get_credential, cloud_trace_only),
+    ).start()
 
-    return
+    return all_spans
 
 
 def _try_write_trace_to_cosmosdb(

@@ -4,7 +4,7 @@ import json
 from promptflow._cli._params import add_param_path, add_param_set_positional, base_params
 from promptflow._cli._utils import activate_action, list_of_dict_to_dict
 from promptflow._sdk._configuration import Configuration, InvalidConfigValue
-from promptflow._sdk._utils import print_red_error
+from promptflow._sdk._utilities.general_utils import print_red_error
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 
 logger = get_cli_sdk_logger()
