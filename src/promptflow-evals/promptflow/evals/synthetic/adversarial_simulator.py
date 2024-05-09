@@ -121,16 +121,14 @@ class AdversarialSimulator:
         :rtype: List[Dict[str, Any]]
         """
         # validate the inputs
-        if "conversation" not in scenario:
+        if scenario != AdversarialScenarios.ADVERSARIAL_CONVERSATION:
             max_conversation_turns = 2
         else:
             max_conversation_turns = max_conversation_turns * 2
         if scenario not in AdversarialScenarios.__members__.values():
             raise ValueError("Invalid adversarial scenario")
         self._ensure_service_dependencies()
-        templates = await self.adversarial_template_handler._get_content_harm_template_collections(scenario)
-        if len(templates) == 0:
-            raise ValueError(f"No templates found for {scenario}")
+        templates = await self.adversarial_template_handler._get_content_harm_template_collections(scenario.value)
         concurrent_async_task = min(concurrent_async_task, 1000)
         semaphore = asyncio.Semaphore(concurrent_async_task)
         sim_results = []

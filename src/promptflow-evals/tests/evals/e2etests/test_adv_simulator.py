@@ -49,9 +49,8 @@ class TestAdvSimulator:
 
     def test_adv_qa_sim_responds_with_one_response(self, model_config, ml_client_config):
         os.environ.pop("RAI_SVC_URL", None)
-        from promptflow.evals.synthetic import AdversarialSimulator
+        from promptflow.evals.synthetic import AdversarialScenarios, AdversarialSimulator
 
-        scenario = "adv_qa"
         azure_ai_project = {
             "subscription_id": ml_client_config["subscription_id"],
             "resource_group_name": ml_client_config["resource_group_name"],
@@ -83,7 +82,7 @@ class TestAdvSimulator:
 
         outputs = asyncio.run(
             simulator(
-                scenario=scenario,
+                scenario=AdversarialScenarios.ADVERSARIAL_QA,
                 max_conversation_turns=1,
                 max_simulation_results=1,
                 target=callback,
@@ -100,9 +99,8 @@ class TestAdvSimulator:
 
     def test_adv_conversation_sim_responds_with_responses(self, model_config, ml_client_config):
         os.environ.pop("RAI_SVC_URL", None)
-        from promptflow.evals.synthetic import AdversarialSimulator
+        from promptflow.evals.synthetic import AdversarialScenarios, AdversarialSimulator
 
-        scenario = "adv_conversation"
         azure_ai_project = {
             "subscription_id": ml_client_config["subscription_id"],
             "resource_group_name": ml_client_config["resource_group_name"],
@@ -128,7 +126,7 @@ class TestAdvSimulator:
 
         outputs = asyncio.run(
             simulator(
-                scenario=scenario,
+                scenario=AdversarialScenarios.ADVERSARIAL_CONVERSATION,
                 max_conversation_turns=2,
                 max_simulation_results=1,
                 target=callback,
@@ -144,9 +142,8 @@ class TestAdvSimulator:
 
     def test_adv_summarization_sim_responds_with_responses(self, model_config, ml_client_config):
         os.environ.pop("RAI_SVC_URL", None)
-        from promptflow.evals.synthetic import AdversarialSimulator
+        from promptflow.evals.synthetic import AdversarialScenarios, AdversarialSimulator
 
-        scenario = "adv_summarization"
         azure_ai_project = {
             "subscription_id": ml_client_config["subscription_id"],
             "resource_group_name": ml_client_config["resource_group_name"],
@@ -172,7 +169,7 @@ class TestAdvSimulator:
 
         outputs = asyncio.run(
             simulator(
-                scenario=scenario,
+                scenario=AdversarialScenarios.ADVERSARIAL_SUMMARIZATION,
                 max_conversation_turns=1,
                 max_simulation_results=1,
                 target=callback,
@@ -188,9 +185,8 @@ class TestAdvSimulator:
 
     def test_adv_summarization_jailbreak_sim_responds_with_responses(self, model_config, ml_client_config):
         os.environ.pop("RAI_SVC_URL", None)
-        from promptflow.evals.synthetic import AdversarialSimulator
+        from promptflow.evals.synthetic import AdversarialScenarios, AdversarialSimulator
 
-        scenario = "adv_summarization"
         azure_ai_project = {
             "subscription_id": ml_client_config["subscription_id"],
             "resource_group_name": ml_client_config["resource_group_name"],
@@ -216,7 +212,7 @@ class TestAdvSimulator:
 
         outputs = asyncio.run(
             simulator(
-                scenario=scenario,
+                scenario=AdversarialScenarios.ADVERSARIAL_SUMMARIZATION,
                 max_conversation_turns=1,
                 max_simulation_results=1,
                 target=callback,
