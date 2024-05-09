@@ -95,7 +95,7 @@ Setup connections to provisioned resources in prompt flow.
 
 _To grasp the fundamentals of creating a chat prompt, begin with [this section](./prompt-tool.md#how-to-write-prompt) for an introductory understanding of jinja._
 
-We offer a method to distinguish between different roles in a chat prompt, such as "system", "user", "assistant" and "tool". The "system", "user", "assistant" roles can have "name" and "content" properties. The "tool" role, however, should have "tool_call_id" and "content" properties. For an example of a tool chat prompt, please refer to Sample 3.
+We offer a method to distinguish between different roles in a chat prompt, such as "system", "user", "assistant" and "tool". The "system", "user", "assistant" roles can have "name" and "content" properties. The "tool" role, however, should have "tool_call_id" and "content" properties. For an example of a tool chat prompt, please refer to [Sample 3](#sample-3).
 
 ### Sample 1
 ```jinja
@@ -171,18 +171,17 @@ What is the current weather like in Boston?
 # assistant:
 {# The assistant message with 'tool_calls' must be followed by a tool message. #}
 ## tool_calls:
-{{outputs.llm_output.tool_calls}}
- 
-{# The tool message must follow an assistant message with 'tool_calls'. #}
-{% for item in outputs.llm_output.tool_calls %}
-# tool:
-{# 'tool_call_id's should match assistant tool_calls. #}
-## tool_call_id:
-{{item.id}}
-## content:
-{{outputs.answer}}
+{{llm_output.tool_calls}}
 
-{% endfor %}
+# tool:
+{#
+Messages with role 'tool' must be a response to a preceding message with 'tool_calls'.
+Additionally, 'tool_call_id's should match assistant tool_calls.
+#}
+## tool_call_id:
+{{llm_output.tool_calls[0].id}}
+## content:
+{{answer}}
 
 # user:
 {{question}}
@@ -215,7 +214,7 @@ In LLM tool, the prompt is transformed to match the [openai messages](https://pl
     {
         "role": "tool",
         "tool_call_id": "<tool-call-id-for-first-question>",
-        "content": "<tool-response-for-first-question>"
+        "content": "<tool-answer-for-first-question>"
     }
     ...
     {

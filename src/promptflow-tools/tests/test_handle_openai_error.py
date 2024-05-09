@@ -377,8 +377,8 @@ class TestHandleOpenAIError:
         error_codes = "UserError/OpenAIError/BadRequestError"
         raw_message = (
             "Please make sure your chat prompt includes 'tool_calls' within the 'assistant' role. Also, the "
-            "assistant message must be followed by a tool message, with 'tool_call_id's matching the assistant message."
-            " You could refer to guideline at https://aka.ms/pfdoc/chat-prompt"
+            "assistant message must be followed by messages with role 'tool', matching ids of assistant message "
+            "'tool_calls' property. You could refer to guideline at https://aka.ms/pfdoc/chat-prompt"
         )
         with pytest.raises(WrappedOpenAIError) as exc_info:
             chat(azure_open_ai_connection, prompt=f"{prompt_template}", deployment_name="gpt-35-turbo")

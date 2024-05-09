@@ -12,8 +12,8 @@ def to_openai_error_message(e: Exception) -> str:
     params_chat_model_cannot_accept = ["best_of", "echo", "logprobs"]
     tool_chat_prompt_tsg = (
         "Please make sure your chat prompt includes 'tool_calls' within the 'assistant' role. Also, the assistant "
-        "message must be followed by a tool message, with 'tool_call_id's matching the assistant message. "
-        "You could refer to guideline at https://aka.ms/pfdoc/chat-prompt"
+        "message must be followed by messages with role 'tool', matching ids of assistant message 'tool_calls' "
+        "property. You could refer to guideline at https://aka.ms/pfdoc/chat-prompt"
     )
     if error_message == "<empty message>":
         msg = "The api key is invalid or revoked. " \
