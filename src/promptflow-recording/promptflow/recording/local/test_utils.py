@@ -7,6 +7,8 @@ import time
 
 import requests
 
+from promptflow._sdk._constants import PF_SERVICE_HOST
+
 
 def invoke_prompt_flow_service() -> str:
     # invoke prompt flow service as a standby service
@@ -21,6 +23,6 @@ def invoke_prompt_flow_service() -> str:
     else:
         _start_background_service_on_unix(port)
     time.sleep(20)  # we need some seconds to start the service
-    response = requests.get(f"http://localhost:{port}/heartbeat")
+    response = requests.get(f"http://{PF_SERVICE_HOST}:{port}/heartbeat")
     assert response.status_code == 200, "prompt flow service is not healthy via /heartbeat"
     return port
