@@ -1,0 +1,46 @@
+{
+    "description": "Test the scenario of running a batch run with the basic flex flow",
+    "run_configs": {
+        "data": "inputs.jsonl",
+        "column_mapping": {
+            "answer": "${answer.text}",
+            "expected_word": "${expected_word.text}"
+        },
+        "init": {
+            "model_config": {
+                "connection": "open_ai_connection",
+                "azure_deployment": "gpt-35-turbo-0125"
+            }
+        }
+    },
+    "assertions": {
+        "status": "Completed",
+        "outputs": [
+            {
+                "line_number": 0,
+                "output": {
+                    "correct": true,
+                    "original_answer": "ChatGPT is a language model"
+                }
+            },
+            {
+                "line_number": 1,
+                "output": {
+                    "correct": false,
+                    "original_answer": "ChatGPT is a conversational AI model"
+                }
+            }
+        ],
+        "logs": [
+            "promptflow-runtime",
+            "execution.bulk",
+            "[Flex in line 0 (index starts from 0)] stderr> Hello error text_0",
+            "Finished 2 / 2 lines.",
+            "Finish executing aggregation function."
+        ],
+        "metrics": {
+            "total_correct": 1,
+            "total": 2
+        }
+    }
+}
