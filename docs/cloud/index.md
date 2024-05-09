@@ -34,6 +34,7 @@ azureai/manage-flows
 azureai/run-promptflow-in-azure-ai
 azureai/create-run-with-automatic-runtime
 azureai/use-flow-in-azure-ml-pipeline
+azureai/generate-test-data-cloud.md
 ```
 
 ```{toctree}
