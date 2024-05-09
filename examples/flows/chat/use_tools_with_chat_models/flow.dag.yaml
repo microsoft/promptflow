@@ -8,7 +8,13 @@ inputs:
     - inputs:
         question: What is the current weather like in Boston?
       outputs:
-        answer: '[{"location":"Boston","temperature":"72","unit":"fahrenheit","forecast":["sunny","windy"]}]'
+        answer:
+        - location: Boston
+          temperature: 72
+          unit: fahrenheit
+          forecast:
+          - sunny
+          - windy
         llm_output:
           content: null
           function_call: null

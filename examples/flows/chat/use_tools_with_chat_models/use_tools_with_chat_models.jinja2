@@ -10,12 +10,12 @@ Don't make assumptions about what values to plug into functions. Ask for clarifi
 ## tool_calls:
 {{item.outputs.llm_output.tool_calls}}
 
-{% for tool_call_item in item.outputs.llm_output.tool_calls %}
+{% for i in range(item.outputs.llm_output.tool_calls|length) %}
 # tool:
 ## tool_call_id:
-{{tool_call_item.id}}
+{{item.outputs.llm_output.tool_calls[i].id}}
 ## content:
-{{item.outputs.answer}}
+{{item.outputs.answer[i]}}
 
 {% endfor %}
 
