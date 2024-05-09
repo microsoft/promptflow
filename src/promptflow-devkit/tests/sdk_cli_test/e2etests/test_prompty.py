@@ -355,6 +355,18 @@ class TestPrompty:
             prompty()
         assert "Only dict and json file are supported as sample in prompty" in ex.value.message
 
+        # Test sample field as input signature
+        prompty = Flow.load(source=f"{PROMPTY_DIR}/sample_as_input_signature.prompty")
+        result = prompty()
+        assert "2" in result
+
+        input_signature = prompty._get_input_signature()
+        assert input_signature == {
+            "firstName": {"type": "string"},
+            "lastName": {"type": "string"},
+            "question": {"type": "string"},
+        }
+
     def test_prompty_with_default_connection(self, pf: PFClient):
         connection = pf.connections.get(name="azure_open_ai_connection", with_secrets=True)
         os.environ["AZURE_OPENAI_ENDPOINT"] = connection.api_base
