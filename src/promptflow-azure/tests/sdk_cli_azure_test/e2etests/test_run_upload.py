@@ -1,7 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
+import tempfile
 from pathlib import Path
 from typing import Callable
 from unittest.mock import patch
@@ -260,3 +260,45 @@ class TestFlowRunUpload:
 
             # check the run is uploaded to cloud.
             Local2CloudTestHelper.check_local_to_cloud_run(pf, run)
+
+    @pytest.mark.skipif(condition=not pytest.is_live, reason="Bug - 3089145 Replay failed for test 'test_upload_run'")
+    def test_upload_run_pf_eval_dependencies(
+            self,
+            pf: PFClient,
+            randstr: Callable[[str], str],
+    ):
+        # This test captures promptflow-evals dependencies on private API of promptflow.
+        # In case changes are made please reach out to promptflow-evals team to update the dependencies.
+
+        name = randstr("batch_run_name_for_upload")
+        local_pf = Local2CloudTestHelper.get_local_pf(name)
+        # submit a local batch run.
+        run = local_pf.run(
+            flow=f"{FLOWS_DIR}/simple_hello_world",
+            data=f"{DATAS_DIR}/webClassification3.jsonl",
+            name=name,
+            column_mapping={"name": "${data.url}"},
+            display_name="sdk-cli-test-run-local-to-cloud",
+            tags={"sdk-cli-test": "true"},
+            description="test sdk local to cloud",
+        )
+        assert run.status == RunStatus.COMPLETED
+
+        # check the run is uploaded to cloud
+        Local2CloudTestHelper.check_local_to_cloud_run(pf, run, check_run_details_in_cloud=True)
+
+        from promptflow.azure._dependencies._pf_evals import AsyncRunUploader
+        from promptflow._sdk._constants import Local2Cloud
+
+        async_uploader = AsyncRunUploader._from_run_operations(run, pf.runs)
+        instance_results = local_pf.runs.get_details(run, all_results=True)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            file_name = Local2Cloud.FLOW_INSTANCE_RESULTS_FILE_NAME
+            local_file = Path(temp_dir) / file_name
+            instance_results.to_json(local_file, orient="records", lines=True)
+
+            # overriding instance_results.jsonl file
+            remote_file = (f"{Local2Cloud.BLOB_ROOT_PROMPTFLOW}"
+                           f"/{Local2Cloud.BLOB_ARTIFACTS}/{run.name}/{Local2Cloud.FLOW_INSTANCE_RESULTS_FILE_NAME}")
+            async_run_allowing_running_loop(async_uploader._upload_local_file_to_blob, local_file, remote_file)
