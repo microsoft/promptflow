@@ -11,6 +11,7 @@ from typing import Any, Mapping, Union
 from promptflow._constants import DEFAULT_ENCODING, LANGUAGE_KEY, PROMPTY_EXTENSION, FlowLanguage
 from promptflow._utils.flow_utils import is_flex_flow, is_prompty_flow, resolve_flow_path
 from promptflow._utils.yaml_utils import load_yaml_string
+from promptflow.contracts.tool import ValueType
 from promptflow.core._errors import MissingRequiredInputError
 from promptflow.core._model_configuration import PromptyModelConfiguration
 from promptflow.core._prompty_utils import (
@@ -314,6 +315,7 @@ class Prompty(FlowBase):
 
         # TODO support more templating engine
         self._template_engine = configs.get("template", "jinja2")
+        self._input_signature, self._output_signature = None, None
         super().__init__(code=path.parent, path=path, data=configs, content_hash=None, **kwargs)
 
     @classmethod
@@ -373,7 +375,7 @@ class Prompty(FlowBase):
 
         resolved_inputs = {}
         missing_inputs = []
-        for input_name, value in self._inputs.items():
+        for input_name, value in self._get_input_signature().items():
             if input_name not in input_values and "default" not in value:
                 missing_inputs.append(input_name)
                 continue
@@ -381,6 +383,25 @@ class Prompty(FlowBase):
         if missing_inputs:
             raise MissingRequiredInputError(f"Missing required inputs: {missing_inputs}")
         return resolved_inputs
+
+    def _get_input_signature(self):
+        if not self._input_signature:
+            if self._inputs:
+                self._input_signature = self._inputs
+            elif self._sample:
+                sample_data = load_inputs_from_sample(self._sample)
+                self._input_signature = {k: {"type": ValueType.from_value(v).value} for k, v in sample_data.items()}
+            else:
+                self._input_signature = {}
+        return self._input_signature
+
+    def _get_output_signature(self, include_primitive_output=False):
+        if not self._output_signature:
+            self._output_signature = self._outputs
+        if not self._output_signature and include_primitive_output:
+            return {"output": {"type": "string"}}
+        else:
+            return self._output_signature
 
     @trace
     def __call__(self, *args, **kwargs):

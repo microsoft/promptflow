@@ -1,0 +1,38 @@
+{
+    "description": "Test the scenario of running a batch run with the basic flex flow",
+    "run_configs": {
+        "data": "inputs.jsonl",
+        "column_mapping": {
+            "text": "${data.text}"
+        }
+    },
+    "assertions": {
+        "status": "Completed",
+        "outputs": [
+            {
+                "line_number": 0,
+                "output": "Hello world! text_0"
+            },
+            {
+                "line_number": 1,
+                "output": "Hello world! text_1"
+            },
+            {
+                "line_number": 2,
+                "output": "Hello world! text_2"
+            }
+        ],
+        "logs": [
+            "promptflow-runtime",
+            "execution.bulk",
+            "[Flex in line 0 (index starts from 0)] stderr> Hello error text_0",
+            "WARNING",
+            "Average execution time for completed lines",
+            "Finished 3 / 3 lines"
+        ],
+        "metrics": {
+            "__pf__.lines.completed": 3.0,
+            "__pf__.lines.failed": 0.0
+        }
+    }
+}
