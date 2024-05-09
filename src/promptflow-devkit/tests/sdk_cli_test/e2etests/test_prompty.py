@@ -226,9 +226,7 @@ class TestPrompty:
             api_version=connection.api_version,
             azure_deployment="gpt-35-turbo",
         )
-        prompty = load_flow(
-            source=f"{PROMPTY_DIR}/prompty_example_without_config.prompty", model={"configuration": config}
-        )
+        prompty = load_flow(source=f"{PROMPTY_DIR}/prompty_example.prompty", model={"configuration": config})
         run = pf.run(flow=prompty, data=f"{DATA_DIR}/prompty_inputs.jsonl")
         assert run.status == "Completed"
         run_dict = run._to_dict()

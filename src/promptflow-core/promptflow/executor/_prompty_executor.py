@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional, Union
 
 from promptflow._constants import FlowType
 from promptflow._utils.logger_utils import logger
@@ -20,7 +20,7 @@ class PromptyExecutor(ScriptExecutor):
 
     def __init__(
         self,
-        flow_file: Path,
+        flow_file: Union[Path, Callable],
         connections: Optional[dict] = None,
         working_dir: Optional[Path] = None,
         *,
@@ -29,7 +29,14 @@ class PromptyExecutor(ScriptExecutor):
     ):
         self._init_kwargs = init_kwargs or {}
         logger.debug(f"Init params for prompty executor: {init_kwargs}")
-        self.prompty = Prompty.load(source=flow_file, **self._init_kwargs)
+
+        if hasattr(flow_file, "__call__"):
+            # Loaded prompty object
+            self._prompty_entry = flow_file
+            self.prompty = Prompty.load(source=flow_file.path)
+        else:
+            self.prompty = Prompty.load(source=flow_file, **self._init_kwargs)
+            self._prompty_entry = self.prompty
         super().__init__(flow_file=flow_file, connections=connections, working_dir=working_dir, storage=storage)
 
     _execution_target = FlowType.PROMPTY
@@ -46,17 +53,21 @@ class PromptyExecutor(ScriptExecutor):
         as executor input.
         """
         # If the function is not decorated with trace, add trace for it.
-        self._func = _traced(self.prompty, name=self.prompty._name)
+        self._func = _traced(self._prompty_entry, name=self.prompty._name)
         inputs = {
             input_name: InputDefinition(type=[input_value["type"]], default=input_value.get("default", None))
             for input_name, input_value in self.prompty._data.get("inputs", {}).items()
         }
         self._inputs = {k: v.to_flow_input_definition() for k, v in inputs.items()}
         self._is_async = False
+        self._func_name = self._get_func_name(func=self._func)
         return self._func
 
     def _init_input_sign(self):
-        configs, _ = Prompty._parse_prompty(self._working_dir / self._flow_file)
+        if not self.is_function_entry:
+            configs, _ = Prompty._parse_prompty(self._working_dir / self._flow_file)
+        else:
+            configs, _ = Prompty._parse_prompty(self._prompty_entry.path)
         flow = PromptyFlow.deserialize(configs)
         self._inputs_sign = flow.inputs
         # The init signature only used for flex flow, so we set the _init_sign to empty dict for prompty flow.

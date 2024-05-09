@@ -479,3 +479,18 @@ def convert_ordered_dict_to_dict(target_object: Union[Dict, List], remove_empty:
                 new_dict[key] = value
         return new_dict
     return target_object
+
+
+def is_prompty_callable(func):
+    """Determine whether function is prompty"""
+    from promptflow.core import Prompty as CorePrompty
+
+    prompty_cls = [CorePrompty]
+    try:
+        from promptflow._sdk.entities._flows import Prompty
+
+        prompty_cls.append(Prompty)
+    except ImportError:
+        pass
+
+    return isinstance(func, tuple(prompty_cls))
