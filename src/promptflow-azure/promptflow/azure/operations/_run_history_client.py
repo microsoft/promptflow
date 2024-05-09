@@ -5,25 +5,24 @@ from typing import Dict
 
 import httpx
 
-from promptflow._sdk._errors import ArtifactInternalError, SDKError, UserAuthenticationError
+from promptflow._sdk._errors import RunHistoryInternalError, SDKError, UserAuthenticationError
 from promptflow._sdk._utilities.general_utils import get_promptflow_sdk_version
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure._utils.general import get_authorization
 
 logger = get_cli_sdk_logger()
 
-CREATE_UNREGISTERED_OUTPUT_URL = (
-    "{endpoint}/artifact/v2.0/subscriptions/{sub}/resourceGroups/{rg}/"
-    "providers/Microsoft.MachineLearningServices/workspaces/{ws}/artifacts/register"
+PATCH_RUN_URL = (
+    "{endpoint}/history/v1.0/subscriptions/{sub}/resourceGroups/{rg}/"
+    "providers/Microsoft.MachineLearningServices/workspaces/{ws}/runs/{run_id}"
+)
+PATCH_EXP_RUN_URL = (
+    "{endpoint}/history/v1.0/subscriptions/{sub}/resourceGroups/{rg}/"
+    "providers/Microsoft.MachineLearningServices/workspaces/{ws}/experiments/{exp_name}/runs/{run_id}"
 )
 
-GET_ARTIFACT_SAS_URL = (
-    "{endpoint}/artifact/v2.0/subscriptions/{sub}/resourceGroups/{rg}"
-    "/providers/Microsoft.MachineLearningServices/workspaces/{ws}/artifacts/{origin}/{container}/write?path={path}"
-)
 
-
-class AsyncArtifactClient:
+class AsyncRunHistoryClient:
     def __init__(
         self,
         subscription_id,
@@ -38,30 +37,19 @@ class AsyncArtifactClient:
         self.service_endpoint = service_endpoint
         self.credential = credential
 
-    async def register_artifact(self, run_id, datastore_name, relative_path, path):
-        """Register an artifact for a run."""
-        url = CREATE_UNREGISTERED_OUTPUT_URL.format(
+    async def patch_run(self, run_id: str, payload: Dict):
+        logger.debug(f"Patching {run_id!r} with payload {payload!r}...")
+        patch_url = PATCH_RUN_URL.format(
+            endpoint=self.service_endpoint,
             sub=self.subscription_id,
             rg=self.resource_group,
             ws=self.workspace_name,
-            endpoint=self.service_endpoint,
+            run_id=run_id,
         )
-
-        logger.debug(f"Creating Artifact for Run {run_id}...")
-
-        payload = {
-            "origin": "ExperimentRun",
-            "container": f"dcid.{run_id}",
-            "path": path,
-            "dataPath": {
-                "dataStoreName": datastore_name,
-                "relativePath": relative_path,
-            },
-        }
-        error_msg_prefix = f"Failed to create Artifact for Run {run_id!r}"
+        error_msg_prefix = f"Failed to patch run history record for Run {run_id!r}"
         try:
             async with httpx.AsyncClient(verify=False) as client:
-                response = await client.post(url, headers=self._get_header(), json=payload)
+                response = await client.patch(patch_url, headers=self._get_header(), json=payload)
                 if response.status_code == 401 or response.status_code == 403:
                     # if it's auth issue, raise auth error
                     error_message = f"{error_msg_prefix}. Code={response.status_code}. Message={response.text}"
@@ -69,11 +57,16 @@ class AsyncArtifactClient:
                 elif response.status_code != 200:
                     error_message = f"{error_msg_prefix}. Code={response.status_code}. Message={response.text}"
                     logger.error(error_message)
-                    raise ArtifactInternalError(error_message)
+                    raise RunHistoryInternalError(error_message)
         except Exception as e:
             error_message = f"{error_msg_prefix}: {str(e)}"
             logger.error(error_message)
-            raise ArtifactInternalError(error_message) from e
+            raise RunHistoryInternalError(error_message) from e
+
+    async def patch_run_outputs(self, run_id: str, outputs_info: Dict):
+        """Patch run history with debug_info and flow_outputs."""
+        payload = {"Outputs": {k: {"assetId": v, "type": "UriFolder"} for k, v in outputs_info.items()}}
+        await self.patch_run(run_id, payload)
 
     def _get_header(self) -> Dict[str, str]:
         headers = {

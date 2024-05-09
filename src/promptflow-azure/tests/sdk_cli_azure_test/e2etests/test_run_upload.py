@@ -11,7 +11,13 @@ from _constants import PROMPTFLOW_ROOT
 from sdk_cli_azure_test.conftest import DATAS_DIR, FLOWS_DIR
 
 from promptflow._constants import TokenKeys
-from promptflow._sdk._constants import FlowRunProperties, Local2CloudProperties, Local2CloudUserProperties, RunStatus
+from promptflow._sdk._constants import (
+    FlowRunProperties,
+    Local2Cloud,
+    Local2CloudProperties,
+    Local2CloudUserProperties,
+    RunStatus,
+)
 from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk._pf_client import PFClient as LocalPFClient
 from promptflow._sdk.entities import Run
@@ -68,6 +74,11 @@ class Local2CloudTestHelper:
             result_dict = async_run_allowing_running_loop(run_uploader._check_run_details_exist_in_cloud)
             for key, value in result_dict.items():
                 assert value is True, f"Run details {key!r} not found in cloud, run name is {run.name!r}"
+
+        # check run output assets are uploaded to cloud
+        original_run_record = pf.runs._get_run_from_run_history(run.name, original_form=True)
+        assert original_run_record["runMetadata"]["outputs"][Local2Cloud.ASSET_NAME_DEBUG_INFO]["assetId"]
+        assert original_run_record["runMetadata"]["outputs"][Local2Cloud.ASSET_NAME_FLOW_OUTPUTS]["assetId"]
 
         return cloud_run
 
