@@ -19,7 +19,11 @@ from promptflow._sdk._telemetry import request_id_context
 from promptflow._sdk._telemetry import TelemetryMixin
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME, SESSION_CREATION_TIMEOUT_ENV_VAR
-from promptflow.azure._constants._trace import COSMOS_DB_SETUP_POLL_INTERVAL_SECOND, COSMOS_DB_SETUP_POLL_TIMEOUT_SECOND
+from promptflow.azure._constants._trace import (
+    COSMOS_DB_SETUP_POLL_INTERVAL_SECOND,
+    COSMOS_DB_SETUP_POLL_PRINT_INTERVAL_SECOND,
+    COSMOS_DB_SETUP_POLL_TIMEOUT_SECOND,
+)
 from promptflow.azure._restclient.flow import AzureMachineLearningDesignerServiceClient
 from promptflow.azure._utils.general import get_authorization, get_arm_token, get_aml_token
 from promptflow.exceptions import UserErrorException, PromptflowException, SystemErrorException
@@ -832,6 +836,12 @@ class FlowServiceCaller(RequestTelemetryMixin):
             response = self.poll_operation_status(url=polling_url, **kwargs)
             status = response["status"]
             logger.debug("current polling status: %s", status)
+            prompt_message = f"waiting for Cosmos DB setup ready, current status: {status}"
+            if elapsed_time % COSMOS_DB_SETUP_POLL_PRINT_INTERVAL_SECOND == 0:
+                # print every fixed seconds, so that user will not feel stuck during the polling
+                print(prompt_message)
+            else:
+                logger.debug(prompt_message)
 
         if status == "Succeeded":
             logger.info("Cosmos DB setup finished with status %s", status)
