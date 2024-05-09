@@ -21,6 +21,7 @@ def write_output(output_dir, mini_batch_index, result: str):
         f.write("\n")
 
 
+@pytest.mark.e2etest
 @pytest.mark.parametrize("enable_processors", ["bulk_run_processor", "component_run_processor"], indirect=True)
 def test_with_simple_flow_with_python_tool_and_aggregate(
     simple_flow_with_python_tool_and_aggregate, enable_processors, enable_debug

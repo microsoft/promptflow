@@ -13,11 +13,11 @@ from promptflow.parallel._processor.base import AbstractParallelRunProcessor
 from promptflow.parallel._processor.finalizer import Finalizer
 
 
-class TestProcessor(AbstractParallelRunProcessor):
+class MockProcessor(AbstractParallelRunProcessor):
     def __init__(self):
         super().__init__(working_dir=Path("."), args=["--output", "."])
         self._executed_results = []
-        self.finalizer = TestFinalizer()
+        self.finalizer = MockFinalizer()
 
     def _create_executor(self, config: ParallelRunConfig) -> ParallelRunExecutor:
         return Mock(execute=self._execute, has_aggregation_node=False)
@@ -41,7 +41,7 @@ class TestProcessor(AbstractParallelRunProcessor):
         yield self.finalizer
 
 
-class TestFinalizer(Finalizer):
+class MockFinalizer(Finalizer):
     def __init__(self):
         self.processed = 0
 
@@ -54,7 +54,7 @@ class TestFinalizer(Finalizer):
 
 
 def test_processor():
-    processor = TestProcessor()
+    processor = MockProcessor()
     processor.init()
 
     rows = [{"a": i} for i in range(10)]

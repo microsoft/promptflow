@@ -12,7 +12,7 @@ from promptflow.parallel._executor.base import AbstractExecutor
 from promptflow.parallel._model import Row
 
 
-class TestExecutor(AbstractExecutor):
+class MockExecutor(AbstractExecutor):
     @staticmethod
     def setup_test():
         return patch.object(FlowValidator, "resolve_flow_inputs_type", lambda _, row: row)
@@ -29,7 +29,7 @@ class TestExecutor(AbstractExecutor):
 
 
 def test_base_executor():
-    executor = TestExecutor(Path("."), Mock(input_mapping={}))
+    executor = MockExecutor(Path("."), Mock(input_mapping={}))
     with executor.setup_test():
         executor.init()
 
