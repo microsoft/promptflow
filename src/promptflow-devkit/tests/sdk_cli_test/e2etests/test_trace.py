@@ -409,7 +409,7 @@ class TestTraceEntitiesAndOperations:
         span.resource[SpanResourceFieldName.ATTRIBUTES][SpanResourceAttributesFieldName.COLLECTION] = collection
         span._persist()
         collections = pf.traces._list_collections(limit=1)
-        assert len(collections) == 1 and collections[0] == collection
+        assert len(collections) == 1 and collections[0].name == collection
 
     def test_list_collection_with_time_priority(self, pf: PFClient) -> None:
         collection1, collection2 = str(uuid.uuid4()), str(uuid.uuid4())
@@ -425,9 +425,9 @@ class TestTraceEntitiesAndOperations:
             # sleep 1 second to ensure the second span is later than the first
             time.sleep(1)
         collections = pf.traces._list_collections(limit=1)
-        assert len(collections) == 1 and collections[0] == collection2
+        assert len(collections) == 1 and collections[0].name == collection2
         collections = pf.traces._list_collections(limit=2)
-        assert len(collections) == 2 and collections == [collection2, collection1]
+        assert len(collections) == 2 and collections[1].name == collection1
 
 
 @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")

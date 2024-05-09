@@ -414,3 +414,15 @@ class LineRun:
                     evaluation.end_time.isoformat() if evaluation.end_time is not None else None
                 )
         return asdict(_self)
+
+
+@dataclass
+class Collection:
+    name: str
+    update_time: datetime.datetime
+
+    def _to_dict(self) -> typing.Dict[str, str]:
+        return {
+            "name": self.name,
+            "update_time": self.update_time,
+        }
