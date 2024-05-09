@@ -8,7 +8,6 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Mapping
 
-from promptflow._utils.execution_utils import set_batch_input_source_from_inputs_mapping
 from promptflow._utils.multimedia_utils import persist_multimedia_data
 from promptflow.executor import FlowExecutor, FlowValidator
 from promptflow.executor._result import AggregationResult
@@ -68,6 +67,8 @@ class AbstractExecutor(ParallelRunExecutor, ABC):
         os.chdir(self._resolve_working_dir())
 
     def _setup_context(self, context: OperationContext):
+        from promptflow._utils.execution_utils import set_batch_input_source_from_inputs_mapping
+
         context.append_user_agent("ParallelComputing")
         set_batch_input_source_from_inputs_mapping(self._config.input_mapping)
 

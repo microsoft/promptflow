@@ -5,6 +5,9 @@ on:
     - cron: "40 10 * * *" # 2:40 PST every day
   pull_request:
     paths:
+      - src/promptflow/**
+      - src/promptflow-core/**
+      - src/promptflow-tracing/**
       - src/promptflow-parallel/**
       - .github/workflows/promptflow-parallel-e2e-test.yml
   workflow_dispatch:
