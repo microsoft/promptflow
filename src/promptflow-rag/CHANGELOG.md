@@ -1,4 +1,4 @@
-# Changelog
+# promptflow-rag package
 
 Please insert change log into "Next Release" ONLY.
 
