@@ -36,6 +36,7 @@ from promptflow._constants import (
     TraceEnvironmentVariableName,
 )
 from promptflow._sdk._constants import (
+    PF_SERVICE_HOST,
     PF_TRACE_CONTEXT,
     PF_TRACE_CONTEXT_ATTR,
     TRACE_DEFAULT_COLLECTION,
@@ -226,7 +227,7 @@ def _get_tracing_url_from_local(
     exp: typing.Optional[str] = None,  # pylint: disable=unused-argument
     run: typing.Optional[str] = None,
 ) -> str:
-    url = f"http://localhost:{pfs_port}/v1.0/ui/traces/"
+    url = f"http://{PF_SERVICE_HOST}:{pfs_port}/v1.0/ui/traces/"
     if run is not None:
         url += f"?#run={run}"
     else:
@@ -335,7 +336,7 @@ def _inject_res_attrs_to_environ(
         os.environ[TraceEnvironmentVariableName.WORKSPACE_NAME] = ws_triad.workspace_name
     # we will not overwrite the value if it is already set
     if OTEL_EXPORTER_OTLP_ENDPOINT not in os.environ:
-        otlp_endpoint = f"http://localhost:{pfs_port}/v1/traces"
+        otlp_endpoint = f"http://{PF_SERVICE_HOST}:{pfs_port}/v1/traces"
         _logger.debug("set OTLP endpoint to environ: %s", otlp_endpoint)
         os.environ[OTEL_EXPORTER_OTLP_ENDPOINT] = otlp_endpoint
 
@@ -615,7 +616,7 @@ def process_otlp_trace_request(
         args=(all_spans, get_created_by_info_with_cache, logger, get_credential, cloud_trace_only),
     ).start()
 
-    return
+    return all_spans
 
 
 def _try_write_trace_to_cosmosdb(

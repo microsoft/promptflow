@@ -1,0 +1,4 @@
+promptflow>=1.7.0
+promptflow-tools
+azure-ai-ml==1.15.0
+mldesigner==0.1.0b18

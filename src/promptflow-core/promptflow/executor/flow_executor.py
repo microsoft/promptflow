@@ -209,7 +209,10 @@ class FlowExecutor:
         :return: A new instance of FlowExecutor.
         :rtype: ~promptflow.executor.flow_executor.FlowExecutor
         """
-        setup_exporter_from_environ()
+        env_exporter_setup = kwargs.get("env_exporter_setup", True)
+        if env_exporter_setup:
+            setup_exporter_from_environ()
+
         if hasattr(flow_file, "__call__") or inspect.isfunction(flow_file):
             from ._script_executor import ScriptExecutor
 
