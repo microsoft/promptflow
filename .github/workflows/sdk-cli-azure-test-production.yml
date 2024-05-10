@@ -19,7 +19,9 @@ on:
         default: "promptflow-eastus"
         type: string
 
-
+permissions:
+  id-token: write
+  contents: read
 
 env:
   IS_IN_CI_PIPELINE: "true"
@@ -42,7 +44,8 @@ jobs:
         # replay tests can cover more combinations
         os: [ubuntu-latest]
         pythonVersion: ['3.8', '3.9', '3.10', '3.11']
-
+    environment:
+      internal
     runs-on: ${{ matrix.os }}
     steps:
       - name: set variables
@@ -63,7 +66,9 @@ jobs:
       - name: Azure Login
         uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
+          tenant-id: ${{secrets.AZURE_TENANT_ID}}
+          client-id: ${{secrets.AZURE_CLIENT_ID}}
       - name: Generate Configs
         uses: "./.github/actions/step_generate_configs"
         with:
@@ -73,7 +78,7 @@ jobs:
         run: |
           set -xe
           poetry install --with ci,test
-  
+
           poetry run pip show promptflow-tracing
           poetry run pip show promptflow-core
           poetry run pip show promptflow-devkit
@@ -85,3 +90,11 @@ jobs:
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: |
           poetry run pytest ${{ inputs.filepath }} -n auto -m "unittest or e2etest"
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: Test Results (Python ${{ matrix.pythonVersion }}) (OS ${{ matrix.os }})
+          path: |
+            ${{ env.WORKING_DIRECTORY }}/tests/sdk_cli_azure_test/count.json

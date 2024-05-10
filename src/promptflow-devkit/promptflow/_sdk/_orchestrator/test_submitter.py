@@ -15,7 +15,7 @@ from promptflow._core._errors import NotSupported
 from promptflow._internal import ConnectionManager
 from promptflow._proxy import ProxyFactory
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
-from promptflow._sdk._utils import get_flow_name, get_flow_path
+from promptflow._sdk._utilities.general_utils import get_flow_name, get_flow_path
 from promptflow._sdk.entities._flows import Flow, FlowContext, Prompty
 from promptflow._sdk.operations._local_storage_operations import LoggerOperations
 from promptflow._utils.async_utils import async_run_allowing_running_loop
@@ -35,10 +35,10 @@ from promptflow.tracing._start_trace import is_collection_writeable, start_trace
 from ..entities._flows import FlexFlow
 from .utils import (
     SubmitterHelper,
+    flow_overwrite_context,
     print_chat_output,
     resolve_generator,
     show_node_log_and_output,
-    variant_overwrite_context,
 )
 
 logger = get_cli_sdk_logger()
@@ -144,7 +144,7 @@ class TestSubmitter:
         else:
             tuning_node, node_variant = None, None
 
-        with variant_overwrite_context(
+        with flow_overwrite_context(
             flow=self._origin_flow,
             tuning_node=tuning_node,
             variant=node_variant,
@@ -611,7 +611,11 @@ class TestSubmitter:
             error_response = ErrorResponse.from_error_dict(error_dict)
             user_execution_error = error_response.get_user_execution_error_info()
             error_message = error_response.message
-            stack_trace = user_execution_error.get("traceback", "")
+            # sdk will wrap exception here, so we need get user code stacktrace or recursively get debug info
+            # stacktrace as inner exception here
+            stack_trace = user_execution_error.get("traceback", "") or TestSubmitter._recursively_get_stacktrace(
+                error_dict.get("debugInfo", {})
+            )
             error_type = user_execution_error.get("type", "Exception")
             if show_trace:
                 print(stack_trace)
@@ -625,3 +629,12 @@ class TestSubmitter:
             generator_outputs = {key: output for key, output in outputs.items() if isinstance(output, GeneratorType)}
             if generator_outputs:
                 logger.info(f"Some streaming outputs in the result, {generator_outputs.keys()}")
+
+    @staticmethod
+    def _recursively_get_stacktrace(debug_info: dict):
+        if not debug_info:
+            return ""
+        stack_trace = debug_info.get("stackTrace", "") + debug_info.get("message", "")
+        inner_exception = debug_info.get("innerException", {})
+        stack_trace = TestSubmitter._recursively_get_stacktrace(inner_exception) + stack_trace
+        return stack_trace

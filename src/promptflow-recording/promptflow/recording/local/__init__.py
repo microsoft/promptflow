@@ -7,6 +7,7 @@ from .record_storage import (
     RecordStorage,
     check_pydantic_v2,
 )
+from .test_utils import invoke_prompt_flow_service
 
 __all__ = [
     "Counter",
@@ -18,6 +19,7 @@ __all__ = [
     "recording_array_reset",
     "inject_async_with_recording",
     "inject_sync_with_recording",
+    "invoke_prompt_flow_service",
     "delete_count_lock_file",
     "check_pydantic_v2",
 ]

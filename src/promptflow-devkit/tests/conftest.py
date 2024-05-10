@@ -1,6 +1,7 @@
 import importlib
 import json
 import os
+import platform
 import tempfile
 from multiprocessing import Lock
 from pathlib import Path
@@ -8,6 +9,7 @@ from typing import TypedDict
 from unittest.mock import MagicMock, patch
 
 import pytest
+import requests
 from _constants import (
     CONNECTION_FILE,
     DEFAULT_RESOURCE_GROUP_NAME,
@@ -19,6 +21,7 @@ from _constants import (
 from _pytest.monkeypatch import MonkeyPatch
 from dotenv import load_dotenv
 from filelock import FileLock
+from mock import mock
 from pytest_mock import MockerFixture
 
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
@@ -27,11 +30,30 @@ from promptflow._sdk.entities._connection import AzureOpenAIConnection
 from promptflow._utils.context_utils import _change_working_dir
 
 try:
+    from promptflow.recording.local import invoke_prompt_flow_service
     from promptflow.recording.record_mode import is_replay
 except ImportError:
     # Run test in empty mode if promptflow-recording is not installed
     def is_replay():
         return False
+
+    # copy lines from /src/promptflow-recording/promptflow/recording/local/test_utils.py
+    import time
+
+    from promptflow._cli._pf._service import _start_background_service_on_unix, _start_background_service_on_windows
+    from promptflow._sdk._constants import PF_SERVICE_HOST
+    from promptflow._sdk._service.utils.utils import get_pfs_port
+
+    def invoke_prompt_flow_service() -> str:
+        port = str(get_pfs_port())
+        if platform.system() == "Windows":
+            _start_background_service_on_windows(port)
+        else:
+            _start_background_service_on_unix(port)
+        time.sleep(20)
+        response = requests.get(f"http://{PF_SERVICE_HOST}:{port}/heartbeat")
+        assert response.status_code == 200, "prompt flow service is not healthy via /heartbeat"
+        return port
 
 
 load_dotenv()
@@ -298,3 +320,14 @@ def csharp_test_project_class_init_flex_flow() -> CSharpProject:
     if is_in_ci_pipeline:
         pytest.skip(reason="need to avoid fetching connection from local pfs to enable this in ci")
     return construct_csharp_test_project("ClassInitFlexFlow")
+
+
+@pytest.fixture(scope="session")
+def otlp_collector():
+    """A session scope fixture, a separate standby prompt flow service serves as OTLP collector."""
+    port = invoke_prompt_flow_service()
+    # mock invoke prompt flow service as it has been invoked already
+    with mock.patch("promptflow._sdk._tracing._invoke_pf_svc", return_value=port), mock.patch(
+        "promptflow._sdk._tracing.is_pfs_service_healthy", return_value=True
+    ):
+        yield

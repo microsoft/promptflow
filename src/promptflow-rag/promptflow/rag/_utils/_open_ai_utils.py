@@ -3,14 +3,11 @@
 # ---------------------------------------------------------
 
 from typing import Optional
-import re
-
-OPEN_AI_PROTOCOL_TEMPLATE = "azure_open_ai://deployment/{}/model/{}"
-OPEN_AI_PROTOCOL_REGEX_PATTERN = OPEN_AI_PROTOCOL_TEMPLATE.format(".*", ".*")
+from promptflow.rag.constants._common import OPEN_AI_PROTOCOL_TEMPLATE
 
 
-def build_open_ai_protocol(s: Optional[str] = None):
-    if not s or re.match(OPEN_AI_PROTOCOL_REGEX_PATTERN, s, re.IGNORECASE):
-        return s
+def build_open_ai_protocol(deployment: Optional[str] = None, model: Optional[str] = None):
+    if not deployment or not model:
+        raise ValueError("Please specify deployment_name and model_name in embeddings_model_config.")
     else:
-        return OPEN_AI_PROTOCOL_TEMPLATE.format(s, s)
+        return OPEN_AI_PROTOCOL_TEMPLATE.format(deployment, model)

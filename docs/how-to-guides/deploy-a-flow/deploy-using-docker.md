@@ -87,11 +87,25 @@ You'll need to set up the environment variables in the container to make the con
 
 ### Run with `docker run`
 
-You can run the docker image directly set via below commands:
+#### Run with `flask` serving engine
+You can run the docker image directly set via below commands, this will by default use `flask` serving engine:
 ```bash
 # The started service will listen on port 8080.You can map the port to any port on the host machine as you want.
-docker run -p 8080:8080 -e OPEN_AI_CONNECTION_API_KEY=<secret-value> web-classification-serve
+docker run -p 8080:8080 -e OPEN_AI_CONNECTION_API_KEY=<secret-value> -e PROMPTFLOW_WORKER_NUM=<expect-worker-num> -e PROMPTFLOW_WORKER_THREADS=<expect-thread-num-per-worker> web-classification-serve
 ```
+Note that:
+- `PROMPTFLOW_WORKER_NUM`: optional setting, it controls how many workers started in your container, default value is 8.
+- `PROMPTFLOW_WORKER_THREADS`: optional setting, it controls how many threads started in one worker, default value is 1. **this setting only works for flask engine**
+
+#### Run with `fastapi` serving engine
+Starting from pf 1.10.0, we support new `fastapi` based serving engine, you can choose to use `fastapi` serving engine via below commands:
+```bash
+# The started service will listen on port 8080.You can map the port to any port on the host machine as you want.
+docker run -p 8080:8080 -e OPEN_AI_CONNECTION_API_KEY=<secret-value> -e PROMPTFLOW_SERVING_ENGINE=fastapi -e PROMPTFLOW_WORKER_NUM=<expect-worker-num> web-classification-serve
+```
+Note that:
+- `PROMPTFLOW_WORKER_NUM`: optional setting, it controls how many workers started in your container, default value is 8.
+- `PROMPTFLOW_SERVING_ENGINE`: optional setting, it controls which serving engine to use in your container, default value is `flask`, currently only support `flask` and `fastapi`.
 
 ### Test the endpoint
 After start the service, you can use curl to test it:

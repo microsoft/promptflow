@@ -32,7 +32,7 @@ jobs:
     needs: build
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-13]
         python-version: ['3.8', '3.9', '3.10', '3.11']
       fail-fast: false
     # snok/install-poetry need this to support Windows

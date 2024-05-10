@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 def get_cached_versions():
-    from promptflow._sdk._utils import read_write_by_user
+    from promptflow._sdk._utilities.general_utils import read_write_by_user
 
     (HOME_PROMPT_FLOW_DIR / PF_VERSION_CHECK).touch(mode=read_write_by_user(), exist_ok=True)
     with open(HOME_PROMPT_FLOW_DIR / PF_VERSION_CHECK, "r") as f:
@@ -101,7 +101,7 @@ def hint_for_update():
     if last_hint_time is None or (
         datetime.datetime.now() > last_hint_time + datetime.timedelta(days=HINT_INTERVAL_DAY)
     ):
-        from promptflow._sdk._utils import get_promptflow_devkit_version
+        from promptflow._sdk._utilities.general_utils import get_promptflow_devkit_version
 
         cached_versions[CURRENT_VERSION] = get_promptflow_devkit_version()
         if LATEST_VERSION in cached_versions:

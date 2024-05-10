@@ -3,11 +3,10 @@
 # ---------------------------------------------------------
 
 import argparse
-import json
-from pathlib import Path
 
 from promptflow._cli._completers._param_completers import run_name_completer
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME, PROMPT_FLOW_RUNS_DIR_NAME, CLIListOutputFormat, FlowType
+from promptflow._sdk._utilities.general_utils import load_input_data
 
 # TODO: avoid azure dependency here
 MAX_LIST_CLI_RESULTS = 50
@@ -34,17 +33,7 @@ class AppendToDictAction(argparse._AppendAction):  # pylint: disable=protected-a
 class FlowTestInputAction(AppendToDictAction):  # pylint: disable=protected-access
     def get_action(self, values, option_string):  # pylint: disable=no-self-use
         if len(values) == 1 and "=" not in values[0]:
-            from promptflow._utils.load_data import load_data
-
-            if not Path(values[0]).exists():
-                raise ValueError(f"Cannot find inputs file {values[0]}")
-            if values[0].endswith(".jsonl"):
-                return load_data(local_path=values[0])[0]
-            elif values[0].endswith(".json"):
-                with open(values[0], "r") as f:
-                    return json.load(f)
-            else:
-                raise ValueError("Only support jsonl or json file as input.")
+            return load_input_data(values[0])
         else:
             return super().get_action(values, option_string)
 
@@ -355,4 +344,15 @@ def add_param_init(parser):
         "Only valid when provided flow is a flex flow with callable class entry. "
         "Example: --init param1=val1 param2=val2",
         nargs="+",
+    )
+
+
+def add_param_path(parser):
+    parser.add_argument(
+        "--path",
+        type=str,
+        required=False,
+        help="Specify the directory of the config file, "
+        "and config file will only take effect when working in that directory or subdirectories. "
+        "Example: pf config set key=value --path config_folder",
     )

@@ -4,6 +4,7 @@
 
 import json
 from copy import deepcopy
+from datetime import datetime
 from typing import Any, Dict
 
 from azure.cosmos.container import ContainerProxy
@@ -11,6 +12,8 @@ from azure.storage.blob import ContainerClient
 
 from promptflow._constants import SpanContextFieldName, SpanEventFieldName, SpanFieldName
 from promptflow._sdk.entities._trace import Span as SpanEntity
+
+DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"  # timestamp format e.g. 2021-08-25T00:00:00.000000Z
 
 
 class Span:
@@ -36,8 +39,9 @@ class Span:
         self.context = span.context
         self.kind = span.kind
         self.parent_id = span.parent_id
-        self.start_time = span.start_time.isoformat()
-        self.end_time = span.end_time.isoformat()
+        # span entity start_time and end_time are datetime objects using utc timezone
+        self.start_time = span.start_time.strftime(DATE_FORMAT)
+        self.end_time = span.end_time.strftime(DATE_FORMAT)
         self.status = span.status
         self.attributes = span.attributes
         # We will remove attributes from events for cosmosdb 2MB size limit.
@@ -51,6 +55,12 @@ class Span:
         self.created_by = created_by
         self.external_event_data_uris = []
         self.span_json_uri = None
+
+        # covert event time to OTel format
+        for event in self.events:
+            event[SpanEventFieldName.TIMESTAMP] = datetime.fromisoformat(event[SpanEventFieldName.TIMESTAMP]).strftime(
+                DATE_FORMAT
+            )
 
     def persist(self, cosmos_client: ContainerProxy, blob_container_client: ContainerClient, blob_base_uri: str):
         if self.id is None or self.partition_key is None or self.resource is None:
@@ -93,13 +103,31 @@ class Span:
     def _persist_span_json(self, blob_container_client: ContainerClient, blob_base_uri: str):
         """
         Persist the span data as a JSON string in a blob.
+
+        Persisted span should confirm the format of ReadableSpan.to_json().
+        https://opentelemetry-python.readthedocs.io/en/latest/_modules/opentelemetry/sdk/trace.html#ReadableSpan.to_json
         """
         # check if span_json_uri is already set
         if self.span_json_uri is not None:
             return
 
         # persist the span as a json string in a blob
-        span_data = json.dumps(self.to_dict())
+        # align with ReadableSpan.to_json() format
+        f_span = {
+            "name": self.name,
+            "context": self.context,
+            "kind": self.kind,
+            "parent_id": self.parent_id,
+            "start_time": self.start_time,
+            "end_time": self.end_time,
+            "status": self.status,
+            "attributes": self.attributes,
+            "events": self.events,
+            "links": self.links,
+            "resource": self.resource,
+        }
+
+        span_data = json.dumps(f_span)
         blob_path = self._generate_blob_path(file_name="span.json")
         blob_client = blob_container_client.get_blob_client(blob_path)
         blob_client.upload_blob(span_data)

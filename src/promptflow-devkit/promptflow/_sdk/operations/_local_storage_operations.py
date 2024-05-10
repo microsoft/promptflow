@@ -23,7 +23,7 @@ from promptflow._sdk._constants import (
     LocalStorageFilenames,
 )
 from promptflow._sdk._errors import BulkRunException, InvalidRunError
-from promptflow._sdk._utils import (
+from promptflow._sdk._utilities.general_utils import (
     PromptflowIgnoreFile,
     generate_flow_tools_json,
     is_flex_run,
@@ -255,9 +255,14 @@ class LocalStorageOperations(AbstractBatchRunStorage):
             ignore=shutil.ignore_patterns(*patterns),
             dirs_exist_ok=True,
         )
-        # replace DAG file with the overwrite one
-        if not self._eager_mode and not self._is_prompty_flow:
-            self._dag_path.unlink()
+        if not self._is_prompty_flow:
+            # for flex flow and DAG flow, the YAML will be updated.
+            # replace the YAML file with the override one
+            try:
+                self._dag_path.unlink()
+            except Exception as e:
+                logger.warning(f"Failed to remove the existing DAG file due to {e}")
+                pass
             shutil.copy(flow.path, self._dag_path)
 
     def load_dag_as_string(self) -> str:

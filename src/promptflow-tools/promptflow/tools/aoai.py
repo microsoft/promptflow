@@ -43,8 +43,8 @@ class AzureOpenAI(ToolProvider):
         logprobs: int = None,
         echo: bool = False,
         stop: list = None,
-        presence_penalty: float = 0,
-        frequency_penalty: float = 0,
+        presence_penalty: float = None,
+        frequency_penalty: float = None,
         best_of: int = 1,
         logit_bias: dict = {},
         user: str = "",
@@ -54,6 +54,12 @@ class AzureOpenAI(ToolProvider):
         # TODO: remove below type conversion after client can pass json rather than string.
         echo = to_bool(echo)
         stream = to_bool(stream)
+        params = {}
+        if presence_penalty is not None:
+            params["presence_penalty"] = presence_penalty
+        if frequency_penalty is not None:
+            params["frequency_penalty"] = frequency_penalty
+
         response = self._client.completions.create(
             prompt=prompt,
             model=deployment_name,
@@ -71,13 +77,13 @@ class AzureOpenAI(ToolProvider):
             echo=echo,
             # fix bug "[] is not valid under any of the given schemas-'stop'"
             stop=stop if stop else None,
-            presence_penalty=float(presence_penalty),
-            frequency_penalty=float(frequency_penalty),
             best_of=int(best_of),
             # Logit bias must be a dict if we passed it to openai api.
             logit_bias=logit_bias if logit_bias else {},
             user=user,
-            extra_headers={"ms-azure-ai-promptflow-called-from": "aoai-tool"})
+            extra_headers={"ms-azure-ai-promptflow-called-from": "aoai-tool"},
+            **params
+        )
 
         if stream:
             def generator():
@@ -107,8 +113,8 @@ class AzureOpenAI(ToolProvider):
         stream: bool = False,
         stop: list = None,
         max_tokens: int = None,
-        presence_penalty: float = 0,
-        frequency_penalty: float = 0,
+        presence_penalty: float = None,
+        frequency_penalty: float = None,
         logit_bias: dict = {},
         user: str = "",
         # function_call can be of type str or dict.
@@ -130,8 +136,6 @@ class AzureOpenAI(ToolProvider):
             "top_p": top_p,
             "n": n,
             "stream": stream,
-            "presence_penalty": presence_penalty,
-            "frequency_penalty": frequency_penalty,
             "user": user,
             "extra_headers": {"ms-azure-ai-promptflow-called-from": "aoai-tool"}
         }
@@ -159,6 +163,10 @@ class AzureOpenAI(ToolProvider):
             params["response_format"] = response_format
         if seed is not None:
             params["seed"] = seed
+        if presence_penalty is not None:
+            params["presence_penalty"] = presence_penalty
+        if frequency_penalty is not None:
+            params["frequency_penalty"] = frequency_penalty
 
         completion = self._client.chat.completions.create(**params)
         return post_process_chat_api_response(completion, stream, functions, tools)
@@ -181,8 +189,8 @@ def completion(
     logprobs: int = None,
     echo: bool = False,
     stop: list = None,
-    presence_penalty: float = 0,
-    frequency_penalty: float = 0,
+    presence_penalty: float = None,
+    frequency_penalty: float = None,
     best_of: int = 1,
     logit_bias: dict = {},
     user: str = "",
@@ -220,8 +228,8 @@ def chat(
     stream: bool = False,
     stop: list = None,
     max_tokens: int = None,
-    presence_penalty: float = 0,
-    frequency_penalty: float = 0,
+    presence_penalty: float = None,
+    frequency_penalty: float = None,
     logit_bias: dict = {},
     user: str = "",
     function_call: object = None,

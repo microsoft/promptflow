@@ -3,15 +3,14 @@
 # ---------------------------------------------------------
 
 import os
-import platform
 import subprocess
 import sys
+import timeit
 
 import pytest
-import requests
 
 from promptflow._cli._pf.entry import main
-from promptflow._sdk._service.utils.utils import get_port_from_config, kill_exist_service
+from promptflow._sdk._service.utils.utils import get_port_from_config, is_pfs_service_healthy, kill_exist_service
 
 
 @pytest.mark.e2etest
@@ -37,10 +36,13 @@ class TestPromptflowServiceCLI:
         stop_pfs = subprocess.Popen(stop_command, shell=True)
         stop_pfs.wait()
 
-    def _is_service_healthy(self, port=None):
+    def _is_service_healthy(self, port=None, time_limit=0.1):
         port = port or get_port_from_config()
-        response = requests.get(f"http://localhost:{port}/heartbeat")
-        return response.status_code == 200
+        st = timeit.default_timer()
+        is_healthy = is_pfs_service_healthy(port)
+        ed = timeit.default_timer()
+        assert ed - st < time_limit, f"The time limit is {time_limit}s, but it took {ed - st}s."
+        return is_healthy
 
     def test_start_service(self, capsys):
         try:
@@ -62,7 +64,8 @@ class TestPromptflowServiceCLI:
             # previous pfs is killed
             assert start_pfs.poll() is not None
             python_dir = os.path.dirname(sys.executable)
-            executable_dir = os.path.join(python_dir, "Scripts") if platform.system() == "Windows" else python_dir
+            # python directory will be changed to Scripts directory after we switched to poetry in ci
+            executable_dir = python_dir
             assert executable_dir in os.environ["PATH"].split(os.pathsep)
         finally:
             port = get_port_from_config()

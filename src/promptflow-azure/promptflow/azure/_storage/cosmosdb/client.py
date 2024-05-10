@@ -5,7 +5,7 @@
 import ast
 import datetime
 import threading
-from typing import Optional
+from typing import Callable
 
 client_map = {}
 _thread_lock = threading.Lock()
@@ -18,7 +18,7 @@ def get_client(
     subscription_id: str,
     resource_group_name: str,
     workspace_name: str,
-    credential: Optional[object] = None,
+    get_credential: Callable,
 ):
     client_key = _get_db_client_key(container_name, subscription_id, resource_group_name, workspace_name)
     container_client = _get_client_from_map(client_key)
@@ -28,13 +28,7 @@ def get_client(
         with container_lock:
             container_client = _get_client_from_map(client_key)
             if container_client is None:
-                if credential is None:
-                    # in cloud scenario, runtime will pass in credential
-                    # so this is local to cloud only code, happens in prompt flow service
-                    # which should rely on Azure CLI credential only
-                    from azure.identity import AzureCliCredential
-
-                    credential = AzureCliCredential()
+                credential = get_credential()
                 token = _get_resource_token(
                     container_name, subscription_id, resource_group_name, workspace_name, credential
                 )
@@ -77,7 +71,7 @@ def _get_resource_token(
     subscription_id: str,
     resource_group_name: str,
     workspace_name: str,
-    credential: Optional[object],
+    credential,
 ) -> object:
     from promptflow.azure import PFClient
 

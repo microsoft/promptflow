@@ -75,6 +75,7 @@ def write_notebook_workflow(notebook, name, output_telemetry=Telemetry()):
         "runflowwithpipeline",
         "quickstartazure",
         "cloudrunmanagement",
+        "chatwithclassbasedflowazure",
     ]
     if any(keyword in workflow_name for keyword in workflows_require_config_json):
         template = env.get_template("workflow_config_json.yml.jinja2")

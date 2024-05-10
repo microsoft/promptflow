@@ -47,6 +47,14 @@ class UnexpectedConnectionProviderReturn(FlowConnectionError):
     pass
 
 
+class AsyncGeneratorOutputNotSupported(UserErrorException):
+    def __init__(self):
+        super().__init__(
+            "Flask engine does not support async generator output, please switch to use FastAPI engine.",
+            target=ErrorTarget.SERVING_APP,
+        )
+
+
 class MultipleStreamOutputFieldsNotSupported(UserErrorException):
     def __init__(self):
         super().__init__(

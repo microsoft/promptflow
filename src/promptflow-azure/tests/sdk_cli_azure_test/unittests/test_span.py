@@ -41,8 +41,8 @@ class TestSpan:
             "name": "test",
             "kind": "test",
             "parent_id": "test",
-            "start_time": "2022-01-01T00:00:00",
-            "end_time": "2022-01-01T00:01:00",
+            "start_time": "2022-01-01T00:00:00.000000Z",
+            "end_time": "2022-01-01T00:01:00.000000Z",
             "context": {
                 "trace_id": self.FAKE_TRACE_ID,
                 "span_id": self.FAKE_SPAN_ID,
@@ -79,8 +79,8 @@ class TestSpan:
             "name": "test",
             "kind": "test",
             "parent_id": "test",
-            "start_time": "2022-01-01T00:00:00",
-            "end_time": "2022-01-01T00:01:00",
+            "start_time": "2022-01-01T00:00:00.000000Z",
+            "end_time": "2022-01-01T00:01:00.000000Z",
             "attributes": {"line_run_id": "test_line_run_id"},
             "partition_key": "fake_collection_id",
             "context": {

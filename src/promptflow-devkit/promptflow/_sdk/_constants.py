@@ -88,6 +88,7 @@ SERVICE_CONFIG_FILE = "pf.yaml"
 PF_SERVICE_PORT_DIT_NAME = "pfs"
 PF_SERVICE_PORT_FILE = "pfs.port"
 PF_SERVICE_LOG_FILE = "pfs.log"
+PF_SERVICE_HOST = "127.0.0.1"
 PF_SERVICE_DEFAULT_PORT = 23333
 PF_SERVICE_HOUR_TIMEOUT = 1
 PF_SERVICE_MONITOR_SECOND = 60
@@ -482,14 +483,14 @@ class Local2Cloud:
 class Local2CloudProperties:
     """Run properties that server needs when uploading local run to cloud."""
 
-    TOTAL_TOKENS = "azureml.promptflow.total_tokens"
+    PREFIX = "azureml.promptflow"
+    EVAL_ARTIFACTS = "_azureml.evaluate_artifacts"
 
 
 class Local2CloudUserProperties:
     """Run properties that user can specify when uploading local run to cloud."""
 
-    EVAL_RUN = "_azureml.evaluation_run"
-    EVAL_ARTIFACTS = "_azureml.evaluate_artifacts"
+    RUN_TYPE = "runType"
 
     @staticmethod
     def get_all_values():
@@ -516,6 +517,7 @@ class ChatGroupSpeakOrder(str, Enum):
 
 
 TRACE_LIST_DEFAULT_LIMIT = 1000
+TRACE_COLLECTION_LIST_DEFAULT_LIMIT = 100
 
 
 class IdentityKeys(str, Enum):

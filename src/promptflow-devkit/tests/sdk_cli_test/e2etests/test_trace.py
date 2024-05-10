@@ -1,5 +1,8 @@
 import datetime
 import json
+import platform
+import sys
+import time
 import typing
 import uuid
 from pathlib import Path
@@ -18,9 +21,13 @@ from promptflow._constants import (
 from promptflow._sdk._constants import TRACE_DEFAULT_COLLECTION
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk.entities._trace import Span
+from promptflow.tracing import start_trace
 
-TEST_ROOT = PROMPTFLOW_ROOT / "tests"
+TEST_ROOT = (PROMPTFLOW_ROOT / "tests").resolve().absolute()
 FLOWS_DIR = (TEST_ROOT / "test_configs/flows").resolve().absolute().as_posix()
+FLEX_FLOWS_DIR = (TEST_ROOT / "test_configs/eager_flows").resolve().absolute().as_posix()
+PROMPTY_DIR = (TEST_ROOT / "test_configs/prompty").resolve().absolute().as_posix()
+DATA_DIR = (TEST_ROOT / "test_configs/datas").resolve().absolute().as_posix()
 
 
 def load_and_override_span_example(
@@ -97,6 +104,13 @@ def assert_span_equals(span: Span, expected_span_dict: typing.Dict) -> None:
     assert "external_event_data_uris" in span_dict
     span_dict.pop("external_event_data_uris")
     assert span_dict == expected_span_dict
+
+
+@pytest.fixture
+def collection() -> str:
+    _collection = str(uuid.uuid4())
+    start_trace(collection=_collection)
+    return _collection
 
 
 @pytest.mark.e2etest
@@ -199,6 +213,24 @@ class TestTraceEntitiesAndOperations:
             expected_span_dict["events"][i]["attributes"] = dict()
         assert_span_equals(lazy_load_span, expected_span_dict)
 
+    def test_aggregation_node_in_eval_run(self, pf: PFClient) -> None:
+        # mock a span generated from an aggregation node in an eval run
+        # whose attributes has `referenced.batch_run_id`, no `line_number`
+        span = mock_span(
+            trace_id=str(uuid.uuid4()),
+            span_id=str(uuid.uuid4()),
+            parent_id=None,
+            line_run_id=str(uuid.uuid4()),
+        )
+        batch_run_id = str(uuid.uuid4())
+        span.attributes.pop(SpanAttributeFieldName.LINE_RUN_ID)
+        span.attributes[SpanAttributeFieldName.BATCH_RUN_ID] = batch_run_id
+        span.attributes[SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID] = str(uuid.uuid4())
+        span._persist()
+        # list and assert to ensure the persist is successful
+        line_runs = pf.traces.list_line_runs(runs=[batch_run_id])
+        assert len(line_runs) == 1
+
     def test_spans_persist_and_line_run_gets(self, pf: PFClient) -> None:
         trace_id = str(uuid.uuid4())
         non_root_span_id = str(uuid.uuid4())
@@ -271,6 +303,34 @@ class TestTraceEntitiesAndOperations:
         }
         assert terminated_line_run._to_rest_object() == expected_terminated_line_run_dict
 
+    def test_span_io_in_attrs_persist(self, pf: PFClient) -> None:
+        trace_id, span_id, line_run_id = str(uuid.uuid4()), str(uuid.uuid4()), str(uuid.uuid4())
+        span = mock_span(trace_id=trace_id, span_id=span_id, parent_id=None, line_run_id=line_run_id)
+        # empty span.events and move inputs/output to span.attributes
+        inputs = {"input1": "value1", "input2": "value2"}
+        output = {"output1": "val1", "output2": "val2"}
+        span.attributes[SpanAttributeFieldName.INPUTS] = json.dumps(inputs)
+        span.attributes[SpanAttributeFieldName.OUTPUT] = json.dumps(output)
+        span.events = list()
+        span._persist()
+        line_run = pf.traces.get_line_run(line_run_id=line_run_id)
+        assert line_run.inputs == inputs
+        assert line_run.outputs == output
+
+    def test_span_non_json_io_in_attrs_persist(self, pf: PFClient) -> None:
+        trace_id, span_id, line_run_id = str(uuid.uuid4()), str(uuid.uuid4()), str(uuid.uuid4())
+        span = mock_span(trace_id=trace_id, span_id=span_id, parent_id=None, line_run_id=line_run_id)
+        # empty span.events and set non-JSON inputs/output to span.attributes
+        inputs = {"input1": "value1", "input2": "value2"}
+        output = {"output1": "val1", "output2": "val2"}
+        span.attributes[SpanAttributeFieldName.INPUTS] = str(inputs)
+        span.attributes[SpanAttributeFieldName.OUTPUT] = str(output)
+        span.events = list()
+        span._persist()
+        line_run = pf.traces.get_line_run(line_run_id=line_run_id)
+        assert isinstance(line_run.inputs, str) and line_run.inputs == str(inputs)
+        assert isinstance(line_run.outputs, str) and line_run.outputs == str(output)
+
     def test_delete_traces_three_tables(self, pf: PFClient) -> None:
         # trace operation does not expose API for events and spans
         # so directly use ORM class to list and assert events and spans existence and deletion
@@ -342,6 +402,10 @@ class TestTraceEntitiesAndOperations:
         line_runs = pf.traces._search_line_runs(expression=expr)
         assert len(line_runs) == 1
 
+    @pytest.mark.skipif(
+        platform.system() == "Windows" and sys.version_info < (3, 9),
+        reason="Python 3.9+ is required on Windows to support json_extract",
+    )
     def test_search_line_runs_with_tokens(self, pf: PFClient) -> None:
         num_line_runs = 5
         trace_ids = list()
@@ -361,6 +425,37 @@ class TestTraceEntitiesAndOperations:
         # assert these line runs are exactly the ones we just persisted
         line_run_trace_ids = {line_run.trace_id for line_run in line_runs}
         assert len(set(trace_ids) & line_run_trace_ids) == num_line_runs
+
+    def test_list_collection(self, pf: PFClient) -> None:
+        collection = str(uuid.uuid4())
+        span = mock_span(
+            trace_id=str(uuid.uuid4()), span_id=str(uuid.uuid4()), parent_id=None, line_run_id=str(uuid.uuid4())
+        )
+        # make span start time a week later, so that it can be the latest collection
+        span.start_time = datetime.datetime.now() + datetime.timedelta(days=7)
+        span.start_time = datetime.datetime.now() + datetime.timedelta(days=8)
+        span.resource[SpanResourceFieldName.ATTRIBUTES][SpanResourceAttributesFieldName.COLLECTION] = collection
+        span._persist()
+        collections = pf.traces._list_collections(limit=1)
+        assert len(collections) == 1 and collections[0].name == collection
+
+    def test_list_collection_with_time_priority(self, pf: PFClient) -> None:
+        collection1, collection2 = str(uuid.uuid4()), str(uuid.uuid4())
+        for collection in (collection1, collection2):
+            span = mock_span(
+                trace_id=str(uuid.uuid4()), span_id=str(uuid.uuid4()), parent_id=None, line_run_id=str(uuid.uuid4())
+            )
+            # make span start time a week later, so that it can be the latest collection
+            span.start_time = datetime.datetime.now() + datetime.timedelta(days=7)
+            span.start_time = datetime.datetime.now() + datetime.timedelta(days=8)
+            span.resource[SpanResourceFieldName.ATTRIBUTES][SpanResourceAttributesFieldName.COLLECTION] = collection
+            span._persist()
+            # sleep 1 second to ensure the second span is later than the first
+            time.sleep(1)
+        collections = pf.traces._list_collections(limit=1)
+        assert len(collections) == 1 and collections[0].name == collection2
+        collections = pf.traces._list_collections(limit=2)
+        assert len(collections) == 2 and collections[1].name == collection1
 
 
 @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
@@ -389,3 +484,70 @@ class TestTraceWithDevKit:
                     node="fetch_text_content_from_url",
                 )
                 assert mock_start_trace.call_count == 0
+
+
+@pytest.mark.usefixtures("otlp_collector", "recording_injection", "setup_local_connection", "use_secrets_config_file")
+@pytest.mark.e2etest
+@pytest.mark.sdk_test
+class TestTraceLifeCycle:
+    """End-to-end tests that cover the trace lifecycle."""
+
+    def _clear_module_cache(self, module_name) -> None:
+        # referenced from test_flow_test.py::clear_module_cache
+        try:
+            del sys.modules[module_name]
+        except Exception:  # pylint: disable=broad-except
+            pass
+
+    def _pf_test_and_assert(
+        self,
+        pf: PFClient,
+        flow_path: Path,
+        inputs: typing.Dict[str, str],
+        collection: str,
+    ) -> None:
+        pf.test(flow=flow_path, inputs=inputs)
+        line_runs = pf.traces.list_line_runs(collection=collection)
+        assert len(line_runs) == 1
+
+    def test_flow_test_dag_flow(self, pf: PFClient, collection: str) -> None:
+        flow_path = Path(f"{FLOWS_DIR}/web_classification").absolute()
+        inputs = {"url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g", "answer": "Channel", "evidence": "Url"}
+        self._pf_test_and_assert(pf, flow_path, inputs, collection)
+
+    def test_flow_test_flex_flow(self, pf: PFClient, collection: str) -> None:
+        self._clear_module_cache("entry")
+        flow_path = Path(f"{FLEX_FLOWS_DIR}/simple_with_yaml").absolute()
+        inputs = {"input_val": "val1"}
+        self._pf_test_and_assert(pf, flow_path, inputs, collection)
+
+    def test_flow_test_prompty(self, pf: PFClient, collection: str) -> None:
+        flow_path = Path(f"{PROMPTY_DIR}/prompty_example.prompty").absolute()
+        inputs = {"question": "what is the result of 1+1?"}
+        self._pf_test_and_assert(pf, flow_path, inputs, collection)
+
+    def _pf_run_and_assert(
+        self,
+        pf: PFClient,
+        flow_path: Path,
+        data_path: Path,
+        expected_number_lines: int,
+    ):
+        run = pf.run(flow=flow_path, data=data_path)
+        line_runs = pf.traces.list_line_runs(runs=run.name)
+        assert len(line_runs) == expected_number_lines
+
+    def test_batch_run_dag_flow(self, pf: PFClient) -> None:
+        flow_path = Path(f"{FLOWS_DIR}/web_classification").absolute()
+        data_path = Path(f"{DATA_DIR}/webClassification3.jsonl").absolute()
+        self._pf_run_and_assert(pf, flow_path, data_path, expected_number_lines=3)
+
+    def test_batch_run_flex_flow(self, pf: PFClient) -> None:
+        flow_path = Path(f"{FLEX_FLOWS_DIR}/simple_with_yaml").absolute()
+        data_path = Path(f"{DATA_DIR}/simple_eager_flow_data.jsonl").absolute()
+        self._pf_run_and_assert(pf, flow_path, data_path, expected_number_lines=1)
+
+    def test_batch_run_prompty(self, pf: PFClient) -> None:
+        flow_path = Path(f"{PROMPTY_DIR}/prompty_example.prompty").absolute()
+        data_path = Path(f"{DATA_DIR}/prompty_inputs.jsonl").absolute()
+        self._pf_run_and_assert(pf, flow_path, data_path, expected_number_lines=3)

@@ -72,6 +72,8 @@ def load_yaml(source: Optional[Union[AnyStr, PathLike, IO]]) -> Dict:
     finally:
         if must_open_file:
             input.close()
+    if cfg is None:
+        return {}
     return cfg
 
 

@@ -7,7 +7,7 @@ from dotenv import dotenv_values
 from marshmallow import RAISE, fields, post_load, pre_load
 
 from promptflow._sdk._constants import IdentityKeys
-from promptflow._sdk._utils import is_remote_uri
+from promptflow._sdk._utilities.general_utils import is_remote_uri, load_input_data
 from promptflow._sdk.schemas._base import PatchedSchemaMeta, YamlFileSchema
 from promptflow._sdk.schemas._fields import LocalPathField, NestedField, StringTransformedEnum, UnionField
 from promptflow._utils.logger_utils import get_cli_sdk_logger
@@ -132,7 +132,7 @@ class RunSchema(YamlFileSchema):
     outputs = fields.Dict(key=fields.Str(), dump_only=True)
     # endregion: command node
 
-    init = fields.Dict(key=fields.Str())
+    init = UnionField([fields.Dict(key=fields.Str()), LocalPathField()])
 
     @post_load
     def resolve_dot_env_file(self, data, **kwargs):
@@ -145,4 +145,11 @@ class RunSchema(YamlFileSchema):
         if unknown_fields:
             logger.warning("Run schema validation warnings. Unknown fields found: %s", unknown_fields)
 
+        return data
+
+    @pre_load
+    def resolve_init_file(self, data, **kwargs):
+        init = data.get("init", None)
+        if init and isinstance(init, str):
+            data["init"] = load_input_data(data["init"])
         return data

@@ -9,7 +9,7 @@ from azure.core.exceptions import HttpResponseError, ResourceExistsError
 from azure.storage.blob.aio import BlobServiceClient
 
 from promptflow._cli._utils import get_instance_results, merge_jsonl_files
-from promptflow._constants import OutputsFolderName
+from promptflow._constants import PROMPTY_EXTENSION, OutputsFolderName
 from promptflow._sdk._constants import (
     DEFAULT_ENCODING,
     CloudDatastore,
@@ -22,6 +22,10 @@ from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure._storage.blob.client import _get_datastore_credential
+from promptflow.azure.operations._artifact_client import AsyncArtifactClient
+from promptflow.azure.operations._asset_client import AsyncAssetClient
+from promptflow.azure.operations._metrics_client import AsyncMetricClient
+from promptflow.azure.operations._run_history_client import AsyncRunHistoryClient
 from promptflow.exceptions import UserErrorException
 
 logger = get_cli_sdk_logger()
@@ -39,8 +43,13 @@ class AsyncRunUploader:
         self.overwrite = overwrite
         self.datastore = self._get_datastore_with_secrets()
         self.blob_service_client = self._init_blob_service_client()
+        self.artifact_client = AsyncArtifactClient.from_run_operations(run_ops)
+        self.metric_client = AsyncMetricClient.from_run_operations(run_ops)
+        self.asset_client = AsyncAssetClient.from_run_operations(run_ops)
+        self.run_history_client = AsyncRunHistoryClient.from_run_operations(run_ops)
 
     def _get_datastore_with_secrets(self):
+        """Get datastores with secrets."""
         logger.debug("Getting datastores with secrets.")
         operations = self.run_ops._datastore_operations
         default_datastore = operations.get_default(include_secrets=True)
@@ -51,6 +60,7 @@ class AsyncRunUploader:
         }
 
     def _init_blob_service_client(self):
+        """Initialize blob service client."""
         result = {}
         for name, datastore in self.datastore.items():
             logger.debug(f"Initializing blob service client for datastore {name!r}.")
@@ -113,9 +123,27 @@ class AsyncRunUploader:
                 }
                 return result_dict
 
-        except UserAuthenticationError:
+        except UserErrorException:
             raise
-        except UploadUserError:
+        except Exception as e:
+            raise UploadInternalError(f"{error_msg_prefix}. Error: {e}") from e
+
+    async def post_process(self):
+        """Post process after uploading run details to cloud.
+
+        .. note::
+            1. Upload metrics to metric service.
+            2. Register assets for debug info and flow outputs
+        """
+        error_msg_prefix = f"Failed to post process run {self.run.name!r}"
+        try:
+            tasks = [
+                self._upload_metrics(),
+                self._register_assets_for_debug_info_and_flow_outputs(),
+            ]
+            await asyncio.gather(*tasks)
+
+        except UserErrorException:
             raise
         except Exception as e:
             raise UploadInternalError(f"{error_msg_prefix}. Error: {e}") from e
@@ -180,22 +208,23 @@ class AsyncRunUploader:
         """Upload run snapshot to cloud. Return the cloud relative path of flow definition file."""
         logger.debug(f"Uploading snapshot for run {self.run.name!r}.")
         local_folder = self.run_output_path / LocalStorageFilenames.SNAPSHOT_FOLDER
-        # for some types of flex flow, even there is no flow.flex.yaml in the original flow folder,
-        # it will be generated in the snapshot folder in the .runs folder, so we can upload it to cloud as well.
-        _, flow_file = resolve_flow_path(local_folder)
+
+        # parse the flow definition file
+        run_flow_path = Path(self.run.properties[FlowRunProperties.FLOW_PATH]).name
+        if str(run_flow_path).endswith(PROMPTY_EXTENSION):
+            # for prompty flow run, get prompty file name from properties/flow_path
+            flow_file = run_flow_path
+        else:
+            # for some types of flex flow, even there is no flow.flex.yaml in the original flow folder,
+            # it will be generated in the snapshot folder in the .runs folder, so we can upload it to cloud as well.
+            _, flow_file = resolve_flow_path(local_folder)
+
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_local_folder = Path(temp_dir) / self.run.name
             shutil.copytree(local_folder, temp_local_folder)
             remote_folder = f"{Local2Cloud.BLOB_ROOT_RUNS}"
             await self._upload_local_folder_to_blob(temp_local_folder, remote_folder)
             return f"{remote_folder}/{self.run.name}/{flow_file}"
-
-    async def _upload_metrics(self) -> None:
-        """Upload run metrics to cloud."""
-        logger.debug(f"Uploading metrics for run {self.run.name!r}.")
-        local_folder = self.run_output_path / LocalStorageFilenames.METRICS
-        remote_folder = f"{Local2Cloud.BLOB_ROOT_PROMPTFLOW}/{Local2Cloud.BLOB_METRICS}/{self.run.name}"
-        await self._upload_local_folder_to_blob(local_folder, remote_folder)
 
     async def _upload_flow_logs(self) -> str:
         """Upload flow logs for each line run to cloud."""
@@ -219,7 +248,73 @@ class AsyncRunUploader:
                     f.write(json.dumps(line_result) + "\n")
             remote_file = f"{Local2Cloud.BLOB_ROOT_PROMPTFLOW}/{Local2Cloud.BLOB_ARTIFACTS}/{self.run.name}/{file_name}"
             await self._upload_local_file_to_blob(local_file, remote_file)
+
+            # registry artifact for instance results
+            await self.artifact_client.register_artifact(
+                run_id=self.run.name,
+                datastore_name=self.datastore[CloudDatastore.DEFAULT].name,
+                relative_path=remote_file,
+                path=file_name,
+            )
+
             return remote_file
+
+    async def _upload_metrics(self) -> Dict:
+        """Write run metrics to metric service."""
+        logger.debug(f"Uploading metrics for run {self.run.name!r}.")
+        # system metrics that starts with "__pf__" are reserved for promptflow internal use
+        metrics = {
+            k: v for k, v in self.run.properties[FlowRunProperties.SYSTEM_METRICS].items() if k.startswith("__pf__")
+        }
+
+        # add user metrics from local metric file
+        metric_file = self.run_output_path / LocalStorageFilenames.METRICS
+        if metric_file.is_file():
+            with open(metric_file, "r", encoding=DEFAULT_ENCODING) as f:
+                user_metrics = json.load(f)
+                if isinstance(user_metrics, dict):
+                    metrics.update(user_metrics)
+
+        # convert metrics to float values
+        try:
+            metrics = {k: float(v) for k, v in metrics.items()}
+        except Exception as e:
+            raise UserErrorException(f"Failed to convert metrics {metrics!r} to float values. Error: {e}") from e
+
+        # write metrics to metric service
+        for k, v in metrics.items():
+            await self.metric_client.log_metric(self.run.name, k, v)
+        return metrics
+
+    async def _register_assets_for_debug_info_and_flow_outputs(self):
+        """Register assets for debug_info and flow_outputs."""
+        run_id = self.run.name
+        remote_folder = f"{Local2Cloud.BLOB_ROOT_PROMPTFLOW}/{Local2Cloud.BLOB_ARTIFACTS}/{run_id}"
+        datastore_name = self.datastore[CloudDatastore.DEFAULT].name
+
+        # register asset for debug_info
+        debug_info_asset_id = await self.asset_client.create_unregistered_output(
+            run_id=run_id,
+            datastore_name=datastore_name,
+            relative_path=remote_folder,
+            output_name=Local2Cloud.ASSET_NAME_DEBUG_INFO,
+        )
+
+        # register asset for flow_outputs
+        flow_outputs_asset_id = await self.asset_client.create_unregistered_output(
+            run_id=run_id,
+            datastore_name=datastore_name,
+            relative_path=f"{remote_folder}/{OutputsFolderName.FLOW_OUTPUTS}",
+            output_name=Local2Cloud.ASSET_NAME_FLOW_OUTPUTS,
+        )
+
+        outputs_info = {
+            Local2Cloud.ASSET_NAME_DEBUG_INFO: debug_info_asset_id,
+            Local2Cloud.ASSET_NAME_FLOW_OUTPUTS: flow_outputs_asset_id,
+        }
+
+        # patch run history with debug_info and flow_outputs
+        await self.run_history_client.patch_run_outputs(run_id, outputs_info)
 
     async def _upload_local_folder_to_blob(self, local_folder, remote_folder):
         """Upload local folder to remote folder in blob.

@@ -1,7 +1,7 @@
 # LLM 
 
 ## Introduction
-Prompt flow LLM tool enables you to leverage widely used large language models like [OpenAI](https://platform.openai.com/) or [Azure OpenAI (AOAI)](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/overview) for natural language processing. 
+Prompt flow LLM tool enables you to leverage widely used large language models like [OpenAI](https://platform.openai.com/), [Azure OpenAI (AOAI)](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/overview), and models in [Azure AI Studio model catalog](https://learn.microsoft.com/en-us/azure/ai-studio/how-to/model-catalog) for natural language processing. 
 > [!NOTE]
 > The previous version of the LLM tool is now being deprecated. Please upgrade to latest [promptflow-tools](https://pypi.org/project/promptflow-tools/) package to consume new llm tools.
 
@@ -11,7 +11,7 @@ Prompt flow provides a few different LLM APIs:
 
 
 ## Prerequisite
-Create OpenAI or Azure OpenAI resources:
+Create OpenAI resources, Azure OpenAI resources or MaaS deployment with the LLM models (e.g.: llama2, mistral, cohere etc.) in Azure AI Studio model catalog:
 
 - **OpenAI**
 
@@ -23,14 +23,21 @@ Create OpenAI or Azure OpenAI resources:
 
     Create Azure OpenAI resources with [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal)
 
+- **MaaS deployment**
+
+    Create MaaS deployment for models in Azure AI Studio model catalog with [instruction](https://learn.microsoft.com/en-us/azure/ai-studio/concepts/deployments-overview#deploy-models-with-model-as-a-service)
+
+    You can create serverless connection to use this MaaS deployment.
+
 ## **Connections**
 
 Setup connections to provisioned resources in prompt flow.
 
-| Type        | Name     | API KEY  | API Type | API Version |
-|-------------|----------|----------|----------|-------------|
-| OpenAI      | Required | Required | -        | -           |
-| AzureOpenAI | Required | Required | Required | Required    |
+| Type        | Name     | API KEY  | API BASE |  API Type | API Version |
+|-------------|----------|----------|----------|-----------|-------------|
+| OpenAI      | Required | Required | -        | -         | -           |
+| AzureOpenAI | Required | Required | Required | Required  | Required    |
+| Serverless  | Required | Required | Required | -         | -           |
 
 
 ## Inputs
@@ -88,7 +95,7 @@ Setup connections to provisioned resources in prompt flow.
 
 _To grasp the fundamentals of creating a chat prompt, begin with [this section](./prompt-tool.md#how-to-write-prompt) for an introductory understanding of jinja._
 
-We offer a method to distinguish between different roles in a chat prompt, such as "system", "user", "assistant". Each role can have "name" and "content" properties.
+We offer a method to distinguish between different roles in a chat prompt, such as "system", "user", "assistant" and "tool". The "system", "user", "assistant" roles can have "name" and "content" properties. The "tool" role, however, should have "tool_call_id" and "content" properties. For an example of a tool chat prompt, please refer to [Sample 3](#sample-3).
 
 ### Sample 1
 ```jinja
@@ -148,6 +155,71 @@ In LLM tool, the prompt is transformed to match the [openai messages](https://pl
         "role": "system",
         "name": "Alice",
         "content": "You are a bot can tell good jokes."
+    }
+]
+```
+
+### Sample 3
+This sample illustrates how to write a tool chat prompt.
+```jinja
+# system:
+You are a helpful assistant.
+
+# user:
+What is the current weather like in Boston?
+
+# assistant:
+{# The assistant message with 'tool_calls' must be followed by messages with role 'tool'. #}
+## tool_calls:
+{{llm_output.tool_calls}}
+
+# tool:
+{#
+Messages with role 'tool' must be a response to a preceding message with 'tool_calls'.
+Additionally, 'tool_call_id's should match ids of assistant message 'tool_calls'.
+#}
+## tool_call_id:
+{{llm_output.tool_calls[0].id}}
+## content:
+{{tool-answer-of-last-question}}
+
+# user:
+{{question}}
+```
+
+In LLM tool, the prompt is transformed to match the [openai messages](https://platform.openai.com/docs/api-reference/chat/create#chat-create-messages) structure before sending to openai chat API.
+
+```
+[
+    {
+        "role": "system",
+        "content": "You are a helpful assistant."
+    },
+    {
+        "role": "user",
+        "content": "What is the current weather like in Boston?"
+    },
+    {
+        "role": "assistant",
+        "content": null,
+        "function_call": null,
+        "tool_calls": [
+            {
+                "id": "<tool-call-id-of-last-question>",
+                "type": "function",
+                "function": "<function-to-call-of-last-question>"
+            }
+        ]
+    },
+    {
+        "role": "tool",
+        "tool_call_id": "<tool-call-id-of-last-question>",
+        "content": "<tool-answer-of-last-question>"
+    }
+    ...
+    {
+        "role": "user",
+        "content": "<question>"
     }
 ]
 ```

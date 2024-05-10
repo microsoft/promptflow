@@ -20,7 +20,7 @@ from tabulate import tabulate
 
 from promptflow._sdk._constants import DEFAULT_ENCODING, AzureMLWorkspaceTriad, CLIListOutputFormat
 from promptflow._sdk._telemetry import ActivityType, get_telemetry_logger, log_activity
-from promptflow._sdk._utils import print_red_error, print_yellow_warning
+from promptflow._sdk._utilities.general_utils import print_red_error, print_yellow_warning
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import PromptflowException, UserErrorException
@@ -442,8 +442,8 @@ def get_instance_results(path: Union[str, Path]) -> List[Dict]:
             for line in f:
                 data = json.loads(line)
                 run_info = data.get("run_info", {})
-                inputs = run_info.get("inputs", {})
-                output = run_info.get("output", {})
+                inputs = run_info.get("inputs", None) or {}
+                output = run_info.get("output", None) or {}  # output can be None for some cases
                 record = {
                     "line_number": data.get("line_number"),
                     "status": run_info.get("status"),

@@ -102,6 +102,28 @@ class InvalidSampleError(CoreError):
     pass
 
 
+class ToolValidationError(UserErrorException):
+    """Base exception raised when failed to validate tool."""
+
+    pass
+
+
+class ChatAPIInvalidFunctions(ToolValidationError):
+    """Base exception raised when failed to validate functions when call chat api."""
+
+    pass
+
+
+class ChatAPIInvalidTools(ToolValidationError):
+    """Base exception raised when failed to validate functions when call chat api."""
+
+    pass
+
+
+class ConnectionNotFound(CoreError):
+    pass
+
+
 class OpenURLUserAuthenticationError(UserAuthenticationError):
     def __init__(self, **kwargs):
         super().__init__(target=ErrorTarget.CORE, **kwargs)

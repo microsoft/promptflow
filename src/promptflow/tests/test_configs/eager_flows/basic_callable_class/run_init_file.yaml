@@ -1,0 +1,4 @@
+description: sample bulk run
+flow: ./
+data: ./inputs.jsonl
+init: ./init.json

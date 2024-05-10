@@ -14,12 +14,16 @@ import pydash
 from promptflow._constants import FlowEntryRegex
 from promptflow._sdk._constants import ALL_CONNECTION_TYPES, FLOW_META_JSON, FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
 from promptflow._utils.flow_utils import is_flex_flow, read_json_content
+from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.exceptions import UserErrorException
 
 from ._base_inspector_proxy import AbstractInspectorProxy
 
 EXECUTOR_SERVICE_DLL = "Promptflow.dll"
+
+# inspector proxy is mainly used in preparation stage instead of execution stage, so we use cli sdk logger here
+logger = get_cli_sdk_logger()
 
 
 class CSharpInspectorProxy(AbstractInspectorProxy):
@@ -113,16 +117,23 @@ class CSharpInspectorProxy(AbstractInspectorProxy):
                 cwd=working_dir,
             )
         except subprocess.CalledProcessError as e:
+            if is_flex_flow(flow_path=flow_file):
+                meta_path = working_dir / PROMPT_FLOW_DIR_NAME / FLOW_META_JSON
+            else:
+                meta_path = working_dir / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
+
+            logger.warning(
+                f"Failed to generate flow meta for csharp flow. "
+                f"Command: {' '.join(command)} "
+                f"Working directory: {working_dir.as_posix()} "
+                f"Return code: {e.returncode} "
+                f"Output: {e.output}"
+            )
+            if meta_path.is_file():
+                logger.warning(f"Will try to use generated flow meta at {meta_path.as_posix()}.")
             raise UserErrorException(
-                message_format="Failed to generate flow meta for csharp flow.\n"
-                "Command: {command}\n"
-                "Working directory: {working_directory}\n"
-                "Return code: {return_code}\n"
-                "Output: {output}",
-                command=" ".join(command),
-                working_directory=working_dir.as_posix(),
-                return_code=e.returncode,
-                output=e.output,
+                "Failed to generate flow meta for csharp flow and not generated flow meta "
+                f"found at {meta_path.as_posix()}. Please check log for more details."
             )
         finally:
             if temp_init_kwargs_file:

@@ -21,7 +21,7 @@ from promptflow._constants import (
 )
 from promptflow._core._errors import MetaFileNotFound, MetaFileReadError
 from promptflow._utils.logger_utils import LoggerFactory
-from promptflow._utils.utils import strip_quotation
+from promptflow._utils.utils import convert_ordered_dict_to_dict, strip_quotation
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.exceptions import ErrorTarget, UserErrorException, ValidationException
@@ -152,12 +152,26 @@ def load_flow_dag(flow_path: Path):
     return flow_path, flow_dag
 
 
-def dump_flow_dag(flow_dag: dict, flow_path: Path):
-    """Dump flow dag to given flow path."""
-    flow_dir, flow_filename = resolve_flow_path(flow_path, check_flow_exist=False)
+def dump_flow_yaml_to_existing_path(flow_dag: dict, flow_path: Path):
+    """Dump flow dag to existing flow path (flow.dag.yaml or flow.flex.yaml). The YAML file is required to exist."""
+    flow_dir, flow_filename = resolve_flow_path(flow_path, check_flow_exist=True)
     flow_path = flow_dir / flow_filename
     with open(flow_path, "w", encoding=DEFAULT_ENCODING) as f:
-        dump_yaml(flow_dag, f)
+        # directly dumping ordered dict will bring !!omap tag in yaml
+        dump_yaml(convert_ordered_dict_to_dict(flow_dag, remove_empty=False), f)
+    return flow_path
+
+
+def dump_flow_dag_according_to_content(flow_dag: dict, flow_path: Path):
+    """Dump flow dag to YAML according to the content of flow_dag."""
+    if is_flex_flow(yaml_dict=flow_dag):
+        flow_filename = FLOW_FLEX_YAML
+    else:
+        flow_filename = FLOW_DAG_YAML
+    flow_path = flow_path / flow_filename
+    with open(flow_path, "w", encoding=DEFAULT_ENCODING) as f:
+        # directly dumping ordered dict will bring !!omap tag in yaml
+        dump_yaml(convert_ordered_dict_to_dict(flow_dag, remove_empty=False), f)
     return flow_path
 
 

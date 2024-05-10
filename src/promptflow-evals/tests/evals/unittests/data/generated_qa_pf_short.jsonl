@@ -1,0 +1,5 @@
+{"chat_history":[],"question":"What is Compute Instance?","ground_truth":"Compute instance is ..."}
+{"chat_history":[],"question":"Is CI different than Compute Cluster?","ground_truth":"Yes."}
+{"chat_history":[],"question":"In what way?","ground_truth":"It is different ... because ...\n... these are the reasons.\n   Here's one more reason ..."}
+{"chat_history":[],"question":"Is K8s also a compute?","ground_truth":"Yes.\n"}
+{"chat_history":[],"question":"Question after space?","ground_truth":"Answer after space.\n\n"}

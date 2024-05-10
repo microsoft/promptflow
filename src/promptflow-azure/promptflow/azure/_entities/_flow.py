@@ -13,8 +13,9 @@ import pydash
 from promptflow._constants import FlowLanguage
 from promptflow._proxy import ProxyFactory
 from promptflow._sdk._constants import SERVICE_FLOW_TYPE_2_CLIENT_FLOW_TYPE, AzureFlowSource, FlowType
-from promptflow._sdk._utils import PromptflowIgnoreFile, load_yaml, remove_empty_element_from_dict
-from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag, resolve_flow_path
+from promptflow._sdk._utilities.general_utils import PromptflowIgnoreFile, load_yaml, remove_empty_element_from_dict
+from promptflow._sdk._utilities.signature_utils import update_signatures
+from promptflow._utils.flow_utils import dump_flow_yaml_to_existing_path, load_flow_dag, resolve_flow_path
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.azure._ml import AdditionalIncludesMixin, Code
 
@@ -132,14 +133,6 @@ class Flow(AdditionalIncludesMixin):
         flow_dag.pop(ADDITIONAL_INCLUDES, None)
         return True
 
-    @classmethod
-    def _resolve_signature(cls, code: Path, data: dict):
-        """Resolve signature for flex flow. Return True if resolved."""
-        from promptflow.client import PFClient
-
-        pf = PFClient()
-        return pf.flows._update_signatures(code=code, data=data)
-
     # region AdditionalIncludesMixin
     @contextmanager
     def _try_build_local_code(self) -> Optional[Code]:
@@ -168,15 +161,15 @@ class Flow(AdditionalIncludesMixin):
                 ProxyFactory().create_inspector_proxy(self.language).prepare_metadata(
                     flow_file=flow_directory / flow_file, working_dir=flow_directory
                 )
-                dag_updated = self._resolve_signature(flow_dir, flow_dag) or dag_updated
+                dag_updated = update_signatures(code=flow_dir, data=flow_dag) or dag_updated
                 self._environment = self._resolve_environment(flow_dir, flow_dag)
                 if dag_updated:
-                    dump_flow_dag(flow_dag, flow_dir)
+                    dump_flow_yaml_to_existing_path(flow_dag, flow_dir)
             try:
                 yield code
             finally:
                 if dag_updated:
-                    dump_flow_dag(original_flow_dag, flow_dir)
+                    dump_flow_yaml_to_existing_path(original_flow_dag, flow_dir)
 
     def _get_base_path_for_code(self) -> Path:
         """Get base path for additional includes."""
@@ -187,7 +180,7 @@ class Flow(AdditionalIncludesMixin):
         """Get all additional include configs.
         For flow, its additional include need to be read from dag with a helper function.
         """
-        from promptflow._sdk._utils import _get_additional_includes
+        from promptflow._sdk._utilities.general_utils import _get_additional_includes
 
         return _get_additional_includes(os.path.join(self.code, self.path))
 
