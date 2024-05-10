@@ -122,10 +122,7 @@ class Tracer(ThreadLocalSingleton):
         last_trace.end_time = datetime.utcnow().timestamp()
         self._current_trace_id.set(last_trace.parent_id)
 
-        if isinstance(output, (GeneratorProxy, AsyncGeneratorProxy)):
-            return output
-        else:
-            return output
+        return output
 
     def to_json(self) -> list:
         return serialize(self._traces)
