@@ -986,7 +986,9 @@ def create_flex_flow_yaml_in_target(entry: Union[str, PathLike, Callable], targe
 
     logger.info("Create temporary entry for flex flow.")
     entry, code = resolve_entry_and_code(entry, code)
-    flow_dag = {"entry": entry, "code": str(code.resolve())}
+    flow_dag = {"entry": entry}
+    code = "." if Path(target_dir).resolve().as_posix() == code.resolve().as_posix() else str(code.resolve())
+    flow_dag.update({"code": code})
     flow_yaml_path = dump_flow_dag_according_to_content(flow_dag=flow_dag, flow_path=Path(target_dir))
     return flow_yaml_path
 
