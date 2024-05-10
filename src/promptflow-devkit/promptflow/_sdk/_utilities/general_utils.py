@@ -40,6 +40,7 @@ from promptflow._constants import (
     PROMPTY_EXTENSION,
     FlowLanguage,
 )
+from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
     AZURE_WORKSPACE_REGEX_FORMAT,
     DEFAULT_ENCODING,
@@ -1127,3 +1128,19 @@ def resolve_flow_language(
                 f"Invalid flow path {file_path.as_posix()}, must exist and of suffix yaml, yml or prompty."
             )
     return yaml_dict.get(LANGUAGE_KEY, FlowLanguage.Python)
+
+
+def get_trace_destination(pf_client=None, path=None):
+    """
+    :param pf_client: pf_client object
+    :type pf_client: promptflow._sdk._pf_client.PFClient
+    :param path: The path to the config file of (subscription, resource_group, workspace)
+                or starting directory to search.
+                The parameter defaults to starting the search in the current directory.
+    :type path: str
+    :return:
+    """
+    config = pf_client._config if pf_client else Configuration.get_instance()
+    trace_destination = config.get_trace_destination(path=path)
+
+    return trace_destination
