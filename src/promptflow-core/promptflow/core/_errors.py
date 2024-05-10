@@ -23,8 +23,7 @@ def to_openai_error_message(e: Exception) -> str:
             "please use gpt-3.5-turbo, gpt-4, gpt-4-32k, gpt-3.5-turbo-0613 or gpt-4-0613. You can refer to "
             "https://platform.openai.com/docs/guides/gpt/function-calling. If you are using azure openai "
             "connection, then please first go to your Azure OpenAI resource, deploy model 'gpt-35-turbo' or "
-            "'gpt-4' with version 0613, then go to prompt flow connection page, upgrade connection api version to "
-            "'2023-07-01-preview'. You can refer to "
+            "'gpt-4' with version 0613. You can refer to "
             "https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/function-calling."
         )
         return f"OpenAI API hits {ex_type}: {msg}"
@@ -35,9 +34,7 @@ def to_openai_error_message(e: Exception) -> str:
         msg = (
             "The completion operation does not work with the current model. "
             "Completion API is a legacy api and is going to be deprecated soon. "
-            "Please change to use Chat API for current model. "
-            "You could refer to guideline at https://aka.ms/pfdoc/chat-prompt "
-            "or view the samples in our gallery that contain 'Chat' in the name."
+            "Please change to use Chat API for current model."
         )
         return f"OpenAI API hits {ex_type}: {msg}"
     elif "Invalid content type. image_url is only supported by certain models" in error_message:
@@ -59,8 +56,8 @@ def to_openai_error_message(e: Exception) -> str:
             'If you are using openai connection, you can only set response_format to { "type": "json_object" } '
             "when calling gpt-3.5-turbo-1106 or gpt-4-1106-preview to enable JSON mode. You can refer to "
             "https://platform.openai.com/docs/guides/text-generation/json-mode. If you are using azure openai "
-            "connection, then please first go to your Azure OpenAI resource, deploy model 'gpt-35-turbo-1106' or "
-            "'gpt-4-1106-preview'. You can refer to "
+            "connection, then please first go to your Azure OpenAI resource, compatible with GPT-4 Turbo and "
+            "all GPT-3.5 Turbo models newer than gpt-35-turbo-1106. You can refer to "
             "https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/json-mode?tabs=python."
         )
         return f"OpenAI API hits {ex_type}: {msg}"

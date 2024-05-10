@@ -380,6 +380,12 @@ class Prompty(FlowBase):
     def __call__(self, *args, **kwargs):
         """Calling flow as a function, the inputs should be provided with key word arguments.
         Returns the output of the prompty.
+
+        The retry mechanism for prompty execution initiates when a retryable error is detected, including LLM response
+        errors such as InternalServerError (>=500), RateLimitError (429), and UnprocessableEntityError (422).
+        It is designed to retry up to 10 times. Each retry interval grows exponentially, with the wait time not
+        exceeding 60 seconds. The aggregate waiting period for all retries is approximately 400 seconds.
+
         The function call throws UserErrorException: if the flow is not valid or the inputs are not valid.
         SystemErrorException: if the flow execution failed due to unexpected executor error.
 

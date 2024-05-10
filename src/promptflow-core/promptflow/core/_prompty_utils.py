@@ -10,6 +10,7 @@ from typing import List, Mapping
 
 from openai import APIConnectionError, APIStatusError, APITimeoutError, BadRequestError, OpenAIError, RateLimitError
 
+from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.core._connection import AzureOpenAIConnection, OpenAIConnection, _Connection
 from promptflow.core._errors import (
     ChatAPIFunctionRoleInvalidFormatError,
@@ -27,6 +28,7 @@ from promptflow.core._model_configuration import ModelConfiguration
 from promptflow.core._utils import get_workspace_triad_from_local, render_jinja_template_content
 from promptflow.exceptions import SystemErrorException, UserErrorException
 
+logger = LoggerFactory.get_logger(name=__name__)
 GPT4V_VERSION = "vision-preview"
 
 
@@ -619,14 +621,16 @@ def is_retriable_api_connection_error(e: APIConnectionError):
     return False
 
 
-# TODO(2971352): revisit this tries=100 when there is any change to the 10min timeout logic
-def handle_openai_error(tries: int = 100, unprocessable_entity_error_tries: int = 3):
+def handle_openai_error(tries: int = 10, unprocessable_entity_error_tries: int = 3):
     """
     A decorator function for handling OpenAI errors.
 
-    OpenAI errors are categorized into retriable and non-retriable.
+    OpenAI errors are categorized into retryable and non-retryable.
+    For retryable errors, the default is to retry 10 times. The waiting time for each round of retry
+    increases exponentially, with a maximum waiting time of 60 seconds.
+    The total waiting time for retrying 10 times is about 400s
 
-    For retriable errors, the decorator uses the following parameters to control its retry behavior:
+    For retryable errors, the decorator uses the following parameters to control its retry behavior:
     `tries`: max times for the function invocation, type is int
     `unprocessable_entity_error_tries`: max times for the function invocation when consecutive
         422 error occurs, type is int
@@ -707,14 +711,14 @@ def handle_openai_error(tries: int = 100, unprocessable_entity_error_tries: int 
                             f"{type(e).__name__} #{i}, but no Retry-After header, "
                             + f"Back off {retry_after_seconds} seconds for retry."
                         )
-                        print(msg, file=sys.stderr)
+                        logger.warning(msg)
                     else:
                         retry_after_seconds = float(retry_after_in_header)
                         msg = (
                             f"{type(e).__name__} #{i}, Retry-After={retry_after_in_header}, "
                             f"Back off {retry_after_seconds} seconds for retry."
                         )
-                        print(msg, file=sys.stderr)
+                        logger.warning(msg)
                     time.sleep(retry_after_seconds)
                 except OpenAIError as e:
                     # For other non-retriable errors from OpenAIError,
