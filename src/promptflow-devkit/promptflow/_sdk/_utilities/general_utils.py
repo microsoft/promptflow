@@ -40,7 +40,6 @@ from promptflow._constants import (
     PROMPTY_EXTENSION,
     FlowLanguage,
 )
-from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
     AZURE_WORKSPACE_REGEX_FORMAT,
     DEFAULT_ENCODING,
@@ -1137,6 +1136,8 @@ def get_trace_destination(pf_client=None):
     :type pf_client: promptflow._sdk._pf_client.PFClient
     :return:
     """
+    from promptflow._sdk._configuration import Configuration
+
     config = pf_client._config if pf_client else Configuration.get_instance()
     trace_destination = config.get_trace_destination()
 
