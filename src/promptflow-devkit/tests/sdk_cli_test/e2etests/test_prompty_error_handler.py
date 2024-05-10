@@ -62,6 +62,7 @@ class TestHandlePromptyError:
             prompty(question="what is the result of 1+1?")
         assert exc_info.value.error_codes == error_codes.split("/")
 
+    @pytest.mark.skipif(pytest.is_replay, reason="The successfully submitted record is referenced in record mode.")
     def test_authentication_error_with_bad_api_key(self, azure_open_ai_connection):
         raw_message = "Unauthorized. Access token is missing, invalid"
         error_codes = "UserError/OpenAIError/AuthenticationError"
@@ -71,6 +72,7 @@ class TestHandlePromptyError:
         assert raw_message in exc_info.value.message
         assert exc_info.value.error_codes == error_codes.split("/")
 
+    @pytest.mark.skipif(pytest.is_replay, reason="The successfully submitted record is referenced in record mode.")
     def test_connection_error_with_bad_api_base(self, azure_open_ai_connection):
         error_codes = "UserError/OpenAIError/APIConnectionError"
         with pytest.raises(WrappedOpenAIError) as exc_info:
@@ -82,6 +84,7 @@ class TestHandlePromptyError:
         assert "Connection error." in exc_info.value.message
         assert exc_info.value.error_codes == error_codes.split("/")
 
+    @pytest.mark.skipif(pytest.is_replay, reason="The successfully submitted record is referenced in record mode.")
     def test_not_found_error_with_bad_api_version(self, azure_open_ai_connection):
         """NotFoundError: Resource not found"""
         raw_message = "Resource not found"
