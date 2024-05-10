@@ -3,8 +3,8 @@
     "run_configs": {
         "data": "inputs.jsonl",
         "column_mapping": {
-            "answer": "${answer.text}",
-            "expected_word": "${expected_word.text}"
+            "answer": "${data.answer}",
+            "expected_word": "${data.expected_word}"
         }
     },
     "assertions": {
