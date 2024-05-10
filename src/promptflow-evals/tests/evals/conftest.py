@@ -7,15 +7,15 @@ from typing import Dict
 from unittest.mock import patch
 
 import pytest
+from azure.identity import DefaultAzureCredential
 from pytest_mock import MockerFixture
 
+from promptflow.azure import PFClient as AzurePFClient
 from promptflow.client import PFClient
 from promptflow.core import AzureOpenAIModelConfiguration
 from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
-from promptflow.azure import PFClient as AzurePFClient
-from azure.identity import DefaultAzureCredential
 
 try:
     from promptflow.recording.local import recording_array_reset
@@ -45,24 +45,35 @@ CONNECTION_FILE = (PROMPTFLOW_ROOT / "promptflow-evals/connections.json").resolv
 RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "promptflow-recording/recordings/local").resolve()
 
 
-@pytest.fixture
 def configure_default_azure_credential():
-    with open(
-        file=CONNECTION_FILE,
-        mode="r",
-    ) as f:
-        dev_connections = json.load(f)
+    if os.path.exists(CONNECTION_FILE):
+        with open(file=CONNECTION_FILE, mode="r") as f:
+            dev_connections = json.load(f)
 
-    # for running e2e test which uses DefaultAzureCredential in ci pipeline
-    if "pf-evals-sp" in dev_connections:
-        creds = dev_connections["pf-evals-sp"]["value"]
-        for key, value in creds.items():
-            os.environ[key] = value
-        login_output = subprocess.check_output(
-            ["az", "login", "--service-principal", "-u", creds["AZURE_CLIENT_ID"],
-             "-p", creds["AZURE_CLIENT_SECRET"], "--tenant", creds["AZURE_TENANT_ID"]], shell=True)
-        print("loging_output")
-        print(login_output)
+        # for running e2e test which uses DefaultAzureCredential in ci pipeline
+        if "pf-evals-sp" in dev_connections:
+            creds = dev_connections["pf-evals-sp"]["value"]
+            for key, value in creds.items():
+                os.environ[key] = value
+            login_output = subprocess.check_output(
+                [
+                    "az",
+                    "login",
+                    "--service-principal",
+                    "-u",
+                    creds["AZURE_CLIENT_ID"],
+                    "-p",
+                    creds["AZURE_CLIENT_SECRET"],
+                    "--tenant",
+                    creds["AZURE_TENANT_ID"],
+                ],
+                shell=True,
+            )
+            print("loging_output")
+            print(login_output)
+
+
+configure_default_azure_credential()
 
 
 def pytest_configure():
@@ -147,7 +158,7 @@ def azure_pf_client(project_scope: Dict):
         subscription_id=project_scope["subscription_id"],
         resource_group_name=project_scope["resource_group_name"],
         workspace_name=project_scope["project_name"],
-        credential=DefaultAzureCredential()
+        credential=DefaultAzureCredential(),
     )
 
 
@@ -248,3 +259,20 @@ def _mock_process_wrapper(*args, **kwargs):
 def _mock_create_spawned_fork_process_manager(*args, **kwargs):
     setup_recording_injection_if_enabled()
     return create_spawned_fork_process_manager(*args, **kwargs)
+
+
+@pytest.fixture
+def ml_client_config() -> dict:
+    conn_name = "azure_ai_project_scope"
+
+    with open(
+        file=CONNECTION_FILE,
+        mode="r",
+        encoding="utf-8",  # Add the encoding parameter
+    ) as f:
+        dev_connections = json.load(f)
+
+    if conn_name not in dev_connections:
+        raise ValueError(f"Connection '{conn_name}' not found in dev connections.")
+
+    return dev_connections[conn_name]["value"]
