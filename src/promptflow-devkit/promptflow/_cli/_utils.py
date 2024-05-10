@@ -9,7 +9,6 @@ import os
 import shutil
 import sys
 import traceback
-from configparser import ConfigParser
 from functools import wraps
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
@@ -23,6 +22,7 @@ from promptflow._sdk._telemetry import ActivityType, get_telemetry_logger, log_a
 from promptflow._sdk._utilities.general_utils import print_red_error, print_yellow_warning
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow.core._utils import get_workspace_triad_from_local as core_get_workspace_triad_from_local
 from promptflow.exceptions import PromptflowException, UserErrorException
 
 logger = get_cli_sdk_logger()
@@ -68,25 +68,7 @@ def dump_connection_file(dot_env_file: str):
 
 
 def get_workspace_triad_from_local() -> AzureMLWorkspaceTriad:
-    subscription_id = None
-    resource_group_name = None
-    workspace_name = None
-    azure_config_path = Path.home() / ".azure"
-    config_parser = ConfigParser()
-    # subscription id
-    try:
-        config_parser.read_file(open(azure_config_path / "clouds.config"))
-        subscription_id = config_parser["AzureCloud"]["subscription"]
-    except Exception:  # pylint: disable=broad-except
-        pass
-    # resource group name & workspace name
-    try:
-        config_parser.read_file(open(azure_config_path / "config"))
-        resource_group_name = config_parser["defaults"]["group"]
-        workspace_name = config_parser["defaults"]["workspace"]
-    except Exception:  # pylint: disable=broad-except
-        pass
-
+    subscription_id, resource_group_name, workspace_name = core_get_workspace_triad_from_local()
     return AzureMLWorkspaceTriad(subscription_id, resource_group_name, workspace_name)
 
 
