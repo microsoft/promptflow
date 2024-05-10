@@ -21,6 +21,7 @@ from promptflow.core._prompty_utils import (
     get_open_ai_client_by_connection,
     handle_openai_error,
     prepare_open_ai_request_params,
+    resolve_references,
     send_request_to_llm,
     update_dict_recursively,
 )
@@ -305,8 +306,11 @@ class Prompty(FlowBase):
         # prompty file path
         path = Path(path)
         configs, self._template = self._parse_prompty(path)
-        configs = update_dict_recursively(configs, kwargs)
-        configs["model"] = update_dict_recursively(configs.get("model", {}), model or {})
+        configs = resolve_references(configs, base_path=path.parent)
+        configs = update_dict_recursively(configs, resolve_references(kwargs, base_path=path.parent))
+        configs["model"] = update_dict_recursively(
+            configs.get("model", {}), resolve_references(model or {}, base_path=path.parent)
+        )
 
         self._model = PromptyModelConfiguration(**configs["model"])
         self._inputs = configs.get("inputs", {})
