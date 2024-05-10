@@ -53,7 +53,7 @@ When `trace.destination` is set to `azureml`, prompt flow will search for a `con
 
 Below is an example folder structure:
 
-```plaintext
+```
 flows
 ├── flow1
 │   ├── .azureml
