@@ -15,9 +15,15 @@ on:
 env:
   IS_IN_CI_PIPELINE: "true"
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   samples_flows_standard_flow_with_symlinks:
     runs-on: ubuntu-latest
+    environment:
+      internal
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -64,10 +70,18 @@ jobs:
       - name: Create AOAI Connection from YAML
         working-directory: ${{ github.workspace }}
         run: pf connection create --file examples/connections/azure_openai.yml --set api_key=${{ secrets.AOAI_API_KEY_TEST }} api_base=${{ secrets.AOAI_API_ENDPOINT_TEST }}
+      - name: Random Wait
+        uses: AliSajid/random-wait-action@main
+        with:
+          minimum: 0
+          maximum: 300
       - name: Azure Login
         uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
+          tenant-id: ${{secrets.AZURE_TENANT_ID}}
+          client-id: ${{secrets.AZURE_CLIENT_ID}}
+          enable-AzPSSession: true
       - name: Extract Steps examples/flows/standard/flow-with-symlinks/README.md
         working-directory: ${{ github.workspace }}
         run: |
@@ -107,7 +121,7 @@ jobs:
           pip list
       - name: Upload artifact
         if: ${{ always() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: artifact
           path: examples/flows/standard/flow-with-symlinks/bash_script.sh

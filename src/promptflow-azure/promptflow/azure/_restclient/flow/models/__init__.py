@@ -78,6 +78,7 @@ try:
     from ._models_py3 import AetherExportDataTask
     from ._models_py3 import AetherFeaturizationSettings
     from ._models_py3 import AetherFileSystem
+    from ._models_py3 import AetherFineTuningCloudSetting
     from ._models_py3 import AetherForecastHorizon
     from ._models_py3 import AetherForecastingSettings
     from ._models_py3 import AetherGeneralSettings
@@ -332,6 +333,7 @@ try:
     from ._models_py3 import ExperimentIndexEntity
     from ._models_py3 import ExperimentInfo
     from ._models_py3 import ExperimentNode
+    from ._models_py3 import ExperimentNodeOutput
     from ._models_py3 import ExperimentNodeRunSettings
     from ._models_py3 import ExperimentProperties
     from ._models_py3 import ExperimentTemplateAnnotations
@@ -346,6 +348,7 @@ try:
     from ._models_py3 import FileSystem
     from ._models_py3 import FilterBy
     from ._models_py3 import FilterValue
+    from ._models_py3 import FineTuningCloudSetting
     from ._models_py3 import Flow
     from ._models_py3 import FlowAnnotations
     from ._models_py3 import FlowBaseDto
@@ -447,6 +450,7 @@ try:
     from ._models_py3 import LogRunTerminatedEventDto
     from ._models_py3 import LongRunningOperationUriResponse
     from ._models_py3 import LongRunningUpdateRegistryComponentRequest
+    from ._models_py3 import ManagedCosmosDbConfig
     from ._models_py3 import ManagedServiceIdentity
     from ._models_py3 import MavenLibraryDto
     from ._models_py3 import MetricProperties
@@ -601,6 +605,8 @@ try:
     from ._models_py3 import RunTypeV2
     from ._models_py3 import RunTypeV2Index
     from ._models_py3 import RuntimeConfiguration
+    from ._models_py3 import RuntimeConfigurationBase
+    from ._models_py3 import RuntimeConfigurationImages
     from ._models_py3 import SampleMeta
     from ._models_py3 import SavePipelineDraftRequest
     from ._models_py3 import SavedDataSetReference
@@ -684,8 +690,10 @@ try:
     from ._models_py3 import ToolSetting
     from ._models_py3 import ToolSourceMeta
     from ._models_py3 import TorchDistributedConfiguration
+    from ._models_py3 import TraceCosmosMetaDto
     from ._models_py3 import TraceCosmosResourceDto
     from ._models_py3 import TraceCosmosResourceDtos
+    from ._models_py3 import TraceDbSetupRequest
     from ._models_py3 import TrainingDiagnosticConfiguration
     from ._models_py3 import TrainingOutput
     from ._models_py3 import TrainingSettings
@@ -807,6 +815,7 @@ except (SyntaxError, ImportError):
     from ._models import AetherExportDataTask  # type: ignore
     from ._models import AetherFeaturizationSettings  # type: ignore
     from ._models import AetherFileSystem  # type: ignore
+    from ._models import AetherFineTuningCloudSetting  # type: ignore
     from ._models import AetherForecastHorizon  # type: ignore
     from ._models import AetherForecastingSettings  # type: ignore
     from ._models import AetherGeneralSettings  # type: ignore
@@ -1061,6 +1070,7 @@ except (SyntaxError, ImportError):
     from ._models import ExperimentIndexEntity  # type: ignore
     from ._models import ExperimentInfo  # type: ignore
     from ._models import ExperimentNode  # type: ignore
+    from ._models import ExperimentNodeOutput  # type: ignore
     from ._models import ExperimentNodeRunSettings  # type: ignore
     from ._models import ExperimentProperties  # type: ignore
     from ._models import ExperimentTemplateAnnotations  # type: ignore
@@ -1075,6 +1085,7 @@ except (SyntaxError, ImportError):
     from ._models import FileSystem  # type: ignore
     from ._models import FilterBy  # type: ignore
     from ._models import FilterValue  # type: ignore
+    from ._models import FineTuningCloudSetting  # type: ignore
     from ._models import Flow  # type: ignore
     from ._models import FlowAnnotations  # type: ignore
     from ._models import FlowBaseDto  # type: ignore
@@ -1176,6 +1187,7 @@ except (SyntaxError, ImportError):
     from ._models import LogRunTerminatedEventDto  # type: ignore
     from ._models import LongRunningOperationUriResponse  # type: ignore
     from ._models import LongRunningUpdateRegistryComponentRequest  # type: ignore
+    from ._models import ManagedCosmosDbConfig  # type: ignore
     from ._models import ManagedServiceIdentity  # type: ignore
     from ._models import MavenLibraryDto  # type: ignore
     from ._models import MetricProperties  # type: ignore
@@ -1330,6 +1342,8 @@ except (SyntaxError, ImportError):
     from ._models import RunTypeV2  # type: ignore
     from ._models import RunTypeV2Index  # type: ignore
     from ._models import RuntimeConfiguration  # type: ignore
+    from ._models import RuntimeConfigurationBase  # type: ignore
+    from ._models import RuntimeConfigurationImages  # type: ignore
     from ._models import SampleMeta  # type: ignore
     from ._models import SavePipelineDraftRequest  # type: ignore
     from ._models import SavedDataSetReference  # type: ignore
@@ -1413,8 +1427,10 @@ except (SyntaxError, ImportError):
     from ._models import ToolSetting  # type: ignore
     from ._models import ToolSourceMeta  # type: ignore
     from ._models import TorchDistributedConfiguration  # type: ignore
+    from ._models import TraceCosmosMetaDto  # type: ignore
     from ._models import TraceCosmosResourceDto  # type: ignore
     from ._models import TraceCosmosResourceDtos  # type: ignore
+    from ._models import TraceDbSetupRequest  # type: ignore
     from ._models import TrainingDiagnosticConfiguration  # type: ignore
     from ._models import TrainingOutput  # type: ignore
     from ._models import TrainingSettings  # type: ignore
@@ -1631,6 +1647,7 @@ from ._azure_machine_learning_designer_service_client_enums import (
     RealTimeEndpointOpCode,
     RealTimeEndpointOpStatusCode,
     RecurrenceFrequency,
+    ResourceType,
     RunDisplayNameGenerationType,
     RunSettingParameterType,
     RunSettingUIWidgetTypeEnum,
@@ -1665,6 +1682,8 @@ from ._azure_machine_learning_designer_service_client_enums import (
     ToolFuncCallScenario,
     ToolState,
     ToolType,
+    TraceCosmosConfiguration,
+    TraceCosmosStatus,
     TrainingOutputType,
     TriggerOperationType,
     TriggerType,
@@ -1757,6 +1776,7 @@ __all__ = [
     'AetherExportDataTask',
     'AetherFeaturizationSettings',
     'AetherFileSystem',
+    'AetherFineTuningCloudSetting',
     'AetherForecastHorizon',
     'AetherForecastingSettings',
     'AetherGeneralSettings',
@@ -2011,6 +2031,7 @@ __all__ = [
     'ExperimentIndexEntity',
     'ExperimentInfo',
     'ExperimentNode',
+    'ExperimentNodeOutput',
     'ExperimentNodeRunSettings',
     'ExperimentProperties',
     'ExperimentTemplateAnnotations',
@@ -2025,6 +2046,7 @@ __all__ = [
     'FileSystem',
     'FilterBy',
     'FilterValue',
+    'FineTuningCloudSetting',
     'Flow',
     'FlowAnnotations',
     'FlowBaseDto',
@@ -2126,6 +2148,7 @@ __all__ = [
     'LogRunTerminatedEventDto',
     'LongRunningOperationUriResponse',
     'LongRunningUpdateRegistryComponentRequest',
+    'ManagedCosmosDbConfig',
     'ManagedServiceIdentity',
     'MavenLibraryDto',
     'MetricProperties',
@@ -2280,6 +2303,8 @@ __all__ = [
     'RunTypeV2',
     'RunTypeV2Index',
     'RuntimeConfiguration',
+    'RuntimeConfigurationBase',
+    'RuntimeConfigurationImages',
     'SampleMeta',
     'SavePipelineDraftRequest',
     'SavedDataSetReference',
@@ -2363,8 +2388,10 @@ __all__ = [
     'ToolSetting',
     'ToolSourceMeta',
     'TorchDistributedConfiguration',
+    'TraceCosmosMetaDto',
     'TraceCosmosResourceDto',
     'TraceCosmosResourceDtos',
+    'TraceDbSetupRequest',
     'TrainingDiagnosticConfiguration',
     'TrainingOutput',
     'TrainingSettings',
@@ -2579,6 +2606,7 @@ __all__ = [
     'RealTimeEndpointOpCode',
     'RealTimeEndpointOpStatusCode',
     'RecurrenceFrequency',
+    'ResourceType',
     'RunDisplayNameGenerationType',
     'RunSettingParameterType',
     'RunSettingUIWidgetTypeEnum',
@@ -2613,6 +2641,8 @@ __all__ = [
     'ToolFuncCallScenario',
     'ToolState',
     'ToolType',
+    'TraceCosmosConfiguration',
+    'TraceCosmosStatus',
     'TrainingOutputType',
     'TriggerOperationType',
     'TriggerType',

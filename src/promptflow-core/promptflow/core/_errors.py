@@ -173,6 +173,10 @@ class InvalidSampleError(CoreError):
 class ListDeploymentsError(UserErrorException):
     """Exception raise when list deployments."""
 
+
+class ToolValidationError(UserErrorException):
+    """Base exception raised when failed to validate tool."""
+
     pass
 
 
@@ -182,8 +186,20 @@ class ParseConnectionError(ListDeploymentsError):
     pass
 
 
+class ChatAPIInvalidFunctions(ToolValidationError):
+    """Base exception raised when failed to validate functions when call chat api."""
+
+    pass
+
+
 class LLMError(UserErrorException):
     """Base exception raised when failed to call openai api with non-OpenAIError."""
+
+    pass
+
+
+class ChatAPIInvalidTools(ToolValidationError):
+    """Base exception raised when failed to validate functions when call chat api."""
 
     pass
 

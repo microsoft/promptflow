@@ -228,6 +228,7 @@ def test_unknown_api(fastapi_flow_serving_client):
     assert response.status_code == 405
 
 
+@pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
 @pytest.mark.usefixtures("recording_injection", "setup_local_connection")
 @pytest.mark.e2etest
 @pytest.mark.parametrize(
@@ -438,3 +439,23 @@ def test_flow_with_environment_variables(fastapi_serving_client_with_environment
         response = response.json()
         assert {"output"} == response.keys()
         assert response["output"] == value
+
+
+@pytest.mark.e2etest
+def test_flow_with_async_generator(fastapi_async_generator_serving_client):
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "text/event-stream",
+    }
+    expected_event_num = 10
+    response = fastapi_async_generator_serving_client.post(
+        "/score", data=json.dumps({"count": expected_event_num}), headers=headers
+    )
+    assert (
+        response.status_code == 200
+    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
+    received_event_num = 0
+    for line in response.iter_lines():
+        if line:
+            received_event_num += 1
+    assert received_event_num == expected_event_num
