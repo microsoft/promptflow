@@ -23,6 +23,10 @@ env:
   RECORD_DIRECTORY: ${{ github.workspace }}/src/promptflow-recording
   PROMPT_FLOW_WORKSPACE_NAME: "promptflow-eastus"
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   id:
     runs-on: ubuntu-latest
@@ -123,6 +127,8 @@ jobs:
   promptflow_core_tests:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call' || github.event_name == 'pull_request' }}
     needs: build
+    environment:
+      internal
     env:
       PROMPT_FLOW_TEST_MODE: "live"
       WORKING_DIRECTORY: ${{ github.workspace }}/src/promptflow-core
@@ -150,7 +156,9 @@ jobs:
       - name: Azure Login
         uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
+          tenant-id: ${{secrets.AZURE_TENANT_ID}}
+          client-id: ${{secrets.AZURE_CLIENT_ID}}
       - name: Generate Configs
         uses: "./.github/actions/step_generate_configs"
         with:
@@ -226,6 +234,8 @@ jobs:
   promptflow_devkit_tests:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call' || github.event_name == 'pull_request' }}
     needs: build
+    environment:
+      internal
     env:
       PROMPT_FLOW_TEST_MODE: "live"
       WORKING_DIRECTORY: ${{ github.workspace }}/src/promptflow-devkit
@@ -253,7 +263,9 @@ jobs:
       - name: Azure Login
         uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
+          tenant-id: ${{secrets.AZURE_TENANT_ID}}
+          client-id: ${{secrets.AZURE_CLIENT_ID}}
       - name: Generate Configs
         uses: "./.github/actions/step_generate_configs"
         with:
@@ -283,6 +295,8 @@ jobs:
 
   promptflow_azure_tests:
     needs: build
+    environment:
+      internal
     strategy:
       fail-fast: false
       matrix:
@@ -311,7 +325,9 @@ jobs:
       - name: Azure Login
         uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
+          tenant-id: ${{secrets.AZURE_TENANT_ID}}
+          client-id: ${{secrets.AZURE_CLIENT_ID}}
       - name: Generate Configs
         uses: "./.github/actions/step_generate_configs"
         with:
@@ -344,6 +360,8 @@ jobs:
   promptflow_executor_tests:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call' || github.event_name == 'pull_request' }}
     needs: build
+    environment:
+      internal
     env:
       testWorkingDirectory: src/promptflow
     strategy:
@@ -376,7 +394,9 @@ jobs:
     - name: Azure Login
       uses: azure/login@v1
       with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
+        subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
+        tenant-id: ${{secrets.AZURE_TENANT_ID}}
+        client-id: ${{secrets.AZURE_CLIENT_ID}}
     - name: Generate Configs
       uses: "./.github/actions/step_generate_configs"
       with:

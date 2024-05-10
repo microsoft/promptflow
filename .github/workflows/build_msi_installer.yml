@@ -21,6 +21,10 @@ on:
         required: false
         description: 'Set the version of the private msi installer'
 
+permissions:
+  id-token: write
+  contents: read
+
 env:
   packageSetupType: promptflow_with_extra
   testWorkingDirectory: src/promptflow
@@ -29,7 +33,8 @@ jobs:
   build_msi_installer:
     runs-on: windows-latest
     name: Build Windows MSI
-
+    environment:
+      internal
     steps:
       - name: Check input parameters
         run: |
@@ -173,10 +178,11 @@ jobs:
           msbuild /t:rebuild /p:Configuration=Release /p:Platform=x64 promptflow.wixproj
         shell: pwsh
 
-      - name: Azure Login
-        uses: azure/login@v1
+      - uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
+          tenant-id: ${{secrets.AZURE_TENANT_ID}}
+          client-id: ${{secrets.AZURE_CLIENT_ID}}
 
       - name: Download JSON file from Azure Blob Storage
         id: download-json
