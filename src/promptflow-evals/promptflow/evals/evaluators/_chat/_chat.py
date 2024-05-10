@@ -13,6 +13,7 @@ from .._coherence import CoherenceEvaluator
 from .._fluency import FluencyEvaluator
 from .._groundedness import GroundednessEvaluator
 from .._relevance import RelevanceEvaluator
+from .retrieval import RetrievalChatEvaluator
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,7 @@ class ChatEvaluator:
 
         .. code-block:: python
 
-            eval_fn = ChatEvaluator(model_config)
+            chat_eval = ChatEvaluator(model_config)
             conversation = [
                 {"role": "user", "content": "What is the value of 2 + 2?"},
                 {"role": "assistant", "content": "2 + 2 = 4", "context": {
@@ -61,6 +62,10 @@ class ChatEvaluator:
             CoherenceEvaluator(model_config),
             FluencyEvaluator(model_config),
         ]
+        # TODO: Temporary workaround to close the gap of missing retrieval score
+        # https://msdata.visualstudio.com/Vienna/_workitems/edit/3186644
+        # For long term, we need to add a built-in evaluator for retrieval after prompt is generalized for QA and Chat
+        self._retrieval_chat_evaluator = RetrievalChatEvaluator(model_config)
 
     def __call__(self, *, conversation, **kwargs):
         """Evaluates chat scenario.
@@ -147,6 +152,13 @@ class ChatEvaluator:
         #     },
         # }
         aggregated = self._aggregate_results(per_turn_results)
+
+        # Run RetrievalChatEvaluator and merge the results
+        if compute_rag_based_metrics:
+            retrieval_score = self._retrieval_chat_evaluator(conversation=conversation_slice)
+            aggregated["gpt_retrieval"] = retrieval_score["gpt_retrieval"]
+            aggregated["evaluation_per_turn"]["gpt_retrieval"] = retrieval_score["evaluation_per_turn"]["gpt_retrieval"]
+            aggregated = dict(sorted(aggregated.items()))
 
         return aggregated
 

@@ -181,9 +181,10 @@ def run_chat_evaluator():
     ]
     score = chat_eval(conversation=conversation)
     print(score)
-    # {'gpt_fluency': 5.0, 'gpt_groundedness': 5.0, 'gpt_coherence': 5.0, 'gpt_relevance': 5.0,
-    # 'evaluation_per_turn': {'gpt_fluency': {'score': [5.0, 5.0]}, 'gpt_groundedness': {'score': [5.0, 5.0]},
-    #   'gpt_coherence': {'score': [5.0, 5.0]}, 'gpt_relevance': {'score': [5.0, 5.0]}}}
+    # {'evaluation_per_turn': {'gpt_coherence': {'score': [5.0, 5.0]}, 'gpt_relevance': {'score': [5.0, 5.0]},
+    # 'gpt_groundedness': {'score': [5.0, 5.0]}, 'gpt_fluency': {'score': [5.0, 5.0]}, 'gpt_retrieval':
+    # {'score': [5.0, 5.0]}}, 'gpt_coherence': 5.0, 'gpt_fluency': 5.0, 'gpt_groundedness': 5.0, 'gpt_relevance': 5.0,
+    # 'gpt_retrieval': 5.0}
 
 
 if __name__ == "__main__":
