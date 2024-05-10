@@ -15,6 +15,7 @@ on:
       - 'src/promptflow-core/promptflow/**'
       - 'src/promptflow-devkit/promptflow/**'
       - 'src/promptflow-azure/promptflow/**'
+      - 'src/promptflow-rag/promptflow/**'
 
 env:
   packageSetupType: promptflow_with_extra
