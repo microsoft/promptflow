@@ -18,7 +18,7 @@ class ChatFlow:
 
     @trace
     def __call__(
-        self, question: str, chat_history: list = None
+        self, question: str="What's Azure Machine Learning?", chat_history: list = None
     ) -> Result:
         """Flow entry function."""
 

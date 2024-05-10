@@ -9,12 +9,14 @@ model:
   parameters:
     temperature: 0.2
     stream: true
+    max_tokens: 1024
 inputs: 
   question:
     type: string
   chat_history:
     type: list
-sample: sample.json
+sample:
+  question: "What is Prompt flow?"
 ---
 
 system:

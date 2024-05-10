@@ -30,7 +30,7 @@ outputs:
   answer:
     type: string
 
-sample: sample.json
+sample: ${file:sample.json}
 ---
 system:
 You are an AI assistant who helps people find information.

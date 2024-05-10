@@ -1,6 +1,5 @@
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 entry: flow:ChatFlow
-sample: sample.json
 environment:
   # image: mcr.microsoft.com/azureml/promptflow/promptflow-python
   python_requirements_txt: requirements.txt

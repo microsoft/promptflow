@@ -23,6 +23,8 @@ class ChatFlow:
             model={"configuration": self.model_config},
         )
 
+        # TODO estimate the token count and drop chat_history if it exceeds the limit
+        
         # output is a generator of string as prompty enabled stream parameter
         output = prompty(question=question, chat_history=chat_history)
 

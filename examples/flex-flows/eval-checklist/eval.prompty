@@ -20,7 +20,7 @@ inputs:
     type: string
   statement:
     type: string
-sample: sample.json
+sample: ${file:sample.json}
 ---
 
 # system:
