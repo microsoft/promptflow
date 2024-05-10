@@ -7,6 +7,7 @@ from typing import IO, AnyStr, Optional, Union
 
 from dotenv import dotenv_values
 
+from promptflow._utils.flow_utils import check_legacy_llm_in_flow_nodes
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.exceptions import UserErrorException
@@ -81,7 +82,13 @@ def load_flow(
     :return: A Flow object
     :rtype: ~promptflow._sdk.entities._flows.Flow
     """
-    return Flow.load(source, **kwargs)
+    flow = Flow.load(source, **kwargs)
+    if check_legacy_llm_in_flow_nodes(flow._data):
+        logger.warning(
+            "Please upgrade to the latest version of promptflow-tools to consume new LLM tools. "
+            "You can upgrade by running 'pip install promptflow-tools --upgrade'"
+        )
+    return flow
 
 
 def load_run(

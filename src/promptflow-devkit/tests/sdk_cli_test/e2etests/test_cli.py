@@ -768,8 +768,7 @@ class TestCli:
             # Only azure openai connection in test env
             with open(Path(temp_dir) / flow_name / "flow.dag.yaml", "r") as f:
                 flow_dict = load_yaml(f)
-            flow_dict["nodes"][0]["provider"] = "AzureOpenAI"
-            flow_dict["nodes"][0]["connection"] = "azure_open_ai_connection"
+            flow_dict["nodes"][0]["inputs"]["connection"] = "azure_open_ai_connection"
             with open(Path(temp_dir) / flow_name / "flow.dag.yaml", "w") as f:
                 dump_yaml(flow_dict, f)
 
@@ -886,7 +885,7 @@ class TestCli:
             with open(Path(flow_folder) / "flow.dag.yaml", "r") as f:
                 flow_dict = load_yaml(f)
                 assert flow_dict["nodes"][0]["inputs"]["deployment_name"] == deployment
-                assert flow_dict["nodes"][0]["connection"] == connection
+                assert flow_dict["nodes"][0]["inputs"]["connection"] == connection
 
         temp_dir = mkdtemp()
         with _change_working_dir(temp_dir):

@@ -20,6 +20,7 @@ from promptflow._constants import (
     PROMPTY_EXTENSION,
 )
 from promptflow._core._errors import MetaFileNotFound, MetaFileReadError
+from promptflow._core.tool import ToolType
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.utils import convert_ordered_dict_to_dict, strip_quotation
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
@@ -335,3 +336,13 @@ def parse_variant(variant: str) -> Tuple[str, str]:
             message=str(error),
             error=error,
         )
+
+
+def check_legacy_llm_in_flow_nodes(data: dict) -> bool:
+    if data and "nodes" in data and isinstance(data["nodes"], list):
+        nodes = data["nodes"]
+        for node in nodes:
+            if node and isinstance(node, dict) and "type" in node and node["type"] == ToolType.LLM:
+                return True
+
+    return False
