@@ -46,6 +46,7 @@ from promptflow.connections import ConnectionProvider
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_mode import RunMode
+from promptflow.core import Prompty
 from promptflow.core._connection_provider._dict_connection_provider import DictConnectionProvider
 from promptflow.exceptions import PromptflowException
 from promptflow.executor import _input_assignment_parser
@@ -213,6 +214,10 @@ class FlowExecutor:
         if env_exporter_setup:
             setup_exporter_from_environ()
 
+        if isinstance(flow_file, Prompty):
+            from ._prompty_executor import PromptyExecutor
+
+            return PromptyExecutor(flow_file=flow_file, working_dir=working_dir, storage=storage)
         if hasattr(flow_file, "__call__") or inspect.isfunction(flow_file):
             from ._script_executor import ScriptExecutor
 

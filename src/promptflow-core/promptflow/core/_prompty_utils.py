@@ -10,9 +10,12 @@ import tiktoken
 from promptflow.core._connection import AzureOpenAIConnection, OpenAIConnection, _Connection
 from promptflow.core._errors import (
     ChatAPIFunctionRoleInvalidFormatError,
+    ChatAPIInvalidFunctions,
     ChatAPIInvalidRoleError,
+    ChatAPIInvalidTools,
     CoreError,
     InvalidOutputKeyError,
+    ToolValidationError,
     UnknownConnectionType,
 )
 from promptflow.core._model_configuration import ModelConfiguration
@@ -121,7 +124,6 @@ def convert_prompt_template(template, inputs, api):
 
 
 def prepare_open_ai_request_params(model_config, template, connection):
-    # TODO validate function in params
     params = copy.copy(model_config.parameters)
     if isinstance(connection, AzureOpenAIConnection):
         params["extra_headers"] = {"ms-azure-ai-promptflow-called-from": "promptflow-core"}
@@ -131,6 +133,17 @@ def prepare_open_ai_request_params(model_config, template, connection):
         params["prompt"] = template
     else:
         params["messages"] = template
+
+    # functions and function_call are deprecated and are replaced by tools and tool_choice.
+    # if both are provided, tools and tool_choice are used and functions and function_call are ignored.
+    if "tools" in params:
+        validate_tools(params["tools"])
+        params["tool_choice"] = validate_tool_choice(params.get("tool_choice", None))
+    else:
+        if "functions" in params:
+            validate_functions(params["functions"])
+            params["function_call"] = validate_function_call(params.get("function_call", None))
+
     return params
 
 
@@ -242,7 +255,14 @@ def format_llm_response(response, api, is_first_choice, response_format=None, st
     if api == "completion":
         result = format_choice(response.choices[0].text)
     else:
-        result = format_choice(getattr(response.choices[0].message, "content", ""))
+        # When calling function/tool, function_call/tool_call response will be returned as a field in message,
+        # so we need return message directly. Otherwise, we only return content.
+        # https://platform.openai.com/docs/api-reference/chat/object#chat/object-choices
+        if response.choices[0].finish_reason in ["tool_calls", "function_calls"]:
+            response_content = response.model_dump()["choices"][0]["message"]
+        else:
+            response_content = getattr(response.choices[0].message, "content", "")
+        result = format_choice(response_content)
     return result
 
 
@@ -491,6 +511,167 @@ def parse_chat(chat_str, images: List = None, valid_roles: List[str] = None):
             new_message = {"role": role}
             chat_list.append(new_message)
     return chat_list
+
+
+def validate_function(common_tsg, i, function, expection: ToolValidationError):
+    # validate if the function is a dict
+    if not isinstance(function, dict):
+        raise expection(message=f"function {i} '{function}' is not a dict. {common_tsg}")
+    # validate if has required keys
+    for key in ["name", "parameters"]:
+        if key not in function.keys():
+            raise expection(message=f"function {i} '{function}' does not have '{key}' property. {common_tsg}")
+    # validate if the parameters is a dict
+    if not isinstance(function["parameters"], dict):
+        raise expection(
+            message=f"function {i} '{function['name']}' parameters '{function['parameters']}' "
+            f"should be described as a JSON Schema object. {common_tsg}"
+        )
+    # validate if the parameters has required keys
+    for key in ["type", "properties"]:
+        if key not in function["parameters"].keys():
+            raise expection(
+                message=f"function {i} '{function['name']}' parameters '{function['parameters']}' "
+                f"does not have '{key}' property. {common_tsg}"
+            )
+    # validate if the parameters type is object
+    if function["parameters"]["type"] != "object":
+        raise expection(
+            message=f"function {i} '{function['name']}' parameters 'type' " f"should be 'object'. {common_tsg}"
+        )
+    # validate if the parameters properties is a dict
+    if not isinstance(function["parameters"]["properties"], dict):
+        raise expection(
+            message=f"function {i} '{function['name']}' parameters 'properties' "
+            f"should be described as a JSON Schema object. {common_tsg}"
+        )
+
+
+def validate_functions(functions):
+    function_example = json.dumps(
+        {
+            "name": "function_name",
+            "parameters": {
+                "type": "object",
+                "properties": {"parameter_name": {"type": "integer", "description": "parameter_description"}},
+            },
+            "description": "function_description",
+        }
+    )
+    common_tsg = (
+        f"Here is a valid function example: {function_example}. See more details at "
+        "https://platform.openai.com/docs/api-reference/chat/create#chat/create-functions "
+        "or view sample 'How to use functions with chat models' in our gallery."
+    )
+    if len(functions) == 0:
+        raise ChatAPIInvalidFunctions(message=f"functions cannot be an empty list. {common_tsg}")
+    else:
+        for i, function in enumerate(functions):
+            validate_function(common_tsg, i, function, ChatAPIInvalidFunctions)
+
+
+def validate_tools(tools):
+    tool_example = json.dumps(
+        {
+            "type": "function",
+            "function": {
+                "name": "get_current_weather",
+                "description": "Get the current weather in a given location",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "location": {
+                            "type": "string",
+                            "description": "The city and state, e.g. San Francisco, CA",
+                        },
+                        "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
+                    },
+                    "required": ["location"],
+                },
+            },
+        }
+    )
+    common_tsg = (
+        f"Here is a valid tool example: {tool_example}. See more details at "
+        "https://platform.openai.com/docs/api-reference/chat/create"
+    )
+
+    if len(tools) == 0:
+        raise ChatAPIInvalidTools(message=f"tools cannot be an empty list. {common_tsg}")
+    for i, tool in enumerate(tools):
+        # validate if the tool is a dict
+        if not isinstance(tool, dict):
+            raise ChatAPIInvalidTools(message=f"tool {i} '{tool}' is not a dict. {common_tsg}")
+        # validate if has required keys
+        for key in ["type", "function"]:
+            if key not in tool.keys():
+                raise ChatAPIInvalidTools(message=f"tool {i} '{tool}' does not have '{key}' property. {common_tsg}")
+        validate_function(common_tsg, i, tool["function"], ChatAPIInvalidTools)
+
+
+def validate_function_call(function_call):
+    if function_call is None:
+        param = "auto"
+    elif function_call == "auto" or function_call == "none":
+        param = function_call
+    else:
+        function_call_example = json.dumps({"name": "function_name"})
+        common_tsg = (
+            f"Here is a valid example: {function_call_example}. See the guide at "
+            "https://platform.openai.com/docs/api-reference/chat/create#chat/create-function_call "
+            "or view sample 'How to call functions with chat models' in our gallery."
+        )
+        param = function_call
+        if not isinstance(param, dict):
+            raise ChatAPIInvalidFunctions(
+                message=f"function_call parameter '{param}' must be a dict, but not {type(function_call)}. {common_tsg}"
+            )
+        else:
+            if "name" not in function_call:
+                raise ChatAPIInvalidFunctions(
+                    message=f'function_call parameter {json.dumps(param)} must contain "name" field. {common_tsg}'
+                )
+    return param
+
+
+def validate_tool_choice(tool_choice):
+    if tool_choice is None:
+        param = "auto"
+    elif tool_choice == "auto" or tool_choice == "none":
+        param = tool_choice
+    else:
+        tool_choice_example = json.dumps({"type": "function", "function": {"name": "my_function"}})
+        common_tsg = (
+            f"Here is a valid example: {tool_choice_example}. See the guide at "
+            "https://platform.openai.com/docs/api-reference/chat/create."
+        )
+        param = tool_choice
+        if not isinstance(param, dict):
+            raise ChatAPIInvalidTools(
+                message=f"tool_choice parameter '{param}' must be a dict, but not {type(tool_choice)}. {common_tsg}"
+            )
+        else:
+            if "type" not in tool_choice:
+                raise ChatAPIInvalidTools(
+                    message=f'tool_choice parameter {json.dumps(param)} must contain "type" field. {common_tsg}'
+                )
+
+            if "function" not in tool_choice:
+                raise ChatAPIInvalidTools(
+                    message=f'tool_choice parameter {json.dumps(param)} must contain "function" field. {common_tsg}'
+                )
+
+            if not isinstance(param["function"], dict):
+                raise ChatAPIInvalidTools(
+                    message=f'function parameter "{param["function"]}" in tool_choice must be a dict, '
+                    f'but not {type(param["function"])}. {common_tsg}'
+                )
+            elif "name" not in tool_choice["function"]:
+                raise ChatAPIInvalidTools(
+                    message=f'function parameter "{json.dumps(param["function"])}" in tool_choice must '
+                    f'contain "name" field. {common_tsg}'
+                )
+    return param
 
 
 # endregion

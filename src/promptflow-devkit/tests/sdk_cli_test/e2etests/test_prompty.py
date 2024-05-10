@@ -13,6 +13,7 @@ from promptflow._sdk._pf_client import PFClient
 from promptflow.client import load_flow
 from promptflow.core import AsyncPrompty, Flow, Prompty
 from promptflow.core._errors import (
+    ChatAPIInvalidTools,
     InvalidConnectionError,
     InvalidOutputKeyError,
     InvalidSampleError,
@@ -211,8 +212,22 @@ class TestPrompty:
             output = json.loads(f.readline())
             assert "6" in output["output"]
 
-        # test pf run wile loaded prompty
+        # test pf run with loaded prompty
         prompty = load_flow(source=f"{PROMPTY_DIR}/prompty_example.prompty")
+        run = pf.run(flow=prompty, data=f"{DATA_DIR}/prompty_inputs.jsonl")
+        assert run.status == "Completed"
+        run_dict = run._to_dict()
+        assert not run_dict.get("error", None), f"error in run_dict {run_dict['error']}"
+
+        # test pf run with override prompty
+        connection = pf.connections.get(name="azure_open_ai_connection", with_secrets=True)
+        config = AzureOpenAIModelConfiguration(
+            azure_endpoint=connection.api_base,
+            api_key=connection.api_key,
+            api_version=connection.api_version,
+            azure_deployment="gpt-35-turbo",
+        )
+        prompty = load_flow(source=f"{PROMPTY_DIR}/prompty_example.prompty", model={"configuration": config})
         run = pf.run(flow=prompty, data=f"{DATA_DIR}/prompty_inputs.jsonl")
         assert run.status == "Completed"
         run_dict = run._to_dict()
@@ -374,6 +389,37 @@ class TestPrompty:
         prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example_with_default_connection.prompty")
         result = prompty(question="what is the result of 1+1?")
         assert "2" in result
+
+    def test_prompty_with_tools(self):
+        prompty = Flow.load(source=f"{PROMPTY_DIR}/prompty_example_with_tools.prompty")
+        result = prompty(question="What'''s the weather like in Boston today?")
+        assert "tool_calls" in result
+        assert result["tool_calls"][0]["function"]["name"] == "get_current_weather"
+        assert "Boston" in result["tool_calls"][0]["function"]["arguments"]
+
+        with pytest.raises(ChatAPIInvalidTools) as ex:
+            params_override = {"parameters": {"tools": []}}
+            prompty = Flow.load(source=f"{PROMPTY_DIR}/prompty_example_with_tools.prompty", model=params_override)
+            prompty(question="What'''s the weather like in Boston today?")
+        assert "tools cannot be an empty list" in ex.value.message
+
+        with pytest.raises(ChatAPIInvalidTools) as ex:
+            params_override = {"parameters": {"tools": ["invalid_tool"]}}
+            prompty = Flow.load(source=f"{PROMPTY_DIR}/prompty_example_with_tools.prompty", model=params_override)
+            prompty(question="What'''s the weather like in Boston today?")
+        assert "tool 0 'invalid_tool' is not a dict" in ex.value.message
+
+        with pytest.raises(ChatAPIInvalidTools) as ex:
+            params_override = {"parameters": {"tools": [{"key": "val"}]}}
+            prompty = Flow.load(source=f"{PROMPTY_DIR}/prompty_example_with_tools.prompty", model=params_override)
+            prompty(question="What'''s the weather like in Boston today?")
+        assert "does not have 'type' property" in ex.value.message
+
+        with pytest.raises(ChatAPIInvalidTools) as ex:
+            params_override = {"parameters": {"tool_choice": "invalid"}}
+            prompty = Flow.load(source=f"{PROMPTY_DIR}/prompty_example_with_tools.prompty", model=params_override)
+            prompty(question="What'''s the weather like in Boston today?")
+        assert "tool_choice parameter 'invalid' must be a dict" in ex.value.message
 
     def test_render_prompty(self):
         prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty")
