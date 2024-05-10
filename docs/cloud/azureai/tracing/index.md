@@ -14,7 +14,7 @@ pip install "promptflow[azure]>=1.11.0"
 
 ## Set cloud destination
 
-To log traces to cloud, first of all, you need an [Azure ML workspace](https://learn.microsoft.com/en-us/azure/machine-learning/concept-workspace?view=azureml-api-2) or [Azure AI project](https://learn.microsoft.com/en-us/azure/ai-studio/how-to/create-projects). Then, you can set the destination via below CLI command:
+To log traces to cloud, first of all, you need an [Azure ML workspace](https://learn.microsoft.com/en-us/azure/machine-learning/concept-workspace?view=azureml-api-2) or [Azure AI project](https://learn.microsoft.com/en-us/azure/ai-studio/how-to/create-projects). Then, you can set the destination. Make sure you have logged in Azure CLI via below CLI command:
 
 ```console
 pf config set trace.destination=azureml://subscriptions/<subscription-id>/resourcegroups/<resource-group-name>/providers/Microsoft.MachineLearningServices/workspaces/<workspace-or-project-name>
@@ -73,7 +73,7 @@ flows
 
 Then when execute `flow1`, traces will be logged to workspace/project A, while execute `flow2`, traces will be logged to workspace/project B.
 
-## Switch back to local
+## Disable logging to cloud
 
 When you want to disable logging traces to cloud, you can switch back to local by below CLI command:
 
@@ -81,4 +81,14 @@ When you want to disable logging traces to cloud, you can switch back to local b
 pf config set trace.destination=local
 ```
 
-Then no traces will be logged to Azure anymore.
+Then no traces will be logged to Azure anymore, note that traces will still be logged to local.
+
+## Disable tracing feature
+
+Use below CLI command to disable prompt flow tracing feature:
+
+```console
+pf config set trace.destination=none
+```
+
+Then no traces will be logged to neither local nor cloud.
