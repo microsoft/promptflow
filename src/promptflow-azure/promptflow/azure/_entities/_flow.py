@@ -161,9 +161,8 @@ class Flow(AdditionalIncludesMixin):
 
                 # generate .promptflow/flow.json for csharp flow as it's required to infer signature for csharp flow
                 flow_directory, flow_file = resolve_flow_path(code.path)
-                # TODO: pass in init_kwargs to support csharp class init flex flow
                 ProxyFactory().create_inspector_proxy(self.language).prepare_metadata(
-                    flow_file=flow_directory / flow_file, working_dir=flow_directory
+                    flow_file=flow_directory / flow_file, working_dir=flow_directory, init_kwargs=self._init_kwargs
                 )
                 dag_updated = update_signatures(code=flow_dir, data=flow_dag) or dag_updated
                 # validate init kwargs with signature
