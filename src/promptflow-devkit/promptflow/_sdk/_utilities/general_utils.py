@@ -1148,3 +1148,18 @@ def resolve_flow_language(
                 f"Invalid flow path {file_path.as_posix()}, must exist and of suffix yaml, yml or prompty."
             )
     return yaml_dict.get(LANGUAGE_KEY, FlowLanguage.Python)
+
+
+def get_trace_destination(pf_client=None):
+    """get trace.destination
+
+    :param pf_client: pf_client object
+    :type pf_client: promptflow._sdk._pf_client.PFClient
+    :return:
+    """
+    from promptflow._sdk._configuration import Configuration
+
+    config = pf_client._config if pf_client else Configuration.get_instance()
+    trace_destination = config.get_trace_destination()
+
+    return trace_destination
