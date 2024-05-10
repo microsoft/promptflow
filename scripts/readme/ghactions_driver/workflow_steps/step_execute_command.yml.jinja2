@@ -1,12 +1,4 @@
-- name: {{ step_name }}
-  working-directory: ${{ '{{' }} github.workspace }}
-  run: |
-    python scripts/readme/extract_steps_from_readme.py -f {{ readme_name }} -o {{ working_dir }}
-- name: Cat script
-  working-directory: {{ working_dir }}
-  run: |
-    cat bash_script.sh
-- name: Run scripts against canary workspace (scheduled runs only)
+- name: Run backup scripts against canary workspace (scheduled runs only)
   if: github.event_name == 'schedule'
   working-directory: {{ working_dir }}
   run: |
@@ -15,8 +7,8 @@
     export test_workspace_sub_id=${{ '{{' }} secrets.TEST_WORKSPACE_SUB_ID }}
     export test_workspace_rg=${{ '{{' }} secrets.TEST_WORKSPACE_RG }}
     export test_workspace_name=${{ '{{' }} secrets.TEST_WORKSPACE_NAME_CANARY }}
-    bash bash_script.sh
-- name: Run scripts against production workspace
+    bash bash_script_pytest.sh
+- name: Run backup scripts against production workspace
   if: github.event_name != 'schedule'
   working-directory: {{ working_dir }}
   run: |
@@ -25,15 +17,4 @@
     export test_workspace_sub_id=${{ '{{' }} secrets.TEST_WORKSPACE_SUB_ID }}
     export test_workspace_rg=${{ '{{' }} secrets.TEST_WORKSPACE_RG }}
     export test_workspace_name=${{ '{{' }} secrets.TEST_WORKSPACE_NAME_PROD }}
-    bash bash_script.sh
-- name: Pip List for Debug
-  if : ${{ '{{' }} always() }}
-  working-directory: {{ working_dir }}
-  run: |
-    pip list
-- name: Upload artifact
-  if: ${{ '{{' }} always() }}
-  uses: actions/upload-artifact@v4
-  with:
-    name: artifact
-    path: {{ working_dir }}/bash_script.sh
+    bash bash_script_pytest.sh

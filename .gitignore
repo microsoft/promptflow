@@ -179,6 +179,7 @@ examples/gen_test_data/config.yml
 **/connections.json
 
 **/bash_script.sh
+**/bash_script_pytest.sh
 
 .index
 .pdfs
