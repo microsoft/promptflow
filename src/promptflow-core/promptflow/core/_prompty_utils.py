@@ -268,6 +268,7 @@ def format_llm_response(response, api, is_first_choice, response_format=None, st
 
 def num_tokens_from_messages(messages, model):
     """Return the number of tokens used by a list of messages."""
+    # Ref: https://cookbook.openai.com/examples/how_to_count_tokens_with_tiktoken#6-counting-tokens-for-chat-completions-api-calls  # noqa: E501
     try:
         encoding = tiktoken.encoding_for_model(model)
     except KeyError:
