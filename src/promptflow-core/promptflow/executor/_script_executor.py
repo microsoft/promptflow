@@ -134,7 +134,7 @@ class ScriptExecutor(FlowExecutor):
         # Executor will add line_number to batch inputs if there is no line_number in the original inputs,
         # which should be removed, so, we only preserve the inputs that are contained in self._inputs.
         inputs = {k: inputs[k] for k in self._inputs if k in inputs}
-        inputs = FlowValidator._ensure_flow_inputs_type_inner(self._inputs_sign, inputs)
+        FlowValidator._ensure_flow_inputs_type_inner(self._inputs_sign, inputs)
         return run_info, inputs, run_tracker, None, []
 
     def _exec_line(
