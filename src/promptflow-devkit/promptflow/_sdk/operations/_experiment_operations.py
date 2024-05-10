@@ -153,15 +153,13 @@ class ExperimentOperations(TelemetryMixin):
         return self.get(experiment.name)
 
     @monitor_operation(activity_name="pf.experiment.test", activity_type=ActivityType.PUBLICAPI)
-    def test(self, experiment: Experiment, inputs=None, environment_variables=None, **kwargs) -> Experiment:
+    def test(self, experiment: Union[Path, str], inputs=None, **kwargs) -> Experiment:
         """Test an experiment.
 
         :param experiment: Experiment yaml file path.
         :type experiment: Union[Path, str]
         :param inputs: Input parameters for flow.
         :type inputs: dict
-        :param environment_variables: Environment variables for flow.
-        :type environment_variables: dict
         """
         from promptflow._sdk._orchestrator.experiment_orchestrator import ExperimentOrchestrator
 
@@ -173,7 +171,6 @@ class ExperimentOperations(TelemetryMixin):
         return ExperimentOrchestrator(client=self._client, experiment=None).test(
             experiment_template,
             inputs=inputs,
-            environment_variables=environment_variables,
             output_path=output_path,
             session=session,
             **kwargs,
