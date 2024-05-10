@@ -172,7 +172,6 @@ class ExperimentOperations(TelemetryMixin):
         session = kwargs.pop("session", None)
         return ExperimentOrchestrator(client=self._client, experiment=None).test(
             experiment_template,
-            flow=None,
             inputs=inputs,
             environment_variables=environment_variables,
             output_path=output_path,
@@ -192,7 +191,7 @@ class ExperimentOperations(TelemetryMixin):
         """
         # The api is used for ux calling pfs. We need the api to read detail.json and log and return to ux as the
         # format they expected.
-        result = self.test(
+        result = self._test_flow(
             experiment=experiment, environment_variables=environment_variables, output_path=output_path, **kwargs
         )
         return_output = {}
@@ -209,12 +208,18 @@ class ExperimentOperations(TelemetryMixin):
             }
         return return_output
 
-    def _test(
-        self, flow: Union[Path, str], experiment: Union[Path, str], inputs=None, environment_variables=None, **kwargs
+    @monitor_operation(activity_name="pf.experiment._test_flow", activity_type=ActivityType.INTERNALCALL)
+    def _test_flow(
+        self,
+        experiment: Union[Path, str],
+        flow: Union[Path, str] = None,
+        inputs=None,
+        environment_variables=None,
+        **kwargs,
     ):
         """Test flow in experiment.
 
-        :param flow: Flow dag yaml file path.
+        :param flow: Flow dag yaml file path, will resolve the first flow if None passed in.
         :type flow: Union[Path, str]
         :param experiment: Experiment yaml file path.
         :type experiment: Union[Path, str]
@@ -230,11 +235,13 @@ class ExperimentOperations(TelemetryMixin):
         experiment_template = _load_experiment_template(experiment)
         output_path = kwargs.get("output_path", None)
         session = kwargs.get("session", None)
-        return ExperimentOrchestrator(client=self._client, experiment=None).test(
+        context = kwargs.get("context", None)
+        return ExperimentOrchestrator(client=self._client, experiment=None).test_flow(
             experiment_template,
             flow,
             inputs,
             environment_variables,
             output_path=output_path,
             session=session,
+            context=context,
         )

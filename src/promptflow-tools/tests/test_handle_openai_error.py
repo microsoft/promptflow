@@ -352,3 +352,45 @@ class TestHandleOpenAIError:
 
         assert "extra fields not permitted" in exc_info.value.message
         assert "Please kindly avoid using vision model in LLM tool" in exc_info.value.message
+
+    @pytest.mark.parametrize(
+        "prompt_template",
+        [
+            (
+                """
+                    # assistant:
+                    How can I assist you?
+
+                    # tool:
+                    ## tool_call_id:
+                    fake_tool_call_id
+                    ## content:
+                    fake_content
+                """
+            ),
+            (
+                """
+                    # assistant:
+                    ## tool_calls:
+                    [{'id': 'fake_tool_id', 'type': 'function', 'function': {'name': 'f_n', 'arguments': '{}'}}]
+
+                    # tool_1:
+                    ## tool_call_id:
+                    fake_tool_call_id
+                    ## content:
+                    fake_content
+                """
+            ),
+        ],
+    )
+    def test_chat_prompt_with_invalid_tool_message(self, azure_open_ai_connection, prompt_template):
+        error_codes = "UserError/OpenAIError/BadRequestError"
+        raw_message = (
+            "Please make sure your chat prompt includes 'tool_calls' within the 'assistant' role. Also, the "
+            "assistant message must be followed by messages with role 'tool', matching ids of assistant message "
+            "'tool_calls' property. You could refer to guideline at https://aka.ms/pfdoc/chat-prompt"
+        )
+        with pytest.raises(WrappedOpenAIError) as exc_info:
+            chat(azure_open_ai_connection, prompt=f"{prompt_template}", deployment_name="gpt-35-turbo")
+        assert raw_message in exc_info.value.message
+        assert exc_info.value.error_codes == error_codes.split("/")
