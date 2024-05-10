@@ -14,7 +14,7 @@ pip install "promptflow[azure]>=1.11.0"
 
 ## Set cloud destination
 
-To log traces to cloud, first of all, you need an [Azure ML workspace](https://learn.microsoft.com/en-us/azure/machine-learning/concept-workspace?view=azureml-api-2) or [Azure AI project](https://learn.microsoft.com/en-us/azure/ai-studio/how-to/create-projects). Then, you can set the destination. Make sure you have logged in Azure CLI via below CLI command:
+To log traces to cloud, first of all, you need an [Azure ML workspace](https://learn.microsoft.com/en-us/azure/machine-learning/concept-workspace?view=azureml-api-2) or [Azure AI project](https://learn.microsoft.com/en-us/azure/ai-studio/how-to/create-projects). Then, you can set the destination. Make sure you have logged in Azure CLI (`az login`, refer to [Azure CLI doc](https://learn.microsoft.com/en-us/cli/azure/) for more informations) before execute below CLI command:
 
 ```console
 pf config set trace.destination=azureml://subscriptions/<subscription-id>/resourcegroups/<resource-group-name>/providers/Microsoft.MachineLearningServices/workspaces/<workspace-or-project-name>
