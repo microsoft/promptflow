@@ -81,7 +81,7 @@ When you want to disable logging traces to cloud, you can switch back to local b
 pf config set trace.destination=local
 ```
 
-Then no traces will be logged to Azure anymore, note that traces will still be logged to local.
+`local` is the default value for `pf.trace.destination`, and no traces will be logged to Azure anymore with this value; note that traces will still be logged to local.
 
 ## Disable tracing feature
 
