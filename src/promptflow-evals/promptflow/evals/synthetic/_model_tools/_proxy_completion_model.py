@@ -25,6 +25,8 @@ class SimulationRequestDTO:
         self.templateParameters = template_parameters
 
     def to_dict(self):
+        if self.templateParameters is not None:
+            self.templateParameters = {str(k): str(v) for k, v in self.templateParameters.items()}
         return self.__dict__
 
     def to_json(self):

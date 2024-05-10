@@ -35,7 +35,10 @@ async def callback(
     session_state: Any = None,
     context: Dict[str, Any] = None
 ) -> dict:
-    question = messages["messages"][0]["content"]
+    messages_list = messages["messages"]
+    # get last message
+    latest_message = messages_list[-1]
+    question = latest_message["content"]
     context = None
     if 'file_content' in messages["template_parameters"]:
         question += messages["template_parameters"]['file_content']
