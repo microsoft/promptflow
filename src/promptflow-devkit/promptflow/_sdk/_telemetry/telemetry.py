@@ -6,6 +6,7 @@ from typing import Optional
 
 from promptflow._constants import USER_AGENT_OVERRIDE_KEY
 from promptflow._sdk._configuration import Configuration
+from promptflow._sdk._utilities.general_utils import get_flow_type
 
 PROMPTFLOW_LOGGER_NAMESPACE = "promptflow._sdk._telemetry"
 
@@ -25,7 +26,35 @@ class TelemetryMixin(object):
         :return: The telemetry values
         :rtype: Dict
         """
-        return {}
+        telemetry_values = {}
+        flow_type = self._get_flow_type(*args, **kwargs)
+        if flow_type:
+            telemetry_values["flow_type"] = flow_type
+        return telemetry_values
+
+    def _get_flow_type(self, *args, **kwargs):
+        activity_name = kwargs.get("activity_name", None)
+        try:
+            if activity_name == "pf.runs.create_or_update":
+                run = kwargs.get("run", None) or args[0]
+                return run._flow_type
+            if activity_name == "pf.flows.test":
+                flow = kwargs.get("flow", None) or args[0]
+                return get_flow_type(flow)
+            if activity_name == "pfazure.runs.create_or_update":
+                run = kwargs.get("run", None) or args[0]
+                return run._flow_type
+            if activity_name == "pfazure.flows.create_or_update":
+                from promptflow.azure._entities._flow import Flow
+
+                flow = kwargs.get("flow", None) or args[0]
+                if isinstance(flow, Flow):
+                    flow = flow.path
+                return get_flow_type(flow)
+        except Exception as e:
+            print(f"Failed to get telemetry values: {str(e)}")
+
+        return None
 
     def _get_user_agent_override(self) -> Optional[str]:
         """If we have a bonded user agent passed in via the constructor, return it.

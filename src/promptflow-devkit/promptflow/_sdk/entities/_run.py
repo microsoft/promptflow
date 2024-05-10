@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from dateutil import parser as date_parser
 
-from promptflow._constants import FlowType, OutputsFolderName, TokenKeys
+from promptflow._constants import OutputsFolderName, TokenKeys
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
@@ -46,6 +46,7 @@ from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, Miss
 from promptflow._sdk._orm import RunInfo as ORMRun
 from promptflow._sdk._utilities.general_utils import (
     _sanitize_python_variable_name,
+    get_flow_type,
     is_multi_container_enabled,
     is_remote_uri,
     parse_remote_flow_pattern,
@@ -842,12 +843,4 @@ class Run(YAMLTranslatableMixin):
     def _flow_type(self) -> str:
         """Get flow type of run."""
 
-        from promptflow._sdk._load_functions import load_flow
-        from promptflow._sdk.entities._flows import FlexFlow
-
-        if is_prompty_flow(self.flow):
-            return FlowType.PROMPTY
-        flow_obj = load_flow(source=self.flow)
-        if isinstance(flow_obj, FlexFlow):
-            return FlowType.FLEX_FLOW
-        return FlowType.DAG_FLOW
+        return get_flow_type(self.flow)
