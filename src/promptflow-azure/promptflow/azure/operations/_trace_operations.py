@@ -7,7 +7,8 @@ from typing import Dict, Optional
 from azure.ai.ml._scope_dependent_operations import OperationConfig, OperationScope, _ScopeDependentOperations
 
 from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, monitor_operation
-from promptflow.azure._restclient.flow.models import TraceDbSetupRequest
+from promptflow.azure._constants._trace import CosmosConfiguration, CosmosStatus
+from promptflow.azure._restclient.flow.models import TraceCosmosMetaDto, TraceDbSetupRequest
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 
 
@@ -63,3 +64,17 @@ class TraceOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             body=body,
         )
         return
+
+    def _get_cosmos_metadata(self) -> TraceCosmosMetaDto:
+        return self._service_caller.get_workspace_cosmos_metadata(
+            subscription_id=self._operation_scope.subscription_id,
+            resource_group_name=self._operation_scope.resource_group_name,
+            workspace_name=self._operation_scope.workspace_name,
+        )
+
+    def _is_cosmos_available(self) -> bool:
+        metadata = self._get_cosmos_metadata()
+        return (
+            str(metadata.trace_cosmos_configuration) != CosmosConfiguration.DISABLED
+            and str(metadata.trace_cosmos_status) == CosmosStatus.INITIALIZED
+        )

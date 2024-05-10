@@ -763,6 +763,22 @@ class FlowServiceCaller(RequestTelemetryMixin):
             **kwargs,
         )
 
+    def get_workspace_cosmos_metadata(
+        self,
+        subscription_id: str,
+        resource_group_name: str,
+        workspace_name: str,
+        **kwargs,
+    ):
+        """Get Cosmos DB metadata."""
+        return self.caller.trace_sessions.get_trace_session_metadata_async(
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+            headers=self._get_headers(),
+            **kwargs,
+        )
+
     @_request_wrapper()
     def setup_workspace_cosmos(self, subscription_id, resource_group_name, workspace_name, body, **kwargs):
         """Setup Cosmos DB for workspace/project."""
