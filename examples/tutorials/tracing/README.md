@@ -6,7 +6,7 @@ resources: examples/tutorials/tracing/
 
 Prompt flow provides the tracing feature to capture and visualize the internal execution details for all flows.
 
-For `DAG flow`, user can track and visualize node level inputs/outputs of flow execution, it provides critical insights for developer to understand the internal details of execution. 
+For `DAG flow`, user can track and visualize node level inputs/outputs of flow execution, it provides critical insights for developer to understand the internal details of execution.
 
 For `Flex flow` developers, who might use different frameworks (langchain, semantic kernel, OpenAI, kinds of agents) to create LLM based applications, prompt flow allow user to instrument their code in a [OpenTelemetry](https://opentelemetry.io/) compatible way, and visualize using UI provided by promptflow devkit.
 
@@ -17,7 +17,7 @@ Let's start with the simplest example, add single line code `start_trace()` to e
 from openai import OpenAI
 from promptflow.tracing import start_trace
 
-# start_trace() will print a url for trace detail visualization 
+# start_trace() will print a url for trace detail visualization
 start_trace()
 
 client = OpenAI()
@@ -50,9 +50,9 @@ More examples of adding trace for [autogen](https://microsoft.github.io/autogen/
 ![langchain-trace-detail](../../../docs/media/trace/langchain-trace-detail.png)
 
 #### Trace for any function
-More common scenario is the application has complicated code structure, and developer would like to add trace on critical path that they would like to debug and monitor. 
+More common scenario is the application has complicated code structure, and developer would like to add trace on critical path that they would like to debug and monitor.
 
-See the **[math_to_code](./math_to_code.py)** example on how to use `@trace`. 
+See the **[math_to_code](./math_to_code.py)** example on how to use `@trace`.
 
 ```python
 from promptflow.tracing import trace
@@ -88,7 +88,7 @@ python math_to_code.py
 ## Trace visualization in flow test and batch run
 ### Flow test
 
-If your application is created with DAG flow, all flow test and batch run will be automatically enable trace function. Take the **[chat_with_pdf](../../flows/chat/chat-with-pdf/)** as example. 
+If your application is created with DAG flow, all flow test and batch run will be automatically enable trace function. Take the **[chat_with_pdf](../../flows/chat/chat-with-pdf/)** as example.
 
 Run `pf flow test --flow .`, each flow test will generate single line in the trace UI:
 ![flow-trace-record](../../../docs/media/trace/flow-trace-records.png)
@@ -107,6 +107,6 @@ Or
 ```shell
 pf run create --flow . --data "./data/bert-paper-qna.jsonl" --column-mapping chat_history='${data.chat_history}' pdf_url='${data.pdf_url}' question='${data.question}'
 ```
-Then you will get a run related trace URL, e.g. http://localhost:52008/v1.0/ui/traces?run=chat_with_pdf_variant_0_20240226_181222_219335
+Then you will get a run related trace URL, e.g. http://127.0.0.1:52008/v1.0/ui/traces?run=chat_with_pdf_variant_0_20240226_181222_219335
 
 ![batch_run_record](../../../docs/media/trace/batch_run_record.png)

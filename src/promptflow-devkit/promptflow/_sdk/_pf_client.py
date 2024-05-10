@@ -181,9 +181,16 @@ class PFClient:
             raise ValueError("at least one of data or run must be provided")
 
         is_flow_object = isinstance(flow, FlowBase)
-        if not is_flow_object and callable(flow) and not inspect.isclass(flow) and not inspect.isfunction(flow):
-            dynamic_callable = flow
-            flow = flow.__class__
+        if callable(flow) and not inspect.isclass(flow) and not inspect.isfunction(flow):
+            # The callable flow will be entry of flex flow or loaded prompty.
+            if isinstance(flow, Prompty):
+                # What is passed to the executor is the prompty in promptflow.core.
+                dynamic_callable = flow._core_prompty
+            else:
+                dynamic_callable = flow
+            if not is_flow_object:
+                # For the entry of flex flow, getting the callable class to generate flex yaml.
+                flow = flow.__class__
         else:
             dynamic_callable = None
 

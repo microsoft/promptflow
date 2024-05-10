@@ -102,6 +102,24 @@ class InvalidSampleError(CoreError):
     pass
 
 
+class ToolValidationError(UserErrorException):
+    """Base exception raised when failed to validate tool."""
+
+    pass
+
+
+class ChatAPIInvalidFunctions(ToolValidationError):
+    """Base exception raised when failed to validate functions when call chat api."""
+
+    pass
+
+
+class ChatAPIInvalidTools(ToolValidationError):
+    """Base exception raised when failed to validate functions when call chat api."""
+
+    pass
+
+
 class ConnectionNotFound(CoreError):
     pass
 
