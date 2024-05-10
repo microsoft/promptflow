@@ -10,6 +10,7 @@ from openai import Stream
 from openai.types.chat import ChatCompletion
 
 from promptflow._sdk._pf_client import PFClient
+from promptflow._utils.yaml_utils import load_yaml
 from promptflow.client import load_flow
 from promptflow.core import AsyncPrompty, Flow, Prompty
 from promptflow.core._errors import (
@@ -433,7 +434,7 @@ class TestPrompty:
             prompty.render(mock_key="mock_value")
         assert "Missing required inputs" in ex.value.message
 
-    def test_prompty_with_reference_file(self, caplog):
+    def test_prompty_with_reference_file(self):
         # Test run prompty with reference file
         prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_with_reference_file.prompty")
         result = prompty(question="What'''s the weather like in Boston today?")
@@ -455,3 +456,47 @@ class TestPrompty:
                 source=f"{PROMPTY_DIR}/prompty_example_with_tools.prompty", sample="${file:../datas/invalid_path.json}"
             )
         assert "Cannot find the reference file" in ex.value.message
+
+        # Test reference yaml file
+        prompty = Flow.load(
+            source=f"{PROMPTY_DIR}/prompty_example_with_tools.prompty", sample="${file:../datas/prompty_sample.yaml}"
+        )
+        with open(DATA_DIR / "prompty_sample.yaml", "r") as f:
+            expect_sample = load_yaml(f)
+        assert prompty._data["sample"] == expect_sample
+
+        # Test reference other type file
+        prompty = Flow.load(
+            source=f"{PROMPTY_DIR}/prompty_example_with_tools.prompty", sample="${file:../datas/prompty_inputs.jsonl}"
+        )
+        with open(DATA_DIR / "prompty_inputs.jsonl", "r") as f:
+            content = f.read()
+        assert prompty._data["sample"] == content
+
+    def test_prompty_with_reference_env(self, monkeypatch):
+        monkeypatch.setenv("MOCK_DEPLOYMENT_NAME", "MOCK_DEPLOYMENT_NAME_VALUE")
+        monkeypatch.setenv("MOCK_API_KEY", "MOCK_API_KEY_VALUE")
+        monkeypatch.setenv("MOCK_API_VERSION", "MOCK_API_VERSION_VALUE")
+        monkeypatch.setenv("MOCK_API_ENDPOINT", "MOCK_API_ENDPOINT_VALUE")
+        monkeypatch.setenv("MOCK_EXIST_ENV", "MOCK_EXIST_ENV_VALUE")
+
+        # Test override with env reference
+        params_override = {
+            "configuration": {
+                "azure_deployment": "${env:MOCK_DEPLOYMENT_NAME}",
+                "api_key": "${env:MOCK_API_KEY}",
+                "api_version": "${env:MOCK_API_VERSION}",
+                "azure_endpoint": "${env:MOCK_API_ENDPOINT}",
+                "connection": None,
+            },
+            "parameters": {"not_exist_env": "${env:NOT_EXIST_ENV}", "exist_env": "${env:MOCK_EXIST_ENV}"},
+        }
+        prompty = Flow.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", model=params_override)
+        assert prompty._model.configuration["azure_deployment"] == os.environ.get("MOCK_DEPLOYMENT_NAME")
+        assert prompty._model.configuration["api_key"] == os.environ.get("MOCK_API_KEY")
+        assert prompty._model.configuration["api_version"] == os.environ.get("MOCK_API_VERSION")
+        assert prompty._model.configuration["azure_endpoint"] == os.environ.get("MOCK_API_ENDPOINT")
+        assert prompty._model.parameters["exist_env"] == os.environ.get("MOCK_EXIST_ENV")
+
+        # Test env not exist
+        assert prompty._model.parameters["not_exist_env"] == "${env:NOT_EXIST_ENV}"

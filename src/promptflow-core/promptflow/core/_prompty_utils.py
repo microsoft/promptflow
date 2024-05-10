@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import List, Mapping
 
 from promptflow._utils.logger_utils import LoggerFactory
+from promptflow._utils.yaml_utils import load_yaml
 from promptflow.core._connection import AzureOpenAIConnection, OpenAIConnection, _Connection
 from promptflow.core._errors import (
     ChatAPIFunctionRoleInvalidFormatError,
@@ -292,13 +293,17 @@ def resolve_reference(reference):
     if match:
         reference_type, value = match.groups()
         if reference_type == "env":
-            return os.environ.get(value)
+            return os.environ.get(value, reference)
         elif reference_type == "file":
             if not Path(value).exists():
                 raise UserErrorException(f"Cannot find the reference file {value}.")
-            # TODO: support load other type files.
             with open(value, "r") as f:
-                return json.load(f)
+                if Path(value).suffix.lower() == ".json":
+                    return json.load(f)
+                elif Path(value).suffix.lower() in [".yml", ".yaml"]:
+                    return load_yaml(f)
+                else:
+                    return f.read()
         else:
             logger.warning(f"Unknown reference type {reference_type}, return original value {reference}.")
             return reference
