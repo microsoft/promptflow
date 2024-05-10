@@ -39,7 +39,6 @@ from promptflow._constants import (
     LANGUAGE_KEY,
     PROMPTY_EXTENSION,
     FlowLanguage,
-    FlowType,
 )
 from promptflow._sdk._constants import (
     AZURE_WORKSPACE_REGEX_FORMAT,
@@ -71,7 +70,7 @@ from promptflow._sdk._errors import (
     UnsecureConnectionError,
 )
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
-from promptflow._utils.flow_utils import is_flex_flow, is_prompty_flow, resolve_flow_path
+from promptflow._utils.flow_utils import is_flex_flow, resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
@@ -1128,13 +1127,3 @@ def resolve_flow_language(
                 f"Invalid flow path {file_path.as_posix()}, must exist and of suffix yaml, yml or prompty."
             )
     return yaml_dict.get(LANGUAGE_KEY, FlowLanguage.Python)
-
-
-def get_flow_type(flow_path: Union[str, Path, PathLike]) -> str:
-    if not isinstance(flow_path, (str, Path, PathLike)):
-        raise UserErrorException(f"flow_path type is {type(flow_path)}, but only support: str, Path, PathLike.")
-    if is_prompty_flow(file_path=flow_path):
-        return FlowType.PROMPTY
-    if is_flex_flow(flow_path=flow_path):
-        return FlowType.FLEX_FLOW
-    return FlowType.DAG_FLOW

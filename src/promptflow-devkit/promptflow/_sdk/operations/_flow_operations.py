@@ -57,6 +57,7 @@ from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.flow_utils import (
     dump_flow_result,
+    get_flow_type,
     is_executable_chat_flow,
     is_flex_flow,
     is_prompty_flow,
@@ -1201,3 +1202,15 @@ class FlowOperations(TelemetryMixin):
             sample=sample,
             **kwargs,
         )
+
+    def _get_telemetry_values(self, *args, **kwargs):
+        activity_name = kwargs.get("activity_name", None)
+        telemetry_values = super()._get_telemetry_values(*args, **kwargs)
+        try:
+            if activity_name == "pf.flows.test":
+                flow = kwargs.get("flow", None) or args[0]
+                telemetry_values["flow_type"] = get_flow_type(flow)
+        except Exception as e:
+            logger.error(f"Failed to get telemetry values: {str(e)}")
+
+        return telemetry_values
