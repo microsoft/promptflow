@@ -2735,7 +2735,7 @@ class TestCli:
         )
         stdout, _ = capsys.readouterr()
         assert "You can begin chat flow" in stdout
-        assert Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml_return_output/flow.flex.yaml").exists()
+        assert not Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml_return_output/flow.flex.yaml").exists()
 
     @pytest.mark.usefixtures("reset_tracer_provider")
     def test_pf_flow_test_with_collection(self):
