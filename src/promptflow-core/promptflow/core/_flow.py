@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Any, Mapping, Union
 
 from promptflow._constants import DEFAULT_ENCODING, LANGUAGE_KEY, PROMPTY_EXTENSION, FlowLanguage
-from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.flow_utils import is_flex_flow, is_prompty_flow, resolve_flow_path
 from promptflow._utils.yaml_utils import load_yaml_string
 from promptflow.contracts.tool import ValueType
@@ -306,10 +305,11 @@ class Prompty(FlowBase):
         # prompty file path
         path = Path(path)
         configs, self._template = self._parse_prompty(path)
-        with _change_working_dir(path.parent):
-            configs = resolve_references(configs)
-            configs = update_dict_recursively(configs, resolve_references(kwargs))
-            configs["model"] = update_dict_recursively(configs.get("model", {}), resolve_references(model or {}))
+        configs = resolve_references(configs, base_path=path.parent)
+        configs = update_dict_recursively(configs, resolve_references(kwargs, base_path=path.parent))
+        configs["model"] = update_dict_recursively(
+            configs.get("model", {}), resolve_references(model or {}, base_path=path.parent)
+        )
 
         self._model = PromptyModelConfiguration(**configs["model"])
         self._inputs = configs.get("inputs", {})

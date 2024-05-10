@@ -270,10 +270,10 @@ def format_llm_response(response, api, is_first_choice, response_format=None, st
     return result
 
 
-def resolve_references(origin):
+def resolve_references(origin, base_path=None):
     """Resolve all reference in the object."""
     if isinstance(origin, str):
-        return resolve_reference(origin)
+        return resolve_reference(origin, base_path=base_path)
     elif isinstance(origin, list):
         return [resolve_references(item) for item in origin]
     elif isinstance(origin, dict):
@@ -282,7 +282,7 @@ def resolve_references(origin):
         return origin
 
 
-def resolve_reference(reference):
+def resolve_reference(reference, base_path=None):
     """
     Resolve the reference, two types are supported, env, file.
     When the string format is ${env:ENV_NAME}, the environment variable value will be returned.
@@ -295,12 +295,16 @@ def resolve_reference(reference):
         if reference_type == "env":
             return os.environ.get(value, reference)
         elif reference_type == "file":
-            if not Path(value).exists():
+            if not Path(value).is_absolute() and base_path:
+                path = Path(base_path) / value
+            else:
+                path = Path(value)
+            if not path.exists():
                 raise UserErrorException(f"Cannot find the reference file {value}.")
-            with open(value, "r") as f:
-                if Path(value).suffix.lower() == ".json":
+            with open(path, "r") as f:
+                if path.suffix.lower() == ".json":
                     return json.load(f)
-                elif Path(value).suffix.lower() in [".yml", ".yaml"]:
+                elif path.suffix.lower() in [".yml", ".yaml"]:
                     return load_yaml(f)
                 else:
                     return f.read()
