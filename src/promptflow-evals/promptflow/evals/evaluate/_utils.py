@@ -192,4 +192,3 @@ def _write_output(path, data_dict):
 
     with open(p, "w") as f:
         json.dump(data_dict, f)
-
