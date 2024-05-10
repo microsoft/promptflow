@@ -1130,17 +1130,14 @@ def resolve_flow_language(
     return yaml_dict.get(LANGUAGE_KEY, FlowLanguage.Python)
 
 
-def get_trace_destination(pf_client=None, path=None):
-    """
+def get_trace_destination(pf_client=None):
+    """get trace.destination
+
     :param pf_client: pf_client object
     :type pf_client: promptflow._sdk._pf_client.PFClient
-    :param path: The path to the config file of (subscription, resource_group, workspace)
-                or starting directory to search.
-                The parameter defaults to starting the search in the current directory.
-    :type path: str
     :return:
     """
     config = pf_client._config if pf_client else Configuration.get_instance()
-    trace_destination = config.get_trace_destination(path=path)
+    trace_destination = config.get_trace_destination()
 
     return trace_destination
