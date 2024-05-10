@@ -142,7 +142,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         except Exception as e:
             logger.warning(f"Failed to get run portal url from pfs for run {run_id!r}: {str(e)}")
 
-        if run_info and hasattr(run_info, "studio_portal_endpoint"):
+        if run_info and hasattr(run_info, "studio_portal_trace_endpoint"):
             portal_url = run_info.studio_portal_endpoint
 
         return portal_url

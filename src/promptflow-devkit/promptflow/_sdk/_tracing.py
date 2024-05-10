@@ -272,47 +272,6 @@ def _get_tracing_detail_url_template_from_azure_portal(
         return ""
 
 
-def _print_tracing_url_from_azure_portal(
-    ws_triad: AzureMLWorkspaceTriad,
-    collection: str,
-    exp: typing.Optional[str] = None,  # pylint: disable=unused-argument
-    run: typing.Optional[str] = None,
-) -> None:
-    url = (
-        "https://ml.azure.com/{query}?"
-        f"wsid=/subscriptions/{ws_triad.subscription_id}"
-        f"/resourceGroups/{ws_triad.resource_group_name}"
-        "/providers/Microsoft.MachineLearningServices"
-        f"/workspaces/{ws_triad.workspace_name}"
-        "&flight=PFTrace"
-    )
-
-    if run is None:
-        _logger.debug("run is not specified, need to concat `collection_id` for query")
-        collection_id = _get_collection_id_for_azure(collection=collection)
-
-    kind = get_workspace_kind(ws_triad)
-    if AzureWorkspaceKind.is_workspace(kind):
-        _logger.debug(f"{ws_triad.workspace_name!r} is an Azure ML workspace.")
-        if run is None:
-            query = f"trace/collection/{collection_id}/list"
-        else:
-            query = f"prompts/trace/run/{run}/details"
-    elif AzureWorkspaceKind.is_project(kind):
-        _logger.debug(f"{ws_triad.workspace_name!r} is an Azure AI project.")
-        url = url.replace("ml.azure.com", "ai.azure.com")
-        if run is None:
-            query = f"projecttrace/collection/{collection_id}/list"
-        else:
-            query = f"projectflows/trace/run/{run}/details"
-    else:
-        _logger.error(f"the workspace type of {ws_triad.workspace_name!r} is not supported.")
-        return
-
-    url = url.format(query=query)
-    print(f"You can view the traces in cloud from Azure portal: {url}")
-
-
 def _inject_res_attrs_to_environ(
     pfs_port: str,
     collection: str,
@@ -441,7 +400,10 @@ def start_trace_with_devkit(collection: str, **kwargs: typing.Any) -> None:
     # print tracing url(s) when run is specified
     _print_tracing_url_from_local(pfs_port=pfs_port, collection=collection, exp=exp, run=run)
     if ws_triad is not None and is_azure_ext_installed:
-        _print_tracing_url_from_azure_portal(ws_triad=ws_triad, collection=collection, exp=exp, run=run)
+        print(
+            "You can view the traces in azure portal. The portal link will be printed once the run is finished "
+            "and get uploaded to the cloud."
+        )
 
 
 def _setup_url_templates(
