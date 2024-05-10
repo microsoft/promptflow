@@ -47,7 +47,7 @@ class TestAdvSimulator:
                 )
             )
 
-    @pytest.skip("Service not availabe in region")
+    @pytest.mark.skip("Service not availabe in region")
     def test_adv_qa_sim_responds_with_one_response(self, model_config, ml_client_config):
         os.environ.pop("RAI_SVC_URL", None)
         from promptflow.evals.synthetic import AdversarialScenario, AdversarialSimulator
@@ -98,7 +98,7 @@ class TestAdvSimulator:
         assert "topic" not in outputs[0]["template_parameters"]
         assert "target_population" not in outputs[0]["template_parameters"]
 
-    @pytest.skip("Service not availabe in region")
+    @pytest.mark.skip("Service not availabe in region")
     def test_adv_conversation_sim_responds_with_responses(self, model_config, ml_client_config):
         os.environ.pop("RAI_SVC_URL", None)
         from promptflow.evals.synthetic import AdversarialScenario, AdversarialSimulator
@@ -142,7 +142,7 @@ class TestAdvSimulator:
         print(outputs)
         assert len(outputs[0]["messages"]) == 4
 
-    @pytest.skip("Service not availabe in region")
+    @pytest.mark.skip("Service not availabe in region")
     def test_adv_summarization_sim_responds_with_responses(self, model_config, ml_client_config):
         os.environ.pop("RAI_SVC_URL", None)
         from promptflow.evals.synthetic import AdversarialScenario, AdversarialSimulator
@@ -186,7 +186,7 @@ class TestAdvSimulator:
         print("*****************************")
         assert len(outputs) == 1
 
-    @pytest.skip("Service not availabe in region")
+    @pytest.mark.skip("Service not availabe in region")
     def test_adv_summarization_jailbreak_sim_responds_with_responses(self, model_config, ml_client_config):
         os.environ.pop("RAI_SVC_URL", None)
         from promptflow.evals.synthetic import AdversarialScenario, AdversarialSimulator
