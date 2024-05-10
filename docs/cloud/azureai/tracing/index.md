@@ -29,7 +29,7 @@ Click the link to view the traces in Azure portal, and feel free to share it wit
 
 ## Storage
 
-Traces in Azure ML workspace/AI project are persisted in an [Azure Cosmos DB](https://learn.microsoft.com/en-us/azure/cosmos-db/) associated with the workspace/project. It will be automatically setup when you execute CLI command `pf config set trace.destination`.
+Traces in Azure ML workspace/AI project are persisted in an [Azure Cosmos DB](https://learn.microsoft.com/en-us/azure/cosmos-db/) associated with the workspace/project. It will be automatically setup the first time you execute CLI command `pf config set trace.destination` for a workspace/project.
 
 ## Set different destination
 
