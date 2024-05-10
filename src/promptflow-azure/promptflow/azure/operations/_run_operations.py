@@ -976,9 +976,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         # post process after run upload, it can only be done after the run history record is created
         async_run_allowing_running_loop(run_uploader.post_process)
 
-        # print portal url when executing in jupyter notebook
-        if in_jupyter_notebook():
-            print(f"Portal url: {self._get_run_portal_url(run_id=run.name)}")
+        print(f"Cloud trace url: {self._get_run_portal_url(run_id=run.name)}")
 
     def _register_existing_bulk_run(self, run: Run):
         """Register the run in the cloud"""
