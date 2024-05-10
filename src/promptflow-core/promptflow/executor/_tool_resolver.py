@@ -545,8 +545,6 @@ class ToolResolver:
             )
 
     def _resolve_llm_node(self, node: Node, convert_input_types=False) -> ResolvedTool:
-        logging.warning("Please upgrade to the latest version of promptflow-tools to consume new LLM tools. "
-                        "You can upgrade by running 'pip install promptflow-tools --upgrade'")
         connection, provider = self._resolve_llm_connection_with_provider(self._get_llm_node_connection(node))
         # Always set the provider according to the connection type
         # to make sure the invoking logic is consistent between the connection and the tool.
