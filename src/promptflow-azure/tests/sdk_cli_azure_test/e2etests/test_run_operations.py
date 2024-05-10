@@ -25,7 +25,7 @@ from promptflow._constants import FLOW_FLEX_YAML
 from promptflow._sdk._constants import FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME, DownloadedRun, RunStatus
 from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, RunNotFoundError
 from promptflow._sdk._load_functions import load_run
-from promptflow._sdk.entities import Run
+from promptflow._sdk.entities import AzureOpenAIConnection, Run
 from promptflow._utils.flow_utils import get_flow_lineage_id
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.azure import PFClient
@@ -1364,43 +1364,72 @@ class TestFlowRun:
 
         assert_batch_run_result(run, pf, assert_func)
 
-    @pytest.mark.skip(reason="Content change in submission time which lead to recording issue.")
+    @pytest.mark.skipif(not is_live(), reason="Content change in submission time which lead to recording issue.")
     def test_model_config_obj_in_init(self, pf):
         def assert_func(details_dict):
-            return details_dict["outputs.azure_open_ai_model_config_azure_endpoint"] != [None, None,] and details_dict[
-                "outputs.azure_open_ai_model_config_connection"
-            ] == [None, None]
+            return details_dict["outputs.azure_open_ai_model_config_azure_endpoint"] != [None, None]
 
-        flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_model_config")
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_single_model_config")
         # init with model config object
         config1 = AzureOpenAIModelConfiguration(azure_deployment="my_deployment", connection="azure_open_ai")
-        config2 = OpenAIModelConfiguration(model="my_model", base_url="fake_base_url")
         run = pf.run(
             flow=flow_path,
-            data=f"{EAGER_FLOWS_DIR}/basic_model_config/inputs.jsonl",
-            init={"azure_open_ai_model_config": config1, "open_ai_model_config": config2},
+            data=f"{EAGER_FLOWS_DIR}/basic_single_model_config/inputs.jsonl",
+            init={"azure_open_ai_model_config": config1},
         )
         assert "azure_open_ai_model_config" in run.properties["azureml.promptflow.init_kwargs"]
         assert_batch_run_result(run, pf, assert_func)
 
-    @pytest.mark.skip(reason="Content change in submission time which lead to recording issue.")
+    @pytest.mark.skipif(not is_live(), reason="Content change in submission time which lead to recording issue.")
     def test_model_config_dict_in_init(self, pf):
         def assert_func(details_dict):
-            return details_dict["outputs.azure_open_ai_model_config_azure_endpoint"] != [None, None,] and details_dict[
-                "outputs.azure_open_ai_model_config_connection"
-            ] == [None, None]
+            return details_dict["outputs.azure_open_ai_model_config_azure_endpoint"] != [None, None]
 
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_single_model_config")
+        # init with model config dict
+        config1 = dict(azure_deployment="my_deployment", connection="azure_open_ai")
+        run = pf.run(
+            flow=flow_path,
+            data=f"{EAGER_FLOWS_DIR}/basic_single_model_config/inputs.jsonl",
+            init={"azure_open_ai_model_config": config1},
+        )
+        assert "azure_open_ai_model_config" in run.properties["azureml.promptflow.init_kwargs"]
+        assert_batch_run_result(run, pf, assert_func)
+
+    def test_exception_in_model_config(self, pf):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_model_config")
+        error_msg = "Init kwargs open_ai_model_config with type OpenAIModelConfiguration is missing connection."
+
         # init with model config dict
         config1 = dict(azure_deployment="my_deployment", connection="azure_open_ai")
         config2 = dict(model="my_model", base_url="fake_base_url")
-        run = pf.run(
-            flow=flow_path,
-            data=f"{EAGER_FLOWS_DIR}/basic_model_config/inputs.jsonl",
-            init={"azure_open_ai_model_config": config1, "open_ai_model_config": config2},
-        )
-        assert "azure_open_ai_model_config" in run.properties["azureml.promptflow.init_kwargs"]
-        assert_batch_run_result(run, pf, assert_func)
+        with pytest.raises(UserErrorException) as e:
+            pf.run(
+                flow=flow_path,
+                data=f"{EAGER_FLOWS_DIR}/basic_model_config/inputs.jsonl",
+                init={"azure_open_ai_model_config": config1, "open_ai_model_config": config2},
+            )
+        assert error_msg in str(e.value)
+
+        # init with model config object
+        config1 = AzureOpenAIModelConfiguration(azure_deployment="my_deployment", connection="azure_open_ai")
+        config2 = OpenAIModelConfiguration(model="my_model", base_url="fake_base_url")
+        with pytest.raises(UserErrorException) as e:
+            pf.run(
+                flow=flow_path,
+                data=f"{EAGER_FLOWS_DIR}/basic_model_config/inputs.jsonl",
+                init={"azure_open_ai_model_config": config1, "open_ai_model_config": config2},
+            )
+        assert error_msg in str(e.value)
+
+        # invalid model config value, non-json serializable object is not supported.
+        with pytest.raises(UserErrorException) as e:
+            pf.run(
+                flow=Path(f"{EAGER_FLOWS_DIR}/basic_callable_class"),
+                data=f"{EAGER_FLOWS_DIR}/basic_callable_class/inputs.jsonl",
+                init={"obj_input": AzureOpenAIConnection(api_base="fake_api_base")},
+            )
+        assert "Invalid init kwargs:" in str(e.value)
 
 
 def assert_batch_run_result(run: Run, pf: PFClient, assert_func):
