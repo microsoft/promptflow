@@ -35,13 +35,16 @@ async def callback(
     session_state: Any = None,
     context: Dict[str, Any] = None
 ) -> dict:
-    question = messages["messages"][0]["content"]
+    messages_list = messages["messages"]
+    # get last message
+    latest_message = messages_list[-1]
+    query = latest_message["content"]
     context = None
     if 'file_content' in messages["template_parameters"]:
-        question += messages["template_parameters"]['file_content']
+        query += messages["template_parameters"]['file_content']
     # the next few lines explains how to use the AsyncAzureOpenAI's chat.completions
     # to respond to the simulator. You should replace it with a call to your model/endpoint/application
-    # make sure you pass the `question` and format the response as we have shown below
+    # make sure you pass the `query` and format the response as we have shown below
     from openai import AsyncAzureOpenAI
     oai_client = AsyncAzureOpenAI(
         api_key=<api_key>,
@@ -49,7 +52,7 @@ async def callback(
         api_version="2023-12-01-preview",
     )
     try:
-        response_from_oai_chat_completions = await oai_client.chat.completions.create(messages=[{"content": question, "role": "user"}], model="gpt-4", max_tokens=300)
+        response_from_oai_chat_completions = await oai_client.chat.completions.create(messages=[{"content": query, "role": "user"}], model="gpt-4", max_tokens=300)
     except Exception as e:
         print(f"Error: {e}")
         # to continue the conversation, return the messages, else you can fail the adversarial with an exception
