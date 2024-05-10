@@ -3,7 +3,6 @@ import functools
 import json
 import os
 import re
-import sys
 import time
 from dataclasses import asdict
 from typing import List, Mapping
@@ -599,35 +598,6 @@ def list_deployment_connections(
             raise ListDeploymentsError(msg=msg) from e
 
 
-def refine_extra_fields_not_permitted_error(connection, deployment_name, model):
-    tsg = (
-        "Please kindly avoid using vision model in LLM tool, "
-        "because vision model cannot work with some chat api parameters. "
-        "You can change to use tool 'Azure OpenAI GPT-4 Turbo with Vision' "
-        "or 'OpenAI GPT-4V' for vision model."
-    )
-    try:
-        if isinstance(connection, AzureOpenAIConnection):
-            subscription_id, resource_group, workspace_name = get_workspace_triad()
-            if subscription_id and resource_group and workspace_name:
-                deployment_collection = list_deployment_connections(
-                    subscription_id, resource_group, workspace_name, connection.name
-                )
-                for item in deployment_collection:
-                    if deployment_name == item.name:
-                        if item.properties.model.version in [GPT4V_VERSION]:
-                            return tsg
-        elif isinstance(connection, OpenAIConnection) and model in ["gpt-4-vision-preview"]:
-            return tsg
-    except Exception as e:
-        print(
-            f"Exception occurs when refine extra fields not permitted error for llm: " f"{type(e).__name__}: {str(e)}",
-            file=sys.stderr,
-        )
-
-    return None
-
-
 def is_retriable_api_connection_error(e: APIConnectionError):
     retriable_error_messages = [
         "connection aborted",
@@ -673,19 +643,12 @@ def handle_openai_error(tries: int = 10, unprocessable_entity_error_tries: int =
                 except (APIStatusError, APIConnectionError) as e:
                     #  Handle retriable exception, please refer to
                     #  https://platform.openai.com/docs/guides/error-codes/api-errors
-                    print(f"Exception occurs: {type(e).__name__}: {str(e)}", file=sys.stderr)
+                    logger.error(f"Exception occurs: {type(e).__name__}: {str(e)}")
                     # Firstly, exclude some non-retriable errors.
                     # Vision model does not support all chat api parameters, e.g. response_format and function_call.
-                    # Recommend user to use vision model in vision tools, rather than LLM tool.
                     # Related issue https://github.com/microsoft/promptflow/issues/1683
-                    if isinstance(e, BadRequestError) and "extra fields not permitted" in str(e).lower():
-                        refined_error_message = refine_extra_fields_not_permitted_error(
-                            args[0].connection, kwargs.get("deployment_name", ""), kwargs.get("model", "")
-                        )
-                        if refined_error_message:
-                            raise LLMError(message=f"{str(e)} {refined_error_message}")
-                        else:
-                            raise WrappedOpenAIError(e)
+                    if isinstance(e, BadRequestError):
+                        raise WrappedOpenAIError(e)
 
                     if (
                         isinstance(e, APIConnectionError)
@@ -704,7 +667,7 @@ def handle_openai_error(tries: int = 10, unprocessable_entity_error_tries: int =
                             raise WrappedOpenAIError(e)
                     if isinstance(e, RateLimitError) and getattr(e, "type", None) == "insufficient_quota":
                         # Exit retry if this is quota insufficient error
-                        print(f"{type(e).__name__} with insufficient quota. Throw user error.", file=sys.stderr)
+                        logger.error(f"{type(e).__name__} with insufficient quota. Throw user error.")
                         raise WrappedOpenAIError(e)
 
                     # Retriable errors.
@@ -717,7 +680,7 @@ def handle_openai_error(tries: int = 10, unprocessable_entity_error_tries: int =
 
                     if i == tries or consecutive_422_error_count == unprocessable_entity_error_tries:
                         # Exit retry if max retry reached
-                        print(f"{type(e).__name__} reached max retry. Exit retry with user error.", file=sys.stderr)
+                        logger.error(f"{type(e).__name__} reached max retry. Exit retry with user error.")
                         raise ExceedMaxRetryTimes(e)
 
                     if hasattr(e, "response") and e.response is not None:
@@ -744,10 +707,10 @@ def handle_openai_error(tries: int = 10, unprocessable_entity_error_tries: int =
                     # For other non-retriable errors from OpenAIError,
                     # For example, AuthenticationError, APIConnectionError, BadRequestError, NotFoundError
                     # Mark UserError for all the non-retriable OpenAIError
-                    print(f"Exception occurs: {type(e).__name__}: {str(e)}", file=sys.stderr)
+                    logger.error(f"Exception occurs: {type(e).__name__}: {str(e)}")
                     raise WrappedOpenAIError(e)
                 except Exception as e:
-                    print(f"Exception occurs: {type(e).__name__}: {str(e)}", file=sys.stderr)
+                    logger.error(f"Exception occurs: {type(e).__name__}: {str(e)}")
                     error_message = f"OpenAI API hits exception: {type(e).__name__}: {str(e)}"
                     raise LLMError(message=error_message)
 
