@@ -732,6 +732,8 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         if run._use_remote_flow:
             return self._resolve_flow_definition_resource_id(run=run), None
         flow = load_flow(run.flow)
+        # set init kwargs for validation
+        flow._init_kwargs = run.init
         self._flow_operations._resolve_arm_id_or_upload_dependencies(
             flow=flow,
             # ignore .promptflow/dag.tools.json only for run submission scenario in python
@@ -973,8 +975,8 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         # registry the run in the cloud
         self._registry_existing_bulk_run(run=run)
 
-        # log metrics for the run, it can only be done after the run history record is created
-        async_run_allowing_running_loop(run_uploader._upload_metrics)
+        # post process after run upload, it can only be done after the run history record is created
+        async_run_allowing_running_loop(run_uploader.post_process)
 
         # print portal url when executing in jupyter notebook
         if in_jupyter_notebook():

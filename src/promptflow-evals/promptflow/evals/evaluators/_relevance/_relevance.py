@@ -52,7 +52,11 @@ class RelevanceEvaluator:
         :rtype: dict
         """
         # Validate input parameters
-        if not (question and question.strip()) or not (answer and answer.strip()) or not (context and context.strip()):
+        question = str(question or "")
+        answer = str(answer or "")
+        context = str(context or "")
+
+        if not (question.strip() and answer.strip() and context.strip()):
             raise ValueError("'question', 'answer' and 'context' must be non-empty strings.")
 
         # Run the evaluation flow

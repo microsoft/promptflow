@@ -10,9 +10,11 @@ from openai import Stream
 from openai.types.chat import ChatCompletion
 
 from promptflow._sdk._pf_client import PFClient
+from promptflow._utils.yaml_utils import load_yaml
 from promptflow.client import load_flow
 from promptflow.core import AsyncPrompty, Flow, Prompty
 from promptflow.core._errors import (
+    ChatAPIInvalidTools,
     InvalidConnectionError,
     InvalidOutputKeyError,
     InvalidSampleError,
@@ -211,8 +213,22 @@ class TestPrompty:
             output = json.loads(f.readline())
             assert "6" in output["output"]
 
-        # test pf run wile loaded prompty
+        # test pf run with loaded prompty
         prompty = load_flow(source=f"{PROMPTY_DIR}/prompty_example.prompty")
+        run = pf.run(flow=prompty, data=f"{DATA_DIR}/prompty_inputs.jsonl")
+        assert run.status == "Completed"
+        run_dict = run._to_dict()
+        assert not run_dict.get("error", None), f"error in run_dict {run_dict['error']}"
+
+        # test pf run with override prompty
+        connection = pf.connections.get(name="azure_open_ai_connection", with_secrets=True)
+        config = AzureOpenAIModelConfiguration(
+            azure_endpoint=connection.api_base,
+            api_key=connection.api_key,
+            api_version=connection.api_version,
+            azure_deployment="gpt-35-turbo",
+        )
+        prompty = load_flow(source=f"{PROMPTY_DIR}/prompty_example.prompty", model={"configuration": config})
         run = pf.run(flow=prompty, data=f"{DATA_DIR}/prompty_inputs.jsonl")
         assert run.status == "Completed"
         run_dict = run._to_dict()
@@ -355,6 +371,18 @@ class TestPrompty:
             prompty()
         assert "Only dict and json file are supported as sample in prompty" in ex.value.message
 
+        # Test sample field as input signature
+        prompty = Flow.load(source=f"{PROMPTY_DIR}/sample_as_input_signature.prompty")
+        result = prompty()
+        assert "2" in result
+
+        input_signature = prompty._get_input_signature()
+        assert input_signature == {
+            "firstName": {"type": "string"},
+            "lastName": {"type": "string"},
+            "question": {"type": "string"},
+        }
+
     def test_prompty_with_default_connection(self, pf: PFClient):
         connection = pf.connections.get(name="azure_open_ai_connection", with_secrets=True)
         os.environ["AZURE_OPENAI_ENDPOINT"] = connection.api_base
@@ -362,6 +390,37 @@ class TestPrompty:
         prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example_with_default_connection.prompty")
         result = prompty(question="what is the result of 1+1?")
         assert "2" in result
+
+    def test_prompty_with_tools(self):
+        prompty = Flow.load(source=f"{PROMPTY_DIR}/prompty_example_with_tools.prompty")
+        result = prompty(question="What'''s the weather like in Boston today?")
+        assert "tool_calls" in result
+        assert result["tool_calls"][0]["function"]["name"] == "get_current_weather"
+        assert "Boston" in result["tool_calls"][0]["function"]["arguments"]
+
+        with pytest.raises(ChatAPIInvalidTools) as ex:
+            params_override = {"parameters": {"tools": []}}
+            prompty = Flow.load(source=f"{PROMPTY_DIR}/prompty_example_with_tools.prompty", model=params_override)
+            prompty(question="What'''s the weather like in Boston today?")
+        assert "tools cannot be an empty list" in ex.value.message
+
+        with pytest.raises(ChatAPIInvalidTools) as ex:
+            params_override = {"parameters": {"tools": ["invalid_tool"]}}
+            prompty = Flow.load(source=f"{PROMPTY_DIR}/prompty_example_with_tools.prompty", model=params_override)
+            prompty(question="What'''s the weather like in Boston today?")
+        assert "tool 0 'invalid_tool' is not a dict" in ex.value.message
+
+        with pytest.raises(ChatAPIInvalidTools) as ex:
+            params_override = {"parameters": {"tools": [{"key": "val"}]}}
+            prompty = Flow.load(source=f"{PROMPTY_DIR}/prompty_example_with_tools.prompty", model=params_override)
+            prompty(question="What'''s the weather like in Boston today?")
+        assert "does not have 'type' property" in ex.value.message
+
+        with pytest.raises(ChatAPIInvalidTools) as ex:
+            params_override = {"parameters": {"tool_choice": "invalid"}}
+            prompty = Flow.load(source=f"{PROMPTY_DIR}/prompty_example_with_tools.prompty", model=params_override)
+            prompty(question="What'''s the weather like in Boston today?")
+        assert "tool_choice parameter 'invalid' must be a dict" in ex.value.message
 
     def test_render_prompty(self):
         prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty")
@@ -388,3 +447,70 @@ class TestPrompty:
         with pytest.raises(MissingRequiredInputError) as ex:
             prompty.render(mock_key="mock_value")
         assert "Missing required inputs" in ex.value.message
+
+    def test_prompty_with_reference_file(self):
+        # Test run prompty with reference file
+        prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_with_reference_file.prompty")
+        result = prompty(question="What'''s the weather like in Boston today?")
+        assert "tool_calls" in result
+        assert result["tool_calls"][0]["function"]["name"] == "get_current_weather"
+        assert "Boston" in result["tool_calls"][0]["function"]["arguments"]
+
+        # Test override prompty with reference file
+        prompty = Flow.load(
+            source=f"{PROMPTY_DIR}/prompty_example_with_tools.prompty", sample="${file:../datas/prompty_sample.json}"
+        )
+        with open(DATA_DIR / "prompty_sample.json", "r") as f:
+            expect_sample = json.load(f)
+        assert prompty._data["sample"] == expect_sample
+
+        # Test reference file doesn't exist
+        with pytest.raises(UserErrorException) as ex:
+            Flow.load(
+                source=f"{PROMPTY_DIR}/prompty_example_with_tools.prompty", sample="${file:../datas/invalid_path.json}"
+            )
+        assert "Cannot find the reference file" in ex.value.message
+
+        # Test reference yaml file
+        prompty = Flow.load(
+            source=f"{PROMPTY_DIR}/prompty_example_with_tools.prompty", sample="${file:../datas/prompty_sample.yaml}"
+        )
+        with open(DATA_DIR / "prompty_sample.yaml", "r") as f:
+            expect_sample = load_yaml(f)
+        assert prompty._data["sample"] == expect_sample
+
+        # Test reference other type file
+        prompty = Flow.load(
+            source=f"{PROMPTY_DIR}/prompty_example_with_tools.prompty", sample="${file:../datas/prompty_inputs.jsonl}"
+        )
+        with open(DATA_DIR / "prompty_inputs.jsonl", "r") as f:
+            content = f.read()
+        assert prompty._data["sample"] == content
+
+    def test_prompty_with_reference_env(self, monkeypatch):
+        monkeypatch.setenv("MOCK_DEPLOYMENT_NAME", "MOCK_DEPLOYMENT_NAME_VALUE")
+        monkeypatch.setenv("MOCK_API_KEY", "MOCK_API_KEY_VALUE")
+        monkeypatch.setenv("MOCK_API_VERSION", "MOCK_API_VERSION_VALUE")
+        monkeypatch.setenv("MOCK_API_ENDPOINT", "MOCK_API_ENDPOINT_VALUE")
+        monkeypatch.setenv("MOCK_EXIST_ENV", "MOCK_EXIST_ENV_VALUE")
+
+        # Test override with env reference
+        params_override = {
+            "configuration": {
+                "azure_deployment": "${env:MOCK_DEPLOYMENT_NAME}",
+                "api_key": "${env:MOCK_API_KEY}",
+                "api_version": "${env:MOCK_API_VERSION}",
+                "azure_endpoint": "${env:MOCK_API_ENDPOINT}",
+                "connection": None,
+            },
+            "parameters": {"not_exist_env": "${env:NOT_EXIST_ENV}", "exist_env": "${env:MOCK_EXIST_ENV}"},
+        }
+        prompty = Flow.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", model=params_override)
+        assert prompty._model.configuration["azure_deployment"] == os.environ.get("MOCK_DEPLOYMENT_NAME")
+        assert prompty._model.configuration["api_key"] == os.environ.get("MOCK_API_KEY")
+        assert prompty._model.configuration["api_version"] == os.environ.get("MOCK_API_VERSION")
+        assert prompty._model.configuration["azure_endpoint"] == os.environ.get("MOCK_API_ENDPOINT")
+        assert prompty._model.parameters["exist_env"] == os.environ.get("MOCK_EXIST_ENV")
+
+        # Test env not exist
+        assert prompty._model.parameters["not_exist_env"] == "${env:NOT_EXIST_ENV}"

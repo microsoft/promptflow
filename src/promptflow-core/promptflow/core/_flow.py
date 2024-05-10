@@ -11,6 +11,7 @@ from typing import Any, Mapping, Union
 from promptflow._constants import DEFAULT_ENCODING, LANGUAGE_KEY, PROMPTY_EXTENSION, FlowLanguage
 from promptflow._utils.flow_utils import is_flex_flow, is_prompty_flow, resolve_flow_path
 from promptflow._utils.yaml_utils import load_yaml_string
+from promptflow.contracts.tool import ValueType
 from promptflow.core._errors import MissingRequiredInputError
 from promptflow.core._model_configuration import PromptyModelConfiguration
 from promptflow.core._prompty_utils import (
@@ -18,7 +19,9 @@ from promptflow.core._prompty_utils import (
     convert_prompt_template,
     format_llm_response,
     get_open_ai_client_by_connection,
+    handle_openai_error,
     prepare_open_ai_request_params,
+    resolve_references,
     send_request_to_llm,
     update_dict_recursively,
 )
@@ -303,8 +306,11 @@ class Prompty(FlowBase):
         # prompty file path
         path = Path(path)
         configs, self._template = self._parse_prompty(path)
-        configs = update_dict_recursively(configs, kwargs)
-        configs["model"] = update_dict_recursively(configs.get("model", {}), model or {})
+        configs = resolve_references(configs, base_path=path.parent)
+        configs = update_dict_recursively(configs, resolve_references(kwargs, base_path=path.parent))
+        configs["model"] = update_dict_recursively(
+            configs.get("model", {}), resolve_references(model or {}, base_path=path.parent)
+        )
 
         self._model = PromptyModelConfiguration(**configs["model"])
         self._inputs = configs.get("inputs", {})
@@ -314,6 +320,7 @@ class Prompty(FlowBase):
 
         # TODO support more templating engine
         self._template_engine = configs.get("template", "jinja2")
+        self._input_signature, self._output_signature = None, None
         super().__init__(code=path.parent, path=path, data=configs, content_hash=None, **kwargs)
 
     @classmethod
@@ -373,7 +380,7 @@ class Prompty(FlowBase):
 
         resolved_inputs = {}
         missing_inputs = []
-        for input_name, value in self._inputs.items():
+        for input_name, value in self._get_input_signature().items():
             if input_name not in input_values and "default" not in value:
                 missing_inputs.append(input_name)
                 continue
@@ -382,10 +389,36 @@ class Prompty(FlowBase):
             raise MissingRequiredInputError(f"Missing required inputs: {missing_inputs}")
         return resolved_inputs
 
+    def _get_input_signature(self):
+        if not self._input_signature:
+            if self._inputs:
+                self._input_signature = self._inputs
+            elif self._sample:
+                sample_data = load_inputs_from_sample(self._sample)
+                self._input_signature = {k: {"type": ValueType.from_value(v).value} for k, v in sample_data.items()}
+            else:
+                self._input_signature = {}
+        return self._input_signature
+
+    def _get_output_signature(self, include_primitive_output=False):
+        if not self._output_signature:
+            self._output_signature = self._outputs
+        if not self._output_signature and include_primitive_output:
+            return {"output": {"type": "string"}}
+        else:
+            return self._output_signature
+
     @trace
+    @handle_openai_error()
     def __call__(self, *args, **kwargs):
         """Calling flow as a function, the inputs should be provided with key word arguments.
         Returns the output of the prompty.
+
+        The retry mechanism for prompty execution initiates when a retryable error is detected, including LLM response
+        errors such as InternalServerError (>=500), RateLimitError (429), and UnprocessableEntityError (422).
+        It is designed to retry up to 10 times. Each retry interval grows exponentially, with the wait time not
+        exceeding 60 seconds. The aggregate waiting period for all retries is approximately 400 seconds.
+
         The function call throws UserErrorException: if the flow is not valid or the inputs are not valid.
         SystemErrorException: if the flow execution failed due to unexpected executor error.
 
@@ -452,6 +485,7 @@ class AsyncPrompty(Prompty):
     """
 
     @trace
+    @handle_openai_error()
     async def __call__(self, *args, **kwargs) -> Mapping[str, Any]:
         """Calling prompty as a function in async, the inputs should be provided with key word arguments.
         Returns the output of the prompty.

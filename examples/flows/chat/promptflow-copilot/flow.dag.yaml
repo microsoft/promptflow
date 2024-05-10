@@ -1,0 +1,129 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+inputs:
+  question:
+    type: string
+    is_chat_input: true
+  chat_history:
+    type: list
+    is_chat_input: false
+    is_chat_history: true
+outputs:
+  output:
+    type: string
+    reference: ${answer_the_question_with_context.output}
+    is_chat_output: true
+nodes:
+- name: modify_query_with_history
+  type: llm
+  source:
+    type: code
+    path: modify_query_with_history.jinja2
+  inputs:
+    deployment_name: gpt-4
+    temperature: 1
+    top_p: 1
+    max_tokens: 1000
+    presence_penalty: 0
+    frequency_penalty: 0
+    chat_history: ${inputs.chat_history}
+    question: ${flow.question}
+  provider: AzureOpenAI
+  api: chat
+  module: promptflow.tools.aoai
+  use_variants: false
+- name: lookup_question_from_indexed_docs
+  type: python
+  source:
+    type: package
+    tool: promptflow_vectordb.tool.common_index_lookup.search
+  inputs:
+    queries: ${modify_query_with_history.output}
+    query_type: Hybrid (vector + keyword)
+    top_k: 4
+  activate:
+    when: ${check_relevance_score.output}
+    is: false
+  use_variants: false
+- name: generate_prompt_context
+  type: python
+  source:
+    type: code
+    path: generate_prompt_context.py
+  inputs:
+    search_result: ${lookup_question_from_indexed_docs.output}
+  aggregation: false
+  use_variants: false
+- name: answer_question_prompt
+  type: prompt
+  source:
+    type: code
+    path: answer_question_prompt.jinja2
+  inputs:
+    chat_history: ${flow.chat_history}
+    contexts: ${generate_prompt_context.output}
+    question: ${flow.question}
+  aggregation: false
+  use_variants: false
+- name: answer_the_question_with_context
+  type: llm
+  source:
+    type: code
+    path: answer_the_question_with_context.jinja2
+  inputs:
+    deployment_name: gpt-4
+    temperature: 0
+    top_p: 1
+    max_tokens: 1000
+    presence_penalty: 0
+    frequency_penalty: 0
+    prompt_text: ${select_prompt.output}
+  provider: AzureOpenAI
+  api: chat
+  module: promptflow.tools.aoai
+  aggregation: false
+  use_variants: false
+- name: check_query_relevance
+  type: llm
+  source:
+    type: code
+    path: check_query_relevance.jinja2
+  inputs:
+    deployment_name: gpt-35-turbo
+    temperature: 1
+    top_p: 1
+    max_tokens: 1
+    presence_penalty: 0
+    frequency_penalty: 0
+    question: ${modify_query_with_history.output}
+  provider: AzureOpenAI
+  api: chat
+  module: promptflow.tools.aoai
+  use_variants: false
+- name: check_relevance_score
+  type: python
+  source:
+    type: code
+    path: check_relevance_score.py
+  inputs:
+    score: ${check_query_relevance.output}
+  use_variants: false
+- name: refuse_to_answer
+  type: prompt
+  source:
+    type: code
+    path: refuse_to_answer.jinja2
+  inputs: {}
+  use_variants: false
+- name: select_prompt
+  type: python
+  source:
+    type: code
+    path: select_prompt.py
+  inputs:
+    answer_question_prompt: ${answer_question_prompt.output}
+    not_relevant: ${check_relevance_score.output}
+    refuse_prompt: ${refuse_to_answer.output}
+  use_variants: false
+node_variants: {}
+environment:
+  python_requirements_txt: requirements.txt
