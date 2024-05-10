@@ -2,16 +2,18 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from typing import Any, AsyncIterator, ContextManager, Iterator
+from typing import Any, AsyncIterator, Iterator
+
+from .context_manager_proxy import ContextManagerProxy
 
 
-# TODO Add support for send, throw and close method
-class GeneratorProxy:
+class GeneratorProxy(ContextManagerProxy):
     """A proxy for an iterator that can record all items that have been yielded."""
 
     def __init__(self, iterator: Iterator[Any]):
         self._iterator = iterator
         self._items = []
+        super().__init__(iterator)
 
     def __iter__(self):
         return self
@@ -20,14 +22,6 @@ class GeneratorProxy:
         item = next(self._iterator)
         self._items.append(item)
         return item
-
-    def __enter__(self):
-        if isinstance(self._iterator, ContextManager):
-            return self._iterator.__enter__()
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        if isinstance(self._iterator, ContextManager):
-            return self._iterator.__exit__(exc_type, exc_value, traceback)
 
     @property
     def items(self) -> list:
@@ -43,7 +37,7 @@ def generate_from_proxy(proxy: GeneratorProxy):
     yield from proxy
 
 
-class AsyncGeneratorProxy:
+class AsyncGeneratorProxy(ContextManagerProxy):
     """A proxy for an async iterator that can record all items that have been yielded."""
 
     def __init__(self, iterator: AsyncIterator[Any]):
@@ -54,6 +48,7 @@ class AsyncGeneratorProxy:
         """
         self._iterator = iterator
         self._items = []
+        super().__init__(iterator)
 
     def __aiter__(self):
         return self
@@ -62,14 +57,6 @@ class AsyncGeneratorProxy:
         item = await self._iterator.__anext__()
         self._items.append(item)
         return item
-
-    def __enter__(self):
-        if isinstance(self._iterator, ContextManager):
-            return self._iterator.__enter__()
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        if isinstance(self._iterator, ContextManager):
-            return self._iterator.__exit__(exc_type, exc_value, traceback)
 
     @property
     def items(self) -> list:
