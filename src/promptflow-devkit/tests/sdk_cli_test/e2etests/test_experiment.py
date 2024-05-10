@@ -260,6 +260,7 @@ class TestExperiment:
                     experiment=template_path,
                     session=session,
                     inputs={"url": "https://www.youtube.com/watch?v=kYqRtjDBci8", "answer": "Channel"},
+                    environment_variables={"PF_TEST_FLOW_TEST_WITH_EXPERIMENT": "1"},
                 )
                 futures.wait([task], return_when=futures.ALL_COMPLETED)
                 result = task.result()
@@ -267,6 +268,7 @@ class TestExperiment:
             # Assert line run id is set by executor when running test
             assert PF_TRACE_CONTEXT in os.environ
             attributes = json.loads(os.environ[PF_TRACE_CONTEXT]).get("attributes")
+            assert os.environ.get("PF_TEST_FLOW_TEST_WITH_EXPERIMENT") == "1"
             assert attributes.get("experiment") == template_path.resolve().absolute().as_posix()
             assert attributes.get("referenced.line_run_id", "").startswith("main")
             expected_output_path = (

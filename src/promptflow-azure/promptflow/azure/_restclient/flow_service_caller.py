@@ -24,6 +24,11 @@ from promptflow.azure._constants._trace import (
     COSMOS_DB_SETUP_POLL_PRINT_INTERVAL_SECOND,
     COSMOS_DB_SETUP_POLL_TIMEOUT_SECOND,
 )
+from promptflow.azure._constants._trace import (
+    COSMOS_DB_SETUP_POLL_INTERVAL_SECOND,
+    COSMOS_DB_SETUP_POLL_PRINT_INTERVAL_SECOND,
+    COSMOS_DB_SETUP_POLL_TIMEOUT_SECOND,
+)
 from promptflow.azure._restclient.flow import AzureMachineLearningDesignerServiceClient
 from promptflow.azure._utils.general import get_authorization, get_arm_token, get_aml_token
 from promptflow.exceptions import UserErrorException, PromptflowException, SystemErrorException

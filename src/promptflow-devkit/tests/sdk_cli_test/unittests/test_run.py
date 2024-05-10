@@ -20,6 +20,7 @@ from promptflow._sdk.entities._flows import Flow
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.context_utils import inject_sys_path
 from promptflow._utils.yaml_utils import load_yaml
+from promptflow.connections import AzureOpenAIConnection
 from promptflow.exceptions import UserErrorException, ValidationException
 
 FLOWS_DIR = Path("./tests/test_configs/flows")
@@ -268,3 +269,19 @@ class TestRun:
         for entry in [non_callable, function, obj.method, obj.class_method, obj.static_method, MyClass.class_method]:
             with pytest.raises(UserErrorException):
                 callable_to_entry_string(entry)
+
+    @pytest.mark.parametrize(
+        "init_val, expected_error_msg",
+        [
+            ("val", "Invalid init kwargs: val"),
+            (
+                {"obj_input": AzureOpenAIConnection(api_base="fake_api_base")},
+                "Expecting a json serializable dictionary.",
+            ),
+        ],
+    )
+    def test_invalid_init_kwargs(self, pf, init_val, expected_error_msg):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_callable_class")
+        with pytest.raises(UserErrorException) as e:
+            pf.run(flow=flow_path, data=f"{EAGER_FLOWS_DIR}/basic_callable_class/inputs.jsonl", init=init_val)
+        assert expected_error_msg in str(e.value)
