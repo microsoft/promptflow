@@ -135,7 +135,8 @@ def _log_metrics_and_instance_results(metrics, instance_results, tracking_uri, r
                 _write_properties_to_run_history(
                     properties={
                         "_azureml.evaluation_run": "azure-ai-generative-parent",
-                        "_azureml.evaluate_artifacts": json.dumps([{"path": "eval_results.jsonl", "type": "table"}])
+                        "_azureml.evaluate_artifacts": json.dumps([{"path": "eval_results.jsonl", "type": "table"}]),
+                        "isEvaluatorRun": "true"
                     })
                 run_id = run.info.run_id
     else:
@@ -168,3 +169,16 @@ def _get_ai_studio_url(trace_destination: str, evaluation_id: str) -> str:
                  f"workspaces/{ws_triad.workspace_name}"
 
     return studio_url
+
+
+def _trace_destination_from_project_scope(project_scope: dict) -> str:
+    subscription_id = project_scope["subscription_id"]
+    resource_group_name = project_scope["resource_group_name"]
+    workspace_name = project_scope["project_name"]
+
+    trace_destination = (
+        f"azureml://subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/"
+        f"providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}"
+    )
+
+    return trace_destination
