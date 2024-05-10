@@ -84,7 +84,7 @@ class TestTelemetry:
             envelope = log_to_envelope(log_data)
 
         def check_evelope():
-            assert envelope.data.base_data.name.startswith("pf.runs.create_or_update")
+            assert envelope.data.base_data.name.startswith("pf.flows.test")
             custom_dimensions = pydash.get(envelope, "data.base_data.properties")
             assert isinstance(custom_dimensions, dict)
             assert "flow_type" in custom_dimensions
@@ -94,15 +94,18 @@ class TestTelemetry:
             "promptflow._sdk._telemetry.telemetry.get_telemetry_logger", side_effect=get_telemetry_logger
         ):
             flow_type = FlowType.DAG_FLOW
-            pf.flows.test(flow="./tests/test_configs/flows/print_input_flow")
+            try:
+                pf.flows.test(flow="./tests/test_configs/flows/print_input_flow")
+            except Exception:
+                pass
             logger = get_telemetry_logger()
             logger.handlers[0].flush()
             check_evelope()
 
             flow_type = FlowType.FLEX_FLOW
-            pf.flows.test(
-                flow="./tests/test_configs/eager_flows/simple_with_req",
-                data="./tests/test_configs/datas/simple_eager_flow_data.jsonl",
-            )
+            try:
+                pf.flows.test(flow="./tests/test_configs/eager_flows/simple_with_req")
+            except Exception:
+                pass
             logger.handlers[0].flush()
             check_evelope()

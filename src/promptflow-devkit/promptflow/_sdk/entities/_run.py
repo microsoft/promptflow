@@ -46,14 +46,19 @@ from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, Miss
 from promptflow._sdk._orm import RunInfo as ORMRun
 from promptflow._sdk._utilities.general_utils import (
     _sanitize_python_variable_name,
-    get_flow_type,
     is_multi_container_enabled,
     is_remote_uri,
     parse_remote_flow_pattern,
 )
 from promptflow._sdk.entities._yaml_translatable import YAMLTranslatableMixin
 from promptflow._sdk.schemas._run import RunSchema
-from promptflow._utils.flow_utils import get_flow_lineage_id, is_flex_flow, is_prompty_flow, parse_variant
+from promptflow._utils.flow_utils import (
+    get_flow_lineage_id,
+    get_flow_type,
+    is_flex_flow,
+    is_prompty_flow,
+    parse_variant,
+)
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import UserErrorException
 
