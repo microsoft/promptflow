@@ -548,7 +548,7 @@ class TestFlowTest:
 
     def test_yaml_default(self, pf):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_with_yaml_default")
-        result = pf.test(flow=flow_path, inputs={"func_input1": "False"})
+        result = pf.test(flow=flow_path, inputs={"func_input1": "input1"})
         assert result == "default_obj_input_input1_default_func_input"
 
         # override default input value
