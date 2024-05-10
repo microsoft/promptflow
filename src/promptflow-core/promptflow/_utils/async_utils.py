@@ -49,9 +49,10 @@ class _AsyncTaskSigIntHandler:
 
 
 async def _invoke_async_with_sigint_handler(async_func, *args, **kwargs):
-    """In python>=3.11, the asyncio.run in default cancel the running tasks when sigint is hit.
-    This is very useful when we call async functions.
-    So we have a similar implementation here to make sure python>3.11 also have such feature.
+    """In python>=3.11, when sigint is hit,
+    asyncio.run in default cancel the running tasks before raising the KeyboardInterrupt,
+    this introduces the chance to handle the cancelled error.
+    So we have a similar implementation here so python<3.11 also have such feature.
     https://github.com/python/cpython/blob/46c808172fd3148e3397234b23674bf70734fb55/Lib/asyncio/runners.py#L150
     """
     # For the scenario that we don't need to update sigint, just return.
