@@ -11,7 +11,7 @@ import pandas as pd
 
 from promptflow._sdk._constants import LINE_NUMBER
 from promptflow.client import PFClient
-from ._utils import _log_metrics_and_instance_results, _trace_destination_from_project_scope
+from ._utils import _log_metrics_and_instance_results, _trace_destination_from_project_scope, _write_output
 from .._user_agent import USER_AGENT
 
 
@@ -58,7 +58,7 @@ def _validate_and_load_data(target, data, evaluators, output_path, azure_ai_proj
 
     if azure_ai_project is not None:
         if not isinstance(azure_ai_project, Dict):
-            raise ValueError("azure_ai_project must be a string.")
+            raise ValueError("azure_ai_project must be a Dict.")
 
     if evaluation_name is not None:
         if not isinstance(evaluation_name, str):
@@ -317,4 +317,9 @@ def evaluate(
     studio_url = _log_metrics_and_instance_results(
         metrics, result_df, trace_destination, target_run, pf_client, data, evaluation_name)
 
-    return {"rows": result_df.to_dict("records"), "metrics": metrics, "studio_url": studio_url}
+    result = {"rows": result_df.to_dict("records"), "metrics": metrics, "studio_url": studio_url}
+
+    if output_path:
+        _write_output(output_path, result)
+
+    return result

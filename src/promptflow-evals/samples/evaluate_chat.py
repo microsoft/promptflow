@@ -1,7 +1,7 @@
 import os
 from pprint import pprint
 
-from promptflow.evals.evaluators import ChatEvaluator, ContentSafetyEvaluator
+from promptflow.evals.evaluators import ChatEvaluator
 from promptflow.evals.evaluate import evaluate
 from promptflow.core import AzureOpenAIModelConfiguration
 
@@ -12,6 +12,13 @@ if __name__ == "__main__":
     os.environ["AZURE_OPENAI_API_VERSION"] = "2023-03-15-preview"
     os.environ["AZURE_OPENAI_DEPLOYMENT"] = "gpt-4-32k"
     os.environ["AZURE_OPENAI_ENDPOINT"] = "<>"
+
+    # Initialize Project Scope
+    project_scope = {
+        "subscription_id": "b17253fa-f327-42d6-9686-f3e553e24763",
+        "resource_group_name": "anksing-vanilla-eval",
+        "project_name": "anksing-vanilla-eval",
+    }
 
     model_config = AzureOpenAIModelConfiguration(
         azure_endpoint=os.environ.get("AZURE_OPENAI_ENDPOINT"),

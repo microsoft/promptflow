@@ -14,6 +14,7 @@ import mlflow
 from promptflow._sdk._constants import Local2Cloud
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow.azure.operations._async_run_uploader import AsyncRunUploader
+from promptflow.evals._constants import DEFAULT_EVALUATION_RESULTS_FILE_NAME
 
 LOGGER = logging.getLogger(__name__)
 
@@ -182,3 +183,13 @@ def _trace_destination_from_project_scope(project_scope: dict) -> str:
     )
 
     return trace_destination
+
+
+def _write_output(path, data_dict):
+    p = Path(path)
+    if os.path.isdir(path):
+        p = p/DEFAULT_EVALUATION_RESULTS_FILE_NAME
+
+    with open(p, "w") as f:
+        json.dump(data_dict, f)
+
