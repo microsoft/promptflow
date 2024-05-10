@@ -6,6 +6,13 @@ permissions:
   contents: read
 on:
   workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - src/promptflow-tools/**
+      - scripts/tool/**
+      - .github/workflows/tools_tests.yml
   pull_request_target:
     paths:
       - src/promptflow-tools/**
@@ -27,6 +34,7 @@ jobs:
     strategy:
       fail-fast: false
     runs-on: ubuntu-latest
+    environment: Testing
     timeout-minutes: 30
     env:
       DEPENDENCY_SOURCE_MODE: ${{ secrets.DEPENDENCY_SOURCE_MODE }}
