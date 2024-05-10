@@ -8,9 +8,10 @@ import functools
 import inspect
 import json
 import logging
+from collections.abc import AsyncIterator, Iterator
 from importlib.metadata import version
 from threading import Lock
-from typing import AsyncGenerator, Callable, ContextManager, Dict, Generator, List, Optional
+from typing import Callable, ContextManager, Dict, List, Optional
 
 import opentelemetry.trace as otel_trace
 from opentelemetry.sdk.trace import ReadableSpan
@@ -155,8 +156,8 @@ def enrich_span_with_trace_type(span, inputs, output, trace_type):
 
 
 def trace_iterator_if_needed(span, inputs, output):
-    if isinstance(output, (Generator, AsyncGenerator)) and not isinstance(span, NonRecordingSpan):
-        trace_func = TracedGenerator if isinstance(output, Generator) else TracedAsyncGenerator
+    if isinstance(output, (Iterator, AsyncIterator)) and not isinstance(span, NonRecordingSpan):
+        trace_func = TracedGenerator if isinstance(output, Iterator) else TracedAsyncGenerator
         output = trace_func(span, inputs, output)
     return output
 
@@ -173,7 +174,7 @@ def enrich_span_with_llm_if_needed(span, original_span, inputs, generator_output
 
 
 class TracedGenerator:
-    def __init__(self, original_span: ReadableSpan, inputs, generator: Generator):
+    def __init__(self, original_span: ReadableSpan, inputs, generator: Iterator):
         self.original_span = original_span
         self.inputs = inputs
         self.generator = generator
@@ -217,7 +218,7 @@ class TracedGenerator:
 
 
 class TracedAsyncGenerator:
-    def __init__(self, original_span: ReadableSpan, inputs, generator: AsyncGenerator):
+    def __init__(self, original_span: ReadableSpan, inputs, generator: AsyncIterator):
         self.original_span = original_span
         self.inputs = inputs
         self.generator = generator
