@@ -1401,6 +1401,9 @@ class TestFlowRun:
         expected_details: dict,
     ) -> None:
         run = pf.run(**run_params)
+        # flex flow does not have variant
+        assert "_variant_" not in run.name
+        assert "_variant_" not in run.display_name
         assert run.status == "Completed"
         assert "error" not in run._to_dict()
 
