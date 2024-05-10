@@ -275,9 +275,9 @@ def resolve_references(origin, base_path=None):
     if isinstance(origin, str):
         return resolve_reference(origin, base_path=base_path)
     elif isinstance(origin, list):
-        return [resolve_references(item) for item in origin]
+        return [resolve_references(item, base_path=base_path) for item in origin]
     elif isinstance(origin, dict):
-        return {key: resolve_references(value) for key, value in origin.items()}
+        return {key: resolve_references(value, base_path=base_path) for key, value in origin.items()}
     else:
         return origin
 
