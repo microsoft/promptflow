@@ -27,6 +27,8 @@ You can view the traces in cloud from Azure portal: https://ml.azure.com/prompts
 ```
 Click the link to view the traces in Azure portal, and feel free to share it with your team members.
 
+![trace-ui-portal](../../../media/trace/trace-ui-portal-demo.gif)
+
 ## Storage
 
 Traces in Azure ML workspace/AI project are persisted in an [Azure Cosmos DB](https://learn.microsoft.com/en-us/azure/cosmos-db/) associated with the workspace/project. It will be automatically setup the first time you execute CLI command `pf config set trace.destination` for a workspace/project.
