@@ -174,10 +174,10 @@ def enrich_span_with_llm_if_needed(span, original_span, inputs, generator_output
 
 
 class TracedGenerator:
-    def __init__(self, original_span: ReadableSpan, inputs, generator: Iterator):
+    def __init__(self, original_span: ReadableSpan, inputs, iterator: Iterator):
         self.original_span = original_span
         self.inputs = inputs
-        self.generator = generator
+        self.iterator = iterator
         self.context = original_span.get_span_context()
         self.link = Link(self.context)
         self.otel_tracer = otel_trace.get_tracer("promptflow")
@@ -195,7 +195,7 @@ class TracedGenerator:
                 # Enrich the new span with input before generator iteration to prevent loss of input information.
                 # The input is as an event within this span.
                 enrich_span_with_input(span, self.inputs)
-                generator_proxy = GeneratorProxy(self.generator)
+                generator_proxy = GeneratorProxy(self.iterator)
                 item = next(generator_proxy)
                 generator_output = generator_proxy.items
                 enrich_span_with_llm_if_needed(span, self.original_span, self.inputs, generator_output)
@@ -209,19 +209,19 @@ class TracedGenerator:
             raise
 
     def __enter__(self):
-        if isinstance(self.generator, ContextManager):
-            self.generator.__enter__()
+        if isinstance(self.iterator, ContextManager):
+            self.iterator.__enter__()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if isinstance(self.generator, ContextManager):
-            self.generator.__exit__(exc_type, exc_val, exc_tb)
+        if isinstance(self.iterator, ContextManager):
+            self.iterator.__exit__(exc_type, exc_val, exc_tb)
 
 
 class TracedAsyncGenerator:
-    def __init__(self, original_span: ReadableSpan, inputs, generator: AsyncIterator):
+    def __init__(self, original_span: ReadableSpan, inputs, iterator: AsyncIterator):
         self.original_span = original_span
         self.inputs = inputs
-        self.generator = generator
+        self.iterator = iterator
         self.context = original_span.get_span_context()
         self.link = Link(self.context)
         self.otel_tracer = otel_trace.get_tracer("promptflow")
@@ -239,7 +239,7 @@ class TracedAsyncGenerator:
                 # Enrich the new span with input before generator iteration to prevent loss of input information.
                 # The input is as an event within this span.
                 enrich_span_with_input(span, self.inputs)
-                generator_proxy = AsyncGeneratorProxy(self.generator)
+                generator_proxy = AsyncGeneratorProxy(self.iterator)
                 item = await generator_proxy.__anext__()
                 generator_output = generator_proxy.items
                 enrich_span_with_llm_if_needed(span, self.original_span, self.inputs, generator_output)
@@ -253,12 +253,12 @@ class TracedAsyncGenerator:
             raise
 
     def __enter__(self):
-        if isinstance(self.generator, ContextManager):
-            self.generator.__enter__()
+        if isinstance(self.iterator, ContextManager):
+            self.iterator.__enter__()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if isinstance(self.generator, ContextManager):
-            self.generator.__exit__(exc_type, exc_val, exc_tb)
+        if isinstance(self.iterator, ContextManager):
+            self.iterator.__exit__(exc_type, exc_val, exc_tb)
 
 
 def enrich_span_with_original_attributes(span, attributes):
