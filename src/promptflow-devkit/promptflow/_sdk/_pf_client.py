@@ -183,7 +183,11 @@ class PFClient:
         is_flow_object = isinstance(flow, FlowBase)
         if callable(flow) and not inspect.isclass(flow) and not inspect.isfunction(flow):
             # The callable flow will be entry of flex flow or loaded prompty.
-            dynamic_callable = flow
+            if isinstance(flow, Prompty):
+                # What is passed to the executor is the prompty in promptflow.core.
+                dynamic_callable = flow._core_prompty
+            else:
+                dynamic_callable = flow
             if not is_flow_object:
                 # For the entry of flex flow, getting the callable class to generate flex yaml.
                 flow = flow.__class__

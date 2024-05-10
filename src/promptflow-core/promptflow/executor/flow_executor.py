@@ -40,12 +40,13 @@ from promptflow._utils.flow_utils import is_flex_flow, is_prompty_flow
 from promptflow._utils.logger_utils import flow_logger, logger
 from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow._utils.user_agent_utils import append_promptflow_package_ua
-from promptflow._utils.utils import get_int_env_var, is_prompty_callable
+from promptflow._utils.utils import get_int_env_var
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.connections import ConnectionProvider
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_mode import RunMode
+from promptflow.core import Prompty
 from promptflow.core._connection_provider._dict_connection_provider import DictConnectionProvider
 from promptflow.exceptions import PromptflowException
 from promptflow.executor import _input_assignment_parser
@@ -217,7 +218,7 @@ class FlowExecutor:
             from ._prompty_executor import PromptyExecutor
             from ._script_executor import ScriptExecutor
 
-            if is_prompty_callable(flow_file):
+            if isinstance(flow_file, Prompty):
                 return PromptyExecutor(flow_file=flow_file, working_dir=working_dir, storage=storage)
             else:
                 return ScriptExecutor(flow_file, connections=connections, storage=storage)
