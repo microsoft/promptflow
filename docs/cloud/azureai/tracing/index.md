@@ -4,7 +4,7 @@
 This is an experimental feature, and may change at any time. Learn [more](../../../how-to-guides/faq.md#stable-vs-experimental).
 :::
 
-Prompt flow [tracing feature](../../../how-to-guides/tracing/index.md) enables users to trace LLM calls, functions and even LLM frameworks. Besides, with Azure extension installed, prompt flow can also log traces to an Azure ML workspace or Azure AI project, which makes it possible to share traces with your team members.
+Prompt flow [tracing feature](../../../how-to-guides/tracing/index.md) enables users to trace LLM calls, functions and even LLM frameworks. Besides, with Azure optional dependencies installed, prompt flow can also log traces to an Azure ML workspace or Azure AI project, which makes it possible to share traces with your team members.
 
 ## Installing the package
 
