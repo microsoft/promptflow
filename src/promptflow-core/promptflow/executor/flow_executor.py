@@ -214,14 +214,14 @@ class FlowExecutor:
         if env_exporter_setup:
             setup_exporter_from_environ()
 
-        if hasattr(flow_file, "__call__") or inspect.isfunction(flow_file):
+        if isinstance(flow_file, Prompty):
             from ._prompty_executor import PromptyExecutor
+
+            return PromptyExecutor(flow_file=flow_file, working_dir=working_dir, storage=storage)
+        if hasattr(flow_file, "__call__") or inspect.isfunction(flow_file):
             from ._script_executor import ScriptExecutor
 
-            if isinstance(flow_file, Prompty):
-                return PromptyExecutor(flow_file=flow_file, working_dir=working_dir, storage=storage)
-            else:
-                return ScriptExecutor(flow_file, connections=connections, storage=storage)
+            return ScriptExecutor(flow_file, connections=connections, storage=storage)
         if not isinstance(flow_file, (Path, str)):
             raise NotImplementedError("Only support Path or str for flow_file.")
         if is_flex_flow(flow_path=flow_file, working_dir=working_dir):
