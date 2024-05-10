@@ -28,7 +28,7 @@ export $(grep -v '^#' ../.env | xargs)
 pf flow test --flow basic.prompty
 
 # test with flow inputs
-pf flow test --flow basic.prompty --inputs first_name="John" last_name="Doe" question="What is the meaning of life?"
+pf flow test --flow basic.prompty --inputs question="What is the meaning of life?"
 
 # test with another sample data
 pf flow test --flow basic.prompty --inputs sample.json
@@ -57,8 +57,8 @@ pf run show --name $name
 # show output
 pf run show-details --name $name
 
-# visualize run in browser (TODO)
-# pf run visualize --name $name
+# visualize run in browser
+pf run visualize --name $name
 ```
 
 ## Run prompty with connection
