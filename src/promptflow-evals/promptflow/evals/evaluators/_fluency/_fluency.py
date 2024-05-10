@@ -47,7 +47,10 @@ class FluencyEvaluator:
         :rtype: dict
         """
         # Validate input parameters
-        if not (question and question.strip()) or not (answer and answer.strip()):
+        question = str(question or "")
+        answer = str(answer or "")
+
+        if not (question.strip() and answer.strip()):
             raise ValueError("Both 'question' and 'answer' must be non-empty strings.")
 
         # Run the evaluation flow
