@@ -5,14 +5,16 @@ import inspect
 import os
 import re
 import tempfile
+from concurrent.futures import ProcessPoolExecutor
 from typing import Any, Callable, Dict, Optional, Set, Tuple
 
 import pandas as pd
 
 from promptflow._sdk._constants import LINE_NUMBER
 from promptflow.client import PFClient
-from ._utils import _log_metrics_and_instance_results
+
 from .._user_agent import USER_AGENT
+from ._utils import _log_metrics_and_instance_results
 
 
 def _calculate_mean(df) -> Dict[str, float]:
@@ -105,8 +107,7 @@ def _validate_columns(
 
 
 def _apply_target_to_data(
-    target: Callable, data: str, pf_client: PFClient, initial_data: pd.DataFrame,
-    evaluation_name: Optional[str] = None
+    target: Callable, data: str, pf_client: PFClient, initial_data: pd.DataFrame, evaluation_name: Optional[str] = None
 ) -> Tuple[pd.DataFrame, Set[str]]:
     """
     Apply the target function to the data set and return updated data and generated columns.
@@ -126,16 +127,12 @@ def _apply_target_to_data(
     # because the way tempdir remove temporary directories will
     # hang the debugger, because promptflow will keep flow directory.
     run = pf_client.run(
-        flow=target,
-        display_name=evaluation_name,
-        data=data,
-        properties={"runType": "eval_run"},
-        stream=True
+        flow=target, display_name=evaluation_name, data=data, properties={"runType": "eval_run"}, stream=True
     )
     target_output = pf_client.runs.get_details(run, all_results=True)
     # Remove input and output prefix
     prefix = "outputs."
-    rename_dict = {col: col[len(prefix):] for col in target_output.columns if col.startswith(prefix)}
+    rename_dict = {col: col[len(prefix) :] for col in target_output.columns if col.startswith(prefix)}
     # Sort output by line numbers
     target_output.set_index(f"inputs.{LINE_NUMBER}", inplace=True)
     target_output.sort_index(inplace=True)
@@ -202,6 +199,16 @@ def _process_evaluator_config(evaluator_config: Dict[str, Dict[str, str]]):
     return processed_config
 
 
+def _run_evaluator(pf_client, evaluator_name, evaluator, evaluator_config, target_run, data_file):
+    return pf_client.run(
+        flow=evaluator,
+        run=target_run,
+        column_mapping=evaluator_config.get(evaluator_name, evaluator_config.get("default", None)),
+        data=data_file,
+        stream=True,
+    )
+
+
 def evaluate(
     *,
     evaluation_name: Optional[str] = None,
@@ -239,18 +246,16 @@ def evaluate(
     _validate_columns(input_data_df, evaluators, target, evaluator_config)
 
     pf_client = PFClient(
-        config={
-            "trace.destination": tracking_uri
-        } if tracking_uri else None,
+        config={"trace.destination": tracking_uri} if tracking_uri else None,
         user_agent=USER_AGENT,
-
     )
     target_run = None
 
     target_generated_columns = set()
     if data is not None and target is not None:
-        input_data_df, target_generated_columns, target_run = _apply_target_to_data(target, data, pf_client,
-                                                                                    input_data_df, evaluation_name)
+        input_data_df, target_generated_columns, target_run = _apply_target_to_data(
+            target, data, pf_client, input_data_df, evaluation_name
+        )
         # After we have generated all columns we can check if we have
         # everything we need for evaluators.
         _validate_columns(input_data_df, evaluators, target=None, evaluator_config=evaluator_config)
@@ -263,15 +268,18 @@ def evaluate(
             data_file = os.path.join(d, "input.jsonl")
             input_data_df.to_json(data_file, orient="records", lines=True)
 
-        for evaluator_name, evaluator in evaluators.items():
+        with ProcessPoolExecutor() as executor:
+            futures = {
+                evaluator_name: executor.submit(
+                    _run_evaluator, pf_client, evaluator_name, evaluator, evaluator_config, target_run, data_file
+                )
+                for evaluator_name, evaluator in evaluators.items()
+            }
+
+        for evaluator_name, future in futures.items():
+            result = future.result()
             evaluator_info[evaluator_name] = {}
-            evaluator_info[evaluator_name]["run"] = pf_client.run(
-                flow=evaluator,
-                run=target_run,
-                column_mapping=evaluator_config.get(evaluator_name, evaluator_config.get("default", None)),
-                data=data_file,
-                stream=True,
-            )
+            evaluator_info[evaluator_name]["run"] = result
 
         evaluators_result_df = None
         for evaluator_name, evaluator_info in evaluator_info.items():
@@ -310,6 +318,7 @@ def evaluate(
     metrics = _calculate_mean(evaluators_result_df)
 
     studio_url = _log_metrics_and_instance_results(
-        metrics, result_df, tracking_uri, target_run, pf_client, data, evaluation_name)
+        metrics, result_df, tracking_uri, target_run, pf_client, data, evaluation_name
+    )
 
     return {"rows": result_df.to_dict("records"), "metrics": metrics, "studio_url": studio_url}
