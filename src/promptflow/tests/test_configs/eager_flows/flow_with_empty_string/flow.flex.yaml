@@ -1,0 +1,11 @@
+entry: flow_with_empty_string:MyClass
+inputs:
+  input_1:
+    type: string
+  input_2:
+    type: string
+    default: ""
+init:
+  input_init:
+    type: string
+    default: ""

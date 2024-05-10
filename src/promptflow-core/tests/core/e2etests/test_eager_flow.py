@@ -105,6 +105,12 @@ class TestEagerFlow:
                 lambda x: x["output"] == "input_2",
                 None,
             ),
+            (
+                "flow_with_empty_string",
+                {"input_1": "test"},
+                lambda x: x == "dummy_output",
+                None,
+            ),
         ],
     )
     def test_flow_run(self, flow_folder, inputs, ensure_output, init_kwargs):
