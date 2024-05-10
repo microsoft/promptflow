@@ -1022,3 +1022,50 @@ def init_azure_openai_client(connection: AzureOpenAIConnection):
 
     conn_dict = normalize_connection_config(connection)
     return AzureOpenAIClient(**conn_dict)
+
+
+def openai_batch_chat(client, kwargs):
+    try:
+        # construct the batch file content
+        batch_file_content = {
+            'custom_id': 'promptflow_batch_chat',
+            'method': 'POST',
+            'url': '/v1/chat/completions',
+            'body': kwargs
+        }
+        # create the batch file
+        with open('promptflow_batch_inputs.jsonl', 'w') as batch_input:
+            batch_input.write(json.dumps(batch_file_content) + '\n')
+        # upload batch file
+        with open('promptflow_batch_inputs.jsonl', 'rb') as batch_input:
+            uploaded_file = client.files.create(file=batch_input, purpose='batch')
+            batch_res = client.batches.create(
+                input_file_id=uploaded_file.id,
+                endpoint="/v1/chat/completions",
+                completion_window="24h",
+                metadata={
+                  "description": "promptflow batch chat test job"
+                }
+            )
+
+        # wait for the batch job to complete
+        job_status = ""
+        output_file_id = ""
+        while job_status != "completed" or job_status != "failed" or job_status != "cancelled" or job_status != "expired":
+            job_status = client.batches.retrieve(batch_res.id).status
+            if job_status == "completed":
+                output_file_id = client.batches.retrieve(batch_res.id).output_file_id
+                break
+            time.sleep(60)
+
+        # retrieve the output file content
+        output_content = client.files.content(output_file_id)
+
+        # delete the batch file
+        client.files.delete(uploaded_file.id)
+        client.files.delete(output_file_id)
+
+        return output_content
+    except Exception as e:
+        error_message = f"OpenAI API hits exception: {type(e).__name__}: {str(e)}"
+        raise LLMError(message=error_message) from e
