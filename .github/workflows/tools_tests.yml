@@ -6,13 +6,6 @@ permissions:
   contents: read
 on:
   workflow_dispatch:
-  pull_request:
-    branches:
-      - main
-    paths:
-      - src/promptflow-tools/**
-      - scripts/tool/**
-      - .github/workflows/tools_tests.yml
   pull_request_target:
     paths:
       - src/promptflow-tools/**
