@@ -10,7 +10,6 @@ class GeneratorProxy:
     """A proxy for an iterator that can record all items that have been yielded."""
 
     def __init__(self, iterator: Iterator[Any]):
-        self.is_context_manager = isinstance(iterator, ContextManager)
         self._iterator = iterator
         self._items = []
 
@@ -23,11 +22,11 @@ class GeneratorProxy:
         return item
 
     def __enter__(self):
-        if self.is_context_manager:
+        if isinstance(self._iterator, ContextManager):
             return self._iterator.__enter__()
 
     def __exit__(self, exc_type, exc_value, traceback):
-        if self.is_context_manager:
+        if isinstance(self._iterator, ContextManager):
             return self._iterator.__exit__(exc_type, exc_value, traceback)
 
     @property
@@ -53,7 +52,6 @@ class AsyncGeneratorProxy:
 
         :param iterator: An async iterator to proxy.
         """
-        self.is_context_manager = isinstance(iterator, ContextManager)
         self._iterator = iterator
         self._items = []
 
@@ -66,11 +64,11 @@ class AsyncGeneratorProxy:
         return item
 
     def __enter__(self):
-        if self.is_context_manager:
+        if isinstance(self._iterator, ContextManager):
             return self._iterator.__enter__()
 
     def __exit__(self, exc_type, exc_value, traceback):
-        if self.is_context_manager:
+        if isinstance(self._iterator, ContextManager):
             return self._iterator.__exit__(exc_type, exc_value, traceback)
 
     @property
