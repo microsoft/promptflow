@@ -338,8 +338,7 @@ class TestTraceEntitiesAndOperations:
         span.events[1]["attributes"]["payload"] = json.dumps(dict(output1=float("nan"), output2=float("-inf")))
         span._persist()
         line_run = pf.traces.get_line_run(line_run_id=line_run_id)
-        rest_obj = line_run._to_rest_object()
-        line_run_inputs, line_run_outputs = rest_obj["inputs"], rest_obj["outputs"]
+        line_run_inputs, line_run_outputs = line_run.inputs, line_run.outputs
         assert isinstance(line_run_inputs["input1"], str) and line_run_inputs["input1"] == "NaN"
         assert isinstance(line_run_inputs["input2"], str) and line_run_inputs["input2"] == "Infinity"
         assert isinstance(line_run_outputs["output1"], str) and line_run_outputs["output1"] == "NaN"
