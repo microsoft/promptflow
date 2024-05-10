@@ -227,6 +227,7 @@ def test_unknown_api(flow_serving_client):
     assert response.status_code == 404
 
 
+@pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
 @pytest.mark.usefixtures("recording_injection", "setup_local_connection")
 @pytest.mark.e2etest
 @pytest.mark.parametrize(
@@ -432,3 +433,22 @@ def test_flow_with_environment_variables(serving_client_with_environment_variabl
         response = json.loads(response.data.decode())
         assert {"output"} == response.keys()
         assert response["output"] == value
+
+
+@pytest.mark.e2etest
+def test_async_generator_serving_client(async_generator_serving_client):
+    # json response will succeed
+    expected_event_num = 10
+    response = async_generator_serving_client.post("/score", data=json.dumps({"count": expected_event_num}))
+    assert response.status_code == 200
+    payload = json.loads(response.data.decode())
+    assert "answer" in payload
+    assert payload["answer"].count("Echo") == expected_event_num
+    # async streaming response will fail
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "text/event-stream",
+    }
+    response = async_generator_serving_client.post("/score", data=json.dumps({"count": 10}), headers=headers)
+    assert response.status_code == 400
+    assert "Flask engine does not support async generator output" in response.data.decode()

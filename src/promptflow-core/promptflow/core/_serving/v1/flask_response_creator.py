@@ -5,11 +5,15 @@
 from flask import Response, jsonify
 
 from promptflow._constants import DEFAULT_OUTPUT_NAME
+from promptflow.core._serving._errors import AsyncGeneratorOutputNotSupported
 from promptflow.core._serving.response_creator import ResponseCreator
 
 
 class FlaskResponseCreator(ResponseCreator):
     def create_text_stream_response(self):
+        if self.is_async_streaming:
+            # flask doesn't support async generator output
+            raise AsyncGeneratorOutputNotSupported()
         return Response(self.generate(), mimetype="text/event-stream")
 
     def create_json_response(self):

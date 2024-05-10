@@ -973,8 +973,8 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         # registry the run in the cloud
         self._registry_existing_bulk_run(run=run)
 
-        # log metrics for the run, it can only be done after the run history record is created
-        async_run_allowing_running_loop(run_uploader._upload_metrics)
+        # post process after run upload, it can only be done after the run history record is created
+        async_run_allowing_running_loop(run_uploader.post_process)
 
         # print portal url when executing in jupyter notebook
         if in_jupyter_notebook():

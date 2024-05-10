@@ -1,8 +1,12 @@
 import pytest
 
-from promptflow.evals.evaluators import ChatEvaluator, FluencyEvaluator
-from promptflow.evals.evaluators.content_safety import ContentSafetyEvaluator, ViolenceEvaluator
-from promptflow.evals.evaluators.qa import QAEvaluator
+from promptflow.evals.evaluators import (
+    ChatEvaluator,
+    ContentSafetyEvaluator,
+    FluencyEvaluator,
+    QAEvaluator,
+    ViolenceEvaluator,
+)
 
 
 @pytest.mark.usefixtures("model_config", "project_scope", "recording_injection", "configure_default_azure_credential")
@@ -16,6 +20,15 @@ class TestBuiltInEvaluators:
         )
         assert score is not None
         assert score["gpt_fluency"] > 1.0
+
+    def test_individual_evaluator_prompt_based_with_dict_input(self, model_config):
+        eval_fn = FluencyEvaluator(model_config)
+        score = eval_fn(
+            question={"foo": "1"},
+            answer={"bar": 2},
+        )
+        assert score is not None
+        assert score["gpt_fluency"] > 0.0
 
     def test_individual_evaluator_service_based(self, project_scope):
         eval_fn = ViolenceEvaluator(project_scope)

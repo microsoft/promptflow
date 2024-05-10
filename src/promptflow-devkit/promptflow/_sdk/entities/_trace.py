@@ -333,10 +333,23 @@ class LineRun:
             self._to_orm_object().persist()
 
     @staticmethod
+    def _parse_io_from_span_attributes(value: str) -> typing.Union[typing.Dict, str]:
+        # use try-catch to parse value in case it is not a JSON string
+        # for example, user generates traces with code like:
+        # `span.set_attributes("inputs", str(dict(x=1)))`
+        try:
+            return json.loads(value)
+        except json.JSONDecodeError:
+            return value
+
+    @staticmethod
     def _get_inputs_from_span(span: Span) -> typing.Optional[typing.Dict]:
         for event in span.events:
             if event[SpanEventFieldName.NAME] == SPAN_EVENTS_NAME_PF_INPUTS:
                 return json.loads(event[SpanEventFieldName.ATTRIBUTES][SPAN_EVENTS_ATTRIBUTE_PAYLOAD])
+        # 3rd-party traces may not follow prompt flow way to persist inputs in events
+        if SpanAttributeFieldName.INPUTS in span.attributes:
+            return LineRun._parse_io_from_span_attributes(span.attributes[SpanAttributeFieldName.INPUTS])
         return None
 
     @staticmethod
@@ -344,6 +357,9 @@ class LineRun:
         for event in span.events:
             if event[SpanEventFieldName.NAME] == SPAN_EVENTS_NAME_PF_OUTPUT:
                 return json.loads(event[SpanEventFieldName.ATTRIBUTES][SPAN_EVENTS_ATTRIBUTE_PAYLOAD])
+        # 3rd-party traces may not follow prompt flow way to persist output in events
+        if SpanAttributeFieldName.OUTPUT in span.attributes:
+            return LineRun._parse_io_from_span_attributes(span.attributes[SpanAttributeFieldName.OUTPUT])
         return None
 
     @staticmethod
@@ -414,3 +430,15 @@ class LineRun:
                     evaluation.end_time.isoformat() if evaluation.end_time is not None else None
                 )
         return asdict(_self)
+
+
+@dataclass
+class Collection:
+    name: str
+    update_time: datetime.datetime
+
+    def _to_dict(self) -> typing.Dict[str, str]:
+        return {
+            "name": self.name,
+            "update_time": self.update_time.isoformat(),
+        }

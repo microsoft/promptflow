@@ -2,6 +2,7 @@ import datetime
 import json
 import platform
 import sys
+import time
 import typing
 import uuid
 from pathlib import Path
@@ -302,6 +303,34 @@ class TestTraceEntitiesAndOperations:
         }
         assert terminated_line_run._to_rest_object() == expected_terminated_line_run_dict
 
+    def test_span_io_in_attrs_persist(self, pf: PFClient) -> None:
+        trace_id, span_id, line_run_id = str(uuid.uuid4()), str(uuid.uuid4()), str(uuid.uuid4())
+        span = mock_span(trace_id=trace_id, span_id=span_id, parent_id=None, line_run_id=line_run_id)
+        # empty span.events and move inputs/output to span.attributes
+        inputs = {"input1": "value1", "input2": "value2"}
+        output = {"output1": "val1", "output2": "val2"}
+        span.attributes[SpanAttributeFieldName.INPUTS] = json.dumps(inputs)
+        span.attributes[SpanAttributeFieldName.OUTPUT] = json.dumps(output)
+        span.events = list()
+        span._persist()
+        line_run = pf.traces.get_line_run(line_run_id=line_run_id)
+        assert line_run.inputs == inputs
+        assert line_run.outputs == output
+
+    def test_span_non_json_io_in_attrs_persist(self, pf: PFClient) -> None:
+        trace_id, span_id, line_run_id = str(uuid.uuid4()), str(uuid.uuid4()), str(uuid.uuid4())
+        span = mock_span(trace_id=trace_id, span_id=span_id, parent_id=None, line_run_id=line_run_id)
+        # empty span.events and set non-JSON inputs/output to span.attributes
+        inputs = {"input1": "value1", "input2": "value2"}
+        output = {"output1": "val1", "output2": "val2"}
+        span.attributes[SpanAttributeFieldName.INPUTS] = str(inputs)
+        span.attributes[SpanAttributeFieldName.OUTPUT] = str(output)
+        span.events = list()
+        span._persist()
+        line_run = pf.traces.get_line_run(line_run_id=line_run_id)
+        assert isinstance(line_run.inputs, str) and line_run.inputs == str(inputs)
+        assert isinstance(line_run.outputs, str) and line_run.outputs == str(output)
+
     def test_delete_traces_three_tables(self, pf: PFClient) -> None:
         # trace operation does not expose API for events and spans
         # so directly use ORM class to list and assert events and spans existence and deletion
@@ -396,6 +425,37 @@ class TestTraceEntitiesAndOperations:
         # assert these line runs are exactly the ones we just persisted
         line_run_trace_ids = {line_run.trace_id for line_run in line_runs}
         assert len(set(trace_ids) & line_run_trace_ids) == num_line_runs
+
+    def test_list_collection(self, pf: PFClient) -> None:
+        collection = str(uuid.uuid4())
+        span = mock_span(
+            trace_id=str(uuid.uuid4()), span_id=str(uuid.uuid4()), parent_id=None, line_run_id=str(uuid.uuid4())
+        )
+        # make span start time a week later, so that it can be the latest collection
+        span.start_time = datetime.datetime.now() + datetime.timedelta(days=7)
+        span.start_time = datetime.datetime.now() + datetime.timedelta(days=8)
+        span.resource[SpanResourceFieldName.ATTRIBUTES][SpanResourceAttributesFieldName.COLLECTION] = collection
+        span._persist()
+        collections = pf.traces._list_collections(limit=1)
+        assert len(collections) == 1 and collections[0].name == collection
+
+    def test_list_collection_with_time_priority(self, pf: PFClient) -> None:
+        collection1, collection2 = str(uuid.uuid4()), str(uuid.uuid4())
+        for collection in (collection1, collection2):
+            span = mock_span(
+                trace_id=str(uuid.uuid4()), span_id=str(uuid.uuid4()), parent_id=None, line_run_id=str(uuid.uuid4())
+            )
+            # make span start time a week later, so that it can be the latest collection
+            span.start_time = datetime.datetime.now() + datetime.timedelta(days=7)
+            span.start_time = datetime.datetime.now() + datetime.timedelta(days=8)
+            span.resource[SpanResourceFieldName.ATTRIBUTES][SpanResourceAttributesFieldName.COLLECTION] = collection
+            span._persist()
+            # sleep 1 second to ensure the second span is later than the first
+            time.sleep(1)
+        collections = pf.traces._list_collections(limit=1)
+        assert len(collections) == 1 and collections[0].name == collection2
+        collections = pf.traces._list_collections(limit=2)
+        assert len(collections) == 2 and collections[1].name == collection1
 
 
 @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")

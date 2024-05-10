@@ -226,3 +226,10 @@ class TestTrace:
         assert len(line_runs) == 2
         # search with collection and session_id, should get 1 line run
         line_runs = pfs_op.search_line_runs(expression="kind == 'Flow'", session_id=session_id).json
+
+    def test_list_collections(self, pfs_op: PFSOperations, mock_collection: str) -> None:
+        persist_a_span(collection=mock_collection)
+        collections = pfs_op.list_collections().json
+        assert len(collections) > 0
+        collection = collections[0]
+        assert isinstance(collection, dict) and "name" in collection and "update_time" in collection
