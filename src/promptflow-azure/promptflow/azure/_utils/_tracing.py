@@ -6,12 +6,11 @@ from azure.ai.ml import MLClient
 from azure.core.exceptions import ResourceNotFoundError
 from azure.identity import AzureCliCredential
 
-from promptflow._constants import AzureWorkspaceKind, CosmosDBContainerName
+from promptflow._constants import AzureWorkspaceKind
 from promptflow._sdk._utilities.general_utils import extract_workspace_triad_from_trace_provider
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure import PFClient
 from promptflow.azure._constants._trace import COSMOS_DB_SETUP_RESOURCE_TYPE
-from promptflow.azure._restclient.flow_service_caller import FlowRequestException
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 _logger = get_cli_sdk_logger()
@@ -61,13 +60,10 @@ def validate_trace_destination(value: str) -> None:
     _logger.debug("Resource type is valid.")
 
     # the workspace Cosmos DB is initialized
-    # try to retrieve the token from PFS; if failed, call PFS init API and start polling
+    # if not, call PFS setup API and start polling
     _logger.debug("Validating workspace Cosmos DB is initialized...")
     pf_client = PFClient(ml_client=ml_client)
-    try:
-        pf_client._traces._get_cosmos_db_token(container_name=CosmosDBContainerName.SPAN)
-        _logger.debug("The workspace Cosmos DB is already initialized.")
-    except FlowRequestException:
+    if not pf_client._traces._is_cosmos_available():
         # print here to let users aware this operation as it's kind of time consuming
         init_cosmos_msg = (
             "The workspace Cosmos DB is not initialized yet, "
@@ -76,6 +72,8 @@ def validate_trace_destination(value: str) -> None:
         print(init_cosmos_msg)
         _logger.debug(init_cosmos_msg)
         pf_client._traces._setup_cosmos_db(resource_type=COSMOS_DB_SETUP_RESOURCE_TYPE)
+    else:
+        _logger.debug("The workspace Cosmos DB is available.")
     _logger.debug("The workspace Cosmos DB is initialized.")
 
     _logger.debug("pf.config.trace.destination is valid.")
