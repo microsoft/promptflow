@@ -1,0 +1,40 @@
+---
+name: Basic Prompt
+description: A basic prompt with tools
+model:
+    api: chat
+    configuration:
+      type: azure_openai
+      azure_deployment: gpt-35-turbo
+      connection: azure_open_ai_connection
+    parameters:
+      max_tokens: 128
+      temperature: 0.2
+      tools:
+        - type: function
+          function:
+            name: get_current_weather
+            description: Get the current weather in a given location
+            parameters:
+              type: object
+              properties:
+                location:
+                  type: string
+                  description: The city and state, e.g. San Francisco, CA
+                unit:
+                  type: string
+                  enum:
+                    - celsius
+                    - fahrenheit
+              required:
+                - location
+      tool_choice: auto
+inputs:
+  question:
+    type: string
+---
+system:
+You are an AI assistant who helps people find information.
+
+user:
+{{question}}
