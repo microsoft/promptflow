@@ -86,7 +86,6 @@ class ExperimentOrchestrator:
         self,
         template: ExperimentTemplate,
         inputs=None,
-        environment_variables=None,
         **kwargs,
     ):
         """Test experiment.
@@ -95,15 +94,13 @@ class ExperimentOrchestrator:
         :type template: ~promptflow.entities.ExperimentTemplate
         :param inputs: Input parameters for experiment.
         :type inputs: dict
-        :param environment_variables: Environment variables for flow.
-        :type environment_variables: dict
         """
         logger.info(f"Testing experiment {template._base_path.absolute().as_posix()}.")
         start_nodes = [node for node in template.nodes if len(ExperimentHelper._prepare_single_node_edges(node)) == 0]
         if not start_nodes:
             raise ExperimentValueError(f"Not found start node in experiment {template.dir_name!r}.")
 
-        inputs, environment_variables = inputs or {}, environment_variables or {}
+        inputs = inputs or {}
         logger.info(f"Found start nodes {[node.name for node in start_nodes]} for experiment.")
         nodes_to_test = ExperimentHelper.resolve_nodes_to_execute(template, start_nodes)
         logger.info(f"Resolved nodes to test {[node.name for node in nodes_to_test]} for experiment.")
@@ -111,7 +108,6 @@ class ExperimentOrchestrator:
         test_context = ExperimentTemplateTestContext(
             template,
             override_inputs=inputs,
-            environment_variables=environment_variables,
             output_path=kwargs.get("output_path"),
             session=kwargs.get("session"),
         )
@@ -139,7 +135,7 @@ class ExperimentOrchestrator:
         :type template: ~promptflow.entities.ExperimentTemplate
         :param inputs: Input parameters for flow.
         :type inputs: dict
-        :param environment_variables: Environment variables for flow.
+        :param environment_variables: Environment variables when test flow in experiment.
         :type environment_variables: dict
         """
         if flow is not None:
@@ -357,8 +353,9 @@ class ExperimentOrchestrator:
         # replace to command
         command = ExperimentCommandSubmitter._resolve_command(node.name, node.command, inputs, outputs)
         # Resolve connection env var on node
-        SubmitterHelper.resolve_environment_variables(environment_variables=node.environment_variables)
-        SubmitterHelper.init_env(environment_variables=node.environment_variables)
+        environment_variables = {**node.environment_variables, **test_context.environment_variables}
+        SubmitterHelper.resolve_environment_variables(environment_variables=environment_variables)
+        SubmitterHelper.init_env(environment_variables=environment_variables)
         ExperimentCommandExecutor.run(command, node.code, test_context.output_path / "log.txt")
         # Return dir path as command node testing result
         return outputs
@@ -864,14 +861,12 @@ class ExperimentNodeRun(Run):
 
 
 class ExperimentTemplateContext:
-    def __init__(self, template: ExperimentTemplate, environment_variables=None, session=None, **kwargs):
+    def __init__(self, template: ExperimentTemplate, session=None, **kwargs):
         """Context for experiment template.
         :param template: Template object to get definition of experiment.
-        :param environment_variables: Environment variables specified for test.
         :param session: The session id for the test trace.
         """
         self.template = template
-        self.environment_variables = environment_variables or {}
         self._experiment_context = self._get_experiment_context()
         # Generate line run id for node
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
@@ -964,8 +959,9 @@ class ExperimentTemplateTestContext(ExperimentTemplateContext):
         :param output_path: The custom output path.
         :param session: The session id for the test trace.
         """
-        super().__init__(template, environment_variables=environment_variables, session=session, **kwargs)
+        super().__init__(template, session=session, **kwargs)
         override_inputs = override_inputs or {}
+        self.environment_variables = environment_variables or {}
         self.node_results = {}  # E.g. {'main': {'category': 'xx', 'evidence': 'xx'}}
         self.node_inputs = {}  # E.g. {'main': {'url': 'https://abc'}}
         self.test_data = ExperimentHelper.prepare_test_data(override_data, template)
