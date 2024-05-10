@@ -45,7 +45,6 @@ class AsyncNodesScheduler:
         inputs: Dict[str, Any],
         context: FlowExecutionContext,
     ) -> Tuple[dict, dict]:
-        flow_logger.info("Current thread is not main thread, skip signal handler registration in AsyncNodesScheduler.")
         # Semaphore should be created in the loop, otherwise it will not work.
         loop = asyncio.get_running_loop()
         self._semaphore = asyncio.Semaphore(self._node_concurrency)
