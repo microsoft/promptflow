@@ -15,9 +15,15 @@ on:
 env:
   IS_IN_CI_PIPELINE: "true"
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   samples_configuration:
     runs-on: ubuntu-latest
+    environment:
+      internal
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -27,10 +33,6 @@ jobs:
       - name: Generate config.json for production workspace
         if: github.event_name != 'schedule'
         run: echo '${{ secrets.EXAMPLE_WORKSPACE_CONFIG_JSON_PROD }}' > ${{ github.workspace }}/examples/config.json
-      - name: Azure Login
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
       - name: Setup Python 3.9 environment
         uses: actions/setup-python@v4
         with:
@@ -42,6 +44,28 @@ jobs:
           pip install -r ${{ github.workspace }}/examples/dev_requirements.txt
       - name: Create Aoai Connection
         run: pf connection create -f ${{ github.workspace }}/examples/connections/azure_openai.yml --set api_key="${{ secrets.AOAI_API_KEY_TEST }}" api_base="${{ secrets.AOAI_API_ENDPOINT_TEST }}"
+      - name: Random Wait
+        uses: AliSajid/random-wait-action@main
+        with:
+          minimum: 1
+          maximum: 300
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
+          tenant-id: ${{secrets.AZURE_TENANT_ID}}
+          client-id: ${{secrets.AZURE_CLIENT_ID}}
+      - name: Fetch OID token every 4 mins
+        shell: bash
+        run: |
+          while true; do
+            token_request=$ACTIONS_ID_TOKEN_REQUEST_TOKEN
+            token_uri=$ACTIONS_ID_TOKEN_REQUEST_URL
+            token=$(curl -H "Authorization: bearer $token_request" "${token_uri}&audience=api://AzureADTokenExchange" | jq .value -r)
+            az login --service-principal -u ${{secrets.AZURE_CLIENT_ID}} -t ${{secrets.AZURE_TENANT_ID}} --federated-token $token --output none
+            # Sleep for 4 minutes
+            sleep 240
+          done &
       - name: Test Notebook
         working-directory: examples
         run: |

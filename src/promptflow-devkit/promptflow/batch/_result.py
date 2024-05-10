@@ -113,10 +113,12 @@ class SystemMetrics:
 
     @staticmethod
     def _get_openai_metrics(line_results: List[LineResult], aggr_results: AggregationResult):
-        node_run_infos = _get_node_run_infos(line_results, aggr_results)
+        # Get openai metrics from the flow run info in line results, since the flex flow do not have node run infos.
+        flow_run_infos = (line_result.run_info for line_result in line_results)
+        aggr_node_run_infos = (node_run_info for node_run_info in aggr_results.node_run_infos.values())
         total_metrics = {}
         calculator = OpenAIMetricsCalculator()
-        for run_info in node_run_infos:
+        for run_info in chain(flow_run_infos, aggr_node_run_infos):
             metrics = SystemMetrics._try_get_openai_metrics(run_info)
             if metrics:
                 calculator.merge_metrics_dict(total_metrics, metrics)
@@ -131,9 +133,8 @@ class SystemMetrics:
         openai_metrics = {}
         if run_info.system_metrics:
             for metric in TokenKeys.get_all_values():
-                if metric not in run_info.system_metrics:
-                    return False
-                openai_metrics[metric] = run_info.system_metrics[metric]
+                if metric in run_info.system_metrics:
+                    openai_metrics[metric] = run_info.system_metrics[metric]
         return openai_metrics
 
     def to_dict(self):

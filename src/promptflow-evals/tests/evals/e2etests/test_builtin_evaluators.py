@@ -21,6 +21,15 @@ class TestBuiltInEvaluators:
         assert score is not None
         assert score["gpt_fluency"] > 1.0
 
+    def test_individual_evaluator_prompt_based_with_dict_input(self, model_config):
+        eval_fn = FluencyEvaluator(model_config)
+        score = eval_fn(
+            question={"foo": "1"},
+            answer={"bar": 2},
+        )
+        assert score is not None
+        assert score["gpt_fluency"] > 0.0
+
     def test_individual_evaluator_service_based(self, project_scope):
         eval_fn = ViolenceEvaluator(project_scope)
         score = eval_fn(
