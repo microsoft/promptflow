@@ -41,7 +41,7 @@ To get started quickly, you can use a pre-built development environment. **Click
 
 If you want to get started in your local environment, first install the packages:
 
-Ensure you have a python environment.
+Ensure you have a python environment, `python>=3.9` is recommended.
 
 ```sh
 pip install promptflow promptflow-tools
