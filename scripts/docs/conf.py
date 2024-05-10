@@ -112,8 +112,8 @@ html_theme_options = {
     "show_toc_level": 1,
     "navbar_align": "left",  # [left, content, right] For testing that the navbar items align properly
     "navbar_center": ["navbar-nav"],
-    "announcement": "<b>[IMPORTANT]</b> Please uninstall existing promptflow and sub packages before you install "
-    "promptflow==1.8.0. Reach "
+    "announcement": "<b>[IMPORTANT]</b> Please uninstall existing promptflow and sub packages before you "
+    "upgrade from promptflow<=1.7.0 to newer version. Reach "
     "<a href='https://microsoft.github.io/promptflow/how-to-guides/faq.html#promptflow-1-8-0-upgrade-guide'>"
     "here</a> for more details.",
     "show_nav_level": 1,
