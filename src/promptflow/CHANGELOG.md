@@ -4,6 +4,7 @@
 
 ### Improvements
 - [promptflow-devkit]: Interactive browser credential is excluded by default when using Azure AI connections, user could set `PF_NO_INTERACTIVE_LOGIN=False` to enable it.
+- [promptflow-azure]: Refine trace Cosmos DB setup process to print setup status during the process, and display error message from service when setup failed.
 
 ### Bugs Fixed
 - Fix the issue that import error will be raised after downgrading promptflow from >=1.10.0 to <1.8.0.
