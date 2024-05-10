@@ -49,7 +49,10 @@ class GroundednessEvaluator:
         :rtype: dict
         """
         # Validate input parameters
-        if not (answer and answer.strip()) or not (context and context.strip()):
+        answer = str(answer or "")
+        context = str(context or "")
+
+        if not (answer.strip()) or not (context.strip()):
             raise ValueError("Both 'answer' and 'context' must be non-empty strings.")
 
         # Run the evaluation flow
