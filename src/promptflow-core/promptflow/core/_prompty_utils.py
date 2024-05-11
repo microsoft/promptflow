@@ -33,7 +33,7 @@ from promptflow.core._utils import get_workspace_triad_from_local, render_jinja_
 from promptflow.exceptions import SystemErrorException, UserErrorException
 
 logger = LoggerFactory.get_logger(name=__name__)
-GPT4V_VERSION = "vision-preview"
+GPT4V_VERSIONS = ["vision-preview", "turbo-2024-04-09"]
 
 
 def update_dict_recursively(origin_dict, overwrite_dict):

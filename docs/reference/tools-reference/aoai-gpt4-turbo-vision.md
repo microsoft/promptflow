@@ -13,7 +13,7 @@ Azure OpenAI GPT-4 Turbo with Vision tool enables you to leverage your AzureOpen
 
     Browse to [Azure OpenAI Studio](https://oai.azure.com/) and sign in with the credentials associated with your Azure OpenAI resource. During or after the sign-in workflow, select the appropriate directory, Azure subscription, and Azure OpenAI resource.
 
-    Under Management select Deployments and Create a GPT-4 Turbo with Vision deployment by selecting model name: `gpt-4` and model version `vision-preview`.
+    Under Management select Deployments and Create a GPT-4 Turbo with Vision deployment by selecting model name: `gpt-4` and model version `turbo-2024-04-09`.
 
 ## Connection
 
