@@ -210,55 +210,57 @@ class FlowExecutor:
         :return: A new instance of FlowExecutor.
         :rtype: ~promptflow.executor.flow_executor.FlowExecutor
         """
-        env_exporter_setup = kwargs.get("env_exporter_setup", True)
-        if env_exporter_setup:
-            setup_exporter_from_environ()
+        working_dir = Flow._resolve_working_dir(flow_file, working_dir)
+        with _change_working_dir(working_dir):
+            env_exporter_setup = kwargs.get("env_exporter_setup", True)
+            if env_exporter_setup:
+                setup_exporter_from_environ()
 
-        if isinstance(flow_file, Prompty):
-            from ._prompty_executor import PromptyExecutor
+            if isinstance(flow_file, Prompty):
+                from ._prompty_executor import PromptyExecutor
 
-            return PromptyExecutor(flow_file=flow_file, working_dir=working_dir, storage=storage)
-        if hasattr(flow_file, "__call__") or inspect.isfunction(flow_file):
-            from ._script_executor import ScriptExecutor
+                return PromptyExecutor(flow_file=flow_file, working_dir=working_dir, storage=storage)
+            if hasattr(flow_file, "__call__") or inspect.isfunction(flow_file):
+                from ._script_executor import ScriptExecutor
 
-            return ScriptExecutor(flow_file, connections=connections, storage=storage)
-        if not isinstance(flow_file, (Path, str)):
-            raise NotImplementedError("Only support Path or str for flow_file.")
-        if is_flex_flow(flow_path=flow_file, working_dir=working_dir):
-            from ._script_executor import ScriptExecutor
+                return ScriptExecutor(flow_file, connections=connections, storage=storage)
+            if not isinstance(flow_file, (Path, str)):
+                raise NotImplementedError("Only support Path or str for flow_file.")
+            if is_flex_flow(flow_path=flow_file, working_dir=working_dir):
+                from ._script_executor import ScriptExecutor
 
-            return ScriptExecutor(
-                flow_file=Path(flow_file),
-                connections=connections,
-                working_dir=working_dir,
-                storage=storage,
-                init_kwargs=init_kwargs,
-            )
-        elif is_prompty_flow(file_path=flow_file):
-            from ._prompty_executor import PromptyExecutor
+                return ScriptExecutor(
+                    flow_file=Path(flow_file),
+                    connections=connections,
+                    working_dir=working_dir,
+                    storage=storage,
+                    init_kwargs=init_kwargs,
+                )
+            elif is_prompty_flow(file_path=flow_file):
+                from ._prompty_executor import PromptyExecutor
 
-            return PromptyExecutor(
-                flow_file=Path(flow_file),
-                working_dir=working_dir,
-                storage=storage,
-                init_kwargs=init_kwargs,
-            )
-        else:
-            if init_kwargs:
-                logger.warning(f"Got unexpected init args {init_kwargs} for non-script flow. Ignoring them.")
+                return PromptyExecutor(
+                    flow_file=Path(flow_file),
+                    working_dir=working_dir,
+                    storage=storage,
+                    init_kwargs=init_kwargs,
+                )
+            else:
+                if init_kwargs:
+                    logger.warning(f"Got unexpected init args {init_kwargs} for non-script flow. Ignoring them.")
 
-            name = kwargs.get("name", None)
-            flow = Flow.from_yaml(flow_file, working_dir=working_dir, name=name)
-            return cls._create_from_flow(
-                flow_file=flow_file,
-                flow=flow,
-                connections=connections,
-                working_dir=working_dir,
-                storage=storage,
-                raise_ex=raise_ex,
-                node_override=node_override,
-                line_timeout_sec=line_timeout_sec,
-            )
+                name = kwargs.get("name", None)
+                flow = Flow.from_yaml(flow_file, working_dir=working_dir, name=name)
+                return cls._create_from_flow(
+                    flow_file=flow_file,
+                    flow=flow,
+                    connections=connections,
+                    working_dir=working_dir,
+                    storage=storage,
+                    raise_ex=raise_ex,
+                    node_override=node_override,
+                    line_timeout_sec=line_timeout_sec,
+                )
 
     @classmethod
     def _create_from_flow(
@@ -274,7 +276,6 @@ class FlowExecutor:
         line_timeout_sec: Optional[int] = None,
     ):
         logger.debug("Start initializing the flow executor.")
-        working_dir = Flow._resolve_working_dir(flow_file, working_dir)
         if node_override:
             flow = flow._apply_node_overrides(node_override)
         flow = flow._apply_default_node_variants()
@@ -283,9 +284,7 @@ class FlowExecutor:
         if isinstance(connections, dict):
             connections = DictConnectionProvider(connections)
         tool_resolver = ToolResolver(working_dir, connections, package_tool_keys, message_format=flow.message_format)
-
-        with _change_working_dir(working_dir):
-            resolved_tools = [tool_resolver.resolve_tool_by_node(node) for node in flow.nodes]
+        resolved_tools = [tool_resolver.resolve_tool_by_node(node) for node in flow.nodes]
         flow = Flow(
             id=flow.id,
             name=flow.name,
