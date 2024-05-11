@@ -2872,6 +2872,101 @@ class TestCli:
         run = pf.runs.get(run_id)
         assert_batch_run_result(run, pf, assert_func)
 
+    def test_prompty_with_env(self, dev_connections, capfd):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            env_file = Path(temp_dir) / "connection.env"
+            aoai_connection = dev_connections.get("azure_open_ai_connection")
+            env = {
+                "MOCK_AZURE_DEVELOPMENT": "gpt-35-turbo",
+                "MOCK_AZURE_API_KEY": aoai_connection["value"]["api_key"],
+                "MOCK_AZURE_API_VERSION": aoai_connection["value"]["api_version"],
+                "MOCK_AZURE_ENDPOINT": aoai_connection["value"]["api_base"],
+            }
+            with open(env_file, "w") as f:
+                f.writelines([f"{key}={value}\n" for key, value in env.items()])
+
+            # Prompty test with environment variables
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{PROMPTY_DIR}/prompty_with_env.prompty",
+                "--inputs",
+                'question="what is the result of 1+1?"',
+                "-env",
+                str(env_file),
+            )
+            out, _ = capfd.readouterr()
+            assert "2" in out
+
+            env_params = [f"{key}={value}" for key, value in env.items()]
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{PROMPTY_DIR}/prompty_with_env.prompty",
+                "--inputs",
+                'question="what is the result of 1+1?"',
+                "-env",
+                *env_params,
+            )
+            out, _ = capfd.readouterr()
+            assert "2" in out
+
+            with pytest.raises(Exception) as ex:
+                run_pf_command(
+                    "flow",
+                    "test",
+                    "--flow",
+                    f"{PROMPTY_DIR}/prompty_with_env.prompty",
+                    "--inputs",
+                    'question="what is the result of 1+1?"',
+                    "-env",
+                    "invalid_path.env",
+                )
+            assert "cannot find the file" in str(ex.value)
+
+            with pytest.raises(Exception) as ex:
+                run_pf_command(
+                    "flow",
+                    "test",
+                    "--flow",
+                    f"{PROMPTY_DIR}/prompty_with_env.prompty",
+                    "--inputs",
+                    'question="what is the result of 1+1?"',
+                    "-env",
+                    "invalid_path.txt",
+                )
+            assert "expects file path endswith .env or KEY=VALUE [KEY=VALUE ...]" in str(ex.value)
+
+            # Test batch run
+            run_pf_command(
+                "run",
+                "create",
+                "--flow",
+                f"{PROMPTY_DIR}/prompty_with_env.prompty",
+                "--data",
+                f"{DATAS_DIR}/prompty_inputs.jsonl",
+                "-env",
+                str(env_file),
+            )
+            out, _ = capfd.readouterr()
+            assert "Completed" in out
+
+            # Test batch run
+            run_pf_command(
+                "run",
+                "create",
+                "--flow",
+                f"{PROMPTY_DIR}/prompty_with_env.prompty",
+                "--data",
+                f"{DATAS_DIR}/prompty_inputs.jsonl",
+                "-env",
+                *env_params,
+            )
+            out, _ = capfd.readouterr()
+            assert "Completed" in out
+
 
 def assert_batch_run_result(run, pf, assert_func):
     assert run.status == "Completed"

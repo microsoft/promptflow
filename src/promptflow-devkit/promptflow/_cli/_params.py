@@ -3,6 +3,9 @@
 # ---------------------------------------------------------
 
 import argparse
+from pathlib import Path
+
+import dotenv
 
 from promptflow._cli._completers._param_completers import run_name_completer
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME, PROMPT_FLOW_RUNS_DIR_NAME, CLIListOutputFormat, FlowType
@@ -34,6 +37,23 @@ class FlowTestInputAction(AppendToDictAction):  # pylint: disable=protected-acce
     def get_action(self, values, option_string):  # pylint: disable=no-self-use
         if len(values) == 1 and "=" not in values[0]:
             return load_input_data(values[0])
+        else:
+            return super().get_action(values, option_string)
+
+
+class EnvironmentVariablesAction(AppendToDictAction):  # pylint: disable=protected-access
+    def get_action(self, values, option_string):  # pylint: disable=no-self-use
+        if len(values) == 1 and "=" not in values[0]:
+            # Load environment variables in .env file.
+            if values[0].endswith(".env"):
+                if Path(values[0]).exists():
+                    return dotenv.dotenv_values(values[0])
+                else:
+                    raise Exception("Usage error: {} cannot find the file {}".format(option_string, values[0]))
+            else:
+                raise Exception(
+                    "Usage error: {} expects file path endswith .env or KEY=VALUE [KEY=VALUE ...]".format(option_string)
+                )
         else:
             return super().get_action(values, option_string)
 
@@ -94,8 +114,9 @@ def add_param_set_positional(parser):
 
 def add_param_environment_variables(parser):
     parser.add_argument(
+        "-env",
         "--environment-variables",
-        action=AppendToDictAction,
+        action=EnvironmentVariablesAction,
         help="Environment variables to set by specifying a property path and value. Example: --environment-variable "
         "key1='${my_connection.api_key}' key2='value2'. The value reference to connection keys will be resolved "
         "to the actual value, and all environment variables specified will be set into os.environ.",
