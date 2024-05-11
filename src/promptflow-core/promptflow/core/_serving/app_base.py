@@ -56,13 +56,10 @@ class PromptflowServingAppBasic(ABC):
         self.sample = get_sample_json(self.project_path, logger)
 
         self.init = kwargs.get("init", {})
-        try:
+        if not len(self.init):
             init_params = os.environ.get(PROMPTFLOW_FLOW_INIT_CONFIG, "{}")
             init_dict: dict = json.loads(init_params)
-            init_dict.update(self.init)
             self.init = init_dict
-        except Exception as e:
-            logger.error("Failed to retrieve init params from environment variable PROMPTFLOW_FLOW_INIT_CONFIG: ", e)
 
         logger.debug("Init params: " + str(self.init))
 

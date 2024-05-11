@@ -27,28 +27,28 @@ def render_jinja_template_content(template_content, *, trim_blocks=True, keep_tr
     return template.render(**kwargs)
 
 
-def init_executable(*, flow_dag: dict = None, flow_path: Path = None, working_dir: Path = None):
-    if flow_dag and flow_path:
+def init_executable(*, flow_data: dict = None, flow_path: Path = None, working_dir: Path = None):
+    if flow_data and flow_path:
         raise ValueError("flow_dag and flow_path cannot be both provided.")
-    if not flow_dag and not flow_path:
+    if not flow_data and not flow_path:
         raise ValueError("flow_dag or flow_path must be provided.")
-    if flow_dag and not working_dir:
+    if flow_data and not working_dir:
         raise ValueError("working_dir must be provided when flow_dag is provided.")
 
     if flow_path:
         flow_dir, flow_filename = resolve_flow_path(flow_path)
-        flow_dag = load_yaml(flow_dir / flow_filename)
+        flow_data = load_yaml(flow_dir / flow_filename)
         if not working_dir:
             working_dir = flow_dir
 
     from promptflow.contracts.flow import FlexFlow as ExecutableEagerFlow
     from promptflow.contracts.flow import Flow as ExecutableFlow
 
-    if is_flex_flow(yaml_dict=flow_dag):
-        return ExecutableEagerFlow._from_dict(flow_dag=flow_dag, working_dir=working_dir)
+    if is_flex_flow(yaml_dict=flow_data):
+        return ExecutableEagerFlow._from_dict(flow_data=flow_data, working_dir=working_dir)
 
     # for DAG flow, use data to init executable to improve performance
-    return ExecutableFlow._from_dict(flow_dag=flow_dag, working_dir=working_dir)
+    return ExecutableFlow._from_dict(flow_data=flow_data, working_dir=working_dir)
 
 
 # !!! Attention!!!: Please make sure you have contact with PRS team before changing the interface.

@@ -4,20 +4,13 @@
 
 import json
 import logging
-import os
 import sys
 from dataclasses import asdict, dataclass
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from promptflow._constants import (
-    DEFAULT_ENCODING,
-    LANGUAGE_KEY,
-    PROMPTFLOW_FLOW_INIT_CONFIG,
-    FlowLanguage,
-    MessageFormatType,
-)
+from promptflow._constants import DEFAULT_ENCODING, LANGUAGE_KEY, FlowLanguage, MessageFormatType
 from promptflow._utils.utils import _match_reference, _sanitize_python_variable_name, try_import
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts._errors import FlowDefinitionError
@@ -758,19 +751,19 @@ class Flow(FlowBase):
         """Load flow from yaml file."""
         working_dir = cls._parse_working_dir(flow_file, working_dir)
         with open(working_dir / flow_file, "r", encoding=DEFAULT_ENCODING) as fin:
-            flow_dag = load_yaml(fin)
+            flow_data = load_yaml(fin)
         # Name priority: name from payload > name from yaml content > working_dir.stem
         # For portal created flow, there is a meaningless predefined name in yaml, use name from payload to override it.
-        return Flow._from_dict(flow_dag=flow_dag, working_dir=working_dir, name=name)
+        return Flow._from_dict(flow_data=flow_data, working_dir=working_dir, name=name)
 
     @classmethod
-    def _from_dict(cls, flow_dag: dict, working_dir: Path, name=None) -> "Flow":
+    def _from_dict(cls, flow_data: dict, working_dir: Path, name=None) -> "Flow":
         """Load flow from dict."""
         cls._update_working_dir(working_dir)
         if name is None:
-            name = flow_dag.get("name", _sanitize_python_variable_name(working_dir.stem))
-        flow_dag["name"] = name
-        flow = Flow.deserialize(flow_dag)
+            name = flow_data.get("name", _sanitize_python_variable_name(working_dir.stem))
+        flow_data["name"] = name
+        flow = Flow.deserialize(flow_data)
         flow._set_tool_loader(working_dir)
         return flow
 
@@ -1027,7 +1020,7 @@ class FlexFlow(FlowBase):
         )
 
     @classmethod
-    def _from_dict(cls, flow_dag: dict, working_dir: Path, name=None) -> "FlexFlow":
+    def _from_dict(cls, flow_data: dict, working_dir: Path, name=None) -> "FlexFlow":
         """Load flow from dict."""
         from promptflow._core.entry_meta_generator import generate_flow_meta
 
@@ -1035,36 +1028,22 @@ class FlexFlow(FlowBase):
 
         Flow._update_working_dir(working_dir)
         if name is None:
-            name = flow_dag.get("name", _sanitize_python_variable_name(working_dir.stem))
-        flow_dag["name"] = name
+            name = flow_data.get("name", _sanitize_python_variable_name(working_dir.stem))
+        flow_data["name"] = name
 
-        entry = flow_dag.get("entry")
+        entry = flow_data.get("entry")
         entry_file = resolve_python_entry_file(entry=entry, working_dir=working_dir)
 
         meta_dict = generate_flow_meta(
             flow_directory=working_dir,
             source_path=entry_file,
-            data=flow_dag,
+            data=flow_data,
         )
         return cls.deserialize(meta_dict)
 
     def get_connection_names(self, environment_variables_overrides: Dict[str, str] = None):
         """Return connection names."""
-        from promptflow.core._model_configuration import MODEL_CONFIG_NAME_2_CLASS
-
         connection_names = super().get_connection_names(environment_variables_overrides=environment_variables_overrides)
-        try:
-            init_params = os.environ.get(PROMPTFLOW_FLOW_INIT_CONFIG, "{}")
-            init_dict: dict = json.loads(init_params)
-            for key, val in self.init.items():
-                if val.type in MODEL_CONFIG_NAME_2_CLASS:
-                    connection_names.add(init_dict.get(key, {}).get("connection", None))
-        except Exception as e:
-            logger.error(
-                "Failed to retrieve connection_names from environment variable PROMPTFLOW_FLOW_INIT_CONFIG: ", e
-            )
-
-        logger.debug("connection_names: ", connection_names)
 
         return set({item for item in connection_names if item})
 

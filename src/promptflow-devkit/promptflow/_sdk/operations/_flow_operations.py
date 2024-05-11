@@ -507,6 +507,7 @@ class FlowOperations(TelemetryMixin):
                     output_dir=output_dir,
                 )
             else:
+                # TODO: avoid using executable here
                 executable = init_executable(flow_path=flow.path, working_dir=flow.code)
                 return self._migrate_connections(
                     connection_names=executable.get_connection_names(),
