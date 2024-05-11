@@ -1105,7 +1105,9 @@ def get_flow_path(flow) -> Path:
     if isinstance(flow, DAGFlow):
         return flow.flow_dag_path.parent.resolve()
     if isinstance(flow, (FlexFlow, Prompty)):
-        return flow.path.parent.resolve()
+        # Use code path to return as flow path, since code path is the same as flow directory for yaml case and code
+        # path points to original code path in non-yaml case
+        return flow.code.resolve()
     raise ValueError(f"Unsupported flow type {type(flow)!r}")
 
 
