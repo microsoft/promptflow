@@ -310,7 +310,10 @@ def _print_tracing_url_from_azure_portal(
         return
 
     url = url.format(query=query)
-    print(f"You can view the traces in cloud from Azure portal: {url}")
+    print(
+        f"You can view the traces in the cloud from the Azure portal. "
+        f"Please note that the page may remain empty for a while until the traces are successfully uploaded:\n{url}."
+    )
 
 
 def _inject_res_attrs_to_environ(
@@ -371,7 +374,9 @@ def start_trace_with_devkit(collection: str, **kwargs: typing.Any) -> None:
     _logger.debug("kwargs: %s", kwargs)
     attrs = kwargs.get("attributes", None)
     run = kwargs.get("run", None)
+    flow_path = None
     if isinstance(run, Run):
+        flow_path = run._get_flow_dir().resolve()
         run_config = run._config
         run = run.name
     else:
@@ -441,13 +446,11 @@ def start_trace_with_devkit(collection: str, **kwargs: typing.Any) -> None:
     # print tracing url(s) when run is specified
     _print_tracing_url_from_local(pfs_port=pfs_port, collection=collection, exp=exp, run=run)
 
-    if run is not None:
-        # when run exists, we need to print the outputs trace link only after the run is completed and
-        # get uploaded to the cloud. Here is to remind user that local-to-cloud is indeed enabled while it
-        # may cost some time for the run to be completed.
+    if run is not None and run_config._is_cloud_trace_destination(path=flow_path):
+        trace_destination = run_config.get_trace_destination(path=flow_path)
         print(
-            "You can view the traces in azure portal. The portal link will be printed once the run is finished "
-            "and get uploaded to the cloud."
+            f"You can view the traces in azure portal since trace destination is set to: {trace_destination}. "
+            f"The link will be printed once the run is finished."
         )
     elif ws_triad is not None and is_azure_ext_installed:
         # if run does not exist, print collection trace link
