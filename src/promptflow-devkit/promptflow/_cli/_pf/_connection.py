@@ -202,12 +202,12 @@ def create_connection(file_path, params_override=None, name=None):
         logger.warning(f"Connection with name {connection.name} already exists. Updating it.")
         # Note: We don't set the existing secret back here, let user input the secrets.
     validate_and_interactive_get_secrets(connection)
-    connection = _get_pf_client().connections.create_or_update(connection)
+    connection = _get_pf_client().connections.create_or_update(connection, with_secrets=False)
     print(json.dumps(connection._to_dict(), indent=4))
 
 
 def show_connection(name):
-    connection = _get_pf_client().connections.get(name)
+    connection = _get_pf_client().connections.get(name, with_secrets=False)
     print(json.dumps(connection._to_dict(), indent=4))
 
 
@@ -229,7 +229,7 @@ def _upsert_connection_from_file(file, params_override=None):
         connection._secrets = existing_connection._secrets
     else:
         validate_and_interactive_get_secrets(connection)
-    connection = _get_pf_client().connections.create_or_update(connection)
+    connection = _get_pf_client().connections.create_or_update(connection, with_secrets=False)
     return connection
 
 
@@ -240,7 +240,7 @@ def update_connection(name, params_override=None):
     validate_and_interactive_get_secrets(connection, is_update=True)
     # Set the secrets not scrubbed, as _to_dict() dump scrubbed connections.
     connection._secrets = existing_connection._secrets
-    connection = _get_pf_client().connections.create_or_update(connection)
+    connection = _get_pf_client().connections.create_or_update(connection, with_secrets=False)
     print(json.dumps(connection._to_dict(), indent=4))
 
 

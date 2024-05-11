@@ -18,6 +18,7 @@ from promptflow._constants import (
     FLOW_FLEX_YAML,
     PROMPT_FLOW_DIR_NAME,
     PROMPTY_EXTENSION,
+    FlowType,
 )
 from promptflow._core._errors import MetaFileNotFound, MetaFileReadError
 from promptflow._utils.logger_utils import LoggerFactory
@@ -335,3 +336,13 @@ def parse_variant(variant: str) -> Tuple[str, str]:
             message=str(error),
             error=error,
         )
+
+
+def get_flow_type(flow_path: Union[str, Path, PathLike]) -> str:
+    if not isinstance(flow_path, (str, Path, PathLike)):
+        raise UserErrorException(f"flow_path type is {type(flow_path)}, but only support: str, Path, PathLike.")
+    if is_prompty_flow(file_path=flow_path):
+        return FlowType.PROMPTY
+    if is_flex_flow(flow_path=flow_path):
+        return FlowType.FLEX_FLOW
+    return FlowType.DAG_FLOW
