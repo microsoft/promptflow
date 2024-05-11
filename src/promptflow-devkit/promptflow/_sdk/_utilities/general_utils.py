@@ -277,7 +277,7 @@ def _resolve_folder_to_compress(base_path: Path, include: str, dst_path: Path) -
 
 @contextmanager
 def _merge_local_code_and_additional_includes(code_path: Path):
-    # TODO: unify variable names: flow_dir_path, flow_dag_path, flow_path
+    # TODO: unify variable names: flow_dir_path, flow_file_path, flow_path
 
     def additional_includes_copy(src, relative_path, target_dir):
         if src.is_file():
@@ -1103,7 +1103,7 @@ def get_flow_path(flow) -> Path:
     from promptflow._sdk.entities._flows.prompty import Prompty
 
     if isinstance(flow, DAGFlow):
-        return flow.flow_dag_path.parent.resolve()
+        return flow._flow_file_path.parent.resolve()
     if isinstance(flow, (FlexFlow, Prompty)):
         # Use code path to return as flow path, since code path is the same as flow directory for yaml case and code
         # path points to original code path in non-yaml case
