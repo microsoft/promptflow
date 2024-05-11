@@ -477,10 +477,10 @@ class TestPrompty:
 
         prompty = Prompty.load(
             source=f"{PROMPTY_DIR}/prompty_example.prompty",
-            model={"parameters": {"max_tokens": 0}},
+            model={"parameters": {"max_tokens": None}},
         )
         total_token = prompty.estimate_token_count(question="what is the result of 1+1?")
-        assert total_token == prompt_tokens + prompty._model.parameters.get("max_tokens")
+        assert total_token == prompt_tokens
 
     def test_prompty_with_reference_file(self):
         # Test run prompty with reference file

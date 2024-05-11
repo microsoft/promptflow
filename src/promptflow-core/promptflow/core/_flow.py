@@ -10,6 +10,7 @@ from typing import Any, Mapping, Union
 
 from promptflow._constants import DEFAULT_ENCODING, LANGUAGE_KEY, PROMPTY_EXTENSION, FlowLanguage
 from promptflow._utils.flow_utils import is_flex_flow, is_prompty_flow, resolve_flow_path
+from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.yaml_utils import load_yaml_string
 from promptflow.contracts.tool import ValueType
 from promptflow.core._errors import MissingRequiredInputError
@@ -31,6 +32,8 @@ from promptflow.exceptions import UserErrorException
 from promptflow.tracing import trace
 from promptflow.tracing._experimental import enrich_prompt_template
 from promptflow.tracing._trace import _traced
+
+logger = LoggerFactory.get_logger(name=__name__)
 
 
 class AbstractFlowBase(abc.ABC):
@@ -471,7 +474,9 @@ class Prompty(FlowBase):
         return str(prompt)
 
     def estimate_token_count(self, *args, **kwargs):
-        """Estimate the token count. Return the sum of prompt tokens and max tokens.
+        """Estimate the token count.
+        LLM will reject the request when prompt token + response token is greater than the maximum number of
+        tokens supported by the model. It is used to estimate the number of total tokens in this round of chat.
 
         :param args: positional arguments are not supported.
         :param kwargs: prompty inputs with key word arguments.
@@ -482,10 +487,17 @@ class Prompty(FlowBase):
             raise UserErrorException("Prompty can only be rendered with keyword arguments.")
         inputs = self._resolve_inputs(kwargs)
         prompt = convert_prompt_template(self._template, inputs, self._model.api)
-        response_max_token = self._model.parameters.get("max_tokens", 0)
-        if not isinstance(response_max_token, int):
+        response_max_token = self._model.parameters.get("max_tokens", None)
+        if response_max_token is None:
+            logger.warning(
+                "The maximum number of tokens that can be generated in the chat completion is not configured. "
+                "It will directly return prompt token count."
+            )
+        elif not isinstance(response_max_token, int):
             raise UserErrorException("Max_token needs to be integer.")
-        total_token = num_tokens_from_messages(prompt, self._model._model) + response_max_token
+        elif response_max_token <= 1:
+            raise UserErrorException(f"{response_max_token} is less than the minimum of max_tokens.")
+        total_token = num_tokens_from_messages(prompt, self._model._model) + (response_max_token or 0)
         return total_token
 
 
