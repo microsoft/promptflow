@@ -24,13 +24,13 @@ router = APIRouter()
 @router.post("/initialize")
 def initialize(request: InitializationRequest):
     with get_log_context(request, enable_service_logger=True):
-        # validate request and get operation context
+        # Validate request and get operation context.
         request.validate_request()
         operation_context = update_and_get_operation_context(request.operation_context)
         service_logger.info(f"Received batch init request, executor version: {operation_context.get_user_agent()}.")
-        # resolve environment variables
+        # Resolve environment variables.
         set_environment_variables(request.environment_variables)
-        # init batch coordinator to validate flow and create process pool
+        # Init batch coordinator to validate flow and create process pool.
         batch_coordinator = BatchCoordinator(
             working_dir=request.working_dir,
             flow_file=request.flow_file,
@@ -42,7 +42,7 @@ def initialize(request: InitializationRequest):
             init_kwargs=request.init_kwargs,
         )
         batch_coordinator.start()
-        # return json response
+        # Return some flow infos including the flow inputs definition and whether it has aggregation nodes.
         return batch_coordinator.get_flow_infos()
 
 
