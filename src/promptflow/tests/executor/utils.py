@@ -147,6 +147,8 @@ def construct_flow_execution_request_json(flow_folder, root=FLOW_ROOT, inputs=No
 def construct_initialization_request_json(
     flow_folder, root=FLOW_ROOT, flow_file="flow.dag.yaml", connections=None, init_kwargs=None
 ):
+    if flow_file == "flow.flex.yaml":
+        root = EAGER_FLOW_ROOT
     base_execution_request = construct_base_execution_request_json(
         flow_folder, root=root, connections=connections, flow_file=flow_file
     )
