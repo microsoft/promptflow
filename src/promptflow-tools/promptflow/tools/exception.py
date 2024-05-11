@@ -43,7 +43,7 @@ def to_openai_error_message(e: Exception) -> str:
               "gpt-4-vision-preview. You can refer to https://platform.openai.com/docs/guides/vision." \
               "If you are using azure openai connection, then please first go to your Azure OpenAI resource, " \
               "create a GPT-4 Turbo with Vision deployment by selecting model name: \"gpt-4\" and "\
-              "model version \"vision-preview\". You can refer to " \
+              "model version \"turbo-2024-04-09\". You can refer to " \
               "https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/gpt-with-vision"
         return f"OpenAI API hits {ex_type}: {msg}"
     elif ("\'response_format\' of type" in error_message and "is not supported with this model." in error_message)\

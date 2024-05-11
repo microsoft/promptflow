@@ -2,7 +2,7 @@ from typing import List, Dict
 
 from promptflow.tools.common import handle_openai_error, build_messages, \
     preprocess_template_string, find_referenced_image_set, convert_to_chat_list, init_azure_openai_client, \
-    post_process_chat_api_response, list_deployment_connections, build_deployment_dict, GPT4V_VERSION \
+    post_process_chat_api_response, list_deployment_connections, build_deployment_dict, GPT4V_VERSIONS \
 
 from promptflow._internal import ToolProvider, tool
 from promptflow.connections import AzureOpenAIConnection
@@ -23,7 +23,7 @@ def list_deployment_names(
 
     for item in deployment_collection:
         deployment = build_deployment_dict(item)
-        if deployment.version == GPT4V_VERSION:
+        if deployment.version in GPT4V_VERSIONS:
             cur_item = {
                 "value": deployment.name,
                 "display_value": deployment.name,

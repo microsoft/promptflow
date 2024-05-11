@@ -59,10 +59,13 @@ class TestAzureOpenAIGPT4V:
         with patch('promptflow.tools.aoai_gpt4v.list_deployment_connections') as mock_list:
             mock_list.return_value = {
                 Deployment("deployment1", "model1", "vision-preview"),
-                Deployment("deployment2", "model2", "version2")
+                Deployment("deployment2", "model2", "version2"),
+                Deployment("deployment3", "model3", "turbo-2024-04-09")
             }
 
             res = list_deployment_names("sub", "rg", "ws", "con")
-            assert len(res) == 1
+            assert len(res) == 2
             assert res[0].get("value") == "deployment1"
             assert res[0].get("display_value") == "deployment1"
+            assert res[1].get("value") == "deployment3"
+            assert res[1].get("display_value") == "deployment3"

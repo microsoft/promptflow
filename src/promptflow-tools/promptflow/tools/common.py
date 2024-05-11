@@ -36,7 +36,7 @@ try:
 except ImportError:
     INPUTS_TO_ESCAPE_PARAM_KEY = "_inputs_to_escape"
 
-GPT4V_VERSION = "vision-preview"
+GPT4V_VERSIONS = ["vision-preview", "turbo-2024-04-09"]
 VALID_ROLES = ["system", "user", "assistant", "function", "tool"]
 
 
@@ -494,7 +494,7 @@ def refine_extra_fields_not_permitted_error(connection, deployment_name, model):
                                                                     connection.name)
                 for item in deployment_collection:
                     if deployment_name == item.name:
-                        if item.properties.model.version in [GPT4V_VERSION]:
+                        if item.properties.model.version in GPT4V_VERSIONS:
                             return tsg
         elif isinstance(connection, OpenAIConnection) and model in ["gpt-4-vision-preview"]:
             return tsg
