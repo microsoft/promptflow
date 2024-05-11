@@ -33,6 +33,8 @@ class PromptyExecutor(ScriptExecutor):
         if isinstance(flow_file, Prompty):
             self.prompty = flow_file
         else:
+            if working_dir and not Path(flow_file).is_absolute():
+                flow_file = Path(working_dir) / flow_file
             self.prompty = Prompty.load(source=flow_file, **self._init_kwargs)
         super().__init__(flow_file=flow_file, connections=connections, working_dir=working_dir, storage=storage)
 

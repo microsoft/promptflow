@@ -199,9 +199,16 @@ def is_flex_flow(
     return isinstance(yaml_dict, dict) and "entry" in yaml_dict
 
 
-def is_prompty_flow(file_path: Union[str, Path], raise_error: bool = False):
+def is_prompty_flow(file_path: Union[str, Path], raise_error: bool = False, working_dir: Union[str, Path] = None):
     """Check if the flow is a prompty flow by extension of the flow file is .prompty."""
-    if not file_path or not Path(file_path).exists():
+    if file_path is None:
+        if raise_error:
+            raise UserErrorException("Prompty file cannot be None.")
+        else:
+            return False
+    if working_dir and not Path(file_path).is_absolute():
+        file_path = Path(working_dir) / file_path
+    if not file_path.exists():
         if raise_error:
             raise UserErrorException(f"Cannot find the prompty file {file_path}.")
         else:

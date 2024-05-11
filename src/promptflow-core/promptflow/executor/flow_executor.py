@@ -234,7 +234,7 @@ class FlowExecutor:
                 storage=storage,
                 init_kwargs=init_kwargs,
             )
-        elif is_prompty_flow(file_path=flow_file):
+        elif is_prompty_flow(file_path=flow_file, working_dir=working_dir):
             from ._prompty_executor import PromptyExecutor
 
             return PromptyExecutor(
