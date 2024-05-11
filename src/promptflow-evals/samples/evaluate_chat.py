@@ -15,9 +15,9 @@ if __name__ == "__main__":
 
     # Initialize Project Scope
     project_scope = {
-        "subscription_id": "b17253fa-f327-42d6-9686-f3e553e24763",
-        "resource_group_name": "anksing-vanilla-eval",
-        "project_name": "anksing-vanilla-eval",
+        "subscription_id": "<>",
+        "resource_group_name": "<>",
+        "project_name": "<>",
     }
 
     model_config = AzureOpenAIModelConfiguration(
