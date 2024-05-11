@@ -19,6 +19,7 @@ from promptflow.core._prompty_utils import (
     convert_prompt_template,
     format_llm_response,
     get_open_ai_client_by_connection,
+    handle_openai_error,
     num_tokens_from_messages,
     prepare_open_ai_request_params,
     send_request_to_llm,
@@ -405,9 +406,16 @@ class Prompty(FlowBase):
             return self._output_signature
 
     @trace
+    @handle_openai_error()
     def __call__(self, *args, **kwargs):
         """Calling flow as a function, the inputs should be provided with key word arguments.
         Returns the output of the prompty.
+
+        The retry mechanism for prompty execution initiates when a retryable error is detected, including LLM response
+        errors such as InternalServerError (>=500), RateLimitError (429), and UnprocessableEntityError (422).
+        It is designed to retry up to 10 times. Each retry interval grows exponentially, with the wait time not
+        exceeding 60 seconds. The aggregate waiting period for all retries is approximately 400 seconds.
+
         The function call throws UserErrorException: if the flow is not valid or the inputs are not valid.
         SystemErrorException: if the flow execution failed due to unexpected executor error.
 
@@ -470,8 +478,8 @@ class Prompty(FlowBase):
             raise UserErrorException("Prompty can only be rendered with keyword arguments.")
         inputs = self._resolve_inputs(kwargs)
         prompt = convert_prompt_template(self._template, inputs, self._model.api)
-        response_max_token = self._model.get("parameters", {}).get("max_token", 0)
-        total_token = num_tokens_from_messages(prompt) + response_max_token
+        response_max_token = self._model.parameters.get("max_token", 0)
+        total_token = num_tokens_from_messages(prompt, self._model._model) + response_max_token
         return total_token
 
 
@@ -490,6 +498,7 @@ class AsyncPrompty(Prompty):
     """
 
     @trace
+    @handle_openai_error()
     async def __call__(self, *args, **kwargs) -> Mapping[str, Any]:
         """Calling prompty as a function in async, the inputs should be provided with key word arguments.
         Returns the output of the prompty.
