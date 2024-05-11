@@ -1105,7 +1105,9 @@ def get_flow_path(flow) -> Path:
     if isinstance(flow, DAGFlow):
         return flow.flow_dag_path.parent.resolve()
     if isinstance(flow, (FlexFlow, Prompty)):
-        return flow.path.parent.resolve()
+        # Use code path to return as flow path, since code path is the same as flow directory for yaml case and code
+        # path points to original code path in non-yaml case
+        return flow.code.resolve()
     raise ValueError(f"Unsupported flow type {type(flow)!r}")
 
 
@@ -1148,3 +1150,18 @@ def resolve_flow_language(
                 f"Invalid flow path {file_path.as_posix()}, must exist and of suffix yaml, yml or prompty."
             )
     return yaml_dict.get(LANGUAGE_KEY, FlowLanguage.Python)
+
+
+def get_trace_destination(pf_client=None):
+    """get trace.destination
+
+    :param pf_client: pf_client object
+    :type pf_client: promptflow._sdk._pf_client.PFClient
+    :return:
+    """
+    from promptflow._sdk._configuration import Configuration
+
+    config = pf_client._config if pf_client else Configuration.get_instance()
+    trace_destination = config.get_trace_destination()
+
+    return trace_destination
