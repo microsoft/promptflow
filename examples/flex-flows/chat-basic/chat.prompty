@@ -7,7 +7,7 @@ model:
     type: azure_openai
     azure_deployment: gpt-35-turbo
   parameters:
-    temperature: 0.2    
+    temperature: 0.2
 inputs: 
   question:
     type: string

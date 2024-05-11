@@ -24,10 +24,8 @@ See <a href="https://platform.openai.com/docs/api-reference/chat/create#chat/cre
 - how to consume chat history in prompt.
     ```jinja
     {% for item in chat_history %}
-    user:
-    {{item.inputs.question}}
-    assistant:
-    {{item.outputs.answer}}
+    {{item.role}}:
+    {{item.content}}
     {% endfor %}
     ```
 
@@ -37,7 +35,7 @@ See <a href="https://platform.openai.com/docs/api-reference/chat/create#chat/cre
 
 - Setup connection
 
-Go to "Prompt flow" "Connections" tab. Click on "Create" button, select one of LLM tool supported connection types and fill in the configurations.
+Go to "Prompt flow" "Connections" tab. Click on "Create" button, select one of prompty supported connection types and fill in the configurations.
 
 Or use CLI to create connection:
 
