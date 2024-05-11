@@ -13,11 +13,11 @@ from dotenv import load_dotenv
 from filelock import FileLock
 from pytest_mock import MockerFixture
 
-from promptflow._cli._utils import AzureMLWorkspaceTriad
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
 from promptflow._core.connection_manager import ConnectionManager
-from promptflow._utils.context_utils import _change_working_dir
+from promptflow._sdk._constants import AzureMLWorkspaceTriad
 from promptflow._sdk.entities._connection import AzureOpenAIConnection
+from promptflow._utils.context_utils import _change_working_dir
 
 load_dotenv()
 

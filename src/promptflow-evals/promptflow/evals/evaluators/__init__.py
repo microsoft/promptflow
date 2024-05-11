@@ -5,6 +5,7 @@
 from ._chat import ChatEvaluator
 from ._coherence import CoherenceEvaluator
 from ._content_safety import (
+    ContentSafetyChatEvaluator,
     ContentSafetyEvaluator,
     HateUnfairnessEvaluator,
     SelfHarmEvaluator,
@@ -32,4 +33,5 @@ __all__ = [
     "SelfHarmEvaluator",
     "HateUnfairnessEvaluator",
     "ContentSafetyEvaluator",
+    "ContentSafetyChatEvaluator",
 ]
