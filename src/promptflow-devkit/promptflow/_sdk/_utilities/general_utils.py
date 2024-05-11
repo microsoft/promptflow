@@ -934,13 +934,14 @@ def overwrite_null_std_logger():
         sys.stderr = sys.stdout
 
 
-def generate_yaml_entry_without_recover(entry: Union[str, PathLike, Callable], code: Path = None):
-    """Generate yaml entry to run, will directly overwrite yaml if it already exists and not delete generated yaml."""
+def generate_yaml_entry_without_delete(entry: Union[str, PathLike, Callable], code: Path = None):
+    """Generate a flex flow yaml in temp folder and won't delete it."""
     from promptflow._proxy import ProxyFactory
 
     executor_proxy = ProxyFactory().get_executor_proxy_cls(FlowLanguage.Python)
     if callable(entry) or executor_proxy.is_flex_flow_entry(entry=entry):
-        flow_yaml_path, _ = create_temp_flex_flow_yaml_core(entry, code)
+        temp_dir = tempfile.mkdtemp()
+        flow_yaml_path = create_flex_flow_yaml_in_target(entry, temp_dir, code)
         return flow_yaml_path
     else:
         if code:
@@ -964,8 +965,7 @@ def generate_yaml_entry(entry: Union[str, PathLike, Callable], code: Path = None
         yield entry
 
 
-def create_temp_flex_flow_yaml_core(entry: Union[str, PathLike, Callable], code: Path = None):
-    logger.info("Create temporary entry for flex flow.")
+def resolve_entry_and_code(entry: Union[str, PathLike, Callable], code: Path = None):
     if callable(entry):
         entry = callable_to_entry_string(entry)
     if not code:
@@ -975,6 +975,27 @@ def create_temp_flex_flow_yaml_core(entry: Union[str, PathLike, Callable], code:
         code = Path(code)
         if not code.exists():
             raise UserErrorException(f"Code path {code.as_posix()} does not exist.")
+    return entry, code
+
+
+def create_flex_flow_yaml_in_target(entry: Union[str, PathLike, Callable], target_dir: str, code: Path = None):
+    """
+    Generate a flex flow yaml in target folder. The code field in the yaml points to the original flex yaml flow folder.
+    """
+    from promptflow._utils.flow_utils import dump_flow_dag_according_to_content
+
+    logger.info("Create temporary entry for flex flow.")
+    entry, code = resolve_entry_and_code(entry, code)
+    flow_dag = {"entry": entry}
+    code = "." if Path(target_dir).resolve().as_posix() == code.resolve().as_posix() else str(code.resolve())
+    flow_dag.update({"code": code})
+    flow_yaml_path = dump_flow_dag_according_to_content(flow_dag=flow_dag, flow_path=Path(target_dir))
+    return flow_yaml_path
+
+
+def create_temp_flex_flow_yaml_core(entry: Union[str, PathLike, Callable], code: Path = None):
+    logger.info("Create temporary entry for flex flow.")
+    entry, code = resolve_entry_and_code(entry, code)
     flow_yaml_path = code / FLOW_FLEX_YAML
     existing_content = None
 
@@ -1084,7 +1105,9 @@ def get_flow_path(flow) -> Path:
     if isinstance(flow, DAGFlow):
         return flow.flow_dag_path.parent.resolve()
     if isinstance(flow, (FlexFlow, Prompty)):
-        return flow.path.parent.resolve()
+        # Use code path to return as flow path, since code path is the same as flow directory for yaml case and code
+        # path points to original code path in non-yaml case
+        return flow.code.resolve()
     raise ValueError(f"Unsupported flow type {type(flow)!r}")
 
 
@@ -1127,3 +1150,18 @@ def resolve_flow_language(
                 f"Invalid flow path {file_path.as_posix()}, must exist and of suffix yaml, yml or prompty."
             )
     return yaml_dict.get(LANGUAGE_KEY, FlowLanguage.Python)
+
+
+def get_trace_destination(pf_client=None):
+    """get trace.destination
+
+    :param pf_client: pf_client object
+    :type pf_client: promptflow._sdk._pf_client.PFClient
+    :return:
+    """
+    from promptflow._sdk._configuration import Configuration
+
+    config = pf_client._config if pf_client else Configuration.get_instance()
+    trace_destination = config.get_trace_destination()
+
+    return trace_destination
