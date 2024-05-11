@@ -603,6 +603,8 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             flow.path = (Path(path) / flow.path).as_posix()
             flow._code_uploaded = True
 
+    # endregion
+
     def _get_telemetry_values(self, *args, **kwargs):
         activity_name = kwargs.get("activity_name", None)
         telemetry_values = super()._get_telemetry_values(*args, **kwargs)
