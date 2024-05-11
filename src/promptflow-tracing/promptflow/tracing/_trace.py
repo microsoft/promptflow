@@ -441,8 +441,6 @@ def _traced_async(
                 Tracer.pop(None, e)
                 raise
         token_collector.collect_openai_tokens_for_parent_span(span)
-        if not isinstance(output, AsyncIterator):
-            span.end()
         return output
 
     wrapped.__original_function = func
