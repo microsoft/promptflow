@@ -13,21 +13,21 @@
                 "line_number": 0,
                 "output": {
                     "nan": NaN,
-                    "infinity": Infinity
+                    "inf": Infinity
                 }
             },
             {
                 "line_number": 1,
                 "output": {
                     "nan": NaN,
-                    "infinity": Infinity
+                    "inf": Infinity
                 }
             },
             {
                 "line_number": 2,
                 "output": {
                     "nan": NaN,
-                    "infinity": Infinity
+                    "inf": Infinity
                 }
             }
         ],
