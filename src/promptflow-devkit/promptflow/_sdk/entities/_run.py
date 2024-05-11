@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from dateutil import parser as date_parser
 
-from promptflow._constants import FlowType, OutputsFolderName, TokenKeys
+from promptflow._constants import OutputsFolderName, TokenKeys
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
@@ -52,7 +52,13 @@ from promptflow._sdk._utilities.general_utils import (
 )
 from promptflow._sdk.entities._yaml_translatable import YAMLTranslatableMixin
 from promptflow._sdk.schemas._run import RunSchema
-from promptflow._utils.flow_utils import get_flow_lineage_id, is_flex_flow, is_prompty_flow, parse_variant
+from promptflow._utils.flow_utils import (
+    get_flow_lineage_id,
+    get_flow_type,
+    is_flex_flow,
+    is_prompty_flow,
+    parse_variant,
+)
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import UserErrorException
 
@@ -329,6 +335,7 @@ class Run(YAMLTranslatableMixin):
             command=properties_json.get(FlowRunProperties.COMMAND, None),
             outputs=properties_json.get(FlowRunProperties.OUTPUTS, None),
             column_mapping=properties_json.get(FlowRunProperties.COLUMN_MAPPING, None),
+            portal_url=obj.portal_url,
         )
 
     @classmethod
@@ -422,6 +429,7 @@ class Run(YAMLTranslatableMixin):
             properties=json.dumps(self.properties, default=asdict),
             data=Path(self.data).resolve().absolute().as_posix() if self.data else None,
             run_source=self._run_source,
+            portal_url=self._portal_url,
         )
 
     def _dump(self) -> None:
@@ -468,6 +476,8 @@ class Run(YAMLTranslatableMixin):
                 if exclude_debug_info:
                     exception_dict.pop("debugInfo", None)
                 result["error"] = exception_dict
+            if self._portal_url:
+                result[RunDataKeys.PORTAL_URL] = self._portal_url
         elif self._run_source == RunInfoSources.INDEX_SERVICE:
             result["creation_context"] = self._creation_context
             result["flow_name"] = self._experiment_name
@@ -874,12 +884,4 @@ class Run(YAMLTranslatableMixin):
     def _flow_type(self) -> str:
         """Get flow type of run."""
 
-        from promptflow._sdk._load_functions import load_flow
-        from promptflow._sdk.entities._flows import FlexFlow
-
-        if is_prompty_flow(self.flow):
-            return FlowType.PROMPTY
-        flow_obj = load_flow(source=self.flow)
-        if isinstance(flow_obj, FlexFlow):
-            return FlowType.FLEX_FLOW
-        return FlowType.DAG_FLOW
+        return get_flow_type(self.flow)

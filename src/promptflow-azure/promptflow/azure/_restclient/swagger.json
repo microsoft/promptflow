@@ -17879,6 +17879,10 @@
           "studioPortalEndpoint": {
             "type": "string",
             "nullable": true
+          },
+          "studioPortalTraceEndpoint": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

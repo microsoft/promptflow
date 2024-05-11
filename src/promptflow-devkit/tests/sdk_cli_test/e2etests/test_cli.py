@@ -1318,6 +1318,37 @@ class TestCli:
         finally:
             shutil.rmtree(output_path, ignore_errors=True)
 
+    def test_flex_flow_build(self):
+        from promptflow._cli._pf.entry import main
+
+        with tempfile.TemporaryDirectory() as temp:
+            temp = Path(temp)
+            cmd = (
+                "pf",
+                "flow",
+                "build",
+                "--source",
+                f"{EAGER_FLOWS_DIR}/chat-basic/flow.flex.yaml",
+                "--output",
+                temp.as_posix(),
+                "--format",
+                "docker",
+            )
+            sys.argv = list(cmd)
+            main()
+            assert (temp / "connections").is_dir()
+            assert (temp / "flow").is_dir()
+            assert (temp / "runit").is_dir()
+            assert (temp / "Dockerfile").is_file()
+            with open(temp / "Dockerfile", "r") as f:
+                assert r"/connections" in f.read()
+
+            origin_flow = Path(f"{EAGER_FLOWS_DIR}/chat-basic")
+            temp_flow = temp / "flow"
+            for file_path in origin_flow.rglob("*"):
+                relative_path = file_path.relative_to(origin_flow)
+                assert (temp_flow / relative_path).exists()
+
     def test_flow_build_with_ua(self, capsys):
         with pytest.raises(SystemExit):
             run_pf_command(

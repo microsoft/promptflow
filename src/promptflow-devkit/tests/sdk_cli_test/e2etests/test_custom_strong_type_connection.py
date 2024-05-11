@@ -4,7 +4,7 @@ import pydash
 import pytest
 from _constants import PROMPTFLOW_ROOT
 
-from promptflow._sdk._constants import SCRUBBED_VALUE, CustomStrongTypeConnectionConfigs
+from promptflow._sdk._constants import CustomStrongTypeConnectionConfigs
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk.entities import CustomStrongTypeConnection
 from promptflow.contracts.types import Secret
@@ -40,7 +40,7 @@ class TestCustomStrongTypeConnection:
                 "promptflow.connection.custom_type": "MyCustomConnection",
                 "promptflow.connection.module": "sdk_cli_test.e2etests.test_custom_strong_type_connection",
             },
-            "secrets": {"api_key": "******"},
+            "secrets": {"api_key": "test"},
         }
         # Update
         conn.configs["api_base"] = "test2"
@@ -53,7 +53,7 @@ class TestCustomStrongTypeConnection:
                 "promptflow.connection.custom_type": "MyCustomConnection",
                 "promptflow.connection.module": "sdk_cli_test.e2etests.test_custom_strong_type_connection",
             },
-            "secrets": {"api_key": "******"},
+            "secrets": {"api_key": "test"},
         }
         # List
         result = _client.connections.list()
@@ -79,7 +79,7 @@ class TestCustomStrongTypeConnection:
                 "promptflow.connection.custom_type": "MyCustomConnection",
                 "promptflow.connection.module": "sdk_cli_test.e2etests.test_custom_strong_type_connection",
             },
-            "secrets": {"api_key": "******"},
+            "secrets": {"api_key": "test"},
         }
         # Update
         custom_conn.configs["api_base"] = "test2"
@@ -92,7 +92,7 @@ class TestCustomStrongTypeConnection:
                 "promptflow.connection.custom_type": "MyCustomConnection",
                 "promptflow.connection.module": "sdk_cli_test.e2etests.test_custom_strong_type_connection",
             },
-            "secrets": {"api_key": "******"},
+            "secrets": {"api_key": "test"},
         }
         # List
         result = _client.connections.list()
@@ -106,19 +106,21 @@ class TestCustomStrongTypeConnection:
     def test_connection_get_and_update(self):
         # Test api key not updated
         name = f"Connection_{str(uuid.uuid4())[:4]}"
-        conn = MyCustomConnection(name=name, secrets={"api_key": "test"}, configs={"api_base": "test"})
+        conn = MyCustomConnection(name=name, secrets={"api_key": "test_key"}, configs={"api_base": "test"})
         result = _client.connections.create_or_update(conn)
-        assert result.secrets["api_key"] == SCRUBBED_VALUE
+        assert result.secrets["api_key"] == "test_key"
+        assert "test_key" not in str(result)  # Assert key scrubbed when print
         # Update api_base only Assert no exception
         result.configs["api_base"] = "test2"
         result = _client.connections.create_or_update(result)
         assert result._to_dict()["configs"]["api_base"] == "test2"
         # Assert value not scrubbed
-        assert result._secrets["api_key"] == "test"
+        assert result._secrets["api_key"] == "test_key"
         _client.connections.delete(name)
         # Invalid update
         with pytest.raises(Exception) as e:
             result._secrets = {}
+            result.secrets["api_key"] = "****"
             _client.connections.create_or_update(result)
         assert "secrets ['api_key'] value invalid, please fill them" in str(e.value)
 
