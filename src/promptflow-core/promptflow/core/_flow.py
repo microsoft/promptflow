@@ -478,7 +478,9 @@ class Prompty(FlowBase):
             raise UserErrorException("Prompty can only be rendered with keyword arguments.")
         inputs = self._resolve_inputs(kwargs)
         prompt = convert_prompt_template(self._template, inputs, self._model.api)
-        response_max_token = self._model.parameters.get("max_token", 0)
+        response_max_token = self._model.parameters.get("max_tokens", 0)
+        if not isinstance(response_max_token, int):
+            raise UserErrorException("Max_token needs to be integer.")
         total_token = num_tokens_from_messages(prompt, self._model._model) + response_max_token
         return total_token
 
