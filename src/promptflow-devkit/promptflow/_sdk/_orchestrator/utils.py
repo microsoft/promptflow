@@ -213,9 +213,21 @@ def override_flow_yaml(
     *,
     overrides: dict = None,
     drop_node_variants: bool = False,
+    init_kwargs: dict = None,
 ):
+    # generate meta before updating signatures since update signatures requires it.
+    if not isinstance(flow, Prompty):
+        ProxyFactory().create_inspector_proxy(flow.language).prepare_metadata(
+            flow_file=Path(flow.path), working_dir=Path(flow.code), init_kwargs=init_kwargs
+        )
     if isinstance(flow, FlexFlow):
         # update signatures for flex flow
+        # no variant overwrite for eager flow
+        for param in [tuning_node, variant, connections, overrides]:
+            if param:
+                logger.warning(
+                    "Eager flow does not support tuning node, variant, connection override. " f"Dropping params {param}"
+                )
         update_signatures(code=flow_dir_path, data=flow_dag)
     else:
         # always overwrite variant since we need to overwrite default variant if not specified.
@@ -233,6 +245,7 @@ def flow_overwrite_context(
     *,
     overrides: dict = None,
     drop_node_variants: bool = False,
+    init_kwargs: dict = None,
 ):
     """Override variant and connections in the flow."""
     flow_dag = flow._data
@@ -252,6 +265,7 @@ def flow_overwrite_context(
                 connections=connections,
                 overrides=overrides,
                 drop_node_variants=drop_node_variants,
+                init_kwargs=init_kwargs,
             )
             flow_dag.pop("additional_includes", None)
             dump_flow_dag_according_to_content(flow_dag=flow_dag, flow_path=Path(temp_dir))
@@ -270,6 +284,7 @@ def flow_overwrite_context(
                 connections=connections,
                 overrides=overrides,
                 drop_node_variants=drop_node_variants,
+                init_kwargs=init_kwargs,
             )
             flow_path = dump_flow_dag_according_to_content(flow_dag=flow_dag, flow_path=Path(temp_dir))
             if isinstance(flow, FlexFlow):
