@@ -43,7 +43,7 @@ def initialize(request: InitializationRequest):
         )
         batch_coordinator.start()
         # return json response
-        return {"status": "initialized"}
+        return batch_coordinator.get_flow_infos()
 
 
 @router.post("/execution")
