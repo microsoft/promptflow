@@ -154,8 +154,7 @@ class OpenAI(ToolProvider):
             params["frequency_penalty"] = frequency_penalty
 
         completion = openai_batch_chat(self._client, params)
-        return completion
-        # return post_process_chat_api_response(completion, stream, functions, tools)
+        return post_process_chat_api_response(completion, stream, functions, tools)
 
 
 register_apis(OpenAI)

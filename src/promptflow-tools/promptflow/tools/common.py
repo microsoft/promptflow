@@ -1026,6 +1026,7 @@ def init_azure_openai_client(connection: AzureOpenAIConnection):
 
 def openai_batch_chat(client, kwargs):
     try:
+        from openai.types.chat import ChatCompletion
         # construct the batch file content
         batch_file_content = {
             'custom_id': 'promptflow_batch_chat',
@@ -1061,11 +1062,26 @@ def openai_batch_chat(client, kwargs):
         # retrieve the output file content
         output_content = client.files.content(output_file_id)
 
+        lines = output_content.response.text.split('\n')
+
+        result = json.loads(lines[0])
+        body = result['response']['body']
+
+        chat_completion = ChatCompletion(
+            id=body['id'],
+            choices=body['choices'],
+            created=body['created'],
+            model=body['model'],
+            object=body['object'],
+            system_fingerprint=body['system_fingerprint'],
+            usage=body['usage']
+        )
+
         # delete the batch file
         client.files.delete(uploaded_file.id)
         client.files.delete(output_file_id)
 
-        return output_content
+        return chat_completion
     except Exception as e:
         error_message = f"OpenAI API hits exception: {type(e).__name__}: {str(e)}"
         raise LLMError(message=error_message) from e
