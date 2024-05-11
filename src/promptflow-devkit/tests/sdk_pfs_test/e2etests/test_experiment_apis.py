@@ -21,7 +21,7 @@ class TestExperimentAPIs:
             expected_activities=[
                 {"activity_name": "pf.flows.test", "first_call": False},
                 {"activity_name": "pf.flows.test", "first_call": False},
-                {"activity_name": "pf.experiment.test"},
+                {"activity_name": "pf.experiment._test_flow", "activity_type": "InternalCall"},
             ]
         ):
             experiment = pfs_op.experiment_test(
@@ -41,7 +41,7 @@ class TestExperimentAPIs:
             expected_activities=[
                 {"activity_name": "pf.flows.test", "first_call": False},
                 {"activity_name": "pf.flows.test", "first_call": False},
-                {"activity_name": "pf.experiment.test"},
+                {"activity_name": "pf.experiment._test_flow", "activity_type": "InternalCall"},
             ]
         ):
             experiment = pfs_op.experiment_test(
@@ -65,7 +65,7 @@ class TestExperimentAPIs:
                 {"activity_name": "pf.flows.test", "first_call": False},
                 {"activity_name": "pf.flows.test", "first_call": False},
                 {"activity_name": "pf.flows.test", "first_call": False},
-                {"activity_name": "pf.experiment.test"},
+                {"activity_name": "pf.experiment._test_flow", "activity_type": "InternalCall"},
             ]
         ):
             experiment = pfs_op.experiment_test(
@@ -83,7 +83,7 @@ class TestExperimentAPIs:
             expected_activities=[
                 {"activity_name": "pf.flows.test", "first_call": False},
                 {"activity_name": "pf.flows.test", "first_call": False},
-                {"activity_name": "pf.experiment.test"},
+                {"activity_name": "pf.experiment._test_flow", "activity_type": "InternalCall"},
             ]
         ):
             experiment = pfs_op.experiment_test(
@@ -106,7 +106,7 @@ class TestExperimentAPIs:
             expected_activities=[
                 {"activity_name": "pf.flows.test", "first_call": False},
                 {"activity_name": "pf.flows.test", "first_call": False},
-                {"activity_name": "pf.experiment.test"},
+                {"activity_name": "pf.experiment._test_flow", "activity_type": "InternalCall"},
             ]
         ):
             experiment = pfs_op.experiment_test(
@@ -131,7 +131,7 @@ class TestExperimentAPIs:
             expected_activities=[
                 {"activity_name": "pf.flows.test", "first_call": False},
                 {"activity_name": "pf.flows.test", "first_call": False},
-                {"activity_name": "pf.experiment.test"},
+                {"activity_name": "pf.experiment._test_flow", "activity_type": "InternalCall"},
             ]
         ):
             experiment = pfs_op.experiment_test(
@@ -154,7 +154,7 @@ class TestExperimentAPIs:
             expected_activities=[
                 {"activity_name": "pf.flows.test", "first_call": False},
                 {"activity_name": "pf.flows.test", "first_call": False},
-                {"activity_name": "pf.experiment.test"},
+                {"activity_name": "pf.experiment._test_flow", "activity_type": "InternalCall"},
             ]
         ):
             experiment = pfs_op.experiment_test(
@@ -179,7 +179,7 @@ class TestExperimentAPIs:
                 {"activity_name": "pf.flows.test", "first_call": False},
                 {"activity_name": "pf.flows.test", "first_call": False},
                 {"activity_name": "pf.flows.test", "first_call": False},
-                {"activity_name": "pf.experiment.test"},
+                {"activity_name": "pf.experiment._test_flow", "activity_type": "InternalCall"},
             ]
         ):
             experiment = pfs_op.experiment_test(
@@ -205,7 +205,7 @@ class TestExperimentAPIs:
                 {"activity_name": "pf.flows.test", "first_call": False},
                 {"activity_name": "pf.flows.test", "first_call": False},
                 {"activity_name": "pf.flows.test", "first_call": False},
-                {"activity_name": "pf.experiment.test"},
+                {"activity_name": "pf.experiment._test_flow", "activity_type": "InternalCall"},
             ]
         ):
             experiment = pfs_op.experiment_test(
@@ -229,7 +229,7 @@ class TestExperimentAPIs:
                 {"activity_name": "pf.flows.test", "first_call": False},
                 {"activity_name": "pf.flows.test", "first_call": False},
                 {"activity_name": "pf.flows.test", "first_call": False},
-                {"activity_name": "pf.experiment.test"},
+                {"activity_name": "pf.experiment._test_flow", "activity_type": "InternalCall"},
             ]
         ):
             experiment = pfs_op.experiment_test(
@@ -255,7 +255,7 @@ class TestExperimentAPIs:
             expected_activities=[
                 {"activity_name": "pf.flows.test", "first_call": False},
                 {"activity_name": "pf.flows.test", "first_call": False},
-                {"activity_name": "pf.experiment.test"},
+                {"activity_name": "pf.experiment._test_flow", "activity_type": "InternalCall"},
             ]
         ):
             experiment = pfs_op.experiment_test(
@@ -272,7 +272,7 @@ class TestExperimentAPIs:
         with check_activity_end_telemetry(
             expected_activities=[
                 {"activity_name": "pf.flows.test", "first_call": False},
-                {"activity_name": "pf.experiment.test"},
+                {"activity_name": "pf.experiment._test_flow", "activity_type": "InternalCall"},
             ]
         ):
             experiment = pfs_op.experiment_test_with_skip(
@@ -293,7 +293,7 @@ class TestExperimentAPIs:
             expected_activities=[
                 {"activity_name": "pf.flows.test", "first_call": False},
                 {"activity_name": "pf.flows.test", "first_call": False},
-                {"activity_name": "pf.experiment.test"},
+                {"activity_name": "pf.experiment._test_flow", "activity_type": "InternalCall"},
             ]
         ):
             experiment = pfs_op.experiment_test_with_skip(

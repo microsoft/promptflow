@@ -4,6 +4,7 @@
 import json
 import os
 import re
+from configparser import ConfigParser
 from os import PathLike
 from pathlib import Path
 from typing import Dict, Optional, Tuple, Union
@@ -186,3 +187,25 @@ def load_inputs_from_sample(sample: Union[dict, str, PathLike]):
             return json.load(f)
     else:
         raise InvalidSampleError("Only dict and json file are supported as sample in prompty.")
+
+
+def get_workspace_triad_from_local() -> tuple:
+    subscription_id = None
+    resource_group_name = None
+    workspace_name = None
+    azure_config_path = Path.home() / ".azure"
+    config_parser = ConfigParser()
+    # subscription id
+    try:
+        config_parser.read_file(open(azure_config_path / "clouds.config"))
+        subscription_id = config_parser["AzureCloud"]["subscription"]
+    except Exception:  # pylint: disable=broad-except
+        pass
+    # resource group name & workspace name
+    try:
+        config_parser.read_file(open(azure_config_path / "config"))
+        resource_group_name = config_parser["defaults"]["group"]
+        workspace_name = config_parser["defaults"]["workspace"]
+    except Exception:  # pylint: disable=broad-except
+        pass
+    return subscription_id, resource_group_name, workspace_name

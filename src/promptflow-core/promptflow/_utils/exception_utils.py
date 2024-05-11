@@ -103,7 +103,9 @@ class ErrorResponse:
 
     def get_user_execution_error_info(self):
         """Get user tool execution error info from additional info."""
-        user_execution_error_info = self.get_additional_info(ADDITIONAL_INFO_USER_EXECUTION_ERROR)
+        user_execution_error_info = self.get_additional_info(
+            ADDITIONAL_INFO_USER_EXECUTION_ERROR
+        ) or self.get_additional_info(ADDITIONAL_INFO_FLEX_FLOW_ERROR)
         if not user_execution_error_info or not isinstance(user_execution_error_info, dict):
             return {}
         return user_execution_error_info

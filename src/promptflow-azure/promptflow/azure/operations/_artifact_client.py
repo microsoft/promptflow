@@ -63,8 +63,9 @@ class AsyncArtifactClient:
             async with httpx.AsyncClient(verify=False) as client:
                 response = await client.post(url, headers=self._get_header(), json=payload)
                 if response.status_code == 401 or response.status_code == 403:
-                    # if it's auth issue, return auth_error_message
-                    raise UserAuthenticationError(response.text)
+                    # if it's auth issue, raise auth error
+                    error_message = f"{error_msg_prefix}. Code={response.status_code}. Message={response.text}"
+                    raise UserAuthenticationError(error_message)
                 elif response.status_code != 200:
                     error_message = f"{error_msg_prefix}. Code={response.status_code}. Message={response.text}"
                     logger.error(error_message)

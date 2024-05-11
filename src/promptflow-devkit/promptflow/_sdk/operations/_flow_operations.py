@@ -43,7 +43,7 @@ from promptflow._sdk._utilities.general_utils import (
     copy_tree_respect_template_and_ignore_file,
     generate_flow_tools_json,
     generate_random_string,
-    generate_yaml_entry_without_recover,
+    generate_yaml_entry_without_delete,
     json_load,
     logger,
 )
@@ -57,6 +57,7 @@ from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.flow_utils import (
     dump_flow_result,
+    get_flow_type,
     is_executable_chat_flow,
     is_flex_flow,
     is_prompty_flow,
@@ -108,7 +109,7 @@ class FlowOperations(TelemetryMixin):
         :rtype: dict
         """
         experiment = kwargs.pop("experiment", None)
-        flow = generate_yaml_entry_without_recover(entry=flow)
+        flow = generate_yaml_entry_without_delete(entry=flow)
         if Configuration.get_instance().is_internal_features_enabled() and experiment:
             if variant is not None or node is not None:
                 error = ValueError("--variant or --node is not supported experiment is specified.")
@@ -117,7 +118,7 @@ class FlowOperations(TelemetryMixin):
                     message=str(error),
                     error=error,
                 )
-            return self._client._experiments._test(
+            return self._client._experiments._test_flow(
                 flow=flow,
                 inputs=inputs,
                 environment_variables=environment_variables,
@@ -337,7 +338,7 @@ class FlowOperations(TelemetryMixin):
         """
         from promptflow._sdk._load_functions import load_flow
 
-        flow = generate_yaml_entry_without_recover(entry=flow)
+        flow = generate_yaml_entry_without_delete(entry=flow)
         flow = load_flow(flow)
         flow.context.variant = variant
 
@@ -1003,11 +1004,12 @@ class FlowOperations(TelemetryMixin):
             from promptflow.contracts.tool import ValueType
             from promptflow.core._model_configuration import PromptyModelConfiguration
 
-            flow_meta = {"inputs": entry._data.get("inputs", {})}
-            if "outputs" in entry._data:
-                flow_meta["outputs"] = entry._data.get("outputs")
-            elif include_primitive_output:
-                flow_meta["outputs"] = {"output": {"type": "string"}}
+            flow_meta = {
+                "inputs": entry._core_prompty._get_input_signature(),
+            }
+            output_signature = entry._core_prompty._get_output_signature(include_primitive_output)
+            if output_signature:
+                flow_meta["outputs"] = output_signature
             init_dict = {}
             for field in fields(PromptyModelConfiguration):
                 init_dict[field.name] = {"type": ValueType.from_type(field.type).value}
@@ -1198,3 +1200,15 @@ class FlowOperations(TelemetryMixin):
             sample=sample,
             **kwargs,
         )
+
+    def _get_telemetry_values(self, *args, **kwargs):
+        activity_name = kwargs.get("activity_name", None)
+        telemetry_values = super()._get_telemetry_values(*args, **kwargs)
+        try:
+            if activity_name == "pf.flows.test":
+                flow = kwargs.get("flow", None) or args[0]
+                telemetry_values["flow_type"] = get_flow_type(flow)
+        except Exception as e:
+            logger.error(f"Failed to get telemetry values: {str(e)}")
+
+        return telemetry_values

@@ -55,7 +55,7 @@ from promptflow._sdk._orm.orchestrator import Orchestrator as ORMOrchestrator
 from promptflow._sdk._orm.run_info import RunInfo as ORMRunInfo
 from promptflow._sdk._utilities.general_utils import overwrite_null_std_logger
 from promptflow._sdk.entities import Run
-from promptflow._sdk.entities._experiment import Experiment, ExperimentTemplate
+from promptflow._sdk.entities._experiment import CommandNode, Experiment, ExperimentTemplate, FlowNode
 from promptflow._sdk.operations import RunOperations
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.flow_utils import resolve_flow_path
@@ -85,6 +85,43 @@ class ExperimentOrchestrator:
     def test(
         self,
         template: ExperimentTemplate,
+        inputs=None,
+        **kwargs,
+    ):
+        """Test experiment.
+
+        :param template: Experiment template to test.
+        :type template: ~promptflow.entities.ExperimentTemplate
+        :param inputs: Input parameters for experiment.
+        :type inputs: dict
+        """
+        logger.info(f"Testing experiment {template._base_path.absolute().as_posix()}.")
+        start_nodes = [node for node in template.nodes if len(ExperimentHelper._prepare_single_node_edges(node)) == 0]
+        if not start_nodes:
+            raise ExperimentValueError(f"Not found start node in experiment {template.dir_name!r}.")
+
+        inputs = inputs or {}
+        logger.info(f"Found start nodes {[node.name for node in start_nodes]} for experiment.")
+        nodes_to_test = ExperimentHelper.resolve_nodes_to_execute(template, start_nodes)
+        logger.info(f"Resolved nodes to test {[node.name for node in nodes_to_test]} for experiment.")
+        # If inputs, override experiment inputs.
+        test_context = ExperimentTemplateTestContext(
+            template,
+            override_inputs=inputs,
+            output_path=kwargs.get("output_path"),
+            session=kwargs.get("session"),
+        )
+
+        for node in nodes_to_test:
+            logger.info(f"Testing node {node.name}...")
+            node_result = self._test_node(node, test_context)
+            test_context.add_node_result(node.name, node_result)
+        logger.info("Testing completed. See full logs at %s.", test_context.output_path.as_posix())
+        return test_context.node_results
+
+    def test_flow(
+        self,
+        template: ExperimentTemplate,
         flow: Union[str, Path] = None,
         inputs=None,
         environment_variables=None,
@@ -98,7 +135,7 @@ class ExperimentOrchestrator:
         :type template: ~promptflow.entities.ExperimentTemplate
         :param inputs: Input parameters for flow.
         :type inputs: dict
-        :param environment_variables: Environment variables for flow.
+        :param environment_variables: Environment variables when test flow in experiment.
         :type environment_variables: dict
         """
         if flow is not None:
@@ -119,7 +156,9 @@ class ExperimentOrchestrator:
         else:
             logger.info(f"Testing experiment {template._base_path.absolute().as_posix()}.")
             start_nodes = [
-                node for node in template.nodes if len(ExperimentHelper._prepare_single_node_edges(node)) == 0
+                node
+                for node in template.nodes
+                if len(ExperimentHelper._prepare_single_node_edges(node)) == 0 and node.type == ExperimentNodeType.FLOW
             ]
             if not start_nodes:
                 raise ExperimentValueError(f"Not found start node in experiment {template.dir_name!r}.")
@@ -136,7 +175,7 @@ class ExperimentOrchestrator:
         # If inputs, use the inputs as experiment data, else read the first line in template data
         test_context = ExperimentTemplateTestContext(
             template,
-            inputs=inputs,
+            override_data=inputs,
             environment_variables=environment_variables,
             output_path=kwargs.get("output_path"),
             session=kwargs.get("session"),
@@ -185,7 +224,7 @@ class ExperimentOrchestrator:
         # If inputs, use the inputs as experiment data, else read the first line in template data
         test_context = ExperimentTemplateTestContext(
             template,
-            inputs=inputs,
+            override_data=inputs,
             environment_variables=environment_variables,
             output_path=kwargs.get("output_path"),
             session=kwargs.get("session"),
@@ -223,14 +262,42 @@ class ExperimentOrchestrator:
             return self._test_chat_group_node(node, test_context)
         raise ExperimentValueError(f"Unknown experiment node {node.name!r} type {node.type!r}")
 
-    def _test_flow_node(self, node, test_context):
+    def _resolve_command_node_outputs_for_test(self, used_node_results, node, test_context):
+        """Read the first line data from command node outputs folder for test."""
+        # Example: {'node': {"output_path": "a/b/c"}} -> {'node': {"output_path": {"data1": "abc"}}}
+        resolved_results = {}
+        from promptflow._constants import MessageFormatType
+        from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
+
+        # Note: Hardcode to basic now.
+        processor = BatchInputsProcessor(
+            working_dir=node.path, flow_inputs=None, message_format=MessageFormatType.BASIC
+        )
+        for referenced_node_name, node_results in used_node_results.items():
+            if referenced_node_name not in test_context.command_node_names:
+                resolved_results[f"{referenced_node_name}.outputs"] = node_results
+                continue
+            logger.info(
+                f"{referenced_node_name!r} is a command node, "
+                f"resolving test inputs from outputs for {node.name} node execution."
+            )
+            # Example node results: {"output1": [{"url": xx}], "output2": [{"number": 111]}}
+            node_results = processor._resolve_input_data_and_check(input_dirs=node_results)
+            # Take the first line of data
+            resolved_results.update({f"{referenced_node_name}.outputs.{k}": v[0] for k, v in node_results.items()})
+        logger.debug(f"Resolved command node {node.name!r} outputs {resolved_results}.")
+        return resolved_results
+
+    def _test_flow_node(self, node: FlowNode, test_context):
         # Resolve experiment related inputs
         inputs_mapping = ExperimentHelper.resolve_column_mapping(node.name, node.inputs, test_context.test_inputs)
         data, runs = ExperimentHelper.get_referenced_data_and_run(
             node.name, node.type, node.inputs, test_context.test_data, test_context.node_results
         )
+        # Read first line data for command node run results
+        referenced_node_results = self._resolve_command_node_outputs_for_test(runs, node, test_context)
         # Add data, run inputs/outputs to binding context for inputs mapping resolve.
-        binding_context = {**{f"data.{k}": v for k, v in data.items()}, **{f"{k}.outputs": v for k, v in runs.items()}}
+        binding_context = {**{f"data.{k}": v for k, v in data.items()}, **referenced_node_results}
         binding_context.update(**{f"{k}.inputs": test_context.node_inputs.get(k, {}) for k in runs.keys()})
         logger.debug(f"Node {node.name!r} binding context {binding_context}.")
         # E.g. inputs_mapping: {'url': '${data.my_data.url}'}  inputs_data: {"data.my_data": {"url": "http://abc"}}
@@ -251,8 +318,47 @@ class ExperimentOrchestrator:
             init=node.init,
         )
 
-    def _test_command_node(self, *args, **kwargs):
-        raise NotImplementedError
+    def _test_command_node(self, node: CommandNode, test_context):
+        logger.debug("Dumping data and node test output to file for command node testing.")
+
+        def _dump_data(data_dict, base_dir, is_data=False):
+            updated_data_dict = {}
+            base_dir = Path(base_dir)
+            base_dir.mkdir(parents=True, exist_ok=True)
+            for name, data in data_dict.items():
+                if name in test_context.command_node_names:
+                    # Command node outputs already in files
+                    continue
+                file_path = base_dir / f"{name}.json"
+                name = f"data.{name}" if is_data else f"{name}.outputs"
+                updated_data_dict[name] = file_path.as_posix()
+                # DO NOT reuse file here as user could test multiple times
+                with open(file_path, "w") as f:
+                    json.dump(data, f)
+            return updated_data_dict
+
+        # Dump data and node results to file
+        # {'my_data': {'url': 'https://www.youtube.com/watch?v=kYqRtjDBci8'}} -> {'data.my_data': <path>}
+        data_inputs = _dump_data(test_context.test_data, test_context.output_path / "data", is_data=True)
+        # {'node': {'url': 'https://www.youtube.com/watch?v=kYqRtjDBci8'}} -> {'node': <path>}
+        node_results = _dump_data(test_context.node_results, test_context.output_path / "outputs")
+        # resolve inputs & outputs for command preparing
+        # Merge experiment data, experiment inputs, and node results
+        all_inputs = {**data_inputs, **node_results, **{f"inputs.{k}": v for k, v in test_context.test_inputs.items()}}
+        # e.g. input_path: ${data.my_data} -> ${inputs.input_path}: real_data_path
+        inputs = ExperimentCommandSubmitter._resolve_inputs(node.name, node.inputs, all_inputs)
+        node_output_dir = test_context.output_path / node.name
+        logger.debug("Node %s base output dir %s.", node.name, node_output_dir)
+        outputs = ExperimentCommandSubmitter._resolve_outputs(node.name, node.outputs, node_output_dir)
+        # replace to command
+        command = ExperimentCommandSubmitter._resolve_command(node.name, node.command, inputs, outputs)
+        # Resolve connection env var on node
+        environment_variables = {**node.environment_variables, **test_context.environment_variables}
+        SubmitterHelper.resolve_environment_variables(environment_variables=environment_variables)
+        SubmitterHelper.init_env(environment_variables=environment_variables)
+        ExperimentCommandExecutor.run(command, node.code, test_context.output_path / "log.txt")
+        # Return dir path as command node testing result
+        return outputs
 
     def _test_chat_group_node(self, node, test_context):
         from promptflow._sdk.entities._chat_group._chat_group import ChatGroup
@@ -271,7 +377,7 @@ class ExperimentOrchestrator:
         :type nodes: list
         :param from_nodes: The branches in experiment to be executed.
         :type from_nodes: list
-        :param attempt: The number of attempts, it's used to records the experiment execution log.
+        :param attempt: The number of attempts, it's used to record the experiment execution log.
         :type attempt: int
         :return: Experiment info.
         :rtype: ~promptflow.entities.Experiment
@@ -755,14 +861,12 @@ class ExperimentNodeRun(Run):
 
 
 class ExperimentTemplateContext:
-    def __init__(self, template: ExperimentTemplate, environment_variables=None, session=None, **kwargs):
+    def __init__(self, template: ExperimentTemplate, session=None, **kwargs):
         """Context for experiment template.
         :param template: Template object to get definition of experiment.
-        :param environment_variables: Environment variables specified for test.
         :param session: The session id for the test trace.
         """
         self.template = template
-        self.environment_variables = environment_variables or {}
         self._experiment_context = self._get_experiment_context()
         # Generate line run id for node
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
@@ -840,7 +944,8 @@ class ExperimentTemplateTestContext(ExperimentTemplateContext):
     def __init__(
         self,
         template: ExperimentTemplate,
-        inputs=None,
+        override_data=None,
+        override_inputs=None,
         environment_variables=None,
         output_path=None,
         session=None,
@@ -849,16 +954,19 @@ class ExperimentTemplateTestContext(ExperimentTemplateContext):
         """
         Test context for experiment template.
         :param template: Template object to get definition of experiment.
-        :param inputs: User inputs when calling test command.
+        :param override_data: User inputs when calling test command.
         :param environment_variables: Environment variables specified for test.
         :param output_path: The custom output path.
         :param session: The session id for the test trace.
         """
-        super().__init__(template, environment_variables=environment_variables, session=session, **kwargs)
+        super().__init__(template, session=session, **kwargs)
+        override_inputs = override_inputs or {}
+        self.environment_variables = environment_variables or {}
         self.node_results = {}  # E.g. {'main': {'category': 'xx', 'evidence': 'xx'}}
         self.node_inputs = {}  # E.g. {'main': {'url': 'https://abc'}}
-        self.test_data = ExperimentHelper.prepare_test_data(inputs, template)
-        self.test_inputs = {input.name: input.default for input in template.inputs}
+        self.test_data = ExperimentHelper.prepare_test_data(override_data, template)
+        self.test_inputs = {input.name: override_inputs.get(input.name, input.default) for input in template.inputs}
+        self.command_node_names = set({node.name for node in template.nodes if node.type == ExperimentNodeType.COMMAND})
         # TODO: Update session part after test session is supported
         if output_path:
             self.output_path = Path(output_path)
@@ -888,13 +996,13 @@ class ExperimentTemplateTestContext(ExperimentTemplateContext):
 
 class ExperimentHelper:
     @staticmethod
-    def prepare_test_data(inputs, template: ExperimentTemplate) -> dict:
+    def prepare_test_data(override_data, template: ExperimentTemplate) -> dict:
         """Prepare test data.
-        If inputs is given, use it for all test data.
+        If override_data is given, use it for all test data.
         Else, read the first line of template data path for test."""
         template_test_data = {}
         for data in template.data:
-            data_line = inputs or next(iter(load_data(local_path=data.path)), None)
+            data_line = override_data or next(iter(load_data(local_path=data.path)), None)
             if not data_line:
                 raise ExperimentValueError(f"Experiment data {data.name!r} is empty.")
             template_test_data[data.name] = data_line
@@ -1115,66 +1223,69 @@ class ExperimentCommandSubmitter:
         self._submit_command_run(run=run, local_storage=local_storage)
         return self.run_operations.get(name=run.name)
 
-    def _resolve_inputs(self, run: ExperimentNodeRun):
+    @classmethod
+    def _resolve_inputs(cls, node_name, column_mapping, input_data):
         """Resolve binding inputs to constant values."""
         # e.g. "input_path": "${data.my_data}" -> "${inputs.input_path}": "real_data_path"
-        logger.info("Start resolve node %s inputs.", run.node.name)
+        logger.info("Start resolve node %s inputs.", node_name)
 
-        logger.debug(f"Resolved node {run.node.name} binding inputs {run._input_data}.")
+        logger.debug(f"Resolved node {node_name} binding inputs {input_data}.")
         # resolve inputs
         resolved_inputs = {}
-        for name, value in run.column_mapping.items():
+        for name, value in column_mapping.items():
             if not isinstance(value, str) or not value.startswith("${"):
                 resolved_inputs[name] = value
                 continue
             # my_input: "${run.outputs}" -> my_input: run_outputs_path
             input_key = value.lstrip("${").rstrip("}")
-            if input_key in run._input_data:
-                resolved_inputs[name] = run._input_data[input_key]
+            if input_key in input_data:
+                resolved_inputs[name] = input_data[input_key]
                 continue
             logger.warning(
-                f"Possibly invalid partial input value binding {value!r} found for node {run.node.name!r}. "
+                f"Possibly invalid partial input value binding {value!r} found for node {node_name!r}. "
                 "Only full binding is supported for command node. For example: ${data.my_data}, ${main_node.outputs}."
             )
             resolved_inputs[name] = value
-        logger.debug(f"Resolved node {run.node.name} inputs {resolved_inputs}.")
+        logger.debug(f"Resolved node {node_name} inputs {resolved_inputs}.")
         return resolved_inputs
 
-    def _resolve_outputs(self, run: ExperimentNodeRun):
+    @classmethod
+    def _resolve_outputs(cls, node_name, output_mapping, base_output_dir):
         """Resolve outputs to real path."""
         # e.g. "output_path": "${outputs.my_output}" -> "${outputs.output_path}": "real_output_path"
-        logger.info("Start resolve node %s outputs.", run.node.name)
+        logger.info("Start resolve node %s outputs.", node_name)
         # resolve outputs
         resolved_outputs = {}
-        for name, value in run._outputs.items():
+        for name, value in output_mapping.items():
             # Set default output path if user doesn't set it
             if not value:
                 # Create default output path if user doesn't set it
-                value = run._output_path / name
+                value = base_output_dir / name
                 value.mkdir(parents=True, exist_ok=True)
                 value = value.resolve().absolute().as_posix()
                 # Update default to run
-                run._outputs[name] = value
+                output_mapping[name] = value
             # Note: We will do nothing if user config the value, as we don't know it's a file or folder
             resolved_outputs[name] = value
-        logger.debug(f"Resolved node {run.node.name} outputs {resolved_outputs}.")
+        logger.debug(f"Resolved node {node_name} outputs {resolved_outputs}.")
         return resolved_outputs
 
-    def _resolve_command(self, run: ExperimentNodeRun, inputs: dict, outputs: dict):
+    @classmethod
+    def _resolve_command(cls, node_name, command, inputs: dict, outputs: dict):
         """Resolve command to real command."""
-        logger.info("Start resolve node %s command.", run.node.name)
+        logger.info("Start resolve node %s command.", node_name)
         # resolve command
-        resolved_command = run._command
+        resolved_command = command
         # replace inputs
         for name, value in inputs.items():
             resolved_command = resolved_command.replace(f"${{inputs.{name}}}", str(value))
         # replace outputs
         for name, value in outputs.items():
             resolved_command = resolved_command.replace(f"${{outputs.{name}}}", str(value))
-        logger.debug(f"Resolved node {run.node.name} command {resolved_command}.")
+        logger.debug(f"Resolved node {node_name} command {resolved_command}.")
         if "${" in resolved_command:
             logger.warning(
-                f"Possibly unresolved command value binding found for node {run.node.name!r}. "
+                f"Possibly unresolved command value binding found for node {node_name!r}. "
                 f"Resolved command: {resolved_command}. Please check your command again."
             )
         return resolved_command
@@ -1186,11 +1297,11 @@ class ExperimentCommandSubmitter:
 
         # resolve inputs & outputs for command preparing
         # e.g. input_path: ${data.my_data} -> ${inputs.input_path}: real_data_path
-        inputs = self._resolve_inputs(run)
-        outputs = self._resolve_outputs(run)
+        inputs = self._resolve_inputs(run.node.name, run.column_mapping, run._input_data)
+        outputs = self._resolve_outputs(run.node.name, run._outputs, run._output_path)
 
         # replace to command
-        command = self._resolve_command(run, inputs, outputs)
+        command = self._resolve_command(run.node.name, run._command, inputs, outputs)
 
         # execute command
         status = Status.Failed.value

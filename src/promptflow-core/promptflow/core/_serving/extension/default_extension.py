@@ -120,7 +120,7 @@ class AppExtension(ABC):
                 common_dimensions = json.loads(common_dimensions_str)
                 return common_dimensions
             except Exception as ex:
-                self.logger.warn(f"Failed to parse common dimensions with value={common_dimensions_str}: {ex}")
+                self.logger.warning(f"Failed to parse common dimensions with value={common_dimensions_str}: {ex}")
         return {}
 
     def _get_default_blueprints(self, flow_monitor, static_folder=None):

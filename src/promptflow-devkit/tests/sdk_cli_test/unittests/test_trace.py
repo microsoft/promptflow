@@ -26,6 +26,7 @@ from promptflow._constants import (
 )
 from promptflow._sdk._constants import (
     HOME_PROMPT_FLOW_DIR,
+    PF_SERVICE_HOST,
     PF_TRACE_CONTEXT,
     PF_TRACE_CONTEXT_ATTR,
     TRACE_DEFAULT_COLLECTION,
@@ -98,7 +99,7 @@ class TestStartTrace:
         assert not is_tracer_provider_set()
 
         # set some required environment variables
-        endpoint = "http://localhost:23333/v1/traces"
+        endpoint = f"http://{PF_SERVICE_HOST}:23333/v1/traces"
         collection = str(uuid.uuid4())
         experiment = "test_experiment"
         with patch.dict(

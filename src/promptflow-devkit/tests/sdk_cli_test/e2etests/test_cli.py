@@ -2729,7 +2729,7 @@ class TestCli:
             "flow",
             "test",
             "--flow",
-            "simple_callable_class:MyFlow",
+            "callable_without_yaml:MyFlow",
             "--inputs",
             "func_input=input",
             "--init",
@@ -2744,7 +2744,7 @@ class TestCli:
             "flow",
             "test",
             "--flow",
-            "simple_callable_class:MyFlow",
+            "callable_without_yaml:MyFlow",
             "--inputs",
             f"{EAGER_FLOWS_DIR}/basic_callable_class_without_yaml/inputs.jsonl",
             "--init",
@@ -2754,6 +2754,26 @@ class TestCli:
         stdout, _ = capsys.readouterr()
         assert "obj_input" in stdout
         assert "func_input" in stdout
+
+        target = "promptflow._sdk._tracing.TraceDestinationConfig.need_to_resolve"
+        with mock.patch(target) as mocked:
+            mocked.return_value = True
+            # When configure azure trace provider, will raise ConfigFileNotFound error since no config.json in code
+            # folder.
+            with pytest.raises(SystemExit):
+                run_pf_command(
+                    "flow",
+                    "test",
+                    "--flow",
+                    "callable_without_yaml:MyFlow",
+                    "--inputs",
+                    f"{EAGER_FLOWS_DIR}/basic_callable_class_without_yaml/inputs.jsonl",
+                    "--init",
+                    f"{EAGER_FLOWS_DIR}/basic_callable_class_without_yaml/init.json",
+                    cwd=f"{EAGER_FLOWS_DIR}/basic_callable_class_without_yaml",
+                )
+            out, _ = capsys.readouterr()
+            assert "basic_callable_class_without_yaml" in out
 
     def test_eager_flow_test_without_yaml_ui(self, pf, capsys):
         run_pf_command(
@@ -2766,7 +2786,7 @@ class TestCli:
         )
         stdout, _ = capsys.readouterr()
         assert "You can begin chat flow" in stdout
-        assert Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml_return_output/flow.flex.yaml").exists()
+        assert not Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml_return_output/flow.flex.yaml").exists()
 
     @pytest.mark.usefixtures("reset_tracer_provider")
     def test_pf_flow_test_with_collection(self):

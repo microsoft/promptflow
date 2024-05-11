@@ -237,7 +237,7 @@ class RunSubmitter:
             trace_destination = self._config.get_trace_destination(path=run._get_flow_dir().resolve())
             if trace_destination and trace_destination.startswith(REMOTE_URI_PREFIX):
                 logger.debug(f"Trace destination set to {trace_destination!r}, uploading run to cloud...")
-                self._upload_run_to_cloud(run=run)
+                self._upload_run_to_cloud(run=run, config=self._config)
 
     def _resolve_input_dirs(self, run: Run):
         result = {"data": run.data if run.data else None}
@@ -269,13 +269,13 @@ class RunSubmitter:
             )
 
     @classmethod
-    def _upload_run_to_cloud(cls, run: Run):
+    def _upload_run_to_cloud(cls, run: Run, config=None):
         error_msg_prefix = f"Failed to upload run {run.name!r} to cloud."
         try:
             from promptflow._sdk._tracing import _get_ws_triad_from_pf_config
             from promptflow.azure._cli._utils import _get_azure_pf_client
 
-            ws_triad = _get_ws_triad_from_pf_config(path=run._get_flow_dir().resolve(), config=run._config)
+            ws_triad = _get_ws_triad_from_pf_config(path=run._get_flow_dir().resolve(), config=config or run._config)
             pf = _get_azure_pf_client(
                 subscription_id=ws_triad.subscription_id,
                 resource_group=ws_triad.resource_group_name,

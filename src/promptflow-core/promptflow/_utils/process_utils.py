@@ -29,7 +29,7 @@ def block_terminate_signal_to_parent():
     signal.set_wakeup_fd(-1)
 
     signal.signal(signal.SIGTERM, signal.SIG_DFL)
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
+    signal.signal(signal.SIGINT, signal.default_int_handler)
 
 
 def get_available_max_worker_count(logger: logging.Logger = bulk_logger):
