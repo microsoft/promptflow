@@ -5,11 +5,13 @@ import os
 import re
 import time
 from dataclasses import asdict
+from pathlib import Path
 from typing import List, Mapping
 
 from openai import APIConnectionError, APIStatusError, APITimeoutError, BadRequestError, OpenAIError, RateLimitError
 
 from promptflow._utils.logger_utils import LoggerFactory
+from promptflow._utils.yaml_utils import load_yaml
 from promptflow.core._connection import AzureOpenAIConnection, OpenAIConnection, _Connection
 from promptflow.core._errors import (
     ChatAPIFunctionRoleInvalidFormatError,
@@ -276,6 +278,51 @@ def format_llm_response(response, api, is_first_choice, response_format=None, st
             response_content = getattr(response.choices[0].message, "content", "")
         result = format_choice(response_content)
     return result
+
+
+def resolve_references(origin, base_path=None):
+    """Resolve all reference in the object."""
+    if isinstance(origin, str):
+        return resolve_reference(origin, base_path=base_path)
+    elif isinstance(origin, list):
+        return [resolve_references(item, base_path=base_path) for item in origin]
+    elif isinstance(origin, dict):
+        return {key: resolve_references(value, base_path=base_path) for key, value in origin.items()}
+    else:
+        return origin
+
+
+def resolve_reference(reference, base_path=None):
+    """
+    Resolve the reference, two types are supported, env, file.
+    When the string format is ${env:ENV_NAME}, the environment variable value will be returned.
+    When the string format is ${file:file_path}, return the loaded json object.
+    """
+    pattern = r"\$\{(\w+):(.*)\}"
+    match = re.match(pattern, reference)
+    if match:
+        reference_type, value = match.groups()
+        if reference_type == "env":
+            return os.environ.get(value, reference)
+        elif reference_type == "file":
+            if not Path(value).is_absolute() and base_path:
+                path = Path(base_path) / value
+            else:
+                path = Path(value)
+            if not path.exists():
+                raise UserErrorException(f"Cannot find the reference file {value}.")
+            with open(path, "r") as f:
+                if path.suffix.lower() == ".json":
+                    return json.load(f)
+                elif path.suffix.lower() in [".yml", ".yaml"]:
+                    return load_yaml(f)
+                else:
+                    return f.read()
+        else:
+            logger.warning(f"Unknown reference type {reference_type}, return original value {reference}.")
+            return reference
+    else:
+        return reference
 
 
 # region: Copied from promptflow-tools
