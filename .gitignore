@@ -173,10 +173,13 @@ connection.json
 .azureml
 # dummy custom tool package example
 hello-world-proj/**
+# gen test data config
+examples/gen_test_data/config.yml
 # secrets
 **/connections.json
 
 **/bash_script.sh
+**/bash_script_pytest.sh
 
 .index
 .pdfs

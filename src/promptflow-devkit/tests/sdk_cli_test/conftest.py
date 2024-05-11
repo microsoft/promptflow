@@ -168,6 +168,11 @@ def evaluation_flow_serving_client(mocker: MockerFixture):
     return app.test_client()
 
 
+@pytest.fixture
+def async_generator_serving_client(mocker: MockerFixture):
+    return create_client_by_model("async_generator_tools", mocker)
+
+
 def create_client_by_model(
     model_name: str,
     mocker: MockerFixture,
@@ -271,6 +276,11 @@ def fastapi_create_client_by_model(
         environment_variables["API_TYPE"] = "${azure_open_ai_connection.api_type}"
     app = create_fastapi_app(environment_variables=environment_variables, extension_type=extension_type, init=init)
     return TestClient(app)
+
+
+@pytest.fixture
+def fastapi_async_generator_serving_client(mocker: MockerFixture):
+    return fastapi_create_client_by_model("async_generator_tools", mocker)
 
 
 @pytest.fixture

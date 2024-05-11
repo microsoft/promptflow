@@ -8,7 +8,7 @@ name = "promptflow-evals"
 # This version does not need to be changed, because it is set by the release pipeline.
 # See build-publish-local-wheel-evals.yaml pipeline definition
 # in Vienna PromptFlow repository for reference.
-version = "0.2.0.dev0"
+version = "0.1.0.dev0"
 description = "Prompt flow evals"
 license = "MIT"
 authors = [
@@ -39,9 +39,11 @@ packages = [
 # dependencies
 [tool.poetry.dependencies]
 python = "<4.0,>=3.8"
-azure-ai-ml = ">=1.14.0"
 promptflow-devkit = "<2.0.0"
 promptflow-core = "<2.0.0"
+aiohttp_retry = ">=2.8.3"
+websocket-client = ">=1.2.0"
+jsonpath_ng = ">=1.5.0"
 promptflow-azure = "<2.0.0" # Needed for remote tracking
 mlflow = "<3.0.0" # Needed for remote tracking to log metrics
 azureml-mlflow = "<2.0.0" # Needed for remote tracking to log metrics

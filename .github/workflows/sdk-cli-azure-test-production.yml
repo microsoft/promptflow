@@ -19,7 +19,9 @@ on:
         default: "promptflow-eastus"
         type: string
 
-
+permissions:
+  id-token: write
+  contents: read
 
 env:
   IS_IN_CI_PIPELINE: "true"
@@ -42,7 +44,8 @@ jobs:
         # replay tests can cover more combinations
         os: [ubuntu-latest]
         pythonVersion: ['3.8', '3.9', '3.10', '3.11']
-
+    environment:
+      internal
     runs-on: ${{ matrix.os }}
     steps:
       - name: set variables
@@ -63,7 +66,9 @@ jobs:
       - name: Azure Login
         uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
+          tenant-id: ${{secrets.AZURE_TENANT_ID}}
+          client-id: ${{secrets.AZURE_CLIENT_ID}}
       - name: Generate Configs
         uses: "./.github/actions/step_generate_configs"
         with:

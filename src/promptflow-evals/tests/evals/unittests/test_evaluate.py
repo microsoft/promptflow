@@ -1,3 +1,4 @@
+import json
 import os
 import pathlib
 
@@ -6,6 +7,7 @@ import pytest
 from pandas.testing import assert_frame_equal
 
 from promptflow.client import PFClient
+from promptflow.evals._constants import DEFAULT_EVALUATION_RESULTS_FILE_NAME
 from promptflow.evals.evaluate import evaluate
 from promptflow.evals.evaluate._evaluate import (
     _apply_column_mapping,
@@ -276,3 +278,31 @@ class TestEvaluate:
         })
         df_actuals = _rename_columns_maybe(df, {'presnt_generated', 'generated'})
         assert_frame_equal(df_actuals.sort_index(axis=1), df_expected.sort_index(axis=1))
+
+    def test_evaluate_output_path(self, evaluate_test_data_jsonl_file, tmpdir):
+        output_path = os.path.join(tmpdir, "eval_test_results.jsonl")
+        result = evaluate(
+            data=evaluate_test_data_jsonl_file,
+            evaluators={"g": F1ScoreEvaluator()},
+            output_path=output_path,
+        )
+
+        assert result is not None
+        assert os.path.exists(output_path)
+        assert os.path.isfile(output_path)
+
+        with open(output_path, "r") as f:
+            content = f.read()
+            data_from_file = json.loads(content)
+            assert result["metrics"] == data_from_file["metrics"]
+
+        result = evaluate(
+            data=evaluate_test_data_jsonl_file,
+            evaluators={"g": F1ScoreEvaluator()},
+            output_path=os.path.join(tmpdir),
+        )
+
+        with open(os.path.join(tmpdir, DEFAULT_EVALUATION_RESULTS_FILE_NAME), "r") as f:
+            content = f.read()
+            data_from_file = json.loads(content)
+            assert result["metrics"] == data_from_file["metrics"]

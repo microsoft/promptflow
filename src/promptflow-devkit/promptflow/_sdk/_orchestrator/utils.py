@@ -41,8 +41,13 @@ from promptflow._sdk._constants import (
 from promptflow._sdk._errors import InvalidFlowError, RunOperationError
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._utilities.general_utils import _merge_local_code_and_additional_includes
+from promptflow._sdk._utilities.signature_utils import update_signatures
 from promptflow._sdk.entities._flows import FlexFlow, Flow, Prompty
-from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag
+from promptflow._utils.flow_utils import (
+    dump_flow_dag_according_to_content,
+    dump_flow_yaml_to_existing_path,
+    load_flow_dag,
+)
 from promptflow._utils.logger_utils import FileHandler, get_cli_sdk_logger
 from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.core._utils import get_used_connection_names_from_dict, update_dict_value_with_connections
@@ -195,11 +200,32 @@ def overwrite_flow(flow_dag: dict, params_overrides: dict):
 def remove_additional_includes(flow_path: Path):
     flow_path, flow_dag = load_flow_dag(flow_path=flow_path)
     flow_dag.pop("additional_includes", None)
-    dump_flow_dag(flow_dag, flow_path)
+    dump_flow_yaml_to_existing_path(flow_dag, flow_path)
+
+
+def override_flow_yaml(
+    flow: Flow,
+    flow_dag: dict,
+    flow_dir_path: Path,
+    tuning_node: str = None,
+    variant: str = None,
+    connections: dict = None,
+    *,
+    overrides: dict = None,
+    drop_node_variants: bool = False,
+):
+    if isinstance(flow, FlexFlow):
+        # update signatures for flex flow
+        update_signatures(code=flow_dir_path, data=flow_dag)
+    else:
+        # always overwrite variant since we need to overwrite default variant if not specified.
+        overwrite_variant(flow_dag, tuning_node, variant, drop_node_variants=drop_node_variants)
+        overwrite_connections(flow_dag, connections, working_dir=flow_dir_path)
+        overwrite_flow(flow_dag, overrides)
 
 
 @contextlib.contextmanager
-def variant_overwrite_context(
+def flow_overwrite_context(
     flow: Flow,
     tuning_node: str = None,
     variant: str = None,
@@ -211,31 +237,47 @@ def variant_overwrite_context(
     """Override variant and connections in the flow."""
     flow_dag = flow._data
     flow_dir_path = Path(flow.code)
-    if getattr(flow, "additional_includes", []):
+    if isinstance(flow, Prompty):
+        # prompty don't support override
+        yield flow
+    elif getattr(flow, "additional_includes", []):
         # Merge the flow folder and additional includes to temp folder for both eager flow & dag flow.
         with _merge_local_code_and_additional_includes(code_path=flow_dir_path) as temp_dir:
-            if not isinstance(flow, FlexFlow):
-                # always overwrite variant since we need to overwrite default variant if not specified.
-                overwrite_variant(flow_dag, tuning_node, variant, drop_node_variants=drop_node_variants)
-                overwrite_connections(flow_dag, connections, working_dir=flow_dir_path)
-                overwrite_flow(flow_dag, overrides)
+            override_flow_yaml(
+                flow=flow,
+                flow_dag=flow_dag,
+                flow_dir_path=flow_dir_path,
+                tuning_node=tuning_node,
+                variant=variant,
+                connections=connections,
+                overrides=overrides,
+                drop_node_variants=drop_node_variants,
+            )
             flow_dag.pop("additional_includes", None)
-            dump_flow_dag(flow_dag, Path(temp_dir))
+            dump_flow_dag_according_to_content(flow_dag=flow_dag, flow_path=Path(temp_dir))
             flow = load_flow(temp_dir)
             yield flow
-    elif isinstance(flow, (FlexFlow, Prompty)):
-        # eager flow and prompty don't support overwrite variant
-        yield flow
     else:
         # Generate a flow, the code path points to the original flow folder,
         # the dag path points to the temp dag file after overwriting variant.
         with tempfile.TemporaryDirectory() as temp_dir:
-            overwrite_variant(flow_dag, tuning_node, variant, drop_node_variants=drop_node_variants)
-            overwrite_connections(flow_dag, connections, working_dir=flow_dir_path)
-            overwrite_flow(flow_dag, overrides)
-            flow_path = dump_flow_dag(flow_dag, Path(temp_dir))
-            flow = Flow(code=flow_dir_path, path=flow_path, dag=flow_dag)
-            yield flow
+            override_flow_yaml(
+                flow=flow,
+                flow_dag=flow_dag,
+                flow_dir_path=flow_dir_path,
+                tuning_node=tuning_node,
+                variant=variant,
+                connections=connections,
+                overrides=overrides,
+                drop_node_variants=drop_node_variants,
+            )
+            flow_path = dump_flow_dag_according_to_content(flow_dag=flow_dag, flow_path=Path(temp_dir))
+            if isinstance(flow, FlexFlow):
+                flow = FlexFlow(code=flow_dir_path, path=flow_path, data=flow_dag, entry=flow.entry)
+                yield flow
+            else:
+                flow = Flow(code=flow_dir_path, path=flow_path, dag=flow_dag)
+                yield flow
 
 
 class SubmitterHelper:
