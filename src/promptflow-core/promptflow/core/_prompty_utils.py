@@ -1,10 +1,18 @@
 import copy
+import functools
 import json
 import os
 import re
+import time
 from dataclasses import asdict
+from pathlib import Path
 from typing import List, Mapping
 
+import tiktoken
+from openai import APIConnectionError, APIStatusError, APITimeoutError, BadRequestError, OpenAIError, RateLimitError
+
+from promptflow._utils.logger_utils import LoggerFactory
+from promptflow._utils.yaml_utils import load_yaml
 from promptflow.core._connection import AzureOpenAIConnection, OpenAIConnection, _Connection
 from promptflow.core._errors import (
     ChatAPIFunctionRoleInvalidFormatError,
@@ -12,12 +20,21 @@ from promptflow.core._errors import (
     ChatAPIInvalidRoleError,
     ChatAPIInvalidTools,
     CoreError,
+    ExceedMaxRetryTimes,
     InvalidOutputKeyError,
+    ListDeploymentsError,
+    LLMError,
+    ParseConnectionError,
     ToolValidationError,
     UnknownConnectionType,
+    WrappedOpenAIError,
 )
 from promptflow.core._model_configuration import ModelConfiguration
-from promptflow.core._utils import render_jinja_template_content
+from promptflow.core._utils import get_workspace_triad_from_local, render_jinja_template_content
+from promptflow.exceptions import SystemErrorException, UserErrorException
+
+logger = LoggerFactory.get_logger(name=__name__)
+GPT4V_VERSION = "vision-preview"
 
 
 def update_dict_recursively(origin_dict, overwrite_dict):
@@ -264,6 +281,95 @@ def format_llm_response(response, api, is_first_choice, response_format=None, st
     return result
 
 
+def num_tokens_from_messages(messages, model):
+    """Return the number of tokens used by a list of messages."""
+    # Ref: https://cookbook.openai.com/examples/how_to_count_tokens_with_tiktoken#6-counting-tokens-for-chat-completions-api-calls  # noqa: E501
+    try:
+        encoding = tiktoken.encoding_for_model(model)
+    except KeyError:
+        logger.warning("Model not found. Using cl100k_base encoding.")
+        encoding = tiktoken.get_encoding("cl100k_base")
+    if model in {
+        "gpt-3.5-turbo-0613",
+        "gpt-3.5-turbo-16k-0613",
+        "gpt-4-0314",
+        "gpt-4-32k-0314",
+        "gpt-4-0613",
+        "gpt-4-32k-0613",
+    }:
+        tokens_per_message = 3
+        tokens_per_name = 1
+    elif model == "gpt-3.5-turbo-0301":
+        tokens_per_message = 4  # every message follows <|start|>{role/name}\n{content}<|end|>\n
+        tokens_per_name = -1  # if there's a name, the role is omitted
+    elif "gpt-3.5-turbo" in model or "gpt-35-turbo":
+        logger.warning("gpt-3.5-turbo may update over time. Returning num tokens assuming gpt-3.5-turbo-0613.")
+        return num_tokens_from_messages(messages, model="gpt-3.5-turbo-0613")
+    elif "gpt-4" in model:
+        logger.warning("gpt-4 may update over time. Returning num tokens assuming gpt-4-0613.")
+        return num_tokens_from_messages(messages, model="gpt-4-0613")
+    else:
+        raise NotImplementedError(
+            f"num_tokens_from_messages() is not implemented for model {model}. "
+            "See https://github.com/openai/openai-python/blob/main/chatml.md for information on "
+            "how messages are converted to tokens."
+        )
+    num_tokens = 0
+    for message in messages:
+        num_tokens += tokens_per_message
+        for key, value in message.items():
+            num_tokens += len(encoding.encode(value))
+            if key == "name":
+                num_tokens += tokens_per_name
+    num_tokens += 3  # every reply is primed with <|start|>assistant<|message|>
+    return num_tokens
+
+
+def resolve_references(origin, base_path=None):
+    """Resolve all reference in the object."""
+    if isinstance(origin, str):
+        return resolve_reference(origin, base_path=base_path)
+    elif isinstance(origin, list):
+        return [resolve_references(item, base_path=base_path) for item in origin]
+    elif isinstance(origin, dict):
+        return {key: resolve_references(value, base_path=base_path) for key, value in origin.items()}
+    else:
+        return origin
+
+
+def resolve_reference(reference, base_path=None):
+    """
+    Resolve the reference, two types are supported, env, file.
+    When the string format is ${env:ENV_NAME}, the environment variable value will be returned.
+    When the string format is ${file:file_path}, return the loaded json object.
+    """
+    pattern = r"\$\{(\w+):(.*)\}"
+    match = re.match(pattern, reference)
+    if match:
+        reference_type, value = match.groups()
+        if reference_type == "env":
+            return os.environ.get(value, reference)
+        elif reference_type == "file":
+            if not Path(value).is_absolute() and base_path:
+                path = Path(base_path) / value
+            else:
+                path = Path(value)
+            if not path.exists():
+                raise UserErrorException(f"Cannot find the reference file {value}.")
+            with open(path, "r") as f:
+                if path.suffix.lower() == ".json":
+                    return json.load(f)
+                elif path.suffix.lower() in [".yml", ".yaml"]:
+                    return load_yaml(f)
+                else:
+                    return f.read()
+        else:
+            logger.warning(f"Unknown reference type {reference_type}, return original value {reference}.")
+            return reference
+    else:
+        return reference
+
+
 # region: Copied from promptflow-tools
 
 
@@ -466,6 +572,243 @@ def parse_chat(chat_str, images: List = None, valid_roles: List[str] = None):
             new_message = {"role": role}
             chat_list.append(new_message)
     return chat_list
+
+
+def generate_retry_interval(retry_count: int) -> float:
+    min_backoff_in_sec = 3
+    max_backoff_in_sec = 60
+    retry_interval = min_backoff_in_sec + ((2**retry_count) - 1)
+
+    if retry_interval > max_backoff_in_sec:
+        retry_interval = max_backoff_in_sec
+    return retry_interval
+
+
+def _parse_resource_id(resource_id):
+    # Resource id is connection's id in following format:
+    # "/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.CognitiveServices/accounts/{account}"
+    split_parts = resource_id.split("/")
+    if len(split_parts) != 9:
+        raise ParseConnectionError(f"Connection resourceId format invalid, cur resourceId is {resource_id}.")
+    sub, rg, account = split_parts[2], split_parts[4], split_parts[-1]
+
+    return sub, rg, account
+
+
+def _get_credential():
+    from azure.ai.ml._azure_environments import AzureEnvironments, EndpointURLS, _get_cloud, _get_default_cloud_name
+    from azure.identity import DefaultAzureCredential
+
+    # Support sovereign cloud cases, like mooncake, fairfax.
+    cloud_name = _get_default_cloud_name()
+    if cloud_name != AzureEnvironments.ENV_DEFAULT:
+        cloud = _get_cloud(cloud=cloud_name)
+        authority = cloud.get(EndpointURLS.ACTIVE_DIRECTORY_ENDPOINT)
+        credential = DefaultAzureCredential(authority=authority, exclude_shared_token_cache_credential=True)
+    else:
+        credential = DefaultAzureCredential()
+
+    return credential
+
+
+def get_workspace_triad():
+    # If flow is submitted from cloud, runtime will save the workspace triad to environment
+    if (
+        "AZUREML_ARM_SUBSCRIPTION" in os.environ
+        and "AZUREML_ARM_RESOURCEGROUP" in os.environ
+        and "AZUREML_ARM_WORKSPACE_NAME" in os.environ
+    ):
+        return (
+            os.environ["AZUREML_ARM_SUBSCRIPTION"],
+            os.environ["AZUREML_ARM_RESOURCEGROUP"],
+            os.environ["AZUREML_ARM_WORKSPACE_NAME"],
+        )
+    else:
+        # If flow is submitted from local, it will get workspace triad from your azure cloud config file
+        # If this config file isn't set up, it will return None.
+        return get_workspace_triad_from_local()
+
+
+def list_deployment_connections(
+    subscription_id=None,
+    resource_group_name=None,
+    workspace_name=None,
+    connection="",
+):
+    try:
+        # Do not support dynamic list if azure packages are not installed.
+        from azure.mgmt.cognitiveservices import CognitiveServicesManagementClient
+
+        from promptflow.azure.operations._arm_connection_operations import (
+            ArmConnectionOperations,
+            OpenURLFailedUserError,
+        )
+    except ImportError:
+        return None
+
+    # Do not support dynamic list if the workspace triple is set in the local.
+    if not subscription_id or not resource_group_name or not workspace_name:
+        return None
+
+    try:
+        credential = _get_credential()
+        try:
+            # Currently, the param 'connection' is str, not AzureOpenAIConnection type.
+            conn = ArmConnectionOperations._build_connection_dict(
+                name=connection,
+                subscription_id=subscription_id,
+                resource_group_name=resource_group_name,
+                workspace_name=workspace_name,
+                credential=credential,
+            )
+            resource_id = conn.get("value").get("resource_id", "")
+            if not resource_id:
+                return None
+            conn_sub, conn_rg, conn_account = _parse_resource_id(resource_id)
+        except OpenURLFailedUserError:
+            return None
+        except ListDeploymentsError as e:
+            raise e
+        except Exception as e:
+            msg = f"Parsing connection with exception: {e}"
+            raise ListDeploymentsError(msg=msg) from e
+
+        client = CognitiveServicesManagementClient(
+            credential=credential,
+            subscription_id=conn_sub,
+        )
+        return client.deployments.list(
+            resource_group_name=conn_rg,
+            account_name=conn_account,
+        )
+    except Exception as e:
+        if hasattr(e, "status_code") and e.status_code == 403:
+            msg = f"Failed to list deployments due to permission issue: {e}"
+            raise ListDeploymentsError(msg=msg) from e
+        else:
+            msg = f"Failed to list deployments with exception: {e}"
+            raise ListDeploymentsError(msg=msg) from e
+
+
+def is_retriable_api_connection_error(e: APIConnectionError):
+    retriable_error_messages = [
+        "connection aborted",
+        # issue 2296
+        "server disconnected without sending a response",
+    ]
+    for message in retriable_error_messages:
+        if message in str(e).lower() or message in str(e.__cause__).lower():
+            return True
+
+    return False
+
+
+def handle_openai_error(tries: int = 10, unprocessable_entity_error_tries: int = 3):
+    """
+    A decorator function for handling OpenAI errors.
+
+    OpenAI errors are categorized into retryable and non-retryable.
+    For retryable errors, the default is to retry 10 times. The waiting time for each round of retry
+    increases exponentially, with a maximum waiting time of 60 seconds.
+    The total waiting time for retrying 10 times is about 400s
+
+    For retryable errors, the decorator uses the following parameters to control its retry behavior:
+    `tries`: max times for the function invocation, type is int
+    `unprocessable_entity_error_tries`: max times for the function invocation when consecutive
+        422 error occurs, type is int
+
+    Note:
+    - The retry policy for UnprocessableEntityError is different because retrying may not be beneficial,
+      so small threshold and requiring consecutive errors.
+    """
+
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            consecutive_422_error_count = 0
+            for i in range(tries + 1):
+                try:
+                    return func(*args, **kwargs)
+                except (SystemErrorException, UserErrorException) as e:
+                    # Throw inner wrapped exception directly
+                    raise e
+                except (APIStatusError, APIConnectionError) as e:
+                    #  Handle retriable exception, please refer to
+                    #  https://platform.openai.com/docs/guides/error-codes/api-errors
+                    logger.error(f"Exception occurs: {type(e).__name__}: {str(e)}")
+                    # Firstly, exclude some non-retriable errors.
+                    # Vision model does not support all chat api parameters, e.g. response_format and function_call.
+                    # Related issue https://github.com/microsoft/promptflow/issues/1683
+                    if isinstance(e, BadRequestError):
+                        raise WrappedOpenAIError(e)
+
+                    if (
+                        isinstance(e, APIConnectionError)
+                        and not isinstance(e, APITimeoutError)
+                        and not is_retriable_api_connection_error(e)
+                    ):
+                        raise WrappedOpenAIError(e)
+
+                    # Retry InternalServerError(>=500), RateLimitError(429), UnprocessableEntityError(422)
+                    # Solution references:
+                    # https://platform.openai.com/docs/guides/error-codes/api-errors
+                    # https://platform.openai.com/docs/guides/error-codes/python-library-error-types
+                    if isinstance(e, APIStatusError):
+                        status_code = e.response.status_code
+                        if status_code < 500 and status_code not in [429, 422]:
+                            raise WrappedOpenAIError(e)
+                    if isinstance(e, RateLimitError) and getattr(e, "type", None) == "insufficient_quota":
+                        # Exit retry if this is quota insufficient error
+                        logger.error(f"{type(e).__name__} with insufficient quota. Throw user error.")
+                        raise WrappedOpenAIError(e)
+
+                    # Retriable errors.
+                    # To fix issue #2296, retry on api connection error, but with a separate retry policy.
+                    if isinstance(e, APIStatusError) and e.response.status_code == 422:
+                        consecutive_422_error_count += 1
+                    else:
+                        # If other retriable errors, reset consecutive_422_error_count.
+                        consecutive_422_error_count = 0
+
+                    if i == tries or consecutive_422_error_count == unprocessable_entity_error_tries:
+                        # Exit retry if max retry reached
+                        logger.error(f"{type(e).__name__} reached max retry. Exit retry with user error.")
+                        raise ExceedMaxRetryTimes(e)
+
+                    if hasattr(e, "response") and e.response is not None:
+                        retry_after_in_header = e.response.headers.get("retry-after", None)
+                    else:
+                        retry_after_in_header = None
+
+                    if not retry_after_in_header:
+                        retry_after_seconds = generate_retry_interval(i)
+                        msg = (
+                            f"{type(e).__name__} #{i}, but no Retry-After header, "
+                            + f"Back off {retry_after_seconds} seconds for retry."
+                        )
+                        logger.warning(msg)
+                    else:
+                        retry_after_seconds = float(retry_after_in_header)
+                        msg = (
+                            f"{type(e).__name__} #{i}, Retry-After={retry_after_in_header}, "
+                            f"Back off {retry_after_seconds} seconds for retry."
+                        )
+                        logger.warning(msg)
+                    time.sleep(retry_after_seconds)
+                except OpenAIError as e:
+                    # For other non-retriable errors from OpenAIError,
+                    # For example, AuthenticationError, APIConnectionError, BadRequestError, NotFoundError
+                    # Mark UserError for all the non-retriable OpenAIError
+                    logger.error(f"Exception occurs: {type(e).__name__}: {str(e)}")
+                    raise WrappedOpenAIError(e)
+                except Exception as e:
+                    logger.error(f"Exception occurs: {type(e).__name__}: {str(e)}")
+                    error_message = f"OpenAI API hits exception: {type(e).__name__}: {str(e)}"
+                    raise LLMError(message=error_message)
+
+        return wrapper
+
+    return decorator
 
 
 def validate_function(common_tsg, i, function, expection: ToolValidationError):

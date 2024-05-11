@@ -1,0 +1,18 @@
+---
+name: Basic Prompt with Sample
+description: A basic prompt that uses the GPT-3 chat API to answer questions
+model:
+    api: chat
+    configuration: ${file:../datas/prompty_configuration.json}
+    parameters:
+      max_tokens: 128
+      temperature: 0.2
+      tools: ${file:../datas/prompty_tools.json}
+      tool_choice: auto
+sample: ${file:../datas/prompty_sample.json}
+---
+system:
+You are an AI assistant who helps people find information.
+
+user:
+{{question}}

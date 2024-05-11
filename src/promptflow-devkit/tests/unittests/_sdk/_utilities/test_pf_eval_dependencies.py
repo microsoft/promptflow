@@ -1,10 +1,14 @@
 from unittest.mock import patch
 
 import pytest
-from promptflow._dependencies._pf_evals import LINE_NUMBER, Local2Cloud, Configuration
 
-DUMMY_TRACE_DESTINATION = ("azureml://subscriptions/sub_id/resourceGroups/resource_group_name"
-                           "/providers/Microsoft.MachineLearningServices/workspaces/workspace_name")
+from promptflow._dependencies._pf_evals import LINE_NUMBER, Local2Cloud, get_trace_destination
+from promptflow._sdk._pf_client import PFClient
+
+DUMMY_TRACE_DESTINATION = (
+    "azureml://subscriptions/sub_id/resourceGroups/resource_group_name"
+    "/providers/Microsoft.MachineLearningServices/workspaces/workspace_name"
+)
 
 
 @pytest.fixture
@@ -15,7 +19,6 @@ def patch_config_validation():
 
 @pytest.mark.unittest
 class TestPromptflowEvalsDependencies:
-
     def test_pf_eval_constants_dependencies(self):
         assert LINE_NUMBER == "line_number"
         assert Local2Cloud.FLOW_INSTANCE_RESULTS_FILE_NAME == "instance_results.jsonl"
@@ -23,5 +26,5 @@ class TestPromptflowEvalsDependencies:
         assert Local2Cloud.BLOB_ARTIFACTS == "PromptFlowArtifacts"
 
     def test_pf_eval_configuration_dependencies(self, patch_config_validation):
-        config = Configuration(overrides={"trace.destination": DUMMY_TRACE_DESTINATION})
-        assert config.get_trace_destination() == DUMMY_TRACE_DESTINATION
+        pf_client = PFClient(config={"trace.destination": DUMMY_TRACE_DESTINATION})
+        assert get_trace_destination(pf_client=pf_client) == DUMMY_TRACE_DESTINATION
