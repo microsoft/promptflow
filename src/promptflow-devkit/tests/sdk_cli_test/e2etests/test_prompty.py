@@ -448,6 +448,40 @@ class TestPrompty:
             prompty.render(mock_key="mock_value")
         assert "Missing required inputs" in ex.value.message
 
+    def test_estimate_token_count(self):
+        prompty = Prompty.load(
+            source=f"{PROMPTY_DIR}/prompty_example.prompty",
+            model={"response": "all"},
+        )
+        with pytest.raises(UserErrorException) as ex:
+            prompty.estimate_token_count("mock_input")
+        assert "Prompty can only be rendered with keyword arguments." in ex.value.message
+
+        with pytest.raises(MissingRequiredInputError) as ex:
+            prompty.estimate_token_count()
+        assert "Missing required inputs" in ex.value.message
+
+        with pytest.raises(UserErrorException) as ex:
+            invalid_prompty = Prompty.load(
+                source=f"{PROMPTY_DIR}/prompty_example.prompty",
+                model={"parameters": {"max_tokens": "invalid_tokens"}},
+            )
+            invalid_prompty.estimate_token_count(question="what is the result of 1+1?")
+        assert "Max_token needs to be integer." in ex.value.message
+
+        response = prompty(question="what is the result of 1+1?")
+        prompt_tokens = response.usage.prompt_tokens
+
+        total_token = prompty.estimate_token_count(question="what is the result of 1+1?")
+        assert total_token == prompt_tokens + prompty._model.parameters.get("max_tokens")
+
+        prompty = Prompty.load(
+            source=f"{PROMPTY_DIR}/prompty_example.prompty",
+            model={"parameters": {"max_tokens": None}},
+        )
+        total_token = prompty.estimate_token_count(question="what is the result of 1+1?")
+        assert total_token == prompt_tokens
+
     def test_prompty_with_reference_file(self):
         # Test run prompty with reference file
         prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_with_reference_file.prompty")
