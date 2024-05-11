@@ -7,6 +7,7 @@ from typing import Dict, Optional
 from azure.ai.ml._scope_dependent_operations import OperationConfig, OperationScope, _ScopeDependentOperations
 
 from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, monitor_operation
+from promptflow.azure._restclient.flow.models import TraceDbSetupRequest
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 
 
@@ -51,3 +52,14 @@ class TraceOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             container_name=container_name,
             acquire_write=acquire_write,
         )
+
+    @monitor_operation(activity_name="pfazure.traces._setup_cosmos_db", activity_type=ActivityType.INTERNALCALL)
+    def _setup_cosmos_db(self, resource_type: str) -> None:
+        body = TraceDbSetupRequest(resource_type=resource_type)
+        self._service_caller.setup_workspace_cosmos(
+            subscription_id=self._operation_scope.subscription_id,
+            resource_group_name=self._operation_scope.resource_group_name,
+            workspace_name=self._operation_scope.workspace_name,
+            body=body,
+        )
+        return
