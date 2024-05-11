@@ -23,6 +23,7 @@ from promptflow._sdk._constants import (
     FLOW_RESOURCE_ID_PREFIX,
     HOME_PROMPT_FLOW_DIR,
     PARAMS_OVERRIDE_KEY,
+    PF_SYSTEM_METRICS_PREFIX,
     REGISTRY_URI_PREFIX,
     REMOTE_URI_PREFIX,
     RUN_MACRO,
@@ -497,6 +498,11 @@ class Run(YAMLTranslatableMixin):
                     result["error"]["error"].pop("additionalInfo", None)
                 if exclude_debug_info:
                     result["error"]["error"].pop("debugInfo", None)
+
+        # hide system metrics that starts with '__pf__'
+        system_metrics = properties[FlowRunProperties.SYSTEM_METRICS]
+        refined_system_metrics = {k: v for k, v in system_metrics.items() if not k.startswith(PF_SYSTEM_METRICS_PREFIX)}
+        properties[FlowRunProperties.SYSTEM_METRICS] = refined_system_metrics
 
         # hide properties when needed (e.g. list remote runs)
         if exclude_properties is True:

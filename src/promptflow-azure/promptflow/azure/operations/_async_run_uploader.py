@@ -12,6 +12,7 @@ from promptflow._cli._utils import get_instance_results, merge_jsonl_files
 from promptflow._constants import PROMPTY_EXTENSION, OutputsFolderName
 from promptflow._sdk._constants import (
     DEFAULT_ENCODING,
+    PF_SYSTEM_METRICS_PREFIX,
     CloudDatastore,
     FlowRunProperties,
     Local2Cloud,
@@ -264,7 +265,9 @@ class AsyncRunUploader:
         logger.debug(f"Uploading metrics for run {self.run.name!r}.")
         # system metrics that starts with "__pf__" are reserved for promptflow internal use
         metrics = {
-            k: v for k, v in self.run.properties[FlowRunProperties.SYSTEM_METRICS].items() if k.startswith("__pf__")
+            k: v
+            for k, v in self.run.properties[FlowRunProperties.SYSTEM_METRICS].items()
+            if k.startswith(PF_SYSTEM_METRICS_PREFIX)
         }
 
         # add user metrics from local metric file
