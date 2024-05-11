@@ -471,11 +471,11 @@ class Prompty(FlowBase):
         return str(prompt)
 
     def estimate_token_count(self, *args, **kwargs):
-        """Estimate the token count.
+        """Estimate the token count. Return the sum of prompt tokens and max tokens.
 
         :param args: positional arguments are not supported.
         :param kwargs: prompty inputs with key word arguments.
-        :return: Total token count
+        :return: Estimate total token count
         :rtype: int
         """
         if args:
