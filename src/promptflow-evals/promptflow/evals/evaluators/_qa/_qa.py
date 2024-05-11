@@ -4,6 +4,7 @@
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+from promptflow.core import AzureOpenAIModelConfiguration
 from .._coherence import CoherenceEvaluator
 from .._f1_score import F1ScoreEvaluator
 from .._fluency import FluencyEvaluator
@@ -13,7 +14,7 @@ from .._similarity import SimilarityEvaluator
 
 
 class QAEvaluator:
-    def __init__(self, model_config, parallel: bool = True):
+    def __init__(self, model_config: AzureOpenAIModelConfiguration, parallel: bool = True):
         """
         Initialize an evaluator configured for a specific Azure OpenAI model.
 

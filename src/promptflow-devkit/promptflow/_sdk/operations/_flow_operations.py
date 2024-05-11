@@ -43,7 +43,7 @@ from promptflow._sdk._utilities.general_utils import (
     copy_tree_respect_template_and_ignore_file,
     generate_flow_tools_json,
     generate_random_string,
-    generate_yaml_entry_without_recover,
+    generate_yaml_entry_without_delete,
     json_load,
     logger,
 )
@@ -109,7 +109,7 @@ class FlowOperations(TelemetryMixin):
         :rtype: dict
         """
         experiment = kwargs.pop("experiment", None)
-        flow = generate_yaml_entry_without_recover(entry=flow)
+        flow = generate_yaml_entry_without_delete(entry=flow)
         if Configuration.get_instance().is_internal_features_enabled() and experiment:
             if variant is not None or node is not None:
                 error = ValueError("--variant or --node is not supported experiment is specified.")
@@ -338,7 +338,7 @@ class FlowOperations(TelemetryMixin):
         """
         from promptflow._sdk._load_functions import load_flow
 
-        flow = generate_yaml_entry_without_recover(entry=flow)
+        flow = generate_yaml_entry_without_delete(entry=flow)
         flow = load_flow(flow)
         flow.context.variant = variant
 
