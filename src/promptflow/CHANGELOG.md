@@ -2,6 +2,9 @@
 
 ## v1.11.0 (Upcoming)
 
+### Features Added
+- [promptflow-devkit]: Upload local run details to cloud when trace destination is configured to cloud. Refer to [here](https://microsoft.github.io/promptflow/cloud/azureai/tracing/index.html) for more details.
+
 ### Improvements
 - [promptflow-devkit]: Interactive browser credential is excluded by default when using Azure AI connections, user could set `PF_NO_INTERACTIVE_LOGIN=False` to enable it.
 - [promptflow-azure]: Refine trace Cosmos DB setup process to print setup status during the process, and display error message from service when setup failed.
