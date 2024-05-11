@@ -2924,7 +2924,7 @@ class TestCli:
                 f"{PROMPTY_DIR}/prompty_with_env.prompty",
                 "--inputs",
                 'question="what is the result of 1+1?"',
-                "-env",
+                "--env",
                 str(env_file),
             )
             out, _ = capfd.readouterr()
@@ -2938,7 +2938,7 @@ class TestCli:
                 f"{PROMPTY_DIR}/prompty_with_env.prompty",
                 "--inputs",
                 'question="what is the result of 1+1?"',
-                "-env",
+                "--env",
                 *env_params,
             )
             out, _ = capfd.readouterr()
@@ -2952,7 +2952,7 @@ class TestCli:
                     f"{PROMPTY_DIR}/prompty_with_env.prompty",
                     "--inputs",
                     'question="what is the result of 1+1?"',
-                    "-env",
+                    "--env",
                     "invalid_path.env",
                 )
             assert "cannot find the file" in str(ex.value)
@@ -2965,7 +2965,7 @@ class TestCli:
                     f"{PROMPTY_DIR}/prompty_with_env.prompty",
                     "--inputs",
                     'question="what is the result of 1+1?"',
-                    "-env",
+                    "--env",
                     "invalid_path.txt",
                 )
             assert "expects file path endswith .env or KEY=VALUE [KEY=VALUE ...]" in str(ex.value)
@@ -2978,7 +2978,7 @@ class TestCli:
                 f"{PROMPTY_DIR}/prompty_with_env.prompty",
                 "--data",
                 f"{DATAS_DIR}/prompty_inputs.jsonl",
-                "-env",
+                "--env",
                 str(env_file),
             )
             out, _ = capfd.readouterr()
@@ -2992,7 +2992,7 @@ class TestCli:
                 f"{PROMPTY_DIR}/prompty_with_env.prompty",
                 "--data",
                 f"{DATAS_DIR}/prompty_inputs.jsonl",
-                "-env",
+                "--env",
                 *env_params,
             )
             out, _ = capfd.readouterr()
