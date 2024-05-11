@@ -66,3 +66,6 @@ class PromptyExecutor(ScriptExecutor):
         self._inputs_sign = flow.inputs
         # The init signature only used for flex flow, so we set the _init_sign to empty dict for prompty flow.
         self._init_sign = {}
+
+    def get_inputs_definition(self):
+        return self._inputs
