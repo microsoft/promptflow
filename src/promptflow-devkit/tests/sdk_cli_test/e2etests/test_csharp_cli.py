@@ -1,32 +1,13 @@
 import json
 import os
 import os.path
-import sys
 from pathlib import Path
 from typing import TypedDict
 
 import pytest
+from sdk_cli_test.e2etests.test_cli import run_pf_command
 
-from promptflow._cli._pf.entry import main
 from promptflow._sdk._utilities.serve_utils import find_available_port
-
-
-# TODO: move this to a shared utility module
-def run_pf_command(*args, cwd=None):
-    """Run a pf command with the given arguments and working directory.
-
-    There have been some unknown issues in using subprocess on CI, so we use this function instead, which will also
-    provide better debugging experience.
-    """
-    origin_argv, origin_cwd = sys.argv, os.path.abspath(os.curdir)
-    try:
-        sys.argv = ["pf"] + list(args)
-        if cwd:
-            os.chdir(cwd)
-        main()
-    finally:
-        sys.argv = origin_argv
-        os.chdir(origin_cwd)
 
 
 class CSharpProject(TypedDict):

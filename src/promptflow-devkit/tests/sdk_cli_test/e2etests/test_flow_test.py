@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 import tempfile
 from dataclasses import is_dataclass
@@ -110,7 +111,6 @@ class TestFlowTest:
         result = _client.test(flow=flow_path, inputs={"input_param": "Hello World!"}, node="my_script_tool")
         assert result == "connection_value is MyCustomConnection: True"
 
-    @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
     def test_pf_test_with_streaming_output(self):
         flow_path = Path(f"{FLOWS_DIR}/chat_flow_with_stream_output")
         result = _client.test(flow=flow_path)
@@ -283,6 +283,8 @@ class TestFlowTest:
                 flow="callable_without_yaml:MyFlow", inputs={"func_input": "input"}, init={"obj_input": "val"}
             )
             assert result["func_input"] == "input"
+            # Cleanup
+            os.remove("flow.flex.yaml")
 
     def test_eager_flow_test_with_yaml(self):
         clear_module_cache("entry")
@@ -430,7 +432,6 @@ class TestFlowTest:
         # directly return the consumed generator to align with the behavior of DAG flow test
         assert result.output == "Hello world! "
 
-    @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
     def test_stream_output_with_builtin_llm(self):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/builtin_llm/").absolute()
         # TODO(3171565): support default value for list & dict

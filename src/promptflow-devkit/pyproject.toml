@@ -103,7 +103,7 @@ promptflow-recording =  {path = "../promptflow-recording"}
 [tool.poetry.group.test.dependencies]
 pytest = "*"
 pytest-cov = "*"
-pytest-xdist = "*"
+pytest-xdist = {extras = ["psutil"], version = "*"}
 pytest-mock = "*"
 pytest-asyncio = "*"
 mock = "*"

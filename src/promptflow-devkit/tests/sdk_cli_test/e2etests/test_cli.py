@@ -4,7 +4,9 @@ import json
 import logging
 import os
 import os.path
+import random
 import shutil
+import string
 import subprocess
 import sys
 import tempfile
@@ -46,6 +48,28 @@ PROMPTY_DIR = PROMPTFLOW_ROOT / "tests/test_configs/prompty"
 TARGET_URL = "https://www.youtube.com/watch?v=o5ZQyXaAv1g"
 
 
+def randomword(length):
+    letters = string.ascii_lowercase
+    return "".join(random.choice(letters) for i in range(length))
+
+
+def lock_folder(folder_or_file: str):
+    """Lock the folder or file to prevent concurrent access.
+    Hash the folder or file and create a temp file in os temp dir.
+    """
+    folder_hash = str(hash(folder_or_file))
+    lock_file = os.path.join(tempfile.gettempdir(), f"lock_{folder_hash}")
+    loop_count = 0
+    while os.path.exists(lock_file) and loop_count < 600:
+        sleep(1)
+        loop_count += 1
+    if loop_count >= 600:
+        raise Exception(f"Cannot acquire lock for {folder_or_file}")
+    with open(lock_file, "w") as f:
+        f.write("lock")
+    return lock_file
+
+
 # TODO: move this to a shared utility module
 def run_pf_command(*args, cwd=None):
     """Run a pf command with the given arguments and working directory.
@@ -56,12 +80,23 @@ def run_pf_command(*args, cwd=None):
     origin_argv, origin_cwd = sys.argv, os.path.abspath(os.curdir)
     try:
         sys.argv = ["pf"] + list(args)
+        lock_file = randomword(10)
+        for index, item in enumerate(list(args)):
+            if item.startswith("--flow"):
+                try:
+                    lock_file = list(args)[index + 1]
+                except IndexError:
+                    pass
+                break
+        lock_file = lock_folder(lock_file)
         if cwd:
             os.chdir(cwd)
         main()
     finally:
         sys.argv = origin_argv
         os.chdir(origin_cwd)
+        if os.path.exists(lock_file) and os.path.isfile(lock_file):
+            os.remove(lock_file)
 
 
 @pytest.mark.usefixtures(
@@ -365,7 +400,6 @@ class TestCli:
         output = json.loads(open(output_path, "r", encoding="utf-8").read())
         assert output["result"] == "meid_token"
 
-    @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
     def test_pf_flow_test_with_non_english_input_output(self, capsys):
         # disable trace to not invoke prompt flow service, which will print unexpected content to stdout
         with mock.patch("promptflow._sdk._tracing.is_trace_feature_disabled", return_value=True):
@@ -747,7 +781,6 @@ class TestCli:
             run_pf_command("flow", "test", "--flow", flow_name, "--inputs", "groundtruth=App", "prediction=App")
             self._validate_requirement(Path(temp_dir) / flow_name / "flow.dag.yaml")
 
-    @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
     def test_init_chat_flow(self):
         temp_dir = mkdtemp()
         with _change_working_dir(temp_dir):
@@ -969,7 +1002,6 @@ class TestCli:
                 assert not (flow_folder / "azure_openai.yaml").exists()
                 assert not (flow_folder / "openai.yaml").exists()
 
-    @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
     def test_flow_chat(self, monkeypatch, capsys):
         chat_list = ["hi", "what is chat gpt?"]
 
@@ -1018,7 +1050,6 @@ class TestCli:
         assert "show_answer:" in outerr.out
         assert "[show_answer]: print:" in outerr.out
 
-    @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
     def test_invalid_chat_flow(self, monkeypatch, capsys):
         def mock_input(*args, **kwargs):
             if chat_list:
@@ -1077,7 +1108,6 @@ class TestCli:
         outerr = capsys.readouterr()
         assert "chat output is not configured" in outerr.out
 
-    @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
     def test_chat_with_stream_output(self, monkeypatch, capsys):
         chat_list = ["hi", "what is chat gpt?"]
 
@@ -1124,7 +1154,6 @@ class TestCli:
         )
         assert detail_path.exists()
 
-    @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
     def test_flow_test_with_default_chat_history(self):
         run_pf_command(
             "flow",
@@ -1144,7 +1173,6 @@ class TestCli:
         ]
         assert details["flow_runs"][0]["inputs"]["chat_history"] == expect_chat_history
 
-    @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
     def test_flow_test_with_user_defined_chat_history(self, monkeypatch, capsys):
         chat_list = ["hi", "what is chat gpt?"]
 
@@ -2723,6 +2751,8 @@ class TestCli:
         stdout, _ = capsys.readouterr()
         assert "obj_input" in stdout
         assert "func_input" in stdout
+        # cleanup
+        os.remove(f"{EAGER_FLOWS_DIR}/basic_callable_class_without_yaml/flow.flex.yaml")
 
     def test_eager_flow_test_without_yaml_ui(self, pf, capsys):
         run_pf_command(

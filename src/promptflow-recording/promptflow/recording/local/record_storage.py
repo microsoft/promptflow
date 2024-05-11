@@ -342,6 +342,14 @@ class RecordCache:
         try:
             line_record_pointer = self.file_records_pointer[hash_value]
         except KeyError:
+            if output_type == "Exception":
+                # https://help.openai.com/en/articles/6897213-openai-library-error-types-guidance
+                if (
+                    output_value.type != "APIConnectionError"
+                    and output_value.type != "InvalidRequestError"
+                    and output_value.type != "DeploymentNotFound"
+                ):
+                    raise output
             self.file_records_pointer[hash_value] = {
                 "input": input_dict,
                 "output": output_value,

@@ -127,7 +127,11 @@ def prepare_symbolic_flow() -> str:
         for file_name in os.listdir(source_folder):
             if not Path(file_name).exists():
                 os.symlink(source_folder / file_name, file_name)
-    return target_folder
+    yield target_folder
+    with _change_working_dir(target_folder):
+        for file_name in os.listdir(target_folder):
+            if Path(file_name).exists():
+                os.remove(file_name)
 
 
 @pytest.fixture(scope="session")

@@ -1,32 +1,11 @@
-import os
-import sys
 from pathlib import Path
 
 import pytest
 from mock import mock
-
-from promptflow._cli._pf.entry import main
+from sdk_cli_test.e2etests.test_cli import run_pf_command
 
 FLOWS_DIR = Path("./tests/test_configs/flows")
 EAGER_FLOWS_DIR = Path("./tests/test_configs/eager_flows")
-
-
-# TODO: move this to a shared utility module
-def run_pf_command(*args, cwd=None):
-    """Run a pf command with the given arguments and working directory.
-
-    There have been some unknown issues in using subprocess on CI, so we use this function instead, which will also
-    provide better debugging experience.
-    """
-    origin_argv, origin_cwd = sys.argv, os.path.abspath(os.curdir)
-    try:
-        sys.argv = ["pf"] + list(args)
-        if cwd:
-            os.chdir(cwd)
-        main()
-    finally:
-        sys.argv = origin_argv
-        os.chdir(origin_cwd)
 
 
 @pytest.mark.cli_test

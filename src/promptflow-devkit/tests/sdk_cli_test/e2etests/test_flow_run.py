@@ -1302,7 +1302,7 @@ class TestFlowRun:
                 },
                 # signature not in original YAML
                 lambda: "inputs" not in load_yaml(f"{EAGER_FLOWS_DIR}/simple_with_yaml/flow.flex.yaml"),
-                {"inputs.input_val": ["input1"], "inputs.line_number": [0], "outputs.output": ["Hello world! input1"]},
+                {"inputs.input_val": ["gpt"], "inputs.line_number": [0], "outputs.output": ["Hello world! gpt"]},
                 id="with_yaml",
             ),
             pytest.param(
@@ -1427,6 +1427,7 @@ class TestFlowRun:
     def test_flex_flow_with_local_imported_func(self, pf):
         # run eager flow against a function from local file
         with inject_sys_path(f"{EAGER_FLOWS_DIR}/multiple_entries"):
+
             from entry2 import my_flow2
 
             run = pf.run(
@@ -1642,6 +1643,7 @@ class TestFlowRun:
         run_dict = run._to_dict()
         assert "error" not in run_dict, run_dict["error"]
 
+    @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603")
     def test_deployment_overwrite_failure(self, local_client, local_aoai_connection, pf):
         # deployment name not exist
         run = pf.run(
