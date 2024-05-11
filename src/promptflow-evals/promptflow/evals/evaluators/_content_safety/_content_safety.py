@@ -9,11 +9,13 @@ from ._violence import ViolenceEvaluator
 class ContentSafetyEvaluator:
     def __init__(self, project_scope: dict, parallel: bool = True, credential=None):
         """
-        Initialize an evaluator configured for a specific Azure OpenAI model.
+        Initialize an evaluator configured to evaluate content safetry metrics for QA scenario.
 
         :param project_scope: The scope of the Azure AI project.
             It contains subscription id, resource group, and project name.
         :type project_scope: dict
+        :param parallel: If True, use parallel execution for evaluators. Else, use sequential execution.
+            Default is True.
         :param credential: The credential for connecting to Azure AI project.
         :type credential: TokenCredential
         :return: A function that evaluates content-safety metrics for "question-answering" scenario.

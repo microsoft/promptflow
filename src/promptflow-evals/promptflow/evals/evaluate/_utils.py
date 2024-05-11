@@ -14,6 +14,7 @@ import mlflow
 from promptflow._sdk._constants import Local2Cloud
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow.azure.operations._async_run_uploader import AsyncRunUploader
+from promptflow.evals._constants import DEFAULT_EVALUATION_RESULTS_FILE_NAME
 
 LOGGER = logging.getLogger(__name__)
 
@@ -135,7 +136,8 @@ def _log_metrics_and_instance_results(metrics, instance_results, tracking_uri, r
                 _write_properties_to_run_history(
                     properties={
                         "_azureml.evaluation_run": "azure-ai-generative-parent",
-                        "_azureml.evaluate_artifacts": json.dumps([{"path": "eval_results.jsonl", "type": "table"}])
+                        "_azureml.evaluate_artifacts": json.dumps([{"path": "eval_results.jsonl", "type": "table"}]),
+                        "isEvaluatorRun": "true"
                     })
                 run_id = run.info.run_id
     else:
@@ -168,3 +170,25 @@ def _get_ai_studio_url(trace_destination: str, evaluation_id: str) -> str:
                  f"workspaces/{ws_triad.workspace_name}"
 
     return studio_url
+
+
+def _trace_destination_from_project_scope(project_scope: dict) -> str:
+    subscription_id = project_scope["subscription_id"]
+    resource_group_name = project_scope["resource_group_name"]
+    workspace_name = project_scope["project_name"]
+
+    trace_destination = (
+        f"azureml://subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/"
+        f"providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}"
+    )
+
+    return trace_destination
+
+
+def _write_output(path, data_dict):
+    p = Path(path)
+    if os.path.isdir(path):
+        p = p/DEFAULT_EVALUATION_RESULTS_FILE_NAME
+
+    with open(p, "w") as f:
+        json.dump(data_dict, f)
