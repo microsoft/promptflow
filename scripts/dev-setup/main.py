@@ -104,7 +104,7 @@ def install_pkg_editable(pkg: str, verbose: bool, is_vscode: bool = False) -> No
             #      we should be able to remove this after we fully deprecate promptflow in local development
             if is_vscode:
                 with open(pkg_working_dir / "promptflow" / "__init__.py", mode="w", encoding="utf-8") as f:
-                    f.write("")
+                    f.write("__path__ = __import__('pkgutil').extend_path(__path__, __name__)\n")
 
 
 @dataclass
