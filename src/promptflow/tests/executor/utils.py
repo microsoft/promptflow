@@ -144,13 +144,22 @@ def construct_flow_execution_request_json(flow_folder, root=FLOW_ROOT, inputs=No
     return {**base_execution_request, **flow_execution_request}
 
 
-def construct_base_execution_request_json(flow_folder, root=FLOW_ROOT, connections=None):
+def construct_initialization_request_json(
+    flow_folder, root=FLOW_ROOT, flow_file="flow.dag.yaml", connections=None, init_kwargs=None
+):
+    base_execution_request = construct_base_execution_request_json(
+        flow_folder, root=root, connections=connections, flow_file=flow_file
+    )
+    return {**base_execution_request, "init_kwargs": init_kwargs} if init_kwargs is not None else base_execution_request
+
+
+def construct_base_execution_request_json(flow_folder, root=FLOW_ROOT, connections=None, flow_file="flow.dag.yaml"):
     working_dir = get_flow_folder(flow_folder, root=root)
     tmp_dir = Path(mkdtemp())
     log_path = tmp_dir / "log.txt"
     return {
         "working_dir": working_dir.as_posix(),
-        "flow_file": "flow.dag.yaml",
+        "flow_file": flow_file,
         "output_dir": tmp_dir.as_posix(),
         "log_path": log_path.as_posix(),
         "connections": connections,
