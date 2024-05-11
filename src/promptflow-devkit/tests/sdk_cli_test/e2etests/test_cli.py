@@ -1,3 +1,4 @@
+import filecmp
 import importlib
 import importlib.util
 import json
@@ -62,6 +63,29 @@ def run_pf_command(*args, cwd=None):
     finally:
         sys.argv = origin_argv
         os.chdir(origin_cwd)
+
+
+def compare_directories(dir1, dir2):
+    dir1_content = list(dir1.iterdir())
+    dir2_content = list(dir2.iterdir())
+
+    sorted(dir1_content)
+    sorted(dir2_content)
+
+    for path1, path2 in zip(dir1_content, dir2_content):
+        if path1.name == "__pycache__" and path2.name == "__pycache__":
+            continue
+        if path1.relative_to(dir1) != path2.relative_to(dir2):
+            raise Exception(f"{path1}, {path2} are different.")
+        if path1.name != path2.name:
+            raise Exception(f"{path1}, {path2} are different.")
+        if path1.is_file() and path2.is_file():
+            if not filecmp.cmp(path1, path2):
+                raise Exception(f"{path1}, {path2} are different.")
+        elif path1.is_dir() and path2.is_dir():
+            compare_directories(path1, path2)
+        else:
+            raise Exception(f"{path1}, {path2} are different.")
 
 
 @pytest.mark.usefixtures(
@@ -1321,6 +1345,7 @@ class TestCli:
     def test_flex_flow_build(self):
         from promptflow._cli._pf.entry import main
 
+        origin_build = Path(f"{FLOWS_DIR}/export/flex_flow_build")
         with tempfile.TemporaryDirectory() as temp:
             temp = Path(temp)
             cmd = (
@@ -1336,18 +1361,7 @@ class TestCli:
             )
             sys.argv = list(cmd)
             main()
-            assert (temp / "connections").is_dir()
-            assert (temp / "flow").is_dir()
-            assert (temp / "runit").is_dir()
-            assert (temp / "Dockerfile").is_file()
-            with open(temp / "Dockerfile", "r") as f:
-                assert r"/connections" in f.read()
-
-            origin_flow = Path(f"{EAGER_FLOWS_DIR}/chat-basic")
-            temp_flow = temp / "flow"
-            for file_path in origin_flow.rglob("*"):
-                relative_path = file_path.relative_to(origin_flow)
-                assert (temp_flow / relative_path).exists()
+            compare_directories(origin_build, temp)
 
     def test_flow_build_with_ua(self, capsys):
         with pytest.raises(SystemExit):
