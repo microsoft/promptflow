@@ -16,6 +16,7 @@ from promptflow.executor._service.apis.tool import router as tool_router
 from promptflow.executor._service.utils.service_utils import generate_error_response
 
 
+# Custom JSON response class to allow nan in response.
 class CustomJSONResponse(JSONResponse):
     def render(self, content: typing.Any) -> bytes:
         return json.dumps(
