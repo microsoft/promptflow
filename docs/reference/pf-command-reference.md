@@ -294,6 +294,7 @@ pf flow serve --source
               [--verbose]
               [--debug]
               [--skip-open-browser]
+              [--engine]
 ```
 
 #### Examples
@@ -308,6 +309,12 @@ Serve flow as an endpoint with specific port and host.
 
 ```bash
 pf flow serve --source <path-to-flow> --port <port> --host <host> --environment-variables key1="`${my_connection.api_key}`" key2="value2"
+```
+
+Serve flow as an endpoint with specific port, host, environment-variables and fastapi serving engine.
+
+```bash
+pf flow serve --source <path-to-flow> --port <port> --host <host> --environment-variables key1="`${my_connection.api_key}`" key2="value2" --engine fastapi
 ```
 
 #### Required Parameter
@@ -341,6 +348,10 @@ Show debug information during serve.
 `--skip-open-browser`
 
 Skip opening browser after serve. Store true parameter.
+
+`--engine`
+
+Switch python serving engine between `flask` amd `fastapi`, default to `flask`.
 
 ## pf connection
 
