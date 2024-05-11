@@ -387,15 +387,18 @@ class FlowOperations(TelemetryMixin):
         st_cli.main()
 
     def _build_environment_config(self, flow_dag_path: Path):
-        flow_info = load_yaml(flow_dag_path)
-        # standard env object:
-        # environment:
-        #   image: xxx
-        #   conda_file: xxx
-        #   python_requirements_txt: xxx
-        #   setup_sh: xxx
-        # TODO: deserialize dag with structured class here to avoid using so many magic strings
-        env_obj = flow_info.get("environment", {})
+        if is_prompty_flow(file_path=flow_dag_path):
+            env_obj = {}
+        else:
+            flow_info = load_yaml(flow_dag_path)
+            # standard env object:
+            # environment:
+            #   image: xxx
+            #   conda_file: xxx
+            #   python_requirements_txt: xxx
+            #   setup_sh: xxx
+            # TODO: deserialize dag with structured class here to avoid using so many magic strings
+            env_obj = flow_info.get("environment", {})
 
         env_obj["sdk_version"] = version("promptflow")
         # version 0.0.1 is the dev version of promptflow
@@ -728,6 +731,7 @@ class FlowOperations(TelemetryMixin):
         flow = load_flow(flow)
         is_csharp_flow = flow.language == FlowLanguage.CSharp
         is_flex_flow = isinstance(flow, FlexFlow)
+        is_prompty_flow = isinstance(flow, Prompty)
 
         if format not in ["docker", "executable"]:
             raise ValueError(f"Unsupported export format: {format}")
@@ -748,7 +752,7 @@ class FlowOperations(TelemetryMixin):
             output=output_flow_dir,
             tuning_node=tuning_node,
             node_variant=node_variant,
-            update_flow_tools_json=False if is_csharp_flow or is_flex_flow else True,
+            update_flow_tools_json=False if is_csharp_flow or is_flex_flow or is_prompty_flow else True,
         )
 
         if flow_only:

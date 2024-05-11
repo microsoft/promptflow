@@ -1092,3 +1092,19 @@ class PromptyFlow(FlowBase):
             environment_variables=data.get("environment_variables") or {},
             message_format=data.get("message_format", MessageFormatType.BASIC),
         )
+
+    @classmethod
+    def _from_dict(cls, flow_data: dict, working_dir: Path, name=None) -> "PromptyFlow":
+        """Load flow from dict."""
+        Flow._update_working_dir(working_dir)
+        if name is None:
+            name = flow_data.get("name", _sanitize_python_variable_name(working_dir.stem))
+        flow_data["name"] = name
+
+        return cls.deserialize(flow_data)
+
+    def get_connection_names(self, environment_variables_overrides: Dict[str, str] = None):
+        """Return connection names."""
+        connection_names = super().get_connection_names(environment_variables_overrides=environment_variables_overrides)
+
+        return set({item for item in connection_names if item})

@@ -12,7 +12,7 @@ from typing import Dict, Optional, Tuple, Union
 from jinja2 import Template
 
 from promptflow._constants import AZURE_WORKSPACE_REGEX_FORMAT
-from promptflow._utils.flow_utils import is_flex_flow, resolve_flow_path
+from promptflow._utils.flow_utils import is_flex_flow, is_prompty_flow, resolve_flow_path
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.utils import _match_reference
 from promptflow._utils.yaml_utils import load_yaml
@@ -36,6 +36,13 @@ def init_executable(*, flow_data: dict = None, flow_path: Path = None, working_d
         raise ValueError("working_dir must be provided when flow_dag is provided.")
 
     if flow_path:
+        if is_prompty_flow(file_path=flow_path):
+            from promptflow.contracts.flow import PromptyFlow as ExecutablePromptyFlow
+            from promptflow.core._flow import Prompty
+
+            configs, _ = Prompty._parse_prompty(flow_path)
+            return ExecutablePromptyFlow._from_dict(flow_data=configs, working_dir=working_dir or flow_path.parent)
+
         flow_dir, flow_filename = resolve_flow_path(flow_path)
         flow_data = load_yaml(flow_dir / flow_filename)
         if not working_dir:
