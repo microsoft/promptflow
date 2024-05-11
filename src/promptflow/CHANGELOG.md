@@ -9,6 +9,9 @@
 ### Bugs Fixed
 - Fix the issue that import error will be raised after downgrading promptflow from >=1.10.0 to <1.8.0.
 - Fix the issue that `pf flow serve` is broken with exception `NotADirectoryError`.
+- [promptflow-devkit]: Fix the issue that chat window error is hard to understand.
+- [promptflow-devkit]: Fix the perf issue because of dns delay when check pfs status.
+- [promptflow-devkit]: Fix the issue that original flex yaml will be overridden when testing non-yaml flow
 
 ## v1.10.0 (2024.04.26)
 ### Features Added
