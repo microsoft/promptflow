@@ -17,7 +17,7 @@ from promptflow.core._serving.utils import get_output_fields_to_remove, get_samp
 from promptflow.core._utils import init_executable
 from promptflow.storage._run_storage import DummyRunStorage
 
-from ..._constants import PROMPTFLOW_FLOW_INIT_CONFIG
+from ..._constants import PF_FLOW_INIT_CONFIG
 from .swagger import generate_swagger
 
 
@@ -57,7 +57,7 @@ class PromptflowServingAppBasic(ABC):
 
         self.init = kwargs.get("init", {})
         if not len(self.init):
-            init_params = os.environ.get(PROMPTFLOW_FLOW_INIT_CONFIG, "{}")
+            init_params = os.environ.get(PF_FLOW_INIT_CONFIG, "{}")
             init_dict: dict = json.loads(init_params)
             self.init = init_dict
 
