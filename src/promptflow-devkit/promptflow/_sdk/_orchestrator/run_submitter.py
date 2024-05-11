@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Union
 
 from promptflow._constants import SystemMetricKeys
-from promptflow._sdk._constants import REMOTE_URI_PREFIX, ContextAttributeKey, FlowRunProperties
+from promptflow._sdk._constants import ContextAttributeKey, FlowRunProperties
 from promptflow._sdk.entities._flows import Flow, Prompty
 from promptflow._sdk.entities._run import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
@@ -229,10 +229,9 @@ class RunSubmitter:
             )
 
             # upload run to cloud if the trace destination is set to cloud
-            trace_destination = self._config.get_trace_destination(path=run._get_flow_dir().resolve())
-            if trace_destination and trace_destination.startswith(REMOTE_URI_PREFIX):
-                logger.debug(f"Trace destination set to {trace_destination!r}, uploading run to cloud...")
-                self._upload_run_to_cloud(run=run, config=self._config)
+            if self._config._is_cloud_trace_destination(path=run._get_flow_dir().resolve()):
+                portal_url = self._upload_run_to_cloud(run=run, config=self._config)
+                self.run_operations.update(name=run.name, portal_url=portal_url)
 
     def _resolve_input_dirs(self, run: Run):
         result = {"data": run.data if run.data else None}
@@ -264,7 +263,7 @@ class RunSubmitter:
             )
 
     @classmethod
-    def _upload_run_to_cloud(cls, run: Run, config=None):
+    def _upload_run_to_cloud(cls, run: Run, config=None) -> str:
         error_msg_prefix = f"Failed to upload run {run.name!r} to cloud."
         try:
             from promptflow._sdk._tracing import _get_ws_triad_from_pf_config
@@ -276,7 +275,7 @@ class RunSubmitter:
                 resource_group=ws_triad.resource_group_name,
                 workspace_name=ws_triad.workspace_name,
             )
-            pf.runs._upload(run=run)
+            return pf.runs._upload(run=run)
         except ImportError as e:
             error_message = (
                 f'{error_msg_prefix}. "promptflow[azure]" is required for local to cloud tracing experience, '
