@@ -499,7 +499,7 @@ class FlowOperations(TelemetryMixin):
                 return self._migrate_connections(
                     connection_names=SubmitterHelper.get_used_connection_names(
                         tools_meta=CSharpExecutorProxy.generate_flow_tools_json(
-                            flow_file=flow.flow_file_path,
+                            flow_file=flow._flow_file_path,
                             working_dir=flow.code,
                         ),
                         flow_dag=flow._data,
@@ -890,7 +890,7 @@ class FlowOperations(TelemetryMixin):
                 },
             }, {}
 
-        with self._resolve_additional_includes(flow.flow_file_path) as new_flow_dag_path:
+        with self._resolve_additional_includes(flow._flow_file_path) as new_flow_dag_path:
             flow_tools = generate_flow_tools_json(
                 flow_directory=new_flow_dag_path.parent,
                 dump=False,
@@ -909,7 +909,7 @@ class FlowOperations(TelemetryMixin):
         for node_name in nodes_with_error:
             tools_errors[node_name] = flow_tools_meta.pop(node_name)
 
-        additional_includes = _get_additional_includes(flow.flow_file_path)
+        additional_includes = _get_additional_includes(flow._flow_file_path)
         if additional_includes:
             additional_files = {}
             for include in additional_includes:

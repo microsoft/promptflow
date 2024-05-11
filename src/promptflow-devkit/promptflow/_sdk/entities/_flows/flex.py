@@ -44,10 +44,6 @@ class FlexFlow(FlowBase):
     def name(self) -> str:
         return self._flow_dir.name
 
-    @property
-    def flow_file_path(self) -> Path:
-        return self._flow_dir / self._flow_file_name
-
     # region properties
     @property
     def language(self) -> str:

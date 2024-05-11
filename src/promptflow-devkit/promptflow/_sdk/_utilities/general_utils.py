@@ -1103,7 +1103,7 @@ def get_flow_path(flow) -> Path:
     from promptflow._sdk.entities._flows.prompty import Prompty
 
     if isinstance(flow, DAGFlow):
-        return flow.flow_file_path.parent.resolve()
+        return flow._flow_file_path.parent.resolve()
     if isinstance(flow, (FlexFlow, Prompty)):
         # Use code path to return as flow path, since code path is the same as flow directory for yaml case and code
         # path points to original code path in non-yaml case

@@ -506,7 +506,7 @@ def _test_flow_multi_modal(args, pf_client):
             for script in script_path:
                 StreamlitFileReplicator(
                     flow_name=flow.display_name if flow.display_name else flow.name,
-                    flow_dag_path=flow.flow_file_path,
+                    flow_dag_path=flow._flow_file_path,
                 ).generate_to_file(script)
             main_script_path = os.path.join(temp_dir, "main.py")
             logger.info("Start streamlit with main script generated at: %s", main_script_path)
