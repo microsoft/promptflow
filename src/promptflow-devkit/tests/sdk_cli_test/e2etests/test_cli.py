@@ -2727,7 +2727,8 @@ class TestCli:
         target = "promptflow._sdk._tracing.TraceDestinationConfig.need_to_resolve"
         with mock.patch(target) as mocked:
             mocked.return_value = True
-            # When configure azure trace provider, init chat flow without connection and deployment.
+            # When configure azure trace provider, will raise ConfigFileNotFound error since no config.json in code
+            # folder.
             with pytest.raises(SystemExit):
                 run_pf_command(
                     "flow",
