@@ -302,6 +302,13 @@ class TestFlowTest:
         result = _client._flows._test(flow=flow_path, inputs={"input_val": "val1"})
         assert result.run_info.status.value == "Completed"
 
+    def test_eager_flow_test_with_user_code_error(self):
+        clear_module_cache("entry")
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/exception_in_user_code/").absolute()
+        result = _client._flows._test(flow=flow_path)
+        assert result.run_info.status.value == "Failed"
+        assert "FlexFlowExecutionErrorDetails" in str(result.run_info.error)
+
     def test_eager_flow_test_invalid_cases(self):
         # wrong entry provided
         flow_path = Path(f"{EAGER_FLOWS_DIR}/incorrect_entry/").absolute()
@@ -553,3 +560,19 @@ class TestFlowTest:
             flow=flow_path, inputs={"func_input1": "input1", "func_input2": "input2"}, init={"obj_input": "val"}
         )
         assert result == "val_input1_input2"
+
+    def test_flow_input_parse(self, pf):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/primitive_type_inputs")
+        result = pf.test(
+            flow=flow_path,
+            inputs={"str_input": "str", "bool_input": "True", "int_input": "1", "float_input": "1.0"},
+            init={"obj_input": "val"},
+        )
+        assert result == {"str_output": "str", "bool_output": False, "int_output": 2, "float_output": 2.0}
+
+        result = pf.test(
+            flow=flow_path,
+            inputs={"str_input": "str", "bool_input": "False", "int_input": 1, "float_input": 1.0},
+            init={"obj_input": "val"},
+        )
+        assert result == {"str_output": "str", "bool_output": True, "int_output": 2, "float_output": 2.0}

@@ -118,7 +118,7 @@ class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
         :return: connection object retrieved from Azure.
         :rtype: ~promptflow.sdk.entities._connection._Connection
         """
-        with_secrets = kwargs.get("with_secrets", False)
+        with_secrets = kwargs.get("with_secrets", True)
         if with_secrets:
             # Do not use pfazure_client here as it requires workspace read permission
             # Get secrets from arm only requires workspace listsecrets permission

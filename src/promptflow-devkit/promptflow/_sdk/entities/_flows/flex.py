@@ -60,7 +60,7 @@ class FlexFlow(FlowBase):
             data = cls._create_schema_for_validation(context={BASE_PATH_CONTEXT_KEY: path.parent}).load(data)
 
         entry = data.get("entry")
-        code = path.parent
+        code = data.get("code", None) or path.parent
 
         if entry is None:
             raise UserErrorException(f"Entry function is not specified for flow {path}")

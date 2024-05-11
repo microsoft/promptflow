@@ -84,6 +84,21 @@ class SearchLineRunParser:
         )
 
 
+# list collection API
+list_collection_parser = api.parser()
+list_collection_parser.add_argument("limit", type=int, required=False)
+
+
+@dataclass
+class ListCollectionParser:
+    limit: typing.Optional[int] = None
+
+    @staticmethod
+    def from_request() -> "ListCollectionParser":
+        args = list_collection_parser.parse_args()
+        return ListCollectionParser(limit=args.limit)
+
+
 # line run models, for strong type support in Swagger
 cumulative_token_count_model = api.model(
     "CumulativeTokenCount",
@@ -157,3 +172,14 @@ class LineRunSearch(Resource):
             current_app.logger.error(traceback.format_exc())
             current_app.logger.error(e)
             api.abort(500, str(e))
+
+
+@api.route("/Collections/list")
+class Collections(Resource):
+    @api.doc(description="List collections")
+    @api.response(code=200, description="Collections")
+    def get(self):
+        client: PFClient = get_client_from_request()
+        args = ListCollectionParser.from_request()
+        collections = client.traces._list_collections(limit=args.limit)
+        return [collection._to_dict() for collection in collections]
