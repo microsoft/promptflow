@@ -681,6 +681,9 @@ class FlowExecutor:
         self._completed_idx[line_number] = thread_name
         return results
 
+    def get_inputs_definition(self):
+        return self._flow.inputs
+
     def exec_line(
         self,
         inputs: Mapping[str, Any],

@@ -5,6 +5,7 @@
 ### Improvements
 - Interactive browser credential is excluded by default when using Azure AI connections, user could set `PF_NO_INTERACTIVE_LOGIN=False` to enable it.
 - Visualize flex flow run(s) switches to trace UI page.
+- Add new `--engine` parameter for `pf flow serve`. This parameter can be used to switch python serving engine between `flask` and `fastapi`, currently it defaults to `flask`.
 - Return the secrets in the connection object by default to improve flex flow experience.
   - Behaviors not changed: 'pf connection' command will scrub secrets.
   - New behavior: connection object by `client.connection.get` will have real secrets. `print(connection_obj)` directly will scrub those secrets. `print(connection_obj.api_key)` or `print(connection_obj.secrets)` will print the REAL secrets.
