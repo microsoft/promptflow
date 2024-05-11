@@ -146,6 +146,12 @@ class ChatAPIInvalidRoleError(CoreError):
     pass
 
 
+class JinjaTemplateError(CoreError):
+    """Base exception raised when failed to render jinja template."""
+
+    pass
+
+
 class ChatAPIFunctionRoleInvalidFormatError(CoreError):
     """Exception raised when failed to validate chat api function role format."""
 
@@ -166,6 +172,12 @@ class InvalidOutputKeyError(CoreError):
 
 class InvalidSampleError(CoreError):
     """Exception raise when invalid sample in Prompty."""
+
+    pass
+
+
+class ChatAPIFunctionRoleInvalidFormat(CoreError):
+    """Base exception raised when failed to validate chat api function role format."""
 
     pass
 
