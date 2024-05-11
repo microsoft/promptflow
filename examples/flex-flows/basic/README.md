@@ -25,6 +25,11 @@ cat ../.env
 python programmer.py
 ```
 
+- Test with flow entry
+```bash
+pf flow test --flow programmer:write_simple_program --inputs text="Java Hello World!"
+```
+
 - Test flow with connection
 
 Storing connection info in .env with plaintext is not safe. We recommend to use `pf connection` to guard secrets like `api_key` from leak.
@@ -39,13 +44,10 @@ pf connection create --file ../../connections/azure_openai.yml --set api_key=<yo
 pf connection show -n open_ai_connection
 ```
 
+- Test with flow yaml
 ```bash
-# test with default input value in flow.flex.yaml
+# test with sample input value in flow.flex.yaml
 pf flow test --flow .
-
-# test with flow inputs
-pf flow test --flow . --inputs text="Java Hello World!"
-
 ```
 
 - Create run with multiple lines data

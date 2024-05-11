@@ -57,8 +57,13 @@ pf connection show --name open_ai_connection
 ```bash
 python flow.py
 ```
-
 - Test flow
+
+```bash
+pf flow test --flow flow:ChatFlow --init init.json --inputs question="What's Azure Machine Learning?"
+```
+
+- Test flow with yaml
 You'll need to write flow entry `flow.flex.yaml` to test with prompt flow.
 
 ```bash
@@ -66,8 +71,6 @@ You'll need to write flow entry `flow.flex.yaml` to test with prompt flow.
 pf flow test --flow . --init init.json
 
 # run chat flow with new question
-pf flow test --flow . --init init.json --inputs question="What's Azure Machine Learning?"
-
 pf flow test --flow . --init init.json --inputs question="What is ChatGPT? Please explain with consise statement."
 ```
 - Test flow: multi turn

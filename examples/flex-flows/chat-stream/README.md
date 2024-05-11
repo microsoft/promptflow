@@ -59,6 +59,12 @@ python flow.py
 ```
 
 - Test flow
+
+```bash
+pf flow test --flow flow:ChatFlow --init init.json
+```
+
+- Test flow with yaml
 You'll need to write flow entry `flow.flex.yaml` to test with prompt flow.
 
 ```bash
