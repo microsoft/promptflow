@@ -3,9 +3,15 @@ name: Update CI runtime
 on:
   workflow_dispatch:
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   update_runtime:
     runs-on: ubuntu-latest
+    environment:
+      internal
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -18,7 +24,9 @@ jobs:
       - name: Azure Login
         uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
+          tenant-id: ${{secrets.AZURE_TENANT_ID}}
+          client-id: ${{secrets.AZURE_CLIENT_ID}}
 
       - name: Generate config.json for canary & production regions
         run: |

@@ -265,6 +265,18 @@ class ArtifactInternalError(SDKInternalError):
     pass
 
 
+class AssetInternalError(SDKInternalError):
+    """Exception raised if asset internal error."""
+
+    pass
+
+
+class RunHistoryInternalError(SDKInternalError):
+    """Exception raised if run history internal error."""
+
+    pass
+
+
 class MetricInternalError(SDKInternalError):
     """Exception raised if metric internal error."""
 
@@ -287,5 +299,11 @@ class MissingAzurePackage(SDKError):
 
 class WrongTraceSearchExpressionError(SDKError):
     """Exception raised if the trace search expression is wrong."""
+
+    pass
+
+
+class PromptFlowServiceInvocationError(SDKError):
+    """Exception raised if prompt flow service invocation failed."""
 
     pass

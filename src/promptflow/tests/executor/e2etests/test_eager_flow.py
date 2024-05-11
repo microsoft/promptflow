@@ -81,6 +81,22 @@ class TestEagerFlow:
         batch_result = batch_engine.run(input_dirs, inputs_mapping, output_dir)
         validate_batch_result(batch_result, flow_folder, output_dir, ensure_output)
 
+    def test_batch_run_with_openai(self, dev_connections):
+        flow_folder = "callable_class_with_openai"
+        inputs_mapping = {"question": "${data.question}", "stream": "${data.stream}"}
+        batch_engine = BatchEngine(
+            get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT),
+            get_flow_folder(flow_folder, root=EAGER_FLOW_ROOT),
+            init_kwargs={"connection": "azure_open_ai_connection"},
+            connections=dev_connections,
+        )
+        input_dirs = {"data": get_flow_inputs_file(flow_folder, root=EAGER_FLOW_ROOT)}
+        output_dir = Path(mkdtemp())
+        batch_result = batch_engine.run(input_dirs, inputs_mapping, output_dir)
+        for token_name in ["prompt_tokens", "completion_tokens", "total_tokens"]:
+            assert getattr(batch_result.system_metrics, token_name, 0) > 0
+        validate_batch_result(batch_result, flow_folder, output_dir, lambda x: isinstance(x, dict))
+
     def test_batch_run_with_invalid_case(self):
         flow_folder = "dummy_flow_with_exception"
         batch_engine = BatchEngine(

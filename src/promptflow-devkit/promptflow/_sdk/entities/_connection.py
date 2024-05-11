@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import abc
+import copy
 import importlib
 import json
 from os import PathLike
@@ -68,6 +69,16 @@ PROMPTFLOW_CONNECTIONS = "promptflow.connections"
 
 class _Connection(_CoreConnection, YAMLTranslatableMixin):
     SUPPORTED_TYPES = {}
+
+    def __str__(self):
+        """Override this function to scrub secrets in connection when print."""
+        obj_for_dump = copy.deepcopy(self)
+        # Scrub secrets.
+        obj_for_dump.secrets = {k: SCRUBBED_VALUE for k in obj_for_dump.secrets}
+        try:
+            return obj_for_dump._to_yaml()
+        except BaseException:  # pylint: disable=broad-except
+            return super(YAMLTranslatableMixin, self).__str__()
 
     @classmethod
     def _casting_type(cls, typ):

@@ -4725,6 +4725,66 @@
         }
       }
     },
+    "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/TraceSessions/setup": {
+      "post": {
+        "tags": [
+          "TraceSessions"
+        ],
+        "operationId": "TraceSessions_SetupTraceSessionAsync",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/subscriptionIdParameter"
+          },
+          {
+            "$ref": "#/components/parameters/resourceGroupNameParameter"
+          },
+          {
+            "$ref": "#/components/parameters/workspaceNameParameter"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TraceDbSetupRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TraceCosmosResourceDtos"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IActionResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error response describing why the operation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/TraceSessions/initialize": {
       "post": {
         "tags": [
@@ -4767,6 +4827,47 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/IActionResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error response describing why the operation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/TraceSessions": {
+      "get": {
+        "tags": [
+          "TraceSessions"
+        ],
+        "operationId": "TraceSessions_GetTraceSessionMetadataAsync",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/subscriptionIdParameter"
+          },
+          {
+            "$ref": "#/components/parameters/resourceGroupNameParameter"
+          },
+          {
+            "$ref": "#/components/parameters/workspaceNameParameter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TraceCosmosMetaDto"
                 }
               }
             }
@@ -6120,6 +6221,9 @@
           "amlSparkCloudSetting": {
             "$ref": "#/components/schemas/AetherAmlSparkCloudSetting"
           },
+          "fineTuningCloudSetting": {
+            "$ref": "#/components/schemas/AetherFineTuningCloudSetting"
+          },
           "dataTransferV2CloudSetting": {
             "$ref": "#/components/schemas/AetherDataTransferV2CloudSetting"
           }
@@ -7116,6 +7220,100 @@
           "path": {
             "type": "string",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AetherFineTuningCloudSetting": {
+        "type": "object",
+        "properties": {
+          "entry": {
+            "$ref": "#/components/schemas/AetherEntrySetting"
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "archives": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "jars": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "pyFiles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "driverMemory": {
+            "type": "string",
+            "nullable": true
+          },
+          "driverCores": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "executorMemory": {
+            "type": "string",
+            "nullable": true
+          },
+          "executorCores": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "numberExecutors": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "environmentAssetId": {
+            "type": "string",
+            "nullable": true
+          },
+          "environmentVariables": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "nullable": true
+            },
+            "nullable": true
+          },
+          "inlineEnvironmentDefinitionString": {
+            "type": "string",
+            "nullable": true
+          },
+          "conf": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "nullable": true
+            },
+            "nullable": true
+          },
+          "compute": {
+            "type": "string",
+            "nullable": true
+          },
+          "resources": {
+            "$ref": "#/components/schemas/AetherResourcesSetting"
+          },
+          "identity": {
+            "$ref": "#/components/schemas/AetherIdentitySetting"
           }
         },
         "additionalProperties": false
@@ -11065,6 +11263,9 @@
           "amlSparkCloudSetting": {
             "$ref": "#/components/schemas/AmlSparkCloudSetting"
           },
+          "fineTuningCloudSetting": {
+            "$ref": "#/components/schemas/FineTuningCloudSetting"
+          },
           "dataTransferV2CloudSetting": {
             "$ref": "#/components/schemas/DataTransferV2CloudSetting"
           }
@@ -12451,7 +12652,8 @@
           "Qdrant",
           "Weaviate",
           "FormRecognizer",
-          "Serverless"
+          "Serverless",
+          "AIServices"
         ],
         "type": "string"
       },
@@ -12668,6 +12870,9 @@
           "logFileRelativePath": {
             "type": "string",
             "nullable": true
+          },
+          "disableTrace": {
+            "type": "boolean"
           },
           "batchDataInput": {
             "$ref": "#/components/schemas/BatchDataInput"
@@ -15575,6 +15780,9 @@
             "type": "string",
             "nullable": true
           },
+          "disableTrace": {
+            "type": "boolean"
+          },
           "connections": {
             "type": "object",
             "additionalProperties": {
@@ -16056,6 +16264,25 @@
             },
             "nullable": true
           },
+          "command": {
+            "type": "string",
+            "nullable": true
+          },
+          "code": {
+            "type": "string",
+            "nullable": true
+          },
+          "environment": {
+            "type": "string",
+            "nullable": true
+          },
+          "outputs": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ExperimentNodeOutput"
+            },
+            "nullable": true
+          },
           "path": {
             "type": "string",
             "nullable": true
@@ -16116,6 +16343,32 @@
             "additionalProperties": {
               "nullable": true
             },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ExperimentNodeOutput": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "mode": {
+            "type": "string",
+            "nullable": true
+          },
+          "uri": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "version": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -16195,6 +16448,9 @@
             "type": "string",
             "nullable": true
           },
+          "disableTrace": {
+            "type": "boolean"
+          },
           "connections": {
             "type": "object",
             "additionalProperties": {
@@ -16253,7 +16509,8 @@
       "ExperimentNodeType": {
         "enum": [
           "Flow",
-          "ChatGroup"
+          "ChatGroup",
+          "Command"
         ],
         "type": "string"
       },
@@ -16658,6 +16915,10 @@
             },
             "description": "This is a dictionary",
             "nullable": true
+          },
+          "filter_attribute": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -16672,6 +16933,100 @@
             "type": "array",
             "items": { },
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "FineTuningCloudSetting": {
+        "type": "object",
+        "properties": {
+          "entry": {
+            "$ref": "#/components/schemas/EntrySetting"
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "archives": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "jars": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "pyFiles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "driverMemory": {
+            "type": "string",
+            "nullable": true
+          },
+          "driverCores": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "executorMemory": {
+            "type": "string",
+            "nullable": true
+          },
+          "executorCores": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "numberExecutors": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "environmentAssetId": {
+            "type": "string",
+            "nullable": true
+          },
+          "environmentVariables": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "nullable": true
+            },
+            "nullable": true
+          },
+          "inlineEnvironmentDefinitionString": {
+            "type": "string",
+            "nullable": true
+          },
+          "conf": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "nullable": true
+            },
+            "nullable": true
+          },
+          "compute": {
+            "type": "string",
+            "nullable": true
+          },
+          "resources": {
+            "$ref": "#/components/schemas/ResourcesSetting"
+          },
+          "identity": {
+            "$ref": "#/components/schemas/IdentitySetting"
           }
         },
         "additionalProperties": false
@@ -17539,7 +17894,8 @@
           "ExperimentTest",
           "ExperimentEval",
           "ChatGroup",
-          "ChatGroupRole"
+          "ChatGroupRole",
+          "Command"
         ],
         "type": "string"
       },
@@ -17624,6 +17980,13 @@
             "additionalProperties": {
               "type": "string",
               "nullable": true
+            },
+            "nullable": true
+          },
+          "createdRunIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
             },
             "nullable": true
           },
@@ -17856,6 +18219,9 @@
             "type": "string",
             "nullable": true
           },
+          "disableTrace": {
+            "type": "boolean"
+          },
           "connections": {
             "type": "object",
             "additionalProperties": {
@@ -18014,6 +18380,9 @@
             "type": "string",
             "nullable": true
           },
+          "disableTrace": {
+            "type": "boolean"
+          },
           "connections": {
             "type": "object",
             "additionalProperties": {
@@ -18086,7 +18455,8 @@
           "Pausing",
           "Finalizing",
           "Canceled",
-          "Bypassed"
+          "Bypassed",
+          "Unavailable"
         ],
         "type": "string"
       },
@@ -18271,6 +18641,9 @@
             },
             "nullable": true
           },
+          "enableMultiContainer": {
+            "type": "boolean"
+          },
           "runtimeName": {
             "type": "string",
             "nullable": true
@@ -18410,10 +18783,6 @@
           },
           "language": {
             "$ref": "#/components/schemas/FlowLanguage"
-          },
-          "entry": {
-            "type": "string",
-            "nullable": true
           },
           "message_format": {
             "$ref": "#/components/schemas/FlowMessageFormatType"
@@ -18619,6 +18988,9 @@
           "logFileRelativePath": {
             "type": "string",
             "nullable": true
+          },
+          "disableTrace": {
+            "type": "boolean"
           },
           "connections": {
             "type": "object",
@@ -21244,6 +21616,17 @@
         ],
         "type": "string"
       },
+      "ManagedCosmosDbConfig": {
+        "type": "object",
+        "properties": {
+          "ttlInSeconds": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "ManagedServiceIdentity": {
         "required": [
           "type"
@@ -21255,11 +21638,13 @@
           },
           "principalId": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "nullable": true
           },
           "tenantId": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "nullable": true
           },
           "userAssignedIdentities": {
             "type": "object",
@@ -26927,6 +27312,13 @@
         },
         "additionalProperties": false
       },
+      "ResourceType": {
+        "enum": [
+          "Attach",
+          "HOBO"
+        ],
+        "type": "string"
+      },
       "ResourcesSetting": {
         "type": "object",
         "properties": {
@@ -26985,6 +27377,9 @@
           "runtimeName": {
             "type": "string",
             "nullable": true
+          },
+          "disableTrace": {
+            "type": "boolean"
           },
           "vmSize": {
             "type": "string",
@@ -28710,6 +29105,51 @@
         "additionalProperties": false
       },
       "RuntimeConfiguration": {
+        "type": "object",
+        "properties": {
+          "images": {
+            "type": "object",
+            "properties": {
+              "Python": {
+                "type": "object",
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/RuntimeConfigurationBase"
+                }
+              },
+              "CSharp": {
+                "type": "object",
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/RuntimeConfigurationBase"
+                }
+              },
+              "TypeScript": {
+                "type": "object",
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/RuntimeConfigurationBase"
+                }
+              },
+              "JavaScript": {
+                "type": "object",
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/RuntimeConfigurationBase"
+                }
+              }
+            },
+            "additionalProperties": false,
+            "nullable": true
+          },
+          "baseImage": {
+            "type": "string",
+            "nullable": true
+          },
+          "version": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "RuntimeConfigurationBase": {
         "type": "object",
         "properties": {
           "baseImage": {
@@ -30865,6 +31305,9 @@
             "type": "string",
             "nullable": true
           },
+          "disableTrace": {
+            "type": "boolean"
+          },
           "connections": {
             "type": "object",
             "additionalProperties": {
@@ -31009,6 +31452,13 @@
             "additionalProperties": {
               "type": "string",
               "nullable": true
+            },
+            "nullable": true
+          },
+          "createdRunIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
             },
             "nullable": true
           },
@@ -31972,9 +32422,34 @@
         },
         "additionalProperties": false
       },
-      "TraceCosmosResourceDto": {
+      "TraceCosmosConfiguration": {
+        "enum": [
+          "None",
+          "ReadDisabled",
+          "WriteDisabled",
+          "Disabled",
+          "DiagnosticDisabled",
+          "DataCleaned",
+          "AccountDeleted"
+        ],
+        "type": "string"
+      },
+      "TraceCosmosMetaDto": {
         "type": "object",
         "properties": {
+          "entityId": {
+            "type": "string",
+            "nullable": true
+          },
+          "traceCosmosConfiguration": {
+            "$ref": "#/components/schemas/TraceCosmosConfiguration"
+          },
+          "traceCosmosStatus": {
+            "$ref": "#/components/schemas/TraceCosmosStatus"
+          },
+          "error": {
+            "$ref": "#/components/schemas/ErrorResponse"
+          },
           "accountEndpoint": {
             "type": "string",
             "nullable": true
@@ -31983,6 +32458,19 @@
             "type": "string",
             "nullable": true
           },
+          "resourceArmId": {
+            "type": "string",
+            "nullable": true
+          },
+          "resourceType": {
+            "$ref": "#/components/schemas/ResourceType"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TraceCosmosResourceDto": {
+        "type": "object",
+        "properties": {
           "containerName": {
             "type": "string",
             "nullable": true
@@ -31998,6 +32486,25 @@
           "permissionMode": {
             "type": "string",
             "nullable": true
+          },
+          "timeToLiveInSeconds": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "accountEndpoint": {
+            "type": "string",
+            "nullable": true
+          },
+          "databaseName": {
+            "type": "string",
+            "nullable": true
+          },
+          "resourceArmId": {
+            "type": "string",
+            "nullable": true
+          },
+          "resourceType": {
+            "$ref": "#/components/schemas/ResourceType"
           }
         },
         "additionalProperties": false
@@ -32011,6 +32518,32 @@
               "$ref": "#/components/schemas/TraceCosmosResourceDto"
             },
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TraceCosmosStatus": {
+        "enum": [
+          "NotExists",
+          "Initializing",
+          "Initialized",
+          "Deleting",
+          "Deleted",
+          "NotAvailable"
+        ],
+        "type": "string"
+      },
+      "TraceDbSetupRequest": {
+        "type": "object",
+        "properties": {
+          "resourceType": {
+            "$ref": "#/components/schemas/ResourceType"
+          },
+          "managedCosmosDbConfig": {
+            "$ref": "#/components/schemas/ManagedCosmosDbConfig"
+          },
+          "userAttachedCosmosDbConfig": {
+            "$ref": "#/components/schemas/AttachCosmosRequest"
           }
         },
         "additionalProperties": false
@@ -32262,6 +32795,9 @@
           "logFileRelativePath": {
             "type": "string",
             "nullable": true
+          },
+          "disableTrace": {
+            "type": "boolean"
           },
           "connections": {
             "type": "object",
@@ -33176,11 +33712,13 @@
         "properties": {
           "principalId": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "nullable": true
           },
           "clientId": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -33254,7 +33792,8 @@
           "file_path",
           "image",
           "assistant_definition",
-          "ServerlessConnection"
+          "ServerlessConnection",
+          "AIServicesConnection"
         ],
         "type": "string"
       },
