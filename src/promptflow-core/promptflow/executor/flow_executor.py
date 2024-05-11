@@ -46,6 +46,7 @@ from promptflow.connections import ConnectionProvider
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_mode import RunMode
+from promptflow.core import Prompty
 from promptflow.core._connection_provider._dict_connection_provider import DictConnectionProvider
 from promptflow.exceptions import PromptflowException
 from promptflow.executor import _input_assignment_parser
@@ -213,6 +214,10 @@ class FlowExecutor:
         if env_exporter_setup:
             setup_exporter_from_environ()
 
+        if isinstance(flow_file, Prompty):
+            from ._prompty_executor import PromptyExecutor
+
+            return PromptyExecutor(flow_file=flow_file, working_dir=working_dir, storage=storage)
         if hasattr(flow_file, "__call__") or inspect.isfunction(flow_file):
             from ._script_executor import ScriptExecutor
 
@@ -1093,15 +1098,12 @@ class FlowExecutor:
                 context,
                 allow_generator_output,
             )
-        except KeyboardInterrupt as ex:
-            # Run will be cancelled when the process receives a SIGINT signal.
-            # KeyboardInterrupt will be raised after asyncio finishes its signal handling
-            # End run with the KeyboardInterrupt exception, so that its status will be Canceled
-            flow_logger.info("Received KeyboardInterrupt, cancel the run.")
-            # Update the run info of those running nodes to a canceled status.
+        except asyncio.CancelledError as ex:
+            flow_logger.info("Received cancelled error, cancel the run.")
             run_tracker.cancel_node_runs(run_id)
             run_tracker.end_run(line_run_id, ex=ex)
-            raise
+            if self._raise_ex:
+                raise
         except Exception as e:
             run_tracker.end_run(line_run_id, ex=e)
             if self._raise_ex:

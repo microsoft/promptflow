@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Union
 
 from promptflow._constants import SystemMetricKeys
-from promptflow._proxy import ProxyFactory
 from promptflow._sdk._constants import REMOTE_URI_PREFIX, ContextAttributeKey, FlowRunProperties
 from promptflow._sdk.entities._flows import Flow, Prompty
 from promptflow._sdk.entities._run import Run
@@ -108,7 +107,9 @@ class RunSubmitter:
         local_storage = LocalStorageOperations(run, stream=stream, run_mode=RunMode.Batch)
         with local_storage.logger:
             flow_obj = load_flow(source=run.flow)
-            with flow_overwrite_context(flow_obj, tuning_node, variant, connections=run.connections) as flow:
+            with flow_overwrite_context(
+                flow_obj, tuning_node, variant, connections=run.connections, init_kwargs=run.init
+            ) as flow:
                 self._submit_bulk_run(flow=flow, run=run, local_storage=local_storage)
 
     @classmethod
@@ -122,12 +123,6 @@ class RunSubmitter:
     ) -> dict:
         logger.info(f"Submitting run {run.name}, log path: {local_storage.logger.file_path}")
         run_id = run.name
-        # TODO: unify the logic for prompty and other flows
-        if not isinstance(flow, Prompty):
-            # variants are resolved in the context, so we can't move this logic to Operations for now
-            ProxyFactory().create_inspector_proxy(flow.language).prepare_metadata(
-                flow_file=Path(flow.path), working_dir=Path(flow.code), init_kwargs=run.init
-            )
 
         with _change_working_dir(flow.code):
             # resolve connections with environment variables overrides to avoid getting unused connections
@@ -237,7 +232,7 @@ class RunSubmitter:
             trace_destination = self._config.get_trace_destination(path=run._get_flow_dir().resolve())
             if trace_destination and trace_destination.startswith(REMOTE_URI_PREFIX):
                 logger.debug(f"Trace destination set to {trace_destination!r}, uploading run to cloud...")
-                self._upload_run_to_cloud(run=run)
+                self._upload_run_to_cloud(run=run, config=self._config)
 
     def _resolve_input_dirs(self, run: Run):
         result = {"data": run.data if run.data else None}
@@ -269,13 +264,13 @@ class RunSubmitter:
             )
 
     @classmethod
-    def _upload_run_to_cloud(cls, run: Run):
+    def _upload_run_to_cloud(cls, run: Run, config=None):
         error_msg_prefix = f"Failed to upload run {run.name!r} to cloud."
         try:
             from promptflow._sdk._tracing import _get_ws_triad_from_pf_config
             from promptflow.azure._cli._utils import _get_azure_pf_client
 
-            ws_triad = _get_ws_triad_from_pf_config(path=run._get_flow_dir().resolve(), config=run._config)
+            ws_triad = _get_ws_triad_from_pf_config(path=run._get_flow_dir().resolve(), config=config or run._config)
             pf = _get_azure_pf_client(
                 subscription_id=ws_triad.subscription_id,
                 resource_group=ws_triad.resource_group_name,

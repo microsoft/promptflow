@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Dict, Iterator, Union
 
 from filelock import FileLock
-from openai import NotFoundError
+from openai import APIStatusError
 
 from promptflow.tracing.contracts.generator_proxy import GeneratorProxy
 
@@ -310,7 +310,7 @@ class RecordCache:
 
             # Reconstruct the exception
             # Check if the exception class requires specific keyword arguments
-            if exception_class is NotFoundError:
+            if issubclass(exception_class, APIStatusError):
                 exception_instance = exception_class(
                     output["message"], response=output["response"], body=output["body"]
                 )
