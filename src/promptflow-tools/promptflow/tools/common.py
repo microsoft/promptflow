@@ -1027,6 +1027,7 @@ def init_azure_openai_client(connection: AzureOpenAIConnection):
 def openai_batch_chat(client, kwargs):
     try:
         from openai.types.chat import ChatCompletion
+        import uuid
         # construct the batch file content
         batch_file_content = {
             'custom_id': 'promptflow_batch_chat',
@@ -1035,10 +1036,11 @@ def openai_batch_chat(client, kwargs):
             'body': kwargs
         }
         # create the batch file
-        with open('promptflow_batch_inputs.jsonl', 'w') as batch_input:
+        temp_file_name = f'promptflow_batch_inputs_{uuid.uuid4().hex[:8]}.jsonl'
+        with open(temp_file_name, 'w') as batch_input:
             batch_input.write(json.dumps(batch_file_content) + '\n')
         # upload batch file
-        with open('promptflow_batch_inputs.jsonl', 'rb') as batch_input:
+        with open(temp_file_name, 'rb') as batch_input:
             uploaded_file = client.files.create(file=batch_input, purpose='batch')
             batch_res = client.batches.create(
                 input_file_id=uploaded_file.id,
@@ -1080,6 +1082,7 @@ def openai_batch_chat(client, kwargs):
         # delete the batch file
         client.files.delete(uploaded_file.id)
         client.files.delete(output_file_id)
+        os.remove(temp_file_name)
 
         return chat_completion
     except Exception as e:
