@@ -1390,6 +1390,8 @@ class AetherCloudSettings(msrest.serialization.Model):
     :vartype data_transfer_cloud_config: ~flow.models.AetherDataTransferCloudConfiguration
     :ivar aml_spark_cloud_setting:
     :vartype aml_spark_cloud_setting: ~flow.models.AetherAmlSparkCloudSetting
+    :ivar fine_tuning_cloud_setting:
+    :vartype fine_tuning_cloud_setting: ~flow.models.AetherFineTuningCloudSetting
     :ivar data_transfer_v2_cloud_setting:
     :vartype data_transfer_v2_cloud_setting: ~flow.models.AetherDataTransferV2CloudSetting
     """
@@ -1405,6 +1407,7 @@ class AetherCloudSettings(msrest.serialization.Model):
         'es_cloud_config': {'key': 'esCloudConfig', 'type': 'AetherEsCloudConfiguration'},
         'data_transfer_cloud_config': {'key': 'dataTransferCloudConfig', 'type': 'AetherDataTransferCloudConfiguration'},
         'aml_spark_cloud_setting': {'key': 'amlSparkCloudSetting', 'type': 'AetherAmlSparkCloudSetting'},
+        'fine_tuning_cloud_setting': {'key': 'fineTuningCloudSetting', 'type': 'AetherFineTuningCloudSetting'},
         'data_transfer_v2_cloud_setting': {'key': 'dataTransferV2CloudSetting', 'type': 'AetherDataTransferV2CloudSetting'},
     }
 
@@ -1421,6 +1424,7 @@ class AetherCloudSettings(msrest.serialization.Model):
         es_cloud_config: Optional["AetherEsCloudConfiguration"] = None,
         data_transfer_cloud_config: Optional["AetherDataTransferCloudConfiguration"] = None,
         aml_spark_cloud_setting: Optional["AetherAmlSparkCloudSetting"] = None,
+        fine_tuning_cloud_setting: Optional["AetherFineTuningCloudSetting"] = None,
         data_transfer_v2_cloud_setting: Optional["AetherDataTransferV2CloudSetting"] = None,
         **kwargs
     ):
@@ -1445,6 +1449,8 @@ class AetherCloudSettings(msrest.serialization.Model):
         :paramtype data_transfer_cloud_config: ~flow.models.AetherDataTransferCloudConfiguration
         :keyword aml_spark_cloud_setting:
         :paramtype aml_spark_cloud_setting: ~flow.models.AetherAmlSparkCloudSetting
+        :keyword fine_tuning_cloud_setting:
+        :paramtype fine_tuning_cloud_setting: ~flow.models.AetherFineTuningCloudSetting
         :keyword data_transfer_v2_cloud_setting:
         :paramtype data_transfer_v2_cloud_setting: ~flow.models.AetherDataTransferV2CloudSetting
         """
@@ -1459,6 +1465,7 @@ class AetherCloudSettings(msrest.serialization.Model):
         self.es_cloud_config = es_cloud_config
         self.data_transfer_cloud_config = data_transfer_cloud_config
         self.aml_spark_cloud_setting = aml_spark_cloud_setting
+        self.fine_tuning_cloud_setting = fine_tuning_cloud_setting
         self.data_transfer_v2_cloud_setting = data_transfer_v2_cloud_setting
 
 
@@ -3234,6 +3241,143 @@ class AetherFileSystem(msrest.serialization.Model):
         super(AetherFileSystem, self).__init__(**kwargs)
         self.connection = connection
         self.path = path
+
+
+class AetherFineTuningCloudSetting(msrest.serialization.Model):
+    """AetherFineTuningCloudSetting.
+
+    :ivar entry:
+    :vartype entry: ~flow.models.AetherEntrySetting
+    :ivar files:
+    :vartype files: list[str]
+    :ivar archives:
+    :vartype archives: list[str]
+    :ivar jars:
+    :vartype jars: list[str]
+    :ivar py_files:
+    :vartype py_files: list[str]
+    :ivar driver_memory:
+    :vartype driver_memory: str
+    :ivar driver_cores:
+    :vartype driver_cores: int
+    :ivar executor_memory:
+    :vartype executor_memory: str
+    :ivar executor_cores:
+    :vartype executor_cores: int
+    :ivar number_executors:
+    :vartype number_executors: int
+    :ivar environment_asset_id:
+    :vartype environment_asset_id: str
+    :ivar environment_variables: Dictionary of :code:`<string>`.
+    :vartype environment_variables: dict[str, str]
+    :ivar inline_environment_definition_string:
+    :vartype inline_environment_definition_string: str
+    :ivar conf: Dictionary of :code:`<string>`.
+    :vartype conf: dict[str, str]
+    :ivar compute:
+    :vartype compute: str
+    :ivar resources:
+    :vartype resources: ~flow.models.AetherResourcesSetting
+    :ivar identity:
+    :vartype identity: ~flow.models.AetherIdentitySetting
+    """
+
+    _attribute_map = {
+        'entry': {'key': 'entry', 'type': 'AetherEntrySetting'},
+        'files': {'key': 'files', 'type': '[str]'},
+        'archives': {'key': 'archives', 'type': '[str]'},
+        'jars': {'key': 'jars', 'type': '[str]'},
+        'py_files': {'key': 'pyFiles', 'type': '[str]'},
+        'driver_memory': {'key': 'driverMemory', 'type': 'str'},
+        'driver_cores': {'key': 'driverCores', 'type': 'int'},
+        'executor_memory': {'key': 'executorMemory', 'type': 'str'},
+        'executor_cores': {'key': 'executorCores', 'type': 'int'},
+        'number_executors': {'key': 'numberExecutors', 'type': 'int'},
+        'environment_asset_id': {'key': 'environmentAssetId', 'type': 'str'},
+        'environment_variables': {'key': 'environmentVariables', 'type': '{str}'},
+        'inline_environment_definition_string': {'key': 'inlineEnvironmentDefinitionString', 'type': 'str'},
+        'conf': {'key': 'conf', 'type': '{str}'},
+        'compute': {'key': 'compute', 'type': 'str'},
+        'resources': {'key': 'resources', 'type': 'AetherResourcesSetting'},
+        'identity': {'key': 'identity', 'type': 'AetherIdentitySetting'},
+    }
+
+    def __init__(
+        self,
+        *,
+        entry: Optional["AetherEntrySetting"] = None,
+        files: Optional[List[str]] = None,
+        archives: Optional[List[str]] = None,
+        jars: Optional[List[str]] = None,
+        py_files: Optional[List[str]] = None,
+        driver_memory: Optional[str] = None,
+        driver_cores: Optional[int] = None,
+        executor_memory: Optional[str] = None,
+        executor_cores: Optional[int] = None,
+        number_executors: Optional[int] = None,
+        environment_asset_id: Optional[str] = None,
+        environment_variables: Optional[Dict[str, str]] = None,
+        inline_environment_definition_string: Optional[str] = None,
+        conf: Optional[Dict[str, str]] = None,
+        compute: Optional[str] = None,
+        resources: Optional["AetherResourcesSetting"] = None,
+        identity: Optional["AetherIdentitySetting"] = None,
+        **kwargs
+    ):
+        """
+        :keyword entry:
+        :paramtype entry: ~flow.models.AetherEntrySetting
+        :keyword files:
+        :paramtype files: list[str]
+        :keyword archives:
+        :paramtype archives: list[str]
+        :keyword jars:
+        :paramtype jars: list[str]
+        :keyword py_files:
+        :paramtype py_files: list[str]
+        :keyword driver_memory:
+        :paramtype driver_memory: str
+        :keyword driver_cores:
+        :paramtype driver_cores: int
+        :keyword executor_memory:
+        :paramtype executor_memory: str
+        :keyword executor_cores:
+        :paramtype executor_cores: int
+        :keyword number_executors:
+        :paramtype number_executors: int
+        :keyword environment_asset_id:
+        :paramtype environment_asset_id: str
+        :keyword environment_variables: Dictionary of :code:`<string>`.
+        :paramtype environment_variables: dict[str, str]
+        :keyword inline_environment_definition_string:
+        :paramtype inline_environment_definition_string: str
+        :keyword conf: Dictionary of :code:`<string>`.
+        :paramtype conf: dict[str, str]
+        :keyword compute:
+        :paramtype compute: str
+        :keyword resources:
+        :paramtype resources: ~flow.models.AetherResourcesSetting
+        :keyword identity:
+        :paramtype identity: ~flow.models.AetherIdentitySetting
+        """
+        super(AetherFineTuningCloudSetting, self).__init__(**kwargs)
+        self.entry = entry
+        self.files = files
+        self.archives = archives
+        self.jars = jars
+        self.py_files = py_files
+        self.driver_memory = driver_memory
+        self.driver_cores = driver_cores
+        self.executor_memory = executor_memory
+        self.executor_cores = executor_cores
+        self.number_executors = number_executors
+        self.environment_asset_id = environment_asset_id
+        self.environment_variables = environment_variables
+        self.inline_environment_definition_string = inline_environment_definition_string
+        self.conf = conf
+        self.compute = compute
+        self.resources = resources
+        self.identity = identity
 
 
 class AetherForecastHorizon(msrest.serialization.Model):
@@ -10647,6 +10791,8 @@ class CloudSettings(msrest.serialization.Model):
     :vartype data_transfer_cloud_config: ~flow.models.DataTransferCloudConfiguration
     :ivar aml_spark_cloud_setting:
     :vartype aml_spark_cloud_setting: ~flow.models.AmlSparkCloudSetting
+    :ivar fine_tuning_cloud_setting:
+    :vartype fine_tuning_cloud_setting: ~flow.models.FineTuningCloudSetting
     :ivar data_transfer_v2_cloud_setting:
     :vartype data_transfer_v2_cloud_setting: ~flow.models.DataTransferV2CloudSetting
     """
@@ -10662,6 +10808,7 @@ class CloudSettings(msrest.serialization.Model):
         'es_cloud_config': {'key': 'esCloudConfig', 'type': 'EsCloudConfiguration'},
         'data_transfer_cloud_config': {'key': 'dataTransferCloudConfig', 'type': 'DataTransferCloudConfiguration'},
         'aml_spark_cloud_setting': {'key': 'amlSparkCloudSetting', 'type': 'AmlSparkCloudSetting'},
+        'fine_tuning_cloud_setting': {'key': 'fineTuningCloudSetting', 'type': 'FineTuningCloudSetting'},
         'data_transfer_v2_cloud_setting': {'key': 'dataTransferV2CloudSetting', 'type': 'DataTransferV2CloudSetting'},
     }
 
@@ -10678,6 +10825,7 @@ class CloudSettings(msrest.serialization.Model):
         es_cloud_config: Optional["EsCloudConfiguration"] = None,
         data_transfer_cloud_config: Optional["DataTransferCloudConfiguration"] = None,
         aml_spark_cloud_setting: Optional["AmlSparkCloudSetting"] = None,
+        fine_tuning_cloud_setting: Optional["FineTuningCloudSetting"] = None,
         data_transfer_v2_cloud_setting: Optional["DataTransferV2CloudSetting"] = None,
         **kwargs
     ):
@@ -10702,6 +10850,8 @@ class CloudSettings(msrest.serialization.Model):
         :paramtype data_transfer_cloud_config: ~flow.models.DataTransferCloudConfiguration
         :keyword aml_spark_cloud_setting:
         :paramtype aml_spark_cloud_setting: ~flow.models.AmlSparkCloudSetting
+        :keyword fine_tuning_cloud_setting:
+        :paramtype fine_tuning_cloud_setting: ~flow.models.FineTuningCloudSetting
         :keyword data_transfer_v2_cloud_setting:
         :paramtype data_transfer_v2_cloud_setting: ~flow.models.DataTransferV2CloudSetting
         """
@@ -10716,6 +10866,7 @@ class CloudSettings(msrest.serialization.Model):
         self.es_cloud_config = es_cloud_config
         self.data_transfer_cloud_config = data_transfer_cloud_config
         self.aml_spark_cloud_setting = aml_spark_cloud_setting
+        self.fine_tuning_cloud_setting = fine_tuning_cloud_setting
         self.data_transfer_v2_cloud_setting = data_transfer_v2_cloud_setting
 
 
@@ -12630,7 +12781,7 @@ class ConnectionDto(msrest.serialization.Model):
     :vartype connection_name: str
     :ivar connection_type: Possible values include: "OpenAI", "AzureOpenAI", "Serp", "Bing",
      "AzureContentModerator", "Custom", "AzureContentSafety", "CognitiveSearch", "SubstrateLLM",
-     "Pinecone", "Qdrant", "Weaviate", "FormRecognizer", "Serverless".
+     "Pinecone", "Qdrant", "Weaviate", "FormRecognizer", "Serverless", "AIServices".
     :vartype connection_type: str or ~flow.models.ConnectionType
     :ivar configs: This is a dictionary.
     :vartype configs: dict[str, str]
@@ -12675,7 +12826,7 @@ class ConnectionDto(msrest.serialization.Model):
         :paramtype connection_name: str
         :keyword connection_type: Possible values include: "OpenAI", "AzureOpenAI", "Serp", "Bing",
          "AzureContentModerator", "Custom", "AzureContentSafety", "CognitiveSearch", "SubstrateLLM",
-         "Pinecone", "Qdrant", "Weaviate", "FormRecognizer", "Serverless".
+         "Pinecone", "Qdrant", "Weaviate", "FormRecognizer", "Serverless", "AIServices".
         :paramtype connection_type: str or ~flow.models.ConnectionType
         :keyword configs: This is a dictionary.
         :paramtype configs: dict[str, str]
@@ -12710,7 +12861,7 @@ class ConnectionEntity(msrest.serialization.Model):
     :vartype connection_name: str
     :ivar connection_type: Possible values include: "OpenAI", "AzureOpenAI", "Serp", "Bing",
      "AzureContentModerator", "Custom", "AzureContentSafety", "CognitiveSearch", "SubstrateLLM",
-     "Pinecone", "Qdrant", "Weaviate", "FormRecognizer", "Serverless".
+     "Pinecone", "Qdrant", "Weaviate", "FormRecognizer", "Serverless", "AIServices".
     :vartype connection_type: str or ~flow.models.ConnectionType
     :ivar connection_scope: Possible values include: "User", "WorkspaceShared".
     :vartype connection_scope: str or ~flow.models.ConnectionScope
@@ -12767,7 +12918,7 @@ class ConnectionEntity(msrest.serialization.Model):
         :paramtype connection_name: str
         :keyword connection_type: Possible values include: "OpenAI", "AzureOpenAI", "Serp", "Bing",
          "AzureContentModerator", "Custom", "AzureContentSafety", "CognitiveSearch", "SubstrateLLM",
-         "Pinecone", "Qdrant", "Weaviate", "FormRecognizer", "Serverless".
+         "Pinecone", "Qdrant", "Weaviate", "FormRecognizer", "Serverless", "AIServices".
         :paramtype connection_type: str or ~flow.models.ConnectionType
         :keyword connection_scope: Possible values include: "User", "WorkspaceShared".
         :paramtype connection_scope: str or ~flow.models.ConnectionScope
@@ -12900,7 +13051,7 @@ class ConnectionSpec(msrest.serialization.Model):
 
     :ivar connection_type: Possible values include: "OpenAI", "AzureOpenAI", "Serp", "Bing",
      "AzureContentModerator", "Custom", "AzureContentSafety", "CognitiveSearch", "SubstrateLLM",
-     "Pinecone", "Qdrant", "Weaviate", "FormRecognizer", "Serverless".
+     "Pinecone", "Qdrant", "Weaviate", "FormRecognizer", "Serverless", "AIServices".
     :vartype connection_type: str or ~flow.models.ConnectionType
     :ivar config_specs:
     :vartype config_specs: list[~flow.models.ConnectionConfigSpec]
@@ -12921,7 +13072,7 @@ class ConnectionSpec(msrest.serialization.Model):
         """
         :keyword connection_type: Possible values include: "OpenAI", "AzureOpenAI", "Serp", "Bing",
          "AzureContentModerator", "Custom", "AzureContentSafety", "CognitiveSearch", "SubstrateLLM",
-         "Pinecone", "Qdrant", "Weaviate", "FormRecognizer", "Serverless".
+         "Pinecone", "Qdrant", "Weaviate", "FormRecognizer", "Serverless", "AIServices".
         :paramtype connection_type: str or ~flow.models.ConnectionType
         :keyword config_specs:
         :paramtype config_specs: list[~flow.models.ConnectionConfigSpec]
@@ -13284,6 +13435,8 @@ class CreateExistingBulkRunRequest(msrest.serialization.Model):
     :vartype init_k_wargs: dict[str, any]
     :ivar log_file_relative_path:
     :vartype log_file_relative_path: str
+    :ivar disable_trace:
+    :vartype disable_trace: bool
     :ivar batch_data_input:
     :vartype batch_data_input: ~flow.models.BatchDataInput
     :ivar inputs_mapping: This is a dictionary.
@@ -13322,6 +13475,7 @@ class CreateExistingBulkRunRequest(msrest.serialization.Model):
         'environment_variables': {'key': 'environmentVariables', 'type': '{str}'},
         'init_k_wargs': {'key': 'initKWargs', 'type': '{object}'},
         'log_file_relative_path': {'key': 'logFileRelativePath', 'type': 'str'},
+        'disable_trace': {'key': 'disableTrace', 'type': 'bool'},
         'batch_data_input': {'key': 'batchDataInput', 'type': 'BatchDataInput'},
         'inputs_mapping': {'key': 'inputsMapping', 'type': '{str}'},
         'node_variant': {'key': 'nodeVariant', 'type': 'str'},
@@ -13350,6 +13504,7 @@ class CreateExistingBulkRunRequest(msrest.serialization.Model):
         environment_variables: Optional[Dict[str, str]] = None,
         init_k_wargs: Optional[Dict[str, Any]] = None,
         log_file_relative_path: Optional[str] = None,
+        disable_trace: Optional[bool] = None,
         batch_data_input: Optional["BatchDataInput"] = None,
         inputs_mapping: Optional[Dict[str, str]] = None,
         node_variant: Optional[str] = None,
@@ -13390,6 +13545,8 @@ class CreateExistingBulkRunRequest(msrest.serialization.Model):
         :paramtype init_k_wargs: dict[str, any]
         :keyword log_file_relative_path:
         :paramtype log_file_relative_path: str
+        :keyword disable_trace:
+        :paramtype disable_trace: bool
         :keyword batch_data_input:
         :paramtype batch_data_input: ~flow.models.BatchDataInput
         :keyword inputs_mapping: This is a dictionary.
@@ -13427,6 +13584,7 @@ class CreateExistingBulkRunRequest(msrest.serialization.Model):
         self.environment_variables = environment_variables
         self.init_k_wargs = init_k_wargs
         self.log_file_relative_path = log_file_relative_path
+        self.disable_trace = disable_trace
         self.batch_data_input = batch_data_input
         self.inputs_mapping = inputs_mapping
         self.node_variant = node_variant
@@ -13974,7 +14132,7 @@ class CreateOrUpdateConnectionRequest(msrest.serialization.Model):
 
     :ivar connection_type: Possible values include: "OpenAI", "AzureOpenAI", "Serp", "Bing",
      "AzureContentModerator", "Custom", "AzureContentSafety", "CognitiveSearch", "SubstrateLLM",
-     "Pinecone", "Qdrant", "Weaviate", "FormRecognizer", "Serverless".
+     "Pinecone", "Qdrant", "Weaviate", "FormRecognizer", "Serverless", "AIServices".
     :vartype connection_type: str or ~flow.models.ConnectionType
     :ivar connection_scope: Possible values include: "User", "WorkspaceShared".
     :vartype connection_scope: str or ~flow.models.ConnectionScope
@@ -14007,7 +14165,7 @@ class CreateOrUpdateConnectionRequest(msrest.serialization.Model):
         """
         :keyword connection_type: Possible values include: "OpenAI", "AzureOpenAI", "Serp", "Bing",
          "AzureContentModerator", "Custom", "AzureContentSafety", "CognitiveSearch", "SubstrateLLM",
-         "Pinecone", "Qdrant", "Weaviate", "FormRecognizer", "Serverless".
+         "Pinecone", "Qdrant", "Weaviate", "FormRecognizer", "Serverless", "AIServices".
         :paramtype connection_type: str or ~flow.models.ConnectionType
         :keyword connection_scope: Possible values include: "User", "WorkspaceShared".
         :paramtype connection_scope: str or ~flow.models.ConnectionScope
@@ -14031,7 +14189,7 @@ class CreateOrUpdateConnectionRequestDto(msrest.serialization.Model):
 
     :ivar connection_type: Possible values include: "OpenAI", "AzureOpenAI", "Serp", "Bing",
      "AzureContentModerator", "Custom", "AzureContentSafety", "CognitiveSearch", "SubstrateLLM",
-     "Pinecone", "Qdrant", "Weaviate", "FormRecognizer", "Serverless".
+     "Pinecone", "Qdrant", "Weaviate", "FormRecognizer", "Serverless", "AIServices".
     :vartype connection_type: str or ~flow.models.ConnectionType
     :ivar configs: This is a dictionary.
     :vartype configs: dict[str, str]
@@ -14060,7 +14218,7 @@ class CreateOrUpdateConnectionRequestDto(msrest.serialization.Model):
         """
         :keyword connection_type: Possible values include: "OpenAI", "AzureOpenAI", "Serp", "Bing",
          "AzureContentModerator", "Custom", "AzureContentSafety", "CognitiveSearch", "SubstrateLLM",
-         "Pinecone", "Qdrant", "Weaviate", "FormRecognizer", "Serverless".
+         "Pinecone", "Qdrant", "Weaviate", "FormRecognizer", "Serverless", "AIServices".
         :paramtype connection_type: str or ~flow.models.ConnectionType
         :keyword configs: This is a dictionary.
         :paramtype configs: dict[str, str]
@@ -18140,6 +18298,8 @@ class EvaluationFlowRunSettings(msrest.serialization.Model):
     :vartype init_k_wargs: dict[str, any]
     :ivar log_file_relative_path:
     :vartype log_file_relative_path: str
+    :ivar disable_trace:
+    :vartype disable_trace: bool
     :ivar connections: This is a dictionary.
     :vartype connections: dict[str, dict[str, str]]
     :ivar promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
@@ -18185,6 +18345,7 @@ class EvaluationFlowRunSettings(msrest.serialization.Model):
         'environment_variables': {'key': 'environmentVariables', 'type': '{str}'},
         'init_k_wargs': {'key': 'initKWargs', 'type': '{object}'},
         'log_file_relative_path': {'key': 'logFileRelativePath', 'type': 'str'},
+        'disable_trace': {'key': 'disableTrace', 'type': 'bool'},
         'connections': {'key': 'connections', 'type': '{{str}}'},
         'promptflow_engine_type': {'key': 'promptflowEngineType', 'type': 'str'},
         'worker_count': {'key': 'workerCount', 'type': 'int'},
@@ -18221,6 +18382,7 @@ class EvaluationFlowRunSettings(msrest.serialization.Model):
         environment_variables: Optional[Dict[str, str]] = None,
         init_k_wargs: Optional[Dict[str, Any]] = None,
         log_file_relative_path: Optional[str] = None,
+        disable_trace: Optional[bool] = None,
         connections: Optional[Dict[str, Dict[str, str]]] = None,
         promptflow_engine_type: Optional[Union[str, "PromptflowEngineType"]] = None,
         worker_count: Optional[int] = None,
@@ -18276,6 +18438,8 @@ class EvaluationFlowRunSettings(msrest.serialization.Model):
         :paramtype init_k_wargs: dict[str, any]
         :keyword log_file_relative_path:
         :paramtype log_file_relative_path: str
+        :keyword disable_trace:
+        :paramtype disable_trace: bool
         :keyword connections: This is a dictionary.
         :paramtype connections: dict[str, dict[str, str]]
         :keyword promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
@@ -18320,6 +18484,7 @@ class EvaluationFlowRunSettings(msrest.serialization.Model):
         self.environment_variables = environment_variables
         self.init_k_wargs = init_k_wargs
         self.log_file_relative_path = log_file_relative_path
+        self.disable_trace = disable_trace
         self.connections = connections
         self.promptflow_engine_type = promptflow_engine_type
         self.worker_count = worker_count
@@ -19055,12 +19220,20 @@ class ExperimentNode(msrest.serialization.Model):
 
     :ivar name:
     :vartype name: str
-    :ivar type: Possible values include: "Flow", "ChatGroup".
+    :ivar type: Possible values include: "Flow", "ChatGroup", "Command".
     :vartype type: str or ~flow.models.ExperimentNodeType
     :ivar max_turns:
     :vartype max_turns: int
     :ivar roles:
     :vartype roles: list[~flow.models.ChatGroupRole]
+    :ivar command:
+    :vartype command: str
+    :ivar code:
+    :vartype code: str
+    :ivar environment:
+    :vartype environment: str
+    :ivar outputs: Dictionary of :code:`<ExperimentNodeOutput>`.
+    :vartype outputs: dict[str, ~flow.models.ExperimentNodeOutput]
     :ivar path:
     :vartype path: str
     :ivar variant:
@@ -19088,6 +19261,10 @@ class ExperimentNode(msrest.serialization.Model):
         'type': {'key': 'type', 'type': 'str'},
         'max_turns': {'key': 'max_turns', 'type': 'int'},
         'roles': {'key': 'roles', 'type': '[ChatGroupRole]'},
+        'command': {'key': 'command', 'type': 'str'},
+        'code': {'key': 'code', 'type': 'str'},
+        'environment': {'key': 'environment', 'type': 'str'},
+        'outputs': {'key': 'outputs', 'type': '{ExperimentNodeOutput}'},
         'path': {'key': 'path', 'type': 'str'},
         'variant': {'key': 'variant', 'type': 'str'},
         'connections': {'key': 'connections', 'type': '{{str}}'},
@@ -19107,6 +19284,10 @@ class ExperimentNode(msrest.serialization.Model):
         type: Optional[Union[str, "ExperimentNodeType"]] = None,
         max_turns: Optional[int] = None,
         roles: Optional[List["ChatGroupRole"]] = None,
+        command: Optional[str] = None,
+        code: Optional[str] = None,
+        environment: Optional[str] = None,
+        outputs: Optional[Dict[str, "ExperimentNodeOutput"]] = None,
         path: Optional[str] = None,
         variant: Optional[str] = None,
         connections: Optional[Dict[str, Dict[str, str]]] = None,
@@ -19122,12 +19303,20 @@ class ExperimentNode(msrest.serialization.Model):
         """
         :keyword name:
         :paramtype name: str
-        :keyword type: Possible values include: "Flow", "ChatGroup".
+        :keyword type: Possible values include: "Flow", "ChatGroup", "Command".
         :paramtype type: str or ~flow.models.ExperimentNodeType
         :keyword max_turns:
         :paramtype max_turns: int
         :keyword roles:
         :paramtype roles: list[~flow.models.ChatGroupRole]
+        :keyword command:
+        :paramtype command: str
+        :keyword code:
+        :paramtype code: str
+        :keyword environment:
+        :paramtype environment: str
+        :keyword outputs: Dictionary of :code:`<ExperimentNodeOutput>`.
+        :paramtype outputs: dict[str, ~flow.models.ExperimentNodeOutput]
         :keyword path:
         :paramtype path: str
         :keyword variant:
@@ -19154,6 +19343,10 @@ class ExperimentNode(msrest.serialization.Model):
         self.type = type
         self.max_turns = max_turns
         self.roles = roles
+        self.command = command
+        self.code = code
+        self.environment = environment
+        self.outputs = outputs
         self.path = path
         self.variant = variant
         self.connections = connections
@@ -19164,6 +19357,59 @@ class ExperimentNode(msrest.serialization.Model):
         self.properties = properties
         self.resources = resources
         self.inputs = inputs
+
+
+class ExperimentNodeOutput(msrest.serialization.Model):
+    """ExperimentNodeOutput.
+
+    :ivar type:
+    :vartype type: str
+    :ivar mode:
+    :vartype mode: str
+    :ivar uri:
+    :vartype uri: str
+    :ivar name:
+    :vartype name: str
+    :ivar version:
+    :vartype version: str
+    """
+
+    _attribute_map = {
+        'type': {'key': 'type', 'type': 'str'},
+        'mode': {'key': 'mode', 'type': 'str'},
+        'uri': {'key': 'uri', 'type': 'str'},
+        'name': {'key': 'name', 'type': 'str'},
+        'version': {'key': 'version', 'type': 'str'},
+    }
+
+    def __init__(
+        self,
+        *,
+        type: Optional[str] = None,
+        mode: Optional[str] = None,
+        uri: Optional[str] = None,
+        name: Optional[str] = None,
+        version: Optional[str] = None,
+        **kwargs
+    ):
+        """
+        :keyword type:
+        :paramtype type: str
+        :keyword mode:
+        :paramtype mode: str
+        :keyword uri:
+        :paramtype uri: str
+        :keyword name:
+        :paramtype name: str
+        :keyword version:
+        :paramtype version: str
+        """
+        super(ExperimentNodeOutput, self).__init__(**kwargs)
+        self.type = type
+        self.mode = mode
+        self.uri = uri
+        self.name = name
+        self.version = version
 
 
 class ExperimentNodeRunSettings(msrest.serialization.Model):
@@ -19198,6 +19444,8 @@ class ExperimentNodeRunSettings(msrest.serialization.Model):
     :vartype init_k_wargs: dict[str, any]
     :ivar log_file_relative_path:
     :vartype log_file_relative_path: str
+    :ivar disable_trace:
+    :vartype disable_trace: bool
     :ivar connections: This is a dictionary.
     :vartype connections: dict[str, dict[str, str]]
     :ivar promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
@@ -19237,6 +19485,7 @@ class ExperimentNodeRunSettings(msrest.serialization.Model):
         'environment_variables': {'key': 'environmentVariables', 'type': '{str}'},
         'init_k_wargs': {'key': 'initKWargs', 'type': '{object}'},
         'log_file_relative_path': {'key': 'logFileRelativePath', 'type': 'str'},
+        'disable_trace': {'key': 'disableTrace', 'type': 'bool'},
         'connections': {'key': 'connections', 'type': '{{str}}'},
         'promptflow_engine_type': {'key': 'promptflowEngineType', 'type': 'str'},
         'worker_count': {'key': 'workerCount', 'type': 'int'},
@@ -19267,6 +19516,7 @@ class ExperimentNodeRunSettings(msrest.serialization.Model):
         environment_variables: Optional[Dict[str, str]] = None,
         init_k_wargs: Optional[Dict[str, Any]] = None,
         log_file_relative_path: Optional[str] = None,
+        disable_trace: Optional[bool] = None,
         connections: Optional[Dict[str, Dict[str, str]]] = None,
         promptflow_engine_type: Optional[Union[str, "PromptflowEngineType"]] = None,
         worker_count: Optional[int] = None,
@@ -19310,6 +19560,8 @@ class ExperimentNodeRunSettings(msrest.serialization.Model):
         :paramtype init_k_wargs: dict[str, any]
         :keyword log_file_relative_path:
         :paramtype log_file_relative_path: str
+        :keyword disable_trace:
+        :paramtype disable_trace: bool
         :keyword connections: This is a dictionary.
         :paramtype connections: dict[str, dict[str, str]]
         :keyword promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
@@ -19348,6 +19600,7 @@ class ExperimentNodeRunSettings(msrest.serialization.Model):
         self.environment_variables = environment_variables
         self.init_k_wargs = init_k_wargs
         self.log_file_relative_path = log_file_relative_path
+        self.disable_trace = disable_trace
         self.connections = connections
         self.promptflow_engine_type = promptflow_engine_type
         self.worker_count = worker_count
@@ -20062,11 +20315,14 @@ class FilterBy(msrest.serialization.Model):
     :vartype input_name: str
     :ivar values: This is a dictionary.
     :vartype values: dict[str, ~flow.models.FilterValue]
+    :ivar filter_attribute:
+    :vartype filter_attribute: str
     """
 
     _attribute_map = {
         'input_name': {'key': 'input_name', 'type': 'str'},
         'values': {'key': 'values', 'type': '{FilterValue}'},
+        'filter_attribute': {'key': 'filter_attribute', 'type': 'str'},
     }
 
     def __init__(
@@ -20074,6 +20330,7 @@ class FilterBy(msrest.serialization.Model):
         *,
         input_name: Optional[str] = None,
         values: Optional[Dict[str, "FilterValue"]] = None,
+        filter_attribute: Optional[str] = None,
         **kwargs
     ):
         """
@@ -20081,10 +20338,13 @@ class FilterBy(msrest.serialization.Model):
         :paramtype input_name: str
         :keyword values: This is a dictionary.
         :paramtype values: dict[str, ~flow.models.FilterValue]
+        :keyword filter_attribute:
+        :paramtype filter_attribute: str
         """
         super(FilterBy, self).__init__(**kwargs)
         self.input_name = input_name
         self.values = values
+        self.filter_attribute = filter_attribute
 
 
 class FilterValue(msrest.serialization.Model):
@@ -20117,6 +20377,143 @@ class FilterValue(msrest.serialization.Model):
         super(FilterValue, self).__init__(**kwargs)
         self.capabilities = capabilities
         self.enum = enum
+
+
+class FineTuningCloudSetting(msrest.serialization.Model):
+    """FineTuningCloudSetting.
+
+    :ivar entry:
+    :vartype entry: ~flow.models.EntrySetting
+    :ivar files:
+    :vartype files: list[str]
+    :ivar archives:
+    :vartype archives: list[str]
+    :ivar jars:
+    :vartype jars: list[str]
+    :ivar py_files:
+    :vartype py_files: list[str]
+    :ivar driver_memory:
+    :vartype driver_memory: str
+    :ivar driver_cores:
+    :vartype driver_cores: int
+    :ivar executor_memory:
+    :vartype executor_memory: str
+    :ivar executor_cores:
+    :vartype executor_cores: int
+    :ivar number_executors:
+    :vartype number_executors: int
+    :ivar environment_asset_id:
+    :vartype environment_asset_id: str
+    :ivar environment_variables: Dictionary of :code:`<string>`.
+    :vartype environment_variables: dict[str, str]
+    :ivar inline_environment_definition_string:
+    :vartype inline_environment_definition_string: str
+    :ivar conf: Dictionary of :code:`<string>`.
+    :vartype conf: dict[str, str]
+    :ivar compute:
+    :vartype compute: str
+    :ivar resources:
+    :vartype resources: ~flow.models.ResourcesSetting
+    :ivar identity:
+    :vartype identity: ~flow.models.IdentitySetting
+    """
+
+    _attribute_map = {
+        'entry': {'key': 'entry', 'type': 'EntrySetting'},
+        'files': {'key': 'files', 'type': '[str]'},
+        'archives': {'key': 'archives', 'type': '[str]'},
+        'jars': {'key': 'jars', 'type': '[str]'},
+        'py_files': {'key': 'pyFiles', 'type': '[str]'},
+        'driver_memory': {'key': 'driverMemory', 'type': 'str'},
+        'driver_cores': {'key': 'driverCores', 'type': 'int'},
+        'executor_memory': {'key': 'executorMemory', 'type': 'str'},
+        'executor_cores': {'key': 'executorCores', 'type': 'int'},
+        'number_executors': {'key': 'numberExecutors', 'type': 'int'},
+        'environment_asset_id': {'key': 'environmentAssetId', 'type': 'str'},
+        'environment_variables': {'key': 'environmentVariables', 'type': '{str}'},
+        'inline_environment_definition_string': {'key': 'inlineEnvironmentDefinitionString', 'type': 'str'},
+        'conf': {'key': 'conf', 'type': '{str}'},
+        'compute': {'key': 'compute', 'type': 'str'},
+        'resources': {'key': 'resources', 'type': 'ResourcesSetting'},
+        'identity': {'key': 'identity', 'type': 'IdentitySetting'},
+    }
+
+    def __init__(
+        self,
+        *,
+        entry: Optional["EntrySetting"] = None,
+        files: Optional[List[str]] = None,
+        archives: Optional[List[str]] = None,
+        jars: Optional[List[str]] = None,
+        py_files: Optional[List[str]] = None,
+        driver_memory: Optional[str] = None,
+        driver_cores: Optional[int] = None,
+        executor_memory: Optional[str] = None,
+        executor_cores: Optional[int] = None,
+        number_executors: Optional[int] = None,
+        environment_asset_id: Optional[str] = None,
+        environment_variables: Optional[Dict[str, str]] = None,
+        inline_environment_definition_string: Optional[str] = None,
+        conf: Optional[Dict[str, str]] = None,
+        compute: Optional[str] = None,
+        resources: Optional["ResourcesSetting"] = None,
+        identity: Optional["IdentitySetting"] = None,
+        **kwargs
+    ):
+        """
+        :keyword entry:
+        :paramtype entry: ~flow.models.EntrySetting
+        :keyword files:
+        :paramtype files: list[str]
+        :keyword archives:
+        :paramtype archives: list[str]
+        :keyword jars:
+        :paramtype jars: list[str]
+        :keyword py_files:
+        :paramtype py_files: list[str]
+        :keyword driver_memory:
+        :paramtype driver_memory: str
+        :keyword driver_cores:
+        :paramtype driver_cores: int
+        :keyword executor_memory:
+        :paramtype executor_memory: str
+        :keyword executor_cores:
+        :paramtype executor_cores: int
+        :keyword number_executors:
+        :paramtype number_executors: int
+        :keyword environment_asset_id:
+        :paramtype environment_asset_id: str
+        :keyword environment_variables: Dictionary of :code:`<string>`.
+        :paramtype environment_variables: dict[str, str]
+        :keyword inline_environment_definition_string:
+        :paramtype inline_environment_definition_string: str
+        :keyword conf: Dictionary of :code:`<string>`.
+        :paramtype conf: dict[str, str]
+        :keyword compute:
+        :paramtype compute: str
+        :keyword resources:
+        :paramtype resources: ~flow.models.ResourcesSetting
+        :keyword identity:
+        :paramtype identity: ~flow.models.IdentitySetting
+        """
+        super(FineTuningCloudSetting, self).__init__(**kwargs)
+        self.entry = entry
+        self.files = files
+        self.archives = archives
+        self.jars = jars
+        self.py_files = py_files
+        self.driver_memory = driver_memory
+        self.driver_cores = driver_cores
+        self.executor_memory = executor_memory
+        self.executor_cores = executor_cores
+        self.number_executors = number_executors
+        self.environment_asset_id = environment_asset_id
+        self.environment_variables = environment_variables
+        self.inline_environment_definition_string = inline_environment_definition_string
+        self.conf = conf
+        self.compute = compute
+        self.resources = resources
+        self.identity = identity
 
 
 class Flow(msrest.serialization.Model):
@@ -21103,7 +21500,7 @@ class FlowInputDefinition(msrest.serialization.Model):
      "AzureContentSafetyConnection", "SerpConnection", "CognitiveSearchConnection",
      "SubstrateLLMConnection", "PineconeConnection", "QdrantConnection", "WeaviateConnection",
      "function_list", "function_str", "FormRecognizerConnection", "file_path", "image",
-     "assistant_definition", "ServerlessConnection".
+     "assistant_definition", "ServerlessConnection", "AIServicesConnection".
     :vartype type: str or ~flow.models.ValueType
     :ivar default: Anything.
     :vartype default: any
@@ -21144,7 +21541,7 @@ class FlowInputDefinition(msrest.serialization.Model):
          "AzureContentSafetyConnection", "SerpConnection", "CognitiveSearchConnection",
          "SubstrateLLMConnection", "PineconeConnection", "QdrantConnection", "WeaviateConnection",
          "function_list", "function_str", "FormRecognizerConnection", "file_path", "image",
-         "assistant_definition", "ServerlessConnection".
+         "assistant_definition", "ServerlessConnection", "AIServicesConnection".
         :paramtype type: str or ~flow.models.ValueType
         :keyword default: Anything.
         :paramtype default: any
@@ -21371,7 +21768,7 @@ class FlowOutputDefinition(msrest.serialization.Model):
      "AzureContentSafetyConnection", "SerpConnection", "CognitiveSearchConnection",
      "SubstrateLLMConnection", "PineconeConnection", "QdrantConnection", "WeaviateConnection",
      "function_list", "function_str", "FormRecognizerConnection", "file_path", "image",
-     "assistant_definition", "ServerlessConnection".
+     "assistant_definition", "ServerlessConnection", "AIServicesConnection".
     :vartype type: str or ~flow.models.ValueType
     :ivar description:
     :vartype description: str
@@ -21412,7 +21809,7 @@ class FlowOutputDefinition(msrest.serialization.Model):
          "AzureContentSafetyConnection", "SerpConnection", "CognitiveSearchConnection",
          "SubstrateLLMConnection", "PineconeConnection", "QdrantConnection", "WeaviateConnection",
          "function_list", "function_str", "FormRecognizerConnection", "file_path", "image",
-         "assistant_definition", "ServerlessConnection".
+         "assistant_definition", "ServerlessConnection", "AIServicesConnection".
         :paramtype type: str or ~flow.models.ValueType
         :keyword description:
         :paramtype description: str
@@ -21733,6 +22130,8 @@ class FlowRunResult(msrest.serialization.Model):
     :vartype aml_compute_name: str
     :ivar flow_run_logs: Dictionary of :code:`<string>`.
     :vartype flow_run_logs: dict[str, str]
+    :ivar created_run_ids:
+    :vartype created_run_ids: list[str]
     :ivar flow_test_mode: Possible values include: "Sync", "Async".
     :vartype flow_test_mode: str or ~flow.models.FlowTestMode
     :ivar flow_test_infos: Dictionary of :code:`<FlowTestInfo>`.
@@ -21768,6 +22167,7 @@ class FlowRunResult(msrest.serialization.Model):
         'runtime_name': {'key': 'runtimeName', 'type': 'str'},
         'aml_compute_name': {'key': 'amlComputeName', 'type': 'str'},
         'flow_run_logs': {'key': 'flowRunLogs', 'type': '{str}'},
+        'created_run_ids': {'key': 'createdRunIds', 'type': '[str]'},
         'flow_test_mode': {'key': 'flowTestMode', 'type': 'str'},
         'flow_test_infos': {'key': 'flowTestInfos', 'type': '{FlowTestInfo}'},
         'working_directory': {'key': 'workingDirectory', 'type': 'str'},
@@ -21798,6 +22198,7 @@ class FlowRunResult(msrest.serialization.Model):
         runtime_name: Optional[str] = None,
         aml_compute_name: Optional[str] = None,
         flow_run_logs: Optional[Dict[str, str]] = None,
+        created_run_ids: Optional[List[str]] = None,
         flow_test_mode: Optional[Union[str, "FlowTestMode"]] = None,
         flow_test_infos: Optional[Dict[str, "FlowTestInfo"]] = None,
         working_directory: Optional[str] = None,
@@ -21846,6 +22247,8 @@ class FlowRunResult(msrest.serialization.Model):
         :paramtype aml_compute_name: str
         :keyword flow_run_logs: Dictionary of :code:`<string>`.
         :paramtype flow_run_logs: dict[str, str]
+        :keyword created_run_ids:
+        :paramtype created_run_ids: list[str]
         :keyword flow_test_mode: Possible values include: "Sync", "Async".
         :paramtype flow_test_mode: str or ~flow.models.FlowTestMode
         :keyword flow_test_infos: Dictionary of :code:`<FlowTestInfo>`.
@@ -21880,6 +22283,7 @@ class FlowRunResult(msrest.serialization.Model):
         self.runtime_name = runtime_name
         self.aml_compute_name = aml_compute_name
         self.flow_run_logs = flow_run_logs
+        self.created_run_ids = created_run_ids
         self.flow_test_mode = flow_test_mode
         self.flow_test_infos = flow_test_infos
         self.working_directory = working_directory
@@ -21892,7 +22296,7 @@ class FlowRunSettings(msrest.serialization.Model):
     """FlowRunSettings.
 
     :ivar run_mode: Possible values include: "Flow", "SingleNode", "FromNode", "BulkTest", "Eval",
-     "PairwiseEval", "ExperimentTest", "ExperimentEval", "ChatGroup", "ChatGroupRole".
+     "PairwiseEval", "ExperimentTest", "ExperimentEval", "ChatGroup", "ChatGroupRole", "Command".
     :vartype run_mode: str or ~flow.models.FlowRunMode
     :ivar tuning_node_names:
     :vartype tuning_node_names: list[str]
@@ -21961,6 +22365,8 @@ class FlowRunSettings(msrest.serialization.Model):
     :vartype init_k_wargs: dict[str, any]
     :ivar log_file_relative_path:
     :vartype log_file_relative_path: str
+    :ivar disable_trace:
+    :vartype disable_trace: bool
     :ivar connections: This is a dictionary.
     :vartype connections: dict[str, dict[str, str]]
     :ivar promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
@@ -22020,6 +22426,7 @@ class FlowRunSettings(msrest.serialization.Model):
         'environment_variables': {'key': 'environmentVariables', 'type': '{str}'},
         'init_k_wargs': {'key': 'initKWargs', 'type': '{object}'},
         'log_file_relative_path': {'key': 'logFileRelativePath', 'type': 'str'},
+        'disable_trace': {'key': 'disableTrace', 'type': 'bool'},
         'connections': {'key': 'connections', 'type': '{{str}}'},
         'promptflow_engine_type': {'key': 'promptflowEngineType', 'type': 'str'},
         'worker_count': {'key': 'workerCount', 'type': 'int'},
@@ -22070,6 +22477,7 @@ class FlowRunSettings(msrest.serialization.Model):
         environment_variables: Optional[Dict[str, str]] = None,
         init_k_wargs: Optional[Dict[str, Any]] = None,
         log_file_relative_path: Optional[str] = None,
+        disable_trace: Optional[bool] = None,
         connections: Optional[Dict[str, Dict[str, str]]] = None,
         promptflow_engine_type: Optional[Union[str, "PromptflowEngineType"]] = None,
         worker_count: Optional[int] = None,
@@ -22085,7 +22493,8 @@ class FlowRunSettings(msrest.serialization.Model):
     ):
         """
         :keyword run_mode: Possible values include: "Flow", "SingleNode", "FromNode", "BulkTest",
-         "Eval", "PairwiseEval", "ExperimentTest", "ExperimentEval", "ChatGroup", "ChatGroupRole".
+         "Eval", "PairwiseEval", "ExperimentTest", "ExperimentEval", "ChatGroup", "ChatGroupRole",
+         "Command".
         :paramtype run_mode: str or ~flow.models.FlowRunMode
         :keyword tuning_node_names:
         :paramtype tuning_node_names: list[str]
@@ -22154,6 +22563,8 @@ class FlowRunSettings(msrest.serialization.Model):
         :paramtype init_k_wargs: dict[str, any]
         :keyword log_file_relative_path:
         :paramtype log_file_relative_path: str
+        :keyword disable_trace:
+        :paramtype disable_trace: bool
         :keyword connections: This is a dictionary.
         :paramtype connections: dict[str, dict[str, str]]
         :keyword promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
@@ -22212,6 +22623,7 @@ class FlowRunSettings(msrest.serialization.Model):
         self.environment_variables = environment_variables
         self.init_k_wargs = init_k_wargs
         self.log_file_relative_path = log_file_relative_path
+        self.disable_trace = disable_trace
         self.connections = connections
         self.promptflow_engine_type = promptflow_engine_type
         self.worker_count = worker_count
@@ -22265,6 +22677,8 @@ class FlowRunSettingsBase(msrest.serialization.Model):
     :vartype init_k_wargs: dict[str, any]
     :ivar log_file_relative_path:
     :vartype log_file_relative_path: str
+    :ivar disable_trace:
+    :vartype disable_trace: bool
     :ivar connections: This is a dictionary.
     :vartype connections: dict[str, dict[str, str]]
     :ivar promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
@@ -22308,6 +22722,7 @@ class FlowRunSettingsBase(msrest.serialization.Model):
         'environment_variables': {'key': 'environmentVariables', 'type': '{str}'},
         'init_k_wargs': {'key': 'initKWargs', 'type': '{object}'},
         'log_file_relative_path': {'key': 'logFileRelativePath', 'type': 'str'},
+        'disable_trace': {'key': 'disableTrace', 'type': 'bool'},
         'connections': {'key': 'connections', 'type': '{{str}}'},
         'promptflow_engine_type': {'key': 'promptflowEngineType', 'type': 'str'},
         'worker_count': {'key': 'workerCount', 'type': 'int'},
@@ -22342,6 +22757,7 @@ class FlowRunSettingsBase(msrest.serialization.Model):
         environment_variables: Optional[Dict[str, str]] = None,
         init_k_wargs: Optional[Dict[str, Any]] = None,
         log_file_relative_path: Optional[str] = None,
+        disable_trace: Optional[bool] = None,
         connections: Optional[Dict[str, Dict[str, str]]] = None,
         promptflow_engine_type: Optional[Union[str, "PromptflowEngineType"]] = None,
         worker_count: Optional[int] = None,
@@ -22393,6 +22809,8 @@ class FlowRunSettingsBase(msrest.serialization.Model):
         :paramtype init_k_wargs: dict[str, any]
         :keyword log_file_relative_path:
         :paramtype log_file_relative_path: str
+        :keyword disable_trace:
+        :paramtype disable_trace: bool
         :keyword connections: This is a dictionary.
         :paramtype connections: dict[str, dict[str, str]]
         :keyword promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
@@ -22435,6 +22853,7 @@ class FlowRunSettingsBase(msrest.serialization.Model):
         self.environment_variables = environment_variables
         self.init_k_wargs = init_k_wargs
         self.log_file_relative_path = log_file_relative_path
+        self.disable_trace = disable_trace
         self.connections = connections
         self.promptflow_engine_type = promptflow_engine_type
         self.worker_count = worker_count
@@ -22453,7 +22872,7 @@ class FlowRunStatusResponse(msrest.serialization.Model):
 
     :ivar flow_run_status: Possible values include: "Started", "Completed", "Failed", "Cancelled",
      "NotStarted", "Running", "Queued", "Paused", "Unapproved", "Starting", "Preparing",
-     "CancelRequested", "Pausing", "Finalizing", "Canceled", "Bypassed".
+     "CancelRequested", "Pausing", "Finalizing", "Canceled", "Bypassed", "Unavailable".
     :vartype flow_run_status: str or ~flow.models.FlowRunStatusEnum
     :ivar last_checked_time:
     :vartype last_checked_time: ~datetime.datetime
@@ -22478,7 +22897,7 @@ class FlowRunStatusResponse(msrest.serialization.Model):
         """
         :keyword flow_run_status: Possible values include: "Started", "Completed", "Failed",
          "Cancelled", "NotStarted", "Running", "Queued", "Paused", "Unapproved", "Starting",
-         "Preparing", "CancelRequested", "Pausing", "Finalizing", "Canceled", "Bypassed".
+         "Preparing", "CancelRequested", "Pausing", "Finalizing", "Canceled", "Bypassed", "Unavailable".
         :paramtype flow_run_status: str or ~flow.models.FlowRunStatusEnum
         :keyword last_checked_time:
         :paramtype last_checked_time: ~datetime.datetime
@@ -22732,6 +23151,8 @@ class FlowSessionDto(msrest.serialization.Model):
     :vartype compute_name: str
     :ivar flow_features:
     :vartype flow_features: list[~flow.models.FlowFeature]
+    :ivar enable_multi_container:
+    :vartype enable_multi_container: bool
     :ivar runtime_name:
     :vartype runtime_name: str
     :ivar runtime_description:
@@ -22795,6 +23216,7 @@ class FlowSessionDto(msrest.serialization.Model):
         'max_idle_time_seconds': {'key': 'maxIdleTimeSeconds', 'type': 'long'},
         'compute_name': {'key': 'computeName', 'type': 'str'},
         'flow_features': {'key': 'flowFeatures', 'type': '[FlowFeature]'},
+        'enable_multi_container': {'key': 'enableMultiContainer', 'type': 'bool'},
         'runtime_name': {'key': 'runtimeName', 'type': 'str'},
         'runtime_description': {'key': 'runtimeDescription', 'type': 'str'},
         'runtime_type': {'key': 'runtimeType', 'type': 'str'},
@@ -22833,6 +23255,7 @@ class FlowSessionDto(msrest.serialization.Model):
         max_idle_time_seconds: Optional[int] = None,
         compute_name: Optional[str] = None,
         flow_features: Optional[List["FlowFeature"]] = None,
+        enable_multi_container: Optional[bool] = None,
         runtime_name: Optional[str] = None,
         runtime_description: Optional[str] = None,
         runtime_type: Optional[Union[str, "RuntimeType"]] = None,
@@ -22877,6 +23300,8 @@ class FlowSessionDto(msrest.serialization.Model):
         :paramtype compute_name: str
         :keyword flow_features:
         :paramtype flow_features: list[~flow.models.FlowFeature]
+        :keyword enable_multi_container:
+        :paramtype enable_multi_container: bool
         :keyword runtime_name:
         :paramtype runtime_name: str
         :keyword runtime_description:
@@ -22939,6 +23364,7 @@ class FlowSessionDto(msrest.serialization.Model):
         self.max_idle_time_seconds = max_idle_time_seconds
         self.compute_name = compute_name
         self.flow_features = flow_features
+        self.enable_multi_container = enable_multi_container
         self.runtime_name = runtime_name
         self.runtime_description = runtime_description
         self.runtime_type = runtime_type
@@ -22983,8 +23409,6 @@ class FlowSnapshot(msrest.serialization.Model):
     :vartype environment_variables: dict[str, any]
     :ivar language: Possible values include: "Python", "CSharp", "TypeScript", "JavaScript".
     :vartype language: str or ~flow.models.FlowLanguage
-    :ivar entry:
-    :vartype entry: str
     :ivar message_format: Possible values include: "basic", "openai-vision".
     :vartype message_format: str or ~flow.models.FlowMessageFormatType
     """
@@ -22997,7 +23421,6 @@ class FlowSnapshot(msrest.serialization.Model):
         'environment': {'key': 'environment', 'type': 'FlowEnvironment'},
         'environment_variables': {'key': 'environment_variables', 'type': '{object}'},
         'language': {'key': 'language', 'type': 'str'},
-        'entry': {'key': 'entry', 'type': 'str'},
         'message_format': {'key': 'message_format', 'type': 'str'},
     }
 
@@ -23011,7 +23434,6 @@ class FlowSnapshot(msrest.serialization.Model):
         environment: Optional["FlowEnvironment"] = None,
         environment_variables: Optional[Dict[str, Any]] = None,
         language: Optional[Union[str, "FlowLanguage"]] = None,
-        entry: Optional[str] = None,
         message_format: Optional[Union[str, "FlowMessageFormatType"]] = None,
         **kwargs
     ):
@@ -23030,8 +23452,6 @@ class FlowSnapshot(msrest.serialization.Model):
         :paramtype environment_variables: dict[str, any]
         :keyword language: Possible values include: "Python", "CSharp", "TypeScript", "JavaScript".
         :paramtype language: str or ~flow.models.FlowLanguage
-        :keyword entry:
-        :paramtype entry: str
         :keyword message_format: Possible values include: "basic", "openai-vision".
         :paramtype message_format: str or ~flow.models.FlowMessageFormatType
         """
@@ -23043,7 +23463,6 @@ class FlowSnapshot(msrest.serialization.Model):
         self.environment = environment
         self.environment_variables = environment_variables
         self.language = language
-        self.entry = entry
         self.message_format = message_format
 
 
@@ -23053,7 +23472,7 @@ class FlowSubmitRunSettings(msrest.serialization.Model):
     :ivar node_inputs: This is a dictionary.
     :vartype node_inputs: dict[str, any]
     :ivar run_mode: Possible values include: "Flow", "SingleNode", "FromNode", "BulkTest", "Eval",
-     "PairwiseEval", "ExperimentTest", "ExperimentEval", "ChatGroup", "ChatGroupRole".
+     "PairwiseEval", "ExperimentTest", "ExperimentEval", "ChatGroup", "ChatGroupRole", "Command".
     :vartype run_mode: str or ~flow.models.FlowRunMode
     :ivar tuning_node_names:
     :vartype tuning_node_names: list[str]
@@ -23122,6 +23541,8 @@ class FlowSubmitRunSettings(msrest.serialization.Model):
     :vartype init_k_wargs: dict[str, any]
     :ivar log_file_relative_path:
     :vartype log_file_relative_path: str
+    :ivar disable_trace:
+    :vartype disable_trace: bool
     :ivar connections: This is a dictionary.
     :vartype connections: dict[str, dict[str, str]]
     :ivar promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
@@ -23182,6 +23603,7 @@ class FlowSubmitRunSettings(msrest.serialization.Model):
         'environment_variables': {'key': 'environmentVariables', 'type': '{str}'},
         'init_k_wargs': {'key': 'initKWargs', 'type': '{object}'},
         'log_file_relative_path': {'key': 'logFileRelativePath', 'type': 'str'},
+        'disable_trace': {'key': 'disableTrace', 'type': 'bool'},
         'connections': {'key': 'connections', 'type': '{{str}}'},
         'promptflow_engine_type': {'key': 'promptflowEngineType', 'type': 'str'},
         'worker_count': {'key': 'workerCount', 'type': 'int'},
@@ -23233,6 +23655,7 @@ class FlowSubmitRunSettings(msrest.serialization.Model):
         environment_variables: Optional[Dict[str, str]] = None,
         init_k_wargs: Optional[Dict[str, Any]] = None,
         log_file_relative_path: Optional[str] = None,
+        disable_trace: Optional[bool] = None,
         connections: Optional[Dict[str, Dict[str, str]]] = None,
         promptflow_engine_type: Optional[Union[str, "PromptflowEngineType"]] = None,
         worker_count: Optional[int] = None,
@@ -23250,7 +23673,8 @@ class FlowSubmitRunSettings(msrest.serialization.Model):
         :keyword node_inputs: This is a dictionary.
         :paramtype node_inputs: dict[str, any]
         :keyword run_mode: Possible values include: "Flow", "SingleNode", "FromNode", "BulkTest",
-         "Eval", "PairwiseEval", "ExperimentTest", "ExperimentEval", "ChatGroup", "ChatGroupRole".
+         "Eval", "PairwiseEval", "ExperimentTest", "ExperimentEval", "ChatGroup", "ChatGroupRole",
+         "Command".
         :paramtype run_mode: str or ~flow.models.FlowRunMode
         :keyword tuning_node_names:
         :paramtype tuning_node_names: list[str]
@@ -23319,6 +23743,8 @@ class FlowSubmitRunSettings(msrest.serialization.Model):
         :paramtype init_k_wargs: dict[str, any]
         :keyword log_file_relative_path:
         :paramtype log_file_relative_path: str
+        :keyword disable_trace:
+        :paramtype disable_trace: bool
         :keyword connections: This is a dictionary.
         :paramtype connections: dict[str, dict[str, str]]
         :keyword promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
@@ -23378,6 +23804,7 @@ class FlowSubmitRunSettings(msrest.serialization.Model):
         self.environment_variables = environment_variables
         self.init_k_wargs = init_k_wargs
         self.log_file_relative_path = log_file_relative_path
+        self.disable_trace = disable_trace
         self.connections = connections
         self.promptflow_engine_type = promptflow_engine_type
         self.worker_count = worker_count
@@ -27617,6 +28044,31 @@ class LongRunningUpdateRegistryComponentRequest(msrest.serialization.Model):
         self.component_name = component_name
         self.component_version = component_version
         self.update_type = update_type
+
+
+class ManagedCosmosDbConfig(msrest.serialization.Model):
+    """ManagedCosmosDbConfig.
+
+    :ivar ttl_in_seconds:
+    :vartype ttl_in_seconds: int
+    """
+
+    _attribute_map = {
+        'ttl_in_seconds': {'key': 'ttlInSeconds', 'type': 'int'},
+    }
+
+    def __init__(
+        self,
+        *,
+        ttl_in_seconds: Optional[int] = None,
+        **kwargs
+    ):
+        """
+        :keyword ttl_in_seconds:
+        :paramtype ttl_in_seconds: int
+        """
+        super(ManagedCosmosDbConfig, self).__init__(**kwargs)
+        self.ttl_in_seconds = ttl_in_seconds
 
 
 class ManagedServiceIdentity(msrest.serialization.Model):
@@ -37102,6 +37554,8 @@ class ResumeBulkRunRequest(msrest.serialization.Model):
     :vartype resume_from_run_id: str
     :ivar runtime_name:
     :vartype runtime_name: str
+    :ivar disable_trace:
+    :vartype disable_trace: bool
     :ivar vm_size:
     :vartype vm_size: str
     :ivar max_idle_time_seconds:
@@ -37121,6 +37575,7 @@ class ResumeBulkRunRequest(msrest.serialization.Model):
         'tags': {'key': 'tags', 'type': '{str}'},
         'resume_from_run_id': {'key': 'resumeFromRunId', 'type': 'str'},
         'runtime_name': {'key': 'runtimeName', 'type': 'str'},
+        'disable_trace': {'key': 'disableTrace', 'type': 'bool'},
         'vm_size': {'key': 'vmSize', 'type': 'str'},
         'max_idle_time_seconds': {'key': 'maxIdleTimeSeconds', 'type': 'long'},
         'identity': {'key': 'identity', 'type': 'str'},
@@ -37137,6 +37592,7 @@ class ResumeBulkRunRequest(msrest.serialization.Model):
         tags: Optional[Dict[str, str]] = None,
         resume_from_run_id: Optional[str] = None,
         runtime_name: Optional[str] = None,
+        disable_trace: Optional[bool] = None,
         vm_size: Optional[str] = None,
         max_idle_time_seconds: Optional[int] = None,
         identity: Optional[str] = None,
@@ -37157,6 +37613,8 @@ class ResumeBulkRunRequest(msrest.serialization.Model):
         :paramtype resume_from_run_id: str
         :keyword runtime_name:
         :paramtype runtime_name: str
+        :keyword disable_trace:
+        :paramtype disable_trace: bool
         :keyword vm_size:
         :paramtype vm_size: str
         :keyword max_idle_time_seconds:
@@ -37175,6 +37633,7 @@ class ResumeBulkRunRequest(msrest.serialization.Model):
         self.tags = tags
         self.resume_from_run_id = resume_from_run_id
         self.runtime_name = runtime_name
+        self.disable_trace = disable_trace
         self.vm_size = vm_size
         self.max_idle_time_seconds = max_idle_time_seconds
         self.identity = identity
@@ -39922,6 +40381,45 @@ class RunStatusPeriod(msrest.serialization.Model):
 class RuntimeConfiguration(msrest.serialization.Model):
     """RuntimeConfiguration.
 
+    :ivar images:
+    :vartype images: ~flow.models.RuntimeConfigurationImages
+    :ivar base_image:
+    :vartype base_image: str
+    :ivar version:
+    :vartype version: str
+    """
+
+    _attribute_map = {
+        'images': {'key': 'images', 'type': 'RuntimeConfigurationImages'},
+        'base_image': {'key': 'baseImage', 'type': 'str'},
+        'version': {'key': 'version', 'type': 'str'},
+    }
+
+    def __init__(
+        self,
+        *,
+        images: Optional["RuntimeConfigurationImages"] = None,
+        base_image: Optional[str] = None,
+        version: Optional[str] = None,
+        **kwargs
+    ):
+        """
+        :keyword images:
+        :paramtype images: ~flow.models.RuntimeConfigurationImages
+        :keyword base_image:
+        :paramtype base_image: str
+        :keyword version:
+        :paramtype version: str
+        """
+        super(RuntimeConfiguration, self).__init__(**kwargs)
+        self.images = images
+        self.base_image = base_image
+        self.version = version
+
+
+class RuntimeConfigurationBase(msrest.serialization.Model):
+    """RuntimeConfigurationBase.
+
     :ivar base_image:
     :vartype base_image: str
     :ivar version:
@@ -39946,9 +40444,55 @@ class RuntimeConfiguration(msrest.serialization.Model):
         :keyword version:
         :paramtype version: str
         """
-        super(RuntimeConfiguration, self).__init__(**kwargs)
+        super(RuntimeConfigurationBase, self).__init__(**kwargs)
         self.base_image = base_image
         self.version = version
+
+
+class RuntimeConfigurationImages(msrest.serialization.Model):
+    """RuntimeConfigurationImages.
+
+    :ivar python: Dictionary of :code:`<RuntimeConfigurationBase>`.
+    :vartype python: dict[str, ~flow.models.RuntimeConfigurationBase]
+    :ivar c_sharp: Dictionary of :code:`<RuntimeConfigurationBase>`.
+    :vartype c_sharp: dict[str, ~flow.models.RuntimeConfigurationBase]
+    :ivar type_script: Dictionary of :code:`<RuntimeConfigurationBase>`.
+    :vartype type_script: dict[str, ~flow.models.RuntimeConfigurationBase]
+    :ivar java_script: Dictionary of :code:`<RuntimeConfigurationBase>`.
+    :vartype java_script: dict[str, ~flow.models.RuntimeConfigurationBase]
+    """
+
+    _attribute_map = {
+        'python': {'key': 'Python', 'type': '{RuntimeConfigurationBase}'},
+        'c_sharp': {'key': 'CSharp', 'type': '{RuntimeConfigurationBase}'},
+        'type_script': {'key': 'TypeScript', 'type': '{RuntimeConfigurationBase}'},
+        'java_script': {'key': 'JavaScript', 'type': '{RuntimeConfigurationBase}'},
+    }
+
+    def __init__(
+        self,
+        *,
+        python: Optional[Dict[str, "RuntimeConfigurationBase"]] = None,
+        c_sharp: Optional[Dict[str, "RuntimeConfigurationBase"]] = None,
+        type_script: Optional[Dict[str, "RuntimeConfigurationBase"]] = None,
+        java_script: Optional[Dict[str, "RuntimeConfigurationBase"]] = None,
+        **kwargs
+    ):
+        """
+        :keyword python: Dictionary of :code:`<RuntimeConfigurationBase>`.
+        :paramtype python: dict[str, ~flow.models.RuntimeConfigurationBase]
+        :keyword c_sharp: Dictionary of :code:`<RuntimeConfigurationBase>`.
+        :paramtype c_sharp: dict[str, ~flow.models.RuntimeConfigurationBase]
+        :keyword type_script: Dictionary of :code:`<RuntimeConfigurationBase>`.
+        :paramtype type_script: dict[str, ~flow.models.RuntimeConfigurationBase]
+        :keyword java_script: Dictionary of :code:`<RuntimeConfigurationBase>`.
+        :paramtype java_script: dict[str, ~flow.models.RuntimeConfigurationBase]
+        """
+        super(RuntimeConfigurationImages, self).__init__(**kwargs)
+        self.python = python
+        self.c_sharp = c_sharp
+        self.type_script = type_script
+        self.java_script = java_script
 
 
 class RunTypeV2(msrest.serialization.Model):
@@ -43221,6 +43765,8 @@ class SubmitBulkRunRequest(msrest.serialization.Model):
     :vartype init_k_wargs: dict[str, any]
     :ivar log_file_relative_path:
     :vartype log_file_relative_path: str
+    :ivar disable_trace:
+    :vartype disable_trace: bool
     :ivar connections: This is a dictionary.
     :vartype connections: dict[str, dict[str, str]]
     :ivar promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
@@ -43274,6 +43820,7 @@ class SubmitBulkRunRequest(msrest.serialization.Model):
         'environment_variables': {'key': 'environmentVariables', 'type': '{str}'},
         'init_k_wargs': {'key': 'initKWargs', 'type': '{object}'},
         'log_file_relative_path': {'key': 'logFileRelativePath', 'type': 'str'},
+        'disable_trace': {'key': 'disableTrace', 'type': 'bool'},
         'connections': {'key': 'connections', 'type': '{{str}}'},
         'promptflow_engine_type': {'key': 'promptflowEngineType', 'type': 'str'},
         'worker_count': {'key': 'workerCount', 'type': 'int'},
@@ -43318,6 +43865,7 @@ class SubmitBulkRunRequest(msrest.serialization.Model):
         environment_variables: Optional[Dict[str, str]] = None,
         init_k_wargs: Optional[Dict[str, Any]] = None,
         log_file_relative_path: Optional[str] = None,
+        disable_trace: Optional[bool] = None,
         connections: Optional[Dict[str, Dict[str, str]]] = None,
         promptflow_engine_type: Optional[Union[str, "PromptflowEngineType"]] = None,
         worker_count: Optional[int] = None,
@@ -43390,6 +43938,8 @@ class SubmitBulkRunRequest(msrest.serialization.Model):
         :paramtype init_k_wargs: dict[str, any]
         :keyword log_file_relative_path:
         :paramtype log_file_relative_path: str
+        :keyword disable_trace:
+        :paramtype disable_trace: bool
         :keyword connections: This is a dictionary.
         :paramtype connections: dict[str, dict[str, str]]
         :keyword promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
@@ -43442,6 +43992,7 @@ class SubmitBulkRunRequest(msrest.serialization.Model):
         self.environment_variables = environment_variables
         self.init_k_wargs = init_k_wargs
         self.log_file_relative_path = log_file_relative_path
+        self.disable_trace = disable_trace
         self.connections = connections
         self.promptflow_engine_type = promptflow_engine_type
         self.worker_count = worker_count
@@ -43502,6 +44053,8 @@ class SubmitBulkRunResponse(msrest.serialization.Model):
     :vartype aml_compute_name: str
     :ivar flow_run_logs: Dictionary of :code:`<string>`.
     :vartype flow_run_logs: dict[str, str]
+    :ivar created_run_ids:
+    :vartype created_run_ids: list[str]
     :ivar flow_test_mode: Possible values include: "Sync", "Async".
     :vartype flow_test_mode: str or ~flow.models.FlowTestMode
     :ivar flow_test_infos: Dictionary of :code:`<FlowTestInfo>`.
@@ -43539,6 +44092,7 @@ class SubmitBulkRunResponse(msrest.serialization.Model):
         'runtime_name': {'key': 'runtimeName', 'type': 'str'},
         'aml_compute_name': {'key': 'amlComputeName', 'type': 'str'},
         'flow_run_logs': {'key': 'flowRunLogs', 'type': '{str}'},
+        'created_run_ids': {'key': 'createdRunIds', 'type': '[str]'},
         'flow_test_mode': {'key': 'flowTestMode', 'type': 'str'},
         'flow_test_infos': {'key': 'flowTestInfos', 'type': '{FlowTestInfo}'},
         'working_directory': {'key': 'workingDirectory', 'type': 'str'},
@@ -43571,6 +44125,7 @@ class SubmitBulkRunResponse(msrest.serialization.Model):
         runtime_name: Optional[str] = None,
         aml_compute_name: Optional[str] = None,
         flow_run_logs: Optional[Dict[str, str]] = None,
+        created_run_ids: Optional[List[str]] = None,
         flow_test_mode: Optional[Union[str, "FlowTestMode"]] = None,
         flow_test_infos: Optional[Dict[str, "FlowTestInfo"]] = None,
         working_directory: Optional[str] = None,
@@ -43624,6 +44179,8 @@ class SubmitBulkRunResponse(msrest.serialization.Model):
         :paramtype aml_compute_name: str
         :keyword flow_run_logs: Dictionary of :code:`<string>`.
         :paramtype flow_run_logs: dict[str, str]
+        :keyword created_run_ids:
+        :paramtype created_run_ids: list[str]
         :keyword flow_test_mode: Possible values include: "Sync", "Async".
         :paramtype flow_test_mode: str or ~flow.models.FlowTestMode
         :keyword flow_test_infos: Dictionary of :code:`<FlowTestInfo>`.
@@ -43660,6 +44217,7 @@ class SubmitBulkRunResponse(msrest.serialization.Model):
         self.runtime_name = runtime_name
         self.aml_compute_name = aml_compute_name
         self.flow_run_logs = flow_run_logs
+        self.created_run_ids = created_run_ids
         self.flow_test_mode = flow_test_mode
         self.flow_test_infos = flow_test_infos
         self.working_directory = working_directory
@@ -45311,13 +45869,87 @@ class TorchDistributedConfiguration(msrest.serialization.Model):
         self.process_count_per_node = process_count_per_node
 
 
-class TraceCosmosResourceDto(msrest.serialization.Model):
-    """TraceCosmosResourceDto.
+class TraceCosmosMetaDto(msrest.serialization.Model):
+    """TraceCosmosMetaDto.
 
+    :ivar entity_id:
+    :vartype entity_id: str
+    :ivar trace_cosmos_configuration: Possible values include: "None", "ReadDisabled",
+     "WriteDisabled", "Disabled", "DiagnosticDisabled", "DataCleaned", "AccountDeleted".
+    :vartype trace_cosmos_configuration: str or ~flow.models.TraceCosmosConfiguration
+    :ivar trace_cosmos_status: Possible values include: "NotExists", "Initializing", "Initialized",
+     "Deleting", "Deleted", "NotAvailable".
+    :vartype trace_cosmos_status: str or ~flow.models.TraceCosmosStatus
+    :ivar error: The error response.
+    :vartype error: ~flow.models.ErrorResponse
     :ivar account_endpoint:
     :vartype account_endpoint: str
     :ivar database_name:
     :vartype database_name: str
+    :ivar resource_arm_id:
+    :vartype resource_arm_id: str
+    :ivar resource_type: Possible values include: "Attach", "HOBO".
+    :vartype resource_type: str or ~flow.models.ResourceType
+    """
+
+    _attribute_map = {
+        'entity_id': {'key': 'entityId', 'type': 'str'},
+        'trace_cosmos_configuration': {'key': 'traceCosmosConfiguration', 'type': 'str'},
+        'trace_cosmos_status': {'key': 'traceCosmosStatus', 'type': 'str'},
+        'error': {'key': 'error', 'type': 'ErrorResponse'},
+        'account_endpoint': {'key': 'accountEndpoint', 'type': 'str'},
+        'database_name': {'key': 'databaseName', 'type': 'str'},
+        'resource_arm_id': {'key': 'resourceArmId', 'type': 'str'},
+        'resource_type': {'key': 'resourceType', 'type': 'str'},
+    }
+
+    def __init__(
+        self,
+        *,
+        entity_id: Optional[str] = None,
+        trace_cosmos_configuration: Optional[Union[str, "TraceCosmosConfiguration"]] = None,
+        trace_cosmos_status: Optional[Union[str, "TraceCosmosStatus"]] = None,
+        error: Optional["ErrorResponse"] = None,
+        account_endpoint: Optional[str] = None,
+        database_name: Optional[str] = None,
+        resource_arm_id: Optional[str] = None,
+        resource_type: Optional[Union[str, "ResourceType"]] = None,
+        **kwargs
+    ):
+        """
+        :keyword entity_id:
+        :paramtype entity_id: str
+        :keyword trace_cosmos_configuration: Possible values include: "None", "ReadDisabled",
+         "WriteDisabled", "Disabled", "DiagnosticDisabled", "DataCleaned", "AccountDeleted".
+        :paramtype trace_cosmos_configuration: str or ~flow.models.TraceCosmosConfiguration
+        :keyword trace_cosmos_status: Possible values include: "NotExists", "Initializing",
+         "Initialized", "Deleting", "Deleted", "NotAvailable".
+        :paramtype trace_cosmos_status: str or ~flow.models.TraceCosmosStatus
+        :keyword error: The error response.
+        :paramtype error: ~flow.models.ErrorResponse
+        :keyword account_endpoint:
+        :paramtype account_endpoint: str
+        :keyword database_name:
+        :paramtype database_name: str
+        :keyword resource_arm_id:
+        :paramtype resource_arm_id: str
+        :keyword resource_type: Possible values include: "Attach", "HOBO".
+        :paramtype resource_type: str or ~flow.models.ResourceType
+        """
+        super(TraceCosmosMetaDto, self).__init__(**kwargs)
+        self.entity_id = entity_id
+        self.trace_cosmos_configuration = trace_cosmos_configuration
+        self.trace_cosmos_status = trace_cosmos_status
+        self.error = error
+        self.account_endpoint = account_endpoint
+        self.database_name = database_name
+        self.resource_arm_id = resource_arm_id
+        self.resource_type = resource_type
+
+
+class TraceCosmosResourceDto(msrest.serialization.Model):
+    """TraceCosmosResourceDto.
+
     :ivar container_name:
     :vartype container_name: str
     :ivar resource_url:
@@ -45326,33 +45958,45 @@ class TraceCosmosResourceDto(msrest.serialization.Model):
     :vartype resource_token: str
     :ivar permission_mode:
     :vartype permission_mode: str
+    :ivar time_to_live_in_seconds:
+    :vartype time_to_live_in_seconds: int
+    :ivar account_endpoint:
+    :vartype account_endpoint: str
+    :ivar database_name:
+    :vartype database_name: str
+    :ivar resource_arm_id:
+    :vartype resource_arm_id: str
+    :ivar resource_type: Possible values include: "Attach", "HOBO".
+    :vartype resource_type: str or ~flow.models.ResourceType
     """
 
     _attribute_map = {
-        'account_endpoint': {'key': 'accountEndpoint', 'type': 'str'},
-        'database_name': {'key': 'databaseName', 'type': 'str'},
         'container_name': {'key': 'containerName', 'type': 'str'},
         'resource_url': {'key': 'resourceUrl', 'type': 'str'},
         'resource_token': {'key': 'resourceToken', 'type': 'str'},
         'permission_mode': {'key': 'permissionMode', 'type': 'str'},
+        'time_to_live_in_seconds': {'key': 'timeToLiveInSeconds', 'type': 'int'},
+        'account_endpoint': {'key': 'accountEndpoint', 'type': 'str'},
+        'database_name': {'key': 'databaseName', 'type': 'str'},
+        'resource_arm_id': {'key': 'resourceArmId', 'type': 'str'},
+        'resource_type': {'key': 'resourceType', 'type': 'str'},
     }
 
     def __init__(
         self,
         *,
-        account_endpoint: Optional[str] = None,
-        database_name: Optional[str] = None,
         container_name: Optional[str] = None,
         resource_url: Optional[str] = None,
         resource_token: Optional[str] = None,
         permission_mode: Optional[str] = None,
+        time_to_live_in_seconds: Optional[int] = None,
+        account_endpoint: Optional[str] = None,
+        database_name: Optional[str] = None,
+        resource_arm_id: Optional[str] = None,
+        resource_type: Optional[Union[str, "ResourceType"]] = None,
         **kwargs
     ):
         """
-        :keyword account_endpoint:
-        :paramtype account_endpoint: str
-        :keyword database_name:
-        :paramtype database_name: str
         :keyword container_name:
         :paramtype container_name: str
         :keyword resource_url:
@@ -45361,14 +46005,27 @@ class TraceCosmosResourceDto(msrest.serialization.Model):
         :paramtype resource_token: str
         :keyword permission_mode:
         :paramtype permission_mode: str
+        :keyword time_to_live_in_seconds:
+        :paramtype time_to_live_in_seconds: int
+        :keyword account_endpoint:
+        :paramtype account_endpoint: str
+        :keyword database_name:
+        :paramtype database_name: str
+        :keyword resource_arm_id:
+        :paramtype resource_arm_id: str
+        :keyword resource_type: Possible values include: "Attach", "HOBO".
+        :paramtype resource_type: str or ~flow.models.ResourceType
         """
         super(TraceCosmosResourceDto, self).__init__(**kwargs)
-        self.account_endpoint = account_endpoint
-        self.database_name = database_name
         self.container_name = container_name
         self.resource_url = resource_url
         self.resource_token = resource_token
         self.permission_mode = permission_mode
+        self.time_to_live_in_seconds = time_to_live_in_seconds
+        self.account_endpoint = account_endpoint
+        self.database_name = database_name
+        self.resource_arm_id = resource_arm_id
+        self.resource_type = resource_type
 
 
 class TraceCosmosResourceDtos(msrest.serialization.Model):
@@ -45394,6 +46051,45 @@ class TraceCosmosResourceDtos(msrest.serialization.Model):
         """
         super(TraceCosmosResourceDtos, self).__init__(**kwargs)
         self.resource_tokens = resource_tokens
+
+
+class TraceDbSetupRequest(msrest.serialization.Model):
+    """TraceDbSetupRequest.
+
+    :ivar resource_type: Possible values include: "Attach", "HOBO".
+    :vartype resource_type: str or ~flow.models.ResourceType
+    :ivar managed_cosmos_db_config:
+    :vartype managed_cosmos_db_config: ~flow.models.ManagedCosmosDbConfig
+    :ivar user_attached_cosmos_db_config:
+    :vartype user_attached_cosmos_db_config: ~flow.models.AttachCosmosRequest
+    """
+
+    _attribute_map = {
+        'resource_type': {'key': 'resourceType', 'type': 'str'},
+        'managed_cosmos_db_config': {'key': 'managedCosmosDbConfig', 'type': 'ManagedCosmosDbConfig'},
+        'user_attached_cosmos_db_config': {'key': 'userAttachedCosmosDbConfig', 'type': 'AttachCosmosRequest'},
+    }
+
+    def __init__(
+        self,
+        *,
+        resource_type: Optional[Union[str, "ResourceType"]] = None,
+        managed_cosmos_db_config: Optional["ManagedCosmosDbConfig"] = None,
+        user_attached_cosmos_db_config: Optional["AttachCosmosRequest"] = None,
+        **kwargs
+    ):
+        """
+        :keyword resource_type: Possible values include: "Attach", "HOBO".
+        :paramtype resource_type: str or ~flow.models.ResourceType
+        :keyword managed_cosmos_db_config:
+        :paramtype managed_cosmos_db_config: ~flow.models.ManagedCosmosDbConfig
+        :keyword user_attached_cosmos_db_config:
+        :paramtype user_attached_cosmos_db_config: ~flow.models.AttachCosmosRequest
+        """
+        super(TraceDbSetupRequest, self).__init__(**kwargs)
+        self.resource_type = resource_type
+        self.managed_cosmos_db_config = managed_cosmos_db_config
+        self.user_attached_cosmos_db_config = user_attached_cosmos_db_config
 
 
 class TrainingDiagnosticConfiguration(msrest.serialization.Model):
@@ -45695,6 +46391,8 @@ class TuningNodeRunSetting(msrest.serialization.Model):
     :vartype init_k_wargs: dict[str, any]
     :ivar log_file_relative_path:
     :vartype log_file_relative_path: str
+    :ivar disable_trace:
+    :vartype disable_trace: bool
     :ivar connections: This is a dictionary.
     :vartype connections: dict[str, dict[str, str]]
     :ivar promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
@@ -45740,6 +46438,7 @@ class TuningNodeRunSetting(msrest.serialization.Model):
         'environment_variables': {'key': 'environmentVariables', 'type': '{str}'},
         'init_k_wargs': {'key': 'initKWargs', 'type': '{object}'},
         'log_file_relative_path': {'key': 'logFileRelativePath', 'type': 'str'},
+        'disable_trace': {'key': 'disableTrace', 'type': 'bool'},
         'connections': {'key': 'connections', 'type': '{{str}}'},
         'promptflow_engine_type': {'key': 'promptflowEngineType', 'type': 'str'},
         'worker_count': {'key': 'workerCount', 'type': 'int'},
@@ -45776,6 +46475,7 @@ class TuningNodeRunSetting(msrest.serialization.Model):
         environment_variables: Optional[Dict[str, str]] = None,
         init_k_wargs: Optional[Dict[str, Any]] = None,
         log_file_relative_path: Optional[str] = None,
+        disable_trace: Optional[bool] = None,
         connections: Optional[Dict[str, Dict[str, str]]] = None,
         promptflow_engine_type: Optional[Union[str, "PromptflowEngineType"]] = None,
         worker_count: Optional[int] = None,
@@ -45831,6 +46531,8 @@ class TuningNodeRunSetting(msrest.serialization.Model):
         :paramtype init_k_wargs: dict[str, any]
         :keyword log_file_relative_path:
         :paramtype log_file_relative_path: str
+        :keyword disable_trace:
+        :paramtype disable_trace: bool
         :keyword connections: This is a dictionary.
         :paramtype connections: dict[str, dict[str, str]]
         :keyword promptflow_engine_type: Possible values include: "FastEngine", "ScalableEngine".
@@ -45875,6 +46577,7 @@ class TuningNodeRunSetting(msrest.serialization.Model):
         self.environment_variables = environment_variables
         self.init_k_wargs = init_k_wargs
         self.log_file_relative_path = log_file_relative_path
+        self.disable_trace = disable_trace
         self.connections = connections
         self.promptflow_engine_type = promptflow_engine_type
         self.worker_count = worker_count
@@ -47237,7 +47940,7 @@ class UpdateFlowStatusRequest(msrest.serialization.Model):
 
     :ivar flow_run_status: Possible values include: "Started", "Completed", "Failed", "Cancelled",
      "NotStarted", "Running", "Queued", "Paused", "Unapproved", "Starting", "Preparing",
-     "CancelRequested", "Pausing", "Finalizing", "Canceled", "Bypassed".
+     "CancelRequested", "Pausing", "Finalizing", "Canceled", "Bypassed", "Unavailable".
     :vartype flow_run_status: str or ~flow.models.FlowRunStatusEnum
     :ivar error_response: The error response.
     :vartype error_response: ~flow.models.ErrorResponse
@@ -47258,7 +47961,7 @@ class UpdateFlowStatusRequest(msrest.serialization.Model):
         """
         :keyword flow_run_status: Possible values include: "Started", "Completed", "Failed",
          "Cancelled", "NotStarted", "Running", "Queued", "Paused", "Unapproved", "Starting",
-         "Preparing", "CancelRequested", "Pausing", "Finalizing", "Canceled", "Bypassed".
+         "Preparing", "CancelRequested", "Pausing", "Finalizing", "Canceled", "Bypassed", "Unavailable".
         :paramtype flow_run_status: str or ~flow.models.FlowRunStatusEnum
         :keyword error_response: The error response.
         :paramtype error_response: ~flow.models.ErrorResponse
@@ -47882,11 +48585,11 @@ class WorkspaceConnectionSpec(msrest.serialization.Model):
      "AzureContentSafetyConnection", "SerpConnection", "CognitiveSearchConnection",
      "SubstrateLLMConnection", "PineconeConnection", "QdrantConnection", "WeaviateConnection",
      "function_list", "function_str", "FormRecognizerConnection", "file_path", "image",
-     "assistant_definition", "ServerlessConnection".
+     "assistant_definition", "ServerlessConnection", "AIServicesConnection".
     :vartype flow_value_type: str or ~flow.models.ValueType
     :ivar connection_type: Possible values include: "OpenAI", "AzureOpenAI", "Serp", "Bing",
      "AzureContentModerator", "Custom", "AzureContentSafety", "CognitiveSearch", "SubstrateLLM",
-     "Pinecone", "Qdrant", "Weaviate", "FormRecognizer", "Serverless".
+     "Pinecone", "Qdrant", "Weaviate", "FormRecognizer", "Serverless", "AIServices".
     :vartype connection_type: str or ~flow.models.ConnectionType
     :ivar connection_type_display_name:
     :vartype connection_type_display_name: str
@@ -47942,11 +48645,11 @@ class WorkspaceConnectionSpec(msrest.serialization.Model):
          "AzureContentSafetyConnection", "SerpConnection", "CognitiveSearchConnection",
          "SubstrateLLMConnection", "PineconeConnection", "QdrantConnection", "WeaviateConnection",
          "function_list", "function_str", "FormRecognizerConnection", "file_path", "image",
-         "assistant_definition", "ServerlessConnection".
+         "assistant_definition", "ServerlessConnection", "AIServicesConnection".
         :paramtype flow_value_type: str or ~flow.models.ValueType
         :keyword connection_type: Possible values include: "OpenAI", "AzureOpenAI", "Serp", "Bing",
          "AzureContentModerator", "Custom", "AzureContentSafety", "CognitiveSearch", "SubstrateLLM",
-         "Pinecone", "Qdrant", "Weaviate", "FormRecognizer", "Serverless".
+         "Pinecone", "Qdrant", "Weaviate", "FormRecognizer", "Serverless", "AIServices".
         :paramtype connection_type: str or ~flow.models.ConnectionType
         :keyword connection_type_display_name:
         :paramtype connection_type_display_name: str

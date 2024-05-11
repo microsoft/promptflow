@@ -231,3 +231,5 @@ class TestTrace:
         persist_a_span(collection=mock_collection)
         collections = pfs_op.list_collections().json
         assert len(collections) > 0
+        collection = collections[0]
+        assert isinstance(collection, dict) and "name" in collection and "update_time" in collection

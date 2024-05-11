@@ -33,7 +33,7 @@
     pip list
 - name: Upload artifact
   if: ${{ '{{' }} always() }}
-  uses: actions/upload-artifact@v3
+  uses: actions/upload-artifact@v4
   with:
     name: artifact
     path: {{ working_dir }}/bash_script.sh

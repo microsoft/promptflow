@@ -181,4 +181,5 @@ class Collections(Resource):
     def get(self):
         client: PFClient = get_client_from_request()
         args = ListCollectionParser.from_request()
-        return client.traces._list_collections(limit=args.limit)
+        collections = client.traces._list_collections(limit=args.limit)
+        return [collection._to_dict() for collection in collections]

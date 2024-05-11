@@ -46,7 +46,7 @@ class OpenAIMetricsCalculator:
             if isinstance(usage, dict):
                 return usage
             self._log_warning(
-                "Cannot find openai metrics in output, " "will calculate metrics from response data directly."
+                "Cannot find openai metrics in output, will calculate metrics from response data directly."
             )
 
         name = api_call.get("name")
@@ -62,13 +62,13 @@ class OpenAIMetricsCalculator:
         elif name == "openai_completion_legacy" or name == "openai_completion":  # openai v1
             return self.get_openai_metrics_for_completion_api(inputs, output)
         else:
-            self._log_warning(f"Calculating metrics for api {name} is not supported.")
+            raise Exception(f"Calculating metrics for api {name} is not supported.")
 
     def _try_get_model(self, inputs, output):
         if IS_LEGACY_OPENAI:
             api_type = inputs.get("api_type")
             if not api_type:
-                self._log_warning("Cannot calculate metrics for none or empty api_type.")
+                raise Exception("Cannot calculate metrics for none or empty api_type.")
             if api_type == "azure":
                 model = inputs.get("engine")
             else:
@@ -85,28 +85,33 @@ class OpenAIMetricsCalculator:
             if not model:
                 model = inputs.get("model")
         if not model:
-            raise self._log_warning(
-                "Cannot get a valid model to calculate metrics. "
+            raise Exception(
+                "Cannot get a valid model to calculate metrics."
                 "Please specify a engine for AzureOpenAI API or a model for OpenAI API."
             )
         return model
 
     def get_openai_metrics_for_chat_api(self, inputs, output):
         metrics = {}
-        enc, tokens_per_message, tokens_per_name = self._get_encoding_for_chat_api(self._try_get_model(inputs, output))
-        metrics["prompt_tokens"] = self._get_prompt_tokens_from_messages(
-            inputs["messages"], enc, tokens_per_message, tokens_per_name
-        )
-        if isinstance(output, list):
-            if IS_LEGACY_OPENAI:
-                metrics["completion_tokens"] = len(output)
+        try:
+            enc, tokens_per_message, tokens_per_name = self._get_encoding_for_chat_api(
+                self._try_get_model(inputs, output)
+            )
+            metrics["prompt_tokens"] = self._get_prompt_tokens_from_messages(
+                inputs["messages"], enc, tokens_per_message, tokens_per_name
+            )
+            if isinstance(output, list):
+                if IS_LEGACY_OPENAI:
+                    metrics["completion_tokens"] = len(output)
+                else:
+                    metrics["completion_tokens"] = len(
+                        [chunk for chunk in output if chunk.choices and chunk.choices[0].delta.content]
+                    )
             else:
-                metrics["completion_tokens"] = len(
-                    [chunk for chunk in output if chunk.choices and chunk.choices[0].delta.content]
-                )
-        else:
-            metrics["completion_tokens"] = self._get_completion_tokens_for_chat_api(output, enc)
-        metrics["total_tokens"] = metrics["prompt_tokens"] + metrics["completion_tokens"]
+                metrics["completion_tokens"] = self._get_completion_tokens_for_chat_api(output, enc)
+            metrics["total_tokens"] = metrics["prompt_tokens"] + metrics["completion_tokens"]
+        except Exception as ex:
+            self._log_warning(f"Failed to calculate metrics due to exception: {ex}.")
         return metrics
 
     def _get_encoding_for_chat_api(self, model):
@@ -121,7 +126,7 @@ class OpenAIMetricsCalculator:
             tokens_per_message = 3
             tokens_per_name = 1
         else:
-            self._log_warning(f"Calculating metrics for model {model} is not supported.")
+            raise Exception(f"Calculating metrics for model {model} is not supported.")
         return enc, tokens_per_message, tokens_per_name
 
     def _get_prompt_tokens_from_messages(self, messages, enc, tokens_per_message, tokens_per_name):
@@ -150,24 +155,27 @@ class OpenAIMetricsCalculator:
 
     def get_openai_metrics_for_completion_api(self, inputs, output):
         metrics = {}
-        enc = self._get_encoding_for_completion_api(self._try_get_model(inputs, output))
-        metrics["prompt_tokens"] = 0
-        prompt = inputs.get("prompt")
-        if isinstance(prompt, str):
-            metrics["prompt_tokens"] = len(enc.encode(prompt))
-        elif isinstance(prompt, list):
-            for pro in prompt:
-                metrics["prompt_tokens"] += len(enc.encode(pro))
-        if isinstance(output, list):
-            if IS_LEGACY_OPENAI:
-                metrics["completion_tokens"] = len(output)
+        try:
+            enc = self._get_encoding_for_completion_api(self._try_get_model(inputs, output))
+            metrics["prompt_tokens"] = 0
+            prompt = inputs.get("prompt")
+            if isinstance(prompt, str):
+                metrics["prompt_tokens"] = len(enc.encode(prompt))
+            elif isinstance(prompt, list):
+                for pro in prompt:
+                    metrics["prompt_tokens"] += len(enc.encode(pro))
+            if isinstance(output, list):
+                if IS_LEGACY_OPENAI:
+                    metrics["completion_tokens"] = len(output)
+                else:
+                    metrics["completion_tokens"] = len(
+                        [chunk for chunk in output if chunk.choices and chunk.choices[0].text]
+                    )
             else:
-                metrics["completion_tokens"] = len(
-                    [chunk for chunk in output if chunk.choices and chunk.choices[0].text]
-                )
-        else:
-            metrics["completion_tokens"] = self._get_completion_tokens_for_completion_api(output, enc)
-        metrics["total_tokens"] = metrics["prompt_tokens"] + metrics["completion_tokens"]
+                metrics["completion_tokens"] = self._get_completion_tokens_for_completion_api(output, enc)
+            metrics["total_tokens"] = metrics["prompt_tokens"] + metrics["completion_tokens"]
+        except Exception as ex:
+            self._log_warning(f"Failed to calculate metrics due to exception: {ex}.")
         return metrics
 
     def _get_encoding_for_completion_api(self, model):
