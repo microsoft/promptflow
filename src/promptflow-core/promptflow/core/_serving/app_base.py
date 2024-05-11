@@ -56,7 +56,7 @@ class PromptflowServingAppBasic(ABC):
         self.sample = get_sample_json(self.project_path, logger)
 
         self.init = kwargs.get("init", {})
-        if not self.init or len(self.init):
+        if not self.init:
             init_params = os.environ.get(PF_FLOW_INIT_CONFIG, "{}")
             init_dict: dict = json.loads(init_params)
             self.init = init_dict
