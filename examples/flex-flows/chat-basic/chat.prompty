@@ -8,6 +8,7 @@ model:
     azure_deployment: gpt-35-turbo
   parameters:
     temperature: 0.2
+    max_tokens: 1024
 inputs: 
   question:
     type: string

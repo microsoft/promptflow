@@ -70,6 +70,7 @@ pf flow test --flow . --init init.json
 
 # run chat flow with new question
 pf flow test --flow . --init init.json --inputs question="What is ChatGPT? Please explain with consise statement."
+pf flow test --flow . --init init.json --inputs sample.json
 ```
 - Test flow: multi turn
 ```shell
