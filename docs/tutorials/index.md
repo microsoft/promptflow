@@ -31,3 +31,9 @@ This section contains a collection of flow samples and step-by-step tutorials.
 |Deployment|[Create service with flow](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/flow-deploy/create-service-with-flow/README.md)| This example shows how to create a simple service with flow|
 |Deployment|[Distribute flow as executable app](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/flow-deploy/distribute-flow-as-executable-app/README.md)| This example demos how to package flow as a executable app|
 |Deployment|[Deploy flow using azure app service](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/flow-deploy/azure-app-service/README.md)| This example demos how to deploy a flow using Azure App Service|
+|Rag|[Tutorial: chat with pdf](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/e2e-development/chat-with-pdf.md)| Retrieval Augmented Generation (or RAG) has become a prevalent pattern to build intelligent application with Large Language Models (or LLMs) since it can infuse external knowledge into the model, which is not trained with those up-to-date or proprietary information|
+|Rag|[Tutorial: how prompt flow helps on quality improvement](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/flow-fine-tuning-evaluation/promptflow-quality-improvement.md)| This tutorial is designed to enhance your understanding of improving flow quality through prompt tuning and evaluation|
+|Rag|[Develop promptflow copilot](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/develop-promptflow-copilot/develop-promptflow-copilot.md)| In this tutorial, we will provide a detailed walkthrough on creating a RAG-based copilot using the Azure Machine Learning promptflow toolkit|
+
+
+Learn more: [Try out more promptflow examples.](https://github.com/microsoft/promptflow/tree/main/examples)

@@ -346,12 +346,17 @@ def write_readme(workflow_telemetries, readme_telemetries):
         [item for item in new_items if item["category"] == "Deployment"],
         key=lambda x: x["weight"],
     )
+    rag_category = sorted(
+        [item for item in new_items if item["category"] == "Rag"],
+        key=lambda x: x["weight"],
+    )
 
     real_new_items = [
         *tracing_category,
         *prompty_category,
         *flow_category,
         *deployment_category,
+        *rag_category,
     ]
     tutorial_items = {"items": real_new_items}
     tutorial_index_file = (
