@@ -100,6 +100,15 @@ def mock_model_config() -> dict:
 
 
 @pytest.fixture
+def mock_project_scope() -> dict:
+    return {
+        "subscription_id": "subscription-id",
+        "resource_group_name": "resource-group-name",
+        "project_name": "project-name",
+    }
+
+
+@pytest.fixture
 def model_config() -> dict:
     conn_name = "azure_openai_model_config"
 

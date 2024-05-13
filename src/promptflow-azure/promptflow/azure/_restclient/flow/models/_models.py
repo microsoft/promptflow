@@ -19451,6 +19451,8 @@ class FlowRunInfo(msrest.serialization.Model):
     :vartype session_id: str
     :ivar studio_portal_endpoint:
     :vartype studio_portal_endpoint: str
+    :ivar studio_portal_trace_endpoint:
+    :vartype studio_portal_trace_endpoint: str
     """
 
     _attribute_map = {
@@ -19476,6 +19478,7 @@ class FlowRunInfo(msrest.serialization.Model):
         'flow_snapshot_id': {'key': 'flowSnapshotId', 'type': 'str'},
         'session_id': {'key': 'sessionId', 'type': 'str'},
         'studio_portal_endpoint': {'key': 'studioPortalEndpoint', 'type': 'str'},
+        'studio_portal_trace_endpoint': {'key': 'studioPortalTraceEndpoint', 'type': 'str'},
     }
 
     def __init__(
@@ -19528,6 +19531,8 @@ class FlowRunInfo(msrest.serialization.Model):
         :paramtype session_id: str
         :keyword studio_portal_endpoint:
         :paramtype studio_portal_endpoint: str
+        :keyword studio_portal_trace_endpoint:
+        :paramtype studio_portal_trace_endpoint: str
         """
         super(FlowRunInfo, self).__init__(**kwargs)
         self.flow_graph = kwargs.get('flow_graph', None)
@@ -19552,6 +19557,7 @@ class FlowRunInfo(msrest.serialization.Model):
         self.flow_snapshot_id = kwargs.get('flow_snapshot_id', None)
         self.session_id = kwargs.get('session_id', None)
         self.studio_portal_endpoint = kwargs.get('studio_portal_endpoint', None)
+        self.studio_portal_trace_endpoint = kwargs.get('studio_portal_trace_endpoint', None)
 
 
 class FlowRunResult(msrest.serialization.Model):

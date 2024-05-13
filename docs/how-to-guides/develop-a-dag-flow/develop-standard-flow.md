@@ -102,7 +102,7 @@ tool prompt by clicking the prompt file and adjust input parameters like connect
 ::::
 
 ### Create connection
-Please refer to the [Create necessary connections](../quick-start.md#create-necessary-connections) for details.
+Please refer to the [Create necessary connections](./quick-start.md#create-necessary-connections) for details.
 
 ## Chain your flow - link nodes together
 Before linking nodes together, you need to define and expose an interface.

@@ -277,7 +277,7 @@ def _resolve_folder_to_compress(base_path: Path, include: str, dst_path: Path) -
 
 @contextmanager
 def _merge_local_code_and_additional_includes(code_path: Path):
-    # TODO: unify variable names: flow_dir_path, flow_dag_path, flow_path
+    # TODO: unify variable names: flow_dir_path, flow_file_path, flow_path
 
     def additional_includes_copy(src, relative_path, target_dir):
         if src.is_file():
@@ -907,6 +907,8 @@ def gen_uuid_by_compute_info() -> Union[str, None]:
 
 def convert_time_unix_nano_to_timestamp(time_unix_nano: str) -> datetime.datetime:
     nanoseconds = int(time_unix_nano)
+    if nanoseconds == 0:
+        return None  # return None if the time is not set
     seconds = nanoseconds / 1_000_000_000
     return datetime.datetime.utcfromtimestamp(seconds)
 
@@ -1103,9 +1105,11 @@ def get_flow_path(flow) -> Path:
     from promptflow._sdk.entities._flows.prompty import Prompty
 
     if isinstance(flow, DAGFlow):
-        return flow.flow_dag_path.parent.resolve()
+        return flow._flow_file_path.parent.resolve()
     if isinstance(flow, (FlexFlow, Prompty)):
-        return flow.path.parent.resolve()
+        # Use code path to return as flow path, since code path is the same as flow directory for yaml case and code
+        # path points to original code path in non-yaml case
+        return flow.code.resolve()
     raise ValueError(f"Unsupported flow type {type(flow)!r}")
 
 
@@ -1137,16 +1141,16 @@ def resolve_flow_language(
     if flow_path is not None and yaml_dict is not None:
         raise UserErrorException("Only one of flow_path and yaml_dict should be provided.")
     if flow_path is not None:
-        flow_path, flow_file = resolve_flow_path(flow_path, base_path=working_dir, check_flow_exist=False)
+        # flow path must exist
+        flow_path, flow_file = resolve_flow_path(flow_path, base_path=working_dir, check_flow_exist=True)
         file_path = flow_path / flow_file
-        if file_path.is_file() and file_path.suffix.lower() in (".yaml", ".yml"):
+        if file_path.suffix.lower() in (".yaml", ".yml"):
             yaml_dict = load_yaml(file_path)
-        elif file_path.is_file() and file_path.suffix.lower() == PROMPTY_EXTENSION:
+        elif file_path.suffix.lower() == PROMPTY_EXTENSION:
             return FlowLanguage.Python
         else:
-            raise UserErrorException(
-                f"Invalid flow path {file_path.as_posix()}, must exist and of suffix yaml, yml or prompty."
-            )
+            # actually suffix is already checked in resolve_flow_path
+            raise UserErrorException(f"Invalid flow path {file_path.as_posix()}, must of suffix yaml, yml or prompty.")
     return yaml_dict.get(LANGUAGE_KEY, FlowLanguage.Python)
 
 

@@ -58,19 +58,28 @@ def start_flow_service(
     environment_variables: Dict[str, str] = None,
     init: Dict[str, Any] = None,
     skip_open_browser: bool = True,
+    engine: str = "flask",
 ):
     logger.info(
         "Start promptflow server with port %s",
         port,
     )
-    language = resolve_flow_language(flow_path=source)
 
-    flow_dir, flow_file_name = resolve_flow_path(source)
+    flow_dir, flow_file_name = resolve_flow_path(source, allow_prompty_dir=True)
+    # prompty dir works for resolve_flow_path, but not for resolve_flow_language,
+    # so infer language after resolve_flow_path
+    language = resolve_flow_language(flow_path=flow_dir / flow_file_name)
+
     if language == FlowLanguage.Python:
         if not os.path.isdir(source):
             raise UserErrorException(
                 message_format="Support directory `source` for Python flow only for now, but got {source}.",
                 source=source,
+            )
+        if engine not in ["flask", "fastapi"]:
+            raise UserErrorException(
+                message_format="Unsupported engine {engine} for Python flow, only support 'flask' and 'fastapi'.",
+                engine=engine,
             )
         serve_python_flow(
             flow_file_name=flow_file_name,
@@ -82,6 +91,7 @@ def start_flow_service(
             config=config or {},
             environment_variables=environment_variables or {},
             skip_open_browser=skip_open_browser,
+            engine=engine,
         )
     else:
         serve_csharp_flow(
@@ -103,6 +113,7 @@ def serve_python_flow(
     environment_variables,
     init,
     skip_open_browser: bool,
+    engine,
 ):
     from promptflow._sdk._configuration import Configuration
     from promptflow.core._serving.app import create_app
@@ -121,13 +132,24 @@ def serve_python_flow(
         environment_variables=environment_variables,
         connection_provider=connection_provider,
         init=init,
+        engine=engine,
     )
     if not skip_open_browser:
         target = f"http://{host}:{port}"
         logger.info(f"Opening browser {target}...")
         webbrowser.open(target)
     # Debug is not supported for now as debug will rerun command, and we changed working directory.
-    app.run(port=port, host=host)
+    if engine == "flask":
+        app.run(port=port, host=host)
+    else:
+        try:
+            import uvicorn
+
+            uvicorn.run(app, host=host, port=port, access_log=False, log_config=None)
+        except ImportError:
+            raise UserErrorException(
+                message_format="FastAPI engine requires uvicorn, please install uvicorn by `pip install uvicorn`."
+            )
 
 
 @contextlib.contextmanager

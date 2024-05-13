@@ -10,7 +10,6 @@ from promptflow._constants import CONNECTION_SCRUBBED_VALUE as SCRUBBED_VALUE
 from promptflow._constants import CONNECTION_SCRUBBED_VALUE_NO_CHANGE, ConnectionType, CustomStrongTypeConnectionConfigs
 from promptflow._core.token_provider import AzureTokenProvider
 from promptflow._utils.logger_utils import LoggerFactory
-from promptflow._utils.utils import in_jupyter_notebook
 from promptflow.constants import ConnectionAuthMode, ConnectionDefaultApiVersion
 from promptflow.contracts.types import Secret
 from promptflow.core._errors import RequiredEnvironmentVariablesNotSetError
@@ -64,10 +63,6 @@ class _Connection:
         self.expiry_time = kwargs.get("expiry_time", None)
         self.created_date = kwargs.get("created_date", None)
         self.last_modified_date = kwargs.get("last_modified_date", None)
-        # Conditional assignment to prevent entity bloat when unused.
-        print_as_yaml = kwargs.pop("print_as_yaml", in_jupyter_notebook())
-        if print_as_yaml:
-            self.print_as_yaml = True
 
     def keys(self) -> List:
         """Return keys of the connection properties."""
