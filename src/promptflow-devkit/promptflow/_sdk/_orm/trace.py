@@ -98,7 +98,7 @@ class Span(Base):
     @sqlite_retry
     def persist(self) -> None:
         with trace_mgmt_db_session() as session:
-            session.add(self)
+            session.merge(self)
             session.commit()
 
     @staticmethod
@@ -159,7 +159,7 @@ class LineRun(Base):
     @sqlite_retry
     def persist(self) -> None:
         with trace_mgmt_db_session() as session:
-            session.add(self)
+            session.merge(self)
             session.commit()
 
     @staticmethod

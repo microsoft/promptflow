@@ -41,7 +41,7 @@ class Span:
         self.parent_id = span.parent_id
         # span entity start_time and end_time are datetime objects using utc timezone
         self.start_time = span.start_time.strftime(DATE_FORMAT)
-        self.end_time = span.end_time.strftime(DATE_FORMAT)
+        self.end_time = span.end_time.strftime(DATE_FORMAT) if span.end_time else None
         self.status = span.status
         self.attributes = span.attributes
         # We will remove attributes from events for cosmosdb 2MB size limit.
@@ -76,12 +76,7 @@ class Span:
         if self.events and blob_container_client is not None and blob_base_uri is not None:
             self._persist_events(blob_container_client, blob_base_uri)
 
-        from azure.cosmos.exceptions import CosmosResourceExistsError
-
-        try:
-            return cosmos_client.create_item(body=self.to_cosmosdb_item())
-        except CosmosResourceExistsError:
-            return
+        return cosmos_client.upsert_item(body=self.to_cosmosdb_item())
 
     def to_dict(self) -> Dict[str, Any]:
         return {k: v for k, v in self.__dict__.items() if v}
@@ -130,7 +125,7 @@ class Span:
         span_data = json.dumps(f_span)
         blob_path = self._generate_blob_path(file_name="span.json")
         blob_client = blob_container_client.get_blob_client(blob_path)
-        blob_client.upload_blob(span_data)
+        blob_client.upload_blob(span_data, overwrite=True)
         self.span_json_uri = f"{blob_base_uri}{blob_path}"
 
     def _persist_events(self, blob_container_client: ContainerClient, blob_base_uri: str):
@@ -140,7 +135,7 @@ class Span:
         for idx, event in enumerate(self.events):
             event_data = json.dumps(event)
             blob_client = blob_container_client.get_blob_client(self._event_path(idx))
-            blob_client.upload_blob(event_data)
+            blob_client.upload_blob(event_data, overwrite=True)
 
             event[SpanEventFieldName.ATTRIBUTES] = {}
             self.external_event_data_uris.append(f"{blob_base_uri}{self._event_path(idx)}")
