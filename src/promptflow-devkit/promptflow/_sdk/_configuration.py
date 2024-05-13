@@ -16,6 +16,7 @@ from promptflow._sdk._constants import (
     DEFAULT_ENCODING,
     FLOW_DIRECTORY_MACRO_IN_CONFIG,
     HOME_PROMPT_FLOW_DIR,
+    REMOTE_URI_PREFIX,
     SERVICE_CONFIG_FILE,
 )
 from promptflow._sdk._utilities.general_utils import call_from_extension, gen_uuid_by_compute_info, read_write_by_user
@@ -214,6 +215,10 @@ class Configuration(object):
         else:
             logger.debug("trace destination does not need to be resolved, directly return...")
             return value
+
+    def _is_cloud_trace_destination(self, path: Optional[Path] = None) -> bool:
+        trace_destination = self.get_trace_destination(path=path)
+        return trace_destination and trace_destination.startswith(REMOTE_URI_PREFIX)
 
     def _resolve_trace_destination(self, path: Optional[Path] = None) -> str:
         return "azureml:/" + self._get_workspace_from_config(path=path)
