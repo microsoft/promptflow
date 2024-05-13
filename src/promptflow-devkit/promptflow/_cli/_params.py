@@ -134,7 +134,6 @@ def add_param_set_positional(parser):
 def add_param_environment_variables(parser):
     parser.add_argument(
         "--environment-variables",
-        "--env",
         action=EnvironmentVariablesAction,
         help="Environment variables to set by specifying a property path and value. Example: --environment-variable "
         "key1='${my_connection.api_key}' key2='value2'. The value reference to connection keys will be resolved "
