@@ -3,6 +3,13 @@
 Simple and short articles grouped by topics, each introduces a core feature of prompt flow and how you can use it to address your specific use cases.
 
 ```{toctree}
+:caption: Quick start
+:maxdepth: 1
+quick-start
+installation/index
+```
+
+```{toctree}
 :caption: Tracing
 :maxdepth: 1
 tracing/index
@@ -22,6 +29,7 @@ develop-a-dag-flow/index
 execute-flow-as-a-function
 chat-with-a-flow/index
 run-and-evaluate-a-flow/index
+generate-test-data
 ```
 
 ```{toctree}

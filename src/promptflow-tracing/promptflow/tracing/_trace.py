@@ -21,6 +21,7 @@ from opentelemetry.trace.status import StatusCode
 
 from ._openai_utils import OpenAIMetricsCalculator, OpenAIResponseParser
 from ._operation_context import OperationContext
+from ._span_enricher import SpanEnricher, SpanEnricherManager
 from ._tracer import Tracer, _create_trace_from_function_call, get_node_name_from_context
 from ._utils import get_input_names_for_prompt_template, get_prompt_param_name_from_func, serialize
 from .contracts.generator_proxy import AsyncGeneratorProxy, GeneratorProxy
@@ -148,29 +149,10 @@ def enrich_span_with_input(span, input):
 
 
 def enrich_span_with_trace_type(span, inputs, output, trace_type):
-    if trace_type == TraceType.LLM:
-        # Handle the non-streaming output of LLM, the streaming output will be handled in traced_generator.
-        token_collector.collect_openai_tokens(span, output)
-        enrich_span_with_llm_output(span, output)
-    if trace_type == TraceType.ASSISTANT:
-        token_collector.collect_openai_tokens(span, output)
-        enrich_span_with_assistant_output(span, output)
-    if trace_type == TraceType.THREAD:
-        token_collector.collect_openai_tokens(span, output)
-        enrich_span_with_thread_output(span, output)
-    if trace_type == TraceType.MESSAGE:
-        token_collector.collect_openai_tokens(span, output)
-        enrich_span_with_message_output(span, output)
-    if trace_type == TraceType.RUN:
-        token_collector.collect_openai_tokens(span, output)
-        enrich_span_with_run_output(span, output)
-    elif trace_type == TraceType.EMBEDDING:
-        token_collector.collect_openai_tokens(span, output)
-        enrich_span_with_embedding(span, inputs, output)
+    SpanEnricherManager.enrich(span, inputs, output, trace_type)
+    # TODO: Move the following logic to SpanEnricher
     enrich_span_with_openai_tokens(span, trace_type)
-    enrich_span_with_output(span, output)
-    output = trace_iterator_if_needed(span, inputs, output)
-    return output
+    return trace_iterator_if_needed(span, inputs, output)
 
 
 def trace_iterator_if_needed(span, inputs, output):
@@ -326,42 +308,6 @@ def enrich_span_with_llm_output(span, output):
             else:
                 generated_message = None
             enrich_span_with_llm(span, model, generated_message)
-
-
-def enrich_span_with_assistant_output(span, output):
-    generated_message = None
-    try:
-        # span.set_attribute("attribute.name", "Attribute value")
-        span.add_event("promptflow.assistant.created_assistant", {"payload": serialize_attribute(generated_message)})
-    except Exception as e:
-        logging.warning(f"Failed to enrich span with assistant: {e}")
-
-
-def enrich_span_with_thread_output(span, output):
-    generated_message = None
-    try:
-        # span.set_attribute("attribute.name", "Attribute value")
-        span.add_event("promptflow.thread.created_thread", {"payload": serialize_attribute(generated_message)})
-    except Exception as e:
-        logging.warning(f"Failed to enrich span with thread: {e}")
-
-
-def enrich_span_with_message_output(span, output):
-    generated_message = None
-    try:
-        # span.set_attribute("attribute.name", "Attribute value")
-        span.add_event("promptflow.message.created_message", {"payload": serialize_attribute(generated_message)})
-    except Exception as e:
-        logging.warning(f"Failed to enrich span with message: {e}")
-
-
-def enrich_span_with_run_output(span, output):
-    generated_message = None
-    try:
-        # span.set_attribute("attribute.name", "Attribute value")
-        span.add_event("promptflow.message.created_run", {"payload": serialize_attribute(generated_message)})
-    except Exception as e:
-        logging.warning(f"Failed to enrich span with run: {e}")
 
 
 def serialize_attribute(value):
@@ -567,3 +513,21 @@ def trace(func: Callable = None) -> Callable:
     """
 
     return _traced(func, trace_type=TraceType.FUNCTION)
+
+
+class LLMSpanEnricher(SpanEnricher):
+    def enrich(self, span, inputs, output):
+        token_collector.collect_openai_tokens(span, output)
+        enrich_span_with_llm_output(span, output)
+        super().enrich(span, inputs, output)
+
+
+class EmbeddingSpanEnricher(SpanEnricher):
+    def enrich(self, span, inputs, output):
+        token_collector.collect_openai_tokens(span, output)
+        enrich_span_with_embedding(span, inputs, output)
+        super().enrich(span, inputs, output)
+
+
+SpanEnricherManager.register(TraceType.LLM, LLMSpanEnricher())
+SpanEnricherManager.register(TraceType.EMBEDDING, EmbeddingSpanEnricher())

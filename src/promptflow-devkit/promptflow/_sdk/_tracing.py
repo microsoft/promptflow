@@ -36,6 +36,7 @@ from promptflow._constants import (
     TraceEnvironmentVariableName,
 )
 from promptflow._sdk._constants import (
+    PF_SERVICE_HOST,
     PF_TRACE_CONTEXT,
     PF_TRACE_CONTEXT_ATTR,
     TRACE_DEFAULT_COLLECTION,
@@ -56,6 +57,7 @@ from promptflow._sdk._utilities.general_utils import (
     extract_workspace_triad_from_trace_provider,
 )
 from promptflow._sdk._utilities.tracing_utils import get_workspace_kind, parse_kv_from_pb_attribute, parse_protobuf_span
+from promptflow._sdk.entities import Run
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.thread_utils import ThreadWithContextVars
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
@@ -195,14 +197,15 @@ def _invoke_pf_svc() -> str:
     return port
 
 
-def _get_ws_triad_from_pf_config(path: typing.Optional[Path]) -> typing.Optional[AzureMLWorkspaceTriad]:
+def _get_ws_triad_from_pf_config(path: typing.Optional[Path], config=None) -> typing.Optional[AzureMLWorkspaceTriad]:
     from promptflow._sdk._configuration import Configuration
 
-    config = Configuration.get_instance().get_trace_destination(path=path)
-    _logger.info("resolved tracing.trace.destination: %s", config)
-    if not TraceDestinationConfig.need_to_export_to_azure(config):
+    config = config or Configuration.get_instance()
+    trace_destination = config.get_trace_destination(path=path)
+    _logger.info("resolved tracing.trace.destination: %s", trace_destination)
+    if not TraceDestinationConfig.need_to_export_to_azure(trace_destination):
         return None
-    return extract_workspace_triad_from_trace_provider(config)
+    return extract_workspace_triad_from_trace_provider(trace_destination)
 
 
 # priority: run > experiment > collection
@@ -224,7 +227,7 @@ def _get_tracing_url_from_local(
     exp: typing.Optional[str] = None,  # pylint: disable=unused-argument
     run: typing.Optional[str] = None,
 ) -> str:
-    url = f"http://localhost:{pfs_port}/v1.0/ui/traces/"
+    url = f"http://{PF_SERVICE_HOST}:{pfs_port}/v1.0/ui/traces/"
     if run is not None:
         url += f"?#run={run}"
     else:
@@ -307,7 +310,10 @@ def _print_tracing_url_from_azure_portal(
         return
 
     url = url.format(query=query)
-    print(f"You can view the traces in cloud from Azure portal: {url}")
+    print(
+        f"You can view the traces in the cloud from the Azure portal. "
+        f"Please note that the page may remain empty for a while until the traces are successfully uploaded:\n{url}."
+    )
 
 
 def _inject_res_attrs_to_environ(
@@ -333,7 +339,7 @@ def _inject_res_attrs_to_environ(
         os.environ[TraceEnvironmentVariableName.WORKSPACE_NAME] = ws_triad.workspace_name
     # we will not overwrite the value if it is already set
     if OTEL_EXPORTER_OTLP_ENDPOINT not in os.environ:
-        otlp_endpoint = f"http://localhost:{pfs_port}/v1/traces"
+        otlp_endpoint = f"http://{PF_SERVICE_HOST}:{pfs_port}/v1/traces"
         _logger.debug("set OTLP endpoint to environ: %s", otlp_endpoint)
         os.environ[OTEL_EXPORTER_OTLP_ENDPOINT] = otlp_endpoint
 
@@ -368,6 +374,13 @@ def start_trace_with_devkit(collection: str, **kwargs: typing.Any) -> None:
     _logger.debug("kwargs: %s", kwargs)
     attrs = kwargs.get("attributes", None)
     run = kwargs.get("run", None)
+    flow_path = None
+    if isinstance(run, Run):
+        flow_path = run._get_flow_dir().resolve()
+        run_config = run._config
+        run = run.name
+    else:
+        run_config = None
     path = kwargs.get("path", None)
 
     # honor and set attributes if user has specified
@@ -395,7 +408,7 @@ def start_trace_with_devkit(collection: str, **kwargs: typing.Any) -> None:
 
     # local to cloud feature
     _logger.debug("start_trace_with_devkit.path(from kwargs): %s", path)
-    ws_triad = _get_ws_triad_from_pf_config(path=path)
+    ws_triad = _get_ws_triad_from_pf_config(path=path, config=run_config)
     is_azure_ext_installed = _is_azure_ext_installed()
     if ws_triad is not None and not is_azure_ext_installed:
         warning_msg = (
@@ -404,6 +417,19 @@ def start_trace_with_devkit(collection: str, **kwargs: typing.Any) -> None:
             "and restart prompt flow service."
         )
         _logger.warning(warning_msg)
+
+    # enable trace by default, only disable it when we get "Disabled" status from service side
+    # this operation requires Azure dependencies as client talks to PFS
+    disable_trace_in_cloud = False
+    if ws_triad is not None and is_azure_ext_installed:
+        from promptflow.azure._utils._tracing import is_trace_cosmos_available
+
+        if not is_trace_cosmos_available(ws_triad=ws_triad, logger=_logger):
+            disable_trace_in_cloud = True
+    # if trace is disabled, directly set workspace triad as None
+    # so that following code will regard as no workspace configured
+    if disable_trace_in_cloud is True:
+        ws_triad = None
 
     # invoke prompt flow service
     pfs_port = _invoke_pf_svc()
@@ -432,7 +458,15 @@ def start_trace_with_devkit(collection: str, **kwargs: typing.Any) -> None:
         return
     # print tracing url(s) when run is specified
     _print_tracing_url_from_local(pfs_port=pfs_port, collection=collection, exp=exp, run=run)
-    if ws_triad is not None and is_azure_ext_installed:
+
+    if run is not None and ws_triad is not None:
+        trace_destination = run_config.get_trace_destination(path=flow_path)
+        print(
+            f"You can view the traces in azure portal since trace destination is set to: {trace_destination}. "
+            f"The link will be printed once the run is finished."
+        )
+    elif ws_triad is not None and is_azure_ext_installed:
+        # if run does not exist, print collection trace link
         _print_tracing_url_from_azure_portal(ws_triad=ws_triad, collection=collection, exp=exp, run=run)
 
 
@@ -510,12 +544,19 @@ def setup_exporter_to_pfs() -> None:
         if not getattr(tracer_provider, TRACER_PROVIDER_PFS_EXPORTER_SET_ATTR, False):
             _logger.info("have not set exporter to prompt flow service, will set it...")
             # Use a 1000 millis schedule delay to help export the traces in 1 second.
-            processor = BatchSpanProcessor(otlp_span_exporter, schedule_delay_millis=1000)
+            processor = PFBatchSpanProcessor(otlp_span_exporter, schedule_delay_millis=1000)
             tracer_provider.add_span_processor(processor)
             setattr(tracer_provider, TRACER_PROVIDER_PFS_EXPORTER_SET_ATTR, True)
         else:
             _logger.info("exporter to prompt flow service is already set, no action needed.")
     _logger.debug("finish setup exporter to prompt flow service.")
+
+
+class PFBatchSpanProcessor(BatchSpanProcessor):
+    def on_start(self, span, parent_context: typing.Union[trace.Context, None] = None) -> None:
+        super().on_start(span, parent_context)
+        #  Process the span when it starts, so a running span could be shown.
+        self.on_end(span)
 
 
 class OTLPSpanExporterWithTraceURL(OTLPSpanExporter):
@@ -602,19 +643,13 @@ def process_otlp_trace_request(
                 else:
                     all_spans.append(span)
 
-    if cloud_trace_only:
-        # If we only trace to cloud, we should make sure the data writing is success before return.
-        _try_write_trace_to_cosmosdb(
-            all_spans, get_created_by_info_with_cache, logger, get_credential, is_cloud_trace=True
-        )
-    else:
-        # Create a new thread to write trace to cosmosdb to avoid blocking the main thread
-        ThreadWithContextVars(
-            target=_try_write_trace_to_cosmosdb,
-            args=(all_spans, get_created_by_info_with_cache, logger, get_credential, False),
-        ).start()
+    # Create a new thread to write trace to cosmosdb to avoid blocking the main thread
+    ThreadWithContextVars(
+        target=_try_write_trace_to_cosmosdb,
+        args=(all_spans, get_created_by_info_with_cache, logger, get_credential, cloud_trace_only),
+    ).start()
 
-    return
+    return all_spans
 
 
 def _try_write_trace_to_cosmosdb(

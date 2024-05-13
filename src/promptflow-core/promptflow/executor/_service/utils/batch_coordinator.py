@@ -79,6 +79,12 @@ class BatchCoordinator:
     def get_log_context(self):
         return self._log_context
 
+    def get_flow_infos(self):
+        return {
+            "inputs_definition": self._flow_executor.get_inputs_definition(),
+            "has_aggregation": self._flow_executor.has_aggregation_node,
+        }
+
     def start(self):
         """Start the process pool."""
         self._process_pool.start()

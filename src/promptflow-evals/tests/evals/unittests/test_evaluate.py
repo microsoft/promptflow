@@ -1,3 +1,4 @@
+import json
 import os
 import pathlib
 
@@ -6,6 +7,7 @@ import pytest
 from pandas.testing import assert_frame_equal
 
 from promptflow.client import PFClient
+from promptflow.evals._constants import DEFAULT_EVALUATION_RESULTS_FILE_NAME
 from promptflow.evals.evaluate import evaluate
 from promptflow.evals.evaluate._evaluate import _apply_column_mapping, _apply_target_to_data
 from promptflow.evals.evaluators import F1ScoreEvaluator, GroundednessEvaluator
@@ -122,7 +124,7 @@ class TestEvaluate:
     def test_apply_target_to_data(self, pf_client, questions_file, questions_answers_file):
         """Test that target was applied correctly."""
         initial_data = pd.read_json(questions_file, lines=True)
-        qa_df, columns = _apply_target_to_data(_target_fn, questions_file, pf_client, initial_data)
+        qa_df, columns, target_run = _apply_target_to_data(_target_fn, questions_file, pf_client, initial_data)
         assert columns == {"answer"}
         ground_truth = pd.read_json(questions_answers_file, lines=True)
         assert_frame_equal(qa_df, ground_truth, check_like=True)
@@ -161,3 +163,31 @@ class TestEvaluate:
             "Unexpected references detected in 'evaluator_config'. Ensure only ${target.} and ${data.} are used."
             in exc_info.value.args[0]
         )
+
+    def test_evaluate_output_path(self, evaluate_test_data_jsonl_file, tmpdir):
+        output_path = os.path.join(tmpdir, "eval_test_results.jsonl")
+        result = evaluate(
+            data=evaluate_test_data_jsonl_file,
+            evaluators={"g": F1ScoreEvaluator()},
+            output_path=output_path,
+        )
+
+        assert result is not None
+        assert os.path.exists(output_path)
+        assert os.path.isfile(output_path)
+
+        with open(output_path, "r") as f:
+            content = f.read()
+            data_from_file = json.loads(content)
+            assert result["metrics"] == data_from_file["metrics"]
+
+        result = evaluate(
+            data=evaluate_test_data_jsonl_file,
+            evaluators={"g": F1ScoreEvaluator()},
+            output_path=os.path.join(tmpdir),
+        )
+
+        with open(os.path.join(tmpdir, DEFAULT_EVALUATION_RESULTS_FILE_NAME), "r") as f:
+            content = f.read()
+            data_from_file = json.loads(content)
+            assert result["metrics"] == data_from_file["metrics"]

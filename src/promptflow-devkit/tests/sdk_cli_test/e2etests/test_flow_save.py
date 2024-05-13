@@ -630,6 +630,25 @@ class TestFlowSave:
                 "response": {"type": "string", "default": "first"},
             },
         }
+
+        # sample as input signature
+        prompty = load_flow(source=Path(PROMPTY_DIR) / "sample_as_input_signature.prompty")
+        meta = pf.flows.infer_signature(entry=prompty, include_primitive_output=True)
+        assert meta == {
+            "inputs": {
+                "firstName": {"type": "string"},
+                "lastName": {"type": "string"},
+                "question": {"type": "string"},
+            },
+            "outputs": {"output": {"type": "string"}},
+            "init": {
+                "configuration": {"type": "object"},
+                "parameters": {"type": "object"},
+                "api": {"type": "string", "default": "chat"},
+                "response": {"type": "string", "default": "first"},
+            },
+        }
+
         # Flex flow
         flex_flow = load_flow(source=Path(EAGER_FLOWS_DIR) / "builtin_llm")
         meta = pf.flows.infer_signature(entry=flex_flow, include_primitive_output=True)

@@ -58,6 +58,10 @@ def write_readme_workflow(readme_path, output_telemetry=Telemetry()):
     else:
         ReadmeSteps.extract_steps_and_run()
 
+    if workflow_name.endswith("e2e_development_chat_with_pdf"):
+        ReadmeSteps.login_again()
+        ReadmeSteps.execute_command()
+
     ReadmeStepsManage.write_workflow(
         workflow_name, "samples_readme_ci", output_telemetry
     )

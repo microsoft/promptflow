@@ -215,6 +215,8 @@
         "FunctionList",
         "FunctionStr",
         "FormRecognizerConnection",
+        "ServerlessConnection",
+        "AzureAIServicesConnection",
         "FilePath",
         "Image",
         "AssistantDefinition"
@@ -243,6 +245,8 @@
         "function_list",
         "function_str",
         "FormRecognizerConnection",
+        "ServerlessConnection",
+        "AzureAIServicesConnection",
         "file_path",
         "image",
         "assistant_definition"
@@ -354,7 +358,9 @@
         "Pinecone",
         "Qdrant",
         "Weaviate",
-        "FormRecognizer"
+        "FormRecognizer",
+        "Serverless",
+        "AzureAIServices"
       ],
       "enum": [
         "OpenAI",
@@ -369,7 +375,9 @@
         "Pinecone",
         "Qdrant",
         "Weaviate",
-        "FormRecognizer"
+        "FormRecognizer",
+        "Serverless",
+        "AzureAIServices"
       ]
     },
     "ToolState": {

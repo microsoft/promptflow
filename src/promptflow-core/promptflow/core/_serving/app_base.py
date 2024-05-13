@@ -1,13 +1,13 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
+import json
 import mimetypes
 import os
 from abc import ABC, abstractmethod
-from pathlib import Path
 from typing import Dict
 
+from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.user_agent_utils import setup_user_agent_to_operation_context
 from promptflow.core import Flow
@@ -17,6 +17,7 @@ from promptflow.core._serving.utils import get_output_fields_to_remove, get_samp
 from promptflow.core._utils import init_executable
 from promptflow.storage._run_storage import DummyRunStorage
 
+from ..._constants import PF_FLOW_INIT_CONFIG
 from .swagger import generate_swagger
 
 
@@ -28,12 +29,15 @@ class PromptflowServingAppBasic(ABC):
         self.logger = logger
         # default to local, can be override when creating the app
         self.extension = ExtensionFactory.create_extension(logger, **kwargs)
-
+        # make sure pfserving exporters initiated before any customer code loading
+        self.flow_monitor = self.extension.get_flow_monitor(self.get_context_data_provider())
         self.flow_invoker: AsyncFlowInvoker = None
+
         # parse promptflow project path
         self.project_path = self.extension.get_flow_project_path()
         logger.info(f"Project path: {self.project_path}")
-        self.flow = init_executable(flow_path=Path(self.project_path))
+        flow_dir, flow_file_name = resolve_flow_path(self.project_path, allow_prompty_dir=True)
+        self.flow = init_executable(flow_path=flow_dir / flow_file_name)
 
         # enable environment_variables
         environment_variables = kwargs.get("environment_variables", {})
@@ -48,14 +52,17 @@ class PromptflowServingAppBasic(ABC):
         self.connections_override = conn_data_override
         self.connections_name_override = conn_name_override
 
-        self.flow_monitor = self.extension.get_flow_monitor(self.get_context_data_provider())
-
         self.connection_provider = self.extension.get_connection_provider()
         self.credential = self.extension.get_credential()
         self.sample = get_sample_json(self.project_path, logger)
 
         self.init = kwargs.get("init", {})
-        logger.info("Init params: " + str(self.init))
+        if not self.init:
+            init_params = os.environ.get(PF_FLOW_INIT_CONFIG, "{}")
+            init_dict: dict = json.loads(init_params)
+            self.init = init_dict
+
+        logger.debug("Init params: " + str(self.init))
 
         self.init_swagger()
         # try to initialize the flow invoker
@@ -81,8 +88,9 @@ class PromptflowServingAppBasic(ABC):
         if self.flow_invoker:
             return
         self.logger.info("Promptflow executor starts initializing...")
+        flow_dir, flow_file_name = resolve_flow_path(self.project_path, allow_prompty_dir=True)
         self.flow_invoker = AsyncFlowInvoker(
-            flow=Flow.load(source=self.project_path),
+            flow=Flow.load(source=flow_dir / flow_file_name),
             connection_provider=self.connection_provider,
             streaming=self.streaming_response_required,
             raise_ex=False,

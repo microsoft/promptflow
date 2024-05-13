@@ -90,6 +90,7 @@ promptflow-tracing = {path = "../promptflow-tracing", develop = true}
 promptflow = {path = "../promptflow"}
 promptflow-tools = {path = "../promptflow-tools"}
 promptflow-recording =  {path = "../promptflow-recording", develop = true}
+promptflow-azure =  {path = "../promptflow-azure", develop = true}
 
 [tool.poetry.group.ci.dependencies]
 import-linter = "*"
