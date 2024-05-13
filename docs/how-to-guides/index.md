@@ -9,12 +9,6 @@ quick-start.md
 ```
 
 ```{toctree}
-:caption: Installation
-:maxdepth: 1
-installation/index
-```
-
-```{toctree}
 :caption: Tracing
 :maxdepth: 1
 tracing/index

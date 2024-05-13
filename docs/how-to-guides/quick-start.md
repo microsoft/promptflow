@@ -151,3 +151,9 @@ Learn more on how to:
 
 And you can also check our [Tutorials](https://microsoft.github.io/promptflow/tutorials/index.html), especially:
 - [Tutorial: Chat with PDF](https://microsoft.github.io/promptflow/tutorials/chat-with-pdf.html): An end-to-end tutorial on how to build a high quality chat application with prompt flow, including flow development and evaluation with metrics.
+
+```{toctree}
+:caption: Installation
+:maxdepth: 1
+installation/index
+```
