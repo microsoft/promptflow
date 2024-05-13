@@ -41,7 +41,7 @@ class RunTracker(ThreadLocalSingleton):
     def __init__(self, run_storage: AbstractRunStorage, run_mode: RunMode = RunMode.Test, node_log_manager=None):
         self._node_runs: Dict[str, RunInfo] = {}
         self._flow_runs: Dict[str, FlowRunInfo] = {}
-        # The key is the parent_run_id, and the value is a list of node traces.
+        # The key is the parent_run_id of node run info, and the value is a list of node traces (api_calls).
         self._node_traces: Dict[str, List[Dict[str, Any]]] = {}
         self._current_run_id = ""
         self._run_context = ContextVar(self.RUN_CONTEXT_NAME, default="")
@@ -215,7 +215,7 @@ class RunTracker(ThreadLocalSingleton):
                 "type": "Flow",
                 "start_time": start_timestamp,
                 "end_time": end_timestamp,
-                "children": self._collect_traces_from_nodes(run_id),
+                "children": self.node_traces_dict.get(run_id, []),
                 "system_metrics": run_info.system_metrics,
                 "inputs": inputs,
                 "output": output,
@@ -239,7 +239,10 @@ class RunTracker(ThreadLocalSingleton):
             msg = f"Output of {run_info.node} is not json serializable, use str to store it."
             output = self._ensure_serializable_value(output, msg)
 
-        # Deep copy the traces of node run info to node_traces.
+        # Currently, the children of api_calls in the flow run info comes from the api_calls in the node run infos.
+        # So, when the api_calls of node run info contains multimedia objects, we need to make a deep copy into
+        # node_trace to prevent changes to it during the persistence of node run, which could cause the api_calls
+        # in the flow run info to point to an incorrect multimedia data path.
         if run_info.api_calls:
             self._node_traces.setdefault(run_info.parent_run_id, []).extend(deepcopy(run_info.api_calls))
 
@@ -420,12 +423,6 @@ class RunTracker(ThreadLocalSingleton):
             calculator.merge_metrics_dict(total_metrics, metrics)
         run_info.system_metrics = run_info.system_metrics or {}
         run_info.system_metrics.update(total_metrics)
-
-    def _collect_traces_from_nodes(self, run_id):
-        for parent_run_id, node_trace in self.node_traces_dict.items():
-            if parent_run_id == run_id:
-                return node_trace
-        return []
 
     OPENAI_AGGREGATE_METRICS = ["prompt_tokens", "completion_tokens", "total_tokens"]
 
