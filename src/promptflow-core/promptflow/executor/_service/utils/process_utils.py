@@ -72,6 +72,7 @@ async def invoke_sync_function_in_process(
                         message="Unexpected error occurred while executing the request",
                         target=ErrorTarget.EXECUTOR,
                     )
+                service_logger.error(f"[{p.pid}] failed with exitcode: {p.exitcode}")
                 # JsonSerializedPromptflowException will be raised here
                 # no need to change to PromptflowException since it will be handled in app.exception_handler
                 raise exception
@@ -92,14 +93,17 @@ def _execute_target_function(
     context_dict: dict,
     environment_variables: Mapping[str, Any],
 ):
-    block_terminate_signal_to_parent()
-    set_environment_variables(environment_variables)
-    with exception_wrapper(error_dict):
-        if context_dict:
-            OperationContext.get_instance().update(context_dict)
-        service_logger.info("Start processing request in executor service...")
-        result = target_function(*args, **kwargs)
-        return_dict["result"] = result
+    try:
+        block_terminate_signal_to_parent()
+        set_environment_variables(environment_variables)
+        with exception_wrapper(error_dict):
+            if context_dict:
+                OperationContext.get_instance().update(context_dict)
+            service_logger.info("Start processing request in executor service...")
+            result = target_function(*args, **kwargs)
+            return_dict["result"] = result
+    except Exception as e:
+        service_logger.info(f"!!!!!!!!!!!!!!!!!Error: {e}")
 
 
 @contextlib.contextmanager
