@@ -1,12 +1,18 @@
-# Overview
+# Trace Span Specification
 
-The span, as you may know, is the fundamental unit of the trace system, representing a unit that captures execution information in the PromptFlow system. Spans are nested together in a parent-child relationship and paired together by link relationships, providing developers and users with a comprehensive view of the application’s execution process.
+:::{admonition} Experimental feature
+This is an experimental feature, and may change at any time. Learn [more](../how-to-guides/faq.md#stable-vs-experimental).
+:::
 
-This document outlines the design of PromptFlow spans, detailing what information is traced and how it is structured. By adhering to these specifications, we ensure transparency and consistency in our tracing system.
+This document outlines the design of Prompt flow spans, detailing what information is traced and how it is structured.
 
-The UI interprets the captured spans and presents them in a user-friendly manner. Understanding the fields and contracts defined within the spans is essential for effectively utilizing PromptFlow or integrating its components.
+## Introduction
 
-# PromptFlow Span
+The span, as you may know, is the fundamental unit of the trace system, representing a unit that captures execution information in the Prompt flow system. Spans are nested together in a parent-child relationship and paired together by link relationships, providing developers and users with a comprehensive view of the application’s execution process.
+
+By adhering to these specifications, we ensure transparency and consistency in our tracing system.
+
+The UI interprets the captured spans and presents them in a user-friendly manner. Understanding the fields and contracts defined within the spans is essential for effectively utilizing Prompt flow or integrating its components.
 
 ## OpenTelemetry Span Basics
 
@@ -24,25 +30,27 @@ A typical span object contains below information:
 | events | [Span Events](https://opentelemetry.io/docs/concepts/signals/traces/#span-events) |
 | links | [Span Links](https://opentelemetry.io/docs/concepts/signals/traces/#span-links) |
 
-## PromptFlow Span Specification
+## Span in Prompt flow
 
-In PromptFlow, we define several span types, and the system automatically creates spans with execution information in designated attributes and events.
+In Prompt flow, we define several span types, and the system automatically creates spans with execution information in designated attributes and events.
 
 These span types share common attributes and events, which we refer to as standard attributes and events. Let’s explore these common elements before diving into the specifics of each span type.
 
-**Standard Attributes**
+### Common Attributes and Events
 
-Each span in PromptFlow is enriched with a set of standard attributes that provide essential information about the span's context and purpose. The following table outlines these attributes:
+**Attributes**
+
+Each span in Prompt flow is enriched with a set of standard attributes that provide essential information about the span's context and purpose. The following table outlines these attributes:
 
 | Attribute | Type | Description | Examples | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) |
 |---|---|---|---|---|
 | framework | string | This attribute specifies the framework in which the trace was recorded. For our project, this value is consistently set to promptflow.  | promptflow | `Required` |
-| node_name | string | Denotes the name of the flow node. | chat | `Conditionally Required` if the flow is a Directed Acyclic Graph ([DAG](https://microsoft.github.io/promptflow/concepts/concept-flows.html#dag-flow)) flow. |
-| span_type | string | Specifies the type of span, such as LLM or Flow. See [this](#promptflow-span-types-detailed-specifications) for details | LLM | `Required` |
-| line_run_id | string | Unique identifier for the execution run within PromptFlow. | d23159d5-cae0-4de6-a175-295c715ce251 | `Required` |
+| node_name | string | Denotes the name of the flow node. | chat | `Conditionally Required` if the flow is a Directed Acyclic Graph ([DAG](../concepts/concept-flows.md##DAG_flow)) flow. |
+| span_type | string | Specifies the type of span, such as LLM or Flow. See [this](#span-types-spectification) for details | LLM | `Required` |
+| line_run_id | string | Unique identifier for the execution run within Prompt flow. | d23159d5-cae0-4de6-a175-295c715ce251 | `Required` |
 | function | string | The function associated with the span. | search | `Recommended` |
 | session_id | string | Unique identifier for chat sessions. | 4ea1a462-7617-439f-a40c-12a8b93f51fb | `Opt-In` |
-| referenced.line_run_id | string | Represents the line run ID that is the source of the evaluation run. | f747f7b8-983c-4bf2-95db-0ec3e33d4fd1 | `Conditionally Required` only used in evaluation runs - runs on [evaluation flow](https://microsoft.github.io/promptflow/concepts/concept-flows.html#flow-types).|
+| referenced.line_run_id | string | Represents the line run ID that is the source of the evaluation run. | f747f7b8-983c-4bf2-95db-0ec3e33d4fd1 | `Conditionally Required` only used in evaluation runs - runs on [evaluation flow](../concepts/concept-flows.md#flow-types).|
 | batch_run_id | string | The batch run ID when in batch mode. | 61daff70-80d5-4e79-a50b-11b38bb3d344 | `Conditionally Required` only used in batch runs |
 | referenced.batch_run_id | string | Notes the batch run ID against which an evaluation flow ran. | 851b32cb-545c-421d-8e51-0a3ea66f0075 | `Conditionally Required` only used in evaluation runs |
 | line_number | int | The line number within a batch run, starting from 0. | `1` | `Conditionally Required`: Only used in batch runs |
@@ -52,9 +60,9 @@ Each span in PromptFlow is enriched with a set of standard attributes that provi
 
 **[1]:** Cumulative token counts are propagated up the span hierarchy, ensuring each span reflects the total token count of all LLM executions within its scope.
 
-**Standard Events**
+**Events**
 
-In promptflow, events emitted by the PromptFlow framework follow the format below
+In Prompt flow, events emitted by the Prompt flow framework follow the format below
 
 - event MUST has attributes
 - event attributes MUST contain a key named `payload`, which refers to the data carried within an event.
@@ -65,9 +73,9 @@ In promptflow, events emitted by the PromptFlow framework follow the format belo
 | promptflow.function.inputs | Input of a function call | ```{"chat_history":[],"question":"What is ChatGPT?"}``` | `Required` |
 | promptflow.function.output | Output of a function call | ```{"answer":"ChatGPT is a conversational AI model developed by OpenAI."}``` | `Required` |
 
-### PromptFlow Span Types: Detailed Specifications
+### Span Types Spectification
 
-Within the PromptFlow system, we have delineated several distinct span types to cater to various execution units. Each span type is designed to capture specific execution information, complementing the standard attributes and events. Currently, our system includes the following span types: `LLM`, `Function`, `LangChain`, `Flow`, `Embedding` and `Retrieval`.
+Within the Prompt flow system, we have delineated several distinct span types to cater to various execution units. Each span type is designed to capture specific execution information, complementing the standard attributes and events. Currently, our system includes the following span types: `LLM`, `Function`, `LangChain`, `Flow`, `Embedding` and `Retrieval`.
 
 Beyond the standard attributes and events, each span type possesses designated fields to store pertinent information unique to its role within the system. These specialized attributes and events ensure that all relevant data is meticulously traced and available for analysis.
 
@@ -87,11 +95,11 @@ The LLM (Large Language Model) span captures detailed execution information from
 |---|---|---|---|
 | promptflow.llm.generated_message | Captures the output message from an LLM call. | ```{"content":"ChatGPT is a conversational AI model developed by OpenAI.","role":"assistant","function_call":null,"tool_calls":null}``` | `Required` |
 
->Note: OpenTelemetry currently defines several LLM-related span attributes and events as semantic conventions. We plan to align with these conventions in the future. For more information, visit [LLM Semantic Conventions](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/attributes-registry/llm.md).
+>Note: OpenTelemetry currently defines several LLM-related span attributes and events as semantic conventions. We plan to align with these conventions in the future. For more information, visit [LLM Semantic Conventions](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/gen-ai/llm-spans.md).
 
 **Function**
 
-The Function span is a versatile default span within PromptFlow, designed to capture a wide range of general function execution information.
+The Function span is a versatile default span within Prompt flow, designed to capture a wide range of general function execution information.
 
 | Attribute | Type | Description | Examples | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) |
 |---|---|---|---|---|
@@ -106,7 +114,7 @@ The Function span is a versatile default span within PromptFlow, designed to cap
 
 **Flow**
 
-The Flow span encapsulates the execution details of a flow within PromptFlow.
+The Flow span encapsulates the execution details of a flow within Prompt flow.
 
 | Attribute | Type | Description | Examples | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) |
 |---|---|---|---|---|
@@ -114,7 +122,7 @@ The Flow span encapsulates the execution details of a flow within PromptFlow.
 
 **Embedding**
 
-The Embedding span is dedicated to recording the details of embedding calls within PromptFlow.
+The Embedding span is dedicated to recording the details of embedding calls within Prompt flow.
 
 | Attribute | Type | Description | Examples | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) |
 |---|---|---|---|---|
@@ -143,10 +151,10 @@ The Retrieval span type is specifically designed to encapsulate the execution de
 
 # Conclusion
 
-In conclusion, the PromptFlow span design plays a pivotal role in ensuring the effectiveness and efficiency of the trace system. By meticulously defining span types and their associated attributes and events, we provide a robust foundation for developers and users to gain insights into the application's execution process.
+In conclusion, the Prompt flow span design plays a pivotal role in ensuring the effectiveness and efficiency of the trace system. By meticulously defining span types and their associated attributes and events, we provide a robust foundation for developers and users to gain insights into the application's execution process.
 
 Adherence to these specifications guarantees that the tracing system remains transparent, consistent, and reliable.
 
-The structured approach to tracing not only facilitates the monitoring and debugging of PromptFlow but also enables seamless integration with other systems and components. As the PromptFlow ecosystem evolves, these specifications will serve as a critical reference to maintain the integrity of tracing data and to support the continuous improvement of the user experience.
+The structured approach to tracing not only facilitates the monitoring and debugging of Prompt flow but also enables seamless integration with other systems and components. As the Prompt flow ecosystem evolves, these specifications will serve as a critical reference to maintain the integrity of tracing data and to support the continuous improvement of the user experience.
 
-We encourage all contributors and users of PromptFlow to familiarize themselves with these guidelines to maximize the benefits of our tracing system. Through collective efforts, we can ensure that PromptFlow remains a powerful and intuitive tool for application development and performance analysis.
+We encourage all contributors and users of Prompt flow to familiarize themselves with these guidelines to maximize the benefits of our tracing system. Through collective efforts, we can ensure that Prompt flow remains a powerful and intuitive tool for application development and performance analysis.
