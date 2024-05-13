@@ -1,10 +1,14 @@
-# Install prompt flow SDK/CLI
+# Installation
 
 The prompt flow SDK & CLI are currently undergoing active development. We will regularly release a stable version to [the stable pypi index](https://pypi.org/project/promptflow/#history). 
 This guide will walk you through the installation process for the prompt flow SDK & CLI library.
 
 [SDK Changelog](https://microsoft.github.io/promptflow/reference/changelog/promptflow.html) contains the history of 
 stable releases. The feature set of upcoming release will also be available on this page.
+
+Latest stable version:
+[![PyPI version](https://badge.fury.io/py/promptflow.svg)](https://badge.fury.io/py/promptflow)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/promptflow)](https://pypi.org/project/promptflow/)
 
 ## Create a virtual environment (optional)
 When installing prompt flow locally, we recommend using a virtual environment for the installation. This ensures
@@ -59,7 +63,7 @@ Use the following command to install the latest version of prompt flow to work w
 pip install promptflow[azure] --upgrade
 ```
 
-## Introduction of promptflow sub packages
+## Promptflow sub packages
 Prompt flow consists of several sub-packages, each is designed to provide specific functionalities.
 
 | Name                                                                | Description                                                                                                                                                                                                                |
@@ -76,9 +80,19 @@ To verify the installation, run the following command to check the version of pr
 pf --version
 ```
 
+Running the above command will yield the following example output:
+```
+{
+  "promptflow": "1.10.1",
+  "promptflow-core": "1.10.1",
+  "promptflow-devkit": "1.10.1",
+  "promptflow-tracing": "1.10.1"
+}
+```
+
 ```{toctree}
 :maxdepth: 1
 :hidden:
 
-msi
+standalone
 ```
