@@ -45,7 +45,7 @@ Each span in Prompt flow is enriched with a set of standard attributes that prov
 | Attribute | Type | Description | Examples | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) |
 |---|---|---|---|---|
 | framework | string | This attribute specifies the framework in which the trace was recorded. For our project, this value is consistently set to promptflow.  | promptflow | `Required` |
-| node_name | string | Denotes the name of the flow node. | chat | `Conditionally Required` if the flow is a Directed Acyclic Graph ([DAG](../concepts/concept-flows.md##DAG_flow)) flow. |
+| node_name | string | Denotes the name of the flow node. | chat | `Conditionally Required` if the flow is a Directed Acyclic Graph ([DAG](../concepts/concept-flows.md#DAG-flow)) flow. |
 | span_type | string | Specifies the type of span, such as LLM or Flow. See [this](#span-types-specification) for details | LLM | `Required` |
 | line_run_id | string | Unique identifier for the execution run within Prompt flow. | d23159d5-cae0-4de6-a175-295c715ce251 | `Required` |
 | function | string | The function associated with the span. | search | `Recommended` |
