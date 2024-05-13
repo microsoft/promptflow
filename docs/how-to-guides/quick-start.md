@@ -77,7 +77,7 @@ def chat(question: str = "What's the capital of France?") -> str:
     return output
 ```
 
-Flow can be a python function or class or a yaml file describe a DAG which encapsulate your LLM application logic. Learn more on the [flow concept](../concepts/concept-flows.md).
+Flow can be a python function or class or a yaml file describe a DAG which encapsulate your LLM application logic. Learn more on the [flow concept](../concepts/concept-flows.md) and how to [Develop a flow](./develop-a-flex-flow/index.md).
 
 ## Test the flow
 
@@ -95,10 +95,18 @@ pf flow test --flow flow:chat --inputs question="What's the capital of France?"
 ```
 
 You will get some output like below in terminal.
-```
+```text
+Prompt flow service has started...
+You can view the trace detail from the following URL:
+http://127.0.0.1:51330/v1.0/ui/traces/?#collection=chat-minimal&uiTraceId=0x49382bbe30664f747348a8ae9dc8b954
+
+The capital of France is Paris
+
 ```
 
-TODO add screenshot on Trace UI.
+Click the trace url printed, you will see a trace UI which help you understand what's the actual llm call heppend behind the scenes.
+![trace_ui](../media/how-to-guides/quick-start/flow_test_trace_ui.png)
+
 
 :::
 
@@ -117,25 +125,37 @@ if __name__ == "__main__":
 ```
 
 Run you script with `python flow.py`, and you will get some outputs like below:
-```
+```text
+Prompt flow service has started...
+You can view the trace detail from the following URL:
+http://127.0.0.1:51330/v1.0/ui/traces/?#collection=chat-minimal&uiTraceId=0x49382bbe30664f747348a8ae9dc8b954
+
+The capital of France is Paris
 
 ```
 
-TODO add screenshot on Trace UI.
+Click the trace url printed, you will see a trace UI which help you understand what's the actual llm call heppend behind the scenes.
+![trace_ui](../media/how-to-guides/quick-start/flow_test_trace_ui.png)
 :::
 
 :::{tab-item} UI
 :sync: VS Code Extension
 
-start test in chat ui
+Start test chat ui with below command.
 
 ```sh
 pf flow test --flow flow:chat --ui 
 ```
 
-TODO add screenshot on Chat UI.
+The command will open a browser page like below:
+![chat_ui](../media/how-to-guides/quick-start/flow_test_ui.png)
 
 See more details of this topic in [Chat with a flow](./chat-with-a-flow/index.md).
+
+
+Click the "View trace" button, you will see a trace UI which help you understand what's the actual llm call heppend behind the scenes.
+![trace_ui](../media/how-to-guides/quick-start/flow_test_trace_ui.png)
+
 
 :::
 
@@ -145,9 +165,10 @@ See more details of this topic in [Chat with a flow](./chat-with-a-flow/index.md
 ## Next steps
 
 Learn more on how to:
+- [Tracing](./tracing/index.md): details on how tracing works.
 - [Develop a prompty](./develop-a-prompty/index.md): details on how to develop prompty.
-- [Develop a flow](./develop-a-flex-flow/index.md): details on how to develop a flow by using a Python function or class.
-- [Develop a flow with DAG](./develop-a-dag-flow/index.md): details on how to develop a flow by using friendly DAG UI.
+- [Develop a flow](./develop-a-flex-flow/index.md): details on how to develop a flow using a python function or class.
+- [Develop a DAG flow](./develop-a-dag-flow/index.md): details on how to develop a flow using friendly DAG UI.
 
 And you can also check our [Tutorials](https://microsoft.github.io/promptflow/tutorials/index.html), especially:
 - [Tutorial: Chat with PDF](https://microsoft.github.io/promptflow/tutorials/chat-with-pdf.html): An end-to-end tutorial on how to build a high quality chat application with prompt flow, including flow development and evaluation with metrics.
