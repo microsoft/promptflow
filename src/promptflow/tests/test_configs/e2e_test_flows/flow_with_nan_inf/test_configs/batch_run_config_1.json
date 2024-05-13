@@ -34,7 +34,6 @@
         "logs": [
             "promptflow-runtime",
             "execution.bulk",
-            "WARNING",
             "Average execution time for completed lines",
             "Finished 3 / 3 lines"
         ],
