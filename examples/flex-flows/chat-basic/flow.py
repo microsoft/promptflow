@@ -41,7 +41,7 @@ class ChatFlow:
                 question=question, chat_history=chat_history
             )
             if token_count > self.max_total_token:
-                chat_history = chat_history[:-1]
+                chat_history = chat_history[1:]
                 log(
                     f"Reducing chat history count to {len(chat_history)} to fit token limit"
                 )
