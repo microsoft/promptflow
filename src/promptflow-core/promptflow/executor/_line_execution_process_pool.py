@@ -58,6 +58,7 @@ from promptflow.executor._result import LineResult
 from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import DEFAULT_CONCURRENCY_BULK, FlowExecutor
 from promptflow.storage._queue_run_storage import QueueRunStorage
+from promptflow.storage._service_storage import ServiceStorage
 from promptflow.tracing._operation_context import OperationContext
 
 
@@ -600,20 +601,32 @@ class LineExecutionProcessPool:
         prevent OOM and persist multimedia data in output when batch running."""
         if not self._output_dir:
             return result
+        if self._serialize_multimedia_during_execution:
+            self._persist_multimedia_data_to_output_dir(result)
+        else:
+            self._convert_multimedia_data_to_string(result)
+        # Persist multimedia data in the outputs of line result to output_dir
+        result.output = self._multimedia_processor.persist_multimedia_data(result.output, self._output_dir)
+        return result
+
+    def _persist_multimedia_data_to_output_dir(self, result: LineResult):
+        service_storage = ServiceStorage(self._output_dir)
+        # Persist multimedia data in flow run info to output_dir
+        service_storage.persist_flow_run(result.run_info)
+        # Persist multimedia data in node run infos to output_dir
+        for node_run_info in result.node_run_infos.values():
+            service_storage.persist_node_run(node_run_info)
+        # Persist multimedia data in the aggregation_inputs of line result to temp dir
+        result.aggregation_inputs = self._multimedia_processor.persist_multimedia_data(
+            result.aggregation_inputs, Path(mkdtemp()), use_absolute_path=True
+        )
+
+    def _convert_multimedia_data_to_string(self, result: LineResult):
         # Serialize multimedia data in flow run info to string
         self._serialize_multimedia(result.run_info)
         # Serialize multimedia data in node run infos to string
         for node_run_info in result.node_run_infos.values():
             self._serialize_multimedia(node_run_info)
-        # Persist multimedia data in the aggregation_inputs of line result to output_dir
-        # if _serialize_multimedia_during_execution is True.
-        if self._serialize_multimedia_during_execution:
-            result.aggregation_inputs = self._multimedia_processor.persist_multimedia_data(
-                result.aggregation_inputs, Path(mkdtemp()), use_absolute_path=True
-            )
-        # Persist multimedia data in the outputs of line result to output_dir
-        result.output = self._multimedia_processor.persist_multimedia_data(result.output, self._output_dir)
-        return result
 
     def _serialize_multimedia(self, run_info: Union[FlowRunInfo, NodeRunInfo]):
         if run_info.inputs:
