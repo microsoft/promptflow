@@ -32,6 +32,11 @@ env:
   PYTHONPATH: ${{ github.workspace }}/src/promptflow
   IS_IN_CI_PIPELINE: "true"
   RECORD_DIRECTORY: ${{ github.workspace }}/src/promptflow-recording
+
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   authorize:
     environment:
@@ -77,12 +82,15 @@ jobs:
         path: |
           ${{ github.workspace }}/src/promptflow/dist/*.whl
           ${{ github.workspace }}/src/promptflow-tools/dist/*.whl
+
   executor_e2e_tests:
     needs: build
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
+    environment:
+      internal
     runs-on: ${{ matrix.os }}
     steps:
     - name: Set test mode
@@ -124,7 +132,9 @@ jobs:
     - name: Azure Login
       uses: azure/login@v1
       with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
+        subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
+        tenant-id: ${{secrets.AZURE_TENANT_ID}}
+        client-id: ${{secrets.AZURE_CLIENT_ID}}
     - name: Generate Configs
       uses: "./.github/actions/step_generate_configs"
       with:

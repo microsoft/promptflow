@@ -331,6 +331,19 @@ class TestTraceEntitiesAndOperations:
         assert isinstance(line_run.inputs, str) and line_run.inputs == str(inputs)
         assert isinstance(line_run.outputs, str) and line_run.outputs == str(output)
 
+    def test_span_with_nan_as_io(self, pf: PFClient) -> None:
+        trace_id, span_id, line_run_id = str(uuid.uuid4()), str(uuid.uuid4()), str(uuid.uuid4())
+        span = mock_span(trace_id=trace_id, span_id=span_id, parent_id=None, line_run_id=line_run_id)
+        span.events[0]["attributes"]["payload"] = json.dumps(dict(input1=float("nan"), input2=float("inf")))
+        span.events[1]["attributes"]["payload"] = json.dumps(dict(output1=float("nan"), output2=float("-inf")))
+        span._persist()
+        line_run = pf.traces.get_line_run(line_run_id=line_run_id)
+        line_run_inputs, line_run_outputs = line_run.inputs, line_run.outputs
+        assert isinstance(line_run_inputs["input1"], str) and line_run_inputs["input1"] == "NaN"
+        assert isinstance(line_run_inputs["input2"], str) and line_run_inputs["input2"] == "Infinity"
+        assert isinstance(line_run_outputs["output1"], str) and line_run_outputs["output1"] == "NaN"
+        assert isinstance(line_run_outputs["output2"], str) and line_run_outputs["output2"] == "-Infinity"
+
     def test_delete_traces_three_tables(self, pf: PFClient) -> None:
         # trace operation does not expose API for events and spans
         # so directly use ORM class to list and assert events and spans existence and deletion
@@ -437,7 +450,7 @@ class TestTraceEntitiesAndOperations:
         span.resource[SpanResourceFieldName.ATTRIBUTES][SpanResourceAttributesFieldName.COLLECTION] = collection
         span._persist()
         collections = pf.traces._list_collections(limit=1)
-        assert len(collections) == 1 and collections[0] == collection
+        assert len(collections) == 1 and collections[0].name == collection
 
     def test_list_collection_with_time_priority(self, pf: PFClient) -> None:
         collection1, collection2 = str(uuid.uuid4()), str(uuid.uuid4())
@@ -453,9 +466,9 @@ class TestTraceEntitiesAndOperations:
             # sleep 1 second to ensure the second span is later than the first
             time.sleep(1)
         collections = pf.traces._list_collections(limit=1)
-        assert len(collections) == 1 and collections[0] == collection2
+        assert len(collections) == 1 and collections[0].name == collection2
         collections = pf.traces._list_collections(limit=2)
-        assert len(collections) == 2 and collections == [collection2, collection1]
+        assert len(collections) == 2 and collections[1].name == collection1
 
 
 @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")

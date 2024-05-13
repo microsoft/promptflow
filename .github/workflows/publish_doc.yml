@@ -16,6 +16,7 @@ on:
       - 'src/promptflow-core/promptflow/**'
       - 'src/promptflow-devkit/promptflow/**'
       - 'src/promptflow-azure/promptflow/**'
+      - 'src/promptflow-rag/promptflow/**'
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:

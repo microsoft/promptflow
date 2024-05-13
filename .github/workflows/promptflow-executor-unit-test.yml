@@ -26,6 +26,9 @@ on:
       - src/promptflow-recording/recordings/local/executor_node_cache.*
       - .github/workflows/promptflow-executor-unit-test.yml
   workflow_dispatch:
+permissions:
+  id-token: write
+  contents: read
 env:
   packageSetupType: promptflow_with_extra
   testWorkingDirectory: ${{ github.workspace }}/src/promptflow
@@ -79,6 +82,8 @@ jobs:
           ${{ github.workspace }}/src/promptflow-tools/dist/*.whl
   executor_unit_tests:
     needs: build
+    environment:
+      internal
     strategy:
       fail-fast: false
       matrix:
@@ -129,7 +134,9 @@ jobs:
     - name: Azure Login
       uses: azure/login@v1
       with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
+        subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
+        tenant-id: ${{secrets.AZURE_TENANT_ID}}
+        client-id: ${{secrets.AZURE_CLIENT_ID}}
     - name: Generate Configs
       uses: "./.github/actions/step_generate_configs"
       with:

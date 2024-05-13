@@ -28,6 +28,7 @@
     "examples/flex-flows/README.md",
     "examples/prompty/README.md",
     "scripts/docs/_build/**",
+    "scripts/readme/**",
     "src/promptflow-azure/promptflow/azure/_restclient/flow/**",
     "src/promptflow-azure/promptflow/azure/_restclient/swagger.json",
     "src/promptflow-azure/promptflow/azure/_models/**",
@@ -48,7 +49,8 @@
     ".github/workflows/**",
     ".github/actions/**",
     ".github/pipelines/**",
-    ".github/CODEOWNERS"
+    ".github/CODEOWNERS",
+    "src/promptflow-evals/tests/**"
   ],
   "words": [
     "aoai",
@@ -220,6 +222,11 @@
     "mpnet",
     "wargs",
     "dcid",
+    "aiohttp",
+    "endofprompt",
+    "tkey",
+    "tparam",
+    "ncols",
     "piezo",
     "Piezo",
     "cmpop",
@@ -228,6 +235,7 @@
     "amlbi",
     "cmpop",
     "omap",
+    "Machinal",
     "azureopenaimodelconfiguration",
     "openaimodelconfiguration"
   ],

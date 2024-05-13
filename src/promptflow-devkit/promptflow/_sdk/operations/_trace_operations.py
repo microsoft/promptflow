@@ -17,7 +17,7 @@ from promptflow._sdk._orm.trace import LineRun as ORMLineRun
 from promptflow._sdk._orm.trace import Span as ORMSpan
 from promptflow._sdk._telemetry import ActivityType, monitor_operation
 from promptflow._sdk._utilities.tracing_utils import append_conditions
-from promptflow._sdk.entities._trace import Event, LineRun, Span
+from promptflow._sdk.entities._trace import Collection, Event, LineRun, Span
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import UserErrorException
 
@@ -249,7 +249,7 @@ class TraceOperations:
         return len(trace_ids)
 
     @sqlite_retry
-    def _list_collections(self, limit: typing.Optional[int] = None) -> typing.List[str]:
+    def _list_collections(self, limit: typing.Optional[int] = None) -> typing.List[Collection]:
         from sqlalchemy import func
 
         if limit is None:
@@ -264,7 +264,10 @@ class TraceOperations:
                 .group_by(ORMLineRun.collection)
                 .subquery()
             )
-            collections = (
-                session.query(subquery.c.collection).order_by(subquery.c.max_start_time.desc()).limit(limit).all()
+            results = (
+                session.query(subquery.c.collection, subquery.c.max_start_time)
+                .order_by(subquery.c.max_start_time.desc())
+                .limit(limit)
+                .all()
             )
-        return [collection[0] for collection in collections]
+        return [Collection(name, update_time) for name, update_time in results]

@@ -6,7 +6,6 @@ import pytest
 from _constants import PROMPTFLOW_ROOT
 from mock import mock
 
-from promptflow._sdk._constants import SCRUBBED_VALUE
 from promptflow._sdk._errors import ConnectionNameNotSetError
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk.entities import AzureOpenAIConnection, CustomConnection, OpenAIConnection
@@ -30,7 +29,7 @@ class TestConnection:
         assert pydash.omit(result._to_dict(), ["created_date", "last_modified_date", "name"]) == {
             "module": "promptflow.connections",
             "type": "azure_open_ai",
-            "api_key": "******",
+            "api_key": "test",  # get return real key now
             "auth_mode": "key",
             "api_base": "test",
             "api_type": "azure",
@@ -42,7 +41,7 @@ class TestConnection:
         assert pydash.omit(result._to_dict(), ["created_date", "last_modified_date", "name"]) == {
             "module": "promptflow.connections",
             "type": "azure_open_ai",
-            "api_key": "******",
+            "api_key": "test",  # get return real key now
             "auth_mode": "key",
             "api_base": "test2",
             "api_type": "azure",
@@ -60,38 +59,42 @@ class TestConnection:
     def test_connection_get_and_update(self):
         # Test api key not updated
         name = f"Connection_{str(uuid.uuid4())[:4]}"
-        conn = AzureOpenAIConnection(name=name, api_key="test", api_base="test")
+        conn = AzureOpenAIConnection(name=name, api_key="test_key", api_base="test")
         result = _client.connections.create_or_update(conn)
-        assert result.api_key == SCRUBBED_VALUE
+        assert result.api_key == "test_key"
+        assert "test_key" not in str(result)  # Assert key scrubbed when print
         # Update api_base only Assert no exception
         result.api_base = "test2"
         result = _client.connections.create_or_update(result)
         assert result._to_dict()["api_base"] == "test2"
         # Assert value not scrubbed
-        assert result._secrets["api_key"] == "test"
+        assert result._secrets["api_key"] == "test_key"
         _client.connections.delete(name)
         # Invalid update
         with pytest.raises(Exception) as e:
             result._secrets = {}
+            result.secrets["api_key"] = "****"
             _client.connections.create_or_update(result)
         assert "secrets ['api_key'] value invalid, please fill them" in str(e.value)
 
     def test_custom_connection_get_and_update(self):
         # Test api key not updated
         name = f"Connection_{str(uuid.uuid4())[:4]}"
-        conn = CustomConnection(name=name, secrets={"api_key": "test"}, configs={"api_base": "test"})
+        conn = CustomConnection(name=name, secrets={"api_key": "test_key"}, configs={"api_base": "test"})
         result = _client.connections.create_or_update(conn)
-        assert result.secrets["api_key"] == SCRUBBED_VALUE
+        assert "test_key" not in str(result)  # Assert key scrubbed when print
+        assert result.secrets["api_key"] == "test_key"
         # Update api_base only Assert no exception
         result.configs["api_base"] = "test2"
         result = _client.connections.create_or_update(result)
         assert result._to_dict()["configs"]["api_base"] == "test2"
         # Assert value not scrubbed
-        assert result._secrets["api_key"] == "test"
+        assert result._secrets["api_key"] == "test_key"
         _client.connections.delete(name)
         # Invalid update
         with pytest.raises(Exception) as e:
             result._secrets = {}
+            result.secrets["api_key"] = "****"
             _client.connections.create_or_update(result)
         assert "secrets ['api_key'] value invalid, please fill them" in str(e.value)
 
