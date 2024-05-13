@@ -36,6 +36,23 @@ class TestBatchServer:
         # Reset the executor proxy to avoid affecting other tests
         ProxyFactory.register_executor(FlowLanguage.Python, PythonExecutorProxy)
 
+    def test_batch_run_with_image_flow(self):
+        flow_folder = "eval_flow_with_simple_image"
+        inputs_mapping = {"image": "${data.image}"}
+        mem_run_storage = MemoryRunStorage()
+        # Mock the executor proxy to use the test client
+        ProxyFactory.register_executor(FlowLanguage.Python, MockPythonAPIBasedExecutorProxy)
+        batch_result = submit_batch_run(
+            flow_folder, inputs_mapping, input_file_name="inputs.jsonl", storage=mem_run_storage
+        )
+        assert batch_result.status == Status.Completed
+        assert batch_result.total_lines == 2
+        assert batch_result.completed_lines == batch_result.total_lines
+        assert len(mem_run_storage._flow_runs) == 2
+        assert len(mem_run_storage._node_runs) == 3
+        # Reset the executor proxy to avoid affecting other tests
+        ProxyFactory.register_executor(FlowLanguage.Python, PythonExecutorProxy)
+
 
 class MockPythonAPIBasedExecutorProxy(AbstractExecutorProxy):
     def __init__(self, *, executor_client: TestClient, init_response: dict):
