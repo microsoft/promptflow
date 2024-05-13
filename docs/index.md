@@ -71,12 +71,6 @@ This documentation site contains guides for prompt flow [sdk, cli](https://pypi.
 ```{toctree}
 :hidden:
 :maxdepth: 1
-how-to-guides/quick-start
-```
-
-```{toctree}
-:hidden:
-:maxdepth: 1
 how-to-guides/index
 ```
 
