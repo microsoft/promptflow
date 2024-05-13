@@ -9,7 +9,7 @@ import os
 import typing
 
 from opentelemetry import trace
-from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_ENDPOINT
+from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_ENDPOINT, OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 
@@ -115,10 +115,13 @@ def setup_exporter_from_environ() -> None:
     logging.debug("OpenAI API injected.")
 
     # Ignore all the setup if the endpoint is not set
-    endpoint = os.getenv(OTEL_EXPORTER_OTLP_ENDPOINT)
+    otlp_endpoint = os.getenv(OTEL_EXPORTER_OTLP_ENDPOINT)
     logging.debug("environ OTEL_EXPORTER_OTLP_ENDPOINT: %s", endpoint)
+    otlp_traces_endpoint = os.getenv(OTEL_EXPORTER_OTLP_TRACES_ENDPOINT)
+    logging.debug("environ OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: %s", otlp_traces_endpoint)
+    endpoint = otlp_traces_endpoint or otlp_endpoint
     if not endpoint:
-        logging.info("environ OTEL_EXPORTER_OTLP_ENDPOINT is not set, will skip the following setup.")
+        logging.info("environ OTLP endpoint is not set, will skip the following setup.")
         return
 
     if _is_devkit_installed():
