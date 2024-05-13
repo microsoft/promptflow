@@ -58,10 +58,16 @@ def write_notebook_workflow(notebook, name, output_telemetry=Telemetry()):
     schedule_minute = name_hash % 60
     schedule_hour = (name_hash // 60) % 4 + 19  # 19-22 UTC
 
-    if "examples/tutorials" in gh_working_dir:
-        notebook_path = Path(ReadmeStepsManage.git_base_dir()) / str(notebook)
+    notebook_path = Path(ReadmeStepsManage.git_base_dir()) / str(notebook)
+    try:
+        # resolve tutorial resources
         path_filter = resolve_tutorial_resource(workflow_name, notebook_path.resolve(), output_telemetry)
-    elif "samples_configuration" in workflow_name:
+    except Exception:
+        if "examples/tutorials" in gh_working_dir:
+            raise
+        else:
+            pass
+    if "samples_configuration" in workflow_name:
         # exception, samples configuration is very simple and not related to other prompt flow examples
         path_filter = (
             "[ examples/configuration.ipynb, .github/workflows/samples_configuration.yml ]"
@@ -164,8 +170,8 @@ def main(input_glob, output_files=[], check=False):
     notebooks = local_filter(no_readme_generation_filter, notebooks)
 
     # format code
-    #if not check:
-    #    format_ipynb(notebooks)
+    # if not check:
+    #     format_ipynb(notebooks)
 
     # write workflows
     write_workflows(notebooks, output_files)

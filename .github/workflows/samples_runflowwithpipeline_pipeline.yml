@@ -9,7 +9,7 @@ on:
     - cron: "33 20 * * *" # Every day starting at 4:33 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/tutorials/run-flow-with-pipeline/**, examples/flows/standard/web-classification/**, .github/workflows/samples_runflowwithpipeline_pipeline.yml, examples/requirements.txt, examples/connections/azure_openai.yml ]
+    paths: [ examples/tutorials/run-flow-with-pipeline/**, examples/*requirements.txt, .github/workflows/samples_runflowwithpipeline_pipeline.yml ]
   workflow_dispatch:
 
 env:

@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import List
 
 import markdown
 import nbformat
@@ -14,16 +13,20 @@ RESOURCES_KEY_ERROR_MESSAGE = (
 TITLE_KEY_NAME = "title"
 CLOUD_KEY_NAME = "cloud"
 CATEGORY_KEY_NAME = "category"
+WEIGHT_KEY_NAME = "weight"
 
 
-def _parse_resources_string_from_notebook(path: Path):
+def _parse_resources_string_from_notebook(path: Path, output_telemetry):
     with open(path, "r", encoding="utf-8") as f:
         nb = nbformat.read(f, as_version=4)
-    if RESOURCES_KEY_NAME not in nb.metadata:
-        raise Exception(RESOURCES_KEY_ERROR_MESSAGE + f" . Error in {path}")
-    obj = {
-        RESOURCES_KEY_NAME: nb.metadata[RESOURCES_KEY_NAME]
-    }
+    obj = {}
+    if nb.metadata.get('build_doc', False):
+        if nb.metadata['build_doc'].get(CLOUD_KEY_NAME, None):
+            output_telemetry.cloud = nb.metadata['build_doc']['category']
+        if nb.metadata['build_doc'].get(CATEGORY_KEY_NAME, None):
+            output_telemetry.category = nb.metadata['build_doc']['section']
+        if nb.metadata['build_doc'].get(WEIGHT_KEY_NAME, None):
+            output_telemetry.weight = int(nb.metadata['build_doc']['weight'])
     cell = nb['cells'][0]
     for cell in nb['cells']:
         if (cell['cell_type'] == 'markdown'):
@@ -32,54 +35,45 @@ def _parse_resources_string_from_notebook(path: Path):
         lines = cell.source.split('\n')
         for line in lines:
             if '#' in line:
-                obj[TITLE_KEY_NAME] = line.replace('#', '').strip()
+                output_telemetry.title = line.replace('#', '').strip()
                 break
-
-    if nb.metadata.get('build_doc', False):
-        if nb.metadata['build_doc'].get(CLOUD_KEY_NAME, None):
-            obj[CLOUD_KEY_NAME] = nb.metadata['build_doc']['category']
-        if nb.metadata['build_doc'].get(CATEGORY_KEY_NAME, None):
-            obj[CATEGORY_KEY_NAME] = nb.metadata['build_doc']['section']
+    if RESOURCES_KEY_NAME not in nb.metadata:
+        raise Exception(RESOURCES_KEY_ERROR_MESSAGE + f" . Error in {path}")
+    obj[RESOURCES_KEY_NAME] = nb.metadata[RESOURCES_KEY_NAME]
     return obj
 
 
-def _parse_resources_string_from_markdown(path: Path):
+def _parse_resources_string_from_markdown(path: Path, output_telemetry):
     markdown_content = path.read_text(encoding="utf-8")
     md = markdown.Markdown(extensions=["meta"])
     md.convert(markdown_content)
-    if RESOURCES_KEY_NAME not in md.Meta:
-        raise Exception(RESOURCES_KEY_ERROR_MESSAGE + f" . Error in {path}")
-
-    obj = {
-        "resources": md.Meta[RESOURCES_KEY_NAME][0],
-    }
+    obj = {}
     for line in md.lines:
         if '#' in line:
-            obj[TITLE_KEY_NAME] = line.replace('#', '').strip()
+            output_telemetry.title = line.replace('#', '').strip()
             break
     if CLOUD_KEY_NAME in md.Meta:
-        obj[CLOUD_KEY_NAME] = md.Meta[CLOUD_KEY_NAME][0]
+        output_telemetry.cloud = md.Meta[CLOUD_KEY_NAME][0]
     if CATEGORY_KEY_NAME in md.Meta:
-        obj[CATEGORY_KEY_NAME] = md.Meta[CATEGORY_KEY_NAME][0]
+        output_telemetry.category = md.Meta[CATEGORY_KEY_NAME][0]
+    if WEIGHT_KEY_NAME in md.Meta:
+        output_telemetry.weight = int(md.Meta[WEIGHT_KEY_NAME][0])
+    if RESOURCES_KEY_NAME not in md.Meta:
+        raise Exception(RESOURCES_KEY_ERROR_MESSAGE + f" . Error in {path}")
+    obj[RESOURCES_KEY_NAME] = md.Meta[RESOURCES_KEY_NAME][0]
     return obj
 
 
 def _parse_resources(path: Path, output_telemetry):
     metadata = {}
     if path.suffix == ".ipynb":
-        metadata = _parse_resources_string_from_notebook(path)
+        metadata = _parse_resources_string_from_notebook(path, output_telemetry)
         resources_string = metadata["resources"]
     elif path.suffix == ".md":
-        metadata = _parse_resources_string_from_markdown(path)
+        metadata = _parse_resources_string_from_markdown(path, output_telemetry)
         resources_string = metadata["resources"]
     else:
         raise Exception(f"Unknown file type: {path.suffix!r}")
-    if TITLE_KEY_NAME in metadata:
-        output_telemetry.title = metadata[TITLE_KEY_NAME]
-    if CLOUD_KEY_NAME in metadata:
-        output_telemetry.cloud = metadata[CLOUD_KEY_NAME]
-    if CATEGORY_KEY_NAME in metadata:
-        output_telemetry.category = metadata[CATEGORY_KEY_NAME]
     return [resource.strip() for resource in resources_string.split(",")]
 
 

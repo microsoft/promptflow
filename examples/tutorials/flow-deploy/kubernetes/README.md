@@ -1,5 +1,7 @@
 ---
 resources: examples/connections/azure_openai.yml, examples/flows/standard/web-classification
+category: flow
+weight: 30
 ---
 
 # Deploy flow using Kubernetes

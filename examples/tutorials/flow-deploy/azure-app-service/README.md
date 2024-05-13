@@ -1,5 +1,7 @@
 ---
 resources: examples/connections/azure_openai.yml, examples/flows/standard/web-classification
+category: flow
+weight: 60
 ---
 
 # Deploy flow using Azure App Service

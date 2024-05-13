@@ -27,6 +27,7 @@ def get_notebook_readme_description(notebook) -> str:
         print(f"{notebook} metadata description not set")
         return ""
 
+
 def get_notebook_buildDoc_description(notebook) -> str:
     """
     Set each ipynb metadata description at .metadata.description
@@ -55,7 +56,13 @@ def get_readme_description_first_sentence(readme) -> str:
                 if line.startswith("#"):
                     line = ""
                 # skip metadata section
-                if line.startswith("---") or line.startswith("resources:") or line.startswith("title:") or line.startswith("cloud:") or line.startswith("category:"):
+                if (
+                    line.startswith("---")
+                    or line.startswith("resources:")
+                    or line.startswith("title:")
+                    or line.startswith("cloud:")
+                    or line.startswith("category:")
+                ):
                     line = ""
                 if line.strip() == "" and sentence != "":
                     break
@@ -134,6 +141,18 @@ def write_readme(workflow_telemetries, readme_telemetries):
             "yaml_name": yaml_name,
             "description": description,
             "build_doc": build_doc,
+            "title": workflow_telemetry.title.capitalize()
+            if hasattr(workflow_telemetry, "title")
+            else "Empty title",
+            "cloud": workflow_telemetry.cloud.capitalize()
+            if hasattr(workflow_telemetry, "cloud")
+            else "NOT DEFINED",
+            "category": workflow_telemetry.category.capitalize()
+            if hasattr(workflow_telemetry, "category")
+            else "General",
+            "weight": workflow_telemetry.weight
+            if hasattr(workflow_telemetry, "weight")
+            else 0,
         }
         if gh_working_dir.startswith("examples/flows/standard"):
             flows["notebooks"].append(default_workflow_item)
@@ -142,16 +161,10 @@ def write_readme(workflow_telemetries, readme_telemetries):
         elif gh_working_dir.startswith("examples/flows/evaluation"):
             evaluations["notebooks"].append(default_workflow_item)
         elif gh_working_dir.startswith("examples/tutorials"):
-            tutorial_workflow_item = {
-                **default_workflow_item,
-                'title': workflow_telemetry.title.capitalize() if hasattr(workflow_telemetry, 'title') else "Empty title",
-                'cloud': workflow_telemetry.cloud.capitalize() if hasattr(workflow_telemetry, 'cloud') else "NOT DEFINED",
-                'category': workflow_telemetry.category.capitalize() if hasattr(workflow_telemetry, 'category') else "General"
-            }
             if "quickstart" in notebook_name:
-                quickstarts["notebooks"].append(tutorial_workflow_item)
+                quickstarts["notebooks"].append(default_workflow_item)
             else:
-                tutorials["notebooks"].append(tutorial_workflow_item)
+                tutorials["notebooks"].append(default_workflow_item)
         elif gh_working_dir.startswith("examples/flows/chat"):
             chats["notebooks"].append(default_workflow_item)
         elif gh_working_dir.startswith("examples/flex-flows"):
@@ -165,6 +178,8 @@ def write_readme(workflow_telemetries, readme_telemetries):
 
     # Adjust tutorial names:
 
+        no_workflow_readmes = []
+
     for readme_telemetry in readme_telemetries:
         if readme_telemetry.readme_name.endswith("README.md"):
             notebook_name = readme_telemetry.readme_folder.split("/")[-1]
@@ -173,6 +188,27 @@ def write_readme(workflow_telemetries, readme_telemetries):
                 ".md", ""
             )
         notebook_path = readme_telemetry.readme_name.replace("examples/", "")
+        if not hasattr(readme_telemetry, "workflow_name"):
+            no_workflow_readme_item = {
+                "name": notebook_name,
+                "path": notebook_path,
+                "description": get_readme_description_first_sentence(readme_telemetry.readme_name),
+                "title": readme_telemetry.title.capitalize()
+                if hasattr(readme_telemetry, "title")
+                else "Empty title",
+                "cloud": readme_telemetry.cloud.capitalize()
+                if hasattr(readme_telemetry, "cloud")
+                else "NOT DEFINED",
+                "category": readme_telemetry.category.capitalize()
+                if hasattr(readme_telemetry, "category")
+                else "General",
+                "weight": readme_telemetry.weight
+                if hasattr(readme_telemetry, "weight")
+                else 0,
+            }
+            no_workflow_readmes.append(no_workflow_readme_item)
+            continue
+
         pipeline_name = readme_telemetry.workflow_name
         yaml_name = f"{readme_telemetry.workflow_name}.yml"
         description = get_readme_description_first_sentence(
@@ -186,6 +222,18 @@ def write_readme(workflow_telemetries, readme_telemetries):
             "pipeline_name": pipeline_name,
             "yaml_name": yaml_name,
             "description": description,
+            "title": readme_telemetry.title.capitalize()
+            if hasattr(readme_telemetry, "title")
+            else "Empty title",
+            "cloud": readme_telemetry.cloud.capitalize()
+            if hasattr(readme_telemetry, "cloud")
+            else "NOT DEFINED",
+            "category": readme_telemetry.category.capitalize()
+            if hasattr(readme_telemetry, "category")
+            else "General",
+            "weight": readme_telemetry.weight
+            if hasattr(readme_telemetry, "weight")
+            else 0,
         }
         if readme_folder.startswith("examples/flows/standard"):
             flows["readmes"].append(default_readme_item)
@@ -194,16 +242,10 @@ def write_readme(workflow_telemetries, readme_telemetries):
         elif readme_folder.startswith("examples/flows/evaluation"):
             evaluations["readmes"].append(default_readme_item)
         elif readme_folder.startswith("examples/tutorials"):
-            tutorial_readme_item = {
-                **default_readme_item,
-                'title': readme_telemetry.title.capitalize() if hasattr(readme_telemetry, 'title') else "Empty title",
-                'cloud': readme_telemetry.cloud.capitalize() if hasattr(readme_telemetry, 'cloud') else "NOT DEFINED",
-                'category': readme_telemetry.category.capitalize() if hasattr(readme_telemetry, 'category') else "General",
-            }
             if "quickstart" in notebook_name:
-                quickstarts["readmes"].append(tutorial_readme_item)
+                quickstarts["readmes"].append(default_readme_item)
             else:
-                tutorials["readmes"].append(tutorial_readme_item)
+                tutorials["readmes"].append(default_readme_item)
         elif readme_folder.startswith("examples/flows/chat"):
             chats["readmes"].append(default_readme_item)
         elif readme_folder.startswith("examples/flex-flows"):
@@ -251,32 +293,47 @@ def write_readme(workflow_telemetries, readme_telemetries):
     # |Area|Cloud|Category|Sample|Description|
     # |item.category | item.cloud | item.section | [item.title](https://github.com/microsoft/promptflow/blob/main/(item.path)) | item.description |
     new_items = []
-    for item in replacement["tutorials"]["notebooks"]:
-        item["url"] = f"https://github.com/microsoft/promptflow/blob/main/examples/{item['path']}"
-        item["area"] = "SDK"
-        new_items.append(item)
-    for item in replacement["quickstarts"]["notebooks"]:
-        item["url"] = f"https://github.com/microsoft/promptflow/blob/main/examples/{item['path']}"
-        item["area"] = "SDK"
-        new_items.append(item)
-    for item in replacement["tutorials"]["readmes"]:
-        item["url"] = f"https://github.com/microsoft/promptflow/blob/main/examples/{item['path']}"
+    for row in replacement.keys():
+        if row == "branch":
+            continue
+        for item in replacement[row]["notebooks"]:
+            item[
+                "url"
+            ] = f"https://github.com/microsoft/promptflow/blob/main/examples/{item['path']}"
+            item["area"] = "SDK"
+            new_items.append(item)
+        for item in replacement[row]["readmes"]:
+            if item.get("category", "General") == "General":
+                print(f"Tutorial Index: Skipping {item['path']} for not having a category")
+                continue
+            item[
+                "url"
+            ] = f"https://github.com/microsoft/promptflow/blob/main/examples/{item['path']}"
+            item["area"] = "CLI"
+            new_items.append(item)
+    for item in no_workflow_readmes:
+        if not item["path"].startswith("tutorials"):
+            print(f"Tutorial Index: Skipping {item['path']} for not being in tutorials")
+            continue
+        if item.get("category", "General") == "General":
+            print(f"Tutorial Index: Skipping {item['path']} for not having a category")
+            continue
+        item[
+            "url"
+        ] = f"https://github.com/microsoft/promptflow/blob/main/examples/{item['path']}"
         item["area"] = "CLI"
         new_items.append(item)
-    for item in replacement["quickstarts"]["readmes"]:
-        item["url"] = f"https://github.com/microsoft/promptflow/blob/main/examples/{item['path']}"
-        item["area"] = "CLI"
-        new_items.append(item)
+
     # sort new_items by category
-    new_items = sorted(new_items, key=lambda x: x["category"])
-    tutorial_items = {
-        "items": new_items
-    }
-    tutorial_index_file = Path(ReadmeStepsManage.git_base_dir()) / "docs/tutorials/index.md"
+    new_items = sorted(new_items, key=lambda x: (x["category"], x["weight"]))
+    tutorial_items = {"items": new_items}
+    tutorial_index_file = (
+        Path(ReadmeStepsManage.git_base_dir()) / "docs/tutorials/index.md"
+    )
     template_tutorial = env.get_template("tutorial_index.md.jinja2")
     with open(tutorial_index_file, "w") as f:
         f.write(template_tutorial.render(tutorial_items))
-    print(f"finished writing {str(tutorial_index_file)}")
+    print(f"Tutorial Index: finished writing {str(tutorial_index_file)}")
 
 
 def main(check):
@@ -293,9 +350,7 @@ def main(check):
         "examples/flex-flows/**/README.md",
         "examples/prompty/**/README.md",
         "examples/connections/**/README.md",
-        "examples/tutorials/e2e-development/*.md",
-        "examples/tutorials/flow-fine-tuning-evaluation/*.md",
-        "examples/tutorials/**/README.md",
+        "examples/tutorials/**/*.md",
         "examples/tools/use-cases/**/README.md",
     ]
     # exclude the readme since this is 3p integration folder, pipeline generation is not included
