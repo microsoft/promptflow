@@ -240,7 +240,8 @@ class RunTracker(ThreadLocalSingleton):
             output = self._ensure_serializable_value(output, msg)
 
         # Deep copy the traces of node run info to node_traces.
-        self._node_traces.setdefault(run_info.parent_run_id, []).extend(deepcopy(run_info.api_calls))
+        if run_info.api_calls:
+            self._node_traces.setdefault(run_info.parent_run_id, []).extend(deepcopy(run_info.api_calls))
 
         self._common_postprocess(run_info, output, ex)
 
