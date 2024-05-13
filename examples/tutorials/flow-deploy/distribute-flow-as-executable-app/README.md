@@ -1,5 +1,7 @@
 ---
 resources: examples/connections/azure_openai.yml, examples/flows/standard/web-classification
+category: deployment
+weight: 50
 ---
 
 # Distribute flow as executable app
