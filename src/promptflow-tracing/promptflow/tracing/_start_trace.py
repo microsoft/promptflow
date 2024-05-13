@@ -116,7 +116,7 @@ def setup_exporter_from_environ() -> None:
 
     # Ignore all the setup if the endpoint is not set
     otlp_endpoint = os.getenv(OTEL_EXPORTER_OTLP_ENDPOINT)
-    logging.debug("environ OTEL_EXPORTER_OTLP_ENDPOINT: %s", endpoint)
+    logging.debug("environ OTEL_EXPORTER_OTLP_ENDPOINT: %s", otlp_endpoint)
     otlp_traces_endpoint = os.getenv(OTEL_EXPORTER_OTLP_TRACES_ENDPOINT)
     logging.debug("environ OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: %s", otlp_traces_endpoint)
     endpoint = otlp_traces_endpoint or otlp_endpoint
