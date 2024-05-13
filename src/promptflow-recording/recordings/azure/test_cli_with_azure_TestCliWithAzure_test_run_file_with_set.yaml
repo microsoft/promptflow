@@ -1051,7 +1051,7 @@ interactions:
         false}}}, "flowRunResourceId": "azureml://locations/eastus/workspaces/00000/flows/name/flowRuns/name",
         "flowRunId": "name", "flowRunDisplayName": "name", "batchDataInput": {"dataUri":
         "azureml://datastores/workspaceblobstore/paths/LocalUpload/4104a8f4d3b0b5b51c7cacbdac64e128/env_var_names.jsonl"},
-        "flowRunType": "FlowRun", "flowType": "Default", "runtimeName": "zhengfei-test",
+        "flowRunType": "FlowRun", "flowType": "Default", "runtimeName": "test-runtime-ci",
         "inputsMapping": {}, "outputDatastoreName": "workspaceblobstore", "childRunBasePath":
         "promptflow/PromptFlowArtifacts/name/flow_artifacts", "flowDagFileRelativePath":
         "flow.dag.yaml", "flowSnapshotId": "286ad9e5-f57f-4ce7-83e9-cbf60141b7b9",
@@ -1583,7 +1583,7 @@ interactions:
         false}}}, "flowRunResourceId": "azureml://locations/eastus/workspaces/00000/flows/name/flowRuns/name",
         "flowRunId": "name", "flowRunDisplayName": "name", "batchDataInput": {"dataUri":
         "azureml://datastores/workspaceblobstore/paths/LocalUpload/4104a8f4d3b0b5b51c7cacbdac64e128/env_var_names.jsonl"},
-        "flowRunType": "FlowRun", "flowType": "Default", "runtimeName": "zhengfei-test",
+        "flowRunType": "FlowRun", "flowType": "Default", "runtimeName": "test-runtime-ci",
         "inputsMapping": {}, "outputDatastoreName": "workspaceblobstore", "childRunBasePath":
         "promptflow/PromptFlowArtifacts/name/flow_artifacts", "flowDagFileRelativePath":
         "flow.dag.yaml", "flowSnapshotId": "286ad9e5-f57f-4ce7-83e9-cbf60141b7b9",
@@ -1651,7 +1651,7 @@ interactions:
         "name", "name": null, "dataContainerId": "dcid.name", "description": null,
         "hidden": false, "runType": "azureml.promptflow.FlowRun", "runTypeV2": {"orchestrator":
         null, "traits": [], "attribution": "PromptFlow", "computeType": "AmlcDsi"},
-        "properties": {"azureml.promptflow.runtime_name": "zhengfei-test", "azureml.promptflow.disable_trace":
+        "properties": {"azureml.promptflow.runtime_name": "test-runtime-ci", "azureml.promptflow.disable_trace":
         "false", "azureml.promptflow.input_data": "azureml://datastores/workspaceblobstore/paths/LocalUpload/4104a8f4d3b0b5b51c7cacbdac64e128/env_var_names.jsonl",
         "azureml.promptflow.definition_file_name": "flow.dag.yaml", "azureml.promptflow.flow_lineage_id":
         "f1efdb93dcf9b3c17e246e7bcf0e2c7398d7bc289f8dd2c3d8f808eacc63c31f", "azureml.promptflow.flow_definition_datastore_name":

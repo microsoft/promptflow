@@ -4777,7 +4777,7 @@ interactions:
       x-ms-version:
       - '2023-11-03'
     method: GET
-    uri: https://fake_account_name.blob.core.windows.net/azureml-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5?comp=list&prefix=promptflow%2FPromptFlowArtifacts%2Fname%2F&restype=container
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name?comp=list&prefix=promptflow%2FPromptFlowArtifacts%2Fname%2F&restype=container
   response:
     body:
       string: "\uFEFF<?xml version=\"1.0\" encoding=\"utf-8\"?><EnumerationResults
