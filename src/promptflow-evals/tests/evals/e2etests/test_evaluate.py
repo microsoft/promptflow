@@ -193,7 +193,7 @@ class TestEvaluate:
 
     @pytest.mark.skip(reason="az login in fixture is not working on ubuntu and mac.Works on windows")
     def test_evaluate_track_in_cloud(self, questions_file, azure_pf_client, mock_trace_destination_to_cloud,
-                                     configure_default_azure_credential):
+                                     configure_default_azure_credential, project_scope):
         """Test evaluation with target function."""
         # We cannot define target in this file as pytest will load
         # all modules in test folder and target_fn will be imported from the first
@@ -206,6 +206,7 @@ class TestEvaluate:
         evaluation_name = "test_evaluate_track_in_cloud"
         # run the evaluation with targets
         result = evaluate(
+            project_scope=project_scope,
             evaluation_name=evaluation_name,
             data=questions_file,
             target=target_fn,
@@ -231,7 +232,7 @@ class TestEvaluate:
 
     @pytest.mark.skip(reason="az login in fixture is not working on ubuntu and mac.Works on windows")
     def test_evaluate_track_in_cloud_no_target(self, data_file, azure_pf_client, mock_trace_destination_to_cloud,
-                                               configure_default_azure_credential):
+                                               configure_default_azure_credential, project_scope):
         # data
         input_data = pd.read_json(data_file, lines=True)
 
@@ -240,6 +241,7 @@ class TestEvaluate:
 
         # run the evaluation
         result = evaluate(
+            project_scope=project_scope,
             evaluation_name=evaluation_name,
             data=data_file,
             evaluators={"f1_score": f1_score_eval},

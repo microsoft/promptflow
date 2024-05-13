@@ -31,9 +31,18 @@ def get_node_run_infos(node_dict: dict, index=None, api_calls=None, system_metri
     }
 
 
-def get_flow_run_info(status_dict: dict, index: int):
+def get_flow_run_info(status_dict: dict, index: int, api_calls=None, system_metrics=None):
     status = Status.Failed if any(status == Status.Failed for status in status_dict.values()) else Status.Completed
     error = {"code": "UserError", "message": "test message"} if status == Status.Failed else None
+    children = []
+    aggregated_tokens = {"total_tokens": 0, "prompt_tokens": 0, "completion_tokens": 0}
+    for i in range(len(status_dict)):
+        if api_calls is not None:
+            children.extend(api_calls)
+        if system_metrics is not None:
+            for k, _ in aggregated_tokens.items():
+                if k in system_metrics:
+                    aggregated_tokens[k] += system_metrics[k]
     return FlowRunInfo(
         run_id=f"{index}_run_id",
         status=status,
@@ -49,6 +58,8 @@ def get_flow_run_info(status_dict: dict, index: int):
         start_time=datetime.utcnow(),
         end_time=datetime.utcnow(),
         index=index,
+        api_calls=[get_api_call("Flow", "Flow", children=children)] if api_calls else None,
+        system_metrics=aggregated_tokens if system_metrics else None,
     )
 
 
@@ -57,7 +68,7 @@ def get_line_results(line_dict: dict, api_calls=None, system_metrics=None):
         LineResult(
             output={},
             aggregation_inputs={},
-            run_info=get_flow_run_info(status_dict=v, index=k),
+            run_info=get_flow_run_info(status_dict=v, index=k, api_calls=api_calls, system_metrics=system_metrics),
             node_run_infos=get_node_run_infos(node_dict=v, index=k, api_calls=api_calls, system_metrics=system_metrics),
         )
         for k, v in line_dict.items()
@@ -259,12 +270,12 @@ class TestSystemMetrics:
         }
         aggr_result = get_aggregation_result(aggr_dict, system_metrics=aggr_system_metrics)
         system_metrics = SystemMetrics.create(datetime.utcnow(), datetime.utcnow(), line_results, aggr_result)
-        assert system_metrics.total_tokens == 20
-        assert system_metrics.prompt_tokens == 12
+        assert system_metrics.total_tokens == 30
+        assert system_metrics.prompt_tokens == 18
         assert system_metrics.completion_tokens == 8
         system_metrics_dict = {
-            "total_tokens": 20,
-            "prompt_tokens": 12,
+            "total_tokens": 30,
+            "prompt_tokens": 18,
             "completion_tokens": 8,
         }
         assert system_metrics_dict.items() <= system_metrics.to_dict().items()

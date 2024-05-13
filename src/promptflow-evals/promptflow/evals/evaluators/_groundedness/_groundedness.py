@@ -8,10 +8,11 @@ import re
 import numpy as np
 
 from promptflow.client import load_flow
+from promptflow.core import AzureOpenAIModelConfiguration
 
 
 class GroundednessEvaluator:
-    def __init__(self, model_config):
+    def __init__(self, model_config: AzureOpenAIModelConfiguration):
         """
         Initialize an evaluator configured for a specific Azure OpenAI model.
 
@@ -49,7 +50,10 @@ class GroundednessEvaluator:
         :rtype: dict
         """
         # Validate input parameters
-        if not (answer and answer.strip()) or not (context and context.strip()):
+        answer = str(answer or "")
+        context = str(context or "")
+
+        if not (answer.strip()) or not (context.strip()):
             raise ValueError("Both 'answer' and 'context' must be non-empty strings.")
 
         # Run the evaluation flow

@@ -135,10 +135,7 @@ class TestSubmitter:
         return self._target_node
 
     @contextlib.contextmanager
-    def _resolve_variant(self):
-        # TODO(2901096): validate invalid configs like variant & connections
-        # no variant overwrite for eager flow
-        # no connection overwrite for eager flow
+    def _resolve_variant(self, init_kwargs=None):
         if self.flow_context.variant:
             tuning_node, node_variant = parse_variant(self.flow_context.variant)
         else:
@@ -150,6 +147,7 @@ class TestSubmitter:
             variant=node_variant,
             connections=self.flow_context.connections,
             overrides=self.flow_context.overrides,
+            init_kwargs=init_kwargs,
         ) as temp_flow:
             # TODO execute flow test in a separate process.
 
@@ -222,18 +220,9 @@ class TestSubmitter:
         :return: TestSubmitter instance.
         :rtype: TestSubmitter
         """
-        with self._resolve_variant():
+        with self._resolve_variant(init_kwargs=init_kwargs):
             # temp flow is generated, will use self.flow instead of self._origin_flow in the following context
             self._within_init_context = True
-
-            if not isinstance(self.flow, Prompty):
-                # variant is resolve in the context, so we can't move this to Operations for now
-                ProxyFactory().create_inspector_proxy(self.flow.language).prepare_metadata(
-                    flow_file=self.flow.path,
-                    working_dir=self.flow.code,
-                    init_kwargs=init_kwargs,
-                )
-
             self._target_node = target_node
             self._enable_stream_output = stream_output
 

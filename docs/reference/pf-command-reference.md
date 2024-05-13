@@ -102,6 +102,7 @@ pf flow test --flow
              [--interactive]
              [--verbose]
              [--ui]
+             [--collection]
 ```
 
 #### Examples
@@ -158,6 +159,12 @@ Chat in the chat window.
 
 ```bash
 pf flow test --flow <path-to-flow-directory> --ui
+```
+
+Test the flow while log traces to a specific collection.
+
+```bash
+pf flow test --flow <path-to-flow-directory> --collection <collection>
 ```
 
 #### Required Parameter
@@ -287,6 +294,7 @@ pf flow serve --source
               [--verbose]
               [--debug]
               [--skip-open-browser]
+              [--engine]
 ```
 
 #### Examples
@@ -301,6 +309,12 @@ Serve flow as an endpoint with specific port and host.
 
 ```bash
 pf flow serve --source <path-to-flow> --port <port> --host <host> --environment-variables key1="`${my_connection.api_key}`" key2="value2"
+```
+
+Serve flow as an endpoint with specific port, host, environment-variables and fastapi serving engine.
+
+```bash
+pf flow serve --source <path-to-flow> --port <port> --host <host> --environment-variables key1="`${my_connection.api_key}`" key2="value2" --engine fastapi
 ```
 
 #### Required Parameter
@@ -334,6 +348,10 @@ Show debug information during serve.
 `--skip-open-browser`
 
 Skip opening browser after serve. Store true parameter.
+
+`--engine`
+
+Switch python serving engine between `flask` amd `fastapi`, default to `flask`.
 
 ## pf connection
 
@@ -886,10 +904,32 @@ pf config set
 
 #### Examples
 
-Config connection provider to azure workspace for current user.
+**Connection provider**
+
+Set connection provider to Azure ML workspace or Azure AI project for current user.
 
 ```bash
-pf config set connection.provider="azureml://subscriptions/<your-subscription>/resourceGroups/<your-resourcegroup>/providers/Microsoft.MachineLearningServices/workspaces/<your-workspace>"
+pf config set connection.provider="azureml://subscriptions/<subscription-id>/resourceGroups/<resource-group-name>/providers/Microsoft.MachineLearningServices/workspaces/<workspace-or-project-name>"
+```
+
+**Tracing**
+
+Set trace destination to Azure ML workspace or Azure AI project.
+
+```bash
+pf config set trace.destination="azureml://subscriptions/<subscription-id>/resourceGroups/<resource-group-name>/providers/Microsoft.MachineLearningServices/workspaces/<workspace-or-project-name>"
+```
+
+Only log traces to local.
+
+```bash
+pf config set trace.destination="local"
+```
+
+Disable tracing feature.
+
+```bash
+pf config set trace.destination="none"
 ```
 
 ### pf config show

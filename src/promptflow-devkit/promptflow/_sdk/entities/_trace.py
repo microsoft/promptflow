@@ -29,6 +29,7 @@ from promptflow._sdk._errors import LineRunNotFoundError
 from promptflow._sdk._orm.trace import Event as ORMEvent
 from promptflow._sdk._orm.trace import LineRun as ORMLineRun
 from promptflow._sdk._orm.trace import Span as ORMSpan
+from promptflow._sdk._utilities.general_utils import json_loads_parse_const_as_str
 
 
 class Event:
@@ -168,7 +169,7 @@ class Span:
             "kind": self.kind,
             "parent_id": self.parent_id,
             "start_time": self.start_time.isoformat(),
-            "end_time": self.end_time.isoformat(),
+            "end_time": self.end_time.isoformat() if self.end_time else None,
             "status": copy.deepcopy(self.status),
             "attributes": copy.deepcopy(self.attributes),
             "links": copy.deepcopy(self.links),
@@ -309,8 +310,8 @@ class LineRun:
             inputs=LineRun._get_inputs_from_span(span),
             outputs=LineRun._get_outputs_from_span(span),
             end_time=span.end_time,
-            status=span.status[SpanStatusFieldName.STATUS_CODE],
-            duration=(span.end_time - span.start_time).total_seconds(),
+            status=span.status[SpanStatusFieldName.STATUS_CODE] if span.end_time else RUNNING_LINE_RUN_STATUS,
+            duration=(span.end_time - span.start_time).total_seconds() if span.end_time else None,
             name=span.name,
             kind=span.attributes.get(SpanAttributeFieldName.SPAN_TYPE, span.kind),
             cumulative_token_count=cumulative_token_count,
@@ -333,10 +334,23 @@ class LineRun:
             self._to_orm_object().persist()
 
     @staticmethod
+    def _parse_io_from_span_attributes(value: str) -> typing.Union[typing.Dict, str]:
+        # use try-catch to parse value in case it is not a JSON string
+        # for example, user generates traces with code like:
+        # `span.set_attributes("inputs", str(dict(x=1)))`
+        try:
+            return json.loads(value)
+        except json.JSONDecodeError:
+            return value
+
+    @staticmethod
     def _get_inputs_from_span(span: Span) -> typing.Optional[typing.Dict]:
         for event in span.events:
             if event[SpanEventFieldName.NAME] == SPAN_EVENTS_NAME_PF_INPUTS:
                 return json.loads(event[SpanEventFieldName.ATTRIBUTES][SPAN_EVENTS_ATTRIBUTE_PAYLOAD])
+        # 3rd-party traces may not follow prompt flow way to persist inputs in events
+        if SpanAttributeFieldName.INPUTS in span.attributes:
+            return LineRun._parse_io_from_span_attributes(span.attributes[SpanAttributeFieldName.INPUTS])
         return None
 
     @staticmethod
@@ -344,16 +358,29 @@ class LineRun:
         for event in span.events:
             if event[SpanEventFieldName.NAME] == SPAN_EVENTS_NAME_PF_OUTPUT:
                 return json.loads(event[SpanEventFieldName.ATTRIBUTES][SPAN_EVENTS_ATTRIBUTE_PAYLOAD])
+        # 3rd-party traces may not follow prompt flow way to persist output in events
+        if SpanAttributeFieldName.OUTPUT in span.attributes:
+            return LineRun._parse_io_from_span_attributes(span.attributes[SpanAttributeFieldName.OUTPUT])
         return None
 
     @staticmethod
     def _from_orm_object(obj: ORMLineRun) -> "LineRun":
+        # handle potential nan, inf and -inf in inputs and outputs
+        # they are serializable in Python, but not in JSON
+        # so it will result in trace UI parse error
+        # here convert them into string type to make them standard JSON value
+        inputs, outputs = copy.deepcopy(obj.inputs), copy.deepcopy(obj.outputs)
+        if isinstance(inputs, dict):
+            inputs = json_loads_parse_const_as_str(json.dumps(inputs))
+        if isinstance(outputs, dict):
+            outputs = json_loads_parse_const_as_str(json.dumps(outputs))
+
         return LineRun(
             line_run_id=obj.line_run_id,
             trace_id=obj.trace_id,
             root_span_id=obj.root_span_id,
-            inputs=copy.deepcopy(obj.inputs),
-            outputs=copy.deepcopy(obj.outputs),
+            inputs=inputs,
+            outputs=outputs,
             start_time=obj.start_time,
             end_time=obj.end_time,
             status=obj.status,
@@ -414,3 +441,15 @@ class LineRun:
                     evaluation.end_time.isoformat() if evaluation.end_time is not None else None
                 )
         return asdict(_self)
+
+
+@dataclass
+class Collection:
+    name: str
+    update_time: datetime.datetime
+
+    def _to_dict(self) -> typing.Dict[str, str]:
+        return {
+            "name": self.name,
+            "update_time": self.update_time.isoformat(),
+        }

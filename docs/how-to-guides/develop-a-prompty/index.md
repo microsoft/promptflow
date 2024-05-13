@@ -400,7 +400,7 @@ When executing a batch run, Promptflow provides a trace UI to visualize the inte
 For example, after starting the Prompt flow service, you might see output like this in your terminal:
 ```text
 Prompt flow service has started...
-You can view the traces from local: http://localhost:49240/v1.0/ui/traces/?#run=prompty_variant_0_20240424_152808_282517
+You can view the traces from local: http://127.0.0.1:49240/v1.0/ui/traces/?#run=prompty_variant_0_20240424_152808_282517
 [2024-04-24 15:28:12,597][promptflow._sdk._orchestrator.run_submitter][INFO] - Submitting run prompty_variant_0_20240424_152808_282517, log path: .promptflow\.runs\prompty_variant_0_20240424_152808_282517\logs.txt
 ```
 

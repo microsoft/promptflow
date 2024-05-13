@@ -27,6 +27,7 @@ jobs:
     strategy:
       fail-fast: false
     runs-on: ubuntu-latest
+    environment: Testing
     timeout-minutes: 30
     env:
       DEPENDENCY_SOURCE_MODE: ${{ secrets.DEPENDENCY_SOURCE_MODE }}

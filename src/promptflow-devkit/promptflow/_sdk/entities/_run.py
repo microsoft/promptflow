@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from dateutil import parser as date_parser
 
-from promptflow._constants import FlowType, OutputsFolderName, TokenKeys
+from promptflow._constants import OutputsFolderName, TokenKeys
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
@@ -23,6 +23,7 @@ from promptflow._sdk._constants import (
     FLOW_RESOURCE_ID_PREFIX,
     HOME_PROMPT_FLOW_DIR,
     PARAMS_OVERRIDE_KEY,
+    PF_SYSTEM_METRICS_PREFIX,
     REGISTRY_URI_PREFIX,
     REMOTE_URI_PREFIX,
     RUN_MACRO,
@@ -52,7 +53,13 @@ from promptflow._sdk._utilities.general_utils import (
 )
 from promptflow._sdk.entities._yaml_translatable import YAMLTranslatableMixin
 from promptflow._sdk.schemas._run import RunSchema
-from promptflow._utils.flow_utils import get_flow_lineage_id, is_prompty_flow, parse_variant
+from promptflow._utils.flow_utils import (
+    get_flow_lineage_id,
+    get_flow_type,
+    is_flex_flow,
+    is_prompty_flow,
+    parse_variant,
+)
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import UserErrorException
 
@@ -169,6 +176,19 @@ class Run(YAMLTranslatableMixin):
         if self._use_remote_flow:
             self._flow_name = parse_remote_flow_pattern(flow)
             self._lineage_id = self._flow_name
+        # record if run is from flex flow or prompty if possible, there's no variant in run name for flex flow
+        if self._run_source == RunInfoSources.LOCAL:
+            try:
+                self._from_flex_flow = is_flex_flow(flow_path=self.flow)
+            except Exception:
+                self._from_flex_flow = False
+            try:
+                self._from_prompty = is_prompty_flow(self.flow)
+            except Exception:
+                self._from_prompty = False
+        else:
+            self._from_flex_flow = False
+            self._from_prompty = False
         # default run name: flow directory name + timestamp
         self.name = name or self._generate_run_name()
         experiment_name = kwargs.get("experiment_name", None)
@@ -180,7 +200,7 @@ class Run(YAMLTranslatableMixin):
             self._experiment_name = _sanitize_python_variable_name(flow_dir.name)
             self._lineage_id = get_flow_lineage_id(flow_dir=flow_dir)
             self._output_path = Path(kwargs.get("output_path", self._generate_output_path(config=self._config)))
-            if is_prompty_flow(self.flow):
+            if self._from_prompty:
                 self._flow_name = Path(self.flow).stem
             else:
                 self._flow_name = flow_dir.name
@@ -202,6 +222,8 @@ class Run(YAMLTranslatableMixin):
         # TODO: such run is not resumable, not sure if we need specific error message for this case.
         self._dynamic_callable = kwargs.get("dynamic_callable", None)
         if init:
+            # validate if provided init kwargs for early exception
+            self._validate_init(init)
             self._properties[FlowRunProperties.INIT_KWARGS] = init
 
     def _copy(self, **kwargs):
@@ -314,6 +336,7 @@ class Run(YAMLTranslatableMixin):
             command=properties_json.get(FlowRunProperties.COMMAND, None),
             outputs=properties_json.get(FlowRunProperties.OUTPUTS, None),
             column_mapping=properties_json.get(FlowRunProperties.COLUMN_MAPPING, None),
+            portal_url=obj.portal_url,
         )
 
     @classmethod
@@ -407,6 +430,7 @@ class Run(YAMLTranslatableMixin):
             properties=json.dumps(self.properties, default=asdict),
             data=Path(self.data).resolve().absolute().as_posix() if self.data else None,
             run_source=self._run_source,
+            portal_url=self._portal_url,
         )
 
     def _dump(self) -> None:
@@ -453,6 +477,8 @@ class Run(YAMLTranslatableMixin):
                 if exclude_debug_info:
                     exception_dict.pop("debugInfo", None)
                 result["error"] = exception_dict
+            if self._portal_url:
+                result[RunDataKeys.PORTAL_URL] = self._portal_url
         elif self._run_source == RunInfoSources.INDEX_SERVICE:
             result["creation_context"] = self._creation_context
             result["flow_name"] = self._experiment_name
@@ -476,6 +502,14 @@ class Run(YAMLTranslatableMixin):
                     result["error"]["error"].pop("additionalInfo", None)
                 if exclude_debug_info:
                     result["error"]["error"].pop("debugInfo", None)
+
+        # hide system metrics that starts with '__pf__'
+        system_metrics = properties.get(FlowRunProperties.SYSTEM_METRICS, None)
+        if system_metrics and isinstance(system_metrics, dict):
+            refined_system_metrics = {
+                k: v for k, v in system_metrics.items() if not k.startswith(PF_SYSTEM_METRICS_PREFIX)
+            }
+            properties[FlowRunProperties.SYSTEM_METRICS] = refined_system_metrics
 
         # hide properties when needed (e.g. list remote runs)
         if exclude_properties is True:
@@ -516,8 +550,11 @@ class Run(YAMLTranslatableMixin):
             flow_name = self._get_flow_dir().name if not self._use_remote_flow else self._flow_name
             variant = self.variant
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-            variant = parse_variant(variant)[1] if variant else DEFAULT_VARIANT
-            run_name_prefix = f"{flow_name}_{variant}"
+            if not self._from_prompty and not self._from_flex_flow:
+                variant = parse_variant(variant)[1] if variant else DEFAULT_VARIANT
+                run_name_prefix = f"{flow_name}_{variant}"
+            else:
+                run_name_prefix = flow_name
             # TODO(2562996): limit run name to avoid it become too long
             run_name = f"{run_name_prefix}_{timestamp}"
             return _sanitize_python_variable_name(run_name)
@@ -537,15 +574,16 @@ class Run(YAMLTranslatableMixin):
             if the display name is "run-${variant_id}-${timestamp}"
             it will be formatted to "run-variant_1-20210901123456"
         """
-
         display_name = self._get_default_display_name()
         time_stamp = datetime.datetime.now().strftime("%Y%m%d%H%M")
         if self.run:
             display_name = display_name.replace(RUN_MACRO, self._validate_and_return_run_name(self.run))
         display_name = display_name.replace(TIMESTAMP_MACRO, time_stamp)
-        variant = self.variant
-        variant = parse_variant(variant)[1] if variant else DEFAULT_VARIANT
-        display_name = display_name.replace(VARIANT_ID_MACRO, variant)
+
+        if not self._from_flex_flow and not self._from_prompty:
+            variant = self.variant
+            variant = parse_variant(variant)[1] if variant else DEFAULT_VARIANT
+            display_name = display_name.replace(VARIANT_ID_MACRO, variant)
 
         return display_name
 
@@ -560,6 +598,19 @@ class Run(YAMLTranslatableMixin):
     @classmethod
     def _get_schema_cls(self):
         return RunSchema
+
+    @classmethod
+    def _validate_init(cls, init: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate and parse init kwargs."""
+        if not init:
+            return {}
+        if not isinstance(init, dict):
+            raise UserErrorException(f"Invalid init kwargs: {init}. Expecting a dictionary.")
+
+        try:
+            json.dumps(init, default=asdict)
+        except Exception as e:
+            raise UserErrorException(f"Invalid init kwargs: {init}. Expecting a json serializable dictionary.") from e
 
     @classmethod
     def _to_rest_init(cls, init):
@@ -842,12 +893,4 @@ class Run(YAMLTranslatableMixin):
     def _flow_type(self) -> str:
         """Get flow type of run."""
 
-        from promptflow._sdk._load_functions import load_flow
-        from promptflow._sdk.entities._flows import FlexFlow
-
-        if is_prompty_flow(self.flow):
-            return FlowType.PROMPTY
-        flow_obj = load_flow(source=self.flow)
-        if isinstance(flow_obj, FlexFlow):
-            return FlowType.FLEX_FLOW
-        return FlowType.DAG_FLOW
+        return get_flow_type(self.flow)

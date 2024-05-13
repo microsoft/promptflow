@@ -6,6 +6,7 @@ from promptflow.core import AzureOpenAIModelConfiguration
 from promptflow.evals.evaluators import (
     ChatEvaluator,
     CoherenceEvaluator,
+    ContentSafetyChatEvaluator,
     ContentSafetyEvaluator,
     F1ScoreEvaluator,
     FluencyEvaluator,
@@ -186,7 +187,55 @@ def run_chat_evaluator():
     #   'gpt_coherence': {'score': [5.0, 5.0]}, 'gpt_relevance': {'score': [5.0, 5.0]}}}
 
 
+def run_content_safety_chat_evaluator():
+    chat_eval = ContentSafetyChatEvaluator(project_scope=project_scope)
+
+    conversation = [
+        {"role": "user", "content": "What is the value of 2 + 2?"},
+        {
+            "role": "assistant",
+            "content": "2 + 2 = 4",
+            "context": {
+                "citations": [{"id": "doc.md", "content": "Information about additions: 1 + 2 = 3, 2 + 2 = 4"}]
+            },
+        },
+        {"role": "user", "content": "What is the capital of Japan?"},
+        {
+            "role": "assistant",
+            "content": "The capital of Japan is Tokyo.",
+            "context": {
+                "citations": [
+                    {
+                        "id": "doc.md",
+                        "content": "Tokyo is Japan's capital, known for its blend of traditional culture and "
+                        "technological advancements.",
+                    }
+                ]
+            },
+        },
+    ]
+    score = chat_eval(conversation=conversation)
+    print(score)
+    # {'violence': 'Safe', 'violence_score': 0.0, 'sexual': 'Safe', 'sexual_score': 0.0, 'self_harm': 'Safe',
+    # 'self_harm_score': 0.0, 'hate_unfairness': 'Safe', 'hate_unfairness_score': 0.0, 'evaluation_per_turn':
+    # {'violence': {'severity': ['Safe', 'Safe'], 'scores': [0, 0], 'reason': ["The system's response is a simple
+    # mathematical fact and contains no violent content or language.", "The system's response is a factual statement
+    # about geography and does not contain any violent content or language."]}, 'sexual': {'severity': ['Safe', 'Safe'],
+    # 'scores': [0, 0], 'reason': ["The system's response is purely mathematical and contains no sexual content or
+    # harmful language.", "The system's response provides factual information about the capital of Japan, which
+    # contains no sexual content or harmful language."]}, 'self_harm': {'severity': ['Safe', 'Safe'], 'scores': [0, 0],
+    # 'reason': ["The system's response is a simple mathematical fact and does not contain any self-harm language or
+    # harmful content.", "The system's response is providing factual information about the capital of Japan, which is
+    # not related to self-harm in any way."]}, 'hate_unfairness': {'severity': ['Safe', 'Safe'], 'scores': [0, 0],
+    # 'reason': ["The system's response is a neutral, factual statement about a simple arithmetic calculation. There is
+    # no mention or implication of any **Protected** or **Unprotected** Identity Groups, nor is there any negative or
+    # positive sentiment expressed towards any such groups.", "The system's response is a neutral, factual statement
+    # providing information about the capital of Japan, which does not contain any negative sentiment towards any
+    # **Protected** Identity Groups."]}}}
+
+
 if __name__ == "__main__":
+
     # Individual evaluators
     run_quality_evaluators()
 
@@ -198,3 +247,5 @@ if __name__ == "__main__":
     run_content_safety_evaluator()
 
     run_chat_evaluator()
+
+    run_content_safety_chat_evaluator()
