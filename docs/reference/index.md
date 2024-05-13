@@ -75,3 +75,11 @@ flow-yaml-schema-reference.md
 run-yaml-schema-reference.md
 
 ```
+
+```{toctree}
+:caption: Trace Specification
+:maxdepth: 1
+
+trace-span-spec-reference.md
+
+```
