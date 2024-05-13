@@ -174,11 +174,11 @@ class Summary:
         self._parse_inputs_outputs_from_events()
         session_id = self.session_id
         start_time = self.span.start_time.isoformat()
-        end_time = self.span.end_time.isoformat()
+        end_time = self.span.end_time.isoformat() if self.span.end_time else None
 
         # Span's original format don't include latency, so we need to calculate it.
         # Convert ISO 8601 formatted strings to datetime objects
-        latency = (self.span.end_time - self.span.start_time).total_seconds()
+        latency = (self.span.end_time - self.span.start_time).total_seconds() if self.span.end_time else None
         # calculate `cumulative_token_count`
         attributes: dict = self.span.attributes
         completion_token_count = int(attributes.get(SpanAttributeFieldName.COMPLETION_TOKEN_COUNT, 0))
@@ -204,7 +204,8 @@ class Summary:
             outputs=self.outputs,
             start_time=start_time,
             end_time=end_time,
-            status=self.span.status[SpanStatusFieldName.STATUS_CODE],
+            #  Set status to running if end_time is None, otherwise use the status from span.
+            status=self.span.status[SpanStatusFieldName.STATUS_CODE] if end_time else RUNNING_LINE_RUN_STATUS,
             latency=latency,
             name=self.span.name,
             kind=attributes.get(SpanAttributeFieldName.SPAN_TYPE, None),

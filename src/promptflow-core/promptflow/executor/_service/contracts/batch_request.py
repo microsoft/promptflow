@@ -2,7 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from typing import Any, Mapping, Optional
+from typing import Any, List, Mapping, Optional, Union
 
 from promptflow._constants import LINE_TIMEOUT_SEC
 from promptflow.contracts.run_mode import RunMode
@@ -33,5 +33,5 @@ class AggregationRequest(BaseRequest):
     """Request model for executing aggregation nodes in the batch run."""
 
     run_id: str
-    batch_inputs: Mapping[str, Any]
-    aggregation_inputs: Mapping[str, Any]
+    batch_inputs: Optional[Mapping[str, Any]] = None
+    aggregation_inputs: Union[Mapping[str, Any], List[Any]]  # The type differs between the dag flow and the flex flow.

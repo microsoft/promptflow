@@ -212,7 +212,7 @@ class Flow(FlowBase):
         from promptflow.contracts.flow import Flow as ExecutableFlow
 
         # for DAG flow, use data to init executable to improve performance
-        return ExecutableFlow._from_dict(flow_dag=self._data, working_dir=self.code)
+        return ExecutableFlow._from_dict(flow_data=self._data, working_dir=self.code)
 
     def __eq__(self, other):
         if isinstance(other, Flow):
