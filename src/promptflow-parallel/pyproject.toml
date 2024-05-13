@@ -1,7 +1,3 @@
-[build-system]
-requires = ["poetry-core>=1.5.0"]
-build-backend = "poetry.core.masonry.api"
-
 [tool.poetry]
 name = "promptflow-parallel"
 version = "1.10.0.dev0"
@@ -43,12 +39,27 @@ packages = [
 python = "<4.0,>=3.8"
 promptflow-core = "<2.0.0"
 
+[tool.poetry.group.dev.dependencies]
+pre-commit = "*"
+import-linter = "*"
+promptflow-core = {path = "../promptflow-core", extras = ["azureml-serving"], develop = true}
+promptflow-tracing = {path = "../promptflow-tracing", develop = true}
+
+[tool.poetry.group.ci.dependencies]
+import-linter = "*"
+promptflow-core = {path = "../promptflow-core", extras = ["azureml-serving"]}
+promptflow-tracing = {path = "../promptflow-tracing"}
+
 [tool.poetry.group.test.dependencies]
 pytest = "*"
 pytest-cov = "*"
 pytest-xdist = "*"
 pytest-mock = "*"
 mock = "*"
+
+[build-system]
+requires = ["poetry-core>=1.5.0"]
+build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
 markers = [

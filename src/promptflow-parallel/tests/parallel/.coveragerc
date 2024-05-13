@@ -1,3 +1,0 @@
-[run]
-omit =
-    *__init__.py*
