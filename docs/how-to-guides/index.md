@@ -5,7 +5,8 @@ Simple and short articles grouped by topics, each introduces a core feature of p
 ```{toctree}
 :caption: Quick start
 :maxdepth: 1
-quick-start.md
+quick-start
+installation/index
 ```
 
 ```{toctree}
