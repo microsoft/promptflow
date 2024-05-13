@@ -278,16 +278,26 @@ class TestEagerFlow:
             executor = FlowExecutor.create(entry, {})
             assert executor._func_name == expected_name
 
-    def test_flow_with_sample(self):
-        flow_folder = "flow_with_sample"
+    @pytest.mark.parametrize(
+        "flow_folder, expected_output",
+        [
+            (
+                "flow_with_sample",
+                {
+                    "func_input1": "val1",
+                    "func_input2": "val2",
+                    "line_number": 0,
+                    "obj_input1": "val1",
+                    "obj_input2": "val2",
+                },
+            ),
+            ("function_flow_with_sample", {"func_input1": "val1", "func_input2": "val2", "line_number": 0}),
+        ],
+    )
+    def test_flow_with_sample(self, flow_folder, expected_output):
         # when inputs & init not provided, will use sample field in flow file
         flow_file = get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT)
         executor = FlowExecutor.create(flow_file=flow_file, connections={})
         line_result = executor.exec_line(inputs={}, index=0)
-        assert line_result.output == {
-            "func_input1": "val1",
-            "func_input2": "val2",
-            "line_number": 0,
-            "obj_input1": "val1",
-            "obj_input2": "val2",
-        }
+        assert line_result.run_info.error is None
+        assert line_result.output == expected_output
