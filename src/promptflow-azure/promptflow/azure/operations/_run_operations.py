@@ -991,7 +991,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             workspace_name=self._operation_scope.workspace_name,
             body=rest_obj,
         )
-        logger.info(f"Successfully registered run {run!r} to cloud.")
+        logger.info(f"Successfully registered run {run.name!r} to cloud.")
 
     def _validate_for_run_download(self, run: Union[str, Run], output: Optional[Union[str, Path]], overwrite):
         """Validate the run download parameters."""

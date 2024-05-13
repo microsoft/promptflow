@@ -136,6 +136,7 @@ class AsyncRunUploader:
             1. Upload metrics to metric service.
             2. Register assets for debug info and flow outputs
         """
+        logger.debug("Post processing after run details are uploaded.")
         error_msg_prefix = f"Failed to post process run {self.run.name!r}"
         try:
             tasks = [
