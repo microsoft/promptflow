@@ -2,7 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from marshmallow import ValidationError, fields, validate, validates_schema
+from marshmallow import ValidationError, fields, pre_load, validate, validates_schema
 
 from promptflow._constants import LANGUAGE_KEY, ConnectionType, FlowLanguage
 from promptflow._proxy import ProxyFactory
@@ -108,7 +108,7 @@ class FlexFlowSchema(BaseFlowSchema):
     inputs = fields.Dict(keys=fields.Str(), values=NestedField(FlexFlowInputSchema), required=False)
     outputs = fields.Dict(keys=fields.Str(), values=NestedField(FlexFlowOutputSchema), required=False)
     init = fields.Dict(keys=fields.Str(), values=NestedField(FlexFlowInitSchema), required=False)
-    sample = fields.Str()
+    sample = fields.Dict(keys=fields.Str(validate=validate.OneOf(["init", "inputs", "outputs"])), required=False)
     code = LocalPathField()
 
     @validates_schema(skip_on_field_errors=False)
@@ -119,6 +119,11 @@ class FlexFlowSchema(BaseFlowSchema):
         inspector_proxy = ProxyFactory().create_inspector_proxy(language=language)
         if not inspector_proxy.is_flex_flow_entry(data.get("entry", None)):
             raise ValidationError(field_name="entry", message=f"Entry function {data['entry']} is not valid.")
+
+    @pre_load
+    def resolve_sample(self, data, **kwargs):
+        # TODO: resolve sample here
+        return data
 
 
 class PromptySchema(BaseFlowSchema):
