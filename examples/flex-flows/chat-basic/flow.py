@@ -1,6 +1,5 @@
 import os
 
-from dataclasses import dataclass
 from pathlib import Path
 
 from promptflow.tracing import trace
@@ -15,11 +14,6 @@ def log(message: str):
         print(message, flush=True)
 
 
-@dataclass
-class Result:
-    answer: str
-
-
 class ChatFlow:
     def __init__(
         self, model_config: AzureOpenAIModelConfiguration, max_total_token=4096
@@ -32,7 +26,7 @@ class ChatFlow:
         self,
         question: str = "What's Azure Machine Learning?",
         chat_history: list = None,
-    ) -> Result:
+    ) -> str:
         """Flow entry function."""
 
         prompty = Prompty.load(
@@ -57,7 +51,7 @@ class ChatFlow:
         # output is a string
         output = prompty(question=question, chat_history=chat_history)
 
-        return Result(answer=output)
+        return output
 
 
 if __name__ == "__main__":

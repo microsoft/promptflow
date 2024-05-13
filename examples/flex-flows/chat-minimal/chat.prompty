@@ -1,5 +1,5 @@
 ---
-name: Basic Chat
+name: Minimal Chat
 model:
   api: chat
   configuration:
@@ -8,23 +8,12 @@ model:
   parameters:
     temperature: 0.2
     max_tokens: 1024
-inputs: 
-  question:
-    type: string
-  chat_history:
-    type: list
 sample:
   question: "What is Prompt flow?"
-  chat_history: []
 ---
 
 system:
 You are a helpful assistant.
-
-{% for item in chat_history %}
-{{item.role}}:
-{{item.content}}
-{% endfor %}
 
 user:
 {{question}}
