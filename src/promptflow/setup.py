@@ -64,6 +64,11 @@ setup(
             "promptflow-core[executor-service]",  # used to build web executor server
         ],
     },
+    entry_points={
+        "console_scripts": [
+            "pf = promptflow._cli.pf:main",
+        ]
+    },
     scripts=["pf.autocomplete.sh"],
     packages=find_packages(),
     include_package_data=True,
