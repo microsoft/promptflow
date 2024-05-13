@@ -57,7 +57,7 @@ from promptflow.executor._process_manager import (
 from promptflow.executor._result import LineResult
 from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import DEFAULT_CONCURRENCY_BULK, FlowExecutor
-from promptflow.storage._queue_run_storage import QueueRunStorage, ServiceQueueRunStorage
+from promptflow.storage._queue_run_storage import QueueRunStorage
 from promptflow.tracing._operation_context import OperationContext
 
 
@@ -182,8 +182,6 @@ class LineExecutionProcessPool:
             "output_queues": self._output_queues,
             "process_info": process_info,
             "process_target_func": _process_wrapper,
-            "output_dir": self._output_dir,
-            "serialize_multimedia": self._serialize_multimedia_during_execution,
         }
         if self._use_fork:
             # 1. Create input_queue, output_queue, control_signal_queue and _process_info in the main process.
@@ -682,8 +680,6 @@ class LineExecutionProcessPool:
 
 def _process_wrapper(
     executor_creation_func,
-    output_dir: Path,
-    serialize_multimedia: bool,
     input_queue: Queue,
     output_queue: Queue,
     log_context_initialization_func,
@@ -702,8 +698,6 @@ def _process_wrapper(
 
     _exec_line_for_queue(
         executor_creation_func,
-        output_dir,
-        serialize_multimedia,
         input_queue,
         output_queue,
         log_context_initialization_func,
@@ -725,16 +719,11 @@ def signal_handler(signum, frame):
 
 def _exec_line_for_queue(
     executor_creation_func,
-    output_dir: Path,
-    serialize_multimedia: bool,
     input_queue: Queue,
     output_queue: Queue,
     log_context_initialization_func: Optional[Callable] = None,
 ):
-    run_storage = (
-        ServiceQueueRunStorage(output_queue, output_dir) if serialize_multimedia else QueueRunStorage(output_queue)
-    )
-    executor: FlowExecutor = executor_creation_func(storage=run_storage)
+    executor: FlowExecutor = executor_creation_func(storage=QueueRunStorage(output_queue))
 
     while True:
         try:
