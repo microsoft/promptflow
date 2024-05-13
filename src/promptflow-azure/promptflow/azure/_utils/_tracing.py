@@ -10,7 +10,7 @@ from promptflow._constants import AzureWorkspaceKind
 from promptflow._sdk._utilities.general_utils import extract_workspace_triad_from_trace_provider
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure import PFClient
-from promptflow.azure._constants._trace import COSMOS_DB_SETUP_RESOURCE_TYPE, CosmosConfiguration, CosmosStatus
+from promptflow.azure._constants._trace import COSMOS_DB_SETUP_RESOURCE_TYPE
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 _logger = get_cli_sdk_logger()
@@ -18,14 +18,6 @@ _logger = get_cli_sdk_logger()
 
 def _create_trace_destination_value_user_error(message: str) -> UserErrorException:
     return UserErrorException(message=message, target=ErrorTarget.CONTROL_PLANE_SDK)
-
-
-def is_cosmos_disabled(cosmos_config: str) -> bool:
-    return cosmos_config == CosmosConfiguration.DISABLED
-
-
-def is_cosmos_ready(cosmos_status: str, cosmos_config: str) -> bool:
-    return not is_cosmos_disabled(cosmos_config) and cosmos_status == CosmosStatus.INITIALIZED
 
 
 def validate_trace_destination(value: str) -> None:
@@ -71,7 +63,13 @@ def validate_trace_destination(value: str) -> None:
     # if not, call PFS setup API and start polling
     _logger.debug("Validating workspace Cosmos DB is initialized...")
     pf_client = PFClient(ml_client=ml_client)
-    if not pf_client._traces._is_cosmos_available():
+    cosmos_metadata = pf_client._traces._get_cosmos_metadata()
+    # raise error if the Cosmos DB is disabled
+    if cosmos_metadata.is_disabled():
+        error_message = "The workspace Cosmos DB is disabled, please enable it first."
+        _logger.error(error_message)
+        raise _create_trace_destination_value_user_error(error_message)
+    if not cosmos_metadata.is_ready():
         # print here to let users aware this operation as it's kind of time consuming
         init_cosmos_msg = (
             "The workspace Cosmos DB is not initialized yet, "
