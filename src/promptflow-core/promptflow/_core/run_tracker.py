@@ -40,7 +40,7 @@ class RunTracker(ThreadLocalSingleton):
 
     def __init__(self, run_storage: AbstractRunStorage, run_mode: RunMode = RunMode.Test, node_log_manager=None):
         self._node_runs: Dict[str, RunInfo] = {}
-        self._node_runs: Dict[str, RunInfo] = {}
+        self._flow_runs: Dict[str, FlowRunInfo] = {}
         # The key is the parent_run_id, and the value is a list of node traces.
         self._node_traces: Dict[str, List[Dict[str, Any]]] = {}
         self._current_run_id = ""
