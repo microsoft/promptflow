@@ -124,11 +124,11 @@ class FlexFlowSchema(BaseFlowSchema):
 
     @pre_load
     def resolve_sample(self, data, **kwargs):
-        # TODO: resolve sample here
         sample_dict = data.get("sample", {})
-        base_path = Path(self.context[BASE_PATH_CONTEXT_KEY])
-        sample_dict = resolve_references(origin=sample_dict, base_path=base_path)
-        data["sample"] = sample_dict
+        if sample_dict:
+            base_path = Path(self.context[BASE_PATH_CONTEXT_KEY])
+            sample_dict = resolve_references(origin=sample_dict, base_path=base_path)
+            data["sample"] = sample_dict
         return data
 
 
