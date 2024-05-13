@@ -113,14 +113,13 @@ class AsyncNodesScheduler:
             dag_manager.completed_nodes_outputs[node] = None
         return dag_manager.completed_nodes_outputs, dag_manager.bypassed_nodes
 
-    async def cancel_tasks(self, tasks):
+    async def cancel_tasks(self, tasks: List[asyncio.Task]):
         for task in tasks:
             if not task.done():
                 task.cancel()
-        # Call asyncio.sleep(0) to yield control to the event loop
-        # So the cancelled tasks can be scheduled to cleanup.
-        # Note that we would not gather those tasks here because we are going to exit the execution.
-        await asyncio.sleep(0)
+        cancel_timeout = 1
+        # Wait at most 1 second for the tasks to cleanup
+        await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED, timeout=cancel_timeout)
 
     async def _wait_and_complete_nodes(self, task2nodes: Dict[Task, Node], dag_manager: DAGManager) -> Dict[Task, Node]:
         if not task2nodes:
