@@ -101,7 +101,7 @@ def overwrite_connections(flow_dag: dict, connections: dict, working_dir: PathLi
         raise InvalidFlowError(f"Invalid connections overwrite format: {connections}, only list is supported.")
 
     # Load executable flow to check if connection is LLM connection
-    executable_flow = ExecutableFlow._from_dict(flow_dag=flow_dag, working_dir=Path(working_dir))
+    executable_flow = ExecutableFlow._from_dict(flow_data=flow_dag, working_dir=Path(working_dir))
 
     # generate tool meta for deployment name, model override
     # tools_meta = generate_flow_tools_json(flow_directory=working_dir, dump=False, used_packages_only=True)

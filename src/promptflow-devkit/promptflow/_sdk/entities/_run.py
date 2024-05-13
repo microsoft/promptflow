@@ -336,6 +336,7 @@ class Run(YAMLTranslatableMixin):
             command=properties_json.get(FlowRunProperties.COMMAND, None),
             outputs=properties_json.get(FlowRunProperties.OUTPUTS, None),
             column_mapping=properties_json.get(FlowRunProperties.COLUMN_MAPPING, None),
+            portal_url=obj.portal_url,
         )
 
     @classmethod
@@ -429,6 +430,7 @@ class Run(YAMLTranslatableMixin):
             properties=json.dumps(self.properties, default=asdict),
             data=Path(self.data).resolve().absolute().as_posix() if self.data else None,
             run_source=self._run_source,
+            portal_url=self._portal_url,
         )
 
     def _dump(self) -> None:
@@ -475,6 +477,8 @@ class Run(YAMLTranslatableMixin):
                 if exclude_debug_info:
                     exception_dict.pop("debugInfo", None)
                 result["error"] = exception_dict
+            if self._portal_url:
+                result[RunDataKeys.PORTAL_URL] = self._portal_url
         elif self._run_source == RunInfoSources.INDEX_SERVICE:
             result["creation_context"] = self._creation_context
             result["flow_name"] = self._experiment_name

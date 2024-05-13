@@ -142,8 +142,8 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         except Exception as e:
             logger.warning(f"Failed to get run portal url from pfs for run {run_id!r}: {str(e)}")
 
-        if run_info and hasattr(run_info, "studio_portal_endpoint"):
-            portal_url = run_info.studio_portal_endpoint
+        if run_info and hasattr(run_info, "studio_portal_trace_endpoint"):
+            portal_url = run_info.studio_portal_trace_endpoint
 
         return portal_url
 
@@ -936,7 +936,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         logger.info(f"Successfully downloaded run {run!r} to {result_path!r}.")
         return result_path
 
-    def _upload(self, run: Union[str, Run]):
+    def _upload(self, run: Union[str, Run]) -> str:
         from promptflow._sdk._pf_client import PFClient
         from promptflow.azure.operations._async_run_uploader import AsyncRunUploader
 
@@ -973,16 +973,19 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         logger.debug(f"Successfully uploaded run details of {run!r} to cloud.")
 
         # registry the run in the cloud
-        self._registry_existing_bulk_run(run=run)
+        self._register_existing_bulk_run(run=run)
 
         # post process after run upload, it can only be done after the run history record is created
         async_run_allowing_running_loop(run_uploader.post_process)
 
+        portal_url = self._get_run_portal_url(run_id=run.name)
         # print portal url when executing in jupyter notebook
         if in_jupyter_notebook():
-            print(f"Portal url: {self._get_run_portal_url(run_id=run.name)}")
+            print(f"Portal url: {portal_url}")
 
-    def _registry_existing_bulk_run(self, run: Run):
+        return portal_url
+
+    def _register_existing_bulk_run(self, run: Run):
         """Register the run in the cloud"""
         rest_obj = run._to_rest_object()
         self._service_caller.create_existing_bulk_run(
