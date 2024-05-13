@@ -264,6 +264,7 @@ class RunSubmitter:
 
     @classmethod
     def _upload_run_to_cloud(cls, run: Run, config=None) -> str:
+        logger.info(f"Uploading run {run.name!r} to cloud...")
         error_msg_prefix = f"Failed to upload run {run.name!r} to cloud."
         try:
             from promptflow._sdk._tracing import _get_ws_triad_from_pf_config
