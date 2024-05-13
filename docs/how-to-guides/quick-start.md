@@ -1,6 +1,14 @@
 # Quick start
 
-[**Prompt flow**](https://github.com/microsoft/promptflow) is a suite of development tools designed to streamline the end-to-end development cycle of LLM-based AI applications, from ideation, prototyping, testing, evaluation to production deployment and monitoring. It makes prompt engineering much easier and enables you to build LLM apps with production quality.
+This guide will walk you through the fist step using of prompt flow code-first experience.
+
+**Prerequisite** - To make the most of this tutorial, you'll need:
+- Know how to program with Python :)
+
+**Learning Objectives** - Upon completing this tutorial, you should learn how to:
+- Setup your python environment to run prompt flow
+- Create a flow using a prompt and python function
+- Test the flow using your favorite experience: CLI, SDK or UI.
 
 ## Installation
 
@@ -8,15 +16,18 @@ Install promptflow package to start.
 ```sh
 pip install promptflow
 ```
-Learn more on installation topic.
 
-## Develop and test your first flow
+Learn more on installation topic. TODO
 
-Create a Prompty file to help you trigger one LLM call.
+## Create your first flow
+
+### Model a LLM call with a prompty
+
+Create a Prompty file to help you trigger one LLM call. 
 
 ```md
 ---
-name: Basic Chat
+name: Minimal Chat
 model:
   api: chat
   configuration:
@@ -25,98 +36,111 @@ model:
   parameters:
     temperature: 0.2
     max_tokens: 1024
-inputs: 
-  question:
-    type: string
-  chat_history:
-    type: list
 sample:
   question: "What is Prompt flow?"
-  chat_history: []
 ---
 
 system:
 You are a helpful assistant.
 
-{% for item in chat_history %}
-{{item.role}}:
-{{item.content}}
-{% endfor %}
-
 user:
 {{question}}
 ```
-See more details of this topic in [Develop a prompty](./develop-a-prompty/index.md).
+
+Prompty is a markdown file. The front matter structured in `YAML`, encapsulates a series of metadata fields pivotal for defining the model’s configuration and the inputs for the prompty. After this front matter is the prompt template, articulated in the `Jinja` format.
+See more details in [Develop a prompty](./develop-a-prompty/index.md). 
 
 ### Create a flow
+Create a python function which is the entry of a `flow`. 
 
 ```python
+import os
 
+from dotenv import load_dotenv
+from pathlib import Path
+from promptflow.tracing import trace
+from promptflow.core import Prompty
 
+BASE_DIR = Path(__file__).absolute().parent
+
+@trace
+def chat(question: str = "What's the capital of France?") -> str:
+    """Flow entry function."""
+
+    if "OPENAI_API_KEY" not in os.environ and "AZURE_OPENAI_API_KEY" not in os.environ:
+        # load environment variables from .env file
+        load_dotenv()
+
+    prompty = Prompty.load(source=BASE_DIR / "chat.prompty")
+    # trigger a llm call with the prompty obj
+    output = prompty(question=question)
+    return output
 ```
 
-### Test the flow
+Flow can be a python function or class or a yaml file describe a DAG which encapsulate your LLM application logic. Learn more on the [flow concept](../concepts/concept-flows.md).
 
-Assuming you are in working directory `promptflow/examples/flows/standard/`
+## Test the flow
+
+Test the flow with your favorite experience: CLI, SDK or UI.
 
 ::::{tab-set}
 
 :::{tab-item} CLI
 :sync: CLI
 
-Change the default input to the value you want to test.
-
-![q_0](../media/how-to-guides/quick-start/flow-directory-and-dag-yaml.png)
+`pf` is the CLI command you get when install `promptflow` package. Learn more on features of `pf` CLI in[reference doc](https://microsoft.github.io/promptflow/reference/pf-command-reference.html).
 
 ```sh
-pf flow test --flow flow:chat
+pf flow test --flow flow:chat --inputs question="What's the capital of France?"
 ```
 
-![flow-test-output-cli](../media/how-to-guides/quick-start/flow-test-output-cli.png)
+You will get some output like below in terminal.
+```
+```
+
+TODO add screenshot on Trace UI.
 
 :::
 
 :::{tab-item} SDK
 :sync: SDK
 
-The return value of `test` function is the flow/node outputs.
-
+Call the chat function with your question. Assume you have a `flow.py` file with below content.
 ```python
-from promptflow.client import PFClient
+if __name__ == "__main__":
+    from promptflow.tracing import start_trace
 
-pf = PFClient()
+    start_trace()
 
-flow_path = "web-classification"  # "web-classification" is the directory name
-
-# Test flow
-flow_inputs = {"url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g", "answer": "Channel", "evidence": "Url"}  # The inputs of the flow.
-flow_result = pf.test(flow=flow_path, inputs=flow_inputs)
-print(f"Flow outputs: {flow_result}")
-
-# Test node in the flow
-node_name = "fetch_text_content_from_url"  # The node name in the flow.
-node_inputs = {"url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g"}  # The inputs of the node.
-node_result = pf.test(flow=flow_path, inputs=node_inputs, node=node_name)
-print(f"Node outputs: {node_result}")
+    result = chat("What's the capital of France?")
+    print(result)
 ```
 
-![Flow test outputs](../media/how-to-guides/quick-start/flow_test_output.png)
+Run you script with `python flow.py`, and you will get some outputs like below:
+```
+
+```
+
+TODO add screenshot on Trace UI.
 :::
 
-:::{tab-item} VS Code Extension
+:::{tab-item} UI
 :sync: VS Code Extension
 
-Use the code lens action on the top of the yaml editor to trigger flow test
-![dag_yaml_flow_test](../media/how-to-guides/quick-start/test_flow_dag_yaml.gif)
+start test in chat ui
 
+```sh
+pf flow test --flow flow:chat --ui 
+```
 
-Click the run flow button on the top of the visual editor to trigger flow test.
-![visual_editor_flow_test](../media/how-to-guides/quick-start/test_flow_dag_editor.gif)
+TODO add screenshot on Chat UI.
+
+See more details of this topic in [Chat with a flow](./chat-with-a-flow/index.md).
+
 :::
 
 ::::
 
-See more details of this topic in [Initialize and test a flow](./develop-a-dag-flow/init-and-test-a-flow.md).
 
 ## Next steps
 
