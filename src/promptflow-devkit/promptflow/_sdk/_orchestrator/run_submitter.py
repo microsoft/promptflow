@@ -231,7 +231,8 @@ class RunSubmitter:
             # upload run to cloud if the trace destination is set to cloud
             if self._config._is_cloud_trace_destination(path=run._get_flow_dir().resolve()):
                 portal_url = self._upload_run_to_cloud(run=run, config=self._config)
-                self.run_operations.update(name=run.name, portal_url=portal_url)
+                if portal_url is not None:
+                    self.run_operations.update(name=run.name, portal_url=portal_url)
 
     def _resolve_input_dirs(self, run: Run):
         result = {"data": run.data if run.data else None}
