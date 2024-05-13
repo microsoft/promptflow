@@ -7,7 +7,7 @@ from typing import Dict, Optional
 from azure.ai.ml._scope_dependent_operations import OperationConfig, OperationScope, _ScopeDependentOperations
 
 from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, monitor_operation
-from promptflow.azure._contracts._trace import CosmosMetadata
+from promptflow.azure._entities._trace import CosmosMetadata
 from promptflow.azure._restclient.flow.models import TraceDbSetupRequest
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 

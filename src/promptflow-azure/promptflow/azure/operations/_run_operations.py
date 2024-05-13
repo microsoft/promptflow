@@ -60,6 +60,7 @@ from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 from promptflow.azure._utils.general import get_authorization, get_user_alias_from_credential, set_event_loop_policy
 from promptflow.azure.operations._flow_operations import FlowOperations
+from promptflow.azure.operations._trace_operations import TraceOperations
 from promptflow.exceptions import UserErrorException
 
 RUNNING_STATUSES = RunStatus.get_running_statuses()
@@ -87,6 +88,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         operation_config: OperationConfig,
         all_operations: OperationsContainer,
         flow_operations: FlowOperations,
+        trace_operations: TraceOperations,
         credential,
         service_caller: FlowServiceCaller,
         workspace: Workspace,
@@ -106,6 +108,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         self._identity = workspace.identity
         self._credential = credential
         self._flow_operations = flow_operations
+        self._trace_operations = trace_operations
         self._orchestrators = OperationOrchestrator(self._all_operations, self._operation_scope, self._operation_config)
 
     @property
@@ -844,17 +847,27 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             raise TypeError(f"runtime should be a string, got {type(runtime)} for {runtime}")
         return runtime
 
-    def _resolve_dependencies_in_parallel(self, run, runtime, reset=None):
+    def _resolve_disable_trace(self) -> bool:
+        cosmos_metadata = self._trace_operations._get_cosmos_metadata()
+        if cosmos_metadata.is_disabled():
+            return True
+        if not cosmos_metadata.is_ready():
+            pass
+        return False
+
+    def _resolve_dependencies_in_parallel(self, run: Run, runtime, reset=None):
         with ThreadPoolExecutor() as pool:
             tasks = [
                 pool.submit(self._resolve_data_to_asset_id, run=run),
                 pool.submit(self._resolve_flow_and_session_id, run=run),
+                pool.submit(self._resolve_disable_trace),
             ]
             concurrent.futures.wait(tasks, return_when=concurrent.futures.ALL_COMPLETED)
             task_results = [task.result() for task in tasks]
 
         run.data = task_results[0]
         run.flow, session_id = task_results[1]
+        disable_trace = task_results[2]
 
         runtime = self._resolve_runtime(run=run, runtime=runtime)
         self._resolve_identity(run=run)
@@ -862,6 +875,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         rest_obj = run._to_rest_object()
         rest_obj.runtime_name = runtime
         rest_obj.session_id = session_id
+        rest_obj.disable_trace = disable_trace
 
         # TODO(2884482): support force reset & force install
 

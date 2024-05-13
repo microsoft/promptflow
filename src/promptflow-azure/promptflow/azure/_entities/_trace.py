@@ -10,20 +10,14 @@ from promptflow.azure._restclient.flow.models import TraceCosmosMetaDto
 
 @dataclass
 class CosmosMetadata:
-    entity_id: str
     configuration: str
     status: str
-    database_name: str
-    resource_type: str
 
     @staticmethod
     def _from_rest_object(obj: TraceCosmosMetaDto) -> "CosmosMetadata":
         return CosmosMetadata(
-            entity_id=obj.entity_id,
             configuration=obj.trace_cosmos_configuration,
             status=obj.trace_cosmos_status,
-            database_name=obj.database_name,
-            resource_type=obj.resource_type,
         )
 
     def is_disabled(self) -> bool:
