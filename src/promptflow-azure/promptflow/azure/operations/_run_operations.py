@@ -8,7 +8,6 @@ import json
 import os
 import shutil
 import sys
-import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor
 from functools import cached_property
@@ -54,7 +53,6 @@ from promptflow._sdk._utilities.general_utils import (
 )
 from promptflow._sdk.entities import Run
 from promptflow._utils.async_utils import async_run_allowing_running_loop
-from promptflow._utils.flow_utils import is_prompty_flow
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.utils import in_jupyter_notebook
 from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME, AUTOMATIC_RUNTIME_NAME, CLOUD_RUNS_PAGE_SIZE
@@ -738,19 +736,6 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         environment_variables = {}
         if run._use_remote_flow:
             return self._resolve_flow_definition_resource_id(run=run), None, environment_variables
-        if is_prompty_flow(run.flow):
-            from promptflow.core._flow import Prompty
-
-            # Replace connection configuration to environment variables in temp prompty.
-            temp_flow_path = Path(tempfile.TemporaryDirectory().name)
-            shutil.copytree(src=Path(run.flow).parent, dst=temp_flow_path, dirs_exist_ok=True)
-
-            prompty_flow = Prompty.load(source=run.flow)
-            with open(temp_flow_path / Path(run.flow).name, "w") as f:
-                prompty_content, environment_variables = prompty_flow._dump_to_content(connection_map_to_env=True)
-                f.write(prompty_content)
-            # Replace flow path to temp prompty path.
-            run.flow = temp_flow_path / Path(run.flow).name
 
         flow = load_flow(run.flow)
         # set init kwargs for validation

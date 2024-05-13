@@ -3,9 +3,7 @@
 # ---------------------------------------------------------
 
 import abc
-import copy
 import re
-from dataclasses import asdict
 from os import PathLike
 from pathlib import Path
 from typing import Any, Mapping, Union
@@ -13,7 +11,7 @@ from typing import Any, Mapping, Union
 from promptflow._constants import DEFAULT_ENCODING, LANGUAGE_KEY, PROMPTY_EXTENSION, FlowLanguage
 from promptflow._utils.flow_utils import is_flex_flow, is_prompty_flow, resolve_flow_path
 from promptflow._utils.logger_utils import LoggerFactory
-from promptflow._utils.yaml_utils import dump_yaml, load_yaml_string
+from promptflow._utils.yaml_utils import load_yaml_string
 from promptflow.contracts.tool import ValueType
 from promptflow.core._errors import MissingRequiredInputError
 from promptflow.core._model_configuration import PromptyModelConfiguration
@@ -459,46 +457,6 @@ class Prompty(FlowBase):
             streaming=params.get("stream", False),
             outputs=self._outputs,
         )
-
-    def _dump_to_content(self, connection_map_to_env=False):
-        environment_variables = {}
-        config_dict = copy.copy(self._data)
-        if self._inputs:
-            config_dict["inputs"].update(self._inputs)
-        if self._outputs:
-            config_dict["outputs"].update(self._outputs)
-        if self._model:
-            model_config = asdict(self._model, dict_factory=lambda x: {k: v for (k, v) in x if v})
-            if connection_map_to_env:
-                from promptflow.core._connection import AzureOpenAIConnection, OpenAIConnection
-
-                connection = convert_model_configuration_to_connection(self._model.configuration)
-                model_config["configuration"].pop("connection", None)
-                if isinstance(connection, AzureOpenAIConnection):
-                    environment_variables = {
-                        "AZURE_OPENAI_ENDPOINT": connection.api_base,
-                        "AZURE_OPENAI_API_KEY": connection.api_key,
-                        "OPENAI_API_VERSION": connection.api_version,
-                    }
-                    model_config["configuration"]["azure_endpoint"] = "${env:AZURE_OPENAI_ENDPOINT}"
-                    model_config["configuration"]["api_key"] = "${env:AZURE_OPENAI_API_KEY}"
-                    model_config["configuration"]["api_version"] = "${env:OPENAI_API_VERSION}"
-                elif isinstance(connection, OpenAIConnection):
-                    environment_variables = {
-                        "OPENAI_BASE_URL": connection.base_url,
-                        "OPENAI_API_KEY": connection.api_key,
-                    }
-                    model_config["configuration"]["base_url"] = "${env:OPENAI_BASE_URL}"
-                    model_config["configuration"]["api_key"] = "${env:OPENAI_API_KEY}"
-            config_dict["model"].update(model_config)
-        if self._sample:
-            config_dict["sample"].update(self._sample)
-        config_content = dump_yaml(config_dict)
-        prompty_content = f"""---
-{config_content}
----
-{self._template}"""
-        return prompty_content, environment_variables
 
     def render(self, *args, **kwargs):
         """Render the prompt content.
