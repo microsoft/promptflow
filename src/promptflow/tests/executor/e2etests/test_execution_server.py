@@ -17,7 +17,7 @@ class TestExecutionServer:
             flow_folder="flow-with-nan-inf", inputs={"number": 1}
         )
         response = executor_client.post(url="/execution/flow", json=flow_execution_request)
-        assert response.status_code == 200
+        assert response.status_code == 200, f"response: {response}"
         line_result = LineResult.deserialize(response.json())
         output = line_result.output["output"]
         assert math.isnan(output["nan"])
