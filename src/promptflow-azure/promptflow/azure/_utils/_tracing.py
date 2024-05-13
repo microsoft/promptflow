@@ -10,7 +10,7 @@ from promptflow._constants import AzureWorkspaceKind
 from promptflow._sdk._utilities.general_utils import extract_workspace_triad_from_trace_provider
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure import PFClient
-from promptflow.azure._constants._trace import COSMOS_DB_SETUP_RESOURCE_TYPE
+from promptflow.azure._constants._trace import COSMOS_DB_SETUP_RESOURCE_TYPE, CosmosConfiguration, CosmosStatus
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 _logger = get_cli_sdk_logger()
@@ -18,6 +18,14 @@ _logger = get_cli_sdk_logger()
 
 def _create_trace_destination_value_user_error(message: str) -> UserErrorException:
     return UserErrorException(message=message, target=ErrorTarget.CONTROL_PLANE_SDK)
+
+
+def is_cosmos_disabled(cosmos_config: str) -> bool:
+    return cosmos_config == CosmosConfiguration.DISABLED
+
+
+def is_cosmos_ready(cosmos_status: str, cosmos_config: str) -> bool:
+    return not is_cosmos_disabled(cosmos_config) and cosmos_status == CosmosStatus.INITIALIZED
 
 
 def validate_trace_destination(value: str) -> None:
