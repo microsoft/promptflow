@@ -841,7 +841,7 @@ def build_messages(
     image_detail: str = "auto",
     **kwargs,
 ):
-    inputs_to_escape = kwargs.pop(INPUTS_TO_ESCAPE_PARAM_KEY, None)
+    inputs_to_escape = kwargs.pop(INPUTS_TO_ESCAPE_PARAM_KEY, list(kwargs.keys()))
     escape_dict = Escaper.build_escape_dict_from_kwargs(_inputs_to_escape=inputs_to_escape, **kwargs)
     updated_kwargs = Escaper.escape_kwargs(escape_dict=escape_dict, _inputs_to_escape=inputs_to_escape, **kwargs)
 
