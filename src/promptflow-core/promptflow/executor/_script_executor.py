@@ -58,17 +58,28 @@ class ScriptExecutor(FlowExecutor):
         logger.debug(f"Start initializing the executor with {flow_file}.")
         logger.debug(f"Init params for script executor: {init_kwargs}")
 
-        self._flow_file = flow_file
         if connections and isinstance(connections, dict):
             connections = DictConnectionProvider(connections)
         self._connections = connections
+
+        self._flow_file = flow_file
         entry = flow_file  # Entry could be both a path or a callable
         self._entry = entry
-        self._init_kwargs = init_kwargs or {}
         if isinstance(entry, (str, Path)):
             self._working_dir = Flow._resolve_working_dir(entry, working_dir)
         else:
             self._working_dir = working_dir or Path.cwd()
+        # load flow if possible
+        try:
+            with open(self._working_dir / self._flow_file, "r", encoding="utf-8") as fin:
+                flow_dag = load_yaml(fin)
+            flow = FlexFlow.deserialize(flow_dag)
+        except Exception as e:
+            logger.debug(f"Failed to load flow from file {self._flow_file} with error: {e}")
+            flow = None
+        self._flow = flow
+
+        self._init_kwargs = self._apply_sample_init(init_kwargs=init_kwargs)
         self._init_input_sign()
         self._initialize_function()
         self._storage = storage or DefaultRunStorage()
@@ -108,6 +119,7 @@ class ScriptExecutor(FlowExecutor):
         **kwargs,
     ) -> LineResult:
         run_id = run_id or str(uuid.uuid4())
+        inputs = self._apply_sample_inputs(inputs=inputs)
         inputs = apply_default_value_for_input(self._inputs_sign, inputs)
         with self._exec_line_context(run_id, index):
             return self._exec_line(inputs, index, run_id, allow_generator_output=allow_generator_output)
@@ -273,6 +285,7 @@ class ScriptExecutor(FlowExecutor):
         **kwargs,
     ) -> LineResult:
         run_id = run_id or str(uuid.uuid4())
+        inputs = self._apply_sample_inputs(inputs=inputs)
         inputs = apply_default_value_for_input(self._inputs_sign, inputs)
         with self._exec_line_context(run_id, index):
             return await self._exec_line_async(inputs, index, run_id, allow_generator_output=allow_generator_output)
@@ -508,18 +521,34 @@ class ScriptExecutor(FlowExecutor):
         return module_name, func_name
 
     def _init_input_sign(self):
-        if not self.is_function_entry:
-            with open(self._working_dir / self._flow_file, "r", encoding="utf-8") as fin:
-                flow_dag = load_yaml(fin)
-            flow = FlexFlow.deserialize(flow_dag)
+        if not self.is_function_entry and self._flow is not None:
             # In the yaml file, user can define the inputs and init signature for the flow, also SDK may create
             # the signature and add them to the yaml file. We need to get the signature from the yaml file and
             # used for applying default value and ensuring input type.
             # If the default value is an empty string, we will assume user has defined the default value as None
             # in python script. We will exclude it from signature.
-            self._inputs_sign = {k: v for k, v in flow.inputs.items() if v.default != ""}
-            self._init_sign = {k: v for k, v in flow.init.items() if v.default != ""}
+            self._inputs_sign = {k: v for k, v in self._flow.inputs.items() if v.default != ""}
+            self._init_sign = {k: v for k, v in self._flow.init.items() if v.default != ""}
         else:
+            # TODO(3194196): support input signature for function entry.
             # Since there is no yaml file for function entry, we set the inputs and init signature to empty dict.
             self._inputs_sign = {}
             self._init_sign = {}
+
+    def _apply_sample_init(self, init_kwargs: Mapping[str, Any]):
+        """Apply sample init if init_kwargs not provided."""
+        if not init_kwargs and self._flow:
+            sample_init = self._flow.sample.get("init")
+            if sample_init:
+                logger.warning(f"Init kwargs are not provided, applying sample init: {sample_init}.")
+                return sample_init
+        return init_kwargs or {}
+
+    def _apply_sample_inputs(self, inputs: Mapping[str, Any]):
+        """Apply sample inputs if inputs not provided."""
+        if not inputs and self._flow:
+            sample_inputs = self._flow.sample.get("inputs")
+            if sample_inputs:
+                logger.warning(f"Inputs are not provided, applying sample inputs: {sample_inputs}.")
+                return sample_inputs
+        return inputs or {}
