@@ -23,10 +23,10 @@ from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure._storage.blob.client import _get_datastore_credential
-from promptflow.azure.operations._artifact_client import AsyncArtifactClient
-from promptflow.azure.operations._asset_client import AsyncAssetClient
-from promptflow.azure.operations._metrics_client import AsyncMetricClient
-from promptflow.azure.operations._run_history_client import AsyncRunHistoryClient
+from promptflow.azure._utils._artifact_client import AsyncArtifactClient
+from promptflow.azure._utils._asset_client import AsyncAssetClient
+from promptflow.azure._utils._metrics_client import AsyncMetricClient
+from promptflow.azure._utils._run_history_client import AsyncRunHistoryClient
 from promptflow.exceptions import UserErrorException
 
 logger = get_cli_sdk_logger()
