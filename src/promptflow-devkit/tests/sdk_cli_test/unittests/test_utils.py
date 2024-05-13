@@ -43,6 +43,7 @@ from promptflow._sdk._utilities.general_utils import (
     get_system_info,
     refresh_connections_dir,
     resolve_flow_language,
+    resolve_flow_path,
 )
 from promptflow._sdk._version_hint_utils import check_latest_version
 from promptflow._utils.load_data import load_data
@@ -337,6 +338,25 @@ class TestUtils:
             importlib.reload(_constants)
             assert _constants.HOME_PROMPT_FLOW_DIR.as_posix() == (Path.home() / ".promptflow").resolve().as_posix()
         importlib.reload(_constants)
+
+    def test_resolve_flow_path_allow_prompty_dir(self):
+        flow_dir, flow_file_name = resolve_flow_path(
+            "./tests/test_configs/prompty/single_prompty", allow_prompty_dir=True
+        )
+        assert flow_file_name == "prompty_example.prompty"
+
+        flow_dir, flow_file_name = resolve_flow_path(
+            "./tests/test_configs/prompty", allow_prompty_dir=True, check_flow_exist=False
+        )
+        assert flow_file_name == "flow.dag.yaml"
+
+        with pytest.raises(UserErrorException) as ex:
+            resolve_flow_path("./tests/test_configs/prompty", allow_prompty_dir=True)
+        assert "either flow.dag.yaml or flow.flex.yaml" in ex.value.message
+
+        with pytest.raises(UserErrorException) as ex:
+            resolve_flow_path("./tests/test_configs/prompty/single_prompty")
+        assert "either flow.dag.yaml or flow.flex.yaml" in ex.value.message
 
     def test_resolve_flow_language(self):
         # dag flow
