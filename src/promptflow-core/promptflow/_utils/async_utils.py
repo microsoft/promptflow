@@ -6,7 +6,7 @@ import asyncio
 import functools
 import signal
 import threading
-from types import GeneratorType
+from typing import Iterator
 
 from promptflow.tracing import ThreadPoolExecutorWithContext
 
@@ -112,7 +112,7 @@ def sync_to_async(func):
     return wrapper
 
 
-async def sync_generator_to_async(g: GeneratorType):
+async def sync_iterator_to_async(g: Iterator):
     with ThreadPoolExecutorWithContext(max_workers=1) as pool:
         loop = asyncio.get_running_loop()
         # Use object() as a default value to distinguish from None
