@@ -20,16 +20,20 @@ class AppendToDictAction(argparse._AppendAction):  # pylint: disable=protected-a
         action = self.get_action(values, option_string)
         super(AppendToDictAction, self).__call__(parser, namespace, action, option_string)
 
-    def get_action(self, values, option_string):  # pylint: disable=no-self-use
+    def _split_to_dict(self, item, option_string):
         from promptflow._utils.utils import strip_quotation
 
+        try:
+            key, value = strip_quotation(item).split("=", 1)
+            return key, strip_quotation(value)
+        except ValueError:
+            raise Exception("Usage error: {} KEY=VALUE [KEY=VALUE ...]".format(option_string))
+
+    def get_action(self, values, option_string):  # pylint: disable=no-self-use
         kwargs = {}
         for item in values:
-            try:
-                key, value = strip_quotation(item).split("=", 1)
-                kwargs[key] = strip_quotation(value)
-            except ValueError:
-                raise Exception("Usage error: {} KEY=VALUE [KEY=VALUE ...]".format(option_string))
+            key, value = self._split_to_dict(item, option_string)
+            kwargs[key] = value
         return kwargs
 
 
@@ -42,20 +46,35 @@ class FlowTestInputAction(AppendToDictAction):  # pylint: disable=protected-acce
 
 
 class EnvironmentVariablesAction(AppendToDictAction):  # pylint: disable=protected-access
-    def get_action(self, values, option_string):  # pylint: disable=no-self-use
-        if len(values) == 1 and "=" not in values[0]:
-            # Load environment variables in .env file.
-            if values[0].endswith(".env"):
-                if Path(values[0]).exists():
-                    return dotenv.dotenv_values(values[0])
-                else:
-                    raise Exception("Usage error: {} cannot find the file {}".format(option_string, values[0]))
+    def _load_from_env(self, item, option_string):
+        # Load environment variables in .env file.
+        if item.endswith(".env"):
+            if Path(item).exists():
+                return dotenv.dotenv_values(item)
             else:
-                raise Exception(
-                    "Usage error: {} expects file path endswith .env or KEY=VALUE [KEY=VALUE ...]".format(option_string)
-                )
+                raise Exception("Usage error: {} cannot find the file {}".format(option_string, item))
         else:
-            return super().get_action(values, option_string)
+            raise Exception(
+                "Usage error: {} expects file path endswith .env or KEY=VALUE [KEY=VALUE ...]".format(option_string)
+            )
+
+    def get_action(self, values, option_string):  # pylint: disable=no-self-use
+        if len(values) == 0:
+            # If env is not specified, load env from default .env file.
+            env_path = dotenv.find_dotenv(usecwd=True)
+            if env_path:
+                return dotenv.dotenv_values(env_path)
+            else:
+                return {}
+
+        kwargs = {}
+        for item in values:
+            if "=" not in item:
+                kwargs.update(self._load_from_env(item, option_string))
+            else:
+                key, value = self._split_to_dict(item, option_string)
+                kwargs[key] = value
+        return kwargs
 
 
 def add_param_yes(parser):
@@ -120,7 +139,7 @@ def add_param_environment_variables(parser):
         help="Environment variables to set by specifying a property path and value. Example: --environment-variable "
         "key1='${my_connection.api_key}' key2='value2'. The value reference to connection keys will be resolved "
         "to the actual value, and all environment variables specified will be set into os.environ.",
-        nargs="+",
+        nargs="*",
     )
 
 

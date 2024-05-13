@@ -2905,7 +2905,7 @@ class TestCli:
 
     def test_prompty_with_env(self, dev_connections, capfd):
         with tempfile.TemporaryDirectory() as temp_dir:
-            env_file = Path(temp_dir) / "connection.env"
+            env_file = Path(temp_dir) / ".env"
             aoai_connection = dev_connections.get("azure_open_ai_connection")
             env = {
                 "MOCK_AZURE_DEVELOPMENT": "gpt-35-turbo",
@@ -2916,7 +2916,22 @@ class TestCli:
             with open(env_file, "w") as f:
                 f.writelines([f"{key}={value}\n" for key, value in env.items()])
 
-            # Prompty test with environment variables
+            # Prompty test with default .env
+            shutil.copy(f"{PROMPTY_DIR}/prompty_with_env.prompty", Path(temp_dir) / "prompty_with_env.prompty")
+            with _change_working_dir(temp_dir):
+                run_pf_command(
+                    "flow",
+                    "test",
+                    "--flow",
+                    f"{temp_dir}/prompty_with_env.prompty",
+                    "--inputs",
+                    'question="what is the result of 1+1?"',
+                    "--env",
+                )
+            out, _ = capfd.readouterr()
+            assert "2" in out
+
+            # Prompty test with env file
             run_pf_command(
                 "flow",
                 "test",
@@ -2930,6 +2945,7 @@ class TestCli:
             out, _ = capfd.readouterr()
             assert "2" in out
 
+            # prompty test with env dict
             env_params = [f"{key}={value}" for key, value in env.items()]
             run_pf_command(
                 "flow",
@@ -2940,6 +2956,25 @@ class TestCli:
                 'question="what is the result of 1+1?"',
                 "--env",
                 *env_params,
+            )
+            out, _ = capfd.readouterr()
+            assert "2" in out
+
+            # Prompty test with env override
+            invalid_env_file = Path(temp_dir) / "invalid.env"
+            with open(invalid_env_file, "w") as f:
+                f.writelines([f"{key}={value}\n" for key, value in env.items() if key != "MOCK_AZURE_API_KEY"])
+                f.write("MOCK_AZURE_API_KEY=invalid_api_key")
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{PROMPTY_DIR}/prompty_with_env.prompty",
+                "--inputs",
+                'question="what is the result of 1+1?"',
+                "--env",
+                str(env_file),
+                f"MOCK_AZURE_API_KEY={env['MOCK_AZURE_API_KEY']}",
             )
             out, _ = capfd.readouterr()
             assert "2" in out
