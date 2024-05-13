@@ -67,6 +67,7 @@ def resolve_flow_path(
     flow_path: Union[str, Path, PathLike],
     base_path: Union[str, Path, PathLike, None] = None,
     check_flow_exist: bool = True,
+    default_flow_file: str = FLOW_DAG_YAML,
 ) -> Tuple[Path, str]:
     """Resolve flow path and return the flow directory path and the file name of the target yaml.
 
@@ -79,6 +80,8 @@ def resolve_flow_path(
     :param check_flow_exist: If True, the function will try to check the target yaml and
       raise FileNotFoundError if not found.
       If False, the function will return the flow directory path and the file name of the target yaml.
+    :param default_flow_file: Default file name used when flow file is not found.
+    :type default_flow_file: str
     :return: The flow directory path and the file name of the target yaml.
     :rtype: Tuple[Path, str]
     """
@@ -89,7 +92,7 @@ def resolve_flow_path(
 
     if flow_path.is_dir():
         flow_folder = flow_path
-        flow_file = FLOW_DAG_YAML
+        flow_file = default_flow_file
         flow_file_list = []
         for flow_name, suffix in itertools.product([FLOW_DAG_YAML, FLOW_FLEX_YAML], [".yaml", ".yml"]):
             flow_file_name = flow_name.replace(".yaml", suffix)
@@ -109,7 +112,7 @@ def resolve_flow_path(
         flow_file = flow_path.name
     else:  # flow_path doesn't exist
         flow_folder = flow_path
-        flow_file = FLOW_DAG_YAML
+        flow_file = default_flow_file
 
     file_path = flow_folder / flow_file
     if file_path.suffix.lower() not in FLOW_FILE_SUFFIX:

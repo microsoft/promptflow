@@ -21,6 +21,7 @@ from opentelemetry.util import types
 
 from ._openai_utils import OpenAIMetricsCalculator, OpenAIResponseParser
 from ._operation_context import OperationContext
+from ._span_enricher import SpanEnricher, SpanEnricherManager
 from ._tracer import Tracer, _create_trace_from_function_call, get_node_name_from_context
 from ._utils import get_input_names_for_prompt_template, get_prompt_param_name_from_func, serialize
 from .contracts.generator_proxy import AsyncGeneratorProxy, GeneratorProxy
@@ -213,15 +214,10 @@ def enrich_span_with_input(span, input):
 
 
 def enrich_span_with_trace_type(span, inputs, output, trace_type):
-    if trace_type == TraceType.LLM:
-        # Handle the non-streaming output of LLM, the streaming output should be handled in traced_generator.
-        token_collector.collect_openai_tokens(span, output)
-        enrich_span_with_llm_output(span, output)
-    elif trace_type == TraceType.EMBEDDING:
-        token_collector.collect_openai_tokens(span, output)
-        enrich_span_with_embedding(span, inputs, output)
+    SpanEnricherManager.enrich(span, inputs, output, trace_type)
+    # TODO: Move the following logic to SpanEnricher
     enrich_span_with_openai_tokens(span, trace_type)
-    enrich_span_with_output(span, output)
+    output = trace_iterator_if_needed(span, inputs, output)
 
 
 def enrich_span_with_llm_if_needed(span, inputs, generator_output):
@@ -563,3 +559,21 @@ def trace(func: Callable = None) -> Callable:
     """
 
     return _traced(func, trace_type=TraceType.FUNCTION)
+
+
+class LLMSpanEnricher(SpanEnricher):
+    def enrich(self, span, inputs, output):
+        token_collector.collect_openai_tokens(span, output)
+        enrich_span_with_llm_output(span, output)
+        super().enrich(span, inputs, output)
+
+
+class EmbeddingSpanEnricher(SpanEnricher):
+    def enrich(self, span, inputs, output):
+        token_collector.collect_openai_tokens(span, output)
+        enrich_span_with_embedding(span, inputs, output)
+        super().enrich(span, inputs, output)
+
+
+SpanEnricherManager.register(TraceType.LLM, LLMSpanEnricher())
+SpanEnricherManager.register(TraceType.EMBEDDING, EmbeddingSpanEnricher())
