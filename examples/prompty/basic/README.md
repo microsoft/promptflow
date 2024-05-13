@@ -17,26 +17,25 @@ Ensure you have put your azure open ai endpoint key in [.env](../.env) file. You
 
 ```bash
 cat ../.env
-# export .env as environment variable
-export $(grep -v '^#' ../.env | xargs)
 ```
 
 - Test prompty
 ```bash
-# test with default sample data
-pf flow test --flow basic.prompty
+# test with default sample data 
+# --env to use environment variable from .env 
+pf flow test --flow basic.prompty --env
 
 # test with flow inputs
-pf flow test --flow basic.prompty --inputs question="What is the meaning of life?"
+pf flow test --flow basic.prompty --env --inputs question="What is the meaning of life?"
 
 # test with another sample data
-pf flow test --flow basic.prompty --inputs sample.json
+pf flow test --flow basic.prompty --env --inputs sample.json
 ```
 
 - Create run with multiple lines data
 ```bash
 # using environment from .env file
-pf run create --flow basic.prompty --data ./data.jsonl --column-mapping question='${data.question}' --stream
+pf run create --flow basic.prompty --env --data ./data.jsonl --column-mapping question='${data.question}' --stream
 ```
 
 You can also skip providing `column-mapping` if provided data has same column name as the flow.

@@ -18,11 +18,9 @@ Ensure you have put your azure open ai endpoint key in [.env](../.env) file. You
 
 ```bash
 cat ../.env
-# export .env as environment variable
-export $(grep -v '^#' ../.env | xargs)
 ```
 
 - Test flow
 ```bash
-pf flow test --flow eval.prompty --inputs sample.json
+pf flow test --flow eval.prompty --env --inputs sample.json
 ```
