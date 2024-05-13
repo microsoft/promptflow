@@ -970,7 +970,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         result_dict = async_run_allowing_running_loop(run_uploader.upload)
         # patch details about the uploaded run
         run._local_to_cloud_info = result_dict
-        logger.debug(f"Successfully uploaded run details of {run!r} to cloud.")
+        logger.debug(f"Successfully uploaded run details of {run.name!r} to cloud.")
 
         # registry the run in the cloud
         self._register_existing_bulk_run(run=run)
