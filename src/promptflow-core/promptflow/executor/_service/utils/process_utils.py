@@ -63,19 +63,20 @@ async def invoke_sync_function_in_process(
             # Raise exception if the process exit code is not 0
             if p.exitcode != 0:
                 # If process is not None, it indicates that the process has been terminated by other errors.
-                exception = error_dict.get("error", None)
-                if exception is None:
+                ex = error_dict.get("error", None)
+                if ex is None:
                     # If process is None, it indicates that the process has been terminated by cancel request.
                     if run_id and not ProcessManager().get_process(run_id):
-                        raise ExecutionCanceledError(run_id)
-                    raise UnexpectedError(
-                        message="Unexpected error occurred while executing the request",
-                        target=ErrorTarget.EXECUTOR,
-                    )
-                service_logger.error(f"[{p.pid}] failed with exitcode: {p.exitcode}")
+                        ex = ExecutionCanceledError(run_id)
+                    else:
+                        ex = UnexpectedError(
+                            message="Unexpected error occurred while executing the request",
+                            target=ErrorTarget.EXECUTOR,
+                        )
+                service_logger.error(f"[{p.pid}] Process execution failed with exitcode: {p.exitcode}, error: {ex}")
                 # JsonSerializedPromptflowException will be raised here
                 # no need to change to PromptflowException since it will be handled in app.exception_handler
-                raise exception
+                raise ex
 
             service_logger.info(f"[{p.pid}--{os.getpid()}] Process finished.")
             return return_dict.get("result", {})
@@ -93,17 +94,14 @@ def _execute_target_function(
     context_dict: dict,
     environment_variables: Mapping[str, Any],
 ):
-    try:
-        block_terminate_signal_to_parent()
-        set_environment_variables(environment_variables)
-        with exception_wrapper(error_dict):
-            if context_dict:
-                OperationContext.get_instance().update(context_dict)
-            service_logger.info("Start processing request in executor service...")
-            result = target_function(*args, **kwargs)
-            return_dict["result"] = result
-    except Exception as e:
-        service_logger.info(f"!!!!!!!!!!!!!!!!!Error: {e}")
+    block_terminate_signal_to_parent()
+    set_environment_variables(environment_variables)
+    with exception_wrapper(error_dict):
+        if context_dict:
+            OperationContext.get_instance().update(context_dict)
+        service_logger.info("Start processing request in executor service...")
+        result = target_function(*args, **kwargs)
+        return_dict["result"] = result
 
 
 @contextlib.contextmanager
