@@ -111,9 +111,9 @@ class Tracer(ThreadLocalSingleton):
         if not last_trace:
             logging.warning("Try to pop trace but no active trace in current context.")
             return output
-        if isinstance(output, Iterator):
+        if isinstance(output, Iterator) and not isinstance(output, GeneratorProxy):
             output = GeneratorProxy(output)
-        if isinstance(output, AsyncIterator):
+        if isinstance(output, AsyncIterator) and not isinstance(output, AsyncGeneratorProxy):
             output = AsyncGeneratorProxy(output)
         if output is not None:
             last_trace.output = self.to_serializable(output)

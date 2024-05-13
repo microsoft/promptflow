@@ -186,33 +186,31 @@ class TracedGenerator(GeneratorProxy):
         return self
 
     def __next__(self):
-        hit_exception_in_context_manager = True
         if not self._initialized:
             self._initialize_span()
         try:
             enrich_span_with_original_attributes(self._span, self._original_span.attributes)
             return next(self._iterator)
-        except StopIteration:
-            try:
-                self._finalize_span()
-                raise
-            except Exception as e:
-                hit_exception_in_context_manager = True
-                self._exit_context_managers_with_exception(e)
-            finally:
-                if not hit_exception_in_context_manager:
-                    self._exit_context_managers_without_exception()
-                token_collector.collect_openai_tokens_for_parent_span(self._span)
         except Exception as e:
+            exception_in_context_other_than_non_stop_iteration = e
             if isinstance(e, StopIteration):
-                raise e
-            else:
+                exception_in_context_other_than_non_stop_iteration = None
+                try:
+                    self._finalize_span()
+                except Exception as e:
+                    exception_in_context_other_than_non_stop_iteration = e
+
+            if exception_in_context_other_than_non_stop_iteration:
                 self._exit_context_managers_with_exception(e)
                 token_collector.collect_openai_tokens_for_parent_span(self._span)
+            else:
+                self._exit_context_managers_without_exception()
+                token_collector.collect_openai_tokens_for_parent_span(self._span)
+                raise e
 
     def _exit_context_managers_with_exception(self, e: Exception):
         suppressed = False
-        for context_manager in self._context_managers.reverse():
+        for context_manager in self._context_managers[::-1]:
             if suppressed:
                 break
             suppressed = context_manager.__exit__(*sys.exc_info())
@@ -220,7 +218,7 @@ class TracedGenerator(GeneratorProxy):
             raise e
 
     def _exit_context_managers_without_exception(self):
-        for context_manager in self._context_managers.reverse():
+        for context_manager in self._context_managers[::-1]:
             context_manager.__exit__(None, None, None)
 
     def _initialize_span(self):
@@ -229,18 +227,20 @@ class TracedGenerator(GeneratorProxy):
         # If start_trace is not called, the name of the original_span will be empty.
         # need to get everytime to ensure tracer is latest
         self._otel_tracer = otel_trace.get_tracer("promptflow")
-        self._span = self._otel_tracer.start_as_current_span(
+        self._span_context_manager = self._otel_tracer.start_as_current_span(
             f"Iterated({self._original_span.name})", links=[self._link]
         )
+        self._span = self._span_context_manager.__enter__()
         self._record_cancel_span_context_manager = _record_cancellation_exceptions_to_span(self._span)
-        self._context_managers = [self._span, self._record_cancel_span_context_manager]
+        self._record_cancel_span_context_manager.__enter__()
+        self._context_managers = [self._span_context_manager, self._record_cancel_span_context_manager]
 
         self._initialized = True
 
     def _finalize_span(self):
         enrich_span_with_llm_if_needed(self._span, self._original_span, self._inputs, self.items)
         enrich_span_with_openai_tokens(self._span, TraceType(self._original_span.attributes["span_type"]))
-        enrich_span_with_output(self._span, serialize_attribute(self._generator_output))
+        enrich_span_with_output(self._span, serialize_attribute(self.items))
         self._span.set_status(StatusCode.OK)
 
 
@@ -256,33 +256,31 @@ class TracedAsyncGenerator(AsyncGeneratorProxy):
         return self
 
     async def __anext__(self):
-        hit_exception_in_context_manager = True
         if not self._initialized:
             self._initialize_span()
         try:
             enrich_span_with_original_attributes(self._span, self._original_span.attributes)
             return await next(self._iterator)
-        except StopIteration:
-            try:
-                self._finalize_span()
-                raise
-            except Exception as e:
-                hit_exception_in_context_manager = True
-                self._exit_context_managers_with_exception(e)
-            finally:
-                if not hit_exception_in_context_manager:
-                    self._exit_context_managers_without_exception()
-                token_collector.collect_openai_tokens_for_parent_span(self._span)
         except Exception as e:
+            exception_in_context_other_than_non_stop_iteration = e
             if isinstance(e, StopIteration):
-                raise e
-            else:
+                exception_in_context_other_than_non_stop_iteration = None
+                try:
+                    self._finalize_span()
+                except Exception as e:
+                    exception_in_context_other_than_non_stop_iteration = e
+
+            if exception_in_context_other_than_non_stop_iteration:
                 self._exit_context_managers_with_exception(e)
                 token_collector.collect_openai_tokens_for_parent_span(self._span)
+            else:
+                self._exit_context_managers_without_exception()
+                token_collector.collect_openai_tokens_for_parent_span(self._span)
+                raise e
 
     def _exit_context_managers_with_exception(self, e: Exception):
         suppressed = False
-        for context_manager in self._context_managers.reverse():
+        for context_manager in self._context_managers[::-1]:
             if suppressed:
                 break
             suppressed = context_manager.__exit__(*sys.exc_info())
@@ -290,7 +288,7 @@ class TracedAsyncGenerator(AsyncGeneratorProxy):
             raise e
 
     def _exit_context_managers_without_exception(self):
-        for context_manager in self._context_managers.reverse():
+        for context_manager in self._context_managers[::-1]:
             context_manager.__exit__(None, None, None)
 
     def _initialize_span(self):
@@ -310,7 +308,7 @@ class TracedAsyncGenerator(AsyncGeneratorProxy):
     def _finalize_span(self):
         enrich_span_with_llm_if_needed(self._span, self._original_span, self._inputs, self.items)
         enrich_span_with_openai_tokens(self._span, TraceType(self._original_span.attributes["span_type"]))
-        enrich_span_with_output(self._span, serialize_attribute(self._generator_output))
+        enrich_span_with_output(self._span, serialize_attribute(self.items))
         self._span.set_status(StatusCode.OK)
 
 
