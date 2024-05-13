@@ -418,6 +418,19 @@ def start_trace_with_devkit(collection: str, **kwargs: typing.Any) -> None:
         )
         _logger.warning(warning_msg)
 
+    # enable trace by default, only disable it when we get "Disabled" status from service side
+    # this operation requires Azure dependencies as client talks to PFS
+    disable_trace_in_cloud = False
+    if ws_triad is not None and is_azure_ext_installed:
+        from promptflow.azure._utils._tracing import is_trace_cosmos_available
+
+        if not is_trace_cosmos_available(ws_triad=ws_triad, logger=_logger):
+            disable_trace_in_cloud = True
+    # if trace is disabled, directly set workspace triad as None
+    # so that following code will regard as no workspace configured
+    if disable_trace_in_cloud is True:
+        ws_triad = None
+
     # invoke prompt flow service
     pfs_port = _invoke_pf_svc()
     is_pfs_healthy = is_pfs_service_healthy(pfs_port)

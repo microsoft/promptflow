@@ -10,6 +10,7 @@ from azure.core.exceptions import ResourceNotFoundError
 from azure.identity import AzureCliCredential
 
 from promptflow._constants import AzureWorkspaceKind
+from promptflow._sdk._constants import AzureMLWorkspaceTriad
 from promptflow._sdk._utilities.general_utils import extract_workspace_triad_from_trace_provider
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure import PFClient
@@ -45,6 +46,19 @@ def resolve_disable_trace(metadata: CosmosMetadata, logger: typing.Optional[logg
         )
         logger.warning(warning_message)
     return False
+
+
+def is_trace_cosmos_available(ws_triad: AzureMLWorkspaceTriad, logger: typing.Optional[logging.Logger] = None) -> bool:
+    if logger is None:
+        logger = _logger
+    pf_client = PFClient(
+        credential=AzureCliCredential(),
+        subscription_id=ws_triad.subscription_id,
+        resource_group_name=ws_triad.resource_group_name,
+        workspace_name=ws_triad.workspace_name,
+    )
+    cosmos_metadata = pf_client._traces._get_cosmos_metadata()
+    return not resolve_disable_trace(metadata=cosmos_metadata, logger=logger)
 
 
 def validate_trace_destination(value: str) -> None:
