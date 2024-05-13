@@ -177,7 +177,7 @@ def write_readme(workflow_telemetries, readme_telemetries):
         else:
             print(f"Unknown workflow type: {gh_working_dir}")
 
-    # Adjust tutorial names:
+        # Adjust tutorial names:
 
         no_workflow_readmes = []
 
@@ -193,7 +193,9 @@ def write_readme(workflow_telemetries, readme_telemetries):
             no_workflow_readme_item = {
                 "name": notebook_name,
                 "path": notebook_path,
-                "description": get_readme_description_first_sentence(readme_telemetry.readme_name),
+                "description": get_readme_description_first_sentence(
+                    readme_telemetry.readme_name
+                ),
                 "title": readme_telemetry.title.capitalize()
                 if hasattr(readme_telemetry, "title")
                 else "Empty title",
@@ -305,7 +307,9 @@ def write_readme(workflow_telemetries, readme_telemetries):
             new_items.append(item)
         for item in replacement[row]["readmes"]:
             if item.get("category", "General") == "General":
-                print(f"Tutorial Index: Skipping {item['path']} for not having a category")
+                print(
+                    f"Tutorial Index: Skipping {item['path']} for not having a category"
+                )
                 continue
             item[
                 "url"
@@ -326,8 +330,13 @@ def write_readme(workflow_telemetries, readme_telemetries):
         new_items.append(item)
 
     # sort new_items by category
-    new_items = sorted(new_items, key=lambda x: (x["category"], x["weight"]))
-    tutorial_items = {"items": new_items}
+    tracing_category = sorted([item for item in new_items if item["category"] == "Tracing"], key=lambda x: x["weight"])
+    prompty_category = sorted([item for item in new_items if item["category"] == "Prompty"], key=lambda x: x["weight"])
+    flow_category = sorted([item for item in new_items if item["category"] == "Flow"], key=lambda x: x["weight"])
+    deployment_category = sorted([item for item in new_items if item["category"] == "Deployment"], key=lambda x: x["weight"])
+
+    real_new_items = [*tracing_category, *prompty_category, *flow_category, *deployment_category]
+    tutorial_items = {"items": real_new_items}
     tutorial_index_file = (
         Path(ReadmeStepsManage.git_base_dir()) / "docs/tutorials/index.md"
     )
