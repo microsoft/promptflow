@@ -19,7 +19,7 @@ from ..utils import MemoryRunStorage, submit_batch_run
 
 @pytest.mark.e2etest
 class TestBatchServer:
-    def test_batch_run_in_server_mode(self):
+    def test_batch_run_with_basic_flow(self):
         flow_folder = "print_input_flow"
         inputs_mapping = {"text": "${data.text}"}
         mem_run_storage = MemoryRunStorage()
