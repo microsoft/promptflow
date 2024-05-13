@@ -10,3 +10,6 @@ class EvaluationMetrics:
     VIOLENCE = "violence"
     SELF_HARM = "self_harm"
     SEXUAL = "sexual"
+
+
+DEFAULT_EVALUATION_RESULTS_FILE_NAME = "evaluation_results.json"

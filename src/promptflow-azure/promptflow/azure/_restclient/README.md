@@ -25,6 +25,7 @@ Download swagger.json from [here](https://int.api.azureml-test.ms/flow/swagger/v
 - 2024.3.14 - [Add enable_multi_container](https://github.com/microsoft/promptflow/pull/2313)
 - 2024.4.7 - [Update SDK restclient](https://github.com/microsoft/promptflow/pull/2670)
 - 2024.5.9 - [Support init Cosmos DB with setup API](https://github.com/microsoft/promptflow/pull/3167)
+- 2024.5.10 - [Use new trace link instead of original run portal link](https://github.com/microsoft/promptflow/pull/3193)
 
 ## Troubleshooting
 

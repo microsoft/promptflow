@@ -277,7 +277,7 @@ def _resolve_folder_to_compress(base_path: Path, include: str, dst_path: Path) -
 
 @contextmanager
 def _merge_local_code_and_additional_includes(code_path: Path):
-    # TODO: unify variable names: flow_dir_path, flow_dag_path, flow_path
+    # TODO: unify variable names: flow_dir_path, flow_file_path, flow_path
 
     def additional_includes_copy(src, relative_path, target_dir):
         if src.is_file():
@@ -1103,9 +1103,11 @@ def get_flow_path(flow) -> Path:
     from promptflow._sdk.entities._flows.prompty import Prompty
 
     if isinstance(flow, DAGFlow):
-        return flow.flow_dag_path.parent.resolve()
+        return flow._flow_file_path.parent.resolve()
     if isinstance(flow, (FlexFlow, Prompty)):
-        return flow.path.parent.resolve()
+        # Use code path to return as flow path, since code path is the same as flow directory for yaml case and code
+        # path points to original code path in non-yaml case
+        return flow.code.resolve()
     raise ValueError(f"Unsupported flow type {type(flow)!r}")
 
 
@@ -1148,3 +1150,18 @@ def resolve_flow_language(
                 f"Invalid flow path {file_path.as_posix()}, must exist and of suffix yaml, yml or prompty."
             )
     return yaml_dict.get(LANGUAGE_KEY, FlowLanguage.Python)
+
+
+def get_trace_destination(pf_client=None):
+    """get trace.destination
+
+    :param pf_client: pf_client object
+    :type pf_client: promptflow._sdk._pf_client.PFClient
+    :return:
+    """
+    from promptflow._sdk._configuration import Configuration
+
+    config = pf_client._config if pf_client else Configuration.get_instance()
+    trace_destination = config.get_trace_destination()
+
+    return trace_destination

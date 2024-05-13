@@ -199,6 +199,9 @@ pf flow serve --source <path_to_flow> --skip-open-browser
     add_param_skip_browser = lambda parser: parser.add_argument(  # noqa: E731
         "--skip-open-browser", action="store_true", default=False, help="Skip open browser for flow serving."
     )
+    add_param_engine = lambda parser: parser.add_argument(  # noqa: E731
+        "--engine", type=str, default="flask", help="The engine to serve the flow, can be flask or fastapi."
+    )
     activate_action(
         name="serve",
         description="Serving a flow as an endpoint.",
@@ -207,6 +210,7 @@ pf flow serve --source <path_to_flow> --skip-open-browser
             add_param_source,
             add_param_port,
             add_param_host,
+            add_param_engine,
             add_param_static_folder,
             add_param_environment_variables,
             add_param_config,
@@ -506,7 +510,7 @@ def _test_flow_multi_modal(args, pf_client):
             for script in script_path:
                 StreamlitFileReplicator(
                     flow_name=flow.display_name if flow.display_name else flow.name,
-                    flow_dag_path=flow.flow_dag_path,
+                    flow_dag_path=flow._flow_file_path,
                 ).generate_to_file(script)
             main_script_path = os.path.join(temp_dir, "main.py")
             logger.info("Start streamlit with main script generated at: %s", main_script_path)
@@ -595,6 +599,7 @@ def serve_flow(args):
         host=args.host,
         port=args.port,
         skip_open_browser=args.skip_open_browser,
+        engine=args.engine,
     )
     logger.info("Promptflow app ended")
 
