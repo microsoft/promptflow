@@ -62,6 +62,7 @@ def get_readme_description_first_sentence(readme) -> str:
                     or line.startswith("title:")
                     or line.startswith("cloud:")
                     or line.startswith("category:")
+                    or line.startswith("weight:")
                 ):
                     line = ""
                 if line.strip() == "" and sentence != "":

@@ -170,8 +170,8 @@ def main(input_glob, output_files=[], check=False):
     notebooks = local_filter(no_readme_generation_filter, notebooks)
 
     # format code
-    # if not check:
-    #     format_ipynb(notebooks)
+    if not check:
+        format_ipynb(notebooks)
 
     # write workflows
     write_workflows(notebooks, output_files)
