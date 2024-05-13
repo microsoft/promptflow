@@ -41,7 +41,7 @@ jobs:
       - name: install promptflow packages in editable mode
         run: |
           set -xe
-          poetry install -E pyarrow --with ci,test
+          poetry install --with ci,test
 
           poetry run pip show promptflow-tracing
           poetry run pip show promptflow-core
