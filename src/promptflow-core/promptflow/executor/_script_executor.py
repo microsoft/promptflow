@@ -3,10 +3,10 @@ import dataclasses
 import importlib
 import inspect
 import uuid
+from collections.abc import Iterator
 from dataclasses import is_dataclass
 from functools import partial
 from pathlib import Path
-from types import GeneratorType
 from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 
 from promptflow._constants import LINE_NUMBER_KEY, FlowType, MessageFormatType
@@ -314,11 +314,11 @@ class ScriptExecutor(FlowExecutor):
         elif is_dataclass(output):
             fields = dataclasses.fields(output)
             for field in fields:
-                if isinstance(getattr(output, field.name), GeneratorType):
+                if isinstance(getattr(output, field.name), Iterator):
                     consumed_values = "".join(str(chuck) for chuck in getattr(output, field.name))
                     setattr(output, field.name, consumed_values)
         else:
-            if isinstance(output, GeneratorType):
+            if isinstance(output, Iterator):
                 output = "".join(str(chuck) for chuck in output)
         return output
 
