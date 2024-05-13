@@ -330,12 +330,29 @@ def write_readme(workflow_telemetries, readme_telemetries):
         new_items.append(item)
 
     # sort new_items by category
-    tracing_category = sorted([item for item in new_items if item["category"] == "Tracing"], key=lambda x: x["weight"])
-    prompty_category = sorted([item for item in new_items if item["category"] == "Prompty"], key=lambda x: x["weight"])
-    flow_category = sorted([item for item in new_items if item["category"] == "Flow"], key=lambda x: x["weight"])
-    deployment_category = sorted([item for item in new_items if item["category"] == "Deployment"], key=lambda x: x["weight"])
+    tracing_category = sorted(
+        [item for item in new_items if item["category"] == "Tracing"],
+        key=lambda x: x["weight"],
+    )
+    prompty_category = sorted(
+        [item for item in new_items if item["category"] == "Prompty"],
+        key=lambda x: x["weight"],
+    )
+    flow_category = sorted(
+        [item for item in new_items if item["category"] == "Flow"],
+        key=lambda x: x["weight"],
+    )
+    deployment_category = sorted(
+        [item for item in new_items if item["category"] == "Deployment"],
+        key=lambda x: x["weight"],
+    )
 
-    real_new_items = [*tracing_category, *prompty_category, *flow_category, *deployment_category]
+    real_new_items = [
+        *tracing_category,
+        *prompty_category,
+        *flow_category,
+        *deployment_category,
+    ]
     tutorial_items = {"items": real_new_items}
     tutorial_index_file = (
         Path(ReadmeStepsManage.git_base_dir()) / "docs/tutorials/index.md"
