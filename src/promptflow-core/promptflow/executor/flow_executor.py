@@ -1197,7 +1197,7 @@ class FlowExecutor:
         batch_nodes = [node for node in self._flow.nodes if not node.aggregation]
         flow_logger.info("Start executing nodes in async mode.")
         scheduler = AsyncNodesScheduler(self._tools_manager, self._node_concurrency)
-        nodes_outputs, bypassed_nodes = await scheduler.execute(batch_nodes, inputs, context)
+        nodes_outputs, bypassed_nodes = await scheduler.execute(batch_nodes, inputs, context, self._line_timeout_sec)
         outputs = self._extract_outputs(nodes_outputs, bypassed_nodes, inputs)
         return outputs, nodes_outputs
 

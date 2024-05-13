@@ -11,7 +11,7 @@ import time
 import traceback
 from asyncio import Task
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from promptflow._core.flow_execution_context import FlowExecutionContext
 from promptflow._core.tools_manager import ToolsManager
@@ -20,7 +20,7 @@ from promptflow._utils.thread_utils import ThreadWithContextVars
 from promptflow._utils.utils import extract_user_frame_summaries, set_context, try_get_long_running_logging_interval
 from promptflow.contracts.flow import Node
 from promptflow.executor._dag_manager import DAGManager
-from promptflow.executor._errors import NoNodeExecutedError
+from promptflow.executor._errors import LineExecutionTimeoutError, NoNodeExecutedError
 
 PF_ASYNC_NODE_SCHEDULER_EXECUTE_TASK_NAME = "_pf_async_nodes_scheduler.execute"
 DEFAULT_TASK_LOGGING_INTERVAL = 60
@@ -44,6 +44,7 @@ class AsyncNodesScheduler:
         nodes: List[Node],
         inputs: Dict[str, Any],
         context: FlowExecutionContext,
+        timeout_seconds: Optional[int] = None,
     ) -> Tuple[dict, dict]:
         # Semaphore should be created in the loop, otherwise it will not work.
         loop = asyncio.get_running_loop()
@@ -75,7 +76,7 @@ class AsyncNodesScheduler:
         # Then the event loop will wait for all tasks to be completed before raising the cancellation error.
         # See reference: https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Executor
         try:
-            outputs = await self._execute_with_thread_pool(executor, nodes, inputs, context)
+            outputs = await self._execute_with_thread_pool(executor, nodes, inputs, context, timeout_seconds)
         except asyncio.CancelledError:
             await self.cancel()
             raise
@@ -88,12 +89,21 @@ class AsyncNodesScheduler:
         nodes: List[Node],
         inputs: Dict[str, Any],
         context: FlowExecutionContext,
+        timeout_seconds: Optional[int] = None,
     ) -> Tuple[dict, dict]:
         flow_logger.info(f"Start to run {len(nodes)} nodes with the current event loop.")
+        start_time = time.time()
         dag_manager = DAGManager(nodes, inputs)
         task2nodes = self._execute_nodes(dag_manager, context, executor)
         while not dag_manager.completed():
-            task2nodes = await self._wait_and_complete_nodes(task2nodes, dag_manager)
+            remaining_timeout = None if timeout_seconds is None else timeout_seconds - (time.time() - start_time)
+            task = asyncio.create_task(self._wait_and_complete_nodes(task2nodes, dag_manager))
+            try:
+                task2nodes = await asyncio.wait_for(task, remaining_timeout)
+            except asyncio.TimeoutError:
+                flow_logger.warning(f"Line execution timeout after {timeout_seconds} seconds.")
+                await self.cancel_tasks(task2nodes.keys())
+                raise LineExecutionTimeoutError(context._line_number, timeout_seconds)
             submitted_tasks2nodes = self._execute_nodes(dag_manager, context, executor)
             task2nodes.update(submitted_tasks2nodes)
         # Set the event to notify the monitor thread to exit
@@ -102,6 +112,15 @@ class AsyncNodesScheduler:
         for node in dag_manager.bypassed_nodes:
             dag_manager.completed_nodes_outputs[node] = None
         return dag_manager.completed_nodes_outputs, dag_manager.bypassed_nodes
+
+    async def cancel_tasks(self, tasks):
+        for task in tasks:
+            if not task.done():
+                task.cancel()
+        # Call asyncio.sleep(0) to yield control to the event loop
+        # So the cancelled tasks can be scheduled to cleanup.
+        # Note that we would not gather those tasks here because we are going to exit the execution.
+        await asyncio.sleep(0)
 
     async def _wait_and_complete_nodes(self, task2nodes: Dict[Task, Node], dag_manager: DAGManager) -> Dict[Task, Node]:
         if not task2nodes:
