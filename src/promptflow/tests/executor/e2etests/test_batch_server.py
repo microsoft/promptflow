@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 from promptflow._constants import FlowLanguage
 from promptflow._proxy import AbstractExecutorProxy, ProxyFactory
 from promptflow._proxy._python_executor_proxy import PythonExecutorProxy
+from promptflow.contracts.flow import FlowInputDefinition
 from promptflow.contracts.run_info import Status
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.executor._service.app import app
@@ -37,9 +38,15 @@ class TestBatchServer:
 
 
 class MockPythonAPIBasedExecutorProxy(AbstractExecutorProxy):
-    def __init__(self, *, executor_client: TestClient):
+    def __init__(self, *, executor_client: TestClient, init_response: dict):
         super().__init__()
         self._executor_client = executor_client
+        self._has_aggregation = init_response.get("has_aggregation", False)
+        self._inputs_definition = init_response.get("inputs_definition", {})
+
+    @property
+    def has_aggregation(self):
+        return self._has_aggregation
 
     @classmethod
     async def create(
@@ -59,7 +66,7 @@ class MockPythonAPIBasedExecutorProxy(AbstractExecutorProxy):
         log_path = output_dir / "execution.log"
         request = {
             "working_dir": working_dir.as_posix(),
-            "flow_file": "flow.dag.yaml",
+            "flow_file": flow_file.name,
             "connections": connections,
             "output_dir": output_dir.as_posix(),
             "log_path": log_path.as_posix(),
@@ -67,7 +74,7 @@ class MockPythonAPIBasedExecutorProxy(AbstractExecutorProxy):
             "line_timeout_sec": line_timeout_sec,
         }
         request = executor_client.post(url="/initialize", json=request)
-        executor_proxy = cls(executor_client=executor_client)
+        executor_proxy = cls(executor_client=executor_client, init_response=request.json())
         return executor_proxy
 
     async def destroy(self):
@@ -99,3 +106,6 @@ class MockPythonAPIBasedExecutorProxy(AbstractExecutorProxy):
     async def ensure_executor_health(self):
         """Ensure the executor service is healthy before execution"""
         return self._executor_client.get(url="/health")
+
+    def get_inputs_definition(self):
+        return {name: FlowInputDefinition.deserialize(i) for name, i in self._inputs_definition.items()}
