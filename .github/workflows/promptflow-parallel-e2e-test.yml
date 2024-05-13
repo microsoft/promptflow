@@ -12,6 +12,10 @@ on:
       - .github/workflows/promptflow-parallel-e2e-test.yml
   workflow_dispatch:
 
+permissions:
+  id-token: write
+  contents: read
+
 env:
   IS_IN_CI_PIPELINE: "true"
   WORKING_DIRECTORY: ${{ github.workspace }}/src/promptflow-parallel
@@ -27,6 +31,8 @@ jobs:
     defaults:
       run:
         shell: bash
+    environment:
+      internal
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -73,7 +79,7 @@ jobs:
       uses: "./.github/actions/step_publish_test_results"
       with:
         testActionFileName: promptflow-parallel-e2e-test.yml
-        testResultTitle: SDK CLI Test Result
+        testResultTitle: Parallel Unit Test Result
         osVersion: ubuntu-latest
         pythonVersion: 3.9
         coverageThreshold: 40
