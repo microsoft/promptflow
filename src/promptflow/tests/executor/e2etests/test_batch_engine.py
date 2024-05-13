@@ -105,7 +105,7 @@ class MockRun(object):
         self.flow = None
 
 
-@pytest.mark.usefixtures("use_secrets_config_file", "dev_connections", "recording_injection")
+@pytest.mark.usefixtures("use_secrets_config_file", "dev_connections")
 @pytest.mark.e2etest
 class TestBatch:
     def test_batch_storage(self, dev_connections):

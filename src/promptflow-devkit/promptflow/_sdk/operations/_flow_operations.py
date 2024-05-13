@@ -36,18 +36,18 @@ from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._orchestrator import TestSubmitter
 from promptflow._sdk._orchestrator.utils import SubmitterHelper
 from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_operation
-from promptflow._sdk._utils import (
+from promptflow._sdk._utilities.general_utils import (
     _get_additional_includes,
     _merge_local_code_and_additional_includes,
     add_executable_script_to_env_path,
     copy_tree_respect_template_and_ignore_file,
     generate_flow_tools_json,
     generate_random_string,
-    generate_yaml_entry_without_recover,
+    generate_yaml_entry_without_delete,
     json_load,
     logger,
 )
-from promptflow._sdk._utils.signature_utils import (
+from promptflow._sdk._utilities.signature_utils import (
     format_signature_type,
     infer_signature_for_flex_flow,
     merge_flow_signature,
@@ -57,13 +57,14 @@ from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.flow_utils import (
     dump_flow_result,
+    get_flow_type,
     is_executable_chat_flow,
     is_flex_flow,
     is_prompty_flow,
     parse_variant,
 )
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
-from promptflow.core._utils import load_inputs_from_sample
+from promptflow.core._utils import init_executable, load_inputs_from_sample
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 
@@ -108,7 +109,7 @@ class FlowOperations(TelemetryMixin):
         :rtype: dict
         """
         experiment = kwargs.pop("experiment", None)
-        flow = generate_yaml_entry_without_recover(entry=flow)
+        flow = generate_yaml_entry_without_delete(entry=flow)
         if Configuration.get_instance().is_internal_features_enabled() and experiment:
             if variant is not None or node is not None:
                 error = ValueError("--variant or --node is not supported experiment is specified.")
@@ -117,7 +118,7 @@ class FlowOperations(TelemetryMixin):
                     message=str(error),
                     error=error,
                 )
-            return self._client._experiments._test(
+            return self._client._experiments._test_flow(
                 flow=flow,
                 inputs=inputs,
                 environment_variables=environment_variables,
@@ -337,7 +338,7 @@ class FlowOperations(TelemetryMixin):
         """
         from promptflow._sdk._load_functions import load_flow
 
-        flow = generate_yaml_entry_without_recover(entry=flow)
+        flow = generate_yaml_entry_without_delete(entry=flow)
         flow = load_flow(flow)
         flow.context.variant = variant
 
@@ -386,15 +387,18 @@ class FlowOperations(TelemetryMixin):
         st_cli.main()
 
     def _build_environment_config(self, flow_dag_path: Path):
-        flow_info = load_yaml(flow_dag_path)
-        # standard env object:
-        # environment:
-        #   image: xxx
-        #   conda_file: xxx
-        #   python_requirements_txt: xxx
-        #   setup_sh: xxx
-        # TODO: deserialize dag with structured class here to avoid using so many magic strings
-        env_obj = flow_info.get("environment", {})
+        if is_prompty_flow(file_path=flow_dag_path):
+            env_obj = {}
+        else:
+            flow_info = load_yaml(flow_dag_path)
+            # standard env object:
+            # environment:
+            #   image: xxx
+            #   conda_file: xxx
+            #   python_requirements_txt: xxx
+            #   setup_sh: xxx
+            # TODO: deserialize dag with structured class here to avoid using so many magic strings
+            env_obj = flow_info.get("environment", {})
 
         env_obj["sdk_version"] = version("promptflow")
         # version 0.0.1 is the dev version of promptflow
@@ -498,7 +502,7 @@ class FlowOperations(TelemetryMixin):
                 return self._migrate_connections(
                     connection_names=SubmitterHelper.get_used_connection_names(
                         tools_meta=CSharpExecutorProxy.generate_flow_tools_json(
-                            flow_file=flow.flow_dag_path,
+                            flow_file=flow._flow_file_path,
                             working_dir=flow.code,
                         ),
                         flow_dag=flow._data,
@@ -507,9 +511,7 @@ class FlowOperations(TelemetryMixin):
                 )
             else:
                 # TODO: avoid using executable here
-                from promptflow.contracts.flow import Flow as ExecutableFlow
-
-                executable = ExecutableFlow.from_yaml(flow_file=flow.path, working_dir=flow.code)
+                executable = init_executable(flow_path=flow.path, working_dir=flow.code)
                 return self._migrate_connections(
                     connection_names=executable.get_connection_names(),
                     output_dir=output_dir,
@@ -525,14 +527,14 @@ class FlowOperations(TelemetryMixin):
         update_flow_tools_json: bool = True,
     ):
         # TODO: confirm if we need to import this
-        from promptflow._sdk._orchestrator import variant_overwrite_context
+        from promptflow._sdk._orchestrator import flow_overwrite_context
 
         flow_copy_target = Path(output)
         flow_copy_target.mkdir(parents=True, exist_ok=True)
 
         # resolve additional includes and copy flow directory first to guarantee there is a final flow directory
         # TODO: shall we pop "node_variants" unless keep-variants is specified?
-        with variant_overwrite_context(
+        with flow_overwrite_context(
             flow=flow,
             tuning_node=tuning_node,
             variant=node_variant,
@@ -589,7 +591,6 @@ class FlowOperations(TelemetryMixin):
             import bs4  # noqa: F401
             import PyInstaller  # noqa: F401
             import streamlit
-            import streamlit_quill  # noqa: F401
         except ImportError as ex:
             raise UserErrorException(
                 f"Please try 'pip install promptflow[executable]' to install dependency, {ex.msg}."
@@ -729,6 +730,8 @@ class FlowOperations(TelemetryMixin):
 
         flow = load_flow(flow)
         is_csharp_flow = flow.language == FlowLanguage.CSharp
+        is_flex_flow = isinstance(flow, FlexFlow)
+        is_prompty_flow = isinstance(flow, Prompty)
 
         if format not in ["docker", "executable"]:
             raise ValueError(f"Unsupported export format: {format}")
@@ -749,7 +752,7 @@ class FlowOperations(TelemetryMixin):
             output=output_flow_dir,
             tuning_node=tuning_node,
             node_variant=node_variant,
-            update_flow_tools_json=False if is_csharp_flow else True,
+            update_flow_tools_json=False if is_csharp_flow or is_flex_flow or is_prompty_flow else True,
         )
 
         if flow_only:
@@ -791,7 +794,7 @@ class FlowOperations(TelemetryMixin):
 
         if is_yaml_file(flow_dag_path) and _get_additional_includes(flow_dag_path):
             # Merge the flow folder and additional includes to temp folder.
-            # TODO: support a flow_dag_path with a name different from flow.dag.yaml
+            # TODO: support a flow_file_path with a name different from flow.dag.yaml
             with _merge_local_code_and_additional_includes(code_path=flow_dag_path.parent) as temp_dir:
                 remove_additional_includes(Path(temp_dir))
                 yield Path(temp_dir) / flow_dag_path.name
@@ -891,7 +894,7 @@ class FlowOperations(TelemetryMixin):
                 },
             }, {}
 
-        with self._resolve_additional_includes(flow.flow_dag_path) as new_flow_dag_path:
+        with self._resolve_additional_includes(flow._flow_file_path) as new_flow_dag_path:
             flow_tools = generate_flow_tools_json(
                 flow_directory=new_flow_dag_path.parent,
                 dump=False,
@@ -910,7 +913,7 @@ class FlowOperations(TelemetryMixin):
         for node_name in nodes_with_error:
             tools_errors[node_name] = flow_tools_meta.pop(node_name)
 
-        additional_includes = _get_additional_includes(flow.flow_dag_path)
+        additional_includes = _get_additional_includes(flow._flow_file_path)
         if additional_includes:
             additional_files = {}
             for include in additional_includes:
@@ -1006,11 +1009,12 @@ class FlowOperations(TelemetryMixin):
             from promptflow.contracts.tool import ValueType
             from promptflow.core._model_configuration import PromptyModelConfiguration
 
-            flow_meta = {"inputs": entry._data.get("inputs", {})}
-            if "outputs" in entry._data:
-                flow_meta["outputs"] = entry._data.get("outputs")
-            elif include_primitive_output:
-                flow_meta["outputs"] = {"output": {"type": "string"}}
+            flow_meta = {
+                "inputs": entry._core_prompty._get_input_signature(),
+            }
+            output_signature = entry._core_prompty._get_output_signature(include_primitive_output)
+            if output_signature:
+                flow_meta["outputs"] = output_signature
             init_dict = {}
             for field in fields(PromptyModelConfiguration):
                 init_dict[field.name] = {"type": ValueType.from_type(field.type).value}
@@ -1201,3 +1205,15 @@ class FlowOperations(TelemetryMixin):
             sample=sample,
             **kwargs,
         )
+
+    def _get_telemetry_values(self, *args, **kwargs):
+        activity_name = kwargs.get("activity_name", None)
+        telemetry_values = super()._get_telemetry_values(*args, **kwargs)
+        try:
+            if activity_name == "pf.flows.test":
+                flow = kwargs.get("flow", None) or args[0]
+                telemetry_values["flow_type"] = get_flow_type(flow)
+        except Exception as e:
+            logger.error(f"Failed to get telemetry values: {str(e)}")
+
+        return telemetry_values

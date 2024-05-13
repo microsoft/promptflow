@@ -8,7 +8,7 @@ from promptflow._sdk._constants import MAX_LIST_CLI_RESULTS
 from promptflow._sdk._errors import ConnectionNameNotSetError
 from promptflow._sdk._orm import Connection as ORMConnection
 from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_operation
-from promptflow._sdk._utils import safe_parse_object_list
+from promptflow._sdk._utilities.general_utils import safe_parse_object_list
 from promptflow._sdk.entities._connection import _Connection
 from promptflow.connections import _Connection as _CoreConnection
 
@@ -55,7 +55,7 @@ class ConnectionOperations(TelemetryMixin):
         return self._get(name, **kwargs)
 
     def _get(self, name: str, **kwargs) -> _Connection:
-        with_secrets = kwargs.get("with_secrets", False)
+        with_secrets = kwargs.get("with_secrets", True)
         raise_error = kwargs.get("raise_error", True)
         orm_connection = ORMConnection.get(name, raise_error)
         if orm_connection is None:
@@ -90,4 +90,4 @@ class ConnectionOperations(TelemetryMixin):
             orm_object.createdDate = now
         orm_object.lastModifiedDate = now
         ORMConnection.create_or_update(orm_object)
-        return self.get(connection.name)
+        return self.get(connection.name, **kwargs)

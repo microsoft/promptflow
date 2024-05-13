@@ -49,10 +49,11 @@ class RunInfo(Base):
     end_time = Column(TEXT)  # ISO8601("YYYY-MM-DD HH:MM:SS.SSS"), string
     data = Column(TEXT)  # local path of original run data, string
     run_source = Column(TEXT)  # run source, string
+    portal_url = Column(TEXT)  # portal url when trace destination is set to cloud, string
 
     __table_args__ = (Index(RUN_INFO_CREATED_ON_INDEX_NAME, "created_on"),)
     # schema version, increase the version number when you change the schema
-    __pf_schema_version__ = "3"
+    __pf_schema_version__ = "4"
 
     @sqlite_retry
     def dump(self) -> None:
@@ -96,6 +97,7 @@ class RunInfo(Base):
         start_time: Optional[Union[str, datetime.datetime]] = None,
         end_time: Optional[Union[str, datetime.datetime]] = None,
         system_metrics: Optional[Dict[str, int]] = None,
+        portal_url: Optional[str] = None,
     ) -> None:
         update_dict = {}
         if status is not None:
@@ -116,6 +118,9 @@ class RunInfo(Base):
         if end_time is not None:
             self.end_time = end_time if isinstance(end_time, str) else end_time.isoformat()
             update_dict["end_time"] = self.end_time
+        if portal_url is not None:
+            self.portal_url = portal_url
+            update_dict["portal_url"] = self.portal_url
         with mgmt_db_session() as session:
             # if not update system metrics, we can directly update the row;
             # otherwise, we need to get properties first, update the dict and finally update the row

@@ -1,7 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
+import tempfile
 from pathlib import Path
 from typing import Callable
 from unittest.mock import patch
@@ -11,7 +11,13 @@ from _constants import PROMPTFLOW_ROOT
 from sdk_cli_azure_test.conftest import DATAS_DIR, FLOWS_DIR
 
 from promptflow._constants import TokenKeys
-from promptflow._sdk._constants import FlowRunProperties, Local2CloudProperties, Local2CloudUserProperties, RunStatus
+from promptflow._sdk._constants import (
+    FlowRunProperties,
+    Local2Cloud,
+    Local2CloudProperties,
+    Local2CloudUserProperties,
+    RunStatus,
+)
 from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk._pf_client import PFClient as LocalPFClient
 from promptflow._sdk.entities import Run
@@ -69,7 +75,33 @@ class Local2CloudTestHelper:
             for key, value in result_dict.items():
                 assert value is True, f"Run details {key!r} not found in cloud, run name is {run.name!r}"
 
+        # check run output assets are uploaded to cloud
+        original_run_record = pf.runs._get_run_from_run_history(run.name, original_form=True)
+        assert original_run_record["runMetadata"]["outputs"][Local2Cloud.ASSET_NAME_DEBUG_INFO]["assetId"]
+        assert original_run_record["runMetadata"]["outputs"][Local2Cloud.ASSET_NAME_FLOW_OUTPUTS]["assetId"]
+
         return cloud_run
+
+    @staticmethod
+    def check_run_metrics(pf: PFClient, local_pf: LocalPFClient, run: Run):
+        """Check the metrics of the run are uploaded to cloud."""
+        local_metrics = local_pf.runs.get_metrics(run.name)
+        with patch.object(pf.runs, "_is_system_metric", return_value=False):
+            # get the metrics of the run
+            cloud_metrics = pf.runs.get_metrics(run.name)
+
+        # check all the user metrics are uploaded to cloud
+        for k, v in local_metrics.items():
+            assert cloud_metrics.pop(k) == v
+
+        # check all the rest system metrics are uploaded to cloud
+        assert cloud_metrics == {
+            "__pf__.nodes.grade.completed": 3.0,
+            "__pf__.nodes.calculate_accuracy.completed": 1.0,
+            "__pf__.nodes.aggregation_assert.completed": 1.0,
+            "__pf__.lines.completed": 3.0,
+            "__pf__.lines.failed": 0.0,
+        }
 
 
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
@@ -204,12 +236,19 @@ class TestFlowRunUpload:
         eval_run_name = randstr("eval_run_name_for_test_upload_eval_run")
         local_pf = Local2CloudTestHelper.get_local_pf(eval_run_name)
         eval_run = local_pf.run(
-            flow=f"{FLOWS_DIR}/simple_hello_world",
-            data=f"{DATAS_DIR}/webClassification3.jsonl",
+            flow=f"{FLOWS_DIR}/classification_accuracy_evaluation",
             run=main_run_name,
             name=eval_run_name,
-            column_mapping={"name": "${data.url}"},
+            column_mapping={
+                "prediction": "${run.outputs.result}",
+                "variant_id": "${run.outputs.result}",
+                "groundtruth": "${run.outputs.result}",
+            },
         )
+        # check the run metrics are uploaded to cloud
+        Local2CloudTestHelper.check_run_metrics(pf, local_pf, eval_run)
+
+        # check other run details are uploaded to cloud
         eval_run = Local2CloudTestHelper.check_local_to_cloud_run(pf, eval_run)
         assert eval_run.properties["azureml.promptflow.variant_run_id"] == main_run_name
 
@@ -232,3 +271,45 @@ class TestFlowRunUpload:
 
             # check the run is uploaded to cloud.
             Local2CloudTestHelper.check_local_to_cloud_run(pf, run)
+
+    @pytest.mark.skipif(condition=not pytest.is_live, reason="Bug - 3089145 Replay failed for test 'test_upload_run'")
+    def test_upload_run_pf_eval_dependencies(
+            self,
+            pf: PFClient,
+            randstr: Callable[[str], str],
+    ):
+        # This test captures promptflow-evals dependencies on private API of promptflow.
+        # In case changes are made please reach out to promptflow-evals team to update the dependencies.
+
+        name = randstr("batch_run_name_for_upload")
+        local_pf = Local2CloudTestHelper.get_local_pf(name)
+        # submit a local batch run.
+        run = local_pf.run(
+            flow=f"{FLOWS_DIR}/simple_hello_world",
+            data=f"{DATAS_DIR}/webClassification3.jsonl",
+            name=name,
+            column_mapping={"name": "${data.url}"},
+            display_name="sdk-cli-test-run-local-to-cloud",
+            tags={"sdk-cli-test": "true"},
+            description="test sdk local to cloud",
+        )
+        assert run.status == RunStatus.COMPLETED
+
+        # check the run is uploaded to cloud
+        Local2CloudTestHelper.check_local_to_cloud_run(pf, run, check_run_details_in_cloud=True)
+
+        from promptflow.azure._dependencies._pf_evals import AsyncRunUploader
+        from promptflow._sdk._constants import Local2Cloud
+
+        async_uploader = AsyncRunUploader._from_run_operations(run, pf.runs)
+        instance_results = local_pf.runs.get_details(run, all_results=True)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            file_name = Local2Cloud.FLOW_INSTANCE_RESULTS_FILE_NAME
+            local_file = Path(temp_dir) / file_name
+            instance_results.to_json(local_file, orient="records", lines=True)
+
+            # overriding instance_results.jsonl file
+            remote_file = (f"{Local2Cloud.BLOB_ROOT_PROMPTFLOW}"
+                           f"/{Local2Cloud.BLOB_ARTIFACTS}/{run.name}/{Local2Cloud.FLOW_INSTANCE_RESULTS_FILE_NAME}")
+            async_run_allowing_running_loop(async_uploader._upload_local_file_to_blob, local_file, remote_file)

@@ -41,9 +41,9 @@ from promptflow._constants import ConnectionProviderConfig
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._pf_client import PFClient
-from promptflow._sdk._utils import generate_yaml_entry_without_recover
-from promptflow._sdk._utils.chat_utils import construct_chat_page_url
-from promptflow._sdk._utils.serve_utils import start_flow_service
+from promptflow._sdk._utilities.chat_utils import construct_chat_page_url
+from promptflow._sdk._utilities.general_utils import generate_yaml_entry_without_delete
+from promptflow._sdk._utilities.serve_utils import start_flow_service
 from promptflow._utils.flow_utils import is_flex_flow
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import ErrorTarget, UserErrorException
@@ -199,6 +199,9 @@ pf flow serve --source <path_to_flow> --skip-open-browser
     add_param_skip_browser = lambda parser: parser.add_argument(  # noqa: E731
         "--skip-open-browser", action="store_true", default=False, help="Skip open browser for flow serving."
     )
+    add_param_engine = lambda parser: parser.add_argument(  # noqa: E731
+        "--engine", type=str, default="flask", help="The engine to serve the flow, can be flask or fastapi."
+    )
     activate_action(
         name="serve",
         description="Serving a flow as an endpoint.",
@@ -207,6 +210,7 @@ pf flow serve --source <path_to_flow> --skip-open-browser
             add_param_source,
             add_param_port,
             add_param_host,
+            add_param_engine,
             add_param_static_folder,
             add_param_environment_variables,
             add_param_config,
@@ -506,7 +510,7 @@ def _test_flow_multi_modal(args, pf_client):
             for script in script_path:
                 StreamlitFileReplicator(
                     flow_name=flow.display_name if flow.display_name else flow.name,
-                    flow_dag_path=flow.flow_dag_path,
+                    flow_dag_path=flow._flow_file_path,
                 ).generate_to_file(script)
             main_script_path = os.path.join(temp_dir, "main.py")
             logger.info("Start streamlit with main script generated at: %s", main_script_path)
@@ -515,7 +519,7 @@ def _test_flow_multi_modal(args, pf_client):
         from promptflow._sdk._tracing import _invoke_pf_svc
 
         pfs_port = _invoke_pf_svc()
-        flow = generate_yaml_entry_without_recover(entry=args.flow)
+        flow = generate_yaml_entry_without_delete(entry=args.flow)
         # flex flow without yaml file doesn't support /eval in chat window
         enable_internal_features = Configuration.get_instance().is_internal_features_enabled() or flow != args.flow
         chat_page_url = construct_chat_page_url(
@@ -595,6 +599,7 @@ def serve_flow(args):
         host=args.host,
         port=args.port,
         skip_open_browser=args.skip_open_browser,
+        engine=args.engine,
     )
     logger.info("Promptflow app ended")
 

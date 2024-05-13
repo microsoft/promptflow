@@ -10,6 +10,7 @@ from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_
 from promptflow._utils.flow_utils import dump_flow_result, is_executable_chat_flow
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.multimedia_utils import MultimediaProcessor
+from promptflow.contracts.run_info import Status
 from promptflow.core._connection import _Connection
 from promptflow.core._connection_provider._connection_provider import ConnectionProvider
 from promptflow.core._flow import AbstractFlowBase
@@ -180,6 +181,7 @@ class FlowInvoker:
             raise_ex=self.raise_ex,
             storage=storage,
             init_kwargs=self._init_kwargs,
+            env_exporter_setup=False,
         )
         self.executor.enable_streaming_for_llm_flow(self.streaming)
         self.logger.info("Promptflow executor initiated successfully.")
@@ -222,8 +224,11 @@ class FlowInvoker:
             returned_non_dict_output = False
         resolved_outputs = self._convert_multimedia_data_to_base64(output_dict)
         self._dump_invoke_result(result)
-        log_outputs = "<REDACTED>" if disable_input_output_logging else result.output
-        self.logger.info(f"Flow run result: {log_outputs}")
+        if result.run_info.status != Status.Completed:
+            self.logger.error(f"Flow run failed with error: {result.run_info.error}")
+        else:
+            log_outputs = "<REDACTED>" if disable_input_output_logging else result.output
+            self.logger.info(f"Flow run result: {log_outputs}")
         if not self.raise_ex:
             # If raise_ex is False, we will return the trace flow & node run info.
             return FlowResult(
@@ -266,8 +271,11 @@ class AsyncFlowInvoker(FlowInvoker):
             returned_non_dict_output = False
         resolved_outputs = self._convert_multimedia_data_to_base64(output_dict)
         self._dump_invoke_result(result)
-        log_outputs = "<REDACTED>" if disable_input_output_logging else result.output
-        self.logger.info(f"Flow run result: {log_outputs}")
+        if result.run_info.status != Status.Completed:
+            self.logger.error(f"Flow run failed with error: {result.run_info.error}")
+        else:
+            log_outputs = "<REDACTED>" if disable_input_output_logging else result.output
+            self.logger.info(f"Flow run result: {log_outputs}")
         if not self.raise_ex:
             # If raise_ex is False, we will return the trace flow & node run info.
             return FlowResult(

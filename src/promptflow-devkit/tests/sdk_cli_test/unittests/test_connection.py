@@ -13,6 +13,7 @@ from promptflow._sdk._constants import SCRUBBED_VALUE, CustomStrongTypeConnectio
 from promptflow._sdk._errors import ConnectionClassNotFoundError, SDKError
 from promptflow._sdk._load_functions import _load_env_to_connection
 from promptflow._sdk.entities._connection import (
+    AzureAIServicesConnection,
     AzureContentSafetyConnection,
     AzureOpenAIConnection,
     CognitiveSearchConnection,
@@ -138,6 +139,21 @@ class TestConnection:
                 {
                     "module": "promptflow.connections",
                     "type": "cognitive_search",
+                    "auth_mode": "key",
+                },
+            ),
+            (
+                "cognitive_search_aad_connection.yaml",
+                CognitiveSearchConnection,
+                {
+                    "name": "my_cognitive_search_connection",
+                    "api_base": "endpoint",
+                    "auth_mode": "meid_token",
+                    "api_version": "2023-07-01-Preview",
+                },
+                {
+                    "module": "promptflow.connections",
+                    "type": "cognitive_search",
                 },
             ),
             (
@@ -206,6 +222,33 @@ class TestConnection:
                     "type": "serverless",
                 },
             ),
+            (
+                "azure_ai_services_connection.yaml",
+                AzureAIServicesConnection,
+                {
+                    "name": "my_ai_services_connection",
+                    "api_key": "<to-be-replaced>",
+                    "endpoint": "endpoint",
+                },
+                {
+                    "module": "promptflow.connections",
+                    "type": "azure_ai_services",
+                    "auth_mode": "key",
+                },
+            ),
+            (
+                "azure_ai_services_aad_connection.yaml",
+                AzureAIServicesConnection,
+                {
+                    "name": "my_ai_services_connection",
+                    "endpoint": "endpoint",
+                    "auth_mode": "meid_token",
+                },
+                {
+                    "module": "promptflow.connections",
+                    "type": "azure_ai_services",
+                },
+            ),
         ],
     )
     def test_connection_load_dump(self, file_name, class_name, init_param, expected):
@@ -245,8 +288,8 @@ module: promptflow.connections
 type: custom
 configs: {}
 secrets:
-  aaa: bbb
-  ccc: ddd
+  aaa: '******'
+  ccc: '******'
 """
         )
 

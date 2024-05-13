@@ -46,6 +46,7 @@ python-library-reference/promptflow-tracing/promptflow
 python-library-reference/promptflow-core/promptflow
 python-library-reference/promptflow-devkit/promptflow
 python-library-reference/promptflow-azure/promptflow
+python-library-reference/promptflow-rag/promptflow
 ```
 
 ```{toctree}
@@ -72,5 +73,13 @@ tools-reference/aoai-gpt4-turbo-vision
 
 flow-yaml-schema-reference.md
 run-yaml-schema-reference.md
+
+```
+
+```{toctree}
+:caption: Trace Specification
+:maxdepth: 1
+
+trace-span-spec-reference.md
 
 ```

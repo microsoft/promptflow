@@ -12,6 +12,9 @@ on:
       - scripts/building/**
       - .github/workflows/promptflow-global-config-test.yml
   workflow_dispatch:
+permissions:
+  id-token: write
+  contents: read
 env:
   IS_IN_CI_PIPELINE: "true"
   RECORD_DIRECTORY: ${{ github.workspace }}/src/promptflow-recording
@@ -33,6 +36,8 @@ jobs:
       - run: true
   sdk_cli_global_config_tests:
     needs: authorize
+    environment:
+      internal
     strategy:
       fail-fast: false
       matrix:
@@ -79,7 +84,9 @@ jobs:
     - name: Azure Login
       uses: azure/login@v1
       with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
+        subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
+        tenant-id: ${{secrets.AZURE_TENANT_ID}}
+        client-id: ${{secrets.AZURE_CLIENT_ID}}
     - name: Install Azure Login items
       working-directory: ${{ env.WORKING_DIRECTORY }}
       run: |

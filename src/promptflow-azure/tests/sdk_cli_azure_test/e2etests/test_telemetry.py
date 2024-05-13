@@ -31,7 +31,7 @@ from promptflow._sdk._telemetry import (
     log_activity,
 )
 from promptflow._sdk._telemetry.logging_handler import get_promptflow_sdk_log_handler
-from promptflow._sdk._utils import call_from_extension
+from promptflow._sdk._utilities.general_utils import call_from_extension
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
 from promptflow.tracing._operation_context import OperationContext
@@ -464,5 +464,61 @@ class TestTelemetry:
                 data=DATAS_DIR / "simple_eager_flow_data.jsonl",
                 name=randstr("name"),
             )
+            logger.handlers[0].flush()
+            check_evelope()
+
+    @pytest.mark.skipif(
+        condition=not pytest.is_live,
+        reason="Live mode can run successfully, but an error will be reported when recording.",
+    )
+    def test_flow_type_with_pfazure_flows(self, pf, randstr: Callable[[str], str]):
+        from promptflow._constants import FlowType
+        from promptflow._sdk._configuration import Configuration
+        from promptflow._sdk._telemetry.logging_handler import PromptFlowSDKExporter
+
+        envelope = None
+        flow_type = None
+        config = Configuration.get_instance()
+        custom_dimensions = {
+            "python_version": platform.python_version(),
+            "installation_id": config.get_or_set_installation_id(),
+        }
+        log_to_envelope = PromptFlowSDKExporter(
+            connection_string="InstrumentationKey=00000000-0000-0000-0000-000000000000",
+            custom_dimensions=custom_dimensions,
+        )._log_to_envelope
+
+        def log_event(log_data):
+            nonlocal envelope
+            envelope = log_to_envelope(log_data)
+
+        def check_evelope():
+            assert envelope.data.base_data.name.startswith("pfazure.flows.create_or_update")
+            custom_dimensions = pydash.get(envelope, "data.base_data.properties")
+            assert isinstance(custom_dimensions, dict)
+            assert "flow_type" in custom_dimensions
+            assert custom_dimensions["flow_type"] == flow_type
+
+        with patch.object(PromptFlowSDKExporter, "_log_to_envelope", side_effect=log_event), patch(
+            "promptflow._sdk._telemetry.telemetry.get_telemetry_logger", side_effect=get_telemetry_logger
+        ):
+            flow_type = FlowType.DAG_FLOW
+            try:
+                pf.flows.create_or_update(
+                    flow=FLOWS_DIR / "print_input_flow",
+                )
+            except Exception:
+                pass
+            logger = get_telemetry_logger()
+            logger.handlers[0].flush()
+            check_evelope()
+
+            flow_type = FlowType.FLEX_FLOW
+            try:
+                pf.flows.create_or_update(
+                    flow=EAGER_FLOWS_DIR / "simple_with_req",
+                )
+            except Exception:
+                pass
             logger.handlers[0].flush()
             check_evelope()

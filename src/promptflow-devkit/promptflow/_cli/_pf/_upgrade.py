@@ -41,7 +41,7 @@ def upgrade_version(args):
     from packaging.version import parse
 
     from promptflow._constants import _ENV_PF_INSTALLER, CLI_PACKAGE_NAME
-    from promptflow._sdk._utils import get_promptflow_sdk_version
+    from promptflow._sdk._utilities.general_utils import get_promptflow_sdk_version
     from promptflow._sdk._version_hint_utils import get_latest_version
 
     installer = os.getenv(_ENV_PF_INSTALLER) or ""

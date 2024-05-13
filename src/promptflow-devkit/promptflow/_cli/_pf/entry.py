@@ -32,7 +32,10 @@ from promptflow._cli._pf._trace import add_trace_parser, dispatch_trace_cmds  # 
 from promptflow._cli._pf._upgrade import add_upgrade_parser, upgrade_version  # noqa: E402
 from promptflow._cli._pf.help import show_privacy_statement, show_welcome_message  # noqa: E402
 from promptflow._cli._user_agent import USER_AGENT  # noqa: E402
-from promptflow._sdk._utils import print_pf_version, print_promptflow_version_dict_string  # noqa: E402
+from promptflow._sdk._utilities.general_utils import (  # noqa: E402
+    print_pf_version,
+    print_promptflow_version_dict_string,
+)
 from promptflow._utils.logger_utils import get_cli_sdk_logger  # noqa: E402
 from promptflow._utils.user_agent_utils import setup_user_agent_to_operation_context  # noqa: E402
 
@@ -54,7 +57,7 @@ def run_command(args):
                 handler.setLevel(logging.DEBUG)
 
         if args.version:
-            print_pf_version()
+            print_pf_version(with_azure=True)
         elif args.action == "flow":
             dispatch_flow_commands(args)
         elif args.action == "connection":
@@ -138,7 +141,7 @@ def main():
     """Entrance of pf CLI."""
     command_args = sys.argv[1:]
     if len(command_args) == 1 and command_args[0] == "version":
-        print_promptflow_version_dict_string()
+        print_promptflow_version_dict_string(with_azure=True)
         return
     if len(command_args) == 0:
         # print privacy statement & welcome message like azure-cli

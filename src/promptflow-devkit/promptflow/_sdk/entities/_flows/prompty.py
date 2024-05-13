@@ -27,8 +27,13 @@ class Prompty(FlowBase):
         path = Path(path)
         # prompty folder path
         code = Path(code)
+        self._flow_file_path = path
         self._core_prompty = CorePrompty(path=path, **kwargs)
         super().__init__(code=code, path=path, data=data, content_hash=None, **kwargs)
+
+    @property
+    def name(self) -> str:
+        return self.code.name
 
     @property
     def language(self) -> str:

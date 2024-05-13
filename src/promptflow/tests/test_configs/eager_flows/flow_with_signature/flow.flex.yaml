@@ -1,0 +1,11 @@
+entry: my_flow:MyClass
+init:
+  input_init:
+    type: string
+    default: input_init
+inputs:
+  input_1:
+    type: string
+  input_2:
+    type: string
+    default: input_2

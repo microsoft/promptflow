@@ -12,7 +12,11 @@ from .pf_streaming_response import PromptflowStreamingResponse
 
 class FastapiResponseCreator(ResponseCreator):
     def create_text_stream_response(self):
-        return PromptflowStreamingResponse(content=self.generate(), media_type="text/event-stream")
+        if self.is_async_streaming:
+            content = self.generate_async()
+        else:
+            content = self.generate()
+        return PromptflowStreamingResponse(content=content, media_type="text/event-stream")
 
     def create_json_response(self):
         # If there is stream field, iterate over it and get the merged result.

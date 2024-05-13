@@ -23,6 +23,10 @@
 /scripts/tool/ @microsoft/promptflow-tools
 /examples/tools/ @microsoft/promptflow-tools
 
+# guard structure changes to docsite
+/docs/how-to-guides/index.md @microsoft/prompt-flow-doc-approvers
+/docs/cloud/index.md @microsoft/prompt-flow-doc-approvers
+
 # 2. Subfolders
 /src/promptflow-tracing/promptflow/tracing/ @microsoft/promptflow-execution
 /src/promptflow-core/promptflow/_core/ @microsoft/promptflow-execution

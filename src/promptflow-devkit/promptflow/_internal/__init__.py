@@ -15,6 +15,7 @@ from promptflow._constants import (
 from promptflow._core._errors import GenerateMetaUserError, PackageToolNotFoundError, ToolExecutionError
 from promptflow._core.cache_manager import AbstractCacheManager, CacheManager, enable_cache
 from promptflow._core.connection_manager import ConnectionManager
+from promptflow._core.entry_meta_generator import generate_flow_meta
 from promptflow._core.flow_execution_context import FlowExecutionContext
 from promptflow._core.log_manager import NodeLogManager, NodeLogWriter
 from promptflow._core.metric_logger import add_metric_logger
@@ -50,7 +51,8 @@ from promptflow._proxy._csharp_executor_proxy import CSharpBaseExecutorProxy
 from promptflow._sdk._constants import LOCAL_MGMT_DB_PATH, CreatedByFieldName
 from promptflow._sdk._service.apis.collector import trace_collector
 from promptflow._sdk._tracing import process_otlp_trace_request
-from promptflow._sdk._utils.general_utils import resolve_flow_language
+from promptflow._sdk._utilities.general_utils import resolve_flow_language
+from promptflow._sdk._utilities.tracing_utils import aggregate_trace_count
 from promptflow._sdk._version import VERSION
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.credential_scrubber import CredentialScrubber
@@ -112,7 +114,9 @@ from promptflow.core._serving.utils import (
 )
 from promptflow.core._serving.v1.utils import handle_error_to_response, streaming_response_required
 from promptflow.core._utils import (
+    get_used_connection_names_from_dict,
     get_used_connection_names_from_environment_variables,
+    update_dict_value_with_connections,
     update_environment_variables_with_connections,
 )
 from promptflow.executor._errors import InputNotFound

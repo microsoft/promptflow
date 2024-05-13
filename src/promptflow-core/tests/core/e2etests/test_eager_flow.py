@@ -1,12 +1,19 @@
 import asyncio
 from dataclasses import is_dataclass
+from unittest.mock import patch
 
 import pytest
 
 from promptflow._core.tool_meta_generator import PythonLoadError
 from promptflow.contracts.run_info import Status
 from promptflow.core import AzureOpenAIModelConfiguration, OpenAIModelConfiguration
-from promptflow.executor._errors import FlowEntryInitializationError, InvalidFlexFlowEntry
+from promptflow.core._connection_provider._dict_connection_provider import DictConnectionProvider
+from promptflow.executor._errors import (
+    FlowEntryInitializationError,
+    InputNotFound,
+    InputTypeError,
+    InvalidFlexFlowEntry,
+)
 from promptflow.executor._result import LineResult
 from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import FlowExecutor
@@ -39,7 +46,7 @@ function_entries = [
 ]
 
 
-@pytest.mark.usefixtures("recording_injection", "setup_connection_provider")
+@pytest.mark.usefixtures("recording_injection", "setup_connection_provider", "dev_connections")
 @pytest.mark.e2etest
 class TestEagerFlow:
     @pytest.mark.parametrize(
@@ -93,6 +100,18 @@ class TestEagerFlow:
                     "open_ai_model_config": OpenAIModelConfiguration(model="my_model", base_url="fake_base_url"),
                 },
             ),
+            (
+                "flow_with_signature",
+                {"input_1": "input_1"},
+                lambda x: x["output"] == "input_2",
+                None,
+            ),
+            (
+                "flow_with_empty_string",
+                {"input_1": "test"},
+                lambda x: x == "dummy_output",
+                None,
+            ),
         ],
     )
     def test_flow_run(self, flow_folder, inputs, ensure_output, init_kwargs):
@@ -121,12 +140,46 @@ class TestEagerFlow:
     def test_flow_run_with_openai_chat(self):
         flow_file = get_yaml_file("callable_class_with_openai", root=EAGER_FLOW_ROOT, file_name="flow.flex.yaml")
 
+        # Case 1: Normal case
         executor = ScriptExecutor(flow_file=flow_file, init_kwargs={"connection": "azure_open_ai_connection"})
         line_result = executor.exec_line(inputs={"question": "Hello", "stream": False}, index=0)
         assert line_result.run_info.status == Status.Completed, line_result.run_info.error
         token_names = ["prompt_tokens", "completion_tokens", "total_tokens"]
         for token_name in token_names:
             assert token_name in line_result.run_info.api_calls[0]["children"][0]["system_metrics"]
+            assert line_result.run_info.api_calls[0]["children"][0]["system_metrics"][token_name] > 0
+
+        # Case 2: OpenAi metrics calculation failure will not raise error
+        with patch(
+            "promptflow.tracing._openai_utils.OpenAIMetricsCalculator._try_get_model", return_value="invalid_model"
+        ):
+            executor = ScriptExecutor(flow_file=flow_file, init_kwargs={"connection": "azure_open_ai_connection"})
+            line_result = executor.exec_line(inputs={"question": "Hello", "stream": True}, index=0)
+            assert line_result.run_info.status == Status.Completed, line_result.run_info.error
+            token_names = ["prompt_tokens", "completion_tokens", "total_tokens"]
+            for token_name in token_names:
+                assert token_name not in line_result.run_info.api_calls[0]["children"][0]["system_metrics"]
+
+    def test_flow_run_with_connection(self, dev_connections):
+        flow_file = get_yaml_file(
+            "dummy_callable_class_with_connection", root=EAGER_FLOW_ROOT, file_name="flow.flex.yaml"
+        )
+
+        # Test submitting eager flow to script executor with connection dictionary
+        executor = ScriptExecutor(
+            flow_file=flow_file, connections=dev_connections, init_kwargs={"connection": "azure_open_ai_connection"}
+        )
+        line_result = executor.exec_line(inputs={}, index=0)
+        assert line_result.run_info.status == Status.Completed, line_result.run_info.error
+
+        # Test submitting eager flow to script executor with connection provider
+        executor = ScriptExecutor(
+            flow_file=flow_file,
+            connections=DictConnectionProvider(dev_connections),
+            init_kwargs={"connection": "azure_open_ai_connection"},
+        )
+        line_result = executor.exec_line(inputs={}, index=0)
+        assert line_result.run_info.status == Status.Completed, line_result.run_info.error
 
     @pytest.mark.parametrize("entry, inputs, expected_output", function_entries)
     def test_flow_run_with_function_entry(self, entry, inputs, expected_output):
@@ -149,6 +202,21 @@ class TestEagerFlow:
         delta_desc = f"{delta_sec}s from {line_result1.run_info.end_time} to {line_result2.run_info.end_time}"
         msg = f"The two tasks should run concurrently, but got {delta_desc}"
         assert 0 <= delta_sec < 0.1, msg
+
+    def test_flow_run_with_invalid_inputs(self):
+        # Case 1: input not found
+        flow_file = get_yaml_file("flow_with_signature", root=EAGER_FLOW_ROOT)
+        executor = FlowExecutor.create(flow_file=flow_file, connections={}, init_kwargs=None)
+        with pytest.raises(InputNotFound) as e:
+            executor.exec_line(inputs={}, index=0)
+        assert "The input for flow is incorrect." in str(e.value)
+
+        # Case 2: input type mismatch
+        flow_file = get_yaml_file("flow_with_wrong_type", root=EAGER_FLOW_ROOT)
+        executor = FlowExecutor.create(flow_file=flow_file, connections={}, init_kwargs=None)
+        with pytest.raises(InputTypeError) as e:
+            executor.exec_line(inputs={"input_1": 1}, index=0)
+        assert "does not match the expected type" in str(e.value)
 
     def test_flow_run_with_invalid_case(self):
         flow_folder = "dummy_flow_with_exception"

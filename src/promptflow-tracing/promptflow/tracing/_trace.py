@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import asyncio
 import contextlib
 import functools
 import inspect
@@ -20,6 +21,7 @@ from opentelemetry.trace.status import StatusCode
 
 from ._openai_utils import OpenAIMetricsCalculator, OpenAIResponseParser
 from ._operation_context import OperationContext
+from ._span_enricher import SpanEnricher, SpanEnricherManager
 from ._tracer import Tracer, _create_trace_from_function_call, get_node_name_from_context
 from ._utils import get_input_names_for_prompt_template, get_prompt_param_name_from_func, serialize
 from .contracts.generator_proxy import AsyncGeneratorProxy, GeneratorProxy
@@ -29,10 +31,10 @@ IS_LEGACY_OPENAI = version("openai").startswith("0.")
 
 
 @contextlib.contextmanager
-def _record_keyboard_interrupt_to_span(span: Span):
+def _record_cancellation_exceptions_to_span(span: Span):
     try:
         yield
-    except KeyboardInterrupt as ex:
+    except (KeyboardInterrupt, asyncio.CancelledError) as ex:
         if span.is_recording():
             span.record_exception(ex)
             span.set_status(StatusCode.ERROR, "Execution cancelled.")
@@ -147,17 +149,10 @@ def enrich_span_with_input(span, input):
 
 
 def enrich_span_with_trace_type(span, inputs, output, trace_type):
-    if trace_type == TraceType.LLM:
-        # Handle the non-streaming output of LLM, the streaming output will be handled in traced_generator.
-        token_collector.collect_openai_tokens(span, output)
-        enrich_span_with_llm_output(span, output)
-    elif trace_type == TraceType.EMBEDDING:
-        token_collector.collect_openai_tokens(span, output)
-        enrich_span_with_embedding(span, inputs, output)
+    SpanEnricherManager.enrich(span, inputs, output, trace_type)
+    # TODO: Move the following logic to SpanEnricher
     enrich_span_with_openai_tokens(span, trace_type)
-    enrich_span_with_output(span, output)
-    output = trace_iterator_if_needed(span, inputs, output)
-    return output
+    return trace_iterator_if_needed(span, inputs, output)
 
 
 def trace_iterator_if_needed(span, inputs, output):
@@ -187,7 +182,7 @@ def traced_generator(original_span: ReadableSpan, inputs, generator):
     with otel_tracer.start_as_current_span(
         f"Iterated({original_span.name})",
         links=[link],
-    ) as span, _record_keyboard_interrupt_to_span(span):
+    ) as span, _record_cancellation_exceptions_to_span(span):
         enrich_span_with_original_attributes(span, original_span.attributes)
         # Enrich the new span with input before generator iteration to prevent loss of input information.
         # The input is as an event within this span.
@@ -211,7 +206,7 @@ async def traced_async_generator(original_span: ReadableSpan, inputs, generator)
     with otel_tracer.start_as_current_span(
         f"Iterated({original_span.name})",
         links=[link],
-    ) as span, _record_keyboard_interrupt_to_span(span):
+    ) as span, _record_cancellation_exceptions_to_span(span):
         enrich_span_with_original_attributes(span, original_span.attributes)
         # Enrich the new span with input before generator iteration to prevent loss of input information.
         # The input is as an event within this span.
@@ -388,7 +383,7 @@ def _traced_async(
         span_name = get_node_name_from_context(used_for_span_name=True) or trace.name
         # need to get everytime to ensure tracer is latest
         otel_tracer = otel_trace.get_tracer("promptflow")
-        with otel_tracer.start_as_current_span(span_name) as span, _record_keyboard_interrupt_to_span(span):
+        with otel_tracer.start_as_current_span(span_name) as span, _record_cancellation_exceptions_to_span(span):
             # Store otel trace id in context for correlation
             OperationContext.get_instance()["otel_trace_id"] = f"0x{format_trace_id(span.get_span_context().trace_id)}"
             enrich_span_with_trace(span, trace)
@@ -454,7 +449,7 @@ def _traced_sync(
         span_name = get_node_name_from_context(used_for_span_name=True) or trace.name
         # need to get everytime to ensure tracer is latest
         otel_tracer = otel_trace.get_tracer("promptflow")
-        with otel_tracer.start_as_current_span(span_name) as span, _record_keyboard_interrupt_to_span(span):
+        with otel_tracer.start_as_current_span(span_name) as span, _record_cancellation_exceptions_to_span(span):
             # Store otel trace id in context for correlation
             OperationContext.get_instance()["otel_trace_id"] = f"0x{format_trace_id(span.get_span_context().trace_id)}"
             enrich_span_with_trace(span, trace)
@@ -518,3 +513,21 @@ def trace(func: Callable = None) -> Callable:
     """
 
     return _traced(func, trace_type=TraceType.FUNCTION)
+
+
+class LLMSpanEnricher(SpanEnricher):
+    def enrich(self, span, inputs, output):
+        token_collector.collect_openai_tokens(span, output)
+        enrich_span_with_llm_output(span, output)
+        super().enrich(span, inputs, output)
+
+
+class EmbeddingSpanEnricher(SpanEnricher):
+    def enrich(self, span, inputs, output):
+        token_collector.collect_openai_tokens(span, output)
+        enrich_span_with_embedding(span, inputs, output)
+        super().enrich(span, inputs, output)
+
+
+SpanEnricherManager.register(TraceType.LLM, LLMSpanEnricher())
+SpanEnricherManager.register(TraceType.EMBEDDING, EmbeddingSpanEnricher())

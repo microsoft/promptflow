@@ -7,8 +7,8 @@ import datetime
 from pathlib import Path
 from typing import Union
 
-from promptflow._proxy import ProxyFactory
-from promptflow._sdk._constants import REMOTE_URI_PREFIX, ContextAttributeKey, FlowRunProperties
+from promptflow._constants import SystemMetricKeys
+from promptflow._sdk._constants import ContextAttributeKey, FlowRunProperties
 from promptflow._sdk.entities._flows import Flow, Prompty
 from promptflow._sdk.entities._run import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
@@ -22,10 +22,9 @@ from promptflow.exceptions import UserErrorException, ValidationException
 from promptflow.tracing._operation_context import OperationContext
 from promptflow.tracing._start_trace import is_collection_writeable, start_trace
 
-from .._configuration import Configuration
 from .._load_functions import load_flow
 from ..entities._flows import FlexFlow
-from .utils import SubmitterHelper, variant_overwrite_context
+from .utils import SubmitterHelper, flow_overwrite_context
 
 logger = LoggerFactory.get_logger(name=__name__)
 
@@ -35,7 +34,7 @@ class RunSubmitter:
 
     def __init__(self, client):
         self._client = client
-        self._config = Configuration(overrides=self._client._config)
+        self._config = self._client._config
         self.run_operations = self._client.runs
 
     def submit(self, run: Run, stream=False, **kwargs):
@@ -95,20 +94,22 @@ class RunSubmitter:
             # pass with internal parameter `_collection`
             start_trace(
                 attributes=attributes,
-                run=run.name,
+                run=run,
                 _collection=collection_for_run,
                 path=flow_path,
             )
         else:
             logger.debug("trace collection is protected, will honor existing collection.")
-            start_trace(attributes=attributes, run=run.name, path=flow_path)
+            start_trace(attributes=attributes, run=run, path=flow_path)
 
         self._validate_inputs(run=run)
 
         local_storage = LocalStorageOperations(run, stream=stream, run_mode=RunMode.Batch)
         with local_storage.logger:
             flow_obj = load_flow(source=run.flow)
-            with variant_overwrite_context(flow_obj, tuning_node, variant, connections=run.connections) as flow:
+            with flow_overwrite_context(
+                flow_obj, tuning_node, variant, connections=run.connections, init_kwargs=run.init
+            ) as flow:
                 self._submit_bulk_run(flow=flow, run=run, local_storage=local_storage)
 
     @classmethod
@@ -122,12 +123,6 @@ class RunSubmitter:
     ) -> dict:
         logger.info(f"Submitting run {run.name}, log path: {local_storage.logger.file_path}")
         run_id = run.name
-        # TODO: unify the logic for prompty and other flows
-        if not isinstance(flow, Prompty):
-            # variants are resolved in the context, so we can't move this logic to Operations for now
-            ProxyFactory().create_inspector_proxy(flow.language).prepare_metadata(
-                flow_file=Path(flow.path), working_dir=Path(flow.code), init_kwargs=run.init
-            )
 
         with _change_working_dir(flow.code):
             # resolve connections with environment variables overrides to avoid getting unused connections
@@ -212,8 +207,19 @@ class RunSubmitter:
             local_storage.persist_result(batch_result)
             # exceptions
             local_storage.dump_exception(exception=exception, batch_result=batch_result)
-            # system metrics: token related
-            system_metrics = batch_result.system_metrics.to_dict() if batch_result else {}
+            # system metrics
+            system_metrics = {}
+            if batch_result:
+                system_metrics.update(batch_result.system_metrics.to_dict())  # token related
+                system_metrics.update(
+                    {f"{SystemMetricKeys.NODE_PREFIX}.{k}": v for k, v in batch_result.node_status.items()}
+                )
+                system_metrics.update(
+                    {
+                        SystemMetricKeys.LINES_COMPLETED: batch_result.completed_lines,
+                        SystemMetricKeys.LINES_FAILED: batch_result.failed_lines,
+                    }
+                )
 
             run = self.run_operations.update(
                 name=run.name,
@@ -223,10 +229,9 @@ class RunSubmitter:
             )
 
             # upload run to cloud if the trace destination is set to cloud
-            trace_destination = self._config.get_trace_destination(path=run._get_flow_dir().resolve())
-            if trace_destination and trace_destination.startswith(REMOTE_URI_PREFIX):
-                logger.debug(f"Trace destination set to {trace_destination!r}, uploading run to cloud...")
-                self._upload_run_to_cloud(run=run)
+            if self._config._is_cloud_trace_destination(path=run._get_flow_dir().resolve()):
+                portal_url = self._upload_run_to_cloud(run=run, config=self._config)
+                self.run_operations.update(name=run.name, portal_url=portal_url)
 
     def _resolve_input_dirs(self, run: Run):
         result = {"data": run.data if run.data else None}
@@ -258,19 +263,19 @@ class RunSubmitter:
             )
 
     @classmethod
-    def _upload_run_to_cloud(cls, run: Run):
+    def _upload_run_to_cloud(cls, run: Run, config=None) -> str:
         error_msg_prefix = f"Failed to upload run {run.name!r} to cloud."
         try:
             from promptflow._sdk._tracing import _get_ws_triad_from_pf_config
             from promptflow.azure._cli._utils import _get_azure_pf_client
 
-            ws_triad = _get_ws_triad_from_pf_config(path=run._get_flow_dir().resolve())
+            ws_triad = _get_ws_triad_from_pf_config(path=run._get_flow_dir().resolve(), config=config or run._config)
             pf = _get_azure_pf_client(
                 subscription_id=ws_triad.subscription_id,
                 resource_group=ws_triad.resource_group_name,
                 workspace_name=ws_triad.workspace_name,
             )
-            pf.runs._upload(run=run)
+            return pf.runs._upload(run=run)
         except ImportError as e:
             error_message = (
                 f'{error_msg_prefix}. "promptflow[azure]" is required for local to cloud tracing experience, '
