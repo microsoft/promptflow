@@ -110,7 +110,7 @@ class FlexFlowSchema(BaseFlowSchema):
     inputs = fields.Dict(keys=fields.Str(), values=NestedField(FlexFlowInputSchema), required=False)
     outputs = fields.Dict(keys=fields.Str(), values=NestedField(FlexFlowOutputSchema), required=False)
     init = fields.Dict(keys=fields.Str(), values=NestedField(FlexFlowInitSchema), required=False)
-    sample = fields.Dict(keys=fields.Str(validate=validate.OneOf(["init", "inputs", "outputs"])), required=False)
+    sample = fields.Dict(keys=fields.Str(validate=validate.OneOf(["init", "inputs"])), required=False)
     code = LocalPathField()
 
     @validates_schema(skip_on_field_errors=False)
