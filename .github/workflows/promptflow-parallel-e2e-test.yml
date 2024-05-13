@@ -59,7 +59,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v3
         with:
-          name: Test Results (Python ${{ matrix.pythonVersion }}) (OS ${{ matrix.os }})
+          name: Test Results (Python ${{ matrix.python-version }}) (OS ${{ matrix.os }})
           path: |
             ${{ env.WORKING_DIRECTORY }}/*.xml
             ${{ env.WORKING_DIRECTORY }}/htmlcov/
@@ -80,7 +80,7 @@ jobs:
       uses: "./.github/actions/step_publish_test_results"
       with:
         testActionFileName: promptflow-parallel-e2e-test.yml
-        testResultTitle: Parallel Unit Test Result
+        testResultTitle: Parallel E2E Test Result
         osVersion: ubuntu-latest
         pythonVersion: 3.9
         coverageThreshold: 40
