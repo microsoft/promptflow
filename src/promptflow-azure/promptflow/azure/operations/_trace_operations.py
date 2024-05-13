@@ -33,6 +33,7 @@ class TraceOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
 
     @monitor_operation(activity_name="pfazure.traces._init_cosmos_db", activity_type=ActivityType.INTERNALCALL)
     def _init_cosmos_db(self) -> Optional[Dict]:
+        # this API is deprecated and will be removed in the future
         resp = self._service_caller.init_workspace_cosmos(
             subscription_id=self._operation_scope.subscription_id,
             resource_group_name=self._operation_scope.resource_group_name,
