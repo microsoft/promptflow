@@ -1,11 +1,13 @@
 import asyncio
 from dataclasses import is_dataclass
+from unittest.mock import patch
 
 import pytest
 
 from promptflow._core.tool_meta_generator import PythonLoadError
 from promptflow.contracts.run_info import Status
 from promptflow.core import AzureOpenAIModelConfiguration, OpenAIModelConfiguration
+from promptflow.core._connection_provider._dict_connection_provider import DictConnectionProvider
 from promptflow.executor._errors import (
     FlowEntryInitializationError,
     InputNotFound,
@@ -44,7 +46,7 @@ function_entries = [
 ]
 
 
-@pytest.mark.usefixtures("recording_injection", "setup_connection_provider")
+@pytest.mark.usefixtures("recording_injection", "setup_connection_provider", "dev_connections")
 @pytest.mark.e2etest
 class TestEagerFlow:
     @pytest.mark.parametrize(
@@ -104,6 +106,12 @@ class TestEagerFlow:
                 lambda x: x["output"] == "input_2",
                 None,
             ),
+            (
+                "flow_with_empty_string",
+                {"input_1": "test"},
+                lambda x: x == "dummy_output",
+                None,
+            ),
         ],
     )
     def test_flow_run(self, flow_folder, inputs, ensure_output, init_kwargs):
@@ -132,12 +140,46 @@ class TestEagerFlow:
     def test_flow_run_with_openai_chat(self):
         flow_file = get_yaml_file("callable_class_with_openai", root=EAGER_FLOW_ROOT, file_name="flow.flex.yaml")
 
+        # Case 1: Normal case
         executor = ScriptExecutor(flow_file=flow_file, init_kwargs={"connection": "azure_open_ai_connection"})
         line_result = executor.exec_line(inputs={"question": "Hello", "stream": False}, index=0)
         assert line_result.run_info.status == Status.Completed, line_result.run_info.error
         token_names = ["prompt_tokens", "completion_tokens", "total_tokens"]
         for token_name in token_names:
             assert token_name in line_result.run_info.api_calls[0]["children"][0]["system_metrics"]
+            assert line_result.run_info.api_calls[0]["children"][0]["system_metrics"][token_name] > 0
+
+        # Case 2: OpenAi metrics calculation failure will not raise error
+        with patch(
+            "promptflow.tracing._openai_utils.OpenAIMetricsCalculator._try_get_model", return_value="invalid_model"
+        ):
+            executor = ScriptExecutor(flow_file=flow_file, init_kwargs={"connection": "azure_open_ai_connection"})
+            line_result = executor.exec_line(inputs={"question": "Hello", "stream": True}, index=0)
+            assert line_result.run_info.status == Status.Completed, line_result.run_info.error
+            token_names = ["prompt_tokens", "completion_tokens", "total_tokens"]
+            for token_name in token_names:
+                assert token_name not in line_result.run_info.api_calls[0]["children"][0]["system_metrics"]
+
+    def test_flow_run_with_connection(self, dev_connections):
+        flow_file = get_yaml_file(
+            "dummy_callable_class_with_connection", root=EAGER_FLOW_ROOT, file_name="flow.flex.yaml"
+        )
+
+        # Test submitting eager flow to script executor with connection dictionary
+        executor = ScriptExecutor(
+            flow_file=flow_file, connections=dev_connections, init_kwargs={"connection": "azure_open_ai_connection"}
+        )
+        line_result = executor.exec_line(inputs={}, index=0)
+        assert line_result.run_info.status == Status.Completed, line_result.run_info.error
+
+        # Test submitting eager flow to script executor with connection provider
+        executor = ScriptExecutor(
+            flow_file=flow_file,
+            connections=DictConnectionProvider(dev_connections),
+            init_kwargs={"connection": "azure_open_ai_connection"},
+        )
+        line_result = executor.exec_line(inputs={}, index=0)
+        assert line_result.run_info.status == Status.Completed, line_result.run_info.error
 
     @pytest.mark.parametrize("entry, inputs, expected_output", function_entries)
     def test_flow_run_with_function_entry(self, entry, inputs, expected_output):

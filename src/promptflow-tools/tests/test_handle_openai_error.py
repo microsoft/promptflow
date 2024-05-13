@@ -12,7 +12,7 @@ from openai import (
 from promptflow.tools.aoai import chat, completion
 from promptflow.tools.common import handle_openai_error
 from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, to_openai_error_message, \
-    JinjaTemplateError, LLMError, ChatAPIFunctionRoleInvalidFormat
+    JinjaTemplateError, LLMError, ChatAPIFunctionRoleInvalidFormat, ExceedMaxRetryTimes
 from promptflow.tools.openai import chat as openai_chat
 from promptflow.tools.aoai_gpt4v import AzureOpenAI as AzureOpenAIVision
 from pytest_mock import MockerFixture
@@ -115,8 +115,6 @@ class TestHandleOpenAIError:
                     create_api_connection_error_with_cause(),
                     InternalServerError("Something went wrong", response=httpx.Response(
                         503, request=httpx.Request('GET', 'https://www.example.com')), body=None),
-                    UnprocessableEntityError("Something went wrong", response=httpx.Response(
-                        422, request=httpx.Request('GET', 'https://www.example.com')), body=None)
                 ]
             ),
         ],
@@ -155,9 +153,6 @@ class TestHandleOpenAIError:
                     InternalServerError("Something went wrong", response=httpx.Response(
                         503, request=httpx.Request('GET', 'https://www.example.com'), headers={"retry-after": "0.3"}),
                                         body=None),
-                    UnprocessableEntityError("Something went wrong", response=httpx.Response(
-                        422, request=httpx.Request('GET', 'https://www.example.com'), headers={"retry-after": "0.3"}),
-                                             body=None)
                 ]
             ),
         ],
@@ -188,6 +183,23 @@ class TestHandleOpenAIError:
             ]
             mock_sleep.assert_has_calls(expected_calls)
 
+    def test_unprocessable_entity_error(self, mocker: MockerFixture):
+        unprocessable_entity_error = UnprocessableEntityError(
+            "Something went wrong", response=httpx.Response(
+                422, request=httpx.Request('GET', 'https://www.example.com')), body=None)
+        rate_limit_error = RateLimitError("Something went wrong", response=httpx.Response(
+            429, request=httpx.Request('GET', 'https://www.example.com'), headers={"retry-after": "0.3"}),
+            body=None)
+        # for below exception sequence, "consecutive_422_error_count" changes: 0 -> 1 -> 0 -> 1 -> 2.
+        exception_sequence = [
+            unprocessable_entity_error, rate_limit_error, unprocessable_entity_error, unprocessable_entity_error]
+        patched_test_method = mocker.patch("promptflow.tools.aoai.AzureOpenAI.chat", side_effect=exception_sequence)
+        # limit api connection error retry threshold to 2.
+        decorated_test_method = handle_openai_error(unprocessable_entity_error_tries=2)(patched_test_method)
+        with pytest.raises(ExceedMaxRetryTimes):
+            decorated_test_method()
+        assert patched_test_method.call_count == 4
+
     @pytest.mark.parametrize(
         "dummyExceptionList",
         [
@@ -197,8 +209,6 @@ class TestHandleOpenAIError:
                                         body=None),
                     BadRequestError("Something went wrong", response=httpx.get('https://www.example.com'),
                                     body=None),
-                    APIConnectionError(message="Something went wrong",
-                                       request=httpx.Request('GET', 'https://www.example.com')),
                 ]
             ),
         ],
@@ -342,3 +352,45 @@ class TestHandleOpenAIError:
 
         assert "extra fields not permitted" in exc_info.value.message
         assert "Please kindly avoid using vision model in LLM tool" in exc_info.value.message
+
+    @pytest.mark.parametrize(
+        "prompt_template",
+        [
+            (
+                """
+                    # assistant:
+                    How can I assist you?
+
+                    # tool:
+                    ## tool_call_id:
+                    fake_tool_call_id
+                    ## content:
+                    fake_content
+                """
+            ),
+            (
+                """
+                    # assistant:
+                    ## tool_calls:
+                    [{'id': 'fake_tool_id', 'type': 'function', 'function': {'name': 'f_n', 'arguments': '{}'}}]
+
+                    # tool_1:
+                    ## tool_call_id:
+                    fake_tool_call_id
+                    ## content:
+                    fake_content
+                """
+            ),
+        ],
+    )
+    def test_chat_prompt_with_invalid_tool_message(self, azure_open_ai_connection, prompt_template):
+        error_codes = "UserError/OpenAIError/BadRequestError"
+        raw_message = (
+            "Please make sure your chat prompt includes 'tool_calls' within the 'assistant' role. Also, the "
+            "assistant message must be followed by messages with role 'tool', matching ids of assistant message "
+            "'tool_calls' property. You could refer to guideline at https://aka.ms/pfdoc/chat-prompt"
+        )
+        with pytest.raises(WrappedOpenAIError) as exc_info:
+            chat(azure_open_ai_connection, prompt=f"{prompt_template}", deployment_name="gpt-35-turbo")
+        assert raw_message in exc_info.value.message
+        assert exc_info.value.error_codes == error_codes.split("/")

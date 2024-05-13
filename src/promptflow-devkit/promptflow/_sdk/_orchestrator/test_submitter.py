@@ -35,10 +35,10 @@ from promptflow.tracing._start_trace import is_collection_writeable, start_trace
 from ..entities._flows import FlexFlow
 from .utils import (
     SubmitterHelper,
+    flow_overwrite_context,
     print_chat_output,
     resolve_generator,
     show_node_log_and_output,
-    variant_overwrite_context,
 )
 
 logger = get_cli_sdk_logger()
@@ -135,21 +135,19 @@ class TestSubmitter:
         return self._target_node
 
     @contextlib.contextmanager
-    def _resolve_variant(self):
-        # TODO(2901096): validate invalid configs like variant & connections
-        # no variant overwrite for eager flow
-        # no connection overwrite for eager flow
+    def _resolve_variant(self, init_kwargs=None):
         if self.flow_context.variant:
             tuning_node, node_variant = parse_variant(self.flow_context.variant)
         else:
             tuning_node, node_variant = None, None
 
-        with variant_overwrite_context(
+        with flow_overwrite_context(
             flow=self._origin_flow,
             tuning_node=tuning_node,
             variant=node_variant,
             connections=self.flow_context.connections,
             overrides=self.flow_context.overrides,
+            init_kwargs=init_kwargs,
         ) as temp_flow:
             # TODO execute flow test in a separate process.
 
@@ -222,18 +220,9 @@ class TestSubmitter:
         :return: TestSubmitter instance.
         :rtype: TestSubmitter
         """
-        with self._resolve_variant():
+        with self._resolve_variant(init_kwargs=init_kwargs):
             # temp flow is generated, will use self.flow instead of self._origin_flow in the following context
             self._within_init_context = True
-
-            if not isinstance(self.flow, Prompty):
-                # variant is resolve in the context, so we can't move this to Operations for now
-                ProxyFactory().create_inspector_proxy(self.flow.language).prepare_metadata(
-                    flow_file=self.flow.path,
-                    working_dir=self.flow.code,
-                    init_kwargs=init_kwargs,
-                )
-
             self._target_node = target_node
             self._enable_stream_output = stream_output
 
@@ -611,7 +600,11 @@ class TestSubmitter:
             error_response = ErrorResponse.from_error_dict(error_dict)
             user_execution_error = error_response.get_user_execution_error_info()
             error_message = error_response.message
-            stack_trace = user_execution_error.get("traceback", "")
+            # sdk will wrap exception here, so we need get user code stacktrace or recursively get debug info
+            # stacktrace as inner exception here
+            stack_trace = user_execution_error.get("traceback", "") or TestSubmitter._recursively_get_stacktrace(
+                error_dict.get("debugInfo", {})
+            )
             error_type = user_execution_error.get("type", "Exception")
             if show_trace:
                 print(stack_trace)
@@ -625,3 +618,12 @@ class TestSubmitter:
             generator_outputs = {key: output for key, output in outputs.items() if isinstance(output, GeneratorType)}
             if generator_outputs:
                 logger.info(f"Some streaming outputs in the result, {generator_outputs.keys()}")
+
+    @staticmethod
+    def _recursively_get_stacktrace(debug_info: dict):
+        if not debug_info:
+            return ""
+        stack_trace = debug_info.get("stackTrace", "") + debug_info.get("message", "")
+        inner_exception = debug_info.get("innerException", {})
+        stack_trace = TestSubmitter._recursively_get_stacktrace(inner_exception) + stack_trace
+        return stack_trace

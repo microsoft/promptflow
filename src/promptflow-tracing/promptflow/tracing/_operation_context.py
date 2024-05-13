@@ -21,6 +21,7 @@ class OperationContext(Dict):
     _current_context = ContextVar(_CONTEXT_KEY, default=None)
     USER_AGENT_KEY = "user_agent"
     REQUEST_ID_KEY = "request_id"
+    EXECUTION_TARGET = "execution_target"
     _DEFAULT_TRACING_KEYS = "_default_tracing_keys"
     _OTEL_ATTRIBUTES = "_otel_attributes"
     _TRACKING_KEYS = "_tracking_keys"
@@ -174,6 +175,12 @@ class OperationContext(Dict):
             for key in keys:
                 if key not in self[self._TRACKING_KEYS]:
                     self[self._TRACKING_KEYS].add(key)
+
+    def set_execution_target(self, execution_target: str):
+        # Set in the context for getting tracking info
+        # Set in otel attributes for telemetry
+        self[OperationContext.EXECUTION_TARGET] = execution_target
+        self._add_otel_attributes(OperationContext.EXECUTION_TARGET, execution_target)
 
     def get_context_dict(self):
         """Get the context dictionary.

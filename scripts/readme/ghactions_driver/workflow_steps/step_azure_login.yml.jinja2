@@ -1,4 +1,12 @@
+- name: Random Wait
+  uses: AliSajid/random-wait-action@main
+  with:
+    minimum: 0
+    maximum: 300
 - name: {{ step_name }}
   uses: azure/login@v1
   with:
-    creds: ${{ '{{' }} secrets.AZURE_CREDENTIALS }}
+    subscription-id: ${{ '{{' }}secrets.AZURE_SUBSCRIPTION_ID}}
+    tenant-id: ${{ '{{' }}secrets.AZURE_TENANT_ID}}
+    client-id: ${{ '{{' }}secrets.AZURE_CLIENT_ID}}
+    enable-AzPSSession: true

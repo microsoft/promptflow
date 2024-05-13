@@ -2,18 +2,22 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-__path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
-
-
-from .coherence import CoherenceEvaluator
-from .f1_score import F1ScoreEvaluator
-from .fluency import FluencyEvaluator
-from .groundedness import GroundednessEvaluator
-from .relevance import RelevanceEvaluator
-from .similarity import SimilarityEvaluator
-from .qa import QAEvaluator
-from .chat import ChatEvaluator
-
+from ._chat import ChatEvaluator
+from ._coherence import CoherenceEvaluator
+from ._content_safety import (
+    ContentSafetyChatEvaluator,
+    ContentSafetyEvaluator,
+    HateUnfairnessEvaluator,
+    SelfHarmEvaluator,
+    SexualEvaluator,
+    ViolenceEvaluator,
+)
+from ._f1_score import F1ScoreEvaluator
+from ._fluency import FluencyEvaluator
+from ._groundedness import GroundednessEvaluator
+from ._qa import QAEvaluator
+from ._relevance import RelevanceEvaluator
+from ._similarity import SimilarityEvaluator
 
 __all__ = [
     "CoherenceEvaluator",
@@ -24,4 +28,10 @@ __all__ = [
     "SimilarityEvaluator",
     "QAEvaluator",
     "ChatEvaluator",
+    "ViolenceEvaluator",
+    "SexualEvaluator",
+    "SelfHarmEvaluator",
+    "HateUnfairnessEvaluator",
+    "ContentSafetyEvaluator",
+    "ContentSafetyChatEvaluator",
 ]

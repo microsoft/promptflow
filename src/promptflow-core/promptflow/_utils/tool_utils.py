@@ -47,6 +47,9 @@ def value_to_str(val):
         return None
     if val is None:
         # Dump default: "" in json to avoid UI validation error
+        # Due to the lack of a equivalent for Python's None value in JSON, we use an empty string
+        # to represent None, which assumes that user input of an empty string is intended to signify a
+        # None value, disregarding the possibility that an empty string could be a valid input.
         return ""
     if isinstance(val, Enum):
         return val.value

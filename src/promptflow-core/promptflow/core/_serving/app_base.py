@@ -1,7 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
+import json
 import mimetypes
 import os
 from abc import ABC, abstractmethod
@@ -17,6 +17,7 @@ from promptflow.core._serving.utils import get_output_fields_to_remove, get_samp
 from promptflow.core._utils import init_executable
 from promptflow.storage._run_storage import DummyRunStorage
 
+from ..._constants import PF_FLOW_INIT_CONFIG
 from .swagger import generate_swagger
 
 
@@ -28,8 +29,10 @@ class PromptflowServingAppBasic(ABC):
         self.logger = logger
         # default to local, can be override when creating the app
         self.extension = ExtensionFactory.create_extension(logger, **kwargs)
-
+        # make sure pfserving exporters initiated before any customer code loading
+        self.flow_monitor = self.extension.get_flow_monitor(self.get_context_data_provider())
         self.flow_invoker: AsyncFlowInvoker = None
+
         # parse promptflow project path
         self.project_path = self.extension.get_flow_project_path()
         logger.info(f"Project path: {self.project_path}")
@@ -48,14 +51,17 @@ class PromptflowServingAppBasic(ABC):
         self.connections_override = conn_data_override
         self.connections_name_override = conn_name_override
 
-        self.flow_monitor = self.extension.get_flow_monitor(self.get_context_data_provider())
-
         self.connection_provider = self.extension.get_connection_provider()
         self.credential = self.extension.get_credential()
         self.sample = get_sample_json(self.project_path, logger)
 
         self.init = kwargs.get("init", {})
-        logger.info("Init params: " + str(self.init))
+        if not self.init:
+            init_params = os.environ.get(PF_FLOW_INIT_CONFIG, "{}")
+            init_dict: dict = json.loads(init_params)
+            self.init = init_dict
+
+        logger.debug("Init params: " + str(self.init))
 
         self.init_swagger()
         # try to initialize the flow invoker

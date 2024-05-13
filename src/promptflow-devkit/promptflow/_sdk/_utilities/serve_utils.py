@@ -15,6 +15,7 @@ from typing import Any, Dict, Generator
 from promptflow._constants import PROMPT_FLOW_DIR_NAME, FlowLanguage
 from promptflow._proxy._csharp_inspector_proxy import EXECUTOR_SERVICE_DLL
 from promptflow._utils.flow_utils import resolve_flow_path
+from promptflow.exceptions import UserErrorException
 
 from .general_utils import resolve_flow_language
 
@@ -30,16 +31,14 @@ def find_available_port() -> str:
         return str(port)
 
 
-def _resolve_python_flow_additional_includes(source) -> Path:
+def _resolve_python_flow_additional_includes(flow_file_name: str, flow_dir: Path) -> Path:
     # Resolve flow additional includes
-    from promptflow.client import load_flow
-
-    flow = load_flow(source)
     from promptflow._sdk.operations import FlowOperations
 
-    with FlowOperations._resolve_additional_includes(flow.path) as resolved_flow_path:
-        if resolved_flow_path == flow.path:
-            return source
+    flow_path = Path(flow_dir) / flow_file_name
+    with FlowOperations._resolve_additional_includes(flow_path) as resolved_flow_path:
+        if resolved_flow_path == flow_path:
+            return flow_dir
         # Copy resolved flow to temp folder if additional includes exists
         # Note: DO NOT use resolved flow path directly, as when inner logic raise exception,
         # temp dir will fail due to file occupied by other process.
@@ -59,6 +58,7 @@ def start_flow_service(
     environment_variables: Dict[str, str] = None,
     init: Dict[str, Any] = None,
     skip_open_browser: bool = True,
+    engine: str = "flask",
 ):
     logger.info(
         "Start promptflow server with port %s",
@@ -68,6 +68,16 @@ def start_flow_service(
 
     flow_dir, flow_file_name = resolve_flow_path(source)
     if language == FlowLanguage.Python:
+        if not os.path.isdir(source):
+            raise UserErrorException(
+                message_format="Support directory `source` for Python flow only for now, but got {source}.",
+                source=source,
+            )
+        if engine not in ["flask", "fastapi"]:
+            raise UserErrorException(
+                message_format="Unsupported engine {engine} for Python flow, only support 'flask' and 'fastapi'.",
+                engine=engine,
+            )
         serve_python_flow(
             flow_file_name=flow_file_name,
             flow_dir=flow_dir,
@@ -78,6 +88,7 @@ def start_flow_service(
             config=config or {},
             environment_variables=environment_variables or {},
             skip_open_browser=skip_open_browser,
+            engine=engine,
         )
     else:
         serve_csharp_flow(
@@ -99,11 +110,13 @@ def serve_python_flow(
     environment_variables,
     init,
     skip_open_browser: bool,
+    engine,
 ):
     from promptflow._sdk._configuration import Configuration
     from promptflow.core._serving.app import create_app
 
-    flow_dir = _resolve_python_flow_additional_includes(flow_dir / flow_file_name)
+    # if no additional includes, flow_dir keeps the same; if additional includes, flow_dir is a temp dir
+    flow_dir = _resolve_python_flow_additional_includes(flow_file_name, flow_dir)
 
     pf_config = Configuration(overrides=config)
     logger.info(f"Promptflow config: {pf_config}")
@@ -116,13 +129,24 @@ def serve_python_flow(
         environment_variables=environment_variables,
         connection_provider=connection_provider,
         init=init,
+        engine=engine,
     )
     if not skip_open_browser:
         target = f"http://{host}:{port}"
         logger.info(f"Opening browser {target}...")
         webbrowser.open(target)
     # Debug is not supported for now as debug will rerun command, and we changed working directory.
-    app.run(port=port, host=host)
+    if engine == "flask":
+        app.run(port=port, host=host)
+    else:
+        try:
+            import uvicorn
+
+            uvicorn.run(app, host=host, port=port, access_log=False, log_config=None)
+        except ImportError:
+            raise UserErrorException(
+                message_format="FastAPI engine requires uvicorn, please install uvicorn by `pip install uvicorn`."
+            )
 
 
 @contextlib.contextmanager

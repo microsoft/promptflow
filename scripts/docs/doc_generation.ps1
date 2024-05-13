@@ -24,7 +24,7 @@ param(
 [string] $SphinxApiDoc = [System.IO.Path]::Combine($DocPath, "sphinx_apidoc.log")
 [string] $SphinxBuildDoc = [System.IO.Path]::Combine($DocPath, "sphinx_build.log")
 [string] $WarningErrorPattern = "WARNING:|ERROR:|CRITICAL:| broken "
-[System.Collections.ArrayList]$IncludeList = @("promptflow-tracing", "promptflow-core", "promptflow-devkit", "promptflow-azure")
+[System.Collections.ArrayList]$IncludeList = @("promptflow-tracing", "promptflow-core", "promptflow-devkit", "promptflow-azure", "promptflow-rag")
 $apidocWarningsAndErrors = $null
 $buildWarningsAndErrors = $null
 

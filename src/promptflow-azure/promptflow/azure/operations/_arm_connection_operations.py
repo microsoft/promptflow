@@ -45,6 +45,11 @@ class ArmConnectionOperations(_ScopeDependentOperations):
         )
 
     def get(self, name, **kwargs):
+        with_secrets = kwargs.get("with_secrets", True)
+        if with_secrets:
+            return self._direct_get(
+                name, self._subscription_id, self._resource_group_name, self._workspace_name, self._credential
+            )
         return _Connection._from_core_connection(self._provider.get(name))
 
     @classmethod

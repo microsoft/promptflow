@@ -57,7 +57,7 @@ def run_command(args):
                 handler.setLevel(logging.DEBUG)
 
         if args.version:
-            print_pf_version()
+            print_pf_version(with_azure=True)
         elif args.action == "flow":
             dispatch_flow_commands(args)
         elif args.action == "connection":
@@ -141,7 +141,7 @@ def main():
     """Entrance of pf CLI."""
     command_args = sys.argv[1:]
     if len(command_args) == 1 and command_args[0] == "version":
-        print_promptflow_version_dict_string()
+        print_promptflow_version_dict_string(with_azure=True)
         return
     if len(command_args) == 0:
         # print privacy statement & welcome message like azure-cli
