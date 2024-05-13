@@ -2,6 +2,9 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import logging
+import typing
+
 from azure.ai.ml import MLClient
 from azure.core.exceptions import ResourceNotFoundError
 from azure.identity import AzureCliCredential
@@ -11,6 +14,7 @@ from promptflow._sdk._utilities.general_utils import extract_workspace_triad_fro
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure import PFClient
 from promptflow.azure._constants._trace import COSMOS_DB_SETUP_RESOURCE_TYPE
+from promptflow.azure._entities._trace import CosmosMetadata
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 _logger = get_cli_sdk_logger()
@@ -18,6 +22,29 @@ _logger = get_cli_sdk_logger()
 
 def _create_trace_destination_value_user_error(message: str) -> UserErrorException:
     return UserErrorException(message=message, target=ErrorTarget.CONTROL_PLANE_SDK)
+
+
+def resolve_disable_trace(metadata: CosmosMetadata, logger: typing.Optional[logging.Logger] = None) -> bool:
+    """Resolve `disable_trace` from Cosmos DB metadata.
+
+    Only return True when the Cosmos DB is disabled; will log warning if the Cosmos DB is not ready.
+    """
+    if logger is None:
+        logger = _logger
+    if metadata.is_disabled():
+        logger.debug("the trace cosmos db is disabled.")
+        return True
+    if not metadata.is_ready():
+        warning_message = (
+            "The trace Cosmos DB for current workspace/project is not ready yet, "
+            "your traces might not be logged and stored properly.\n"
+            "To enable it, please run `pf config set trace.destination="
+            "azureml://subscriptions/<subscription-id>/"
+            "resourceGroups/<resource-group-name>/providers/Microsoft.MachineLearningServices/"
+            "workspaces/<workspace-or-project-name>`, prompt flow will help to get everything ready.\n"
+        )
+        logger.warning(warning_message)
+    return False
 
 
 def validate_trace_destination(value: str) -> None:
