@@ -21,9 +21,9 @@ with open("CHANGELOG.md", encoding="utf-8") as f:
     changelog = f.read()
 
 REQUIRES = [
-    "promptflow-tracing>=1.0.0",  # tracing capabilities
-    "promptflow-core",  # core capabilities
-    "promptflow-devkit",  # devkit capabilities
+    "promptflow-tracing==1.11.0.dev126476105",  # tracing capabilities
+    "promptflow-core==1.11.0.dev126476105",  # core capabilities
+    "promptflow-devkit==1.11.0.dev126476105",  # devkit capabilities
 ]
 
 setup(
@@ -51,18 +51,18 @@ setup(
     install_requires=REQUIRES,
     extras_require={
         "all": [
-            "promptflow-core[executor-service]",
-            "promptflow-devkit[all]",
-            "promptflow-azure",
-            "promptflow-parallel",
+            "promptflow-core[executor-service]==1.11.0.dev126476105",
+            "promptflow-devkit[all]==1.11.0.dev126476105",
+            "promptflow-azure==1.11.0.dev126476105",
+            "promptflow-parallel==1.11.0.dev126476105",
         ],
-        "azure": ["promptflow-azure"],
-        "executable": ["promptflow-devkit[executable]"],
+        "azure": ["promptflow-azure==1.11.0.dev126476105"],
+        "executable": ["promptflow-devkit[executable]==1.11.0.dev126476105"],
         "azureml-serving": [
-            "promptflow-core[azureml-serving]",
+            "promptflow-core[azureml-serving]==1.11.0.dev126476105",
         ],
         "executor-service": [
-            "promptflow-core[executor-service]",  # used to build web executor server
+            "promptflow-core[executor-service]==1.11.0.dev126476105",  # used to build web executor server
         ],
     },
     scripts=["pf.autocomplete.sh"],
