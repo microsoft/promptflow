@@ -24,6 +24,11 @@ from promptflow.azure._constants._trace import (
     COSMOS_DB_SETUP_POLL_PRINT_INTERVAL_SECOND,
     COSMOS_DB_SETUP_POLL_TIMEOUT_SECOND,
 )
+from promptflow.azure._constants._trace import (
+    COSMOS_DB_SETUP_POLL_INTERVAL_SECOND,
+    COSMOS_DB_SETUP_POLL_PRINT_INTERVAL_SECOND,
+    COSMOS_DB_SETUP_POLL_TIMEOUT_SECOND,
+)
 from promptflow.azure._restclient.flow import AzureMachineLearningDesignerServiceClient
 from promptflow.azure._utils.general import get_authorization, get_arm_token, get_aml_token
 from promptflow.exceptions import UserErrorException, PromptflowException, SystemErrorException
@@ -759,6 +764,22 @@ class FlowServiceCaller(RequestTelemetryMixin):
             resource_group_name=resource_group_name,
             workspace_name=workspace_name,
             overwrite=overwrite,
+            headers=self._get_headers(),
+            **kwargs,
+        )
+
+    def get_workspace_cosmos_metadata(
+        self,
+        subscription_id: str,
+        resource_group_name: str,
+        workspace_name: str,
+        **kwargs,
+    ):
+        """Get Cosmos DB metadata."""
+        return self.caller.trace_sessions.get_trace_session_metadata_async(
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
             headers=self._get_headers(),
             **kwargs,
         )
