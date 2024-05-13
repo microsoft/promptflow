@@ -117,7 +117,8 @@ def resolve_flow_path(
     file_path = flow_folder / flow_file
     if file_path.suffix.lower() not in FLOW_FILE_SUFFIX:
         raise UserErrorException(
-            error_format=f"The flow file suffix must be yaml or yml, and cannot be {file_path.suffix}"
+            message_format="The flow file suffix must be yaml, yml or prompty; cannot be {suffix}",
+            suffix=file_path.suffix,
         )
 
     if not check_flow_exist:

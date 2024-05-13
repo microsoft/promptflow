@@ -372,8 +372,18 @@ class TestUtils:
         assert "Only one of flow_path and yaml_dict should be provided." in ex.value.message
 
         with pytest.raises(UserErrorException) as ex:
+            resolve_flow_language(
+                flow_path=TEST_ROOT
+                / "test_configs"
+                / "eager_flows"
+                / "basic_callable_class"
+                / "simple_callable_class.py"
+            )
+        assert "suffix must be yaml, yml or prompty" in ex.value.message
+
+        with pytest.raises(UserErrorException) as ex:
             resolve_flow_language(flow_path="mock_path")
-        assert "must exist and of suffix yaml, yml or prompty." in ex.value.message
+        assert "mock_path does not exist." in ex.value.message
 
 
 @pytest.mark.unittest
