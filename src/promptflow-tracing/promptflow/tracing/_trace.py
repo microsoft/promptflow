@@ -21,7 +21,6 @@ from opentelemetry.util import types
 
 from ._openai_utils import OpenAIMetricsCalculator, OpenAIResponseParser
 from ._operation_context import OperationContext
-from ._span_wrapper import SpanWrapper
 from ._tracer import Tracer, _create_trace_from_function_call, get_node_name_from_context
 from ._utils import get_input_names_for_prompt_template, get_prompt_param_name_from_func, serialize
 from .contracts.generator_proxy import AsyncGeneratorProxy, GeneratorProxy
@@ -41,10 +40,10 @@ def _record_cancellation_exceptions_to_span(span: Span):
         raise
 
 
-def handle_span_exception(span: Span, exception):
-    if span.is_recording():
+def handle_span_exception(span, exception):
+    if isinstance(span, Span) and span.is_recording():
         # Record the exception as an event
-        span.record_exception(exception=exception, escaped=True)
+        span.record_exception(exception)
         # Records status as error
         span.set_status(
             Status(
@@ -57,7 +56,7 @@ def handle_span_exception(span: Span, exception):
 def handle_output(span, inputs, output, trace_type):
     if isinstance(output, (Iterator, AsyncIterator)):
         # Set should_end to False to delay span end until generator exhaustion, preventing premature span end.
-        span.should_end = False
+        setattr(span, "__should_end", False)
         output = Tracer.pop(output)
         if isinstance(output, Iterator):
             return traced_generator(span, inputs, output, trace_type)
@@ -81,14 +80,29 @@ def start_as_current_span(
     record_exception: bool = True,
     set_status_on_exception: bool = True,
 ):
-    with tracer.start_as_current_span(
-        name, context, kind, attributes, links, start_time, record_exception, set_status_on_exception, end_on_exit=False
-    ) as span:
-        span_wrapper = SpanWrapper(span)
-        yield span_wrapper
+    span = None
+    try:
+        with tracer.start_as_current_span(
+            name,
+            context,
+            kind,
+            attributes,
+            links,
+            start_time,
+            record_exception,
+            set_status_on_exception,
+            end_on_exit=False,
+        ) as span:
+            object.__setattr__(span, "__should_end", True)
+            yield span
 
-    if span_wrapper.should_end:
-        span.end()
+    except (KeyboardInterrupt, asyncio.CancelledError) as ex:
+        handle_span_exception(span, ex)
+        raise
+
+    finally:
+        if span is not None and getattr(span, "__should_end", False):
+            span.end()
 
 
 class TokenCollector:
@@ -423,7 +437,7 @@ def _traced_async(
         span_name = get_node_name_from_context(used_for_span_name=True) or trace.name
         # need to get everytime to ensure tracer is latest
         otel_tracer = otel_trace.get_tracer("promptflow")
-        with start_as_current_span(otel_tracer, span_name) as span, _record_cancellation_exceptions_to_span(span):
+        with start_as_current_span(otel_tracer, span_name) as span:
             # Store otel trace id in context for correlation
             OperationContext.get_instance()["otel_trace_id"] = f"0x{format_trace_id(span.get_span_context().trace_id)}"
             enrich_span_with_trace(span, trace)
@@ -487,7 +501,7 @@ def _traced_sync(
         span_name = get_node_name_from_context(used_for_span_name=True) or trace.name
         # need to get everytime to ensure tracer is latest
         otel_tracer = otel_trace.get_tracer("promptflow")
-        with start_as_current_span(otel_tracer, span_name) as span, _record_cancellation_exceptions_to_span(span):
+        with start_as_current_span(otel_tracer, span_name) as span:
             # Store otel trace id in context for correlation
             OperationContext.get_instance()["otel_trace_id"] = f"0x{format_trace_id(span.get_span_context().trace_id)}"
             enrich_span_with_trace(span, trace)
