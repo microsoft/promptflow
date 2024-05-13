@@ -9,7 +9,7 @@ on:
     - cron: "21 19 * * *" # Every day starting at 3:21 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/tutorials/tracing/langchain/**, .github/workflows/samples_tracing_langchain_tracelangchain.yml, examples/requirements.txt, examples/connections/azure_openai.yml ]
+    paths: [ examples/tutorials/tracing/langchain/**, examples/*requirements.txt, .github/workflows/samples_tracing_langchain_tracelangchain.yml ]
   workflow_dispatch:
 
 env:

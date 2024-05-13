@@ -9,7 +9,7 @@ on:
     - cron: "22 21 * * *" # Every day starting at 5:22 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/tutorials/tracing/custom-otlp-collector/**, .github/workflows/samples_tracing_customotlpcollector_otlptracecollector.yml, examples/requirements.txt, examples/connections/azure_openai.yml ]
+    paths: [ examples/tutorials/tracing/custom-otlp-collector/**, examples/*requirements.txt, .github/workflows/samples_tracing_customotlpcollector_otlptracecollector.yml ]
   workflow_dispatch:
 
 env:
