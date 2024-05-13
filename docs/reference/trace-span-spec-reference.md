@@ -46,7 +46,7 @@ Each span in Prompt flow is enriched with a set of standard attributes that prov
 |---|---|---|---|---|
 | framework | string | This attribute specifies the framework in which the trace was recorded. For our project, this value is consistently set to promptflow.  | promptflow | `Required` |
 | node_name | string | Denotes the name of the flow node. | chat | `Conditionally Required` if the flow is a Directed Acyclic Graph ([DAG](../concepts/concept-flows.md##DAG_flow)) flow. |
-| span_type | string | Specifies the type of span, such as LLM or Flow. See [this](#span-types-spectification) for details | LLM | `Required` |
+| span_type | string | Specifies the type of span, such as LLM or Flow. See [this](#span-types-specification) for details | LLM | `Required` |
 | line_run_id | string | Unique identifier for the execution run within Prompt flow. | d23159d5-cae0-4de6-a175-295c715ce251 | `Required` |
 | function | string | The function associated with the span. | search | `Recommended` |
 | session_id | string | Unique identifier for chat sessions. | 4ea1a462-7617-439f-a40c-12a8b93f51fb | `Opt-In` |
@@ -73,7 +73,7 @@ In Prompt flow, events emitted by the Prompt flow framework follow the format be
 | promptflow.function.inputs | Input of a function call | ```{"chat_history":[],"question":"What is ChatGPT?"}``` | `Required` |
 | promptflow.function.output | Output of a function call | ```{"answer":"ChatGPT is a conversational AI model developed by OpenAI."}``` | `Required` |
 
-### Span Types Spectification
+### Span Types Specification
 
 Within the Prompt flow system, we have delineated several distinct span types to cater to various execution units. Each span type is designed to capture specific execution information, complementing the standard attributes and events. Currently, our system includes the following span types: `LLM`, `Function`, `LangChain`, `Flow`, `Embedding` and `Retrieval`.
 
