@@ -9,7 +9,7 @@ on:
     - cron: "11 20 * * *" # Every day starting at 4:11 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/tutorials/tracing/autogen-groupchat/**, .github/workflows/samples_tracing_autogengroupchat_traceautogengroupchat.yml, examples/requirements.txt, examples/connections/azure_openai.yml ]
+    paths: [ examples/tutorials/tracing/autogen-groupchat/**, examples/*requirements.txt, .github/workflows/samples_tracing_autogengroupchat_traceautogengroupchat.yml ]
   workflow_dispatch:
 
 env:

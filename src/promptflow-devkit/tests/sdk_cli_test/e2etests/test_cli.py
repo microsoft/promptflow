@@ -1318,6 +1318,37 @@ class TestCli:
         finally:
             shutil.rmtree(output_path, ignore_errors=True)
 
+    def test_flex_flow_build(self):
+        from promptflow._cli._pf.entry import main
+
+        with tempfile.TemporaryDirectory() as temp:
+            temp = Path(temp)
+            cmd = (
+                "pf",
+                "flow",
+                "build",
+                "--source",
+                f"{EAGER_FLOWS_DIR}/chat-basic/flow.flex.yaml",
+                "--output",
+                temp.as_posix(),
+                "--format",
+                "docker",
+            )
+            sys.argv = list(cmd)
+            main()
+            assert (temp / "connections").is_dir()
+            assert (temp / "flow").is_dir()
+            assert (temp / "runit").is_dir()
+            assert (temp / "Dockerfile").is_file()
+            with open(temp / "Dockerfile", "r") as f:
+                assert r"/connections" in f.read()
+
+            origin_flow = Path(f"{EAGER_FLOWS_DIR}/chat-basic")
+            temp_flow = temp / "flow"
+            for file_path in origin_flow.rglob("*"):
+                relative_path = file_path.relative_to(origin_flow)
+                assert (temp_flow / relative_path).exists()
+
     def test_flow_build_with_ua(self, capsys):
         with pytest.raises(SystemExit):
             run_pf_command(
@@ -2871,6 +2902,136 @@ class TestCli:
         # check run results
         run = pf.runs.get(run_id)
         assert_batch_run_result(run, pf, assert_func)
+
+    def test_prompty_with_env(self, dev_connections, capfd):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            env_file = Path(temp_dir) / ".env"
+            aoai_connection = dev_connections.get("azure_open_ai_connection")
+            env = {
+                "MOCK_AZURE_DEVELOPMENT": "gpt-35-turbo",
+                "MOCK_AZURE_API_KEY": aoai_connection["value"]["api_key"],
+                "MOCK_AZURE_API_VERSION": aoai_connection["value"]["api_version"],
+                "MOCK_AZURE_ENDPOINT": aoai_connection["value"]["api_base"],
+            }
+            with open(env_file, "w") as f:
+                f.writelines([f"{key}={value}\n" for key, value in env.items()])
+
+            # Prompty test with default .env
+            shutil.copy(f"{PROMPTY_DIR}/prompty_with_env.prompty", Path(temp_dir) / "prompty_with_env.prompty")
+            with _change_working_dir(temp_dir):
+                run_pf_command(
+                    "flow",
+                    "test",
+                    "--flow",
+                    f"{temp_dir}/prompty_with_env.prompty",
+                    "--inputs",
+                    'question="what is the result of 1+1?"',
+                    "--env",
+                )
+            out, _ = capfd.readouterr()
+            assert "2" in out
+
+            # Prompty test with env file
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{PROMPTY_DIR}/prompty_with_env.prompty",
+                "--inputs",
+                'question="what is the result of 1+1?"',
+                "--env",
+                str(env_file),
+            )
+            out, _ = capfd.readouterr()
+            assert "2" in out
+
+            # prompty test with env dict
+            env_params = [f"{key}={value}" for key, value in env.items()]
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{PROMPTY_DIR}/prompty_with_env.prompty",
+                "--inputs",
+                'question="what is the result of 1+1?"',
+                "--env",
+                *env_params,
+            )
+            out, _ = capfd.readouterr()
+            assert "2" in out
+
+            # Prompty test with env override
+            invalid_env_file = Path(temp_dir) / "invalid.env"
+            with open(invalid_env_file, "w") as f:
+                f.writelines([f"{key}={value}\n" for key, value in env.items() if key != "MOCK_AZURE_API_KEY"])
+                f.write("MOCK_AZURE_API_KEY=invalid_api_key")
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{PROMPTY_DIR}/prompty_with_env.prompty",
+                "--inputs",
+                'question="what is the result of 1+1?"',
+                "--env",
+                str(env_file),
+                f"MOCK_AZURE_API_KEY={env['MOCK_AZURE_API_KEY']}",
+            )
+            out, _ = capfd.readouterr()
+            assert "2" in out
+
+            with pytest.raises(Exception) as ex:
+                run_pf_command(
+                    "flow",
+                    "test",
+                    "--flow",
+                    f"{PROMPTY_DIR}/prompty_with_env.prompty",
+                    "--inputs",
+                    'question="what is the result of 1+1?"',
+                    "--env",
+                    "invalid_path.env",
+                )
+            assert "cannot find the file" in str(ex.value)
+
+            with pytest.raises(Exception) as ex:
+                run_pf_command(
+                    "flow",
+                    "test",
+                    "--flow",
+                    f"{PROMPTY_DIR}/prompty_with_env.prompty",
+                    "--inputs",
+                    'question="what is the result of 1+1?"',
+                    "--env",
+                    "invalid_path.txt",
+                )
+            assert "expects file path endswith .env or KEY=VALUE [KEY=VALUE ...]" in str(ex.value)
+
+            # Test batch run
+            run_pf_command(
+                "run",
+                "create",
+                "--flow",
+                f"{PROMPTY_DIR}/prompty_with_env.prompty",
+                "--data",
+                f"{DATAS_DIR}/prompty_inputs.jsonl",
+                "--env",
+                str(env_file),
+            )
+            out, _ = capfd.readouterr()
+            assert "Completed" in out
+
+            # Test batch run
+            run_pf_command(
+                "run",
+                "create",
+                "--flow",
+                f"{PROMPTY_DIR}/prompty_with_env.prompty",
+                "--data",
+                f"{DATAS_DIR}/prompty_inputs.jsonl",
+                "--env",
+                *env_params,
+            )
+            out, _ = capfd.readouterr()
+            assert "Completed" in out
 
 
 def assert_batch_run_result(run, pf, assert_func):

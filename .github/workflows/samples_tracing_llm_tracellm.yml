@@ -9,7 +9,7 @@ on:
     - cron: "36 21 * * *" # Every day starting at 5:36 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/tutorials/tracing/llm/**, .github/workflows/samples_tracing_llm_tracellm.yml, examples/requirements.txt, examples/connections/azure_openai.yml ]
+    paths: [ examples/tutorials/tracing/llm/**, examples/*requirements.txt, .github/workflows/samples_tracing_llm_tracellm.yml ]
   workflow_dispatch:
 
 env:

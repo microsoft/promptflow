@@ -6,7 +6,11 @@ import os
 from abc import abstractmethod
 from enum import Enum
 
-from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_ENDPOINT
+from opentelemetry.sdk.environment_variables import (
+    OTEL_EXPORTER_OTLP_ENDPOINT,
+    OTEL_EXPORTER_OTLP_METRICS_ENDPOINT,
+    OTEL_EXPORTER_OTLP_TRACES_ENDPOINT,
+)
 
 from promptflow.core._serving.extension.extension_type import ExtensionType
 from promptflow.core._serving.monitor.mdc_exporter import MdcExporter
@@ -101,9 +105,18 @@ class OTLPExporterProvider(OTelExporterProvider):
     def __init__(self, logger, exporter_type: ExporterType) -> None:
         super().__init__(logger, exporter_type)
         self.otel_exporter_endpoint = os.environ.get(OTEL_EXPORTER_OTLP_ENDPOINT, None)
+        extra_env: str = None
+        if not self.otel_exporter_endpoint:
+            if exporter_type == ExporterType.TRACE:
+                extra_env = OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+                self.otel_exporter_endpoint = os.environ.get(OTEL_EXPORTER_OTLP_TRACES_ENDPOINT, None)
+            elif exporter_type == ExporterType.METRIC:
+                extra_env = OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
+                self.otel_exporter_endpoint = os.environ.get(OTEL_EXPORTER_OTLP_METRICS_ENDPOINT, None)
+
         if not self.otel_exporter_endpoint:
             self.logger.info(
-                f"No OTEL_EXPORTER_OTLP_ENDPOINT detected, OTLP {exporter_type.value} exporter is disabled."
+                f"No OTEL_EXPORTER_OTLP_ENDPOINT or {extra_env} detected, OTLP {exporter_type.value} exporter is disabled."  # noqa
             )  # noqa
 
     def is_enabled(self, extension: ExtensionType):

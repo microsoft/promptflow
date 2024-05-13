@@ -23,6 +23,7 @@ from promptflow._sdk._constants import (
     FLOW_RESOURCE_ID_PREFIX,
     HOME_PROMPT_FLOW_DIR,
     PARAMS_OVERRIDE_KEY,
+    PF_SYSTEM_METRICS_PREFIX,
     REGISTRY_URI_PREFIX,
     REMOTE_URI_PREFIX,
     RUN_MACRO,
@@ -335,6 +336,7 @@ class Run(YAMLTranslatableMixin):
             command=properties_json.get(FlowRunProperties.COMMAND, None),
             outputs=properties_json.get(FlowRunProperties.OUTPUTS, None),
             column_mapping=properties_json.get(FlowRunProperties.COLUMN_MAPPING, None),
+            portal_url=obj.portal_url,
         )
 
     @classmethod
@@ -428,6 +430,7 @@ class Run(YAMLTranslatableMixin):
             properties=json.dumps(self.properties, default=asdict),
             data=Path(self.data).resolve().absolute().as_posix() if self.data else None,
             run_source=self._run_source,
+            portal_url=self._portal_url,
         )
 
     def _dump(self) -> None:
@@ -474,6 +477,8 @@ class Run(YAMLTranslatableMixin):
                 if exclude_debug_info:
                     exception_dict.pop("debugInfo", None)
                 result["error"] = exception_dict
+            if self._portal_url:
+                result[RunDataKeys.PORTAL_URL] = self._portal_url
         elif self._run_source == RunInfoSources.INDEX_SERVICE:
             result["creation_context"] = self._creation_context
             result["flow_name"] = self._experiment_name
@@ -497,6 +502,14 @@ class Run(YAMLTranslatableMixin):
                     result["error"]["error"].pop("additionalInfo", None)
                 if exclude_debug_info:
                     result["error"]["error"].pop("debugInfo", None)
+
+        # hide system metrics that starts with '__pf__'
+        system_metrics = properties.get(FlowRunProperties.SYSTEM_METRICS, None)
+        if system_metrics and isinstance(system_metrics, dict):
+            refined_system_metrics = {
+                k: v for k, v in system_metrics.items() if not k.startswith(PF_SYSTEM_METRICS_PREFIX)
+            }
+            properties[FlowRunProperties.SYSTEM_METRICS] = refined_system_metrics
 
         # hide properties when needed (e.g. list remote runs)
         if exclude_properties is True:
