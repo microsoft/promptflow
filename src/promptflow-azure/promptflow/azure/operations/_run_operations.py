@@ -983,7 +983,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         result_dict = async_run_allowing_running_loop(run_uploader.upload)
         # patch details about the uploaded run
         run._local_to_cloud_info = result_dict
-        logger.debug(f"Successfully uploaded run details of {run!r} to cloud.")
+        logger.debug(f"Successfully uploaded run details of {run.name!r} to cloud.")
 
         # registry the run in the cloud
         self._register_existing_bulk_run(run=run)
@@ -1007,7 +1007,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             workspace_name=self._operation_scope.workspace_name,
             body=rest_obj,
         )
-        logger.info(f"Successfully registered run {run!r} to cloud.")
+        logger.info(f"Successfully registered run {run.name!r} to cloud.")
 
     def _validate_for_run_download(self, run: Union[str, Run], output: Optional[Union[str, Path]], overwrite):
         """Validate the run download parameters."""
