@@ -577,8 +577,16 @@ class TestFlowTest:
         )
         assert result == {"str_output": "str", "bool_output": True, "int_output": 2, "float_output": 2.0}
 
-    def test_flow_with_sample(self, pf):
-        flow_path = Path(f"{EAGER_FLOWS_DIR}/flow_with_sample")
+    @pytest.mark.parametrize(
+        "flow_file",
+        [
+            "flow.flex.yaml",
+            "flow_with_sample_ref.yaml",
+            "flow_with_sample_inner_ref.yaml",
+        ],
+    )
+    def test_flow_with_sample(self, pf, flow_file):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/flow_with_sample/{flow_file}")
         result = pf.test(
             flow=flow_path,
         )

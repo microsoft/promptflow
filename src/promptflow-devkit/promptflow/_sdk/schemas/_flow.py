@@ -1,16 +1,18 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+from pathlib import Path
 
 from marshmallow import ValidationError, fields, pre_load, validate, validates_schema
 
 from promptflow._constants import LANGUAGE_KEY, ConnectionType, FlowLanguage
 from promptflow._proxy import ProxyFactory
-from promptflow._sdk._constants import FlowType
+from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY, FlowType
 from promptflow._sdk.schemas._base import PatchedSchemaMeta, YamlFileSchema
 from promptflow._sdk.schemas._fields import LocalPathField, NestedField
 from promptflow.contracts.tool import ValueType
 from promptflow.core._model_configuration import MODEL_CONFIG_NAME_2_CLASS
+from promptflow.core._prompty_utils import resolve_references
 
 
 class FlowInputSchema(metaclass=PatchedSchemaMeta):
@@ -123,6 +125,10 @@ class FlexFlowSchema(BaseFlowSchema):
     @pre_load
     def resolve_sample(self, data, **kwargs):
         # TODO: resolve sample here
+        sample_dict = data.get("sample", {})
+        base_path = Path(self.context[BASE_PATH_CONTEXT_KEY])
+        sample_dict = resolve_references(origin=sample_dict, base_path=base_path)
+        data["sample"] = sample_dict
         return data
 
 
