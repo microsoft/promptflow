@@ -292,7 +292,9 @@ class FlowOperations(TelemetryMixin):
             init_kwargs=init,
             collection=collection,
         ) as submitter:
-            inputs = inputs or load_inputs_from_sample(submitter.flow.sample)
+            # Only override sample inputs for prompty, flex flow and prompty has different sample format
+            if isinstance(flow, Prompty) and not inputs:
+                inputs = load_inputs_from_sample(submitter.flow.sample)
             if isinstance(flow, FlexFlow) or isinstance(flow, Prompty):
                 # TODO(2897153): support chat eager flow
                 # set is chat flow to True to allow generator output
