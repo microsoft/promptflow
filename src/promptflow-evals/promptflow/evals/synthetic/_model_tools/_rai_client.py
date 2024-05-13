@@ -92,5 +92,5 @@ class RAIClient:
 
         raise ValueError(
             "Azure safety evaluation service is not available in your current region, "
-            "please go to <link to docs> to see which regions are supported"
+            "please go to https://aka.ms/azureaistudiosafetyeval to see which regions are supported"
         )
