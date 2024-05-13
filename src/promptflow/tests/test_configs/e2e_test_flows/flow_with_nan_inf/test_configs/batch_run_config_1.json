@@ -12,22 +12,22 @@
             {
                 "line_number": 0,
                 "output": {
-                    "nan": NaN,
-                    "inf": Infinity
+                    "nan": "NaN",
+                    "inf": "Infinity"
                 }
             },
             {
                 "line_number": 1,
                 "output": {
-                    "nan": NaN,
-                    "inf": Infinity
+                    "nan": "NaN",
+                    "inf": "Infinity"
                 }
             },
             {
                 "line_number": 2,
                 "output": {
-                    "nan": NaN,
-                    "inf": Infinity
+                    "nan": "NaN",
+                    "inf": "Infinity"
                 }
             }
         ],
