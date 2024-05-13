@@ -8,7 +8,6 @@ from promptflow.executor._result import LineResult
 from ..utils import construct_flow_execution_request_json
 
 
-@pytest.mark.usefixtures("executor_client")
 @pytest.mark.e2etest
 class TestExecutionServer:
     # region /execution
