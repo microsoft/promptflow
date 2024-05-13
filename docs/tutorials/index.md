@@ -2,31 +2,23 @@
 
 This section contains a collection of flow samples and step-by-step tutorials.
 
-|Area|<div style="width:250px">Sample</div>|Description|
-|--|--|--|
-|SDK|[Getting started with prompt flow](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/get-started/quickstart.ipynb)| A step by step guidance to invoke your first flow run.
-|CLI|[Chat with PDF](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/e2e-development/chat-with-pdf.md)| An end-to-end tutorial on how to build a high quality chat application with prompt flow, including flow development and evaluation with metrics.
-|SDK|[Chat with PDF - test, evaluation and experimentation](https://github.com/microsoft/promptflow/blob/main/examples/flows/chat/chat-with-pdf/chat-with-pdf.ipynb)| We will walk you through how to use prompt flow Python SDK to test, evaluate and experiment with the "Chat with PDF" flow.
-|SDK|[Connection management](https://github.com/microsoft/promptflow/blob/main/examples/connections/connection.ipynb)| Manage various types of connections using sdk
-|CLI|[Working with connection](https://github.com/microsoft/promptflow/blob/main/examples/connections/README.md)| Manage various types of connections using cli
-|SDK|[Run prompt flow in Azure AI](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/get-started/quickstart-azure.ipynb)| A quick start tutorial to run a flow in Azure AI and evaluate it.
-|SDK|[Flow run management in Azure AI](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/run-management/cloud-run-management.ipynb)| Flow run management in azure AI
-|AZURE|[Develop promptflow copilot](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/develop-promptflow-copilot/develop-promptflow-copilot.md)| A step by step guidance to develop a promptflow copilot.
-
-## Samples
-
-|Area|<div style="width:250px">Sample</div>|Description|
-|--|--|--|
-|Standard Flow|[basic](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/basic)| a basic flow with prompt and python tool.
-|Standard Flow|[basic-with-connection](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/basic-with-connection)| a basic flow using custom connection with prompt and python tool
-|Standard Flow|[basic-with-builtin-llm](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/basic-with-builtin-llm)| a basic flow using builtin llm tool
-|Standard Flow|[customer-intent-extraction](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/customer-intent-extraction)| a flow created from existing langchain python code
-|Standard Flow|[web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification)| a flow demonstrating multi-class classification with LLM. Given an url, it will classify the url into one web category with just a few shots, simple summarization and classification prompts.
-|Standard Flow|[autonomous-agent](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/autonomous-agent)| a flow showcasing how to construct a AutoGPT flow to autonomously figures out how to apply the given functions to solve the goal, which is film trivia that provides accurate and up-to-date information about movies, directors, actors, and more.
-|Chat Flow|[chat-with-wikipedia](https://github.com/microsoft/promptflow/tree/main/examples/flows/chat/chat-with-wikipedia)| a flow demonstrating Q&A with GPT3.5 using information from Wikipedia to make the answer more grounded.
-|Chat Flow|[chat-with-pdf](https://github.com/microsoft/promptflow/tree/main/examples/flows/chat/chat-with-pdf)| a flow that allow you to ask questions about the content of a PDF file and get answers.
-|Evaluation Flow|[eval-classification-accuracy](https://github.com/microsoft/promptflow/tree/main/examples/flows/evaluation/eval-classification-accuracy)| a flow illustrating how to evaluate the performance of a classification system.
-
-Learn more:  [Try out more promptflow examples.](https://github.com/microsoft/promptflow/tree/main/examples)
-
-
+|Area|Cloud|Category|<div style="width:250px">Sample</div>|Description|
+|--|--|--|--|--|
+|SDK|NOT DEFINED|Flow|[Execute flow as a function](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/get-started/flow-as-function.ipynb)|This guide will walk you through the main scenarios of executing flow as a function.|
+|SDK|NOT DEFINED|Flow|[Run flows in azure ml pipeline](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/run-flow-with-pipeline/pipeline.ipynb)|Create pipeline using components to run a distributed job with tensorflow|
+|SDK|NOT DEFINED|Flow|[Flow run management in azure](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/run-management/cloud-run-management.ipynb)|Flow run management in Azure AI|
+|SDK|NOT DEFINED|Flow|[Flow run management](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/run-management/run-management.ipynb)|Flow run management|
+|SDK|NOT DEFINED|Flow|[Getting started with dag flow](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/get-started/quickstart.ipynb)|A quickstart tutorial to run a flow and evaluate it.|
+|SDK|NOT DEFINED|Flow|[Run dag flow in azure](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/get-started/quickstart-azure.ipynb)|A quickstart tutorial to run a flow in Azure AI and evaluate it.|
+|CLI|NOT DEFINED|General|[Deploy flow using azure app service](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/flow-deploy/azure-app-service/README.md)| This example demos how to deploy a flow using Azure App Service|
+|CLI|NOT DEFINED|General|[Create service with flow](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/flow-deploy/create-service-with-flow/README.md)| This example shows how to create a simple service with flow|
+|CLI|NOT DEFINED|General|[Distribute flow as executable app](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/flow-deploy/distribute-flow-as-executable-app/README.md)| This example demos how to package flow as a executable app|
+|CLI|NOT DEFINED|General|[Deploy a flow using docker](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/flow-deploy/docker/README.md)| This example demos how to deploy flow as a docker app|
+|CLI|NOT DEFINED|General|[Deploy flow using kubernetes](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/flow-deploy/kubernetes/README.md)| This example demos how to deploy flow as a Kubernetes app|
+|CLI|NOT DEFINED|General|[Tutorial: how prompt flow helps on quality improvement](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/flow-fine-tuning-evaluation/promptflow-quality-improvement.md)| This tutorial is designed to enhance your understanding of improving flow quality through prompt tuning and evaluation|
+|CLI|Local|Rag|[Tutorial: chat with pdf](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/e2e-development/chat-with-pdf.md)| Retrieval Augmented Generation (or RAG) has become a prevalent pattern to build intelligent application with Large Language Models (or LLMs) since it can infuse external knowledge into the model, which is not trained with those up-to-date or proprietary information|
+|SDK|NOT DEFINED|Tracing|[Tracing with autogen](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/tracing/autogen-groupchat/trace-autogen-groupchat.ipynb)|Tracing LLM calls in autogen group chat application|
+|SDK|NOT DEFINED|Tracing|[Tracing with custom opentelemetry collector](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/tracing/custom-otlp-collector/otlp-trace-collector.ipynb)|A tutorial on how to levarage custom OTLP collector.|
+|SDK|NOT DEFINED|Tracing|[Tracing with langchain apps](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/tracing/langchain/trace-langchain.ipynb)|Tracing LLM calls in langchain application|
+|SDK|NOT DEFINED|Tracing|[Tracing with llm application](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/tracing/llm/trace-llm.ipynb)|Tracing LLM application|
+|CLI|Local|Tracing|[Tracing](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/tracing/README.md)| Prompt flow provides the tracing feature to capture and visualize the internal execution details for all flows|

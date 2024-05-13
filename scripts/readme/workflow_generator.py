@@ -60,7 +60,7 @@ def write_notebook_workflow(notebook, name, output_telemetry=Telemetry()):
 
     if "examples/tutorials" in gh_working_dir:
         notebook_path = Path(ReadmeStepsManage.git_base_dir()) / str(notebook)
-        path_filter = resolve_tutorial_resource(workflow_name, notebook_path.resolve())
+        path_filter = resolve_tutorial_resource(workflow_name, notebook_path.resolve(), output_telemetry)
     elif "samples_configuration" in workflow_name:
         # exception, samples configuration is very simple and not related to other prompt flow examples
         path_filter = (
@@ -164,8 +164,8 @@ def main(input_glob, output_files=[], check=False):
     notebooks = local_filter(no_readme_generation_filter, notebooks)
 
     # format code
-    if not check:
-        format_ipynb(notebooks)
+    #if not check:
+    #    format_ipynb(notebooks)
 
     # write workflows
     write_workflows(notebooks, output_files)
