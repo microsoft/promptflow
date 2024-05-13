@@ -8,10 +8,11 @@ import functools
 import inspect
 import json
 import logging
+import sys
 from collections.abc import AsyncIterator, Iterator
 from importlib.metadata import version
 from threading import Lock
-from typing import Callable, ContextManager, Dict, List, Optional
+from typing import Callable, Dict, List, Optional
 
 import opentelemetry.trace as otel_trace
 from opentelemetry.sdk.trace import ReadableSpan
@@ -173,92 +174,144 @@ def enrich_span_with_llm_if_needed(span, original_span, inputs, generator_output
             token_collector.collect_openai_tokens_for_streaming(span, inputs, generator_output, parser.is_chat)
 
 
-class TracedGenerator:
+class TracedGenerator(GeneratorProxy):
     def __init__(self, original_span: ReadableSpan, inputs, iterator: Iterator):
-        self.original_span = original_span
-        self.inputs = inputs
-        self.iterator = iterator
-        self.context = original_span.get_span_context()
-        self.link = Link(self.context)
-        self.otel_tracer = otel_trace.get_tracer("promptflow")
+        self._original_span = original_span
+        self._inputs = inputs
+        self._initialized = False
+        self._context_managers = []
+        super().__init__(iterator)
 
     def __iter__(self):
         return self
 
     def __next__(self):
+        hit_exception_in_context_manager = True
+        if not self._initialized:
+            self._initialize_span()
         try:
-            with self.otel_tracer.start_as_current_span(
-                f"Iterated({self.original_span.name})",
-                links=[self.link],
-            ) as span, _record_cancellation_exceptions_to_span(span):
-                enrich_span_with_original_attributes(span, self.original_span.attributes)
-                # Enrich the new span with input before generator iteration to prevent loss of input information.
-                # The input is as an event within this span.
-                enrich_span_with_input(span, self.inputs)
-                generator_proxy = GeneratorProxy(self.iterator)
-                item = next(generator_proxy)
-                generator_output = generator_proxy.items
-                enrich_span_with_llm_if_needed(span, self.original_span, self.inputs, generator_output)
-                enrich_span_with_openai_tokens(span, TraceType(self.original_span.attributes["span_type"]))
-                enrich_span_with_output(span, serialize_attribute(generator_output))
-                span.set_status(StatusCode.OK)
-
-                return item
+            enrich_span_with_original_attributes(self._span, self._original_span.attributes)
+            return next(self._iterator)
         except StopIteration:
-            token_collector.collect_openai_tokens_for_parent_span(span)
-            raise
+            try:
+                self._finalize_span()
+                raise
+            except Exception as e:
+                hit_exception_in_context_manager = True
+                self._exit_context_managers_with_exception(e)
+            finally:
+                if not hit_exception_in_context_manager:
+                    self._exit_context_managers_without_exception()
+                token_collector.collect_openai_tokens_for_parent_span(self._span)
+        except Exception as e:
+            if isinstance(e, StopIteration):
+                raise e
+            else:
+                self._exit_context_managers_with_exception(e)
+                token_collector.collect_openai_tokens_for_parent_span(self._span)
 
-    def __enter__(self):
-        if isinstance(self.iterator, ContextManager):
-            self.iterator.__enter__()
+    def _exit_context_managers_with_exception(self, e: Exception):
+        suppressed = False
+        for context_manager in self._context_managers.reverse():
+            if suppressed:
+                break
+            suppressed = context_manager.__exit__(*sys.exc_info())
+        if not suppressed:
+            raise e
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if isinstance(self.iterator, ContextManager):
-            self.iterator.__exit__(exc_type, exc_val, exc_tb)
+    def _exit_context_managers_without_exception(self):
+        for context_manager in self._context_managers.reverse():
+            context_manager.__exit__(None, None, None)
+
+    def _initialize_span(self):
+        self._original_span_context = self._original_span.get_span_context()
+        self._link = Link(self._original_span_context)
+        # If start_trace is not called, the name of the original_span will be empty.
+        # need to get everytime to ensure tracer is latest
+        self._otel_tracer = otel_trace.get_tracer("promptflow")
+        self._span = self._otel_tracer.start_as_current_span(
+            f"Iterated({self._original_span.name})", links=[self._link]
+        )
+        self._record_cancel_span_context_manager = _record_cancellation_exceptions_to_span(self._span)
+        self._context_managers = [self._span, self._record_cancel_span_context_manager]
+
+        self._initialized = True
+
+    def _finalize_span(self):
+        enrich_span_with_llm_if_needed(self._span, self._original_span, self._inputs, self.items)
+        enrich_span_with_openai_tokens(self._span, TraceType(self._original_span.attributes["span_type"]))
+        enrich_span_with_output(self._span, serialize_attribute(self._generator_output))
+        self._span.set_status(StatusCode.OK)
 
 
-class TracedAsyncGenerator:
-    def __init__(self, original_span: ReadableSpan, inputs, iterator: AsyncIterator):
-        self.original_span = original_span
-        self.inputs = inputs
-        self.iterator = iterator
-        self.context = original_span.get_span_context()
-        self.link = Link(self.context)
-        self.otel_tracer = otel_trace.get_tracer("promptflow")
+class TracedAsyncGenerator(AsyncGeneratorProxy):
+    def __init__(self, original_span: ReadableSpan, inputs, iterator: Iterator):
+        self._original_span = original_span
+        self._inputs = inputs
+        self._initialized = False
+        self._context_managers = []
+        super().__init__(iterator)
 
     async def __aiter__(self):
         return self
 
     async def __anext__(self):
+        hit_exception_in_context_manager = True
+        if not self._initialized:
+            self._initialize_span()
         try:
-            with self.otel_tracer.start_as_current_span(
-                f"Iterated({self.original_span.name})",
-                links=[self.link],
-            ) as span, _record_cancellation_exceptions_to_span(span):
-                enrich_span_with_original_attributes(span, self.original_span.attributes)
-                # Enrich the new span with input before generator iteration to prevent loss of input information.
-                # The input is as an event within this span.
-                enrich_span_with_input(span, self.inputs)
-                generator_proxy = AsyncGeneratorProxy(self.iterator)
-                item = await generator_proxy.__anext__()
-                generator_output = generator_proxy.items
-                enrich_span_with_llm_if_needed(span, self.original_span, self.inputs, generator_output)
-                enrich_span_with_openai_tokens(span, TraceType(self.original_span.attributes["span_type"]))
-                enrich_span_with_output(span, serialize_attribute(generator_output))
-                span.set_status(StatusCode.OK)
+            enrich_span_with_original_attributes(self._span, self._original_span.attributes)
+            return await next(self._iterator)
+        except StopIteration:
+            try:
+                self._finalize_span()
+                raise
+            except Exception as e:
+                hit_exception_in_context_manager = True
+                self._exit_context_managers_with_exception(e)
+            finally:
+                if not hit_exception_in_context_manager:
+                    self._exit_context_managers_without_exception()
+                token_collector.collect_openai_tokens_for_parent_span(self._span)
+        except Exception as e:
+            if isinstance(e, StopIteration):
+                raise e
+            else:
+                self._exit_context_managers_with_exception(e)
+                token_collector.collect_openai_tokens_for_parent_span(self._span)
 
-                return item
-        except StopAsyncIteration:
-            token_collector.collect_openai_tokens_for_parent_span(span)
-            raise
+    def _exit_context_managers_with_exception(self, e: Exception):
+        suppressed = False
+        for context_manager in self._context_managers.reverse():
+            if suppressed:
+                break
+            suppressed = context_manager.__exit__(*sys.exc_info())
+        if not suppressed:
+            raise e
 
-    def __enter__(self):
-        if isinstance(self.iterator, ContextManager):
-            self.iterator.__enter__()
+    def _exit_context_managers_without_exception(self):
+        for context_manager in self._context_managers.reverse():
+            context_manager.__exit__(None, None, None)
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if isinstance(self.iterator, ContextManager):
-            self.iterator.__exit__(exc_type, exc_val, exc_tb)
+    def _initialize_span(self):
+        self._original_span_context = self._original_span.get_span_context()
+        self._link = Link(self._original_span_context)
+        # If start_trace is not called, the name of the original_span will be empty.
+        # need to get everytime to ensure tracer is latest
+        self._otel_tracer = otel_trace.get_tracer("promptflow")
+        self._span = self._otel_tracer.start_as_current_span(
+            f"Iterated({self._original_span.name})", links=[self._link]
+        )
+        self._record_cancel_span_context_manager = _record_cancellation_exceptions_to_span(self._span)
+        self._context_managers = [self._span, self._record_cancel_span_context_manager]
+
+        self._initialized = True
+
+    def _finalize_span(self):
+        enrich_span_with_llm_if_needed(self._span, self._original_span, self._inputs, self.items)
+        enrich_span_with_openai_tokens(self._span, TraceType(self._original_span.attributes["span_type"]))
+        enrich_span_with_output(self._span, serialize_attribute(self._generator_output))
+        self._span.set_status(StatusCode.OK)
 
 
 def enrich_span_with_original_attributes(span, attributes):
