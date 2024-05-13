@@ -599,14 +599,14 @@ class LineExecutionProcessPool:
         if not self._output_dir:
             return result
         if self._delayed_multimedia_persistence:
-            self._persist_multimedia_data_to_output_dir(result)
+            self._persist_multimedia_to_output_dir(result)
         else:
-            self._convert_multimedia_data_to_string(result)
+            self._persist_multimedia_to_string(result)
         # Persist multimedia data in the outputs of line result to output_dir
         result.output = self._multimedia_processor.persist_multimedia_data(result.output, self._output_dir)
         return result
 
-    def _persist_multimedia_data_to_output_dir(self, result: LineResult):
+    def _persist_multimedia_to_output_dir(self, result: LineResult):
         """Persist multimedia data in the line result to output_dir to ensure
         the multimedia data path is correct in the line result."""
         service_storage = ServiceStorage(self._output_dir)
@@ -620,16 +620,16 @@ class LineExecutionProcessPool:
             result.aggregation_inputs, Path(mkdtemp()), use_absolute_path=True
         )
 
-    def _convert_multimedia_data_to_string(self, result: LineResult):
+    def _persist_multimedia_to_string(self, result: LineResult):
         """Replace multimedia data in line result with string place holder to
         prevent OOM and persist multimedia data in output when batch running."""
         # Serialize multimedia data in flow run info to string
-        self._serialize_multimedia(result.run_info)
+        self._convert_multimedia_to_string(result.run_info)
         # Serialize multimedia data in node run infos to string
         for node_run_info in result.node_run_infos.values():
-            self._serialize_multimedia(node_run_info)
+            self._convert_multimedia_to_string(node_run_info)
 
-    def _serialize_multimedia(self, run_info: Union[FlowRunInfo, NodeRunInfo]):
+    def _convert_multimedia_to_string(self, run_info: Union[FlowRunInfo, NodeRunInfo]):
         if run_info.inputs:
             run_info.inputs = self._multimedia_processor.convert_multimedia_data_to_string(run_info.inputs)
 
