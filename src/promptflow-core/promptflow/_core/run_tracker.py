@@ -6,6 +6,7 @@ import asyncio
 import inspect
 import json
 from contextvars import ContextVar
+from copy import deepcopy
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Mapping, Optional, Union
 
@@ -39,7 +40,9 @@ class RunTracker(ThreadLocalSingleton):
 
     def __init__(self, run_storage: AbstractRunStorage, run_mode: RunMode = RunMode.Test, node_log_manager=None):
         self._node_runs: Dict[str, RunInfo] = {}
-        self._flow_runs: Dict[str, FlowRunInfo] = {}
+        self._node_runs: Dict[str, RunInfo] = {}
+        # The key is the parent_run_id, and the value is a list of node traces.
+        self._node_traces: Dict[str, List[Dict[str, Any]]] = {}
         self._current_run_id = ""
         self._run_context = ContextVar(self.RUN_CONTEXT_NAME, default="")
         self._storage = run_storage
@@ -62,6 +65,12 @@ class RunTracker(ThreadLocalSingleton):
         # Add list() to make node_run_list a new list object,
         # therefore avoid iterating over a dictionary, which might be updated by another thread.
         return list(self._node_runs.values())
+
+    @property
+    def node_traces_dict(self):
+        # Add dict() to make node_traces a new dict object,
+        # therefore avoid iterating over a dictionary, which might be updated by another thread.
+        return dict(self._node_traces)
 
     @property
     def flow_run_list(self):
@@ -229,11 +238,15 @@ class RunTracker(ThreadLocalSingleton):
         if output is not None:
             msg = f"Output of {run_info.node} is not json serializable, use str to store it."
             output = self._ensure_serializable_value(output, msg)
+
+        # Deep copy the traces of node run info to node_traces.
+        self._node_traces.setdefault(run_info.parent_run_id, []).extend(deepcopy(run_info.api_calls))
+
         self._common_postprocess(run_info, output, ex)
 
     def _common_postprocess(self, run_info, output, ex):
         if output is not None:
-            #  Duplicated fields for backward compatibility.
+            # Duplicated fields for backward compatibility.
             run_info.result = output
             run_info.output = output
         if ex is not None:
@@ -408,11 +421,10 @@ class RunTracker(ThreadLocalSingleton):
         run_info.system_metrics.update(total_metrics)
 
     def _collect_traces_from_nodes(self, run_id):
-        child_run_infos = self.collect_child_node_runs(run_id)
-        traces = []
-        for node_run_info in child_run_infos:
-            traces.extend(node_run_info.api_calls or [])
-        return traces
+        for parent_run_id, node_trace in self.node_traces_dict.items():
+            if parent_run_id == run_id:
+                return node_trace
+        return []
 
     OPENAI_AGGREGATE_METRICS = ["prompt_tokens", "completion_tokens", "total_tokens"]
 
