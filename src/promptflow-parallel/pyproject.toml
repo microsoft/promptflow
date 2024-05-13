@@ -37,7 +37,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "<4.0,>=3.8"
-promptflow-core = "<2.0.0"
+promptflow-core = ">=1.11.0.dev126475973,<2.0.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"

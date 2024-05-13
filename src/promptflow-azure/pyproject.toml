@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "promptflow-azure"
-version = "1.11.0.dev0"
+version = "1.11.0.dev126475973"
 description = "Prompt flow azure"
 include = [
   "promptflow/azure/resources/*"
@@ -45,7 +45,7 @@ azure-identity = ">=1.12.0,<2.0.0"
 azure-ai-ml = ">=1.14.0,<2.0.0"
 azure-cosmos = ">=4.5.1,<5.0.0"  # used to upload trace to cloud
 pyjwt = ">=2.4.0,<3.0.0"  # requirement of control plane SDK
-promptflow-devkit = "<2.0.0"
+promptflow-devkit = ">=1.11.0.dev126475973,<2.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "*"
