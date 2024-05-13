@@ -190,6 +190,8 @@ def get_open_ai_client_by_connection(connection, is_async=False):
 def send_request_to_llm(client, api, parameters):
     if api == "completion":
         result = client.completions.create(**parameters)
+    if api == "images":
+        result = client.images.generate(model=parameters['model'], prompt=parameters['messages'][0]['content'], n=1)
     else:
         result = client.chat.completions.create(**parameters)
     return result
