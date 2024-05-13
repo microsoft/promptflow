@@ -410,6 +410,8 @@ def main(check):
                     continue
                 output_object[workflow.workflow_name].append(item)
         for readme in readme_telemetry:
+            if not hasattr(readme_telemetry, "workflow_name"):
+                continue
             output_object[readme.workflow_name] = []
             readme_items = re.split(r"\[|,| |\]", readme.path_filter)
             readme_items = list(filter(None, readme_items))
