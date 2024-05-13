@@ -148,13 +148,3 @@ The Retrieval span type is specifically designed to encapsulate the execution de
 |---|---|---|---|
 | promptflow.retrieval.query | Captures the text of the retrieval query. | ```"When does a pipeline job reuse a previous job's results in Azure Machine Learning?"``` | `Required` |
 | promptflow.retrieval.documents | Details the list of retrieved documents relevant to the query. | ```[{"document.id":"https://componentsdk.azurewebsites.net/howto/caching-reuse.html","document.score":2.677619457244873,"document.content":"# Component concepts &..."},{"document.id":"https://learn.microsoft.com/en-us/azure/machine-learning/v1/reference-pipeline-yaml","document.score":2.563112735748291,"document.content":"etc. \|\r\n\| runconfig \| T..."}]``` | `Required` |
-
-## Conclusion
-
-In conclusion, the Prompt flow span design plays a pivotal role in ensuring the effectiveness and efficiency of the trace system. By meticulously defining span types and their associated attributes and events, we provide a robust foundation for developers and users to gain insights into the application's execution process.
-
-Adherence to these specifications guarantees that the tracing system remains transparent, consistent, and reliable.
-
-The structured approach to tracing not only facilitates the monitoring and debugging of Prompt flow but also enables seamless integration with other systems and components. As the Prompt flow ecosystem evolves, these specifications will serve as a critical reference to maintain the integrity of tracing data and to support the continuous improvement of the user experience.
-
-We encourage all contributors and users of Prompt flow to familiarize themselves with these guidelines to maximize the benefits of our tracing system. Through collective efforts, we can ensure that Prompt flow remains a powerful and intuitive tool for application development and performance analysis.
