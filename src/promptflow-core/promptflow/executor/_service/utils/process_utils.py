@@ -63,20 +63,18 @@ async def invoke_sync_function_in_process(
             # Raise exception if the process exit code is not 0
             if p.exitcode != 0:
                 # If process is not None, it indicates that the process has been terminated by other errors.
-                ex = error_dict.get("error", None)
-                if ex is None:
+                exception = error_dict.get("error", None)
+                if exception is None:
                     # If process is None, it indicates that the process has been terminated by cancel request.
                     if run_id and not ProcessManager().get_process(run_id):
-                        ex = ExecutionCanceledError(run_id)
-                    else:
-                        ex = UnexpectedError(
-                            message="Unexpected error occurred while executing the request",
-                            target=ErrorTarget.EXECUTOR,
-                        )
-                service_logger.error(f"[{p.pid}] Process execution failed with exitcode: {p.exitcode}, error: {ex}")
+                        raise ExecutionCanceledError(run_id)
+                    raise UnexpectedError(
+                        message="Unexpected error occurred while executing the request",
+                        target=ErrorTarget.EXECUTOR,
+                    )
                 # JsonSerializedPromptflowException will be raised here
                 # no need to change to PromptflowException since it will be handled in app.exception_handler
-                raise ex
+                raise exception
 
             service_logger.info(f"[{p.pid}--{os.getpid()}] Process finished.")
             return return_dict.get("result", {})
