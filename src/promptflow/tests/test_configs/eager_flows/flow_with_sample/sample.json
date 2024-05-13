@@ -1,0 +1,8 @@
+{
+    "inputs": {
+        "func_input": "func_input"
+    },
+    "init": {
+        "obj_input": "obj_input"
+    }
+}
