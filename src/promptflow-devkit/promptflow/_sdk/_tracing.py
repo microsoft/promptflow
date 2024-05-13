@@ -459,7 +459,7 @@ def start_trace_with_devkit(collection: str, **kwargs: typing.Any) -> None:
     # print tracing url(s) when run is specified
     _print_tracing_url_from_local(pfs_port=pfs_port, collection=collection, exp=exp, run=run)
 
-    if run is not None and run_config._is_cloud_trace_destination(path=flow_path):
+    if run is not None and ws_triad is not None:
         trace_destination = run_config.get_trace_destination(path=flow_path)
         print(
             f"You can view the traces in azure portal since trace destination is set to: {trace_destination}. "
