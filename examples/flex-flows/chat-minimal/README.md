@@ -1,5 +1,5 @@
 # Minimal chat
-A chat flow defined using function. It demonstrates the minimal code to have a chat flow.
+A chat flow defined using function with minimal code. It demonstrates the minimal code to have a chat flow.
 
 ## Prerequisites
 
@@ -45,7 +45,6 @@ python flow.py
 pf flow test --flow flow:chat --inputs question="What's the capital of France?"
 ```
 
-```
 - Test flow: multi turn
 ```shell
 # start test in interactive terminal (TODO)
@@ -81,21 +80,3 @@ pf run show-details --name $name
 # visualize run in browser
 pf run visualize --name $name
 ```
-
-## Run flow in cloud
-
-- Assume we already have a connection named `open_ai_connection` in workspace.
-
-```bash
-# set default workspace
-az account set -s <your_subscription_id>
-az configure --defaults group=<your_resource_group_name> workspace=<your_workspace_name>
-```
-
-- Create run
-
-```bash
-# run with environment variable reference connection in azureml workspace
-pfazure run create --flow . --data ./data.jsonl --column-mapping question='${data.question}' --stream
-# run using yaml file
-pfazure run create --file run.yml --stream
