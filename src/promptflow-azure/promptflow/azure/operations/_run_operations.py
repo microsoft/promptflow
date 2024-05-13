@@ -59,7 +59,6 @@ from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME, AUTOMATIC_RUNTI
 from promptflow.azure._entities._trace import CosmosMetadata
 from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
-from promptflow.azure._utils._tracing import resolve_disable_trace
 from promptflow.azure._utils.general import get_authorization, get_user_alias_from_credential, set_event_loop_policy
 from promptflow.azure.operations._flow_operations import FlowOperations
 from promptflow.azure.operations._trace_operations import TraceOperations
@@ -853,6 +852,9 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         return self._trace_operations._get_cosmos_metadata()
 
     def _resolve_dependencies_in_parallel(self, run: Run, runtime, reset=None):
+        # local import to avoid circular import related to PFClient
+        from promptflow.azure._utils._tracing import resolve_disable_trace
+
         with ThreadPoolExecutor() as pool:
             tasks = [
                 pool.submit(self._resolve_data_to_asset_id, run=run),
