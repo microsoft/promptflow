@@ -73,9 +73,9 @@ class LineExecutionProcessPool:
     :param batch_timeout_sec: The timeout for the entire batch run in seconds.
     :param run_id: The run id of the batch run.
     :param nlines: The number of lines in the batch run.
-    :param delayed_multimedia_persistence: Whether to delay the persistence of multimedia data.
-        If True, will persist multimedia data after get LineResult from the output queue;
-        otherwise, will persist multimedia data during the line execution.
+    :param persist_multimedia_after_execution: Persist multimedia after execution or during execution.
+        If True, will persist multimedia data after get LineResult from the output queue.
+        If False, will persist multimedia data during the line execution.
     """
 
     _DEFAULT_WORKER_COUNT = 4
@@ -92,7 +92,7 @@ class LineExecutionProcessPool:
         batch_timeout_sec: Optional[int] = None,
         run_id: Optional[str] = None,
         nlines: Optional[int] = None,
-        delayed_multimedia_persistence: bool = False,
+        persist_multimedia_after_execution: bool = False,
     ):
         # Determine whether to use fork to create process.
         multiprocessing_start_method = os.environ.get("PF_BATCH_METHOD", multiprocessing.get_start_method())
@@ -113,7 +113,7 @@ class LineExecutionProcessPool:
         self._batch_timeout_sec = batch_timeout_sec
         self._line_timeout_sec = line_timeout_sec or LINE_TIMEOUT_SEC
         self._worker_count = self._determine_worker_count(worker_count)
-        self._delayed_multimedia_persistence = delayed_multimedia_persistence
+        self._persist_multimedia_after_execution = persist_multimedia_after_execution
 
         # Initialize the results dictionary that stores line results.
         self._result_dict: Dict[str, LineResult] = {}
@@ -598,7 +598,7 @@ class LineExecutionProcessPool:
     def _process_multimedia(self, result: LineResult) -> LineResult:
         if not self._output_dir:
             return result
-        if self._delayed_multimedia_persistence:
+        if self._persist_multimedia_after_execution:
             self._persist_multimedia_to_output_dir(result)
         else:
             self._persist_multimedia_to_string(result)
