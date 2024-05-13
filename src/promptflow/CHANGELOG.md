@@ -2,10 +2,13 @@
 
 ## v1.11.0 (Upcoming)
 
-### Features Added
+### Announcement
 
 - Introducing flex flow - design powerful LLM apps with the flexibility of Python functions or classes, and seamlessly test and run your logic with our VS Code Extension. Learn more about flex flow [here](https://microsoft.github.io/promptflow/how-to-guides/develop-a-flex-flow/index.html)
 - Introducing prompty - an experimental feature by for streamlining the creation of prompt templates. Simplify your development with .prompty files and elevate your prompts with ease! Learn more about prompty [here](https://microsoft.github.io/promptflow/how-to-guides/develop-a-prompty/index.html).
+
+### Features Added
+
 - [promptflow-devkit]: Upload local run details to cloud when trace destination is configured to cloud.
 
 ### Improvements
