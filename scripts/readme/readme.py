@@ -294,7 +294,6 @@ def write_readme(workflow_telemetries, readme_telemetries):
 
     # Build a table out of replacement
     # |Area|Cloud|Category|Sample|Description|
-    # |item.category | item.cloud | item.section | [item.title](https://github.com/microsoft/promptflow/blob/main/(item.path)) | item.description |
     new_items = []
     for row in replacement.keys():
         if row == "branch":
