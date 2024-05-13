@@ -73,7 +73,9 @@ class LineExecutionProcessPool:
     :param batch_timeout_sec: The timeout for the entire batch run in seconds.
     :param run_id: The run id of the batch run.
     :param nlines: The number of lines in the batch run.
-    :param serialize_multimedia_during_execution: Whether to serialize multimedia data during line execution.
+    :param delayed_multimedia_persistence: Whether to delay the persistence of multimedia data.
+        If True, will persist multimedia data after get LineResult from the output queue;
+        otherwise, will persist multimedia data during the line execution.
     """
 
     _DEFAULT_WORKER_COUNT = 4
@@ -90,7 +92,7 @@ class LineExecutionProcessPool:
         batch_timeout_sec: Optional[int] = None,
         run_id: Optional[str] = None,
         nlines: Optional[int] = None,
-        serialize_multimedia_during_execution: bool = False,
+        delayed_multimedia_persistence: bool = False,
     ):
         # Determine whether to use fork to create process.
         multiprocessing_start_method = os.environ.get("PF_BATCH_METHOD", multiprocessing.get_start_method())
@@ -111,13 +113,7 @@ class LineExecutionProcessPool:
         self._batch_timeout_sec = batch_timeout_sec
         self._line_timeout_sec = line_timeout_sec or LINE_TIMEOUT_SEC
         self._worker_count = self._determine_worker_count(worker_count)
-
-        # - If it is False, we will use QueueRunStorage as the storage during execution.
-        # It will only put the original run info into the output queue to wait for processing.
-        # - If it is True, we will use ServiceQueueRunStorage as the storage during execution.
-        # It will persist multimedia data in the run infos and aggregation_inputs to output_dir
-        # and convert Image object to path dict.
-        self._serialize_multimedia_during_execution = serialize_multimedia_during_execution
+        self._delayed_multimedia_persistence = delayed_multimedia_persistence
 
         # Initialize the results dictionary that stores line results.
         self._result_dict: Dict[str, LineResult] = {}
@@ -600,11 +596,9 @@ class LineExecutionProcessPool:
         return None
 
     def _process_multimedia(self, result: LineResult) -> LineResult:
-        """Replace multimedia data in line result with string place holder to
-        prevent OOM and persist multimedia data in output when batch running."""
         if not self._output_dir:
             return result
-        if self._serialize_multimedia_during_execution:
+        if self._delayed_multimedia_persistence:
             self._persist_multimedia_data_to_output_dir(result)
         else:
             self._convert_multimedia_data_to_string(result)
@@ -613,6 +607,8 @@ class LineExecutionProcessPool:
         return result
 
     def _persist_multimedia_data_to_output_dir(self, result: LineResult):
+        """Persist multimedia data in the line result to output_dir to ensure
+        the multimedia data path is correct in the line result."""
         service_storage = ServiceStorage(self._output_dir)
         # Persist multimedia data in flow run info to output_dir
         service_storage.persist_flow_run(result.run_info)
@@ -625,6 +621,8 @@ class LineExecutionProcessPool:
         )
 
     def _convert_multimedia_data_to_string(self, result: LineResult):
+        """Replace multimedia data in line result with string place holder to
+        prevent OOM and persist multimedia data in output when batch running."""
         # Serialize multimedia data in flow run info to string
         self._serialize_multimedia(result.run_info)
         # Serialize multimedia data in node run infos to string
