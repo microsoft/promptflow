@@ -17,21 +17,7 @@ env:
   WORKING_DIRECTORY: ${{ github.workspace }}/src/promptflow-parallel
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - uses: snok/install-poetry@v1
-    - name: build
-      run: poetry build
-      working-directory: ${{ env.WORKING_DIRECTORY }}
-    - uses: actions/upload-artifact@v4
-      with:
-        name: promptflow-parallel
-        path: ${{ env.WORKING_DIRECTORY }}/dist/promptflow_parallel-*.whl
-
   test:
-    needs: build
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-13]
@@ -58,20 +44,11 @@ jobs:
           path: ${{ env.WORKING_DIRECTORY }}
       - name: install promptflow packages in editable mode
         run: |
-          poetry run pip install -e ../promptflow
-          poetry run pip install -e ../promptflow-core
-          poetry run pip install -e ../promptflow-tracing
-          poetry run pip install -e ../promptflow-tools
-        working-directory: ${{ env.WORKING_DIRECTORY }}
-      - name: install promptflow-parallel from wheel
-        # wildcard expansion (*) does not work in Windows, so leverage python to find and install
-        run: poetry run pip install --pre $(python -c "import glob; print(glob.glob('promptflow_parallel-*.whl')[0])")
-        working-directory: ${{ env.WORKING_DIRECTORY }}
-      - name: install test dependency group
-        run: poetry install --only test
-        working-directory: ${{ env.WORKING_DIRECTORY }}
-      - name: install recording
-        run: poetry run pip install -e ../promptflow-recording
+          set -xe
+          poetry install -E pyarrow --with ci,test
+
+          poetry run pip show promptflow-tracing
+          poetry run pip show promptflow-core
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: run e2e tests
         run: poetry run pytest -m e2etest --cov=promptflow --cov-config=pyproject.toml --cov-report=term --cov-report=html --cov-report=xml
@@ -92,21 +69,16 @@ jobs:
       pull-requests: write
       contents: read
       issues: read
+    if: always()
     steps:
-      - uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-      - uses: EnricoMi/publish-unit-test-result-action@v2
-        with:
-          check_name: promptflow-parallel test result
-          comment_title: promptflow-parallel test result
-          files: "artifacts/**/test-results.xml"  # align with `--junit-xml` in pyproject.toml
-      - uses: irongut/CodeCoverageSummary@v1.3.0
-        with:
-          filename: "artifacts/report-ubuntu-latest-py3.11/coverage.xml"
-          badge: true
-          fail_below_min: false
-          format: markdown
-          hide_complexity: true
-          output: both
-          thresholds: 40 80
+    - name: checkout
+      uses: actions/checkout@v4
+    - name: Publish Test Results
+      uses: "./.github/actions/step_publish_test_results"
+      with:
+        testActionFileName: promptflow-parallel-e2e-test.yml
+        testResultTitle: SDK CLI Test Result
+        osVersion: ubuntu-latest
+        pythonVersion: 3.9
+        coverageThreshold: 40
+        context: test/parallel-e2e

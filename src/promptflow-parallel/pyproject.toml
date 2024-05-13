@@ -49,6 +49,7 @@ promptflow-tracing = {path = "../promptflow-tracing", develop = true}
 import-linter = "*"
 promptflow-core = {path = "../promptflow-core", extras = ["azureml-serving"]}
 promptflow-tracing = {path = "../promptflow-tracing"}
+promptflow-recording =  {path = "../promptflow-recording"}
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"
