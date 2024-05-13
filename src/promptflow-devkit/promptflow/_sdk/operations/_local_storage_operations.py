@@ -105,7 +105,9 @@ class LoggerOperations(LogContext):
             else:
                 log_path.touch()
 
-        for _logger in self._get_execute_loggers_list():
+        # set the log level for all loggers except the logger "promptflow"
+        _loggers = [_logger for _logger in self._get_execute_loggers_list() if _logger.name != logger.name]
+        for _logger in _loggers:
             for handler in _logger.handlers:
                 if self.stream is False and isinstance(handler, logging.StreamHandler):
                     handler.setLevel(logging.CRITICAL)
@@ -113,11 +115,12 @@ class LoggerOperations(LogContext):
 
     def __exit__(self, *args):
         super().__exit__(*args)
-
-        for _logger in self._get_execute_loggers_list():
+        # set the log level for all loggers except the logger "promptflow"
+        _loggers = [_logger for _logger in self._get_execute_loggers_list() if _logger.name != logger.name]
+        for _logger in _loggers:
             for handler in _logger.handlers:
                 if self.stream is False and isinstance(handler, logging.StreamHandler):
-                    handler.setLevel(logging.CRITICAL)
+                    handler.setLevel(logging.INFO)
 
 
 @dataclass
