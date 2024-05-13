@@ -2,6 +2,9 @@
 
 ## v1.11.0 (Upcoming)
 
+### Features Added
+- [promptflow-devkit]: Upload local run details to cloud when trace destination is configured to cloud.
+
 ### Improvements
 - [promptflow-devkit]: Interactive browser credential is excluded by default when using Azure AI connections, user could set `PF_NO_INTERACTIVE_LOGIN=False` to enable it.
 - [promptflow-devkit]: Add new `--engine` parameter for `pf flow serve`. This parameter can be used to switch python serving engine between `flask` and `fastapi`, currently it defaults to `flask`.
