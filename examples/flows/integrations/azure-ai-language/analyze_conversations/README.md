@@ -1,6 +1,6 @@
 # Analyze Conversations
 
-A flow that analyzes conversations with various language-based Machine Learning models. 
+A flow that analyzes conversations with various language-based Machine Learning models.
 
 This sample flow utilizes Azure AI Language's pre-built and optimized language models to perform various analyses on conversations. It performs:
 - [Language Detection](https://learn.microsoft.com/en-us/azure/ai-services/language-service/language-detection/overview)
@@ -8,7 +8,7 @@ This sample flow utilizes Azure AI Language's pre-built and optimized language m
 - [Conversational PII](https://learn.microsoft.com/en-us/azure/ai-services/language-service/personally-identifiable-information/how-to-call-for-conversations?tabs=client-libraries)
 - [Conversation Summarization](https://learn.microsoft.com/en-us/azure/ai-services/language-service/summarization/overview?tabs=conversation-summarization)
 
-See the [`promptflow-azure-ai-language`](https://pypi.org/project/promptflow-azure-ai-language/) tool package reference documentation for further information. 
+See the [`promptflow-azure-ai-language`](https://pypi.org/project/promptflow-azure-ai-language/) tool package reference documentation for further information.
 
 Tools used in this flow:
 - `python` tool.
@@ -31,7 +31,7 @@ pip install -r requirements.txt
 Note: when using the Prompt flow SDK, it may be useful to also install the [`Prompt flow for VS Code`](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) extension (if using VS Code).
 
 ### Azure AI/ML Studio:
-Start an automatic runtime. Required packages will automatically be installed from the `requirements.txt` file.
+Start an compute session. Required packages will automatically be installed from the `requirements.txt` file.
 
 ## Setup connections
 To use the `promptflow-azure-ai-language` package, you must have an [Azure AI Language Resource](https://azure.microsoft.com/en-us/products/ai-services/ai-language). [Create a Language Resource](https://portal.azure.com/#create/Microsoft.CognitiveServicesTextAnalytics) if necessary. From your Language Resource, obtain its `api_key` and `endpoint`.

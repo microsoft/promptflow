@@ -1,16 +1,15 @@
-# Create run with automatic runtime
+# Create run with compute session
 
 :::{admonition} Experimental feature
 This is an experimental feature, and may change at any time. Learn [more](../../how-to-guides/faq.md#stable-vs-experimental).
 :::
 
-A prompt flow runtime provides computing resources that are required for the application to run, including a Docker image that contains all necessary dependency packages. This reliable and scalable runtime environment enables prompt flow to efficiently execute its tasks and functions for a seamless user experience.
+A prompt flow compute session provides computing resources that are required for the application to run, including a Docker image that contains all necessary dependency packages. This reliable and scalable compute session environment enables prompt flow to efficiently execute its tasks and functions for a seamless user experience.
 
-If you're a new user, we recommend that you use the automatic runtime (preview). You can easily customize the environment by adding packages in the requirements.txt file in flow.dag.yaml in the flow folder.
+If you're a new user, we recommend that you use the compute session (preview). You can easily customize the environment by adding packages in the requirements.txt file in flow.dag.yaml in the flow folder.
 
-## Create a run with automatic runtime
+## Create a run with compute session
 
-Create a run with automatic runtime is simple, just omit the `runtime` field and system will use automatic runtime to create a session to execute.
 
 ::::{tab-set}
 :::{tab-item} CLI
@@ -44,10 +43,10 @@ pf.run(
 :::
 ::::
 
-## Specify pip requirements for automatic runtime
+## Specify pip requirements for compute session
 
 If `requirements.txt` exists in the same folder with `flow.dag.yaml`.
-The dependencies in it will be automatically installed for automatic runtime.
+The dependencies in it will be automatically installed for compute session.
 
 You can also specify which requirements file to use in `flow.dag.yaml` like this:
 
@@ -60,9 +59,9 @@ environment:
 
 Reference [Flow YAML Schema](../../reference/flow-yaml-schema-reference.md) for details.
 
-## Customize automatic runtime
+## Customize compute session
 
-In automatic runtime case, you can also specify the instance type, if you don't specify the instance type, Azure Machine Learning chooses an instance type (VM size) based on factors like quota, cost, performance and disk size, learn more about [serverless compute](https://docs.microsoft.com/en-us/azure/machine-learning/how-to-use-serverless-compute).
+In compute session case, you can also specify the instance type, if you don't specify the instance type, Azure Machine Learning chooses an instance type (VM size) based on factors like quota, cost, performance and disk size, learn more about [serverless compute](https://docs.microsoft.com/en-us/azure/machine-learning/how-to-use-serverless-compute).
 
 ```yaml
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/Run.schema.json
@@ -72,7 +71,7 @@ data: <path_to_flow>/data.jsonl
 column_mapping:
   url: ${data.url}
 
-# define instance type only work for automatic runtime, will be ignored if you specify the runtime name.
+# define instance type only work for compute session.
 resources:
   instance_type: <instance_type>
 ```
