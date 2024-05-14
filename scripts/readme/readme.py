@@ -303,7 +303,7 @@ def write_readme(workflow_telemetries, readme_telemetries):
                 "url"
             ] = f"https://github.com/microsoft/promptflow/blob/main/examples/{item['path']}"
             item["area"] = "SDK"
-            if "azure" in item["title"].lower():
+            if "azure" in item["name"].lower():
                 item["weight"] += 1000
             new_items.append(item)
         for item in replacement[row]["readmes"]:
