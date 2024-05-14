@@ -71,9 +71,9 @@ class ScriptExecutor(FlowExecutor):
         else:
             self._working_dir = working_dir or Path.cwd()
 
-        flow_file = os.path.join(self._working_dir, self._flow_file)
         # load flow if possible
         try:
+            flow_file = os.path.join(self._working_dir, self._flow_file)
             with open(flow_file, "r", encoding="utf-8") as fin:
                 flow_data = load_yaml(fin)
             flow = FlexFlow.deserialize(flow_data)
