@@ -359,7 +359,7 @@ class ReadmeStepsManage:
             from .resource_resolver import resolve_tutorial_resource
 
             path_filter = resolve_tutorial_resource(
-                workflow_name, readme_path.resolve()
+                workflow_name, readme_path.resolve(), output_telemetry
             )
         else:
             if (

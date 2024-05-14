@@ -55,7 +55,7 @@ from promptflow._sdk.entities import Run
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.utils import in_jupyter_notebook
-from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME, AUTOMATIC_RUNTIME_NAME, CLOUD_RUNS_PAGE_SIZE
+from promptflow.azure._constants._flow import CLOUD_RUNS_PAGE_SIZE, COMPUTE_SESSION, COMPUTE_SESSION_NAME
 from promptflow.azure._entities._trace import CosmosMetadata
 from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
@@ -651,8 +651,8 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                     file_handler.write(
                         f"The run {run.name!r} is in status {run.status} and produce no new logs for {timeout} seconds,"
                         "streaming is stopped. If the final status is 'NotStarted', "
-                        "Please make sure you are using the latest runtime.\n"
-                        "For automatic runtime case, please try extending the timeout value.\n"
+                        "Please make sure you are using the latest session.\n"
+                        f"For {COMPUTE_SESSION} case, please try extending the timeout value.\n"
                     )
                     break
 
@@ -835,16 +835,16 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
     @classmethod
     def _resolve_automatic_runtime(cls):
         logger.warning(
-            f"You're using {AUTOMATIC_RUNTIME}, if it's first time you're using it, "
-            "it may take a while to build runtime and you may see 'NotStarted' status for a while. "
+            f"You're using {COMPUTE_SESSION}, if it's first time you're using it, "
+            "it may take a while to build session and you may see 'NotStarted' status for a while. "
         )
-        runtime_name = AUTOMATIC_RUNTIME_NAME
+        runtime_name = COMPUTE_SESSION_NAME
         return runtime_name
 
     def _resolve_runtime(self, run, runtime):
         runtime = run._runtime or runtime
 
-        if runtime is None or runtime == AUTOMATIC_RUNTIME_NAME:
+        if runtime is None or runtime == COMPUTE_SESSION_NAME:
             runtime = self._resolve_automatic_runtime()
         elif not isinstance(runtime, str):
             raise TypeError(f"runtime should be a string, got {type(runtime)} for {runtime}")

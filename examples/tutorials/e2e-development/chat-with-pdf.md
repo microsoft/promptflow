@@ -1,5 +1,7 @@
 ---
 resources: examples/connections/azure_openai.yml, examples/flows/chat/chat-with-pdf
+cloud: local
+category: rag
 ---
 
 # Tutorial: Chat with PDF
