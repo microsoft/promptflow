@@ -37,24 +37,6 @@ def get_n_day_weather_forecast(location, format, num_days):
     )
 
 
-# Example response_message
-# {
-#     "content": null,
-#     "role": "assistant",
-#     "function_call": null,
-#     "tool_calls": [
-#         {
-#             "id": "call_NHrcOpfSiE433KX636GnafJz",
-#             "function": {
-#                 "arguments": "{\n  \"location\": \"Beijing\",\n  \"format\": \"celsius\"\n}",
-#                 "name": "get_current_weather"
-#             },
-#             "type": "function"
-#         }
-#     ]
-# }
-
-
 @trace
 def run_function(response_message: dict) -> str:
     if "tool_calls" in response_message and len(response_message["tool_calls"]) == 1:
