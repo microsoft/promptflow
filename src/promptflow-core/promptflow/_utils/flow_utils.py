@@ -93,6 +93,7 @@ def resolve_flow_path(
     else:
         flow_path = Path(flow_path)
 
+    prompty_count = -1
     if flow_path.is_dir():
         flow_folder = flow_path
         flow_file = default_flow_file
@@ -112,6 +113,7 @@ def resolve_flow_path(
             )
         elif allow_prompty_dir and check_flow_exist:
             candidates = list(flow_folder.glob(f"*{PROMPTY_EXTENSION}"))
+            prompty_count = len(candidates)
             if len(candidates) == 1:
                 flow_file = candidates[0].name
     elif flow_path.is_file() or flow_path.suffix.lower() in FLOW_FILE_SUFFIX:
@@ -137,17 +139,17 @@ def resolve_flow_path(
             privacy_info=[flow_path.absolute().as_posix()],
         )
 
-    if not file_path.is_file():
-        if flow_folder == flow_path:
+    if not file_path.is_file() and flow_folder == flow_path:
+        if prompty_count == 0 or not allow_prompty_dir:
             raise UserErrorException(
-                f"Flow path {flow_path.absolute().as_posix()} "
-                f"must have postfix either {FLOW_DAG_YAML} or {FLOW_FLEX_YAML}",
+                f"Haven't found default flow yaml file under {flow_path.absolute().as_posix()}",
                 privacy_info=[flow_path.absolute().as_posix()],
             )
         else:
             raise UserErrorException(
-                f"Flow file {file_path.absolute().as_posix()} does not exist.",
-                privacy_info=[file_path.absolute().as_posix()],
+                f"No default flow yaml file found under {flow_path.absolute().as_posix()} "
+                f"and there are more than 1 prompty file.",
+                privacy_info=[flow_path.absolute().as_posix()],
             )
 
     return flow_folder.resolve().absolute(), flow_file

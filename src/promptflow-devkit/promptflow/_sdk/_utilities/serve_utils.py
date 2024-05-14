@@ -74,6 +74,26 @@ class PythonServeAppHelper(ServeAppHelper):
             # trace must be started within the same process as the app
             start_trace()
 
+        error_msg = None
+        try:
+            flow_dir, flow_file_name = resolve_flow_path(self._flow_dir, allow_prompty_dir=True)
+            if flow_file_name != self._flow_file_name:
+                # this may happen when a prompty is specified while there is already a default flow in the flow dir
+                error_msg = (
+                    f"Default definition {flow_file_name} is found and will be picked in flow directory "
+                    f"while {self._flow_file_name} is specified. "
+                    f"Please remove {flow_file_name} from flow directory as a workaround."
+                )
+        except (UserErrorException,) as e:
+            error_msg = e.message
+
+        if error_msg is not None:
+            raise UserErrorException(
+                message_format="Service have some limitations on flow directory for now:\n{msg}",
+                msg=error_msg,
+                privacy_info=[self._flow_dir.absolute().as_posix()],
+            )
+
         serve_python_flow(
             flow_file_name=self._flow_file_name,
             flow_dir=self._flow_dir,

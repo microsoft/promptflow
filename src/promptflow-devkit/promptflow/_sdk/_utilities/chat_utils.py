@@ -17,6 +17,10 @@ from promptflow._sdk._utilities.serve_utils import CSharpServeAppHelper, PythonS
 from promptflow._utils.flow_utils import resolve_flow_path
 
 
+def print_log(text):
+    print(text)
+
+
 def construct_flow_absolute_path(flow: str) -> str:
     flow_dir, flow_file = resolve_flow_path(flow)
     return (flow_dir / flow_file).absolute().resolve().as_posix()
@@ -34,7 +38,7 @@ def _try_restart_service(
     *, last_result: ServeAppHelper, flow_file_name: str, flow_dir: Path, serve_app_port: int, ux_input_path: Path
 ):
     if last_result is not None:
-        print("Changes detected, stopping current serve app...")
+        print_log("Changes detected, stopping current serve app...")
         last_result.terminate()
 
     # init must be always loaded from ux_inputs.json
@@ -62,11 +66,11 @@ def _try_restart_service(
             port=serve_app_port,
         )
 
-    print("Starting serve app...")
+    print_log("Starting serve app...")
     try:
         helper.start()
     except Exception:
-        print("Failed to start serve app, please check the error message above.")
+        print_log("Failed to start serve app, please check the error message above.")
     return helper
 
 
@@ -116,7 +120,7 @@ def start_chat_ui_service_monitor(
     enable_internal_features: bool = False,
     skip_open_browser: bool = False,
 ):
-    flow_dir, flow_file_name = resolve_flow_path(flow)
+    flow_dir, flow_file_name = resolve_flow_path(flow, allow_prompty_dir=True)
 
     ux_input_path = flow_dir / PROMPT_FLOW_DIR_NAME / UX_INPUTS_JSON
     update_init_in_ux_inputs(ux_input_path=ux_input_path, flow_file_name=flow_file_name, init=init)
@@ -130,7 +134,7 @@ def start_chat_ui_service_monitor(
         pfs_port,
         url_params=url_params,
     )
-    print(f"You can begin chat flow on {chat_page_url}")
+    print_log(f"You can begin chat flow on {chat_page_url}")
     if not skip_open_browser:
         webbrowser.open(chat_page_url)
 
@@ -159,8 +163,8 @@ def start_chat_ui_service_monitor(
     try:
         monitor.start_monitor()
     except KeyboardInterrupt:
-        print("Stopping monitor and attached serve app...")
+        print_log("Stopping monitor and attached serve app...")
         serve_app_helper = monitor.last_callback_result
         if serve_app_helper is not None:
             serve_app_helper.terminate()
-        print("Stopped monitor and attached serve app.")
+        print_log("Stopped monitor and attached serve app.")
