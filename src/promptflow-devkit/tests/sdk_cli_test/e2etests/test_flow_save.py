@@ -576,7 +576,11 @@ class TestFlowSave:
                         "type": "string",
                     }
                 },
-                "sample": "sample.json",
+                "sample": {
+                    "inputs": {
+                        "text": "promptflow",
+                    }
+                },
             }
 
     def test_flow_save_file_code(self):
