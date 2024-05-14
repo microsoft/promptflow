@@ -1,10 +1,14 @@
 # promptflow-core package
 
+## v1.11.0 (Upcoming)
+
+### Features Added
+- Support modifying the promptflow logger format through environment variables, reach [here](https://microsoft.github.io/promptflow/how-to-guides/faq.html#set-environment-variables) for more details.
+
 ## v1.10.0 (2024.04.26)
 
 ### Features Added
 - Add prompty feature to simplify the development of prompt templates for customers, reach [here](https://microsoft.github.io/promptflow/how-to-guides/develop-a-prompty/index.html) for more details.
-- Support modifying the promptflow logger format through environment variables, reach [here](https://microsoft.github.io/promptflow/how-to-guides/faq.html#set-environment-variables) for more details.
 
 ### Others
 - Add fastapi serving engine support.
