@@ -211,9 +211,14 @@ class OpenAIResponseParser(ABC):
 
     @property
     def model(self):
-        for item in self._response:
-            if hasattr(item, "model"):
-                return item.model
+        """
+        This method iterates over each item in the _response list.
+        If the item has a non-empty 'model' attribute, it returns the model.
+        If no such item is found, it returns None.
+        """
+        for response_item in self._response:
+            if hasattr(response_item, "model") and response_item.model:
+                return response_item.model
         return None
 
     @property

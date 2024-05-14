@@ -1,0 +1,2 @@
+entry: function_flow_with_multiple_inputs:my_flow
+sample: ${file:./sample.json}

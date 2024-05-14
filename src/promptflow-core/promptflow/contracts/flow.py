@@ -988,6 +988,8 @@ class FlexFlow(FlowBase):
     :type environment_variables: Dict[str, object]
     :param message_format: The message format type of the flow to represent different multimedia contracts.
     :type message_format: str
+    :param sample: Sample data for the flow. Will become default inputs & init kwargs if not provided.
+    :type sample: Dict[str, object]
     """
 
     init: Dict[str, FlowInputDefinition] = None
@@ -995,6 +997,7 @@ class FlexFlow(FlowBase):
     environment_variables: Dict[str, object] = None
     # eager flow does not support multimedia contract currently, it is set to basic by default.
     message_format: str = MessageFormatType.BASIC
+    sample: Dict[str, dict] = None
 
     @staticmethod
     def deserialize(data: dict) -> "FlexFlow":
@@ -1017,6 +1020,7 @@ class FlexFlow(FlowBase):
             init={name: FlowInitDefinition.deserialize(i) for name, i in init.items()},
             program_language=data.get(LANGUAGE_KEY, FlowLanguage.Python),
             environment_variables=data.get("environment_variables") or {},
+            sample=data.get("sample") or {},
         )
 
     @classmethod

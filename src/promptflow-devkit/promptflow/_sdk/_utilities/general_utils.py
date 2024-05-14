@@ -70,7 +70,7 @@ from promptflow._sdk._errors import (
     UnsecureConnectionError,
 )
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
-from promptflow._utils.flow_utils import is_flex_flow, resolve_flow_path
+from promptflow._utils.flow_utils import is_flex_flow, is_prompty_flow, resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
@@ -236,8 +236,10 @@ def _sanitize_python_variable_name(name: str):
 
 
 def _get_additional_includes(yaml_path):
-    flow_dag = load_yaml(yaml_path)
-    return flow_dag.get("additional_includes", [])
+    if not is_prompty_flow(yaml_path):
+        flow_dag = load_yaml(yaml_path)
+        return flow_dag.get("additional_includes", [])
+    return []
 
 
 def _is_folder_to_compress(path: Path) -> bool:
@@ -425,7 +427,7 @@ def print_pf_version(with_azure: bool = False, ignore_none: bool = False):
 
 class PromptflowIgnoreFile(IgnoreFile):
     # TODO add more files to this list.
-    IGNORE_FILE = [".runs", "__pycache__"]
+    IGNORE_FILE = [".git", ".runs", "__pycache__"]
 
     def __init__(self, prompt_flow_path: Union[Path, str]):
         super(PromptflowIgnoreFile, self).__init__(prompt_flow_path)

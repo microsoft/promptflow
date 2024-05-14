@@ -1,7 +1,7 @@
 ---
 resources: examples/tutorials/flow-deploy/create-service-with-flow
 category: deployment
-weight: 50
+weight: 10
 ---
 
 # Create service with flow

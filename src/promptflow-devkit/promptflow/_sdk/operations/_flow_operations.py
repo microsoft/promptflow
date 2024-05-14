@@ -292,7 +292,9 @@ class FlowOperations(TelemetryMixin):
             init_kwargs=init,
             collection=collection,
         ) as submitter:
-            inputs = inputs or load_inputs_from_sample(submitter.flow.sample)
+            # Only override sample inputs for prompty, flex flow and prompty has different sample format
+            if isinstance(flow, Prompty) and not inputs:
+                inputs = load_inputs_from_sample(submitter.flow.sample)
             if isinstance(flow, FlexFlow) or isinstance(flow, Prompty):
                 # TODO(2897153): support chat eager flow
                 # set is chat flow to True to allow generator output
@@ -1138,17 +1140,18 @@ class FlowOperations(TelemetryMixin):
 
         if sample:
             inputs = data.get("inputs", {})
-            if not isinstance(sample, dict):
+            sample_inputs = sample.get("inputs", {})
+            if not isinstance(sample_inputs, dict):
                 raise UserErrorException("Sample must be a dict.")
-            if not set(sample.keys()) == set(inputs.keys()):
+            if not set(sample_inputs.keys()) == set(inputs.keys()):
                 raise UserErrorException(
                     message_format="Sample keys {actual} do not match the inputs {expected}.",
-                    actual=", ".join(sample.keys()),
+                    actual=", ".join(sample_inputs.keys()),
                     expected=", ".join(inputs.keys()),
                 )
             with open(target_flow_directory / SERVE_SAMPLE_JSON_PATH, "w", encoding=DEFAULT_ENCODING) as f:
                 json.dump(sample, f, indent=4)
-            data["sample"] = SERVE_SAMPLE_JSON_PATH
+            data["sample"] = f"${{file:{SERVE_SAMPLE_JSON_PATH}}}"
         with open(target_flow_file, "w", encoding=DEFAULT_ENCODING):
             dump_yaml(data, target_flow_file)
 
