@@ -734,7 +734,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         """Resolve flow to remote flow and session id."""
         # for remote flow case, leave session id to None and let service side resolve
         if run._use_remote_flow:
-            return self._resolve_flow_definition_resource_id(run=run), None, environment_variables
+            return self._resolve_flow_definition_resource_id(run=run), None
 
         flow = load_flow(run.flow)
         # set init kwargs for validation
