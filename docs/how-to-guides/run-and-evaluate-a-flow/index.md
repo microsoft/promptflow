@@ -242,4 +242,5 @@ Learn more about:
 
 use-column-mapping
 manage-runs
+compute-session
 ```
