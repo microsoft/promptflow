@@ -1,0 +1,5 @@
+entry: function_flow_with_multiple_inputs:my_flow
+sample: 
+  inputs:
+    func_input1: val1
+    func_input2: val2
