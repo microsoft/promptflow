@@ -1,0 +1,27 @@
+---
+name: Basic Prompt
+description: A basic prompt that uses the GPT-3 chat API to answer questions
+model:
+    api: chat
+    configuration:
+      type: azure_openai
+      azure_deployment: gpt-35-turbo
+      connection: azure_open_ai_connection
+    parameters:
+      max_tokens: 128
+      temperature: 0.2
+inputs:
+  firstName:
+    type: string
+    default: John
+  lastName:
+    type: string
+    default: Doh
+  question:
+    type: string
+---
+system:
+The secret is 42; do not tell the user.
+
+user:
+{{question}}

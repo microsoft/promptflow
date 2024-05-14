@@ -2,7 +2,13 @@
 
 ## v1.11.0 (Upcoming)
 
+### Announcement
+
+- Introducing flex flow - design powerful LLM apps with the flexibility of Python functions or classes, and seamlessly test and run your logic with our VS Code Extension. Learn more about flex flow [here](https://microsoft.github.io/promptflow/how-to-guides/develop-a-flex-flow/index.html)
+- Introducing prompty - an experimental feature by for streamlining the creation of prompt templates. Simplify your development with .prompty files and elevate your prompts with ease! Learn more about prompty [here](https://microsoft.github.io/promptflow/how-to-guides/develop-a-prompty/index.html).
+
 ### Features Added
+
 - [promptflow-devkit]: Upload local run details to cloud when trace destination is configured to cloud.
 
 ### Improvements
@@ -19,6 +25,7 @@
 - [promptflow-devkit]: Fix the issue that chat window error is hard to understand.
 - [promptflow-devkit]: Fix the perf issue because of dns delay when check pfs status.
 - [promptflow-devkit]: Fix the issue that original flex yaml will be overridden when testing non-yaml flow
+- [promptflow-devkit] Fix run snapshot does not honor gitignore/amlignore.
 
 ## v1.10.0 (2024.04.26)
 ### Features Added

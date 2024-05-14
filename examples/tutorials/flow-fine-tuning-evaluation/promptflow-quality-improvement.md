@@ -1,5 +1,6 @@
 ---
 resources: examples/connections/azure_openai.yml, examples/flows/chat/chat-basic, examples/flows/chat/chat-math-variant, examples/flows/evaluation/eval-chat-math
+category: rag
 ---
 
 # Tutorial: How prompt flow helps on quality improvement

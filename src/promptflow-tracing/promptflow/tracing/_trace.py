@@ -8,17 +8,16 @@ import functools
 import inspect
 import json
 import logging
-import sys
 from collections.abc import AsyncIterator, Iterator
 from importlib.metadata import version
 from threading import Lock
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Sequence
 
 import opentelemetry.trace as otel_trace
-from opentelemetry.sdk.trace import ReadableSpan
-from opentelemetry.trace import Link, Span
-from opentelemetry.trace.span import NonRecordingSpan, format_trace_id
-from opentelemetry.trace.status import StatusCode
+from opentelemetry.trace import Span
+from opentelemetry.trace.span import format_trace_id
+from opentelemetry.trace.status import Status, StatusCode
+from opentelemetry.util import types
 
 from ._openai_utils import OpenAIMetricsCalculator, OpenAIResponseParser
 from ._operation_context import OperationContext
@@ -40,6 +39,73 @@ def _record_cancellation_exceptions_to_span(span: Span):
             span.record_exception(ex)
             span.set_status(StatusCode.ERROR, "Execution cancelled.")
         raise
+
+
+def handle_span_exception(span, exception):
+    if isinstance(span, Span) and span.is_recording():
+        # Record the exception as an event
+        span.record_exception(exception)
+        # Records status as error
+        span.set_status(
+            Status(
+                status_code=StatusCode.ERROR,
+                description=f"{type(exception).__name__}: {str(exception)}",
+            )
+        )
+
+
+def handle_output(span, inputs, output, trace_type):
+    if isinstance(output, (Iterator, AsyncIterator)):
+        # Set should_end to False to delay span end until generator exhaustion, preventing premature span end.
+        setattr(span, "__should_end", False)
+        output = Tracer.pop(output)
+        if isinstance(output, Iterator):
+            return traced_generator(span, inputs, output, trace_type)
+        else:
+            return traced_async_generator(span, inputs, output, trace_type)
+    else:
+        enrich_span_with_trace_type(span, inputs, output, trace_type)
+        span.set_status(StatusCode.OK)
+        return Tracer.pop(output)
+
+
+@contextlib.contextmanager
+def start_as_current_span(
+    tracer: otel_trace.Tracer,
+    name: str,
+    context: Optional[otel_trace.Context] = None,
+    kind: otel_trace.SpanKind = otel_trace.SpanKind.INTERNAL,
+    attributes: types.Attributes = None,
+    links: Optional[Sequence[otel_trace.Link]] = (),
+    start_time: Optional[int] = None,
+    record_exception: bool = True,
+    set_status_on_exception: bool = True,
+):
+    span = None
+    try:
+        with tracer.start_as_current_span(
+            name,
+            context,
+            kind,
+            attributes,
+            links,
+            start_time,
+            record_exception,
+            set_status_on_exception,
+            end_on_exit=False,
+        ) as span:
+            setattr(span, "__should_end", True)
+            yield span
+
+    except (KeyboardInterrupt, asyncio.CancelledError) as ex:
+        # The context manager above does not handle KeyboardInterrupt and asyncio.CancelledError exceptions.
+        # Therefore, we need to explicitly handle these exceptions here to ensure proper span exception handling.
+        handle_span_exception(span, ex)
+        raise
+
+    finally:
+        if span is not None and getattr(span, "__should_end", False):
+            span.end()
 
 
 class TokenCollector:
@@ -153,18 +219,10 @@ def enrich_span_with_trace_type(span, inputs, output, trace_type):
     SpanEnricherManager.enrich(span, inputs, output, trace_type)
     # TODO: Move the following logic to SpanEnricher
     enrich_span_with_openai_tokens(span, trace_type)
-    return trace_iterator_if_needed(span, inputs, output)
 
 
-def trace_iterator_if_needed(span, inputs, output):
-    if isinstance(output, (Iterator, AsyncIterator)) and not isinstance(span, NonRecordingSpan):
-        trace_func = TracedGenerator if isinstance(output, Iterator) else TracedAsyncGenerator
-        output = trace_func(span, inputs, output)
-    return output
-
-
-def enrich_span_with_llm_if_needed(span, original_span, inputs, generator_output):
-    if original_span.attributes["span_type"] == "LLM" and not IS_LEGACY_OPENAI:
+def enrich_span_with_llm_if_needed(span, inputs, generator_output):
+    if span.is_recording() and span.attributes["span_type"] == "LLM" and not IS_LEGACY_OPENAI:
         from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
         from openai.types.completion import Completion
 
@@ -175,141 +233,79 @@ def enrich_span_with_llm_if_needed(span, original_span, inputs, generator_output
 
 
 class TracedGenerator(IteratorProxy):
-    def __init__(self, original_span: ReadableSpan, inputs, iterator: Iterator):
-        self._original_span = original_span
+    def __init__(self, span, inputs, iterator: Iterator, trace_type):
+        self._span = span
         self._inputs = inputs
+        self._trace_type = trace_type
         self._initialized = False
-        self._context_managers = []
         super().__init__(iterator)
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        if not self._initialized:
-            self._initialize_span()
         try:
-            enrich_span_with_original_attributes(self._span, self._original_span.attributes)
             return next(self._iterator)
         except Exception as e:
-            exception_in_context_other_than_non_stop_iteration = e
+            exception_other_than_non_stop_iteration = None
             if isinstance(e, StopIteration):
-                exception_in_context_other_than_non_stop_iteration = None
                 try:
-                    self._finalize_span()
-                except Exception as e:
-                    exception_in_context_other_than_non_stop_iteration = e
-
-            if exception_in_context_other_than_non_stop_iteration:
-                self._exit_context_managers_with_exception(e)
-                token_collector.collect_openai_tokens_for_parent_span(self._span)
+                    generator_output = self.items
+                    enrich_span_with_llm_if_needed(self._span, self._inputs, generator_output)
+                    enrich_span_with_trace_type(self._span, self._inputs, generator_output, self._trace_type)
+                    token_collector.collect_openai_tokens_for_parent_span(self._span)
+                    self._span.set_attribute("output_type", "iterated")
+                    self._span.set_status(StatusCode.OK)
+                except Exception as finalization_exception:
+                    exception_other_than_non_stop_iteration = finalization_exception
             else:
-                self._exit_context_managers_without_exception()
-                token_collector.collect_openai_tokens_for_parent_span(self._span)
+                exception_other_than_non_stop_iteration = e
+
+            if exception_other_than_non_stop_iteration:
+                handle_span_exception(self._span, exception_other_than_non_stop_iteration)
+                raise exception_other_than_non_stop_iteration
+            else:
                 raise e
-
-    def _exit_context_managers_with_exception(self, e: Exception):
-        suppressed = False
-        for context_manager in self._context_managers[::-1]:
-            if suppressed:
-                break
-            suppressed = context_manager.__exit__(*sys.exc_info())
-        if not suppressed:
-            raise e
-
-    def _exit_context_managers_without_exception(self):
-        for context_manager in self._context_managers[::-1]:
-            context_manager.__exit__(None, None, None)
-
-    def _initialize_span(self):
-        self._original_span_context = self._original_span.get_span_context()
-        self._link = Link(self._original_span_context)
-        # If start_trace is not called, the name of the original_span will be empty.
-        # need to get everytime to ensure tracer is latest
-        self._otel_tracer = otel_trace.get_tracer("promptflow")
-        self._span_context_manager = self._otel_tracer.start_as_current_span(
-            f"Iterated({self._original_span.name})", links=[self._link]
-        )
-        self._span = self._span_context_manager.__enter__()
-        self._record_cancel_span_context_manager = _record_cancellation_exceptions_to_span(self._span)
-        self._record_cancel_span_context_manager.__enter__()
-        self._context_managers = [self._span_context_manager, self._record_cancel_span_context_manager]
-
-        self._initialized = True
-
-    def _finalize_span(self):
-        enrich_span_with_llm_if_needed(self._span, self._original_span, self._inputs, self.items)
-        enrich_span_with_openai_tokens(self._span, TraceType(self._original_span.attributes["span_type"]))
-        enrich_span_with_output(self._span, serialize_attribute(self.items))
-        self._span.set_status(StatusCode.OK)
+        finally:
+            self._span.end()
 
 
 class TracedAsyncGenerator(AsyncIteratorProxy):
-    def __init__(self, original_span: ReadableSpan, inputs, iterator: Iterator):
-        self._original_span = original_span
+    def __init__(self, span, inputs, iterator: Iterator, trace_type):
+        self._span = span
         self._inputs = inputs
+        self._trace_type = trace_type
         self._initialized = False
-        self._context_managers = []
         super().__init__(iterator)
 
-    async def __aiter__(self):
+    def __aiter__(self):
         return self
 
     async def __anext__(self):
-        if not self._initialized:
-            self._initialize_span()
         try:
-            enrich_span_with_original_attributes(self._span, self._original_span.attributes)
             return await next(self._iterator)
         except Exception as e:
-            exception_in_context_other_than_non_stop_iteration = e
+            exception_other_than_non_stop_iteration = None
             if isinstance(e, StopIteration):
-                exception_in_context_other_than_non_stop_iteration = None
                 try:
-                    self._finalize_span()
-                except Exception as e:
-                    exception_in_context_other_than_non_stop_iteration = e
-
-            if exception_in_context_other_than_non_stop_iteration:
-                self._exit_context_managers_with_exception(e)
-                token_collector.collect_openai_tokens_for_parent_span(self._span)
+                    generator_output = self.items
+                    enrich_span_with_llm_if_needed(self._span, self._inputs, generator_output)
+                    enrich_span_with_trace_type(self._span, self._inputs, generator_output, self._trace_type)
+                    token_collector.collect_openai_tokens_for_parent_span(self._span)
+                    self._span.set_attribute("output_type", "iterated")
+                    self._span.set_status(StatusCode.OK)
+                except Exception as finalization_exception:
+                    exception_other_than_non_stop_iteration = finalization_exception
             else:
-                self._exit_context_managers_without_exception()
-                token_collector.collect_openai_tokens_for_parent_span(self._span)
+                exception_other_than_non_stop_iteration = e
+
+            if exception_other_than_non_stop_iteration:
+                handle_span_exception(self._span, exception_other_than_non_stop_iteration)
+                raise exception_other_than_non_stop_iteration
+            else:
                 raise e
-
-    def _exit_context_managers_with_exception(self, e: Exception):
-        suppressed = False
-        for context_manager in self._context_managers[::-1]:
-            if suppressed:
-                break
-            suppressed = context_manager.__exit__(*sys.exc_info())
-        if not suppressed:
-            raise e
-
-    def _exit_context_managers_without_exception(self):
-        for context_manager in self._context_managers[::-1]:
-            context_manager.__exit__(None, None, None)
-
-    def _initialize_span(self):
-        self._original_span_context = self._original_span.get_span_context()
-        self._link = Link(self._original_span_context)
-        # If start_trace is not called, the name of the original_span will be empty.
-        # need to get everytime to ensure tracer is latest
-        self._otel_tracer = otel_trace.get_tracer("promptflow")
-        self._span = self._otel_tracer.start_as_current_span(
-            f"Iterated({self._original_span.name})", links=[self._link]
-        )
-        self._record_cancel_span_context_manager = _record_cancellation_exceptions_to_span(self._span)
-        self._context_managers = [self._span, self._record_cancel_span_context_manager]
-
-        self._initialized = True
-
-    def _finalize_span(self):
-        enrich_span_with_llm_if_needed(self._span, self._original_span, self._inputs, self.items)
-        enrich_span_with_openai_tokens(self._span, TraceType(self._original_span.attributes["span_type"]))
-        enrich_span_with_output(self._span, serialize_attribute(self.items))
-        self._span.set_status(StatusCode.OK)
+        finally:
+            self._span.end()
 
 
 def enrich_span_with_original_attributes(span, attributes):
@@ -473,7 +469,7 @@ def _traced_async(
         span_name = get_node_name_from_context(used_for_span_name=True) or trace.name
         # need to get everytime to ensure tracer is latest
         otel_tracer = otel_trace.get_tracer("promptflow")
-        with otel_tracer.start_as_current_span(span_name) as span, _record_cancellation_exceptions_to_span(span):
+        with start_as_current_span(otel_tracer, span_name) as span:
             # Store otel trace id in context for correlation
             OperationContext.get_instance()["otel_trace_id"] = f"0x{format_trace_id(span.get_span_context().trace_id)}"
             enrich_span_with_trace(span, trace)
@@ -486,9 +482,7 @@ def _traced_async(
                 Tracer.push(trace)
                 enrich_span_with_input(span, trace.inputs)
                 output = await func(*args, **kwargs)
-                output = enrich_span_with_trace_type(span, trace.inputs, output, trace_type)
-                span.set_status(StatusCode.OK)
-                output = Tracer.pop(output)
+                output = handle_output(span, trace.inputs, output, trace_type)
             except Exception as e:
                 Tracer.pop(None, e)
                 raise
@@ -539,7 +533,7 @@ def _traced_sync(
         span_name = get_node_name_from_context(used_for_span_name=True) or trace.name
         # need to get everytime to ensure tracer is latest
         otel_tracer = otel_trace.get_tracer("promptflow")
-        with otel_tracer.start_as_current_span(span_name) as span, _record_cancellation_exceptions_to_span(span):
+        with start_as_current_span(otel_tracer, span_name) as span:
             # Store otel trace id in context for correlation
             OperationContext.get_instance()["otel_trace_id"] = f"0x{format_trace_id(span.get_span_context().trace_id)}"
             enrich_span_with_trace(span, trace)
@@ -552,9 +546,7 @@ def _traced_sync(
                 Tracer.push(trace)
                 enrich_span_with_input(span, trace.inputs)
                 output = func(*args, **kwargs)
-                output = enrich_span_with_trace_type(span, trace.inputs, output, trace_type)
-                span.set_status(StatusCode.OK)
-                output = Tracer.pop(output)
+                output = handle_output(span, trace.inputs, output, trace_type)
             except Exception as e:
                 Tracer.pop(None, e)
                 raise

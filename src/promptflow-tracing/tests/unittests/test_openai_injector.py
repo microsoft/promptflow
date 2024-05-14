@@ -1,6 +1,6 @@
 import json
 import logging
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
 from importlib.metadata import version
 from unittest.mock import MagicMock, patch
 
@@ -229,7 +229,7 @@ async def test_openai_generator_proxy_async():
         # check if args has a stream parameter
         if "stream" in kwargs and kwargs["stream"]:
             # stream parameter is true, yield a string
-            def generator():
+            async def generator():
                 yield "This is a yielded string"
 
             return generator()
@@ -258,9 +258,9 @@ async def test_openai_generator_proxy_async():
             return_generator = await openai.resources.AsyncCompletions.create(stream=True)
 
         assert return_string == "This is a returned string"
-        assert isinstance(return_generator, Iterator)
+        assert isinstance(return_generator, AsyncIterator)
 
-        for _ in return_generator:
+        async for _ in return_generator:
             pass
 
         traces = Tracer.end_tracing()
