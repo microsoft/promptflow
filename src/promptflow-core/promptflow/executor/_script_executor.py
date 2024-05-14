@@ -2,6 +2,7 @@ import contextlib
 import dataclasses
 import importlib
 import inspect
+import os.path
 import uuid
 from dataclasses import is_dataclass
 from functools import partial
@@ -69,9 +70,11 @@ class ScriptExecutor(FlowExecutor):
             self._working_dir = Flow._resolve_working_dir(entry, working_dir)
         else:
             self._working_dir = working_dir or Path.cwd()
+
+        flow_file = os.path.join(self._working_dir, self._flow_file)
         # load flow if possible
         try:
-            with open(self._working_dir / self._flow_file, "r", encoding="utf-8") as fin:
+            with open(flow_file, "r", encoding="utf-8") as fin:
                 flow_data = load_yaml(fin)
             flow = FlexFlow.deserialize(flow_data)
         except Exception as e:
