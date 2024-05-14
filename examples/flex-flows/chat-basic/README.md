@@ -66,19 +66,19 @@ You'll need to write flow entry `flow.flex.yaml` to test with prompt flow.
 
 ```bash
 # run chat flow with default question in flow.flex.yaml
-pf flow test --flow . --init init.json
-
+pf flow test --flow . 
 # run chat flow with new question
-pf flow test --flow . --init init.json --inputs question="What is ChatGPT? Please explain with consise statement."
+pf flow test --flow . --inputs question="What is ChatGPT? Please explain with consise statement."
+# run chat flow with specific init and inputs
 pf flow test --flow . --init init.json --inputs sample.json
 ```
+
 - Test flow: multi turn
 ```shell
 # start test in interactive terminal (TODO)
 pf flow test --flow . --init init.json --interactive
-
 # start test in chat ui (TODO)
-pf flow test --flow . --init init.json --ui 
+pf flow test --flow . --ui 
 ```
 
 - Create run with multiple lines data
