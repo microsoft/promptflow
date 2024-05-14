@@ -27,6 +27,10 @@ def answer_evaluator(answer):
     return {"length": len(answer)}
 
 
+def question_evaluator(question):
+    return {"length": len(question)}
+
+
 def _get_run_from_run_history(flow_run_id, runs_operation):
     """Get run info from run history"""
     token = "Bearer " + AzureCliCredential().get_token("https://management.azure.com/.default").token
@@ -132,7 +136,10 @@ class TestEvaluate:
         result = evaluate(
             data=questions_file,
             target=target_fn,
-            evaluators={"answer": answer_evaluator, "f1": f1_score_eval},
+            evaluators={
+                "answer": answer_evaluator,
+                "f1": f1_score_eval
+                },
         )
         row_result_df = pd.DataFrame(result["rows"])
         assert "outputs.answer" in row_result_df.columns
@@ -140,6 +147,46 @@ class TestEvaluate:
         assert list(row_result_df["outputs.answer.length"]) == [28, 76, 22]
         assert "outputs.f1.f1_score" in row_result_df.columns
         assert not any(np.isnan(f1) for f1 in row_result_df["outputs.f1.f1_score"])
+
+    @pytest.mark.parametrize(
+        'evaluation_config',
+        [
+            None,
+            {"default": {}},
+            {"default": {}, 'question_ev': {}},
+            {"default": {'question': '${target.question}'}},
+            {"default": {'question': '${data.question}'}},
+            {"default": {},  'question_ev': {'question': '${data.question}'}},
+            {"default": {},  'question_ev': {'question': '${target.question}'}},
+            {"default": {},  'question_ev': {'another_question': '${target.question}'}},
+            {"default": {'another_question': '${target.question}'}},
+        ])
+    def test_evaluate_another_questions(self, questions_file, evaluation_config):
+        """Test evaluation with target function."""
+        from .target_fn import target_fn3
+        # run the evaluation with targets
+        result = evaluate(
+            target=target_fn3,
+            data=questions_file,
+            evaluators={
+                "question_ev": question_evaluator,
+                },
+            evaluator_config=evaluation_config
+        )
+        row_result_df = pd.DataFrame(result["rows"])
+        assert "outputs.answer" in row_result_df.columns
+        assert "inputs.question" in row_result_df.columns
+        assert "outputs.question" in row_result_df.columns
+        assert "outputs.question_ev.length" in row_result_df.columns
+        question = "outputs.question"
+
+        mapping = None
+        if evaluation_config:
+            mapping = evaluation_config.get('question_ev', evaluation_config.get("default", None))
+        if mapping and ('another_question' in mapping or mapping['question'] == '${data.question}'):
+            question = "inputs.question"
+        expected = list(row_result_df[question].str.len())
+        assert expected == list(row_result_df['outputs.question_ev.length'])
 
     @pytest.mark.parametrize(
         "evaluate_config",

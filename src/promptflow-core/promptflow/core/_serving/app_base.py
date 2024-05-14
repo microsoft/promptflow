@@ -5,9 +5,9 @@ import json
 import mimetypes
 import os
 from abc import ABC, abstractmethod
-from pathlib import Path
 from typing import Dict
 
+from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.user_agent_utils import setup_user_agent_to_operation_context
 from promptflow.core import Flow
@@ -38,7 +38,8 @@ class PromptflowServingAppBasic(ABC):
         # parse promptflow project path
         self.project_path = self.extension.get_flow_project_path()
         logger.info(f"Project path: {self.project_path}")
-        self.flow = init_executable(flow_path=Path(self.project_path))
+        flow_dir, flow_file_name = resolve_flow_path(self.project_path, allow_prompty_dir=True)
+        self.flow = init_executable(flow_path=flow_dir / flow_file_name)
 
         # enable environment_variables
         environment_variables = kwargs.get("environment_variables", {})
@@ -96,8 +97,9 @@ class PromptflowServingAppBasic(ABC):
         if self.flow_invoker:
             return
         self.logger.info("Promptflow executor starts initializing...")
+        flow_dir, flow_file_name = resolve_flow_path(self.project_path, allow_prompty_dir=True)
         self.flow_invoker = AsyncFlowInvoker(
-            flow=Flow.load(source=self.project_path),
+            flow=Flow.load(source=flow_dir / flow_file_name),
             connection_provider=self.connection_provider,
             streaming=self.streaming_response_required,
             raise_ex=False,

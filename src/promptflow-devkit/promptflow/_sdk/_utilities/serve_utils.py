@@ -64,9 +64,12 @@ def start_flow_service(
         "Start promptflow server with port %s",
         port,
     )
-    language = resolve_flow_language(flow_path=source)
 
-    flow_dir, flow_file_name = resolve_flow_path(source)
+    flow_dir, flow_file_name = resolve_flow_path(source, allow_prompty_dir=True)
+    # prompty dir works for resolve_flow_path, but not for resolve_flow_language,
+    # so infer language after resolve_flow_path
+    language = resolve_flow_language(flow_path=flow_dir / flow_file_name)
+
     if language == FlowLanguage.Python:
         if not os.path.isdir(source):
             raise UserErrorException(
