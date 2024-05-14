@@ -29,4 +29,4 @@ You can also view the details of the run record with most of the [pfazure run co
 
 Learn more about:
 - [Run prompt flow in Azure AI](../run-promptflow-in-azure-ai.md)
-- [CLI reference: pfazure](../../reference/pfazure-command-reference.md)
+- [CLI reference: pfazure](../../../reference/pfazure-command-reference.md)
