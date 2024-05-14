@@ -98,6 +98,8 @@ def start_as_current_span(
             yield span
 
     except (KeyboardInterrupt, asyncio.CancelledError) as ex:
+        # The context manager above does not handle KeyboardInterrupt and asyncio.CancelledError exceptions.
+        # Therefore, we need to explicitly handle these exceptions here to ensure proper span exception handling.
         handle_span_exception(span, ex)
         raise
 
