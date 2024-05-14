@@ -1140,6 +1140,7 @@ class FlowOperations(TelemetryMixin):
 
         if sample:
             inputs = data.get("inputs", {})
+            sample = sample.get("inputs", {})
             if not isinstance(sample, dict):
                 raise UserErrorException("Sample must be a dict.")
             if not set(sample.keys()) == set(inputs.keys()):

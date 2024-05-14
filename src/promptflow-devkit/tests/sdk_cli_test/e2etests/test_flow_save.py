@@ -101,7 +101,7 @@ class TestFlowSave:
                             }
                         },
                     },
-                    "sample": {"text": "promptflow"},
+                    "sample": {"inputs": {"text": "promptflow"}},
                 },
                 {
                     "inputs": {
@@ -562,7 +562,9 @@ class TestFlowSave:
             with open(f"{tempdir}/sample.json", "w") as f:
                 json.dump(
                     {
-                        "text": "promptflow",
+                        "inputs": {
+                            "text": "promptflow",
+                        }
                     },
                     f,
                 )

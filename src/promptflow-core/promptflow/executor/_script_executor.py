@@ -72,8 +72,8 @@ class ScriptExecutor(FlowExecutor):
         # load flow if possible
         try:
             with open(self._working_dir / self._flow_file, "r", encoding="utf-8") as fin:
-                flow_dag = load_yaml(fin)
-            flow = FlexFlow.deserialize(flow_dag)
+                flow_data = load_yaml(fin)
+            flow = FlexFlow.deserialize(flow_data)
         except Exception as e:
             logger.debug(f"Failed to load flow from file {self._flow_file} with error: {e}")
             flow = None
@@ -540,7 +540,7 @@ class ScriptExecutor(FlowExecutor):
         if not init_kwargs and self._flow:
             sample_init = self._flow.sample.get("init")
             if sample_init:
-                logger.warning(f"Init kwargs are not provided, applying sample init: {sample_init}.")
+                logger.debug(f"Init kwargs are not provided, applying sample init: {sample_init}.")
                 return sample_init
         return init_kwargs or {}
 
@@ -549,6 +549,6 @@ class ScriptExecutor(FlowExecutor):
         if not inputs and self._flow:
             sample_inputs = self._flow.sample.get("inputs")
             if sample_inputs:
-                logger.warning(f"Inputs are not provided, applying sample inputs: {sample_inputs}.")
+                logger.debug(f"Inputs are not provided, applying sample inputs: {sample_inputs}.")
                 return sample_inputs
         return inputs or {}
