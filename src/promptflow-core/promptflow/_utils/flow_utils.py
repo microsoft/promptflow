@@ -140,17 +140,22 @@ def resolve_flow_path(
         )
 
     if not file_path.is_file() and flow_folder == flow_path:
+        msg = f"Have found neither flow.dag.yaml nor flow.flex.yaml in {flow_path.absolute().as_posix()}"
         if prompty_count == 0 or not allow_prompty_dir:
             raise UserErrorException(
-                f"Haven't found default flow yaml file under {flow_path.absolute().as_posix()}",
+                msg,
                 privacy_info=[flow_path.absolute().as_posix()],
             )
         else:
             raise UserErrorException(
-                f"No default flow yaml file found under {flow_path.absolute().as_posix()} "
-                f"and there are more than 1 prompty file.",
+                msg + " and there are more than 1 prompty file.",
                 privacy_info=[flow_path.absolute().as_posix()],
             )
+    if not file_path.is_file():
+        raise UserErrorException(
+            f"Flow file {file_path.absolute().as_posix()} does not exist.",
+            privacy_info=[file_path.absolute().as_posix()],
+        )
 
     return flow_folder.resolve().absolute(), flow_file
 
