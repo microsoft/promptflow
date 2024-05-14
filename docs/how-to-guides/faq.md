@@ -6,10 +6,10 @@
 
 Prompt flow provides both stable and experimental features in the same SDK.
 
-|Feature status | Description |
-|----------------|----------------|
-Stable features	| **Production ready** <br/><br/> These features are recommended for most use cases and production environments. They are updated less frequently then experimental features.|
-Experimental features | **Developmental**  <br/><br/> These features are newly developed capabilities & updates that may not be ready or fully tested for production usage. While the features are typically functional, they can include some breaking changes. Experimental features are used to iron out SDK breaking bugs, and will only receive updates for the duration of the testing period. Experimental features are also referred to as features that are in **preview**. <br/> As the name indicates, the experimental (preview) features are for experimenting and is **not considered bug free or stable**. For this reason, we only recommend experimental features to advanced users who wish to try out early versions of capabilities and updates, and intend to participate in the reporting of bugs and glitches.
+| Feature status        | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Stable features       | **Production ready** <br/><br/> These features are recommended for most use cases and production environments. They are updated less frequently then experimental features.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Experimental features | **Developmental**  <br/><br/> These features are newly developed capabilities & updates that may not be ready or fully tested for production usage. While the features are typically functional, they can include some breaking changes. Experimental features are used to iron out SDK breaking bugs, and will only receive updates for the duration of the testing period. Experimental features are also referred to as features that are in **preview**. <br/> As the name indicates, the experimental (preview) features are for experimenting and is **not considered bug free or stable**. For this reason, we only recommend experimental features to advanced users who wish to try out early versions of capabilities and updates, and intend to participate in the reporting of bugs and glitches. |
 
 
 ### OpenAI 1.x support
@@ -144,6 +144,14 @@ Valid for batch run only. Optional values: 'spawn', 'fork'.
 
 Note: Windows only supports spawn, Linux and macOS support both spawn and fork.
 
+**PF_LOG_FORMAT & PF_LOG_DATETIME_FORMAT**
+
+By default, promptflow uses the following log format and datetime format:
+
+- Log format: "%(asctime)s %(process)7d %(name)-18s %(levelname)-8s %(message)s"
+- Datetime format: "%Y-%m-%d %H:%M:%S %z"
+
+You can customize the log format with the `PF_LOG_FORMAT` environment variable, and the datetime format with `PF_LOG_DATETIME_FORMAT`. These variables can also be defined in a flow yaml file or set directly in the environment.
 
 #### How to configure environment variables
 
