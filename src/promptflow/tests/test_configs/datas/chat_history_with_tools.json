@@ -1,0 +1,100 @@
+[
+  {
+    "inputs": {
+      "question": "What is the weather like in Boston?"
+    },
+    "outputs": {
+      "answer": "{\"forecast\":[\"sunny\",\"windy\"],\"location\":\"Boston\",\"temperature\":\"72\",\"unit\":\"fahrenheit\"}",
+      "llm_output": {
+        "content": null,
+        "tool_calls": [
+          {
+            "id": "call_id",
+            "type": "function",
+            "function": {
+              "name": "get_current_weather",
+              "arguments": "{\n  \"location\": \"Boston\"\n}"
+            }
+          }
+        ],
+        "role": "assistant"
+      }
+    }
+  },
+  {
+    "inputs": {
+      "question": "What's the current weather like in San Francisco, Tokyo and Paris in Fahrenheit?"
+    },
+    "outputs": {
+      "answer": "{\"location\":\"San Francisco\",\"temperature\":\"72\",\"unit\":\"fahrenheit\",\"forecast\":[\"sunny\",\"windy\"]}\n\n{\"location\":\"Tokyo\",\"temperature\":\"72\",\"unit\":\"fahrenheit\",\"forecast\":[\"sunny\",\"windy\"]}\n\n{\"location\":\"Paris\",\"temperature\":\"72\",\"unit\":\"fahrenheit\",\"forecast\":[\"sunny\",\"windy\"]}",
+      "llm_output": {
+        "content": null,
+        "role": "assistant",
+        "function_call": null,
+        "tool_calls": [
+          {
+            "id": "call_tw0qF0jST2Lq5X604YiA7unl",
+            "function": {
+              "arguments": "{\"location\": \"San Francisco\", \"unit\": \"fahrenheit\"}",
+              "name": "get_current_weather"
+            },
+            "type": "function"
+          },
+          {
+            "id": "call_nFChtraJxdTKQHiyiErW9qEc",
+            "function": {
+              "arguments": "{\"location\": \"Tokyo\", \"unit\": \"fahrenheit\"}",
+              "name": "get_current_weather"
+            },
+            "type": "function"
+          },
+          {
+            "id": "call_2woaFoYcYSf1G5bn7wNQmZVp",
+            "function": {
+              "arguments": "{\"location\": \"Paris\", \"unit\": \"fahrenheit\"}",
+              "name": "get_current_weather"
+            },
+            "type": "function"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "inputs": {
+      "question": "What is ChatGPT?"
+    },
+    "outputs": {
+      "answer": "ChatGPT is an AI language model developed by OpenAI, based on the GPT (Generative Pre-trained Transformer) architecture. Its design enables it to understand and generate human-like text based on the input it receives. ChatGPT is trained on a diverse range of internet text, so it can perform a variety of tasks, such as answering questions, having conversations, summarizing information, assisting with writing tasks, and more.\n\nThe model is pre-trained on a vast corpus of text data and then fine-tuned on specific tasks or to improve certain aspects of its performance, such as adhering to guidelines for safety and reducing biases. Versions of GPT, including GPT-3 and its updates, have been widely used in applications that require natural language understanding and generation. The model is equipped to handle a broad scope of topics and can continue learning from interactions with users to improve its responses over time.",
+      "llm_output": {
+        "content": "ChatGPT is an AI language model developed by OpenAI, based on the GPT (Generative Pre-trained Transformer) architecture. Its design enables it to understand and generate human-like text based on the input it receives. ChatGPT is trained on a diverse range of internet text, so it can perform a variety of tasks, such as answering questions, having conversations, summarizing information, assisting with writing tasks, and more.\n\nThe model is pre-trained on a vast corpus of text data and then fine-tuned on specific tasks or to improve certain aspects of its performance, such as adhering to guidelines for safety and reducing biases. Versions of GPT, including GPT-3 and its updates, have been widely used in applications that require natural language understanding and generation. The model is equipped to handle a broad scope of topics and can continue learning from interactions with users to improve its responses over time.",
+        "role": "assistant",
+        "function_call": null,
+        "tool_calls": null
+      }
+    }
+  },
+  {
+    "inputs": {
+      "question": "What is the weather like in Suzhou in next month?"
+    },
+    "outputs": {
+      "answer": "{\"location\":\"Suzhou\",\"temperature\":\"60\",\"format\":\"json\",\"forecast\":[\"rainy\"],\"num_days\":\"30\"}",
+      "llm_output": {
+        "content": null,
+        "role": "assistant",
+        "function_call": null,
+        "tool_calls": [
+          {
+            "id": "call_tw0qF0jST2Lq5X604YiA7unl",
+            "function": {
+              "arguments": "{\"format\":\"json\",\"location\":\"Suzhou\",\"num_days\":\"30\"}",
+              "name": "get_n_day_weather_forecast"
+            },
+            "type": "function"
+          }
+        ]
+      }
+    }
+  }
+]

@@ -146,6 +146,12 @@ class ChatAPIInvalidRoleError(CoreError):
     pass
 
 
+class JinjaTemplateError(CoreError):
+    """Base exception raised when failed to render jinja template."""
+
+    pass
+
+
 class ChatAPIFunctionRoleInvalidFormatError(CoreError):
     """Exception raised when failed to validate chat api function role format."""
 
@@ -170,8 +176,22 @@ class InvalidSampleError(CoreError):
     pass
 
 
+class ChatAPIFunctionRoleInvalidFormat(CoreError):
+    """Base exception raised when failed to validate chat api function role format."""
+
+    pass
+
+
+class ChatAPIToolRoleInvalidFormat(CoreError):
+    """Base exception raised when failed to validate chat api tool role format."""
+
+    pass
+
+
 class ListDeploymentsError(UserErrorException):
     """Exception raise when list deployments."""
+
+    pass
 
 
 class ToolValidationError(UserErrorException):
@@ -249,6 +269,7 @@ class ExceedMaxRetryTimes(WrappedOpenAIError):
 
 
 class ConnectionNotFound(CoreError):
+
     pass
 
 
