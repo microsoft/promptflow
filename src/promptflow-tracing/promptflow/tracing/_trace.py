@@ -60,9 +60,9 @@ def handle_output(span, inputs, output, trace_type):
         setattr(span, "__should_end", False)
         output = Tracer.pop(output)
         if isinstance(output, Iterator):
-            return traced_generator(span, inputs, output, trace_type)
+            return TracedIterator(span, inputs, output, trace_type)
         else:
-            return traced_async_generator(span, inputs, output, trace_type)
+            return TracedAsyncIterator(span, inputs, output, trace_type)
     else:
         enrich_span_with_trace_type(span, inputs, output, trace_type)
         span.set_status(StatusCode.OK)
@@ -232,7 +232,7 @@ def enrich_span_with_llm_if_needed(span, inputs, generator_output):
             token_collector.collect_openai_tokens_for_streaming(span, inputs, generator_output, parser.is_chat)
 
 
-class TracedGenerator(IteratorProxy):
+class TracedIterator(IteratorProxy):
     def __init__(self, span, inputs, iterator: Iterator, trace_type):
         self._span = span
         self._inputs = inputs
@@ -270,7 +270,7 @@ class TracedGenerator(IteratorProxy):
             self._span.end()
 
 
-class TracedAsyncGenerator(AsyncIteratorProxy):
+class TracedAsyncIterator(AsyncIteratorProxy):
     def __init__(self, span, inputs, iterator: Iterator, trace_type):
         self._span = span
         self._inputs = inputs
