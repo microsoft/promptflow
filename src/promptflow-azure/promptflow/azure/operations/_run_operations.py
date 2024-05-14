@@ -733,7 +733,6 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
     def _resolve_flow_and_session_id(self, run: Run) -> Tuple[str, Optional[str]]:
         """Resolve flow to remote flow and session id."""
         # for remote flow case, leave session id to None and let service side resolve
-        environment_variables = {}
         if run._use_remote_flow:
             return self._resolve_flow_definition_resource_id(run=run), None, environment_variables
 
@@ -747,7 +746,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         )
         # for local flow case, use flow path to calculate session id
         session_id = self._get_session_id(flow=flow, flow_lineage_id=run._lineage_id)
-        return flow.path, session_id, environment_variables
+        return flow.path, session_id
 
     def _get_session_id(self, flow, flow_lineage_id):
         try:
