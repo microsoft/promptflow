@@ -7,11 +7,11 @@ from promptflow.connections import AzureOpenAIConnection
 from promptflow.tracing import trace
 from promptflow.tracing._trace import _traced
 from promptflow.tracing._tracer import Tracer, _create_trace_from_function_call
-from promptflow.tracing.contracts.generator_proxy import GeneratorProxy
+from promptflow.tracing.contracts.iterator_proxy import IteratorProxy
 from promptflow.tracing.contracts.trace import Trace, TraceType
 
-from ...utils import prepare_memory_exporter
 from ...process_utils import execute_function_in_subprocess
+from ...utils import prepare_memory_exporter
 
 
 def generator():
@@ -88,7 +88,7 @@ class TestTracer:
         for i in range(3):
             assert next(output) == i
 
-        assert isinstance(trace2.output, GeneratorProxy)
+        assert isinstance(trace2.output, IteratorProxy)
         assert trace2.error == {
             "message": str(error1),
             "type": type(error1).__qualname__,
@@ -111,7 +111,7 @@ class TestTracer:
         # assert that the function returns a str object for unserializable objects
         assert Tracer.to_serializable(generator) == str(generator)
 
-    @pytest.mark.parametrize("obj", [({"name": "Alice", "age": 25}), ([1, 2, 3]), (GeneratorProxy(generator())), (42)])
+    @pytest.mark.parametrize("obj", [({"name": "Alice", "age": 25}), ([1, 2, 3]), (IteratorProxy(generator())), (42)])
     def test_to_serializable(self, obj):
         assert Tracer.to_serializable(obj) == obj
 

@@ -9,7 +9,7 @@ from typing import Dict, List, Optional
 
 from ._thread_local_singleton import ThreadLocalSingleton
 from ._utils import serialize
-from .contracts.generator_proxy import AsyncGeneratorProxy, GeneratorProxy
+from .contracts.iterator_proxy import AsyncIteratorProxy, IteratorProxy
 from .contracts.trace import Trace, TraceType
 
 
@@ -61,7 +61,7 @@ class Tracer(ThreadLocalSingleton):
     def to_serializable(obj):
         if isinstance(obj, dict) and all(isinstance(k, str) for k in obj.keys()):
             return {k: Tracer.to_serializable(v) for k, v in obj.items()}
-        if isinstance(obj, (GeneratorProxy, AsyncGeneratorProxy)):
+        if isinstance(obj, (IteratorProxy, AsyncIteratorProxy)):
             return obj
         try:
             obj = serialize(obj)
@@ -111,10 +111,10 @@ class Tracer(ThreadLocalSingleton):
         if not last_trace:
             logging.warning("Try to pop trace but no active trace in current context.")
             return output
-        if isinstance(output, Iterator) and not isinstance(output, GeneratorProxy):
-            output = GeneratorProxy(output)
-        if isinstance(output, AsyncIterator) and not isinstance(output, AsyncGeneratorProxy):
-            output = AsyncGeneratorProxy(output)
+        if isinstance(output, Iterator) and not isinstance(output, IteratorProxy):
+            output = IteratorProxy(output)
+        if isinstance(output, AsyncIterator) and not isinstance(output, AsyncIteratorProxy):
+            output = AsyncIteratorProxy(output)
         if output is not None:
             last_trace.output = self.to_serializable(output)
         if error is not None:

@@ -25,7 +25,7 @@ from ._operation_context import OperationContext
 from ._span_enricher import SpanEnricher, SpanEnricherManager
 from ._tracer import Tracer, _create_trace_from_function_call, get_node_name_from_context
 from ._utils import get_input_names_for_prompt_template, get_prompt_param_name_from_func, serialize
-from .contracts.generator_proxy import AsyncGeneratorProxy, GeneratorProxy
+from .contracts.iterator_proxy import AsyncIteratorProxy, IteratorProxy
 from .contracts.trace import Trace, TraceType
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
@@ -174,7 +174,7 @@ def enrich_span_with_llm_if_needed(span, original_span, inputs, generator_output
             token_collector.collect_openai_tokens_for_streaming(span, inputs, generator_output, parser.is_chat)
 
 
-class TracedGenerator(GeneratorProxy):
+class TracedGenerator(IteratorProxy):
     def __init__(self, original_span: ReadableSpan, inputs, iterator: Iterator):
         self._original_span = original_span
         self._inputs = inputs
@@ -244,7 +244,7 @@ class TracedGenerator(GeneratorProxy):
         self._span.set_status(StatusCode.OK)
 
 
-class TracedAsyncGenerator(AsyncGeneratorProxy):
+class TracedAsyncGenerator(AsyncIteratorProxy):
     def __init__(self, original_span: ReadableSpan, inputs, iterator: Iterator):
         self._original_span = original_span
         self._inputs = inputs
