@@ -50,6 +50,7 @@ promptflow.tools.llm_vision.llm_vision:
       - gpt-4o
       - gpt-4-turbo-2024-04-09
       - gpt-4-1106-vision-preview
+      - gpt-4o-2024-05-13
       allow_manual_entry: true
       type:
         - string

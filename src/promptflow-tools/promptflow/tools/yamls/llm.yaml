@@ -107,6 +107,7 @@ promptflow.tools.llm.llm:
             - gpt-4-0314
             - gpt-4-32k
             - gpt-4-32k-0314
+            - gpt-4o-2024-05-13
           completion:
             enum:
             - gpt-3.5-turbo-instruct
