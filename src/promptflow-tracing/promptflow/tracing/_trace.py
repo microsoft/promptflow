@@ -283,7 +283,7 @@ class TracedAsyncIterator(AsyncIteratorProxy):
 
     async def __anext__(self):
         try:
-            return await next(self._iterator)
+            return await self._iterator.__anext__()
         except Exception as e:
             exception_other_than_non_stop_iteration = None
             if isinstance(e, StopIteration):
