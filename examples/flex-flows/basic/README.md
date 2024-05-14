@@ -36,6 +36,11 @@ pf flow test --flow programmer:write_simple_program --inputs text="Java Hello Wo
 pf flow test --flow .
 ```
 
+```shell
+# test with UI
+pf flow test --flow . --ui
+```
+
 - Create run with multiple lines data
 ```bash
 # using environment from .env file (loaded in user code: hello.py)

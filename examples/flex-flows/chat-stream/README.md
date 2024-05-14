@@ -75,6 +75,11 @@ pf flow test --flow . --init init.json --inputs question="What's Azure Machine L
 pf flow test --flow . --init init.json --inputs question="What is ChatGPT? Please explain with consise statement."
 ```
 
+- Test flow with UI
+```shell
+pf flow test --flow . --init init.json --ui
+```
+
 - Create run with multiple lines data
 
 ```bash
