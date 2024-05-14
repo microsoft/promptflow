@@ -83,12 +83,19 @@ class PFClient:
             workspace=workspace,
             **kwargs,
         )
+        self._traces = TraceOperations(
+            operation_scope=self._ml_client._operation_scope,
+            operation_config=self._ml_client._operation_config,
+            service_caller=self._service_caller,
+            **kwargs,
+        )
         self._runs = RunOperations(
             operation_scope=self._ml_client._operation_scope,
             operation_config=self._ml_client._operation_config,
             all_operations=self._ml_client._operation_container,
             credential=self._ml_client._credential,
             flow_operations=self._flows,
+            trace_operations=self._traces,
             service_caller=self._service_caller,
             workspace=workspace,
             **kwargs,
@@ -106,12 +113,6 @@ class PFClient:
             operation_config=self._ml_client._operation_config,
             all_operations=self._ml_client._operation_container,
             credential=self._ml_client._credential,
-            service_caller=self._service_caller,
-            **kwargs,
-        )
-        self._traces = TraceOperations(
-            operation_scope=self._ml_client._operation_scope,
-            operation_config=self._ml_client._operation_config,
             service_caller=self._service_caller,
             **kwargs,
         )
