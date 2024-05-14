@@ -1,3 +1,4 @@
+import json
 import os
 
 from dotenv import load_dotenv
@@ -8,8 +9,6 @@ from promptflow.tracing import trace
 from promptflow.core import Prompty
 
 BASE_DIR = Path(__file__).absolute().parent
-
-import json
 
 
 class WeatherInfo(TypedDict):
