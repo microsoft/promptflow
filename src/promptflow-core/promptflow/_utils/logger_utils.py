@@ -14,7 +14,7 @@ from contextvars import ContextVar
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from promptflow._constants import LINE_NUMBER_WIDTH, PF_LOGGING_LEVEL
 from promptflow._utils.credential_scrubber import CredentialScrubber
@@ -29,7 +29,7 @@ LOG_FORMAT = "%(asctime)s %(process)7d %(name)-18s %(levelname)-8s %(message)s"
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S %z"
 
 
-def _get_format_for_logger(default_log_format: str = None, default_date_format: str = None) -> str:
+def _get_format_for_logger(default_log_format: str = None, default_date_format: str = None) -> Tuple[str, str]:
     """
     Get the logging format and date format for logger.
 
