@@ -1,6 +1,5 @@
 import copy
 import json
-import sys
 import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -8,7 +7,6 @@ from pathlib import Path
 
 import pytest
 
-from promptflow._sdk._constants import OSType
 from promptflow._sdk._utilities.monitor_utils import (
     DirectoryModificationMonitorTarget,
     JsonContentMonitorTarget,
@@ -66,11 +64,18 @@ class TestMonitorUtils:
             assert_update_cache(True, "file added", cache, monitor_target)
             assert_update_cache(False, "same content", cache, monitor_target)
 
-            if sys.platform != OSType.LINUX:
-                # TODO: fix this test on linux
-                write_json(temp_dir / "test.txt", "test")
-                assert_update_cache(True, "content changed", cache, monitor_target)
-                assert_update_cache(False, "same content", cache, monitor_target)
+            # wait for 0.1s to make sure the last modified time is different
+            time.sleep(0.1)
+
+            target_file = temp_dir / "test.txt"
+            write_json(target_file, "test")
+            assert_update_cache(
+                True,
+                "content changed on " + str(target_file.stat().st_mtime) + ": " + (temp_dir / "test.txt").read_text(),
+                cache,
+                monitor_target,
+            )
+            assert_update_cache(False, "same content", cache, monitor_target)
 
             # ignore empty directory creation
             (temp_dir / "new").mkdir()
@@ -121,16 +126,20 @@ class TestMonitorUtils:
             write_json(target_file, data)
             assert_update_cache(True, "related content found", cache, monitor_target)
 
-            if sys.platform != OSType.LINUX:
-                # TODO: fix this test on linux
-                data["key1"]["key2"] = "value3"
-                write_json(target_file, data)
-                assert_update_cache(True, "related content changed", cache, monitor_target)
+            # wait for 0.1s to make sure the last modified time is different
+            time.sleep(0.1)
+            data["key1"]["key2"] = "value3"
+            write_json(target_file, data)
+            assert_update_cache(
+                True, f"related content changed:\ncurrent json content:{target_file.read_text()}", cache, monitor_target
+            )
 
             data["key1"]["key1"] = "value2"
             write_json(target_file, data)
             assert_update_cache(False, "change not related", cache, monitor_target)
 
+            # wait for 0.1s to make sure the last modified time is different
+            time.sleep(0.1)
             del data["key1"]["key2"]
             write_json(target_file, data)
             assert_update_cache(True, "delete related", cache, monitor_target)
