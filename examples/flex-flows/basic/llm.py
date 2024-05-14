@@ -49,7 +49,7 @@ def my_llm_tool(
         max_tokens=int(max_tokens),
         temperature=float(temperature),
         top_p=float(top_p),
-        n=int(n)
+        n=int(n),
     )
 
     # get first element because prompt is single.
