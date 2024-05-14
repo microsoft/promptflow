@@ -88,7 +88,13 @@ class ExperimentInput(YAMLTranslatableMixin):
         return cls(base_path=context[BASE_PATH_CONTEXT_KEY], **loaded_data)
 
 
-class FlowNode(YAMLTranslatableMixin):
+class NodeBase(YAMLTranslatableMixin):
+    @classmethod
+    def _get_schema_cls(cls):
+        raise NotImplementedError
+
+
+class FlowNode(NodeBase):
     def __init__(
         self,
         path: Union[Path, str],
@@ -152,7 +158,7 @@ class FlowNode(YAMLTranslatableMixin):
         self.path = saved_flow_path.resolve().absolute().as_posix()
 
 
-class CommandNode(YAMLTranslatableMixin):
+class CommandNode(NodeBase):
     def __init__(
         self,
         command,
@@ -204,7 +210,7 @@ class CommandNode(YAMLTranslatableMixin):
         self.code = saved_path.resolve().absolute().as_posix()
 
 
-class ChatGroupNode(YAMLTranslatableMixin):
+class ChatGroupNode(NodeBase):
     def __init__(
         self,
         name,

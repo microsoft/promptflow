@@ -69,6 +69,7 @@ streamlit-quill = { version = "<0.1.0", optional = true}
 bs4 = { version = "*", optional = true}
 argcomplete = ">=3.2.3" # for generating shell autocompletions
 pywin32 = {version = "*", markers = "sys_platform == 'win32'"}  # Support PFS detach mode in windows
+bytecode = {version = "*"}  # Support bytecode inject function to get locals
 
 [tool.poetry.extras]
 executable = [
