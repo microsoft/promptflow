@@ -208,6 +208,11 @@ def sanitize_pfs_response_body(body: str) -> str:
     # BulkRuns/{flowRunId}
     if "studioPortalEndpoint" in body:
         body_dict["studioPortalEndpoint"] = sanitize_azure_workspace_triad(body_dict["studioPortalEndpoint"])
+    # TraceSessions
+    if "accountEndpoint" in body:
+        body_dict["accountEndpoint"] = ""
+    if "resourceArmId" in body:
+        body_dict["resourceArmId"] = ""
     return json.dumps(body_dict)
 
 

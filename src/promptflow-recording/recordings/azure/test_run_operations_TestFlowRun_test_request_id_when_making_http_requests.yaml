@@ -9,8 +9,8 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.0 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.11.5 (Windows-10-10.0.22621-SP0)
+      - promptflow-azure-sdk/1.11.0.dev0 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.39)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000
   response:
@@ -23,7 +23,7 @@ interactions:
       cache-control:
       - no-cache
       content-length:
-      - '3630'
+      - '3761'
       content-type:
       - application/json; charset=utf-8
       expires:
@@ -39,7 +39,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.017'
+      - '0.039'
     status:
       code: 200
       message: OK
@@ -53,8 +53,8 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.0 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.11.5 (Windows-10-10.0.22621-SP0)
+      - promptflow-azure-sdk/1.11.0.dev0 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.39)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores?count=30&isDefault=true&orderByAsc=false
   response:
@@ -91,7 +91,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.716'
+      - '0.063'
     status:
       code: 200
       message: OK
@@ -105,8 +105,8 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.0 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.11.5 (Windows-10-10.0.22621-SP0)
+      - promptflow-azure-sdk/1.11.0.dev0 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.39)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore
   response:
@@ -143,7 +143,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.105'
+      - '0.078'
     status:
       code: 200
       message: OK
@@ -159,8 +159,8 @@ interactions:
       Content-Length:
       - '0'
       User-Agent:
-      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.0 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.11.5 (Windows-10-10.0.22621-SP0)
+      - promptflow-azure-sdk/1.11.0.dev0 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.39)
     method: POST
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore/listSecrets
   response:
@@ -184,7 +184,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.140'
+      - '0.111'
     status:
       code: 200
       message: OK
@@ -198,9 +198,9 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - azsdk-python-storage-blob/12.19.0 Python/3.11.5 (Windows-10-10.0.22621-SP0)
+      - azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.39)
       x-ms-date:
-      - Thu, 30 Nov 2023 08:11:19 GMT
+      - Mon, 13 May 2024 08:34:54 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -212,13 +212,13 @@ interactions:
       accept-ranges:
       - bytes
       content-length:
-      - '49'
+      - '48'
       content-md5:
-      - quXiEreYvPinSj0HsaNa/g==
+      - coR2DL3u7dznqaSP7zFogw==
       content-type:
       - application/octet-stream
       last-modified:
-      - Wed, 08 Nov 2023 04:26:09 GMT
+      - Tue, 31 Oct 2023 09:02:21 GMT
       server:
       - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
       vary:
@@ -226,13 +226,13 @@ interactions:
       x-ms-blob-type:
       - BlockBlob
       x-ms-creation-time:
-      - Wed, 08 Nov 2023 04:26:09 GMT
+      - Tue, 31 Oct 2023 09:02:21 GMT
       x-ms-meta-name:
-      - c4092674-5e53-4c17-b78d-75353ae0edb6
+      - aeb6ec02-977b-40f5-af8e-6d74a508290d
       x-ms-meta-upload_status:
       - completed
       x-ms-meta-version:
-      - 579021dc-8ac8-4c73-8110-4642bd00c69b
+      - bb7465bd-bfff-4936-99f3-31d77d641b37
       x-ms-version:
       - '2023-11-03'
     status:
@@ -248,9 +248,9 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - azsdk-python-storage-blob/12.19.0 Python/3.11.5 (Windows-10-10.0.22621-SP0)
+      - azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.39)
       x-ms-date:
-      - Thu, 30 Nov 2023 08:11:21 GMT
+      - Mon, 13 May 2024 08:34:55 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -282,8 +282,8 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.0 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.11.5 (Windows-10-10.0.22621-SP0)
+      - promptflow-azure-sdk/1.11.0.dev0 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.39)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore
   response:
@@ -320,7 +320,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.103'
+      - '0.083'
     status:
       code: 200
       message: OK
@@ -336,8 +336,8 @@ interactions:
       Content-Length:
       - '0'
       User-Agent:
-      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.0 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.11.5 (Windows-10-10.0.22621-SP0)
+      - promptflow-azure-sdk/1.11.0.dev0 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.39)
     method: POST
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore/listSecrets
   response:
@@ -361,7 +361,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.107'
+      - '0.097'
     status:
       code: 200
       message: OK
@@ -375,9 +375,9 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - azsdk-python-storage-blob/12.19.0 Python/3.11.5 (Windows-10-10.0.22621-SP0)
+      - azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.39)
       x-ms-date:
-      - Thu, 30 Nov 2023 08:11:25 GMT
+      - Mon, 13 May 2024 08:34:57 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -389,13 +389,13 @@ interactions:
       accept-ranges:
       - bytes
       content-length:
-      - '245'
+      - '230'
       content-md5:
-      - F+JA0a3CxcLYZ0ANRdlZbA==
+      - z4r8oJG4uHoQyFTVBI+vbg==
       content-type:
       - application/octet-stream
       last-modified:
-      - Wed, 29 Nov 2023 02:51:35 GMT
+      - Mon, 15 Apr 2024 03:32:29 GMT
       server:
       - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
       vary:
@@ -403,9 +403,9 @@ interactions:
       x-ms-blob-type:
       - BlockBlob
       x-ms-creation-time:
-      - Thu, 17 Aug 2023 10:30:09 GMT
+      - Mon, 15 Apr 2024 03:32:29 GMT
       x-ms-meta-name:
-      - 56efdd28-6297-4baa-aad3-be46f4b768a2
+      - 047f1308-c77e-4357-983b-3bcd5bf40191
       x-ms-meta-upload_status:
       - completed
       x-ms-meta-version:
@@ -425,9 +425,9 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - azsdk-python-storage-blob/12.19.0 Python/3.11.5 (Windows-10-10.0.22621-SP0)
+      - azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.39)
       x-ms-date:
-      - Thu, 30 Nov 2023 08:11:26 GMT
+      - Mon, 13 May 2024 08:34:58 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -459,8 +459,47 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.0 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.11.5 (Windows-10-10.0.22621-SP0)
+      - promptflow-azure-sdk/1.11.0.dev0 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
+        Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.39)
+    method: GET
+    uri: https://eastus.api.azureml.ms/flow/api/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/TraceSessions
+  response:
+    body:
+      string: '{"entityId": "3e123da1-f9a5-4c91-9234-8d9ffbb39ff5", "traceCosmosConfiguration":
+        "None", "traceCosmosStatus": "Initialized", "accountEndpoint": "", "databaseName":
+        "PromptFlowTraceSession", "resourceArmId": "", "resourceType": 1}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '486'
+      content-type:
+      - application/json; charset=utf-8
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.232'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - promptflow-azure-sdk/1.11.0.dev0 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.39)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore
   response:
@@ -497,7 +536,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.070'
+      - '0.094'
     status:
       code: 200
       message: OK
@@ -513,8 +552,8 @@ interactions:
       Content-Length:
       - '0'
       User-Agent:
-      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.0 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.11.5 (Windows-10-10.0.22621-SP0)
+      - promptflow-azure-sdk/1.11.0.dev0 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.39)
     method: POST
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore/listSecrets
   response:
@@ -538,7 +577,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.104'
+      - '0.175'
     status:
       code: 200
       message: OK
@@ -552,9 +591,9 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - azsdk-python-storage-blob/12.19.0 Python/3.11.5 (Windows-10-10.0.22621-SP0)
+      - azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.39)
       x-ms-date:
-      - Thu, 30 Nov 2023 08:11:35 GMT
+      - Mon, 13 May 2024 08:35:06 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -566,13 +605,13 @@ interactions:
       accept-ranges:
       - bytes
       content-length:
-      - '49'
+      - '48'
       content-md5:
-      - quXiEreYvPinSj0HsaNa/g==
+      - coR2DL3u7dznqaSP7zFogw==
       content-type:
       - application/octet-stream
       last-modified:
-      - Wed, 08 Nov 2023 04:26:09 GMT
+      - Tue, 31 Oct 2023 09:02:21 GMT
       server:
       - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
       vary:
@@ -580,13 +619,13 @@ interactions:
       x-ms-blob-type:
       - BlockBlob
       x-ms-creation-time:
-      - Wed, 08 Nov 2023 04:26:09 GMT
+      - Tue, 31 Oct 2023 09:02:21 GMT
       x-ms-meta-name:
-      - c4092674-5e53-4c17-b78d-75353ae0edb6
+      - aeb6ec02-977b-40f5-af8e-6d74a508290d
       x-ms-meta-upload_status:
       - completed
       x-ms-meta-version:
-      - 579021dc-8ac8-4c73-8110-4642bd00c69b
+      - bb7465bd-bfff-4936-99f3-31d77d641b37
       x-ms-version:
       - '2023-11-03'
     status:
@@ -602,9 +641,9 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - azsdk-python-storage-blob/12.19.0 Python/3.11.5 (Windows-10-10.0.22621-SP0)
+      - azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.39)
       x-ms-date:
-      - Thu, 30 Nov 2023 08:11:36 GMT
+      - Mon, 13 May 2024 08:35:06 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -636,8 +675,8 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.0 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.11.5 (Windows-10-10.0.22621-SP0)
+      - promptflow-azure-sdk/1.11.0.dev0 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.39)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore
   response:
@@ -669,47 +708,6 @@ interactions:
       - max-age=31536000; includeSubDomains
       vary:
       - Accept-Encoding
-      x-cache:
-      - CONFIG_NOCACHE
-      x-content-type-options:
-      - nosniff
-      x-request-time:
-      - '0.073'
-    status:
-      code: 200
-      message: OK
-- request:
-    body: null
-    headers:
-      Accept:
-      - application/json
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '0'
-      User-Agent:
-      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.0 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.11.5 (Windows-10-10.0.22621-SP0)
-    method: POST
-    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore/listSecrets
-  response:
-    body:
-      string: '{"secretsType": "AccountKey", "key": "dGhpcyBpcyBmYWtlIGtleQ=="}'
-    headers:
-      cache-control:
-      - no-cache
-      content-length:
-      - '134'
-      content-type:
-      - application/json; charset=utf-8
-      expires:
-      - '-1'
-      pragma:
-      - no-cache
-      strict-transport-security:
-      - max-age=31536000; includeSubDomains
       x-cache:
       - CONFIG_NOCACHE
       x-content-type-options:
@@ -723,15 +721,56 @@ interactions:
     body: null
     headers:
       Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '0'
+      User-Agent:
+      - promptflow-azure-sdk/1.11.0.dev0 azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.39)
+    method: POST
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore/listSecrets
+  response:
+    body:
+      string: '{"secretsType": "AccountKey", "key": "dGhpcyBpcyBmYWtlIGtleQ=="}'
+    headers:
+      cache-control:
+      - no-cache
+      content-length:
+      - '134'
+      content-type:
+      - application/json; charset=utf-8
+      expires:
+      - '-1'
+      pragma:
+      - no-cache
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      x-cache:
+      - CONFIG_NOCACHE
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.122'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
       - application/xml
       Accept-Encoding:
       - gzip, deflate
       Connection:
       - keep-alive
       User-Agent:
-      - azsdk-python-storage-blob/12.19.0 Python/3.11.5 (Windows-10-10.0.22621-SP0)
+      - azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.39)
       x-ms-date:
-      - Thu, 30 Nov 2023 08:11:40 GMT
+      - Mon, 13 May 2024 08:35:09 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -743,13 +782,13 @@ interactions:
       accept-ranges:
       - bytes
       content-length:
-      - '245'
+      - '230'
       content-md5:
-      - F+JA0a3CxcLYZ0ANRdlZbA==
+      - z4r8oJG4uHoQyFTVBI+vbg==
       content-type:
       - application/octet-stream
       last-modified:
-      - Wed, 29 Nov 2023 02:51:35 GMT
+      - Mon, 15 Apr 2024 03:32:29 GMT
       server:
       - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
       vary:
@@ -757,9 +796,9 @@ interactions:
       x-ms-blob-type:
       - BlockBlob
       x-ms-creation-time:
-      - Thu, 17 Aug 2023 10:30:09 GMT
+      - Mon, 15 Apr 2024 03:32:29 GMT
       x-ms-meta-name:
-      - 56efdd28-6297-4baa-aad3-be46f4b768a2
+      - 047f1308-c77e-4357-983b-3bcd5bf40191
       x-ms-meta-upload_status:
       - completed
       x-ms-meta-version:
@@ -779,9 +818,9 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - azsdk-python-storage-blob/12.19.0 Python/3.11.5 (Windows-10-10.0.22621-SP0)
+      - azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.39)
       x-ms-date:
-      - Thu, 30 Nov 2023 08:11:42 GMT
+      - Mon, 13 May 2024 08:35:09 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -803,4 +842,43 @@ interactions:
     status:
       code: 404
       message: The specified blob does not exist.
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - promptflow-azure-sdk/1.11.0.dev0 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
+        Python/3.11.9 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.39)
+    method: GET
+    uri: https://eastus.api.azureml.ms/flow/api/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/TraceSessions
+  response:
+    body:
+      string: '{"entityId": "3e123da1-f9a5-4c91-9234-8d9ffbb39ff5", "traceCosmosConfiguration":
+        "None", "traceCosmosStatus": "Initialized", "accountEndpoint": "", "databaseName":
+        "PromptFlowTraceSession", "resourceArmId": "", "resourceType": 1}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '486'
+      content-type:
+      - application/json; charset=utf-8
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.274'
+    status:
+      code: 200
+      message: OK
 version: 1
