@@ -11,6 +11,7 @@ import shutil
 import signal
 import sys
 import threading
+import uuid
 from contextlib import nullcontext
 from datetime import datetime
 from functools import partial
@@ -118,7 +119,7 @@ class LineExecutionProcessPool:
         self._serialize_multimedia_during_execution = serialize_multimedia_during_execution
 
         # Initialize the results dictionary that stores line results.
-        self._result_dict: Dict[int, LineResult] = {}
+        self._result_dict: Dict[str, LineResult] = {}
 
         # Initialize some fields from flow_executor and construct flow_create_kwargs
         self._flow_id = flow_executor._flow_id
@@ -250,11 +251,12 @@ class LineExecutionProcessPool:
 
     async def submit(self, run_id: str, line_number: int, inputs: dict):
         """Submit a line execution request to the process pool and return the line result."""
-        self._task_queue.put((run_id, line_number, inputs))
+        request_id = get_request_id()
+        self._task_queue.put((request_id, run_id, line_number, inputs))
         start_time = datetime.utcnow()
         line_result = None
         while not self._line_timeout_expired(start_time, buffer_sec=20) and not line_result:
-            line_result = self._result_dict.get(line_number, None)
+            line_result = self._result_dict.pop(request_id, None)
             # Check monitor status every 1 second
             self._monitor_thread_pool_status()
             await asyncio.sleep(1)
@@ -279,6 +281,7 @@ class LineExecutionProcessPool:
                 for index, inputs in batch_inputs:
                     self._task_queue.put(
                         (
+                            get_request_id(),
                             self._run_id,
                             index,
                             inputs,
@@ -322,14 +325,14 @@ class LineExecutionProcessPool:
             # Set the timeout flag to True and log the warning.
             self._is_timeout = True
             bulk_logger.warning(f"The batch run timed out, with {len(self._result_dict)} line results processed.")
-        return [self._result_dict[key] for key in sorted(self._result_dict)]
+        return [line_result for line_result in sorted(self._result_dict.values(), key=lambda item: item.run_info.index)]
 
     # region monitor thread target function
 
     def _monitor_workers_and_process_tasks_in_thread(
         self,
         task_queue: Queue,
-        result_dict: Dict[int, LineResult],
+        result_dict: Dict[str, LineResult],
         index: int,
         input_queue: Queue,
         output_queue: Queue,
@@ -364,7 +367,7 @@ class LineExecutionProcessPool:
                 terminated = True
             else:
                 # If the task is a line execution request, put the request into the input queue.
-                run_id, line_number, inputs = data
+                request_id, run_id, line_number, inputs = data
                 args = (run_id, line_number, inputs, line_timeout_sec)
                 input_queue.put(args)
 
@@ -388,7 +391,7 @@ class LineExecutionProcessPool:
                 # Handle output queue message.
                 message = self._handle_output_queue_messages(output_queue)
                 if isinstance(message, LineResult):
-                    result_dict[line_number] = message
+                    result_dict[request_id] = message
                     completed = True
                     break
                 if isinstance(message, NodeRunInfo):
@@ -438,7 +441,7 @@ class LineExecutionProcessPool:
                     ex,
                     returned_node_run_infos,
                 )
-                result_dict[line_number] = result
+                result_dict[request_id] = result
 
                 self._completed_idx[line_number] = format_current_process_info(process_name, process_id, line_number)
                 log_process_status(process_name, process_id, line_number, is_failed=True)
@@ -458,8 +461,9 @@ class LineExecutionProcessPool:
     def _delete_log_files(self):
         try:
             shutil.rmtree(ProcessPoolConstants.PROCESS_LOG_PATH)
-        except Exception as e:
-            bulk_logger.warning(f"Failed to delete the folder, exception: {e}")
+        except Exception:
+            # Ignore the exception when deleting the log files.
+            pass
 
     def _get_task_from_queue(self, task_queue: Queue):
         """Get task from the task queue. Ignore the queue being empty and only exit the loop when getting data."""
@@ -840,6 +844,14 @@ def log_process_status(process_name, pid, line_number: int, is_completed=False, 
 
 def format_current_process_info(process_name, pid, line_number: int):
     return f"Process name({process_name})-Process id({pid})-Line number({line_number})"
+
+
+def get_request_id() -> str:
+    """
+    Treat each input as a request to the line process pool and
+    get the id of each request to use it as the key for the result_dict.
+    """
+    return str(uuid.uuid4())
 
 
 # endregion

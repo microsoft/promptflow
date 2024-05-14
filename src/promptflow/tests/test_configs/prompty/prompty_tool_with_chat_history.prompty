@@ -1,0 +1,49 @@
+---
+name: Basic Prompt
+description: A basic prompt that uses the GPT-3 chat API to answer questions
+model:
+    api: chat
+    configuration:
+      type: azure_openai
+      azure_deployment: gpt-35-turbo
+      connection: azure_open_ai_connection
+    parameters:
+      max_tokens: 128
+      temperature: 0.2
+      tools: ${file:../datas/prompty_with_multi_tools.json}
+      tool_choice: auto
+sample:
+  chat_history: []
+  question: ""
+---
+# system:
+Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous.
+
+{% for item in chat_history %}
+# user:
+{{item.inputs.question}}
+
+{% if 'tool_calls' in item.outputs.llm_output and item.outputs.llm_output.tool_calls is not none %}
+# assistant:
+## tool_calls:
+{{item.outputs.llm_output.tool_calls}}
+
+{% for tool_call_item in item.outputs.llm_output.tool_calls %}
+# tool:
+## tool_call_id:
+{{tool_call_item.id}}
+## content:
+{{item.outputs.answer}}
+
+{% endfor %}
+
+{% else %}
+# assistant:
+{{item.outputs.llm_output}}}}
+
+{% endif %}}
+
+{% endfor %}
+
+# user:
+{{question}}

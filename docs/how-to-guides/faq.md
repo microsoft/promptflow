@@ -6,7 +6,7 @@
 
 Prompt flow provides both stable and experimental features in the same SDK.
 
-|Feature status | Description | 
+|Feature status | Description |
 |----------------|----------------|
 Stable features	| **Production ready** <br/><br/> These features are recommended for most use cases and production environments. They are updated less frequently then experimental features.|
 Experimental features | **Developmental**  <br/><br/> These features are newly developed capabilities & updates that may not be ready or fully tested for production usage. While the features are typically functional, they can include some breaking changes. Experimental features are used to iron out SDK breaking bugs, and will only receive updates for the duration of the testing period. Experimental features are also referred to as features that are in **preview**. <br/> As the name indicates, the experimental (preview) features are for experimenting and is **not considered bug free or stable**. For this reason, we only recommend experimental features to advanced users who wish to try out early versions of capabilities and updates, and intend to participate in the reporting of bugs and glitches.
@@ -18,14 +18,14 @@ Please use the following command to upgrade promptflow for openai 1.x support:
 pip install promptflow>=1.1.0
 pip install promptflow-tools>=1.0.0
 ```
-Note that the command above will upgrade your openai package a version later than 1.0.0, 
+Note that the command above will upgrade your openai package a version later than 1.0.0,
 which may introduce breaking changes to custom tool code.
 
 Reach [OpenAI migration guide](https://github.com/openai/openai-python/discussions/742) for more details.
 
 ### Promptflow 1.8.0 upgrade guide
-Before upgrading to promptflow version 1.8.0 or later, it's important to first uninstall any existing installations of promptflow and its sub-packages. 
-This ensures a clean installation of the new version without any conflicts. 
+Before upgrading to promptflow version 1.8.0 or later, it's important to first uninstall any existing installations of promptflow and its sub-packages.
+This ensures a clean installation of the new version without any conflicts.
 ```bash
 pip uninstall -y promptflow promptflow-core promptflow-devkit promptflow-azure # uninstall promptflow and its sub-packages
 pip install 'promptflow>=1.8.0' # install promptflow version 1.8.0 or later
@@ -40,7 +40,7 @@ Reason for 'pip install promptflow>=1.8.0' or 'pf upgrade' directly not working:
     - `promptflow-devkit`: Development kit for promptflow.
     - `promptflow-azure`: Azure extra requires(`promptflow[azure]`) for promptflow to integrate with Azure.
 
-When upgrading promptflow from an existing version to promptflow 1.8.0, pip will remove the old promptflow after installing promptflow subpackages, 
+When upgrading promptflow from an existing version to promptflow 1.8.0, pip will remove the old promptflow after installing promptflow subpackages,
 which caused subpackage files got wrongly removed.
 
 ![upgrade-wrongly-remove](../media/how-to-guides/upgrade-error.png)
@@ -80,7 +80,7 @@ This is often due to outdated cache. To refresh the tool list and make newly ins
 
 2. Bring up the command palette by pressing "Ctrl+Shift+P".
 
-3. Type and select the "Developer: Reload Webviews" command. 
+3. Type and select the "Developer: Reload Webviews" command.
 
 4. Wait a moment for the tool list refreshing.
 
@@ -102,7 +102,7 @@ Compare to the serving logs with `WARNING` level:
 
 Currently, promptflow supports the following environment variables:
 
-**PF_WORKER_COUNT** 
+**PF_WORKER_COUNT**
 
 Effective for batch run only, count of parallel workers in batch run execution.
 
@@ -128,20 +128,20 @@ For example, if your endpoint TPM (token per minute) is 50K, the single flow run
 
 **PF_BATCH_METHOD**
 
-Valid for batch run only. Optional values: 'spawn', 'fork'. 
+Valid for batch run only. Optional values: 'spawn', 'fork'.
 
 **spawn**
 
 1. The child processes will not inherit resources of the parent process, therefore, each process needs to reinitialize the resources required for the flow, which may use more system memory.
 
 2. Starting a process is slow because it will take some time to initialize the necessary resources.
- 
+
 **fork**
 
 1. Use the copy-on-write mechanism, the child processes will inherit all the resources of the parent process, thereby using less system memory.
 
 2. The process starts faster as it doesn't need to reinitialize resources.
- 
+
 Note: Windows only supports spawn, Linux and macOS support both spawn and fork.
 
 
@@ -149,13 +149,13 @@ Note: Windows only supports spawn, Linux and macOS support both spawn and fork.
 
 1. Configure environment variables in ```flow.dag.yaml```. Example:
 ```
-    inputs: []  
-    outputs: []  
-    nodes: []  
-    environment_variables:  
-      PF_WORKER_COUNT: 2  
+    inputs: []
+    outputs: []
+    nodes: []
+    environment_variables:
+      PF_WORKER_COUNT: 2
       PF_BATCH_METHOD: "spawn"
-      MY_CUSTOM_SETTING: my_custom_value 
+      MY_CUSTOM_SETTING: my_custom_value
 ```
 
 2. Specify environment variables when submitting runs.
@@ -164,7 +164,7 @@ Note: Windows only supports spawn, Linux and macOS support both spawn and fork.
 :::{tab-item} CLI
 :sync: CLI
 
-Use this parameter: ```--environment-variable``` to specify environment variables. 
+Use this parameter: ```--environment-variable``` to specify environment variables.
 Example: ```--environment-variable PF_WORKER_COUNT="2" PF_BATCH_METHOD="spawn"```.
 
 :::
@@ -172,7 +172,7 @@ Example: ```--environment-variable PF_WORKER_COUNT="2" PF_BATCH_METHOD="spawn"``
 :::{tab-item} SDK
 :sync: SDK
 
-Specify environment variables when creating run. Example: 
+Specify environment variables when creating run. Example:
 
 ``` python
     pf = PFClient(
@@ -184,7 +184,6 @@ Specify environment variables when creating run. Example:
 
     flow = "web-classification"
     data = "web-classification/data.jsonl"
-    runtime = "example-runtime-ci"
 
     environment_variables = {"PF_WORKER_COUNT": "2", "PF_BATCH_METHOD": "spawn"}
 
@@ -192,7 +191,6 @@ Specify environment variables when creating run. Example:
     base_run = pf.run(
         flow=flow,
         data=data,
-        runtime=runtime,
         environment_variables=environment_variables,
     )
 ```

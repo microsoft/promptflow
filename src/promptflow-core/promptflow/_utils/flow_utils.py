@@ -68,6 +68,7 @@ def resolve_flow_path(
     base_path: Union[str, Path, PathLike, None] = None,
     check_flow_exist: bool = True,
     default_flow_file: str = FLOW_DAG_YAML,
+    allow_prompty_dir: bool = False,
 ) -> Tuple[Path, str]:
     """Resolve flow path and return the flow directory path and the file name of the target yaml.
 
@@ -82,6 +83,8 @@ def resolve_flow_path(
       If False, the function will return the flow directory path and the file name of the target yaml.
     :param default_flow_file: Default file name used when flow file is not found.
     :type default_flow_file: str
+    :param allow_prompty_dir: If True along with check_flow_exist, the function will allow the flow path to be a
+      directory with no yaml/yml but 1 and only 1 prompty in it.
     :return: The flow directory path and the file name of the target yaml.
     :rtype: Tuple[Path, str]
     """
@@ -107,6 +110,10 @@ def resolve_flow_path(
                 f"Please specify a file or remove the extra YAML file.",
                 privacy_info=[str(flow_path)],
             )
+        elif allow_prompty_dir and check_flow_exist:
+            candidates = list(flow_folder.glob(f"*{PROMPTY_EXTENSION}"))
+            if len(candidates) == 1:
+                flow_file = candidates[0].name
     elif flow_path.is_file() or flow_path.suffix.lower() in FLOW_FILE_SUFFIX:
         flow_folder = flow_path.parent
         flow_file = flow_path.name
@@ -117,7 +124,8 @@ def resolve_flow_path(
     file_path = flow_folder / flow_file
     if file_path.suffix.lower() not in FLOW_FILE_SUFFIX:
         raise UserErrorException(
-            error_format=f"The flow file suffix must be yaml or yml, and cannot be {file_path.suffix}"
+            message_format="The flow file suffix must be yaml, yml or prompty; cannot be {suffix}",
+            suffix=file_path.suffix,
         )
 
     if not check_flow_exist:

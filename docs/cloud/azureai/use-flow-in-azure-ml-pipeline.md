@@ -1,5 +1,5 @@
 # Use flow in Azure ML pipeline job
-In practical scenarios, flows fulfill various functions. For example, consider an offline flow specifically designed to assess the relevance score for communication sessions between humans and agents. This flow is triggered nightly and processes a substantial amount of session data. In such a context, Parallel component and AzureML pipeline emerge as the optimal choices for handling large-scale, highly resilient, and efficient offline batch requirements. 
+In practical scenarios, flows fulfill various functions. For example, consider an offline flow specifically designed to assess the relevance score for communication sessions between humans and agents. This flow is triggered nightly and processes a substantial amount of session data. In such a context, Parallel component and AzureML pipeline emerge as the optimal choices for handling large-scale, highly resilient, and efficient offline batch requirements.
 
 Once you’ve developed and thoroughly tested your flow, this guide will walk you through utilizing your flow as a parallel component within an AzureML pipeline job.
 
@@ -124,10 +124,10 @@ outputs:
     type: uri_folder
   debug_info:
     type: uri_folder
-... 
+...
 ```
 
-Besides the fixed input/output ports, all connections and flow inputs will be exposed as input parameters of the component. Default value can be provided in flow/run definition; they can also be set/overwrite on job submission. Full description of ports can be seen in section [Component ports and run settings](#component-ports-and-run-settings). 
+Besides the fixed input/output ports, all connections and flow inputs will be exposed as input parameters of the component. Default value can be provided in flow/run definition; they can also be set/overwrite on job submission. Full description of ports can be seen in section [Component ports and run settings](#component-ports-and-run-settings).
 
 ## Use a flow in a pipeline job
 
@@ -179,7 +179,7 @@ Full example can be found [here](https://github.com/Azure/azureml-examples/tree/
 from azure.identity import DefaultAzureCredential
 from azure.ai.ml import MLClient, load_component, Input
 from azure.ai.ml.dsl import pipeline
- 
+
 credential = DefaultAzureCredential()
 ml_client = MLClient.from_config(credential=credential)
 data_input = Input(path="<path-to-data>", type='uri_file')
@@ -255,7 +255,7 @@ from azure.identity import DefaultAzureCredential
 from azure.ai.ml import MLClient, load_component, Input
 from azure.ai.ml.dsl import pipeline
 from azure.ai.ml.entities import RetrySettings
- 
+
 credential = DefaultAzureCredential()
 ml_client = MLClient.from_config(credential=credential)
 data_input = Input(path="<path-to-data>", type='uri_file')
@@ -318,7 +318,7 @@ For more details about the supported format of Azure ML environment, please refe
 
 ## Difference across flow in prompt flow and pipeline job
 
-In prompt flow, flow runs on [runtime](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/concept-runtime), which is designed for prompt flow and easy to customize; while in pipeline job, flow runs on different types of compute, and usually compute cluster.
+In prompt flow, flow runs on compute session, which is designed for prompt flow; while in pipeline job, flow runs on different types of compute, and usually compute cluster.
 
 Given above, if your flow has logic relying on identity or environment variable, please be aware of this difference as you might run into some unexpected error(s) when the flow runs in pipeline job, and you might need some extra configurations to make it work.
 

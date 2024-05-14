@@ -1,5 +1,7 @@
 ---
 resources: examples/tutorials/tracing/
+cloud: local
+category: tracing
 ---
 
 ## Tracing

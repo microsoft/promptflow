@@ -14,7 +14,7 @@ from contextvars import ContextVar
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from promptflow._constants import LINE_NUMBER_WIDTH, PF_LOGGING_LEVEL
 from promptflow._utils.credential_scrubber import CredentialScrubber
@@ -27,6 +27,20 @@ from promptflow.contracts.run_mode import RunMode
 # May need to change if logger name/process id length changes.
 LOG_FORMAT = "%(asctime)s %(process)7d %(name)-18s %(levelname)-8s %(message)s"
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S %z"
+
+
+def _get_format_for_logger(default_log_format: str = None, default_date_format: str = None) -> Tuple[str, str]:
+    """
+    Get the logging format and date format for logger.
+
+    This function attempts to find the handler of the root logger with a configured formatter.
+    If such a handler is found, it returns the format and date format used by this handler.
+    This can be configured through logging.basicConfig. If no configured formatter is found,
+    it defaults to LOG_FORMAT and DATETIME_FORMAT.
+    """
+    log_format = os.environ.get("PF_LOG_FORMAT") or default_log_format or LOG_FORMAT
+    datetime_format = os.environ.get("PF_LOG_DATETIME_FORMAT") or default_date_format or DATETIME_FORMAT
+    return log_format, datetime_format
 
 
 class CredentialScrubberFormatter(logging.Formatter):
@@ -106,7 +120,8 @@ class FileHandler:
         self._stream_handler = self._get_stream_handler(file_path)
         if formatter is None:
             # Default formatter to scrub credentials in log message, exception and stack trace.
-            self._formatter = CredentialScrubberFormatter(fmt=LOG_FORMAT, datefmt=DATETIME_FORMAT)
+            fmt, datefmt = _get_format_for_logger()
+            self._formatter = CredentialScrubberFormatter(fmt=fmt, datefmt=datefmt)
         else:
             self._formatter = formatter
         self._stream_handler.setFormatter(self._formatter)
@@ -186,7 +201,8 @@ def get_logger(name: str) -> logging.Logger:
     logger.setLevel(get_pf_logging_level())
     logger.addHandler(FileHandlerConcurrentWrapper())
     stdout_handler = logging.StreamHandler(sys.stdout)
-    stdout_handler.setFormatter(CredentialScrubberFormatter(fmt=LOG_FORMAT, datefmt=DATETIME_FORMAT))
+    fmt, datefmt = _get_format_for_logger()
+    stdout_handler.setFormatter(CredentialScrubberFormatter(fmt=fmt, datefmt=datefmt))
     logger.addHandler(stdout_handler)
     return logger
 
@@ -406,7 +422,8 @@ class LoggerFactory:
         # set target_stdout=True can log data into sys.stdout instead of default sys.stderr, in this way
         # logger info and python print result can be synchronized
         handler = logging.StreamHandler(stream=sys.stdout) if target_stdout else logging.StreamHandler()
-        formatter = logging.Formatter("[%(asctime)s][%(name)s][%(levelname)s] - %(message)s")
+        fmt, datefmt = _get_format_for_logger(default_log_format="[%(asctime)s][%(name)s][%(levelname)s] - %(message)s")
+        formatter = logging.Formatter(fmt=fmt, datefmt=datefmt)
         handler.setFormatter(formatter)
         handler.setLevel(verbosity)
         logger.addHandler(handler)

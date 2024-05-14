@@ -9,6 +9,7 @@ from promptflow._cli._pf.entry import main
 
 FLOWS_DIR = Path("./tests/test_configs/flows")
 EAGER_FLOWS_DIR = Path("./tests/test_configs/eager_flows")
+PROMPTY_DIR = Path("./tests/test_configs/prompty")
 
 
 # TODO: move this to a shared utility module
@@ -35,8 +36,9 @@ class TestRun:
     @pytest.mark.parametrize(
         "source",
         [
-            pytest.param(EAGER_FLOWS_DIR / "simple_with_yaml", id="simple_with_yaml_dir"),
-            pytest.param(FLOWS_DIR / "simple_hello_world", id="simple_hello_world_dir"),
+            pytest.param(EAGER_FLOWS_DIR / "simple_with_yaml", id="simple_flex_dir"),
+            pytest.param(FLOWS_DIR / "simple_hello_world", id="simple_dag_dir"),
+            pytest.param(PROMPTY_DIR / "single_prompty", id="simple_prompty_dir"),
         ],
     )
     def test_flow_serve(self, source: Path):

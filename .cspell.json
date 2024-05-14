@@ -234,7 +234,8 @@
     "omap",
     "Machinal",
     "azureopenaimodelconfiguration",
-    "openaimodelconfiguration"
+    "openaimodelconfiguration",
+    "usecwd"
   ],
   "flagWords": [
     "Prompt Flow"

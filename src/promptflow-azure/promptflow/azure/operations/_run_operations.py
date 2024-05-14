@@ -55,11 +55,13 @@ from promptflow._sdk.entities import Run
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.utils import in_jupyter_notebook
-from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME, AUTOMATIC_RUNTIME_NAME, CLOUD_RUNS_PAGE_SIZE
+from promptflow.azure._constants._flow import CLOUD_RUNS_PAGE_SIZE, COMPUTE_SESSION, COMPUTE_SESSION_NAME
+from promptflow.azure._entities._trace import CosmosMetadata
 from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 from promptflow.azure._utils.general import get_authorization, get_user_alias_from_credential, set_event_loop_policy
 from promptflow.azure.operations._flow_operations import FlowOperations
+from promptflow.azure.operations._trace_operations import TraceOperations
 from promptflow.exceptions import UserErrorException
 
 RUNNING_STATUSES = RunStatus.get_running_statuses()
@@ -87,6 +89,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         operation_config: OperationConfig,
         all_operations: OperationsContainer,
         flow_operations: FlowOperations,
+        trace_operations: TraceOperations,
         credential,
         service_caller: FlowServiceCaller,
         workspace: Workspace,
@@ -106,6 +109,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         self._identity = workspace.identity
         self._credential = credential
         self._flow_operations = flow_operations
+        self._trace_operations = trace_operations
         self._orchestrators = OperationOrchestrator(self._all_operations, self._operation_scope, self._operation_config)
 
     @property
@@ -647,8 +651,8 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                     file_handler.write(
                         f"The run {run.name!r} is in status {run.status} and produce no new logs for {timeout} seconds,"
                         "streaming is stopped. If the final status is 'NotStarted', "
-                        "Please make sure you are using the latest runtime.\n"
-                        "For automatic runtime case, please try extending the timeout value.\n"
+                        "Please make sure you are using the latest session.\n"
+                        f"For {COMPUTE_SESSION} case, please try extending the timeout value.\n"
                     )
                     break
 
@@ -829,32 +833,40 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
     @classmethod
     def _resolve_automatic_runtime(cls):
         logger.warning(
-            f"You're using {AUTOMATIC_RUNTIME}, if it's first time you're using it, "
-            "it may take a while to build runtime and you may see 'NotStarted' status for a while. "
+            f"You're using {COMPUTE_SESSION}, if it's first time you're using it, "
+            "it may take a while to build session and you may see 'NotStarted' status for a while. "
         )
-        runtime_name = AUTOMATIC_RUNTIME_NAME
+        runtime_name = COMPUTE_SESSION_NAME
         return runtime_name
 
     def _resolve_runtime(self, run, runtime):
         runtime = run._runtime or runtime
 
-        if runtime is None or runtime == AUTOMATIC_RUNTIME_NAME:
+        if runtime is None or runtime == COMPUTE_SESSION_NAME:
             runtime = self._resolve_automatic_runtime()
         elif not isinstance(runtime, str):
             raise TypeError(f"runtime should be a string, got {type(runtime)} for {runtime}")
         return runtime
 
-    def _resolve_dependencies_in_parallel(self, run, runtime, reset=None):
+    def _get_cosmos_metadata(self) -> CosmosMetadata:
+        return self._trace_operations._get_cosmos_metadata()
+
+    def _resolve_dependencies_in_parallel(self, run: Run, runtime, reset=None):
+        # local import to avoid circular import related to PFClient
+        from promptflow.azure._utils._tracing import resolve_disable_trace
+
         with ThreadPoolExecutor() as pool:
             tasks = [
                 pool.submit(self._resolve_data_to_asset_id, run=run),
                 pool.submit(self._resolve_flow_and_session_id, run=run),
+                pool.submit(self._get_cosmos_metadata),
             ]
             concurrent.futures.wait(tasks, return_when=concurrent.futures.ALL_COMPLETED)
             task_results = [task.result() for task in tasks]
 
         run.data = task_results[0]
         run.flow, session_id = task_results[1]
+        cosmos_metadata = task_results[2]
 
         runtime = self._resolve_runtime(run=run, runtime=runtime)
         self._resolve_identity(run=run)
@@ -862,6 +874,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         rest_obj = run._to_rest_object()
         rest_obj.runtime_name = runtime
         rest_obj.session_id = session_id
+        rest_obj.disable_trace = resolve_disable_trace(metadata=cosmos_metadata, logger=logger)
 
         # TODO(2884482): support force reset & force install
 
@@ -970,7 +983,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         result_dict = async_run_allowing_running_loop(run_uploader.upload)
         # patch details about the uploaded run
         run._local_to_cloud_info = result_dict
-        logger.debug(f"Successfully uploaded run details of {run!r} to cloud.")
+        logger.debug(f"Successfully uploaded run details of {run.name!r} to cloud.")
 
         # registry the run in the cloud
         self._register_existing_bulk_run(run=run)
@@ -994,7 +1007,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             workspace_name=self._operation_scope.workspace_name,
             body=rest_obj,
         )
-        logger.info(f"Successfully registered run {run!r} to cloud.")
+        logger.info(f"Successfully registered run {run.name!r} to cloud.")
 
     def _validate_for_run_download(self, run: Union[str, Run], output: Optional[Union[str, Path]], overwrite):
         """Validate the run download parameters."""
