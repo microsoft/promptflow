@@ -425,7 +425,7 @@ def print_pf_version(with_azure: bool = False, ignore_none: bool = False):
 
 class PromptflowIgnoreFile(IgnoreFile):
     # TODO add more files to this list.
-    IGNORE_FILE = [".runs", "__pycache__"]
+    IGNORE_FILE = [".git", ".runs", "__pycache__"]
 
     def __init__(self, prompt_flow_path: Union[Path, str]):
         super(PromptflowIgnoreFile, self).__init__(prompt_flow_path)
