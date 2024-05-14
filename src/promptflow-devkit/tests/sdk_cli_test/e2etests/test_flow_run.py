@@ -2006,6 +2006,15 @@ class TestFlowRun:
         # assert run._flow_type == FlowType.FLEX_FLOW
         assert pf.runs._get_run_flow_type(run) == FlowType.FLEX_FLOW
 
+    def test_dump_snapshot_honor_ignore_file(self, pf: PFClient) -> None:
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/print_env_var_with_aml_ignore",
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
+        )
+        snapshot_folder = run._output_path / "snapshot"
+        assert not (snapshot_folder / "ignore_a").exists()
+        assert not (snapshot_folder / "ignore_b").exists()
+
 
 def assert_batch_run_result(run: Run, pf: PFClient, assert_func):
     assert run.status == "Completed"

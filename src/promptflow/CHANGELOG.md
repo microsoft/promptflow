@@ -25,6 +25,7 @@
 - [promptflow-devkit]: Fix the issue that chat window error is hard to understand.
 - [promptflow-devkit]: Fix the perf issue because of dns delay when check pfs status.
 - [promptflow-devkit]: Fix the issue that original flex yaml will be overridden when testing non-yaml flow
+- [promptflow-devkit] Fix run snapshot does not honor gitignore/amlignore.
 
 ## v1.10.0 (2024.04.26)
 ### Features Added
