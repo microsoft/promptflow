@@ -4,6 +4,7 @@ import json
 import os
 import re
 import time
+import uuid
 from dataclasses import asdict
 from pathlib import Path
 from typing import List, Mapping
@@ -13,15 +14,18 @@ from openai import APIConnectionError, APIStatusError, APITimeoutError, BadReque
 
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.yaml_utils import load_yaml
+from promptflow.contracts.types import PromptTemplate
 from promptflow.core._connection import AzureOpenAIConnection, OpenAIConnection, _Connection
 from promptflow.core._errors import (
-    ChatAPIFunctionRoleInvalidFormatError,
+    ChatAPIFunctionRoleInvalidFormat,
     ChatAPIInvalidFunctions,
     ChatAPIInvalidRoleError,
     ChatAPIInvalidTools,
+    ChatAPIToolRoleInvalidFormat,
     CoreError,
     ExceedMaxRetryTimes,
     InvalidOutputKeyError,
+    JinjaTemplateError,
     ListDeploymentsError,
     LLMError,
     ParseConnectionError,
@@ -35,6 +39,8 @@ from promptflow.exceptions import SystemErrorException, UserErrorException
 
 logger = LoggerFactory.get_logger(name=__name__)
 GPT4V_VERSION = "vision-preview"
+
+VALID_ROLES = ["system", "user", "assistant", "function", "tool"]
 
 
 def update_dict_recursively(origin_dict, overwrite_dict):
@@ -126,16 +132,13 @@ def convert_model_configuration_to_connection(model_configuration):
 def convert_prompt_template(template, inputs, api):
     prompt = preprocess_template_string(template)
 
-    # convert list type into ChatInputList type
-    converted_kwargs = convert_to_chat_list(inputs)
-    rendered_prompt = render_jinja_template_content(
-        template_content=prompt, trim_blocks=True, keep_trailing_newline=True, **converted_kwargs
-    )
     if api == "completion":
-        return rendered_prompt
+        rendered_prompt = render_jinja_template_content(
+            template_content=prompt, trim_blocks=True, keep_trailing_newline=True, **inputs
+        )
     else:
-        referenced_images = find_referenced_image_set(inputs)
-        return parse_chat(rendered_prompt, list(referenced_images))
+        rendered_prompt = build_messages(prompt=prompt, **inputs)
+    return rendered_prompt
 
 
 def prepare_open_ai_request_params(model_config, template, connection):
@@ -373,6 +376,45 @@ def resolve_reference(reference, base_path=None):
 # region: Copied from promptflow-tools
 
 
+class PromptResult(str):
+    """
+    PromptResult is the prompt tool output. This class substitutes the initial string output to
+    avoid unintended parsing of roles for user input. The class has three properties:
+    Original string: the previous rendered prompt result,
+    Escaped string: the escaped prompt result string,
+    Escaped mapping: the mapping of roles and uuids for the escaped prompt result string.
+    """
+
+    def __init__(self, string):
+        super().__init__()
+        self.original_string = string
+        self.escaped_string = ""
+        self.escaped_mapping = {}
+
+    def get_escape_string(self) -> str:
+        return self.escaped_string
+
+    def set_escape_string(self, escaped_string: str):
+        self.escaped_string = escaped_string
+
+    def get_escape_mapping(self) -> dict:
+        return self.escaped_mapping
+
+    def set_escape_mapping(self, escape_mapping: dict):
+        self.escaped_mapping = escape_mapping
+
+    def need_to_escape(self) -> bool:
+        return bool(self.escaped_mapping)
+
+    def merge_escape_mapping_of_prompt_results(self, **kwargs):
+        prompt_result_escape_dict = Escaper.merge_escape_mapping_of_prompt_results(**kwargs)
+        self.escaped_mapping.update(prompt_result_escape_dict)
+
+    def merge_escape_mapping_of_flow_inputs(self, _inputs_to_escape: list, **kwargs):
+        flow_inputs_escape_dict = Escaper.build_flow_inputs_escape_dict(_inputs_to_escape=_inputs_to_escape, **kwargs)
+        self.escaped_mapping.update(flow_inputs_escape_dict)
+
+
 def normalize_connection_config(connection):
     """
     Normalizes the configuration of a given connection object for compatibility.
@@ -464,26 +506,7 @@ class ChatInputList(list):
         return "\n".join(map(str, self))
 
 
-def convert_to_chat_list(obj):
-    if isinstance(obj, dict):
-        return {key: convert_to_chat_list(value) for key, value in obj.items()}
-    elif isinstance(obj, list):
-        return ChatInputList([convert_to_chat_list(item) for item in obj])
-    else:
-        return obj
-
-
-def try_parse_name_and_content(role_prompt):
-    # customer can add ## in front of name/content for markdown highlight.
-    # and we still support name/content without ## prefix for backward compatibility.
-    pattern = r"\n*#{0,2}\s*name:\n+\s*(\S+)\s*\n*#{0,2}\s*content:\n?(.*)"
-    match = re.search(pattern, role_prompt, re.DOTALL)
-    if match:
-        return match.group(1), match.group(2)
-    return None
-
-
-def to_content_str_or_list(chat_str: str, hash2images: Mapping):
+def to_content_str_or_list(chat_str: str, hash2images: Mapping, image_detail: str):
     chat_str = chat_str.strip()
     chunks = chat_str.split("\n")
     include_image = False
@@ -498,8 +521,8 @@ def to_content_str_or_list(chat_str: str, hash2images: Mapping):
             if not image_url:
                 image_bs64 = hash2images[chunk.strip()].to_base64()
                 image_mine_type = hash2images[chunk.strip()]._mime_type
-                image_url = {"url": f"data:{image_mine_type};base64,{image_bs64}"}
-            image_message["image_url"] = image_url
+                image_url = f"data:{image_mine_type};base64,{image_bs64}"
+            image_message["image_url"] = {"url": image_url, "detail": image_detail}
             result.append(image_message)
             include_image = True
         elif chunk.strip() == "":
@@ -509,15 +532,18 @@ def to_content_str_or_list(chat_str: str, hash2images: Mapping):
     return result if include_image else chat_str
 
 
-def validate_role(role: str, valid_roles: List[str] = None):
+def validate_role(role: str, valid_roles: List[str] = None, escape_dict: dict = {}):
     if not valid_roles:
-        valid_roles = ["assistant", "function", "user", "system"]
+        valid_roles = VALID_ROLES
 
     if role not in valid_roles:
         valid_roles_str = ",".join([f"'{role}:\\n'" for role in valid_roles])
+        # The role string may contain escaped roles(uuids).
+        # Need to unescape invalid role as the error message will be displayed to user.
+        unescaped_invalid_role = Escaper.unescape_roles(role, escape_dict)
         error_message = (
             f"The Chat API requires a specific format for prompt definition, and the prompt should include separate "
-            f"lines as role delimiters: {valid_roles_str}. Current parsed role '{role}'"
+            f"lines as role delimiters: {valid_roles_str}. Current parsed role '{unescaped_invalid_role}'"
             f" does not meet the requirement. If you intend to use the Completion API, please select the appropriate"
             f" API type and deployment name. If you do intend to use the Chat API, please refer to the guideline at "
             f"https://aka.ms/pfdoc/chat-prompt or view the samples in our gallery that contain 'Chat' in the name."
@@ -525,9 +551,67 @@ def validate_role(role: str, valid_roles: List[str] = None):
         raise ChatAPIInvalidRoleError(message=error_message)
 
 
-def parse_chat(chat_str, images: List = None, valid_roles: List[str] = None):
+def try_parse_name_and_content(role_prompt):
+    # customer can add ## in front of name/content for markdown highlight.
+    # and we still support name/content without ## prefix for backward compatibility.
+    pattern = r"\n*#{0,2}\s*name\s*:\s*\n+\s*(\S+)\s*\n*#{0,2}\s*content\s*:\s*\n?(.*)"
+    match = re.search(pattern, role_prompt, re.DOTALL)
+    if match:
+        return match.group(1), match.group(2)
+    return None
+
+
+def try_parse_tool_call_id_and_content(role_prompt):
+    # customer can add ## in front of tool_call_id/content for markdown highlight.
+    # and we still support tool_call_id/content without ## prefix for backward compatibility.
+    pattern = r"\n*#{0,2}\s*tool_call_id\s*:\s*\n+\s*(\S+)\s*\n*#{0,2}\s*content\s*:\s*\n?(.*)"
+    match = re.search(pattern, role_prompt, re.DOTALL)
+    if match:
+        return match.group(1), match.group(2)
+    return None
+
+
+def try_parse_tool_calls(role_prompt):
+    # customer can add ## in front of tool_calls for markdown highlight.
+    # and we still support tool_calls without ## prefix for backward compatibility.
+    pattern = r"\n*#{0,2}\s*tool_calls\s*:\s*\n+\s*(\[.*?\])"
+    match = re.search(pattern, role_prompt, re.DOTALL)
+    if match:
+        try:
+            parsed_array = eval(match.group(1))
+            return parsed_array
+        except Exception:
+            None
+    return None
+
+
+def is_tool_chunk(last_message):
+    return last_message and "role" in last_message and last_message["role"] == "tool" and "content" not in last_message
+
+
+def parse_tools(last_message, chunk, hash2images, image_detail):
+    parsed_result = try_parse_tool_call_id_and_content(chunk)
+    if parsed_result is None:
+        raise ChatAPIToolRoleInvalidFormat(
+            message="Failed to parse tool role prompt. Please make sure the prompt follows the "
+            "format: 'tool_call_id:\\ntool_call_id\\ncontent:\\ntool_content'. "
+            "'tool_call_id' is required if role is tool, and it should be the tool call that this message is responding"
+            " to. See more details in https://platform.openai.com/docs/api-reference/chat/create#chat-create-messages"
+        )
+    else:
+        last_message["tool_call_id"] = parsed_result[0]
+        last_message["content"] = to_content_str_or_list(parsed_result[1], hash2images, image_detail)
+
+
+def parse_chat(
+    chat_str,
+    images: List = None,
+    valid_roles: List[str] = None,
+    image_detail: str = "auto",
+    escape_dict: dict = {},
+):
     if not valid_roles:
-        valid_roles = ["system", "user", "assistant", "function"]
+        valid_roles = VALID_ROLES
 
     # openai chat api only supports below roles.
     # customer can add single # in front of role name for markdown highlight.
@@ -542,12 +626,27 @@ def parse_chat(chat_str, images: List = None, valid_roles: List[str] = None):
 
     for chunk in chunks:
         last_message = chat_list[-1] if len(chat_list) > 0 else None
-        if last_message and "role" in last_message and "content" not in last_message:
+        if is_tool_chunk(last_message):
+            parse_tools(last_message, chunk, hash2images, image_detail)
+            continue
+
+        if last_message and "role" in last_message and last_message["role"] == "assistant":
+            parsed_result = try_parse_tool_calls(chunk)
+            if parsed_result is not None:
+                last_message["tool_calls"] = parsed_result
+                continue
+
+        if (
+            last_message
+            and "role" in last_message
+            and "content" not in last_message
+            and "tool_calls" not in last_message
+        ):
             parsed_result = try_parse_name_and_content(chunk)
             if parsed_result is None:
                 # "name" is required if the role is "function"
                 if last_message["role"] == "function":
-                    raise ChatAPIFunctionRoleInvalidFormatError(
+                    raise ChatAPIFunctionRoleInvalidFormat(
                         message="Failed to parse function role prompt. Please make sure the prompt follows the "
                         "format: 'name:\\nfunction_name\\ncontent:\\nfunction_content'. "
                         "'name' is required if role is function, and it should be the name of the function "
@@ -558,20 +657,193 @@ def parse_chat(chat_str, images: List = None, valid_roles: List[str] = None):
                     )
                 # "name" is optional for other role types.
                 else:
-                    last_message["content"] = to_content_str_or_list(chunk, hash2images)
+                    last_message["content"] = to_content_str_or_list(chunk, hash2images, image_detail)
             else:
                 last_message["name"] = parsed_result[0]
-                last_message["content"] = to_content_str_or_list(parsed_result[1], hash2images)
+                last_message["content"] = to_content_str_or_list(parsed_result[1], hash2images, image_detail)
         else:
             if chunk.strip() == "":
                 continue
             # Check if prompt follows chat api message format and has valid role.
             # References: https://platform.openai.com/docs/api-reference/chat/create.
             role = chunk.strip().lower()
-            validate_role(role, valid_roles=valid_roles)
+            validate_role(role, valid_roles=valid_roles, escape_dict=escape_dict)
             new_message = {"role": role}
             chat_list.append(new_message)
     return chat_list
+
+
+def render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, escape_dict={}, **kwargs):
+    try:
+        return render_jinja_template_content(
+            prompt, trim_blocks=trim_blocks, keep_trailing_newline=keep_trailing_newline, **kwargs
+        )
+    except Exception as e:
+        # For exceptions raised by jinja2 module, mark UserError
+        exception_message = str(e)
+        unescaped_exception_message = Escaper.unescape_roles(exception_message, escape_dict)
+        error_message = (
+            f"Failed to render jinja template: {type(e).__name__}: {unescaped_exception_message}. "
+            + "Please modify your prompt to fix the issue."
+        )
+        raise JinjaTemplateError(message=error_message) from e
+
+
+class Escaper:
+    """
+    This class handles common escape and unescape functionality for flow inputs and prompt result input.
+    Its primary purpose is to avoid unintended parsing of roles for user input.
+    """
+
+    @staticmethod
+    def merge_escape_mapping_of_prompt_results(**kwargs):
+        escape_dict = {}
+        for _, v in kwargs.items():
+            if isinstance(v, PromptResult) and v.need_to_escape():
+                escape_dict.update(v.get_escape_mapping())
+        return escape_dict
+
+    @staticmethod
+    def build_flow_inputs_escape_dict(_inputs_to_escape: list, **kwargs):
+        escape_dict = {}
+        if not _inputs_to_escape:
+            return escape_dict
+
+        for k, v in kwargs.items():
+            if k in _inputs_to_escape:
+                escape_dict = Escaper.build_flow_input_escape_dict(v, escape_dict)
+        return escape_dict
+
+    @staticmethod
+    def build_flow_input_escape_dict(val, escape_dict: dict):
+        """
+        Build escape dictionary with roles as keys and uuids as values.
+        """
+        if isinstance(val, ChatInputList):
+            for item in val:
+                Escaper.build_flow_input_escape_dict(item, escape_dict)
+        elif isinstance(val, str):
+            pattern = r"(?i)^\s*#?\s*(" + "|".join(VALID_ROLES) + r")\s*:\s*\n"
+            roles = re.findall(pattern, val, flags=re.MULTILINE)
+            for role in roles:
+                if role not in escape_dict.values():
+                    # We cannot use a hard-coded hash str for each role, as the same role might be in various case.
+                    # For example, the 'system' role may vary in input as 'system', 'System', 'SysteM','SYSTEM', etc.
+                    # To convert the escaped roles back to original str, we need to use different uuids for each case.
+                    #
+                    # Besides, use a uuid as KEY to be able to convert all the escape string back to original role.
+                    # For example:
+                    #  prompt result 1 escape mapping: {'syStem': 'uuid1'}, escape string: 'uuid1'
+                    #  prompt result 2 escape mapping: {'syStem': 'uuid2'}, escape string: 'uuid2'
+                    # In order to convert both uuid1 and uuid2 back, we need to store both uuid1 and uuid2.
+                    # Otherwise if using role as key, the merged dict would be {'syStem': 'uuid2'}.
+                    # So it cannot convert prompt result 2 escape string back.
+                    #
+                    # Despite the chance of two uuids clashing is extremely low, if it happens, when merge escape dict,
+                    # the latter uuid will overwrite the previous one.
+                    escape_dict[str(uuid.uuid4())] = role
+
+        return escape_dict
+
+    @staticmethod
+    def escape_roles_in_flow_input(val, escape_dict: dict):
+        """
+        Escape the roles in the prompt inputs to avoid the input string with pattern '# role' get parsed.
+        """
+        if not escape_dict:
+            return val
+
+        if isinstance(val, ChatInputList):
+            return ChatInputList([Escaper.escape_roles_in_flow_input(item, escape_dict) for item in val])
+        elif isinstance(val, str):
+            for encoded_role, role in escape_dict.items():
+                val = val.replace(role, encoded_role)
+            return val
+        else:
+            return val
+
+    @staticmethod
+    def unescape_roles(val, escape_dict: dict):
+        """
+        Unescape the roles in the parsed chat messages to restore the original role names.
+        Besides the case that value is: 'some text. escaped_roles (i.e. fake uuids)'
+        We also need to handle the vision case that the content is converted to list.
+        For example:
+            [{
+                'type': 'text',
+                'text': 'some text. fake_uuid'
+            }, {
+                'type': 'image_url',
+                'image_url': {}
+            }]
+        """
+        if not escape_dict:
+            return val
+
+        if isinstance(val, str):
+            for encoded_role, role in escape_dict.items():
+                val = val.replace(encoded_role, role)
+            return val
+        elif isinstance(val, list):
+            for index, item in enumerate(val):
+                if isinstance(item, dict) and "text" in item:
+                    for encoded_role, role in escape_dict.items():
+                        val[index]["text"] = item["text"].replace(encoded_role, role)
+            return val
+        else:
+            return val
+
+    @staticmethod
+    def escape_kwargs(escape_dict: dict, _inputs_to_escape: list, **kwargs):
+        # Use escape/unescape to avoid unintended parsing of role in user inputs.
+        # There are two scenarios to consider for llm/prompt tool:
+        # 1. Prompt injection directly from flow input.
+        # 2. Prompt injection from the previous linked prompt tool, where its output becomes llm/prompt input.
+        updated_kwargs = {}
+        for k, v in kwargs.items():
+            if isinstance(v, PromptResult) and v.need_to_escape():
+                updated_kwargs[k] = v.get_escape_string()
+            elif _inputs_to_escape and k in _inputs_to_escape:
+                updated_kwargs[k] = Escaper.escape_roles_in_flow_input(v, escape_dict)
+            else:
+                updated_kwargs[k] = v
+
+        return updated_kwargs
+
+    @staticmethod
+    def build_escape_dict_from_kwargs(_inputs_to_escape: list, **kwargs):
+        prompt_result_escape_dict = Escaper.merge_escape_mapping_of_prompt_results(**kwargs)
+        flow_inputs_escape_dict = Escaper.build_flow_inputs_escape_dict(_inputs_to_escape=_inputs_to_escape, **kwargs)
+        escape_dict = {**prompt_result_escape_dict, **flow_inputs_escape_dict}
+
+        return escape_dict
+
+
+def build_messages(
+    prompt: PromptTemplate,
+    images: List = None,
+    image_detail: str = "auto",
+    **kwargs,
+):
+    # TODO: Support when prompty is used in flow, escape the flow input. Get escape list from _inputs_to_escape.
+    inputs_to_escape = list(kwargs.keys())
+    escape_dict = Escaper.build_escape_dict_from_kwargs(_inputs_to_escape=inputs_to_escape, **kwargs)
+    updated_kwargs = Escaper.escape_kwargs(escape_dict=escape_dict, _inputs_to_escape=inputs_to_escape, **kwargs)
+
+    # keep_trailing_newline=True is to keep the last \n in the prompt to avoid converting "user:\t\n" to "user:".
+    chat_str = render_jinja_template(
+        prompt, trim_blocks=True, keep_trailing_newline=True, escape_dict=escape_dict, **updated_kwargs
+    )
+    messages = parse_chat(chat_str, images=images, image_detail=image_detail, escape_dict=escape_dict)
+
+    if escape_dict and isinstance(messages, list):
+        for message in messages:
+            if not isinstance(message, dict):
+                continue
+            for key, val in message.items():
+                message[key] = Escaper.unescape_roles(val, escape_dict)
+
+    return messages
 
 
 def generate_retry_interval(retry_count: int) -> float:
