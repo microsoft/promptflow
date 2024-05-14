@@ -17,6 +17,10 @@ class MissingRequiredFlowInput(BadRequest):
     pass
 
 
+class InvalidFlowInitConfig(BadRequest):
+    pass
+
+
 class FlowConnectionError(UserErrorException):
     pass
 
