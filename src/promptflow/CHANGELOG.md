@@ -10,6 +10,7 @@
 ### Features Added
 
 - [promptflow-devkit]: Upload local run details to cloud when trace destination is configured to cloud.
+- [promptflow-core]: Support modifying the promptflow logger format through environment variables, reach [here](https://microsoft.github.io/promptflow/how-to-guides/faq.html#set-logging-format) for more details.
 
 ### Improvements
 - [promptflow-devkit]: Interactive browser credential is excluded by default when using Azure AI connections, user could set `PF_NO_INTERACTIVE_LOGIN=False` to enable it.

@@ -159,6 +159,7 @@ SPAN_EVENTS_NAME_PF_OUTPUT = "promptflow.function.output"
 SPAN_EVENTS_ATTRIBUTE_PAYLOAD = "payload"
 
 UX_INPUTS_JSON = "ux.inputs.json"
+UX_INPUTS_INIT_KEY = "init"
 AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])
 
 # chat group
