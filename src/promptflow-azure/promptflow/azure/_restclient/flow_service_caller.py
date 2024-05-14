@@ -18,7 +18,7 @@ from azure.core.pipeline.policies import RetryPolicy
 from promptflow._sdk._telemetry import request_id_context
 from promptflow._sdk._telemetry import TelemetryMixin
 from promptflow._utils.logger_utils import LoggerFactory
-from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME, SESSION_CREATION_TIMEOUT_ENV_VAR
+from promptflow.azure._constants._flow import COMPUTE_SESSION, SESSION_CREATION_TIMEOUT_ENV_VAR
 from promptflow.azure._constants._trace import (
     COSMOS_DB_SETUP_POLL_INTERVAL_SECOND,
     COSMOS_DB_SETUP_POLL_PRINT_INTERVAL_SECOND,
@@ -570,8 +570,8 @@ class FlowServiceCaller(RequestTelemetryMixin):
             if time_run + sleep_period > timeout_seconds:
                 message = (
                     f"Polling timeout for session {session_id} {action} "
-                    f"for {AUTOMATIC_RUNTIME} after {timeout_seconds} seconds.\n"
-                    f"To proceed the {action} for {AUTOMATIC_RUNTIME}, you can retry using the same flow, "
+                    f"for {COMPUTE_SESSION} after {timeout_seconds} seconds.\n"
+                    f"To proceed the {action} for {COMPUTE_SESSION}, you can retry using the same flow, "
                     "and we will continue polling status of previous session. \n"
                 )
                 raise Exception(message)

@@ -237,7 +237,7 @@ Node & variant name in format of `${node_name.variant_name}`.
 
 `--stream -s`
 
-Indicates whether to stream the run's logs to the console.  
+Indicates whether to stream the run's logs to the console.
 default value: False
 
 `--environment-variables`
@@ -291,17 +291,17 @@ pfazure run list [--archived-only]
 
 `--archived-only`
 
-List archived runs only.  
+List archived runs only.
 default value: False
 
 `--include-archived`
 
-List archived runs and active runs.  
+List archived runs and active runs.
 default value: False
 
 `--max-results -r`
 
-Max number of results to return. Default is 50, upper bound is 100.  
+Max number of results to return. Default is 50, upper bound is 100.
 default value: 50
 
 `--subscription`

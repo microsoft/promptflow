@@ -20,7 +20,7 @@ To begin with the guide, you need:
 
 Create the run with flow and data, can add `--stream` to stream the run.
 ```sh
-pf run create --flow standard/web-classification --data standard/web-classification/data.jsonl --column-mapping url='${data.url}' --stream 
+pf run create --flow standard/web-classification --data standard/web-classification/data.jsonl --column-mapping url='${data.url}' --stream
 ```
 
 Note `column-mapping` is a mapping from flow input name to specified values, see more details in [Use column mapping](https://aka.ms/pf/column-mapping).
