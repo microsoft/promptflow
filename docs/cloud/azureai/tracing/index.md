@@ -93,3 +93,11 @@ pf config set trace.destination=none
 ```
 
 Then no traces will be logged to neither local nor cloud.
+
+
+```{toctree}
+:maxdepth: 1
+:hidden:
+
+run_tracking
+```
