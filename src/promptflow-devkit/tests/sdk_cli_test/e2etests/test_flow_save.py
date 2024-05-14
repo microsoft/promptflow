@@ -114,7 +114,7 @@ class TestFlowSave:
                         "image": "python:3.8-slim",
                         "python_requirements_txt": "requirements",
                     },
-                    "sample": "sample.json",
+                    "sample": {"inputs": {"text": "promptflow"}},
                 },
                 id="hello_world.main",
             ),
@@ -317,7 +317,7 @@ class TestFlowSave:
             pytest.param(
                 {
                     "entry": "hello:hello_world",
-                    "sample": {"non-exist": "promptflow"},
+                    "sample": {"inputs": {"non-exist": "promptflow"}},
                 },
                 UserErrorException,
                 r"Sample keys non-exist do not match the inputs text.",
