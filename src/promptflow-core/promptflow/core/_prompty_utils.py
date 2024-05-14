@@ -12,7 +12,6 @@ from typing import List, Mapping
 import tiktoken
 from openai import APIConnectionError, APIStatusError, APITimeoutError, BadRequestError, OpenAIError, RateLimitError
 
-from promptflow._core.tool import INPUTS_TO_ESCAPE_PARAM_KEY
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.types import PromptTemplate
@@ -133,14 +132,12 @@ def convert_model_configuration_to_connection(model_configuration):
 def convert_prompt_template(template, inputs, api):
     prompt = preprocess_template_string(template)
 
-    # convert list type into ChatInputList type
-    converted_kwargs = convert_to_chat_list(inputs)
     if api == "completion":
         rendered_prompt = render_jinja_template_content(
-            template_content=prompt, trim_blocks=True, keep_trailing_newline=True, **converted_kwargs
+            template_content=prompt, trim_blocks=True, keep_trailing_newline=True, **inputs
         )
     else:
-        rendered_prompt = build_messages(prompt=prompt, **converted_kwargs)
+        rendered_prompt = build_messages(prompt=prompt, **inputs)
     return rendered_prompt
 
 
@@ -509,15 +506,6 @@ class ChatInputList(list):
         return "\n".join(map(str, self))
 
 
-def convert_to_chat_list(obj):
-    if isinstance(obj, dict):
-        return {key: convert_to_chat_list(value) for key, value in obj.items()}
-    elif isinstance(obj, list):
-        return ChatInputList([convert_to_chat_list(item) for item in obj])
-    else:
-        return obj
-
-
 def to_content_str_or_list(chat_str: str, hash2images: Mapping, image_detail: str):
     chat_str = chat_str.strip()
     chunks = chat_str.split("\n")
@@ -599,10 +587,6 @@ def try_parse_tool_calls(role_prompt):
 
 def is_tool_chunk(last_message):
     return last_message and "role" in last_message and last_message["role"] == "tool" and "content" not in last_message
-
-
-def is_assistant_tool_calls_chunk(last_message, chunk):
-    return last_message and "role" in last_message and last_message["role"] == "assistant" and "tool_calls" in chunk
 
 
 def parse_tools(last_message, chunk, hash2images, image_detail):
@@ -841,7 +825,8 @@ def build_messages(
     image_detail: str = "auto",
     **kwargs,
 ):
-    inputs_to_escape = kwargs.pop(INPUTS_TO_ESCAPE_PARAM_KEY, list(kwargs.keys()))
+    # TODO: Support when prompty is used in flow, escape the flow input. Get escape list from _inputs_to_escape.
+    inputs_to_escape = list(kwargs.keys())
     escape_dict = Escaper.build_escape_dict_from_kwargs(_inputs_to_escape=inputs_to_escape, **kwargs)
     updated_kwargs = Escaper.escape_kwargs(escape_dict=escape_dict, _inputs_to_escape=inputs_to_escape, **kwargs)
 
