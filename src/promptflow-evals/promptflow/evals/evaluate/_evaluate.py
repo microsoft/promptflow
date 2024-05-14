@@ -376,14 +376,17 @@ def evaluate(
             columns=[col for col in evaluator_result_df.columns if col.startswith("inputs.")]
         )
 
-        # rename output columns
-        # Assuming after removing inputs columns, all columns are output columns
-        evaluator_result_df.rename(
-            columns={
-                col: "outputs." f"{evaluator_name}.{col.replace('outputs.', '')}" for col in evaluator_result_df.columns
-            },
-            inplace=True,
-        )
+        # If we use thread pool, the columns are already renamed.
+        if not use_thread_pool:
+            # rename output columns
+            # Assuming after removing inputs columns, all columns are output columns
+            evaluator_result_df.rename(
+                columns={
+                    col: "outputs." f"{evaluator_name}.{col.replace('outputs.', '')}"
+                    for col in evaluator_result_df.columns
+                },
+                inplace=True,
+            )
 
         evaluators_result_df = (
             pd.concat([evaluators_result_df, evaluator_result_df], axis=1, verify_integrity=True)
