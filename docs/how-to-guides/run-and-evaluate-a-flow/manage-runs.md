@@ -19,6 +19,7 @@ Let's take a look at the following topics:
   - [Archive a run](#archive-a-run)
   - [Restore a run](#restore-a-run)
   - [Delete a run](#delete-a-run)
+  - [Next steps](#next-steps)
 
 ## Create a run
 
@@ -414,3 +415,7 @@ client.runs.delete(name="run-name")
 ```
 :::
 ::::
+
+## Next steps
+
+- [Compute session](./compute-session.md).

@@ -38,7 +38,6 @@ azureai/tracing/index
 :maxdepth: 2
 azureai/manage-flows
 azureai/run-promptflow-in-azure-ai
-azureai/create-run-with-compute-session
 azureai/use-flow-in-azure-ml-pipeline
 azureai/generate-test-data-cloud.md
 ```

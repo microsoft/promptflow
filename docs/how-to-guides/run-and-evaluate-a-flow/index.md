@@ -233,6 +233,7 @@ Learn more about:
 - [Tune prompts with variants](../tune-prompts-with-variants.md)
 - [Deploy a flow](../deploy-a-flow/index.md)
 - [Manage runs](./manage-runs.md)
+- [Compute session](./compute-session.md)
 - [Python library reference](../../reference/python-library-reference/promptflow-core/promptflow.rst)
 
 ```{toctree}
