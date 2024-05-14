@@ -1,6 +1,10 @@
+import contextlib
+import contextvars
 import json
 import multiprocessing
 import os
+import traceback
+from multiprocessing import Queue, get_context
 from pathlib import Path
 from unittest.mock import patch
 
@@ -8,7 +12,7 @@ import pytest
 from fastapi.testclient import TestClient
 from pytest_mock import MockerFixture
 
-from promptflow._utils.flow_utils import resolve_flow_path
+from promptflow._constants import PROMPTFLOW_CONNECTIONS
 from promptflow.core._connection_provider._connection_provider import ConnectionProvider
 from promptflow.core._connection_provider._dict_connection_provider import DictConnectionProvider
 from promptflow.core._serving.app import create_app as create_serving_app
@@ -27,42 +31,148 @@ RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "../promptflow-recording/r
 COUNTER_FILE = (Path(__file__) / "../count.json").resolve()
 
 
-def get_flow_folder(folder_name, root: str = FLOW_ROOT) -> Path:
-    flow_folder_path = Path(root) / folder_name
-    return flow_folder_path
+def _run_in_subprocess(error_queue: Queue, func, args, kwargs):
+    try:
+        func(*args, **kwargs)
+    except BaseException as e:
+        error_queue.put((repr(e), traceback.format_exc()))
 
 
-def get_yaml_file(folder_name, root: str = FLOW_ROOT, file_name: str = None) -> Path:
-    if file_name is None:
-        flow_path, flow_file = resolve_flow_path(get_flow_folder(folder_name, root), check_flow_exist=False)
-        yaml_file = flow_path / flow_file
-    else:
-        yaml_file = get_flow_folder(folder_name, root) / file_name
-
-    return yaml_file
+def _run_in_subprocess_with_recording(*args, **kwargs):
+    setup_recording_injection_if_enabled()
+    _run_in_subprocess(*args, **kwargs)
 
 
-SpawnProcess = multiprocessing.get_context("spawn").Process
+def execute_function_in_subprocess(func, *args, **kwargs):
+    """
+    Execute a function in a new process and return any exception that occurs.
+    Replace pickle with dill for better serialization capabilities.
+    """
+    ctx = get_context("spawn")
+    error_queue = ctx.Queue()
+    process = ctx.Process(target=_run_in_subprocess_with_recording, args=(error_queue, func, args, kwargs))
+    process.start()
+    process.join()  # Wait for the process to finish
+
+    if not error_queue.empty():
+        err, stacktrace_str = error_queue.get()
+        raise Exception(f"An error occurred in the subprocess: {err}\nStacktrace:\n{stacktrace_str}")
+    assert process.exitcode == 0, f"Subprocess exited with code {process.exitcode}"
 
 
-class MockSpawnProcess(SpawnProcess):
-    def __init__(self, group=None, target=None, *args, **kwargs):
+SpawnProcess = multiprocessing.Process
+if "spawn" in multiprocessing.get_all_start_methods():
+    SpawnProcess = multiprocessing.get_context("spawn").Process
+
+
+ForkServerProcess = multiprocessing.Process
+if "forkserver" in multiprocessing.get_all_start_methods():
+    ForkServerProcess = multiprocessing.get_context("forkserver").Process
+
+
+# Define context variables with default values
+current_process_wrapper_var = contextvars.ContextVar("current_process_wrapper", default=_process_wrapper)
+current_process_manager_var = contextvars.ContextVar(
+    "current_process_manager", default=create_spawned_fork_process_manager
+)
+
+
+class BaseMockProcess:
+    # Base class for the mock process; This class is mainly used as the placeholder for the target mocking logic
+    def modify_target(self, target):
+        # Method to modify the target of the mock process
+        # This shall be the place to hold the target mocking logic
         if target == _process_wrapper:
-            target = _mock_process_wrapper
+            return current_process_wrapper_var.get()
         if target == create_spawned_fork_process_manager:
-            target = _mock_create_spawned_fork_process_manager
-        super().__init__(group, target, *args, **kwargs)
+            return current_process_manager_var.get()
+        return target
+
+
+class MockSpawnProcess(SpawnProcess, BaseMockProcess):
+    def __init__(self, group=None, target=None, *args, **kwargs):
+        modified_target = self.modify_target(target)
+        super().__init__(group, modified_target, *args, **kwargs)
+
+
+class MockForkServerProcess(ForkServerProcess, BaseMockProcess):
+    def __init__(self, group=None, target=None, *args, **kwargs):
+        modified_target = self.modify_target(target)
+        super().__init__(group, modified_target, *args, **kwargs)
+
+
+def _default_mock_process_wrapper(*args, **kwargs):
+    # Default mock implementation of _process_wrapper in recording mode
+    setup_recording_injection_if_enabled()
+    _process_wrapper(*args, **kwargs)
+
+
+def _default_mock_create_spawned_fork_process_manager(*args, **kwargs):
+    # Default mock implementation of create_spawned_fork_process_manager in recording mode
+    setup_recording_injection_if_enabled()
+    create_spawned_fork_process_manager(*args, **kwargs)
+
+
+def override_process_class(process_class_dict: dict):
+    original_process_class = {}
+    for start_method, MockProcessClass in process_class_dict.items():
+        if start_method in multiprocessing.get_all_start_methods():
+            original_process_class[start_method] = multiprocessing.get_context(start_method).Process
+            multiprocessing.get_context(start_method).Process = MockProcessClass
+            if start_method == multiprocessing.get_start_method():
+                multiprocessing.Process = MockProcessClass
+    return original_process_class
+
+
+@contextlib.contextmanager
+def override_process_pool_targets(process_wrapper=None, process_manager=None):
+    """
+    Context manager to override the process pool targets for the current context
+
+    """
+    original_process_wrapper = current_process_wrapper_var.get()
+    original_process_manager = current_process_manager_var.get()
+
+    if process_wrapper is not None:
+        current_process_wrapper_var.set(process_wrapper)
+    if process_manager is not None:
+        current_process_manager_var.set(process_manager)
+    original_process_class = override_process_class({"spawn": MockSpawnProcess, "forkserver": MockForkServerProcess})
+
+    try:
+        yield
+    finally:
+        # Revert back to the original states
+        current_process_wrapper_var.set(original_process_wrapper)
+        current_process_manager_var.set(original_process_manager)
+        override_process_class(original_process_class)
 
 
 @pytest.fixture
-def recording_injection(mocker: MockerFixture):
-    original_process_class = multiprocessing.get_context("spawn").Process
-    multiprocessing.get_context("spawn").Process = MockSpawnProcess
-    if "spawn" == multiprocessing.get_start_method():
-        multiprocessing.Process = MockSpawnProcess
+def process_override():
+    # This fixture is used to override the Process class to ensure the recording mode works
 
-    patches = setup_recording_injection_if_enabled()
+    # Step I: set process pool targets placeholder with customized targets
+    current_process_wrapper_var.set(_default_mock_process_wrapper)
+    current_process_manager_var.set(_default_mock_create_spawned_fork_process_manager)
 
+    # Step II: override the process pool class
+    process_class_dict = {"spawn": MockSpawnProcess, "forkserver": MockForkServerProcess}
+    original_process_class = override_process_class(process_class_dict)
+
+    try:
+        yield
+    finally:
+        for start_method, MockProcessClass in process_class_dict.items():
+            if start_method in multiprocessing.get_all_start_methods():
+                multiprocessing.get_context(start_method).Process = original_process_class[start_method]
+                if start_method == multiprocessing.get_start_method():
+                    multiprocessing.Process = original_process_class[start_method]
+
+
+@pytest.fixture
+def recording_injection():
+    # This fixture is used to main entry point to inject recording mode into the test
     try:
         yield
     finally:
@@ -76,13 +186,6 @@ def recording_injection(mocker: MockerFixture):
             Counter.set_file(COUNTER_FILE)
             Counter.delete_count_lock_file()
         recording_array_reset()
-
-        multiprocessing.get_context("spawn").Process = original_process_class
-        if "spawn" == multiprocessing.get_start_method():
-            multiprocessing.Process = original_process_class
-
-        for patcher in patches:
-            patcher.stop()
 
 
 def setup_recording_injection_if_enabled():
@@ -160,6 +263,11 @@ def setup_connection_provider():
 def dev_connections() -> dict:
     with open(CONNECTION_FILE, "r") as f:
         return json.load(f)
+
+
+@pytest.fixture
+def use_secrets_config_file(mocker: MockerFixture):
+    mocker.patch.dict(os.environ, {PROMPTFLOW_CONNECTIONS: str(CONNECTION_FILE)})
 
 
 # ==================== serving fixtures ====================

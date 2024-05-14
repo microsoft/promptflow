@@ -18,7 +18,7 @@ from promptflow.executor._result import LineResult
 from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import FlowExecutor
 
-from ...conftest import EAGER_FLOW_ROOT, get_yaml_file
+from ...utils import FLEX_FLOW_ROOT, get_yaml_file
 
 SAMPLE_FLOW = "web_classification_no_variants"
 SAMPLE_EVAL_FLOW = "classification_accuracy_evaluation"
@@ -115,7 +115,7 @@ class TestEagerFlow:
         ],
     )
     def test_flow_run(self, flow_folder, inputs, ensure_output, init_kwargs):
-        flow_file = get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT)
+        flow_file = get_yaml_file(flow_folder, root=FLEX_FLOW_ROOT)
 
         # Test submitting eager flow to script executor
         executor = ScriptExecutor(flow_file=flow_file, init_kwargs=init_kwargs)
@@ -138,7 +138,7 @@ class TestEagerFlow:
         assert line_result1.output == line_result2.output
 
     def test_flow_run_with_openai_chat(self):
-        flow_file = get_yaml_file("callable_class_with_openai", root=EAGER_FLOW_ROOT, file_name="flow.flex.yaml")
+        flow_file = get_yaml_file("callable_class_with_openai", root=FLEX_FLOW_ROOT, file_name="flow.flex.yaml")
 
         # Case 1: Normal case
         executor = ScriptExecutor(flow_file=flow_file, init_kwargs={"connection": "azure_open_ai_connection"})
@@ -162,7 +162,7 @@ class TestEagerFlow:
 
     def test_flow_run_with_connection(self, dev_connections):
         flow_file = get_yaml_file(
-            "dummy_callable_class_with_connection", root=EAGER_FLOW_ROOT, file_name="flow.flex.yaml"
+            "dummy_callable_class_with_connection", root=FLEX_FLOW_ROOT, file_name="flow.flex.yaml"
         )
 
         # Test submitting eager flow to script executor with connection dictionary
@@ -205,14 +205,14 @@ class TestEagerFlow:
 
     def test_flow_run_with_invalid_inputs(self):
         # Case 1: input not found
-        flow_file = get_yaml_file("flow_with_signature", root=EAGER_FLOW_ROOT)
+        flow_file = get_yaml_file("flow_with_signature", root=FLEX_FLOW_ROOT)
         executor = FlowExecutor.create(flow_file=flow_file, connections={}, init_kwargs=None)
         with pytest.raises(InputNotFound) as e:
             executor.exec_line(inputs={}, index=0)
         assert "The input for flow is incorrect." in str(e.value)
 
         # Case 2: input type mismatch
-        flow_file = get_yaml_file("flow_with_wrong_type", root=EAGER_FLOW_ROOT)
+        flow_file = get_yaml_file("flow_with_wrong_type", root=FLEX_FLOW_ROOT)
         executor = FlowExecutor.create(flow_file=flow_file, connections={}, init_kwargs=None)
         with pytest.raises(InputTypeError) as e:
             executor.exec_line(inputs={"input_1": 1}, index=0)
@@ -220,7 +220,7 @@ class TestEagerFlow:
 
     def test_flow_run_with_invalid_case(self):
         flow_folder = "dummy_flow_with_exception"
-        flow_file = get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT)
+        flow_file = get_yaml_file(flow_folder, root=FLEX_FLOW_ROOT)
         executor = ScriptExecutor(flow_file=flow_file)
         line_result = executor.exec_line(inputs={"text": "text"}, index=0)
 
@@ -231,7 +231,7 @@ class TestEagerFlow:
 
     def test_flow_with_operation_context(self):
         flow_folder = "flow_with_operation_context"
-        flow_file = get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT)
+        flow_file = get_yaml_file(flow_folder, root=FLEX_FLOW_ROOT)
         executor = FlowExecutor.create(flow_file=flow_file, connections={})
         line_result = executor.exec_line(inputs={}, index=0)
 
@@ -242,7 +242,7 @@ class TestEagerFlow:
 
     def test_execute_init_func_with_user_error(self):
         flow_folder = "callable_flow_with_init_exception"
-        flow_file = get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT)
+        flow_file = get_yaml_file(flow_folder, root=FLEX_FLOW_ROOT)
         with pytest.raises(FlowEntryInitializationError) as e:
             ScriptExecutor(flow_file=flow_file, init_kwargs={})
         assert "Failed to initialize flow entry with" in str(e.value)
@@ -256,14 +256,14 @@ class TestEagerFlow:
         ],
     )
     def test_execute_func_with_user_error(self, flow_folder, expected_exception, expected_error_msg):
-        flow_file = get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT)
+        flow_file = get_yaml_file(flow_folder, root=FLEX_FLOW_ROOT)
         with pytest.raises(expected_exception) as e:
             ScriptExecutor(flow_file=flow_file)
         assert expected_error_msg in str(e.value)
 
     def test_aggregation_error(self):
         flow_folder = "class_based_flow_with_aggregation_exception"
-        flow_file = get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT)
+        flow_file = get_yaml_file(flow_folder, root=FLEX_FLOW_ROOT)
         executor = ScriptExecutor(flow_file=flow_file, init_kwargs={"obj_input": "obj_input"})
         line_result = executor.exec_line(inputs={"func_input": "func_input"}, index=0)
 

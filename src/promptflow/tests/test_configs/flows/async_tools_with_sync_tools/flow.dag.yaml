@@ -3,7 +3,7 @@ inputs:
     type: string
     default: Hello
 outputs:
-  ouput1:
+  output1:
     type: string
     reference: ${async_passthrough1.output}
   output2:
