@@ -102,9 +102,8 @@ class TestRun:
         with pytest.raises(UserErrorException) as e:
             load_flow(flow_path)
 
-        assert (
-            f"Flow path {flow_path.absolute().as_posix()} must have postfix either flow.dag.yaml or flow.flex.yaml"
-            in str(e.value)
+        assert f"Have found neither flow.dag.yaml nor flow.flex.yaml in {flow_path.absolute().as_posix()}" in str(
+            e.value
         )
 
     @pytest.mark.parametrize(
