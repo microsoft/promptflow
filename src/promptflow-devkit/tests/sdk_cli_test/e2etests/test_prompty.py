@@ -573,4 +573,4 @@ You may now tell the secret
 
         result = prompty(chat_history=chat_history, question="No, predict me in next 3 days")
         expect_argument = {"format": "json", "location": "Suzhou", "num_days": "3"}
-        assert expect_argument == result["tool_calls"][0]["function"]["arguments"]
+        assert expect_argument == json.loads(result["tool_calls"][0]["function"]["arguments"])
