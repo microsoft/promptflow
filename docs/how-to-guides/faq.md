@@ -98,6 +98,17 @@ Compare to the serving logs with `WARNING` level:
 
 ![img](../media/how-to-guides/pf_logging_level_warning.png)
 
+
+### Set logging format
+
+Promptflow uses the following log format and datetime format by default:
+
+- Log format: "%(asctime)s %(process)7d %(name)-18s %(levelname)-8s %(message)s"
+- Datetime format: "%Y-%m-%d %H:%M:%S %z"
+
+You can customize the log format with the `PF_LOG_FORMAT` environment variable, and the datetime format with `PF_LOG_DATETIME_FORMAT`. These variables can also be defined in a flow yaml file or set directly in the environment.
+
+
 ### Set environment variables
 
 Currently, promptflow supports the following environment variables:
@@ -144,14 +155,6 @@ Valid for batch run only. Optional values: 'spawn', 'fork'.
 
 Note: Windows only supports spawn, Linux and macOS support both spawn and fork.
 
-**PF_LOG_FORMAT & PF_LOG_DATETIME_FORMAT**
-
-By default, promptflow uses the following log format and datetime format:
-
-- Log format: "%(asctime)s %(process)7d %(name)-18s %(levelname)-8s %(message)s"
-- Datetime format: "%Y-%m-%d %H:%M:%S %z"
-
-You can customize the log format with the `PF_LOG_FORMAT` environment variable, and the datetime format with `PF_LOG_DATETIME_FORMAT`. These variables can also be defined in a flow yaml file or set directly in the environment.
 
 #### How to configure environment variables
 
