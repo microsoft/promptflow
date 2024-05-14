@@ -11,10 +11,12 @@ from typing import Dict
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.user_agent_utils import setup_user_agent_to_operation_context
 from promptflow.core import Flow
+from promptflow.core._serving._errors import InvalidFlowInitConfig
 from promptflow.core._serving.extension.extension_factory import ExtensionFactory
 from promptflow.core._serving.flow_invoker import AsyncFlowInvoker
 from promptflow.core._serving.utils import get_output_fields_to_remove, get_sample_json, load_feedback_swagger
 from promptflow.core._utils import init_executable
+from promptflow.exceptions import ErrorTarget
 from promptflow.storage._run_storage import DummyRunStorage
 
 from ..._constants import PF_FLOW_INIT_CONFIG
@@ -57,9 +59,16 @@ class PromptflowServingAppBasic(ABC):
 
         self.init = kwargs.get("init", {})
         if not self.init:
-            init_params = os.environ.get(PF_FLOW_INIT_CONFIG, "{}")
-            init_dict: dict = json.loads(init_params)
-            self.init = init_dict
+            init_params = os.environ.get(PF_FLOW_INIT_CONFIG, None)
+            if init_params:
+                try:
+                    self.init = json.loads(init_params)
+                except Exception as e:
+                    self.logger.error(f"PF_FLOW_INIT_CONFIG can't be deserialized to json: {e}")
+                    raise InvalidFlowInitConfig(
+                        "PF_FLOW_INIT_CONFIG can't be deserialized to json",
+                        target=ErrorTarget.SERVING_APP,
+                    )
 
         logger.debug("Init params: " + str(self.init))
 
