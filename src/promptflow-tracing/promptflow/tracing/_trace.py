@@ -94,7 +94,7 @@ def start_as_current_span(
             set_status_on_exception,
             end_on_exit=False,
         ) as span:
-            object.__setattr__(span, "__should_end", True)
+            setattr(span, "__should_end", True)
             yield span
 
     except (KeyboardInterrupt, asyncio.CancelledError) as ex:

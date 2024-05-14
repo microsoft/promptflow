@@ -217,7 +217,7 @@ class OpenAIResponseParser(ABC):
         If no such item is found, it returns None.
         """
         for response_item in self._response:
-            if hasattr(response_item, "model") and bool(response_item.model):
+            if hasattr(response_item, "model") and response_item.model:
                 return response_item.model
         return None
 
