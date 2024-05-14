@@ -11,3 +11,9 @@ def target_fn(question: str) -> str:
 def target_fn2(question: str) -> str:
     answer = target_fn(question)["answer"]
     return {"response": answer}
+
+
+def target_fn3(question: str) -> str:
+    response = target_fn(question)
+    response['question'] = f'The question is as follows: {question}'
+    return response

@@ -41,7 +41,6 @@ This documentation site contains guides for prompt flow [sdk, cli](https://pypi.
     Articles guide user to complete a specific task in prompt flow.<br/><br/>
     - [Develop a flow](how-to-guides/develop-a-flex-flow/index.md)<br/>
     - [Run and evaluate a flow](how-to-guides/run-and-evaluate-a-flow/index.md)<br/>
-    - [Develop custom tool](how-to-guides/develop-a-tool/create-and-use-tool-package.md)<br/>
     - [Deploy a flow](how-to-guides/deploy-a-flow/index.md)<br/>
   "
 ```
@@ -66,12 +65,6 @@ This documentation site contains guides for prompt flow [sdk, cli](https://pypi.
     - Tool reference: [LLM Tool](reference/tools-reference/llm-tool.md), [Python Tool](reference/tools-reference/python-tool.md), [Prompt Tool](reference/tools-reference/prompt-tool.md)<br/>
     - ChangeLog: [ChangeLog](reference/changelog/promptflow.md)<br/>
   "
-```
-
-```{toctree}
-:hidden:
-:maxdepth: 1
-how-to-guides/quick-start
 ```
 
 ```{toctree}

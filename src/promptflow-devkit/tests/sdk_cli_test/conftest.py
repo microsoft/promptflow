@@ -45,6 +45,7 @@ except ImportError:
 
 EAGER_FLOW_ROOT = Path(PROMPTFLOW_ROOT / "tests/test_configs/eager_flows")
 MODEL_ROOT = Path(PROMPTFLOW_ROOT / "tests/test_configs/flows")
+PROMPTY_ROOT = Path(PROMPTFLOW_ROOT / "tests/test_configs/prompty")
 
 RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "../promptflow-recording/recordings/local").resolve()
 COUNTER_FILE = (Path(__file__) / "../count.json").resolve()
@@ -133,6 +134,20 @@ def setup_experiment_table():
 @pytest.fixture
 def flow_serving_client(mocker: MockerFixture):
     model_path = (Path(MODEL_ROOT) / "basic-with-connection").resolve().absolute().as_posix()
+    mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
+    mocker.patch.dict(os.environ, {"USER_AGENT": "test-user-agent"})
+    app = create_serving_app(environment_variables={"API_TYPE": "${azure_open_ai_connection.api_type}"})
+    app.config.update(
+        {
+            "TESTING": True,
+        }
+    )
+    return app.test_client()
+
+
+@pytest.fixture
+def prompty_serving_client(mocker: MockerFixture):
+    model_path = (Path(PROMPTY_ROOT) / "single_prompty").resolve().absolute().as_posix()
     mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
     mocker.patch.dict(os.environ, {"USER_AGENT": "test-user-agent"})
     app = create_serving_app(environment_variables={"API_TYPE": "${azure_open_ai_connection.api_type}"})

@@ -124,6 +124,7 @@ class TestBuiltInEvaluators:
         assert score["gpt_relevance"] > 0.0
         assert score["gpt_coherence"] > 0.0
         assert score["gpt_fluency"] > 0.0
+        assert score["gpt_retrieval"] > 0.0
         assert score["evaluation_per_turn"] is not None
 
         turn_count = 1 if eval_last_turn else 2
@@ -138,6 +139,9 @@ class TestBuiltInEvaluators:
 
         assert score["evaluation_per_turn"]["gpt_fluency"] is not None
         assert len(score["evaluation_per_turn"]["gpt_fluency"]["score"]) == turn_count
+
+        assert score["evaluation_per_turn"]["gpt_retrieval"] is not None
+        assert len(score["evaluation_per_turn"]["gpt_retrieval"]["score"]) == turn_count
 
     @pytest.mark.skip(reason="Skipping due to RAI service capacity limitation")
     @pytest.mark.parametrize(

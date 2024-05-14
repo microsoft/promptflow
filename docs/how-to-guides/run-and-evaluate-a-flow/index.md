@@ -12,7 +12,7 @@ Let's create a run with flow [web-classification](https://github.com/microsoft/p
 
 To begin with the guide, you need:
 - Git clone the sample repository(above flow link) and set the working directory to `<path-to-the-sample-repo>/examples/flows/`.
-- Make sure you have already created the necessary connection following [Create necessary connections](../quick-start.md#create-necessary-connections).
+- Make sure you have already created the necessary connection.
 ::::{tab-set}
 
 :::{tab-item} CLI
@@ -20,7 +20,7 @@ To begin with the guide, you need:
 
 Create the run with flow and data, can add `--stream` to stream the run.
 ```sh
-pf run create --flow standard/web-classification --data standard/web-classification/data.jsonl --column-mapping url='${data.url}' --stream 
+pf run create --flow standard/web-classification --data standard/web-classification/data.jsonl --column-mapping url='${data.url}' --stream
 ```
 
 Note `column-mapping` is a mapping from flow input name to specified values, see more details in [Use column mapping](https://aka.ms/pf/column-mapping).
