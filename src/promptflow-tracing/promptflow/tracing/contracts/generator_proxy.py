@@ -50,7 +50,7 @@ class AsyncGeneratorProxy(ContextManagerProxy):
         self._items = []
         super().__init__(iterator)
 
-    def __aiter__(self):
+    async def __aiter__(self):
         return self
 
     async def __anext__(self):
