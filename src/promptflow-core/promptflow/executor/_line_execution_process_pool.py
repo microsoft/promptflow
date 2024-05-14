@@ -456,8 +456,9 @@ class LineExecutionProcessPool:
     def _delete_log_files(self):
         try:
             shutil.rmtree(ProcessPoolConstants.PROCESS_LOG_PATH)
-        except Exception as e:
-            bulk_logger.warning(f"Failed to delete the folder, exception: {e}")
+        except Exception:
+            # Ignore the exception when deleting the log files.
+            pass
 
     def _get_task_from_queue(self, task_queue: Queue):
         """Get task from the task queue. Ignore the queue being empty and only exit the loop when getting data."""

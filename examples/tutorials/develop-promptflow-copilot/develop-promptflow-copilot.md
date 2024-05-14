@@ -1,3 +1,8 @@
+---
+category: rag
+weight: 30
+---
+
 # Develop promptflow copilot
 
 In this tutorial, we will provide a detailed walkthrough on creating a RAG-based copilot using the Azure Machine Learning promptflow toolkit. Our tutorial will cover a range of essential topics, including:

@@ -22,9 +22,8 @@ pf config set trace.destination=azureml://subscriptions/<subscription-id>/resour
 
 Fill in with your own subscription ID, resource group name, workspace or project name, and all is ready now. You can make LLM calls, run LLM application or execute your flow with `pf flow test` or `pf run create`, you will see an Azure portal URL link in the console:
 
-```console
-You can view the traces in cloud from Azure portal: https://ml.azure.com/prompts/trace/run/<run-name>/details?wsid=/subscriptions/<subscription-id>/resourceGroups/<resource-group-name>/providers/Microsoft.MachineLearningServices/workspaces/<workspace-or-project-name>
-```
+![trace-ui-portal](../../../media/cloud/azureai/tracing/portal_url.png)
+
 Click the link to view the traces in Azure portal, and feel free to share it with your team members.
 
 ![trace-ui-portal](../../../media/trace/trace-ui-portal-demo.gif)
@@ -94,3 +93,11 @@ pf config set trace.destination=none
 ```
 
 Then no traces will be logged to neither local nor cloud.
+
+
+```{toctree}
+:maxdepth: 1
+:hidden:
+
+run_tracking
+```

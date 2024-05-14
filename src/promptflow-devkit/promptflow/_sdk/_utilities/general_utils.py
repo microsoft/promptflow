@@ -425,7 +425,7 @@ def print_pf_version(with_azure: bool = False, ignore_none: bool = False):
 
 class PromptflowIgnoreFile(IgnoreFile):
     # TODO add more files to this list.
-    IGNORE_FILE = [".runs", "__pycache__"]
+    IGNORE_FILE = [".git", ".runs", "__pycache__"]
 
     def __init__(self, prompt_flow_path: Union[Path, str]):
         super(PromptflowIgnoreFile, self).__init__(prompt_flow_path)
@@ -1141,16 +1141,16 @@ def resolve_flow_language(
     if flow_path is not None and yaml_dict is not None:
         raise UserErrorException("Only one of flow_path and yaml_dict should be provided.")
     if flow_path is not None:
-        flow_path, flow_file = resolve_flow_path(flow_path, base_path=working_dir, check_flow_exist=False)
+        # flow path must exist
+        flow_path, flow_file = resolve_flow_path(flow_path, base_path=working_dir, check_flow_exist=True)
         file_path = flow_path / flow_file
-        if file_path.is_file() and file_path.suffix.lower() in (".yaml", ".yml"):
+        if file_path.suffix.lower() in (".yaml", ".yml"):
             yaml_dict = load_yaml(file_path)
-        elif file_path.is_file() and file_path.suffix.lower() == PROMPTY_EXTENSION:
+        elif file_path.suffix.lower() == PROMPTY_EXTENSION:
             return FlowLanguage.Python
         else:
-            raise UserErrorException(
-                f"Invalid flow path {file_path.as_posix()}, must exist and of suffix yaml, yml or prompty."
-            )
+            # actually suffix is already checked in resolve_flow_path
+            raise UserErrorException(f"Invalid flow path {file_path.as_posix()}, must of suffix yaml, yml or prompty.")
     return yaml_dict.get(LANGUAGE_KEY, FlowLanguage.Python)
 
 
