@@ -285,7 +285,7 @@ class TracedAsyncIterator(AsyncIteratorProxy):
             return await super().__anext__()
         except Exception as e:
             exception_other_than_non_stop_iteration = None
-            if isinstance(e, StopIteration):
+            if isinstance(e, StopAsyncIteration):
                 try:
                     generator_output = self.items
                     enrich_span_with_llm_if_needed(self._span, self._inputs, generator_output)
