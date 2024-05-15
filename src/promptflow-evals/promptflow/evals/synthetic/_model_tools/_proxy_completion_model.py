@@ -99,6 +99,7 @@ class ProxyChatCompletionsModel(OpenAIChatCompletionsModel):
         proxy_headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
+            "User-Agent": "promptflow-evals",
         }
 
         headers = {

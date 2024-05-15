@@ -82,6 +82,7 @@ class RAIClient:
         headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
+            "User-Agent": "promptflow-evals",
         }
 
         async with self._create_async_client().client as session:
