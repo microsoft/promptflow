@@ -295,12 +295,7 @@ def evaluate(
     :keyword output_path: The local folder or file path to save evaluation results to if set. If folder path is provided
           the results will be saved to a file named `evaluation_results.json` in the folder.
     :paramtype output_path: Optional[str]
-    :keyword azure_ai_project: Logs evaluation results to AI Studio
-        Example: {
-                "subscription_id": "<subscription_id>",
-                "resource_group_name": "<resource_group_name>",
-                "project_name": "<project_name>"
-        }
+    :keyword azure_ai_project: Logs evaluation results to AI Studio if set.
     :paramtype azure_ai_project: Optional[Dict]
     :return: Evaluation results.
     :rtype: dict
