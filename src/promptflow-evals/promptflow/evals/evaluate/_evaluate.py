@@ -380,7 +380,8 @@ def evaluate(
         # Assuming after removing inputs columns, all columns are output columns
         evaluator_result_df.rename(
             columns={
-                col: "outputs." f"{evaluator_name}.{col.replace('outputs.', '')}" for col in evaluator_result_df.columns
+                col: f"outputs.{evaluator_name}.{col.replace('outputs.', '')}"
+                for col in evaluator_result_df.columns
             },
             inplace=True,
         )

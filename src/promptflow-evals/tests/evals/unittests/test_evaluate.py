@@ -3,6 +3,7 @@ import os
 import pathlib
 
 import pandas as pd
+import numpy as np
 import pytest
 from pandas.testing import assert_frame_equal
 
@@ -67,6 +68,12 @@ def _target_fn(question):
         return {"answer": "There is no central heating on the streets today, but it will be, I promise."}
     if "strange" in question:
         return {"answer": "The life is strange..."}
+
+
+def _yeti_evaluator(question, answer):
+    if "yeti" in question.lower():
+        raise ValueError("Do not ask about Yeti!")
+    return {'result': len(answer)}
 
 
 def _target_fn2(question):
@@ -306,3 +313,24 @@ class TestEvaluate:
             content = f.read()
             data_from_file = json.loads(content)
             assert result["metrics"] == data_from_file["metrics"]
+
+    def test_evaluate_with_errors(self):
+        """Test evaluate_handle_errors"""
+        data = _get_file("yeti_questions.jsonl")
+        result = evaluate(
+            data=data,
+            evaluators={"yeti": _yeti_evaluator},
+            use_thread_pool=True
+        )
+        result_df = pd.DataFrame(result['rows'])
+        expected = pd.read_json(data, lines=True)
+        expected.rename(columns={
+            'question': "inputs.question",
+            'answer': "inputs.answer"
+        }, inplace=True)
+
+        expected['outputs.yeti.result'] = expected['inputs.answer'].str.len()
+        expected.at[0, 'outputs.yeti.result'] = np.nan
+        expected.at[2, 'outputs.yeti.result'] = np.nan
+        expected.at[3, 'outputs.yeti.result'] = np.nan
+        assert_frame_equal(expected, result_df)
