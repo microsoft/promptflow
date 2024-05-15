@@ -19,6 +19,7 @@ import zipfile
 from contextlib import contextmanager
 from enum import Enum
 from functools import partial
+from importlib.util import find_spec
 from inspect import isfunction
 from os import PathLike
 from pathlib import Path
@@ -70,6 +71,7 @@ from promptflow._sdk._errors import (
     UnsecureConnectionError,
 )
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
+from promptflow._utils.context_utils import inject_sys_path
 from promptflow._utils.flow_utils import is_flex_flow, is_prompty_flow, resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
@@ -972,7 +974,6 @@ def resolve_entry_and_code(entry: Union[str, PathLike, Callable], code: Path = N
         entry = callable_to_entry_string(entry)
     if not code:
         code = Path.cwd()
-        logger.warning(f"Code path is not specified, use current working directory: {code.as_posix()}")
     else:
         code = Path(code)
         if not code.exists():
@@ -1005,6 +1006,10 @@ def create_temp_flex_flow_yaml_core(entry: Union[str, PathLike, Callable], code:
         logger.warning(f"Found existing {flow_yaml_path.as_posix()}, will not respect it in runtime.")
         with open(flow_yaml_path, "r", encoding=DEFAULT_ENCODING) as f:
             existing_content = f.read()
+    if not is_local_module(entry_string=entry, code=code):
+        logger.debug(f"Entry {entry} is not found in local, it's snapshot will be empty.")
+        temp_dir = tempfile.mkdtemp()
+        flow_yaml_path = Path(temp_dir) / FLOW_FLEX_YAML
     with open(flow_yaml_path, "w", encoding=DEFAULT_ENCODING) as f:
         dump_yaml({"entry": entry}, f)
     return flow_yaml_path, existing_content
@@ -1059,6 +1064,22 @@ def callable_to_entry_string(callable_obj: Callable) -> str:
         )
 
     return f"{module_str}:{func_str}"
+
+
+def is_local_module(entry_string: str, code: Path) -> bool:
+    """Return True if the module is from local file."""
+    try:
+        with inject_sys_path(code):
+            module, _ = entry_string.split(":")
+            spec = find_spec(module)
+            origin = spec.origin
+            module_path = module.replace(".", "/") + ".py"
+            module_path = code / module_path
+            if Path(origin) == module_path:
+                return True
+    except Exception as e:
+        logger.debug(f"Failed to check is local module from {entry_string} due to {e}.")
+        return False
 
 
 def is_flex_run(run: "Run") -> bool:
