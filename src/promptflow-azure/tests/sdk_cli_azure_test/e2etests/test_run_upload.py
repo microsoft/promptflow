@@ -49,7 +49,7 @@ class Local2CloudTestHelper:
         return local_pf
 
     @staticmethod
-    def check_local_to_cloud_run(pf: PFClient, run: Run, check_run_details_in_cloud: bool = False) -> Run:
+    def check_local_to_cloud_run(pf: PFClient, run: Run, check_run_details_in_cloud: bool = True) -> Run:
         # check if local run is uploaded
         cloud_run = pf.runs.get(run.name)
         assert cloud_run.display_name == run.display_name
@@ -71,6 +71,7 @@ class Local2CloudTestHelper:
         # check run details are actually uploaded to cloud
         if check_run_details_in_cloud:
             run_uploader = AsyncRunUploader._from_run_operations(run_ops=pf.runs)
+            run_uploader._set_run(run)
             result_dict = async_run_allowing_running_loop(run_uploader._check_run_details_exist_in_cloud)
             for key, value in result_dict.items():
                 assert value is True, f"Run details {key!r} not found in cloud, run name is {run.name!r}"

@@ -132,6 +132,8 @@ class TestRunOperations:
         with pytest.raises(UserErrorException, match="workspace default datastore is not supported"):
             pf.runs._upload(run="fake_run_name")
 
+    @pytest.mark.skipif(condition=not pytest.is_live, reason="Subscription not found.")
+    @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
     def test_upload_run_with_running_status(self, pf: PFClient):
         # test upload run with running status
         with patch.object(RunOperations, "get") as mock_get:
@@ -152,6 +154,7 @@ class TestRunOperations:
 
         mocker.patch.object(AsyncRunUploader, "_get_datastore_with_secrets")
         run_uploader = AsyncRunUploader._from_run_operations(run_ops=pf.runs)
+        run_uploader._set_run(MagicMock())
         with pytest.raises(UserAuthenticationError, match="User does not have permission"):
             async_run_allowing_running_loop(run_uploader._upload_single_blob, blob_client, random_data)
 

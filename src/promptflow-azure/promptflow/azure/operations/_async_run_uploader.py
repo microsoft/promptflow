@@ -73,10 +73,15 @@ class AsyncRunUploader:
             result[name] = BlobServiceClient(account_url=account_url, credential=credential)
         return result
 
+    def _set_run(self, run: Run):
+        """Set the run to be uploaded."""
+        self.run = run
+        self.run_output_path = Path(self.run.properties[FlowRunProperties.OUTPUT_PATH])
+
     def _prepare_run_to_upload(self, run: Run):
         """Prepare the run to be uploaded."""
-        self.run = self._check_run_is_valid_to_upload(run=run)
-        self.run_output_path = Path(run.properties[FlowRunProperties.OUTPUT_PATH])
+        run = self._check_run_is_valid_to_upload(run=run)
+        self._set_run(run=run)
         # check if the run already exists in cloud
         self._check_run_exists(run=self.run)
 
