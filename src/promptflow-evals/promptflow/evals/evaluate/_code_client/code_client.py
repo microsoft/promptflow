@@ -52,9 +52,7 @@ class CodeClient:
         return pd.concat(
             [
                 input_df.add_prefix("inputs."),
-                pd.DataFrame(row_metric_results).add_prefix(
-                    f"outputs.{evaluator_name}." if evaluator_name else "outputs."
-                ),
+                pd.DataFrame(row_metric_results)
             ],
             axis=1,
             verify_integrity=True,
