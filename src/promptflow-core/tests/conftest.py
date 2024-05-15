@@ -22,10 +22,10 @@ from promptflow.recording.local import recording_array_reset
 from promptflow.recording.record_mode import is_in_ci_pipeline, is_live, is_record, is_replay
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
 
+from .utils import FLEX_FLOW_ROOT, FLOW_ROOT
+
 PROMPTFLOW_ROOT = Path(__file__).parent.parent.parent / "promptflow"
 TEST_CONFIG_ROOT = Path(__file__).parent.parent.parent / "promptflow" / "tests" / "test_configs"
-FLOW_ROOT = TEST_CONFIG_ROOT / "flows"
-EAGER_FLOW_ROOT = TEST_CONFIG_ROOT / "eager_flows"
 CONNECTION_FILE = PROMPTFLOW_ROOT / "connections.json"
 RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "../promptflow-recording/recordings/local").resolve()
 COUNTER_FILE = (Path(__file__) / "../count.json").resolve()
@@ -322,37 +322,37 @@ def flow_serving_client(mocker: MockerFixture):
 
 @pytest.fixture
 def simple_eager_flow(mocker: MockerFixture):
-    return create_client_by_model("simple_with_dict_output", mocker, model_root=EAGER_FLOW_ROOT)
+    return create_client_by_model("simple_with_dict_output", mocker, model_root=FLEX_FLOW_ROOT)
 
 
 @pytest.fixture
 def simple_eager_flow_primitive_output(mocker: MockerFixture):
-    return create_client_by_model("primitive_output", mocker, model_root=EAGER_FLOW_ROOT)
+    return create_client_by_model("primitive_output", mocker, model_root=FLEX_FLOW_ROOT)
 
 
 @pytest.fixture
 def simple_eager_flow_dataclass_output(mocker: MockerFixture):
-    return create_client_by_model("flow_with_dataclass_output", mocker, model_root=EAGER_FLOW_ROOT)
+    return create_client_by_model("flow_with_dataclass_output", mocker, model_root=FLEX_FLOW_ROOT)
 
 
 @pytest.fixture
 def non_json_serializable_output(mocker: MockerFixture):
-    return create_client_by_model("non_json_serializable_output", mocker, model_root=EAGER_FLOW_ROOT)
+    return create_client_by_model("non_json_serializable_output", mocker, model_root=FLEX_FLOW_ROOT)
 
 
 @pytest.fixture
 def stream_output(mocker: MockerFixture):
-    return create_client_by_model("stream_output", mocker, model_root=EAGER_FLOW_ROOT)
+    return create_client_by_model("stream_output", mocker, model_root=FLEX_FLOW_ROOT)
 
 
 @pytest.fixture
 def multiple_stream_outputs(mocker: MockerFixture):
-    return create_client_by_model("multiple_stream_outputs", mocker, model_root=EAGER_FLOW_ROOT)
+    return create_client_by_model("multiple_stream_outputs", mocker, model_root=FLEX_FLOW_ROOT)
 
 
 @pytest.fixture
 def eager_flow_evc(mocker: MockerFixture):
-    return create_client_by_model("environment_variables_connection", mocker, model_root=EAGER_FLOW_ROOT)
+    return create_client_by_model("environment_variables_connection", mocker, model_root=FLEX_FLOW_ROOT)
 
 
 @pytest.fixture
@@ -360,7 +360,7 @@ def eager_flow_evc_override(mocker: MockerFixture):
     return create_client_by_model(
         "environment_variables_connection",
         mocker,
-        model_root=EAGER_FLOW_ROOT,
+        model_root=FLEX_FLOW_ROOT,
         environment_variables={"TEST": "${azure_open_ai_connection.api_base}"},
     )
 
@@ -370,7 +370,7 @@ def eager_flow_evc_override_not_exist(mocker: MockerFixture):
     return create_client_by_model(
         "environment_variables",
         mocker,
-        model_root=EAGER_FLOW_ROOT,
+        model_root=FLEX_FLOW_ROOT,
         environment_variables={"TEST": "${azure_open_ai_connection.api_type}"},
     )
 
@@ -380,7 +380,7 @@ def eager_flow_evc_connection_not_exist(mocker: MockerFixture):
     return create_client_by_model(
         "evc_connection_not_exist",
         mocker,
-        model_root=EAGER_FLOW_ROOT,
+        model_root=FLEX_FLOW_ROOT,
         environment_variables={"TEST": "VALUE"},
     )
 
@@ -388,7 +388,7 @@ def eager_flow_evc_connection_not_exist(mocker: MockerFixture):
 @pytest.fixture
 def callable_class(mocker: MockerFixture):
     return create_client_by_model(
-        "basic_callable_class", mocker, model_root=EAGER_FLOW_ROOT, init={"obj_input": "input1"}
+        "basic_callable_class", mocker, model_root=FLEX_FLOW_ROOT, init={"obj_input": "input1"}
     )
 
 
@@ -435,37 +435,37 @@ def fastapi_create_client_by_model(
 
 @pytest.fixture
 def fastapi_simple_eager_flow(mocker: MockerFixture):
-    return fastapi_create_client_by_model("simple_with_dict_output", mocker, model_root=EAGER_FLOW_ROOT)
+    return fastapi_create_client_by_model("simple_with_dict_output", mocker, model_root=FLEX_FLOW_ROOT)
 
 
 @pytest.fixture
 def fastapi_simple_eager_flow_primitive_output(mocker: MockerFixture):
-    return fastapi_create_client_by_model("primitive_output", mocker, model_root=EAGER_FLOW_ROOT)
+    return fastapi_create_client_by_model("primitive_output", mocker, model_root=FLEX_FLOW_ROOT)
 
 
 @pytest.fixture
 def fastapi_simple_eager_flow_dataclass_output(mocker: MockerFixture):
-    return fastapi_create_client_by_model("flow_with_dataclass_output", mocker, model_root=EAGER_FLOW_ROOT)
+    return fastapi_create_client_by_model("flow_with_dataclass_output", mocker, model_root=FLEX_FLOW_ROOT)
 
 
 @pytest.fixture
 def fastapi_non_json_serializable_output(mocker: MockerFixture):
-    return fastapi_create_client_by_model("non_json_serializable_output", mocker, model_root=EAGER_FLOW_ROOT)
+    return fastapi_create_client_by_model("non_json_serializable_output", mocker, model_root=FLEX_FLOW_ROOT)
 
 
 @pytest.fixture
 def fastapi_stream_output(mocker: MockerFixture):
-    return fastapi_create_client_by_model("stream_output", mocker, model_root=EAGER_FLOW_ROOT)
+    return fastapi_create_client_by_model("stream_output", mocker, model_root=FLEX_FLOW_ROOT)
 
 
 @pytest.fixture
 def fastapi_multiple_stream_outputs(mocker: MockerFixture):
-    return fastapi_create_client_by_model("multiple_stream_outputs", mocker, model_root=EAGER_FLOW_ROOT)
+    return fastapi_create_client_by_model("multiple_stream_outputs", mocker, model_root=FLEX_FLOW_ROOT)
 
 
 @pytest.fixture
 def fastapi_eager_flow_evc(mocker: MockerFixture):
-    return fastapi_create_client_by_model("environment_variables_connection", mocker, model_root=EAGER_FLOW_ROOT)
+    return fastapi_create_client_by_model("environment_variables_connection", mocker, model_root=FLEX_FLOW_ROOT)
 
 
 @pytest.fixture
@@ -473,7 +473,7 @@ def fastapi_eager_flow_evc_override(mocker: MockerFixture):
     return fastapi_create_client_by_model(
         "environment_variables_connection",
         mocker,
-        model_root=EAGER_FLOW_ROOT,
+        model_root=FLEX_FLOW_ROOT,
         environment_variables={"TEST": "${azure_open_ai_connection.api_base}"},
     )
 
@@ -483,7 +483,7 @@ def fastapi_eager_flow_evc_override_not_exist(mocker: MockerFixture):
     return fastapi_create_client_by_model(
         "environment_variables",
         mocker,
-        model_root=EAGER_FLOW_ROOT,
+        model_root=FLEX_FLOW_ROOT,
         environment_variables={"TEST": "${azure_open_ai_connection.api_type}"},
     )
 
@@ -493,7 +493,7 @@ def fastapi_eager_flow_evc_connection_not_exist(mocker: MockerFixture):
     return fastapi_create_client_by_model(
         "evc_connection_not_exist",
         mocker,
-        model_root=EAGER_FLOW_ROOT,
+        model_root=FLEX_FLOW_ROOT,
         environment_variables={"TEST": "VALUE"},
     )
 
@@ -501,5 +501,5 @@ def fastapi_eager_flow_evc_connection_not_exist(mocker: MockerFixture):
 @pytest.fixture
 def fastapi_callable_class(mocker: MockerFixture):
     return fastapi_create_client_by_model(
-        "basic_callable_class", mocker, model_root=EAGER_FLOW_ROOT, init={"obj_input": "input1"}
+        "basic_callable_class", mocker, model_root=FLEX_FLOW_ROOT, init={"obj_input": "input1"}
     )
