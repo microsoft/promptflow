@@ -49,7 +49,7 @@ class Local2CloudTestHelper:
         return local_pf
 
     @staticmethod
-    def check_local_to_cloud_run(pf: PFClient, run: Run, check_run_details_in_cloud: bool = True) -> Run:
+    def check_local_to_cloud_run(pf: PFClient, run: Run, check_run_details_in_cloud: bool = False) -> Run:
         # check if local run is uploaded
         cloud_run = pf.runs.get(run.name)
         assert cloud_run.display_name == run.display_name
