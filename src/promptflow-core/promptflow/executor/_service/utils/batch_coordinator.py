@@ -57,14 +57,14 @@ class BatchCoordinator:
             init_kwargs=init_kwargs,
         )
 
-        # Init line execution process pool and set serialize_multimedia_during_execution to True
-        # to ensure that images are converted to paths during line execution.
+        # Init line execution process pool and set persist_multimedia_after_execution to True
+        # to ensure that images are persisted to paths after line execution.
         self._process_pool = LineExecutionProcessPool(
             output_dir,
             self._flow_executor,
             worker_count=worker_count,
             line_timeout_sec=line_timeout_sec,
-            serialize_multimedia_during_execution=True,
+            persist_multimedia_after_execution=True,
         )
         self._init = True
 
