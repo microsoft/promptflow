@@ -121,6 +121,17 @@ class ScriptExecutor(FlowExecutor):
         allow_generator_output: bool = False,
         **kwargs,
     ) -> LineResult:
+        if self._is_async:
+            from promptflow._utils.async_utils import async_run_allowing_running_loop
+
+            return async_run_allowing_running_loop(
+                self.exec_line_async,
+                inputs=inputs,
+                index=index,
+                run_id=run_id,
+                allow_generator_output=allow_generator_output,
+                **kwargs,
+            )
         run_id = run_id or str(uuid.uuid4())
         inputs = self._apply_sample_inputs(inputs=inputs)
         inputs = apply_default_value_for_input(self._inputs_sign, inputs)
@@ -309,8 +320,12 @@ class ScriptExecutor(FlowExecutor):
         line_run_id = run_info.run_id
         try:
             Tracer.start_tracing(line_run_id)
-            output = await self._func_async(**inputs)
-            output = self._stringify_generator_output(output) if not allow_generator_output else output
+            output = self._func_async(**inputs)
+            # Get the result of the output if it is an awaitable.
+            # Note that if it is an async generator, it would not be awaitable.
+            if inspect.isawaitable(output):
+                output = await output
+            output = await self._stringify_generator_output_async(output) if not allow_generator_output else output
             traces = Tracer.end_tracing(line_run_id)
             output_dict = convert_eager_flow_output_to_dict(output)
             run_info.api_calls = traces
@@ -323,6 +338,17 @@ class ScriptExecutor(FlowExecutor):
         finally:
             run_tracker.persist_flow_run(run_info)
         return self._construct_line_result(output, run_info)
+
+    async def _stringify_generator_output_async(self, output):
+        if isinstance(output, dict):
+            return await super()._stringify_generator_output_async(output)
+        if is_dataclass(output):
+            kv = {field.name: getattr(output, field.name) for field in dataclasses.fields(output)}
+            updated_kv = await super()._stringify_generator_output_async(kv)
+            return dataclasses.replace(output, **updated_kv)
+        kv = {"output": output}
+        updated_kv = await super()._stringify_generator_output_async(kv)
+        return updated_kv["output"]
 
     def _stringify_generator_output(self, output):
         if isinstance(output, dict):
@@ -465,6 +491,8 @@ class ScriptExecutor(FlowExecutor):
 
     def _initialize_function(self):
         func = self._parse_entry_func()
+        original_func = getattr(func, "__original_function", func)
+
         # If the function is not decorated with trace, add trace for it.
         if not hasattr(func, "__original_function"):
             func = _traced(func, trace_type=TraceType.FLOW)
@@ -482,10 +510,12 @@ class ScriptExecutor(FlowExecutor):
                 func = _traced(getattr(func, "__original_function"), trace_type=TraceType.FLOW)
         inputs, _, _, _ = function_to_interface(func)
         self._inputs = {k: v.to_flow_input_definition() for k, v in inputs.items()}
-        if inspect.iscoroutinefunction(func):
+        if inspect.iscoroutinefunction(original_func) or inspect.isasyncgenfunction(original_func):
+            self._is_async = True
             self._func = async_to_sync(func)
             self._func_async = func
         else:
+            self._is_async = False
             self._func = func
             self._func_async = sync_to_async(func)
         self._func_name = self._get_func_name(func=func)
