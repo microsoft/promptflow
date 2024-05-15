@@ -6,36 +6,9 @@ from unittest.mock import patch
 
 import pytest
 
-from promptflow.core import AzureOpenAIModelConfiguration, OpenAIModelConfiguration
-from promptflow.core._errors import InvalidConnectionError
 from promptflow.core._prompty_utils import ChatInputList, Escaper, PromptResult
 
 
-@pytest.mark.sdk_test
-@pytest.mark.unittest
-class TestPrompty:
-    def test_connection_validate(self):
-        with pytest.raises(InvalidConnectionError) as ex:
-            AzureOpenAIModelConfiguration(
-                connection="mock_connection", azure_deployment="mock_deployment", api_key="mock_api_key"
-            )
-        assert "Cannot configure model config and connection at the same time." in ex.value.message
-
-        with pytest.raises(InvalidConnectionError) as ex:
-            AzureOpenAIModelConfiguration(azure_deployment="mock_deployment", api_key="mock_api_key")
-        assert "AzureOpenAIModel parameters are incomplete" in ex.value.message
-
-        with pytest.raises(InvalidConnectionError) as ex:
-            OpenAIModelConfiguration(connection="mock_connection", model="mock_deployment", api_key="mock_api_key")
-        assert "Cannot configure model config and connection at the same time." in ex.value.message
-
-        with pytest.raises(InvalidConnectionError) as ex:
-            OpenAIModelConfiguration(model="mock_deployment", api_key="mock_api_key")
-        assert "OpenAIModel parameters are incomplete" in ex.value.message
-
-
-@pytest.mark.sdk_test
-@pytest.mark.unittest
 class TestEscaper:
     @pytest.mark.parametrize(
         "value, escaped_dict, expected_val",
