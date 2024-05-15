@@ -11,7 +11,7 @@ from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.executor import FlowExecutor
 
-from ...utils import WRONG_FLOW_ROOT, get_flow_expected_result, get_flow_inputs, get_yaml_file
+from ...utils import WRONG_FLOW_ROOT, get_flow_expected_result, get_flow_sample_input, get_yaml_file
 
 ACTIVATE_FLOW_TEST_CASES = [
     "activate_with_no_inputs",
@@ -26,7 +26,7 @@ class TestExecutorActivate:
     @pytest.mark.parametrize("flow_folder", ACTIVATE_FLOW_TEST_CASES)
     def test_flow_run_activate(self, dev_connections, flow_folder):
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
-        results = executor.exec_line(get_flow_inputs(flow_folder))
+        results = executor.exec_line(get_flow_sample_input(flow_folder))
         # Assert the flow result
         expected_result = get_flow_expected_result(flow_folder)
         expected_result = expected_result[0] if isinstance(expected_result, list) else get_flow_expected_result
@@ -38,7 +38,7 @@ class TestExecutorActivate:
         file_path = Path(mkdtemp()) / "flow.log"
         with LogContext(file_path):
             executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
-            result = executor.exec_line(get_flow_inputs(flow_folder))
+            result = executor.exec_line(get_flow_sample_input(flow_folder))
         assert result.output["result"] is None
         with open(file_path) as fin:
             content = fin.read()

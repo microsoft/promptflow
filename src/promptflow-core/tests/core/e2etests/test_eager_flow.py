@@ -301,7 +301,7 @@ class TestEagerFlow:
     )
     def test_flow_with_sample(self, flow_folder, expected_output):
         # when inputs & init not provided, will use sample field in flow file
-        flow_file = get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT)
+        flow_file = get_yaml_file(flow_folder, root=FLEX_FLOW_ROOT)
         executor = FlowExecutor.create(flow_file=flow_file, connections={})
         line_result = executor.exec_line(inputs={}, index=0)
         assert line_result.run_info.error is None

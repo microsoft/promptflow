@@ -12,7 +12,7 @@ from promptflow.executor._flow_nodes_scheduler import RUN_FLOW_NODES_LINEARLY
 from promptflow.executor._result import LineResult
 from promptflow.executor.flow_executor import FlowExecutor
 
-from ...utils import get_flow_inputs, get_yaml_file, load_content
+from ...utils import get_flow_sample_input, get_yaml_file, load_content
 
 TEST_ROOT = Path(__file__).parent.parent.parent
 FLOWS_ROOT = TEST_ROOT / "test_configs/flows"
@@ -28,7 +28,7 @@ class TestConcurrentExecution:
 
         # flow run: test exec_line
         with LogContext(flow_run_log_path, run_mode=RunMode.Test):
-            results = executor.exec_line(get_flow_inputs(FLOW_FOLDER))
+            results = executor.exec_line(get_flow_sample_input(FLOW_FOLDER))
             log_content = load_content(flow_run_log_path)
             pattern = r"\[wait_(\d+) in line None.*Thread (\d+)"
             matches = re.findall(pattern, log_content)
@@ -54,7 +54,7 @@ class TestConcurrentExecution:
     def test_linear_run(self):
         executor = FlowExecutor.create(get_yaml_file(FLOW_FOLDER), {})
         # flow run: test exec_line run linearly
-        results = executor.exec_line(get_flow_inputs(FLOW_FOLDER), node_concurrency=RUN_FLOW_NODES_LINEARLY)
+        results = executor.exec_line(get_flow_sample_input(FLOW_FOLDER), node_concurrency=RUN_FLOW_NODES_LINEARLY)
         self.assert_run_result(results)
         assert 15 > results.run_info.system_metrics["duration"] > 10, "run nodes linearly will consume more time."
 
