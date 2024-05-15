@@ -28,14 +28,18 @@ def _aggregate_metrics(df, evaluators) -> Dict[str, float]:
     ]
     content_safety_cols = []
     for col in df.columns:
-        for metric in content_safety_metrics:
-            if col.endswith(f".{metric}_score"):
-                evaluator_name = col.split(".")[0]
-                if evaluator_name in evaluators:
-                    # Check the namespace of the evaluator
-                    module = inspect.getmodule(evaluators[evaluator_name])
-                    if module and module.__name__.startswith("promptflow.evals.evaluators."):
-                        content_safety_cols.append(col)
+        evaluator_name = col.split(".")[0]
+        metric_name = col.split(".")[1]
+        if evaluator_name in evaluators:
+            # Check the namespace of the evaluator
+            module = inspect.getmodule(evaluators[evaluator_name])
+            if (
+                module
+                and module.__name__.startswith("promptflow.evals.evaluators.")
+                and metric_name.endswith("_score")
+                and metric_name.replace("_score", "") in content_safety_metrics
+            ):
+                content_safety_cols.append(col)
 
     content_safety_df = df[content_safety_cols]
     defect_rates = {}
