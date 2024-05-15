@@ -544,19 +544,12 @@ def setup_exporter_to_pfs() -> None:
         if not getattr(tracer_provider, TRACER_PROVIDER_PFS_EXPORTER_SET_ATTR, False):
             _logger.info("have not set exporter to prompt flow service, will set it...")
             # Use a 1000 millis schedule delay to help export the traces in 1 second.
-            processor = PFBatchSpanProcessor(otlp_span_exporter, schedule_delay_millis=1000)
+            processor = BatchSpanProcessor(otlp_span_exporter, schedule_delay_millis=1000)
             tracer_provider.add_span_processor(processor)
             setattr(tracer_provider, TRACER_PROVIDER_PFS_EXPORTER_SET_ATTR, True)
         else:
             _logger.info("exporter to prompt flow service is already set, no action needed.")
     _logger.debug("finish setup exporter to prompt flow service.")
-
-
-class PFBatchSpanProcessor(BatchSpanProcessor):
-    def on_start(self, span, parent_context: typing.Union[trace.Context, None] = None) -> None:
-        super().on_start(span, parent_context)
-        #  Process the span when it starts, so a running span could be shown.
-        self.on_end(span)
 
 
 class OTLPSpanExporterWithTraceURL(OTLPSpanExporter):
