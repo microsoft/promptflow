@@ -1,4 +1,3 @@
-import importlib.metadata
 import re
 import time
 from typing import List
@@ -12,12 +11,6 @@ from constants import RAIService, Tasks
 from utils import get_harm_severity_level
 
 from promptflow.core import tool
-
-try:
-    version = importlib.metadata.version("promptflow-evals")
-except importlib.metadata.PackageNotFoundError:
-    version = "unknown"
-USER_AGENT = "{}/{}".format("promptflow-evals", version)
 
 
 def ensure_service_availability(rai_svc_url: str):
@@ -37,7 +30,7 @@ def submit_request(question: str, answer: str, metric: str, rai_svc_url: str, cr
     headers = {
         "Authorization": f"Bearer {bearer_token}",
         "Content-Type": "application/json",
-        "User-Agent": USER_AGENT,
+        "User-Agent": "promptflow-evals",
     }
 
     response = requests.post(url, json=payload, headers=headers)
