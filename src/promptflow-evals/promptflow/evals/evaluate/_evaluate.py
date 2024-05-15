@@ -299,6 +299,40 @@ def evaluate(
     :paramtype azure_ai_project: Optional[Dict]
     :return: Evaluation results.
     :rtype: dict
+
+    :Example:
+
+    Evaluate API can be used as follows:
+
+    .. code-block:: python
+
+            from promptflow.evals.evaluate import evaluate
+            from promptflow.evals.evaluators import RelevanceEvaluator, CohereEvaluator
+
+            coherence_eval = CohereEvaluator()
+            relevance_eval = RelevanceEvaluator()
+
+            path = "evaluate_test_data.jsonl"
+            result = evaluate(
+                data=path,
+                evaluators={
+                    "coherence": coherence_eval,
+                    "relevance": relevance_eval,
+                },
+                evaluator_config={
+                    "coherence": {
+                        "answer": "data.answer",
+                        "context": "data.context",
+                        "question": "data.question"
+                    },
+                    "relevance": {
+                        "answer": "data.answer",
+                        "context": "data.context",
+                        "question": "data.question"
+                    }
+                }
+            )
+
     """
 
     trace_destination = _trace_destination_from_project_scope(azure_ai_project) if azure_ai_project else None
