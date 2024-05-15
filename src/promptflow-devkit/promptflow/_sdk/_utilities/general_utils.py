@@ -19,6 +19,7 @@ import zipfile
 from contextlib import contextmanager
 from enum import Enum
 from functools import partial
+from importlib.util import find_spec
 from inspect import isfunction
 from os import PathLike
 from pathlib import Path
@@ -974,7 +975,6 @@ def resolve_entry_and_code(entry: Union[str, PathLike, Callable], code: Path = N
         entry = callable_to_entry_string(entry)
     if not code:
         code = Path.cwd()
-        logger.warning(f"Code path is not specified, use current working directory: {code.as_posix()}")
     else:
         code = Path(code)
         if not code.exists():
@@ -1007,6 +1007,10 @@ def create_temp_flex_flow_yaml_core(entry: Union[str, PathLike, Callable], code:
         logger.warning(f"Found existing {flow_yaml_path.as_posix()}, will not respect it in runtime.")
         with open(flow_yaml_path, "r", encoding=DEFAULT_ENCODING) as f:
             existing_content = f.read()
+    if not is_local_module(entry):
+        logger.warning(f"Entry {entry} is not found in local, it's snapshot will be empty.")
+        temp_dir = tempfile.mkdtemp()
+        flow_yaml_path = Path(temp_dir) / FLOW_FLEX_YAML
     with open(flow_yaml_path, "w", encoding=DEFAULT_ENCODING) as f:
         dump_yaml({"entry": entry}, f)
     return flow_yaml_path, existing_content
@@ -1061,6 +1065,21 @@ def callable_to_entry_string(callable_obj: Callable) -> str:
         )
 
     return f"{module_str}:{func_str}"
+
+
+def is_local_module(entry_string: str) -> bool:
+    """Return True if the module is from local file."""
+    try:
+        module, _ = entry_string.split(":")
+        spec = find_spec(module)
+        origin = spec.origin
+        module_path = module.replace(".", "/") + ".py"
+        module_path = Path().cwd() / module_path
+        if Path(origin) == module_path:
+            return True
+    except Exception as e:
+        logger.debug(f"Failed to check is local module from {entry_string} due to {e}.")
+        return False
 
 
 def is_flex_run(run: "Run") -> bool:
