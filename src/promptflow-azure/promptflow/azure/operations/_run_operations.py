@@ -991,6 +991,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
 
         # post process after run upload, it can only be done after the run history record is created
         async_run_allowing_running_loop(run_uploader.post_process)
+        logger.debug(f"Successfully post processed run {run.name!r} after upload.")
 
         portal_url = self._get_run_portal_url(run_id=run.name)
         # print portal url when executing in jupyter notebook
