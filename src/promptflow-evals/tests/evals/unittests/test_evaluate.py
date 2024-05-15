@@ -138,6 +138,17 @@ class TestEvaluate:
 
         assert "Missing required inputs for evaluator g : ['ground_truth']." in exc_info.value.args[0]
 
+    def test_target_raises_on_outputs(self):
+        """Test we are raising exception if the output is column is present in the input."""
+        data = _get_file("questions_answers_outputs.jsonl")
+        with pytest.raises(ValueError) as cm:
+            evaluate(
+                data=data,
+                target=_target_fn,
+                evaluators={"g": F1ScoreEvaluator()},
+            )
+        assert 'The column cannot start from "outputs." if target was defined.' in cm.value.args[0]
+
     @pytest.mark.parametrize('input_file,out_file,expected_columns,fun', [
             ("questions.jsonl", "questions_answers.jsonl", {"answer"}, _target_fn),
             ("questions_ground_truth.jsonl", "questions_answers_ground_truth.jsonl",
@@ -180,7 +191,7 @@ class TestEvaluate:
             (
                 [{
                     "question": "How are you?",
-                    "answer": "I'm fine",
+                    "outputs.answer": "I'm fine",
                 }],
                 {
                     "question": "${data.question}",
@@ -237,6 +248,21 @@ class TestEvaluate:
                     "another_answer": "${data.answer}",
                 },
                 "I'm great"
+            ),
+            (
+                [{
+                    "question": "How are you?",
+                    "outputs.answer": "I'm fine",
+                    "else": "Another column",
+                    "else1": "Another column 1",
+                }],
+                {
+                    "question": "${data.question}",
+                    "answer": "${run.outputs.answer}",
+                    "else1": "${data.else}",
+                    "else2": "${data.else1}"
+                },
+                "I'm fine"
             )
         ])
     def test_apply_column_mapping_target(self, json_data, inputs_mapping, answer):
@@ -252,6 +278,11 @@ class TestEvaluate:
         if "another_answer" in inputs_mapping:
             assert "another_answer" in new_data_df.columns
             assert new_data_df["another_answer"][0] != answer
+        if "else" in inputs_mapping:
+            assert "else1" in new_data_df.columns
+            assert new_data_df["else1"][0] == "Another column"
+            assert "else2" in new_data_df.columns
+            assert new_data_df["else2"][0] == "Another column 1"
 
     def test_evaluate_invalid_evaluator_config(self, mock_model_config, evaluate_test_data_jsonl_file):
         # Invalid source reference
@@ -286,12 +317,14 @@ class TestEvaluate:
         df_actuals = _rename_columns_conditionally(df, {'presnt_generated', 'generated'})
         assert_frame_equal(df_actuals.sort_index(axis=1), df_expected.sort_index(axis=1))
 
-    def test_evaluate_output_path(self, evaluate_test_data_jsonl_file, tmpdir):
+    @pytest.mark.parametrize('use_thread_pool', [True, False])
+    def test_evaluate_output_path(self, evaluate_test_data_jsonl_file, tmpdir, use_thread_pool):
         output_path = os.path.join(tmpdir, "eval_test_results.jsonl")
         result = evaluate(
             data=evaluate_test_data_jsonl_file,
             evaluators={"g": F1ScoreEvaluator()},
             output_path=output_path,
+            use_thread_pool=use_thread_pool
         )
 
         assert result is not None
