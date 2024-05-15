@@ -28,10 +28,10 @@ class TestSimulator:
     @patch("promptflow.evals.synthetic.adversarial_simulator.AdversarialSimulator._ensure_service_dependencies")
     def test_initialization_with_all_valid_scenarios(
         self,
-        mock_get_service_discovery_url,
+        mock_ensure_service_dependencies,
         mock_get_content_harm_template_collections,
         mock_simulate_async,
-        mock_ensure_service_dependencies,
+        mock_get_service_discovery_url,
     ):
         mock_get_service_discovery_url.return_value = "http://some.url/discovery/"
         mock_simulate_async.return_value = MagicMock()
