@@ -1,3 +1,4 @@
+import importlib.metadata
 import re
 import time
 from typing import List
@@ -11,7 +12,9 @@ from constants import RAIService, Tasks
 from utils import get_harm_severity_level
 
 from promptflow.core import tool
-from promptflow.evals._user_agent import USER_AGENT
+
+version = importlib.metadata.version("promptflow-evals")
+USER_AGENT = "{}/{}".format("promptflow-evals", version)
 
 
 def ensure_service_availability(rai_svc_url: str):
