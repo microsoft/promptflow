@@ -38,7 +38,7 @@ from promptflow._cli._pf._init_entry_generators import (
 from promptflow._cli._utils import _copy_to_flow, activate_action, confirm, inject_sys_path, list_of_dict_to_dict
 from promptflow._constants import ConnectionProviderConfig
 from promptflow._sdk._configuration import Configuration
-from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
+from promptflow._sdk._constants import DEFAULT_SERVE_ENGINE, PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._utilities.chat_utils import start_chat_ui_service_monitor
 from promptflow._sdk._utilities.general_utils import generate_yaml_entry_without_delete
@@ -199,7 +199,10 @@ pf flow serve --source <path_to_flow> --skip-open-browser
         "--skip-open-browser", action="store_true", default=False, help="Skip open browser for flow serving."
     )
     add_param_engine = lambda parser: parser.add_argument(  # noqa: E731
-        "--engine", type=str, default="flask", help="The engine to serve the flow, can be flask or fastapi."
+        "--engine",
+        type=str,
+        default=DEFAULT_SERVE_ENGINE,
+        help="The engine to serve the flow, can be flask or fastapi.",
     )
     activate_action(
         name="serve",
