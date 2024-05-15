@@ -9,6 +9,8 @@ import pytest
 from promptflow.core._prompty_utils import ChatInputList, Escaper, PromptResult
 
 
+@pytest.mark.sdk_test
+@pytest.mark.unittest
 class TestEscaper:
     @pytest.mark.parametrize(
         "value, escaped_dict, expected_val",
