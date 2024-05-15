@@ -8,6 +8,8 @@ from urllib.parse import urljoin, urlparse
 
 import requests
 
+from promptflow.evals._user_agent import USER_AGENT
+
 from ._async_http_client import AsyncHTTPClientWithRetry
 
 api_url = None
@@ -82,7 +84,7 @@ class RAIClient:
         headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
-            "User-Agent": "promptflow-evals",
+            "User-Agent": USER_AGENT,
         }
 
         async with self._create_async_client().client as session:

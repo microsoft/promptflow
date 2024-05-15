@@ -47,7 +47,6 @@ class TestAdvSimulator:
                 )
             )
 
-    @pytest.mark.skip("Service not availabe in region")
     def test_adv_qa_sim_responds_with_one_response(self, model_config, ml_client_config):
         os.environ.pop("RAI_SVC_URL", None)
         from promptflow.evals.synthetic import AdversarialScenario, AdversarialSimulator
