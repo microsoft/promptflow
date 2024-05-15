@@ -1,6 +1,7 @@
 import re
 import time
 from typing import List
+from urllib.parse import urlparse
 
 import numpy as np
 import requests
@@ -8,7 +9,6 @@ from azure.core.credentials import TokenCredential
 from azure.identity import DefaultAzureCredential
 from constants import RAIService, Tasks
 from utils import get_harm_severity_level
-from urllib.parse import urlparse
 
 from promptflow.core import tool
 
@@ -27,7 +27,11 @@ def submit_request(question: str, answer: str, metric: str, rai_svc_url: str, cr
 
     url = rai_svc_url + "/submitannotation"
     bearer_token = credential.get_token("https://management.azure.com/.default").token
-    headers = {"Authorization": f"Bearer {bearer_token}", "Content-Type": "application/json"}
+    headers = {
+        "Authorization": f"Bearer {bearer_token}",
+        "Content-Type": "application/json",
+        "User-Agent": "promptflow-evals",
+    }
 
     response = requests.post(url, json=payload, headers=headers)
     if response.status_code != 202:
