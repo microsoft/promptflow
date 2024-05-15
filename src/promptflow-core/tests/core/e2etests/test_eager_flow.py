@@ -225,12 +225,12 @@ class TestEagerFlow:
         delta_desc = f"{delta_sec}s from {line_result1.run_info.end_time} to {line_result2.run_info.end_time}"
         msg = f"The two tasks should run concurrently, but got {delta_desc}"
         assert 0 <= delta_sec < 0.1, msg
-    
+
     @pytest.mark.asyncio
     @pytest.mark.parametrize("entry, inputs, expected_output", generator_entries)
     async def test_flow_run_with_generator_entry(self, entry, inputs, expected_output):
         executor = FlowExecutor.create(entry, {})
-    
+
         line_result = executor.exec_line(inputs=inputs)
         assert line_result.run_info.status == Status.Completed
         assert line_result.output == "".join(expected_output)  # When stream=False, it should be a string
