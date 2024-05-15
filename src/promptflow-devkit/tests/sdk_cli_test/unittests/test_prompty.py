@@ -23,7 +23,7 @@ class TestPrompty:
 
         with pytest.raises(InvalidConnectionError) as ex:
             AzureOpenAIModelConfiguration(azure_deployment="mock_deployment", api_key="mock_api_key")
-        assert "Missing required params" in ex.value.message
+        assert "AzureOpenAIModel parameters are incomplete" in ex.value.message
 
         with pytest.raises(InvalidConnectionError) as ex:
             OpenAIModelConfiguration(connection="mock_connection", model="mock_deployment", api_key="mock_api_key")
@@ -31,7 +31,7 @@ class TestPrompty:
 
         with pytest.raises(InvalidConnectionError) as ex:
             OpenAIModelConfiguration(model="mock_deployment", api_key="mock_api_key")
-        assert "Missing required params" in ex.value.message
+        assert "OpenAIModel parameters are incomplete" in ex.value.message
 
 
 @pytest.mark.sdk_test

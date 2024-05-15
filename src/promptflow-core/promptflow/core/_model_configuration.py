@@ -30,7 +30,8 @@ class AzureOpenAIModelConfiguration(ModelConfiguration):
             raise InvalidConnectionError("Cannot configure model config and connection at the same time.")
         if not self.connection and not all([self.azure_endpoint, self.api_key, self.api_version]):
             raise InvalidConnectionError(
-                "Missing required params for connection, required azure_endpoint, api_version and api_key."
+                "AzureOpenAIModel parameters are incomplete. Please ensure azure_endpoint, "
+                "api_version, and api_key are provided."
             )
 
     @classmethod
@@ -64,7 +65,7 @@ class OpenAIModelConfiguration(ModelConfiguration):
         if any([self.base_url, self.api_key, self.organization]) and self.connection:
             raise InvalidConnectionError("Cannot configure model config and connection at the same time.")
         if not self.connection and not self.base_url:
-            raise InvalidConnectionError("Missing required params api_key for connection.")
+            raise InvalidConnectionError("OpenAIModel parameters are incomplete. Please ensure api_key are provided.")
 
     @classmethod
     def from_connection(cls, connection: OpenAIConnection, model: str):
