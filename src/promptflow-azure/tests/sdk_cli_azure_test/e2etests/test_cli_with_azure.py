@@ -4,7 +4,9 @@
 import contextlib
 import os
 import sys
+import tempfile
 import uuid
+from pathlib import Path
 from typing import Callable
 
 import pytest
@@ -14,6 +16,7 @@ from sdk_cli_azure_test.conftest import DATAS_DIR, FLOWS_DIR
 
 from promptflow._constants import PF_USER_AGENT
 from promptflow._sdk.entities import Run
+from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
 from promptflow.azure import PFClient
@@ -22,6 +25,7 @@ from promptflow.tracing._operation_context import OperationContext
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
 
 RUNS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/runs"
+PROMPTY_DIR = PROMPTFLOW_ROOT / "tests/test_configs/prompty"
 
 
 # TODO: move this to a shared utility module
@@ -205,3 +209,52 @@ class TestCliWithAzure:
                 if "obj must be an instance or subtype of type" in str(e):
                     pass
                 raise
+
+    @pytest.mark.skipif(pytest.is_replay, reason="Skip to avoid expose secret in record.")
+    @pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection")
+    def test_azure_run_prompty(self, pf, runtime: str, azure_open_ai_connection, randstr: Callable[[str], str]) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            env_file = Path(temp_dir) / ".env"
+            env = {
+                "MOCK_AZURE_DEVELOPMENT": "gpt-35-turbo",
+                "MOCK_AZURE_API_KEY": azure_open_ai_connection.api_key,
+                "MOCK_AZURE_API_VERSION": azure_open_ai_connection.api_version,
+                "MOCK_AZURE_ENDPOINT": azure_open_ai_connection.api_base,
+            }
+            with open(env_file, "w") as f:
+                f.writelines([f"{key}={value}\n" for key, value in env.items()])
+
+            with _change_working_dir(temp_dir):
+                # Submit with .env
+                name = randstr("name")
+                run_pf_command(
+                    "run",
+                    "create",
+                    "--flow",
+                    f"{PROMPTY_DIR}/prompty_with_env.prompty",
+                    "--data",
+                    f"{DATAS_DIR}/prompty_inputs.jsonl",
+                    "--name",
+                    name,
+                    "--env",
+                    str(env_file),
+                    pf=pf,
+                )
+                run = pf.runs.get(run=name)
+                assert isinstance(run, Run)
+
+                # Submit prompty with connection
+                name = randstr("name")
+                run_pf_command(
+                    "run",
+                    "create",
+                    "--flow",
+                    f"{PROMPTY_DIR}/prompty_example.prompty",
+                    "--data",
+                    f"{DATAS_DIR}/prompty_inputs.jsonl",
+                    "--name",
+                    name,
+                    pf=pf,
+                )
+                run = pf.runs.get(run=name)
+                assert isinstance(run, Run)
