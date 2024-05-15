@@ -16,24 +16,28 @@ from .._user_agent import USER_AGENT
 from ._utils import _log_metrics_and_instance_results, _trace_destination_from_project_scope, _write_output
 
 
-def _aggregate_metrics(df) -> Dict[str, float]:
+def _aggregate_metrics(df, evaluators) -> Dict[str, float]:
     df.rename(columns={col: col.replace("outputs.", "") for col in df.columns}, inplace=True)
 
     # Calculate defect rates for content safety metrics
-    # Note: As a principle, custom aggregation logic should not be implemented within the evaluate API.
-    # This is a temporary solution to unblock the build demo until we support custom aggregation for evaluators.
     content_safety_metrics = [
         EvaluationMetrics.SEXUAL,
         EvaluationMetrics.SELF_HARM,
         EvaluationMetrics.HATE_UNFAIRNESS,
         EvaluationMetrics.VIOLENCE,
     ]
-    content_safety_cols = [
-        col for col in df.columns if any(col.endswith(f".{metric}_score") for metric in content_safety_metrics)
-    ]
-    content_safety_df = df[content_safety_cols]
-    df.drop(columns=content_safety_cols, inplace=True)
+    content_safety_cols = []
+    for col in df.columns:
+        for metric in content_safety_metrics:
+            if col.endswith(f".{metric}_score"):
+                evaluator_name = col.split(".")[0]
+                if evaluator_name in evaluators:
+                    # Check the namespace of the evaluator
+                    module = inspect.getmodule(evaluators[evaluator_name])
+                    if module and module.__name__.startswith("promptflow.evals.evaluators."):
+                        content_safety_cols.append(col)
 
+    content_safety_df = df[content_safety_cols]
     defect_rates = {}
     for col in content_safety_df.columns:
         defect_rate_name = col.replace("_score", "_defect_rate")
@@ -43,11 +47,12 @@ def _aggregate_metrics(df) -> Dict[str, float]:
             2,
         )
 
-    # By default, we will calculate mean
+    # For rest of metrics, we will calculate mean
+    df.drop(columns=content_safety_cols, inplace=True)
     mean_value = df.mean(numeric_only=True)
     metrics = mean_value.to_dict()
-    metrics.update(defect_rates)
 
+    metrics.update(defect_rates)
     return metrics
 
 
@@ -404,7 +409,7 @@ def evaluate(
     input_data_df = _rename_columns_conditionally(input_data_df, target_generated_columns)
 
     result_df = pd.concat([input_data_df, evaluators_result_df], axis=1, verify_integrity=True)
-    metrics = _aggregate_metrics(evaluators_result_df)
+    metrics = _aggregate_metrics(evaluators_result_df, evaluators)
 
     studio_url = _log_metrics_and_instance_results(
         metrics, result_df, trace_destination, target_run, pf_client, data, evaluation_name
