@@ -1,8 +1,8 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-import logging
 import json
+import logging
 import os
 import re
 import tempfile
@@ -95,18 +95,17 @@ def _get_mlflow_tracking_uri(trace_destination):
 
 def _get_trace_destination_config(tracking_uri):
     from promptflow._sdk._configuration import Configuration
-    pf_config = Configuration(overrides={
-        "trace.destination": tracking_uri
-    } if tracking_uri is not None else {}
-                              )
+
+    pf_config = Configuration(overrides={"trace.destination": tracking_uri} if tracking_uri is not None else {})
 
     trace_destination = pf_config.get_trace_destination()
 
     return trace_destination
 
 
-def _log_metrics_and_instance_results(metrics, instance_results, tracking_uri, run, pf_client, data,
-                                      evaluation_name=None) -> str:
+def _log_metrics_and_instance_results(
+    metrics, instance_results, tracking_uri, run, pf_client, data, evaluation_name=None
+) -> str:
     run_id = None
     trace_destination = _get_trace_destination_config(tracking_uri=tracking_uri)
 
@@ -137,8 +136,9 @@ def _log_metrics_and_instance_results(metrics, instance_results, tracking_uri, r
                     properties={
                         "_azureml.evaluation_run": "azure-ai-generative-parent",
                         "_azureml.evaluate_artifacts": json.dumps([{"path": "eval_results.jsonl", "type": "table"}]),
-                        "isEvaluatorRun": "true"
-                    })
+                        "isEvaluatorRun": "true",
+                    }
+                )
                 run_id = run.info.run_id
     else:
         azure_pf_client = _azure_pf_client(trace_destination=trace_destination)
@@ -148,9 +148,11 @@ def _log_metrics_and_instance_results(metrics, instance_results, tracking_uri, r
             instance_results.to_json(local_file, orient="records", lines=True)
 
             # overriding instance_results.jsonl file
-            async_uploader = AsyncRunUploader._from_run_operations(run, azure_pf_client.runs)
-            remote_file = (f"{Local2Cloud.BLOB_ROOT_PROMPTFLOW}"
-                           f"/{Local2Cloud.BLOB_ARTIFACTS}/{run.name}/{Local2Cloud.FLOW_INSTANCE_RESULTS_FILE_NAME}")
+            async_uploader = AsyncRunUploader._from_run_operations(azure_pf_client.runs)
+            remote_file = (
+                f"{Local2Cloud.BLOB_ROOT_PROMPTFLOW}"
+                f"/{Local2Cloud.BLOB_ARTIFACTS}/{run.name}/{Local2Cloud.FLOW_INSTANCE_RESULTS_FILE_NAME}"
+            )
             async_run_allowing_running_loop(async_uploader._upload_local_file_to_blob, local_file, remote_file)
             run_id = run.name
 
@@ -165,9 +167,11 @@ def _get_ai_studio_url(trace_destination: str, evaluation_id: str) -> str:
     ws_triad = extract_workspace_triad_from_trace_provider(trace_destination)
     studio_base_url = os.getenv("AI_STUDIO_BASE_URL", "https://ai.azure.com")
 
-    studio_url = f"{studio_base_url}/build/evaluation/{evaluation_id}?wsid=/subscriptions/{ws_triad.subscription_id}" \
-                 f"/resourceGroups/{ws_triad.resource_group_name}/providers/Microsoft.MachineLearningServices/" \
-                 f"workspaces/{ws_triad.workspace_name}"
+    studio_url = (
+        f"{studio_base_url}/build/evaluation/{evaluation_id}?wsid=/subscriptions/{ws_triad.subscription_id}"
+        f"/resourceGroups/{ws_triad.resource_group_name}/providers/Microsoft.MachineLearningServices/"
+        f"workspaces/{ws_triad.workspace_name}"
+    )
 
     return studio_url
 
@@ -188,7 +192,7 @@ def _trace_destination_from_project_scope(project_scope: dict) -> str:
 def _write_output(path, data_dict):
     p = Path(path)
     if os.path.isdir(path):
-        p = p/DEFAULT_EVALUATION_RESULTS_FILE_NAME
+        p = p / DEFAULT_EVALUATION_RESULTS_FILE_NAME
 
     with open(p, "w") as f:
         json.dump(data_dict, f)

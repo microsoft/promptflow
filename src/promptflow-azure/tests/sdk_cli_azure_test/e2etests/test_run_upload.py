@@ -70,7 +70,7 @@ class Local2CloudTestHelper:
 
         # check run details are actually uploaded to cloud
         if check_run_details_in_cloud:
-            run_uploader = AsyncRunUploader._from_run_operations(run=run, run_ops=pf.runs)
+            run_uploader = AsyncRunUploader._from_run_operations(run_ops=pf.runs)
             result_dict = async_run_allowing_running_loop(run_uploader._check_run_details_exist_in_cloud)
             for key, value in result_dict.items():
                 assert value is True, f"Run details {key!r} not found in cloud, run name is {run.name!r}"
@@ -274,9 +274,9 @@ class TestFlowRunUpload:
 
     @pytest.mark.skipif(condition=not pytest.is_live, reason="Bug - 3089145 Replay failed for test 'test_upload_run'")
     def test_upload_run_pf_eval_dependencies(
-            self,
-            pf: PFClient,
-            randstr: Callable[[str], str],
+        self,
+        pf: PFClient,
+        randstr: Callable[[str], str],
     ):
         # This test captures promptflow-evals dependencies on private API of promptflow.
         # In case changes are made please reach out to promptflow-evals team to update the dependencies.
@@ -298,10 +298,10 @@ class TestFlowRunUpload:
         # check the run is uploaded to cloud
         Local2CloudTestHelper.check_local_to_cloud_run(pf, run, check_run_details_in_cloud=True)
 
-        from promptflow.azure._dependencies._pf_evals import AsyncRunUploader
         from promptflow._sdk._constants import Local2Cloud
+        from promptflow.azure._dependencies._pf_evals import AsyncRunUploader
 
-        async_uploader = AsyncRunUploader._from_run_operations(run, pf.runs)
+        async_uploader = AsyncRunUploader._from_run_operations(pf.runs)
         instance_results = local_pf.runs.get_details(run, all_results=True)
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -310,6 +310,8 @@ class TestFlowRunUpload:
             instance_results.to_json(local_file, orient="records", lines=True)
 
             # overriding instance_results.jsonl file
-            remote_file = (f"{Local2Cloud.BLOB_ROOT_PROMPTFLOW}"
-                           f"/{Local2Cloud.BLOB_ARTIFACTS}/{run.name}/{Local2Cloud.FLOW_INSTANCE_RESULTS_FILE_NAME}")
+            remote_file = (
+                f"{Local2Cloud.BLOB_ROOT_PROMPTFLOW}"
+                f"/{Local2Cloud.BLOB_ARTIFACTS}/{run.name}/{Local2Cloud.FLOW_INSTANCE_RESULTS_FILE_NAME}"
+            )
             async_run_allowing_running_loop(async_uploader._upload_local_file_to_blob, local_file, remote_file)
