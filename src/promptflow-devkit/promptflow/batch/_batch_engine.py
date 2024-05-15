@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 import asyncio
 import inspect
+import os
 import signal
 import threading
 import uuid
@@ -472,7 +473,8 @@ class BatchEngine:
 
         # execute lines
         is_timeout = False
-        if isinstance(self._executor_proxy, PythonExecutorProxy):
+        should_use_async = os.environ.get("PF_BATCH_USE_ASYNC", "False").lower() == "true"
+        if not should_use_async and isinstance(self._executor_proxy, PythonExecutorProxy):
             results, is_timeout = await self._executor_proxy._exec_batch(
                 inputs_to_run,
                 output_dir,
