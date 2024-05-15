@@ -322,9 +322,9 @@ class ScriptExecutor(FlowExecutor):
         try:
             Tracer.start_tracing(line_run_id)
             output = self._func_async(**inputs)
-            # Get the result of the task if it is a task
-            # Note that if it is an async generator, it would not be a task.
-            if isinstance(output, asyncio.Task):
+            # Get the result of the output if it is an awaitable.
+            # Note that if it is an async generator, it would not be awaitable.
+            if inspect.isawaitable(output):
                 output = await output
             output = await self._stringify_generator_output_async(output) if not allow_generator_output else output
             traces = Tracer.end_tracing(line_run_id)
