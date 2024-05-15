@@ -5,12 +5,10 @@
 # flake8: noqa: F841
 
 import asyncio
-import os
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 
-os.environ["RAI_SVC_URL"] = "https://int.api.azureml-test.ms"
 from promptflow.evals.synthetic import AdversarialScenario, AdversarialSimulator
 
 
