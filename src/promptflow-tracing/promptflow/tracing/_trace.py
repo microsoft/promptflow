@@ -245,7 +245,7 @@ class TracedIterator(IteratorProxy):
 
     def __next__(self):
         try:
-            return next(self._iterator)
+            return super().__next__()
         except Exception as e:
             exception_other_than_non_stop_iteration = None
             if isinstance(e, StopIteration):
@@ -265,9 +265,8 @@ class TracedIterator(IteratorProxy):
                 handle_span_exception(self._span, exception_other_than_non_stop_iteration)
                 raise exception_other_than_non_stop_iteration
             else:
+                self._span.end()
                 raise e
-        finally:
-            self._span.end()
 
 
 class TracedAsyncIterator(AsyncIteratorProxy):
@@ -283,7 +282,7 @@ class TracedAsyncIterator(AsyncIteratorProxy):
 
     async def __anext__(self):
         try:
-            return await self._iterator.__anext__()
+            return await super().__anext__()
         except Exception as e:
             exception_other_than_non_stop_iteration = None
             if isinstance(e, StopIteration):
@@ -303,9 +302,8 @@ class TracedAsyncIterator(AsyncIteratorProxy):
                 handle_span_exception(self._span, exception_other_than_non_stop_iteration)
                 raise exception_other_than_non_stop_iteration
             else:
+                self._span.end()
                 raise e
-        finally:
-            self._span.end()
 
 
 def enrich_span_with_original_attributes(span, attributes):
