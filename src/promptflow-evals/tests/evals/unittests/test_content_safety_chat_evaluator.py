@@ -57,21 +57,25 @@ class TestChatEvaluator:
 
         per_turn_results = [
             {
-                "violence": "Safe",
+                "violence": "Very low",
                 "violence_reason": "reason1",
                 "violence_score": 0.0,
             },
             {
-                "violence": "Safe",
+                "violence": "Very low",
                 "violence_reason": "reason2",
                 "violence_score": 1.0,
             },
         ]
         aggregated = chat_eval._aggregate_results(per_turn_results)
         assert aggregated == {
-            "violence": "Safe",
+            "violence": "Very low",
             "violence_score": 0.5,
             "evaluation_per_turn": {
-                "violence": {"severity": ["Safe", "Safe"], "score": [0.0, 1.0], "reason": ["reason1", "reason2"]}
+                "violence": {
+                    "severity": ["Very low", "Very low"],
+                    "score": [0.0, 1.0],
+                    "reason": ["reason1", "reason2"],
+                }
             },
         }

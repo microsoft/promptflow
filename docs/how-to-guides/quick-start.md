@@ -36,6 +36,9 @@ model:
   parameters:
     temperature: 0.2
     max_tokens: 1024
+inputs:
+  question:
+    type: string
 sample:
   question: "What is Prompt flow?"
 ---
