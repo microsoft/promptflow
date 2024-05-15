@@ -3,7 +3,6 @@
 # ---------------------------------------------------------
 import inspect
 import re
-from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Callable, Dict, Optional, Set, Tuple
 
 import pandas as pd
@@ -338,22 +337,16 @@ def evaluate(
     use_thread_pool = kwargs.get("_use_thread_pool", True)
     code_client = CodeClient()
     if use_thread_pool:
-        with ThreadPoolExecutor() as executor:
-            futures = {}
-            for evaluator_name, evaluator in evaluators.items():
-                evaluator_info[evaluator_name] = {
-                    "client": code_client,
-                }
-                futures[evaluator_name] = executor.submit(
-                    code_client.run,
-                    flow=evaluator,
-                    evaluator_name=evaluator_name,
-                    column_mapping=evaluator_config.get(evaluator_name, evaluator_config.get("default", None)),
-                    data=data,
-                )
-
-            for evaluator_name, future in futures.items():
-                evaluator_info[evaluator_name]["run"] = future.result()
+        for evaluator_name, evaluator in evaluators.items():
+            evaluator_info[evaluator_name] = {
+                "client": code_client,
+            }
+            evaluator_info[evaluator_name]["run"] = code_client.run(
+                flow=evaluator,
+                evaluator_name=evaluator_name,
+                column_mapping=evaluator_config.get(evaluator_name, evaluator_config.get("default", None)),
+                data=data,
+            )
     else:
         for evaluator_name, evaluator in evaluators.items():
             evaluator_info[evaluator_name] = {
