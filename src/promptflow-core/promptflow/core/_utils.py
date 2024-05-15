@@ -45,8 +45,9 @@ def init_executable(*, flow_data: dict = None, flow_path: Path = None, working_d
 
         flow_dir, flow_filename = resolve_flow_path(flow_path)
         flow_data = load_yaml(flow_dir / flow_filename)
-        if not working_dir:
-            working_dir = flow_dir
+
+        # priority: code in yaml > working_dir > flow_dir
+        working_dir = Path(flow_data["code"]) if "code" in flow_data else working_dir or flow_dir
 
     from promptflow.contracts.flow import FlexFlow as ExecutableEagerFlow
     from promptflow.contracts.flow import Flow as ExecutableFlow
