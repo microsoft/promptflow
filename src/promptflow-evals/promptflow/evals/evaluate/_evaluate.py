@@ -335,7 +335,7 @@ def evaluate(
 
     evaluator_info = {}
 
-    use_thread_pool = kwargs.get("use_thread_pool", False)
+    use_thread_pool = kwargs.get("_use_thread_pool", True)
     code_client = CodeClient()
     if use_thread_pool:
         with ThreadPoolExecutor() as executor:
@@ -380,8 +380,7 @@ def evaluate(
         # Assuming after removing inputs columns, all columns are output columns
         evaluator_result_df.rename(
             columns={
-                col: f"outputs.{evaluator_name}.{col.replace('outputs.', '')}"
-                for col in evaluator_result_df.columns
+                col: f"outputs.{evaluator_name}.{col.replace('outputs.', '')}" for col in evaluator_result_df.columns
             },
             inplace=True,
         )
