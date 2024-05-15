@@ -13,7 +13,10 @@ from utils import get_harm_severity_level
 
 from promptflow.core import tool
 
-version = importlib.metadata.version("promptflow-evals")
+try:
+    version = importlib.metadata.version("promptflow-evals")
+except importlib.metadata.PackageNotFoundError:
+    version = "unknown"
 USER_AGENT = "{}/{}".format("promptflow-evals", version)
 
 
