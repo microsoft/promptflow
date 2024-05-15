@@ -74,7 +74,7 @@ class Local2CloudTestHelper:
             run_uploader._set_run(run)
             result_dict = async_run_allowing_running_loop(run_uploader._check_run_details_exist_in_cloud)
             for key, value in result_dict.items():
-                assert value is True, f"Run details {key!r} not found in cloud, run name is {run.name!r}"
+                assert value, f"Run details {key!r} not found in cloud, run name is {run.name!r}"
 
         # check run output assets are uploaded to cloud
         original_run_record = pf.runs._get_run_from_run_history(run.name, original_form=True)
