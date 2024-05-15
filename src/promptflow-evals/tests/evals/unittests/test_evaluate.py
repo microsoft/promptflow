@@ -12,7 +12,7 @@ from promptflow.evals.evaluate import evaluate
 from promptflow.evals.evaluate._evaluate import (
     _apply_column_mapping,
     _apply_target_to_data,
-    _rename_columns_maybe
+    _rename_columns_conditionally
     )
 from promptflow.evals.evaluators import F1ScoreEvaluator, GroundednessEvaluator
 
@@ -276,7 +276,7 @@ class TestEvaluate:
             'outputs.generated': ['Generaged by target'],
             'inputs.outputs.before': ['Despite prefix this column was before target.']
         })
-        df_actuals = _rename_columns_maybe(df, {'presnt_generated', 'generated'})
+        df_actuals = _rename_columns_conditionally(df, {'presnt_generated', 'generated'})
         assert_frame_equal(df_actuals.sort_index(axis=1), df_expected.sort_index(axis=1))
 
     def test_evaluate_output_path(self, evaluate_test_data_jsonl_file, tmpdir):

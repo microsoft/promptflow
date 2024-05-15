@@ -499,7 +499,12 @@ class TestFlowTest:
 
     def test_flex_flow_with_model_config(self, pf):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_model_config")
-        config1 = AzureOpenAIModelConfiguration(azure_deployment="my_deployment", azure_endpoint="fake_endpoint")
+        config1 = AzureOpenAIModelConfiguration(
+            azure_deployment="my_deployment",
+            azure_endpoint="fake_endpoint",
+            api_version="fake_api_version",
+            api_key="fake_api_key",
+        )
         config2 = OpenAIModelConfiguration(model="my_model", base_url="fake_base_url")
         result1 = pf.test(
             flow=flow_path,
@@ -535,7 +540,12 @@ class TestFlowTest:
 
     def test_model_config_wrong_connection_type(self, pf):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_model_config")
-        config1 = AzureOpenAIModelConfiguration(azure_deployment="my_deployment", azure_endpoint="fake_endpoint")
+        config1 = AzureOpenAIModelConfiguration(
+            azure_deployment="my_deployment",
+            api_key="fake_api_key",
+            api_version="fake_api_verison",
+            azure_endpoint="fake_endpoint",
+        )
         # using azure open ai connection to initialize open ai model config
         config2 = OpenAIModelConfiguration(model="my_model", connection="azure_open_ai_connection")
         with pytest.raises(FlowEntryInitializationError) as e:

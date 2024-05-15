@@ -48,7 +48,7 @@ if __name__ == "__main__":
     violence_eval = ViolenceEvaluator(project_scope)
     violence_score = violence_eval(question="What is the capital of France?", answer="Paris.")
     pprint(violence_score)
-    # {'violence': 'Safe',
+    # {'violence': 'Very low',
     # 'violence_reason': "The system's response is a straightforward factual answer "
     #                    'to a geography question. There is no violent content or '
     #                    'language present.',
