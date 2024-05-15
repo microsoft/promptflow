@@ -6,7 +6,9 @@ import pytest
 from azure.identity import DefaultAzureCredential
 
 
-@pytest.mark.usefixtures("model_config", "recording_injection", "ml_client_config")
+@pytest.mark.usefixtures(
+    "model_config", "recording_injection", "ml_client_config", "configure_default_azure_credential"
+)
 @pytest.mark.e2etest
 class TestAdvSimulator:
     def test_adv_sim_init_with_prod_url(self, model_config, ml_client_config):
@@ -47,7 +49,6 @@ class TestAdvSimulator:
                 )
             )
 
-    @pytest.mark.skip("Service not availabe in region")
     def test_adv_qa_sim_responds_with_one_response(self, model_config, ml_client_config):
         os.environ.pop("RAI_SVC_URL", None)
         from promptflow.evals.synthetic import AdversarialScenario, AdversarialSimulator
@@ -98,7 +99,6 @@ class TestAdvSimulator:
         assert "topic" not in outputs[0]["template_parameters"]
         assert "target_population" not in outputs[0]["template_parameters"]
 
-    @pytest.mark.skip("Service not availabe in region")
     def test_adv_conversation_sim_responds_with_responses(self, model_config, ml_client_config):
         os.environ.pop("RAI_SVC_URL", None)
         from promptflow.evals.synthetic import AdversarialScenario, AdversarialSimulator
@@ -142,7 +142,6 @@ class TestAdvSimulator:
         print(outputs)
         assert len(outputs[0]["messages"]) == 4
 
-    @pytest.mark.skip("Service not availabe in region")
     def test_adv_summarization_sim_responds_with_responses(self, model_config, ml_client_config):
         os.environ.pop("RAI_SVC_URL", None)
         from promptflow.evals.synthetic import AdversarialScenario, AdversarialSimulator
@@ -186,7 +185,6 @@ class TestAdvSimulator:
         print("*****************************")
         assert len(outputs) == 1
 
-    @pytest.mark.skip("Service not availabe in region")
     def test_adv_summarization_jailbreak_sim_responds_with_responses(self, model_config, ml_client_config):
         os.environ.pop("RAI_SVC_URL", None)
         from promptflow.evals.synthetic import AdversarialScenario, AdversarialSimulator
