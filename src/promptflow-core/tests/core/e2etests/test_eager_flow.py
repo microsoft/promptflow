@@ -83,9 +83,14 @@ class TestEagerFlow:
                 lambda x: x["azure_open_ai_model_config_azure_endpoint"] == "fake_endpoint",
                 {
                     "azure_open_ai_model_config": AzureOpenAIModelConfiguration(
-                        azure_deployment="my_deployment", azure_endpoint="fake_endpoint"
+                        azure_deployment="my_deployment",
+                        azure_endpoint="fake_endpoint",
+                        api_key="fake_api_key",
+                        api_version="fake_api_version",
                     ),
-                    "open_ai_model_config": OpenAIModelConfiguration(model="my_model", base_url="fake_base_url"),
+                    "open_ai_model_config": OpenAIModelConfiguration(
+                        model="my_model", base_url="fake_base_url", api_key="fake_api_key"
+                    ),
                 },
             ),
             (
