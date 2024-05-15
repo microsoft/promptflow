@@ -40,8 +40,10 @@ from promptflow._constants import ConnectionProviderConfig
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import DEFAULT_SERVE_ENGINE, PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._pf_client import PFClient
-from promptflow._sdk._utilities.chat_utils import start_chat_ui_service_monitor
-from promptflow._sdk._utilities.general_utils import generate_yaml_entry_without_delete
+from promptflow._sdk._utilities.chat_utils import (
+    generate_yaml_entry_under_flow_directory,
+    start_chat_ui_service_monitor,
+)
 from promptflow._sdk._utilities.serve_utils import find_available_port, start_flow_service
 from promptflow._utils.flow_utils import is_flex_flow
 from promptflow._utils.logger_utils import get_cli_sdk_logger
@@ -525,18 +527,20 @@ def _test_flow_multi_modal(args, pf_client):
 
         pfs_port = _invoke_pf_svc()
         serve_app_port = args.port or find_available_port()
-        flow = generate_yaml_entry_without_delete(entry=args.flow)
-        # flex flow without yaml file doesn't support /eval in chat window
-        enable_internal_features = Configuration.get_instance().is_internal_features_enabled() and flow == args.flow
-        start_chat_ui_service_monitor(
-            flow=flow,
-            serve_app_port=serve_app_port,
-            pfs_port=pfs_port,
-            url_params=list_of_dict_to_dict(args.url_params),
-            init=list_of_dict_to_dict(args.init),
-            enable_internal_features=enable_internal_features,
-            skip_open_browser=args.skip_open_browser,
-        )
+        # this is a workaround given current serve app requires flow file to be under flow directory
+        # should switch to generate_yaml_entry_without_delete in the future
+        with generate_yaml_entry_under_flow_directory(entry=args.flow) as flow:
+            # flex flow without yaml file doesn't support /eval in chat window
+            enable_internal_features = Configuration.get_instance().is_internal_features_enabled() and flow == args.flow
+            start_chat_ui_service_monitor(
+                flow=flow,
+                serve_app_port=serve_app_port,
+                pfs_port=pfs_port,
+                url_params=list_of_dict_to_dict(args.url_params),
+                init=list_of_dict_to_dict(args.init),
+                enable_internal_features=enable_internal_features,
+                skip_open_browser=args.skip_open_browser,
+            )
 
 
 def _test_flow_interactive(args, pf_client, inputs, environment_variables):

@@ -1,13 +1,15 @@
+import contextlib
 import json
 import webbrowser
+from os import PathLike
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Callable, Dict, Union
 from urllib.parse import urlencode, urlunparse
 
-from promptflow._constants import FlowLanguage
+from promptflow._constants import FLOW_FLEX_YAML, FlowLanguage
 from promptflow._sdk._constants import DEFAULT_ENCODING, PROMPT_FLOW_DIR_NAME, UX_INPUTS_INIT_KEY, UX_INPUTS_JSON
 from promptflow._sdk._service.utils.utils import encrypt_flow_path
-from promptflow._sdk._utilities.general_utils import resolve_flow_language
+from promptflow._sdk._utilities.general_utils import create_flex_flow_yaml_in_target, resolve_flow_language
 from promptflow._sdk._utilities.monitor_utils import (
     DirectoryModificationMonitorTarget,
     JsonContentMonitorTarget,
@@ -15,6 +17,7 @@ from promptflow._sdk._utilities.monitor_utils import (
 )
 from promptflow._sdk._utilities.serve_utils import CSharpServeAppHelper, PythonServeAppHelper, ServeAppHelper
 from promptflow._utils.flow_utils import resolve_flow_path
+from promptflow.exceptions import UserErrorException
 
 
 def print_log(text):
@@ -24,6 +27,33 @@ def print_log(text):
 def construct_flow_absolute_path(flow: str) -> str:
     flow_dir, flow_file = resolve_flow_path(flow)
     return (flow_dir / flow_file).absolute().resolve().as_posix()
+
+
+@contextlib.contextmanager
+def generate_yaml_entry_under_flow_directory(entry: Union[str, PathLike, Callable], code: Path = None):
+    """Generate a flex flow yaml in flow directory and will delete it."""
+    from promptflow._proxy import ProxyFactory
+
+    executor_proxy = ProxyFactory().get_executor_proxy_cls(FlowLanguage.Python)
+    if not callable(entry) and not executor_proxy.is_flex_flow_entry(entry=entry):
+        yield entry
+        return
+
+    code = code or Path(".")
+    target_path = (code / FLOW_FLEX_YAML).absolute()
+    if target_path.is_file():
+        raise UserErrorException(
+            message_format="Due to a known limitation, `pf flow test --ui` will try to create a flow.flex.yaml "
+            "in the current directory when you provide an entry as flow; "
+            "However, the file {target_path} already exists. Please use this yaml directly or move it.",
+            target_path=target_path.as_posix(),
+            privacy_info=[target_path.as_posix()],
+        )
+
+    print_log(f"Creating a flex flow yaml in {target_path}...")
+    create_flex_flow_yaml_in_target(entry, code.as_posix(), code)
+    yield target_path.as_posix()
+    target_path.unlink()
 
 
 # Todo: use base64 encode for now, will consider whether need use encryption or use db to store flow path info
