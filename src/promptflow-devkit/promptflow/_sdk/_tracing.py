@@ -20,7 +20,7 @@ from google.protobuf.json_format import MessageToJson
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.proto.collector.trace.v1.trace_service_pb2 import ExportTraceServiceRequest
-from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_ENDPOINT, OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -535,8 +535,11 @@ def setup_exporter_to_pfs() -> None:
         _logger.info("tracer provider is set with resource attributes: %s", res.attributes)
     # set exporter to PFS
     # get OTLP endpoint from environment
-    endpoint = os.getenv(OTEL_EXPORTER_OTLP_TRACES_ENDPOINT)
-    _logger.debug("environ OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: %s", endpoint)
+    otlp_endpoint = os.getenv(OTEL_EXPORTER_OTLP_ENDPOINT)
+    _logger.debug("environ OTEL_EXPORTER_OTLP_ENDPOINT: %s", otlp_endpoint)
+    otlp_traces_endpoint = os.getenv(OTEL_EXPORTER_OTLP_TRACES_ENDPOINT)
+    _logger.debug("environ OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: %s", otlp_traces_endpoint)
+    endpoint = otlp_traces_endpoint or otlp_endpoint
     if endpoint is not None:
         # create OTLP span exporter if endpoint is set
         otlp_span_exporter = OTLPSpanExporterWithTraceURL(endpoint=endpoint)
