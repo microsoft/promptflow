@@ -352,11 +352,11 @@ class TestUtils:
 
         with pytest.raises(UserErrorException) as ex:
             resolve_flow_path("./tests/test_configs/prompty", allow_prompty_dir=True)
-        assert "either flow.dag.yaml or flow.flex.yaml" in ex.value.message
+        assert "neither flow.dag.yaml nor flow.flex.yaml" in ex.value.message
 
         with pytest.raises(UserErrorException) as ex:
             resolve_flow_path("./tests/test_configs/prompty/single_prompty")
-        assert "either flow.dag.yaml or flow.flex.yaml" in ex.value.message
+        assert "neither flow.dag.yaml nor flow.flex.yaml" in ex.value.message
 
     def test_resolve_flow_language(self):
         # dag flow
