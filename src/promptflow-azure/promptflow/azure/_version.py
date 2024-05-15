@@ -7,6 +7,6 @@ import importlib.metadata
 try:
     __version__ = importlib.metadata.version("promptflow-azure")
 except BaseException:
-    __version__ = 0.0.1dev0
+    __version__ = '0.0.1.dev0'
 
 VERSION: str = __version__
