@@ -38,7 +38,7 @@ These span types share common attributes and events, which we refer to as standa
 
 ### Common Attributes and Events
 
-**Attributes**
+#### Attributes
 
 Each span in Prompt flow is enriched with a set of standard attributes that provide essential information about the span's context and purpose. The following table outlines these attributes:
 
@@ -46,21 +46,21 @@ Each span in Prompt flow is enriched with a set of standard attributes that prov
 |---|---|---|---|---|
 | framework | string | This attribute specifies the framework in which the trace was recorded. For our project, this value is consistently set to promptflow.  | promptflow | `Required` |
 | node_name | string | Denotes the name of the flow node. | chat | `Conditionally Required` if the flow is a Directed Acyclic Graph ([DAG](../concepts/concept-flows.md#dag-flow)) flow. |
-| span_type | string | Specifies the type of span, such as LLM or Flow. See [this](#span-types-specification) for details | LLM | `Required` |
+| span_type | string | Specifies the type of span, such as LLM or Flow. See [this](#span-types-specification) for details. | LLM | `Required` |
 | line_run_id | string | Unique identifier for the execution run within Prompt flow. | d23159d5-cae0-4de6-a175-295c715ce251 | `Required` |
 | function | string | The function associated with the span. | search | `Recommended` |
 | session_id | string | Unique identifier for chat sessions. | 4ea1a462-7617-439f-a40c-12a8b93f51fb | `Opt-In` |
 | referenced.line_run_id | string | Represents the line run ID that is the source of the evaluation run. | f747f7b8-983c-4bf2-95db-0ec3e33d4fd1 | `Conditionally Required` only used in evaluation runs - runs on [evaluation flow](../concepts/concept-flows.md#flow-types).|
-| batch_run_id | string | The batch run ID when in batch mode. | 61daff70-80d5-4e79-a50b-11b38bb3d344 | `Conditionally Required` only used in batch runs |
-| referenced.batch_run_id | string | Notes the batch run ID against which an evaluation flow ran. | 851b32cb-545c-421d-8e51-0a3ea66f0075 | `Conditionally Required` only used in evaluation runs |
-| line_number | int | The line number within a batch run, starting from 0. | `1` | `Conditionally Required`: Only used in batch runs |
+| batch_run_id | string | The batch run ID when in batch mode. | 61daff70-80d5-4e79-a50b-11b38bb3d344 | `Conditionally Required` only used in batch runs. |
+| referenced.batch_run_id | string | Notes the batch run ID against which an evaluation flow ran. | 851b32cb-545c-421d-8e51-0a3ea66f0075 | `Conditionally Required` only used in evaluation runs. |
+| line_number | int | The line number within a batch run, starting from 0. | `1` | `Conditionally Required` Only used in batch runs. |
 | \_\_computed\_\_.cumulative_token_count.prompt | int | Cumulative token count of child nodes for prompts. [1] | `200` | `Recommended` |
 | \_\_computed\_\_.cumulative_token_count.completion | int | Cumulative token count of child nodes for completion responses. [1] | `80` | `Recommended` |
 | \_\_computed\_\_.cumulative_token_count.total | int | Total cumulative token count for both prompts and completions. [1] | `120` | `Recommended` |
 
 **[1]:** Cumulative token counts are propagated up the span hierarchy, ensuring each span reflects the total token count of all LLM executions within its scope.
 
-**Events**
+#### Events
 
 In Prompt flow, events emitted by the Prompt flow framework follow the format below
 
@@ -79,7 +79,7 @@ Within the Prompt flow system, we have delineated several distinct span types to
 
 Beyond the standard attributes and events, each span type possesses designated fields to store pertinent information unique to its role within the system. These specialized attributes and events ensure that all relevant data is meticulously traced and available for analysis.
 
-**LLM**
+#### LLM
 
 The LLM (Large Language Model) span captures detailed execution information from calls to large language models.
 
@@ -97,7 +97,7 @@ The LLM (Large Language Model) span captures detailed execution information from
 
 >Note: OpenTelemetry currently defines several LLM-related span attributes and events as semantic conventions. We plan to align with these conventions in the future. For more information, visit [LLM Semantic Conventions](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/gen-ai/llm-spans.md).
 
-**Function**
+#### Function
 
 The Function span is a versatile default span within Prompt flow, designed to capture a wide range of general function execution information.
 
@@ -108,11 +108,11 @@ The Function span is a versatile default span within Prompt flow, designed to ca
 
 | Event | Payload Description | Payload Examples | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) |
 |---|---|---|---|
-| promptflow.prompt.template | Details the prompt template and variable information. | ```{"prompt.template":"# system:\nYou are a helpful assistant.\n\n# user:\n{{question}}","prompt.variables":"{\n "question": "What is ChatGPT?"\n}"}``` | `Conditionally Required` if the function contains prompt template formating [1] |
+| promptflow.prompt.template | Details the prompt template and variable information. | ```{"prompt.template":"# system:\nYou are a helpful assistant.\n\n# user:\n{{question}}","prompt.variables":"{\n "question": "What is ChatGPT?"\n}"}``` | `Conditionally Required` if the function contains prompt template formating. [1] |
 
 **[1]**: Template formatting is a process by resolving prompt template into prompt message, this process can happen within a function that invokes LLM call. 
 
-**Flow**
+#### Flow
 
 The Flow span encapsulates the execution details of a flow within Prompt flow.
 
@@ -120,7 +120,7 @@ The Flow span encapsulates the execution details of a flow within Prompt flow.
 |---|---|---|---|---|
 | span_type | string | Designates the span as a Flow type. | Flow | `Required` |
 
-**Embedding**
+#### Embedding
 
 The Embedding span is dedicated to recording the details of embedding calls within Prompt flow.
 
@@ -136,9 +136,9 @@ The Embedding span is dedicated to recording the details of embedding calls with
 |---|---|---|---|
 | promptflow.embedding.embeddings | Details the embeddings generated by a call. | ```[{"embedding.vector":"","embedding.text":"When does a pipeline job reuse a previous job's results in Azure Machine Learning?"}]``` | `Required` |
 
-**Retrieval**
+#### Retrieval
 
-The Retrieval span type is specifically designed to encapsulate the execution details of a retrieval task within PromptFlow.
+The Retrieval span type is specifically designed to encapsulate the execution details of a retrieval task within Prompt flow.
 
 | Attribute | Type | Description | Examples | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) |
 |---|---|---|---|---|
