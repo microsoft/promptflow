@@ -160,10 +160,15 @@ class AsyncRunUploader:
             logger.debug("Merging run artifacts jsonl files.")
             merge_jsonl_files(local_folder, temp_local_folder)
             remote_folder = f"{Local2Cloud.BLOB_ROOT_PROMPTFLOW}/{Local2Cloud.BLOB_ARTIFACTS}/{self.run.name}"
-            # upload the artifacts folder to blob
-            await self._upload_local_folder_to_blob(temp_local_folder, remote_folder)
-            # upload updated meta.json to cloud
-            await self._upload_meta_json(temp_local_folder)
+
+            await asyncio.gather(
+                *[
+                    # upload the artifacts folder to blob
+                    self._upload_local_folder_to_blob(temp_local_folder, remote_folder),
+                    # upload updated meta.json to cloud
+                    self._upload_meta_json(temp_local_folder),
+                ]
+            )
             return f"{remote_folder}/{OutputsFolderName.FLOW_ARTIFACTS}"
 
     async def _upload_meta_json(self, temp_dir: Path):
@@ -249,14 +254,19 @@ class AsyncRunUploader:
                 for line_result in instance_results:
                     f.write(json.dumps(line_result) + "\n")
             remote_file = f"{Local2Cloud.BLOB_ROOT_PROMPTFLOW}/{Local2Cloud.BLOB_ARTIFACTS}/{self.run.name}/{file_name}"
-            await self._upload_local_file_to_blob(local_file, remote_file)
 
-            # registry artifact for instance results
-            await self.artifact_client.register_artifact(
-                run_id=self.run.name,
-                datastore_name=self.datastore[CloudDatastore.DEFAULT].name,
-                relative_path=remote_file,
-                path=file_name,
+            await asyncio.gather(
+                *[
+                    # upload the instance results file to blob
+                    self._upload_local_file_to_blob(local_file, remote_file),
+                    # registry artifact for instance results
+                    self.artifact_client.register_artifact(
+                        run_id=self.run.name,
+                        datastore_name=self.datastore[CloudDatastore.DEFAULT].name,
+                        relative_path=remote_file,
+                        path=file_name,
+                    ),
+                ]
             )
 
             return remote_file
@@ -286,8 +296,8 @@ class AsyncRunUploader:
             raise UserErrorException(f"Failed to convert metrics {metrics!r} to float values. Error: {e}") from e
 
         # write metrics to metric service
-        for k, v in metrics.items():
-            await self.metric_client.log_metric(self.run.name, k, v)
+        await asyncio.gather(*[self.metric_client.log_metric(self.run.name, k, v) for k, v in metrics.items()])
+
         return metrics
 
     async def _register_assets_for_debug_info_and_flow_outputs(self):
@@ -297,24 +307,25 @@ class AsyncRunUploader:
         datastore_name = self.datastore[CloudDatastore.DEFAULT].name
 
         # register asset for debug_info
-        debug_info_asset_id = await self.asset_client.create_unregistered_output(
-            run_id=run_id,
-            datastore_name=datastore_name,
-            relative_path=remote_folder,
-            output_name=Local2Cloud.ASSET_NAME_DEBUG_INFO,
-        )
-
-        # register asset for flow_outputs
-        flow_outputs_asset_id = await self.asset_client.create_unregistered_output(
-            run_id=run_id,
-            datastore_name=datastore_name,
-            relative_path=f"{remote_folder}/{OutputsFolderName.FLOW_OUTPUTS}",
-            output_name=Local2Cloud.ASSET_NAME_FLOW_OUTPUTS,
-        )
+        tasks = [
+            self.asset_client.create_unregistered_output(
+                run_id=run_id,
+                datastore_name=datastore_name,
+                relative_path=remote_folder,
+                output_name=Local2Cloud.ASSET_NAME_DEBUG_INFO,
+            ),
+            self.asset_client.create_unregistered_output(
+                run_id=run_id,
+                datastore_name=datastore_name,
+                relative_path=f"{remote_folder}/{OutputsFolderName.FLOW_OUTPUTS}",
+                output_name=Local2Cloud.ASSET_NAME_FLOW_OUTPUTS,
+            ),
+        ]
+        results = await asyncio.gather(*tasks)
 
         outputs_info = {
-            Local2Cloud.ASSET_NAME_DEBUG_INFO: debug_info_asset_id,
-            Local2Cloud.ASSET_NAME_FLOW_OUTPUTS: flow_outputs_asset_id,
+            Local2Cloud.ASSET_NAME_DEBUG_INFO: results[0],  # debug_info_asset_id
+            Local2Cloud.ASSET_NAME_FLOW_OUTPUTS: results[1],  # flow_outputs_asset_id
         }
 
         # patch run history with debug_info and flow_outputs
@@ -334,6 +345,7 @@ class AsyncRunUploader:
                 f"Local folder {local_folder.resolve().as_posix()!r} does not exist or it's not a directory."
             )
 
+        tasks = []
         for file in local_folder.rglob("*"):
             # skip the file if it's in the ignored pattern
             skip_this_file = False
@@ -349,7 +361,9 @@ class AsyncRunUploader:
                 # Construct the blob path
                 relative_path = file.relative_to(local_folder)
                 blob_path = f"{remote_folder}/{local_folder.name}/{relative_path}"
-                await self._upload_local_file_to_blob(file, blob_path)
+                tasks.append(self._upload_local_file_to_blob(file, blob_path))
+
+        await asyncio.gather(*tasks)
 
         # return the remote folder path
         return f"{remote_folder}/{local_folder.name}"

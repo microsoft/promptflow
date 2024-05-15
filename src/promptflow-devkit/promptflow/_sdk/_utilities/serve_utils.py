@@ -16,6 +16,7 @@ from typing import Any, Dict, Generator, Optional
 
 from promptflow._constants import PROMPT_FLOW_DIR_NAME, FlowLanguage
 from promptflow._proxy._csharp_inspector_proxy import EXECUTOR_SERVICE_DLL
+from promptflow._sdk._constants import DEFAULT_SERVE_ENGINE
 from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow.exceptions import UserErrorException
 from promptflow.tracing import start_trace
@@ -63,7 +64,7 @@ class PythonServeAppHelper(ServeAppHelper):
         self._static_folder: Optional[str] = kwargs.get("static_folder", None)
         self._config = kwargs.get("config", {}) or {}
         self._environment_variables = kwargs.get("environment_variables", {}) or {}
-        self._engine = kwargs.get("engine", "flask")
+        self._engine = kwargs.get("engine", DEFAULT_SERVE_ENGINE)
 
         super().__init__(flow_file_name=flow_file_name, flow_dir=flow_dir, init=init, port=port, host=host, **kwargs)
 
