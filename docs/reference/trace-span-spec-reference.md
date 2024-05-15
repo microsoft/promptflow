@@ -53,7 +53,7 @@ Each span in Prompt flow is enriched with a set of standard attributes that prov
 | referenced.line_run_id | string | Represents the line run ID that is the source of the evaluation run. | f747f7b8-983c-4bf2-95db-0ec3e33d4fd1 | `Conditionally Required` only used in evaluation runs - runs on [evaluation flow](../concepts/concept-flows.md#flow-types).|
 | batch_run_id | string | The batch run ID when in batch mode. | 61daff70-80d5-4e79-a50b-11b38bb3d344 | `Conditionally Required` only used in batch runs. |
 | referenced.batch_run_id | string | Notes the batch run ID against which an evaluation flow ran. | 851b32cb-545c-421d-8e51-0a3ea66f0075 | `Conditionally Required` only used in evaluation runs. |
-| line_number | int | The line number within a batch run, starting from 0. | `1` | `Conditionally Required` Only used in batch runs. |
+| line_number | int | The line number within a batch run, starting from 0. | `1` | `Conditionally Required` only used in batch runs. |
 | \_\_computed\_\_.cumulative_token_count.prompt | int | Cumulative token count of child nodes for prompts. [1] | `200` | `Recommended` |
 | \_\_computed\_\_.cumulative_token_count.completion | int | Cumulative token count of child nodes for completion responses. [1] | `80` | `Recommended` |
 | \_\_computed\_\_.cumulative_token_count.total | int | Total cumulative token count for both prompts and completions. [1] | `120` | `Recommended` |
