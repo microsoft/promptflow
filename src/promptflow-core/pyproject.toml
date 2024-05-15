@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "promptflow-core"
-version = "1.11.0.dev0"
+version = "1.11.0rc3"
 description = "Prompt flow core"
 include = [
   "promptflow/core/_serving/static/*",
@@ -41,7 +41,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "<4.0,>=3.8"
-promptflow-tracing = ">=1.0.0,<2.0.0"
+promptflow-tracing = "1.11.0rc3"
 "ruamel.yaml" = ">=0.17.10,<1.0.0"  # used to generate connection templates with preserved comments
 docutils = "<0.21.post1 || >0.21.post1"  # used to generate description for tools, temporary limitation to 0.21.post1
 psutil = "*"  # promptflow/_utils/process_utils.py
