@@ -1008,7 +1008,8 @@ def create_temp_flex_flow_yaml_core(entry: Union[str, PathLike, Callable], code:
             existing_content = f.read()
     if not is_local_module(entry_string=entry, code=code):
         logger.debug(f"Entry {entry} is not found in local, it's snapshot will be empty.")
-        temp_dir = tempfile.mkdtemp()
+        # make sure run name is from entry instead of random folder name
+        temp_dir = tempfile.mkdtemp(prefix=_sanitize_python_variable_name(entry) + "_")
         flow_yaml_path = Path(temp_dir) / FLOW_FLEX_YAML
     with open(flow_yaml_path, "w", encoding=DEFAULT_ENCODING) as f:
         dump_yaml({"entry": entry}, f)
