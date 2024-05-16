@@ -13,7 +13,7 @@ import mlflow
 
 from promptflow._sdk._constants import Local2Cloud
 from promptflow._utils.async_utils import async_run_allowing_running_loop
-from promptflow.azure.operations._async_run_uploader import AsyncRunUploader
+from promptflow.azure._dependencies._pf_evals import AsyncRunUploader
 from promptflow.evals._constants import DEFAULT_EVALUATION_RESULTS_FILE_NAME
 
 LOGGER = logging.getLogger(__name__)
