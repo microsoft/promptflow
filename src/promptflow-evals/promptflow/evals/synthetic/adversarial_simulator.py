@@ -195,8 +195,7 @@ class AdversarialSimulator:
             "topic",
             "ch_template_placeholder",
         ):
-            if key in template_parameters:
-                del template_parameters[key]
+            template_parameters.pop(key, None)
 
         return {
             "template_parameters": template_parameters,

@@ -7,7 +7,7 @@ from ._violence import ViolenceEvaluator
 
 
 class ContentSafetyEvaluator:
-    def __init__(self, project_scope: dict, parallel: bool = False, credential=None):
+    def __init__(self, project_scope: dict, parallel: bool = True, credential=None):
         """
         Initialize an evaluator configured to evaluate content safetry metrics for QA scenario.
 
