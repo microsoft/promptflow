@@ -5,11 +5,9 @@ model:
   api: chat
   configuration:
     type: azure_openai
-    azure_deployment: gpt-35-turbo-0125
+    azure_deployment: gpt-35-turbo
   parameters:
     temperature: 0.2
-    response_format:
-        type: json_object
 inputs: 
   code:
     type: string

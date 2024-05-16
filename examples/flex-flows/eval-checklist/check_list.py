@@ -24,7 +24,7 @@ def check(answer: str, statement: str, model_config: AzureOpenAIModelConfigurati
         model={"configuration": model_config},
     )
     output = prompty(examples=examples, answer=answer, statement=statement)
-
+    output = json.loads(output)
     return output
 
 
@@ -75,7 +75,7 @@ if __name__ == "__main__":
     }
 
     config = AzureOpenAIModelConfiguration(
-        connection="open_ai_connection", azure_deployment="gpt-35-turbo-0125"
+        connection="open_ai_connection", azure_deployment="gpt-35-turbo"
     )
     flow = EvalFlow(config)
 
