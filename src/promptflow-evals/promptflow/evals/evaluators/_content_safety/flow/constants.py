@@ -20,3 +20,11 @@ class Tasks:
     """Defines types of annotation tasks supported by RAI Service."""
 
     CONTENT_HARM = "content harm"
+
+
+class EvaluationMetrics:
+    HATE_FAIRNESS = "hate_fairness"
+    HATE_UNFAIRNESS = "hate_unfairness"
+    VIOLENCE = "violence"
+    SELF_HARM = "self_harm"
+    SEXUAL = "sexual"
