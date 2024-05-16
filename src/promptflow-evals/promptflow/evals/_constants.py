@@ -12,4 +12,10 @@ class EvaluationMetrics:
     SEXUAL = "sexual"
 
 
+class Prefixes:
+    _INPUTS = 'inputs.'
+    _OUTPUTS = 'outputs.'
+    _TGT_OUTPUTS = '__outputs.'
+
+
 DEFAULT_EVALUATION_RESULTS_FILE_NAME = "evaluation_results.json"
