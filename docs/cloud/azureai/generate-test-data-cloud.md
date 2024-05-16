@@ -4,10 +4,10 @@ This guide will help you learn how to generate test data on Azure AI, so that yo
 
 ## Prerequisites
 
-1. Go through [local test data generation guide](https://github.com/microsoft/promptflow/blob/95dc3e4276761fa8027f0ab4223034f76ee99bf0/examples/tutorials/generate-test-data/README.md) and prepare your [test data generation flow](https://github.com/microsoft/promptflow/tree/95dc3e4276761fa8027f0ab4223034f76ee99bf0/examples/tutorials/generate-test-data/example_flow).
-2. Go to the [example_gen_test_data](https://github.com/microsoft/promptflow/tree/95dc3e4276761fa8027f0ab4223034f76ee99bf0/examples/tutorials/generate-test-data) folder and run command `pip install -r requirements_cloud.txt` to prepare local environment.
+1. Go through [local test data generation guide](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/generate-test-data/README.md) and prepare your [test data generation flow](https://github.com/microsoft/promptflow/tree/main/examples/tutorials/generate-test-data/example_flow).
+2. Go to the [example_gen_test_data](https://github.com/microsoft/promptflow/tree/main/examples/tutorials/generate-test-data) folder and run command `pip install -r requirements_cloud.txt` to prepare local environment.
 3. Prepare cloud environment.
-    - Navigate to file [conda.yml](https://github.com/microsoft/promptflow/blob/95dc3e4276761fa8027f0ab4223034f76ee99bf0/examples/tutorials/generate-test-data/conda.yml).
+    - Navigate to file [conda.yml](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/generate-test-data/conda.yml).
     - For specific document file types, you may need to install extra packages:
       - .docx - `pip install docx2txt`
       - .pdf - `pip install pypdf`
@@ -20,14 +20,14 @@ This guide will help you learn how to generate test data on Azure AI, so that yo
 5. [Create cloud AzureOpenAI or OpenAI connection](https://microsoft.github.io/promptflow/cloud/azureai/run-promptflow-in-azure-ai.html#create-necessary-connections)
 
 6. Prepare test data generation setting.
-    - Navigate to [example_gen_test_data](https://github.com/microsoft/promptflow/tree/95dc3e4276761fa8027f0ab4223034f76ee99bf0/examples/tutorials/generate-test-data) folder.
-    - Prepare `config.yml` by copying [`config.yml.example`](https://github.com/microsoft/promptflow/blob/95dc3e4276761fa8027f0ab4223034f76ee99bf0/examples/tutorials/generate-test-data/config.yml.example).
+    - Navigate to [example_gen_test_data](https://github.com/microsoft/promptflow/tree/main/examples/tutorials/generate-test-data) folder.
+    - Prepare `config.yml` by copying [`config.yml.example`](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/generate-test-data/config.yml.example).
     - Fill in configurations in the `config.yml` by following inline comment instructions.
 
 
 ## Generate test data at cloud
 For handling larger test data, you can leverage the PRS component to run flow in cloud.
-- Navigate to [example_gen_test_data](https://github.com/microsoft/promptflow/tree/95dc3e4276761fa8027f0ab4223034f76ee99bf0/examples/tutorials/generate-test-data) folder.
+- Navigate to [example_gen_test_data](https://github.com/microsoft/promptflow/tree/main/examples/tutorials/generate-test-data) folder.
 - After configuration, run the following command to generate the test data set:
   ```bash
   python -m generate-test-data.run --cloud
