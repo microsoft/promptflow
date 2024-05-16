@@ -46,7 +46,7 @@ class PromptflowServingAppBasic(ABC):
         else:
             flow_dir, flow_file_name = resolve_flow_path(self.project_path, allow_prompty_dir=True)
             # project path is also the current working directory
-            self.flow_file_path = Path(flow_file_name)
+            self.flow_file_path = flow_dir / flow_file_name
 
         self.flow = init_executable(flow_path=self.flow_file_path, working_dir=Path(self.project_path))
 
