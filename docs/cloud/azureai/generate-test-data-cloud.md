@@ -4,7 +4,7 @@ This guide will help you learn how to generate test data on Azure AI, so that yo
 
 ## Prerequisites
 
-1. Go through [local test data generation guide](https://github.com/microsoft/promptflow/blob/95dc3e4276761fa8027f0ab4223034f76ee99bf0/examples/tutorials/generate-test-data/README.md) and prepare your [test data generation flow](https://github.com/microsoft/promptflow/blob/95dc3e4276761fa8027f0ab4223034f76ee99bf0/examples/gen_test_data/example_flow/).
+1. Go through [local test data generation guide](https://github.com/microsoft/promptflow/blob/95dc3e4276761fa8027f0ab4223034f76ee99bf0/examples/tutorials/generate-test-data/README.md) and prepare your [test data generation flow](https://github.com/microsoft/promptflow/tree/95dc3e4276761fa8027f0ab4223034f76ee99bf0/examples/tutorials/generate-test-data/example_flow).
 2. Go to the [example_gen_test_data](https://github.com/microsoft/promptflow/tree/95dc3e4276761fa8027f0ab4223034f76ee99bf0/examples/tutorials/generate-test-data) folder and run command `pip install -r requirements_cloud.txt` to prepare local environment.
 3. Prepare cloud environment.
     - Navigate to file [conda.yml](https://github.com/microsoft/promptflow/blob/95dc3e4276761fa8027f0ab4223034f76ee99bf0/examples/tutorials/generate-test-data/conda.yml).
