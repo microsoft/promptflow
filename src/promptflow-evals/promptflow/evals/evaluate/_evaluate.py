@@ -337,7 +337,7 @@ def evaluate(
     _validate_columns(input_data_df, evaluators, target, evaluator_config)
 
     pf_client = PFClient(
-        config={"trace.destination": trace_destination},
+        config={"trace.destination": trace_destination} if trace_destination else None,
         user_agent=USER_AGENT,
     )
     target_run = None
