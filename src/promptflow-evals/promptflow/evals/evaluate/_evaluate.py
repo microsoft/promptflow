@@ -330,7 +330,6 @@ def evaluate(
                 evaluator_config={
                     "coherence": {
                         "answer": "${data.answer}",
-                        "context": "${data.context}",
                         "question": "${data.question}"
                     },
                     "relevance": {
