@@ -308,7 +308,7 @@ def evaluate(
 
             from promptflow.core import AzureOpenAIModelConfiguration
             from promptflow.evals.evaluate import evaluate
-            from promptflow.evals.evaluators import RelevanceEvaluator, CohereEvaluator
+            from promptflow.evals.evaluators import RelevanceEvaluator, CoherenceEvaluator
 
 
             model_config = AzureOpenAIModelConfiguration(
@@ -317,7 +317,7 @@ def evaluate(
                 azure_deployment=os.environ.get("AZURE_OPENAI_DEPLOYMENT")
             )
 
-            coherence_eval = CohereEvaluator(model_config=model_config)
+            coherence_eval = CoherenceEvaluator(model_config=model_config)
             relevance_eval = RelevanceEvaluator(model_config=model_config)
 
             path = "evaluate_test_data.jsonl"
