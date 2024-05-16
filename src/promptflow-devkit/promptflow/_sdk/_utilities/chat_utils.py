@@ -1,4 +1,5 @@
 import json
+import shutil
 from pathlib import Path
 from typing import Any, Dict
 from urllib.parse import urlencode, urlunparse
@@ -84,7 +85,6 @@ def _try_restart_service(
         )
 
     print_log("Starting serve app...")
-    print_log(f"Chat page URL will be available after service is started: {chat_page_url}")
     try:
         helper.start(skip_open_browser=skip_open_browser)
         # only open on first successful start
@@ -144,20 +144,33 @@ def start_chat_ui_service_monitor(
 ):
     # if flow is an entry, generate yaml entry without delete; if flow is a path, use it directly
     flow_file_path = generate_yaml_entry_without_delete(entry=flow)
-    if flow_file_path != flow:
+    use_entry_as_flow = flow_file_path != flow
+    if use_entry_as_flow:
         flow_dir = Path(".")
         flow_file_name = flow_file_path.name
+        # when using entry as flow, chat UI will now access ux_inputs.json and images in temp directory
+        ux_input_path = flow_file_path.parent / PROMPT_FLOW_DIR_NAME / UX_INPUTS_JSON
+
+        # so we need to copy the original ux_inputs.json to temp directory
+        origin_prompt_flow_dir = flow_dir / PROMPT_FLOW_DIR_NAME
+        if origin_prompt_flow_dir.is_dir():
+            # TODO: skip files that no need to copy, like logs for flow run
+            shutil.copytree(origin_prompt_flow_dir, flow_file_path.parent / PROMPT_FLOW_DIR_NAME)
     else:
         flow_dir, flow_file_name = resolve_flow_path(flow, allow_prompty_dir=True)
         flow_file_path = flow_dir / flow_file_name
+        ux_input_path = flow_dir / PROMPT_FLOW_DIR_NAME / UX_INPUTS_JSON
+        origin_prompt_flow_dir = None
 
-    ux_input_path = flow_dir / PROMPT_FLOW_DIR_NAME / UX_INPUTS_JSON
     update_init_in_ux_inputs(ux_input_path=ux_input_path, flow_file_name=flow_file_name, init=init)
 
     # show url for chat UI
     url_params["serve_app_port"] = serve_app_port
     if "enable_internal_features" not in url_params:
-        url_params["enable_internal_features"] = "true" if enable_internal_features else "false"
+        # /eval is not supported in chat window when using entry as a flow for now
+        url_params["enable_internal_features"] = (
+            "true" if enable_internal_features and not use_entry_as_flow else "false"
+        )
     chat_page_url = construct_chat_page_url(
         # Chat UI now doesn't support as_posix in windows
         str(flow_file_path),
@@ -192,6 +205,8 @@ def start_chat_ui_service_monitor(
                 )
             )
 
+    print_log(f"Chat page URL will be available after service is started: {chat_page_url}")
+
     monitor = Monitor(
         targets=targets,
         target_callback=_try_restart_service,
@@ -216,3 +231,6 @@ def start_chat_ui_service_monitor(
             serve_app_helper, _ = monitor.last_callback_result
             serve_app_helper.terminate()
         print_log("Stopped monitor and attached serve app.")
+    finally:
+        if use_entry_as_flow:
+            shutil.copytree(flow_file_path.parent / PROMPT_FLOW_DIR_NAME, origin_prompt_flow_dir, dirs_exist_ok=True)

@@ -524,8 +524,7 @@ def _test_flow_multi_modal(args, pf_client, environment_variables):
 
         pfs_port = _invoke_pf_svc()
         serve_app_port = args.port or find_available_port()
-        # flex flow without yaml file doesn't support /eval in chat window
-        enable_internal_features = Configuration.get_instance().is_internal_features_enabled() and flow == args.flow
+        enable_internal_features = Configuration.get_instance().is_internal_features_enabled()
         start_chat_ui_service_monitor(
             flow=args.flow,
             serve_app_port=serve_app_port,
