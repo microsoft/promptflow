@@ -36,6 +36,7 @@ def create_app(**kwargs):
         from promptflow.core._serving.v2.app import PromptFlowServingAppV2
 
         logger = LoggerFactory.get_logger("pfserving-app-v2", target_stdout=True)
+        # TODO: support specify flow file path in fastapi app
         app = PromptFlowServingAppV2(docs_url=None, redoc_url=None, logger=logger, **kwargs)  # type: ignore
         # enable auto-instrumentation if customer installed opentelemetry-instrumentation-fastapi
         try:
