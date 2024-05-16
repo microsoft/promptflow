@@ -5,12 +5,17 @@ import inspect
 import re
 from typing import Any, Callable, Dict, Optional, Set, Tuple
 
+import numpy as np
 import pandas as pd
 
 from promptflow._sdk._constants import LINE_NUMBER
 from promptflow.client import PFClient
 
-from .._constants import Prefixes
+from .._constants import (
+    CONTENT_SAFETY_DEFECT_RATE_THRESHOLD_DEFAULT,
+    EvaluationMetrics,
+    Prefixes
+)
 from .._user_agent import USER_AGENT
 from ._code_client import CodeClient
 from ._utils import (
@@ -21,10 +26,48 @@ from ._utils import (
     )
 
 
-def _calculate_mean(df) -> Dict[str, float]:
-    df.rename(columns={col: col.replace(Prefixes._OUTPUTS, "") for col in df.columns}, inplace=True)
+def _aggregate_metrics(df, evaluators) -> Dict[str, float]:
+    df.rename(columns={col: col.replace("outputs.", "") for col in df.columns}, inplace=True)
+
+    # Calculate defect rates for content safety metrics
+    content_safety_metrics = [
+        EvaluationMetrics.SEXUAL,
+        EvaluationMetrics.SELF_HARM,
+        EvaluationMetrics.HATE_UNFAIRNESS,
+        EvaluationMetrics.VIOLENCE,
+    ]
+    content_safety_cols = []
+    for col in df.columns:
+        evaluator_name = col.split(".")[0]
+        metric_name = col.split(".")[1]
+        if evaluator_name in evaluators:
+            # Check the namespace of the evaluator
+            module = inspect.getmodule(evaluators[evaluator_name])
+            if (
+                module
+                and module.__name__.startswith("promptflow.evals.evaluators.")
+                and metric_name.endswith("_score")
+                and metric_name.replace("_score", "") in content_safety_metrics
+            ):
+                content_safety_cols.append(col)
+
+    content_safety_df = df[content_safety_cols]
+    defect_rates = {}
+    for col in content_safety_df.columns:
+        defect_rate_name = col.replace("_score", "_defect_rate")
+        defect_rates[defect_rate_name] = round(
+            np.sum(content_safety_df[col] >= CONTENT_SAFETY_DEFECT_RATE_THRESHOLD_DEFAULT)
+            / len(content_safety_df[col]),
+            2,
+        )
+
+    # For rest of metrics, we will calculate mean
+    df.drop(columns=content_safety_cols, inplace=True)
     mean_value = df.mean(numeric_only=True)
-    return mean_value.to_dict()
+    metrics = mean_value.to_dict()
+
+    metrics.update(defect_rates)
+    return metrics
 
 
 def _validate_input_data_for_evaluator(evaluator, evaluator_name, df_data, is_target_fn=False):
@@ -340,7 +383,7 @@ def evaluate(
     input_data_df = _rename_columns_conditionally(input_data_df, target_generated_columns)
 
     result_df = pd.concat([input_data_df, evaluators_result_df], axis=1, verify_integrity=True)
-    metrics = _calculate_mean(evaluators_result_df)
+    metrics = _aggregate_metrics(evaluators_result_df, evaluators)
 
     studio_url = _log_metrics_and_instance_results(
         metrics, result_df, trace_destination, target_run, pf_client, data, evaluation_name

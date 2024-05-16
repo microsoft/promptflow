@@ -8,7 +8,7 @@ import numpy as np
 import requests
 from azure.core.credentials import TokenCredential
 from azure.identity import DefaultAzureCredential
-from constants import RAIService, Tasks
+from constants import EvaluationMetrics, RAIService, Tasks
 from utils import get_harm_severity_level
 
 from promptflow.core import tool
@@ -76,8 +76,8 @@ def parse_response(batch_response: List[dict], metric_name: str) -> List[List[di
     # Fix the metric name if it's "hate_fairness"
     # Eventually we will remove this fix once the RAI service is updated
     key = metric_name
-    if key == "hate_fairness":
-        key = "hate_unfairness"
+    if key == EvaluationMetrics.HATE_FAIRNESS:
+        key = EvaluationMetrics.HATE_UNFAIRNESS
 
     result = {key: np.nan, key + "_score": np.nan, key + "_reason": ""}
 

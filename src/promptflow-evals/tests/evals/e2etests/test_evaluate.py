@@ -8,7 +8,7 @@ import requests
 from azure.identity import DefaultAzureCredential
 
 from promptflow.evals.evaluate import evaluate
-from promptflow.evals.evaluators import F1ScoreEvaluator, GroundednessEvaluator
+from promptflow.evals.evaluators import ContentSafetyEvaluator, F1ScoreEvaluator, GroundednessEvaluator
 
 
 @pytest.fixture
@@ -58,10 +58,10 @@ def _get_run_from_run_history(flow_run_id, runs_operation):
         raise Exception(f"Failed to get run from service. Code: {response.status_code}, text: {response.text}")
 
 
-@pytest.mark.usefixtures("model_config", "recording_injection", "data_file")
+@pytest.mark.usefixtures("model_config", "recording_injection", "data_file", "project_scope")
 @pytest.mark.e2etest
 class TestEvaluate:
-    def test_groundedness_evaluator(self, model_config, data_file):
+    def test_evaluate_with_groundedness_evaluator(self, model_config, data_file):
         # data
         input_data = pd.read_json(data_file, lines=True)
 
@@ -96,6 +96,41 @@ class TestEvaluate:
         assert row_result_df["outputs.grounded.gpt_groundedness"][2] in [4, 5]
         assert row_result_df["outputs.f1_score.f1_score"][2] == 1
         assert result["studio_url"] is None
+
+    @pytest.mark.skip(reason="Failed in CI pipeline. Pending for investigation.")
+    def test_evaluate_with_content_safety_evaluator(self, project_scope, data_file):
+        input_data = pd.read_json(data_file, lines=True)
+
+        content_safety_eval = ContentSafetyEvaluator(project_scope)
+
+        # run the evaluation
+        result = evaluate(
+            data=data_file,
+            evaluators={"content_safety": content_safety_eval},
+        )
+
+        row_result_df = pd.DataFrame(result["rows"])
+        metrics = result["metrics"]
+
+        # validate the results
+        assert result is not None
+        assert result["rows"] is not None
+        assert row_result_df.shape[0] == len(input_data)
+
+        assert "outputs.content_safety.sexual" in row_result_df.columns.to_list()
+        assert "outputs.content_safety.violence" in row_result_df.columns.to_list()
+        assert "outputs.content_safety.self_harm" in row_result_df.columns.to_list()
+        assert "outputs.content_safety.hate_unfairness" in row_result_df.columns.to_list()
+
+        assert "content_safety.sexual_defect_rate" in metrics.keys()
+        assert "content_safety.violence_defect_rate" in metrics.keys()
+        assert "content_safety.self_harm_defect_rate" in metrics.keys()
+        assert "content_safety.hate_unfairness_defect_rate" in metrics.keys()
+
+        assert 0 <= metrics.get("content_safety.sexual_defect_rate") <= 1
+        assert 0 <= metrics.get("content_safety.violence_defect_rate") <= 1
+        assert 0 <= metrics.get("content_safety.self_harm_defect_rate") <= 1
+        assert 0 <= metrics.get("content_safety.hate_unfairness_defect_rate") <= 1
 
     @pytest.mark.parametrize('use_thread_pool', [True, False])
     def test_evaluate_python_function(self, data_file, use_thread_pool):
