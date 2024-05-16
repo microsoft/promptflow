@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import inspect
 import json
 import logging
 from concurrent.futures.thread import ThreadPoolExecutor
@@ -9,13 +10,13 @@ import pandas as pd
 
 from promptflow.evals.evaluate._utils import load_jsonl
 
+
 LOGGER = logging.getLogger(__name__)
 
 
 class CodeRun:
-    def __init__(self, run, column_mapping, input_data, evaluator_name=None, **kwargs):
+    def __init__(self, run, input_data, evaluator_name=None, **kwargs):
         self.run = run
-        self.column_mapping = column_mapping
         self.evaluator_name = evaluator_name if evaluator_name is not None else ""
         self.input_data = input_data
 
@@ -30,12 +31,13 @@ class CodeClient:
     def __init__(self):
         self._thread_pool = ThreadPoolExecutor(thread_name_prefix="evaluators_thread")
 
-    def _calculate_metric(self, evaluator, input_df, column_mapping, evaluator_name):
+    def _calculate_metric(self, evaluator, input_df, evaluator_name):
         row_metric_futures = []
         row_metric_results = []
-        input_df = input_df.rename(columns={v: k for k, v in column_mapping.items()}) if column_mapping else input_df
+        parameters = {param.name for param in inspect.signature(evaluator).parameters.values()}
         for value in input_df.to_dict("records"):
-            row_metric_futures.append(self._thread_pool.submit(evaluator, **value))
+            filtered_values = {k: v for k, v in value.items() if k in parameters}
+            row_metric_futures.append(self._thread_pool.submit(evaluator, **filtered_values))
 
         for row_number, row_metric_future in enumerate(row_metric_futures):
             try:
@@ -58,17 +60,17 @@ class CodeClient:
             verify_integrity=True,
         )
 
-    def run(self, flow, data, evaluator_name=None, column_mapping=None, **kwargs):
-        try:
-            json_data = load_jsonl(data)
-        except json.JSONDecodeError:
-            raise ValueError(f"Failed to parse data as JSON: {data}. Please provide a valid json lines data.")
+    def run(self, flow, data, evaluator_name=None, **kwargs):
+        input_df = data
+        if not isinstance(input_df, pd.DataFrame):
+            try:
+                json_data = load_jsonl(data)
+            except json.JSONDecodeError:
+                raise ValueError(f"Failed to parse data as JSON: {data}. Please provide a valid json lines data.")
 
-        input_df = pd.DataFrame(json_data)
-        if column_mapping:
-            input_df.rename(columns={v: k for k, v in column_mapping.items()}, inplace=True)
-        eval_future = self._thread_pool.submit(self._calculate_metric, flow, input_df, column_mapping, evaluator_name)
-        return CodeRun(run=eval_future, column_mapping=column_mapping, input_data=data, evaluator_name=evaluator_name)
+            input_df = pd.DataFrame(json_data)
+        eval_future = self._thread_pool.submit(self._calculate_metric, flow, input_df, evaluator_name)
+        return CodeRun(run=eval_future, input_data=data, evaluator_name=evaluator_name)
 
     def get_details(self, run, all_results=False):
         result_df = run.run.result(timeout=60 * 60)
