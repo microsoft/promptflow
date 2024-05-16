@@ -156,7 +156,8 @@ def start_chat_ui_service_monitor(
     if "enable_internal_features" not in url_params:
         url_params["enable_internal_features"] = "true" if enable_internal_features else "false"
     chat_page_url = construct_chat_page_url(
-        flow_file_path.as_posix(),
+        # Chat UI now doesn't support as_posix in windows
+        str(flow_file_path),
         pfs_port,
         url_params=url_params,
     )
