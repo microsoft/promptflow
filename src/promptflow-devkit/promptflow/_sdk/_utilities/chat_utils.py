@@ -6,7 +6,11 @@ from urllib.parse import urlencode, urlunparse
 from promptflow._constants import FlowLanguage
 from promptflow._sdk._constants import DEFAULT_ENCODING, PROMPT_FLOW_DIR_NAME, UX_INPUTS_INIT_KEY, UX_INPUTS_JSON
 from promptflow._sdk._service.utils.utils import encrypt_flow_path
-from promptflow._sdk._utilities.general_utils import generate_yaml_entry_without_delete, resolve_flow_language
+from promptflow._sdk._utilities.general_utils import (
+    _get_additional_includes,
+    generate_yaml_entry_without_delete,
+    resolve_flow_language,
+)
 from promptflow._sdk._utilities.monitor_utils import (
     DirectoryModificationMonitorTarget,
     FileModificationMonitorTarget,
@@ -15,7 +19,6 @@ from promptflow._sdk._utilities.monitor_utils import (
 )
 from promptflow._sdk._utilities.serve_utils import CSharpServeAppHelper, PythonServeAppHelper, ServeAppHelper
 from promptflow._utils.flow_utils import resolve_flow_path
-from promptflow._utils.yaml_utils import load_yaml
 
 
 def print_log(text):
@@ -173,8 +176,7 @@ def start_chat_ui_service_monitor(
         ),
     ]
 
-    flow_data = load_yaml(flow_file_path)
-    for additional_includes in flow_data.get("additional_includes", []):
+    for additional_includes in _get_additional_includes(flow_file_path):
         target = Path(additional_includes)
         if target.is_file():
             targets.append(

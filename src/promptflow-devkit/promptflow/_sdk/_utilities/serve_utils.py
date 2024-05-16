@@ -143,6 +143,8 @@ class CSharpServeAppHelper(ServeAppHelper):
         chat_page_url=None,
         **kwargs,
     ):
+        self._chat_on_serve = chat_page_url is None
+
         super().__init__(
             flow_file_path=flow_file_path,
             flow_dir=flow_dir,
@@ -194,8 +196,10 @@ class CSharpServeAppHelper(ServeAppHelper):
             pass
 
     def start(self, skip_open_browser: bool = True):
-        # there is no chat UI in Csharp service for now
-        if not skip_open_browser and f"http://{self._host}:{self._port}" != self._chat_page_url:
+        # chat_page_url will be pointed to serve app url if not provided
+        # however, it's not supported in CSharp service for now
+        # so we skip opening browser if so; but keep the logic to open browser for `pf flow test --ui`
+        if not skip_open_browser and not self._chat_on_serve:
             logger.info(f"Opening browser {self._chat_page_url}...")
             webbrowser.open(self._chat_page_url)
         with self._construct_start_up_command() as command:
