@@ -35,7 +35,13 @@ def construct_chat_page_url(flow_path, port, url_params):
 
 
 def _try_restart_service(
-    *, last_result: ServeAppHelper, flow_file_name: str, flow_dir: Path, serve_app_port: int, ux_input_path: Path
+    *,
+    last_result: ServeAppHelper,
+    flow_file_name: str,
+    flow_dir: Path,
+    serve_app_port: int,
+    ux_input_path: Path,
+    environment_variables: Dict[str, str],
 ):
     if last_result is not None:
         print_log("Changes detected, stopping current serve app...")
@@ -57,6 +63,7 @@ def _try_restart_service(
             flow_dir=flow_dir,
             init=init,
             port=serve_app_port,
+            environment_variables=environment_variables,
         )
     else:
         helper = CSharpServeAppHelper(
@@ -64,6 +71,7 @@ def _try_restart_service(
             flow_dir=flow_dir,
             init=init,
             port=serve_app_port,
+            environment_variables=environment_variables,
         )
 
     print_log("Starting serve app...")
@@ -119,6 +127,7 @@ def start_chat_ui_service_monitor(
     init: Dict[str, Any],
     enable_internal_features: bool = False,
     skip_open_browser: bool = False,
+    environment_variables: Dict[str, str] = None,
 ):
     flow_dir, flow_file_name = resolve_flow_path(flow, allow_prompty_dir=True)
 
@@ -155,6 +164,7 @@ def start_chat_ui_service_monitor(
             "flow_dir": flow_dir,
             "serve_app_port": int(serve_app_port),
             "ux_input_path": ux_input_path,
+            "environment_variables": environment_variables,
         },
         inject_last_callback_result=True,
         extra_logic_in_loop=touch_local_pfs,

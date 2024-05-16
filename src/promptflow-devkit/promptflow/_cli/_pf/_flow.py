@@ -465,7 +465,7 @@ def test_flow(args):
         _test_flow_experiment(args, pf_client, inputs, environment_variables)
         return
     if args.multi_modal or args.ui:
-        _test_flow_multi_modal(args, pf_client)
+        _test_flow_multi_modal(args, pf_client, environment_variables)
         return
     if args.interactive:
         _test_flow_interactive(args, pf_client, inputs, environment_variables)
@@ -492,7 +492,7 @@ def _build_inputs_for_flow_test(args):
     return inputs
 
 
-def _test_flow_multi_modal(args, pf_client):
+def _test_flow_multi_modal(args, pf_client, environment_variables):
     """Test flow with multi modality mode."""
     if str(os.getenv(PF_CHAT_UI_ENABLE_STREAMLIT, "false")).lower() == "true":
         from promptflow._sdk._load_functions import load_flow
@@ -536,6 +536,7 @@ def _test_flow_multi_modal(args, pf_client):
             init=list_of_dict_to_dict(args.init),
             enable_internal_features=enable_internal_features,
             skip_open_browser=args.skip_open_browser,
+            environment_variables=environment_variables,
         )
 
 
