@@ -43,6 +43,7 @@ class RunSubmitter:
         if upload_to_cloud:
             logger.info(f"Upload run to cloud: {upload_to_cloud}")
         with ThreadPoolExecutor() as executor:
+            # if upload to cloud, initialize async run uploader simultaneously with run execution to improve performance
             tasks = [
                 executor.submit(self._run_bulk, run=run, stream=stream, **kwargs),
                 executor.submit(self._initialize_async_run_uploader, run=run, upload_to_cloud=upload_to_cloud),
