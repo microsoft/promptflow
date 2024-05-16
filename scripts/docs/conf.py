@@ -70,6 +70,8 @@ linkcheck_ignore = [
     "https://portal.azure.com/#create/Microsoft.CognitiveServicesTextAnalytics",  # sphinx recognizes #create as an anchor while it's not. # noqa: E501
     "https://ms.portal.azure.com/#view/Microsoft_Azure_Marketplace/MarketplaceOffersBlade/searchQuery/machine%20learning",  # noqa: E501
     "https://github.com/microsoft/promptflow/blob/main/examples/flex-flows/chat-async-stream/chat-stream-with-async-flex-flow.ipynb",  # noqa: E501
+    "https://github.com/microsoft/promptflow/blob/main/examples/tutorials/develop-copilot-with-promptflow/develop-copilot-with-promptflow.md",  # noqa: E501
+    "https://github.com/microsoft/promptflow/blob/main/examples/tutorials/generate-test-data/README.md",  # noqa: E501
 ]
 
 linkcheck_exclude_documents = [
