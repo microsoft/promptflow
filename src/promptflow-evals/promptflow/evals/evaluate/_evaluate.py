@@ -11,19 +11,15 @@ import pandas as pd
 from promptflow._sdk._constants import LINE_NUMBER
 from promptflow.client import PFClient
 
-from .._constants import (
-    CONTENT_SAFETY_DEFECT_RATE_THRESHOLD_DEFAULT,
-    EvaluationMetrics,
-    Prefixes
-)
+from .._constants import CONTENT_SAFETY_DEFECT_RATE_THRESHOLD_DEFAULT, EvaluationMetrics, Prefixes
 from .._user_agent import USER_AGENT
 from ._code_client import CodeClient
 from ._utils import (
+    _apply_column_mapping,
     _log_metrics_and_instance_results,
     _trace_destination_from_project_scope,
     _write_output,
-    _apply_column_mapping
-    )
+)
 
 
 def _aggregate_metrics(df, evaluators) -> Dict[str, float]:
@@ -139,8 +135,7 @@ def _validate_columns(
     """
     if target:
         if any(c.startswith(Prefixes._TGT_OUTPUTS) for c in df.columns):
-            raise ValueError('The column cannot start from '
-                             f'"{Prefixes._TGT_OUTPUTS}" if target was defined.')
+            raise ValueError("The column cannot start from " f'"{Prefixes._TGT_OUTPUTS}" if target was defined.')
         # If the target function is given, it may return
         # several columns and hence we cannot check the availability of columns
         # without knowing target function semantics.
@@ -185,8 +180,9 @@ def _apply_target_to_data(
     )
     target_output = pf_client.runs.get_details(run, all_results=True)
     # Remove input and output prefix
-    generated_columns = {col[
-        len(Prefixes._OUTPUTS) :] for col in target_output.columns if col.startswith(Prefixes._OUTPUTS)}
+    generated_columns = {
+        col[len(Prefixes._OUTPUTS) :] for col in target_output.columns if col.startswith(Prefixes._OUTPUTS)
+    }
     # Sort output by line numbers
     target_output.set_index(f"inputs.{LINE_NUMBER}", inplace=True)
     target_output.sort_index(inplace=True)
@@ -325,32 +321,21 @@ def evaluate(
         _validate_columns(input_data_df, evaluators, target=None, evaluator_config=evaluator_config)
 
     evaluator_info = {}
-
     use_thread_pool = kwargs.get("_use_thread_pool", True)
-    code_client = CodeClient()
-    if use_thread_pool:
-        for evaluator_name, evaluator in evaluators.items():
-            evaluator_info[evaluator_name] = {
-                "client": code_client,
-            }
-            evaluator_info[evaluator_name]["run"] = code_client.run(
-                flow=evaluator,
-                column_mapping=evaluator_config.get(evaluator_name, evaluator_config.get("default", None)),
-                evaluator_name=evaluator_name,
-                data=input_data_df,
-            )
-    else:
-        for evaluator_name, evaluator in evaluators.items():
-            evaluator_info[evaluator_name] = {
-                "client": pf_client,
-            }
-            evaluator_info[evaluator_name]["run"] = pf_client.run(
-                flow=evaluator,
-                run=target_run,
-                column_mapping=evaluator_config.get(evaluator_name, evaluator_config.get("default", None)),
-                data=data,
-                stream=True,
-            )
+    batch_run_client = CodeClient() if use_thread_pool else pf_client
+
+    for evaluator_name, evaluator in evaluators.items():
+        evaluator_info[evaluator_name] = {
+            "client": batch_run_client,
+        }
+        evaluator_info[evaluator_name]["run"] = batch_run_client.run(
+            flow=evaluator,
+            run=target_run,
+            evaluator_name=evaluator_name,
+            column_mapping=evaluator_config.get(evaluator_name, evaluator_config.get("default", None)),
+            data=data,
+            stream=True,
+        )
 
     evaluators_result_df = None
     for evaluator_name, evaluator_info in evaluator_info.items():
