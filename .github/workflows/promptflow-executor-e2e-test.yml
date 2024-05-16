@@ -151,7 +151,7 @@ jobs:
         # numexpr is required by langchain in e2e tests.
         pip install numexpr
         python scripts/building/run_coverage_tests.py `
-          -p ${{ env.testWorkingDirectory }} `
+          -p ../${{ env.testWorkingDirectory }} `
           -t ${{ env.testWorkingDirectory }}/tests/executor/e2etests `
           -l eastus `
           -m "all" `
