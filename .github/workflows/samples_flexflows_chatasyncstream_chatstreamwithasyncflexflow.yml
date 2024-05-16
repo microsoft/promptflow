@@ -3,13 +3,13 @@
 # Any manual changes to this file may cause incorrect behavior.
 # Any manual changes will be overwritten if the code is regenerated.
 
-name: samples_flexflows_chatasyncstream_chatstreamwithflexflow
+name: samples_flexflows_chatasyncstream_chatstreamwithasyncflexflow
 on:
   schedule:
-    - cron: "29 19 * * *" # Every day starting at 3:29 BJT
+    - cron: "11 20 * * *" # Every day starting at 4:11 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/flex-flows/chat-async-stream/**, examples/*requirements.txt, .github/workflows/samples_flexflows_chatasyncstream_chatstreamwithflexflow.yml ]
+    paths: [ examples/flex-flows/chat-async-stream/**, examples/*requirements.txt, .github/workflows/samples_flexflows_chatasyncstream_chatstreamwithasyncflexflow.yml ]
   workflow_dispatch:
 
 env:
@@ -20,7 +20,7 @@ permissions:
   contents: read
 
 jobs:
-  samples_flexflows_chatasyncstream_chatstreamwithflexflow:
+  samples_flexflows_chatasyncstream_chatstreamwithasyncflexflow:
     runs-on: ubuntu-latest
     environment:
       internal
@@ -79,7 +79,7 @@ jobs:
       - name: Test Notebook
         working-directory: examples/flex-flows/chat-async-stream
         run: |
-          papermill -k python chat-stream-with-flex-flow.ipynb chat-stream-with-flex-flow.output.ipynb
+          papermill -k python chat-stream-with-async-flex-flow.ipynb chat-stream-with-async-flex-flow.output.ipynb
       - name: Upload artifact
         if: ${{ always() }}
         uses: actions/upload-artifact@v3

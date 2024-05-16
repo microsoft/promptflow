@@ -1,5 +1,5 @@
 # Chat stream async
-A chat flow defined using class entry that return output in stream mode. It demonstrates how to create a chatbot that can remember previous interactions and use the conversation history to generate next message.
+A chat flow defined using async class entry that return output in stream mode. It demonstrates how to create a chatbot that can remember previous interactions and use the conversation history to generate next message.
 
 ## Prerequisites
 
