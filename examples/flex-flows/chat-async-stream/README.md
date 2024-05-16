@@ -75,11 +75,6 @@ pf flow test --flow . --init init.json --inputs question="What's Azure Machine L
 pf flow test --flow . --init init.json --inputs question="What is ChatGPT? Please explain with consise statement."
 ```
 
-- Test flow with UI
-```shell
-pf flow test --flow . --init init.json --ui
-```
-
 - Create run with multiple lines data
 
 ```bash
@@ -96,7 +91,7 @@ pf run list
 
 # get a sample run name
 
-name=$(pf run list -r 10 | jq '.[] | select(.name | contains("chat_stream_")) | .name'| head -n 1 | tr -d '"')
+name=$(pf run list -r 10 | jq '.[] | select(.name | contains("chat_async_stream_")) | .name'| head -n 1 | tr -d '"')
 # show specific run detail
 pf run show --name $name
 
