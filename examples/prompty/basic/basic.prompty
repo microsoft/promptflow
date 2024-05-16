@@ -9,6 +9,9 @@ model:
     parameters:
         max_tokens: 128
         temperature: 0.2
+inputs:
+  question:
+    type: string
 sample:
   "question": "Who is the most famous person in the world?"
 ---
