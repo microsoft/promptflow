@@ -39,11 +39,11 @@ def batch_run_flow(flow_folder: str, flow_input_data: str, flow_batch_run_size: 
         for k, v in node_val.items():
             # need to double quote the value to make sure the value can be passed correctly
             # when the value contains special characters like "<".
-            connections_str += f"{node_name}.{k}=\"{v}\" "
+            connections_str += f'{node_name}.{k}="{v}" '
     connections_str = connections_str.rstrip()
 
     cmd = (
-        f"pf run create --flow \"{flow_folder}\" --data \"{flow_input_data}\" --name {run_name} "
+        f'pf run create --flow "{flow_folder}" --data "{flow_input_data}" --name {run_name} '
         f"--environment-variables PF_WORKER_COUNT='{flow_batch_run_size}' PF_BATCH_METHOD='spawn' "
         f"--column-mapping {TEXT_CHUNK}='${{data.text_chunk}}' --connections {connections_str} --debug"
     )
