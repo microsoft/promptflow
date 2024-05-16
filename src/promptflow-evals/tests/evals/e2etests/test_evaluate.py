@@ -141,7 +141,7 @@ class TestEvaluate:
         result = evaluate(
             data=data_file,
             evaluators={"answer": answer_evaluator},
-            use_thread_pool=use_thread_pool
+            _use_thread_pool=use_thread_pool
         )
 
         row_result_df = pd.DataFrame(result["rows"])
