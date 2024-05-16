@@ -2015,6 +2015,17 @@ class TestFlowRun:
         assert not (snapshot_folder / "ignore_a").exists()
         assert not (snapshot_folder / "ignore_b").exists()
 
+    def test_installed_entry_without_snapshot(self, pf):
+        run = pf.run(
+            flow=_parse_otel_span_status_code,
+            data=f"{DATAS_DIR}/simple_eager_flow_data_numbers.jsonl",
+            column_mapping={"value": "${data.value}"},
+        )
+        snapshot_folder = run._output_path / "snapshot"
+        # check snapshot folder will only contain flow.flex.yaml
+        assert len(os.listdir(snapshot_folder)) == 1
+        assert (snapshot_folder / "flow.flex.yaml").exists()
+
 
 def assert_batch_run_result(run: Run, pf: PFClient, assert_func):
     assert run.status == "Completed"

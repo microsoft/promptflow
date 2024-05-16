@@ -28,11 +28,6 @@ class AzureOpenAIModelConfiguration(ModelConfiguration):
         self._type = ConnectionType.AZURE_OPEN_AI
         if any([self.azure_endpoint, self.api_key, self.api_version]) and self.connection:
             raise InvalidConnectionError("Cannot configure model config and connection at the same time.")
-        if not self.connection and not all([self.azure_endpoint, self.api_key, self.api_version]):
-            raise InvalidConnectionError(
-                "AzureOpenAIModel parameters are incomplete. Please ensure azure_endpoint, "
-                "api_version, and api_key are provided."
-            )
 
     @classmethod
     def from_connection(cls, connection: AzureOpenAIConnection, azure_deployment: str):
@@ -64,8 +59,6 @@ class OpenAIModelConfiguration(ModelConfiguration):
         self._type = ConnectionType.OPEN_AI
         if any([self.base_url, self.api_key, self.organization]) and self.connection:
             raise InvalidConnectionError("Cannot configure model config and connection at the same time.")
-        if not self.connection and not self.base_url:
-            raise InvalidConnectionError("OpenAIModel parameters are incomplete. Please ensure api_key are provided.")
 
     @classmethod
     def from_connection(cls, connection: OpenAIConnection, model: str):

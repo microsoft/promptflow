@@ -38,7 +38,7 @@ from promptflow._cli._pf._init_entry_generators import (
 from promptflow._cli._utils import _copy_to_flow, activate_action, confirm, inject_sys_path, list_of_dict_to_dict
 from promptflow._constants import ConnectionProviderConfig
 from promptflow._sdk._configuration import Configuration
-from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
+from promptflow._sdk._constants import DEFAULT_SERVE_ENGINE, PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._utilities.chat_utils import start_chat_ui_service_monitor
 from promptflow._sdk._utilities.general_utils import generate_yaml_entry_without_delete
@@ -199,7 +199,10 @@ pf flow serve --source <path_to_flow> --skip-open-browser
         "--skip-open-browser", action="store_true", default=False, help="Skip open browser for flow serving."
     )
     add_param_engine = lambda parser: parser.add_argument(  # noqa: E731
-        "--engine", type=str, default="flask", help="The engine to serve the flow, can be flask or fastapi."
+        "--engine",
+        type=str,
+        default=DEFAULT_SERVE_ENGINE,
+        help="The engine to serve the flow, can be flask or fastapi.",
     )
     activate_action(
         name="serve",
@@ -462,7 +465,7 @@ def test_flow(args):
         _test_flow_experiment(args, pf_client, inputs, environment_variables)
         return
     if args.multi_modal or args.ui:
-        _test_flow_multi_modal(args, pf_client)
+        _test_flow_multi_modal(args, pf_client, environment_variables)
         return
     if args.interactive:
         _test_flow_interactive(args, pf_client, inputs, environment_variables)
@@ -489,7 +492,7 @@ def _build_inputs_for_flow_test(args):
     return inputs
 
 
-def _test_flow_multi_modal(args, pf_client):
+def _test_flow_multi_modal(args, pf_client, environment_variables):
     """Test flow with multi modality mode."""
     if str(os.getenv(PF_CHAT_UI_ENABLE_STREAMLIT, "false")).lower() == "true":
         from promptflow._sdk._load_functions import load_flow
@@ -533,6 +536,7 @@ def _test_flow_multi_modal(args, pf_client):
             init=list_of_dict_to_dict(args.init),
             enable_internal_features=enable_internal_features,
             skip_open_browser=args.skip_open_browser,
+            environment_variables=environment_variables,
         )
 
 
