@@ -1,16 +1,23 @@
+import importlib.metadata
 import re
 import time
 from typing import List
+from urllib.parse import urlparse
 
 import numpy as np
 import requests
 from azure.core.credentials import TokenCredential
 from azure.identity import DefaultAzureCredential
-from constants import RAIService, Tasks
+from constants import EvaluationMetrics, RAIService, Tasks
 from utils import get_harm_severity_level
-from urllib.parse import urlparse
 
 from promptflow.core import tool
+
+try:
+    version = importlib.metadata.version("promptflow-evals")
+except importlib.metadata.PackageNotFoundError:
+    version = "unknown"
+USER_AGENT = "{}/{}".format("promptflow-evals", version)
 
 
 def ensure_service_availability(rai_svc_url: str):
@@ -27,7 +34,11 @@ def submit_request(question: str, answer: str, metric: str, rai_svc_url: str, cr
 
     url = rai_svc_url + "/submitannotation"
     bearer_token = credential.get_token("https://management.azure.com/.default").token
-    headers = {"Authorization": f"Bearer {bearer_token}", "Content-Type": "application/json"}
+    headers = {
+        "Authorization": f"Bearer {bearer_token}",
+        "Content-Type": "application/json",
+        "User-Agent": USER_AGENT,
+    }
 
     response = requests.post(url, json=payload, headers=headers)
     if response.status_code != 202:
@@ -65,8 +76,8 @@ def parse_response(batch_response: List[dict], metric_name: str) -> List[List[di
     # Fix the metric name if it's "hate_fairness"
     # Eventually we will remove this fix once the RAI service is updated
     key = metric_name
-    if key == "hate_fairness":
-        key = "hate_unfairness"
+    if key == EvaluationMetrics.HATE_FAIRNESS:
+        key = EvaluationMetrics.HATE_UNFAIRNESS
 
     result = {key: np.nan, key + "_score": np.nan, key + "_reason": ""}
 
