@@ -71,10 +71,11 @@ class Local2CloudTestHelper:
 
         # check run details are actually uploaded to cloud
         if check_run_details_in_cloud:
-            run_uploader = AsyncRunUploader._from_run_operations(run=run, run_ops=pf.runs)
+            run_uploader = AsyncRunUploader._from_run_operations(run_ops=pf.runs)
+            run_uploader._set_run(run)
             result_dict = async_run_allowing_running_loop(run_uploader._check_run_details_exist_in_cloud)
             for key, value in result_dict.items():
-                assert value is True, f"Run details {key!r} not found in cloud, run name is {run.name!r}"
+                assert value, f"Run details {key!r} not found in cloud, run name is {run.name!r}"
 
         # check run output assets are uploaded to cloud
         original_run_record = pf.runs._get_run_from_run_history(run.name, original_form=True)
@@ -307,7 +308,7 @@ class TestFlowRunUpload:
         from promptflow._sdk._constants import Local2Cloud
         from promptflow.azure._dependencies._pf_evals import AsyncRunUploader
 
-        async_uploader = AsyncRunUploader._from_run_operations(run, pf.runs)
+        async_uploader = AsyncRunUploader._from_run_operations(pf.runs)
         instance_results = local_pf.runs.get_details(run, all_results=True)
 
         with tempfile.TemporaryDirectory() as temp_dir:

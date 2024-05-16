@@ -334,14 +334,14 @@ class TestTelemetry:
                 source=f"{RUNS_DIR}/run_with_env.yaml",
                 params_override=[{"environment_variables": {}}],
             )
-            # create 2 times will get 2 request ids
+            # create 2 times will get 4 request ids, every time contains 2 request ids: create and update
             run.name = str(uuid.uuid4())
             pf.runs.create_or_update(run=run)
             run.name = str(uuid.uuid4())
             pf.runs.create_or_update(run=run)
 
-        # only 1 request id
-        assert len(request_ids) == 2
+        # 4 request id
+        assert len(request_ids) == 4
         # 1 and last call is public call
         assert first_sdk_calls[0] is True
         assert first_sdk_calls[-1] is True
