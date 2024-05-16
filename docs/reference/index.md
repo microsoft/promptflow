@@ -47,6 +47,7 @@ python-library-reference/promptflow-core/promptflow
 python-library-reference/promptflow-devkit/promptflow
 python-library-reference/promptflow-azure/promptflow
 python-library-reference/promptflow-rag/promptflow
+python-library-reference/promptflow-evals/promptflow
 ```
 
 ```{toctree}
