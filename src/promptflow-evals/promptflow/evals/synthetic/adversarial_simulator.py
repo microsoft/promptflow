@@ -193,6 +193,12 @@ class AdversarialSimulator:
             del template_parameters["topic"]
         if "ch_template_placeholder" in template_parameters:
             del template_parameters["ch_template_placeholder"]
+        if "conversation_starter" in template_parameters:
+            del template_parameters["conversation_starter"]
+        if "group_of_people" in template_parameters:
+            del template_parameters["group_of_people"]
+        if "metadata" in template_parameters:
+            del template_parameters["metadata"]
 
         return {
             "template_parameters": template_parameters,
