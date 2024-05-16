@@ -33,13 +33,22 @@ class ServeAppHelper(abc.ABC):
     """
 
     def __init__(
-        self, *, flow_file_name: str, flow_dir: Path, init: Dict[str, Any], port: int, host: str = "localhost", **kwargs
+        self,
+        *,
+        flow_file_path: Path,
+        flow_dir: Path,
+        init: Dict[str, Any],
+        port: int,
+        host: str = "localhost",
+        chat_page_url: str = None,
+        **kwargs,
     ):
-        self._flow_file_name = flow_file_name
+        self._flow_file_path = flow_file_path
         self._flow_dir = flow_dir
         self._init = init or {}
         self._port = port
         self._host = host
+        self._chat_page_url = chat_page_url or f"http://{host}:{port}"
 
     @abc.abstractmethod
     def start_in_main(self, skip_open_browser: bool = False):
@@ -47,7 +56,7 @@ class ServeAppHelper(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def start(self):
+    def start(self, skip_open_browser: bool = True):
         """Start the serve app in a subprocess."""
         pass
 
@@ -59,14 +68,30 @@ class ServeAppHelper(abc.ABC):
 
 class PythonServeAppHelper(ServeAppHelper):
     def __init__(
-        self, *, flow_file_name: str, flow_dir: Path, init: Dict[str, Any], port: int, host: str = "localhost", **kwargs
+        self,
+        *,
+        flow_file_path: Path,
+        flow_dir: Path,
+        init: Dict[str, Any],
+        port: int,
+        host: str = "localhost",
+        chat_page_url: str = None,
+        **kwargs,
     ):
         self._static_folder: Optional[str] = kwargs.get("static_folder", None)
         self._config = kwargs.get("config", {}) or {}
         self._environment_variables = kwargs.get("environment_variables", {}) or {}
         self._engine = kwargs.get("engine", DEFAULT_SERVE_ENGINE)
 
-        super().__init__(flow_file_name=flow_file_name, flow_dir=flow_dir, init=init, port=port, host=host, **kwargs)
+        super().__init__(
+            flow_file_path=flow_file_path,
+            flow_dir=flow_dir,
+            init=init,
+            port=port,
+            host=host,
+            chat_page_url=chat_page_url,
+            **kwargs,
+        )
 
         self._process: Optional[multiprocessing.Process] = None
 
@@ -75,28 +100,8 @@ class PythonServeAppHelper(ServeAppHelper):
             # trace must be started within the same process as the app
             start_trace()
 
-        error_msg = None
-        try:
-            flow_dir, flow_file_name = resolve_flow_path(self._flow_dir, allow_prompty_dir=True)
-            if flow_file_name != self._flow_file_name:
-                # this may happen when a prompty is specified while there is already a default flow in the flow dir
-                error_msg = (
-                    f"Default definition {flow_file_name} is found and will be picked in flow directory "
-                    f"while {self._flow_file_name} is specified. "
-                    f"Please remove {flow_file_name} from flow directory as a workaround."
-                )
-        except (UserErrorException,) as e:
-            error_msg = e.message
-
-        if error_msg is not None:
-            raise UserErrorException(
-                message_format="Service have some limitations on flow directory for now:\n{msg}",
-                msg=error_msg,
-                privacy_info=[self._flow_dir.absolute().as_posix()],
-            )
-
         serve_python_flow(
-            flow_file_name=self._flow_file_name,
+            flow_file_path=self._flow_file_path,
             flow_dir=self._flow_dir,
             port=self._port,
             host=self._host,
@@ -106,16 +111,17 @@ class PythonServeAppHelper(ServeAppHelper):
             init=self._init,
             skip_open_browser=skip_open_browser,
             engine=self._engine,
+            chat_page_url=self._chat_page_url,
         )
 
     def start_in_main(self, skip_open_browser: bool = False):
         self._run(skip_open_browser=skip_open_browser)
 
-    def start(self):
+    def start(self, skip_open_browser: bool = True):
         self._process = multiprocessing.Process(
             target=self._run,
             # no need to open browser if the serve app is started in a subprocess
-            kwargs={"skip_open_browser": True, "enable_trace": True},
+            kwargs={"skip_open_browser": skip_open_browser, "enable_trace": True},
         )
         self._process.start()
 
@@ -127,9 +133,25 @@ class PythonServeAppHelper(ServeAppHelper):
 
 class CSharpServeAppHelper(ServeAppHelper):
     def __init__(
-        self, *, flow_file_name: str, flow_dir: Path, init: Dict[str, Any], port: int, host: str = "localhost", **kwargs
+        self,
+        *,
+        flow_file_path: Path,
+        flow_dir: Path,
+        init: Dict[str, Any],
+        port: int,
+        host: str = "localhost",
+        chat_page_url=None,
+        **kwargs,
     ):
-        super().__init__(flow_file_name=flow_file_name, flow_dir=flow_dir, init=init, port=port, host=host, **kwargs)
+        super().__init__(
+            flow_file_path=flow_file_path,
+            flow_dir=flow_dir,
+            init=init,
+            port=port,
+            host=host,
+            chat_page_url=chat_page_url,
+            **kwargs,
+        )
 
         self._process: Optional[subprocess.Popen] = None
 
@@ -141,7 +163,7 @@ class CSharpServeAppHelper(ServeAppHelper):
             "--port",
             str(self._port),
             "--yaml_path",
-            self._flow_file_name,
+            self._flow_file_path,
             "--assembly_folder",
             ".",
             "--connection_provider_url",
@@ -171,7 +193,11 @@ class CSharpServeAppHelper(ServeAppHelper):
         except KeyboardInterrupt:
             pass
 
-    def start(self):
+    def start(self, skip_open_browser: bool = True):
+        # there is no chat UI in Csharp service for now
+        if not skip_open_browser and f"http://{self._host}:{self._port}" != self._chat_page_url:
+            logger.info(f"Opening browser {self._chat_page_url}...")
+            webbrowser.open(self._chat_page_url)
         with self._construct_start_up_command() as command:
             self._process = subprocess.Popen(command, cwd=self._flow_dir, stdout=sys.stdout, stderr=sys.stderr)
 
@@ -190,13 +216,12 @@ def find_available_port() -> str:
         return str(port)
 
 
-def _resolve_python_flow_additional_includes(flow_file_name: str, flow_dir: Path) -> Path:
+def _resolve_python_flow_additional_includes(flow_file_path: Path, flow_dir: Path) -> Path:
     # Resolve flow additional includes
     from promptflow._sdk.operations import FlowOperations
 
-    flow_path = Path(flow_dir) / flow_file_name
-    with FlowOperations._resolve_additional_includes(flow_path) as resolved_flow_path:
-        if resolved_flow_path == flow_path:
+    with FlowOperations._resolve_additional_includes(flow_file_path) as resolved_flow_path:
+        if resolved_flow_path == flow_file_path:
             return flow_dir
         # Copy resolved flow to temp folder if additional includes exists
         # Note: DO NOT use resolved flow path directly, as when inner logic raise exception,
@@ -225,6 +250,7 @@ def start_flow_service(
     )
 
     flow_dir, flow_file_name = resolve_flow_path(source, allow_prompty_dir=True)
+    flow_file_path = flow_dir / flow_file_name
     # prompty dir works for resolve_flow_path, but not for resolve_flow_language,
     # so infer language after resolve_flow_path
     language = resolve_flow_language(flow_path=flow_dir / flow_file_name)
@@ -242,7 +268,7 @@ def start_flow_service(
             )
 
         helper = PythonServeAppHelper(
-            flow_file_name=flow_file_name,
+            flow_file_path=flow_file_path,
             flow_dir=flow_dir,
             init=init,
             port=port,
@@ -254,7 +280,7 @@ def start_flow_service(
         )
     else:
         helper = CSharpServeAppHelper(
-            flow_file_name=flow_file_name,
+            flow_file_path=flow_file_path,
             flow_dir=flow_dir,
             init=init or {},
             port=port,
@@ -265,7 +291,7 @@ def start_flow_service(
 
 def serve_python_flow(
     *,
-    flow_file_name,
+    flow_file_path,
     flow_dir,
     port,
     host,
@@ -275,6 +301,7 @@ def serve_python_flow(
     init,
     skip_open_browser: bool,
     engine,
+    chat_page_url,
 ):
     # we should consider moving below logic to PythonServeAppHelper._run but keep it here for now as it's not related to
     # the helper itself
@@ -282,7 +309,8 @@ def serve_python_flow(
     from promptflow.core._serving.app import create_app
 
     # if no additional includes, flow_dir keeps the same; if additional includes, flow_dir is a temp dir
-    flow_dir = _resolve_python_flow_additional_includes(flow_file_name, flow_dir)
+    # there won't be additional includes if flow_file_path points to a generated temp flow file
+    flow_dir = _resolve_python_flow_additional_includes(flow_file_path, flow_dir)
 
     pf_config = Configuration(overrides=config)
     logger.info(f"Promptflow config: {pf_config}")
@@ -296,11 +324,11 @@ def serve_python_flow(
         connection_provider=connection_provider,
         init=init,
         engine=engine,
+        flow_file_path=flow_file_path,
     )
     if not skip_open_browser:
-        target = f"http://{host}:{port}"
-        logger.info(f"Opening browser {target}...")
-        webbrowser.open(target)
+        logger.info(f"Opening browser {chat_page_url}...")
+        webbrowser.open(chat_page_url)
     # Debug is not supported for now as debug will rerun command, and we changed working directory.
     if engine == "flask":
         app.run(port=port, host=host)

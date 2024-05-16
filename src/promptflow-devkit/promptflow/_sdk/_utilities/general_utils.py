@@ -981,7 +981,7 @@ def resolve_entry_and_code(entry: Union[str, PathLike, Callable], code: Path = N
     return entry, code
 
 
-def create_flex_flow_yaml_in_target(entry: Union[str, PathLike, Callable], target_dir: str, code: Path = None):
+def create_flex_flow_yaml_in_target(entry: Union[str, PathLike, Callable], target_dir: str, code: Path = None) -> Path:
     """
     Generate a flex flow yaml in target folder. The code field in the yaml points to the original flex yaml flow folder.
     """
