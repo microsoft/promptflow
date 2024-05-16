@@ -78,7 +78,7 @@ pf flow test --flow . --init init.json --inputs sample.json
 # start test in interactive terminal (TODO)
 pf flow test --flow . --init init.json --interactive
 # start test in chat UI
-pf flow test --flow . --ui -init init.json
+pf flow test --flow . --ui --init init.json
 ```
 
 - Create run with multiple lines data
