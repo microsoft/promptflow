@@ -8,7 +8,7 @@ from concurrent.futures.thread import ThreadPoolExecutor
 
 import pandas as pd
 
-from promptflow.evals.evaluate._utils import load_jsonl
+from promptflow.evals.evaluate._utils import load_jsonl, _apply_column_mapping
 
 
 LOGGER = logging.getLogger(__name__)
@@ -31,9 +31,10 @@ class CodeClient:
     def __init__(self):
         self._thread_pool = ThreadPoolExecutor(thread_name_prefix="evaluators_thread")
 
-    def _calculate_metric(self, evaluator, input_df, evaluator_name):
+    def _calculate_metric(self, evaluator, input_df, column_mapping, evaluator_name):
         row_metric_futures = []
         row_metric_results = []
+        input_df = _apply_column_mapping(input_df, column_mapping)
         parameters = {param.name for param in inspect.signature(evaluator).parameters.values()}
         for value in input_df.to_dict("records"):
             filtered_values = {k: v for k, v in value.items() if k in parameters}
@@ -60,7 +61,7 @@ class CodeClient:
             verify_integrity=True,
         )
 
-    def run(self, flow, data, evaluator_name=None, **kwargs):
+    def run(self, flow, data, evaluator_name=None, column_mapping=None, **kwargs):
         input_df = data
         if not isinstance(input_df, pd.DataFrame):
             try:
@@ -69,7 +70,7 @@ class CodeClient:
                 raise ValueError(f"Failed to parse data as JSON: {data}. Please provide a valid json lines data.")
 
             input_df = pd.DataFrame(json_data)
-        eval_future = self._thread_pool.submit(self._calculate_metric, flow, input_df, evaluator_name)
+        eval_future = self._thread_pool.submit(self._calculate_metric, flow, input_df, column_mapping, evaluator_name)
         return CodeRun(run=eval_future, input_data=data, evaluator_name=evaluator_name)
 
     def get_details(self, run, all_results=False):

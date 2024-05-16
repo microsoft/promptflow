@@ -11,14 +11,19 @@ import pandas as pd
 from promptflow._sdk._constants import LINE_NUMBER
 from promptflow.client import PFClient
 
-from .._constants import CONTENT_SAFETY_DEFECT_RATE_THRESHOLD_DEFAULT, EvaluationMetrics
+from .._constants import (
+    CONTENT_SAFETY_DEFECT_RATE_THRESHOLD_DEFAULT,
+    EvaluationMetrics,
+    Prefixes
+)
 from .._user_agent import USER_AGENT
 from ._code_client import CodeClient
-from ._utils import _log_metrics_and_instance_results, _trace_destination_from_project_scope, _write_output
-
-_INPUTS = "inputs."
-_OUTPUTS = "outputs."
-_TGT_OUTPUTS = "__outputs."
+from ._utils import (
+    _log_metrics_and_instance_results,
+    _trace_destination_from_project_scope,
+    _write_output,
+    _apply_column_mapping
+    )
 
 
 def _aggregate_metrics(df, evaluators) -> Dict[str, float]:
@@ -133,8 +138,9 @@ def _validate_columns(
     :paramtype target: Optional[Callable]
     """
     if target:
-        if any(c.startswith(_TGT_OUTPUTS) for c in df.columns):
-            raise ValueError(f'The column cannot start from "{_TGT_OUTPUTS}" if target was defined.')
+        if any(c.startswith(Prefixes._TGT_OUTPUTS) for c in df.columns):
+            raise ValueError('The column cannot start from '
+                             f'"{Prefixes._TGT_OUTPUTS}" if target was defined.')
         # If the target function is given, it may return
         # several columns and hence we cannot check the availability of columns
         # without knowing target function semantics.
@@ -179,7 +185,8 @@ def _apply_target_to_data(
     )
     target_output = pf_client.runs.get_details(run, all_results=True)
     # Remove input and output prefix
-    generated_columns = {col[len(_OUTPUTS) :] for col in target_output.columns if col.startswith(_OUTPUTS)}
+    generated_columns = {col[
+        len(Prefixes._OUTPUTS) :] for col in target_output.columns if col.startswith(Prefixes._OUTPUTS)}
     # Sort output by line numbers
     target_output.set_index(f"inputs.{LINE_NUMBER}", inplace=True)
     target_output.sort_index(inplace=True)
@@ -189,59 +196,11 @@ def _apply_target_to_data(
     drop_columns = list(filter(lambda x: x.startswith("inputs"), target_output.columns))
     target_output.drop(drop_columns, inplace=True, axis=1)
     # Rename outputs columns to __outputs
-    rename_dict = {col: col.replace(_OUTPUTS, _TGT_OUTPUTS) for col in target_output.columns}
+    rename_dict = {col: col.replace(Prefixes._OUTPUTS, Prefixes._TGT_OUTPUTS) for col in target_output.columns}
     target_output.rename(columns=rename_dict, inplace=True)
     # Concatenate output to input
     target_output = pd.concat([target_output, initial_data], axis=1)
     return target_output, generated_columns, run
-
-
-def _apply_column_mapping(source_df: pd.DataFrame, mapping_config: dict, inplace: bool = False) -> pd.DataFrame:
-    """
-    Apply column mapping to source_df based on mapping_config.
-
-    This function is used for pre-validation of input data for evaluators
-    :param source_df: the data frame to be changed.
-    :type source_df: pd.DataFrame
-    :param mapping_config: The configuration, containing column mapping.
-    :type mapping_config: dict.
-    :param inplace: If true, the source_df will be changed inplace.
-    :type inplace: bool
-    :return: The modified data frame.
-    """
-    result_df = source_df
-
-    if mapping_config:
-        column_mapping = {}
-        columns_to_drop = set()
-        pattern_prefix = "data."
-        run_outputs_prefix = "run.outputs."
-
-        for map_to_key, map_value in mapping_config.items():
-            match = re.search(r"^\${([^{}]+)}$", map_value)
-            if match is not None:
-                pattern = match.group(1)
-                if pattern.startswith(pattern_prefix):
-                    map_from_key = pattern[len(pattern_prefix) :]
-                elif pattern.startswith(run_outputs_prefix):
-                    # Target-generated columns always starts from .outputs.
-                    map_from_key = f"{_TGT_OUTPUTS}{pattern[len(run_outputs_prefix) :]}"
-                # if we are not renaming anything, skip.
-                if map_from_key == map_to_key:
-                    continue
-                # If column needs to be mapped to already existing column, we will add it
-                # to the drop list.
-                if map_to_key in source_df.columns:
-                    columns_to_drop.add(map_to_key)
-                column_mapping[map_from_key] = map_to_key
-        # If we map column to another one, which is already present in the data
-        # set and the letter also needs to be mapped, we will not drop it, but map
-        # instead.
-        columns_to_drop = columns_to_drop - set(column_mapping.keys())
-        result_df = source_df.drop(columns=columns_to_drop, inplace=inplace)
-        result_df.rename(columns=column_mapping, inplace=True)
-
-    return result_df
 
 
 def _process_evaluator_config(evaluator_config: Dict[str, Dict[str, str]]):
@@ -285,8 +244,8 @@ def _rename_columns_conditionally(df: pd.DataFrame, target_generated: Set[str]):
     rename_dict = {}
     for col in df.columns:
         # Rename columns generated by target.
-        if _TGT_OUTPUTS in col:
-            rename_dict[col] = col.replace(_TGT_OUTPUTS, _OUTPUTS)
+        if Prefixes._TGT_OUTPUTS in col:
+            rename_dict[col] = col.replace(Prefixes._TGT_OUTPUTS, Prefixes._OUTPUTS)
         else:
             rename_dict[col] = f"inputs.{col}"
     df.rename(columns=rename_dict, inplace=True)
@@ -371,15 +330,14 @@ def evaluate(
     code_client = CodeClient()
     if use_thread_pool:
         for evaluator_name, evaluator in evaluators.items():
-            mapping_config = evaluator_config.get(evaluator_name, evaluator_config.get("default", None))
-            new_df = _apply_column_mapping(input_data_df, mapping_config)
             evaluator_info[evaluator_name] = {
                 "client": code_client,
             }
             evaluator_info[evaluator_name]["run"] = code_client.run(
                 flow=evaluator,
+                column_mapping=evaluator_config.get(evaluator_name, evaluator_config.get("default", None)),
                 evaluator_name=evaluator_name,
-                data=new_df,
+                data=input_data_df,
             )
     else:
         for evaluator_name, evaluator in evaluators.items():
@@ -400,14 +358,15 @@ def evaluate(
 
         # drop input columns
         evaluator_result_df = evaluator_result_df.drop(
-            columns=[col for col in evaluator_result_df.columns if col.startswith(_INPUTS)]
+            columns=[col for col in evaluator_result_df.columns if col.startswith(Prefixes._INPUTS)]
         )
 
         # rename output columns
         # Assuming after removing inputs columns, all columns are output columns
         evaluator_result_df.rename(
             columns={
-                col: f"outputs.{evaluator_name}.{col.replace(_OUTPUTS, '')}" for col in evaluator_result_df.columns
+                col: f"outputs.{evaluator_name}.{col.replace(Prefixes._OUTPUTS, '')}"
+                for col in evaluator_result_df.columns
             },
             inplace=True,
         )

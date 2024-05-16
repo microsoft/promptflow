@@ -11,10 +11,10 @@ from promptflow.client import PFClient
 from promptflow.evals._constants import DEFAULT_EVALUATION_RESULTS_FILE_NAME
 from promptflow.evals.evaluate import evaluate
 from promptflow.evals.evaluate._evaluate import (
-    _apply_column_mapping,
     _apply_target_to_data,
     _rename_columns_conditionally
     )
+from promptflow.evals.evaluate._utils import _apply_column_mapping
 from promptflow.evals.evaluators import F1ScoreEvaluator, GroundednessEvaluator
 
 
@@ -324,7 +324,7 @@ class TestEvaluate:
             data=evaluate_test_data_jsonl_file,
             evaluators={"g": F1ScoreEvaluator()},
             output_path=output_path,
-            use_thread_pool=use_thread_pool
+            _use_thread_pool=use_thread_pool
         )
 
         assert result is not None
@@ -353,7 +353,7 @@ class TestEvaluate:
         result = evaluate(
             data=data,
             evaluators={"yeti": _yeti_evaluator},
-            use_thread_pool=True
+            _use_thread_pool=True
         )
         result_df = pd.DataFrame(result['rows'])
         expected = pd.read_json(data, lines=True)
