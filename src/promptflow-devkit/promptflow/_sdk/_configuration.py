@@ -22,7 +22,7 @@ from promptflow._sdk._constants import (
 from promptflow._sdk._utilities.general_utils import call_from_extension, gen_uuid_by_compute_info, read_write_by_user
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
-from promptflow.exceptions import ErrorTarget, ValidationException
+from promptflow.exceptions import ErrorTarget, UserErrorException, ValidationException
 
 logger = get_cli_sdk_logger()
 
@@ -218,7 +218,18 @@ class Configuration(object):
 
     def _is_cloud_trace_destination(self, path: Optional[Path] = None) -> bool:
         trace_destination = self.get_trace_destination(path=path)
-        return trace_destination and trace_destination.startswith(REMOTE_URI_PREFIX)
+        is_cloud = trace_destination and trace_destination.startswith(REMOTE_URI_PREFIX)
+        if is_cloud:
+            try:
+                from promptflow.azure import PFClient  # noqa: F401
+            except ImportError as e:
+                error_message = (
+                    f'Trace provider is set to cloud. "promptflow[azure]" is required for local to cloud tracing '
+                    f'experience, please install it by running "pip install promptflow[azure]". '
+                    f"Original error: {str(e)}"
+                )
+                raise UserErrorException(message=error_message) from e
+        return is_cloud
 
     def _resolve_trace_destination(self, path: Optional[Path] = None) -> str:
         return "azureml:/" + self._get_workspace_from_config(path=path)
