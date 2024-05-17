@@ -119,12 +119,12 @@ def async_retry(exception_to_check: Union[Exception, Tuple[Exception]], tries=4,
                 try:
                     return await f(*args, **kwargs)
                 except exception_to_check as e:
-                    await asyncio.sleep(delay_seconds)
-                    retry_times -= 1
-                    delay_seconds *= backoff
                     if _logger:
                         message = f"{str(e)}. Retrying in {delay_seconds} seconds..."
                         _logger.warning(message)
+                    await asyncio.sleep(delay_seconds)
+                    retry_times -= 1
+                    delay_seconds *= backoff
             return await f(*args, **kwargs)
 
         return f_retry  # true decorator
