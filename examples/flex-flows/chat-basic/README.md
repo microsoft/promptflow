@@ -75,8 +75,6 @@ pf flow test --flow . --init init.json --inputs sample.json
 
 - Test flow: multi turn
 ```shell
-# start test in interactive terminal (TODO)
-pf flow test --flow . --init init.json --interactive
 # start test in chat UI
 pf flow test --flow . --ui --init init.json
 ```

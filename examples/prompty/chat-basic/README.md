@@ -65,9 +65,6 @@ pf flow test --flow chat.prompty --inputs sample.json
 
 - Test flow: multi turn
 ```shell
-# start test in interactive terminal (TODO)
-pf flow test --flow chat.prompty --interactive
-
 # start test in chat ui
 pf flow test --flow chat.prompty --ui
 ```
