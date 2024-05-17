@@ -338,7 +338,7 @@ def evaluate(
 
     # Target Run
     pf_client = PFClient(
-        config={"trace.destination": trace_destination},
+        config={"trace.destination": trace_destination} if trace_destination else None,
         user_agent=USER_AGENT,
     )
     target_run = None

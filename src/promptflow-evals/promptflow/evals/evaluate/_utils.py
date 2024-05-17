@@ -27,6 +27,10 @@ AZURE_WORKSPACE_REGEX_FORMAT = (
 AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])
 
 
+def is_none(value):
+    return value is None or str(value).lower() == "none"
+
+
 def extract_workspace_triad_from_trace_provider(trace_provider: str):
     match = re.match(AZURE_WORKSPACE_REGEX_FORMAT, trace_provider)
     if not match or len(match.groups()) != 5:
@@ -97,9 +101,12 @@ def _get_mlflow_tracking_uri(trace_destination):
 def _get_trace_destination_config(tracking_uri):
     from promptflow._sdk._configuration import Configuration
 
-    pf_config = Configuration(overrides={"trace.destination": tracking_uri} if tracking_uri is not None else {})
+    pf_config = Configuration(overrides={"trace.destination": tracking_uri} if tracking_uri is not None else None)
 
     trace_destination = pf_config.get_trace_destination()
+
+    if is_none(trace_destination):
+        return None
 
     return trace_destination
 
