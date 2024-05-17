@@ -64,12 +64,6 @@ class CodeClient:
         for row_number, row_metric_future in enumerate(row_metric_futures):
             try:
                 result = row_metric_future.result()
-                if isinstance(result, str):
-                    try:
-                        result = json.loads(result)
-                    except BaseException:
-                        # Handle in the next section.
-                        pass
                 if not isinstance(result, dict):
                     result = {'output': result}
                 row_metric_results.append(result)

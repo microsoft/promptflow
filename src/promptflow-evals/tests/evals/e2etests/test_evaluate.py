@@ -148,9 +148,6 @@ class TestEvaluate:
     @pytest.mark.parametrize('use_thread_pool,function,column', [
         (True, answer_evaluator, 'length'),
         (False, answer_evaluator, 'length'),
-        (True, answer_evaluator_json, 'length'),
-        # PFClient does not deserialize the JSON.
-        # (False, answer_evaluator_json, 'length'),
         (True, answer_evaluator_int, 'output'),
         (False, answer_evaluator_int, 'output'),
         (True, answer_evaluator_int_dict, "42"),
