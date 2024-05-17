@@ -8,6 +8,7 @@ import httpx
 from promptflow._sdk._errors import RunHistoryInternalError, SDKError, UserAuthenticationError
 from promptflow._sdk._utilities.general_utils import get_promptflow_sdk_version
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow._utils.retry_utils import async_retry
 from promptflow.azure._utils.general import get_authorization
 
 logger = get_cli_sdk_logger()
@@ -37,6 +38,7 @@ class AsyncRunHistoryClient:
         self.service_endpoint = service_endpoint
         self.credential = credential
 
+    @async_retry(RunHistoryInternalError, _logger=logger)
     async def patch_run(self, run_id: str, payload: Dict):
         logger.debug(f"Patching {run_id!r} with payload {payload!r}...")
         patch_url = PATCH_RUN_URL.format(

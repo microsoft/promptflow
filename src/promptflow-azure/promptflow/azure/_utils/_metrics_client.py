@@ -8,6 +8,7 @@ import httpx
 from promptflow._sdk._errors import MetricInternalError, SDKError, UserAuthenticationError
 from promptflow._sdk._utilities.general_utils import get_promptflow_sdk_version
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow._utils.retry_utils import async_retry
 from promptflow.azure._utils.general import get_authorization
 
 logger = get_cli_sdk_logger()
@@ -33,6 +34,7 @@ class AsyncMetricClient:
         self.service_endpoint = service_endpoint
         self.credential = credential
 
+    @async_retry(MetricInternalError, _logger=logger)
     async def log_metric(self, run_id, metric_key: str, metric_value: float):
         """Write metric for a run."""
         url = POST_METRICS_URL.format(

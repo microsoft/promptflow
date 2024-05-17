@@ -8,6 +8,7 @@ import httpx
 from promptflow._sdk._errors import AssetInternalError, SDKError, UserAuthenticationError
 from promptflow._sdk._utilities.general_utils import get_promptflow_sdk_version
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow._utils.retry_utils import async_retry
 from promptflow.azure._utils.general import get_authorization
 
 logger = get_cli_sdk_logger()
@@ -33,6 +34,7 @@ class AsyncAssetClient:
         self.service_endpoint = service_endpoint
         self.credential = credential
 
+    @async_retry(AssetInternalError, _logger=logger)
     async def create_unregistered_output(self, run_id, datastore_name, relative_path, output_name, type="UriFolder"):
         url = CREATE_UNREGISTERED_OUTPUT_URL.format(
             endpoint=self.service_endpoint,
