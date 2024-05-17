@@ -3,10 +3,12 @@ import json
 import uuid
 from unittest.mock import patch
 
+import openai
 import pytest
 from opentelemetry.trace.status import StatusCode
 
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
+from promptflow.tracing._trace import TracedIterator
 from promptflow.tracing.contracts.trace import TraceType
 
 from ..utils import execute_function_in_subprocess, prepare_memory_exporter
@@ -181,6 +183,36 @@ class TestTracing:
         execute_function_in_subprocess(
             self.assert_otel_trace_with_llm, dev_connections, func, inputs, expected_span_length
         )
+
+    def test_open_ai_stream_context_manager(self, dev_connections):
+        inject_openai_api()
+        conn_name = "azure_open_ai_connection"
+        conn_dict = {
+            "api_key": dev_connections[conn_name]["value"]["api_key"],
+            "azure_endpoint": dev_connections[conn_name]["value"]["api_base"],
+            "api_version": dev_connections[conn_name]["value"]["api_version"],
+        }
+        client = openai.AzureOpenAI(**conn_dict)
+
+        messages = [{"role": "system", "content": "You are a helpful assistant."}, {"role": "user", "content": "Hello"}]
+        response = client.chat.completions.create(model="gpt-35-turbo", messages=messages, stream=True)
+        assert isinstance(response, TracedIterator)
+        assert isinstance(response._iterator, openai.Stream)
+
+        with patch.object(openai.Stream, "__enter__") as mock_enter, patch.object(
+            openai.Stream, "__exit__"
+        ) as mock_exit:
+
+            def generator():
+                with response:
+                    mock_enter.assert_called_once()
+                    mock_exit.enter.assert_not_called()
+                    for chunk in response:
+                        if chunk.choices:
+                            yield chunk.choices[0].delta.content or ""
+
+            _ = "".join(generator())
+            mock_exit.assert_called_once()
 
     def assert_otel_trace_with_llm(self, dev_connections, func, inputs, expected_span_length):
         inject_openai_api()

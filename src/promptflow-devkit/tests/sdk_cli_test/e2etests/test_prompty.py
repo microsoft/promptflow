@@ -1,7 +1,7 @@
 import asyncio
 import json
 import os
-import types
+from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
@@ -275,13 +275,13 @@ class TestPrompty:
 
     def test_prompty_with_stream(self, pf: PFClient):
         if pytest.is_record or pytest.is_replay:
-            stream_type = types.GeneratorType
+            stream_type = Iterator
         else:
-            stream_type = (types.GeneratorType, Stream)
+            stream_type = (Iterator, Stream)
         # Test text format with stream=true
         prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty", model={"parameters": {"stream": True}})
         result = prompty(question="what is the result of 1+1?")
-        assert isinstance(result, types.GeneratorType)
+        assert isinstance(result, Iterator)
         response_contents = []
         for item in result:
             response_contents.append(item)
@@ -292,7 +292,7 @@ class TestPrompty:
             source=f"{PROMPTY_DIR}/prompty_example.prompty", model={"parameters": {"stream": True, "n": 2}}
         )
         result = prompty(question="what is the result of 1+1?")
-        assert isinstance(result, types.GeneratorType)
+        assert isinstance(result, Iterator)
         response_contents = []
         for item in result:
             response_contents.append(item)

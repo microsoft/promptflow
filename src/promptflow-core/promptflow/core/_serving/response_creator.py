@@ -5,7 +5,7 @@
 import json
 import time
 from abc import ABC, abstractmethod
-from types import AsyncGeneratorType, GeneratorType
+from collections.abc import AsyncIterator, Iterator
 
 from promptflow.core._serving._errors import MultipleStreamOutputFieldsNotSupported, NotAcceptable
 
@@ -27,16 +27,16 @@ class ResponseCreator(ABC):
         # if return the response original value, only will set to true when eager flow returns non dict value.
         response_original_value=False,
     ):
-        # Fields that are with GeneratorType are streaming outputs.
+        # Fields that are with Iterator are streaming outputs.
         stream_fields = [
-            k for k, v in flow_run_result.items() if isinstance(v, GeneratorType) or isinstance(v, AsyncGeneratorType)
+            k for k, v in flow_run_result.items() if isinstance(v, Iterator) or isinstance(v, AsyncIterator)
         ]
         if len(stream_fields) > 1:
             raise MultipleStreamOutputFieldsNotSupported()
 
         self.stream_field_name = stream_fields[0] if stream_fields else None
         self.stream_iterator = flow_run_result.pop(self.stream_field_name, None)
-        self.is_async_streaming = isinstance(self.stream_iterator, AsyncGeneratorType)
+        self.is_async_streaming = isinstance(self.stream_iterator, AsyncIterator)
         self.non_stream_fields = flow_run_result
 
         # According to RFC2616, if "Accept" header is not specified,
