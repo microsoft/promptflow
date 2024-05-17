@@ -3,7 +3,7 @@ category: rag
 weight: 30
 ---
 
-# Develop promptflow copilot
+# Develop copilot with promptflow
 
 In this tutorial, we will provide a detailed walkthrough on creating a RAG-based copilot using the Azure Machine Learning promptflow toolkit. Our tutorial will cover a range of essential topics, including:
 
@@ -46,7 +46,7 @@ Currently, the volume of test data generated cannot be directly manipulated by t
 
 To ensure the quality of the promptFlow copilot, it's imperative to conduct extensive testing using a broad dataset. Ideally, this dataset would consist of real user inquiries, such as those found on platforms like StackOverflow. However, real-world cases often fall short in both quantity and diversity. To address this gap, the creation of synthetic test data is necessary to encompass a wider array of scenarios.
 
-Promptflow has provided comprehensive guidelines for generating synthetic test data using Large Language Models (LLMs). For step-by-step instructions, please refer to the document available at [here](../../../docs/how-to-guides/generate-test-data.md).
+Promptflow has provided comprehensive guidelines for generating synthetic test data using Large Language Models (LLMs). For step-by-step instructions, please refer to the document available at [here](../generate-test-data/README.md).
 
 To facilitate evaluation of your copilot in Azure, consider creating a new Data Asset in your workspace specifically for this purpose.
 

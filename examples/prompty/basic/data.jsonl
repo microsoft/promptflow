@@ -1,3 +1,3 @@
-{"first_name": "John", "last_name": "Doe", "question": "What is capital of France?", "ground_truth": "Paris"}
-{"first_name": "John", "last_name": "Doe", "question": "What is the meaning of life?", "ground_truth": "The meaning of life is subjective and can vary greatly depending on one's personal beliefs. Some people may find meaning through personal growth, love, or contribution to others, while others may find it through religious or spiritual beliefs. Ultimately, the meaning of life is a deeply personal and subjective concept."}
-{"first_name": "John", "last_name": "Doe", "question": "What are the planets in Sun system?", "ground_truth":"The planets in the Solar System are Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, and Neptune."}
+{"question": "What is capital of France?", "ground_truth": "Paris"}
+{"question": "What is the meaning of life?", "ground_truth": "The meaning of life is subjective and can vary greatly depending on one's personal beliefs. Some people may find meaning through personal growth, love, or contribution to others, while others may find it through religious or spiritual beliefs. Ultimately, the meaning of life is a deeply personal and subjective concept."}
+{"question": "What are the planets in Sun system?", "ground_truth":"The planets in the Solar System are Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, and Neptune."}

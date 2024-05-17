@@ -1,7 +1,7 @@
 import json
 import logging
+from collections.abc import AsyncIterator, Iterator
 from importlib.metadata import version
-from types import AsyncGeneratorType, GeneratorType
 from unittest.mock import MagicMock, patch
 
 import openai
@@ -207,7 +207,7 @@ def test_openai_generator_proxy_sync():
             return_generator = openai.resources.Completions.create(stream=True)
 
         assert return_string == "This is a returned string"
-        assert isinstance(return_generator, GeneratorType)
+        assert isinstance(return_generator, Iterator)
 
         for _ in return_generator:
             pass
@@ -258,7 +258,7 @@ async def test_openai_generator_proxy_async():
             return_generator = await openai.resources.AsyncCompletions.create(stream=True)
 
         assert return_string == "This is a returned string"
-        assert isinstance(return_generator, AsyncGeneratorType)
+        assert isinstance(return_generator, AsyncIterator)
 
         async for _ in return_generator:
             pass

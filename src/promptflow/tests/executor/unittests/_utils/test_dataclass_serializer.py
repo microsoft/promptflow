@@ -2,21 +2,16 @@ import sys
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict, List
+from unittest.mock import Mock, patch
 
 import pytest
-from unittest.mock import patch, Mock
 
-from promptflow._utils.dataclass_serializer import (
-    get_type,
-    deserialize_dataclass,
-    deserialize_value,
-    assertEqual,
-)
-from promptflow.contracts.run_info import RunInfo, Status
 from promptflow._core.connection_manager import ConnectionManager
+from promptflow._utils.dataclass_serializer import assertEqual, deserialize_dataclass, deserialize_value, get_type
+from promptflow.contracts.run_info import RunInfo, Status
 from promptflow.storage.run_records import NodeRunRecord
 from promptflow.tracing._utils import serialize
-from promptflow.tracing.contracts.generator_proxy import GeneratorProxy
+from promptflow.tracing.contracts.iterator_proxy import IteratorProxy
 
 
 def get_connection_dict():
@@ -130,7 +125,7 @@ def test_serialize_generator():
         for i in range(3):
             yield i
 
-    g = GeneratorProxy(generator())
+    g = IteratorProxy(generator())
     next(g)
     assert serialize(g) == [0]
 

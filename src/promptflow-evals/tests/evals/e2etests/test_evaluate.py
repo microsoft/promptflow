@@ -132,7 +132,8 @@ class TestEvaluate:
         assert 0 <= metrics.get("content_safety.self_harm_defect_rate") <= 1
         assert 0 <= metrics.get("content_safety.hate_unfairness_defect_rate") <= 1
 
-    def test_evaluate_python_function(self, data_file):
+    @pytest.mark.parametrize('use_thread_pool', [True, False])
+    def test_evaluate_python_function(self, data_file, use_thread_pool):
         # data
         input_data = pd.read_json(data_file, lines=True)
 
@@ -140,6 +141,7 @@ class TestEvaluate:
         result = evaluate(
             data=data_file,
             evaluators={"answer": answer_evaluator},
+            _use_thread_pool=use_thread_pool
         )
 
         row_result_df = pd.DataFrame(result["rows"])

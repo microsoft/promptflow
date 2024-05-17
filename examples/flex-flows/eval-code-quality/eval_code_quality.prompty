@@ -5,20 +5,18 @@ model:
   api: chat
   configuration:
     type: azure_openai
-    azure_deployment: gpt-35-turbo-0125
+    azure_deployment: gpt-35-turbo
   parameters:
     temperature: 0.2
-    response_format:
-        type: json_object
 inputs: 
   code:
     type: string
-sample: sample.json
+sample: ${file:sample.json}
 ---
 # system:
 You are an AI assistant. 
 You task is to evaluate the code based on correctness, readability.
-Only accepts JSON format.
+Only accepts valid JSON format response without extra prefix or postfix.
 
 # user:
 This correctness value should always be an integer between 1 and 5. So the correctness produced should be 1 or 2 or 3 or 4 or 5.

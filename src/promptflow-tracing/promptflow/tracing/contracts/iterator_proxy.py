@@ -4,13 +4,16 @@
 
 from typing import Any, AsyncIterator, Iterator
 
+from .context_manager_proxy import ContextManagerProxy
 
-class GeneratorProxy:
+
+class IteratorProxy(ContextManagerProxy):
     """A proxy for an iterator that can record all items that have been yielded."""
 
     def __init__(self, iterator: Iterator[Any]):
         self._iterator = iterator
         self._items = []
+        super().__init__(iterator)
 
     def __iter__(self):
         return self
@@ -30,11 +33,7 @@ class GeneratorProxy:
         return self._items
 
 
-def generate_from_proxy(proxy: GeneratorProxy):
-    yield from proxy
-
-
-class AsyncGeneratorProxy:
+class AsyncIteratorProxy(ContextManagerProxy):
     """A proxy for an async iterator that can record all items that have been yielded."""
 
     def __init__(self, iterator: AsyncIterator[Any]):
@@ -45,6 +44,7 @@ class AsyncGeneratorProxy:
         """
         self._iterator = iterator
         self._items = []
+        super().__init__(iterator)
 
     def __aiter__(self):
         return self
@@ -62,8 +62,3 @@ class AsyncGeneratorProxy:
         :return: A list of yielded items.
         """
         return self._items
-
-
-async def generate_from_async_proxy(proxy: AsyncGeneratorProxy):
-    async for item in proxy:
-        yield item

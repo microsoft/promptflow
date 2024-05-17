@@ -17,6 +17,7 @@ from promptflow._sdk._constants import (
     FlowRunProperties,
     Local2Cloud,
     LocalStorageFilenames,
+    RunStatus,
 )
 from promptflow._sdk._errors import RunNotFoundError, UploadInternalError, UploadUserError, UserAuthenticationError
 from promptflow._sdk.entities import Run
@@ -37,9 +38,7 @@ class AsyncRunUploader:
 
     IGNORED_PATTERN = ["__pycache__"]
 
-    def __init__(self, run: Run, run_ops: "RunOperations", overwrite=True):
-        self.run = run
-        self.run_output_path = Path(run.properties[FlowRunProperties.OUTPUT_PATH])
+    def __init__(self, run_ops: "RunOperations", overwrite=True):
         self.run_ops = run_ops
         self.overwrite = overwrite
         self.datastore = self._get_datastore_with_secrets()
@@ -74,24 +73,65 @@ class AsyncRunUploader:
             result[name] = BlobServiceClient(account_url=account_url, credential=credential)
         return result
 
-    def _check_run_exists(self):
-        """Check if run exists in cloud."""
+    def _set_run(self, run: Run):
+        """Set the run to be uploaded."""
+        self.run = run
+        self.run_output_path = Path(self.run.properties[FlowRunProperties.OUTPUT_PATH])
+
+    def _prepare_run_to_upload(self, run: Run):
+        """Prepare the run to be uploaded."""
+        run = self._check_run_is_valid_to_upload(run=run)
+        self._set_run(run=run)
+        # check if the run already exists in cloud
+        self._check_run_exists(run=self.run)
+
+    def _check_run_exists(self, run):
+        """Check if the run already exists in cloud."""
         try:
-            self.run_ops.get(self.run.name)
+            self.run_ops.get(run)
         except RunNotFoundError:
             # go ahead to upload if run does not exist
             pass
         else:
-            msg_prefix = f"Run record {self.run.name!r} already exists in cloud"
+            msg_prefix = f"Run record {run.name!r} already exists in cloud"
             if self.overwrite is True:
                 logger.warning(f"{msg_prefix}. Overwrite is set to True, will overwrite existing run record.")
             else:
                 raise UploadUserError(f"{msg_prefix}. Overwrite is set to False, cannot upload the run record.")
 
-    async def upload(self) -> Dict:
+    def _check_run_is_valid_to_upload(self, run):
+        """Check if the run is valid to be uploaded."""
+        from promptflow._sdk._pf_client import PFClient as LocalPFClient
+
+        # always get run object from db, since the passed in run object may not have all latest info
+        pf = LocalPFClient()
+        run = pf.runs.get(run)
+
+        # check if the run is in terminated status
+        terminated_statuses = RunStatus.get_terminated_statuses()
+        if run.status not in terminated_statuses:
+            raise UserErrorException(
+                f"Can only upload the run with status {terminated_statuses!r} "
+                f"while {run.name!r}'s status is {run.status!r}."
+            )
+
+        # check if it's evaluation run and make sure the main run is already uploaded
+        if run.run:
+            main_run_name = run.run.name if isinstance(run.run, Run) else run.run
+            try:
+                self.run_ops.get(main_run_name)
+            except RunNotFoundError:
+                raise UserErrorException(
+                    f"Failed to upload evaluation run {run.name!r} to cloud. It ran against the run {main_run_name!r} "
+                    f"that was not uploaded to cloud. Make sure the previous run is already uploaded to cloud when "
+                    f"uploading an evaluation run."
+                )
+        return run
+
+    async def upload(self, run: Run) -> Dict:
         """Upload run record to cloud."""
-        # check if run already exists in cloud
-        self._check_run_exists()
+        # check if run is ready to be uploaded
+        self._prepare_run_to_upload(run=run)
 
         # upload run details to cloud
         error_msg_prefix = f"Failed to upload run {self.run.name!r}"
@@ -415,16 +455,17 @@ class AsyncRunUploader:
                     raise
 
     @classmethod
-    def _from_run_operations(cls, run: Run, run_ops: "RunOperations"):
-        """Create an instance from run operations."""
+    def _from_run_operations(cls, run_ops: "RunOperations"):
+        """Create an instance from run and run operations."""
         from azure.ai.ml.entities._datastore.azure_storage import AzureBlobDatastore
 
+        # validate the datastore is supported
         datastore = run_ops._workspace_default_datastore
         if isinstance(datastore, AzureBlobDatastore):
-            return cls(run=run, run_ops=run_ops)
+            return cls(run_ops=run_ops)
         else:
             raise UserErrorException(
-                f"Cannot upload run {run.name!r} because the workspace default datastore is not supported. "
+                f"Cannot upload run because the workspace default datastore is not supported. "
                 f"Supported ones are ['AzureBlobDatastore'], got {type(datastore).__name__!r}."
             )
 

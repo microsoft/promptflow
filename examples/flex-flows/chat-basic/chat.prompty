@@ -1,19 +1,21 @@
 ---
-name: Stream Chat
-description: Chat with stream enabled.
+name: Basic Chat
 model:
   api: chat
   configuration:
     type: azure_openai
     azure_deployment: gpt-35-turbo
   parameters:
-    temperature: 0.2    
+    temperature: 0.2
+    max_tokens: 1024
 inputs: 
   question:
     type: string
   chat_history:
     type: list
-sample: sample.json
+sample:
+  question: "What is Prompt flow?"
+  chat_history: []
 ---
 
 system:

@@ -41,7 +41,6 @@ from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import DEFAULT_SERVE_ENGINE, PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._utilities.chat_utils import start_chat_ui_service_monitor
-from promptflow._sdk._utilities.general_utils import generate_yaml_entry_without_delete
 from promptflow._sdk._utilities.serve_utils import find_available_port, start_flow_service
 from promptflow._utils.flow_utils import is_flex_flow
 from promptflow._utils.logger_utils import get_cli_sdk_logger
@@ -525,11 +524,9 @@ def _test_flow_multi_modal(args, pf_client, environment_variables):
 
         pfs_port = _invoke_pf_svc()
         serve_app_port = args.port or find_available_port()
-        flow = generate_yaml_entry_without_delete(entry=args.flow)
-        # flex flow without yaml file doesn't support /eval in chat window
-        enable_internal_features = Configuration.get_instance().is_internal_features_enabled() and flow == args.flow
+        enable_internal_features = Configuration.get_instance().is_internal_features_enabled()
         start_chat_ui_service_monitor(
-            flow=flow,
+            flow=args.flow,
             serve_app_port=serve_app_port,
             pfs_port=pfs_port,
             url_params=list_of_dict_to_dict(args.url_params),
