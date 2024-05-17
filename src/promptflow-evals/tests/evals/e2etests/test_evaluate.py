@@ -32,6 +32,10 @@ def answer_evaluator_int(answer):
     return len(answer)
 
 
+def answer_evaluator_int_dict(answer):
+    return {42: len(answer)}
+
+
 def answer_evaluator_json(answer):
     return json.dumps({"length": len(answer)})
 
@@ -149,6 +153,8 @@ class TestEvaluate:
         # (False, answer_evaluator_json, 'length'),
         (True, answer_evaluator_int, 'output'),
         (False, answer_evaluator_int, 'output'),
+        (True, answer_evaluator_int_dict, "42"),
+        (False, answer_evaluator_int_dict, "42"),
         ])
     def test_evaluate_python_function(self, data_file, use_thread_pool,
                                       function, column):
