@@ -47,9 +47,6 @@ pf flow test --flow flow:chat --inputs question="What's the capital of France?"
 
 - Test flow: multi turn
 ```shell
-# start test in interactive terminal (TODO)
-pf flow test --flow flow:chat --interactive
-
 # start test in chat ui
 pf flow test --flow flow:chat --ui 
 ```
