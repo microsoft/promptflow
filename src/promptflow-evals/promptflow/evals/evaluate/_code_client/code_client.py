@@ -4,14 +4,31 @@
 import inspect
 import json
 import logging
-from concurrent.futures.thread import ThreadPoolExecutor
 
 import pandas as pd
 
-from promptflow.evals.evaluate._utils import load_jsonl, _apply_column_mapping
+from promptflow._utils.user_agent_utils import ClientUserAgentUtil
+from promptflow.evals.evaluate._utils import _apply_column_mapping, load_jsonl
+from promptflow.tracing import ThreadPoolExecutorWithContext as ThreadPoolExecutor
+from promptflow.tracing._integrations._openai_injector import inject_openai_api, recover_openai_api
 
+from ..._user_agent import USER_AGENT
 
 LOGGER = logging.getLogger(__name__)
+
+
+class BatchRunContext:
+    def __init__(self, client):
+        self.client = client
+
+    def __enter__(self):
+        if isinstance(self.client, CodeClient):
+            ClientUserAgentUtil.append_user_agent(USER_AGENT)
+            inject_openai_api()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if isinstance(self.client, CodeClient):
+            recover_openai_api()
 
 
 class CodeRun:
@@ -53,10 +70,7 @@ class CodeClient:
                 row_metric_results.append({})
 
         return pd.concat(
-            [
-                input_df.add_prefix("inputs."),
-                pd.DataFrame(row_metric_results)
-            ],
+            [input_df.add_prefix("inputs."), pd.DataFrame(row_metric_results)],
             axis=1,
             verify_integrity=True,
         )

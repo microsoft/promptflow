@@ -13,7 +13,7 @@ from promptflow.client import PFClient
 
 from .._constants import CONTENT_SAFETY_DEFECT_RATE_THRESHOLD_DEFAULT, EvaluationMetrics, Prefixes
 from .._user_agent import USER_AGENT
-from ._code_client import CodeClient
+from ._code_client import BatchRunContext, CodeClient
 from ._utils import (
     _apply_column_mapping,
     _log_metrics_and_instance_results,
@@ -336,6 +336,7 @@ def evaluate(
     evaluator_config = _process_evaluator_config(evaluator_config)
     _validate_columns(input_data_df, evaluators, target, evaluator_config)
 
+    # Target Run
     pf_client = PFClient(
         config={"trace.destination": trace_destination},
         user_agent=USER_AGENT,
@@ -370,26 +371,28 @@ def evaluate(
         # everything we need for evaluators.
         _validate_columns(input_data_df, evaluators, target=None, evaluator_config=evaluator_config)
 
+    # Batch Run
     evaluator_info = {}
     use_thread_pool = kwargs.get("_use_thread_pool", True)
     batch_run_client = CodeClient() if use_thread_pool else pf_client
 
-    for evaluator_name, evaluator in evaluators.items():
-        evaluator_info[evaluator_name] = {
-            "client": batch_run_client,
-        }
-        evaluator_info[evaluator_name]["run"] = batch_run_client.run(
-            flow=evaluator,
-            run=target_run,
-            evaluator_name=evaluator_name,
-            column_mapping=evaluator_config.get(evaluator_name, evaluator_config.get("default", None)),
-            data=input_data_df if use_thread_pool else data,
-            stream=True,
-        )
+    with BatchRunContext(batch_run_client):
+        for evaluator_name, evaluator in evaluators.items():
+            run = batch_run_client.run(
+                flow=evaluator,
+                run=target_run,
+                evaluator_name=evaluator_name,
+                column_mapping=evaluator_config.get(evaluator_name, evaluator_config.get("default", None)),
+                data=input_data_df if use_thread_pool else data,
+                stream=True,
+            )
 
+            evaluator_info[evaluator_name] = {"result_df": batch_run_client.get_details(run, all_results=True)}
+
+    # Concatenate all results
     evaluators_result_df = None
     for evaluator_name, evaluator_info in evaluator_info.items():
-        evaluator_result_df = evaluator_info["client"].get_details(evaluator_info["run"], all_results=True)
+        evaluator_result_df = evaluator_info["result_df"]
 
         # drop input columns
         evaluator_result_df = evaluator_result_df.drop(
