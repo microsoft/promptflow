@@ -1,0 +1,45 @@
+{
+    "description": "Test the flow with NaN and Infinity values in a batch run",
+    "run_configs": {
+        "data": "inputs.jsonl",
+        "column_mapping": {
+            "number": "${data.number}"
+        }
+    },
+    "assertions": {
+        "status": "Completed",
+        "outputs": [
+            {
+                "line_number": 0,
+                "output": {
+                    "nan": "NaN",
+                    "inf": "Infinity"
+                }
+            },
+            {
+                "line_number": 1,
+                "output": {
+                    "nan": "NaN",
+                    "inf": "Infinity"
+                }
+            },
+            {
+                "line_number": 2,
+                "output": {
+                    "nan": "NaN",
+                    "inf": "Infinity"
+                }
+            }
+        ],
+        "logs": [
+            "promptflow-runtime",
+            "execution.bulk",
+            "Average execution time for completed lines",
+            "Finished 3 / 3 lines"
+        ],
+        "metrics": {
+            "__pf__.lines.completed": 3.0,
+            "__pf__.lines.failed": 0.0
+        }
+    }
+}

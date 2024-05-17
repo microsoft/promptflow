@@ -3,8 +3,8 @@ import multiprocessing
 import sys
 import threading
 import uuid
+from collections.abc import Iterator
 from pathlib import Path
-from types import GeneratorType
 from unittest.mock import patch
 
 import opentelemetry.trace as otel_trace
@@ -267,7 +267,7 @@ class TestExecutorTraces:
             assert not generator_output_trace
             # Obtain the generator from the flow result
             answer_gen = flow_result.output.get("answer")
-            assert isinstance(answer_gen, GeneratorType)
+            assert isinstance(answer_gen, Iterator)
             # Consume the generator and check that it yields text
             try:
                 generated_text = next(answer_gen)
@@ -464,9 +464,9 @@ class TestOTelTracer:
         "flow_file, inputs, is_stream, expected_span_length",
         [
             ("openai_chat_api_flow", get_chat_input(False), False, 3),
-            ("openai_chat_api_flow", get_chat_input(True), True, 5),
+            ("openai_chat_api_flow", get_chat_input(True), True, 3),
             ("openai_completion_api_flow", get_completion_input(False), False, 3),
-            ("openai_completion_api_flow", get_completion_input(True), True, 5),
+            ("openai_completion_api_flow", get_completion_input(True), True, 3),
             ("llm_tool", {"topic": "Hello", "stream": False}, False, 4),
             ("flow_with_async_llm_tasks", get_flow_sample_inputs("flow_with_async_llm_tasks"), False, 6),
         ],
@@ -728,10 +728,23 @@ class TestOTelTracer:
                     assert span.attributes[token_name] == expected_tokens[span_id][token_name]
 
     def _is_llm_span_with_tokens(self, span, is_stream):
-        # For streaming mode, there are two spans for openai api call, one is the original span, and the other
-        # is the iterated span, which name is "Iterated(<original_trace_name>)", we should check the iterated span
-        # in streaming mode.
+        """
+        This function checks if a given span is a LLM span with tokens.
+
+        If in stream mode, the function checks if the span has attributes indicating it's an iterated span.
+        In non-stream mode, it simply checks if the span's function attribute is in the list of LLM function names.
+
+        Args:
+            span: The span to check.
+            is_stream: A boolean indicating whether the span is in stream mode.
+
+        Returns:
+            A boolean indicating whether the span is a LLM span with tokens.
+        """
         if is_stream:
-            return span.attributes.get("function", "") in LLM_FUNCTION_NAMES and span.name.startswith("Iterated(")
+            return (
+                span.attributes.get("function", "") in LLM_FUNCTION_NAMES
+                and span.attributes.get("output_type", "") == "iterated"
+            )
         else:
             return span.attributes.get("function", "") in LLM_FUNCTION_NAMES

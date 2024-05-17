@@ -6,12 +6,10 @@ model:
   api: chat
   configuration:
     type: azure_openai
-    azure_deployment: gpt-35-turbo-0125
+    azure_deployment: gpt-35-turbo
   parameters:
     max_tokens: 256
     temperature: 0.7
-    response_format:
-        type: json_object
 
 inputs: 
   examples:
@@ -20,13 +18,13 @@ inputs:
     type: string
   statement:
     type: string
-sample: sample.json
+sample: ${file:sample.json}
 ---
 
 # system:
 You are an AI assistant. 
 You task is to evaluate a score based on how the statement applies for the answer.
-Only accepts JSON format.
+Only accepts valid JSON format response without extra prefix or postfix.
 
 # user:
 This score value should always be an integer between 1 and 5. So the score produced should be 1 or 2 or 3 or 4 or 5.

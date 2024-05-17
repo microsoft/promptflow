@@ -2,57 +2,63 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-import time
+import logging
 import typing
 
 from azure.ai.ml import MLClient
 from azure.core.exceptions import ResourceNotFoundError
 from azure.identity import AzureCliCredential
 
-from promptflow._constants import AzureWorkspaceKind, CosmosDBContainerName
+from promptflow._constants import AzureWorkspaceKind
+from promptflow._sdk._constants import AzureMLWorkspaceTriad
 from promptflow._sdk._utilities.general_utils import extract_workspace_triad_from_trace_provider
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure import PFClient
-from promptflow.azure._restclient.flow_service_caller import FlowRequestException
+from promptflow.azure._constants._trace import COSMOS_DB_SETUP_RESOURCE_TYPE
+from promptflow.azure._entities._trace import CosmosMetadata
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 _logger = get_cli_sdk_logger()
-
-COSMOS_INIT_POLL_TIMEOUT_SECOND = 600  # 10 minutes
-COSMOS_INIT_POLL_INTERVAL_SECOND = 30  # 30 seconds
 
 
 def _create_trace_destination_value_user_error(message: str) -> UserErrorException:
     return UserErrorException(message=message, target=ErrorTarget.CONTROL_PLANE_SDK)
 
 
-def _init_workspace_cosmos_db(init_cosmos_func: typing.Callable) -> None:
-    # SDK will call PFS async API to execute workspace Cosmos DB initialization
-    # and poll the status until it's done, the signal is the response is not None
-    start_time = time.time()
-    while True:
-        try:
-            cosmos_res = init_cosmos_func()
-            if cosmos_res is not None:
-                return
-        except FlowRequestException:
-            # ignore request error and continue to poll in next iteration
-            pass
-        # set a timeout here to prevent the potential infinite loop
-        if int(time.time() - start_time) > COSMOS_INIT_POLL_TIMEOUT_SECOND:
-            break
-        prompt_msg = "The workspace Cosmos DB initialization is still in progress..."
-        _logger.info(prompt_msg)
-        time.sleep(COSMOS_INIT_POLL_INTERVAL_SECOND)
-    # initialization does not finish in time, we need to ensure the Cosmos resource is ready
-    # so print error log and raise error here
-    error_msg = (
-        "The workspace Cosmos DB initialization is still in progress "
-        f"after {COSMOS_INIT_POLL_TIMEOUT_SECOND} seconds, "
-        "please wait for a while and retry."
+def resolve_disable_trace(metadata: CosmosMetadata, logger: typing.Optional[logging.Logger] = None) -> bool:
+    """Resolve `disable_trace` from Cosmos DB metadata.
+
+    Only return True when the Cosmos DB is disabled; will log warning if the Cosmos DB is not ready.
+    """
+    if logger is None:
+        logger = _logger
+    if metadata.is_disabled():
+        logger.debug("the trace cosmos db is disabled.")
+        return True
+    if not metadata.is_ready():
+        warning_message = (
+            "The trace Cosmos DB for current workspace/project is not ready yet, "
+            "your traces might not be logged and stored properly.\n"
+            "To enable it, please run `pf config set trace.destination="
+            "azureml://subscriptions/<subscription-id>/"
+            "resourceGroups/<resource-group-name>/providers/Microsoft.MachineLearningServices/"
+            "workspaces/<workspace-or-project-name>`, prompt flow will help to get everything ready.\n"
+        )
+        logger.warning(warning_message)
+    return False
+
+
+def is_trace_cosmos_available(ws_triad: AzureMLWorkspaceTriad, logger: typing.Optional[logging.Logger] = None) -> bool:
+    if logger is None:
+        logger = _logger
+    pf_client = PFClient(
+        credential=AzureCliCredential(),
+        subscription_id=ws_triad.subscription_id,
+        resource_group_name=ws_triad.resource_group_name,
+        workspace_name=ws_triad.workspace_name,
     )
-    _logger.error(error_msg)
-    raise Exception(error_msg)
+    cosmos_metadata = pf_client._traces._get_cosmos_metadata()
+    return not resolve_disable_trace(metadata=cosmos_metadata, logger=logger)
 
 
 def validate_trace_destination(value: str) -> None:
@@ -95,13 +101,16 @@ def validate_trace_destination(value: str) -> None:
     _logger.debug("Resource type is valid.")
 
     # the workspace Cosmos DB is initialized
-    # try to retrieve the token from PFS; if failed, call PFS init API and start polling
+    # if not, call PFS setup API and start polling
     _logger.debug("Validating workspace Cosmos DB is initialized...")
     pf_client = PFClient(ml_client=ml_client)
-    try:
-        pf_client._traces._get_cosmos_db_token(container_name=CosmosDBContainerName.SPAN)
-        _logger.debug("The workspace Cosmos DB is already initialized.")
-    except FlowRequestException:
+    cosmos_metadata = pf_client._traces._get_cosmos_metadata()
+    # raise error if the Cosmos DB is disabled
+    if cosmos_metadata.is_disabled():
+        error_message = "The workspace Cosmos DB is disabled, please enable it first."
+        _logger.error(error_message)
+        raise _create_trace_destination_value_user_error(error_message)
+    if not cosmos_metadata.is_ready():
         # print here to let users aware this operation as it's kind of time consuming
         init_cosmos_msg = (
             "The workspace Cosmos DB is not initialized yet, "
@@ -109,7 +118,9 @@ def validate_trace_destination(value: str) -> None:
         )
         print(init_cosmos_msg)
         _logger.debug(init_cosmos_msg)
-        _init_workspace_cosmos_db(init_cosmos_func=pf_client._traces._init_cosmos_db)
+        pf_client._traces._setup_cosmos_db(resource_type=COSMOS_DB_SETUP_RESOURCE_TYPE)
+    else:
+        _logger.debug("The workspace Cosmos DB is available.")
     _logger.debug("The workspace Cosmos DB is initialized.")
 
     _logger.debug("pf.config.trace.destination is valid.")

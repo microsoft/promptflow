@@ -4,8 +4,8 @@ from promptflow.exceptions import UserErrorException
 from promptflow._utils.credential_utils import get_default_azure_credential
 
 
-# to access azure ai services, we need to get the token with this audience
-COGNITIVE_AUDIENCE = "https://cognitiveservices.azure.com/"
+# to access azure ai services, we need to get the token with this scope
+COGNITIVE_SCOPE = "https://cognitiveservices.azure.com/.default"
 
 
 class TokenProviderABC(ABC):
@@ -48,5 +48,5 @@ class AzureTokenProvider(TokenProviderABC):
             )
 
     def get_token(self):
-        audience = COGNITIVE_AUDIENCE
-        return self.credential.get_token(audience).token
+        scope = COGNITIVE_SCOPE
+        return self.credential.get_token(scope).token

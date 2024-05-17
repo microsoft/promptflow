@@ -9,6 +9,7 @@ from promptflow._cli._pf.entry import main
 
 FLOWS_DIR = Path("./tests/test_configs/flows")
 EAGER_FLOWS_DIR = Path("./tests/test_configs/eager_flows")
+PROMPTY_DIR = Path("./tests/test_configs/prompty")
 
 
 # TODO: move this to a shared utility module
@@ -35,8 +36,9 @@ class TestRun:
     @pytest.mark.parametrize(
         "source",
         [
-            pytest.param(EAGER_FLOWS_DIR / "simple_with_yaml", id="simple_with_yaml_dir"),
-            pytest.param(FLOWS_DIR / "simple_hello_world", id="simple_hello_world_dir"),
+            pytest.param(EAGER_FLOWS_DIR / "simple_with_yaml", id="simple_flex_dir"),
+            pytest.param(FLOWS_DIR / "simple_hello_world", id="simple_dag_dir"),
+            pytest.param(PROMPTY_DIR / "single_prompty", id="simple_prompty_dir"),
         ],
     )
     def test_flow_serve(self, source: Path):
@@ -49,6 +51,17 @@ class TestRun:
                 "--skip-open-browser",
             )
             mock_run.assert_called_once_with(port=8080, host="localhost")
+        with mock.patch("uvicorn.run") as mock_run:
+            run_pf_command(
+                "flow",
+                "serve",
+                "--source",
+                source.as_posix(),
+                "--skip-open-browser",
+                "--engine",
+                "fastapi",
+            )
+            mock_run.assert_called_once()
 
     @pytest.mark.parametrize(
         "source",
@@ -71,3 +84,25 @@ class TestRun:
             "pf.flow.serve failed with UserErrorException: Support directory `source` for Python flow only for now"
             in out
         )
+
+    @pytest.mark.parametrize(
+        "source",
+        [
+            pytest.param(EAGER_FLOWS_DIR / "simple_with_yaml", id="simple_with_yaml_file"),
+            pytest.param(FLOWS_DIR / "simple_hello_world", id="simple_hello_world_file"),
+        ],
+    )
+    def test_flow_serve_invalid_engine(self, source: Path, capsys):
+        invalid_engine = "invalid_engine"
+        with pytest.raises(SystemExit):
+            run_pf_command(
+                "flow",
+                "serve",
+                "--source",
+                source.as_posix(),
+                "--skip-open-browser",
+                "--engine",
+                invalid_engine,
+            )
+        out, err = capsys.readouterr()
+        assert f"Unsupported engine {invalid_engine} for Python flow, only support 'flask' and 'fastapi'." in out

@@ -1,306 +1,178 @@
-# Quick Start
+# Quick start
 
 This guide will walk you through the fist step using of prompt flow code-first experience.
 
 **Prerequisite** - To make the most of this tutorial, you'll need:
-
 - Know how to program with Python :)
-- A basic understanding of Machine Learning can be beneficial, but it's not mandatory.
-
 
 **Learning Objectives** - Upon completing this tutorial, you should learn how to:
 - Setup your python environment to run prompt flow
-- Clone a sample flow & understand what's a flow
-- Understand how to edit the flow using visual editor or yaml
-- Test the flow using your favorite experience: CLI, SDK or VS Code Extension.
+- Create a flow using a prompt and python function
+- Test the flow using your favorite experience: CLI, SDK or UI.
 
+## Installation
 
-## Set up your dev environment
-
-1. A python environment with version `python=3.9` or higher version like 3.10. It's recommended to use python environment manager [miniconda](https://docs.conda.io/en/latest/miniconda.html). After you have installed miniconda, run below commands to create a python environment:
-```bash
-conda create --name pf python=3.9
-conda activate pf
-```
-
-2. Install `promptflow` and `promptflow-tools`.
+Install promptflow package to start.
 ```sh
-pip install promptflow promptflow-tools
+pip install promptflow
 ```
 
-3. Check the installation.
-```bash
-# should print promptflow version, e.g. "0.1.0b3"
-pf -v
-```
+Learn more on ways of [installation](./installation/index.md).
 
-## Understand what's a flow
+## Create your first flow
 
-A flow, represented as a YAML file, is a DAG of functions, which is connected via input/output dependencies, and executed based on the topology by prompt flow executor. See [Flows](../concepts/concept-flows.md) for more details.
+### Model a LLM call with a prompty
 
-### Get the flow sample
+Create a Prompty file to help you trigger one LLM call. 
 
-Clone the sample repo and check flows in folder [examples/flows](https://github.com/microsoft/promptflow/tree/main/examples/flows).
-
-```bash
-git clone https://github.com/microsoft/promptflow.git
-```
-
-### Understand flow directory
-The sample used in this tutorial is the [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification) flow, which categorizes URLs into several predefined classes. Classification is a traditional machine learning task, and this sample illustrates how to perform classification using GPT and prompts.
-
-```bash
-cd promptflow/examples/flows/standard/web-classification
-```
-
-A flow directory is a directory that contains all contents of a flow. Structure of flow folder:
-- **flow.dag.yaml**: The flow definition with inputs/outputs, nodes, tools and variants for authoring purpose.
-- **.promptflow/flow.tools.json**: It contains tools meta referenced in `flow.dag.yaml`.
-- **Source code files (.py, .jinja2)**: User managed, the code scripts referenced by tools.
-- **requirements.txt**: Python package dependencies for this flow.
-
-
-![flow_dir](../media/how-to-guides/quick-start/flow_directory.png)
-
-In order to run this specific flow, you need to install its requirements first.
-
-```sh
-pip install -r requirements.txt
-```
-
-### Understand the flow yaml
-The entry file of a flow directory is [`flow.dag.yaml`](https://github.com/microsoft/promptflow/blob/main/examples/flows/standard/web-classification/flow.dag.yaml) which describes the `DAG(Directed Acyclic Graph)` of a flow. Below is a sample of flow DAG:
-
-![flow_dag](../media/how-to-guides/quick-start/flow_dag.png)
-
-This graph is rendered by VS Code extension which will be introduced in the next section.
-
-### Using VS Code Extension to visualize the flow
-_Note: Prompt flow VS Code Extension is highly recommended for flow development and debugging._
-
-1. Prerequisites for VS Code extension.
-   - Install latest stable version of [VS Code](https://code.visualstudio.com/)
-   - Install [VS Code Python extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python)
-
-2. Install [Prompt flow for VS Code extension](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow)
-
-3. Select python interpreter
-
-    ![vscode](../media/how-to-guides/quick-start/vs_code_interpreter_0.png)
-    ![vscode](../media/how-to-guides/quick-start/vs_code_interpreter_1.png)
-
-
-2. Open dag in vscode. You can open the `flow.dag.yaml` as yaml file, or you can also open it in `visual editor`.
-    ![vscode](../media/how-to-guides/quick-start/vs_code_dag_0.png)
-
-## Develop and test your flow
-
-### How to edit the flow
-
-To test your flow with varying input data, you have the option to modify the default input. If you are well-versed with the structure, you may also add or remove nodes to alter the flow's arrangement.
-
-```yaml
-$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+```md
+---
+name: Minimal Chat
+model:
+  api: chat
+  configuration:
+    type: azure_openai
+    azure_deployment: gpt-35-turbo
+  parameters:
+    temperature: 0.2
+    max_tokens: 1024
 inputs:
-  url:
+  question:
     type: string
-    # change the default value of input url here
-    default: https://play.google.com/store/apps/details?id=com.twitter.android
-...
+sample:
+  question: "What is Prompt flow?"
+---
+
+system:
+You are a helpful assistant.
+
+user:
+{{question}}
 ```
-See more details of this topic in [Develop a flow](./develop-a-dag-flow/index.md).
 
-### Create necessary connections
+Prompty is a markdown file. The front matter structured in `YAML`, encapsulates a series of metadata fields pivotal for defining the model’s configuration and the inputs for the prompty. After this front matter is the prompt template, articulated in the `Jinja` format.
+See more details in [Develop a prompty](./develop-a-prompty/index.md). 
 
-:::{note}
-If you are using `WSL` or other OS without default keyring storage backend, you may encounter `StoreConnectionEncryptionKeyError`, please refer to [FAQ](./faq.md#connection-creation-failed-with-storeconnectionencryptionkeyerror) for the solutions.
-:::
+### Create a flow
+Create a python function which is the entry of a `flow`. 
 
+```python
+import os
 
-The [`connection`](../concepts/concept-connections.md) helps securely store and manage secret keys or other sensitive credentials required for interacting with LLM and other external tools for example Azure Content Safety.
+from dotenv import load_dotenv
+from pathlib import Path
+from promptflow.tracing import trace
+from promptflow.core import Prompty
 
-The sample flow [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification) uses connection `open_ai_connection` inside, e.g. `classify_with_llm` node needs to talk to `llm` using the connection.
+BASE_DIR = Path(__file__).absolute().parent
 
-We need to set up the connection if we haven't added it before. Once created, the connection will be stored in local db and can be used in any flow.
+@trace
+def chat(question: str = "What's the capital of France?") -> str:
+    """Flow entry function."""
+
+    if "OPENAI_API_KEY" not in os.environ and "AZURE_OPENAI_API_KEY" not in os.environ:
+        # load environment variables from .env file
+        load_dotenv()
+
+    prompty = Prompty.load(source=BASE_DIR / "chat.prompty")
+    # trigger a llm call with the prompty obj
+    output = prompty(question=question)
+    return output
+```
+
+Flow can be a python function or class or a yaml file describe a DAG which encapsulate your LLM application logic. Learn more on the [flow concept](../concepts/concept-flows.md) and how to [Develop a flow](./develop-a-flex-flow/index.md).
+
+## Test the flow
+
+Test the flow with your favorite experience: CLI, SDK or UI.
 
 ::::{tab-set}
 
 :::{tab-item} CLI
 :sync: CLI
 
-Firstly we need a connection yaml file `connection.yaml`:
-
-If you are using Azure Open AI, prepare your resource follow with this [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal) and get your `api_key` if you don't have one.
-```yaml
-$schema: https://azuremlschemas.azureedge.net/promptflow/latest/AzureOpenAIConnection.schema.json
-name: open_ai_connection
-type: azure_open_ai
-api_key: <test_key>
-api_base: <test_base>
-api_type: azure
-api_version: <test_version>
-```
-
-If you are using OpenAI, sign up account via [OpenAI website](https://openai.com/), login and [find personal API key](https://platform.openai.com/account/api-keys), then use this yaml:
-```yaml
-$schema: https://azuremlschemas.azureedge.net/promptflow/latest/OpenAIConnection.schema.json
-name: open_ai_connection
-type: open_ai
-api_key: "<user-input>"
-organization: "" # optional
-```
-Then we can use CLI command to create the connection.
+`pf` is the CLI command you get when install `promptflow` package. Learn more on features of `pf` CLI in[reference doc](https://microsoft.github.io/promptflow/reference/pf-command-reference.html).
 
 ```sh
-pf connection create -f connection.yaml
+pf flow test --flow flow:chat --inputs question="What's the capital of France?"
 ```
 
-More command details can be found in [CLI reference](../reference/pf-command-reference.md).
+You will get some output like below in terminal.
+```text
+Prompt flow service has started...
+You can view the trace detail from the following URL:
+http://127.0.0.1:51330/v1.0/ui/traces/?#collection=chat-minimal&uiTraceId=0x49382bbe30664f747348a8ae9dc8b954
+
+The capital of France is Paris
+
+```
+
+Click the trace url printed, you will see a trace UI which help you understand what's the actual llm call heppend behind the scenes.
+![trace_ui](../media/how-to-guides/quick-start/flow_test_trace_ui.png)
+
 
 :::
 
 :::{tab-item} SDK
 :sync: SDK
 
-In SDK, connections can be created and managed with `PFClient`.
-
+Call the chat function with your question. Assume you have a `flow.py` file with below content.
 ```python
-from promptflow.client import PFClient
-from promptflow.entities import AzureOpenAIConnection
+if __name__ == "__main__":
+    from promptflow.tracing import start_trace
 
-# PFClient can help manage your runs and connections.
-pf = PFClient()
+    start_trace()
 
-try:
-    conn_name = "open_ai_connection"
-    conn = pf.connections.get(name=conn_name)
-    print("using existing connection")
-except:
-    connection = AzureOpenAIConnection(
-        name=conn_name,
-        api_key="<test_key>",
-        api_base="<test_base>",
-        api_type="azure",
-        api_version="<test_version>",
-    )
-
-    # use this if you have an existing OpenAI account
-    # from promptflow.entities import OpenAIConnection
-    # connection = OpenAIConnection(
-    #     name=conn_name,
-    #     api_key="<user-input>",
-    # )
-
-    conn = pf.connections.create_or_update(connection)
-    print("successfully created connection")
-
-print(conn)
+    result = chat("What's the capital of France?")
+    print(result)
 ```
+
+Run you script with `python flow.py`, and you will get some outputs like below:
+```text
+Prompt flow service has started...
+You can view the trace detail from the following URL:
+http://127.0.0.1:51330/v1.0/ui/traces/?#collection=chat-minimal&uiTraceId=0x49382bbe30664f747348a8ae9dc8b954
+
+The capital of France is Paris
+
+```
+
+Click the trace url printed, you will see a trace UI which help you understand what's the actual llm call heppend behind the scenes.
+![trace_ui](../media/how-to-guides/quick-start/flow_test_trace_ui.png)
 :::
 
-:::{tab-item} VS Code Extension
+:::{tab-item} UI
 :sync: VS Code Extension
 
-
-
-1. Click the promptflow icon to enter promptflow control panel
-
-    ![vsc_add_connection](../media/how-to-guides/quick-start/vs_code_connection_0.png)
-
-2. Create your connection.
-
-    ![vsc_add_connection](../media/how-to-guides/quick-start/vs_code_connection_1.png)
-
-    ![vsc_add_connection](../media/how-to-guides/quick-start/vs_code_connection_2.png)
-
-    ![vsc_add_connection](../media/how-to-guides/quick-start/vs_code_connection_3.png)
-
-
-:::
-
-::::
-
-Learn more on more actions like delete connection in: [Manage connections](./manage-connections.md).
-
-### Test the flow
-
-:::{admonition} Note
-Testing flow will NOT create a batch run record, therefore it's unable to use commands like `pf run show-details` to get the run information. If you want to persist the run record, see [Run and evaluate a flow](./run-and-evaluate-a-flow/index.md)
-:::
-
-
-Assuming you are in working directory `promptflow/examples/flows/standard/`
-
-::::{tab-set}
-
-:::{tab-item} CLI
-:sync: CLI
-
-Change the default input to the value you want to test.
-
-![q_0](../media/how-to-guides/quick-start/flow-directory-and-dag-yaml.png)
+Start test chat ui with below command.
 
 ```sh
-pf flow test --flow web-classification  # "web-classification" is the directory name
+pf flow test --flow flow:chat --ui 
 ```
 
-![flow-test-output-cli](../media/how-to-guides/quick-start/flow-test-output-cli.png)
+The command will open a browser page like below:
+![chat_ui](../media/how-to-guides/quick-start/flow_test_ui.png)
 
-:::
-
-:::{tab-item} SDK
-:sync: SDK
-
-The return value of `test` function is the flow/node outputs.
-
-```python
-from promptflow.client import PFClient
-
-pf = PFClient()
-
-flow_path = "web-classification"  # "web-classification" is the directory name
-
-# Test flow
-flow_inputs = {"url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g", "answer": "Channel", "evidence": "Url"}  # The inputs of the flow.
-flow_result = pf.test(flow=flow_path, inputs=flow_inputs)
-print(f"Flow outputs: {flow_result}")
-
-# Test node in the flow
-node_name = "fetch_text_content_from_url"  # The node name in the flow.
-node_inputs = {"url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g"}  # The inputs of the node.
-node_result = pf.test(flow=flow_path, inputs=node_inputs, node=node_name)
-print(f"Node outputs: {node_result}")
-```
-
-![Flow test outputs](../media/how-to-guides/quick-start/flow_test_output.png)
-:::
-
-:::{tab-item} VS Code Extension
-:sync: VS Code Extension
-
-Use the code lens action on the top of the yaml editor to trigger flow test
-![dag_yaml_flow_test](../media/how-to-guides/quick-start/test_flow_dag_yaml.gif)
+See more details of this topic in [Chat with a flow](./chat-with-a-flow/index.md).
 
 
-Click the run flow button on the top of the visual editor to trigger flow test.
-![visual_editor_flow_test](../media/how-to-guides/quick-start/test_flow_dag_editor.gif)
+Click the "View trace" button, you will see a trace UI which help you understand what's the actual llm call heppend behind the scenes.
+![trace_ui](../media/how-to-guides/quick-start/flow_test_trace_ui.png)
+
+
 :::
 
 ::::
 
-See more details of this topic in [Initialize and test a flow](./develop-a-dag-flow/init-and-test-a-flow.md).
 
 ## Next steps
 
 Learn more on how to:
-- [Develop a flow](./develop-a-dag-flow/index.md): details on how to develop a flow by writing a flow yaml from scratch.
-- [Initialize and test a flow](./develop-a-dag-flow/init-and-test-a-flow.md): details on how develop a flow from scratch or existing code.
-- [Add conditional control to a flow](./develop-a-dag-flow/add-conditional-control-to-a-flow.md): how to use activate config to add conditional control to a flow.
-- [Run and evaluate a flow](./run-and-evaluate-a-flow/index.md): run and evaluate the flow using multi line data file.
-- [Deploy a flow](./deploy-a-flow/index.md): how to deploy the flow as a web app.
-- [Manage connections](./manage-connections.md): how to manage the endpoints/secrets information to access external services including LLMs.
-- [Prompt flow in Azure AI](../cloud/azureai/run-promptflow-in-azure-ai.md): run and evaluate flow in Azure AI where you can collaborate with team better.
+- [Tracing](./tracing/index.md): details on how tracing works.
+- [Develop a prompty](./develop-a-prompty/index.md): details on how to develop prompty.
+- [Develop a flow](./develop-a-flex-flow/index.md): details on how to develop a flow using a python function or class.
+- [Develop a DAG flow](./develop-a-dag-flow/index.md): details on how to develop a flow using friendly DAG UI.
 
-And you can also check our [examples](https://github.com/microsoft/promptflow/tree/main/examples), especially:
-- [Getting started with prompt flow](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/get-started/quickstart.ipynb): the notebook covering the python sdk experience for sample introduced in this doc.
-- [Tutorial: Chat with PDF](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/e2e-development/chat-with-pdf.md): An end-to-end tutorial on how to build a high quality chat application with prompt flow, including flow development and evaluation with metrics.
+And you can also check our [Tutorials](https://microsoft.github.io/promptflow/tutorials/index.html), especially:
+- [Tutorial: Chat with PDF](https://microsoft.github.io/promptflow/tutorials/chat-with-pdf.html): An end-to-end tutorial on how to build a high quality chat application with prompt flow, including flow development and evaluation with metrics.
+

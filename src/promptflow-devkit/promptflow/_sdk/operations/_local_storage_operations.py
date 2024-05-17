@@ -105,7 +105,9 @@ class LoggerOperations(LogContext):
             else:
                 log_path.touch()
 
-        for _logger in self._get_execute_loggers_list():
+        # set the log level for all loggers except the logger "promptflow"
+        _loggers = [_logger for _logger in self._get_execute_loggers_list() if _logger.name != logger.name]
+        for _logger in _loggers:
             for handler in _logger.handlers:
                 if self.stream is False and isinstance(handler, logging.StreamHandler):
                     handler.setLevel(logging.CRITICAL)
@@ -113,11 +115,12 @@ class LoggerOperations(LogContext):
 
     def __exit__(self, *args):
         super().__exit__(*args)
-
-        for _logger in self._get_execute_loggers_list():
+        # set the log level for all loggers except the logger "promptflow"
+        _loggers = [_logger for _logger in self._get_execute_loggers_list() if _logger.name != logger.name]
+        for _logger in _loggers:
             for handler in _logger.handlers:
                 if self.stream is False and isinstance(handler, logging.StreamHandler):
-                    handler.setLevel(logging.CRITICAL)
+                    handler.setLevel(logging.INFO)
 
 
 @dataclass
@@ -246,7 +249,8 @@ class LocalStorageOperations(AbstractBatchRunStorage):
 
     def dump_snapshot(self, flow: Flow) -> None:
         """Dump flow directory to snapshot folder, input file will be dumped after the run."""
-        patterns = [pattern for pattern in PromptflowIgnoreFile.IGNORE_FILE]
+        ignore_file = PromptflowIgnoreFile(prompt_flow_path=flow.code)
+        patterns = [pattern for pattern in ignore_file._get_ignore_list()]
         # ignore current output parent folder to avoid potential recursive copy
         patterns.append(self._run._output_path.parent.name)
         shutil.copytree(

@@ -69,6 +69,7 @@ linkcheck_ignore = [
     "deploy-using-kubernetes.html",
     "https://portal.azure.com/#create/Microsoft.CognitiveServicesTextAnalytics",  # sphinx recognizes #create as an anchor while it's not. # noqa: E501
     "https://ms.portal.azure.com/#view/Microsoft_Azure_Marketplace/MarketplaceOffersBlade/searchQuery/machine%20learning",  # noqa: E501
+    "https://github.com/microsoft/promptflow/blob/main/examples/flex-flows/chat-async-stream/chat-stream-with-async-flex-flow.ipynb",  # noqa: E501
 ]
 
 linkcheck_exclude_documents = [
@@ -112,8 +113,8 @@ html_theme_options = {
     "show_toc_level": 1,
     "navbar_align": "left",  # [left, content, right] For testing that the navbar items align properly
     "navbar_center": ["navbar-nav"],
-    "announcement": "<b>[IMPORTANT]</b> Please uninstall existing promptflow and sub packages before you install "
-    "promptflow==1.8.0. Reach "
+    "announcement": "<b>[IMPORTANT]</b> Please uninstall existing promptflow and sub packages before you "
+    "upgrade from promptflow<=1.7.0 to newer version. Reach "
     "<a href='https://microsoft.github.io/promptflow/how-to-guides/faq.html#promptflow-1-8-0-upgrade-guide'>"
     "here</a> for more details.",
     "show_nav_level": 1,

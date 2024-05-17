@@ -1,4 +1,1 @@
 entry: class_with_model_config:MyFlow
-environment:
-  image: promptflow.azurecr.io/promptflow-runtime:pr-1316971-v19
-  python_requirements_txt: requirements.txt

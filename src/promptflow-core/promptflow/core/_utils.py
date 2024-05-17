@@ -4,6 +4,7 @@
 import json
 import os
 import re
+from configparser import ConfigParser
 from os import PathLike
 from pathlib import Path
 from typing import Dict, Optional, Tuple, Union
@@ -11,7 +12,7 @@ from typing import Dict, Optional, Tuple, Union
 from jinja2 import Template
 
 from promptflow._constants import AZURE_WORKSPACE_REGEX_FORMAT
-from promptflow._utils.flow_utils import is_flex_flow, resolve_flow_path, resolve_python_entry_file
+from promptflow._utils.flow_utils import is_flex_flow, is_prompty_flow, resolve_flow_path
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.utils import _match_reference
 from promptflow._utils.yaml_utils import load_yaml
@@ -26,39 +27,41 @@ def render_jinja_template_content(template_content, *, trim_blocks=True, keep_tr
     return template.render(**kwargs)
 
 
-def init_executable(*, flow_dag: dict = None, flow_path: Path = None, working_dir: Path = None):
-    if flow_dag and flow_path:
+def init_executable(*, flow_data: dict = None, flow_path: Path = None, working_dir: Path = None):
+    if flow_data and flow_path:
         raise ValueError("flow_dag and flow_path cannot be both provided.")
-    if not flow_dag and not flow_path:
+    if not flow_data and not flow_path:
         raise ValueError("flow_dag or flow_path must be provided.")
-    if flow_dag and not working_dir:
+    if flow_data and not working_dir:
         raise ValueError("working_dir must be provided when flow_dag is provided.")
 
     if flow_path:
+        if is_prompty_flow(file_path=flow_path):
+            from promptflow.contracts.flow import PromptyFlow as ExecutablePromptyFlow
+            from promptflow.core._flow import Prompty
+
+            configs, _ = Prompty._parse_prompty(flow_path)
+            return ExecutablePromptyFlow._from_dict(flow_data=configs, working_dir=working_dir or flow_path.parent)
+
         flow_dir, flow_filename = resolve_flow_path(flow_path)
-        flow_dag = load_yaml(flow_dir / flow_filename)
-        if not working_dir:
-            working_dir = flow_dir
+        flow_data = load_yaml(flow_dir / flow_filename)
+
+        # priority: code in yaml > working_dir > flow_dir
+        if "code" not in flow_data:
+            working_dir = working_dir or flow_dir
+        elif os.path.isabs(flow_data["code"]):
+            working_dir = Path(flow_data["code"])
+        else:
+            working_dir = flow_dir / Path(flow_data["code"])
 
     from promptflow.contracts.flow import FlexFlow as ExecutableEagerFlow
     from promptflow.contracts.flow import Flow as ExecutableFlow
 
-    if is_flex_flow(yaml_dict=flow_dag):
-
-        entry = flow_dag.get("entry")
-        entry_file = resolve_python_entry_file(entry=entry, working_dir=working_dir)
-
-        from promptflow._core.entry_meta_generator import generate_flow_meta
-
-        meta_dict = generate_flow_meta(
-            flow_directory=working_dir,
-            source_path=entry_file,
-            data=flow_dag,
-        )
-        return ExecutableEagerFlow.deserialize(meta_dict)
+    if is_flex_flow(yaml_dict=flow_data):
+        return ExecutableEagerFlow._from_dict(flow_data=flow_data, working_dir=working_dir)
 
     # for DAG flow, use data to init executable to improve performance
-    return ExecutableFlow._from_dict(flow_dag=flow_dag, working_dir=working_dir)
+    return ExecutableFlow._from_dict(flow_data=flow_data, working_dir=working_dir)
 
 
 # !!! Attention!!!: Please make sure you have contact with PRS team before changing the interface.
@@ -197,3 +200,25 @@ def load_inputs_from_sample(sample: Union[dict, str, PathLike]):
             return json.load(f)
     else:
         raise InvalidSampleError("Only dict and json file are supported as sample in prompty.")
+
+
+def get_workspace_triad_from_local() -> tuple:
+    subscription_id = None
+    resource_group_name = None
+    workspace_name = None
+    azure_config_path = Path.home() / ".azure"
+    config_parser = ConfigParser()
+    # subscription id
+    try:
+        config_parser.read_file(open(azure_config_path / "clouds.config"))
+        subscription_id = config_parser["AzureCloud"]["subscription"]
+    except Exception:  # pylint: disable=broad-except
+        pass
+    # resource group name & workspace name
+    try:
+        config_parser.read_file(open(azure_config_path / "config"))
+        resource_group_name = config_parser["defaults"]["group"]
+        workspace_name = config_parser["defaults"]["workspace"]
+    except Exception:  # pylint: disable=broad-except
+        pass
+    return subscription_id, resource_group_name, workspace_name

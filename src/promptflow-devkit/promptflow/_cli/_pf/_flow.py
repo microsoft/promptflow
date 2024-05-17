@@ -8,7 +8,6 @@ import json
 import os
 import sys
 import tempfile
-import webbrowser
 from pathlib import Path
 
 from promptflow._cli._params import (
@@ -39,11 +38,10 @@ from promptflow._cli._pf._init_entry_generators import (
 from promptflow._cli._utils import _copy_to_flow, activate_action, confirm, inject_sys_path, list_of_dict_to_dict
 from promptflow._constants import ConnectionProviderConfig
 from promptflow._sdk._configuration import Configuration
-from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
+from promptflow._sdk._constants import DEFAULT_SERVE_ENGINE, PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._pf_client import PFClient
-from promptflow._sdk._utilities.chat_utils import construct_chat_page_url
-from promptflow._sdk._utilities.general_utils import generate_yaml_entry_without_recover
-from promptflow._sdk._utilities.serve_utils import start_flow_service
+from promptflow._sdk._utilities.chat_utils import start_chat_ui_service_monitor
+from promptflow._sdk._utilities.serve_utils import find_available_port, start_flow_service
 from promptflow._utils.flow_utils import is_flex_flow
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import ErrorTarget, UserErrorException
@@ -199,6 +197,12 @@ pf flow serve --source <path_to_flow> --skip-open-browser
     add_param_skip_browser = lambda parser: parser.add_argument(  # noqa: E731
         "--skip-open-browser", action="store_true", default=False, help="Skip open browser for flow serving."
     )
+    add_param_engine = lambda parser: parser.add_argument(  # noqa: E731
+        "--engine",
+        type=str,
+        default=DEFAULT_SERVE_ENGINE,
+        help="The engine to serve the flow, can be flask or fastapi.",
+    )
     activate_action(
         name="serve",
         description="Serving a flow as an endpoint.",
@@ -207,6 +211,7 @@ pf flow serve --source <path_to_flow> --skip-open-browser
             add_param_source,
             add_param_port,
             add_param_host,
+            add_param_engine,
             add_param_static_folder,
             add_param_environment_variables,
             add_param_config,
@@ -294,6 +299,8 @@ pf flow test --flow my-awesome-flow --init key1=value1 key2=value2
     add_param_url_params = lambda parser: parser.add_argument(  # noqa: E731
         "--url-params", action=AppendToDictAction, help=argparse.SUPPRESS, nargs="+"
     )
+    # add a private param to support specifying port for chat debug service
+    add_param_port = lambda parser: parser.add_argument("--port", type=str, help=argparse.SUPPRESS)  # noqa: E731
 
     add_params = [
         add_param_flow,
@@ -311,6 +318,7 @@ pf flow test --flow my-awesome-flow --init key1=value1 key2=value2
         add_param_skip_browser,
         add_param_init,
         add_param_url_params,
+        add_param_port,
     ] + base_params
 
     if Configuration.get_instance().is_internal_features_enabled():
@@ -456,7 +464,7 @@ def test_flow(args):
         _test_flow_experiment(args, pf_client, inputs, environment_variables)
         return
     if args.multi_modal or args.ui:
-        _test_flow_multi_modal(args, pf_client)
+        _test_flow_multi_modal(args, pf_client, environment_variables)
         return
     if args.interactive:
         _test_flow_interactive(args, pf_client, inputs, environment_variables)
@@ -483,7 +491,7 @@ def _build_inputs_for_flow_test(args):
     return inputs
 
 
-def _test_flow_multi_modal(args, pf_client):
+def _test_flow_multi_modal(args, pf_client, environment_variables):
     """Test flow with multi modality mode."""
     if str(os.getenv(PF_CHAT_UI_ENABLE_STREAMLIT, "false")).lower() == "true":
         from promptflow._sdk._load_functions import load_flow
@@ -506,7 +514,7 @@ def _test_flow_multi_modal(args, pf_client):
             for script in script_path:
                 StreamlitFileReplicator(
                     flow_name=flow.display_name if flow.display_name else flow.name,
-                    flow_dag_path=flow.flow_dag_path,
+                    flow_dag_path=flow._flow_file_path,
                 ).generate_to_file(script)
             main_script_path = os.path.join(temp_dir, "main.py")
             logger.info("Start streamlit with main script generated at: %s", main_script_path)
@@ -515,18 +523,18 @@ def _test_flow_multi_modal(args, pf_client):
         from promptflow._sdk._tracing import _invoke_pf_svc
 
         pfs_port = _invoke_pf_svc()
-        flow = generate_yaml_entry_without_recover(entry=args.flow)
-        # flex flow without yaml file doesn't support /eval in chat window
-        enable_internal_features = Configuration.get_instance().is_internal_features_enabled() or flow != args.flow
-        chat_page_url = construct_chat_page_url(
-            flow,
-            pfs_port,
-            list_of_dict_to_dict(args.url_params),
+        serve_app_port = args.port or find_available_port()
+        enable_internal_features = Configuration.get_instance().is_internal_features_enabled()
+        start_chat_ui_service_monitor(
+            flow=args.flow,
+            serve_app_port=serve_app_port,
+            pfs_port=pfs_port,
+            url_params=list_of_dict_to_dict(args.url_params),
+            init=list_of_dict_to_dict(args.init),
             enable_internal_features=enable_internal_features,
+            skip_open_browser=args.skip_open_browser,
+            environment_variables=environment_variables,
         )
-        print(f"You can begin chat flow on {chat_page_url}")
-        if not args.skip_open_browser:
-            webbrowser.open(chat_page_url)
 
 
 def _test_flow_interactive(args, pf_client, inputs, environment_variables):
@@ -595,6 +603,7 @@ def serve_flow(args):
         host=args.host,
         port=args.port,
         skip_open_browser=args.skip_open_browser,
+        engine=args.engine,
     )
     logger.info("Promptflow app ended")
 

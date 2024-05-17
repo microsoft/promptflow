@@ -36,7 +36,8 @@ class Flow(FlowBase):
 
         # TODO: this can be dangerous. path always point to the flow yaml file; code always point to the flow directory;
         #   but path may not under code (like a temp generated flow yaml file).
-        self._flow_dir, self._dag_file_name = resolve_flow_path(self.path)
+        self._flow_dir, self._flow_file_name = resolve_flow_path(self.path)
+        self._flow_file_path = self._flow_dir / self._flow_file_name
         self._executable = None
         self._params_override = params_override
 
@@ -47,7 +48,7 @@ class Flow(FlowBase):
 
     @property
     def flow_dag_path(self) -> Path:
-        return self._flow_dir / self._dag_file_name
+        return self._flow_file_path
 
     @property
     def tools_meta_path(self) -> Path:
@@ -93,7 +94,7 @@ class Flow(FlowBase):
 
     def _dump_for_validation(self) -> Dict:
         # Flow is read-only in control plane, so we always dump the flow from file
-        data = load_yaml(self.flow_dag_path)
+        data = load_yaml(self._flow_file_path)
         if isinstance(self._params_override, dict):
             data.update(self._params_override)
         return data

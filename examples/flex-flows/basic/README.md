@@ -25,27 +25,20 @@ cat ../.env
 python programmer.py
 ```
 
-- Test flow with connection
-
-Storing connection info in .env with plaintext is not safe. We recommend to use `pf connection` to guard secrets like `api_key` from leak.
-
-- Show or create `open_ai_connection`
+- Test with flow entry
 ```bash
-# create connection from `azure_openai.yml` file
-# Override keys with --set to avoid yaml file changes
-pf connection create --file ../../connections/azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base>
-
-# check if connection exists
-pf connection show -n open_ai_connection
+pf flow test --flow programmer:write_simple_program --inputs text="Java Hello World!"
 ```
 
+- Test with flow yaml
 ```bash
-# test with default input value in flow.flex.yaml
+# test with sample input value in flow.flex.yaml
 pf flow test --flow .
+```
 
-# test with flow inputs
-pf flow test --flow . --inputs text="Java Hello World!"
-
+```shell
+# test with UI
+pf flow test --flow . --ui
 ```
 
 - Create run with multiple lines data
@@ -76,7 +69,9 @@ pf run visualize --name $name
 ```
 
 ## Run flow in cloud with connection
+
 - Assume we already have a connection named `open_ai_connection` in workspace.
+
 ```bash
 # set default workspace
 az account set -s <your_subscription_id>
@@ -86,7 +81,7 @@ az configure --defaults group=<your_resource_group_name> workspace=<your_workspa
 - Create run
 ```bash
 # run with environment variable reference connection in azureml workspace
-pfazure run create --flow . --data ./data.jsonl --column-mapping text='${data.text}' --stream
+pfazure run create --flow . --data ./data.jsonl --column-mapping text='${data.text}' --environment-variables AZURE_OPENAI_API_KEY='${open_ai_connection.api_key}' AZURE_OPENAI_ENDPOINT='${open_ai_connection.api_base}' --stream
 # run using yaml file
 pfazure run create --file run.yml --stream
 ```

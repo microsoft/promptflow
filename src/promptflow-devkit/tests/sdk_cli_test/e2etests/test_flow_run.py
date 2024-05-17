@@ -15,7 +15,7 @@ from _constants import PROMPTFLOW_ROOT
 from marshmallow import ValidationError
 from pytest_mock import MockerFixture
 
-from promptflow._constants import PROMPTFLOW_CONNECTIONS
+from promptflow._constants import PROMPTFLOW_CONNECTIONS, FlowType
 from promptflow._sdk._constants import (
     FLOW_DIRECTORY_MACRO_IN_CONFIG,
     PROMPT_FLOW_DIR_NAME,
@@ -1401,6 +1401,9 @@ class TestFlowRun:
         expected_details: dict,
     ) -> None:
         run = pf.run(**run_params)
+        # flex flow does not have variant
+        assert "_variant_" not in run.name
+        assert "_variant_" not in run.display_name
         assert run.status == "Completed"
         assert "error" not in run._to_dict()
 
@@ -1992,6 +1995,36 @@ class TestFlowRun:
             # visualize both runs, will use trace UI visualize
             pf.visualize(runs=[dag_flow_run, flex_flow_run, prompty_run])
             assert static_vis_func.call_count == 1 and trace_ui_vis_func.call_count == 3
+
+    def test_flex_flow_run_flow_type(self, pf: PFClient) -> None:
+        run = pf.run(
+            flow="entry:my_flow",
+            code=f"{EAGER_FLOWS_DIR}/simple_without_yaml",
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+        )
+        # BUG 3195705: uncomment below line after bug fixed, current value is "dag"
+        # assert run._flow_type == FlowType.FLEX_FLOW
+        assert pf.runs._get_run_flow_type(run) == FlowType.FLEX_FLOW
+
+    def test_dump_snapshot_honor_ignore_file(self, pf: PFClient) -> None:
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/print_env_var_with_aml_ignore",
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
+        )
+        snapshot_folder = run._output_path / "snapshot"
+        assert not (snapshot_folder / "ignore_a").exists()
+        assert not (snapshot_folder / "ignore_b").exists()
+
+    def test_installed_entry_without_snapshot(self, pf):
+        run = pf.run(
+            flow=_parse_otel_span_status_code,
+            data=f"{DATAS_DIR}/simple_eager_flow_data_numbers.jsonl",
+            column_mapping={"value": "${data.value}"},
+        )
+        snapshot_folder = run._output_path / "snapshot"
+        # check snapshot folder will only contain flow.flex.yaml
+        assert len(os.listdir(snapshot_folder)) == 1
+        assert (snapshot_folder / "flow.flex.yaml").exists()
 
 
 def assert_batch_run_result(run: Run, pf: PFClient, assert_func):

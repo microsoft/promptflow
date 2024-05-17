@@ -102,7 +102,39 @@ class TestRun:
         with pytest.raises(UserErrorException) as e:
             load_flow(flow_path)
 
-        assert (
-            f"Flow path {flow_path.absolute().as_posix()} must have postfix either flow.dag.yaml or flow.flex.yaml"
-            in str(e.value)
+        assert f"Have found neither flow.dag.yaml nor flow.flex.yaml in {flow_path.absolute().as_posix()}" in str(
+            e.value
         )
+
+    @pytest.mark.parametrize(
+        "flow_file",
+        [
+            "flow.flex.yaml",
+            "flow_with_sample_ref.yaml",
+            "flow_with_sample_inner_ref.yaml",
+        ],
+    )
+    def test_flex_flow_sample_ref(self, flow_file):
+        expected_sample_dict = {
+            "init": {"obj_input1": "val1", "obj_input2": "val2"},
+            "inputs": {"func_input1": "val1", "func_input2": "val2"},
+        }
+        flow_path = EAGER_FLOWS_DIR / "flow_with_sample" / flow_file
+        flow = load_flow(flow_path)
+        assert flow.sample == expected_sample_dict
+
+    @pytest.mark.parametrize(
+        "flow_file",
+        [
+            "flow.flex.yaml",
+            "flow_with_sample_ref.yaml",
+            "flow_with_sample_inner_ref.yaml",
+        ],
+    )
+    def test_function_flex_flow_sample_ref(self, flow_file):
+        expected_sample_dict = {
+            "inputs": {"func_input1": "val1", "func_input2": "val2"},
+        }
+        flow_path = EAGER_FLOWS_DIR / "function_flow_with_sample" / flow_file
+        flow = load_flow(flow_path)
+        assert flow.sample == expected_sample_dict

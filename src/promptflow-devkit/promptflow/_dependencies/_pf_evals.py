@@ -7,4 +7,4 @@
 
 # flake8: noqa
 from promptflow._sdk._constants import LINE_NUMBER, Local2Cloud
-from promptflow._sdk._configuration import Configuration
+from promptflow._sdk._utilities.general_utils import get_trace_destination

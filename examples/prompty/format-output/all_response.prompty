@@ -24,7 +24,7 @@ inputs:
   chat_history:
     type: list
     default: []
-sample: sample.json
+sample: ${file:sample.json}
 ---
 system:
 You are an AI assistant who helps people find information.

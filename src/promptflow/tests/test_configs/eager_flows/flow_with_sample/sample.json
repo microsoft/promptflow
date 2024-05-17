@@ -1,0 +1,10 @@
+{
+    "inputs": {
+        "func_input1": "val1",
+        "func_input2": "val2"
+    },
+    "init": {
+        "obj_input1": "val1",
+        "obj_input2": "val2"
+    }
+}
