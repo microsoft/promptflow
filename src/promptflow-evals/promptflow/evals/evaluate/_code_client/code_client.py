@@ -52,9 +52,13 @@ class CodeClient:
         row_metric_futures = []
         row_metric_results = []
         input_df = _apply_column_mapping(input_df, column_mapping)
-        parameters = {param.name for param in inspect.signature(evaluator).parameters.values()}
+        # Ignoring args and kwargs from the signature since they are usually catching extra arguments
+        parameters = {param.name for param in inspect.signature(evaluator).parameters.values()
+                      if param.name not in ['args', 'kwargs']}
         for value in input_df.to_dict("records"):
-            filtered_values = {k: v for k, v in value.items() if k in parameters}
+            # Filter out only the parameters that are present in the input data
+            # if no parameters then pass data as is
+            filtered_values = {k: v for k, v in value.items() if k in parameters} if len(parameters) > 0 else value
             row_metric_futures.append(self._thread_pool.submit(evaluator, **filtered_values))
 
         for row_number, row_metric_future in enumerate(row_metric_futures):

@@ -360,3 +360,7 @@ class TestEvaluate:
         assert remote_run is not None
         assert remote_run["runMetadata"]["properties"]["_azureml.evaluation_run"] == "azure-ai-generative-parent"
         assert remote_run["runMetadata"]["displayName"] == evaluation_name
+
+    @pytest.mark.skip(reason="TODO: Add test back")
+    def test_prompty_with_threadpool_implementation(self):
+        pass
