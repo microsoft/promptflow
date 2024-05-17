@@ -8,7 +8,7 @@ from typing import List, Mapping
 import uuid
 
 from jinja2 import Template
-from openai import APIConnectionError, APIStatusError, APITimeoutError, BadRequestError, OpenAIError, RateLimitError
+from openai import APIConnectionError, APIStatusError, APITimeoutError, BadRequestError, OpenAIError, RateLimitError, APIError
 
 from promptflow._cli._utils import get_workspace_triad_from_local
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
@@ -1054,35 +1054,48 @@ def openai_batch_chat(client, kwargs):
         # wait for the batch job to complete
         job_status = ""
         output_file_id = ""
+        error_file_id = ""
         while job_status != "completed" or job_status != "failed" or job_status != "cancelled" or job_status != "expired":
             job_status = client.batches.retrieve(batch_res.id).status
             if job_status == "completed":
                 output_file_id = client.batches.retrieve(batch_res.id).output_file_id
+                error_file_id = client.batches.retrieve(batch_res.id).error_file_id
                 break
             time.sleep(60)
 
-        # retrieve the output file content
-        output_content = client.files.content(output_file_id)
+        if output_file_id:
+            # retrieve the output file content
+            output_content = client.files.content(output_file_id)
 
-        lines = output_content.response.text.split('\n')
+            lines = output_content.response.text.split('\n')
 
-        result = json.loads(lines[0])
-        body = result['response']['body']
+            result = json.loads(lines[0])
+            body = result['response']['body']
 
-        chat_completion = ChatCompletion(
-            id=body['id'],
-            choices=body['choices'],
-            created=body['created'],
-            model=body['model'],
-            object=body['object'],
-            system_fingerprint=body['system_fingerprint'],
-            usage=body['usage']
-        )
+            chat_completion = ChatCompletion(
+                id=body['id'],
+                choices=body['choices'],
+                created=body['created'],
+                model=body['model'],
+                object=body['object'],
+                system_fingerprint=body['system_fingerprint'],
+                usage=body['usage']
+            )
 
-        # delete the batch file
-        client.files.delete(uploaded_file.id)
-        client.files.delete(output_file_id)
-        os.remove(temp_file_name)
+            # delete the batch file
+            client.files.delete(output_file_id)
+            client.files.delete(uploaded_file.id)
+            os.remove(temp_file_name)
+        elif error_file_id:
+            # retrieve the error file content and raise exception
+            error_content = client.files.content(error_file_id)
+            lines = error_content.response.text.split('\n')
+
+            result = json.loads(lines[0])
+            body = result['response']['body']
+            client.files.delete(uploaded_file.id)
+
+            raise APIError(message=body['error']['message'], request=None, body=body['error'])
 
         return chat_completion
     except Exception as e:
