@@ -14,6 +14,7 @@ This section contains a collection of flow samples and step-by-step tutorials.
 |Prompty|[Prompty output format](https://github.com/microsoft/promptflow/blob/main/examples/prompty/format-output/prompty-output-format.ipynb)||
 |Flow|[Getting started with flex flow](https://github.com/microsoft/promptflow/blob/main/examples/flex-flows/basic/flex-flow-quickstart.ipynb)|A quickstart tutorial to run a flex flow and evaluate it.|
 |Flow|[Chat with class based flex flow](https://github.com/microsoft/promptflow/blob/main/examples/flex-flows/chat-basic/chat-with-class-based-flow.ipynb)|A quickstart tutorial to run a class based flex flow and evaluate it.|
+|Flow|[Stream chat with async flex flow](https://github.com/microsoft/promptflow/blob/main/examples/flex-flows/chat-async-stream/chat-stream-with-async-flex-flow.ipynb)|A quickstart tutorial to run a class based flex flow in stream mode and evaluate it.|
 |Flow|[Stream chat with flex flow](https://github.com/microsoft/promptflow/blob/main/examples/flex-flows/chat-stream/chat-stream-with-flex-flow.ipynb)|A quickstart tutorial to run a class based flex flow in stream mode and evaluate it.|
 |Flow|[Getting started with dag flow](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/get-started/quickstart.ipynb)|A quickstart tutorial to run a flow and evaluate it.|
 |Flow|[Execute flow as a function](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/get-started/flow-as-function.ipynb)|This guide will walk you through the main scenarios of executing flow as a function.|

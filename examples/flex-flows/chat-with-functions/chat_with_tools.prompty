@@ -1,0 +1,32 @@
+---
+name: Chat with Tools
+description: A basic prompt with tools
+model:
+    api: chat
+    configuration:
+      type: azure_openai
+      azure_deployment: gpt-35-turbo
+    parameters:
+      max_tokens: 128
+      temperature: 0.2
+      tools: ${file:tools.json}
+      tool_choice: auto
+inputs:
+  question:
+    type: string
+  chat_history:
+    type: list
+sample:
+  question: What's the weather in Beijing?
+  chat_history: []
+---
+# system:
+Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous.
+
+{% for item in chat_history %}
+{{item.role}}:
+{{item.content}}
+{% endfor %}
+
+user:
+{{question}}

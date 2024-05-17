@@ -23,7 +23,7 @@ Or use CLI to create connection:
 
 ```bash
 # Override keys with --set to avoid yaml file changes
-pf connection create --file ../../connections/custom.yml --set secrets.openai_api_key=<your_api_key> secrets.azure_endpoint=<your_api_base> --name my_llm_connection
+pf connection create --file ./connection.yml --set secrets.openai_api_key=<your_api_key> configs.azure_endpoint=<your_api_base> --name my_llm_connection
 ```
 
 Note in [flow.flex.yaml](flow.flex.yaml) we are using connection named `my_llm_connection`.
@@ -39,7 +39,12 @@ python eval_conciseness.py
 
 - Test flow
 ```bash
-pf flow test --flow . --inputs input="What's 2+2?" prediction="What's 2+2? That's an elementary question. The answer you're looking for is that two and two is four." --init custom_connection=my_llm_connection
+pf flow test --flow eval_conciseness:LangChainEvaluator --inputs input="What's 2+2?" prediction="What's 2+2? That's an elementary question. The answer you're looking for is that two and two is four." --init custom_connection=my_llm_connection
+```
+
+- Test flow with yaml
+```bash
+pf flow test --flow .
 ```
 
 - Create run with multiple lines data
