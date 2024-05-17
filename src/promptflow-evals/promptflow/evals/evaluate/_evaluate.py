@@ -395,14 +395,14 @@ def evaluate(
 
         # drop input columns
         evaluator_result_df = evaluator_result_df.drop(
-            columns=[col for col in evaluator_result_df.columns if col.startswith(Prefixes._INPUTS)]
+            columns=[col for col in evaluator_result_df.columns if str(col).startswith(Prefixes._INPUTS)]
         )
 
         # rename output columns
         # Assuming after removing inputs columns, all columns are output columns
         evaluator_result_df.rename(
             columns={
-                col: f"outputs.{evaluator_name}.{col.replace(Prefixes._OUTPUTS, '')}"
+                col: f"outputs.{evaluator_name}.{str(col).replace(Prefixes._OUTPUTS, '')}"
                 for col in evaluator_result_df.columns
             },
             inplace=True,
