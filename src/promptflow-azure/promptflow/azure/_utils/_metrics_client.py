@@ -58,7 +58,7 @@ class AsyncMetricClient:
             ]
         }
 
-        error_msg_prefix = f"Failed to write metrics for Run {run_id!r}"
+        error_msg_prefix = f"Failed to write metrics '{metric_key}:{metric_value}' for Run {run_id!r}"
         try:
             async with httpx.AsyncClient(verify=False) as client:
                 response = await client.post(url, headers=self._get_header(), json=payload)
@@ -67,11 +67,9 @@ class AsyncMetricClient:
                     raise UserAuthenticationError(response.text)
                 elif response.status_code != 200:
                     error_message = f"{error_msg_prefix}. Code={response.status_code}. Message={response.text}"
-                    logger.error(error_message)
                     raise MetricInternalError(error_message)
         except Exception as e:
             error_message = f"{error_msg_prefix}: {str(e)}"
-            logger.error(error_message)
             raise MetricInternalError(error_message) from e
 
     def _get_header(self) -> Dict[str, str]:

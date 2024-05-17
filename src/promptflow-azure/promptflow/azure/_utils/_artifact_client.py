@@ -70,11 +70,9 @@ class AsyncArtifactClient:
                     raise UserAuthenticationError(error_message)
                 elif response.status_code != 200:
                     error_message = f"{error_msg_prefix}. Code={response.status_code}. Message={response.text}"
-                    logger.error(error_message)
                     raise ArtifactInternalError(error_message)
         except Exception as e:
             error_message = f"{error_msg_prefix}: {str(e)}"
-            logger.error(error_message)
             raise ArtifactInternalError(error_message) from e
 
     def _get_header(self) -> Dict[str, str]:
