@@ -378,7 +378,8 @@ def evaluate(
 
     with BatchRunContext(batch_run_client):
         for evaluator_name, evaluator in evaluators.items():
-            run = batch_run_client.run(
+            evaluator_info[evaluator_name] = {}
+            evaluator_info[evaluator_name]["run"] = batch_run_client.run(
                 flow=evaluator,
                 run=target_run,
                 evaluator_name=evaluator_name,
@@ -387,12 +388,10 @@ def evaluate(
                 stream=True,
             )
 
-            evaluator_info[evaluator_name] = {"result_df": batch_run_client.get_details(run, all_results=True)}
-
     # Concatenate all results
     evaluators_result_df = None
     for evaluator_name, evaluator_info in evaluator_info.items():
-        evaluator_result_df = evaluator_info["result_df"]
+        evaluator_result_df = batch_run_client.get_details(evaluator_info["run"], all_results=True)
 
         # drop input columns
         evaluator_result_df = evaluator_result_df.drop(
