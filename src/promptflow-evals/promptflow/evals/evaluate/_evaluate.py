@@ -372,13 +372,14 @@ def evaluate(
         _validate_columns(input_data_df, evaluators, target=None, evaluator_config=evaluator_config)
 
     # Batch Run
-    evaluator_info = {}
+    evaluators_info = {}
     use_thread_pool = kwargs.get("_use_thread_pool", True)
     batch_run_client = CodeClient() if use_thread_pool else pf_client
 
     with BatchRunContext(batch_run_client):
         for evaluator_name, evaluator in evaluators.items():
-            run = batch_run_client.run(
+            evaluators_info[evaluator_name] = {}
+            evaluators_info[evaluator_name]["run"] = batch_run_client.run(
                 flow=evaluator,
                 run=target_run,
                 evaluator_name=evaluator_name,
@@ -387,12 +388,14 @@ def evaluate(
                 stream=True,
             )
 
-            evaluator_info[evaluator_name] = {"result_df": batch_run_client.get_details(run, all_results=True)}
+        # get_details needs to be called within BatchRunContext scope in order to have user agent populated
+        for evaluator_name, evaluator_info in evaluators_info.items():
+            evaluator_info["result"] = batch_run_client.get_details(evaluator_info["run"], all_results=True)
 
     # Concatenate all results
     evaluators_result_df = None
-    for evaluator_name, evaluator_info in evaluator_info.items():
-        evaluator_result_df = evaluator_info["result_df"]
+    for evaluator_name, evaluator_info in evaluators_info.items():
+        evaluator_result_df = evaluator_info["result"]
 
         # drop input columns
         evaluator_result_df = evaluator_result_df.drop(

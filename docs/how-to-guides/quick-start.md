@@ -80,7 +80,10 @@ def chat(question: str = "What's the capital of France?") -> str:
     return output
 ```
 
-Flow can be a python function or class or a yaml file describe a DAG which encapsulate your LLM application logic. Learn more on the [flow concept](../concepts/concept-flows.md) and how to [Develop a flow](./develop-a-flex-flow/index.md).
+Flow can be a python function or class or a yaml file describe a DAG which encapsulate your LLM application logic.
+Learn more on the [flow concept](../concepts/concept-flows.md) and how to [Develop a flow](./develop-a-flex-flow/index.md).
+
+See the full example of this python file in: [Minimal Chat](https://github.com/microsoft/promptflow/tree/main/examples/flex-flows/chat-minimal).
 
 ## Test the flow
 

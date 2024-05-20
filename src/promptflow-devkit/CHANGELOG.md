@@ -1,6 +1,6 @@
 # promptflow-devkit package
 
-## v1.11.0 (Upcoming)
+## v1.11.0 (2024.05.17)
 
 ### Features Added
 - Upload local run details to cloud when trace destination is configured to cloud.
