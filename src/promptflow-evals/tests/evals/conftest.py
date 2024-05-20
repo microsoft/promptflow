@@ -41,7 +41,7 @@ except ImportError as e:
 
 PROMPTFLOW_ROOT = Path(__file__) / "../../../.."
 CONNECTION_FILE = (PROMPTFLOW_ROOT / "promptflow-evals/connections.json").resolve().absolute().as_posix()
-RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "promptflow-evals/tests/evals/recordings").resolve()
+RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "promptflow-evals/tests/recordings").resolve()
 
 
 @pytest.fixture
