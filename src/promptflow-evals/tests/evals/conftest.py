@@ -41,7 +41,7 @@ except ImportError as e:
 
 PROMPTFLOW_ROOT = Path(__file__) / "../../../.."
 CONNECTION_FILE = (PROMPTFLOW_ROOT / "promptflow-evals/connections.json").resolve().absolute().as_posix()
-RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "promptflow-recording/recordings/local").resolve()
+RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "promptflow-evals/tests/evals/recordings").resolve()
 
 
 @pytest.fixture
@@ -215,14 +215,26 @@ def setup_recording_injection_if_enabled():
             patcher.start()
 
     if is_replay() or is_record():
-        from promptflow.recording.local import RecordStorage, inject_async_with_recording, inject_sync_with_recording
+        from promptflow.recording.local import (
+            RecordStorage,
+            inject_async_with_recording,
+            inject_sync_with_recording,
+            mock_tool,
+        )
         from promptflow.recording.record_mode import check_pydantic_v2
 
         check_pydantic_v2()
         file_path = RECORDINGS_TEST_CONFIGS_ROOT / "evals.node_cache.shelve"
         RecordStorage.get_instance(file_path)
 
+        from promptflow._core.tool import tool as original_tool
+
+        mocked_tool = mock_tool(original_tool)
         patch_targets = {
+            "promptflow._core.tool.tool": mocked_tool,
+            "promptflow._internal.tool": mocked_tool,
+            "promptflow.tool": mocked_tool,
+            "promptflow.core.tool": mocked_tool,
             "promptflow.tracing._integrations._openai_injector.inject_sync": inject_sync_with_recording,
             "promptflow.tracing._integrations._openai_injector.inject_async": inject_async_with_recording,
         }
@@ -249,20 +261,3 @@ def _mock_process_wrapper(*args, **kwargs):
 def _mock_create_spawned_fork_process_manager(*args, **kwargs):
     setup_recording_injection_if_enabled()
     return create_spawned_fork_process_manager(*args, **kwargs)
-
-
-@pytest.fixture
-def ml_client_config() -> dict:
-    conn_name = "azure_ai_project_scope"
-
-    with open(
-        file=CONNECTION_FILE,
-        mode="r",
-        encoding="utf-8",  # Add the encoding parameter
-    ) as f:
-        dev_connections = json.load(f)
-
-    if conn_name not in dev_connections:
-        raise ValueError(f"Connection '{conn_name}' not found in dev connections.")
-
-    return dev_connections[conn_name]["value"]
