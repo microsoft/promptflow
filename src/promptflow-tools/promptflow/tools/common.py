@@ -8,7 +8,7 @@ from typing import List, Mapping
 import uuid
 
 from jinja2 import Template
-from openai import APIConnectionError, APIStatusError, APITimeoutError, BadRequestError, OpenAIError, RateLimitError, APIError
+from openai import APIConnectionError, APIStatusError, APITimeoutError, BadRequestError, OpenAIError, RateLimitError
 
 from promptflow._cli._utils import get_workspace_triad_from_local
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
@@ -1022,83 +1022,3 @@ def init_azure_openai_client(connection: AzureOpenAIConnection):
 
     conn_dict = normalize_connection_config(connection)
     return AzureOpenAIClient(**conn_dict)
-
-
-def openai_batch_chat(client, kwargs):
-    try:
-        from openai.types.chat import ChatCompletion
-        import uuid
-        # construct the batch file content
-        batch_file_content = {
-            'custom_id': 'promptflow_batch_chat',
-            'method': 'POST',
-            'url': '/v1/chat/completions',
-            'body': kwargs
-        }
-        # create the batch file
-        temp_file_name = f'promptflow_batch_inputs_{uuid.uuid4().hex[:8]}.jsonl'
-        with open(temp_file_name, 'w') as batch_input:
-            batch_input.write(json.dumps(batch_file_content) + '\n')
-        # upload batch file
-        with open(temp_file_name, 'rb') as batch_input:
-            uploaded_file = client.files.create(file=batch_input, purpose='batch')
-            batch_res = client.batches.create(
-                input_file_id=uploaded_file.id,
-                endpoint="/v1/chat/completions",
-                completion_window="24h",
-                metadata={
-                  "description": "promptflow batch chat test job"
-                }
-            )
-
-        # wait for the batch job to complete
-        job_status = ""
-        output_file_id = ""
-        error_file_id = ""
-        while job_status != "completed" or job_status != "failed" or job_status != "cancelled" or job_status != "expired":
-            job_status = client.batches.retrieve(batch_res.id).status
-            if job_status == "completed":
-                output_file_id = client.batches.retrieve(batch_res.id).output_file_id
-                error_file_id = client.batches.retrieve(batch_res.id).error_file_id
-                break
-            time.sleep(60)
-
-        if output_file_id:
-            # retrieve the output file content
-            output_content = client.files.content(output_file_id)
-
-            lines = output_content.response.text.split('\n')
-
-            result = json.loads(lines[0])
-            body = result['response']['body']
-
-            chat_completion = ChatCompletion(
-                id=body['id'],
-                choices=body['choices'],
-                created=body['created'],
-                model=body['model'],
-                object=body['object'],
-                system_fingerprint=body['system_fingerprint'],
-                usage=body['usage']
-            )
-
-            # delete the batch file
-            client.files.delete(output_file_id)
-            client.files.delete(uploaded_file.id)
-            os.remove(temp_file_name)
-        elif error_file_id:
-            # retrieve the error file content and raise exception
-            error_content = client.files.content(error_file_id)
-            lines = error_content.response.text.split('\n')
-
-            result = json.loads(lines[0])
-            body = result['response']['body']
-            client.files.delete(uploaded_file.id)
-            client.files.delete(error_file_id)
-
-            raise APIError(message=body['error']['message'], request=None, body=body['error'])
-
-        return chat_completion
-    except Exception as e:
-        error_message = f"OpenAI API hits exception: {type(e).__name__}: {str(e)}"
-        raise LLMError(message=error_message) from e

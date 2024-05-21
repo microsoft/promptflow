@@ -1,7 +1,8 @@
 from enum import Enum
 from promptflow.tools.common import render_jinja_template, handle_openai_error, \
     to_bool, validate_functions, process_function_call, \
-    post_process_chat_api_response, init_openai_client, build_messages, openai_batch_chat
+    post_process_chat_api_response, init_openai_client, build_messages
+from promptflow.tools.openai_batch_client import OpenAIBatchClient
 
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
 # since the code here is in promptflow namespace as well
@@ -25,6 +26,7 @@ class OpenAI(ToolProvider):
     def __init__(self, connection: OpenAIConnection):
         super().__init__()
         self._client = init_openai_client(connection)
+        self._batch_client = OpenAIBatchClient(self._client)
 
     @tool
     @handle_openai_error()
@@ -153,7 +155,7 @@ class OpenAI(ToolProvider):
         if frequency_penalty is not None:
             params["frequency_penalty"] = frequency_penalty
 
-        completion = openai_batch_chat(self._client, params)
+        completion = self._batch_client.chat(params)
         return post_process_chat_api_response(completion, stream, functions, tools)
 
 
