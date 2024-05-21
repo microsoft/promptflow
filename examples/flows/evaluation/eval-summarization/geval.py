@@ -1,8 +1,8 @@
 import logging
 import logging.config
+import math
 from pathlib import Path
 from typing import List, Tuple
-import math
 
 import promptflow
 import yaml

@@ -1,0 +1,4 @@
+promptflow[azure]
+promptflow-tools
+tenacity
+openai
