@@ -1094,6 +1094,7 @@ def openai_batch_chat(client, kwargs):
             result = json.loads(lines[0])
             body = result['response']['body']
             client.files.delete(uploaded_file.id)
+            client.files.delete(error_file_id)
 
             raise APIError(message=body['error']['message'], request=None, body=body['error'])
 
