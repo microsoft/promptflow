@@ -115,12 +115,13 @@ class AzureResourceProcessor(RecordingProcessor):
 
     def _sanitize_response_for_workspace(self, body: Dict) -> Dict:
         filter_keys = ["identity", "properties", "systemData"]
+        discovery_url = body.get("properties", {}).get("discoveryUrl", SanitizedValues.DISCOVERY_URL)
         for k in filter_keys:
             if k in body:
                 body.pop(k)
 
         # need during the constructor of FlowServiceCaller (for vNet case)
-        body["properties"] = {"discoveryUrl": SanitizedValues.DISCOVERY_URL}
+        body["properties"] = {"discoveryUrl": discovery_url}
 
         name = body["name"]
         body["name"] = SanitizedValues.WORKSPACE_NAME
