@@ -36,7 +36,7 @@ The tool accepts the following inputs:
 | string      | The resulting compressed prompt.     |
 
 ## Sample Flows
-Find example flows using the `llmlingua-promptflow` package [here]().
+Find example flows using the `llmlingua-promptflow` package [here](https://github.com/microsoft/promptflow/tree/main/examples/flows/integrations/llmlingua-prompt-compression).
 
 ## Contact
-Please reach out to LLMLingua Team (llmlingua@microsoft.com) with any issues.
+Please reach out to LLMLingua Team (<llmlingua@microsoft.com>) with any issues.
