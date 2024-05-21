@@ -259,7 +259,6 @@ def _get_workspace_base_url(ws_triad: AzureMLWorkspaceTriad) -> str:
         f"/resourceGroups/{ws_triad.resource_group_name}"
         "/providers/Microsoft.MachineLearningServices"
         f"/workspaces/{ws_triad.workspace_name}"
-        "&flight=PFTrace"
     )
 
 
@@ -290,7 +289,6 @@ def _print_tracing_url_from_azure_portal(
         f"/resourceGroups/{ws_triad.resource_group_name}"
         "/providers/Microsoft.MachineLearningServices"
         f"/workspaces/{ws_triad.workspace_name}"
-        "&flight=PFTrace"
     )
 
     if run is None:
