@@ -51,12 +51,11 @@ jobs:
           path: ${{ env.WORKING_DIRECTORY }}
       - name: install promptflow packages in editable mode
         run: |
-          poetry run pip install -e ../promptflow
+          poetry run pip install -e ../promptflow-tracing
           poetry run pip install -e ../promptflow-core
           poetry run pip install -e ../promptflow-devkit
-          poetry run pip install -e ../promptflow-tracing
-          poetry run pip install -e ../promptflow-tools
           poetry run pip install -e ../promptflow-azure
+          poetry run pip install -e ../promptflow
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: install promptflow-evals from wheel
         # wildcard expansion (*) does not work in Windows, so leverage python to find and install
