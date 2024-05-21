@@ -51,9 +51,10 @@ def _aggregate_metrics(df, evaluators) -> Dict[str, float]:
     defect_rates = {}
     for col in content_safety_df.columns:
         defect_rate_name = col.replace("_score", "_defect_rate")
+        col_with_numeric_values = pd.to_numeric(content_safety_df[col], errors='coerce')
         defect_rates[defect_rate_name] = round(
-            np.sum(content_safety_df[col] >= CONTENT_SAFETY_DEFECT_RATE_THRESHOLD_DEFAULT)
-            / len(content_safety_df[col]),
+            np.sum(col_with_numeric_values >= CONTENT_SAFETY_DEFECT_RATE_THRESHOLD_DEFAULT)
+            / col_with_numeric_values.count(),
             2,
         )
 
