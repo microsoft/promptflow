@@ -36,7 +36,8 @@ nodes:
   inputs:
     connection: open_ai_connection
     prompt_with_src_and_gen: ${prompt_coherence.output}
-    deployment_name: gpt-4-turbo
+    max_score: 5
+    deployment_name: gpt-4
 - name: prompt_consistency
   type: prompt
   source:
@@ -53,7 +54,8 @@ nodes:
   inputs:
     connection: open_ai_connection
     prompt_with_src_and_gen: ${prompt_consistency.output}
-    deployment_name: gpt-4-turbo
+    max_score: 5
+    deployment_name: gpt-4
 - name: prompt_fluency
   type: prompt
   source:
@@ -69,7 +71,8 @@ nodes:
   inputs:
     connection: open_ai_connection
     prompt_with_src_and_gen: ${prompt_fluency.output}
-    deployment_name: gpt-4-turbo
+    max_score: 3
+    deployment_name: gpt-4
 - name: prompt_relevance
   type: prompt
   source:
@@ -86,7 +89,8 @@ nodes:
   inputs:
     connection: open_ai_connection
     prompt_with_src_and_gen: ${prompt_relevance.output}
-    deployment_name: gpt-4-turbo
+    max_score: 5
+    deployment_name: gpt-4
 - name: average_scores
   type: python
   source:

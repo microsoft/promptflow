@@ -38,7 +38,7 @@ Prepare your Azure Open AI resource follow this [instruction](https://learn.micr
 
 ```bash
 # Override keys with --set to avoid yaml file changes
-pf connection create --file ../../../connections/azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base>
+pf connection create --file ../../../connections/azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base> api_version=2024-04-01-preview
 ```
 
 Note that this evaluation flow is only validated to work with certain GPT-4 models versions (see meta-evaluation section).
@@ -51,7 +51,7 @@ This flow will evaluate a generated summary with respect to the source document 
 
 ```bash
 # test with flow inputs
-pf flow test --flow . --inputs document=ABC summary=ABC
+pf flow test --flow . --inputs document='this is a test document for summary evaluation method.' summary='test document for summary evaluation.'
 ```
 
 ### 2. Create flow run with multi-line data
@@ -119,6 +119,7 @@ Meta-evaluation Spearman correlations between different experiments and human ju
 | GPT-4 0613 8k + updated prompts + original parser | 0.5079  | 0.5102      | 0.4998    | 0.4606    |
 | GPT-4 0613 8k + updated prompts + updated parser | 0.5402  | 0.5215      | 0.5137    | 0.4897    |
 | GPT-4 0613 32k + updated prompts + updated parser | 0.4985  | 0.4914      | 0.5038    | 0.4921    |
+| GPT-4 turbo 1106-preview 128k + updated prompts + logprob based | 0.454  | 0.5272 | 0.5242    | 0.5198    |
 
 Note that GPT-4 Turbo has shown poor results when meta-evaluated and is currently not recommended to be used with this flow. It is recommended to use this flow and it's prompts with only the GPT-4 model versions listed above, as the meta-evaluation results have been verified for these model versions. 
 

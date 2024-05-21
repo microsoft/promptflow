@@ -1,8 +1,8 @@
 import logging
 import logging.config
+import re
 from pathlib import Path
-from typing import List, Tuple
-import math
+from typing import List
 
 import promptflow
 import yaml
@@ -53,46 +53,44 @@ class Logger:
 logger = Logger().get_logger()
 
 
-def compute_weighted_score_over_probs(
-    top_probs: List[Tuple[str, float]],
-    expected_scores: List[str] = ["1", "2", "3", "4", "5"],
-) -> float:
+def parse_output(output: str, max: float) -> float:
     """
-    Computes the weighted score over probability of number tokens.
-    number tokens defined in `expected_scores` are selected from `top_probs`
-     and their probabilities are normalized for sum of probabilities to be 1
-     and weighted score is calculated by multiplying the number token with its normalized probability.
+    Function that extracts numerical score from the beginning of string
 
     Args:
-        top_probs (List[Tuple[str, float]]): A list of token, probability pairs.
-        expected_scores (List[str], optional): A list of expected scores. Defaults to ["1", "2", "3", "4", "5"].
+        output (str): String to search
+        max (float): Maximum score allowed
 
     Returns:
-        float: The weighted score computed from the probability-score pairs.
-
-    Raises:
-        ValueError: If no expected scores are found in the top_probs list.
+        float: The extracted score
     """
-    filtered_score_probs = [
-        (token, prob) for token, prob in top_probs if token in expected_scores
-    ]
-    if not filtered_score_probs:
+    # match with either non-negative float or integer
+    # if number has non-whitespace characture before that, it won't match
+    matched: List[str] = re.findall(r"(?<!\S)\d+(?:\.\d+)?", output)
+    if matched:
+        if len(matched) == 1:
+            score = float(matched[0])
+            if score > max:
+                raise ValueError(
+                    f"Parsed number: {score} was larger than max score: {max}"
+                )
+        else:
+            raise ValueError(
+                f"More than one number detected in input. Input to parser was: {output}"
+            )
+    else:
         raise ValueError(
-            f"No expected scores {expected_scores} found in top_probs: {top_probs}"
+            f'No number detected in input. Input to parser was "{output}". '
         )
-    total_probs = sum(prob for _, prob in filtered_score_probs)
-    normalized_probs = [
-        (token, prob / total_probs) for token, prob in filtered_score_probs
-    ]
-    weighted_score = sum(int(token) * prob for token, prob in normalized_probs)
-    return weighted_score
+    return score
 
 
 @promptflow.tool
 def geval_summarization(
     prompt_with_src_and_gen: str,
+    max_score: float,
     connection: AzureOpenAIConnection,
-    deployment_name: str = "gpt-4-turbo",
+    deployment_name: str = "gpt-4",
 ) -> float:
     """Using GPT, evaluate a generated summary with respect to a source document from
     which it was generated. This function should be used for four dimensions of
@@ -101,8 +99,9 @@ def geval_summarization(
 
     Args:
         prompt_with_src_and_gen (str): The prompt containing the source document and generated summary.
+        max_score (float): The maximum score allowed.
         connection (AzureOpenAIConnection): The connection object for Azure OpenAI.
-        deployment_name (str, optional): The name of the deployment. Defaults to "gpt-4-turbo".
+        deployment_name (str, optional): The name of the deployment. Defaults to "gpt-4".
 
     Returns:
         float: The evaluation score
@@ -131,27 +130,55 @@ def geval_summarization(
                 response = client.chat.completions.create(
                     model=deployment_name,
                     messages=[message],
-                    temperature=0,
+                    temperature=2,
                     max_tokens=5,
-                    logprobs=True,
-                    top_logprobs=5,
+                    top_p=1,
                     frequency_penalty=0,
                     presence_penalty=0,
-                    n=1,
+                    stop=None,
+                    n=20,
                 )
     except RetryError:
         logger.exception(f"geval openai call failed\nInput prompt was: {message}")
         raise
 
-    top_logprobs = response.choices[0].logprobs.content[0].top_logprobs
-    top_probs = [
-        (top_logprob.token, math.exp(top_logprob.logprob))
-        for top_logprob in top_logprobs
-    ]
-    try:
-        weighted_score = compute_weighted_score_over_probs(top_probs)
-    except ValueError:
-        logger.exception(f"geval openai call failed\nInput prompt was: {message}")
-        raise
+    all_responses = []
+    for i in range(len(response.choices)):
+        try:
+            content = response.choices[i].message.content
+            all_responses.append(content)
+        except KeyError:
+            # `content` won't exist in returned json when openai content_filter is triggered
+            logger.exception(
+                f"""data with key missing was: {response.choices[i]}\nInput prompt was: {message}"""
+            )
 
-    return weighted_score
+    return aggregate_llm_scores(all_responses, max_score=max_score)
+
+
+def aggregate_llm_scores(llm_responses: List[str], max_score: int) -> float:
+    """Parse and average valid scores from the generated responses of
+    the G-Eval LLM call.
+
+    Args:
+        llm_responses (List[str]): List of scores from multiple LLMs
+        max_score (float): The maximum score allowed.
+
+    Returns:
+        float: The average of all the valid scores
+    """
+    all_scores = []
+    error_count = 0
+    for generated in llm_responses:
+        try:
+            parsed = parse_output(generated, max_score)
+            all_scores.append(parsed)
+        except ValueError as e:
+            logger.warning(e)
+            error_count += 1
+    if error_count:
+        logger.warning(
+            f"{error_count} out of 20 scores were discarded due to corrupt g-eval generation"
+        )
+    score = sum(all_scores) / len(all_scores)
+    return score
