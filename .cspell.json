@@ -110,7 +110,9 @@
     "uvicorn",
     "attribited",
     "MistralAI",
-    "probs"
+    "probs",
+    "llmlingua",
+    "myconn"
   ],
   "ignoreWords": [
     "openmpi",
