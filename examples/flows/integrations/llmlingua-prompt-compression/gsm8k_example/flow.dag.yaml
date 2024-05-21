@@ -1,3 +1,4 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 inputs:
   question:
     type: string
@@ -46,7 +47,7 @@ nodes:
     path: prompt_node.jinja2
   inputs:
     question: ${inputs.question}
-    few_shot_exampls: ${LLMLingua_Prompt_Compression_Tool.output}
+    few_shot_examples: ${LLMLingua_Prompt_Compression_Tool.output}
 - name: llm_node
   type: llm
   source:

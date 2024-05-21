@@ -6,6 +6,7 @@ import re
 # Adding type to arguments and return value will help the system show the types properly
 # Please update the function name/signature per need
 
+
 def extract_ans(ans_model):
     ans_model = ans_model.split("\n")
     ans = []
@@ -19,11 +20,13 @@ def extract_ans(ans_model):
     residual = "\n".join(residual)
     return ans, residual
 
+
 def get_result(text: str):
-    pattern = "\d*\.?\d+"
+    pattern = r"\d*\.?\d+"
     res = re.findall(pattern, text)
     # return res[-1].replace(".00", "") if res else ""
     return res[-1] if res else ""
+
 
 def test_answer(pred_str, ans_str):
     pred, gold = get_result(pred_str), get_result(ans_str)
