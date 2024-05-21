@@ -1,7 +1,7 @@
 # LLMLingua Prompt Compression
 
 ## Introduction
-LLMLingua Prompt Compression tool enables you to speed up LLMs' inference and enhance LLM's perceive of key information, compress the prompt with minimal performance loss.
+LLMLingua Prompt Compression tool enables you to speed up large language model's inference and enhance large language model's perceive of key information, compress the prompt with minimal performance loss.
 
 ## Requirements
 PyPI package: [`llmlingua-promptflow`](https://pypi.org/project/llmlingua-promptflow/).
@@ -14,7 +14,7 @@ PyPI package: [`llmlingua-promptflow`](https://pypi.org/project/llmlingua-prompt
     You may also want to install the [Prompt flow for VS Code extension](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow).
 
 ## Prerequisite
-Create a MaaS deployment for LLM model in Azure model catalog. Take the Llama model as an example, you can learn how to deploy and consume Meta Llama models with model as a service by  [the guidance for Azure AI Studio](https://learn.microsoft.com/en-us/azure/ai-studio/how-to/deploy-models-llama?tabs=llama-three#deploy-meta-llama-models-with-pay-as-you-go) 
+Create a MaaS deployment for large language model in Azure model catalog. Take the Llama model as an example, you can learn how to deploy and consume Meta Llama models with model as a service by  [the guidance for Azure AI Studio](https://learn.microsoft.com/en-us/azure/ai-studio/how-to/deploy-models-llama?tabs=llama-three#deploy-meta-llama-models-with-pay-as-you-go) 
 or
 [the guidance for Azure Machine Learning Studio
 ](https://learn.microsoft.com/en-us/azure/machine-learning/how-to-deploy-models-llama?view=azureml-api-2&tabs=llama-three#deploy-meta-llama-models-with-pay-as-you-go).
