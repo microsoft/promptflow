@@ -205,5 +205,5 @@ python scripts/json_schema/gen_json_schema.py -a # Generate all schema files
             target_schema = PatchedJSONSchema().dump(item_cls(context={"base_path": "./"}))
             dump_json(f"{item}.schema.json", target_schema)
             # Dump another small case first letter one
-            item[0] = item[0].lower()
+            item = item[0].lower() + item[1:]
             dump_json(f"{item}.schema.json", target_schema)

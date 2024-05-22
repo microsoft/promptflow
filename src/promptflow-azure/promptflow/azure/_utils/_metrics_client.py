@@ -43,7 +43,7 @@ class AsyncMetricClient:
             runId=run_id,
         )
 
-        logger.debug(f"Writing metrics for Run {run_id}...")
+        logger.debug(f"Writing metrics '{metric_key}:{metric_value}' for Run {run_id!r}...")
 
         payload = {
             "values": [

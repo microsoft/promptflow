@@ -5,7 +5,7 @@ from enum import Enum
 import pytest
 
 from promptflow.tracing._utils import get_input_names_for_prompt_template, get_prompt_param_name_from_func, serialize
-from promptflow.tracing.contracts.generator_proxy import GeneratorProxy
+from promptflow.tracing.contracts.iterator_proxy import IteratorProxy
 
 
 class DummyEnum(Enum):
@@ -67,7 +67,7 @@ def test_serialize_generator():
         for i in range(3):
             yield i
 
-    g = GeneratorProxy(generator())
+    g = IteratorProxy(generator())
     next(g), next(g), next(g)
     assert serialize(g) == [0, 1, 2]
 

@@ -1,6 +1,6 @@
 # Release History
 
-## v1.11.0 (Upcoming)
+## v1.11.0 (2024.05.17)
 
 ### Announcement
 

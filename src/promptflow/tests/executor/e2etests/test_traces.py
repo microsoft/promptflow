@@ -3,8 +3,8 @@ import multiprocessing
 import sys
 import threading
 import uuid
+from collections.abc import Iterator
 from pathlib import Path
-from types import GeneratorType
 from unittest.mock import patch
 
 import opentelemetry.trace as otel_trace
@@ -267,7 +267,7 @@ class TestExecutorTraces:
             assert not generator_output_trace
             # Obtain the generator from the flow result
             answer_gen = flow_result.output.get("answer")
-            assert isinstance(answer_gen, GeneratorType)
+            assert isinstance(answer_gen, Iterator)
             # Consume the generator and check that it yields text
             try:
                 generated_text = next(answer_gen)

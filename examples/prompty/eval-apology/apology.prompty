@@ -20,7 +20,7 @@ inputs:
 outputs:
   apology:
     type: string
-sample: sample.json
+sample: ${file:sample.json}
 ---
 
 system:

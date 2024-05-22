@@ -1,5 +1,13 @@
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 entry: flow:ChatFlow
+sample: 
+  inputs:
+    question: What's Azure Machine Learning?
+  init: 
+    model_config: 
+      connection: open_ai_connection
+      azure_deployment: gpt-35-turbo
+    max_total_token: 1024
 environment:
   # image: mcr.microsoft.com/azureml/promptflow/promptflow-python
   python_requirements_txt: requirements.txt

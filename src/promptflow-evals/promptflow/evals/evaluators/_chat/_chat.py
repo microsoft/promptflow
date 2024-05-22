@@ -4,12 +4,13 @@
 
 import json
 import logging
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import as_completed
 from typing import Dict, List
 
 import numpy as np
 
 from promptflow.core import AzureOpenAIModelConfiguration
+from promptflow.tracing import ThreadPoolExecutorWithContext as ThreadPoolExecutor
 
 from .._coherence import CoherenceEvaluator
 from .._fluency import FluencyEvaluator

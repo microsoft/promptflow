@@ -4,8 +4,8 @@ import os
 import re
 import shutil
 import sys
+from collections.abc import Iterator
 from pathlib import Path
-from types import GeneratorType
 
 import pytest
 
@@ -246,7 +246,7 @@ class TestExecutor:
 
         # Assert the only output is a generator
         output_echo = line_result.output["output_echo"]
-        assert isinstance(output_echo, GeneratorType)
+        assert isinstance(output_echo, Iterator)
         assert list(output_echo) == ["Echo: ", "hello "]
 
         # Assert the flow is completed and no errors are raised

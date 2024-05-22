@@ -110,6 +110,8 @@
     "uvicorn",
     "attribited",
     "MistralAI",
+    "llmlingua",
+    "myconn",
     "capsys"
   ],
   "ignoreWords": [

@@ -1,7 +1,8 @@
 from pathlib import Path
 
 from promptflow.client import load_flow
-from promptflow.evals._constants import EvaluationMetrics
+
+from .flow.constants import EvaluationMetrics
 
 
 class HateUnfairnessEvaluator:

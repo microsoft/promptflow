@@ -5,6 +5,7 @@ import json
 import mimetypes
 import os
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Dict
 
 from promptflow._utils.flow_utils import resolve_flow_path
@@ -38,8 +39,16 @@ class PromptflowServingAppBasic(ABC):
         # parse promptflow project path
         self.project_path = self.extension.get_flow_project_path()
         logger.info(f"Project path: {self.project_path}")
-        flow_dir, flow_file_name = resolve_flow_path(self.project_path, allow_prompty_dir=True)
-        self.flow = init_executable(flow_path=flow_dir / flow_file_name)
+
+        flow_file_path = kwargs.get("flow_file_path", None)
+        if flow_file_path:
+            self.flow_file_path = Path(flow_file_path)
+        else:
+            flow_dir, flow_file_name = resolve_flow_path(self.project_path, allow_prompty_dir=True)
+            # project path is also the current working directory
+            self.flow_file_path = flow_dir / flow_file_name
+
+        self.flow = init_executable(flow_path=self.flow_file_path, working_dir=Path(self.project_path))
 
         # enable environment_variables
         environment_variables = kwargs.get("environment_variables", {})
@@ -97,9 +106,8 @@ class PromptflowServingAppBasic(ABC):
         if self.flow_invoker:
             return
         self.logger.info("Promptflow executor starts initializing...")
-        flow_dir, flow_file_name = resolve_flow_path(self.project_path, allow_prompty_dir=True)
         self.flow_invoker = AsyncFlowInvoker(
-            flow=Flow.load(source=flow_dir / flow_file_name),
+            flow=Flow.load(source=self.flow_file_path),
             connection_provider=self.connection_provider,
             streaming=self.streaming_response_required,
             raise_ex=False,
@@ -109,6 +117,7 @@ class PromptflowServingAppBasic(ABC):
             storage=DummyRunStorage(),
             credential=self.credential,
             init_kwargs=self.init,
+            logger=self.logger,
         )
         # why we need to update bonded executable flow?
         self.flow = self.flow_invoker.flow

@@ -950,38 +950,18 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         logger.info(f"Successfully downloaded run {run!r} to {result_path!r}.")
         return result_path
 
-    def _upload(self, run: Union[str, Run]) -> str:
-        from promptflow._sdk._pf_client import PFClient
+    def _upload(self, run: Optional[Union[str, Run]], run_uploader=None) -> str:
         from promptflow.azure.operations._async_run_uploader import AsyncRunUploader
 
-        # always get run object from db, since the passed in run object may not have all latest info
-        pf = PFClient()
-        run = pf.runs.get(run)
-
-        # check if the run is in terminated status
-        terminated_statuses = RunStatus.get_terminated_statuses()
-        if run.status not in terminated_statuses:
-            raise UserErrorException(
-                f"Can only upload the run with status {terminated_statuses!r} "
-                f"while {run.name!r}'s status is {run.status!r}."
-            )
         set_event_loop_policy()
 
-        # check if it's evaluation run and make sure the main run is already uploaded
-        if run.run:
-            main_run_name = run.run.name if isinstance(run.run, Run) else run.run
-            try:
-                self.get(main_run_name)
-            except RunNotFoundError:
-                raise UserErrorException(
-                    f"Failed to upload evaluation run {run.name!r} to cloud. It ran against a run {main_run_name!r} "
-                    f"that was not uploaded to cloud. Make sure the previous run is already uploaded to cloud when "
-                    f"uploading an evaluation run."
-                )
+        # if the run_uploader is not provided, create a new one
+        if run_uploader is None:
+            run_uploader = AsyncRunUploader._from_run_operations(run_ops=self)
 
         # upload local run details to cloud
-        run_uploader = AsyncRunUploader._from_run_operations(run=run, run_ops=self)
-        result_dict = async_run_allowing_running_loop(run_uploader.upload)
+        result_dict = async_run_allowing_running_loop(run_uploader.upload, run=run)
+        run = run_uploader.run
         # patch details about the uploaded run
         run._local_to_cloud_info = result_dict
         logger.debug(f"Successfully uploaded run details of {run.name!r} to cloud.")
@@ -991,6 +971,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
 
         # post process after run upload, it can only be done after the run history record is created
         async_run_allowing_running_loop(run_uploader.post_process)
+        logger.debug(f"Successfully post processed run {run.name!r} after upload.")
 
         portal_url = self._get_run_portal_url(run_id=run.name)
         # print portal url when executing in jupyter notebook
