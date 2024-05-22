@@ -1,0 +1,5 @@
+transformers>=4.26.0
+tiktoken
+nltk
+numpy
+llmlingua-promptflow
