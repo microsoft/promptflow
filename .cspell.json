@@ -109,7 +109,9 @@
     "Entra",
     "uvicorn",
     "attribited",
-    "MistralAI"
+    "MistralAI",
+    "llmlingua",
+    "myconn"
   ],
   "ignoreWords": [
     "openmpi",
