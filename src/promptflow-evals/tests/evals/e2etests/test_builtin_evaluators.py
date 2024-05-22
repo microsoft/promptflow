@@ -10,7 +10,7 @@ from promptflow.evals.evaluators import (
 )
 
 
-@pytest.mark.usefixtures("model_config", "project_scope", "recording_injection", "vcr_recording")
+@pytest.mark.usefixtures("model_config", "project_scope", "recording_injection")
 @pytest.mark.e2etest
 class TestBuiltInEvaluators:
     def test_individual_evaluator_prompt_based(self, model_config):
