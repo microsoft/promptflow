@@ -21,6 +21,7 @@ on:
       - src/promptflow-tracing/promptflow/**
       - src/promptflow-core/promptflow/**
       - src/promptflow-devkit/promptflow/**
+      - src/promptflow-parallel/promptflow/**
       - scripts/building/**
       - src/promptflow-recording/recordings/local/executor_node_cache.*
       - .github/workflows/promptflow-executor-unit-test.yml
