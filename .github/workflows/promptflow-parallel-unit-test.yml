@@ -21,7 +21,7 @@ env:
   WORKING_DIRECTORY: ${{ github.workspace }}/src/promptflow-parallel
 
 jobs:
-  test:
+  parallel-unit-test:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-13]
@@ -64,7 +64,7 @@ jobs:
             ${{ env.WORKING_DIRECTORY }}/*.xml
             ${{ env.WORKING_DIRECTORY }}/htmlcov/
 
-  report:
+  parallel-unit-test-report:
     needs: test
     runs-on: ubuntu-latest
     permissions:
