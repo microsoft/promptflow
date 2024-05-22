@@ -1302,7 +1302,7 @@ class TestFlowRun:
                 },
                 # signature not in original YAML
                 lambda: "inputs" not in load_yaml(f"{EAGER_FLOWS_DIR}/simple_with_yaml/flow.flex.yaml"),
-                {"inputs.input_val": ["input1"], "inputs.line_number": [0], "outputs.output": ["Hello world! input1"]},
+                {"inputs.input_val": ["gpt"], "inputs.line_number": [0], "outputs.output": ["Hello world! gpt"]},
                 id="with_yaml",
             ),
             pytest.param(
