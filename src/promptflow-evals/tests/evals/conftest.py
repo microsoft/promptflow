@@ -110,16 +110,7 @@ def model_config() -> dict:
 
 
 @pytest.fixture
-def project_scope(mocker) -> dict:
-    if is_replay():
-        from promptflow.recording.azure import SanitizedValues
-
-        return {
-            "subscription_id": SanitizedValues.SUBSCRIPTION_ID,
-            "resource_group_name": SanitizedValues.RESOURCE_GROUP_NAME,
-            "project_name": SanitizedValues.WORKSPACE_NAME,
-        }
-
+def project_scope() -> dict:
     conn_name = "azure_ai_project_scope"
 
     with open(
