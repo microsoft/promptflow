@@ -16,6 +16,7 @@ from promptflow.contracts.tool import ValueType
 from promptflow.core._errors import MissingRequiredInputError
 from promptflow.core._model_configuration import PromptyModelConfiguration
 from promptflow.core._prompty_utils import (
+    _get_image_obj,
     convert_model_configuration_to_connection,
     convert_prompt_template,
     format_llm_response,
@@ -391,6 +392,11 @@ class Prompty(FlowBase):
             resolved_inputs[input_name] = input_values.get(input_name, value.get("default", None))
         if missing_inputs:
             raise MissingRequiredInputError(f"Missing required inputs: {missing_inputs}")
+
+        # Resolve image input
+        for k, v in resolved_inputs.items():
+            if isinstance(v, str):
+                resolved_inputs[k] = _get_image_obj(v, working_dir=self.path.parent)
         return resolved_inputs
 
     def _get_input_signature(self):
@@ -497,7 +503,9 @@ class Prompty(FlowBase):
             raise UserErrorException("Max_token needs to be integer.")
         elif response_max_token <= 1:
             raise UserErrorException(f"{response_max_token} is less than the minimum of max_tokens.")
-        total_token = num_tokens_from_messages(prompt, self._model._model) + (response_max_token or 0)
+        total_token = num_tokens_from_messages(prompt, self._model._model, working_dir=self.path.parent) + (
+            response_max_token or 0
+        )
         return total_token
 
 

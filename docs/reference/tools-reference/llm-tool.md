@@ -25,7 +25,7 @@ Create OpenAI resources, Azure OpenAI resources or MaaS deployment with the LLM 
 
 - **MaaS deployment**
 
-    Create MaaS deployment for models in Azure AI Studio model catalog with [instruction](https://learn.microsoft.com/en-us/azure/ai-studio/concepts/deployments-overview#deploy-models-with-model-as-a-service)
+    Create MaaS deployment for models in Azure AI Studio model catalog with [instruction](https://learn.microsoft.com/en-us/azure/ai-studio/concepts/deployments-overview#deploy-models-with-model-as-a-service-maas)
 
     You can create serverless connection to use this MaaS deployment.
 
