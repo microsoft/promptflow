@@ -399,7 +399,6 @@ class TestExperiment:
             exp = pf._experiments.get(exp.name)
             exp = ExperimentOrchestrator(pf, exp).start()
 
-    @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
     def test_experiment_test_chat_group_node(self, pf: PFClient):
         template_path = EXP_ROOT / "chat-group-node-exp-template" / "exp.yaml"

@@ -365,7 +365,6 @@ class TestCli:
         output = json.loads(open(output_path, "r", encoding="utf-8").read())
         assert output["result"] == "meid_token"
 
-    @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
     def test_pf_flow_test_with_non_english_input_output(self, capsys):
         # disable trace to not invoke prompt flow service, which will print unexpected content to stdout
         with mock.patch("promptflow._sdk._tracing.is_trace_feature_disabled", return_value=True):
@@ -747,7 +746,6 @@ class TestCli:
             run_pf_command("flow", "test", "--flow", flow_name, "--inputs", "groundtruth=App", "prediction=App")
             self._validate_requirement(Path(temp_dir) / flow_name / "flow.dag.yaml")
 
-    @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
     def test_init_chat_flow(self):
         temp_dir = mkdtemp()
         with _change_working_dir(temp_dir):
@@ -969,7 +967,6 @@ class TestCli:
                 assert not (flow_folder / "azure_openai.yaml").exists()
                 assert not (flow_folder / "openai.yaml").exists()
 
-    @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
     def test_flow_chat(self, monkeypatch, capsys):
         chat_list = ["hi", "what is chat gpt?"]
 
@@ -1018,7 +1015,6 @@ class TestCli:
         assert "show_answer:" in outerr.out
         assert "[show_answer]: print:" in outerr.out
 
-    @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
     def test_invalid_chat_flow(self, monkeypatch, capsys):
         def mock_input(*args, **kwargs):
             if chat_list:
@@ -1077,7 +1073,7 @@ class TestCli:
         outerr = capsys.readouterr()
         assert "chat output is not configured" in outerr.out
 
-    @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
+    @pytest.mark.skipif(pytest.is_replay, reason="Cannot pass in replay mode")
     def test_chat_with_stream_output(self, monkeypatch, capsys):
         chat_list = ["hi", "what is chat gpt?"]
 
@@ -1124,7 +1120,6 @@ class TestCli:
         )
         assert detail_path.exists()
 
-    @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
     def test_flow_test_with_default_chat_history(self):
         run_pf_command(
             "flow",
@@ -1144,7 +1139,6 @@ class TestCli:
         ]
         assert details["flow_runs"][0]["inputs"]["chat_history"] == expect_chat_history
 
-    @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
     def test_flow_test_with_user_defined_chat_history(self, monkeypatch, capsys):
         chat_list = ["hi", "what is chat gpt?"]
 

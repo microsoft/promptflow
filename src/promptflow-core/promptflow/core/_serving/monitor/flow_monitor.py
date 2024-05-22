@@ -26,6 +26,7 @@ class FlowMonitor:
         custom_dimensions: Dict[str, str],
         metric_exporters=None,
         trace_exporters=None,
+        log_exporters=None,
     ):
         self.data_collector = data_collector
         self.logger = logger
@@ -33,6 +34,7 @@ class FlowMonitor:
         self.metrics_recorder = self.setup_metrics_recorder(custom_dimensions, metric_exporters)
         self.flow_name = default_flow_name
         self.setup_trace_exporters(trace_exporters)
+        self.setup_log_exporters(log_exporters)
 
     def setup_metrics_recorder(self, custom_dimensions, metric_exporters):
         if metric_exporters:
@@ -75,6 +77,31 @@ class FlowMonitor:
                 provider.add_span_processor(BatchSpanProcessor(exporter))
         except Exception as e:
             self.logger.error(f"Setup trace exporters failed: {e}")
+
+    def setup_log_exporters(self, log_exporters):
+        if not log_exporters:
+            self.logger.warning("No log exporter enabled.")
+            return
+        exporter_names = [n.__class__.__name__ for n in log_exporters]
+        self.logger.info(f"Enable {len(log_exporters)} log exporters: {exporter_names}.")
+        import logging
+
+        from opentelemetry._logs import set_logger_provider
+        from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
+        from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
+        from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+
+        resource = Resource(attributes={SERVICE_NAME: "promptflow"})
+        logger_provider = LoggerProvider(resource=resource)
+        set_logger_provider(logger_provider)
+        for exporter in log_exporters:
+            logger_provider.add_log_record_processor(BatchLogRecordProcessor(exporter))
+        handler = LoggingHandler(level=logging.NOTSET, logger_provider=logger_provider)
+        from promptflow._utils.logger_utils import flow_logger, logger
+
+        self.logger.addHandler(handler)
+        flow_logger.addHandler(handler)
+        logger.addHandler(handler)
 
     def setup_streaming_monitor_if_needed(self, response_creator):
         input_data = self.context_data_provider.get_request_data()
@@ -129,6 +156,7 @@ class FlowMonitor:
             if flow_result:
                 self.metrics_recorder.record_tracing_metrics(flow_result.run_info, flow_result.node_run_infos)
             err_code = self.context_data_provider.get_exception_code()
+            err_code = err_code if err_code else ""
             self.metrics_recorder.record_flow_request(flow_id, resp_status_code, err_code, streaming)
             # streaming metrics will be recorded in the streaming callback func
             if not streaming:
