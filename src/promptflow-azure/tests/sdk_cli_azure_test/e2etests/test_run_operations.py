@@ -588,6 +588,8 @@ class TestFlowRun:
         from azure.core.rest._requests_basic import RestRequestsTransportResponse
         from requests import Response
 
+        from promptflow.azure._constants._trace import CosmosConfiguration, CosmosStatus
+        from promptflow.azure._entities._trace import CosmosMetadata
         from promptflow.azure._restclient.flow.models import SubmitBulkRunRequest
         from promptflow.azure._restclient.flow_service_caller import FlowRequestException, FlowServiceCaller
         from promptflow.azure.operations import RunOperations
@@ -606,9 +608,14 @@ class TestFlowRun:
         mock_run._use_remote_flow = False
         mock_run._identity = None
 
+        mock_cosmos_metadata = CosmosMetadata(
+            configuration=CosmosConfiguration.DIAGNOSTIC_DISABLED,
+            status=CosmosStatus.INITIALIZED,
+        )
+
         with patch.object(RunOperations, "_resolve_data_to_asset_id"), patch.object(
             RunOperations, "_resolve_flow_and_session_id", return_value=("fake_flow_id", "fake_session_id")
-        ):
+        ), patch.object(RunOperations, "_get_cosmos_metadata", return_value=mock_cosmos_metadata):
             with patch.object(RequestsTransport, "send") as mock_request, patch.object(
                 FlowServiceCaller, "_set_headers_with_user_aml_token"
             ):
@@ -625,7 +632,7 @@ class TestFlowRun:
 
         with patch.object(RunOperations, "_resolve_data_to_asset_id"), patch.object(
             RunOperations, "_resolve_flow_and_session_id", return_value=("fake_flow_id", "fake_session_id")
-        ):
+        ), patch.object(RunOperations, "_get_cosmos_metadata", return_value=mock_cosmos_metadata):
             with patch.object(RequestsTransport, "send") as mock_request, patch.object(
                 FlowServiceCaller, "_set_headers_with_user_aml_token"
             ):
@@ -645,7 +652,7 @@ class TestFlowRun:
 
         with patch.object(RunOperations, "_resolve_data_to_asset_id"), patch.object(
             RunOperations, "_resolve_flow_and_session_id", return_value=("fake_flow_id", "fake_session_id")
-        ):
+        ), patch.object(RunOperations, "_get_cosmos_metadata", return_value=mock_cosmos_metadata):
             with patch.object(RequestsTransport, "send") as mock_request, patch.object(
                 FlowServiceCaller, "_set_headers_with_user_aml_token"
             ):
@@ -695,7 +702,7 @@ class TestFlowRun:
 
         with patch.object(FlowServiceCaller, "submit_bulk_run") as mock_submit, patch.object(RunOperations, "get"):
             mock_submit.side_effect = submit
-            # no runtime provided, will use automatic runtime
+            # no runtime provided, will use compute session
             pf.run(
                 flow=f"{FLOWS_DIR}/print_env_var",
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
@@ -704,7 +711,7 @@ class TestFlowRun:
 
         with patch.object(FlowServiceCaller, "submit_bulk_run") as mock_submit, patch.object(RunOperations, "get"):
             mock_submit.side_effect = submit
-            # automatic is a reserved runtime name, will use automatic runtime if specified.
+            # automatic is a reserved runtime name, will use compute session if specified.
             pf.run(
                 flow=f"{FLOWS_DIR}/print_env_var",
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
@@ -856,7 +863,7 @@ class TestFlowRun:
             RunOperations, "get"
         ), patch.object(FlowServiceCaller, "create_flow_session"):
             mock_submit.side_effect = submit
-            # no runtime provided, will use automatic runtime
+            # no runtime provided, will use compute session
             pf.run(
                 flow=flow_path,
                 data=f"{DATAS_DIR}/env_var_names.jsonl",

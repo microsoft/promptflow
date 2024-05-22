@@ -16,6 +16,7 @@ Note:
 ```{toctree}
 :maxdepth: 1
 
+quick-start
 init-and-test-a-flow
 develop-standard-flow
 develop-chat-flow

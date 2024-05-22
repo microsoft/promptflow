@@ -1,3 +1,5 @@
+import json
+
 from typing import TypedDict
 from pathlib import Path
 
@@ -36,6 +38,7 @@ class CodeEvaluator:
             model={"configuration": self.model_config},
         )
         output = prompty(code=code)
+        output = json.loads(output)
         output = Result(**output)
         return output
 
@@ -57,7 +60,7 @@ if __name__ == "__main__":
     start_trace()
     model_config = AzureOpenAIModelConfiguration(
         connection="open_ai_connection",
-        azure_deployment="gpt-35-turbo-0125",
+        azure_deployment="gpt-35-turbo",
     )
     evaluator = CodeEvaluator(model_config)
     result = evaluator('print("Hello, world!")')

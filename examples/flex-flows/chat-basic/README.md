@@ -24,10 +24,8 @@ See <a href="https://platform.openai.com/docs/api-reference/chat/create#chat/cre
 - how to consume chat history in prompt.
     ```jinja
     {% for item in chat_history %}
-    user:
-    {{item.inputs.question}}
-    assistant:
-    {{item.outputs.answer}}
+    {{item.role}}:
+    {{item.content}}
     {% endfor %}
     ```
 
@@ -37,7 +35,7 @@ See <a href="https://platform.openai.com/docs/api-reference/chat/create#chat/cre
 
 - Setup connection
 
-Go to "Prompt flow" "Connections" tab. Click on "Create" button, select one of LLM tool supported connection types and fill in the configurations.
+Go to "Prompt flow" "Connections" tab. Click on "Create" button, select one of prompty supported connection types and fill in the configurations.
 
 Or use CLI to create connection:
 
@@ -57,26 +55,28 @@ pf connection show --name open_ai_connection
 ```bash
 python flow.py
 ```
-
 - Test flow
+
+```bash
+pf flow test --flow flow:ChatFlow --init init.json --inputs question="What's Azure Machine Learning?"
+```
+
+- Test flow with yaml
 You'll need to write flow entry `flow.flex.yaml` to test with prompt flow.
 
 ```bash
 # run chat flow with default question in flow.flex.yaml
-pf flow test --flow . --init init.json
-
+pf flow test --flow . 
 # run chat flow with new question
-pf flow test --flow . --init init.json --inputs question="What's Azure Machine Learning?"
-
-pf flow test --flow . --init init.json --inputs question="What is ChatGPT? Please explain with consise statement."
+pf flow test --flow . --inputs question="What is ChatGPT? Please explain with consise statement."
+# run chat flow with specific init and inputs
+pf flow test --flow . --init init.json --inputs sample.json
 ```
+
 - Test flow: multi turn
 ```shell
-# start test in interactive terminal (TODO)
-pf flow test --flow . --init init.json --interactive
-
-# start test in chat ui (TODO)
-pf flow test --flow . --init init.json --ui 
+# start test in chat UI
+pf flow test --flow . --ui --init init.json
 ```
 
 - Create run with multiple lines data

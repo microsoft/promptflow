@@ -5,6 +5,7 @@
 import asyncio
 import inspect
 import json
+from collections.abc import AsyncIterator, Iterator
 from contextvars import ContextVar
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Mapping, Optional, Union
@@ -299,7 +300,7 @@ class RunTracker(ThreadLocalSingleton):
     def _ensure_serializable_value(self, val, warning_msg: Optional[str] = None):
         if ConnectionType.is_connection_value(val):
             return ConnectionType.serialize_conn(val)
-        if inspect.isgenerator(val) or inspect.isasyncgen(val):
+        if isinstance(val, (Iterator, AsyncIterator)):
             return str(val)
         try:
             json.dumps(val, default=default_json_encoder)

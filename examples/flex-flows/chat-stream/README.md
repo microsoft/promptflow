@@ -24,10 +24,8 @@ See <a href="https://platform.openai.com/docs/api-reference/chat/create#chat/cre
 - how to consume chat history in prompt.
     ```jinja
     {% for item in chat_history %}
-    user:
-    {{item.inputs.question}}
-    assistant:
-    {{item.outputs.answer}}
+    {{item.role}}:
+    {{item.content}}
     {% endfor %}
     ```
 
@@ -59,6 +57,12 @@ python flow.py
 ```
 
 - Test flow
+
+```bash
+pf flow test --flow flow:ChatFlow --init init.json
+```
+
+- Test flow with yaml
 You'll need to write flow entry `flow.flex.yaml` to test with prompt flow.
 
 ```bash
@@ -69,6 +73,11 @@ pf flow test --flow . --init init.json
 pf flow test --flow . --init init.json --inputs question="What's Azure Machine Learning?"
 
 pf flow test --flow . --init init.json --inputs question="What is ChatGPT? Please explain with consise statement."
+```
+
+- Test flow with UI
+```shell
+pf flow test --flow . --init init.json --ui
 ```
 
 - Create run with multiple lines data
@@ -112,6 +121,6 @@ az configure --defaults group=<your_resource_group_name> workspace=<your_workspa
 
 ```bash
 # run with environment variable reference connection in azureml workspace
-pfazure run create --flow . --init connection=open_ai_connection --data ./data.jsonl --column-mapping question='${data.question}' --stream
+pfazure run create --flow . --init ./init.json --data ./data.jsonl --column-mapping question='${data.question}' --stream
 # run using yaml file
 pfazure run create --file run.yml --stream

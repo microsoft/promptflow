@@ -2,11 +2,12 @@ import contextlib
 import dataclasses
 import importlib
 import inspect
+import os.path
 import uuid
+from collections.abc import Iterator
 from dataclasses import is_dataclass
 from functools import partial
 from pathlib import Path
-from types import GeneratorType
 from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 
 from promptflow._constants import LINE_NUMBER_KEY, FlowType, MessageFormatType
@@ -58,17 +59,30 @@ class ScriptExecutor(FlowExecutor):
         logger.debug(f"Start initializing the executor with {flow_file}.")
         logger.debug(f"Init params for script executor: {init_kwargs}")
 
-        self._flow_file = flow_file
         if connections and isinstance(connections, dict):
             connections = DictConnectionProvider(connections)
         self._connections = connections
+
+        self._flow_file = flow_file
         entry = flow_file  # Entry could be both a path or a callable
         self._entry = entry
-        self._init_kwargs = init_kwargs or {}
         if isinstance(entry, (str, Path)):
             self._working_dir = Flow._resolve_working_dir(entry, working_dir)
         else:
             self._working_dir = working_dir or Path.cwd()
+
+        # load flow if possible
+        try:
+            flow_file = os.path.join(self._working_dir, self._flow_file)
+            with open(flow_file, "r", encoding="utf-8") as fin:
+                flow_data = load_yaml(fin)
+            flow = FlexFlow.deserialize(flow_data)
+        except Exception as e:
+            logger.debug(f"Failed to load flow from file {self._flow_file} with error: {e}")
+            flow = None
+        self._flow = flow
+
+        self._init_kwargs = self._apply_sample_init(init_kwargs=init_kwargs)
         self._init_input_sign()
         self._initialize_function()
         self._storage = storage or DefaultRunStorage()
@@ -107,7 +121,19 @@ class ScriptExecutor(FlowExecutor):
         allow_generator_output: bool = False,
         **kwargs,
     ) -> LineResult:
+        if self._is_async:
+            from promptflow._utils.async_utils import async_run_allowing_running_loop
+
+            return async_run_allowing_running_loop(
+                self.exec_line_async,
+                inputs=inputs,
+                index=index,
+                run_id=run_id,
+                allow_generator_output=allow_generator_output,
+                **kwargs,
+            )
         run_id = run_id or str(uuid.uuid4())
+        inputs = self._apply_sample_inputs(inputs=inputs)
         inputs = apply_default_value_for_input(self._inputs_sign, inputs)
         with self._exec_line_context(run_id, index):
             return self._exec_line(inputs, index, run_id, allow_generator_output=allow_generator_output)
@@ -273,6 +299,7 @@ class ScriptExecutor(FlowExecutor):
         **kwargs,
     ) -> LineResult:
         run_id = run_id or str(uuid.uuid4())
+        inputs = self._apply_sample_inputs(inputs=inputs)
         inputs = apply_default_value_for_input(self._inputs_sign, inputs)
         with self._exec_line_context(run_id, index):
             return await self._exec_line_async(inputs, index, run_id, allow_generator_output=allow_generator_output)
@@ -293,8 +320,12 @@ class ScriptExecutor(FlowExecutor):
         line_run_id = run_info.run_id
         try:
             Tracer.start_tracing(line_run_id)
-            output = await self._func_async(**inputs)
-            output = self._stringify_generator_output(output) if not allow_generator_output else output
+            output = self._func_async(**inputs)
+            # Get the result of the output if it is an awaitable.
+            # Note that if it is an async generator, it would not be awaitable.
+            if inspect.isawaitable(output):
+                output = await output
+            output = await self._stringify_generator_output_async(output) if not allow_generator_output else output
             traces = Tracer.end_tracing(line_run_id)
             output_dict = convert_eager_flow_output_to_dict(output)
             run_info.api_calls = traces
@@ -308,17 +339,28 @@ class ScriptExecutor(FlowExecutor):
             run_tracker.persist_flow_run(run_info)
         return self._construct_line_result(output, run_info)
 
+    async def _stringify_generator_output_async(self, output):
+        if isinstance(output, dict):
+            return await super()._stringify_generator_output_async(output)
+        if is_dataclass(output):
+            kv = {field.name: getattr(output, field.name) for field in dataclasses.fields(output)}
+            updated_kv = await super()._stringify_generator_output_async(kv)
+            return dataclasses.replace(output, **updated_kv)
+        kv = {"output": output}
+        updated_kv = await super()._stringify_generator_output_async(kv)
+        return updated_kv["output"]
+
     def _stringify_generator_output(self, output):
         if isinstance(output, dict):
             return super()._stringify_generator_output(output)
         elif is_dataclass(output):
             fields = dataclasses.fields(output)
             for field in fields:
-                if isinstance(getattr(output, field.name), GeneratorType):
+                if isinstance(getattr(output, field.name), Iterator):
                     consumed_values = "".join(str(chuck) for chuck in getattr(output, field.name))
                     setattr(output, field.name, consumed_values)
         else:
-            if isinstance(output, GeneratorType):
+            if isinstance(output, Iterator):
                 output = "".join(str(chuck) for chuck in output)
         return output
 
@@ -449,6 +491,8 @@ class ScriptExecutor(FlowExecutor):
 
     def _initialize_function(self):
         func = self._parse_entry_func()
+        original_func = getattr(func, "__original_function", func)
+
         # If the function is not decorated with trace, add trace for it.
         if not hasattr(func, "__original_function"):
             func = _traced(func, trace_type=TraceType.FLOW)
@@ -466,10 +510,12 @@ class ScriptExecutor(FlowExecutor):
                 func = _traced(getattr(func, "__original_function"), trace_type=TraceType.FLOW)
         inputs, _, _, _ = function_to_interface(func)
         self._inputs = {k: v.to_flow_input_definition() for k, v in inputs.items()}
-        if inspect.iscoroutinefunction(func):
+        if inspect.iscoroutinefunction(original_func) or inspect.isasyncgenfunction(original_func):
+            self._is_async = True
             self._func = async_to_sync(func)
             self._func_async = func
         else:
+            self._is_async = False
             self._func = func
             self._func_async = sync_to_async(func)
         self._func_name = self._get_func_name(func=func)
@@ -508,18 +554,34 @@ class ScriptExecutor(FlowExecutor):
         return module_name, func_name
 
     def _init_input_sign(self):
-        if not self.is_function_entry:
-            with open(self._working_dir / self._flow_file, "r", encoding="utf-8") as fin:
-                flow_dag = load_yaml(fin)
-            flow = FlexFlow.deserialize(flow_dag)
+        if not self.is_function_entry and self._flow is not None:
             # In the yaml file, user can define the inputs and init signature for the flow, also SDK may create
             # the signature and add them to the yaml file. We need to get the signature from the yaml file and
             # used for applying default value and ensuring input type.
             # If the default value is an empty string, we will assume user has defined the default value as None
             # in python script. We will exclude it from signature.
-            self._inputs_sign = {k: v for k, v in flow.inputs.items() if v.default != ""}
-            self._init_sign = {k: v for k, v in flow.init.items() if v.default != ""}
+            self._inputs_sign = {k: v for k, v in self._flow.inputs.items() if v.default != ""}
+            self._init_sign = {k: v for k, v in self._flow.init.items() if v.default != ""}
         else:
+            # TODO(3194196): support input signature for function entry.
             # Since there is no yaml file for function entry, we set the inputs and init signature to empty dict.
             self._inputs_sign = {}
             self._init_sign = {}
+
+    def _apply_sample_init(self, init_kwargs: Mapping[str, Any]):
+        """Apply sample init if init_kwargs not provided."""
+        if not init_kwargs and self._flow:
+            sample_init = self._flow.sample.get("init")
+            if sample_init:
+                logger.debug(f"Init kwargs are not provided, applying sample init: {sample_init}.")
+                return sample_init
+        return init_kwargs or {}
+
+    def _apply_sample_inputs(self, inputs: Mapping[str, Any]):
+        """Apply sample inputs if inputs not provided."""
+        if not inputs and self._flow:
+            sample_inputs = self._flow.sample.get("inputs")
+            if sample_inputs:
+                logger.debug(f"Inputs are not provided, applying sample inputs: {sample_inputs}.")
+                return sample_inputs
+        return inputs or {}

@@ -3,10 +3,12 @@ import json
 import uuid
 from unittest.mock import patch
 
+import openai
 import pytest
 from opentelemetry.trace.status import StatusCode
 
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
+from promptflow.tracing._trace import TracedIterator
 from promptflow.tracing.contracts.trace import TraceType
 
 from ..utils import execute_function_in_subprocess, prepare_memory_exporter
@@ -124,7 +126,7 @@ class TestTracing:
                 },
                 2,
             ),
-            (prompt_tpl_completion, {"prompt_tpl": "Hello {{name}}", "name": "world", "stream": True}, 3),
+            (prompt_tpl_completion, {"prompt_tpl": "Hello {{name}}", "name": "world", "stream": True}, 2),
             (
                 prompt_tpl_chat,
                 {
@@ -132,7 +134,7 @@ class TestTracing:
                     "question": "What is ChatGPT?",
                     "stream": True,
                 },
-                3,
+                2,
             ),
         ],
     )
@@ -169,18 +171,48 @@ class TestTracing:
         [
             (openai_chat, {"prompt": "Hello"}, 2),
             (openai_completion, {"prompt": "Hello"}, 2),
-            (openai_chat, {"prompt": "Hello", "stream": True}, 3),
-            (openai_completion, {"prompt": "Hello", "stream": True}, 3),
+            (openai_chat, {"prompt": "Hello", "stream": True}, 2),
+            (openai_completion, {"prompt": "Hello", "stream": True}, 2),
             (openai_chat_async, {"prompt": "Hello"}, 2),
             (openai_completion_async, {"prompt": "Hello"}, 2),
-            (openai_chat_async, {"prompt": "Hello", "stream": True}, 3),
-            (openai_completion_async, {"prompt": "Hello", "stream": True}, 3),
+            (openai_chat_async, {"prompt": "Hello", "stream": True}, 2),
+            (openai_completion_async, {"prompt": "Hello", "stream": True}, 2),
         ],
     )
     def test_otel_trace_with_llm(self, dev_connections, func, inputs, expected_span_length):
         execute_function_in_subprocess(
             self.assert_otel_trace_with_llm, dev_connections, func, inputs, expected_span_length
         )
+
+    def test_open_ai_stream_context_manager(self, dev_connections):
+        inject_openai_api()
+        conn_name = "azure_open_ai_connection"
+        conn_dict = {
+            "api_key": dev_connections[conn_name]["value"]["api_key"],
+            "azure_endpoint": dev_connections[conn_name]["value"]["api_base"],
+            "api_version": dev_connections[conn_name]["value"]["api_version"],
+        }
+        client = openai.AzureOpenAI(**conn_dict)
+
+        messages = [{"role": "system", "content": "You are a helpful assistant."}, {"role": "user", "content": "Hello"}]
+        response = client.chat.completions.create(model="gpt-35-turbo", messages=messages, stream=True)
+        assert isinstance(response, TracedIterator)
+        assert isinstance(response._iterator, openai.Stream)
+
+        with patch.object(openai.Stream, "__enter__") as mock_enter, patch.object(
+            openai.Stream, "__exit__"
+        ) as mock_exit:
+
+            def generator():
+                with response:
+                    mock_enter.assert_called_once()
+                    mock_exit.enter.assert_not_called()
+                    for chunk in response:
+                        if chunk.choices:
+                            yield chunk.choices[0].delta.content or ""
+
+            _ = "".join(generator())
+            mock_exit.assert_called_once()
 
     def assert_otel_trace_with_llm(self, dev_connections, func, inputs, expected_span_length):
         inject_openai_api()
@@ -315,35 +347,15 @@ class TestTracing:
         assert FUNCTION_OUTPUT_EVENT in events, f"Expected '{FUNCTION_OUTPUT_EVENT}' in events"
 
         if span.attributes[SPAN_TYPE_ATTRIBUTE] == TraceType.LLM:
-            self.validate_llm_event(span, events)
+            self.validate_llm_event(events)
         elif span.attributes[SPAN_TYPE_ATTRIBUTE] == TraceType.EMBEDDING:
             self.validate_embedding_event(events)
 
         if PROMPT_TEMPLATE_EVENT in events:
             self.validate_prompt_template_event(events)
 
-    def validate_llm_event(self, span, span_events):
-        is_stream = span_events[FUNCTION_INPUTS_EVENT].get("stream", False)
-        is_iterated_span = span.name.startswith(ITERATED_SPAN_PREFIX)
-
-        # iterate span should have LLM_GENERATED_MESSAGE_EVENT and links
-        if is_iterated_span:
-            assert (
-                LLM_GENERATED_MESSAGE_EVENT in span_events
-            ), f"Expected '{LLM_GENERATED_MESSAGE_EVENT}' in iterated span events"
-            assert span.links, "Expected links in iterated span"
-
-        # non-stream span should have LLM_GENERATED_MESSAGE_EVENT
-        if not is_stream:
-            assert (
-                LLM_GENERATED_MESSAGE_EVENT in span_events
-            ), f"Expected '{LLM_GENERATED_MESSAGE_EVENT}' in non-stream span events"
-
-        # original span in streaming mode should not have LLM_GENERATED_MESSAGE_EVENT
-        if is_stream and not is_iterated_span:
-            assert (
-                LLM_GENERATED_MESSAGE_EVENT not in span_events
-            ), f"Unexpected '{LLM_GENERATED_MESSAGE_EVENT}' in original span in streaming mode"
+    def validate_llm_event(self, span_events):
+        assert LLM_GENERATED_MESSAGE_EVENT in span_events, f"Expected '{LLM_GENERATED_MESSAGE_EVENT}' in span events"
 
     def validate_embedding_event(self, span_events):
         assert EMBEDDING_EVENT in span_events, f"Expected '{EMBEDDING_EVENT}' in span events"
@@ -446,10 +458,23 @@ class TestTracing:
                     assert span.attributes[token_name] == expected_tokens[span_id][token_name]
 
     def _is_llm_span_with_tokens(self, span, is_stream):
-        # For streaming mode, there are two spans for openai api call, one is the original span, and the other
-        # is the iterated span, which name is "Iterated(<original_trace_name>)", we should check the iterated span
-        # in streaming mode.
+        """
+        This function checks if a given span is a LLM span with tokens.
+
+        If in stream mode, the function checks if the span has attributes indicating it's an iterated span.
+        In non-stream mode, it simply checks if the span's function attribute is in the list of LLM function names.
+
+        Args:
+            span: The span to check.
+            is_stream: A boolean indicating whether the span is in stream mode.
+
+        Returns:
+            A boolean indicating whether the span is a LLM span with tokens.
+        """
         if is_stream:
-            return span.attributes.get("function", "") in LLM_FUNCTION_NAMES and span.name.startswith("Iterated(")
+            return (
+                span.attributes.get("function", "") in LLM_FUNCTION_NAMES
+                and span.attributes.get("output_type", "") == "iterated"
+            )
         else:
             return span.attributes.get("function", "") in LLM_FUNCTION_NAMES

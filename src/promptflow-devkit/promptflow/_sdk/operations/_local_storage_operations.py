@@ -249,7 +249,8 @@ class LocalStorageOperations(AbstractBatchRunStorage):
 
     def dump_snapshot(self, flow: Flow) -> None:
         """Dump flow directory to snapshot folder, input file will be dumped after the run."""
-        patterns = [pattern for pattern in PromptflowIgnoreFile.IGNORE_FILE]
+        ignore_file = PromptflowIgnoreFile(prompt_flow_path=flow.code)
+        patterns = [pattern for pattern in ignore_file._get_ignore_list()]
         # ignore current output parent folder to avoid potential recursive copy
         patterns.append(self._run._output_path.parent.name)
         shutil.copytree(

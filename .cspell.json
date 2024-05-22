@@ -109,7 +109,9 @@
     "Entra",
     "uvicorn",
     "attribited",
-    "MistralAI"
+    "MistralAI",
+    "llmlingua",
+    "myconn"
   ],
   "ignoreWords": [
     "openmpi",
@@ -237,7 +239,8 @@
     "omap",
     "Machinal",
     "azureopenaimodelconfiguration",
-    "openaimodelconfiguration"
+    "openaimodelconfiguration",
+    "usecwd"
   ],
   "flagWords": [
     "Prompt Flow"

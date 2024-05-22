@@ -1,6 +1,6 @@
 # promptflow-devkit package
 
-## v1.11.0 (Upcoming)
+## v1.11.0 (2024.05.17)
 
 ### Features Added
 - Upload local run details to cloud when trace destination is configured to cloud.
@@ -20,6 +20,7 @@
 - Fix the perf issue because of dns delay when check pfs status.
 - Fix the issue that original flex yaml will be overridden when testing non-yaml flow
 - Fix "Failed to load trace ... is not valid JSON" when traces inputs/outputs have invalid JSON values like `-Infinity`, `Infinity` and `NaN`.
+- [promptflow-devkit] Fix run snapshot does not honor gitignore/amlignore.
 
 ## v1.10.0 (2024.04.26)
 

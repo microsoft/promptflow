@@ -365,7 +365,6 @@ class TestCli:
         output = json.loads(open(output_path, "r", encoding="utf-8").read())
         assert output["result"] == "meid_token"
 
-    @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
     def test_pf_flow_test_with_non_english_input_output(self, capsys):
         # disable trace to not invoke prompt flow service, which will print unexpected content to stdout
         with mock.patch("promptflow._sdk._tracing.is_trace_feature_disabled", return_value=True):
@@ -747,7 +746,6 @@ class TestCli:
             run_pf_command("flow", "test", "--flow", flow_name, "--inputs", "groundtruth=App", "prediction=App")
             self._validate_requirement(Path(temp_dir) / flow_name / "flow.dag.yaml")
 
-    @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
     def test_init_chat_flow(self):
         temp_dir = mkdtemp()
         with _change_working_dir(temp_dir):
@@ -969,7 +967,6 @@ class TestCli:
                 assert not (flow_folder / "azure_openai.yaml").exists()
                 assert not (flow_folder / "openai.yaml").exists()
 
-    @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
     def test_flow_chat(self, monkeypatch, capsys):
         chat_list = ["hi", "what is chat gpt?"]
 
@@ -1018,7 +1015,6 @@ class TestCli:
         assert "show_answer:" in outerr.out
         assert "[show_answer]: print:" in outerr.out
 
-    @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
     def test_invalid_chat_flow(self, monkeypatch, capsys):
         def mock_input(*args, **kwargs):
             if chat_list:
@@ -1077,7 +1073,7 @@ class TestCli:
         outerr = capsys.readouterr()
         assert "chat output is not configured" in outerr.out
 
-    @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
+    @pytest.mark.skipif(pytest.is_replay, reason="Cannot pass in replay mode")
     def test_chat_with_stream_output(self, monkeypatch, capsys):
         chat_list = ["hi", "what is chat gpt?"]
 
@@ -1124,7 +1120,6 @@ class TestCli:
         )
         assert detail_path.exists()
 
-    @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
     def test_flow_test_with_default_chat_history(self):
         run_pf_command(
             "flow",
@@ -1144,7 +1139,6 @@ class TestCli:
         ]
         assert details["flow_runs"][0]["inputs"]["chat_history"] == expect_chat_history
 
-    @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
     def test_flow_test_with_user_defined_chat_history(self, monkeypatch, capsys):
         chat_list = ["hi", "what is chat gpt?"]
 
@@ -2775,6 +2769,7 @@ class TestCli:
             out, _ = capsys.readouterr()
             assert "basic_callable_class_without_yaml" in out
 
+    @pytest.mark.skip(reason="Chat UI won't exit automatically now and need to update this test")
     def test_eager_flow_test_without_yaml_ui(self, pf, capsys):
         run_pf_command(
             "flow",
@@ -2902,6 +2897,136 @@ class TestCli:
         # check run results
         run = pf.runs.get(run_id)
         assert_batch_run_result(run, pf, assert_func)
+
+    def test_prompty_with_env(self, dev_connections, capfd):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            env_file = Path(temp_dir) / ".env"
+            aoai_connection = dev_connections.get("azure_open_ai_connection")
+            env = {
+                "MOCK_AZURE_DEVELOPMENT": "gpt-35-turbo",
+                "MOCK_AZURE_API_KEY": aoai_connection["value"]["api_key"],
+                "MOCK_AZURE_API_VERSION": aoai_connection["value"]["api_version"],
+                "MOCK_AZURE_ENDPOINT": aoai_connection["value"]["api_base"],
+            }
+            with open(env_file, "w") as f:
+                f.writelines([f"{key}={value}\n" for key, value in env.items()])
+
+            # Prompty test with default .env
+            shutil.copy(f"{PROMPTY_DIR}/prompty_with_env.prompty", Path(temp_dir) / "prompty_with_env.prompty")
+            with _change_working_dir(temp_dir):
+                run_pf_command(
+                    "flow",
+                    "test",
+                    "--flow",
+                    f"{temp_dir}/prompty_with_env.prompty",
+                    "--inputs",
+                    'question="what is the result of 1+1?"',
+                    "--env",
+                )
+            out, _ = capfd.readouterr()
+            assert "2" in out
+
+            # Prompty test with env file
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{PROMPTY_DIR}/prompty_with_env.prompty",
+                "--inputs",
+                'question="what is the result of 1+1?"',
+                "--env",
+                str(env_file),
+            )
+            out, _ = capfd.readouterr()
+            assert "2" in out
+
+            # prompty test with env dict
+            env_params = [f"{key}={value}" for key, value in env.items()]
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{PROMPTY_DIR}/prompty_with_env.prompty",
+                "--inputs",
+                'question="what is the result of 1+1?"',
+                "--env",
+                *env_params,
+            )
+            out, _ = capfd.readouterr()
+            assert "2" in out
+
+            # Prompty test with env override
+            invalid_env_file = Path(temp_dir) / "invalid.env"
+            with open(invalid_env_file, "w") as f:
+                f.writelines([f"{key}={value}\n" for key, value in env.items() if key != "MOCK_AZURE_API_KEY"])
+                f.write("MOCK_AZURE_API_KEY=invalid_api_key")
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{PROMPTY_DIR}/prompty_with_env.prompty",
+                "--inputs",
+                'question="what is the result of 1+1?"',
+                "--env",
+                str(env_file),
+                f"MOCK_AZURE_API_KEY={env['MOCK_AZURE_API_KEY']}",
+            )
+            out, _ = capfd.readouterr()
+            assert "2" in out
+
+            with pytest.raises(Exception) as ex:
+                run_pf_command(
+                    "flow",
+                    "test",
+                    "--flow",
+                    f"{PROMPTY_DIR}/prompty_with_env.prompty",
+                    "--inputs",
+                    'question="what is the result of 1+1?"',
+                    "--env",
+                    "invalid_path.env",
+                )
+            assert "cannot find the file" in str(ex.value)
+
+            with pytest.raises(Exception) as ex:
+                run_pf_command(
+                    "flow",
+                    "test",
+                    "--flow",
+                    f"{PROMPTY_DIR}/prompty_with_env.prompty",
+                    "--inputs",
+                    'question="what is the result of 1+1?"',
+                    "--env",
+                    "invalid_path.txt",
+                )
+            assert "expects file path endswith .env or KEY=VALUE [KEY=VALUE ...]" in str(ex.value)
+
+            # Test batch run
+            run_pf_command(
+                "run",
+                "create",
+                "--flow",
+                f"{PROMPTY_DIR}/prompty_with_env.prompty",
+                "--data",
+                f"{DATAS_DIR}/prompty_inputs.jsonl",
+                "--env",
+                str(env_file),
+            )
+            out, _ = capfd.readouterr()
+            assert "Completed" in out
+
+            # Test batch run
+            run_pf_command(
+                "run",
+                "create",
+                "--flow",
+                f"{PROMPTY_DIR}/prompty_with_env.prompty",
+                "--data",
+                f"{DATAS_DIR}/prompty_inputs.jsonl",
+                "--env",
+                *env_params,
+            )
+            out, _ = capfd.readouterr()
+            assert "Completed" in out
 
 
 def assert_batch_run_result(run, pf, assert_func):

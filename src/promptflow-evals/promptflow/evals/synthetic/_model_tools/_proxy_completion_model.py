@@ -12,6 +12,8 @@ from typing import List
 from aiohttp.web import HTTPException
 from aiohttp_retry import JitterRetry, RetryClient
 
+from promptflow.evals._user_agent import USER_AGENT
+
 from .models import AsyncHTTPClientWithRetry, OpenAIChatCompletionsModel
 
 
@@ -99,6 +101,7 @@ class ProxyChatCompletionsModel(OpenAIChatCompletionsModel):
         proxy_headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
+            "User-Agent": USER_AGENT,
         }
 
         headers = {

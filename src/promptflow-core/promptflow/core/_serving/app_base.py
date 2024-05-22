@@ -8,13 +8,16 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Dict
 
+from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.user_agent_utils import setup_user_agent_to_operation_context
 from promptflow.core import Flow
+from promptflow.core._serving._errors import InvalidFlowInitConfig
 from promptflow.core._serving.extension.extension_factory import ExtensionFactory
 from promptflow.core._serving.flow_invoker import AsyncFlowInvoker
 from promptflow.core._serving.utils import get_output_fields_to_remove, get_sample_json, load_feedback_swagger
 from promptflow.core._utils import init_executable
+from promptflow.exceptions import ErrorTarget
 from promptflow.storage._run_storage import DummyRunStorage
 
 from ..._constants import PF_FLOW_INIT_CONFIG
@@ -36,7 +39,16 @@ class PromptflowServingAppBasic(ABC):
         # parse promptflow project path
         self.project_path = self.extension.get_flow_project_path()
         logger.info(f"Project path: {self.project_path}")
-        self.flow = init_executable(flow_path=Path(self.project_path))
+
+        flow_file_path = kwargs.get("flow_file_path", None)
+        if flow_file_path:
+            self.flow_file_path = Path(flow_file_path)
+        else:
+            flow_dir, flow_file_name = resolve_flow_path(self.project_path, allow_prompty_dir=True)
+            # project path is also the current working directory
+            self.flow_file_path = flow_dir / flow_file_name
+
+        self.flow = init_executable(flow_path=self.flow_file_path, working_dir=Path(self.project_path))
 
         # enable environment_variables
         environment_variables = kwargs.get("environment_variables", {})
@@ -57,9 +69,16 @@ class PromptflowServingAppBasic(ABC):
 
         self.init = kwargs.get("init", {})
         if not self.init:
-            init_params = os.environ.get(PF_FLOW_INIT_CONFIG, "{}")
-            init_dict: dict = json.loads(init_params)
-            self.init = init_dict
+            init_params = os.environ.get(PF_FLOW_INIT_CONFIG, None)
+            if init_params:
+                try:
+                    self.init = json.loads(init_params)
+                except Exception as e:
+                    self.logger.error(f"PF_FLOW_INIT_CONFIG can't be deserialized to json: {e}")
+                    raise InvalidFlowInitConfig(
+                        "PF_FLOW_INIT_CONFIG can't be deserialized to json",
+                        target=ErrorTarget.SERVING_APP,
+                    )
 
         logger.debug("Init params: " + str(self.init))
 
@@ -88,7 +107,7 @@ class PromptflowServingAppBasic(ABC):
             return
         self.logger.info("Promptflow executor starts initializing...")
         self.flow_invoker = AsyncFlowInvoker(
-            flow=Flow.load(source=self.project_path),
+            flow=Flow.load(source=self.flow_file_path),
             connection_provider=self.connection_provider,
             streaming=self.streaming_response_required,
             raise_ex=False,
@@ -98,6 +117,7 @@ class PromptflowServingAppBasic(ABC):
             storage=DummyRunStorage(),
             credential=self.credential,
             init_kwargs=self.init,
+            logger=self.logger,
         )
         # why we need to update bonded executable flow?
         self.flow = self.flow_invoker.flow

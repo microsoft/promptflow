@@ -39,10 +39,28 @@ async def func_entry_async(input_str: str) -> str:
     return "Hello " + input_str
 
 
+async def gen_func(input_str: str):
+    for i in range(5):
+        await asyncio.sleep(0.1)
+        yield str(i)
+
+
+class ClassEntryGen:
+    async def __call__(self, input_str: str):
+        for i in range(5):
+            await asyncio.sleep(0.1)
+            yield str(i)
+
+
 function_entries = [
     (ClassEntry(), {"input_str": "world"}, "Hello world"),
     (func_entry, {"input_str": "world"}, "Hello world"),
     (func_entry_async, {"input_str": "world"}, "Hello world"),
+]
+
+generator_entries = [
+    (gen_func, {"input_str": "world"}, ["0", "1", "2", "3", "4"]),
+    (ClassEntryGen(), {"input_str": "world"}, ["0", "1", "2", "3", "4"]),
 ]
 
 
@@ -203,6 +221,26 @@ class TestEagerFlow:
         msg = f"The two tasks should run concurrently, but got {delta_desc}"
         assert 0 <= delta_sec < 0.1, msg
 
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("entry, inputs, expected_output", generator_entries)
+    async def test_flow_run_with_generator_entry(self, entry, inputs, expected_output):
+        executor = FlowExecutor.create(entry, {})
+
+        line_result = executor.exec_line(inputs=inputs)
+        assert line_result.run_info.status == Status.Completed
+        assert line_result.output == "".join(expected_output)  # When stream=False, it should be a string
+
+        line_result = await executor.exec_line_async(inputs=inputs)
+        assert line_result.run_info.status == Status.Completed
+        assert line_result.output == "".join(expected_output)  # When stream=False, it should be a string
+
+        line_result = await executor.exec_line_async(inputs=inputs, allow_generator_output=True)
+        assert line_result.run_info.status == Status.Completed
+        list_result = []
+        async for item in line_result.output:
+            list_result.append(item)
+        assert list_result == expected_output  # When stream=True, it should be an async generator
+
     def test_flow_run_with_invalid_inputs(self):
         # Case 1: input not found
         flow_file = get_yaml_file("flow_with_signature", root=EAGER_FLOW_ROOT)
@@ -277,3 +315,27 @@ class TestEagerFlow:
         for (entry, _, _), expected_name in zip(function_entries, expected_names):
             executor = FlowExecutor.create(entry, {})
             assert executor._func_name == expected_name
+
+    @pytest.mark.parametrize(
+        "flow_folder, expected_output",
+        [
+            (
+                "flow_with_sample",
+                {
+                    "func_input1": "val1",
+                    "func_input2": "val2",
+                    "line_number": 0,
+                    "obj_input1": "val1",
+                    "obj_input2": "val2",
+                },
+            ),
+            ("function_flow_with_sample", {"func_input1": "val1", "func_input2": "val2", "line_number": 0}),
+        ],
+    )
+    def test_flow_with_sample(self, flow_folder, expected_output):
+        # when inputs & init not provided, will use sample field in flow file
+        flow_file = get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT)
+        executor = FlowExecutor.create(flow_file=flow_file, connections={})
+        line_result = executor.exec_line(inputs={}, index=0)
+        assert line_result.run_info.error is None
+        assert line_result.output == expected_output

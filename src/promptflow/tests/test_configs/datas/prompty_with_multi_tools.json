@@ -1,0 +1,55 @@
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "get_n_day_weather_forecast",
+      "description": "Get next num_days weather in a given location",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "format": {
+            "type": "string",
+            "description": ""
+          },
+          "location": {
+            "type": "string",
+            "description": ""
+          },
+          "num_days": {
+            "type": "string",
+            "description": ""
+          }
+        },
+        "required": [
+          "format",
+          "location",
+          "num_days"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "get_current_weather",
+      "description": "Get the current weather in a given location",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "location": {
+            "type": "string",
+            "description": ""
+          },
+          "unit": {
+            "type": "string",
+            "description": ""
+          }
+        },
+        "required": [
+          "location",
+          "unit"
+        ]
+      }
+    }
+  }
+]

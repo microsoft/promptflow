@@ -11,33 +11,31 @@ pip install promptflow-devkit
 ## Run prompty
 
 - Prepare your Azure Open AI resource follow this [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal) and get your `api_key` if you don't have one.
-- Note: you need the new [gpt-35-turbo (0125) version](https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/models#gpt-35-models) to use the json_object response_format feature.
 - Setup environment variables
 
 Ensure you have put your azure open ai endpoint key in [.env](../.env) file. You can create one refer to this [example file](../.env.example).
 
 ```bash
 cat ../.env
-# export .env as environment variable
-export $(grep -v '^#' ../.env | xargs)
 ```
 
 - Test prompty
 ```bash
-# test with default sample data
-pf flow test --flow basic.prompty
+# test with default sample data 
+# --env to use environment variable from .env 
+pf flow test --flow basic.prompty --env
 
 # test with flow inputs
-pf flow test --flow basic.prompty --inputs first_name="John" last_name="Doe" question="What is the meaning of life?"
+pf flow test --flow basic.prompty --env --inputs question="What is the meaning of life?"
 
 # test with another sample data
-pf flow test --flow basic.prompty --inputs sample.json
+pf flow test --flow basic.prompty --env --inputs sample.json
 ```
 
 - Create run with multiple lines data
 ```bash
 # using environment from .env file
-pf run create --flow basic.prompty --data ./data.jsonl --column-mapping question='${data.question}' --stream
+pf run create --flow basic.prompty --env --data ./data.jsonl --column-mapping question='${data.question}' --stream
 ```
 
 You can also skip providing `column-mapping` if provided data has same column name as the flow.
@@ -57,8 +55,8 @@ pf run show --name $name
 # show output
 pf run show-details --name $name
 
-# visualize run in browser (TODO)
-# pf run visualize --name $name
+# visualize run in browser
+pf run visualize --name $name
 ```
 
 ## Run prompty with connection
