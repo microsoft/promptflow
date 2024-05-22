@@ -4,7 +4,7 @@ environment:
 inputs:
   text:
     type: string
-    default: hola
+    default: new
 outputs:
   output_prompt:
     type: string
