@@ -6,7 +6,7 @@ LLMLingua Prompt Compression tool enables you to speed up large language model's
 ## Requirements
 PyPI package: [`llmlingua-promptflow`](https://pypi.org/project/llmlingua-promptflow/).
 - For Azure users: 
-    follow [the wiki for AzureML](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/how-to-custom-tool-package-creation-and-usage?view=azureml-api-2#prepare-runtime) or [the wiki for AI Studio](https://learn.microsoft.com/en-us/azure/ai-studio/how-to/prompt-flow-tools/prompt-flow-tools-overview#custom-tools), starting from `Prepare runtime`.
+    follow [the wiki for AzureML](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/how-to-custom-tool-package-creation-and-usage?view=azureml-api-2#prepare-compute-session) or [the wiki for AI Studio](https://learn.microsoft.com/en-us/azure/ai-studio/how-to/prompt-flow-tools/prompt-flow-tools-overview#custom-tools) to prepare the compute session.
 - For local users: 
     ```
     pip install llmlingua-promptflow
