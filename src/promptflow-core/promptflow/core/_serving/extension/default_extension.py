@@ -90,6 +90,7 @@ class AppExtension(ABC):
         custom_dimensions = self.get_metrics_common_dimensions()
         metric_exporters = OTelExporterProviderFactory.get_metrics_exporters(self.logger, self.extension_type)
         trace_exporters = OTelExporterProviderFactory.get_trace_exporters(self.logger, self.extension_type)
+        log_exporters = OTelExporterProviderFactory.get_log_exporters(self.logger, self.extension_type)
         self.flow_monitor = FlowMonitor(
             self.logger,
             self.get_flow_name(),
@@ -98,6 +99,7 @@ class AppExtension(ABC):
             custom_dimensions,
             metric_exporters,
             trace_exporters,
+            log_exporters,
         )  # noqa: E501
         return self.flow_monitor
 
