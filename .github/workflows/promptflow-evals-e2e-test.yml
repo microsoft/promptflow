@@ -53,7 +53,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - uses: snok/install-poetry@v1
         with:
-          version: 1.7.1
+          version: 1.6.1
       - uses: actions/download-artifact@v4
         with:
           name: promptflow-evals
