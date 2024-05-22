@@ -5,6 +5,7 @@ from promptflow.evals.evaluators import (
     ContentSafetyChatEvaluator,
     ContentSafetyEvaluator,
     FluencyEvaluator,
+    GroundednessEvaluator,
     QAEvaluator,
     ViolenceEvaluator,
 )
@@ -30,6 +31,16 @@ class TestBuiltInEvaluators:
         )
         assert score is not None
         assert score["gpt_fluency"] > 0.0
+
+    def test_groundedness_with_project_scope(self, project_scope):
+        eval_fn = GroundednessEvaluator(project_scope=project_scope)
+        score = eval_fn(
+            question="What is the capital of Japan?",
+            answer="The capital of Japan is Tokyo.",
+            context="Tokyo is Japan's capital, known for its traditional culture and technological advancements.",
+        )
+        assert score is not None
+        assert score["gpt_groundedness"] > 1.0
 
     def test_individual_evaluator_service_based(self, project_scope):
         eval_fn = ViolenceEvaluator(project_scope)
