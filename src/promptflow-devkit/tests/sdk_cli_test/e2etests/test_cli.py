@@ -1073,6 +1073,7 @@ class TestCli:
         outerr = capsys.readouterr()
         assert "chat output is not configured" in outerr.out
 
+    @pytest.mark.skipif(pytest.is_replay, reason="Cannot pass in replay mode")
     def test_chat_with_stream_output(self, monkeypatch, capsys):
         chat_list = ["hi", "what is chat gpt?"]
 
