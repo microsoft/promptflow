@@ -89,6 +89,7 @@ class GroundednessEvaluator:
                     credential=self._credential,
                 )
                 if output:
+                    # TODO: Include the reason in the result
                     return {"gpt_groundedness": float(output["result"]["label"])}
             except Exception as e:
                 logger.warning(f"Failed to evaluate groundedness using service: {e}. Falling back to prompty.")
