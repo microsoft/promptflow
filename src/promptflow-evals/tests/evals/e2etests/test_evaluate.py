@@ -1,3 +1,4 @@
+import json
 import os
 import pathlib
 
@@ -25,6 +26,18 @@ def questions_file():
 
 def answer_evaluator(answer):
     return {"length": len(answer)}
+
+
+def answer_evaluator_int(answer):
+    return len(answer)
+
+
+def answer_evaluator_int_dict(answer):
+    return {42: len(answer)}
+
+
+def answer_evaluator_json(answer):
+    return json.dumps({"length": len(answer)})
 
 
 def question_evaluator(question):
@@ -132,15 +145,23 @@ class TestEvaluate:
         assert 0 <= metrics.get("content_safety.self_harm_defect_rate") <= 1
         assert 0 <= metrics.get("content_safety.hate_unfairness_defect_rate") <= 1
 
-    @pytest.mark.parametrize('use_thread_pool', [True, False])
-    def test_evaluate_python_function(self, data_file, use_thread_pool):
+    @pytest.mark.parametrize('use_thread_pool,function,column', [
+        (True, answer_evaluator, 'length'),
+        (False, answer_evaluator, 'length'),
+        (True, answer_evaluator_int, 'output'),
+        (False, answer_evaluator_int, 'output'),
+        (True, answer_evaluator_int_dict, "42"),
+        (False, answer_evaluator_int_dict, "42"),
+        ])
+    def test_evaluate_python_function(self, data_file, use_thread_pool,
+                                      function, column):
         # data
         input_data = pd.read_json(data_file, lines=True)
 
         # run the evaluation
         result = evaluate(
             data=data_file,
-            evaluators={"answer": answer_evaluator},
+            evaluators={"answer": function},
             _use_thread_pool=use_thread_pool
         )
 
@@ -152,10 +173,12 @@ class TestEvaluate:
         assert result["rows"] is not None
         assert row_result_df.shape[0] == len(input_data)
 
-        assert "outputs.answer.length" in row_result_df.columns.to_list()
-        assert "answer.length" in metrics.keys()
-        assert metrics.get("answer.length") == np.nanmean(row_result_df["outputs.answer.length"])
-        assert row_result_df["outputs.answer.length"][2] == 31
+        out_column = f"outputs.answer.{column}"
+        metric = f"answer.{column}"
+        assert out_column in row_result_df.columns.to_list()
+        assert metric in metrics.keys()
+        assert metrics.get(metric) == np.nanmean(row_result_df[out_column])
+        assert row_result_df[out_column][2] == 31
 
     def test_evaluate_with_target(self, questions_file):
         """Test evaluation with target function."""
