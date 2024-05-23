@@ -104,7 +104,7 @@ def setup_recording_injection_if_enabled():
         from promptflow.recording.record_mode import check_pydantic_v2
 
         check_pydantic_v2()
-        file_path = RECORDINGS_TEST_CONFIGS_ROOT / "node_cache.shelve"
+        file_path = RECORDINGS_TEST_CONFIGS_ROOT / "core_node_cache.shelve"
         RecordStorage.get_instance(file_path)
 
         from promptflow._core.tool import tool as original_tool
