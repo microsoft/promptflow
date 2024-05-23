@@ -16,7 +16,7 @@ from typing import Any, Dict, Generator, Optional
 
 from promptflow._constants import PROMPT_FLOW_DIR_NAME, FlowLanguage
 from promptflow._proxy._csharp_inspector_proxy import EXECUTOR_SERVICE_DLL
-from promptflow._sdk._constants import DEFAULT_SERVE_ENGINE
+from promptflow._sdk._constants import DEFAULT_SERVE_ENGINE, PF_TRACING_SKIP_EXPORTER_SETUP_ENVIRON
 from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow.exceptions import UserErrorException
 from promptflow.tracing import start_trace
@@ -98,6 +98,10 @@ class PythonServeAppHelper(ServeAppHelper):
     def _run(self, skip_open_browser: bool = False, enable_trace: bool = False):
         if enable_trace:
             # trace must be started within the same process as the app
+            # prompt flow serving has separate OTLP trace collector
+            # with environ set, each traces will be exported duplicated
+            # therefore for serving scenario, skip exporter setup
+            os.environ[PF_TRACING_SKIP_EXPORTER_SETUP_ENVIRON] = "true"
             start_trace()
 
         serve_python_flow(
