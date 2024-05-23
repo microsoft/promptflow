@@ -8,6 +8,7 @@ import httpx
 from promptflow._sdk._errors import MetricInternalError, SDKError, UserAuthenticationError
 from promptflow._sdk._utilities.general_utils import get_promptflow_sdk_version
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow._utils.retry_utils import async_retry
 from promptflow.azure._utils.general import get_authorization
 
 logger = get_cli_sdk_logger()
@@ -33,6 +34,7 @@ class AsyncMetricClient:
         self.service_endpoint = service_endpoint
         self.credential = credential
 
+    @async_retry(MetricInternalError, _logger=logger)
     async def log_metric(self, run_id, metric_key: str, metric_value: float):
         """Write metric for a run."""
         url = POST_METRICS_URL.format(
@@ -56,7 +58,7 @@ class AsyncMetricClient:
             ]
         }
 
-        error_msg_prefix = f"Failed to write metrics for Run {run_id!r}"
+        error_msg_prefix = f"Failed to write metrics '{metric_key}:{metric_value}' for Run {run_id!r}"
         try:
             async with httpx.AsyncClient(verify=False) as client:
                 response = await client.post(url, headers=self._get_header(), json=payload)
@@ -65,11 +67,9 @@ class AsyncMetricClient:
                     raise UserAuthenticationError(response.text)
                 elif response.status_code != 200:
                     error_message = f"{error_msg_prefix}. Code={response.status_code}. Message={response.text}"
-                    logger.error(error_message)
                     raise MetricInternalError(error_message)
         except Exception as e:
             error_message = f"{error_msg_prefix}: {str(e)}"
-            logger.error(error_message)
             raise MetricInternalError(error_message) from e
 
     def _get_header(self) -> Dict[str, str]:

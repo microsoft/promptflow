@@ -1,5 +1,10 @@
 # Release History
 
+## v1.12.0 (Upcoming)
+
+### Improvements
+- [promptflow-devkit] Add retry logic when uploading run details to cloud.
+
 ## v1.11.0 (2024.05.17)
 
 ### Announcement
@@ -9,7 +14,7 @@
 
 ### Features Added
 
-- [promptflow-devkit]: Upload local run details to cloud when trace destination is configured to cloud.
+- [promptflow-devkit]: Upload local run details to cloud when trace destination is configured to cloud. See [here](https://microsoft.github.io/promptflow/cloud/azureai/tracing/run_tracking.html) for more details.
 - [promptflow-core]: Support modifying the promptflow logger format through environment variables, reach [here](https://microsoft.github.io/promptflow/how-to-guides/faq.html#set-logging-format) for more details.
 
 ### Improvements
