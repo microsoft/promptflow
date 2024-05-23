@@ -1,0 +1,106 @@
+[tool.poetry]
+name = "promptflow-parallel"
+version = "0.1.0.dev0"
+description = "Prompt flow parallel computing"
+include = []
+
+license = "MIT"
+
+authors = [
+  "Microsoft Corporation <aml-pt-eng@microsoft.com>"
+]
+
+repository = "https://github.com/microsoft/promptflow"
+homepage = "https://microsoft.github.io/promptflow/"
+
+readme = ["README.md"]
+keywords = ["parallel computing"]
+
+classifiers = [
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+
+packages = [
+  { include = "promptflow" }
+]
+
+[tool.poetry.urls]
+"Bug Reports" = "https://github.com/microsoft/promptflow/issues"
+
+[tool.poetry.dependencies]
+python = "<4.0,>=3.8"
+promptflow-core = "<2.0.0"
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "*"
+import-linter = "*"
+promptflow-core = {path = "../promptflow-core", extras = ["azureml-serving"], develop = true}
+promptflow-tracing = {path = "../promptflow-tracing", develop = true}
+
+[tool.poetry.group.ci.dependencies]
+import-linter = "*"
+promptflow-core = {path = "../promptflow-core", extras = ["azureml-serving"]}
+promptflow-tracing = {path = "../promptflow-tracing"}
+promptflow-recording =  {path = "../promptflow-recording"}
+
+[tool.poetry.group.test.dependencies]
+pytest = "*"
+pytest-cov = "*"
+pytest-xdist = "*"
+pytest-mock = "*"
+mock = "*"
+
+[build-system]
+requires = ["poetry-core>=1.5.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+markers = [
+  "unittest",
+  "e2etest",
+]
+# junit - analyse and publish test results (https://github.com/EnricoMi/publish-unit-test-result-action)
+# durations - list the slowest test durations
+addopts = """
+--junit-xml=test-results.xml \
+--dist loadfile \
+--log-level=info \
+--log-format="%(asctime)s %(levelname)s %(message)s" \
+--log-date-format="[%Y-%m-%d %H:%M:%S]" \
+--durations=5 \
+-ra \
+-vv
+"""
+testpaths = ["tests"]
+
+[tool.coverage.run]
+concurrency = ["multiprocessing"]
+source = [
+  "*/promptflow/*"
+]
+omit = [
+  "*/__init__.py",
+]
+
+[tool.black]
+line-length = 120
+
+# import linter
+# reference: https://pypi.org/project/import-linter/
+[tool.importlinter]
+root_package = "promptflow"
+include_external_packages = "True"
+
+[[tool.importlinter.contracts]]
+name = "Contract forbidden modules"
+type = "forbidden"
+source_modules = ["promptflow.parallel"]
+forbidden_modules = []
