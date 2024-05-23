@@ -15,6 +15,18 @@ You can check the runtime image version from the flow execution log:
 ## Change log
 Default runtime image is continuously updated, and here we record the new features and fixed bugs of each image version.
 
+### 20240429.v8
+
+#### New features
+- Support download flow directory from file share.
+- Record log of single line for batch run.
+- Support ESIndex in common index lookup.
+- Support class-based flex flow for c# batch run in cloud.
+
+#### Bugs fixed
+NA
+
+
 ### 20240411.v4
 
 #### New features
@@ -23,6 +35,7 @@ Default runtime image is continuously updated, and here we record the new featur
 #### Bugs fixed
 - Resolve an intermittent ImportError that arose while loading the package tool.
 - Upgrade langchain>=0.1.1 and langchain-core>=0.1.30 to fix vulnerability.
+
 
 ### 20240403.v2
 
