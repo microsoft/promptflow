@@ -143,7 +143,6 @@ class TestBuiltInEvaluators:
         assert score["evaluation_per_turn"]["gpt_retrieval"] is not None
         assert len(score["evaluation_per_turn"]["gpt_retrieval"]["score"]) == turn_count
 
-    @pytest.mark.skip(reason="Skipping due to RAI service capacity limitation")
     @pytest.mark.parametrize(
         "eval_last_turn, parallel",
         [

@@ -115,6 +115,10 @@ class TestExecutorLogs:
             line_count = count_lines(bulk_run_log_path)
             assert 40 <= line_count <= 50
 
+        import shutil
+
+        shutil.rmtree(logs_directory)
+
     @pytest.mark.parametrize(
         "flow_root_dir, flow_folder_name, line_number",
         [[FLOW_ROOT, "print_input_flow", 8], [EAGER_FLOW_ROOT, "print_input_flex", 2]],

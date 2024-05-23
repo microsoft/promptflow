@@ -52,12 +52,13 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - uses: snok/install-poetry@v1
-        with:
-          version: 1.5.1
       - uses: actions/download-artifact@v4
         with:
           name: promptflow-evals
           path: ${{ env.WORKING_DIRECTORY }}
+      - name: install test dependency group
+        run: poetry install --only test
+        working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: install promptflow packages in editable mode
         run: |
           poetry run pip install -e ../promptflow
@@ -70,9 +71,6 @@ jobs:
       - name: install promptflow-evals from wheel
         # wildcard expansion (*) does not work in Windows, so leverage python to find and install
         run: poetry run pip install --pre $(python -c "import glob; print(glob.glob('promptflow_evals-*.whl')[0])")
-        working-directory: ${{ env.WORKING_DIRECTORY }}
-      - name: install test dependency group
-        run: poetry install --only test
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: install recording
         run: poetry run pip install -e ../promptflow-recording
