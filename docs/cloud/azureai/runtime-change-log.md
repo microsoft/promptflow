@@ -19,7 +19,7 @@ Default runtime image is continuously updated, and here we record the new featur
 
 #### New features
 - Support download flow directory from file share.
-- Record log of single line for batch run.
+- Record log of each line for batch run.
 - Support ESIndex in common index lookup.
 - Support class-based flex flow for c# batch run in cloud.
 
