@@ -11,7 +11,7 @@ class OpenAIBatchClient:
     def __init__(self, client: OpenAIClient) -> None:
         self.client = client
 
-    def chat(self, kwargs):
+    def chat(self, kwargs, extra_headers=None):
         # construct the batch file content
         batch_file_content = {
             'custom_id': 'promptflow_batch_chat',

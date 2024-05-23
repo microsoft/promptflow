@@ -125,6 +125,7 @@ def _openai_apis():
         ("openai.resources.chat", "Completions", "create", TraceType.LLM, "openai_chat"),
         ("openai.resources", "Completions", "create", TraceType.LLM, "openai_completion"),
         ("openai.resources", "Embeddings", "create", TraceType.EMBEDDING, "openai_embeddings"),
+        ("promptflow.tools", "OpenAIBatchClient", "chat", TraceType.LLM, "openai_chat_batch"),
     )
     async_apis = (
         ("openai.resources.chat", "AsyncCompletions", "create", TraceType.LLM, "openai_chat_async"),
