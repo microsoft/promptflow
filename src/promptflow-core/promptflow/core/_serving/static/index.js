@@ -9,7 +9,7 @@ var __publicField = (obj, key, value) => {
   return value;
 };
 var require_index_001 = __commonJS({
-  "static/index-4e681c6f.js"(exports, module) {
+  "static/index-f1682d9c.js"(exports, module) {
     function _mergeNamespaces(n2, m2) {
       for (var i2 = 0; i2 < m2.length; i2++) {
         const e2 = m2[i2];
@@ -48480,12 +48480,6 @@ Slot shorthands can be strings, numbers, arrays or JSX elements`);
         this.isDBReady = true;
       }
     }
-    const getChatStoreName = (name2, version2) => {
-      if (name2 && version2) {
-        return `${name2}-${version2}`;
-      }
-      return "";
-    };
     const cookMessage = (message, from2, duration) => {
       const content2 = typeof message === "string" ? message : JSON.stringify(message, void 0, 2);
       return {
@@ -48522,6 +48516,12 @@ Slot shorthands can be strings, numbers, arrays or JSX elements`);
       } catch (error) {
         return {};
       }
+    };
+    const getChatStoreName = (name2, version2) => {
+      if (name2 && version2) {
+        return `${name2}-${version2}`;
+      }
+      return "";
     };
     const createNavItem = (appInfo, name2, isSelected) => {
       return {
@@ -48623,6 +48623,11 @@ Slot shorthands can be strings, numbers, arrays or JSX elements`);
             );
             configStore == null ? void 0 : configStore.getWithIndex("type", appConfigTypeValue).then((config2) => {
               setAppConfig(config2 ?? { type: appConfigTypeValue, appDisplayName: `${appInfo.name}(${appInfo.version})` });
+            });
+          }).catch((e2) => {
+            console.error("create indexed db ", e2);
+            setNavList(() => {
+              return [createNavItem(appInfo, "", true)];
             });
           }).finally(() => {
             setIsLoading(false);
