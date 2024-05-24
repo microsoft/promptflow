@@ -1,0 +1,47 @@
+interactions:
+- request:
+    body: '[{"ver": 1, "name": "Microsoft.ApplicationInsights.Event", "time": "2024-05-24T21:07:38.610231Z",
+      "sampleRate": 100.0, "iKey": "8b52b368-4c91-4226-b7f7-be52822f0509", "tags":
+      {"ai.device.locale": "en_US", "ai.device.osVersion": "10.0.22631", "ai.device.type":
+      "Other", "ai.internal.sdkVersion": "uwm_py3.10.14:otel1.24.0:ext1.0.0b25", "ai.cloud.role":
+      "***.py", "ai.internal.nodeName": "ninhu-desktop2", "ai.operation.id": "00000000000000000000000000000000",
+      "ai.operation.parentId": "0000000000000000"}, "data": {"baseType": "EventData",
+      "baseData": {"ver": 2, "name": "pf.runs.create_or_update.start", "properties":
+      {"level": "INFO", "from_ci": "False", "request_id": "e546a332-5b6f-4f10-8095-2d33f4cdec3a",
+      "first_call": "True", "activity_name": "pf.runs.create_or_update", "activity_type":
+      "PublicApi", "user_agent": "promptflow-evals/0.1.0.dev0 promptflow-sdk/1.12.0.dev0
+      promptflow/1.12.0.dev0 promptflow-core/1.12.0.dev0", "flow_type": "flex", "python_version":
+      "3.10.14", "installation_id": "ca79f281-c213-5434-91e6-88ee00a05a6a"}}}}]'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '1042'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - azsdk-python-azuremonitorclient/unknown Python/3.10.14 (Windows-10-10.0.22631-SP0)
+    method: POST
+    uri: https://eastus-8.in.applicationinsights.azure.com/v2.1/track
+  response:
+    body:
+      string: '{"itemsReceived": 1, "itemsAccepted": 1, "appId": null, "errors": []}'
+    headers:
+      content-type:
+      - application/json; charset=utf-8
+      server:
+      - Microsoft-HTTPAPI/2.0
+      strict-transport-security:
+      - max-age=31536000
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+    status:
+      code: 200
+      message: OK
+version: 1
