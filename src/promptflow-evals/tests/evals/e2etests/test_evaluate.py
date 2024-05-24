@@ -71,7 +71,7 @@ def _get_run_from_run_history(flow_run_id, runs_operation):
         raise Exception(f"Failed to get run from service. Code: {response.status_code}, text: {response.text}")
 
 
-@pytest.mark.usefixtures("recording_injection", "vcr_recording")
+@pytest.mark.usefixtures("recording_injection", "vcr_recording", "configure_default_azure_credential")
 @pytest.mark.e2etest
 class TestEvaluate:
     def test_evaluate_with_groundedness_evaluator(self, model_config, data_file):
