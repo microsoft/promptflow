@@ -1,4 +1,6 @@
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+environment:
+  python_requirements_txt: requirements.txt
 inputs:
   chat_history:
     type: list
@@ -14,7 +16,7 @@ inputs:
     type: object
     default:
       EMBEDDING_MODEL_DEPLOYMENT_NAME: text-embedding-ada-002
-      CHAT_MODEL_DEPLOYMENT_NAME: gpt-4
+      CHAT_MODEL_DEPLOYMENT_NAME: gpt-35-turbo
       PROMPT_TOKEN_LIMIT: 3000
       MAX_COMPLETION_TOKENS: 1024
       VERBOSE: true
@@ -77,5 +79,3 @@ nodes:
     question: ${inputs.question}
     history: ${inputs.chat_history}
     env_ready_signal: ${setup_env.output}
-environment:
-  python_requirements_txt: requirements.txt
