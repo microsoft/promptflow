@@ -1,4 +1,5 @@
 from enum import Enum
+from promptflow.contracts.run_mode import RunMode
 from promptflow.tools.common import render_jinja_template, handle_openai_error, \
     to_bool, validate_functions, process_function_call, \
     post_process_chat_api_response, init_openai_client, build_messages
@@ -155,7 +156,13 @@ class OpenAI(ToolProvider):
         if frequency_penalty is not None:
             params["frequency_penalty"] = frequency_penalty
 
-        completion = self._batch_client.chat(params)
+        run_mode = kwargs.get("_run_mode", RunMode.Test.value)
+
+        if run_mode == RunMode.Batch.value:
+            completion = self._batch_client.chat(params)
+        else:
+            completion = self._client.chat.completions.create(**params)
+
         return post_process_chat_api_response(completion, stream, functions, tools)
 
 

@@ -19,8 +19,10 @@ from promptflow._utils.logger_utils import flow_logger
 from promptflow._utils.thread_utils import ThreadWithContextVars
 from promptflow._utils.utils import extract_user_frame_summaries, set_context, try_get_long_running_logging_interval
 from promptflow.contracts.flow import Node
+from promptflow.contracts.tool import ToolType
 from promptflow.executor._dag_manager import DAGManager
 from promptflow.executor._errors import LineExecutionTimeoutError, NoNodeExecutedError
+from promptflow.tracing._operation_context import OperationContext
 
 PF_ASYNC_NODE_SCHEDULER_EXECUTE_TASK_NAME = "_pf_async_nodes_scheduler.execute"
 DEFAULT_TASK_LOGGING_INTERVAL = 60
@@ -163,6 +165,10 @@ class AsyncNodesScheduler:
     ) -> Task:
         f = self._tools_manager.get_tool(node.name)
         kwargs = dag_manager.get_node_valid_inputs(node, f)
+        if node.type == ToolType.LLM:
+            operation_context = OperationContext.get_instance()
+            run_mode = operation_context["run_mode"]
+            kwargs["_run_mode"] = run_mode
         if inspect.iscoroutinefunction(f):
             # For async task, it will not be executed before calling create_task.
             task = context.invoke_tool_async(node, f, kwargs)
