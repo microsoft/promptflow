@@ -1,4 +1,8 @@
 # promptflow-core package
+## v1.12.0 (Upcoming)
+
+### Bugs fixed
+- Fix ChatUI can't work in docker container when running image build with `pf flow build`.
 
 ## v1.11.0 (2024.05.17)
 
