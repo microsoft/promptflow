@@ -9,7 +9,7 @@ var __publicField = (obj, key, value) => {
   return value;
 };
 var require_index_001 = __commonJS({
-  "static/index-f1682d9c.js"(exports, module) {
+  "static/index-45e41db4.js"(exports, module) {
     function _mergeNamespaces(n2, m2) {
       for (var i2 = 0; i2 < m2.length; i2++) {
         const e2 = m2[i2];
@@ -48541,6 +48541,8 @@ Slot shorthands can be strings, numbers, arrays or JSX elements`);
     const useCreateChatStore = (appInfo) => {
       const { chatDBRef, setMessages, setChatHistory, setNavList, setAppConfig } = reactExports.useContext(AppContext);
       const [isLoading, setIsLoading] = reactExports.useState(true);
+      const loadNavSuccessRef = reactExports.useRef(false);
+      console.log("useCreateChatStore start", appInfo.name, appInfo.version);
       reactExports.useLayoutEffect(() => {
         if (appInfo.name && appInfo.version) {
           const storeName = getChatStoreName(appInfo.name, appInfo.version);
@@ -48553,6 +48555,8 @@ Slot shorthands can be strings, numbers, arrays or JSX elements`);
             }
           ];
           chatDB.createDB(storeItems).then(() => {
+            console.log("open indexed db success");
+            loadNavSuccessRef.current = true;
             chatDBRef.current = chatDB;
             const store = chatDB.getStore(storeName);
             store == null ? void 0 : store.getAll().then((cacheMessages) => {
@@ -48630,7 +48634,13 @@ Slot shorthands can be strings, numbers, arrays or JSX elements`);
               return [createNavItem(appInfo, "", true)];
             });
           }).finally(() => {
+            console.error("create indexed finally ");
             setIsLoading(false);
+            if (!loadNavSuccessRef.current) {
+              setNavList(() => {
+                return [createNavItem(appInfo, "", true)];
+              });
+            }
           });
         }
         return () => {
