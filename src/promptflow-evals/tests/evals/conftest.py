@@ -294,7 +294,7 @@ def get_cred():
 
 
 @pytest.fixture
-def azure_cred():
+def azure_cred(configure_default_azure_credential):
     return get_cred()
 
 

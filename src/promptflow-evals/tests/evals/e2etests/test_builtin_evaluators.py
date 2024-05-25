@@ -10,7 +10,7 @@ from promptflow.evals.evaluators import (
 )
 
 
-@pytest.mark.usefixtures("recording_injection", "vcr_recording", "configure_default_azure_credential")
+@pytest.mark.usefixtures("recording_injection", "vcr_recording")
 @pytest.mark.e2etest
 class TestBuiltInEvaluators:
     def test_individual_evaluator_prompt_based(self, model_config):
