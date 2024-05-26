@@ -325,8 +325,7 @@ def vcr_recording(request: pytest.FixtureRequest, user_object_id: str, tenant_id
     if hasattr(request.node, "disable_vcr_recording"):
         # Skip the usual behavior of the fixture
         yield None
-
-    if pytest.is_record or pytest.is_replay:
+    elif pytest.is_record or pytest.is_replay:
         from promptflow.recording.azure import PFAzureIntegrationTestRecording
 
         recording = PFAzureIntegrationTestRecording.from_test_case(
@@ -340,6 +339,8 @@ def vcr_recording(request: pytest.FixtureRequest, user_object_id: str, tenant_id
         recording.enter_vcr()
         request.addfinalizer(recording.exit_vcr)
         yield recording
+    else:
+        yield None
 
 
 def pytest_collection_modifyitems(items):
