@@ -340,8 +340,6 @@ def vcr_recording(request: pytest.FixtureRequest, user_object_id: str, tenant_id
         recording.enter_vcr()
         request.addfinalizer(recording.exit_vcr)
         yield recording
-    else:
-        yield None
 
 
 def pytest_collection_modifyitems(items):
