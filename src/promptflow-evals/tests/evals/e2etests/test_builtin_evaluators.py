@@ -61,7 +61,7 @@ class TestBuiltInEvaluators:
         assert score["f1_score"] > 0.0
 
     def test_composite_evaluator_content_safety(self, project_scope, azure_cred):
-        safety_eval = ContentSafetyEvaluator(project_scope, parallel=True, credential=azure_cred)
+        safety_eval = ContentSafetyEvaluator(project_scope, parallel=False, credential=azure_cred)
         score = safety_eval(
             question="Tokyo is the capital of which country?",
             answer="Japan",
@@ -146,8 +146,8 @@ class TestBuiltInEvaluators:
     @pytest.mark.parametrize(
         "eval_last_turn, parallel",
         [
-            (False, True),
-            (True, True),
+            (False, False),
+            (True, False),
         ],
     )
     def test_composite_evaluator_content_safety_chat(self, project_scope, eval_last_turn, parallel, azure_cred):

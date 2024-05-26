@@ -1,13 +1,11 @@
 import json
 import multiprocessing
-import os
 from pathlib import Path
 from typing import Dict
 from unittest.mock import patch
 
 import jwt
 import pytest
-from azure.identity import DefaultAzureCredential
 from pytest_mock import MockerFixture
 
 from promptflow.azure import PFClient as AzurePFClient
@@ -43,19 +41,6 @@ except ImportError as e:
 PROMPTFLOW_ROOT = Path(__file__) / "../../../.."
 CONNECTION_FILE = (PROMPTFLOW_ROOT / "promptflow-evals/connections.json").resolve().absolute().as_posix()
 RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "promptflow-evals/tests/recordings").resolve()
-
-
-@pytest.fixture
-def configure_default_azure_credential():
-    if os.path.exists(CONNECTION_FILE):
-        with open(file=CONNECTION_FILE, mode="r") as f:
-            dev_connections = json.load(f)
-
-        # for running e2e test which uses DefaultAzureCredential in ci pipeline
-        if "pf-evals-sp" in dev_connections:
-            creds = dev_connections["pf-evals-sp"]["value"]
-            for key, value in creds.items():
-                os.environ[key] = value
 
 
 def pytest_configure():
@@ -111,8 +96,8 @@ def model_config() -> dict:
 
 
 @pytest.fixture
-def project_scope(mocker) -> dict:
-    if is_replay():
+def project_scope(request) -> dict:
+    if is_replay() and "vcr_recording" in request.fixturenames and not hasattr(request.node, "disable_vcr_recording"):
         from promptflow.recording.azure import SanitizedValues
 
         return {
@@ -158,7 +143,7 @@ def azure_pf_client(project_scope: Dict):
         subscription_id=project_scope["subscription_id"],
         resource_group_name=project_scope["resource_group_name"],
         workspace_name=project_scope["project_name"],
-        credential=DefaultAzureCredential(),
+        credential=get_cred(),
     )
 
 
@@ -279,7 +264,7 @@ def package_scope_in_live_mode() -> str:
 def get_cred():
     from azure.identity import AzureCliCredential, DefaultAzureCredential
 
-    """get credential for azure storage"""
+    """get credential for azure tests"""
     # resolve requests
     try:
         credential = AzureCliCredential()
@@ -294,7 +279,7 @@ def get_cred():
 
 
 @pytest.fixture
-def azure_cred(configure_default_azure_credential):
+def azure_cred():
     return get_cred()
 
 

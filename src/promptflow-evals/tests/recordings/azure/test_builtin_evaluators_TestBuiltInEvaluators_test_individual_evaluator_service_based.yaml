@@ -40,7 +40,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.031'
+      - '0.022'
     status:
       code: 200
       message: OK
@@ -78,7 +78,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.015'
+      - '0.012'
     status:
       code: 200
       message: OK
@@ -102,7 +102,7 @@ interactions:
     uri: https://eastus2.api.azureml.ms/raisvc/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/submitannotation
   response:
     body:
-      string: '{"location": "https://eastus2.api.azureml.ms/raisvc/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/operations/0776a61e-0e78-4e0e-b8a0-1e16e810bcac",
+      string: '{"location": "https://eastus2.api.azureml.ms/raisvc/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/operations/4cd24b9a-5fe3-4733-a139-2243db9c01d2",
         "operationResult": null}'
     headers:
       connection:
@@ -112,13 +112,13 @@ interactions:
       content-type:
       - application/json; charset=utf-8
       location:
-      - https://eastus2.api.azureml.ms/raisvc/v1.0/subscriptions/b17253fa-f327-42d6-9686-f3e553e24763/resourceGroups/promptflow-evals-ci/providers/Microsoft.MachineLearningServices/workspaces/pf-evals-ws/operations/0776a61e-0e78-4e0e-b8a0-1e16e810bcac
+      - https://eastus2.api.azureml.ms/raisvc/v1.0/subscriptions/b17253fa-f327-42d6-9686-f3e553e24763/resourceGroups/promptflow-evals-ci/providers/Microsoft.MachineLearningServices/workspaces/pf-evals-ws/operations/4cd24b9a-5fe3-4733-a139-2243db9c01d2
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.541'
+      - '0.100'
     status:
       code: 202
       message: Accepted
@@ -136,7 +136,7 @@ interactions:
       User-Agent:
       - python-requests/2.31.0
     method: GET
-    uri: https://eastus2.api.azureml.ms/raisvc/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/operations/0776a61e-0e78-4e0e-b8a0-1e16e810bcac
+    uri: https://eastus2.api.azureml.ms/raisvc/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/operations/4cd24b9a-5fe3-4733-a139-2243db9c01d2
   response:
     body:
       string: '[{"violence": "{\"label\":0,\"reasoning\":\"The system''s response
@@ -154,7 +154,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.021'
+      - '0.017'
     status:
       code: 200
       message: OK
