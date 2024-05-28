@@ -1356,6 +1356,7 @@ class TestCli:
             )
             sys.argv = list(cmd)
             main()
+            (temp / "connections").rmdir()  # connections is a empty folder
             compare_directories(origin_build, temp)
 
     def test_flow_build_with_ua(self, capsys):
