@@ -75,7 +75,7 @@ def compare_directories(dir1, dir2):
         raise Exception(f"These two folders {dir1_content} and {dir2_content} are different.")
 
     for path1 in dir1_content:
-        if path1.name == "__pycache__":
+        if path1.name == "__pycache__" or path1.name == "file.ignore":
             continue
         path2 = dir2 / path1.name
         if not path2.exists():
