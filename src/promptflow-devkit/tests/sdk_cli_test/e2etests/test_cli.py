@@ -72,7 +72,7 @@ def compare_directories(dir1, dir2):
     dir2_content = list(dir2.iterdir())
 
     if len(dir1_content) != len(dir2_content):
-        raise f"These two folders {dir1_content} and {dir2_content} are different."
+        raise Exception(f"These two folders {dir1_content} and {dir2_content} are different.")
 
     for path1 in dir1_content:
         if path1.name == "__pycache__":
