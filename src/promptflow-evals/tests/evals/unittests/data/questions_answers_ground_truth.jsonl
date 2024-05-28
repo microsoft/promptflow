@@ -1,0 +1,3 @@
+{"question":"How long is flight from Earth to LV-426?","__outputs.answer":"There is nothing good there.", "ground_truth": "Far away.", "__outputs.question": "The question is as follows: How long is flight from Earth to LV-426?"}
+{"question":"Why there is no central heating on the street?","__outputs.answer":"There is no central heating on the streets today, but it will be, I promise.", "ground_truth": "It is expensive.", "__outputs.question": "The question is as follows: Why there is no central heating on the street?"}
+{"question":"Why these questions are so strange?","__outputs.answer":"The life is strange...", "ground_truth": "The life is strange...", "__outputs.question": "The question is as follows: Why these questions are so strange?"}

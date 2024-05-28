@@ -6,31 +6,18 @@ model:
     configuration:
         type: azure_openai
         connection: open_ai_connection
-        azure_deployment: gpt-35-turbo-0125
+        azure_deployment: gpt-35-turbo
     parameters:
         max_tokens: 256
         temperature: 0.2
-        response_format:
-            type: json_object
+
 inputs:
-    first_name:
-        type: string
-        default: "Jane"
-    last_name: 
-        type: string
-        default: "Doe"
     question:
         type: string
     chat_history:
         type: list
         default: []
-outputs: 
-    answer:
-        type: string
-
 sample:
-    first_name: Jane
-    last_name: Doe
     question: What is the meaning of life?
     chat_history: []
 
@@ -39,10 +26,6 @@ system:
 You are an AI assistant who helps people find information.
 As the assistant, you answer questions briefly, succinctly, 
 and in a personable manner using markdown and even add some personal flair with appropriate emojis.
-Only accepts JSON format, likes below: {"answer": the answer content}
-
-You are helping {{first_name}} {{last_name}} to find answers to their questions.
-Use their name to address them in your responses.
 
 {% for item in chat_history %}
 {{item.role}}:

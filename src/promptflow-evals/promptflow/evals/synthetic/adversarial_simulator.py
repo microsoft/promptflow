@@ -187,12 +187,15 @@ class AdversarialSimulator:
                 message["context"] = m.full_response["context"]
             messages.append(message)
         template_parameters["metadata"] = {}
-        if "target_population" in template_parameters:
-            del template_parameters["target_population"]
-        if "topic" in template_parameters:
-            del template_parameters["topic"]
-        if "ch_template_placeholder" in template_parameters:
-            del template_parameters["ch_template_placeholder"]
+        for key in (
+            "conversation_starter",
+            "group_of_people",
+            "metadata",
+            "target_population",
+            "topic",
+            "ch_template_placeholder",
+        ):
+            template_parameters.pop(key, None)
 
         return {
             "template_parameters": template_parameters,

@@ -8,6 +8,8 @@ from urllib.parse import urljoin, urlparse
 
 import requests
 
+from promptflow.evals._user_agent import USER_AGENT
+
 from ._async_http_client import AsyncHTTPClientWithRetry
 
 api_url = None
@@ -82,6 +84,7 @@ class RAIClient:
         headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
+            "User-Agent": USER_AGENT,
         }
 
         async with self._create_async_client().client as session:
@@ -92,5 +95,5 @@ class RAIClient:
 
         raise ValueError(
             "Azure safety evaluation service is not available in your current region, "
-            "please go to <link to docs> to see which regions are supported"
+            "please go to https://aka.ms/azureaistudiosafetyeval to see which regions are supported"
         )

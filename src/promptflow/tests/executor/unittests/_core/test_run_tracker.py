@@ -4,7 +4,7 @@ from promptflow._core._errors import RunRecordNotFound
 from promptflow._core.run_tracker import RunTracker
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.contracts.run_info import Status
-from promptflow.tracing.contracts.generator_proxy import GeneratorProxy
+from promptflow.tracing.contracts.iterator_proxy import IteratorProxy
 
 
 class UnserializableClass:
@@ -40,9 +40,7 @@ class TestRunTracker:
         run_tracker.set_inputs(
             "run_id_0", {"input": "input_0", "connection": AzureOpenAIConnection("api_key", "api_base")}
         )
-        run_tracker.set_inputs(
-            "run_id_1", {"input": "input_1", "generator": GeneratorProxy(item for item in range(10))}
-        )
+        run_tracker.set_inputs("run_id_1", {"input": "input_1", "generator": IteratorProxy(item for item in range(10))})
         run_infos = run_tracker.collect_all_run_infos_as_dicts()
         assert len(run_infos["flow_runs"]) == 1
         assert len(run_infos["node_runs"]) == 3

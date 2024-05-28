@@ -1,7 +1,6 @@
 import json
 import multiprocessing
 import os
-import subprocess
 from pathlib import Path
 from typing import Dict
 from unittest.mock import patch
@@ -42,9 +41,10 @@ except ImportError as e:
 
 PROMPTFLOW_ROOT = Path(__file__) / "../../../.."
 CONNECTION_FILE = (PROMPTFLOW_ROOT / "promptflow-evals/connections.json").resolve().absolute().as_posix()
-RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "promptflow-recording/recordings/local").resolve()
+RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "promptflow-evals/tests/recordings/local").resolve()
 
 
+@pytest.fixture
 def configure_default_azure_credential():
     if os.path.exists(CONNECTION_FILE):
         with open(file=CONNECTION_FILE, mode="r") as f:
@@ -55,25 +55,6 @@ def configure_default_azure_credential():
             creds = dev_connections["pf-evals-sp"]["value"]
             for key, value in creds.items():
                 os.environ[key] = value
-            login_output = subprocess.check_output(
-                [
-                    "az",
-                    "login",
-                    "--service-principal",
-                    "-u",
-                    creds["AZURE_CLIENT_ID"],
-                    "-p",
-                    creds["AZURE_CLIENT_SECRET"],
-                    "--tenant",
-                    creds["AZURE_TENANT_ID"],
-                ],
-                shell=True,
-            )
-            print("loging_output")
-            print(login_output)
-
-
-configure_default_azure_credential()
 
 
 def pytest_configure():
@@ -268,20 +249,3 @@ def _mock_process_wrapper(*args, **kwargs):
 def _mock_create_spawned_fork_process_manager(*args, **kwargs):
     setup_recording_injection_if_enabled()
     return create_spawned_fork_process_manager(*args, **kwargs)
-
-
-@pytest.fixture
-def ml_client_config() -> dict:
-    conn_name = "azure_ai_project_scope"
-
-    with open(
-        file=CONNECTION_FILE,
-        mode="r",
-        encoding="utf-8",  # Add the encoding parameter
-    ) as f:
-        dev_connections = json.load(f)
-
-    if conn_name not in dev_connections:
-        raise ValueError(f"Connection '{conn_name}' not found in dev connections.")
-
-    return dev_connections[conn_name]["value"]

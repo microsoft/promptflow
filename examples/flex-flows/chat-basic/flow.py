@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+import os
+
 from pathlib import Path
 
 from promptflow.tracing import trace
@@ -7,32 +8,50 @@ from promptflow.core import AzureOpenAIModelConfiguration, Prompty
 BASE_DIR = Path(__file__).absolute().parent
 
 
-@dataclass
-class Result:
-    answer: str
+def log(message: str):
+    verbose = os.environ.get("VERBOSE", "false")
+    if verbose.lower() == "true":
+        print(message, flush=True)
 
 
 class ChatFlow:
-    def __init__(self, model_config: AzureOpenAIModelConfiguration):
+    def __init__(
+        self, model_config: AzureOpenAIModelConfiguration, max_total_token=4096
+    ):
         self.model_config = model_config
+        self.max_total_token = max_total_token
 
     @trace
     def __call__(
-        self, question: str = "What is ChatGPT?", chat_history: list = None
-    ) -> Result:
+        self,
+        question: str = "What's Azure Machine Learning?",
+        chat_history: list = None,
+    ) -> str:
         """Flow entry function."""
-
-        chat_history = chat_history or []
 
         prompty = Prompty.load(
             source=BASE_DIR / "chat.prompty",
             model={"configuration": self.model_config},
         )
 
+        chat_history = chat_history or []
+        # Try to render the prompt with token limit and reduce the history count if it fails
+        while len(chat_history) > 0:
+            token_count = prompty.estimate_token_count(
+                question=question, chat_history=chat_history
+            )
+            if token_count > self.max_total_token:
+                chat_history = chat_history[1:]
+                log(
+                    f"Reducing chat history count to {len(chat_history)} to fit token limit"
+                )
+            else:
+                break
+
         # output is a string
         output = prompty(question=question, chat_history=chat_history)
 
-        return Result(answer=output)
+        return output
 
 
 if __name__ == "__main__":

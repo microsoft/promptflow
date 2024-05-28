@@ -4,7 +4,7 @@
 import inspect
 from copy import deepcopy
 
-from promptflow.tracing.contracts.generator_proxy import AsyncGeneratorProxy, GeneratorProxy
+from promptflow.tracing.contracts.iterator_proxy import AsyncIteratorProxy, IteratorProxy
 
 
 def _deep_copy_and_extract_items_from_generator_proxy(value: object) -> object:
@@ -19,7 +19,7 @@ def _deep_copy_and_extract_items_from_generator_proxy(value: object) -> object:
         return [_deep_copy_and_extract_items_from_generator_proxy(v) for v in value]
     elif isinstance(value, dict):
         return {k: _deep_copy_and_extract_items_from_generator_proxy(v) for k, v in value.items()}
-    elif isinstance(value, (GeneratorProxy, AsyncGeneratorProxy)):
+    elif isinstance(value, (IteratorProxy, AsyncIteratorProxy)):
         return deepcopy(value.items)
     elif inspect.isgenerator(value) or inspect.isasyncgen(value):
         return str(value)  # Convert generator to string to avoid deepcopy error

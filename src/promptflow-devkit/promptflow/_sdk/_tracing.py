@@ -20,7 +20,7 @@ from google.protobuf.json_format import MessageToJson
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.proto.collector.trace.v1.trace_service_pb2 import ExportTraceServiceRequest
-from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_ENDPOINT
+from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_ENDPOINT, OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -39,6 +39,7 @@ from promptflow._sdk._constants import (
     PF_SERVICE_HOST,
     PF_TRACE_CONTEXT,
     PF_TRACE_CONTEXT_ATTR,
+    PF_TRACING_SKIP_EXPORTER_SETUP_ENVIRON,
     TRACE_DEFAULT_COLLECTION,
     AzureMLWorkspaceTriad,
     ContextAttributeKey,
@@ -119,6 +120,11 @@ def is_trace_feature_disabled() -> bool:
     conf = Configuration.get_instance()
     value = conf.get_config(key=conf.TRACE_DESTINATION)
     return TraceDestinationConfig.is_feature_disabled(value)
+
+
+def is_exporter_setup_skipped() -> bool:
+    value = os.getenv(PF_TRACING_SKIP_EXPORTER_SETUP_ENVIRON, "false").lower()
+    return value == "true"
 
 
 def _is_azure_ext_installed() -> bool:
@@ -253,7 +259,6 @@ def _get_workspace_base_url(ws_triad: AzureMLWorkspaceTriad) -> str:
         f"/resourceGroups/{ws_triad.resource_group_name}"
         "/providers/Microsoft.MachineLearningServices"
         f"/workspaces/{ws_triad.workspace_name}"
-        "&flight=PFTrace"
     )
 
 
@@ -284,7 +289,6 @@ def _print_tracing_url_from_azure_portal(
         f"/resourceGroups/{ws_triad.resource_group_name}"
         "/providers/Microsoft.MachineLearningServices"
         f"/workspaces/{ws_triad.workspace_name}"
-        "&flight=PFTrace"
     )
 
     if run is None:
@@ -338,10 +342,10 @@ def _inject_res_attrs_to_environ(
         os.environ[TraceEnvironmentVariableName.RESOURCE_GROUP_NAME] = ws_triad.resource_group_name
         os.environ[TraceEnvironmentVariableName.WORKSPACE_NAME] = ws_triad.workspace_name
     # we will not overwrite the value if it is already set
-    if OTEL_EXPORTER_OTLP_ENDPOINT not in os.environ:
-        otlp_endpoint = f"http://{PF_SERVICE_HOST}:{pfs_port}/v1/traces"
-        _logger.debug("set OTLP endpoint to environ: %s", otlp_endpoint)
-        os.environ[OTEL_EXPORTER_OTLP_ENDPOINT] = otlp_endpoint
+    if OTEL_EXPORTER_OTLP_TRACES_ENDPOINT not in os.environ:
+        otlp_traces_endpoint = f"http://{PF_SERVICE_HOST}:{pfs_port}/v1/traces"
+        _logger.debug("set OTLP traces endpoint to environ: %s", otlp_traces_endpoint)
+        os.environ[OTEL_EXPORTER_OTLP_TRACES_ENDPOINT] = otlp_traces_endpoint
 
 
 def _create_res(
@@ -418,6 +422,19 @@ def start_trace_with_devkit(collection: str, **kwargs: typing.Any) -> None:
         )
         _logger.warning(warning_msg)
 
+    # enable trace by default, only disable it when we get "Disabled" status from service side
+    # this operation requires Azure dependencies as client talks to PFS
+    disable_trace_in_cloud = False
+    if ws_triad is not None and is_azure_ext_installed:
+        from promptflow.azure._utils._tracing import is_trace_cosmos_available
+
+        if not is_trace_cosmos_available(ws_triad=ws_triad, logger=_logger):
+            disable_trace_in_cloud = True
+    # if trace is disabled, directly set workspace triad as None
+    # so that following code will regard as no workspace configured
+    if disable_trace_in_cloud is True:
+        ws_triad = None
+
     # invoke prompt flow service
     pfs_port = _invoke_pf_svc()
     is_pfs_healthy = is_pfs_service_healthy(pfs_port)
@@ -446,7 +463,7 @@ def start_trace_with_devkit(collection: str, **kwargs: typing.Any) -> None:
     # print tracing url(s) when run is specified
     _print_tracing_url_from_local(pfs_port=pfs_port, collection=collection, exp=exp, run=run)
 
-    if run is not None and run_config._is_cloud_trace_destination(path=flow_path):
+    if run is not None and ws_triad is not None:
         trace_destination = run_config.get_trace_destination(path=flow_path)
         print(
             f"You can view the traces in azure portal since trace destination is set to: {trace_destination}. "
@@ -522,20 +539,26 @@ def setup_exporter_to_pfs() -> None:
         _logger.info("tracer provider is set with resource attributes: %s", res.attributes)
     # set exporter to PFS
     # get OTLP endpoint from environment
-    endpoint = os.getenv(OTEL_EXPORTER_OTLP_ENDPOINT)
-    _logger.debug("environ OTEL_EXPORTER_OTLP_ENDPOINT: %s", endpoint)
+    otlp_endpoint = os.getenv(OTEL_EXPORTER_OTLP_ENDPOINT)
+    _logger.debug("environ OTEL_EXPORTER_OTLP_ENDPOINT: %s", otlp_endpoint)
+    otlp_traces_endpoint = os.getenv(OTEL_EXPORTER_OTLP_TRACES_ENDPOINT)
+    _logger.debug("environ OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: %s", otlp_traces_endpoint)
+    endpoint = otlp_traces_endpoint or otlp_endpoint
     if endpoint is not None:
         # create OTLP span exporter if endpoint is set
         otlp_span_exporter = OTLPSpanExporterWithTraceURL(endpoint=endpoint)
         tracer_provider: TracerProvider = trace.get_tracer_provider()
-        if not getattr(tracer_provider, TRACER_PROVIDER_PFS_EXPORTER_SET_ATTR, False):
-            _logger.info("have not set exporter to prompt flow service, will set it...")
-            # Use a 1000 millis schedule delay to help export the traces in 1 second.
-            processor = BatchSpanProcessor(otlp_span_exporter, schedule_delay_millis=1000)
-            tracer_provider.add_span_processor(processor)
-            setattr(tracer_provider, TRACER_PROVIDER_PFS_EXPORTER_SET_ATTR, True)
+        if is_exporter_setup_skipped():
+            _logger.debug("exporter setup is skipped according to environment variable.")
         else:
-            _logger.info("exporter to prompt flow service is already set, no action needed.")
+            if not getattr(tracer_provider, TRACER_PROVIDER_PFS_EXPORTER_SET_ATTR, False):
+                _logger.info("have not set exporter to prompt flow service, will set it...")
+                # Use a 1000 millis schedule delay to help export the traces in 1 second.
+                processor = BatchSpanProcessor(otlp_span_exporter, schedule_delay_millis=1000)
+                tracer_provider.add_span_processor(processor)
+                setattr(tracer_provider, TRACER_PROVIDER_PFS_EXPORTER_SET_ATTR, True)
+            else:
+                _logger.info("exporter to prompt flow service is already set, no action needed.")
     _logger.debug("finish setup exporter to prompt flow service.")
 
 

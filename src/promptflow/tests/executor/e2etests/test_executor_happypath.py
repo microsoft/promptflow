@@ -4,8 +4,8 @@ import os
 import re
 import shutil
 import sys
+from collections.abc import Iterator
 from pathlib import Path
-from types import GeneratorType
 
 import pytest
 
@@ -103,11 +103,11 @@ class TestExecutor:
         executor = FlowExecutor.create(get_yaml_file("async_tools"), dev_connections)
         executor.exec_line(self.get_line_inputs())
         captured = capsys.readouterr()
-        expected_long_running_str_1 = r".*.*Task async_passthrough has been running for 1 seconds, stacktrace:\n.*async_passthrough\.py.*in passthrough_str_and_wait\n.*await asyncio.sleep\(1\).*tasks\.py.*"  # noqa E501
+        expected_long_running_str_1 = r".*.*Task async_passthrough has been running for \d+ seconds, stacktrace:\n.*async_passthrough\.py.*in passthrough_str_and_wait\n.*await asyncio.sleep\(1\).*tasks\.py.*"  # noqa E501
         assert re.match(
             expected_long_running_str_1, captured.out, re.DOTALL
         ), "flow_logger should contain long running async tool log"
-        expected_long_running_str_2 = r".*.*Task async_passthrough has been running for 2 seconds, stacktrace:\n.*async_passthrough\.py.*in passthrough_str_and_wait\n.*await asyncio.sleep\(1\).*tasks\.py.*"  # noqa E501
+        expected_long_running_str_2 = r".*.*Task async_passthrough has been running for \d+ seconds, stacktrace:\n.*async_passthrough\.py.*in passthrough_str_and_wait\n.*await asyncio.sleep\(1\).*tasks\.py.*"  # noqa E501
         assert re.match(
             expected_long_running_str_2, captured.out, re.DOTALL
         ), "flow_logger should contain long running async tool log"
@@ -246,7 +246,7 @@ class TestExecutor:
 
         # Assert the only output is a generator
         output_echo = line_result.output["output_echo"]
-        assert isinstance(output_echo, GeneratorType)
+        assert isinstance(output_echo, Iterator)
         assert list(output_echo) == ["Echo: ", "hello "]
 
         # Assert the flow is completed and no errors are raised

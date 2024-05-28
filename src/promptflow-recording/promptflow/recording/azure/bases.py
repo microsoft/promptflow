@@ -289,7 +289,7 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
         # for file share request, mainly target pytest fixture "created_flow"
         if r1.host == r2.host and r1.host == SanitizedValues.FILE_SHARE_REQUEST_HOST:
             return sanitize_file_share_flow_path(r1.path) == r2.path
-        # for automatic runtime, sanitize flow session id in path
+        # for compute session, sanitize flow session id in path
         if r1.host == r2.host and ("FlowSessions" in r1.path and "FlowSessions" in r2.path):
             path1 = sanitize_automatic_runtime_request_path(r1.path)
             path2 = sanitize_automatic_runtime_request_path(r2.path)

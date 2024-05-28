@@ -1,10 +1,7 @@
-$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/flow.schema.json
 entry: programmer:write_simple_program
 environment:
-  # image: mcr.microsoft.com/azureml/promptflow/promptflow-python
   python_requirements_txt: requirements.txt
-environment_variables:
-  # environment variables from connection
-  AZURE_OPENAI_API_KEY: ${open_ai_connection.api_key}
-  AZURE_OPENAI_ENDPOINT: ${open_ai_connection.api_base}
-  AZURE_OPENAI_API_TYPE: azure
+sample:
+  inputs:
+    text: Java Hello World!

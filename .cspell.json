@@ -109,7 +109,9 @@
     "Entra",
     "uvicorn",
     "attribited",
-    "MistralAI"
+    "MistralAI",
+    "llmlingua",
+    "myconn"
   ],
   "ignoreWords": [
     "openmpi",
@@ -230,10 +232,15 @@
     "piezo",
     "Piezo",
     "cmpop",
+    "finalizer",
+    "finalizers",
+    "amlbi",
+    "cmpop",
     "omap",
     "Machinal",
     "azureopenaimodelconfiguration",
-    "openaimodelconfiguration"
+    "openaimodelconfiguration",
+    "usecwd"
   ],
   "flagWords": [
     "Prompt Flow"

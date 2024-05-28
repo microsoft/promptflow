@@ -101,7 +101,7 @@ class TestFlowSave:
                             }
                         },
                     },
-                    "sample": {"text": "promptflow"},
+                    "sample": {"inputs": {"text": "promptflow"}},
                 },
                 {
                     "inputs": {
@@ -114,7 +114,7 @@ class TestFlowSave:
                         "image": "python:3.8-slim",
                         "python_requirements_txt": "requirements",
                     },
-                    "sample": "sample.json",
+                    "sample": {"inputs": {"text": "promptflow"}},
                 },
                 id="hello_world.main",
             ),
@@ -317,7 +317,7 @@ class TestFlowSave:
             pytest.param(
                 {
                     "entry": "hello:hello_world",
-                    "sample": {"non-exist": "promptflow"},
+                    "sample": {"inputs": {"non-exist": "promptflow"}},
                 },
                 UserErrorException,
                 r"Sample keys non-exist do not match the inputs text.",
@@ -562,7 +562,9 @@ class TestFlowSave:
             with open(f"{tempdir}/sample.json", "w") as f:
                 json.dump(
                     {
-                        "text": "promptflow",
+                        "inputs": {
+                            "text": "promptflow",
+                        }
                     },
                     f,
                 )
@@ -574,7 +576,11 @@ class TestFlowSave:
                         "type": "string",
                     }
                 },
-                "sample": "sample.json",
+                "sample": {
+                    "inputs": {
+                        "text": "promptflow",
+                    }
+                },
             }
 
     def test_flow_save_file_code(self):

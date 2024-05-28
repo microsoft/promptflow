@@ -14,7 +14,7 @@ from typing import Dict, Iterator, Union
 from filelock import FileLock
 from openai import APIStatusError
 
-from promptflow.tracing.contracts.generator_proxy import GeneratorProxy
+from promptflow.tracing.contracts.iterator_proxy import IteratorProxy
 
 from ..record_mode import is_live, is_record, is_replay
 
@@ -214,7 +214,7 @@ class RecordCache:
                 else:
                     output_value[k] = v
         elif isinstance(output, Iterator):
-            output = GeneratorProxy(output)
+            output = IteratorProxy(output)
             output_value = list(output)
 
             def generator():

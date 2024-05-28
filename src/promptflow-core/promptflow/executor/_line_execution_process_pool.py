@@ -11,6 +11,7 @@ import shutil
 import signal
 import sys
 import threading
+import uuid
 from contextlib import nullcontext
 from datetime import datetime
 from functools import partial
@@ -57,7 +58,8 @@ from promptflow.executor._process_manager import (
 from promptflow.executor._result import LineResult
 from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import DEFAULT_CONCURRENCY_BULK, FlowExecutor
-from promptflow.storage._queue_run_storage import QueueRunStorage, ServiceQueueRunStorage
+from promptflow.storage._queue_run_storage import QueueRunStorage
+from promptflow.storage._service_storage import ServiceStorage
 from promptflow.tracing._operation_context import OperationContext
 
 
@@ -71,7 +73,9 @@ class LineExecutionProcessPool:
     :param batch_timeout_sec: The timeout for the entire batch run in seconds.
     :param run_id: The run id of the batch run.
     :param nlines: The number of lines in the batch run.
-    :param serialize_multimedia_during_execution: Whether to serialize multimedia data during line execution.
+    :param persist_multimedia_after_execution: Persist multimedia after execution or during execution.
+        If True, will persist multimedia data after get LineResult from the output queue.
+        If False, will persist multimedia data during the line execution.
     """
 
     _DEFAULT_WORKER_COUNT = 4
@@ -88,7 +92,7 @@ class LineExecutionProcessPool:
         batch_timeout_sec: Optional[int] = None,
         run_id: Optional[str] = None,
         nlines: Optional[int] = None,
-        serialize_multimedia_during_execution: bool = False,
+        persist_multimedia_after_execution: bool = False,
     ):
         # Determine whether to use fork to create process.
         multiprocessing_start_method = os.environ.get("PF_BATCH_METHOD", multiprocessing.get_start_method())
@@ -109,16 +113,10 @@ class LineExecutionProcessPool:
         self._batch_timeout_sec = batch_timeout_sec
         self._line_timeout_sec = line_timeout_sec or LINE_TIMEOUT_SEC
         self._worker_count = self._determine_worker_count(worker_count)
-
-        # - If it is False, we will use QueueRunStorage as the storage during execution.
-        # It will only put the original run info into the output queue to wait for processing.
-        # - If it is True, we will use ServiceQueueRunStorage as the storage during execution.
-        # It will persist multimedia data in the run infos and aggregation_inputs to output_dir
-        # and convert Image object to path dict.
-        self._serialize_multimedia_during_execution = serialize_multimedia_during_execution
+        self._persist_multimedia_after_execution = persist_multimedia_after_execution
 
         # Initialize the results dictionary that stores line results.
-        self._result_dict: Dict[int, LineResult] = {}
+        self._result_dict: Dict[str, LineResult] = {}
 
         # Initialize some fields from flow_executor and construct flow_create_kwargs
         self._flow_id = flow_executor._flow_id
@@ -182,8 +180,6 @@ class LineExecutionProcessPool:
             "output_queues": self._output_queues,
             "process_info": process_info,
             "process_target_func": _process_wrapper,
-            "output_dir": self._output_dir,
-            "serialize_multimedia": self._serialize_multimedia_during_execution,
         }
         if self._use_fork:
             # 1. Create input_queue, output_queue, control_signal_queue and _process_info in the main process.
@@ -250,11 +246,12 @@ class LineExecutionProcessPool:
 
     async def submit(self, run_id: str, line_number: int, inputs: dict):
         """Submit a line execution request to the process pool and return the line result."""
-        self._task_queue.put((run_id, line_number, inputs))
+        request_id = get_request_id()
+        self._task_queue.put((request_id, run_id, line_number, inputs))
         start_time = datetime.utcnow()
         line_result = None
         while not self._line_timeout_expired(start_time, buffer_sec=20) and not line_result:
-            line_result = self._result_dict.get(line_number, None)
+            line_result = self._result_dict.pop(request_id, None)
             # Check monitor status every 1 second
             self._monitor_thread_pool_status()
             await asyncio.sleep(1)
@@ -279,6 +276,7 @@ class LineExecutionProcessPool:
                 for index, inputs in batch_inputs:
                     self._task_queue.put(
                         (
+                            get_request_id(),
                             self._run_id,
                             index,
                             inputs,
@@ -322,14 +320,14 @@ class LineExecutionProcessPool:
             # Set the timeout flag to True and log the warning.
             self._is_timeout = True
             bulk_logger.warning(f"The batch run timed out, with {len(self._result_dict)} line results processed.")
-        return [self._result_dict[key] for key in sorted(self._result_dict)]
+        return [line_result for line_result in sorted(self._result_dict.values(), key=lambda item: item.run_info.index)]
 
     # region monitor thread target function
 
     def _monitor_workers_and_process_tasks_in_thread(
         self,
         task_queue: Queue,
-        result_dict: Dict[int, LineResult],
+        result_dict: Dict[str, LineResult],
         index: int,
         input_queue: Queue,
         output_queue: Queue,
@@ -364,7 +362,7 @@ class LineExecutionProcessPool:
                 terminated = True
             else:
                 # If the task is a line execution request, put the request into the input queue.
-                run_id, line_number, inputs = data
+                request_id, run_id, line_number, inputs = data
                 args = (run_id, line_number, inputs, line_timeout_sec)
                 input_queue.put(args)
 
@@ -388,7 +386,7 @@ class LineExecutionProcessPool:
                 # Handle output queue message.
                 message = self._handle_output_queue_messages(output_queue)
                 if isinstance(message, LineResult):
-                    result_dict[line_number] = message
+                    result_dict[request_id] = message
                     completed = True
                     break
                 if isinstance(message, NodeRunInfo):
@@ -438,7 +436,7 @@ class LineExecutionProcessPool:
                     ex,
                     returned_node_run_infos,
                 )
-                result_dict[line_number] = result
+                result_dict[request_id] = result
 
                 self._completed_idx[line_number] = format_current_process_info(process_name, process_id, line_number)
                 log_process_status(process_name, process_id, line_number, is_failed=True)
@@ -458,8 +456,9 @@ class LineExecutionProcessPool:
     def _delete_log_files(self):
         try:
             shutil.rmtree(ProcessPoolConstants.PROCESS_LOG_PATH)
-        except Exception as e:
-            bulk_logger.warning(f"Failed to delete the folder, exception: {e}")
+        except Exception:
+            # Ignore the exception when deleting the log files.
+            pass
 
     def _get_task_from_queue(self, task_queue: Queue):
         """Get task from the task queue. Ignore the queue being empty and only exit the loop when getting data."""
@@ -598,26 +597,40 @@ class LineExecutionProcessPool:
         return None
 
     def _process_multimedia(self, result: LineResult) -> LineResult:
-        """Replace multimedia data in line result with string place holder to
-        prevent OOM and persist multimedia data in output when batch running."""
         if not self._output_dir:
             return result
-        # Serialize multimedia data in flow run info to string
-        self._serialize_multimedia(result.run_info)
-        # Serialize multimedia data in node run infos to string
-        for node_run_info in result.node_run_infos.values():
-            self._serialize_multimedia(node_run_info)
-        # Persist multimedia data in the aggregation_inputs of line result to output_dir
-        # if _serialize_multimedia_during_execution is True.
-        if self._serialize_multimedia_during_execution:
-            result.aggregation_inputs = self._multimedia_processor.persist_multimedia_data(
-                result.aggregation_inputs, Path(mkdtemp()), use_absolute_path=True
-            )
+        if self._persist_multimedia_after_execution:
+            self._persist_multimedia_to_output_dir(result)
+        else:
+            self._persist_multimedia_to_string(result)
         # Persist multimedia data in the outputs of line result to output_dir
         result.output = self._multimedia_processor.persist_multimedia_data(result.output, self._output_dir)
         return result
 
-    def _serialize_multimedia(self, run_info: Union[FlowRunInfo, NodeRunInfo]):
+    def _persist_multimedia_to_output_dir(self, result: LineResult):
+        """Persist multimedia data in the line result to output_dir to ensure
+        the multimedia data path is correct in the line result."""
+        service_storage = ServiceStorage(self._output_dir)
+        # Persist multimedia data in flow run info to output_dir
+        service_storage.persist_flow_run(result.run_info)
+        # Persist multimedia data in node run infos to output_dir
+        for node_run_info in result.node_run_infos.values():
+            service_storage.persist_node_run(node_run_info)
+        # Persist multimedia data in the aggregation_inputs of line result to temp dir
+        result.aggregation_inputs = self._multimedia_processor.persist_multimedia_data(
+            result.aggregation_inputs, Path(mkdtemp()), use_absolute_path=True
+        )
+
+    def _persist_multimedia_to_string(self, result: LineResult):
+        """Replace multimedia data in line result with string place holder to
+        prevent OOM and persist multimedia data in output when batch running."""
+        # Serialize multimedia data in flow run info to string
+        self._convert_multimedia_to_string(result.run_info)
+        # Serialize multimedia data in node run infos to string
+        for node_run_info in result.node_run_infos.values():
+            self._convert_multimedia_to_string(node_run_info)
+
+    def _convert_multimedia_to_string(self, run_info: Union[FlowRunInfo, NodeRunInfo]):
         if run_info.inputs:
             run_info.inputs = self._multimedia_processor.convert_multimedia_data_to_string(run_info.inputs)
 
@@ -682,8 +695,6 @@ class LineExecutionProcessPool:
 
 def _process_wrapper(
     executor_creation_func,
-    output_dir: Path,
-    serialize_multimedia: bool,
     input_queue: Queue,
     output_queue: Queue,
     log_context_initialization_func,
@@ -702,8 +713,6 @@ def _process_wrapper(
 
     _exec_line_for_queue(
         executor_creation_func,
-        output_dir,
-        serialize_multimedia,
         input_queue,
         output_queue,
         log_context_initialization_func,
@@ -725,16 +734,11 @@ def signal_handler(signum, frame):
 
 def _exec_line_for_queue(
     executor_creation_func,
-    output_dir: Path,
-    serialize_multimedia: bool,
     input_queue: Queue,
     output_queue: Queue,
     log_context_initialization_func: Optional[Callable] = None,
 ):
-    run_storage = (
-        ServiceQueueRunStorage(output_queue, output_dir) if serialize_multimedia else QueueRunStorage(output_queue)
-    )
-    executor: FlowExecutor = executor_creation_func(storage=run_storage)
+    executor: FlowExecutor = executor_creation_func(storage=QueueRunStorage(output_queue))
 
     while True:
         try:
@@ -840,6 +844,14 @@ def log_process_status(process_name, pid, line_number: int, is_completed=False, 
 
 def format_current_process_info(process_name, pid, line_number: int):
     return f"Process name({process_name})-Process id({pid})-Line number({line_number})"
+
+
+def get_request_id() -> str:
+    """
+    Treat each input as a request to the line process pool and
+    get the id of each request to use it as the key for the result_dict.
+    """
+    return str(uuid.uuid4())
 
 
 # endregion

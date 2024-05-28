@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "promptflow-devkit"
-version = "1.11.0.dev0"
+version = "1.12.0.dev0"
 description = "Prompt flow devkit"
 include = [
   "promptflow/_sdk/_service/static/*",

@@ -1,4 +1,14 @@
 # promptflow-core package
+## v1.12.0 (Upcoming)
+
+### Bugs fixed
+- Fix ChatUI can't work in docker container when running image build with `pf flow build`.
+
+## v1.11.0 (2024.05.17)
+
+### Features Added
+- Support modifying the promptflow logger format through environment variables, reach [here](https://microsoft.github.io/promptflow/how-to-guides/faq.html#set-logging-format) for more details.
+- Support async generator in flex flow.
 
 ## v1.10.0 (2024.04.26)
 

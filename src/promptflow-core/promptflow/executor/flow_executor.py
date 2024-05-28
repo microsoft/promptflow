@@ -14,8 +14,7 @@ import uuid
 from contextlib import contextmanager
 from pathlib import Path
 from threading import current_thread
-from types import AsyncGeneratorType, GeneratorType
-from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
+from typing import Any, AsyncIterator, Callable, Dict, Iterator, List, Mapping, Optional, Tuple, Union
 
 import opentelemetry.trace as otel_trace
 from opentelemetry.trace.span import Span, format_trace_id
@@ -29,7 +28,7 @@ from promptflow._core.metric_logger import add_metric_logger, remove_metric_logg
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import ToolsManager
-from promptflow._utils.async_utils import async_run_allowing_running_loop
+from promptflow._utils.async_utils import async_run_allowing_running_loop, sync_iterator_to_async
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
     apply_default_value_for_input,
@@ -66,7 +65,12 @@ from promptflow.tracing import ThreadPoolExecutorWithContext
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
 from promptflow.tracing._operation_context import OperationContext
 from promptflow.tracing._start_trace import setup_exporter_from_environ
-from promptflow.tracing._trace import enrich_span_with_context, enrich_span_with_input, enrich_span_with_trace_type
+from promptflow.tracing._trace import (
+    enrich_span_with_context,
+    enrich_span_with_input,
+    enrich_span_with_trace_type,
+    start_as_current_span,
+)
 from promptflow.tracing.contracts.trace import TraceType
 
 DEFAULT_TRACING_KEYS = {"run_mode", "root_run_id", "flow_id", "batch_input_source", "execution_target"}
@@ -724,6 +728,7 @@ class FlowExecutor:
                 node_concurrency,
                 allow_generator_output,
                 line_timeout_sec,
+                sync_iterator_to_async=False,
             )
         # TODO: Call exec_line_async in exec_line when async is mature.
         self._node_concurrency = node_concurrency
@@ -754,6 +759,7 @@ class FlowExecutor:
         node_concurrency=DEFAULT_CONCURRENCY_FLOW,
         allow_generator_output: bool = False,
         line_timeout_sec: Optional[int] = None,
+        sync_iterator_to_async: bool = True,
     ) -> LineResult:
         """Execute a single line of the flow.
 
@@ -769,6 +775,8 @@ class FlowExecutor:
         :type node_concurrency: int
         :param allow_generator_output: Whether to allow generator output.
         :type allow_generator_output: bool
+        :param sync_iterator_to_async: Whether to convert sync iterator output to async iterator.
+        :type sync_iterator_to_async: bool
         :return: The result of executing the line.
         :rtype: ~promptflow.executor._result.LineResult
         """
@@ -786,6 +794,8 @@ class FlowExecutor:
                 validate_inputs=validate_inputs,
                 allow_generator_output=allow_generator_output,
             )
+            if sync_iterator_to_async:
+                line_result.output = self._convert_iterators_to_async(line_result.output)
         #  Return line result with index
         if index is not None and isinstance(line_result.output, dict):
             line_result.output[LINE_NUMBER_KEY] = index
@@ -875,7 +885,7 @@ class FlowExecutor:
     @contextlib.contextmanager
     def _start_flow_span(self, inputs: Mapping[str, Any]):
         otel_tracer = otel_trace.get_tracer("promptflow")
-        with otel_tracer.start_as_current_span(self._flow.name) as span:
+        with start_as_current_span(otel_tracer, self._flow.name) as span:
             # Store otel trace id in context for correlation
             OperationContext.get_instance()["otel_trace_id"] = f"0x{format_trace_id(span.get_span_context().trace_id)}"
             # initialize span
@@ -890,6 +900,12 @@ class FlowExecutor:
             enrich_span_with_input(span, inputs)
             yield span
 
+    def _convert_iterators_to_async(self, output: dict):
+        for k, v in output.items():
+            if isinstance(v, Iterator):
+                output[k] = sync_iterator_to_async(v)
+        return output
+
     async def _exec_inner_with_trace_async(
         self,
         inputs: Mapping[str, Any],
@@ -898,7 +914,7 @@ class FlowExecutor:
         context: FlowExecutionContext,
         stream=False,
     ):
-        with self._start_flow_span(inputs) as span, self._record_cancellation_exceptions_to_span(span):
+        with self._start_flow_span(inputs) as span:
             output, nodes_outputs = await self._traverse_nodes_async(inputs, context)
             output = await self._stringify_generator_output_async(output) if not stream else output
             self._exec_post_process(inputs, output, nodes_outputs, run_info, run_tracker, span, stream)
@@ -912,7 +928,7 @@ class FlowExecutor:
         context: FlowExecutionContext,
         stream=False,
     ):
-        with self._start_flow_span(inputs) as span, self._record_cancellation_exceptions_to_span(span):
+        with self._start_flow_span(inputs) as span:
             output, nodes_outputs = self._traverse_nodes(inputs, context)
             output = self._stringify_generator_output(output) if not stream else output
             self._exec_post_process(inputs, output, nodes_outputs, run_info, run_tracker, span, stream)
@@ -942,7 +958,7 @@ class FlowExecutor:
         generator_output_nodes = [
             nodename
             for nodename, output in nodes_outputs.items()
-            if isinstance(output, GeneratorType) or isinstance(output, AsyncGeneratorType)
+            if isinstance(output, Iterator) or isinstance(output, AsyncIterator)
         ]
         # When stream is True, we allow generator output in the flow output
         run_tracker.allow_generator_types = stream
@@ -1197,14 +1213,14 @@ class FlowExecutor:
         batch_nodes = [node for node in self._flow.nodes if not node.aggregation]
         flow_logger.info("Start executing nodes in async mode.")
         scheduler = AsyncNodesScheduler(self._tools_manager, self._node_concurrency)
-        nodes_outputs, bypassed_nodes = await scheduler.execute(batch_nodes, inputs, context)
+        nodes_outputs, bypassed_nodes = await scheduler.execute(batch_nodes, inputs, context, self._line_timeout_sec)
         outputs = self._extract_outputs(nodes_outputs, bypassed_nodes, inputs)
         return outputs, nodes_outputs
 
     @staticmethod
-    async def _merge_async_generator(async_gen: AsyncGeneratorType, outputs: dict, key: str):
+    async def _merge_async_iterator(async_it: AsyncIterator, outputs: dict, key: str):
         items = []
-        async for item in async_gen:
+        async for item in async_it:
             items.append(item)
         outputs[key] = "".join(str(item) for item in items)
 
@@ -1212,24 +1228,24 @@ class FlowExecutor:
         pool = ThreadPoolExecutorWithContext()
         tasks = []
         for k, v in outputs.items():
-            if isinstance(v, AsyncGeneratorType):
-                tasks.append(asyncio.create_task(self._merge_async_generator(v, outputs, k)))
-            elif isinstance(v, GeneratorType):
+            if isinstance(v, AsyncIterator):
+                tasks.append(asyncio.create_task(self._merge_async_iterator(v, outputs, k)))
+            elif isinstance(v, Iterator):
                 loop = asyncio.get_event_loop()
-                task = loop.run_in_executor(pool, self._merge_generator, v, outputs, k)
+                task = loop.run_in_executor(pool, self._merge_iterator, v, outputs, k)
                 tasks.append(task)
         if tasks:
             await asyncio.wait(tasks)
         return outputs
 
     @staticmethod
-    def _merge_generator(gen: GeneratorType, outputs: dict, key: str):
+    def _merge_iterator(gen: Iterator, outputs: dict, key: str):
         outputs[key] = "".join(str(item) for item in gen)
 
     def _stringify_generator_output(self, outputs: dict):
         for k, v in outputs.items():
-            if isinstance(v, GeneratorType):
-                self._merge_generator(v, outputs, k)
+            if isinstance(v, Iterator):
+                self._merge_iterator(v, outputs, k)
 
         return outputs
 
@@ -1366,7 +1382,7 @@ def _ensure_node_result_is_serializable(f):
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
         result = f(*args, **kwargs)
-        if isinstance(result, GeneratorType):
+        if isinstance(result, Iterator):
             result = "".join(str(trunk) for trunk in result)
         return result
 

@@ -12,6 +12,7 @@
 /src/promptflow-azure/ @microsoft/promptflow-sdk
 /src/promptflow-recording/ @microsoft/promptflow-sdk
 /src/promptflow-evals/ @microsoft/pf-eval-team-contributor
+/src/promptflow-parallel/ @microsoft/promptflow-sdk
 /src/promptflow-rag/ @microsoft/promptflow-rag
 
 /scripts/docs/ @microsoft/promptflow-sdk
@@ -22,6 +23,10 @@
 /src/promptflow-tools/ @microsoft/promptflow-tools
 /scripts/tool/ @microsoft/promptflow-tools
 /examples/tools/ @microsoft/promptflow-tools
+
+# guard structure changes to docsite
+/docs/how-to-guides/index.md @microsoft/prompt-flow-doc-approvers
+/docs/cloud/index.md @microsoft/prompt-flow-doc-approvers
 
 # 2. Subfolders
 /src/promptflow-tracing/promptflow/tracing/ @microsoft/promptflow-execution

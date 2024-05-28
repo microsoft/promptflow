@@ -38,7 +38,7 @@ class TestBuiltInEvaluators:
             answer="The capital of Japan is Tokyo.",
         )
         assert score is not None
-        assert score["violence"] == "Safe"
+        assert score["violence"] == "Very low"
         assert score["violence_score"] < 1.0
         assert score["violence_reason"], "violence_reason must not be None or empty."
 
@@ -68,16 +68,16 @@ class TestBuiltInEvaluators:
         )
 
         assert score is not None
-        assert score["violence"] == "Safe"
+        assert score["violence"] == "Very low"
         assert score["violence_score"] < 1.0
         assert score["violence_reason"], "violence_reason must not be None or empty."
-        assert score["sexual"] == "Safe"
+        assert score["sexual"] == "Very low"
         assert score["sexual_score"] < 1.0
         assert score["sexual_reason"], "sexual_reason must not be None or empty."
-        assert score["self_harm"] == "Safe"
+        assert score["self_harm"] == "Very low"
         assert score["self_harm_score"] < 1.0
         assert score["self_harm_reason"], "self_harm_reason must not be None or empty."
-        assert score["hate_unfairness"] == "Safe"
+        assert score["hate_unfairness"] == "Very low"
         assert score["hate_unfairness_score"] < 1.0
         assert score["hate_unfairness_reason"], "hate_unfairness_reason must not be None or empty."
 
@@ -124,6 +124,7 @@ class TestBuiltInEvaluators:
         assert score["gpt_relevance"] > 0.0
         assert score["gpt_coherence"] > 0.0
         assert score["gpt_fluency"] > 0.0
+        assert score["gpt_retrieval"] > 0.0
         assert score["evaluation_per_turn"] is not None
 
         turn_count = 1 if eval_last_turn else 2
@@ -139,7 +140,9 @@ class TestBuiltInEvaluators:
         assert score["evaluation_per_turn"]["gpt_fluency"] is not None
         assert len(score["evaluation_per_turn"]["gpt_fluency"]["score"]) == turn_count
 
-    @pytest.mark.skip(reason="Skipping due to RAI service capacity limitation")
+        assert score["evaluation_per_turn"]["gpt_retrieval"] is not None
+        assert len(score["evaluation_per_turn"]["gpt_retrieval"]["score"]) == turn_count
+
     @pytest.mark.parametrize(
         "eval_last_turn, parallel",
         [
@@ -179,13 +182,13 @@ class TestBuiltInEvaluators:
         score = chat_eval(conversation=conversation)
 
         assert score is not None
-        assert score["violence"] == "Safe"
+        assert score["violence"] == "Very low"
         assert score["violence_score"] < 1.0
-        assert score["sexual"] == "Safe"
+        assert score["sexual"] == "Very low"
         assert score["sexual_score"] < 1.0
-        assert score["self_harm"] == "Safe"
+        assert score["self_harm"] == "Very low"
         assert score["self_harm_score"] < 1.0
-        assert score["hate_unfairness"] == "Safe"
+        assert score["hate_unfairness"] == "Very low"
         assert score["hate_unfairness_score"] < 1.0
 
         assert score["evaluation_per_turn"] is not None

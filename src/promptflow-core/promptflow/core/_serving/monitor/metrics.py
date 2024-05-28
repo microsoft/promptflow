@@ -243,7 +243,7 @@ class MetricsRecorder(object):
                                 },
                             )
                 # record node request metric
-                err = None
+                err = ""
                 if run.status != Status.Completed:
                     err = "unknown"
                     if isinstance(run.error, dict):
@@ -293,7 +293,7 @@ class MetricsRecorder(object):
                         },
                     )
                 # remote api call request metrics
-                err = api_call.get("error") or {}
+                err = api_call.get("error") or ""
                 if isinstance(err, dict):
                     exception_type = self._get_exact_error(err)
                 else:
@@ -329,8 +329,16 @@ class MetricsRecorder(object):
         for view in metrics_views:
             view._attribute_keys.update(common_keys)
 
+        from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+
+        resource = Resource(
+            attributes={
+                SERVICE_NAME: "promptflow",
+            }
+        )
         meter_provider = MeterProvider(
             metric_readers=readers,
+            resource=resource,
             views=metrics_views,
         )
         set_meter_provider(meter_provider)
