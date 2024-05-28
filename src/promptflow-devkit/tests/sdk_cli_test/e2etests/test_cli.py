@@ -72,6 +72,9 @@ def compare_directories(dir1, dir2):
     sorted(dir1_content)
     sorted(dir2_content)
 
+    print("dir1_content: ", dir1_content)
+    print("dir2_content: ", dir2_content)
+
     for path1, path2 in zip(dir1_content, dir2_content):
         if path1.name == "__pycache__" and path2.name == "__pycache__":
             continue
