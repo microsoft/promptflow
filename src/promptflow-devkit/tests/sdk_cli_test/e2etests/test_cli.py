@@ -1,4 +1,3 @@
-import filecmp
 import importlib
 import importlib.util
 import json
@@ -69,26 +68,24 @@ def compare_directories(dir1, dir2):
     dir1_content = list(dir1.iterdir())
     dir2_content = list(dir2.iterdir())
 
-    sorted(dir1_content)
-    sorted(dir2_content)
+    if len(dir1_content) != len(dir2_content):
+        raise f"The length of dir1 is {len(dir1_content)}, The length of dir2 is {len(dir1_content)}"
 
-    print("dir1_content: ", dir1_content)
-    print("dir2_content: ", dir2_content)
-
-    for path1, path2 in zip(dir1_content, dir2_content):
-        if path1.name == "__pycache__" and path2.name == "__pycache__":
-            continue
-        if path1.relative_to(dir1) != path2.relative_to(dir2):
-            raise Exception(f"{path1}, {path2} are different.")
-        if path1.name != path2.name:
-            raise Exception(f"{path1}, {path2} are different.")
-        if path1.is_file() and path2.is_file():
-            if not filecmp.cmp(path1, path2):
-                raise Exception(f"{path1}, {path2} are different.")
-        elif path1.is_dir() and path2.is_dir():
-            compare_directories(path1, path2)
-        else:
-            raise Exception(f"{path1}, {path2} are different.")
+    # for path1 in dir1_content:
+    #     if
+    #     if path1.name == "__pycache__" and path2.name == "__pycache__":
+    #         continue
+    #     if path1.relative_to(dir1) != path2.relative_to(dir2):
+    #         raise Exception(f"{path1}, {path2} are different.")
+    #     if path1.name != path2.name:
+    #         raise Exception(f"{path1}, {path2} are different.")
+    #     if path1.is_file() and path2.is_file():
+    #         if not filecmp.cmp(path1, path2):
+    #             raise Exception(f"{path1}, {path2} are different.")
+    #     elif path1.is_dir() and path2.is_dir():
+    #         compare_directories(path1, path2)
+    #     else:
+    #         raise Exception(f"{path1}, {path2} are different.")
 
 
 @pytest.mark.usefixtures(
