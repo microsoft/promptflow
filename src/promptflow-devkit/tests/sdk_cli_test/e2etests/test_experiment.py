@@ -365,6 +365,10 @@ class TestExperiment:
             template_path = EXP_ROOT / "eager-flow-exp-template" / "flow.exp.yaml"
             target_flow_path = EAGER_FLOW_ROOT / "flow_with_dataclass_output" / "flow.flex.yaml"
             client = PFClient()
+            template = load_common(ExperimentTemplate, source=template_path)
+            experiment = Experiment.from_template(template)
+            client._experiments.start(experiment=experiment, stream=True)
+            retrieved_experiment = client._experiments.get(experiment.name)
             result = client.flows.test(target_flow_path, experiment=template_path)
             assert result == {
                 "main": {"models": ["model"], "text": "text"},
