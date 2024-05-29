@@ -1,0 +1,13 @@
+#!/bin/bash
+
+echo "$(date -uIns) - promptflow-serve/finish $@"
+
+# stop all gunicorn processes
+echo "$(date -uIns) - Stopping all Gunicorn processes"
+pkill gunicorn
+while pgrep gunicorn >/dev/null; do
+  echo "$(date -uIns) - Gunicorn process is still running, waiting for 1s"
+  sleep 1
+done
+
+echo "$(date -uIns) - Stopped all Gunicorn processes"

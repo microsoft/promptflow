@@ -1,3 +1,4 @@
+import filecmp
 import importlib
 import importlib.util
 import json
@@ -62,6 +63,28 @@ def run_pf_command(*args, cwd=None):
     finally:
         sys.argv = origin_argv
         os.chdir(origin_cwd)
+
+
+def compare_directories(dir1, dir2, ingore_path_name):
+    dir1 = Path(dir1)
+    dir2 = Path(dir2)
+    dir1_content = [item for item in dir1.iterdir() if item.name not in ingore_path_name]
+    dir2_content = [item for item in dir2.iterdir() if item.name not in ingore_path_name]
+
+    if len(dir1_content) != len(dir2_content):
+        raise Exception(f"These two folders {dir1_content} and {dir2_content} are different.")
+
+    for path1 in dir1_content:
+        path2 = dir2 / path1.name
+        if not path2.exists():
+            raise Exception(f"The path {path2} does not exist.")
+        if path1.is_file() and path2.is_file():
+            if not filecmp.cmp(path1, path2):
+                raise Exception(f"These two files {path1} and {path2} are different.")
+        elif path1.is_dir() and path2.is_dir():
+            compare_directories(path1, path2, ingore_path_name)
+        else:
+            raise Exception(f"These two path {path1} and {path2} are different.")
 
 
 @pytest.mark.usefixtures(
@@ -1315,6 +1338,7 @@ class TestCli:
     def test_flex_flow_build(self):
         from promptflow._cli._pf.entry import main
 
+        origin_build = Path(f"{FLOWS_DIR}/export/flex_flow_build")
         with tempfile.TemporaryDirectory() as temp:
             temp = Path(temp)
             cmd = (
@@ -1330,18 +1354,7 @@ class TestCli:
             )
             sys.argv = list(cmd)
             main()
-            assert (temp / "connections").is_dir()
-            assert (temp / "flow").is_dir()
-            assert (temp / "runit").is_dir()
-            assert (temp / "Dockerfile").is_file()
-            with open(temp / "Dockerfile", "r") as f:
-                assert r"/connections" in f.read()
-
-            origin_flow = Path(f"{EAGER_FLOWS_DIR}/chat-basic")
-            temp_flow = temp / "flow"
-            for file_path in origin_flow.rglob("*"):
-                relative_path = file_path.relative_to(origin_flow)
-                assert (temp_flow / relative_path).exists()
+            compare_directories(origin_build, temp, ("connections", ".promptflow", "__pycache__"))
 
     def test_flow_build_with_ua(self, capsys):
         with pytest.raises(SystemExit):
