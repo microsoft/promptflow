@@ -95,8 +95,10 @@ class TestExecutorLogs:
             executor.exec_line({"text": "line_text"})
             log_content = load_content(flow_run_log_path)
             loggers_name_list = ["execution", "execution.flow"]
-            assert all(logger in log_content for logger in loggers_name_list)
-            assert 6 == count_lines(flow_run_log_path)
+            missing_loggers = [logger for logger in loggers_name_list if logger not in log_content]
+            assert not missing_loggers, f"Missing loggers: {missing_loggers}\nLog content:\n---\n{log_content}"
+            line_count = count_lines(flow_run_log_path)
+            assert 6 == line_count, f"Expected 6 lines in log, but got {line_count}\nLog content:\n---\n{log_content}"
 
         # bulk run: test batch_engine.run
         # setting run_mode to BulkTest is a requirement to use bulk_logger
@@ -112,6 +114,10 @@ class TestExecutorLogs:
             # about test wehen line count change a lot in the future.
             line_count = count_lines(bulk_run_log_path)
             assert 40 <= line_count <= 50
+
+        import shutil
+
+        shutil.rmtree(logs_directory)
 
     @pytest.mark.parametrize(
         "flow_root_dir, flow_folder_name, line_number",

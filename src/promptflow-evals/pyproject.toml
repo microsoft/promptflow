@@ -47,6 +47,7 @@ jsonpath_ng = ">=1.5.0"
 promptflow-azure = "<2.0.0" # Needed for remote tracking
 mlflow = "<3.0.0" # Needed for remote tracking to log metrics
 azureml-mlflow = "<2.0.0" # Needed for remote tracking to log metrics
+numpy = ">=1.22"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "*"

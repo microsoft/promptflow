@@ -1,0 +1,69 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+inputs:
+  question:
+    type: string
+    default: Janet\u2019s ducks lay 16 eggs per day. She eats three for breakfast
+      every morning and bakes muffins for her friends every day with four. She
+      sells the remainder at the farmers' market daily for $2 per fresh duck
+      egg. How much in dollars does she make every day at the farmers' market?
+  answer:
+    type: string
+    default: Janet sells 16 - 3 - 4 = <<16-3-4=9>>9 duck eggs a day.\nShe makes 9 *
+      2 = $<<9*2=18>>18 every day at the farmer\u2019s market.\n#### 18
+  few_shot_exp_path:
+    type: string
+    default: ./few_shot_examples.txt
+  chat_history:
+    type: list
+    default: []
+  compression_rate:
+    type: double
+    default: 0.6
+outputs:
+  Accuracy:
+    type: string
+    reference: ${answer_evaluate.output}
+nodes:
+- name: read_file
+  type: python
+  source:
+    type: code
+    path: read_file.py
+  inputs:
+    file_path: ${inputs.few_shot_exp_path}
+- name: LLMLingua_Prompt_Compression_Tool
+  type: python
+  source:
+    type: package
+    tool: llmlingua_promptflow.tools.llmlingua.prompt_compress
+  inputs:
+    myconn: maas_connection
+    prompt: ${read_file.output}
+    rate: ${inputs.compression_rate}
+- name: prompt_node
+  type: prompt
+  source:
+    type: code
+    path: prompt_node.jinja2
+  inputs:
+    question: ${inputs.question}
+    few_shot_examples: ${LLMLingua_Prompt_Compression_Tool.output}
+- name: llm_node
+  type: llm
+  source:
+    type: code
+    path: gpt.jinja2
+  inputs:
+    chat_history: ${inputs.chat_history}
+    question: ${prompt_node.output}
+    deployment_name: your_deployment_name
+  connection: your_open_ai_connection
+  api: chat
+- name: answer_evaluate
+  type: python
+  source:
+    type: code
+    path: answer_eval.py
+  inputs:
+    llm_response: ${llm_node.output}
+    answer: ${inputs.answer}
