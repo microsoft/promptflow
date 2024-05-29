@@ -68,15 +68,13 @@ def run_pf_command(*args, cwd=None):
 def compare_directories(dir1, dir2):
     dir1 = Path(dir1)
     dir2 = Path(dir2)
-    dir1_content = list(dir1.iterdir())
-    dir2_content = list(dir2.iterdir())
+    dir1_content = [item for item in dir1.iterdir() if item.name not in (".promptflow", "__pycache__")]
+    dir2_content = [item for item in dir2.iterdir() if item.name not in (".promptflow", "__pycache__")]
 
     if len(dir1_content) != len(dir2_content):
         raise Exception(f"These two folders {dir1_content} and {dir2_content} are different.")
 
     for path1 in dir1_content:
-        if path1.name == "__pycache__":
-            continue
         path2 = dir2 / path1.name
         if not path2.exists():
             raise Exception(f"The path {path2} does not exist.")
