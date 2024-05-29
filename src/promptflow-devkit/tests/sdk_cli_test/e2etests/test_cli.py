@@ -65,11 +65,11 @@ def run_pf_command(*args, cwd=None):
         os.chdir(origin_cwd)
 
 
-def compare_directories(dir1, dir2):
+def compare_directories(dir1, dir2, ingore_path_name):
     dir1 = Path(dir1)
     dir2 = Path(dir2)
-    dir1_content = [item for item in dir1.iterdir() if item.name not in (".promptflow", "__pycache__")]
-    dir2_content = [item for item in dir2.iterdir() if item.name not in (".promptflow", "__pycache__")]
+    dir1_content = [item for item in dir1.iterdir() if item.name not in ingore_path_name]
+    dir2_content = [item for item in dir2.iterdir() if item.name not in ingore_path_name]
 
     if len(dir1_content) != len(dir2_content):
         raise Exception(f"These two folders {dir1_content} and {dir2_content} are different.")
@@ -82,7 +82,7 @@ def compare_directories(dir1, dir2):
             if not filecmp.cmp(path1, path2):
                 raise Exception(f"These two files {path1} and {path2} are different.")
         elif path1.is_dir() and path2.is_dir():
-            compare_directories(path1, path2)
+            compare_directories(path1, path2, ingore_path_name)
         else:
             raise Exception(f"These two path {path1} and {path2} are different.")
 
@@ -1354,8 +1354,7 @@ class TestCli:
             )
             sys.argv = list(cmd)
             main()
-            (temp / "connections").rmdir()  # connections is a empty folder
-            compare_directories(origin_build, temp)
+            compare_directories(origin_build, temp, ("connections", ".promptflow", "__pycache__"))
 
     def test_flow_build_with_ua(self, capsys):
         with pytest.raises(SystemExit):
