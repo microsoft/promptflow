@@ -250,7 +250,7 @@ def _rename_columns_conditionally(df: pd.DataFrame):
     return df
 
 
-@log_activity(get_telemetry_logger(),"pf.evals.evaluate", activity_type=ActivityType.PUBLICAPI, user_agent=USER_AGENT)
+@log_activity(get_telemetry_logger(), "pf.evals.evaluate", activity_type=ActivityType.PUBLICAPI, user_agent=USER_AGENT)
 def evaluate(
     *,
     evaluation_name: Optional[str] = None,
