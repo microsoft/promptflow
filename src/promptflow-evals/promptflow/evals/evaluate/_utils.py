@@ -1,6 +1,8 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+from typing import Any, Dict
+
 import json
 import logging
 import os
@@ -12,10 +14,19 @@ from pathlib import Path
 import mlflow
 import pandas as pd
 
+from azure.ai.ml import MLClient
+from packaging.version import Version
 from promptflow._sdk._constants import Local2Cloud
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow.azure._dependencies._pf_evals import AsyncRunUploader
+from promptflow.azure import PFClient as AZPFclient
 from promptflow.evals._constants import DEFAULT_EVALUATION_RESULTS_FILE_NAME, Prefixes
+from promptflow.evals._version import VERSION
+from promptflow.evals.evaluate._eval_run import EvalRun
+from urllib3.util.retry import Retry
+from requests.adapters import HTTPAdapter
+import requests
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -26,6 +37,10 @@ AZURE_WORKSPACE_REGEX_FORMAT = (
 
 AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])
 
+# mlflow constants
+MAX_RETRIES = 5
+BACKOFF_FACTOR = 2
+TIMEOUT = 5
 
 def is_none(value):
     return value is None or str(value).lower() == "none"
@@ -49,19 +64,43 @@ def load_jsonl(path):
     with open(path, "r", encoding="utf-8") as f:
         return [json.loads(line) for line in f.readlines()]
 
+def _request_with_retry(
+        endpoint: str,
+        method: str,
+        json: Dict[str, Any]
+    ) -> requests.Response:
+    """
+    
+    """
+    headers = {
+        'User-Agent': f'promptflow/{VERSION}'}
+        'Authorization': f"Bearer {token}"
+    retry = Retry(
+        total=MAX_RETRIES,
+        connect=MAX_RETRIES,
+        read=MAX_RETRIES,
+        redirect=MAX_RETRIES,
+        status=MAX_RETRIES,
+        status_forcelist=(408, 429, 500, 502, 503, 504),
+        backoff_factor=BACKOFF_FACTOR,
+        allowed_methods=None
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    session = requests.Session()
+    session.mount("https://", adapter)
+    return session.request(
+        method,
+        endpoint,
+        headers=headers,
+        json=json,
+        timeout=TIMEOUT
+    )
 
 def _write_properties_to_run_history(properties: dict) -> None:
-    from mlflow.tracking import MlflowClient
     from mlflow.utils.rest_utils import http_request
 
-    # get mlflow run
-    run = mlflow.active_run()
-    if run is None:
-        run = mlflow.start_run()
-    # get auth from client
-    client = MlflowClient()
+    run = EvalRun()
     try:
-        cred = client._tracking_client.store.get_host_creds()  # pylint: disable=protected-access
         # update host to run history and request PATCH API
         cred.host = cred.host.replace("mlflow/v2.0", "mlflow/v1.0").replace("mlflow/v1.0", "history/v1.0")
         response = http_request(
@@ -77,7 +116,7 @@ def _write_properties_to_run_history(properties: dict) -> None:
         LOGGER.error("Fail writing properties '%s' to run history: %s", properties, e)
 
 
-def _azure_pf_client(trace_destination):
+def _azure_pf_client_and_triad(trace_destination):
     from promptflow.azure._cli._utils import _get_azure_pf_client
 
     ws_triad = extract_workspace_triad_from_trace_provider(trace_destination)
@@ -87,15 +126,7 @@ def _azure_pf_client(trace_destination):
         workspace_name=ws_triad.workspace_name,
     )
 
-    return azure_pf_client
-
-
-def _get_mlflow_tracking_uri(trace_destination):
-    azure_pf_client = _azure_pf_client(trace_destination)
-    ws_triad = extract_workspace_triad_from_trace_provider(trace_destination)
-
-    ws = azure_pf_client.ml_client.workspaces.get(ws_triad.workspace_name)
-    return ws.mlflow_tracking_uri
+    return azure_pf_client, ws_triad
 
 
 def _get_trace_destination_config(tracking_uri):
@@ -112,44 +143,53 @@ def _get_trace_destination_config(tracking_uri):
 
 
 def _log_metrics_and_instance_results(
-    metrics, instance_results, tracking_uri, run, pf_client, data, evaluation_name=None
+    metrics, instance_results, tracking_uri, run, evaluation_name=None,
 ) -> str:
     run_id = None
     trace_destination = _get_trace_destination_config(tracking_uri=tracking_uri)
 
     if trace_destination is None:
         return None
-
-    tracking_uri = _get_mlflow_tracking_uri(trace_destination=trace_destination)
+    
+    azure_pf_client, ws_triad = _azure_pf_client_and_triad(trace_destination)
+    tracking_uri = azure_pf_client.ml_client.workspaces.get(ws_triad.workspace_name).mlflow_tracking_uri
 
     # Adding line_number as index column this is needed by UI to form link to individual instance run
     instance_results["line_number"] = instance_results.index
 
+    
     if run is None:
-        mlflow.set_tracking_uri(tracking_uri)
-
+        run = EvalRun(
+            run_name=evaluation_name,
+            tracking_uri=tracking_uri,
+            subscription_id=ws_triad.subscription_id,
+            group_name=ws_triad.resource_group_name,
+            workspace_name=ws_triad.workspace_name
+        )
         with tempfile.TemporaryDirectory() as tmpdir:
-            with mlflow.start_run(run_name=evaluation_name) as run:
-                tmp_path = os.path.join(tmpdir, "eval_results.jsonl")
+            tmp_path = os.path.join(tmpdir, "eval_results.jsonl")
 
-                with open(tmp_path, "w", encoding="utf-8") as f:
-                    f.write(instance_results.to_json(orient="records", lines=True))
+            with open(tmp_path, "w", encoding="utf-8") as f:
+                f.write(instance_results.to_json(orient="records", lines=True))
 
-                mlflow.log_artifact(tmp_path)
+            mlflow.log_artifact(tmp_path)
 
-                # Using mlflow to create a dummy run since once created via PF show traces of dummy run in UI.
-                # Those traces can be confusing.
-                # adding these properties to avoid showing traces if a dummy run is created
-                _write_properties_to_run_history(
-                    properties={
-                        "_azureml.evaluation_run": "azure-ai-generative-parent",
-                        "_azureml.evaluate_artifacts": json.dumps([{"path": "eval_results.jsonl", "type": "table"}]),
-                        "isEvaluatorRun": "true",
-                    }
-                )
-                run_id = run.info.run_id
+            # Using mlflow to create a dummy run since once created via PF show traces of dummy run in UI.
+            # Those traces can be confusing.
+            # adding these properties to avoid showing traces if a dummy run is created
+            _write_properties_to_run_history(
+                properties={
+                    "_azureml.evaluation_run": "azure-ai-generative-parent",
+                    "_azureml.evaluate_artifacts": json.dumps([{"path": "eval_results.jsonl", "type": "table"}]),
+                    "isEvaluatorRun": "true",
+                },
+                # This behavior mimics how the authority is taken in azureml-mlflow.
+                # Note, that here we are taking authority for public cloud, however,
+                # it will not work for non-public clouds. 
+                token = azure_pf_client.ml_client._credentials.get_token(authority="login.microsoftonline.com")
+            )
+            run_id = run.info.run_id
     else:
-        azure_pf_client = _azure_pf_client(trace_destination=trace_destination)
         with tempfile.TemporaryDirectory() as temp_dir:
             file_name = Local2Cloud.FLOW_INSTANCE_RESULTS_FILE_NAME
             local_file = Path(temp_dir) / file_name
