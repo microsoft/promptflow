@@ -140,7 +140,7 @@ def process_search_result(search_result):
         return ""
 
 
-def augemented_qa(question, context):
+def augmented_qa(question, context):
     system_message = system_message_template.render(contexts=context)
 
     messages = [
@@ -166,7 +166,7 @@ def ask_wiki(question):
     url_list = get_wiki_url(question, count=2)
     search_result = search_result_from_url(url_list, count=10)
     context = process_search_result(search_result)
-    answer = augemented_qa(question, context)
+    answer = augmented_qa(question, context)
 
     return {
         "answer": answer,
