@@ -146,7 +146,7 @@ class DefaultAppExtension(AppExtension):
 
     def get_flow_name(self) -> str:
         project_path = self.get_flow_project_path()
-        return Path(project_path).stem
+        return Path(project_path).resolve().absolute().stem
 
     def get_connection_provider(self) -> str:
         return self.connection_provider
