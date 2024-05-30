@@ -97,7 +97,7 @@ def model_config() -> dict:
 
 @pytest.fixture
 def project_scope(request) -> dict:
-    if is_replay() and "vcr_recording" in request.fixturenames and not hasattr(request.node, "disable_vcr_recording"):
+    if is_replay() and "vcr_recording" in request.fixturenames:
         from promptflow.recording.azure import SanitizedValues
 
         return {
@@ -322,10 +322,7 @@ def vcr_recording(request: pytest.FixtureRequest, user_object_id: str, tenant_id
     If the test mode is "record" or "replay", this fixture will locate a YAML (recording) file
     based on the test file, class and function name, write to (record) or read from (replay) the file.
     """
-    if hasattr(request.node, "disable_vcr_recording"):
-        # Skip the usual behavior of the fixture
-        yield None
-    elif pytest.is_record or pytest.is_replay:
+    if pytest.is_record or pytest.is_replay:
         from promptflow.recording.azure import PFAzureIntegrationTestRecording
 
         recording = PFAzureIntegrationTestRecording.from_test_case(
@@ -341,9 +338,3 @@ def vcr_recording(request: pytest.FixtureRequest, user_object_id: str, tenant_id
         yield recording
     else:
         yield None
-
-
-def pytest_collection_modifyitems(items):
-    for item in items:
-        if "disable_vcr_recording" in [mark.name for mark in item.iter_markers()]:
-            setattr(item, "disable_vcr_recording", True)

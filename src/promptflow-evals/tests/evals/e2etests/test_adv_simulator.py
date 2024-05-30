@@ -5,7 +5,7 @@ from typing import Any, Dict, List
 import pytest
 
 
-@pytest.mark.usefixtures("recording_injection", "vcr_recording")
+@pytest.mark.usefixtures("recording_injection")
 @pytest.mark.e2etest
 class TestAdvSimulator:
     def test_adv_sim_init_with_prod_url(self, azure_cred, project_scope):
@@ -96,7 +96,6 @@ class TestAdvSimulator:
         assert "topic" not in outputs[0]["template_parameters"]
         assert "target_population" not in outputs[0]["template_parameters"]
 
-    @pytest.mark.disable_vcr_recording("Failed to record with VCR due to request.body has no attribute 'decode'")
     def test_adv_conversation_sim_responds_with_responses(self, azure_cred, project_scope):
         os.environ.pop("RAI_SVC_URL", None)
         from promptflow.evals.synthetic import AdversarialScenario, AdversarialSimulator
