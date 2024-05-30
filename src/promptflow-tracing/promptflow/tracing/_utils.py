@@ -1,3 +1,4 @@
+import os
 import re
 from dataclasses import fields, is_dataclass
 from datetime import datetime
@@ -5,6 +6,10 @@ from enum import Enum
 from typing import Callable, Dict
 
 from .contracts.iterator_proxy import AsyncIteratorProxy, IteratorProxy
+
+
+def is_tracing_disabled():
+    return os.environ.get("PF_DISABLE_TRACING", "false").lower() == "true"
 
 
 def serialize(value: object, remove_null: bool = False, serialization_funcs: Dict[type, Callable] = None) -> dict:
