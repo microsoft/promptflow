@@ -5,6 +5,7 @@
 import asyncio
 import inspect
 import json
+import os
 from collections.abc import AsyncIterator, Iterator
 from contextvars import ContextVar
 from datetime import datetime, timezone
@@ -22,7 +23,7 @@ from promptflow.contracts.run_mode import RunMode
 from promptflow.contracts.tool import ConnectionType
 from promptflow.exceptions import ErrorTarget
 from promptflow.storage import AbstractRunStorage
-from promptflow.storage._run_storage import DummyRunStorage
+from promptflow.storage._run_storage import DefaultRunStorage, DummyRunStorage
 from promptflow.tracing._openai_utils import OpenAIMetricsCalculator
 from promptflow.tracing._operation_context import OperationContext
 from promptflow.tracing._thread_local_singleton import ThreadLocalSingleton
@@ -43,6 +44,11 @@ class RunTracker(ThreadLocalSingleton):
         self._flow_runs: Dict[str, FlowRunInfo] = {}
         self._current_run_id = ""
         self._run_context = ContextVar(self.RUN_CONTEXT_NAME, default="")
+        if run_storage is None:
+            if self._skip_serialization_check():
+                run_storage = DummyRunStorage()
+            else:
+                run_storage = DefaultRunStorage()
         self._storage = run_storage
         self._debug = True  # TODO: Make this configurable
         self.node_log_manager = node_log_manager or NodeLogManager()
@@ -187,6 +193,8 @@ class RunTracker(ThreadLocalSingleton):
         # It has to be a list for UI backward compatibility.
         start_timestamp = run_info.start_time.astimezone(timezone.utc).timestamp() if run_info.start_time else None
         end_timestamp = run_info.end_time.astimezone(timezone.utc).timestamp() if run_info.end_time else None
+        if self._skip_serialization_check():
+            return
         # This implementation deep copies the inputs and output of the flow run, and extracts items from GeneratorProxy.
         # So that both image and generator will be supported.
         # It's a short term solution, while the long term one will be implemented in the next generation of Tracer.
@@ -302,6 +310,8 @@ class RunTracker(ThreadLocalSingleton):
             return ConnectionType.serialize_conn(val)
         if isinstance(val, (Iterator, AsyncIterator)):
             return str(val)
+        if self._skip_serialization_check():
+            return val
         try:
             json.dumps(val, default=default_json_encoder)
             return val
@@ -310,6 +320,10 @@ class RunTracker(ThreadLocalSingleton):
                 raise
             flow_logger.warning(warning_msg)
             return repr(val)
+
+    @staticmethod
+    def _skip_serialization_check():
+        return os.getenv("PF_SKIP_SERIALIZATION_CHECK", "false").lower() == "true"
 
     def _ensure_inputs_is_json_serializable(self, inputs: dict, node_name: str) -> dict:
         return {
@@ -448,9 +462,13 @@ class RunTracker(ThreadLocalSingleton):
             run_info for run_info in self.collect_child_node_runs(run_id) if run_info.node in node_names
         )
         for node_run_info in selected_node_run_info:
+            if not node_run_info.api_calls:
+                # Note that in some scenario (flow as function/serving), we don't have api_calls for the node run,
+                # we don't need to update it.
+                continue
             # Update the output of the node run with the output in the trace.
             # This is because the output in the trace would includes the generated items.
-            output_in_trace = node_run_info.api_calls[0]["output"]
+            output_in_trace = node_run_info.api_calls[0].get("output")
             node_run_info.output = output_in_trace
             # Update the openai metrics for the node run, since we can calculator the
             # completion tokens from the generated output.

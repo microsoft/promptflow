@@ -27,6 +27,10 @@ class Tracer(ThreadLocalSingleton):
 
     @classmethod
     def start_tracing(cls, run_id, node_name: Optional[str] = None):
+        from ._utils import is_tracing_disabled
+
+        if is_tracing_disabled():
+            return
         current_run_id = cls.current_run_id()
         if current_run_id is not None:
             return
