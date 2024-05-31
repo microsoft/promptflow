@@ -462,9 +462,13 @@ class RunTracker(ThreadLocalSingleton):
             run_info for run_info in self.collect_child_node_runs(run_id) if run_info.node in node_names
         )
         for node_run_info in selected_node_run_info:
+            if not node_run_info.api_calls:
+                # Note that in some scenario (flow as function/serving), we don't have api_calls for the node run,
+                # we don't need to update it.
+                continue
             # Update the output of the node run with the output in the trace.
             # This is because the output in the trace would includes the generated items.
-            output_in_trace = node_run_info.api_calls[0]["output"]
+            output_in_trace = node_run_info.api_calls[0].get("output")
             node_run_info.output = output_in_trace
             # Update the openai metrics for the node run, since we can calculator the
             # completion tokens from the generated output.
