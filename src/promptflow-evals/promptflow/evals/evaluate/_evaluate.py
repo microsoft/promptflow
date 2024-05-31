@@ -20,6 +20,8 @@ from ._utils import (
     _trace_destination_from_project_scope,
     _write_output,
 )
+from promptflow._sdk._telemetry import ActivityType, log_activity
+from promptflow._sdk._telemetry.telemetry import get_telemetry_logger
 
 
 def _aggregate_metrics(df, evaluators) -> Dict[str, float]:
@@ -248,6 +250,7 @@ def _rename_columns_conditionally(df: pd.DataFrame):
     return df
 
 
+@log_activity(get_telemetry_logger(), "pf.evals.evaluate", activity_type=ActivityType.PUBLICAPI, user_agent=USER_AGENT)
 def evaluate(
     *,
     evaluation_name: Optional[str] = None,
