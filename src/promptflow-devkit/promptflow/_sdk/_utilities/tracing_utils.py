@@ -307,6 +307,9 @@ def aggregate_trace_count(all_spans: typing.List[Span]) -> typing.Dict[TraceCoun
 
     # Iterate over all spans
     for span in all_spans:
+        if span.attributes.get(SpanAttributeFieldName.IS_AGGREGATION, False):
+            # Ignore aggregation span, because it does not represent a line execution.
+            continue
         # Only count for root span, ignore span count telemetry for now.
         if span.parent_id is None:
             resource_attributes = span.resource.get(SpanResourceFieldName.ATTRIBUTES, {})
