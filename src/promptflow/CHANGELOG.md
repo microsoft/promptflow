@@ -1,13 +1,40 @@
 # Release History
+## v1.12.0 (Upcoming)
 
-## v1.11.0 (Upcoming)
+### Bugs fixed
+- [promptflow-core] Fix ChatUI can't work in docker container when running image build with `pf flow build`.
+- [promptflow-core] Fix [#3355](https://github.com/microsoft/promptflow/issues/3355) that IndexError is raised when generator is used in a flow and the flow is called inside another flow.
+
+### Improvements
+- [promptflow-devkit] Add retry logic when uploading run details to cloud.
+
+## v1.11.0 (2024.05.17)
+
+### Announcement
+
+- Introducing flex flow - design powerful LLM apps with the flexibility of Python functions or classes, and seamlessly test and run your logic with our VS Code Extension. Learn more about flex flow [here](https://microsoft.github.io/promptflow/how-to-guides/develop-a-flex-flow/index.html)
+- Introducing prompty - an experimental feature by for streamlining the creation of prompt templates. Simplify your development with .prompty files and elevate your prompts with ease! Learn more about prompty [here](https://microsoft.github.io/promptflow/how-to-guides/develop-a-prompty/index.html).
+
+### Features Added
+
+- [promptflow-devkit]: Upload local run details to cloud when trace destination is configured to cloud. See [here](https://microsoft.github.io/promptflow/cloud/azureai/tracing/run_tracking.html) for more details.
+- [promptflow-core]: Support modifying the promptflow logger format through environment variables, reach [here](https://microsoft.github.io/promptflow/how-to-guides/faq.html#set-logging-format) for more details.
 
 ### Improvements
 - [promptflow-devkit]: Interactive browser credential is excluded by default when using Azure AI connections, user could set `PF_NO_INTERACTIVE_LOGIN=False` to enable it.
+- [promptflow-devkit]: Add new `--engine` parameter for `pf flow serve`. This parameter can be used to switch python serving engine between `flask` and `fastapi`, currently it defaults to `flask`.
+- [promptflow-azure]: Refine trace Cosmos DB setup process to print setup status during the process, and display error message from service when setup failed.
+- [promptflow-devkit][promptflow-azure] - Return the secrets in the connection object by default to improve flex flow experience.
+  - Reach the sub package docs for more details about this. [promptflow-devkit](https://microsoft.github.io/promptflow/reference/changelog/promptflow-devkit.html) [promptflow-azure](https://microsoft.github.io/promptflow/reference/changelog/promptflow-azure.html)
+- [promptflow-azure] Check workspace/project trace Cosmos DB status and honor when create run in Azure.
 
 ### Bugs Fixed
 - Fix the issue that import error will be raised after downgrading promptflow from >=1.10.0 to <1.8.0.
 - Fix the issue that `pf flow serve` is broken with exception `NotADirectoryError`.
+- [promptflow-devkit]: Fix the issue that chat window error is hard to understand.
+- [promptflow-devkit]: Fix the perf issue because of dns delay when check pfs status.
+- [promptflow-devkit]: Fix the issue that original flex yaml will be overridden when testing non-yaml flow
+- [promptflow-devkit] Fix run snapshot does not honor gitignore/amlignore.
 
 ## v1.10.0 (2024.04.26)
 ### Features Added

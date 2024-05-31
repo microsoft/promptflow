@@ -1,0 +1,11 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+entry: eval_conciseness:LangChainEvaluator
+environment:
+  # image: mcr.microsoft.com/azureml/promptflow/promptflow-python
+  python_requirements_txt: requirements.txt
+sample:
+  inputs:
+    input: What's 2+2?
+    prediction: What's 2+2? That's an elementary question. The answer you're looking for is that two and two is four.
+  init:
+    custom_connection: my_llm_connection

@@ -19,6 +19,7 @@ import zipfile
 from contextlib import contextmanager
 from enum import Enum
 from functools import partial
+from importlib.util import find_spec
 from inspect import isfunction
 from os import PathLike
 from pathlib import Path
@@ -70,7 +71,8 @@ from promptflow._sdk._errors import (
     UnsecureConnectionError,
 )
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
-from promptflow._utils.flow_utils import is_flex_flow, resolve_flow_path
+from promptflow._utils.context_utils import inject_sys_path
+from promptflow._utils.flow_utils import is_flex_flow, is_prompty_flow, resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
@@ -236,8 +238,10 @@ def _sanitize_python_variable_name(name: str):
 
 
 def _get_additional_includes(yaml_path):
-    flow_dag = load_yaml(yaml_path)
-    return flow_dag.get("additional_includes", [])
+    if not is_prompty_flow(yaml_path):
+        flow_dag = load_yaml(yaml_path)
+        return flow_dag.get("additional_includes", [])
+    return []
 
 
 def _is_folder_to_compress(path: Path) -> bool:
@@ -277,7 +281,7 @@ def _resolve_folder_to_compress(base_path: Path, include: str, dst_path: Path) -
 
 @contextmanager
 def _merge_local_code_and_additional_includes(code_path: Path):
-    # TODO: unify variable names: flow_dir_path, flow_dag_path, flow_path
+    # TODO: unify variable names: flow_dir_path, flow_file_path, flow_path
 
     def additional_includes_copy(src, relative_path, target_dir):
         if src.is_file():
@@ -425,7 +429,7 @@ def print_pf_version(with_azure: bool = False, ignore_none: bool = False):
 
 class PromptflowIgnoreFile(IgnoreFile):
     # TODO add more files to this list.
-    IGNORE_FILE = [".runs", "__pycache__"]
+    IGNORE_FILE = [".git", ".runs", "__pycache__"]
 
     def __init__(self, prompt_flow_path: Union[Path, str]):
         super(PromptflowIgnoreFile, self).__init__(prompt_flow_path)
@@ -944,13 +948,14 @@ def overwrite_null_std_logger():
         sys.stderr = sys.stdout
 
 
-def generate_yaml_entry_without_recover(entry: Union[str, PathLike, Callable], code: Path = None):
-    """Generate yaml entry to run, will directly overwrite yaml if it already exists and not delete generated yaml."""
+def generate_yaml_entry_without_delete(entry: Union[str, PathLike, Callable], code: Path = None):
+    """Generate a flex flow yaml in temp folder and won't delete it."""
     from promptflow._proxy import ProxyFactory
 
     executor_proxy = ProxyFactory().get_executor_proxy_cls(FlowLanguage.Python)
     if callable(entry) or executor_proxy.is_flex_flow_entry(entry=entry):
-        flow_yaml_path, _ = create_temp_flex_flow_yaml_core(entry, code)
+        temp_dir = tempfile.mkdtemp()
+        flow_yaml_path = create_flex_flow_yaml_in_target(entry, temp_dir, code)
         return flow_yaml_path
     else:
         if code:
@@ -974,17 +979,36 @@ def generate_yaml_entry(entry: Union[str, PathLike, Callable], code: Path = None
         yield entry
 
 
-def create_temp_flex_flow_yaml_core(entry: Union[str, PathLike, Callable], code: Path = None):
-    logger.info("Create temporary entry for flex flow.")
+def resolve_entry_and_code(entry: Union[str, PathLike, Callable], code: Path = None):
     if callable(entry):
         entry = callable_to_entry_string(entry)
     if not code:
         code = Path.cwd()
-        logger.warning(f"Code path is not specified, use current working directory: {code.as_posix()}")
     else:
         code = Path(code)
         if not code.exists():
             raise UserErrorException(f"Code path {code.as_posix()} does not exist.")
+    return entry, code
+
+
+def create_flex_flow_yaml_in_target(entry: Union[str, PathLike, Callable], target_dir: str, code: Path = None) -> Path:
+    """
+    Generate a flex flow yaml in target folder. The code field in the yaml points to the original flex yaml flow folder.
+    """
+    from promptflow._utils.flow_utils import dump_flow_dag_according_to_content
+
+    logger.info("Create temporary entry for flex flow.")
+    entry, code = resolve_entry_and_code(entry, code)
+    flow_dag = {"entry": entry}
+    code = "." if Path(target_dir).resolve().as_posix() == code.resolve().as_posix() else str(code.resolve())
+    flow_dag.update({"code": code})
+    flow_yaml_path = dump_flow_dag_according_to_content(flow_dag=flow_dag, flow_path=Path(target_dir))
+    return flow_yaml_path
+
+
+def create_temp_flex_flow_yaml_core(entry: Union[str, PathLike, Callable], code: Path = None):
+    logger.info("Create temporary entry for flex flow.")
+    entry, code = resolve_entry_and_code(entry, code)
     flow_yaml_path = code / FLOW_FLEX_YAML
     existing_content = None
 
@@ -992,6 +1016,11 @@ def create_temp_flex_flow_yaml_core(entry: Union[str, PathLike, Callable], code:
         logger.warning(f"Found existing {flow_yaml_path.as_posix()}, will not respect it in runtime.")
         with open(flow_yaml_path, "r", encoding=DEFAULT_ENCODING) as f:
             existing_content = f.read()
+    if not is_local_module(entry_string=entry, code=code):
+        logger.debug(f"Entry {entry} is not found in local, it's snapshot will be empty.")
+        # make sure run name is from entry instead of random folder name
+        temp_dir = tempfile.mkdtemp(prefix=_sanitize_python_variable_name(entry) + "_")
+        flow_yaml_path = Path(temp_dir) / FLOW_FLEX_YAML
     with open(flow_yaml_path, "w", encoding=DEFAULT_ENCODING) as f:
         dump_yaml({"entry": entry}, f)
     return flow_yaml_path, existing_content
@@ -1048,6 +1077,22 @@ def callable_to_entry_string(callable_obj: Callable) -> str:
     return f"{module_str}:{func_str}"
 
 
+def is_local_module(entry_string: str, code: Path) -> bool:
+    """Return True if the module is from local file."""
+    try:
+        with inject_sys_path(code):
+            module, _ = entry_string.split(":")
+            spec = find_spec(module)
+            origin = spec.origin
+            module_path = module.replace(".", "/") + ".py"
+            module_path = code / module_path
+            if Path(origin) == module_path:
+                return True
+    except Exception as e:
+        logger.debug(f"Failed to check is local module from {entry_string} due to {e}.")
+        return False
+
+
 def is_flex_run(run: "Run") -> bool:
     if run._run_source == RunInfoSources.LOCAL:
         try:
@@ -1092,9 +1137,11 @@ def get_flow_path(flow) -> Path:
     from promptflow._sdk.entities._flows.prompty import Prompty
 
     if isinstance(flow, DAGFlow):
-        return flow.flow_dag_path.parent.resolve()
+        return flow._flow_file_path.parent.resolve()
     if isinstance(flow, (FlexFlow, Prompty)):
-        return flow.path.parent.resolve()
+        # Use code path to return as flow path, since code path is the same as flow directory for yaml case and code
+        # path points to original code path in non-yaml case
+        return flow.code.resolve()
     raise ValueError(f"Unsupported flow type {type(flow)!r}")
 
 
@@ -1126,14 +1173,29 @@ def resolve_flow_language(
     if flow_path is not None and yaml_dict is not None:
         raise UserErrorException("Only one of flow_path and yaml_dict should be provided.")
     if flow_path is not None:
-        flow_path, flow_file = resolve_flow_path(flow_path, base_path=working_dir, check_flow_exist=False)
+        # flow path must exist
+        flow_path, flow_file = resolve_flow_path(flow_path, base_path=working_dir, check_flow_exist=True)
         file_path = flow_path / flow_file
-        if file_path.is_file() and file_path.suffix.lower() in (".yaml", ".yml"):
+        if file_path.suffix.lower() in (".yaml", ".yml"):
             yaml_dict = load_yaml(file_path)
-        elif file_path.is_file() and file_path.suffix.lower() == PROMPTY_EXTENSION:
+        elif file_path.suffix.lower() == PROMPTY_EXTENSION:
             return FlowLanguage.Python
         else:
-            raise UserErrorException(
-                f"Invalid flow path {file_path.as_posix()}, must exist and of suffix yaml, yml or prompty."
-            )
+            # actually suffix is already checked in resolve_flow_path
+            raise UserErrorException(f"Invalid flow path {file_path.as_posix()}, must of suffix yaml, yml or prompty.")
     return yaml_dict.get(LANGUAGE_KEY, FlowLanguage.Python)
+
+
+def get_trace_destination(pf_client=None):
+    """get trace.destination
+
+    :param pf_client: pf_client object
+    :type pf_client: promptflow._sdk._pf_client.PFClient
+    :return:
+    """
+    from promptflow._sdk._configuration import Configuration
+
+    config = pf_client._config if pf_client else Configuration.get_instance()
+    trace_destination = config.get_trace_destination()
+
+    return trace_destination

@@ -1,0 +1,23 @@
+---
+name: Basic Prompt with Image
+description: A basic prompt that uses the GPT-3 chat API to answer questions
+model:
+    api: chat
+    configuration:
+      type: azure_openai
+      azure_deployment: gpt-4-vision-preview
+      connection: azure_open_ai_connection
+    parameters:
+      temperature: 0.2
+sample:
+  image: "data:image/jpg;path:../datas/logo.jpg"
+  question: what is it
+---
+system:
+As an AI assistant, your task involves interpreting images and responding to questions about the image.
+Remember to provide accurate answers based on the information present in the image.
+Directly give the answer, no more explanation is needed.
+
+# user:
+{{question}}
+![image]({{image}})

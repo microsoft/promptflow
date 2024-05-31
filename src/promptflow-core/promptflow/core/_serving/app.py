@@ -3,13 +3,13 @@
 # ---------------------------------------------------------
 
 from promptflow._utils.logger_utils import LoggerFactory
-from promptflow.core._serving.v1.app import PromptflowServingApp
-from promptflow.core._serving.v2.app import PromptFlowServingAppV2
 
 
 def create_app(**kwargs):
     engine = kwargs.pop("engine", "flask")
     if engine == "flask":
+        from promptflow.core._serving.v1.app import PromptflowServingApp
+
         logger = LoggerFactory.get_logger("pfserving-app", target_stdout=True)
         app = PromptflowServingApp(__name__)
         # enable CORS
@@ -32,7 +32,11 @@ def create_app(**kwargs):
         app.init(logger=logger, **kwargs)
         return app
     elif engine == "fastapi":
+        # use local import to avoid importing fastapi if not necessary
+        from promptflow.core._serving.v2.app import PromptFlowServingAppV2
+
         logger = LoggerFactory.get_logger("pfserving-app-v2", target_stdout=True)
+        # TODO: support specify flow file path in fastapi app
         app = PromptFlowServingAppV2(docs_url=None, redoc_url=None, logger=logger, **kwargs)  # type: ignore
         # enable auto-instrumentation if customer installed opentelemetry-instrumentation-fastapi
         try:

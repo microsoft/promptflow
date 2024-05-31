@@ -1,5 +1,6 @@
 import asyncio
 from dataclasses import is_dataclass
+from unittest.mock import patch
 
 import pytest
 
@@ -38,10 +39,28 @@ async def func_entry_async(input_str: str) -> str:
     return "Hello " + input_str
 
 
+async def gen_func(input_str: str):
+    for i in range(5):
+        await asyncio.sleep(0.1)
+        yield str(i)
+
+
+class ClassEntryGen:
+    async def __call__(self, input_str: str):
+        for i in range(5):
+            await asyncio.sleep(0.1)
+            yield str(i)
+
+
 function_entries = [
     (ClassEntry(), {"input_str": "world"}, "Hello world"),
     (func_entry, {"input_str": "world"}, "Hello world"),
     (func_entry_async, {"input_str": "world"}, "Hello world"),
+]
+
+generator_entries = [
+    (gen_func, {"input_str": "world"}, ["0", "1", "2", "3", "4"]),
+    (ClassEntryGen(), {"input_str": "world"}, ["0", "1", "2", "3", "4"]),
 ]
 
 
@@ -105,6 +124,12 @@ class TestEagerFlow:
                 lambda x: x["output"] == "input_2",
                 None,
             ),
+            (
+                "flow_with_empty_string",
+                {"input_1": "test"},
+                lambda x: x == "dummy_output",
+                None,
+            ),
         ],
     )
     def test_flow_run(self, flow_folder, inputs, ensure_output, init_kwargs):
@@ -133,6 +158,7 @@ class TestEagerFlow:
     def test_flow_run_with_openai_chat(self):
         flow_file = get_yaml_file("callable_class_with_openai", root=EAGER_FLOW_ROOT, file_name="flow.flex.yaml")
 
+        # Case 1: Normal case
         executor = ScriptExecutor(flow_file=flow_file, init_kwargs={"connection": "azure_open_ai_connection"})
         line_result = executor.exec_line(inputs={"question": "Hello", "stream": False}, index=0)
         assert line_result.run_info.status == Status.Completed, line_result.run_info.error
@@ -140,6 +166,17 @@ class TestEagerFlow:
         for token_name in token_names:
             assert token_name in line_result.run_info.api_calls[0]["children"][0]["system_metrics"]
             assert line_result.run_info.api_calls[0]["children"][0]["system_metrics"][token_name] > 0
+
+        # Case 2: OpenAi metrics calculation failure will not raise error
+        with patch(
+            "promptflow.tracing._openai_utils.OpenAIMetricsCalculator._try_get_model", return_value="invalid_model"
+        ):
+            executor = ScriptExecutor(flow_file=flow_file, init_kwargs={"connection": "azure_open_ai_connection"})
+            line_result = executor.exec_line(inputs={"question": "Hello", "stream": True}, index=0)
+            assert line_result.run_info.status == Status.Completed, line_result.run_info.error
+            token_names = ["prompt_tokens", "completion_tokens", "total_tokens"]
+            for token_name in token_names:
+                assert token_name not in line_result.run_info.api_calls[0]["children"][0]["system_metrics"]
 
     def test_flow_run_with_connection(self, dev_connections):
         flow_file = get_yaml_file(
@@ -183,6 +220,26 @@ class TestEagerFlow:
         delta_desc = f"{delta_sec}s from {line_result1.run_info.end_time} to {line_result2.run_info.end_time}"
         msg = f"The two tasks should run concurrently, but got {delta_desc}"
         assert 0 <= delta_sec < 0.1, msg
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("entry, inputs, expected_output", generator_entries)
+    async def test_flow_run_with_generator_entry(self, entry, inputs, expected_output):
+        executor = FlowExecutor.create(entry, {})
+
+        line_result = executor.exec_line(inputs=inputs)
+        assert line_result.run_info.status == Status.Completed
+        assert line_result.output == "".join(expected_output)  # When stream=False, it should be a string
+
+        line_result = await executor.exec_line_async(inputs=inputs)
+        assert line_result.run_info.status == Status.Completed
+        assert line_result.output == "".join(expected_output)  # When stream=False, it should be a string
+
+        line_result = await executor.exec_line_async(inputs=inputs, allow_generator_output=True)
+        assert line_result.run_info.status == Status.Completed
+        list_result = []
+        async for item in line_result.output:
+            list_result.append(item)
+        assert list_result == expected_output  # When stream=True, it should be an async generator
 
     def test_flow_run_with_invalid_inputs(self):
         # Case 1: input not found
@@ -258,3 +315,27 @@ class TestEagerFlow:
         for (entry, _, _), expected_name in zip(function_entries, expected_names):
             executor = FlowExecutor.create(entry, {})
             assert executor._func_name == expected_name
+
+    @pytest.mark.parametrize(
+        "flow_folder, expected_output",
+        [
+            (
+                "flow_with_sample",
+                {
+                    "func_input1": "val1",
+                    "func_input2": "val2",
+                    "line_number": 0,
+                    "obj_input1": "val1",
+                    "obj_input2": "val2",
+                },
+            ),
+            ("function_flow_with_sample", {"func_input1": "val1", "func_input2": "val2", "line_number": 0}),
+        ],
+    )
+    def test_flow_with_sample(self, flow_folder, expected_output):
+        # when inputs & init not provided, will use sample field in flow file
+        flow_file = get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT)
+        executor = FlowExecutor.create(flow_file=flow_file, connections={})
+        line_result = executor.exec_line(inputs={}, index=0)
+        assert line_result.run_info.error is None
+        assert line_result.output == expected_output

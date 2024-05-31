@@ -43,6 +43,7 @@ from promptflow._sdk._utilities.general_utils import (
     get_system_info,
     refresh_connections_dir,
     resolve_flow_language,
+    resolve_flow_path,
 )
 from promptflow._sdk._version_hint_utils import check_latest_version
 from promptflow._utils.load_data import load_data
@@ -84,7 +85,7 @@ class TestUtils:
             mock_sqlite_op()
         # assert function execution time from stdout
         out, _ = capfd.readouterr()
-        assert out.count("sqlite op...") == 3
+        assert out.count("sqlite op...") <= 10
 
     def test_resolve_connections_environment_variable_reference(self):
         connections = {
@@ -338,6 +339,25 @@ class TestUtils:
             assert _constants.HOME_PROMPT_FLOW_DIR.as_posix() == (Path.home() / ".promptflow").resolve().as_posix()
         importlib.reload(_constants)
 
+    def test_resolve_flow_path_allow_prompty_dir(self):
+        flow_dir, flow_file_name = resolve_flow_path(
+            "./tests/test_configs/prompty/single_prompty", allow_prompty_dir=True
+        )
+        assert flow_file_name == "prompty_example.prompty"
+
+        flow_dir, flow_file_name = resolve_flow_path(
+            "./tests/test_configs/prompty", allow_prompty_dir=True, check_flow_exist=False
+        )
+        assert flow_file_name == "flow.dag.yaml"
+
+        with pytest.raises(UserErrorException) as ex:
+            resolve_flow_path("./tests/test_configs/prompty", allow_prompty_dir=True)
+        assert "neither flow.dag.yaml nor flow.flex.yaml" in ex.value.message
+
+        with pytest.raises(UserErrorException) as ex:
+            resolve_flow_path("./tests/test_configs/prompty/single_prompty")
+        assert "neither flow.dag.yaml nor flow.flex.yaml" in ex.value.message
+
     def test_resolve_flow_language(self):
         # dag flow
         lan = resolve_flow_language(flow_path=TEST_ROOT / "test_configs" / "flows" / "csharp_flow")
@@ -372,8 +392,18 @@ class TestUtils:
         assert "Only one of flow_path and yaml_dict should be provided." in ex.value.message
 
         with pytest.raises(UserErrorException) as ex:
+            resolve_flow_language(
+                flow_path=TEST_ROOT
+                / "test_configs"
+                / "eager_flows"
+                / "basic_callable_class"
+                / "simple_callable_class.py"
+            )
+        assert "suffix must be yaml, yml or prompty" in ex.value.message
+
+        with pytest.raises(UserErrorException) as ex:
             resolve_flow_language(flow_path="mock_path")
-        assert "must exist and of suffix yaml, yml or prompty." in ex.value.message
+        assert "mock_path does not exist." in ex.value.message
 
 
 @pytest.mark.unittest

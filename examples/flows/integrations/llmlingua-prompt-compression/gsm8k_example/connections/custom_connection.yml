@@ -1,0 +1,7 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/CustomConnection.schema.json
+name: maas_connection
+type: custom
+configs:
+  api_url: "<maas-endpoint>"
+secrets: 
+  api_key: "<to-be-replaced>"

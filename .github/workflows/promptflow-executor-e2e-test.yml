@@ -21,7 +21,9 @@ on:
       - src/promptflow-tracing/promptflow/**
       - src/promptflow-core/promptflow/**
       - src/promptflow-devkit/promptflow/**
+      - src/promptflow-parallel/promptflow/**
       - scripts/building/**
+      - src/promptflow-recording/recordings/local/executor_node_cache.*
       - .github/workflows/promptflow-executor-e2e-test.yml
   workflow_dispatch:
 env:
@@ -30,6 +32,11 @@ env:
   PYTHONPATH: ${{ github.workspace }}/src/promptflow
   IS_IN_CI_PIPELINE: "true"
   RECORD_DIRECTORY: ${{ github.workspace }}/src/promptflow-recording
+
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   authorize:
     environment:
@@ -75,12 +82,15 @@ jobs:
         path: |
           ${{ github.workspace }}/src/promptflow/dist/*.whl
           ${{ github.workspace }}/src/promptflow-tools/dist/*.whl
+
   executor_e2e_tests:
     needs: build
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
+    environment:
+      internal
     runs-on: ${{ matrix.os }}
     steps:
     - name: Set test mode
@@ -122,7 +132,9 @@ jobs:
     - name: Azure Login
       uses: azure/login@v1
       with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
+        subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
+        tenant-id: ${{secrets.AZURE_TENANT_ID}}
+        client-id: ${{secrets.AZURE_CLIENT_ID}}
     - name: Generate Configs
       uses: "./.github/actions/step_generate_configs"
       with:
@@ -136,7 +148,7 @@ jobs:
       run: |
         gci env:* | sort-object name
         az account show
-        pip install langchain
+        pip install langchain-community
         # numexpr is required by langchain in e2e tests.
         pip install numexpr
         python scripts/building/run_coverage_tests.py `

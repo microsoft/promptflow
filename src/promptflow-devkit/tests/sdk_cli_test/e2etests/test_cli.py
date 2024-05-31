@@ -1,3 +1,4 @@
+import filecmp
 import importlib
 import importlib.util
 import json
@@ -62,6 +63,28 @@ def run_pf_command(*args, cwd=None):
     finally:
         sys.argv = origin_argv
         os.chdir(origin_cwd)
+
+
+def compare_directories(dir1, dir2, ingore_path_name):
+    dir1 = Path(dir1)
+    dir2 = Path(dir2)
+    dir1_content = [item for item in dir1.iterdir() if item.name not in ingore_path_name]
+    dir2_content = [item for item in dir2.iterdir() if item.name not in ingore_path_name]
+
+    if len(dir1_content) != len(dir2_content):
+        raise Exception(f"These two folders {dir1_content} and {dir2_content} are different.")
+
+    for path1 in dir1_content:
+        path2 = dir2 / path1.name
+        if not path2.exists():
+            raise Exception(f"The path {path2} does not exist.")
+        if path1.is_file() and path2.is_file():
+            if not filecmp.cmp(path1, path2):
+                raise Exception(f"These two files {path1} and {path2} are different.")
+        elif path1.is_dir() and path2.is_dir():
+            compare_directories(path1, path2, ingore_path_name)
+        else:
+            raise Exception(f"These two path {path1} and {path2} are different.")
 
 
 @pytest.mark.usefixtures(
@@ -1073,6 +1096,7 @@ class TestCli:
         outerr = capsys.readouterr()
         assert "chat output is not configured" in outerr.out
 
+    @pytest.mark.skipif(pytest.is_replay, reason="Cannot pass in replay mode")
     def test_chat_with_stream_output(self, monkeypatch, capsys):
         chat_list = ["hi", "what is chat gpt?"]
 
@@ -1310,6 +1334,27 @@ class TestCli:
             assert connection_path.exists()
         finally:
             shutil.rmtree(output_path, ignore_errors=True)
+
+    def test_flex_flow_build(self):
+        from promptflow._cli._pf.entry import main
+
+        origin_build = Path(f"{FLOWS_DIR}/export/flex_flow_build")
+        with tempfile.TemporaryDirectory() as temp:
+            temp = Path(temp)
+            cmd = (
+                "pf",
+                "flow",
+                "build",
+                "--source",
+                f"{EAGER_FLOWS_DIR}/chat-basic/flow.flex.yaml",
+                "--output",
+                temp.as_posix(),
+                "--format",
+                "docker",
+            )
+            sys.argv = list(cmd)
+            main()
+            compare_directories(origin_build, temp, ("connections", ".promptflow", "__pycache__"))
 
     def test_flow_build_with_ua(self, capsys):
         with pytest.raises(SystemExit):
@@ -2691,7 +2736,7 @@ class TestCli:
             "flow",
             "test",
             "--flow",
-            "simple_callable_class:MyFlow",
+            "callable_without_yaml:MyFlow",
             "--inputs",
             "func_input=input",
             "--init",
@@ -2706,7 +2751,7 @@ class TestCli:
             "flow",
             "test",
             "--flow",
-            "simple_callable_class:MyFlow",
+            "callable_without_yaml:MyFlow",
             "--inputs",
             f"{EAGER_FLOWS_DIR}/basic_callable_class_without_yaml/inputs.jsonl",
             "--init",
@@ -2717,6 +2762,27 @@ class TestCli:
         assert "obj_input" in stdout
         assert "func_input" in stdout
 
+        target = "promptflow._sdk._tracing.TraceDestinationConfig.need_to_resolve"
+        with mock.patch(target) as mocked:
+            mocked.return_value = True
+            # When configure azure trace provider, will raise ConfigFileNotFound error since no config.json in code
+            # folder.
+            with pytest.raises(SystemExit):
+                run_pf_command(
+                    "flow",
+                    "test",
+                    "--flow",
+                    "callable_without_yaml:MyFlow",
+                    "--inputs",
+                    f"{EAGER_FLOWS_DIR}/basic_callable_class_without_yaml/inputs.jsonl",
+                    "--init",
+                    f"{EAGER_FLOWS_DIR}/basic_callable_class_without_yaml/init.json",
+                    cwd=f"{EAGER_FLOWS_DIR}/basic_callable_class_without_yaml",
+                )
+            out, _ = capsys.readouterr()
+            assert "basic_callable_class_without_yaml" in out
+
+    @pytest.mark.skip(reason="Chat UI won't exit automatically now and need to update this test")
     def test_eager_flow_test_without_yaml_ui(self, pf, capsys):
         run_pf_command(
             "flow",
@@ -2728,7 +2794,7 @@ class TestCli:
         )
         stdout, _ = capsys.readouterr()
         assert "You can begin chat flow" in stdout
-        assert Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml_return_output/flow.flex.yaml").exists()
+        assert not Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml_return_output/flow.flex.yaml").exists()
 
     @pytest.mark.usefixtures("reset_tracer_provider")
     def test_pf_flow_test_with_collection(self):
@@ -2844,6 +2910,136 @@ class TestCli:
         # check run results
         run = pf.runs.get(run_id)
         assert_batch_run_result(run, pf, assert_func)
+
+    def test_prompty_with_env(self, dev_connections, capfd):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            env_file = Path(temp_dir) / ".env"
+            aoai_connection = dev_connections.get("azure_open_ai_connection")
+            env = {
+                "MOCK_AZURE_DEVELOPMENT": "gpt-35-turbo",
+                "MOCK_AZURE_API_KEY": aoai_connection["value"]["api_key"],
+                "MOCK_AZURE_API_VERSION": aoai_connection["value"]["api_version"],
+                "MOCK_AZURE_ENDPOINT": aoai_connection["value"]["api_base"],
+            }
+            with open(env_file, "w") as f:
+                f.writelines([f"{key}={value}\n" for key, value in env.items()])
+
+            # Prompty test with default .env
+            shutil.copy(f"{PROMPTY_DIR}/prompty_with_env.prompty", Path(temp_dir) / "prompty_with_env.prompty")
+            with _change_working_dir(temp_dir):
+                run_pf_command(
+                    "flow",
+                    "test",
+                    "--flow",
+                    f"{temp_dir}/prompty_with_env.prompty",
+                    "--inputs",
+                    'question="what is the result of 1+1?"',
+                    "--env",
+                )
+            out, _ = capfd.readouterr()
+            assert "2" in out
+
+            # Prompty test with env file
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{PROMPTY_DIR}/prompty_with_env.prompty",
+                "--inputs",
+                'question="what is the result of 1+1?"',
+                "--env",
+                str(env_file),
+            )
+            out, _ = capfd.readouterr()
+            assert "2" in out
+
+            # prompty test with env dict
+            env_params = [f"{key}={value}" for key, value in env.items()]
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{PROMPTY_DIR}/prompty_with_env.prompty",
+                "--inputs",
+                'question="what is the result of 1+1?"',
+                "--env",
+                *env_params,
+            )
+            out, _ = capfd.readouterr()
+            assert "2" in out
+
+            # Prompty test with env override
+            invalid_env_file = Path(temp_dir) / "invalid.env"
+            with open(invalid_env_file, "w") as f:
+                f.writelines([f"{key}={value}\n" for key, value in env.items() if key != "MOCK_AZURE_API_KEY"])
+                f.write("MOCK_AZURE_API_KEY=invalid_api_key")
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{PROMPTY_DIR}/prompty_with_env.prompty",
+                "--inputs",
+                'question="what is the result of 1+1?"',
+                "--env",
+                str(env_file),
+                f"MOCK_AZURE_API_KEY={env['MOCK_AZURE_API_KEY']}",
+            )
+            out, _ = capfd.readouterr()
+            assert "2" in out
+
+            with pytest.raises(Exception) as ex:
+                run_pf_command(
+                    "flow",
+                    "test",
+                    "--flow",
+                    f"{PROMPTY_DIR}/prompty_with_env.prompty",
+                    "--inputs",
+                    'question="what is the result of 1+1?"',
+                    "--env",
+                    "invalid_path.env",
+                )
+            assert "cannot find the file" in str(ex.value)
+
+            with pytest.raises(Exception) as ex:
+                run_pf_command(
+                    "flow",
+                    "test",
+                    "--flow",
+                    f"{PROMPTY_DIR}/prompty_with_env.prompty",
+                    "--inputs",
+                    'question="what is the result of 1+1?"',
+                    "--env",
+                    "invalid_path.txt",
+                )
+            assert "expects file path endswith .env or KEY=VALUE [KEY=VALUE ...]" in str(ex.value)
+
+            # Test batch run
+            run_pf_command(
+                "run",
+                "create",
+                "--flow",
+                f"{PROMPTY_DIR}/prompty_with_env.prompty",
+                "--data",
+                f"{DATAS_DIR}/prompty_inputs.jsonl",
+                "--env",
+                str(env_file),
+            )
+            out, _ = capfd.readouterr()
+            assert "Completed" in out
+
+            # Test batch run
+            run_pf_command(
+                "run",
+                "create",
+                "--flow",
+                f"{PROMPTY_DIR}/prompty_with_env.prompty",
+                "--data",
+                f"{DATAS_DIR}/prompty_inputs.jsonl",
+                "--env",
+                *env_params,
+            )
+            out, _ = capfd.readouterr()
+            assert "Completed" in out
 
 
 def assert_batch_run_result(run, pf, assert_func):

@@ -432,3 +432,85 @@ def test_flow_with_environment_variables(serving_client_with_environment_variabl
         response = json.loads(response.data.decode())
         assert {"output"} == response.keys()
         assert response["output"] == value
+
+
+@pytest.mark.e2etest
+def test_async_generator_serving_client(async_generator_serving_client):
+    # json response will succeed
+    expected_event_num = 10
+    response = async_generator_serving_client.post("/score", data=json.dumps({"count": expected_event_num}))
+    assert response.status_code == 200
+    payload = json.loads(response.data.decode())
+    assert "answer" in payload
+    assert payload["answer"].count("Echo") == expected_event_num
+    # async streaming response will fail
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "text/event-stream",
+    }
+    response = async_generator_serving_client.post("/score", data=json.dumps({"count": 10}), headers=headers)
+    assert response.status_code == 400
+    assert "Flask engine does not support async generator output" in response.data.decode()
+
+
+@pytest.mark.usefixtures("recording_injection", "setup_local_connection")
+@pytest.mark.e2etest
+def test_prompty_serving_api(prompty_serving_client):
+    response = prompty_serving_client.get("/health")
+    assert b"Healthy" in response.data
+    response = prompty_serving_client.get("/")
+    print(response.data)
+    assert response.status_code == 200
+    response = prompty_serving_client.get("/swagger.json")
+    assert (
+        response.status_code == 200
+    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
+    response = json.loads(response.data.decode())
+    assert response["paths"]["/score"] == {
+        "post": {
+            "requestBody": {
+                "content": {
+                    "application/json": {
+                        "example": {},
+                        "schema": {
+                            "properties": {
+                                "firstName": {"default": "John", "type": "string"},
+                                "lastName": {"default": "Doh", "type": "string"},
+                                "question": {"type": "string"},
+                            },
+                            "required": ["firstName", "lastName", "question"],
+                            # TODO: expected to be "string" but got "object"
+                            #  now it is fully depends on signature of the prompty
+                            #  but will be object when no signature is provided
+                            "type": "object",
+                        },
+                    }
+                },
+                "description": "promptflow input data",
+                "required": True,
+            },
+            "responses": {
+                "200": {
+                    "content": {"application/json": {"schema": {"type": "object"}}},
+                    "description": "successful operation",
+                },
+                "400": {"description": "Invalid input"},
+                "default": {"description": "unexpected error"},
+            },
+            "summary": "run promptflow: single_prompty with an given input",
+        }
+    }
+
+
+@pytest.mark.usefixtures("recording_injection", "setup_local_connection")
+@pytest.mark.e2etest
+@pytest.mark.skipif(not pytest.is_live, reason="llm request involved but no recording found")
+def test_prompty_serving_api_live(prompty_serving_client):
+    response = prompty_serving_client.post(
+        "/score", data=json.dumps({"firstName": "first", "lastName": "last", "question": "hello"})
+    )
+    assert (
+        response.status_code == 200
+    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
+    response = json.loads(response.data.decode())
+    assert isinstance(response, str)

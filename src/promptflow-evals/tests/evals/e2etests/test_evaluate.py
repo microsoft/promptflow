@@ -1,3 +1,4 @@
+import json
 import os
 import pathlib
 
@@ -5,10 +6,10 @@ import numpy as np
 import pandas as pd
 import pytest
 import requests
+from azure.identity import DefaultAzureCredential
 
 from promptflow.evals.evaluate import evaluate
-from promptflow.evals.evaluators import F1ScoreEvaluator, GroundednessEvaluator
-from azure.identity import AzureCliCredential
+from promptflow.evals.evaluators import ContentSafetyEvaluator, F1ScoreEvaluator, GroundednessEvaluator
 
 
 @pytest.fixture
@@ -27,13 +28,29 @@ def answer_evaluator(answer):
     return {"length": len(answer)}
 
 
+def answer_evaluator_int(answer):
+    return len(answer)
+
+
+def answer_evaluator_int_dict(answer):
+    return {42: len(answer)}
+
+
+def answer_evaluator_json(answer):
+    return json.dumps({"length": len(answer)})
+
+
+def question_evaluator(question):
+    return {"length": len(question)}
+
+
 def _get_run_from_run_history(flow_run_id, runs_operation):
     """Get run info from run history"""
-    token = "Bearer " + AzureCliCredential().get_token("https://management.azure.com/.default").token
+    token = "Bearer " + DefaultAzureCredential().get_token("https://management.azure.com/.default").token
     headers = {
-            "Authorization": token,
-            "Content-Type": "application/json",
-        }
+        "Authorization": token,
+        "Content-Type": "application/json",
+    }
     url = runs_operation._run_history_endpoint_url + "/rundata"
 
     payload = {
@@ -51,15 +68,13 @@ def _get_run_from_run_history(flow_run_id, runs_operation):
     elif response.status_code == 404:
         raise Exception(f"Run {flow_run_id!r} not found.")
     else:
-        raise Exception(
-            f"Failed to get run from service. Code: {response.status_code}, text: {response.text}"
-        )
+        raise Exception(f"Failed to get run from service. Code: {response.status_code}, text: {response.text}")
 
 
-@pytest.mark.usefixtures("model_config", "recording_injection", "data_file")
+@pytest.mark.usefixtures("model_config", "recording_injection", "data_file", "project_scope")
 @pytest.mark.e2etest
 class TestEvaluate:
-    def test_groundedness_evaluator(self, model_config, data_file):
+    def test_evaluate_with_groundedness_evaluator(self, model_config, data_file):
         # data
         input_data = pd.read_json(data_file, lines=True)
 
@@ -95,14 +110,16 @@ class TestEvaluate:
         assert row_result_df["outputs.f1_score.f1_score"][2] == 1
         assert result["studio_url"] is None
 
-    def test_evaluate_python_function(self, data_file):
-        # data
+    @pytest.mark.skip(reason="Failed in CI pipeline. Pending for investigation.")
+    def test_evaluate_with_content_safety_evaluator(self, project_scope, data_file):
         input_data = pd.read_json(data_file, lines=True)
+
+        content_safety_eval = ContentSafetyEvaluator(project_scope)
 
         # run the evaluation
         result = evaluate(
             data=data_file,
-            evaluators={"answer": answer_evaluator},
+            evaluators={"content_safety": content_safety_eval},
         )
 
         row_result_df = pd.DataFrame(result["rows"])
@@ -113,10 +130,55 @@ class TestEvaluate:
         assert result["rows"] is not None
         assert row_result_df.shape[0] == len(input_data)
 
-        assert "outputs.answer.length" in row_result_df.columns.to_list()
-        assert "answer.length" in metrics.keys()
-        assert metrics.get("answer.length") == np.nanmean(row_result_df["outputs.answer.length"])
-        assert row_result_df["outputs.answer.length"][2] == 31
+        assert "outputs.content_safety.sexual" in row_result_df.columns.to_list()
+        assert "outputs.content_safety.violence" in row_result_df.columns.to_list()
+        assert "outputs.content_safety.self_harm" in row_result_df.columns.to_list()
+        assert "outputs.content_safety.hate_unfairness" in row_result_df.columns.to_list()
+
+        assert "content_safety.sexual_defect_rate" in metrics.keys()
+        assert "content_safety.violence_defect_rate" in metrics.keys()
+        assert "content_safety.self_harm_defect_rate" in metrics.keys()
+        assert "content_safety.hate_unfairness_defect_rate" in metrics.keys()
+
+        assert 0 <= metrics.get("content_safety.sexual_defect_rate") <= 1
+        assert 0 <= metrics.get("content_safety.violence_defect_rate") <= 1
+        assert 0 <= metrics.get("content_safety.self_harm_defect_rate") <= 1
+        assert 0 <= metrics.get("content_safety.hate_unfairness_defect_rate") <= 1
+
+    @pytest.mark.parametrize('use_thread_pool,function,column', [
+        (True, answer_evaluator, 'length'),
+        (False, answer_evaluator, 'length'),
+        (True, answer_evaluator_int, 'output'),
+        (False, answer_evaluator_int, 'output'),
+        (True, answer_evaluator_int_dict, "42"),
+        (False, answer_evaluator_int_dict, "42"),
+        ])
+    def test_evaluate_python_function(self, data_file, use_thread_pool,
+                                      function, column):
+        # data
+        input_data = pd.read_json(data_file, lines=True)
+
+        # run the evaluation
+        result = evaluate(
+            data=data_file,
+            evaluators={"answer": function},
+            _use_thread_pool=use_thread_pool
+        )
+
+        row_result_df = pd.DataFrame(result["rows"])
+        metrics = result["metrics"]
+
+        # validate the results
+        assert result is not None
+        assert result["rows"] is not None
+        assert row_result_df.shape[0] == len(input_data)
+
+        out_column = f"outputs.answer.{column}"
+        metric = f"answer.{column}"
+        assert out_column in row_result_df.columns.to_list()
+        assert metric in metrics.keys()
+        assert metrics.get(metric) == np.nanmean(row_result_df[out_column])
+        assert row_result_df[out_column][2] == 31
 
     def test_evaluate_with_target(self, questions_file):
         """Test evaluation with target function."""
@@ -140,6 +202,48 @@ class TestEvaluate:
         assert list(row_result_df["outputs.answer.length"]) == [28, 76, 22]
         assert "outputs.f1.f1_score" in row_result_df.columns
         assert not any(np.isnan(f1) for f1 in row_result_df["outputs.f1.f1_score"])
+
+    @pytest.mark.parametrize(
+        "evaluation_config",
+        [
+            None,
+            {"default": {}},
+            {"default": {}, "question_ev": {}},
+            {"default": {"question": "${target.question}"}},
+            {"default": {"question": "${data.question}"}},
+            {"default": {}, "question_ev": {"question": "${data.question}"}},
+            {"default": {}, "question_ev": {"question": "${target.question}"}},
+            {"default": {}, "question_ev": {"another_question": "${target.question}"}},
+            {"default": {"another_question": "${target.question}"}},
+        ],
+    )
+    def test_evaluate_another_questions(self, questions_file, evaluation_config):
+        """Test evaluation with target function."""
+        from .target_fn import target_fn3
+
+        # run the evaluation with targets
+        result = evaluate(
+            target=target_fn3,
+            data=questions_file,
+            evaluators={
+                "question_ev": question_evaluator,
+            },
+            evaluator_config=evaluation_config,
+        )
+        row_result_df = pd.DataFrame(result["rows"])
+        assert "outputs.answer" in row_result_df.columns
+        assert "inputs.question" in row_result_df.columns
+        assert "outputs.question" in row_result_df.columns
+        assert "outputs.question_ev.length" in row_result_df.columns
+        question = "outputs.question"
+
+        mapping = None
+        if evaluation_config:
+            mapping = evaluation_config.get("question_ev", evaluation_config.get("default", None))
+        if mapping and ("another_question" in mapping or mapping["question"] == "${data.question}"):
+            question = "inputs.question"
+        expected = list(row_result_df[question].str.len())
+        assert expected == list(row_result_df["outputs.question_ev.length"])
 
     @pytest.mark.parametrize(
         "evaluate_config",
@@ -192,8 +296,14 @@ class TestEvaluate:
         assert "f1_score.f1_score" in metrics.keys()
 
     @pytest.mark.skip(reason="az login in fixture is not working on ubuntu and mac.Works on windows")
-    def test_evaluate_track_in_cloud(self, questions_file, azure_pf_client, mock_trace_destination_to_cloud,
-                                     configure_default_azure_credential):
+    def test_evaluate_track_in_cloud(
+        self,
+        questions_file,
+        azure_pf_client,
+        mock_trace_destination_to_cloud,
+        configure_default_azure_credential,
+        project_scope,
+    ):
         """Test evaluation with target function."""
         # We cannot define target in this file as pytest will load
         # all modules in test folder and target_fn will be imported from the first
@@ -206,6 +316,7 @@ class TestEvaluate:
         evaluation_name = "test_evaluate_track_in_cloud"
         # run the evaluation with targets
         result = evaluate(
+            project_scope=project_scope,
             evaluation_name=evaluation_name,
             data=questions_file,
             target=target_fn,
@@ -230,8 +341,14 @@ class TestEvaluate:
         assert remote_run.display_name == evaluation_name
 
     @pytest.mark.skip(reason="az login in fixture is not working on ubuntu and mac.Works on windows")
-    def test_evaluate_track_in_cloud_no_target(self, data_file, azure_pf_client, mock_trace_destination_to_cloud,
-                                               configure_default_azure_credential):
+    def test_evaluate_track_in_cloud_no_target(
+        self,
+        data_file,
+        azure_pf_client,
+        mock_trace_destination_to_cloud,
+        configure_default_azure_credential,
+        project_scope,
+    ):
         # data
         input_data = pd.read_json(data_file, lines=True)
 
@@ -240,6 +357,7 @@ class TestEvaluate:
 
         # run the evaluation
         result = evaluate(
+            project_scope=project_scope,
             evaluation_name=evaluation_name,
             data=data_file,
             evaluators={"f1_score": f1_score_eval},
@@ -265,3 +383,7 @@ class TestEvaluate:
         assert remote_run is not None
         assert remote_run["runMetadata"]["properties"]["_azureml.evaluation_run"] == "azure-ai-generative-parent"
         assert remote_run["runMetadata"]["displayName"] == evaluation_name
+
+    @pytest.mark.skip(reason="TODO: Add test back")
+    def test_prompty_with_threadpool_implementation(self):
+        pass

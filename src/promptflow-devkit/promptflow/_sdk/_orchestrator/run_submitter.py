@@ -4,12 +4,12 @@
 # this file is a middle layer between the local SDK and executor, it'll have some similar logic with cloud PFS.
 
 import datetime
+from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, wait
 from pathlib import Path
 from typing import Union
 
 from promptflow._constants import SystemMetricKeys
-from promptflow._proxy import ProxyFactory
-from promptflow._sdk._constants import REMOTE_URI_PREFIX, ContextAttributeKey, FlowRunProperties
+from promptflow._sdk._constants import ContextAttributeKey, FlowRunProperties
 from promptflow._sdk.entities._flows import Flow, Prompty
 from promptflow._sdk.entities._run import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
@@ -25,7 +25,7 @@ from promptflow.tracing._start_trace import is_collection_writeable, start_trace
 
 from .._load_functions import load_flow
 from ..entities._flows import FlexFlow
-from .utils import SubmitterHelper, variant_overwrite_context
+from .utils import SubmitterHelper, flow_overwrite_context
 
 logger = LoggerFactory.get_logger(name=__name__)
 
@@ -39,7 +39,27 @@ class RunSubmitter:
         self.run_operations = self._client.runs
 
     def submit(self, run: Run, stream=False, **kwargs):
-        self._run_bulk(run=run, stream=stream, **kwargs)
+        upload_to_cloud = self._config._is_cloud_trace_destination(path=run._get_flow_dir().resolve())
+        if upload_to_cloud:
+            logger.info(f"Upload run to cloud: {upload_to_cloud}")
+        with ThreadPoolExecutor() as executor:
+            # if upload to cloud, initialize async run uploader simultaneously with run execution to improve performance
+            tasks = [
+                executor.submit(self._run_bulk, run=run, stream=stream, **kwargs),
+                executor.submit(self._initialize_async_run_uploader, run=run, upload_to_cloud=upload_to_cloud),
+            ]
+            wait(tasks, return_when=ALL_COMPLETED)
+            task_results = [task.result() for task in tasks]
+
+        # upload run to cloud if the trace destination is set to cloud
+        if upload_to_cloud:
+            logger.info(f"Uploading run {run.name!r} to cloud...")
+            uploader, pfazure_client = task_results[1]
+            portal_url = pfazure_client.runs._upload(run=run, run_uploader=uploader)
+            logger.info(f"Updating run {run.name!r} portal url to {portal_url!r}.")
+            if portal_url is not None:
+                self.run_operations.update(name=run.name, portal_url=portal_url)
+
         return self.run_operations.get(name=run.name)
 
     def resume(self, resume_from: str, **kwargs):
@@ -108,7 +128,9 @@ class RunSubmitter:
         local_storage = LocalStorageOperations(run, stream=stream, run_mode=RunMode.Batch)
         with local_storage.logger:
             flow_obj = load_flow(source=run.flow)
-            with variant_overwrite_context(flow_obj, tuning_node, variant, connections=run.connections) as flow:
+            with flow_overwrite_context(
+                flow_obj, tuning_node, variant, connections=run.connections, init_kwargs=run.init
+            ) as flow:
                 self._submit_bulk_run(flow=flow, run=run, local_storage=local_storage)
 
     @classmethod
@@ -122,12 +144,6 @@ class RunSubmitter:
     ) -> dict:
         logger.info(f"Submitting run {run.name}, log path: {local_storage.logger.file_path}")
         run_id = run.name
-        # TODO: unify the logic for prompty and other flows
-        if not isinstance(flow, Prompty):
-            # variants are resolved in the context, so we can't move this logic to Operations for now
-            ProxyFactory().create_inspector_proxy(flow.language).prepare_metadata(
-                flow_file=Path(flow.path), working_dir=Path(flow.code), init_kwargs=run.init
-            )
 
         with _change_working_dir(flow.code):
             # resolve connections with environment variables overrides to avoid getting unused connections
@@ -233,12 +249,6 @@ class RunSubmitter:
                 system_metrics=system_metrics,
             )
 
-            # upload run to cloud if the trace destination is set to cloud
-            trace_destination = self._config.get_trace_destination(path=run._get_flow_dir().resolve())
-            if trace_destination and trace_destination.startswith(REMOTE_URI_PREFIX):
-                logger.debug(f"Trace destination set to {trace_destination!r}, uploading run to cloud...")
-                self._upload_run_to_cloud(run=run)
-
     def _resolve_input_dirs(self, run: Run):
         result = {"data": run.data if run.data else None}
         if run.run is not None:
@@ -268,23 +278,26 @@ class RunSubmitter:
                 f"current column mapping contains all static values: {column_mapping}"
             )
 
-    @classmethod
-    def _upload_run_to_cloud(cls, run: Run):
-        error_msg_prefix = f"Failed to upload run {run.name!r} to cloud."
-        try:
-            from promptflow._sdk._tracing import _get_ws_triad_from_pf_config
-            from promptflow.azure._cli._utils import _get_azure_pf_client
+    def _initialize_pfazure_client(self, run: Run, config=None):
+        """Initialize pfazure client."""
+        logger.debug("Initialize pfazure client to upload run to cloud...")
+        from promptflow._sdk._tracing import _get_ws_triad_from_pf_config
+        from promptflow.azure._cli._utils import _get_azure_pf_client
 
-            ws_triad = _get_ws_triad_from_pf_config(path=run._get_flow_dir().resolve(), config=run._config)
-            pf = _get_azure_pf_client(
-                subscription_id=ws_triad.subscription_id,
-                resource_group=ws_triad.resource_group_name,
-                workspace_name=ws_triad.workspace_name,
-            )
-            pf.runs._upload(run=run)
-        except ImportError as e:
-            error_message = (
-                f'{error_msg_prefix}. "promptflow[azure]" is required for local to cloud tracing experience, '
-                f'please install it by running "pip install promptflow[azure]". Original error: {str(e)}'
-            )
-            raise UserErrorException(message=error_message) from e
+        ws_triad = _get_ws_triad_from_pf_config(path=run._get_flow_dir().resolve(), config=config or run._config)
+        return _get_azure_pf_client(
+            subscription_id=ws_triad.subscription_id,
+            resource_group=ws_triad.resource_group_name,
+            workspace_name=ws_triad.workspace_name,
+        )
+
+    def _initialize_async_run_uploader(self, run: Run, upload_to_cloud: bool):
+        """Initialize async run uploader if upload_to_cloud is True."""
+        uploader, pfazure_client = None, None
+        if upload_to_cloud:
+            logger.debug(f"Initialize async run uploader for run {run.name!r}...")
+            from promptflow.azure.operations._async_run_uploader import AsyncRunUploader
+
+            pfazure_client = self._initialize_pfazure_client(run=run, config=self._config)
+            uploader = AsyncRunUploader._from_run_operations(run_ops=pfazure_client.runs)
+        return uploader, pfazure_client

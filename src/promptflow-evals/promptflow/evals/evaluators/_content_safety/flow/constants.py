@@ -10,13 +10,21 @@ class RAIService:
 
 
 class HarmSeverityLevel(Enum):
-    Safe = 0
-    Low = 1
-    Medium = 2
-    High = 3
+    VeryLow = "Very low"
+    Low = "Low"
+    Medium = "Medium"
+    High = "High"
 
 
 class Tasks:
     """Defines types of annotation tasks supported by RAI Service."""
 
     CONTENT_HARM = "content harm"
+
+
+class EvaluationMetrics:
+    HATE_FAIRNESS = "hate_fairness"
+    HATE_UNFAIRNESS = "hate_unfairness"
+    VIOLENCE = "violence"
+    SELF_HARM = "self_harm"
+    SEXUAL = "sexual"

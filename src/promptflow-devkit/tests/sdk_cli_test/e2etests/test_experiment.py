@@ -260,6 +260,7 @@ class TestExperiment:
                     experiment=template_path,
                     session=session,
                     inputs={"url": "https://www.youtube.com/watch?v=kYqRtjDBci8", "answer": "Channel"},
+                    environment_variables={"PF_TEST_FLOW_TEST_WITH_EXPERIMENT": "1"},
                 )
                 futures.wait([task], return_when=futures.ALL_COMPLETED)
                 result = task.result()
@@ -267,6 +268,7 @@ class TestExperiment:
             # Assert line run id is set by executor when running test
             assert PF_TRACE_CONTEXT in os.environ
             attributes = json.loads(os.environ[PF_TRACE_CONTEXT]).get("attributes")
+            assert os.environ.get("PF_TEST_FLOW_TEST_WITH_EXPERIMENT") == "1"
             assert attributes.get("experiment") == template_path.resolve().absolute().as_posix()
             assert attributes.get("referenced.line_run_id", "").startswith("main")
             expected_output_path = (
@@ -320,12 +322,31 @@ class TestExperiment:
             assert len(result) == 2
 
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
+    def test_experiment_test_with_script_node(self):
+        template_path = EXP_ROOT / "basic-script-template" / "basic-script.exp.yaml"
+        client = PFClient()
+        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+            mock_func.return_value = True
+            result = client._experiments.test(
+                experiment=template_path,
+                # Test only read 1 line
+                inputs={"count": 1},  # To replace experiment.inputs
+            )
+            assert len(result) == 4
+            assert "output_path" in result["gen_data"]
+            assert "category" in result["main"]
+            assert "grade" in result["eval"]
+            assert "output_path" in result["echo"]
+            # Assert reference resolved for command node
+            assert "main.json" in open(Path(result["echo"]["output_path"]) / "output.txt", "r").read()
+
+    @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
     def test_experiment_test_with_skip_node(self):
         template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"
         client = PFClient()
         with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
             mock_func.return_value = True
-            result = client._experiments.test(
+            result = client._experiments._test_flow(
                 experiment=template_path,
                 context={
                     "node": FLOW_ROOT / "web_classification" / "flow.dag.yaml",

@@ -90,6 +90,7 @@ class AppExtension(ABC):
         custom_dimensions = self.get_metrics_common_dimensions()
         metric_exporters = OTelExporterProviderFactory.get_metrics_exporters(self.logger, self.extension_type)
         trace_exporters = OTelExporterProviderFactory.get_trace_exporters(self.logger, self.extension_type)
+        log_exporters = OTelExporterProviderFactory.get_log_exporters(self.logger, self.extension_type)
         self.flow_monitor = FlowMonitor(
             self.logger,
             self.get_flow_name(),
@@ -98,6 +99,7 @@ class AppExtension(ABC):
             custom_dimensions,
             metric_exporters,
             trace_exporters,
+            log_exporters,
         )  # noqa: E501
         return self.flow_monitor
 
@@ -120,7 +122,7 @@ class AppExtension(ABC):
                 common_dimensions = json.loads(common_dimensions_str)
                 return common_dimensions
             except Exception as ex:
-                self.logger.warn(f"Failed to parse common dimensions with value={common_dimensions_str}: {ex}")
+                self.logger.warning(f"Failed to parse common dimensions with value={common_dimensions_str}: {ex}")
         return {}
 
     def _get_default_blueprints(self, flow_monitor, static_folder=None):
@@ -144,7 +146,7 @@ class DefaultAppExtension(AppExtension):
 
     def get_flow_name(self) -> str:
         project_path = self.get_flow_project_path()
-        return Path(project_path).stem
+        return Path(project_path).resolve().absolute().stem
 
     def get_connection_provider(self) -> str:
         return self.connection_provider

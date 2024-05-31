@@ -45,6 +45,7 @@ except ImportError:
 
 EAGER_FLOW_ROOT = Path(PROMPTFLOW_ROOT / "tests/test_configs/eager_flows")
 MODEL_ROOT = Path(PROMPTFLOW_ROOT / "tests/test_configs/flows")
+PROMPTY_ROOT = Path(PROMPTFLOW_ROOT / "tests/test_configs/prompty")
 
 RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "../promptflow-recording/recordings/local").resolve()
 COUNTER_FILE = (Path(__file__) / "../count.json").resolve()
@@ -145,6 +146,20 @@ def flow_serving_client(mocker: MockerFixture):
 
 
 @pytest.fixture
+def prompty_serving_client(mocker: MockerFixture):
+    model_path = (Path(PROMPTY_ROOT) / "single_prompty").resolve().absolute().as_posix()
+    mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
+    mocker.patch.dict(os.environ, {"USER_AGENT": "test-user-agent"})
+    app = create_serving_app(environment_variables={"API_TYPE": "${azure_open_ai_connection.api_type}"})
+    app.config.update(
+        {
+            "TESTING": True,
+        }
+    )
+    return app.test_client()
+
+
+@pytest.fixture
 def flow_serving_client_with_encoded_connection(mocker: MockerFixture):
     from promptflow._core.connection_manager import ConnectionManager
     from promptflow.core._serving.utils import encode_dict
@@ -166,6 +181,11 @@ def evaluation_flow_serving_client(mocker: MockerFixture):
         }
     )
     return app.test_client()
+
+
+@pytest.fixture
+def async_generator_serving_client(mocker: MockerFixture):
+    return create_client_by_model("async_generator_tools", mocker)
 
 
 def create_client_by_model(
@@ -271,6 +291,11 @@ def fastapi_create_client_by_model(
         environment_variables["API_TYPE"] = "${azure_open_ai_connection.api_type}"
     app = create_fastapi_app(environment_variables=environment_variables, extension_type=extension_type, init=init)
     return TestClient(app)
+
+
+@pytest.fixture
+def fastapi_async_generator_serving_client(mocker: MockerFixture):
+    return fastapi_create_client_by_model("async_generator_tools", mocker)
 
 
 @pytest.fixture

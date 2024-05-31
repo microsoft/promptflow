@@ -338,7 +338,30 @@ class Node:
 
 
 @dataclass
-class FlowInputDefinition:
+class FlowParamDefinitionBase:
+    """Base class for the definition of a flow param (input & init kwargs)."""
+
+    type: ValueType
+    default: str = None
+    description: str = None
+
+    def serialize(self):
+        """Serialize the flow param definition to a dict.
+
+        :return: The dict of the flow param definition.
+        :rtype: dict
+        """
+        data = {}
+        data["type"] = self.type.value
+        if self.default:
+            data["default"] = str(self.default)
+        if self.description:
+            data["description"] = self.description
+        return data
+
+
+@dataclass
+class FlowInputDefinition(FlowParamDefinitionBase):
     """This class represents the definition of a flow input.
 
     :param type: The type of the flow input.
@@ -355,9 +378,6 @@ class FlowInputDefinition:
     :type is_chat_history: bool
     """
 
-    type: ValueType
-    default: str = None
-    description: str = None
     enum: List[str] = None
     is_chat_input: bool = False
     is_chat_history: bool = None
@@ -368,12 +388,7 @@ class FlowInputDefinition:
         :return: The dict of the flow input definition.
         :rtype: dict
         """
-        data = {}
-        data["type"] = self.type.value
-        if self.default:
-            data["default"] = str(self.default)
-        if self.description:
-            data["description"] = self.description
+        data = super().serialize()
         if self.enum:
             data["enum"] = self.enum
         if self.is_chat_input:
@@ -456,6 +471,36 @@ class FlowOutputDefinition:
             data.get("description", ""),
             data.get("evaluation_only", False),
             data.get("is_chat_output", False),
+        )
+
+
+@dataclass
+class FlowInitDefinition(FlowParamDefinitionBase):
+    """This class represents the definition of a callable class flow's init kwargs."""
+
+    @staticmethod
+    def deserialize(data: dict) -> "FlowInitDefinition":
+        """Deserialize the flow init definition from a dict.
+
+        :param data: The dict to be deserialized.
+        :type data: dict
+        :return: The flow input definition constructed from the dict.
+        :rtype: ~promptflow.contracts.flow.FlowInitDefinition
+        """
+        from promptflow.core._model_configuration import MODEL_CONFIG_NAME_2_CLASS
+
+        # support connection & model config type
+        def _get_type(data_type: str):
+            if ConnectionType.is_connection_class_name(data_type):
+                return data_type
+            elif data_type in MODEL_CONFIG_NAME_2_CLASS:
+                return data_type
+            return ValueType(data_type)
+
+        return FlowInitDefinition(
+            type=_get_type(data["type"]),
+            default=data.get("default", None),
+            description=data.get("description", ""),
         )
 
 
@@ -706,19 +751,19 @@ class Flow(FlowBase):
         """Load flow from yaml file."""
         working_dir = cls._parse_working_dir(flow_file, working_dir)
         with open(working_dir / flow_file, "r", encoding=DEFAULT_ENCODING) as fin:
-            flow_dag = load_yaml(fin)
+            flow_data = load_yaml(fin)
         # Name priority: name from payload > name from yaml content > working_dir.stem
         # For portal created flow, there is a meaningless predefined name in yaml, use name from payload to override it.
-        if name is None:
-            name = flow_dag.get("name", _sanitize_python_variable_name(working_dir.stem))
-        flow_dag["name"] = name
-        return Flow._from_dict(flow_dag=flow_dag, working_dir=working_dir)
+        return Flow._from_dict(flow_data=flow_data, working_dir=working_dir, name=name)
 
     @classmethod
-    def _from_dict(cls, flow_dag: dict, working_dir: Path) -> "Flow":
+    def _from_dict(cls, flow_data: dict, working_dir: Path, name=None) -> "Flow":
         """Load flow from dict."""
         cls._update_working_dir(working_dir)
-        flow = Flow.deserialize(flow_dag)
+        if name is None:
+            name = flow_data.get("name", _sanitize_python_variable_name(working_dir.stem))
+        flow_data["name"] = name
+        flow = Flow.deserialize(flow_data)
         flow._set_tool_loader(working_dir)
         return flow
 
@@ -943,6 +988,8 @@ class FlexFlow(FlowBase):
     :type environment_variables: Dict[str, object]
     :param message_format: The message format type of the flow to represent different multimedia contracts.
     :type message_format: str
+    :param sample: Sample data for the flow. Will become default inputs & init kwargs if not provided.
+    :type sample: Dict[str, object]
     """
 
     init: Dict[str, FlowInputDefinition] = None
@@ -950,6 +997,7 @@ class FlexFlow(FlowBase):
     environment_variables: Dict[str, object] = None
     # eager flow does not support multimedia contract currently, it is set to basic by default.
     message_format: str = MessageFormatType.BASIC
+    sample: Dict[str, dict] = None
 
     @staticmethod
     def deserialize(data: dict) -> "FlexFlow":
@@ -969,10 +1017,39 @@ class FlexFlow(FlowBase):
             name=data.get("name", "default_flow"),
             inputs={name: FlowInputDefinition.deserialize(i) for name, i in inputs.items()},
             outputs={name: FlowOutputDefinition.deserialize(o) for name, o in outputs.items()},
-            init={name: FlowInputDefinition.deserialize(i) for name, i in init.items()},
+            init={name: FlowInitDefinition.deserialize(i) for name, i in init.items()},
             program_language=data.get(LANGUAGE_KEY, FlowLanguage.Python),
             environment_variables=data.get("environment_variables") or {},
+            sample=data.get("sample") or {},
         )
+
+    @classmethod
+    def _from_dict(cls, flow_data: dict, working_dir: Path, name=None) -> "FlexFlow":
+        """Load flow from dict."""
+        from promptflow._core.entry_meta_generator import generate_flow_meta
+
+        from .._utils.flow_utils import resolve_python_entry_file
+
+        Flow._update_working_dir(working_dir)
+        if name is None:
+            name = flow_data.get("name", _sanitize_python_variable_name(working_dir.stem))
+        flow_data["name"] = name
+
+        entry = flow_data.get("entry")
+        entry_file = resolve_python_entry_file(entry=entry, working_dir=working_dir)
+
+        meta_dict = generate_flow_meta(
+            flow_directory=working_dir,
+            source_path=entry_file,
+            data=flow_data,
+        )
+        return cls.deserialize(meta_dict)
+
+    def get_connection_names(self, environment_variables_overrides: Dict[str, str] = None):
+        """Return connection names."""
+        connection_names = super().get_connection_names(environment_variables_overrides=environment_variables_overrides)
+
+        return set({item for item in connection_names if item})
 
 
 @dataclass
@@ -1019,3 +1096,19 @@ class PromptyFlow(FlowBase):
             environment_variables=data.get("environment_variables") or {},
             message_format=data.get("message_format", MessageFormatType.BASIC),
         )
+
+    @classmethod
+    def _from_dict(cls, flow_data: dict, working_dir: Path, name=None) -> "PromptyFlow":
+        """Load flow from dict."""
+        Flow._update_working_dir(working_dir)
+        if name is None:
+            name = flow_data.get("name", _sanitize_python_variable_name(working_dir.stem))
+        flow_data["name"] = name
+
+        return cls.deserialize(flow_data)
+
+    def get_connection_names(self, environment_variables_overrides: Dict[str, str] = None):
+        """Return connection names."""
+        connection_names = super().get_connection_names(environment_variables_overrides=environment_variables_overrides)
+
+        return set({item for item in connection_names if item})

@@ -34,11 +34,10 @@ from promptflow._sdk._utilities.general_utils import (
     read_open,
     write_open,
 )
-from promptflow._sdk._utilities.signature_utils import update_signatures
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._flows import Flow
 from promptflow._utils.exception_utils import PromptflowExceptionPresenter
-from promptflow._utils.flow_utils import dump_flow_dag, is_prompty_flow
+from promptflow._utils.flow_utils import is_prompty_flow
 from promptflow._utils.logger_utils import LogContext, get_cli_sdk_logger
 from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow._utils.utils import prepare_folder
@@ -106,7 +105,9 @@ class LoggerOperations(LogContext):
             else:
                 log_path.touch()
 
-        for _logger in self._get_execute_loggers_list():
+        # set the log level for all loggers except the logger "promptflow"
+        _loggers = [_logger for _logger in self._get_execute_loggers_list() if _logger.name != logger.name]
+        for _logger in _loggers:
             for handler in _logger.handlers:
                 if self.stream is False and isinstance(handler, logging.StreamHandler):
                     handler.setLevel(logging.CRITICAL)
@@ -114,11 +115,12 @@ class LoggerOperations(LogContext):
 
     def __exit__(self, *args):
         super().__exit__(*args)
-
-        for _logger in self._get_execute_loggers_list():
+        # set the log level for all loggers except the logger "promptflow"
+        _loggers = [_logger for _logger in self._get_execute_loggers_list() if _logger.name != logger.name]
+        for _logger in _loggers:
             for handler in _logger.handlers:
                 if self.stream is False and isinstance(handler, logging.StreamHandler):
-                    handler.setLevel(logging.CRITICAL)
+                    handler.setLevel(logging.INFO)
 
 
 @dataclass
@@ -247,7 +249,8 @@ class LocalStorageOperations(AbstractBatchRunStorage):
 
     def dump_snapshot(self, flow: Flow) -> None:
         """Dump flow directory to snapshot folder, input file will be dumped after the run."""
-        patterns = [pattern for pattern in PromptflowIgnoreFile.IGNORE_FILE]
+        ignore_file = PromptflowIgnoreFile(prompt_flow_path=flow.code)
+        patterns = [pattern for pattern in ignore_file._get_ignore_list()]
         # ignore current output parent folder to avoid potential recursive copy
         patterns.append(self._run._output_path.parent.name)
         shutil.copytree(
@@ -256,14 +259,14 @@ class LocalStorageOperations(AbstractBatchRunStorage):
             ignore=shutil.ignore_patterns(*patterns),
             dirs_exist_ok=True,
         )
-        if self._eager_mode:
-            yaml_dict = copy.deepcopy(flow._data)
-            update_signatures(code=flow.code, data=yaml_dict)
-            # for eager mode, we need to update signature for it
-            dump_flow_dag(flow_dag=yaml_dict, flow_path=self._dag_path)
-        elif not self._is_prompty_flow:
-            # replace DAG file with the overwrite one
-            self._dag_path.unlink()
+        if not self._is_prompty_flow:
+            # for flex flow and DAG flow, the YAML will be updated.
+            # replace the YAML file with the override one
+            try:
+                self._dag_path.unlink()
+            except Exception as e:
+                logger.warning(f"Failed to remove the existing DAG file due to {e}")
+                pass
             shutil.copy(flow.path, self._dag_path)
 
     def load_dag_as_string(self) -> str:

@@ -8,10 +8,11 @@ import re
 import numpy as np
 
 from promptflow.client import load_flow
+from promptflow.core import AzureOpenAIModelConfiguration
 
 
 class SimilarityEvaluator:
-    def __init__(self, model_config):
+    def __init__(self, model_config: AzureOpenAIModelConfiguration):
         """
         Initialize an evaluator configured for a specific Azure OpenAI model.
 
@@ -51,11 +52,11 @@ class SimilarityEvaluator:
         :rtype: dict
         """
         # Validate input parameters
-        if (
-            not (question and question.strip())
-            or not (answer and answer.strip())
-            or not (ground_truth and ground_truth.strip())
-        ):
+        question = str(question or "")
+        answer = str(answer or "")
+        ground_truth = str(ground_truth or "")
+
+        if not (question.strip() and answer.strip() and ground_truth.strip()):
             raise ValueError("'question', 'answer' and 'ground_truth' must be non-empty strings.")
 
         # Run the evaluation flow

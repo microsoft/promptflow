@@ -18,7 +18,17 @@ from azure.core.pipeline.policies import RetryPolicy
 from promptflow._sdk._telemetry import request_id_context
 from promptflow._sdk._telemetry import TelemetryMixin
 from promptflow._utils.logger_utils import LoggerFactory
-from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME, SESSION_CREATION_TIMEOUT_ENV_VAR
+from promptflow.azure._constants._flow import COMPUTE_SESSION, SESSION_CREATION_TIMEOUT_ENV_VAR
+from promptflow.azure._constants._trace import (
+    COSMOS_DB_SETUP_POLL_INTERVAL_SECOND,
+    COSMOS_DB_SETUP_POLL_PRINT_INTERVAL_SECOND,
+    COSMOS_DB_SETUP_POLL_TIMEOUT_SECOND,
+)
+from promptflow.azure._constants._trace import (
+    COSMOS_DB_SETUP_POLL_INTERVAL_SECOND,
+    COSMOS_DB_SETUP_POLL_PRINT_INTERVAL_SECOND,
+    COSMOS_DB_SETUP_POLL_TIMEOUT_SECOND,
+)
 from promptflow.azure._restclient.flow import AzureMachineLearningDesignerServiceClient
 from promptflow.azure._utils.general import get_authorization, get_arm_token, get_aml_token
 from promptflow.exceptions import UserErrorException, PromptflowException, SystemErrorException
@@ -560,8 +570,8 @@ class FlowServiceCaller(RequestTelemetryMixin):
             if time_run + sleep_period > timeout_seconds:
                 message = (
                     f"Polling timeout for session {session_id} {action} "
-                    f"for {AUTOMATIC_RUNTIME} after {timeout_seconds} seconds.\n"
-                    f"To proceed the {action} for {AUTOMATIC_RUNTIME}, you can retry using the same flow, "
+                    f"for {COMPUTE_SESSION} after {timeout_seconds} seconds.\n"
+                    f"To proceed the {action} for {COMPUTE_SESSION}, you can retry using the same flow, "
                     "and we will continue polling status of previous session. \n"
                 )
                 raise Exception(message)
@@ -757,3 +767,114 @@ class FlowServiceCaller(RequestTelemetryMixin):
             headers=self._get_headers(),
             **kwargs,
         )
+
+    def get_workspace_cosmos_metadata(
+        self,
+        subscription_id: str,
+        resource_group_name: str,
+        workspace_name: str,
+        **kwargs,
+    ):
+        """Get Cosmos DB metadata."""
+        return self.caller.trace_sessions.get_trace_session_metadata_async(
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+            headers=self._get_headers(),
+            **kwargs,
+        )
+
+    @_request_wrapper()
+    def setup_workspace_cosmos(self, subscription_id, resource_group_name, workspace_name, body, **kwargs):
+        """Setup Cosmos DB for workspace/project."""
+        # TODO 3184158: use LROPoller for async API
+        # the standard way to call Azure async API is using LROPoller (Long Running Operations Poller)
+        # however, implement with naive way for now; will refine this part after Build
+        from azure.core.exceptions import (
+            ClientAuthenticationError,
+            ResourceNotFoundError,
+            map_error,
+        )
+        from promptflow.azure._restclient.flow.operations._trace_sessions_operations import (
+            _convert_request,
+            _models,
+            build_setup_trace_session_async_request,
+        )
+
+        headers = self._get_headers()
+        request_id = headers["x-ms-client-request-id"]
+        # below lines are copied and modified from TraceSessionsOperations.setup_trace_session_async
+        error_map = {401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError}
+        content_type = kwargs.pop("content_type", "application/json")
+        _json = self.caller.trace_sessions._serialize.body(body, "TraceDbSetupRequest")
+        request = build_setup_trace_session_async_request(
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+            content_type=content_type,
+            json=_json,
+            template_url=self.caller.trace_sessions.setup_trace_session_async.metadata["url"],
+            headers=headers,
+        )
+        request = _convert_request(request)
+        request.url = self.caller.trace_sessions._client.format_url(request.url)
+
+        pipeline_response = self.caller.trace_sessions._client._pipeline.run(request, stream=False, **kwargs)
+        response = pipeline_response.http_response
+
+        if response.status_code not in [200, 202]:
+            map_error(status_code=response.status_code, response=response, error_map=error_map)
+            error = self.caller.trace_sessions._deserialize.failsafe_deserialize(
+                _models.ErrorResponse, pipeline_response
+            )
+            raise HttpResponseError(response=response, model=error)
+        if response.status_code == 200:
+            # status code 200 means the Cosmos DB is ready
+            return
+
+        # status code 202 means the Cosmos DB setup is still in progress, need to poll the status
+        # the poll url is in the response header - that's why we copy code from REST client
+        logger.info("start polling until Cosmos DB setup finished...")
+        if "azure-asyncoperation" not in response.headers:
+            raise FlowRequestException(
+                "No polling url found in response headers.\n"
+                f"Request id: {request_id}, headers: {response.headers}."
+            )
+        polling_url = response.headers["azure-asyncoperation"]
+        elapsed_time = 0
+        timeout_seconds, poll_interval = COSMOS_DB_SETUP_POLL_TIMEOUT_SECOND, COSMOS_DB_SETUP_POLL_INTERVAL_SECOND
+        status = None
+        # only poll during "InProgress" status
+        while status in [None, "InProgress"]:
+            if elapsed_time + poll_interval > timeout_seconds:
+                error_message = (
+                    f"Polling timeout for Cosmos DB setup for {workspace_name!r} after {timeout_seconds} seconds.\n"
+                    "To proceed the setup for Cosmos DB, you can retry and we will continue polling status of previous setup.\n"
+                )
+                raise Exception(error_message)
+            elapsed_time += poll_interval
+            time.sleep(poll_interval)
+            response = self.poll_operation_status(url=polling_url, **kwargs)
+            status = response["status"]
+            logger.debug("current polling status: %s", status)
+            prompt_message = f"waiting for Cosmos DB setup ready, current status: {status}"
+            if elapsed_time % COSMOS_DB_SETUP_POLL_PRINT_INTERVAL_SECOND == 0:
+                # print every fixed seconds, so that user will not feel stuck during the polling
+                print(prompt_message)
+            else:
+                logger.debug(prompt_message)
+
+        if status == "Succeeded":
+            logger.info("Cosmos DB setup finished with status %s", status)
+            return
+        else:
+            # try to prettier response error message, and ignore all exceptions happened there
+            try:
+                response["error"]["message"] = json.loads(response["error"]["message"])
+            except Exception:  # pylint: disable=broad-except
+                pass
+            raise FlowRequestException(
+                f"Cosmos DB setup failed for {workspace_name!r}, status: {status}.\n"
+                f"Request id: {request_id}.\n"
+                f"{json.dumps(response, indent=2)}."
+            )

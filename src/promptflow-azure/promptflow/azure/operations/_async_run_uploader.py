@@ -12,18 +12,22 @@ from promptflow._cli._utils import get_instance_results, merge_jsonl_files
 from promptflow._constants import PROMPTY_EXTENSION, OutputsFolderName
 from promptflow._sdk._constants import (
     DEFAULT_ENCODING,
+    PF_SYSTEM_METRICS_PREFIX,
     CloudDatastore,
     FlowRunProperties,
     Local2Cloud,
     LocalStorageFilenames,
+    RunStatus,
 )
 from promptflow._sdk._errors import RunNotFoundError, UploadInternalError, UploadUserError, UserAuthenticationError
 from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure._storage.blob.client import _get_datastore_credential
-from promptflow.azure.operations._artifact_client import AsyncArtifactClient
-from promptflow.azure.operations._metrics_client import AsyncMetricClient
+from promptflow.azure._utils._artifact_client import AsyncArtifactClient
+from promptflow.azure._utils._asset_client import AsyncAssetClient
+from promptflow.azure._utils._metrics_client import AsyncMetricClient
+from promptflow.azure._utils._run_history_client import AsyncRunHistoryClient
 from promptflow.exceptions import UserErrorException
 
 logger = get_cli_sdk_logger()
@@ -34,15 +38,15 @@ class AsyncRunUploader:
 
     IGNORED_PATTERN = ["__pycache__"]
 
-    def __init__(self, run: Run, run_ops: "RunOperations", overwrite=True):
-        self.run = run
-        self.run_output_path = Path(run.properties[FlowRunProperties.OUTPUT_PATH])
+    def __init__(self, run_ops: "RunOperations", overwrite=True):
         self.run_ops = run_ops
         self.overwrite = overwrite
         self.datastore = self._get_datastore_with_secrets()
         self.blob_service_client = self._init_blob_service_client()
         self.artifact_client = AsyncArtifactClient.from_run_operations(run_ops)
         self.metric_client = AsyncMetricClient.from_run_operations(run_ops)
+        self.asset_client = AsyncAssetClient.from_run_operations(run_ops)
+        self.run_history_client = AsyncRunHistoryClient.from_run_operations(run_ops)
 
     def _get_datastore_with_secrets(self):
         """Get datastores with secrets."""
@@ -69,24 +73,65 @@ class AsyncRunUploader:
             result[name] = BlobServiceClient(account_url=account_url, credential=credential)
         return result
 
-    def _check_run_exists(self):
-        """Check if run exists in cloud."""
+    def _set_run(self, run: Run):
+        """Set the run to be uploaded."""
+        self.run = run
+        self.run_output_path = Path(self.run.properties[FlowRunProperties.OUTPUT_PATH])
+
+    def _prepare_run_to_upload(self, run: Run):
+        """Prepare the run to be uploaded."""
+        run = self._check_run_is_valid_to_upload(run=run)
+        self._set_run(run=run)
+        # check if the run already exists in cloud
+        self._check_run_exists(run=self.run)
+
+    def _check_run_exists(self, run):
+        """Check if the run already exists in cloud."""
         try:
-            self.run_ops.get(self.run.name)
+            self.run_ops.get(run)
         except RunNotFoundError:
             # go ahead to upload if run does not exist
             pass
         else:
-            msg_prefix = f"Run record {self.run.name!r} already exists in cloud"
+            msg_prefix = f"Run record {run.name!r} already exists in cloud"
             if self.overwrite is True:
                 logger.warning(f"{msg_prefix}. Overwrite is set to True, will overwrite existing run record.")
             else:
                 raise UploadUserError(f"{msg_prefix}. Overwrite is set to False, cannot upload the run record.")
 
-    async def upload(self) -> Dict:
+    def _check_run_is_valid_to_upload(self, run):
+        """Check if the run is valid to be uploaded."""
+        from promptflow._sdk._pf_client import PFClient as LocalPFClient
+
+        # always get run object from db, since the passed in run object may not have all latest info
+        pf = LocalPFClient()
+        run = pf.runs.get(run)
+
+        # check if the run is in terminated status
+        terminated_statuses = RunStatus.get_terminated_statuses()
+        if run.status not in terminated_statuses:
+            raise UserErrorException(
+                f"Can only upload the run with status {terminated_statuses!r} "
+                f"while {run.name!r}'s status is {run.status!r}."
+            )
+
+        # check if it's evaluation run and make sure the main run is already uploaded
+        if run.run:
+            main_run_name = run.run.name if isinstance(run.run, Run) else run.run
+            try:
+                self.run_ops.get(main_run_name)
+            except RunNotFoundError:
+                raise UserErrorException(
+                    f"Failed to upload evaluation run {run.name!r} to cloud. It ran against the run {main_run_name!r} "
+                    f"that was not uploaded to cloud. Make sure the previous run is already uploaded to cloud when "
+                    f"uploading an evaluation run."
+                )
+        return run
+
+    async def upload(self, run: Run) -> Dict:
         """Upload run record to cloud."""
-        # check if run already exists in cloud
-        self._check_run_exists()
+        # check if run is ready to be uploaded
+        self._prepare_run_to_upload(run=run)
 
         # upload run details to cloud
         error_msg_prefix = f"Failed to upload run {self.run.name!r}"
@@ -124,6 +169,27 @@ class AsyncRunUploader:
         except Exception as e:
             raise UploadInternalError(f"{error_msg_prefix}. Error: {e}") from e
 
+    async def post_process(self):
+        """Post process after uploading run details to cloud.
+
+        .. note::
+            1. Upload metrics to metric service.
+            2. Register assets for debug info and flow outputs
+        """
+        logger.debug("Post processing after run details are uploaded.")
+        error_msg_prefix = f"Failed to post process run {self.run.name!r}"
+        try:
+            tasks = [
+                self._upload_metrics(),
+                self._register_assets_for_debug_info_and_flow_outputs(),
+            ]
+            await asyncio.gather(*tasks)
+
+        except UserErrorException:
+            raise
+        except Exception as e:
+            raise UploadInternalError(f"{error_msg_prefix}. Error: {e}") from e
+
     async def _upload_flow_artifacts(self) -> str:
         """Upload run artifacts to cloud. Return the cloud relative path of flow artifacts folder."""
         logger.debug(f"Uploading flow artifacts for run {self.run.name!r}.")
@@ -134,10 +200,15 @@ class AsyncRunUploader:
             logger.debug("Merging run artifacts jsonl files.")
             merge_jsonl_files(local_folder, temp_local_folder)
             remote_folder = f"{Local2Cloud.BLOB_ROOT_PROMPTFLOW}/{Local2Cloud.BLOB_ARTIFACTS}/{self.run.name}"
-            # upload the artifacts folder to blob
-            await self._upload_local_folder_to_blob(temp_local_folder, remote_folder)
-            # upload updated meta.json to cloud
-            await self._upload_meta_json(temp_local_folder)
+
+            await asyncio.gather(
+                *[
+                    # upload the artifacts folder to blob
+                    self._upload_local_folder_to_blob(temp_local_folder, remote_folder),
+                    # upload updated meta.json to cloud
+                    self._upload_meta_json(temp_local_folder),
+                ]
+            )
             return f"{remote_folder}/{OutputsFolderName.FLOW_ARTIFACTS}"
 
     async def _upload_meta_json(self, temp_dir: Path):
@@ -223,14 +294,19 @@ class AsyncRunUploader:
                 for line_result in instance_results:
                     f.write(json.dumps(line_result) + "\n")
             remote_file = f"{Local2Cloud.BLOB_ROOT_PROMPTFLOW}/{Local2Cloud.BLOB_ARTIFACTS}/{self.run.name}/{file_name}"
-            await self._upload_local_file_to_blob(local_file, remote_file)
 
-            # registry artifact for instance results
-            await self.artifact_client.register_artifact(
-                run_id=self.run.name,
-                datastore_name=self.datastore[CloudDatastore.DEFAULT].name,
-                relative_path=remote_file,
-                path=file_name,
+            await asyncio.gather(
+                *[
+                    # upload the instance results file to blob
+                    self._upload_local_file_to_blob(local_file, remote_file),
+                    # registry artifact for instance results
+                    self.artifact_client.register_artifact(
+                        run_id=self.run.name,
+                        datastore_name=self.datastore[CloudDatastore.DEFAULT].name,
+                        relative_path=remote_file,
+                        path=file_name,
+                    ),
+                ]
             )
 
             return remote_file
@@ -240,7 +316,9 @@ class AsyncRunUploader:
         logger.debug(f"Uploading metrics for run {self.run.name!r}.")
         # system metrics that starts with "__pf__" are reserved for promptflow internal use
         metrics = {
-            k: v for k, v in self.run.properties[FlowRunProperties.SYSTEM_METRICS].items() if k.startswith("__pf__")
+            k: v
+            for k, v in self.run.properties[FlowRunProperties.SYSTEM_METRICS].items()
+            if k.startswith(PF_SYSTEM_METRICS_PREFIX)
         }
 
         # add user metrics from local metric file
@@ -258,9 +336,40 @@ class AsyncRunUploader:
             raise UserErrorException(f"Failed to convert metrics {metrics!r} to float values. Error: {e}") from e
 
         # write metrics to metric service
-        for k, v in metrics.items():
-            await self.metric_client.log_metric(self.run.name, k, v)
+        await asyncio.gather(*[self.metric_client.log_metric(self.run.name, k, v) for k, v in metrics.items()])
+
         return metrics
+
+    async def _register_assets_for_debug_info_and_flow_outputs(self):
+        """Register assets for debug_info and flow_outputs."""
+        run_id = self.run.name
+        remote_folder = f"{Local2Cloud.BLOB_ROOT_PROMPTFLOW}/{Local2Cloud.BLOB_ARTIFACTS}/{run_id}"
+        datastore_name = self.datastore[CloudDatastore.DEFAULT].name
+
+        # register asset for debug_info
+        tasks = [
+            self.asset_client.create_unregistered_output(
+                run_id=run_id,
+                datastore_name=datastore_name,
+                relative_path=remote_folder,
+                output_name=Local2Cloud.ASSET_NAME_DEBUG_INFO,
+            ),
+            self.asset_client.create_unregistered_output(
+                run_id=run_id,
+                datastore_name=datastore_name,
+                relative_path=f"{remote_folder}/{OutputsFolderName.FLOW_OUTPUTS}",
+                output_name=Local2Cloud.ASSET_NAME_FLOW_OUTPUTS,
+            ),
+        ]
+        results = await asyncio.gather(*tasks)
+
+        outputs_info = {
+            Local2Cloud.ASSET_NAME_DEBUG_INFO: results[0],  # debug_info_asset_id
+            Local2Cloud.ASSET_NAME_FLOW_OUTPUTS: results[1],  # flow_outputs_asset_id
+        }
+
+        # patch run history with debug_info and flow_outputs
+        await self.run_history_client.patch_run_outputs(run_id, outputs_info)
 
     async def _upload_local_folder_to_blob(self, local_folder, remote_folder):
         """Upload local folder to remote folder in blob.
@@ -276,6 +385,7 @@ class AsyncRunUploader:
                 f"Local folder {local_folder.resolve().as_posix()!r} does not exist or it's not a directory."
             )
 
+        tasks = []
         for file in local_folder.rglob("*"):
             # skip the file if it's in the ignored pattern
             skip_this_file = False
@@ -291,7 +401,9 @@ class AsyncRunUploader:
                 # Construct the blob path
                 relative_path = file.relative_to(local_folder)
                 blob_path = f"{remote_folder}/{local_folder.name}/{relative_path}"
-                await self._upload_local_file_to_blob(file, blob_path)
+                tasks.append(self._upload_local_file_to_blob(file, blob_path))
+
+        await asyncio.gather(*tasks)
 
         # return the remote folder path
         return f"{remote_folder}/{local_folder.name}"
@@ -343,16 +455,17 @@ class AsyncRunUploader:
                     raise
 
     @classmethod
-    def _from_run_operations(cls, run: Run, run_ops: "RunOperations"):
-        """Create an instance from run operations."""
+    def _from_run_operations(cls, run_ops: "RunOperations"):
+        """Create an instance from run and run operations."""
         from azure.ai.ml.entities._datastore.azure_storage import AzureBlobDatastore
 
+        # validate the datastore is supported
         datastore = run_ops._workspace_default_datastore
         if isinstance(datastore, AzureBlobDatastore):
-            return cls(run=run, run_ops=run_ops)
+            return cls(run_ops=run_ops)
         else:
             raise UserErrorException(
-                f"Cannot upload run {run.name!r} because the workspace default datastore is not supported. "
+                f"Cannot upload run because the workspace default datastore is not supported. "
                 f"Supported ones are ['AzureBlobDatastore'], got {type(datastore).__name__!r}."
             )
 

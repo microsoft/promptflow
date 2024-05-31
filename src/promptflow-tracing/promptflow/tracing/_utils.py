@@ -1,10 +1,15 @@
+import os
 import re
 from dataclasses import fields, is_dataclass
 from datetime import datetime
 from enum import Enum
 from typing import Callable, Dict
 
-from .contracts.generator_proxy import AsyncGeneratorProxy, GeneratorProxy
+from .contracts.iterator_proxy import AsyncIteratorProxy, IteratorProxy
+
+
+def is_tracing_disabled():
+    return os.environ.get("PF_DISABLE_TRACING", "false").lower() == "true"
 
 
 def serialize(value: object, remove_null: bool = False, serialization_funcs: Dict[type, Callable] = None) -> dict:
@@ -18,7 +23,7 @@ def serialize(value: object, remove_null: bool = False, serialization_funcs: Dic
         return value.value
     if isinstance(value, list):
         return [serialize(v, remove_null, serialization_funcs) for v in value]
-    if isinstance(value, (GeneratorProxy, AsyncGeneratorProxy)):
+    if isinstance(value, (IteratorProxy, AsyncIteratorProxy)):
         # TODO: The current implementation of the serialize function is not self-explanatory, as value.items is mutable
         # whereas the serialize function should deal with a fixed object. We should rename the function to
         # to_serializable to better reflect its purpose.

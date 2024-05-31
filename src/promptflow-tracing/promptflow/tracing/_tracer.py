@@ -9,12 +9,7 @@ from typing import Dict, List, Optional
 
 from ._thread_local_singleton import ThreadLocalSingleton
 from ._utils import serialize
-from .contracts.generator_proxy import (
-    AsyncGeneratorProxy,
-    GeneratorProxy,
-    generate_from_async_proxy,
-    generate_from_proxy,
-)
+from .contracts.iterator_proxy import AsyncIteratorProxy, IteratorProxy
 from .contracts.trace import Trace, TraceType
 
 
@@ -32,6 +27,10 @@ class Tracer(ThreadLocalSingleton):
 
     @classmethod
     def start_tracing(cls, run_id, node_name: Optional[str] = None):
+        from ._utils import is_tracing_disabled
+
+        if is_tracing_disabled():
+            return
         current_run_id = cls.current_run_id()
         if current_run_id is not None:
             return
@@ -66,7 +65,7 @@ class Tracer(ThreadLocalSingleton):
     def to_serializable(obj):
         if isinstance(obj, dict) and all(isinstance(k, str) for k in obj.keys()):
             return {k: Tracer.to_serializable(v) for k, v in obj.items()}
-        if isinstance(obj, (GeneratorProxy, AsyncGeneratorProxy)):
+        if isinstance(obj, (IteratorProxy, AsyncIteratorProxy)):
             return obj
         try:
             obj = serialize(obj)
@@ -116,10 +115,10 @@ class Tracer(ThreadLocalSingleton):
         if not last_trace:
             logging.warning("Try to pop trace but no active trace in current context.")
             return output
-        if isinstance(output, Iterator):
-            output = GeneratorProxy(output)
-        if isinstance(output, AsyncIterator):
-            output = AsyncGeneratorProxy(output)
+        if isinstance(output, Iterator) and not isinstance(output, IteratorProxy):
+            output = IteratorProxy(output)
+        if isinstance(output, AsyncIterator) and not isinstance(output, AsyncIteratorProxy):
+            output = AsyncIteratorProxy(output)
         if output is not None:
             last_trace.output = self.to_serializable(output)
         if error is not None:
@@ -127,12 +126,7 @@ class Tracer(ThreadLocalSingleton):
         last_trace.end_time = datetime.utcnow().timestamp()
         self._current_trace_id.set(last_trace.parent_id)
 
-        if isinstance(output, GeneratorProxy):
-            return generate_from_proxy(output)
-        elif isinstance(output, AsyncGeneratorProxy):
-            return generate_from_async_proxy(output)
-        else:
-            return output
+        return output
 
     def to_json(self) -> list:
         return serialize(self._traces)

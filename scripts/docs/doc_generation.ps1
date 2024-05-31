@@ -2,7 +2,7 @@
 .DESCRIPTION
 Script to build doc site
 
-.EXAMPLE 
+.EXAMPLE
 PS> ./doc_generation.ps1 -SkipInstall # skip pip install
 PS> ./doc_generation.ps1 -BuildLinkCheck -WarningAsError:$true -SkipInstall
 
@@ -24,7 +24,7 @@ param(
 [string] $SphinxApiDoc = [System.IO.Path]::Combine($DocPath, "sphinx_apidoc.log")
 [string] $SphinxBuildDoc = [System.IO.Path]::Combine($DocPath, "sphinx_build.log")
 [string] $WarningErrorPattern = "WARNING:|ERROR:|CRITICAL:| broken "
-[System.Collections.ArrayList]$IncludeList = @("promptflow-tracing", "promptflow-core", "promptflow-devkit", "promptflow-azure")
+[System.Collections.ArrayList]$IncludeList = @("promptflow-tracing", "promptflow-core", "promptflow-devkit", "promptflow-azure", "promptflow-rag", "promptflow-evals")
 $apidocWarningsAndErrors = $null
 $buildWarningsAndErrors = $null
 
@@ -174,11 +174,12 @@ function Add-Notebook
     $NotebookRootPath = [System.IO.Path]::Combine($RepoRootPath, "examples")
     $TargetNotebookPath = [System.IO.Path]::Combine($TempDocPath, "tutorials")
     # Create section list
-    $SectionNames = "Tracing", "Prompty", "Flow"
+    $SectionNames = "Tracing", "Prompty", "Flow", "Rag"
     $Sections = [ordered]@{
         Tracing=[System.Collections.ArrayList]::new();
         Prompty=[System.Collections.ArrayList]::new();
         Flow=[System.Collections.ArrayList]::new()
+        Rag=[System.Collections.ArrayList]::new()
     }
     foreach($Item in Get-Childitem -path $NotebookRootPath -Recurse -Filter "*.ipynb")
     {
@@ -251,10 +252,10 @@ $buildWarningsAndErrors = Select-String -Path $SphinxBuildDoc -Pattern $WarningE
 Write-Host "Clean path: $TempDocPath"
 Remove-Item $TempDocPath -Recurse -Confirm:$False -Force
 
-  
-if ($buildWarningsAndErrors) {  
-    Write-Host "=============== Build warnings and errors ==============="  
-    foreach ($line in $buildWarningsAndErrors) {  
-        Write-Host $line -ForegroundColor Red  
-    }  
-} 
+
+if ($buildWarningsAndErrors) {
+    Write-Host "=============== Build warnings and errors ==============="
+    foreach ($line in $buildWarningsAndErrors) {
+        Write-Host $line -ForegroundColor Red
+    }
+}

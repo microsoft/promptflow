@@ -1,0 +1,87 @@
+name: promptflow-parallel-unit-test
+
+on:
+  schedule:
+    - cron: "40 10 * * *" # 2:40 PST every day
+  pull_request:
+    paths:
+      - src/promptflow/**
+      - src/promptflow-core/**
+      - src/promptflow-tracing/**
+      - src/promptflow-parallel/**
+      - .github/workflows/promptflow-parallel-unit-test.yml
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  IS_IN_CI_PIPELINE: "true"
+  WORKING_DIRECTORY: ${{ github.workspace }}/src/promptflow-parallel
+
+jobs:
+  parallel-unit-test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-13]
+        python-version: ['3.8', '3.9', '3.10', '3.11']
+      fail-fast: false
+    # snok/install-poetry need this to support Windows
+    defaults:
+      run:
+        shell: bash
+    environment:
+      internal
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: set test mode
+        # Always run in replay mode for now until we figure out the test resource to run live mode
+        run: echo "PROMPT_FLOW_TEST_MODE=replay" >> $GITHUB_ENV
+        #run: echo "PROMPT_FLOW_TEST_MODE=$(if [[ "${{ github.event_name }}" == "pull_request" ]]; then echo replay; else echo live; fi)" >> $GITHUB_ENV
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: snok/install-poetry@v1
+      - name: install promptflow packages in editable mode
+        run: |
+          set -xe
+          poetry install --with ci,test
+
+          poetry run pip show promptflow-tracing
+          poetry run pip show promptflow-core
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+      - name: run unit tests
+        run: poetry run pytest -m unittest --cov=promptflow --cov-config=pyproject.toml --cov-report=term --cov-report=html --cov-report=xml
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: Test Results (Python ${{ matrix.python-version }}) (OS ${{ matrix.os }})
+          path: |
+            ${{ env.WORKING_DIRECTORY }}/*.xml
+            ${{ env.WORKING_DIRECTORY }}/htmlcov/
+
+  parallel-unit-test-report:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      checks: write
+      pull-requests: write
+      contents: read
+      issues: read
+    if: always()
+    steps:
+    - name: checkout
+      uses: actions/checkout@v4
+    - name: Publish Test Results
+      uses: "./.github/actions/step_publish_test_results"
+      with:
+        testActionFileName: promptflow-parallel-unit-test.yml
+        testResultTitle: Parallel Unit Test Result
+        osVersion: ubuntu-latest
+        pythonVersion: 3.9
+        coverageThreshold: 40
+        context: test/parallel-unit

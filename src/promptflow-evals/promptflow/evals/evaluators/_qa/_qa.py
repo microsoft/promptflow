@@ -2,7 +2,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import as_completed
+
+from promptflow.core import AzureOpenAIModelConfiguration
+from promptflow.tracing import ThreadPoolExecutorWithContext as ThreadPoolExecutor
 
 from .._coherence import CoherenceEvaluator
 from .._f1_score import F1ScoreEvaluator
@@ -13,7 +16,7 @@ from .._similarity import SimilarityEvaluator
 
 
 class QAEvaluator:
-    def __init__(self, model_config, parallel: bool = True):
+    def __init__(self, model_config: AzureOpenAIModelConfiguration, parallel: bool = True):
         """
         Initialize an evaluator configured for a specific Azure OpenAI model.
 

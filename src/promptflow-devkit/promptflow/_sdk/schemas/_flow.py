@@ -1,16 +1,18 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+from pathlib import Path
 
-from marshmallow import ValidationError, fields, validate, validates_schema
+from marshmallow import ValidationError, fields, pre_load, validate, validates_schema
 
 from promptflow._constants import LANGUAGE_KEY, ConnectionType, FlowLanguage
 from promptflow._proxy import ProxyFactory
-from promptflow._sdk._constants import FlowType
+from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY, FlowType
 from promptflow._sdk.schemas._base import PatchedSchemaMeta, YamlFileSchema
-from promptflow._sdk.schemas._fields import NestedField
+from promptflow._sdk.schemas._fields import LocalPathField, NestedField
 from promptflow.contracts.tool import ValueType
 from promptflow.core._model_configuration import MODEL_CONFIG_NAME_2_CLASS
+from promptflow.core._prompty_utils import resolve_references
 
 
 class FlowInputSchema(metaclass=PatchedSchemaMeta):
@@ -108,7 +110,8 @@ class FlexFlowSchema(BaseFlowSchema):
     inputs = fields.Dict(keys=fields.Str(), values=NestedField(FlexFlowInputSchema), required=False)
     outputs = fields.Dict(keys=fields.Str(), values=NestedField(FlexFlowOutputSchema), required=False)
     init = fields.Dict(keys=fields.Str(), values=NestedField(FlexFlowInitSchema), required=False)
-    sample = fields.Str()
+    sample = fields.Dict(keys=fields.Str(validate=validate.OneOf(["init", "inputs"])), required=False)
+    code = LocalPathField()
 
     @validates_schema(skip_on_field_errors=False)
     def validate_entry(self, data, **kwargs):
@@ -118,6 +121,15 @@ class FlexFlowSchema(BaseFlowSchema):
         inspector_proxy = ProxyFactory().create_inspector_proxy(language=language)
         if not inspector_proxy.is_flex_flow_entry(data.get("entry", None)):
             raise ValidationError(field_name="entry", message=f"Entry function {data['entry']} is not valid.")
+
+    @pre_load
+    def resolve_sample(self, data, **kwargs):
+        sample_dict = data.get("sample", {})
+        if sample_dict:
+            base_path = Path(self.context[BASE_PATH_CONTEXT_KEY])
+            sample_dict = resolve_references(origin=sample_dict, base_path=base_path)
+            data["sample"] = sample_dict
+        return data
 
 
 class PromptySchema(BaseFlowSchema):

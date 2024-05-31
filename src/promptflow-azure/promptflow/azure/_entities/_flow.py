@@ -15,9 +15,16 @@ from promptflow._proxy import ProxyFactory
 from promptflow._sdk._constants import SERVICE_FLOW_TYPE_2_CLIENT_FLOW_TYPE, AzureFlowSource, FlowType
 from promptflow._sdk._utilities.general_utils import PromptflowIgnoreFile, load_yaml, remove_empty_element_from_dict
 from promptflow._sdk._utilities.signature_utils import update_signatures
-from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag, resolve_flow_path
+from promptflow._utils.flow_utils import (
+    dump_flow_yaml_to_existing_path,
+    is_prompty_flow,
+    load_flow_dag,
+    resolve_flow_path,
+)
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.azure._ml import AdditionalIncludesMixin, Code
+from promptflow.core._model_configuration import MODEL_CONFIG_NAME_2_CLASS
+from promptflow.exceptions import UserErrorException
 
 from .._constants._flow import ADDITIONAL_INCLUDES, DEFAULT_STORAGE, ENVIRONMENT, PYTHON_REQUIREMENTS_TXT
 from .._restclient.flow.models import FlowDto
@@ -52,6 +59,7 @@ class Flow(AdditionalIncludesMixin):
         self.flow_portal_url = kwargs.get("flow_portal_url", None)
         # flow's environment, used to calculate session id, value will be set after flow is resolved to code.
         self._environment = {}
+        self._is_prompty_flow = is_prompty_flow(path)
 
         if self._flow_source == AzureFlowSource.LOCAL:
             absolute_path = self._validate_flow_from_source(path)
@@ -59,7 +67,12 @@ class Flow(AdditionalIncludesMixin):
             self.code = absolute_path.parent.as_posix()
             self._code_uploaded = False
             self.path = absolute_path.name
-            self._flow_dict = self._load_flow_yaml(absolute_path)
+            if self._is_prompty_flow:
+                from promptflow.core._flow import Prompty
+
+                self._flow_dict = Prompty.load(source=absolute_path)._data
+            else:
+                self._flow_dict = self._load_flow_yaml(absolute_path)
             self.display_name = self.display_name or absolute_path.parent.name
             self.description = description or self._flow_dict.get("description", None)
             self.tags = tags or self._flow_dict.get("tags", None)
@@ -67,6 +80,8 @@ class Flow(AdditionalIncludesMixin):
             self.code = kwargs.get("flow_resource_id", None)
         elif self._flow_source == AzureFlowSource.INDEX:
             self.code = kwargs.get("entity_id", None)
+        # set this in runtime to validate against signature
+        self._init_kwargs = None
 
     def _validate_flow_from_source(self, source: Union[str, PathLike]) -> Path:
         """Validate flow from source.
@@ -144,7 +159,10 @@ class Flow(AdditionalIncludesMixin):
             dag_updated = False
             if isinstance(code, Code):
                 flow_dir = Path(code.path)
-                _, flow_dag = load_flow_dag(flow_path=flow_dir)
+                if self._is_prompty_flow:
+                    flow_dag = self._flow_dict
+                else:
+                    _, flow_dag = load_flow_dag(flow_path=flow_dir)
                 original_flow_dag = copy.deepcopy(flow_dag)
                 if self._get_all_additional_includes_configs():
                     # Remove additional include in the flow yaml.
@@ -155,21 +173,24 @@ class Flow(AdditionalIncludesMixin):
                 code.datastore = DEFAULT_STORAGE
                 dag_updated = self._resolve_requirements(flow_dir, flow_dag) or dag_updated
 
-                # generate .promptflow/flow.json for csharp flow as it's required to infer signature for csharp flow
-                flow_directory, flow_file = resolve_flow_path(code.path)
-                # TODO: pass in init_kwargs to support csharp class init flex flow
-                ProxyFactory().create_inspector_proxy(self.language).prepare_metadata(
-                    flow_file=flow_directory / flow_file, working_dir=flow_directory
-                )
+                if not self._is_prompty_flow:
+                    # generate .promptflow/flow.json for csharp flow as it's required to infer signature for csharp flow
+                    flow_directory, flow_file = resolve_flow_path(code.path)
+                    ProxyFactory().create_inspector_proxy(self.language).prepare_metadata(
+                        flow_file=flow_directory / flow_file, working_dir=flow_directory, init_kwargs=self._init_kwargs
+                    )
                 dag_updated = update_signatures(code=flow_dir, data=flow_dag) or dag_updated
+                # validate init kwargs with signature
+                self._validate_init_kwargs(init_signatures=flow_dag.get("init"), init_kwargs=self._init_kwargs)
+                # validate and resolve environment
                 self._environment = self._resolve_environment(flow_dir, flow_dag)
-                if dag_updated:
-                    dump_flow_dag(flow_dag, flow_dir)
+                if dag_updated and not self._is_prompty_flow:
+                    dump_flow_yaml_to_existing_path(flow_dag, flow_dir)
             try:
                 yield code
             finally:
-                if dag_updated:
-                    dump_flow_dag(original_flow_dag, flow_dir)
+                if dag_updated and not self._is_prompty_flow:
+                    dump_flow_yaml_to_existing_path(original_flow_dag, flow_dir)
 
     def _get_base_path_for_code(self) -> Path:
         """Get base path for additional includes."""
@@ -248,3 +269,23 @@ class Flow(AdditionalIncludesMixin):
     @property
     def language(self):
         return self._flow_dict.get("language", FlowLanguage.Python)
+
+    @classmethod
+    def _validate_init_kwargs(cls, init_signatures: dict, init_kwargs: dict):
+        init_kwargs = init_kwargs or {}
+        if not isinstance(init_kwargs, dict):
+            raise UserErrorException(f"Init kwargs should be a dict, got {type(init_kwargs)}")
+        # validate init kwargs against signature
+        for param_name, param_value in init_kwargs.items():
+            if param_name not in init_signatures:
+                raise UserErrorException(
+                    f"Init kwargs {param_name} is not in the flow signature. Current signatures: {init_signatures}"
+                )
+            param_signature = init_signatures[param_name]
+            param_type = param_signature.get("type")
+            if param_type in MODEL_CONFIG_NAME_2_CLASS:
+                if pydash.get(param_value, "connection") is None:
+                    raise UserErrorException(
+                        f"Init kwargs {param_name} with type {param_type} is missing connection. "
+                        "Only connection model configs with connection is supported in cloud."
+                    )

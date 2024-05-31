@@ -121,7 +121,6 @@ class OpenAI(ToolProvider):
             "temperature": temperature,
             "top_p": top_p,
             "stream": stream,
-            "user": user,
         }
 
         # functions and function_call are deprecated and are replaced by tools and tool_choice.
@@ -152,6 +151,8 @@ class OpenAI(ToolProvider):
             params["presence_penalty"] = presence_penalty
         if frequency_penalty is not None:
             params["frequency_penalty"] = frequency_penalty
+        if user:
+            params["user"] = user
 
         completion = self._client.chat.completions.create(**params)
         return post_process_chat_api_response(completion, stream, functions, tools)

@@ -8,10 +8,11 @@ import re
 import numpy as np
 
 from promptflow.client import load_flow
+from promptflow.core import AzureOpenAIModelConfiguration
 
 
 class CoherenceEvaluator:
-    def __init__(self, model_config):
+    def __init__(self, model_config: AzureOpenAIModelConfiguration):
         """
         Initialize an evaluator configured for a specific Azure OpenAI model.
 
@@ -48,7 +49,10 @@ class CoherenceEvaluator:
         """
 
         # Validate input parameters
-        if not (question and question.strip()) or not (answer and answer.strip()):
+        question = str(question or "")
+        answer = str(answer or "")
+
+        if not (question.strip() and answer.strip()):
             raise ValueError("Both 'question' and 'answer' must be non-empty strings.")
 
         # Run the evaluation flow

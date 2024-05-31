@@ -50,7 +50,7 @@ RUN conda run -n {{env.conda_env_name}} sh /flow/{{ env.setup_sh }}
 
 EXPOSE 8080
 
-COPY ./connections/* /connections/
+COPY ./connections /connections
 
 # reset runsvdir
 RUN rm -rf /var/runit

@@ -54,6 +54,19 @@ class AzureLoginStep(Step):
         )
 
 
+class LoginAgainStep(Step):
+    def __init__(self) -> None:
+        Step.__init__(self, "Azure Login Again")
+
+    def get_workflow_step(self) -> str:
+        template = Step.get_workflow_template("step_login_again.yml.jinja2")
+        return template.render(
+            {
+                "step_name": self.workflow_name,
+            }
+        )
+
+
 class InstallDependenciesStep(Step):
     def __init__(self) -> None:
         Step.__init__(self, "Prepare requirements")
@@ -125,6 +138,22 @@ class ExtractStepsAndRunGPTFour(Step):
                 "step_name": self.workflow_name,
                 "working_dir": ReadmeSteps.working_dir,
                 "readme_name": ReadmeSteps.readme_name,
+            }
+        )
+
+
+class ExecuteCommand(Step):
+    def __init__(self) -> None:
+        Step.__init__(self, "Execute Command")
+
+    def get_workflow_step(self) -> str:
+        template = Step.get_workflow_template(
+            "step_execute_command.yml.jinja2"
+        )
+        return template.render(
+            {
+                "step_name": self.workflow_name,
+                "working_dir": ReadmeSteps.working_dir,
             }
         )
 
@@ -226,6 +255,10 @@ class ReadmeSteps:
         return ReadmeSteps.remember_step(AzureLoginStep())
 
     @staticmethod
+    def login_again() -> Step:
+        return ReadmeSteps.remember_step(LoginAgainStep())
+
+    @staticmethod
     def install_dependencies() -> Step:
         return ReadmeSteps.remember_step(InstallDependenciesStep())
 
@@ -244,6 +277,10 @@ class ReadmeSteps:
     @staticmethod
     def extract_steps_and_run_gpt_four() -> Step:
         return ReadmeSteps.remember_step(ExtractStepsAndRunGPTFour())
+
+    @staticmethod
+    def execute_command() -> Step:
+        return ReadmeSteps.remember_step(ExecuteCommand())
 
     # endregion steps
 
@@ -322,7 +359,7 @@ class ReadmeStepsManage:
             from .resource_resolver import resolve_tutorial_resource
 
             path_filter = resolve_tutorial_resource(
-                workflow_name, readme_path.resolve()
+                workflow_name, readme_path.resolve(), output_telemetry
             )
         else:
             if (

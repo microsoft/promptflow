@@ -147,6 +147,11 @@ from promptflow._sdk.schemas._run import RunSchema
 from promptflow._sdk.schemas._flow import FlowSchema, FlexFlowSchema
 
 
+def dump_json(file_name, dct):
+    with open(file_name, "w") as f:
+        f.write(json.dumps(dct, indent=4))
+
+
 if __name__ == "__main__":
     example_text = """Example usage:
 
@@ -180,8 +185,9 @@ python scripts/json_schema/gen_json_schema.py -a # Generate all schema files
             "type": "object",
             "oneOf": schema_list
         }
-        with open((f"Flow.schema.json"), "w") as f:
-            f.write(json.dumps(schema, indent=4))
+        dump_json("Flow.schema.json", schema)
+        # Dump another small case first letter one
+        dump_json("flow.schema.json", schema)
         args.output_file.remove("Flow")
 
     prepared_schemas = {}
@@ -197,5 +203,7 @@ python scripts/json_schema/gen_json_schema.py -a # Generate all schema files
             print(f"Schema not found for {item}")
         else:
             target_schema = PatchedJSONSchema().dump(item_cls(context={"base_path": "./"}))
-            with open((f"{item}.schema.json"), "w") as f:
-                f.write(json.dumps(target_schema, indent=4))
+            dump_json(f"{item}.schema.json", target_schema)
+            # Dump another small case first letter one
+            item = item[0].lower() + item[1:]
+            dump_json(f"{item}.schema.json", target_schema)

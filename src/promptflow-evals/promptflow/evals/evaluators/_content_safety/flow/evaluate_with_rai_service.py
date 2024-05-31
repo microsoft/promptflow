@@ -1,15 +1,23 @@
+import importlib.metadata
 import re
 import time
 from typing import List
+from urllib.parse import urlparse
 
 import numpy as np
 import requests
 from azure.core.credentials import TokenCredential
 from azure.identity import DefaultAzureCredential
-from constants import RAIService, Tasks
+from constants import EvaluationMetrics, RAIService, Tasks
 from utils import get_harm_severity_level
 
 from promptflow.core import tool
+
+try:
+    version = importlib.metadata.version("promptflow-evals")
+except importlib.metadata.PackageNotFoundError:
+    version = "unknown"
+USER_AGENT = "{}/{}".format("promptflow-evals", version)
 
 
 def ensure_service_availability(rai_svc_url: str):
@@ -26,7 +34,11 @@ def submit_request(question: str, answer: str, metric: str, rai_svc_url: str, cr
 
     url = rai_svc_url + "/submitannotation"
     bearer_token = credential.get_token("https://management.azure.com/.default").token
-    headers = {"Authorization": f"Bearer {bearer_token}", "Content-Type": "application/json"}
+    headers = {
+        "Authorization": f"Bearer {bearer_token}",
+        "Content-Type": "application/json",
+        "User-Agent": USER_AGENT,
+    }
 
     response = requests.post(url, json=payload, headers=headers)
     if response.status_code != 202:
@@ -64,8 +76,8 @@ def parse_response(batch_response: List[dict], metric_name: str) -> List[List[di
     # Fix the metric name if it's "hate_fairness"
     # Eventually we will remove this fix once the RAI service is updated
     key = metric_name
-    if key == "hate_fairness":
-        key = "hate_unfairness"
+    if key == EvaluationMetrics.HATE_FAIRNESS:
+        key = EvaluationMetrics.HATE_UNFAIRNESS
 
     result = {key: np.nan, key + "_score": np.nan, key + "_reason": ""}
 
@@ -132,31 +144,35 @@ def parse_response(batch_response: List[dict], metric_name: str) -> List[List[di
     return result
 
 
-def get_rai_svc_url(project_scope: dict, credential: TokenCredential):
-    from azure.ai.ml import MLClient
-
-    ml_client = MLClient(
-        credential=credential,
-        subscription_id=project_scope["subscription_id"],
-        resource_group_name=project_scope["resource_group_name"],
+def _get_service_discovery_url(azure_ai_project, credential):
+    bearer_token = credential.get_token("https://management.azure.com/.default").token
+    headers = {"Authorization": f"Bearer {bearer_token}", "Content-Type": "application/json"}
+    response = requests.get(
+        f"https://management.azure.com/subscriptions/{azure_ai_project['subscription_id']}/"
+        f"resourceGroups/{azure_ai_project['resource_group_name']}/"
+        f"providers/Microsoft.MachineLearningServices/workspaces/{azure_ai_project['project_name']}?"
+        f"api-version=2023-08-01-preview",
+        headers=headers,
+        timeout=5,
     )
-
-    ws = ml_client.workspaces.get(project_scope["project_name"])
-    response = requests.get(ws.discovery_url)
     if response.status_code != 200:
         raise Exception("Failed to retrieve the discovery service URL")
+    base_url = urlparse(response.json()["properties"]["discoveryUrl"])
+    return f"{base_url.scheme}://{base_url.netloc}"
 
+
+def get_rai_svc_url(project_scope: dict, credential: TokenCredential):
+    discovery_url = _get_service_discovery_url(azure_ai_project=project_scope, credential=credential)
     subscription_id = project_scope["subscription_id"]
     resource_group_name = project_scope["resource_group_name"]
     project_name = project_scope["project_name"]
-    base_url = response.json()["api"]
+    base_url = discovery_url.rstrip("/")
     rai_url = (
         f"{base_url}/raisvc/v1.0"
         f"/subscriptions/{subscription_id}"
         f"/resourceGroups/{resource_group_name}"
         f"/providers/Microsoft.MachineLearningServices/workspaces/{project_name}"
     )
-
     return rai_url
 
 

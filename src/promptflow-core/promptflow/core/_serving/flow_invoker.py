@@ -81,6 +81,7 @@ class FlowInvoker:
         self._init_executor(flow._path, flow._code)
         self._dump_file_prefix = "chat" if self._is_chat_flow else "flow"
         self._multimedia_processor = MultimediaProcessor.create(self.flow.message_format)
+        self._disable_serialization = os.getenv("PF_DISABLE_SERIALIZATION", "False").lower() == "true"
 
     def resolve_connections(
         self,
@@ -181,6 +182,7 @@ class FlowInvoker:
             raise_ex=self.raise_ex,
             storage=storage,
             init_kwargs=self._init_kwargs,
+            env_exporter_setup=False,
         )
         self.executor.enable_streaming_for_llm_flow(self.streaming)
         self.logger.info("Promptflow executor initiated successfully.")

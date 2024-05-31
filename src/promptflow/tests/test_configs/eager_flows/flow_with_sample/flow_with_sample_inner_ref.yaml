@@ -1,0 +1,4 @@
+entry: simple_flow_with_multiple_inputs:MyFlow
+sample: 
+  init: ${file:./init.json}
+  inputs: ${file:./inputs.json}

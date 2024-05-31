@@ -288,8 +288,8 @@ module: promptflow.connections
 type: custom
 configs: {}
 secrets:
-  aaa: bbb
-  ccc: ddd
+  aaa: '******'
+  ccc: '******'
 """
         )
 

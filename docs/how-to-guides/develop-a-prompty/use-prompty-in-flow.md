@@ -93,7 +93,7 @@ if __name__ == "__main__":
 
     # print result in stream manner
     for r in result:
-        print(result, end="")
+        print(r, end="")
 ```
 
 ## Run as normal python file

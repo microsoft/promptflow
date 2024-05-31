@@ -2,13 +2,15 @@ import asyncio
 import json
 import time
 from enum import Enum
-from unittest.mock import patch
+from unittest.mock import MagicMock, Mock, create_autospec, patch
 
 import opentelemetry
 import pytest
 from openai.types.create_embedding_response import CreateEmbeddingResponse, Embedding, Usage
+from opentelemetry.trace import Span, SpanKind
 from opentelemetry.trace.status import StatusCode
 
+from promptflow.tracing import _trace
 from promptflow.tracing._experimental import enrich_prompt_template
 from promptflow.tracing._operation_context import OperationContext
 from promptflow.tracing._trace import (
@@ -21,7 +23,9 @@ from promptflow.tracing._trace import (
     enrich_span_with_openai_tokens,
     enrich_span_with_prompt_info,
     enrich_span_with_trace,
+    handle_span_exception,
     serialize_attribute,
+    start_as_current_span,
 )
 from promptflow.tracing.contracts.trace import TraceType
 
@@ -304,7 +308,7 @@ def test_serialize_attribute_with_non_serializable_data():
     assert serialize_attribute(data) == json.dumps(str(data))
 
 
-@pytest.mark.unitests
+@pytest.mark.unittest
 def test_set_enrich_prompt_template():
     mock_span = MockSpan(MockSpanContext(1))
     with patch.object(opentelemetry.trace, "get_current_span", return_value=mock_span):
@@ -337,3 +341,75 @@ def test_record_cancellation():
     assert mock_span.status == StatusCode.ERROR
     assert "Execution cancelled" in mock_span.description
     assert isinstance(mock_span.exception, asyncio.CancelledError)
+
+
+@pytest.mark.unittest
+def test_start_as_current_span_starts_and_ends_span():
+    tracer = Mock()
+    mock_span = MagicMock()
+    tracer.start_as_current_span.return_value = mock_span
+
+    with start_as_current_span(tracer, "test_span") as span:
+        pass
+
+    tracer.start_as_current_span.assert_called_once_with(
+        "test_span", None, SpanKind.INTERNAL, None, (), None, True, True, end_on_exit=False
+    )
+    span.end.assert_called_once()
+
+
+@pytest.mark.unittest
+def test_start_as_current_span_does_not_end_when_should_end_is_false():
+    tracer = Mock()
+    mock_span = MagicMock()
+    tracer.start_as_current_span.return_value = mock_span
+
+    with start_as_current_span(tracer, "test_span") as span:
+        setattr(span, "__should_end", False)
+        pass
+
+    span.end.assert_not_called()
+
+
+@pytest.mark.unittest
+def test_start_as_current_span_throws_exception_on_enter():
+    tracer = Mock()
+    mock_span = MagicMock()
+    mock_span.__enter__.side_effect = Exception("Test Exception")
+    tracer.start_as_current_span.return_value = mock_span
+
+    with pytest.raises(Exception) as e:
+        with start_as_current_span(tracer, "test_span"):
+            pass
+
+    assert str(e.value) == "Test Exception"
+
+
+@pytest.mark.unittest
+def test_start_as_current_span_handles_exception():
+    tracer = Mock()
+    tracer.start_as_current_span.return_value = MagicMock()
+    exception = KeyboardInterrupt()
+
+    with pytest.raises(KeyboardInterrupt):
+        with patch.object(_trace, "handle_span_exception") as mock_handle_span_exception:
+            with start_as_current_span(tracer, "test_span") as span:
+                raise exception
+
+    mock_handle_span_exception.assert_called_once_with(span, exception)
+    span.end.assert_called_once()
+
+
+@pytest.mark.unittest
+def test_handle_span_exception():
+    span = create_autospec(Span)
+
+    span.is_recording.return_value = True
+    exception = Exception("test exception")
+
+    handle_span_exception(span, exception)
+
+    assert span.record_exception.called
+    called_status = span.set_status.call_args[0][0]
+    assert called_status.status_code == StatusCode.ERROR
+    assert called_status.description == "Exception: test exception"

@@ -23,6 +23,7 @@ PROMPT_FLOW_HOME_DIR_ENV_VAR = "PF_HOME_DIRECTORY"
 # Please avoid using PROMPT_FLOW_DIR_NAME directly for home directory, "Path.home() / PROMPT_FLOW_DIR_NAME" e.g.
 # Use HOME_PROMPT_FLOW_DIR instead
 PROMPT_FLOW_DIR_NAME = PROMPT_FLOW_DIR_NAME
+DEFAULT_SERVE_ENGINE = "flask"
 
 
 def _prepare_home_dir() -> Path:
@@ -88,6 +89,7 @@ SERVICE_CONFIG_FILE = "pf.yaml"
 PF_SERVICE_PORT_DIT_NAME = "pfs"
 PF_SERVICE_PORT_FILE = "pfs.port"
 PF_SERVICE_LOG_FILE = "pfs.log"
+PF_SERVICE_HOST = "127.0.0.1"
 PF_SERVICE_DEFAULT_PORT = 23333
 PF_SERVICE_HOUR_TIMEOUT = 1
 PF_SERVICE_MONITOR_SECOND = 60
@@ -95,6 +97,7 @@ PF_SERVICE_WORKER_NUM = 16
 PF_TRACE_CONTEXT = "PF_TRACE_CONTEXT"
 PF_TRACE_CONTEXT_ATTR = "attributes"
 PF_SERVICE_DEBUG = "PF_SERVICE_DEBUG"
+PF_SYSTEM_METRICS_PREFIX = "__pf__"
 
 LOCAL_MGMT_DB_PATH = (HOME_PROMPT_FLOW_DIR / "pf.sqlite").resolve()
 LOCAL_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "pf.sqlite.lock").resolve()
@@ -157,6 +160,7 @@ SPAN_EVENTS_NAME_PF_OUTPUT = "promptflow.function.output"
 SPAN_EVENTS_ATTRIBUTE_PAYLOAD = "payload"
 
 UX_INPUTS_JSON = "ux.inputs.json"
+UX_INPUTS_INIT_KEY = "init"
 AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])
 
 # chat group
@@ -516,6 +520,8 @@ class ChatGroupSpeakOrder(str, Enum):
 
 
 TRACE_LIST_DEFAULT_LIMIT = 1000
+TRACE_COLLECTION_LIST_DEFAULT_LIMIT = 100
+PF_TRACING_SKIP_EXPORTER_SETUP_ENVIRON = "PF_TRACING_SKIP_EXPORTER_SETUP"
 
 
 class IdentityKeys(str, Enum):
