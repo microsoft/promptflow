@@ -16,5 +16,11 @@
     "variant_id": "variant_0",
     "groundtruth": "App",
     "prediction": "Pdf"
+  },
+  {
+    "line_number": 3,
+    "variant_id": "variant_0",
+    "groundtruth": "dogs, cats, birds",
+    "prediction": "dogs,cats,birds"
   }
 ]
