@@ -21,6 +21,7 @@ on:
       - src/promptflow-tracing/promptflow/**
       - src/promptflow-core/promptflow/**
       - src/promptflow-devkit/promptflow/**
+      - src/promptflow-parallel/promptflow/**
       - scripts/building/**
       - src/promptflow-recording/recordings/local/executor_node_cache.*
       - .github/workflows/promptflow-executor-e2e-test.yml
@@ -147,7 +148,7 @@ jobs:
       run: |
         gci env:* | sort-object name
         az account show
-        pip install langchain
+        pip install langchain-community
         # numexpr is required by langchain in e2e tests.
         pip install numexpr
         python scripts/building/run_coverage_tests.py `

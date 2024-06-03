@@ -10,11 +10,12 @@ from collections import namedtuple
 from pathlib import Path
 
 import mlflow
+import pandas as pd
 
 from promptflow._sdk._constants import Local2Cloud
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow.azure._dependencies._pf_evals import AsyncRunUploader
-from promptflow.evals._constants import DEFAULT_EVALUATION_RESULTS_FILE_NAME
+from promptflow.evals._constants import DEFAULT_EVALUATION_RESULTS_FILE_NAME, Prefixes
 
 LOGGER = logging.getLogger(__name__)
 
@@ -24,6 +25,10 @@ AZURE_WORKSPACE_REGEX_FORMAT = (
 )
 
 AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])
+
+
+def is_none(value):
+    return value is None or str(value).lower() == "none"
 
 
 def extract_workspace_triad_from_trace_provider(trace_provider: str):
@@ -96,9 +101,12 @@ def _get_mlflow_tracking_uri(trace_destination):
 def _get_trace_destination_config(tracking_uri):
     from promptflow._sdk._configuration import Configuration
 
-    pf_config = Configuration(overrides={"trace.destination": tracking_uri} if tracking_uri is not None else {})
+    pf_config = Configuration(overrides={"trace.destination": tracking_uri} if tracking_uri is not None else None)
 
     trace_destination = pf_config.get_trace_destination()
+
+    if is_none(trace_destination):
+        return None
 
     return trace_destination
 
@@ -196,3 +204,51 @@ def _write_output(path, data_dict):
 
     with open(p, "w") as f:
         json.dump(data_dict, f)
+
+
+def _apply_column_mapping(source_df: pd.DataFrame, mapping_config: dict, inplace: bool = False) -> pd.DataFrame:
+    """
+    Apply column mapping to source_df based on mapping_config.
+
+    This function is used for pre-validation of input data for evaluators
+    :param source_df: the data frame to be changed.
+    :type source_df: pd.DataFrame
+    :param mapping_config: The configuration, containing column mapping.
+    :type mapping_config: dict.
+    :param inplace: If true, the source_df will be changed inplace.
+    :type inplace: bool
+    :return: The modified data frame.
+    """
+    result_df = source_df
+
+    if mapping_config:
+        column_mapping = {}
+        columns_to_drop = set()
+        pattern_prefix = "data."
+        run_outputs_prefix = "run.outputs."
+
+        for map_to_key, map_value in mapping_config.items():
+            match = re.search(r"^\${([^{}]+)}$", map_value)
+            if match is not None:
+                pattern = match.group(1)
+                if pattern.startswith(pattern_prefix):
+                    map_from_key = pattern[len(pattern_prefix) :]
+                elif pattern.startswith(run_outputs_prefix):
+                    # Target-generated columns always starts from .outputs.
+                    map_from_key = f"{Prefixes._TGT_OUTPUTS}{pattern[len(run_outputs_prefix) :]}"
+                # if we are not renaming anything, skip.
+                if map_from_key == map_to_key:
+                    continue
+                # If column needs to be mapped to already existing column, we will add it
+                # to the drop list.
+                if map_to_key in source_df.columns:
+                    columns_to_drop.add(map_to_key)
+                column_mapping[map_from_key] = map_to_key
+        # If we map column to another one, which is already present in the data
+        # set and the letter also needs to be mapped, we will not drop it, but map
+        # instead.
+        columns_to_drop = columns_to_drop - set(column_mapping.keys())
+        result_df = source_df.drop(columns=columns_to_drop, inplace=inplace)
+        result_df.rename(columns=column_mapping, inplace=True)
+
+    return result_df

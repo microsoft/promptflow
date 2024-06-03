@@ -1,6 +1,6 @@
 # promptflow-azure package
 
-## v1.11.0 (Upcoming)
+## v1.11.0 (2024.05.17)
 
 ### Improvements
 - Refine trace Cosmos DB setup process to print setup status during the process, and display error message from service when setup failed.

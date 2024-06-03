@@ -24,7 +24,7 @@ from ._operation_context import OperationContext
 from ._span_enricher import SpanEnricher, SpanEnricherManager
 from ._tracer import Tracer, _create_trace_from_function_call, get_node_name_from_context
 from ._utils import get_input_names_for_prompt_template, get_prompt_param_name_from_func, serialize
-from .contracts.generator_proxy import AsyncGeneratorProxy, GeneratorProxy
+from .contracts.iterator_proxy import AsyncIteratorProxy, IteratorProxy
 from .contracts.trace import Trace, TraceType
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
@@ -60,9 +60,9 @@ def handle_output(span, inputs, output, trace_type):
         setattr(span, "__should_end", False)
         output = Tracer.pop(output)
         if isinstance(output, Iterator):
-            return traced_generator(span, inputs, output, trace_type)
+            return TracedIterator(span, inputs, output, trace_type)
         else:
-            return traced_async_generator(span, inputs, output, trace_type)
+            return TracedAsyncIterator(span, inputs, output, trace_type)
     else:
         enrich_span_with_trace_type(span, inputs, output, trace_type)
         span.set_status(StatusCode.OK)
@@ -232,45 +232,78 @@ def enrich_span_with_llm_if_needed(span, inputs, generator_output):
             token_collector.collect_openai_tokens_for_streaming(span, inputs, generator_output, parser.is_chat)
 
 
-def traced_generator(span, inputs, generator, trace_type):
-    try:
-        generator_proxy = GeneratorProxy(generator)
-        yield from generator_proxy
+class TracedIterator(IteratorProxy):
+    def __init__(self, span, inputs, iterator: Iterator, trace_type):
+        self._span = span
+        self._inputs = inputs
+        self._trace_type = trace_type
+        self._initialized = False
+        super().__init__(iterator)
 
-        generator_output = generator_proxy.items
+    def __iter__(self):
+        return self
 
-        enrich_span_with_llm_if_needed(span, inputs, generator_output)
-        enrich_span_with_trace_type(span, inputs, generator_output, trace_type)
-        token_collector.collect_openai_tokens_for_parent_span(span)
-        span.set_attribute("output_type", "iterated")
-        span.set_status(StatusCode.OK)
-    except Exception as e:
-        handle_span_exception(span, e)
-        raise
-    finally:
-        # Always end the span on function exit, as the context manager doesn't handle this.
-        span.end()
+    def __next__(self):
+        try:
+            return super().__next__()
+        except Exception as e:
+            exception_other_than_non_stop_iteration = None
+            if isinstance(e, StopIteration):
+                try:
+                    generator_output = self.items
+                    enrich_span_with_llm_if_needed(self._span, self._inputs, generator_output)
+                    enrich_span_with_trace_type(self._span, self._inputs, generator_output, self._trace_type)
+                    token_collector.collect_openai_tokens_for_parent_span(self._span)
+                    self._span.set_attribute("output_type", "iterated")
+                    self._span.set_status(StatusCode.OK)
+                except Exception as finalization_exception:
+                    exception_other_than_non_stop_iteration = finalization_exception
+            else:
+                exception_other_than_non_stop_iteration = e
+
+            if exception_other_than_non_stop_iteration:
+                handle_span_exception(self._span, exception_other_than_non_stop_iteration)
+                raise exception_other_than_non_stop_iteration
+            else:
+                self._span.end()
+                raise e
 
 
-async def traced_async_generator(span, inputs, generator, trace_type):
-    try:
-        generator_proxy = AsyncGeneratorProxy(generator)
-        async for item in generator_proxy:
-            yield item
+class TracedAsyncIterator(AsyncIteratorProxy):
+    def __init__(self, span, inputs, iterator: Iterator, trace_type):
+        self._span = span
+        self._inputs = inputs
+        self._trace_type = trace_type
+        self._initialized = False
+        super().__init__(iterator)
 
-        generator_output = generator_proxy.items
+    def __aiter__(self):
+        return self
 
-        enrich_span_with_llm_if_needed(span, inputs, generator_output)
-        enrich_span_with_trace_type(span, inputs, generator_output, trace_type)
-        token_collector.collect_openai_tokens_for_parent_span(span)
-        span.set_attribute("output_type", "iterated")
-        span.set_status(StatusCode.OK)
-    except Exception as e:
-        handle_span_exception(span, e)
-        raise
-    finally:
-        # Always end the span on function exit, as the context manager doesn't handle this.
-        span.end()
+    async def __anext__(self):
+        try:
+            return await super().__anext__()
+        except Exception as e:
+            exception_other_than_non_stop_iteration = None
+            if isinstance(e, StopAsyncIteration):
+                try:
+                    generator_output = self.items
+                    enrich_span_with_llm_if_needed(self._span, self._inputs, generator_output)
+                    enrich_span_with_trace_type(self._span, self._inputs, generator_output, self._trace_type)
+                    token_collector.collect_openai_tokens_for_parent_span(self._span)
+                    self._span.set_attribute("output_type", "iterated")
+                    self._span.set_status(StatusCode.OK)
+                except Exception as finalization_exception:
+                    exception_other_than_non_stop_iteration = finalization_exception
+            else:
+                exception_other_than_non_stop_iteration = e
+
+            if exception_other_than_non_stop_iteration:
+                handle_span_exception(self._span, exception_other_than_non_stop_iteration)
+                raise exception_other_than_non_stop_iteration
+            else:
+                self._span.end()
+                raise e
 
 
 def enrich_span_with_original_attributes(span, attributes):
@@ -429,6 +462,11 @@ def _traced_async(
 
     @functools.wraps(func)
     async def wrapped(*args, **kwargs):
+        from ._utils import is_tracing_disabled
+
+        if is_tracing_disabled():
+            return await func(*args, **kwargs)
+
         trace = create_trace(func, args, kwargs)
         # For node span we set the span name to node name, otherwise we use the function name.
         span_name = get_node_name_from_context(used_for_span_name=True) or trace.name
@@ -493,6 +531,11 @@ def _traced_sync(
 
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
+        from ._utils import is_tracing_disabled
+
+        if is_tracing_disabled():
+            return func(*args, **kwargs)
+
         trace = create_trace(func, args, kwargs)
         # For node span we set the span name to node name, otherwise we use the function name.
         span_name = get_node_name_from_context(used_for_span_name=True) or trace.name

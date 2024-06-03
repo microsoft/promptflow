@@ -1,6 +1,14 @@
 # Release History
+## v1.12.0 (Upcoming)
 
-## v1.11.0 (Upcoming)
+### Bugs fixed
+- [promptflow-core] Fix ChatUI can't work in docker container when running image build with `pf flow build`.
+- [promptflow-core] Fix [#3355](https://github.com/microsoft/promptflow/issues/3355) that IndexError is raised when generator is used in a flow and the flow is called inside another flow.
+
+### Improvements
+- [promptflow-devkit] Add retry logic when uploading run details to cloud.
+
+## v1.11.0 (2024.05.17)
 
 ### Announcement
 
@@ -9,7 +17,7 @@
 
 ### Features Added
 
-- [promptflow-devkit]: Upload local run details to cloud when trace destination is configured to cloud.
+- [promptflow-devkit]: Upload local run details to cloud when trace destination is configured to cloud. See [here](https://microsoft.github.io/promptflow/cloud/azureai/tracing/run_tracking.html) for more details.
 - [promptflow-core]: Support modifying the promptflow logger format through environment variables, reach [here](https://microsoft.github.io/promptflow/how-to-guides/faq.html#set-logging-format) for more details.
 
 ### Improvements

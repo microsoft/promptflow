@@ -136,7 +136,6 @@ class AzureOpenAI(ToolProvider):
             "top_p": top_p,
             "n": n,
             "stream": stream,
-            "user": user,
             "extra_headers": {"ms-azure-ai-promptflow-called-from": "aoai-tool"}
         }
 
@@ -167,6 +166,8 @@ class AzureOpenAI(ToolProvider):
             params["presence_penalty"] = presence_penalty
         if frequency_penalty is not None:
             params["frequency_penalty"] = frequency_penalty
+        if user:
+            params["user"] = user
 
         completion = self._client.chat.completions.create(**params)
         return post_process_chat_api_response(completion, stream, functions, tools)

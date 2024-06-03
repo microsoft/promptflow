@@ -12,7 +12,6 @@ from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanE
 from promptflow._utils.multimedia_utils import OpenaiVisionMultimediaProcessor
 from promptflow.core._serving.constants import FEEDBACK_TRACE_FIELD_NAME
 from promptflow.core._serving.utils import load_feedback_swagger
-from promptflow.recording.record_mode import is_live
 from promptflow.tracing._operation_context import OperationContext
 
 
@@ -228,7 +227,6 @@ def test_unknown_api(flow_serving_client):
     assert response.status_code == 404
 
 
-@pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
 @pytest.mark.usefixtures("recording_injection", "setup_local_connection")
 @pytest.mark.e2etest
 @pytest.mark.parametrize(
@@ -506,7 +504,7 @@ def test_prompty_serving_api(prompty_serving_client):
 
 @pytest.mark.usefixtures("recording_injection", "setup_local_connection")
 @pytest.mark.e2etest
-@pytest.mark.skipif(not is_live(), reason="llm request involved but no recording found")
+@pytest.mark.skipif(not pytest.is_live, reason="llm request involved but no recording found")
 def test_prompty_serving_api_live(prompty_serving_client):
     response = prompty_serving_client.post(
         "/score", data=json.dumps({"firstName": "first", "lastName": "last", "question": "hello"})

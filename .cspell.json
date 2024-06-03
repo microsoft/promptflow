@@ -109,7 +109,9 @@
     "Entra",
     "uvicorn",
     "attribited",
-    "MistralAI"
+    "MistralAI",
+    "llmlingua",
+    "myconn"
   ],
   "ignoreWords": [
     "openmpi",
@@ -229,6 +231,10 @@
     "ncols",
     "piezo",
     "Piezo",
+    "cmpop",
+    "finalizer",
+    "finalizers",
+    "amlbi",
     "cmpop",
     "omap",
     "Machinal",

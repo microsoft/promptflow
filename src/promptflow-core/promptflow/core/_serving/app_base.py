@@ -117,6 +117,7 @@ class PromptflowServingAppBasic(ABC):
             storage=DummyRunStorage(),
             credential=self.credential,
             init_kwargs=self.init,
+            logger=self.logger,
         )
         # why we need to update bonded executable flow?
         self.flow = self.flow_invoker.flow
