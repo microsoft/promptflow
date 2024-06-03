@@ -352,7 +352,7 @@ class TraceTelemetryHelper:
             logger.debug("last log time: %s", self._last_log_time.isoformat())
             current_datetime = datetime.datetime.now()
             logger.debug("current datetime: %s", current_datetime.isoformat())
-            return current_datetime - self._last_log_time >= self.LOG_INTERVAL_SECONDS
+            return (current_datetime - self._last_log_time).seconds >= self.LOG_INTERVAL_SECONDS
 
     def append(self, summary: typing.Dict[TraceCountKey, int], logger: logging.Logger) -> None:
         with self._lock:
