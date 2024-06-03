@@ -27,7 +27,7 @@ from promptflow._constants import (
     SpanStatusFieldName,
 )
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, AzureMLWorkspaceTriad
-from promptflow._sdk._telemetry import ActivityType, monitor_operation
+from promptflow._sdk._telemetry.telemetry import get_telemetry_logger
 from promptflow._sdk.entities._trace import Span
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.core._errors import MissingRequiredPackage
@@ -341,7 +341,8 @@ class TraceTelemetryHelper:
     TELEMETRY_ACTIVITY_NAME = "pf.telemetry.trace_count"
     CUSTOM_DIMENSIONS_TRACE_COUNT = "trace_count"
 
-    def ___init___(self):
+    def __init__(self):
+        self._telemetry_logger = get_telemetry_logger()
         self._lock = multiprocessing.Lock()
         self._summary: typing.Dict[TraceCountKey, int] = dict()
         self._last_log_time: datetime.datetime = datetime.datetime.now()
@@ -366,10 +367,8 @@ class TraceTelemetryHelper:
             for key, count in self._summary.items():
                 custom_dimensions = key._asdict()
                 custom_dimensions[self.CUSTOM_DIMENSIONS_TRACE_COUNT] = count
-                monitor_operation(
-                    activity_name=self.TELEMETRY_ACTIVITY_NAME,
-                    activity_type=ActivityType.INTERNALCALL,
-                    custom_dimensions=custom_dimensions,
+                self._telemetry_logger.info(
+                    self.TELEMETRY_ACTIVITY_NAME, extra={"custom_dimensions": custom_dimensions}
                 )
             self._summary = dict()
             self._last_log_time = datetime.datetime.now()
