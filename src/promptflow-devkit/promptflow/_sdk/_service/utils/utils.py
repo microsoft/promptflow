@@ -38,6 +38,7 @@ from promptflow._sdk._utilities.general_utils import (
     get_promptflow_sdk_version,
     read_write_by_user,
 )
+from promptflow._sdk._utilities.tracing_utils import _telemetry_helper as trace_telemetry_helper
 from promptflow._sdk._version import VERSION
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
@@ -177,6 +178,9 @@ def _get_process_by_port(port):
 
 
 def kill_exist_service(port):
+    # flush the trace count telemetry before shutting down prompt flow service
+    trace_telemetry_helper.flush()
+
     proc = _get_process_by_port(port) if port else None
     if proc:
         proc.terminate()
