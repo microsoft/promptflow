@@ -347,7 +347,7 @@ class TraceTelemetryHelper:
         self._telemetry_logger = get_telemetry_logger()
         self._lock = multiprocessing.Lock()
         self._summary: typing.Dict[TraceCountKey, int] = dict()
-        self._thread = threading.Thread(target=self._schedule_flush)
+        self._thread = threading.Thread(target=self._schedule_flush, daemon=True)
         self._thread.start()
 
     def _schedule_flush(self) -> None:
