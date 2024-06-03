@@ -8,6 +8,7 @@ from multiprocessing import Lock
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+from azure.ai.ml._artifacts._constants import ARTIFACT_ORIGIN, LEGACY_ARTIFACT_DIRECTORY
 from azure.ai.ml._artifacts._fileshare_storage_helper import FileStorageClient
 from azure.ai.ml._utils._asset_utils import (
     DirectoryUploadProgressBar,
@@ -27,7 +28,38 @@ uploading_lock = defaultdict(Lock)
 
 class FlowFileStorageClient(FileStorageClient):
     def __init__(self, credential: str, file_share_name: str, account_url: str, azure_cred):
-        super().__init__(credential=credential, file_share_name=file_share_name, account_url=account_url)
+        if isinstance(credential, str):
+            super().__init__(credential=credential, file_share_name=file_share_name, account_url=account_url)
+        else:
+            # need add backup token intent for file share client when using AAD credential
+            self.directory_client = ShareDirectoryClient(
+                account_url=account_url,
+                credential=credential,
+                share_name=file_share_name,
+                directory_path=ARTIFACT_ORIGIN,
+                token_intent="backup",
+            )
+            self.legacy_directory_client = ShareDirectoryClient(
+                account_url=account_url,
+                credential=credential,
+                share_name=file_share_name,
+                directory_path=LEGACY_ARTIFACT_DIRECTORY,
+                token_intent="backup",
+            )
+            self.file_share = file_share_name
+            self.total_file_count = 1
+            self.uploaded_file_count = 0
+            self.name = None
+            self.version = None
+            self.legacy = False
+
+            try:
+                self.directory_client.create_directory()
+            except ResourceExistsError:
+                pass
+
+            self.subdirectory_client = None
+
         try:
             user_alias = get_user_alias_from_credential(azure_cred)
         except Exception:
@@ -38,11 +70,14 @@ class FlowFileStorageClient(FileStorageClient):
         # TODO: update this after we finalize the design for flow file storage client
         # create user folder if not exist
         for directory_path in ["Users", f"Users/{user_alias}", f"Users/{user_alias}/{PROMPTFLOW_FILE_SHARE_DIR}"]:
+            token_intent = None if isinstance(credential, str) else "backup"
+
             self.directory_client = ShareDirectoryClient(
                 account_url=account_url,
                 credential=credential,
                 share_name=file_share_name,
                 directory_path=directory_path,
+                token_intent=token_intent,
             )
 
             # try to create user folder if not exist
