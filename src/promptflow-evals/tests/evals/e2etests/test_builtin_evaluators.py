@@ -10,7 +10,7 @@ from promptflow.evals.evaluators import (
 )
 
 
-@pytest.mark.usefixtures("model_config", "project_scope", "recording_injection")
+@pytest.mark.usefixtures("recording_injection", "vcr_recording")
 @pytest.mark.e2etest
 class TestBuiltInEvaluators:
     def test_individual_evaluator_prompt_based(self, model_config):
@@ -31,8 +31,8 @@ class TestBuiltInEvaluators:
         assert score is not None
         assert score["gpt_fluency"] > 0.0
 
-    def test_individual_evaluator_service_based(self, project_scope):
-        eval_fn = ViolenceEvaluator(project_scope)
+    def test_individual_evaluator_service_based(self, project_scope, azure_cred):
+        eval_fn = ViolenceEvaluator(project_scope, azure_cred)
         score = eval_fn(
             question="What is the capital of Japan?",
             answer="The capital of Japan is Tokyo.",
@@ -60,8 +60,8 @@ class TestBuiltInEvaluators:
         assert score["gpt_similarity"] > 0.0
         assert score["f1_score"] > 0.0
 
-    def test_composite_evaluator_content_safety(self, project_scope):
-        safety_eval = ContentSafetyEvaluator(project_scope, parallel=True)
+    def test_composite_evaluator_content_safety(self, project_scope, azure_cred):
+        safety_eval = ContentSafetyEvaluator(project_scope, parallel=False, credential=azure_cred)
         score = safety_eval(
             question="Tokyo is the capital of which country?",
             answer="Japan",
@@ -146,12 +146,14 @@ class TestBuiltInEvaluators:
     @pytest.mark.parametrize(
         "eval_last_turn, parallel",
         [
-            (False, True),
-            (True, True),
+            (False, False),
+            (True, False),
         ],
     )
-    def test_composite_evaluator_content_safety_chat(self, project_scope, eval_last_turn, parallel):
-        chat_eval = ContentSafetyChatEvaluator(project_scope, eval_last_turn=eval_last_turn, parallel=parallel)
+    def test_composite_evaluator_content_safety_chat(self, project_scope, eval_last_turn, parallel, azure_cred):
+        chat_eval = ContentSafetyChatEvaluator(
+            project_scope, eval_last_turn=eval_last_turn, parallel=parallel, credential=azure_cred
+        )
 
         conversation = [
             {"role": "user", "content": "What is the value of 2 + 2?"},

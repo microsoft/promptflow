@@ -1,12 +1,11 @@
 import json
 import multiprocessing
-import os
 from pathlib import Path
 from typing import Dict
 from unittest.mock import patch
 
+import jwt
 import pytest
-from azure.identity import DefaultAzureCredential
 from pytest_mock import MockerFixture
 
 from promptflow.azure import PFClient as AzurePFClient
@@ -41,20 +40,7 @@ except ImportError as e:
 
 PROMPTFLOW_ROOT = Path(__file__) / "../../../.."
 CONNECTION_FILE = (PROMPTFLOW_ROOT / "promptflow-evals/connections.json").resolve().absolute().as_posix()
-RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "promptflow-evals/tests/recordings/local").resolve()
-
-
-@pytest.fixture
-def configure_default_azure_credential():
-    if os.path.exists(CONNECTION_FILE):
-        with open(file=CONNECTION_FILE, mode="r") as f:
-            dev_connections = json.load(f)
-
-        # for running e2e test which uses DefaultAzureCredential in ci pipeline
-        if "pf-evals-sp" in dev_connections:
-            creds = dev_connections["pf-evals-sp"]["value"]
-            for key, value in creds.items():
-                os.environ[key] = value
+RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "promptflow-evals/tests/recordings").resolve()
 
 
 def pytest_configure():
@@ -110,7 +96,16 @@ def model_config() -> dict:
 
 
 @pytest.fixture
-def project_scope() -> dict:
+def project_scope(request) -> dict:
+    if is_replay() and "vcr_recording" in request.fixturenames:
+        from promptflow.recording.azure import SanitizedValues
+
+        return {
+            "subscription_id": SanitizedValues.SUBSCRIPTION_ID,
+            "resource_group_name": SanitizedValues.RESOURCE_GROUP_NAME,
+            "project_name": SanitizedValues.WORKSPACE_NAME,
+        }
+
     conn_name = "azure_ai_project_scope"
 
     with open(
@@ -148,7 +143,7 @@ def azure_pf_client(project_scope: Dict):
         subscription_id=project_scope["subscription_id"],
         resource_group_name=project_scope["resource_group_name"],
         workspace_name=project_scope["project_name"],
-        credential=DefaultAzureCredential(),
+        credential=get_cred(),
     )
 
 
@@ -219,7 +214,7 @@ def setup_recording_injection_if_enabled():
         from promptflow.recording.record_mode import check_pydantic_v2
 
         check_pydantic_v2()
-        file_path = RECORDINGS_TEST_CONFIGS_ROOT / "evals.node_cache.shelve"
+        file_path = RECORDINGS_TEST_CONFIGS_ROOT / "local" / "evals.node_cache.shelve"
         RecordStorage.get_instance(file_path)
 
         patch_targets = {
@@ -249,3 +244,97 @@ def _mock_process_wrapper(*args, **kwargs):
 def _mock_create_spawned_fork_process_manager(*args, **kwargs):
     setup_recording_injection_if_enabled()
     return create_spawned_fork_process_manager(*args, **kwargs)
+
+
+def package_scope_in_live_mode() -> str:
+    """Determine the scope of some expected sharing fixtures.
+
+    We have many tests against flows and runs, and it's very time consuming to create a new flow/run
+    for each test. So we expect to leverage pytest fixture concept to share flows/runs across tests.
+    However, we also have replay tests, which require function scope fixture as it will locate the
+    recording YAML based on the test function info.
+
+    Use this function to determine the scope of the fixtures dynamically. For those fixtures that
+    will request dynamic scope fixture(s), they also need to be dynamic scope.
+    """
+    # package-scope should be enough for Azure tests
+    return "package" if is_live() else "function"
+
+
+def get_cred():
+    from azure.identity import AzureCliCredential, DefaultAzureCredential
+
+    """get credential for azure tests"""
+    # resolve requests
+    try:
+        credential = AzureCliCredential()
+        token = credential.get_token("https://management.azure.com/.default")
+    except Exception:
+        credential = DefaultAzureCredential()
+        # ensure we can get token
+        token = credential.get_token("https://management.azure.com/.default")
+
+    assert token is not None
+    return credential
+
+
+@pytest.fixture
+def azure_cred():
+    return get_cred()
+
+
+@pytest.fixture(scope=package_scope_in_live_mode())
+def user_object_id() -> str:
+    if pytest.is_replay:
+        from promptflow.recording.azure import SanitizedValues
+
+        return SanitizedValues.USER_OBJECT_ID
+    credential = get_cred()
+    access_token = credential.get_token("https://management.azure.com/.default")
+    decoded_token = jwt.decode(access_token.token, options={"verify_signature": False})
+    return decoded_token["oid"]
+
+
+@pytest.fixture(scope=package_scope_in_live_mode())
+def tenant_id() -> str:
+    if pytest.is_replay:
+        from promptflow.recording.azure import SanitizedValues
+
+        return SanitizedValues.TENANT_ID
+    credential = get_cred()
+    access_token = credential.get_token("https://management.azure.com/.default")
+    decoded_token = jwt.decode(access_token.token, options={"verify_signature": False})
+    return decoded_token["tid"]
+
+
+@pytest.fixture(scope=package_scope_in_live_mode())
+def variable_recorder():
+    from promptflow.recording.azure import VariableRecorder
+
+    yield VariableRecorder()
+
+
+@pytest.fixture(scope=package_scope_in_live_mode())
+def vcr_recording(request: pytest.FixtureRequest, user_object_id: str, tenant_id: str, variable_recorder):
+    """Fixture to record or replay network traffic.
+
+    If the test mode is "live", nothing will happen.
+    If the test mode is "record" or "replay", this fixture will locate a YAML (recording) file
+    based on the test file, class and function name, write to (record) or read from (replay) the file.
+    """
+    if pytest.is_record or pytest.is_replay:
+        from promptflow.recording.azure import PFAzureIntegrationTestRecording
+
+        recording = PFAzureIntegrationTestRecording.from_test_case(
+            test_class=request.cls,
+            test_func_name=request.node.name,
+            user_object_id=user_object_id,
+            tenant_id=tenant_id,
+            variable_recorder=variable_recorder,
+            recording_dir=(RECORDINGS_TEST_CONFIGS_ROOT / "azure").resolve(),
+        )
+        recording.enter_vcr()
+        request.addfinalizer(recording.exit_vcr)
+        yield recording
+    else:
+        yield None
