@@ -355,7 +355,7 @@ class TraceTelemetryHelper:
             time.sleep(self.LOG_INTERVAL_SECONDS)
             self.log_telemetry()
 
-    def append(self, summary: typing.Dict[TraceCountKey, int], logger: logging.Logger) -> None:
+    def append(self, summary: typing.Dict[TraceCountKey, int]) -> None:
         with self._lock:
             for key, count in summary.items():
                 self._summary[key] = self._summary.get(key, 0) + count
