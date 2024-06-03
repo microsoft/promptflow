@@ -5,6 +5,7 @@
 import datetime
 import json
 import logging
+import multiprocessing
 import typing
 from collections import namedtuple
 from dataclasses import dataclass
@@ -26,6 +27,7 @@ from promptflow._constants import (
     SpanStatusFieldName,
 )
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, AzureMLWorkspaceTriad
+from promptflow._sdk._telemetry import ActivityType, monitor_operation
 from promptflow._sdk.entities._trace import Span
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.core._errors import MissingRequiredPackage
@@ -330,3 +332,51 @@ def aggregate_trace_count(all_spans: typing.List[Span]) -> typing.Dict[TraceCoun
             trace_count_summary[key] = trace_count_summary.get(key, 0) + 1
 
     return trace_count_summary
+
+
+class TraceTelemetryHelper:
+    """Helper class for trace telemetry in prompt flow service."""
+
+    LOG_INTERVAL_SECONDS = 300  # 5 * 60 seconds
+    TELEMETRY_ACTIVITY_NAME = "pf.telemetry.trace_count"
+    CUSTOM_DIMENSIONS_TRACE_COUNT = "trace_count"
+
+    def ___init___(self):
+        self._lock = multiprocessing.Lock()
+        self._summary: typing.Dict[TraceCountKey, int] = dict()
+        self._last_log_time: datetime.datetime = datetime.datetime.now()
+
+    def reach_log_interval(self, logger: logging.Logger) -> bool:
+        with self._lock:
+            logger.debug("last log time: %s", self._last_log_time.isoformat())
+            current_datetime = datetime.datetime.now()
+            logger.debug("current datetime: %s", current_datetime.isoformat())
+            return current_datetime - self._last_log_time >= self.LOG_INTERVAL_SECONDS
+
+    def append(self, summary: typing.Dict[TraceCountKey, int], logger: logging.Logger) -> None:
+        with self._lock:
+            for key, count in summary.items():
+                self._summary[key] = self._summary.get(key, 0) + count
+        if self.reach_log_interval(logger=logger):
+            logger.info("reach telemetry log interval, log trace count...")
+            self.log_telemetry()
+
+    def log_telemetry(self) -> None:
+        with self._lock:
+            for key, count in self._summary.items():
+                custom_dimensions = key._asdict()
+                custom_dimensions[self.CUSTOM_DIMENSIONS_TRACE_COUNT] = count
+                monitor_operation(
+                    activity_name=self.TELEMETRY_ACTIVITY_NAME,
+                    activity_type=ActivityType.INTERNALCALL,
+                    custom_dimensions=custom_dimensions,
+                )
+            self._summary = dict()
+            self._last_log_time = datetime.datetime.now()
+
+    def flush(self) -> None:
+        with self._lock:
+            self.log_telemetry()
+
+
+_telemetry_helper = TraceTelemetryHelper()
