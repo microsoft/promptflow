@@ -1,4 +1,3 @@
 promptflow
 langchain>=0.1.5
 python-dotenv
-langchain_community
