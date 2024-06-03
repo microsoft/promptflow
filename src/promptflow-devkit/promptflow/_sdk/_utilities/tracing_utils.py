@@ -374,8 +374,7 @@ class TraceTelemetryHelper:
             self._last_log_time = datetime.datetime.now()
 
     def flush(self) -> None:
-        with self._lock:
-            self.log_telemetry()
+        self.log_telemetry()
 
 
 _telemetry_helper = TraceTelemetryHelper()
