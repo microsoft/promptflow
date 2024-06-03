@@ -6,6 +6,8 @@ import datetime
 import json
 import logging
 import multiprocessing
+import threading
+import time
 import typing
 from collections import namedtuple
 from dataclasses import dataclass
@@ -337,7 +339,7 @@ def aggregate_trace_count(all_spans: typing.List[Span]) -> typing.Dict[TraceCoun
 class TraceTelemetryHelper:
     """Helper class for trace telemetry in prompt flow service."""
 
-    LOG_INTERVAL_SECONDS = 300  # 5 * 60 seconds
+    LOG_INTERVAL_SECONDS = 60
     TELEMETRY_ACTIVITY_NAME = "pf.telemetry.trace_count"
     CUSTOM_DIMENSIONS_TRACE_COUNT = "trace_count"
 
@@ -345,22 +347,18 @@ class TraceTelemetryHelper:
         self._telemetry_logger = get_telemetry_logger()
         self._lock = multiprocessing.Lock()
         self._summary: typing.Dict[TraceCountKey, int] = dict()
-        self._last_log_time: datetime.datetime = datetime.datetime.now()
+        self._thread = threading.Thread(target=self._schedule_flush)
+        self._thread.start()
 
-    def reach_log_interval(self, logger: logging.Logger) -> bool:
-        with self._lock:
-            logger.debug("last log time: %s", self._last_log_time.isoformat())
-            current_datetime = datetime.datetime.now()
-            logger.debug("current datetime: %s", current_datetime.isoformat())
-            return (current_datetime - self._last_log_time).seconds >= self.LOG_INTERVAL_SECONDS
+    def _schedule_flush(self) -> None:
+        while True:
+            time.sleep(self.LOG_INTERVAL_SECONDS)
+            self.log_telemetry()
 
     def append(self, summary: typing.Dict[TraceCountKey, int], logger: logging.Logger) -> None:
         with self._lock:
             for key, count in summary.items():
                 self._summary[key] = self._summary.get(key, 0) + count
-        if self.reach_log_interval(logger=logger):
-            logger.info("reach telemetry log interval, log trace count...")
-            self.log_telemetry()
 
     def log_telemetry(self) -> None:
         with self._lock:
@@ -371,10 +369,6 @@ class TraceTelemetryHelper:
                     self.TELEMETRY_ACTIVITY_NAME, extra={"custom_dimensions": custom_dimensions}
                 )
             self._summary = dict()
-            self._last_log_time = datetime.datetime.now()
-
-    def flush(self) -> None:
-        self.log_telemetry()
 
 
 _telemetry_helper = TraceTelemetryHelper()

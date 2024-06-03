@@ -75,7 +75,7 @@ def trace_collector(
         # trace telemetry
         if len(all_spans) > 0:
             summary = aggregate_trace_count(all_spans=all_spans)
-            trace_telemetry_helper.append(summary=summary, logger=logger)
+            trace_telemetry_helper.append(summary=summary)
 
         return "Traces received", 200
 
