@@ -71,7 +71,7 @@ def _get_run_from_run_history(flow_run_id, runs_operation):
         raise Exception(f"Failed to get run from service. Code: {response.status_code}, text: {response.text}")
 
 
-@pytest.mark.usefixtures("model_config", "recording_injection", "data_file", "project_scope")
+@pytest.mark.usefixtures("recording_injection", "vcr_recording")
 @pytest.mark.e2etest
 class TestEvaluate:
     def test_evaluate_with_groundedness_evaluator(self, model_config, data_file):
@@ -111,10 +111,10 @@ class TestEvaluate:
         assert result["studio_url"] is None
 
     @pytest.mark.skip(reason="Failed in CI pipeline. Pending for investigation.")
-    def test_evaluate_with_content_safety_evaluator(self, project_scope, data_file):
+    def test_evaluate_with_content_safety_evaluator(self, project_scope, data_file, azure_cred):
         input_data = pd.read_json(data_file, lines=True)
 
-        content_safety_eval = ContentSafetyEvaluator(project_scope)
+        content_safety_eval = ContentSafetyEvaluator(project_scope, credential=azure_cred)
 
         # run the evaluation
         result = evaluate(
@@ -159,11 +159,7 @@ class TestEvaluate:
         input_data = pd.read_json(data_file, lines=True)
 
         # run the evaluation
-        result = evaluate(
-            data=data_file,
-            evaluators={"answer": function},
-            _use_thread_pool=use_thread_pool
-        )
+        result = evaluate(data=data_file, evaluators={"answer": function}, _use_thread_pool=use_thread_pool)
 
         row_result_df = pd.DataFrame(result["rows"])
         metrics = result["metrics"]
@@ -301,7 +297,6 @@ class TestEvaluate:
         questions_file,
         azure_pf_client,
         mock_trace_destination_to_cloud,
-        configure_default_azure_credential,
         project_scope,
     ):
         """Test evaluation with target function."""
@@ -316,7 +311,7 @@ class TestEvaluate:
         evaluation_name = "test_evaluate_track_in_cloud"
         # run the evaluation with targets
         result = evaluate(
-            project_scope=project_scope,
+            azure_ai_project=project_scope,
             evaluation_name=evaluation_name,
             data=questions_file,
             target=target_fn,
@@ -346,7 +341,6 @@ class TestEvaluate:
         data_file,
         azure_pf_client,
         mock_trace_destination_to_cloud,
-        configure_default_azure_credential,
         project_scope,
     ):
         # data
@@ -357,7 +351,7 @@ class TestEvaluate:
 
         # run the evaluation
         result = evaluate(
-            project_scope=project_scope,
+            azure_ai_project=project_scope,
             evaluation_name=evaluation_name,
             data=data_file,
             evaluators={"f1_score": f1_score_eval},

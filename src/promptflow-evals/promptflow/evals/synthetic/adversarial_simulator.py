@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 # noqa: E501
 import asyncio
+import functools
 import logging
 import random
 from typing import Any, Callable, Dict, List
@@ -25,6 +26,29 @@ from ._model_tools import (
 from ._utils import JsonLineList
 
 logger = logging.getLogger(__name__)
+
+
+def monitor_adversarial_scenario(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        scenario = str(kwargs.get("scenario", None))
+        max_conversation_turns = kwargs.get("max_conversation_turns", None)
+        max_simulation_results = kwargs.get("max_simulation_results", None)
+        jailbreak = kwargs.get("jailbreak", None)
+        decorated_func = monitor_operation(
+            activity_name="adversarial.simulator.call",
+            activity_type=ActivityType.PUBLICAPI,
+            custom_dimensions={
+                "scenario": scenario,
+                "max_conversation_turns": max_conversation_turns,
+                "max_simulation_results": max_simulation_results,
+                "jailbreak": jailbreak,
+            },
+        )(func)
+
+        return decorated_func(*args, **kwargs)
+
+    return wrapper
 
 
 class AdversarialSimulator:
@@ -66,7 +90,7 @@ class AdversarialSimulator:
         if self.rai_client is None:
             raise ValueError("Simulation options require rai services but ai client is not provided.")
 
-    @monitor_operation(activity_name="adversarial.simulator.call", activity_type=ActivityType.PUBLICAPI)
+    @monitor_adversarial_scenario
     async def __call__(
         self,
         *,

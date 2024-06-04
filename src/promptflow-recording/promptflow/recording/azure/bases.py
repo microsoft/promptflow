@@ -47,11 +47,13 @@ class PFAzureIntegrationTestRecording:
         user_object_id: str,
         tenant_id: str,
         variable_recorder: VariableRecorder,
+        recording_dir: str = None,
     ):
         self.test_class = test_class
         self.test_func_name = test_func_name
         self.user_object_id = user_object_id
         self.tenant_id = tenant_id
+        self.recording_dir = recording_dir
         self.recording_file = self._get_recording_file()
         self.recording_processors = self._get_recording_processors()
         self.vcr = self._init_vcr()
@@ -60,7 +62,9 @@ class PFAzureIntegrationTestRecording:
         self.variable_recorder = variable_recorder
 
     @staticmethod
-    def from_test_case(test_class, test_func_name: str, **kwargs) -> "PFAzureIntegrationTestRecording":
+    def from_test_case(
+        test_class, test_func_name: str, recording_dir: str, **kwargs
+    ) -> "PFAzureIntegrationTestRecording":
         test_class_name = test_class.__name__
         if test_class_name in TEST_CLASSES_FOR_RUN_INTEGRATION_TEST_RECORDING:
             return PFAzureRunIntegrationTestRecording(
@@ -77,11 +81,16 @@ class PFAzureIntegrationTestRecording:
                 user_object_id=kwargs["user_object_id"],
                 tenant_id=kwargs["tenant_id"],
                 variable_recorder=kwargs["variable_recorder"],
+                recording_dir=recording_dir,
             )
 
     def _get_recording_file(self) -> Path:
         test_file_path = Path(inspect.getfile(self.test_class)).resolve()
-        recording_dir = (Path(__file__).parent / "../../../recordings/azure").resolve()
+        if self.recording_dir is not None:
+            recording_dir = Path(self.recording_dir).resolve()
+        else:
+            recording_dir = (Path(__file__).parent / "../../../recordings/azure").resolve()
+
         # when promptflow-recording is installed as a package (not editable mode)
         # __file__ will direct to the installed package path (with "site-packages" in it)
         # where the recording is not there, so we need to leverage test class to find the recording in repo

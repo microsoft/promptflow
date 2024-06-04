@@ -304,8 +304,6 @@ class FlowExecutor:
         flow = FlowValidator._validate_nodes_topology(flow)
         flow.outputs = FlowValidator._ensure_outputs_valid(flow)
 
-        if storage is None:
-            storage = DefaultRunStorage()
         run_tracker = RunTracker(storage)
 
         cache_manager = AbstractCacheManager.init_from_env()
@@ -882,8 +880,15 @@ class FlowExecutor:
                 node_referenced_flow_inputs[value.value] = flow_inputs[value.value]
         return node_referenced_flow_inputs
 
+    @staticmethod
+    def _tracing_disabled():
+        return os.environ.get("PF_DISABLE_TRACING", "false").lower() == "true"
+
     @contextlib.contextmanager
     def _start_flow_span(self, inputs: Mapping[str, Any]):
+        if FlowExecutor._tracing_disabled():
+            yield None
+            return
         otel_tracer = otel_trace.get_tracer("promptflow")
         with start_as_current_span(otel_tracer, self._flow.name) as span:
             # Store otel trace id in context for correlation
@@ -964,6 +969,8 @@ class FlowExecutor:
         run_tracker.allow_generator_types = stream
         run_tracker.update_and_persist_generator_node_runs(run_info.run_id, generator_output_nodes)
         run_tracker.end_run(run_info.run_id, result=output)
+        if self._tracing_disabled():
+            return
         enrich_span_with_trace_type(span, inputs, output, trace_type=TraceType.FLOW)
         span.set_status(StatusCode.OK)
 

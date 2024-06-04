@@ -78,6 +78,10 @@ jobs:
       - name: generate end-to-end test config from secret
         run: echo '${{ secrets.PF_EVALS_E2E_TEST_CONFIG }}' >> connections.json
         working-directory: ${{ env.WORKING_DIRECTORY }}
+      - uses: azure/login@v2
+        with:
+          creds: ${{ secrets.PF_EVALS_SP_CREDENTIALS }}
+          enable-AzPSSession: true
       - name: run e2e tests
         run: poetry run pytest -m e2etest --cov=promptflow --cov-config=pyproject.toml --cov-report=term --cov-report=html --cov-report=xml
         working-directory: ${{ env.WORKING_DIRECTORY }}
