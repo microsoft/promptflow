@@ -152,7 +152,7 @@ class TestEvaluate:
         (False, answer_evaluator_int, 'output'),
         (True, answer_evaluator_int_dict, "42"),
         (False, answer_evaluator_int_dict, "42"),
-        ])
+    ])
     def test_evaluate_python_function(self, data_file, use_thread_pool,
                                       function, column):
         # data
@@ -340,7 +340,7 @@ class TestEvaluate:
         assert remote_run.properties["runType"] == "eval_run"
         assert remote_run.display_name == evaluation_name
 
-    @pytest.mark.skip(reason="az login in fixture is not working on ubuntu and mac.Works on windows")
+    @pytest.mark.skip(reason="az login in fixture is not working on ubuntu and mac. Works on windows")
     def test_evaluate_track_in_cloud_no_target(
         self,
         data_file,
