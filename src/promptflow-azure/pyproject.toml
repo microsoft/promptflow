@@ -46,6 +46,7 @@ azure-ai-ml = ">=1.14.0,<2.0.0"
 azure-cosmos = ">=4.5.1,<5.0.0"  # used to upload trace to cloud
 pyjwt = ">=2.4.0,<3.0.0"  # requirement of control plane SDK
 promptflow-devkit = "<2.0.0"
+azure-mgmt-authorization = ">=1.0.0"  # used to get role assignments
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "*"
