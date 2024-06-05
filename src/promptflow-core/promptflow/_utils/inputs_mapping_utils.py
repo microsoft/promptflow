@@ -86,6 +86,11 @@ def apply_inputs_mapping(
             ),
             invalid_relations=invalid_relations,
         )
+
+    # if no input mapping is provided, return the original inputs which is data
+    if not result:
+        result = inputs.get("data", {})
+
     # For PRS scenario, apply_inputs_mapping will be used for exec_line and line_number is not necessary.
     if LINE_NUMBER_KEY in inputs:
         result[LINE_NUMBER_KEY] = inputs[LINE_NUMBER_KEY]
