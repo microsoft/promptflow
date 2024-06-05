@@ -53,7 +53,7 @@ def load_jsonl(path):
 
 
 def _write_properties_to_run_history(properties: dict) -> None:
-    run = EvalRun()
+    run = EvalRun.get_instance()
     try:
         # update host to run history and request PATCH API
         response = run.request_with_retry(
@@ -100,6 +100,7 @@ def _log_metrics_and_instance_results(
     trace_destination = _get_trace_destination_config(tracking_uri=tracking_uri)
 
     if trace_destination is None:
+        LOGGER.error("Unable to log traces as trace destination was not defined.")
         return None
 
     azure_pf_client, ws_triad = _azure_pf_client_and_triad(trace_destination)
@@ -152,6 +153,7 @@ def _log_metrics_and_instance_results(
     for metric_name, metric_value in metrics.items():
         ev_run.log_metric(metric_name, metric_value)
 
+    ev_run.end_run("FINISHED")
     return _get_ai_studio_url(trace_destination=trace_destination, evaluation_id=ev_run.name)
 
 

@@ -52,7 +52,7 @@ class Singleton(type):
             Singleton._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
         return Singleton._instances[cls]
 
-    @classmethod
+    @staticmethod
     def destroy(cls: Type) -> None:
         """
         Destroy the singleton instance.
@@ -94,6 +94,7 @@ class EvalRun(metaclass=Singleton):
         self._ml_client: MLClient = ml_client
         self._url_base = urlparse(self._tracking_uri).netloc
         self._is_broken = self._start_run()
+        self._is_terminated = False
         self.name: str = run_name if run_name else self.info.run_id
 
     def _get_scope(self):
@@ -165,6 +166,9 @@ class EvalRun(metaclass=Singleton):
             raise ValueError(
                 f"Incorrect terminal status {status}. "
                 "Valid statuses are \"FINISHED\", \"FAILED\" and \"KILLED\".")
+        if self._is_terminated:
+            LOGGER.warning("Unable to stop run because it was already terminated.")
+            return
         if self._is_broken:
             LOGGER.error("Unable to stop run because the run failed to start.")
             return
@@ -184,6 +188,8 @@ class EvalRun(metaclass=Singleton):
         )
         if response.status_code != 200:
             LOGGER.error("Unable to terminate the run.")
+        Singleton.destroy(EvalRun)
+        self._is_terminated = True
 
     def get_run_history_uri(self) -> str:
         """
@@ -210,7 +216,7 @@ class EvalRun(metaclass=Singleton):
             f"https://{self._url_base}"
             "/mlflow/v2.0"
             f"{self._get_scope()}"
-            f'/experimentids/{self.info.experiment_id}/runs/{self.info.run_id}'
+            f'/api/2.0/mlflow/runs/log-metric'
         )
 
     def _get_token(self):
@@ -301,7 +307,8 @@ class EvalRun(metaclass=Singleton):
         for (root, _, filenames) in os.walk(artifact_folder):
             if root != artifact_folder:
                 rel_path = os.path.relpath(root, artifact_folder)
-                upload_path = posixpath.join(upload_path, rel_path)
+                if rel_path != '.':
+                    upload_path = posixpath.join(upload_path, rel_path)
             for f in filenames:
                 remote_file_path = posixpath.join(upload_path, f)
                 remote_paths['paths'].append({'path': remote_file_path})
@@ -323,12 +330,12 @@ class EvalRun(metaclass=Singleton):
         if response.status_code != 200:
             self._log_error("allocate Blob for the artifact", response)
             return
-        empty_artifacts = response.json()['artifact_content_information']
+        empty_artifacts = response.json()['artifactContentInformation']
         # The response from Azure contains the URL with SAS, that allows to upload file to the
         # artifact store.
-        for local, remote in zip(local_file_path, remote_paths['paths']):
+        for local, remote in zip(local_paths, remote_paths['paths']):
             artifact_loc = empty_artifacts[remote['path']]
-            blob_client = BlobClient.from_blob_url(artifact_loc['content_uri'], max_single_put_size=32 * 1024 * 1024)
+            blob_client = BlobClient.from_blob_url(artifact_loc['contentUri'], max_single_put_size=32 * 1024 * 1024)
             with open(local, 'rb') as fp:
                 blob_client.upload_blob(fp)
 
@@ -345,12 +352,12 @@ class EvalRun(metaclass=Singleton):
             LOGGER.error("Unable to log metric because the run failed to start.")
             return
         body = {
-            "run_uuid": self.name,
+            "run_uuid": self.info.run_id,
             "key": key,
             "value": value,
             "timestamp": int(time.time() * 1000),
             "step": 0,
-            "run_id": self.name
+            "run_id": self.info.run_id
         }
         response = self.request_with_retry(
             url=self.get_metrics_url(),
@@ -359,3 +366,12 @@ class EvalRun(metaclass=Singleton):
         )
         if response.status_code != 200:
             self._log_error('save metrics', response)
+
+    @staticmethod
+    def get_instance(*args, **kwargs) -> "EvalRun":
+        """
+        The convenience method to the the EvalRun instance.
+
+        :return: The EvalRun instance.
+        """
+        return EvalRun(*args, **kwargs)

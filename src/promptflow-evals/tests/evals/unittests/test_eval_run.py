@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 
 from promptflow.evals.evaluate._eval_run import Singleton, EvalRun
 from uuid import uuid4
+import promptflow.evals.evaluate._utils as ev_utils
 
 
 @pytest.fixture
@@ -29,7 +30,7 @@ class TestEvalRun:
             ("FAILED", False)
         ]
     )
-    def test_end_raises(self, setup_data, status, should_raise):
+    def test_end_raises(self, setup_data, status, should_raise, caplog):
         """Test that end run raises exception if incorrect status is set."""
         mock_session = MagicMock()
         mock_response = MagicMock()
@@ -58,6 +59,40 @@ class TestEvalRun:
                 assert status in cm.value.args[0]
             else:
                 run.end_run(status)
+                assert len(caplog.records) == 0
+
+    def test_run_logs_if_terminated(self, setup_data, caplog):
+        """Test that run warn user if we are trying to terminate it twice."""
+        mock_session = MagicMock()
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            'run': {
+                "info": {
+                    "run_id": str(uuid4()),
+                    "experiment_id": str(uuid4()),
+                }
+            }
+        }
+        mock_session.request.return_value = mock_response
+        with patch('promptflow.evals.evaluate._eval_run.requests.Session', return_value=mock_session):
+            logger = logging.getLogger(EvalRun.__module__)
+            # All loggers, having promptflow. prefix will have "promptflow" logger
+            # as a parent. This logger does not propagate the logs and cannot be
+            # captured by caplog. Here we will skip this logger to capture logs.
+            logger.parent = logging.root
+            run = EvalRun(
+                run_name=None,
+                tracking_uri='www.microsoft.com',
+                subscription_id='mock',
+                group_name='mock',
+                workspace_name='mock',
+                ml_client=MagicMock()
+            )
+            run.end_run("KILLED")
+            run.end_run("KILLED")
+            assert len(caplog.records) == 1
+            assert "Unable to stop run because it was already terminated." in caplog.records[0].message
 
     def test_end_logs_if_fails(self, setup_data, caplog):
         """Test that if the terminal status setting was failed, it is logged."""
@@ -135,8 +170,15 @@ class TestEvalRun:
             assert "Unable to stop run because the run failed to start." in caplog.records[0].message
             caplog.clear()
 
+    @pytest.mark.parametrize(
+        'destroy_run,runs_are_the_same',
+        [
+            (False, True),
+            (True, False)
+        ]
+    )
     @patch('promptflow.evals.evaluate._eval_run.requests.Session')
-    def test_singleton(self, mock_session_cls, setup_data):
+    def test_singleton(self, mock_session_cls, setup_data, destroy_run, runs_are_the_same):
         """Test that the EvalRun is actually a singleton."""
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -161,16 +203,17 @@ class TestEvalRun:
         mock_session = MagicMock()
         mock_session.request.return_value = mock_response
         mock_session_cls.return_value = mock_session
-        id1 = id(
-            EvalRun(
-                run_name='run',
-                tracking_uri='www.microsoft.com',
-                subscription_id='mock',
-                group_name='mock',
-                workspace_name='mock',
-                ml_client=MagicMock()
-            )
+        run = EvalRun(
+            run_name='run',
+            tracking_uri='www.microsoft.com',
+            subscription_id='mock',
+            group_name='mock',
+            workspace_name='mock',
+            ml_client=MagicMock()
         )
+        id1 = id(run)
+        if destroy_run:
+            run.end_run("FINISHED")
         id2 = id(
             EvalRun(
                 run_name='run',
@@ -181,7 +224,7 @@ class TestEvalRun:
                 ml_client=MagicMock()
             )
         )
-        assert id1 == id2
+        assert (id1 == id2) == runs_are_the_same
 
     @patch('promptflow.evals.evaluate._eval_run.requests.Session')
     def test_run_name(self, mock_session_cls, setup_data):
@@ -288,8 +331,8 @@ class TestEvalRun:
             'https://region.api.azureml.ms/mlflow/v2.0/subscriptions'
             '/000000-0000-0000-0000-0000000/resourceGroups/mock-rg-region'
             '/providers/Microsoft.MachineLearningServices'
-            '/workspaces/mock-ws-region/experimentids/'
-            f'{run.info.experiment_id}/runs/{run.info.run_id}'), 'Wrong Metrics URL'
+            '/workspaces/mock-ws-region/api/2.0/mlflow/runs/log-metric'
+            ), 'Wrong Metrics URL'
 
     @pytest.mark.parametrize(
         'log_function,expected_str',
@@ -355,3 +398,19 @@ class TestEvalRun:
         assert mock_response.text in caplog.records[0].message
         assert '404' in caplog.records[0].message
         assert expected_str in caplog.records[0].message
+
+    def test_log_metrics_and_instance_results_logs_error(self, caplog):
+        """Test that we are logging the error when there is no trace destination."""
+        logger = logging.getLogger(ev_utils.__name__)
+        # All loggers, having promptflow. prefix will have "promptflow" logger
+        # as a parent. This logger does not propagate the logs and cannot be
+        # captured by caplog. Here we will skip this logger to capture logs.
+        logger.parent = logging.root
+        ev_utils._log_metrics_and_instance_results(
+            metrics=None,
+            instance_results=None,
+            tracking_uri=None,
+            run=None,
+            evaluation_name=None)
+        assert len(caplog.records) == 1
+        assert "Unable to log traces as trace destination was not defined." in caplog.records[0].message
