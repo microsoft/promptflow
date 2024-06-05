@@ -8,6 +8,7 @@ import pytest
 @pytest.mark.usefixtures("recording_injection")
 @pytest.mark.e2etest
 class TestAdvSimulator:
+    @pytest.mark.usefixtures("vcr_recording")
     def test_adv_sim_init_with_prod_url(self, azure_cred, project_scope):
         os.environ.pop("RAI_SVC_URL", None)
         from promptflow.evals.synthetic import AdversarialSimulator
@@ -21,6 +22,7 @@ class TestAdvSimulator:
         simulator = AdversarialSimulator(azure_ai_project=azure_ai_project)
         assert callable(simulator)
 
+    @pytest.mark.usefixtures("vcr_recording")
     def test_incorrect_scenario_raises_error(self, azure_cred, project_scope):
         os.environ.pop("RAI_SVC_URL", None)
         from promptflow.evals.synthetic import AdversarialSimulator
@@ -46,6 +48,7 @@ class TestAdvSimulator:
                 )
             )
 
+    @pytest.mark.usefixtures("vcr_recording")
     def test_adv_qa_sim_responds_with_one_response(self, azure_cred, project_scope):
         os.environ.pop("RAI_SVC_URL", None)
         from promptflow.evals.synthetic import AdversarialScenario, AdversarialSimulator
@@ -139,6 +142,7 @@ class TestAdvSimulator:
         print(outputs)
         assert len(outputs[0]["messages"]) == 4
 
+    @pytest.mark.usefixtures("vcr_recording")
     def test_adv_summarization_sim_responds_with_responses(self, azure_cred, project_scope):
         os.environ.pop("RAI_SVC_URL", None)
         from promptflow.evals.synthetic import AdversarialScenario, AdversarialSimulator
@@ -182,6 +186,7 @@ class TestAdvSimulator:
         print("*****************************")
         assert len(outputs) == 1
 
+    @pytest.mark.usefixtures("vcr_recording")
     def test_adv_summarization_jailbreak_sim_responds_with_responses(self, azure_cred, project_scope):
         os.environ.pop("RAI_SVC_URL", None)
         from promptflow.evals.synthetic import AdversarialScenario, AdversarialSimulator
