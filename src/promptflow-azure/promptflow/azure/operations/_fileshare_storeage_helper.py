@@ -8,7 +8,7 @@ from multiprocessing import Lock
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from azure.ai.ml._artifacts._constants import ARTIFACT_ORIGIN, LEGACY_ARTIFACT_DIRECTORY
+from azure.ai.ml._artifacts._constants import ARTIFACT_ORIGIN
 from azure.ai.ml._artifacts._fileshare_storage_helper import FileStorageClient
 from azure.ai.ml._utils._asset_utils import (
     DirectoryUploadProgressBar,
@@ -37,13 +37,6 @@ class FlowFileStorageClient(FileStorageClient):
                 credential=credential,
                 share_name=file_share_name,
                 directory_path=ARTIFACT_ORIGIN,
-                token_intent="backup",
-            )
-            self.legacy_directory_client = ShareDirectoryClient(
-                account_url=account_url,
-                credential=credential,
-                share_name=file_share_name,
-                directory_path=LEGACY_ARTIFACT_DIRECTORY,
                 token_intent="backup",
             )
             self.file_share = file_share_name
