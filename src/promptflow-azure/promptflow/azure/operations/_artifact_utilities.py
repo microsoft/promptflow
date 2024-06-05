@@ -44,7 +44,6 @@ from azure.storage.blob import BlobSasPermissions, generate_blob_sas
 from azure.storage.filedatalake import FileSasPermissions, generate_file_sas
 
 from promptflow._utils.logger_utils import LoggerFactory
-from promptflow.exceptions import UserErrorException
 
 from ._fileshare_storeage_helper import FlowFileStorageClient
 
@@ -86,13 +85,6 @@ def get_datastore_info(operations: DatastoreOperations, name: str) -> Dict[str, 
         except Exception as e:  # pylint: disable=broad-except
             if not hasattr(credentials, "sas_token"):
                 datastore_info["credential"] = operations._credential
-
-                from azure.mgmt.authorization import AuthorizationManagementClient
-
-                client = AuthorizationManagementClient(datastore_info["credential"], operations._subscription_id)
-                scope = f"/subscriptions/{operations._subscription_id}/resourceGroups/{operations._resource_group_name}"
-                role_name_list = ["Storage Blob Data Contributor", "AzureML Data Scientist"]
-                check_scope_rbac_role(client, scope, role_name_list)
             else:
                 raise e
 
@@ -109,28 +101,6 @@ def get_datastore_info(operations: DatastoreOperations, name: str) -> Dict[str, 
         )
 
     return datastore_info
-
-
-def check_scope_rbac_role(client, scope: str, role_name_list: list):
-    # Get the role assignments for the user
-    role_assignments = client.role_assignments.list_for_scope(scope)
-    # Get all role definitions
-    role_definitions = client.role_definitions.list(scope)
-
-    # Find the ID of the role_name
-    for role_name in role_name_list:
-        role_id = next((definition.id for definition in role_definitions if definition.role_name == role_name), None)
-
-        # Check if the user has the role
-        if role_id is not None:
-            for assignment in role_assignments:
-                if assignment.role_definition_id == role_id:
-                    module_logger.debug(f"User has the {role_name} role")
-                    break
-            else:
-                raise UserErrorException(f"User does not have the {role_name} role")
-        else:
-            raise UserErrorException(f"Role {role_name} not found")
 
 
 def list_logs_in_datastore(ds_info: Dict[str, str], prefix: str, legacy_log_folder_name: str) -> Dict[str, str]:
