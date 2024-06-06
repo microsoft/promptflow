@@ -16,7 +16,7 @@ class Result:
 
 
 class LangChainEvaluator:
-    def __init__(self, custom_connection: CustomConnection):
+    def __init__(self, custom_connection: CustomConnection, deployment_name: str):
         self.custom_connection = custom_connection
 
         # create llm according to the secrets in custom connection
@@ -27,7 +27,7 @@ class LangChainEvaluator:
             )
         elif "openai_api_key" in self.custom_connection.secrets:
             self.llm = AzureChatOpenAI(
-                deployment_name="gpt-35-turbo",
+                deployment_name=deployment_name,
                 openai_api_key=self.custom_connection.secrets["openai_api_key"],
                 azure_endpoint=self.custom_connection.configs["azure_endpoint"],
                 openai_api_type="azure",
