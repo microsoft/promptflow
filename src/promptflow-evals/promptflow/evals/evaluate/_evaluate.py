@@ -9,19 +9,19 @@ import numpy as np
 import pandas as pd
 
 from promptflow._sdk._constants import LINE_NUMBER
+from promptflow._sdk._telemetry import ActivityType, log_activity
+from promptflow._sdk._telemetry.telemetry import get_telemetry_logger
 from promptflow.client import PFClient
 
 from .._constants import CONTENT_SAFETY_DEFECT_RATE_THRESHOLD_DEFAULT, EvaluationMetrics, Prefixes
 from .._user_agent import USER_AGENT
-from ._code_client import BatchRunContext, CodeClient
+from ._code_client import BatchRunContext, CodeClient, ProxyClient
 from ._utils import (
     _apply_column_mapping,
     _log_metrics_and_instance_results,
     _trace_destination_from_project_scope,
     _write_output,
 )
-from promptflow._sdk._telemetry import ActivityType, log_activity
-from promptflow._sdk._telemetry.telemetry import get_telemetry_logger
 
 
 def _aggregate_metrics(df, evaluators) -> Dict[str, float]:
@@ -53,7 +53,7 @@ def _aggregate_metrics(df, evaluators) -> Dict[str, float]:
     defect_rates = {}
     for col in content_safety_df.columns:
         defect_rate_name = col.replace("_score", "_defect_rate")
-        col_with_numeric_values = pd.to_numeric(content_safety_df[col], errors='coerce')
+        col_with_numeric_values = pd.to_numeric(content_safety_df[col], errors="coerce")
         defect_rates[defect_rate_name] = round(
             np.sum(col_with_numeric_values >= CONTENT_SAFETY_DEFECT_RATE_THRESHOLD_DEFAULT)
             / col_with_numeric_values.count(),
@@ -377,8 +377,8 @@ def evaluate(
 
     # Batch Run
     evaluators_info = {}
-    use_thread_pool = kwargs.get("_use_thread_pool", True)
-    batch_run_client = CodeClient() if use_thread_pool else pf_client
+    use_pf_client = kwargs.get("_use_pf_client", True)
+    batch_run_client = ProxyClient(pf_client) if use_pf_client else CodeClient()
 
     with BatchRunContext(batch_run_client):
         for evaluator_name, evaluator in evaluators.items():
@@ -388,7 +388,7 @@ def evaluate(
                 run=target_run,
                 evaluator_name=evaluator_name,
                 column_mapping=evaluator_config.get(evaluator_name, evaluator_config.get("default", None)),
-                data=input_data_df if use_thread_pool else data,
+                data=input_data_df if isinstance(batch_run_client, CodeClient) else data,
                 stream=True,
             )
 
