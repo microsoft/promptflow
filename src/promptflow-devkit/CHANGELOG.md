@@ -4,6 +4,7 @@
 
 ### Improvements
 - Add retry logic when uploading run details to cloud.
+- Add trace usage telemetry.
 
 ## v1.11.0 (2024.05.17)
 
