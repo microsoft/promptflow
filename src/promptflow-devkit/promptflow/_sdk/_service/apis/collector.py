@@ -15,6 +15,8 @@ from opentelemetry.proto.collector.trace.v1.trace_service_pb2 import ExportTrace
 
 from promptflow._sdk._errors import MissingAzurePackage
 from promptflow._sdk._tracing import _is_azure_ext_installed, process_otlp_trace_request
+from promptflow._sdk._utilities.tracing_utils import _telemetry_helper as trace_telemetry_helper
+from promptflow._sdk._utilities.tracing_utils import aggregate_trace_count
 
 
 def trace_collector(
@@ -37,6 +39,7 @@ def trace_collector(
     :param credential: The credential object used to authenticate with cosmosdb. Default is None.
     :type credential: Optional[object]
     """
+    all_spans = list()
     content_type = request.headers.get("Content-Type")
     # binary protobuf encoding
     if "application/x-protobuf" in content_type:
@@ -48,7 +51,7 @@ def trace_collector(
         if credential is not None:
             # local prompt flow service will not pass credential, so this is runtime scenario
             get_credential = credential if callable(credential) else lambda: credential  # noqa: F841
-            process_otlp_trace_request(
+            all_spans = process_otlp_trace_request(
                 trace_request=trace_request,
                 get_created_by_info_with_cache=get_created_by_info_with_cache,
                 logger=logger,
@@ -62,13 +65,18 @@ def trace_collector(
                 from azure.identity import AzureCliCredential
 
                 get_credential = AzureCliCredential
-            process_otlp_trace_request(
+            all_spans = process_otlp_trace_request(
                 trace_request=trace_request,
                 get_created_by_info_with_cache=get_created_by_info_with_cache,
                 logger=logger,
                 get_credential=get_credential,
                 cloud_trace_only=cloud_trace_only,
             )
+        # trace telemetry
+        if len(all_spans) > 0:
+            summary = aggregate_trace_count(all_spans=all_spans)
+            trace_telemetry_helper.append(summary=summary)
+
         return "Traces received", 200
 
     # JSON protobuf encoding
