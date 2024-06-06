@@ -430,7 +430,7 @@ jobs:
       shell: pwsh
       working-directory: ${{ github.workspace }}
       run: |
-        pip install langchain
+        pip install langchain langchain_community
         pip install numexpr
         python scripts/building/run_coverage_tests.py `
           -p ${{ github.workspace }}/src/promptflow/promptflow `

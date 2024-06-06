@@ -62,9 +62,7 @@ class PFAzureIntegrationTestRecording:
         self.variable_recorder = variable_recorder
 
     @staticmethod
-    def from_test_case(
-        test_class, test_func_name: str, recording_dir: str, **kwargs
-    ) -> "PFAzureIntegrationTestRecording":
+    def from_test_case(test_class, test_func_name: str, **kwargs) -> "PFAzureIntegrationTestRecording":
         test_class_name = test_class.__name__
         if test_class_name in TEST_CLASSES_FOR_RUN_INTEGRATION_TEST_RECORDING:
             return PFAzureRunIntegrationTestRecording(
@@ -81,7 +79,7 @@ class PFAzureIntegrationTestRecording:
                 user_object_id=kwargs["user_object_id"],
                 tenant_id=kwargs["tenant_id"],
                 variable_recorder=kwargs["variable_recorder"],
-                recording_dir=recording_dir,
+                recording_dir=kwargs.get("recording_dir"),
             )
 
     def _get_recording_file(self) -> Path:
