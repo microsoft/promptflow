@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import copy
 import datetime
 import json
 import logging
@@ -361,14 +362,14 @@ class TraceTelemetryHelper:
                 self._summary[key] = self._summary.get(key, 0) + count
 
     def log_telemetry(self) -> None:
+        # only lock the process to operate the summary
         with self._lock:
-            for key, count in self._summary.items():
-                custom_dimensions = key._asdict()
-                custom_dimensions[self.CUSTOM_DIMENSIONS_TRACE_COUNT] = count
-                self._telemetry_logger.info(
-                    self.TELEMETRY_ACTIVITY_NAME, extra={"custom_dimensions": custom_dimensions}
-                )
+            summary_to_log = copy.deepcopy(self._summary)
             self._summary = dict()
+        for key, count in summary_to_log.items():
+            custom_dimensions = key._asdict()
+            custom_dimensions[self.CUSTOM_DIMENSIONS_TRACE_COUNT] = count
+            self._telemetry_logger.info(self.TELEMETRY_ACTIVITY_NAME, extra={"custom_dimensions": custom_dimensions})
 
 
 _telemetry_helper = TraceTelemetryHelper()
