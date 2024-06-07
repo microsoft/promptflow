@@ -7,6 +7,7 @@
 
 ### Improvements
 - [promptflow-devkit] Add retry logic when uploading run details to cloud.
+- [promptflow-devkit] Add trace usage telemetry.
 
 ## v1.11.0 (2024.05.17)
 
