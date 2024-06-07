@@ -6,6 +6,7 @@
 - Add "detail" to "Azure OpenAI GPT-4 Turbo with Vision" and "OpenAI GPT-4V" tool inputs.
 - Avoid unintended parsing by role process to user flow inputs in prompt templates.
 - Introduce universal contract LLM tool and combine "Azure OpenAI GPT-4 Turbo with Vision" and "OpenAI GPT-4V" tools to "LLM-Vision" tool.
+- Fix [#3388](https://github.com/microsoft/promptflow/issues/3388) that tool calls definitions with internal arrays failed parsing
 
 ## 1.4.0 (2024.03.26)
 

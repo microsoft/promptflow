@@ -4,6 +4,7 @@
 ### Bugs fixed
 - Fix ChatUI can't work in docker container when running image build with `pf flow build`.
 - Fix [#3355](https://github.com/microsoft/promptflow/issues/3355) that IndexError is raised when generator is used in a flow and the flow is called inside another flow.
+- Fix [#3388](https://github.com/microsoft/promptflow/issues/3388) that tool calls definitions with internal arrays failed parsing
 
 ## v1.11.0 (2024.05.17)
 
