@@ -67,7 +67,17 @@ class EvalRun(metaclass=Singleton):
     The simple singleton run class, used for accessing artifact store.
 
     :param run_name: The name of the run.
-    :param
+    :type run_name: Optional[str]
+    :param tracking_uri: Tracking URI for this run; required to make calls.
+    :type tracking_uri: str
+    :param subscription_id: The subscription ID used to track run.
+    :type subscription_id: str
+    :param group_name: The resource group used to track run.
+    :type group_name: str
+    :param workspace_name: The name of workspace/project used to track run.
+    :type workspace_name: str
+    :param ml_client: The ml client used for authentication into Azure.
+    :type ml_client: MLClient
     '''
 
     _MAX_RETRIES = 5
@@ -348,7 +358,7 @@ class EvalRun(metaclass=Singleton):
 
     def log_metric(self, key: str, value: float) -> None:
         """
-        Log the metric to azure silmilar to how it is done by mlflow.
+        Log the metric to azure similar to how it is done by mlflow.
 
         :param key: The metric name to be logged.
         :type key: str
