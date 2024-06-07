@@ -301,7 +301,7 @@ class TestHandlePromptyError:
         [
             (0, "0 is less than the minimum of 1", "UserError/OpenAIError/BadRequestError", WrappedOpenAIError),
             (-1, "-1 is less than the minimum of 1", "UserError/OpenAIError/BadRequestError", WrappedOpenAIError),
-            ("invalid_max_token", "Unsupported data type", "UserError/OpenAIError/BadRequestError", WrappedOpenAIError),
+            ("invalid_max_token", "not of type 'integer'", "UserError/OpenAIError/BadRequestError", WrappedOpenAIError),
         ],
     )
     def test_invalid_max_tokens(self, azure_open_ai_connection, max_tokens, error_message, error_codes, exception):
