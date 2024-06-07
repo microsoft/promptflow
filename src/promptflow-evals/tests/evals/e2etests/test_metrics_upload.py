@@ -9,8 +9,6 @@ from promptflow.evals.evaluate import _utils as ev_utils
 from promptflow.evals.evaluate._eval_run import EvalRun
 from promptflow.evals.evaluators._f1_score._f1_score import F1ScoreEvaluator
 from promptflow.evals.evaluate._evaluate import evaluate
-import shutil
-from promptflow._sdk._constants import LOCAL_MGMT_DB_PATH
 
 
 @pytest.fixture
@@ -48,20 +46,6 @@ def setup_data(azure_pf_client, project_scope):
     )
     yield
     run.end_run("FINISHED")
-
-
-class FakeTemporaryDirectory:
-    """The class to create the temporary directory with the deterministic name."""
-
-    def __init__(self, tempfolder: str, name):
-        self.folder = os.path.join(tempfolder, name)
-
-    def __enter__(self):
-        os.makedirs(self.folder, exist_ok=True)
-        return self.folder
-
-    def __exit__(self, *kwargs):
-        shutil.rmtree(self.folder)
 
 
 @pytest.mark.usefixtures("model_config", "recording_injection", "project_scope")
@@ -139,35 +123,18 @@ class TestMetricsUpload(object):
         from .target_fn import target_fn
 
         f1_score_eval = F1ScoreEvaluator()
-        # Runs are stored in the sqlite file locally,
-        # when ran in recording we will break the SQL constraint.
-        # Temporary back up file if it exists.
-        # backup_path = str(LOCAL_MGMT_DB_PATH) + '_backup'
-        # if os.path.isfile(LOCAL_MGMT_DB_PATH):
-        #     if os.path.isfile(backup_path):
-        #         # If we have the backup test was already ran, just remove file.
-        #         os.remove(LOCAL_MGMT_DB_PATH)
-        #     else:
-        #         os.rename(LOCAL_MGMT_DB_PATH, backup_path)
-        # run the evaluation with targets
-        # try:
-        with patch('promptflow._sdk.entities._run.Run._dump'):    
-            evaluate(
-                data=questions_answers_file,
-                target=target_fn,
-                evaluators={"f1": f1_score_eval},
-                azure_ai_project=project_scope,
-                _run_name='eval_test_run2'
-            )
-        # finally:
-            pass
-            # if os.path.isfile(backup_path):
-            #     try:
-            #         os.remove(LOCAL_MGMT_DB_PATH)
-            #         os.rename(backup_path, LOCAL_MGMT_DB_PATH)
-            #     except BaseException:
-            #         # Promptflow service is blocking file from being deleted.
-            #         pass
+        # We need the deterministic name of a run, however it cannot be recorded
+        # into database more then once or the database may be non writable.
+        # By this reason we will cancel writing to database by mocking it.
+        # Please uncomment this line for the local tests
+        # with patch('promptflow._sdk.entities._run.Run._dump'):
+        evaluate(
+            data=questions_answers_file,
+            target=target_fn,
+            evaluators={"f1": f1_score_eval},
+            azure_ai_project=project_scope,
+            _run_name='eval_test_run2'
+        )
         # Check there are no errors in the log.
         error_messages = []
         if caplog.records:
