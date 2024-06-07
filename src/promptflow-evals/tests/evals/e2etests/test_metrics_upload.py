@@ -9,6 +9,7 @@ from promptflow.evals.evaluate import _utils as ev_utils
 from promptflow.evals.evaluate._eval_run import EvalRun
 from promptflow.evals.evaluators._f1_score._f1_score import F1ScoreEvaluator
 from promptflow.evals.evaluate._evaluate import evaluate
+from promptflow.recording.record_mode import is_live
 
 
 @pytest.fixture
@@ -121,6 +122,8 @@ class TestMetricsUpload(object):
         ev_run.log_artifact(tmp_path)
         self._assert_no_errors_for_module(caplog.records, EvalRun.__module__)
 
+    @pytest.mark.skipif(condition=not is_live(),
+                        reason="promptflow run create files with random names, which cannot be recorded.")
     @pytest.mark.usefixtures("vcr_recording")
     def test_e2e_run_target_fn(self, caplog, project_scope, questions_answers_file):
         """Test evaluation run logging."""
@@ -136,14 +139,14 @@ class TestMetricsUpload(object):
         # into database more then once or the database may be non writable.
         # By this reason we will cancel writing to database by mocking it.
         # Please uncomment this line for the local tests
-        with patch('promptflow._sdk.entities._run.Run._dump'):
-            evaluate(
-                data=questions_answers_file,
-                target=target_fn,
-                evaluators={"f1": f1_score_eval},
-                azure_ai_project=project_scope,
-                _run_name='eval_test_run2'
-            )
+        # with patch('promptflow._sdk.entities._run.Run._dump'):
+        evaluate(
+            data=questions_answers_file,
+            target=target_fn,
+            evaluators={"f1": f1_score_eval},
+            azure_ai_project=project_scope,
+            _run_name='eval_test_run2'
+        )
         self._assert_no_errors_for_module(caplog.records, (ev_utils.__name__, EvalRun.__module__))
 
     @pytest.mark.usefixtures("vcr_recording")
