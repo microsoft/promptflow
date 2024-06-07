@@ -46,6 +46,7 @@ websocket-client = ">=1.2.0"
 jsonpath_ng = ">=1.5.0"
 promptflow-azure = "<2.0.0" # Needed for remote tracking
 mlflow = "<3.0.0" # Needed for remote tracking to log metrics
+setuptools = "<71.0.0" # Neede for mlflow, may be removed after mlflow removal.
 azureml-mlflow = "<2.0.0" # Needed for remote tracking to log metrics
 numpy = ">=1.22"
 
