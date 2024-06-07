@@ -142,15 +142,16 @@ class TestMetricsUpload(object):
         # Runs are stored in the sqlite file locally,
         # when ran in recording we will break the SQL constraint.
         # Temporary back up file if it exists.
-        backup_path = str(LOCAL_MGMT_DB_PATH) + '_backup'
-        if os.path.isfile(LOCAL_MGMT_DB_PATH):
-            if os.path.isfile(backup_path):
-                # If we have the backup test was already ran, just remove file.
-                os.remove(LOCAL_MGMT_DB_PATH)
-            else:
-                os.rename(LOCAL_MGMT_DB_PATH, backup_path)
+        # backup_path = str(LOCAL_MGMT_DB_PATH) + '_backup'
+        # if os.path.isfile(LOCAL_MGMT_DB_PATH):
+        #     if os.path.isfile(backup_path):
+        #         # If we have the backup test was already ran, just remove file.
+        #         os.remove(LOCAL_MGMT_DB_PATH)
+        #     else:
+        #         os.rename(LOCAL_MGMT_DB_PATH, backup_path)
         # run the evaluation with targets
-        try:
+        # try:
+        with patch('promptflow._sdk.entities._run.Run._dump'):    
             evaluate(
                 data=questions_answers_file,
                 target=target_fn,
@@ -158,14 +159,15 @@ class TestMetricsUpload(object):
                 azure_ai_project=project_scope,
                 _run_name='eval_test_run2'
             )
-        finally:
-            if os.path.isfile(backup_path):
-                try:
-                    os.remove(LOCAL_MGMT_DB_PATH)
-                    os.rename(backup_path, LOCAL_MGMT_DB_PATH)
-                except BaseException:
-                    # Promptflow service is blocking file from being deleted.
-                    pass
+        # finally:
+            pass
+            # if os.path.isfile(backup_path):
+            #     try:
+            #         os.remove(LOCAL_MGMT_DB_PATH)
+            #         os.rename(backup_path, LOCAL_MGMT_DB_PATH)
+            #     except BaseException:
+            #         # Promptflow service is blocking file from being deleted.
+            #         pass
         # Check there are no errors in the log.
         error_messages = []
         if caplog.records:
