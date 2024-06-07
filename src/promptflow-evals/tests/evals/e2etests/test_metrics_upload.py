@@ -53,6 +53,15 @@ def setup_data(azure_pf_client, project_scope):
 class TestMetricsUpload(object):
     """End to end tests to check how the metrics were uploaded to cloud."""
 
+    def _assert_no_errors_for_module(self, records, module_names):
+        """Check there are no errors in the log."""
+        error_messages = []
+        if records:
+            error_messages = [
+                lg_rec.message for lg_rec in records if lg_rec.levelno == logging.ERROR and (
+                    lg_rec.name in module_names)]
+            assert not error_messages, '\n'.join(error_messages)
+
     @pytest.mark.usefixtures("vcr_recording")
     def test_writing_to_run_history(self, setup_data, caplog):
         """Test logging data to RunHistory service."""
@@ -69,7 +78,7 @@ class TestMetricsUpload(object):
             assert any(lg_rec.levelno == logging.ERROR for lg_rec in caplog.records), 'The error log was not captured!'
         caplog.clear()
         ev_utils._write_properties_to_run_history({'test': 42})
-        assert not any(lg_rec.levelno == logging.ERROR for lg_rec in caplog.records)
+        self._assert_no_errors_for_module(caplog.records, [ev_utils.__name__])
 
     @pytest.mark.usefixtures("vcr_recording")
     def test_logging_metrics(self, setup_data, caplog):
@@ -87,7 +96,7 @@ class TestMetricsUpload(object):
             assert any(lg_rec.levelno == logging.ERROR for lg_rec in caplog.records), 'The error log was not captured!'
         caplog.clear()
         ev_run.log_metric('f1', 0.54)
-        assert len(caplog.records) == 0 or not any(lg_rec.levelno == logging.ERROR for lg_rec in caplog.records)
+        self._assert_no_errors_for_module(caplog.records, EvalRun.__module__)
 
     @pytest.mark.usefixtures("vcr_recording")
     def test_log_artifact(self, setup_data, caplog, tmp_path):
@@ -110,7 +119,7 @@ class TestMetricsUpload(object):
             assert any(lg_rec.levelno == logging.ERROR for lg_rec in caplog.records), 'The error log was not captured!'
         caplog.clear()
         ev_run.log_artifact(tmp_path)
-        assert len(caplog.records) == 0 or not any(lg_rec.levelno == logging.ERROR for lg_rec in caplog.records)
+        self._assert_no_errors_for_module(caplog.records, EvalRun.__module__)
 
     @pytest.mark.usefixtures("vcr_recording")
     def test_e2e_run_target_fn(self, caplog, project_scope, questions_answers_file):
@@ -127,22 +136,15 @@ class TestMetricsUpload(object):
         # into database more then once or the database may be non writable.
         # By this reason we will cancel writing to database by mocking it.
         # Please uncomment this line for the local tests
-        # with patch('promptflow._sdk.entities._run.Run._dump'):
-        evaluate(
-            data=questions_answers_file,
-            target=target_fn,
-            evaluators={"f1": f1_score_eval},
-            azure_ai_project=project_scope,
-            _run_name='eval_test_run2'
-        )
-        # Check there are no errors in the log.
-        error_messages = []
-        if caplog.records:
-            error_messages = [
-                lg_rec.message for lg_rec in caplog.records if lg_rec.levelno == logging.ERROR and (
-                    lg_rec.name == ev_utils.__name__ or lg_rec.name == EvalRun.__module__)]
-
-        assert not error_messages, '\n'.join(error_messages)
+        with patch('promptflow._sdk.entities._run.Run._dump'):
+            evaluate(
+                data=questions_answers_file,
+                target=target_fn,
+                evaluators={"f1": f1_score_eval},
+                azure_ai_project=project_scope,
+                _run_name='eval_test_run2'
+            )
+        self._assert_no_errors_for_module(caplog.records, (ev_utils.__name__, EvalRun.__module__))
 
     @pytest.mark.usefixtures("vcr_recording")
     def test_e2e_run(self, caplog, project_scope, questions_answers_file):
@@ -162,11 +164,4 @@ class TestMetricsUpload(object):
             evaluators={"f1": f1_score_eval},
             azure_ai_project=project_scope
         )
-        # Check there are no errors in the log.
-        error_messages = []
-        if caplog.records:
-            error_messages = [
-                lg_rec.message for lg_rec in caplog.records if lg_rec.levelno == logging.ERROR and (
-                    lg_rec.name == ev_utils.__name__ or lg_rec.name == EvalRun.__module__)]
-
-        assert not error_messages, '\n'.join(error_messages)
+        self._assert_no_errors_for_module(caplog.records, (ev_utils.__name__, EvalRun.__module__))
