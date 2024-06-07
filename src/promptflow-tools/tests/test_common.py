@@ -249,7 +249,8 @@ class TestCommon:
          ("tool_calls:\r\n[", None),
          ("tool_calls:\r\n[{'id': 'tool_call_id', 'type': 'function', 'function': {'name': 'func1', 'arguments': ''}}]",
           [{'id': 'tool_call_id', 'type': 'function', 'function': {'name': 'func1', 'arguments': ''}}]),
-         ("tool_calls:\r\n[{'id': 'tool_call_id', 'type': 'function', 'function': {'name': 'func1', 'arguments': '{\"arg1\": []}'}}]",
+         ("tool_calls:\r\n[{'id': 'tool_call_id', 'type': 'function',"\
+          " 'function': {'name': 'func1', 'arguments': '{\"arg1\": []}'}}]",
           [{'id': 'tool_call_id', 'type': 'function', 'function': {'name': 'func1', 'arguments': '{"arg1": []}'}}]),
          ("tool_calls:\n[{'id': 'tool_call_id', 'type': 'function', 'function': {'name': 'func1', 'arguments': ''}}]",
           [{'id': 'tool_call_id', 'type': 'function', 'function': {'name': 'func1', 'arguments': ''}}])])
