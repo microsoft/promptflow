@@ -296,6 +296,7 @@ class TestHandlePromptyError:
         assert mock_method.call_count == 1
         assert exc_info.value.error_codes == error_codes.split("/")
 
+    @pytest.mark.skipif(condition=not pytest.is_live, reason="OpenAI response failed.")
     @pytest.mark.parametrize(
         "max_tokens, error_message, error_codes, exception",
         [
