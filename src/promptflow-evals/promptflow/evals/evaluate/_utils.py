@@ -11,11 +11,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from promptflow._sdk._constants import Local2Cloud
-from promptflow._utils.async_utils import async_run_allowing_running_loop
-from promptflow.azure._dependencies._pf_evals import AsyncRunUploader
 from promptflow.evals._constants import DEFAULT_EVALUATION_RESULTS_FILE_NAME, Prefixes
-
 from promptflow.evals.evaluate._eval_run import EvalRun
 
 
@@ -81,24 +77,9 @@ def _azure_pf_client_and_triad(trace_destination):
     return azure_pf_client, ws_triad
 
 
-def _get_trace_destination_config(tracking_uri):
-    from promptflow._sdk._configuration import Configuration
-
-    pf_config = Configuration(overrides={"trace.destination": tracking_uri} if tracking_uri is not None else None)
-
-    trace_destination = pf_config.get_trace_destination()
-
-    if is_none(trace_destination):
-        return None
-
-    return trace_destination
-
-
 def _log_metrics_and_instance_results(
-    metrics, instance_results, tracking_uri, run, evaluation_name=None,
+    metrics, instance_results, trace_destination, run
 ) -> str:
-    trace_destination = _get_trace_destination_config(tracking_uri=tracking_uri)
-
     if trace_destination is None:
         LOGGER.error("Unable to log traces as trace destination was not defined.")
         return None
@@ -117,38 +98,26 @@ def _log_metrics_and_instance_results(
         workspace_name=ws_triad.workspace_name,
         ml_client=azure_pf_client.ml_client
     )
-    if run is None:
-        with tempfile.TemporaryDirectory() as tmpdir:
-            tmp_path = os.path.join(tmpdir, "eval_results.jsonl")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        eval_path = os.path.join(tmpdir, "evaluation_results")
+        os.makedirs(eval_path, exist_ok=True)
+        tmp_path = os.path.join(eval_path, "eval_results.jsonl")
 
-            with open(tmp_path, "w", encoding="utf-8") as f:
-                f.write(instance_results.to_json(orient="records", lines=True))
+        with open(tmp_path, "w", encoding="utf-8") as f:
+            f.write(instance_results.to_json(orient="records", lines=True))
 
-            ev_run.log_artifact(tmp_path)
+        ev_run.log_artifact(eval_path)
 
-            # Using mlflow to create a dummy run since once created via PF show traces of dummy run in UI.
-            # Those traces can be confusing.
-            # adding these properties to avoid showing traces if a dummy run is created
-            _write_properties_to_run_history(
-                properties={
-                    "_azureml.evaluation_run": "azure-ai-generative-parent",
-                    "_azureml.evaluate_artifacts": json.dumps([{"path": "eval_results.jsonl", "type": "table"}]),
-                    "isEvaluatorRun": "true",
-                }
-            )
-    else:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            file_name = Local2Cloud.FLOW_INSTANCE_RESULTS_FILE_NAME
-            local_file = Path(temp_dir) / file_name
-            instance_results.to_json(local_file, orient="records", lines=True)
-
-            # overriding instance_results.jsonl file
-            async_uploader = AsyncRunUploader._from_run_operations(azure_pf_client.runs)
-            remote_file = (
-                f"{Local2Cloud.BLOB_ROOT_PROMPTFLOW}"
-                f"/{Local2Cloud.BLOB_ARTIFACTS}/{run.name}/{Local2Cloud.FLOW_INSTANCE_RESULTS_FILE_NAME}"
-            )
-            async_run_allowing_running_loop(async_uploader._upload_local_file_to_blob, local_file, remote_file)
+        # Using mlflow to create a dummy run since once created via PF show traces of dummy run in UI.
+        # Those traces can be confusing.
+        # adding these properties to avoid showing traces if a dummy run is created
+        _write_properties_to_run_history(
+            properties={
+                "_azureml.evaluation_run": "azure-ai-generative-parent",
+                "_azureml.evaluate_artifacts": json.dumps([{"path": "eval_results.jsonl", "type": "table"}]),
+                "isEvaluatorRun": "true",
+            }
+        )
 
     for metric_name, metric_value in metrics.items():
         ev_run.log_metric(metric_name, metric_value)

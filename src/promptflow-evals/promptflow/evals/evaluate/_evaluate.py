@@ -155,7 +155,8 @@ def _validate_columns(
 
 
 def _apply_target_to_data(
-    target: Callable, data: str, pf_client: PFClient, initial_data: pd.DataFrame, evaluation_name: Optional[str] = None
+    target: Callable, data: str, pf_client: PFClient, initial_data: pd.DataFrame, evaluation_name: Optional[str] = None,
+    _run_name: Optional[str] = None
 ) -> Tuple[pd.DataFrame, Set[str]]:
     """
     Apply the target function to the data set and return updated data and generated columns.
@@ -168,6 +169,8 @@ def _apply_target_to_data(
     :paramtype pf_client: PFClient
     :keyword initial_data: The data frame with the loaded data.
     :paramtype initial_data: pd.DataFrame
+    :keyword _run_name: The name of target run. Used for testing only.
+    :paramtype _run_name: Optional[str]
     :return: The tuple, containing data frame and the list of added columns.
     :rtype: Tuple[pd.DataFrame, List[str]]
     """
@@ -180,6 +183,7 @@ def _apply_target_to_data(
         data=data,
         properties={"runType": "eval_run", "isEvaluatorRun": "true"},
         stream=True,
+        name=_run_name
     )
     target_output = pf_client.runs.get_details(run, all_results=True)
     # Remove input and output prefix
@@ -350,7 +354,8 @@ def evaluate(
     target_generated_columns = set()
     if data is not None and target is not None:
         input_data_df, target_generated_columns, target_run = _apply_target_to_data(
-            target, data, pf_client, input_data_df, evaluation_name
+            target, data, pf_client, input_data_df, evaluation_name,
+            _run_name = kwargs.get('_run_name')
         )
 
         # Make sure, the default is always in the configuration.
@@ -431,7 +436,7 @@ def evaluate(
     metrics = _aggregate_metrics(evaluators_result_df, evaluators)
 
     studio_url = _log_metrics_and_instance_results(
-        metrics, result_df, trace_destination, target_run, evaluation_name
+        metrics, result_df, trace_destination, target_run
     )
 
     result = {"rows": result_df.to_dict("records"), "metrics": metrics, "studio_url": studio_url}

@@ -299,6 +299,13 @@ class EvalRun(metaclass=Singleton):
         if self._is_broken:
             LOGGER.error("Unable to log artifact because the run failed to start.")
             return
+        # Check if artifact dirrectory is empty or does not exist.
+        if not os.path.isdir(artifact_folder):
+            LOGGER.error("The path to the artifact is either not a directory or does not exist.")
+            return
+        if not os.listdir(artifact_folder):
+            LOGGER.error("The path to the artifact is empty.")
+            return
         # First we will list the files and the appropriate remote paths for them.
         upload_path = os.path.basename(os.path.normpath(artifact_folder))
         remote_paths = {'paths': []}

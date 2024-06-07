@@ -399,6 +399,49 @@ class TestEvalRun:
         assert '404' in caplog.records[0].message
         assert expected_str in caplog.records[0].message
 
+    @pytest.mark.parametrize(
+        'dir_exists,expected_error', [
+            (True, "The path to the artifact is empty."),
+            (False, "The path to the artifact is either not a directory or does not exist.")
+        ]
+    )
+    def test_wrong_artifact_path(self, tmp_path, caplog, dir_exists, expected_error):
+        """Test that if artifact path is empty, or dies not exist we are logging the error."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            'run': {
+                "info": {
+                    "run_id": str(uuid4()),
+                    "experiment_id": str(uuid4()),
+                }
+            }
+        }
+        mock_session = MagicMock()
+        mock_session.request.return_value = mock_response
+        with patch('promptflow.evals.evaluate._eval_run.requests.Session', return_value=mock_session):
+            run = EvalRun(
+                run_name='test',
+                tracking_uri=(
+                    'https://region.api.azureml.ms/mlflow/v2.0/subscriptions'
+                    '/000000-0000-0000-0000-0000000/resourceGroups/mock-rg-region'
+                    '/providers/Microsoft.MachineLearningServices'
+                    '/workspaces/mock-ws-region'),
+                subscription_id='000000-0000-0000-0000-0000000',
+                group_name='mock-rg-region',
+                workspace_name='mock-ws-region',
+                ml_client=MagicMock()
+            )
+            logger = logging.getLogger(EvalRun.__module__)
+            # All loggers, having promptflow. prefix will have "promptflow" logger
+            # as a parent. This logger does not propagate the logs and cannot be
+            # captured by caplog. Here we will skip this logger to capture logs.
+            logger.parent = logging.root
+            artifact_folder = tmp_path if dir_exists else "wrong_path_567"
+            run.log_artifact(artifact_folder)
+            assert len(caplog.records) == 1
+            assert expected_error in caplog.records[0].message
+
     def test_log_metrics_and_instance_results_logs_error(self, caplog):
         """Test that we are logging the error when there is no trace destination."""
         logger = logging.getLogger(ev_utils.__name__)
@@ -409,8 +452,7 @@ class TestEvalRun:
         ev_utils._log_metrics_and_instance_results(
             metrics=None,
             instance_results=None,
-            tracking_uri=None,
-            run=None,
-            evaluation_name=None)
+            trace_destination=None,
+            run=None)
         assert len(caplog.records) == 1
         assert "Unable to log traces as trace destination was not defined." in caplog.records[0].message

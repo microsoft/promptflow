@@ -73,6 +73,7 @@ class PFAzureIntegrationTestRecording:
                 user_object_id=kwargs["user_object_id"],
                 tenant_id=kwargs["tenant_id"],
                 variable_recorder=kwargs["variable_recorder"],
+                recording_dir=recording_dir,
             )
         else:
             return PFAzureIntegrationTestRecording(
@@ -335,7 +336,7 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
                         body2_dict = json.loads(r2.body.decode("utf-8"))
                         body_dict["startTimeUtc"] = body2_dict["startTimeUtc"]
                         body_dict["endTimeUtc"] = body2_dict["endTimeUtc"]
-                    except (AttributeError, json.JSONDecodeError, KeyError):
+                    except (AttributeError, json.JSONDecodeError, KeyError, TypeError):
                         return False
                     body1 = json.dumps(body_dict)
                     _r1.body = body1.encode("utf-8")
