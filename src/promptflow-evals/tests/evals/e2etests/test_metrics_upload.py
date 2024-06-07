@@ -144,7 +144,11 @@ class TestMetricsUpload(object):
         # Temporary back up file if it exists.
         backup_path = str(LOCAL_MGMT_DB_PATH) + '_backup'
         if os.path.isfile(LOCAL_MGMT_DB_PATH):
-            os.rename(LOCAL_MGMT_DB_PATH, backup_path)
+            if os.path.isfile(backup_path):
+                # If we have the backup test was already ran, just remove file.
+                os.remove(LOCAL_MGMT_DB_PATH)
+            else:
+                os.rename(LOCAL_MGMT_DB_PATH, backup_path)
         # run the evaluation with targets
         try:
             evaluate(
@@ -160,6 +164,7 @@ class TestMetricsUpload(object):
                     os.remove(LOCAL_MGMT_DB_PATH)
                     os.rename(backup_path, LOCAL_MGMT_DB_PATH)
                 except BaseException:
+                    # Promptflow service is blocking file from being deleted.
                     pass
         # Check there are no errors in the log.
         error_messages = []
