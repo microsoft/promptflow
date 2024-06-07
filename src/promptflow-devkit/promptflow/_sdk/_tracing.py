@@ -39,6 +39,7 @@ from promptflow._sdk._constants import (
     PF_SERVICE_HOST,
     PF_TRACE_CONTEXT,
     PF_TRACE_CONTEXT_ATTR,
+    PF_TRACING_SKIP_EXPORTER_SETUP_ENVIRON,
     TRACE_DEFAULT_COLLECTION,
     AzureMLWorkspaceTriad,
     ContextAttributeKey,
@@ -119,6 +120,11 @@ def is_trace_feature_disabled() -> bool:
     conf = Configuration.get_instance()
     value = conf.get_config(key=conf.TRACE_DESTINATION)
     return TraceDestinationConfig.is_feature_disabled(value)
+
+
+def is_exporter_setup_skipped() -> bool:
+    value = os.getenv(PF_TRACING_SKIP_EXPORTER_SETUP_ENVIRON, "false").lower()
+    return value == "true"
 
 
 def _is_azure_ext_installed() -> bool:
@@ -253,7 +259,6 @@ def _get_workspace_base_url(ws_triad: AzureMLWorkspaceTriad) -> str:
         f"/resourceGroups/{ws_triad.resource_group_name}"
         "/providers/Microsoft.MachineLearningServices"
         f"/workspaces/{ws_triad.workspace_name}"
-        "&flight=PFTrace"
     )
 
 
@@ -284,7 +289,6 @@ def _print_tracing_url_from_azure_portal(
         f"/resourceGroups/{ws_triad.resource_group_name}"
         "/providers/Microsoft.MachineLearningServices"
         f"/workspaces/{ws_triad.workspace_name}"
-        "&flight=PFTrace"
     )
 
     if run is None:
@@ -544,14 +548,17 @@ def setup_exporter_to_pfs() -> None:
         # create OTLP span exporter if endpoint is set
         otlp_span_exporter = OTLPSpanExporterWithTraceURL(endpoint=endpoint)
         tracer_provider: TracerProvider = trace.get_tracer_provider()
-        if not getattr(tracer_provider, TRACER_PROVIDER_PFS_EXPORTER_SET_ATTR, False):
-            _logger.info("have not set exporter to prompt flow service, will set it...")
-            # Use a 1000 millis schedule delay to help export the traces in 1 second.
-            processor = BatchSpanProcessor(otlp_span_exporter, schedule_delay_millis=1000)
-            tracer_provider.add_span_processor(processor)
-            setattr(tracer_provider, TRACER_PROVIDER_PFS_EXPORTER_SET_ATTR, True)
+        if is_exporter_setup_skipped():
+            _logger.debug("exporter setup is skipped according to environment variable.")
         else:
-            _logger.info("exporter to prompt flow service is already set, no action needed.")
+            if not getattr(tracer_provider, TRACER_PROVIDER_PFS_EXPORTER_SET_ATTR, False):
+                _logger.info("have not set exporter to prompt flow service, will set it...")
+                # Use a 1000 millis schedule delay to help export the traces in 1 second.
+                processor = BatchSpanProcessor(otlp_span_exporter, schedule_delay_millis=1000)
+                tracer_provider.add_span_processor(processor)
+                setattr(tracer_provider, TRACER_PROVIDER_PFS_EXPORTER_SET_ATTR, True)
+            else:
+                _logger.info("exporter to prompt flow service is already set, no action needed.")
     _logger.debug("finish setup exporter to prompt flow service.")
 
 

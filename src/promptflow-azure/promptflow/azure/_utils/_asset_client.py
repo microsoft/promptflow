@@ -8,6 +8,7 @@ import httpx
 from promptflow._sdk._errors import AssetInternalError, SDKError, UserAuthenticationError
 from promptflow._sdk._utilities.general_utils import get_promptflow_sdk_version
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow._utils.retry_utils import async_retry
 from promptflow.azure._utils.general import get_authorization
 
 logger = get_cli_sdk_logger()
@@ -33,6 +34,7 @@ class AsyncAssetClient:
         self.service_endpoint = service_endpoint
         self.credential = credential
 
+    @async_retry(AssetInternalError, _logger=logger)
     async def create_unregistered_output(self, run_id, datastore_name, relative_path, output_name, type="UriFolder"):
         url = CREATE_UNREGISTERED_OUTPUT_URL.format(
             endpoint=self.service_endpoint,
@@ -65,14 +67,12 @@ class AsyncAssetClient:
                     raise UserAuthenticationError(error_message)
                 elif response.status_code != 200:
                     error_message = f"{error_msg_prefix}. Code={response.status_code}. Message={response.text}"
-                    logger.error(error_message)
                     raise AssetInternalError(error_message)
                 else:
                     asset_id = response.json()["latestVersion"]["dataVersion"]["assetId"]
                     return asset_id
         except Exception as e:
             error_message = f"{error_msg_prefix}: {str(e)}"
-            logger.error(error_message)
             raise AssetInternalError(error_message) from e
 
     def _get_header(self) -> Dict[str, str]:

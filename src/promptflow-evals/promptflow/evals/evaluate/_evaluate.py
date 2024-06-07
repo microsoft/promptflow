@@ -20,6 +20,8 @@ from ._utils import (
     _trace_destination_from_project_scope,
     _write_output,
 )
+from promptflow._sdk._telemetry import ActivityType, log_activity
+from promptflow._sdk._telemetry.telemetry import get_telemetry_logger
 
 
 def _aggregate_metrics(df, evaluators) -> Dict[str, float]:
@@ -51,9 +53,10 @@ def _aggregate_metrics(df, evaluators) -> Dict[str, float]:
     defect_rates = {}
     for col in content_safety_df.columns:
         defect_rate_name = col.replace("_score", "_defect_rate")
+        col_with_numeric_values = pd.to_numeric(content_safety_df[col], errors='coerce')
         defect_rates[defect_rate_name] = round(
-            np.sum(content_safety_df[col] >= CONTENT_SAFETY_DEFECT_RATE_THRESHOLD_DEFAULT)
-            / len(content_safety_df[col]),
+            np.sum(col_with_numeric_values >= CONTENT_SAFETY_DEFECT_RATE_THRESHOLD_DEFAULT)
+            / col_with_numeric_values.count(),
             2,
         )
 
@@ -247,6 +250,7 @@ def _rename_columns_conditionally(df: pd.DataFrame):
     return df
 
 
+@log_activity(get_telemetry_logger(), "pf.evals.evaluate", activity_type=ActivityType.PUBLICAPI, user_agent=USER_AGENT)
 def evaluate(
     *,
     evaluation_name: Optional[str] = None,
@@ -399,14 +403,14 @@ def evaluate(
 
         # drop input columns
         evaluator_result_df = evaluator_result_df.drop(
-            columns=[col for col in evaluator_result_df.columns if col.startswith(Prefixes._INPUTS)]
+            columns=[col for col in evaluator_result_df.columns if str(col).startswith(Prefixes._INPUTS)]
         )
 
         # rename output columns
         # Assuming after removing inputs columns, all columns are output columns
         evaluator_result_df.rename(
             columns={
-                col: f"outputs.{evaluator_name}.{col.replace(Prefixes._OUTPUTS, '')}"
+                col: f"outputs.{evaluator_name}.{str(col).replace(Prefixes._OUTPUTS, '')}"
                 for col in evaluator_result_df.columns
             },
             inplace=True,

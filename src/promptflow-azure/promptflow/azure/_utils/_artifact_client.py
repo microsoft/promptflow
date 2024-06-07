@@ -8,6 +8,7 @@ import httpx
 from promptflow._sdk._errors import ArtifactInternalError, SDKError, UserAuthenticationError
 from promptflow._sdk._utilities.general_utils import get_promptflow_sdk_version
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow._utils.retry_utils import async_retry
 from promptflow.azure._utils.general import get_authorization
 
 logger = get_cli_sdk_logger()
@@ -38,6 +39,7 @@ class AsyncArtifactClient:
         self.service_endpoint = service_endpoint
         self.credential = credential
 
+    @async_retry(ArtifactInternalError, _logger=logger)
     async def register_artifact(self, run_id, datastore_name, relative_path, path):
         """Register an artifact for a run."""
         url = CREATE_UNREGISTERED_OUTPUT_URL.format(
@@ -68,11 +70,9 @@ class AsyncArtifactClient:
                     raise UserAuthenticationError(error_message)
                 elif response.status_code != 200:
                     error_message = f"{error_msg_prefix}. Code={response.status_code}. Message={response.text}"
-                    logger.error(error_message)
                     raise ArtifactInternalError(error_message)
         except Exception as e:
             error_message = f"{error_msg_prefix}: {str(e)}"
-            logger.error(error_message)
             raise ArtifactInternalError(error_message) from e
 
     def _get_header(self) -> Dict[str, str]:

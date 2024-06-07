@@ -3,36 +3,35 @@ import os
 from typing import Any, Dict, List
 
 import pytest
-from azure.identity import DefaultAzureCredential
 
 
-@pytest.mark.usefixtures(
-    "model_config", "recording_injection", "ml_client_config", "configure_default_azure_credential"
-)
+@pytest.mark.usefixtures("recording_injection")
 @pytest.mark.e2etest
 class TestAdvSimulator:
-    def test_adv_sim_init_with_prod_url(self, model_config, ml_client_config):
+    @pytest.mark.usefixtures("vcr_recording")
+    def test_adv_sim_init_with_prod_url(self, azure_cred, project_scope):
         os.environ.pop("RAI_SVC_URL", None)
         from promptflow.evals.synthetic import AdversarialSimulator
 
         azure_ai_project = {
-            "subscription_id": ml_client_config["subscription_id"],
-            "resource_group_name": ml_client_config["resource_group_name"],
-            "project_name": ml_client_config["project_name"],
-            "credential": DefaultAzureCredential(),
+            "subscription_id": project_scope["subscription_id"],
+            "resource_group_name": project_scope["resource_group_name"],
+            "project_name": project_scope["project_name"],
+            "credential": azure_cred,
         }
         simulator = AdversarialSimulator(azure_ai_project=azure_ai_project)
         assert callable(simulator)
 
-    def test_incorrect_scenario_raises_error(self, model_config, ml_client_config):
+    @pytest.mark.usefixtures("vcr_recording")
+    def test_incorrect_scenario_raises_error(self, azure_cred, project_scope):
         os.environ.pop("RAI_SVC_URL", None)
         from promptflow.evals.synthetic import AdversarialSimulator
 
         azure_ai_project = {
-            "subscription_id": ml_client_config["subscription_id"],
-            "resource_group_name": ml_client_config["resource_group_name"],
-            "project_name": ml_client_config["project_name"],
-            "credential": DefaultAzureCredential(),
+            "subscription_id": project_scope["subscription_id"],
+            "resource_group_name": project_scope["resource_group_name"],
+            "project_name": project_scope["project_name"],
+            "credential": azure_cred,
         }
 
         async def callback(x):
@@ -49,15 +48,16 @@ class TestAdvSimulator:
                 )
             )
 
-    def test_adv_qa_sim_responds_with_one_response(self, model_config, ml_client_config):
+    @pytest.mark.usefixtures("vcr_recording")
+    def test_adv_qa_sim_responds_with_one_response(self, azure_cred, project_scope):
         os.environ.pop("RAI_SVC_URL", None)
         from promptflow.evals.synthetic import AdversarialScenario, AdversarialSimulator
 
         azure_ai_project = {
-            "subscription_id": ml_client_config["subscription_id"],
-            "resource_group_name": ml_client_config["resource_group_name"],
-            "project_name": ml_client_config["project_name"],
-            "credential": DefaultAzureCredential(),
+            "subscription_id": project_scope["subscription_id"],
+            "resource_group_name": project_scope["resource_group_name"],
+            "project_name": project_scope["project_name"],
+            "credential": azure_cred,
         }
 
         async def callback(
@@ -99,15 +99,15 @@ class TestAdvSimulator:
         assert "topic" not in outputs[0]["template_parameters"]
         assert "target_population" not in outputs[0]["template_parameters"]
 
-    def test_adv_conversation_sim_responds_with_responses(self, model_config, ml_client_config):
+    def test_adv_conversation_sim_responds_with_responses(self, azure_cred, project_scope):
         os.environ.pop("RAI_SVC_URL", None)
         from promptflow.evals.synthetic import AdversarialScenario, AdversarialSimulator
 
         azure_ai_project = {
-            "subscription_id": ml_client_config["subscription_id"],
-            "resource_group_name": ml_client_config["resource_group_name"],
-            "project_name": ml_client_config["project_name"],
-            "credential": DefaultAzureCredential(),
+            "subscription_id": project_scope["subscription_id"],
+            "resource_group_name": project_scope["resource_group_name"],
+            "project_name": project_scope["project_name"],
+            "credential": azure_cred,
         }
 
         async def callback(
@@ -142,15 +142,16 @@ class TestAdvSimulator:
         print(outputs)
         assert len(outputs[0]["messages"]) == 4
 
-    def test_adv_summarization_sim_responds_with_responses(self, model_config, ml_client_config):
+    @pytest.mark.usefixtures("vcr_recording")
+    def test_adv_summarization_sim_responds_with_responses(self, azure_cred, project_scope):
         os.environ.pop("RAI_SVC_URL", None)
         from promptflow.evals.synthetic import AdversarialScenario, AdversarialSimulator
 
         azure_ai_project = {
-            "subscription_id": ml_client_config["subscription_id"],
-            "resource_group_name": ml_client_config["resource_group_name"],
-            "project_name": ml_client_config["project_name"],
-            "credential": DefaultAzureCredential(),
+            "subscription_id": project_scope["subscription_id"],
+            "resource_group_name": project_scope["resource_group_name"],
+            "project_name": project_scope["project_name"],
+            "credential": azure_cred,
         }
 
         async def callback(
@@ -185,15 +186,16 @@ class TestAdvSimulator:
         print("*****************************")
         assert len(outputs) == 1
 
-    def test_adv_summarization_jailbreak_sim_responds_with_responses(self, model_config, ml_client_config):
+    @pytest.mark.usefixtures("vcr_recording")
+    def test_adv_summarization_jailbreak_sim_responds_with_responses(self, azure_cred, project_scope):
         os.environ.pop("RAI_SVC_URL", None)
         from promptflow.evals.synthetic import AdversarialScenario, AdversarialSimulator
 
         azure_ai_project = {
-            "subscription_id": ml_client_config["subscription_id"],
-            "resource_group_name": ml_client_config["resource_group_name"],
-            "project_name": ml_client_config["project_name"],
-            "credential": DefaultAzureCredential(),
+            "subscription_id": project_scope["subscription_id"],
+            "resource_group_name": project_scope["resource_group_name"],
+            "project_name": project_scope["project_name"],
+            "credential": azure_cred,
         }
 
         async def callback(

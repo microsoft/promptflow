@@ -1,0 +1,103 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.31.0
+    method: GET
+    uri: http://127.0.0.1:57190/heartbeat
+  response:
+    body:
+      string: '{"promptflow": "1.12.0.dev0"}'
+    headers:
+      access-control-allow-origin:
+      - '*'
+      content-length:
+      - '29'
+      content-type:
+      - application/json
+      server:
+      - waitress
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.31.0
+    method: GET
+    uri: http://127.0.0.1:57190/heartbeat
+  response:
+    body:
+      string: '{"promptflow": "1.12.0.dev0"}'
+    headers:
+      access-control-allow-origin:
+      - '*'
+      content-length:
+      - '29'
+      content-type:
+      - application/json
+      server:
+      - waitress
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '[{"ver": 1, "name": "Microsoft.ApplicationInsights.Event", "time": "2024-05-25T22:26:44.178508Z",
+      "sampleRate": 100.0, "iKey": "8b52b368-4c91-4226-b7f7-be52822f0509", "tags":
+      {"ai.device.locale": "en_US", "ai.device.osVersion": "10.0.22631", "ai.device.type":
+      "Other", "ai.internal.sdkVersion": "uwm_py3.12.2:otel1.23.0:ext1.0.0b23", "ai.cloud.role":
+      "***.py", "ai.internal.nodeName": "CPC-ninhu-FNJRA", "ai.operation.id": "00000000000000000000000000000000",
+      "ai.operation.parentId": "0000000000000000"}, "data": {"baseType": "EventData",
+      "baseData": {"ver": 2, "name": "pf.runs.create_or_update.start", "properties":
+      {"level": "INFO", "from_ci": "False", "request_id": "2d6256db-5018-4f47-8304-f3f9f74bff8a",
+      "first_call": "True", "activity_name": "pf.runs.create_or_update", "activity_type":
+      "PublicApi", "user_agent": "promptflow-evals/0.1.0.dev0 promptflow-sdk/1.9.0.dev0
+      promptflow/1.12.0.dev0 promptflow-core/1.9.0.dev0", "flow_type": "flex", "python_version":
+      "3.12.2", "installation_id": "ab9e2fa7-0039-5518-931a-d73917091bf8"}}}}]'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '1039'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - azsdk-python-azuremonitorclient/unknown Python/3.12.2 (Windows-11-10.0.22631-SP0)
+    method: POST
+    uri: https://eastus-8.in.applicationinsights.azure.com/v2.1/track
+  response:
+    body:
+      string: '{"itemsReceived": 1, "itemsAccepted": 1, "appId": null, "errors": []}'
+    headers:
+      content-type:
+      - application/json; charset=utf-8
+      server:
+      - Microsoft-HTTPAPI/2.0
+      strict-transport-security:
+      - max-age=31536000
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+    status:
+      code: 200
+      message: OK
+version: 1

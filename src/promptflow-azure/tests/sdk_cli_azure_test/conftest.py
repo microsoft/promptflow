@@ -60,6 +60,7 @@ AZUREML_RESOURCE_PROVIDER = "Microsoft.MachineLearningServices"
 RESOURCE_ID_FORMAT = "/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}"
 MODEL_ROOT = FLOWS_DIR
 COUNTER_FILE = (Path(__file__) / "../count.json").resolve()
+RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "../promptflow-recording/recordings").resolve()
 
 
 def pytest_configure():
@@ -361,6 +362,7 @@ def vcr_recording(request: pytest.FixtureRequest, user_object_id: str, tenant_id
             user_object_id=user_object_id,
             tenant_id=tenant_id,
             variable_recorder=variable_recorder,
+            recording_dir=(RECORDINGS_TEST_CONFIGS_ROOT / "azure").resolve(),
         )
         recording.enter_vcr()
         request.addfinalizer(recording.exit_vcr)

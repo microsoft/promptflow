@@ -13,6 +13,7 @@ import tiktoken
 from openai import APIConnectionError, APIStatusError, APITimeoutError, BadRequestError, OpenAIError, RateLimitError
 
 from promptflow._utils.logger_utils import LoggerFactory
+from promptflow._utils.multimedia_utils import MIME_PATTERN, ImageProcessor
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.types import PromptTemplate
 from promptflow.core._connection import AzureOpenAIConnection, OpenAIConnection, _Connection
@@ -137,7 +138,8 @@ def convert_prompt_template(template, inputs, api):
             template_content=prompt, trim_blocks=True, keep_trailing_newline=True, **inputs
         )
     else:
-        rendered_prompt = build_messages(prompt=prompt, **inputs)
+        reference_images = find_referenced_image_set(inputs)
+        rendered_prompt = build_messages(prompt=prompt, images=reference_images, **inputs)
     return rendered_prompt
 
 
@@ -284,7 +286,7 @@ def format_llm_response(response, api, is_first_choice, response_format=None, st
     return result
 
 
-def num_tokens_from_messages(messages, model):
+def num_tokens_from_messages(messages, model, working_dir):
     """Return the number of tokens used by a list of messages."""
     # Ref: https://cookbook.openai.com/examples/how_to_count_tokens_with_tiktoken#6-counting-tokens-for-chat-completions-api-calls  # noqa: E501
     try:
@@ -307,10 +309,10 @@ def num_tokens_from_messages(messages, model):
         tokens_per_name = -1  # if there's a name, the role is omitted
     elif "gpt-3.5-turbo" in model or "gpt-35-turbo":
         logger.warning("gpt-3.5-turbo may update over time. Returning num tokens assuming gpt-3.5-turbo-0613.")
-        return num_tokens_from_messages(messages, model="gpt-3.5-turbo-0613")
+        return num_tokens_from_messages(messages, model="gpt-3.5-turbo-0613", working_dir=working_dir)
     elif "gpt-4" in model:
         logger.warning("gpt-4 may update over time. Returning num tokens assuming gpt-4-0613.")
-        return num_tokens_from_messages(messages, model="gpt-4-0613")
+        return num_tokens_from_messages(messages, model="gpt-4-0613", working_dir=working_dir)
     else:
         raise NotImplementedError(
             f"num_tokens_from_messages() is not implemented for model {model}. "
@@ -321,11 +323,79 @@ def num_tokens_from_messages(messages, model):
     for message in messages:
         num_tokens += tokens_per_message
         for key, value in message.items():
-            num_tokens += len(encoding.encode(value))
+            if isinstance(value, str):
+                num_tokens += len(encoding.encode(value))
+            elif isinstance(value, list):
+                for item in value:
+                    value_type = item.get("type", "text")
+                    if value_type == "text":
+                        # Calculate content tokens
+                        num_tokens += len(encoding.encode(item["text"]))
+                    elif value_type == "image_url":
+                        image_content = item["image_url"]["url"]
+                        if ImageProcessor.is_url(image_content):
+                            image_obj = ImageProcessor.create_image_from_url(image_content)
+                            num_tokens += _num_tokens_for_image(image_obj.to_base64())
+                        elif ImageProcessor.is_base64(image_content):
+                            image_obj = ImageProcessor.create_image_from_base64(image_content)
+                            num_tokens += _num_tokens_for_image(image_obj.to_base64())
+                        else:
+                            # Calculate image input as content
+                            num_tokens += len(encoding.encode(item["image_url"]["url"]))
             if key == "name":
                 num_tokens += tokens_per_name
     num_tokens += 3  # every reply is primed with <|start|>assistant<|message|>
     return num_tokens
+
+
+def _get_image_obj(image_str, working_dir):
+    mime_pattern_with_content = MIME_PATTERN.pattern[:-1] + r":\s*(.*)$"
+    match = re.match(mime_pattern_with_content, image_str)
+    if match:
+        mine_type, image_type, image_content = f"image/{match.group(1)}", match.group(2), match.group(3)
+        if image_type == "path":
+            if not Path(image_content).is_absolute():
+                image_content = Path(working_dir) / image_content
+            if not Path(image_content).exists():
+                logger.warning(f"Cannot find the image path {image_content}, it will be regarded as {type(image_str)}.")
+            return ImageProcessor.create_image_from_file(image_content, mine_type)
+        elif image_type == "base64":
+            return ImageProcessor.create_image_from_base64(image_content, mine_type)
+        elif image_type == "url":
+            return ImageProcessor.create_image_from_url(image_content, mine_type)
+        else:
+            logger.warning(f"Invalid mine type {mine_type}, it will be regarded as {type(image_str)}.")
+    return image_str
+
+
+def _num_tokens_for_image(base64_str: str):
+    """calculate token of image input"""
+    # https://platform.openai.com/docs/guides/vision/calculating-costs
+    import base64
+    from io import BytesIO
+    from math import ceil
+
+    from PIL import Image
+
+    imgdata = base64.b64decode(base64_str)
+    image = Image.open(BytesIO(imgdata))
+    width, height = image.size
+    if width > 2048 or height > 2048:
+        aspect_ratio = width / height
+        if aspect_ratio > 1:
+            width, height = 2048, int(2048 / aspect_ratio)
+        else:
+            width, height = int(2048 * aspect_ratio), 2048
+
+    if width >= height and height > 768:
+        width, height = int((768 / height) * width), 768
+    elif height > width and width > 768:
+        width, height = 768, int((768 / width) * height)
+
+    tiles_width = ceil(width / 512)
+    tiles_height = ceil(height / 512)
+    image_tokens = 85 + 170 * (tiles_width * tiles_height)
+    return image_tokens
 
 
 def resolve_references(origin, base_path=None):
@@ -413,6 +483,15 @@ class PromptResult(str):
     def merge_escape_mapping_of_flow_inputs(self, _inputs_to_escape: list, **kwargs):
         flow_inputs_escape_dict = Escaper.build_flow_inputs_escape_dict(_inputs_to_escape=_inputs_to_escape, **kwargs)
         self.escaped_mapping.update(flow_inputs_escape_dict)
+
+
+def convert_to_chat_list(obj):
+    if isinstance(obj, dict):
+        return {key: convert_to_chat_list(value) for key, value in obj.items()}
+    elif isinstance(obj, list):
+        return ChatInputList([convert_to_chat_list(item) for item in obj])
+    else:
+        return obj
 
 
 def normalize_connection_config(connection):

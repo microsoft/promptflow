@@ -1,3 +1,4 @@
+import filecmp
 import importlib
 import importlib.util
 import json
@@ -62,6 +63,28 @@ def run_pf_command(*args, cwd=None):
     finally:
         sys.argv = origin_argv
         os.chdir(origin_cwd)
+
+
+def compare_directories(dir1, dir2, ingore_path_name):
+    dir1 = Path(dir1)
+    dir2 = Path(dir2)
+    dir1_content = [item for item in dir1.iterdir() if item.name not in ingore_path_name]
+    dir2_content = [item for item in dir2.iterdir() if item.name not in ingore_path_name]
+
+    if len(dir1_content) != len(dir2_content):
+        raise Exception(f"These two folders {dir1_content} and {dir2_content} are different.")
+
+    for path1 in dir1_content:
+        path2 = dir2 / path1.name
+        if not path2.exists():
+            raise Exception(f"The path {path2} does not exist.")
+        if path1.is_file() and path2.is_file():
+            if not filecmp.cmp(path1, path2):
+                raise Exception(f"These two files {path1} and {path2} are different.")
+        elif path1.is_dir() and path2.is_dir():
+            compare_directories(path1, path2, ingore_path_name)
+        else:
+            raise Exception(f"These two path {path1} and {path2} are different.")
 
 
 @pytest.mark.usefixtures(
@@ -365,7 +388,6 @@ class TestCli:
         output = json.loads(open(output_path, "r", encoding="utf-8").read())
         assert output["result"] == "meid_token"
 
-    @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
     def test_pf_flow_test_with_non_english_input_output(self, capsys):
         # disable trace to not invoke prompt flow service, which will print unexpected content to stdout
         with mock.patch("promptflow._sdk._tracing.is_trace_feature_disabled", return_value=True):
@@ -747,7 +769,6 @@ class TestCli:
             run_pf_command("flow", "test", "--flow", flow_name, "--inputs", "groundtruth=App", "prediction=App")
             self._validate_requirement(Path(temp_dir) / flow_name / "flow.dag.yaml")
 
-    @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
     def test_init_chat_flow(self):
         temp_dir = mkdtemp()
         with _change_working_dir(temp_dir):
@@ -969,7 +990,6 @@ class TestCli:
                 assert not (flow_folder / "azure_openai.yaml").exists()
                 assert not (flow_folder / "openai.yaml").exists()
 
-    @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
     def test_flow_chat(self, monkeypatch, capsys):
         chat_list = ["hi", "what is chat gpt?"]
 
@@ -1018,7 +1038,6 @@ class TestCli:
         assert "show_answer:" in outerr.out
         assert "[show_answer]: print:" in outerr.out
 
-    @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
     def test_invalid_chat_flow(self, monkeypatch, capsys):
         def mock_input(*args, **kwargs):
             if chat_list:
@@ -1077,7 +1096,7 @@ class TestCli:
         outerr = capsys.readouterr()
         assert "chat output is not configured" in outerr.out
 
-    @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
+    @pytest.mark.skipif(pytest.is_replay, reason="Cannot pass in replay mode")
     def test_chat_with_stream_output(self, monkeypatch, capsys):
         chat_list = ["hi", "what is chat gpt?"]
 
@@ -1124,7 +1143,6 @@ class TestCli:
         )
         assert detail_path.exists()
 
-    @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
     def test_flow_test_with_default_chat_history(self):
         run_pf_command(
             "flow",
@@ -1144,7 +1162,6 @@ class TestCli:
         ]
         assert details["flow_runs"][0]["inputs"]["chat_history"] == expect_chat_history
 
-    @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
     def test_flow_test_with_user_defined_chat_history(self, monkeypatch, capsys):
         chat_list = ["hi", "what is chat gpt?"]
 
@@ -1321,6 +1338,7 @@ class TestCli:
     def test_flex_flow_build(self):
         from promptflow._cli._pf.entry import main
 
+        origin_build = Path(f"{FLOWS_DIR}/export/flex_flow_build")
         with tempfile.TemporaryDirectory() as temp:
             temp = Path(temp)
             cmd = (
@@ -1336,18 +1354,7 @@ class TestCli:
             )
             sys.argv = list(cmd)
             main()
-            assert (temp / "connections").is_dir()
-            assert (temp / "flow").is_dir()
-            assert (temp / "runit").is_dir()
-            assert (temp / "Dockerfile").is_file()
-            with open(temp / "Dockerfile", "r") as f:
-                assert r"/connections" in f.read()
-
-            origin_flow = Path(f"{EAGER_FLOWS_DIR}/chat-basic")
-            temp_flow = temp / "flow"
-            for file_path in origin_flow.rglob("*"):
-                relative_path = file_path.relative_to(origin_flow)
-                assert (temp_flow / relative_path).exists()
+            compare_directories(origin_build, temp, ("connections", ".promptflow", "__pycache__"))
 
     def test_flow_build_with_ua(self, capsys):
         with pytest.raises(SystemExit):

@@ -11,7 +11,6 @@ FLOWS_DIR = PROMPTFLOW_ROOT / "tests/test_configs/flows"
 @pytest.mark.e2etest
 @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
 class TestChatGroup:
-    @pytest.mark.skipif(pytest.is_replay, reason="BUG 3178603, recording instable")
     def test_chat_group_basic_invoke(self):
         question = "What's the most beautiful thing in the world?"
         ground_truth = "The world itself."

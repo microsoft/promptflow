@@ -63,7 +63,10 @@ class CodeClient:
 
         for row_number, row_metric_future in enumerate(row_metric_futures):
             try:
-                row_metric_results.append(row_metric_future.result())
+                result = row_metric_future.result()
+                if not isinstance(result, dict):
+                    result = {'output': result}
+                row_metric_results.append(result)
             except Exception as ex:  # pylint: disable=broad-except
                 msg_1 = f"Error calculating value for row {row_number} for metric {evaluator_name}, "
                 msg_2 = f"failed with error {str(ex)} : Stack trace : {str(ex.__traceback__)}"
