@@ -6,11 +6,12 @@ import copy
 import inspect
 import json
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import vcr
 from vcr import matchers
 from vcr.request import Request
+from vcr.util import read_body
 
 from ..record_mode import is_live, is_record, is_replay
 from .constants import FILTER_HEADERS, TEST_CLASSES_FOR_RUN_INTEGRATION_TEST_RECORDING, SanitizedValues
@@ -352,4 +353,34 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
                         'executionlogs.txt' in r1.path or
                         ("PromptFlowArtifacts" in r1.path and "flow_artifacts" in r1.path)):
                     return True
-            return matchers.body(r1, r2)
+            return self._body(r1, r2)
+
+    def _transform_bytes_may_be(self, byte_obj: Optional[bytes]) -> Optional[bytes]:
+        """
+        Try to fix line ending.
+
+        :param byte_obj: The original bytes object.
+        :type byte_obj: Optional[bytes]
+        :return: byte_obj with fixed end lines.
+        """
+        if byte_obj is None:
+            return byte_obj
+        return byte_obj.replace(b'\r\n', b'\n')
+
+    def _body(self, r1: Request, r2: Request) -> None:
+        """
+        Implementation of body matcher.
+
+        If recordigs are generated on one system and it is replayed on another one,
+        line ending may not match. For this purpose we replace \r\n by \n.
+        :param r1: The request.
+        :type r1: Request
+        :param r2: Another request.
+        :type r2: Request
+        :raises AssertionError: if bodies does not match.
+        """
+        b1 = self._transform_bytes_may_be(read_body(r1))
+        b2 = self._transform_bytes_may_be(read_body(r2))
+
+        if b1 != b2:
+            raise AssertionError
