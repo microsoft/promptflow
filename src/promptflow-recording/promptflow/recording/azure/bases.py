@@ -71,7 +71,7 @@ class PFAzureIntegrationTestRecording:
                 user_object_id=kwargs["user_object_id"],
                 tenant_id=kwargs["tenant_id"],
                 variable_recorder=kwargs["variable_recorder"],
-                recording_dir=recording_dir,
+                recording_dir=kwargs.get("recording_dir"),
             )
         else:
             return PFAzureIntegrationTestRecording(
@@ -288,8 +288,8 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
         if "https://" in r1.path:
             _path = str(r1.path)
             endpoint = ".blob.core.windows.net/"
-            duplicate_path = _path[_path.index(endpoint) + len(endpoint) :]
-            path_for_compare = _path[: _path.index("https://")] + duplicate_path[duplicate_path.index("/") + 1 :]
+            duplicate_path = _path[_path.index(endpoint) + len(endpoint):]
+            path_for_compare = _path[: _path.index("https://")] + duplicate_path[duplicate_path.index("/") + 1:]
             return path_for_compare == r2.path
         # for blob storage request, sanitize the upload hash in path
         if r1.host == r2.host and r1.host == SanitizedValues.BLOB_STORAGE_REQUEST_HOST:
@@ -347,6 +347,9 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
             # so simple return True for such requests
             # corresponding test: `test_upload_run`
             if r1.method == "PUT":
-                if "PromptFlowArtifacts/batch_run_name" in r1.path or "ExperimentRun/dcid.batch_run_name" in r1.path:
+                if ("PromptFlowArtifacts/batch_run_name" in r1.path or
+                        "ExperimentRun/dcid.batch_run_name" in r1.path or
+                        'executionlogs.txt' in r1.path or
+                        ("PromptFlowArtifacts" in r1.path and "flow_artifacts" in r1.path)):
                     return True
             return matchers.body(r1, r2)

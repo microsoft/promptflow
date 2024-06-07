@@ -10,6 +10,7 @@ from promptflow.evals.evaluate._eval_run import EvalRun
 from promptflow.evals.evaluators._f1_score._f1_score import F1ScoreEvaluator
 from promptflow.evals.evaluate._evaluate import evaluate
 import shutil
+from promptflow._sdk._constants import LOCAL_MGMT_DB_PATH
 
 
 @pytest.fixture
@@ -17,10 +18,12 @@ def data_file():
     data_path = os.path.join(pathlib.Path(__file__).parent.resolve(), "data")
     return os.path.join(data_path, "evaluate_test_data.jsonl")
 
+
 @pytest.fixture
 def questions_answers_file():
     data_path = os.path.join(pathlib.Path(__file__).parent.resolve(), "data")
     return os.path.join(data_path, "questions_answers.jsonl")
+
 
 @pytest.fixture
 def questions_file():
@@ -46,16 +49,17 @@ def setup_data(azure_pf_client, project_scope):
     yield
     run.end_run("FINISHED")
 
+
 class FakeTemporaryDirectory:
     """The class to create the temporary directory with the deterministic name."""
-    
+
     def __init__(self, tempfolder: str, name):
         self.folder = os.path.join(tempfolder, name)
-    
+
     def __enter__(self):
         os.makedirs(self.folder, exist_ok=True)
         return self.folder
-    
+
     def __exit__(self, *kwargs):
         shutil.rmtree(self.folder)
 
@@ -133,18 +137,30 @@ class TestMetricsUpload(object):
         # folder. By keeping function in separate file we guarantee, it will be loaded
         # from there.
         from .target_fn import target_fn
-            
+
         f1_score_eval = F1ScoreEvaluator()
+        # Runs are stored in the sqlite file locally,
+        # when ran in recording we will break the SQL constraint.
+        # Temporary back up file if it exists.
+        backup_path = str(LOCAL_MGMT_DB_PATH) + '_backup'
+        if os.path.isfile(LOCAL_MGMT_DB_PATH):
+            os.rename(LOCAL_MGMT_DB_PATH, backup_path)
         # run the evaluation with targets
-        evaluate(
-            data=questions_answers_file,
-            target=target_fn,
-            evaluators={"f1": f1_score_eval},
-            azure_ai_project=project_scope,
-            # Please make sure to change run names in one workspace
-            # to avoid SQL constraint error. 
-            _run_name='eval_test_run2'
-        )
+        try:
+            evaluate(
+                data=questions_answers_file,
+                target=target_fn,
+                evaluators={"f1": f1_score_eval},
+                azure_ai_project=project_scope,
+                _run_name='eval_test_run2'
+            )
+        finally:
+            if os.path.isfile(backup_path):
+                try:
+                    os.remove(LOCAL_MGMT_DB_PATH)
+                    os.rename(backup_path, LOCAL_MGMT_DB_PATH)
+                except BaseException:
+                    pass
         # Check there are no errors in the log.
         error_messages = []
         if caplog.records:

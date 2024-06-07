@@ -1518,7 +1518,7 @@ interactions:
       x-ms-version:
       - '2024-05-04'
     method: PUT
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/ExperimentRun/dcid.feb068c0-fea0-4f0f-b5d0-b2a8960bd97b/evaluation_results/eval_results.jsonl?se=2024-06-08T05%3A05%3A12Z&sig=T1w%2FvOwQ7OeBofj382CauzoPuOLbzNILBEPmMhwX%2Bzs%3D&ske=2024-06-08T12%3A10%3A49Z&skoid=f4777969-da99-42e7-a95c-5f6396e15e83&sks=b&skt=2024-06-07T04%3A00%3A49Z&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skv=2019-07-07&sp=rcw&sr=b&st=2024-06-07T04%3A55%3A12Z&sv=2019-07-07
+    uri: https://nirovinswseast5028951403.blob.core.windows.net/azureml/ExperimentRun/dcid.feb068c0-fea0-4f0f-b5d0-b2a8960bd97b/evaluation_results/eval_results.jsonl?sv=2019-07-07&sr=b&sig=T1w%2FvOwQ7OeBofj382CauzoPuOLbzNILBEPmMhwX%2Bzs%3D&skoid=f4777969-da99-42e7-a95c-5f6396e15e83&sktid=00000000-0000-0000-0000-000000000000&skt=2024-06-07T04%3A00%3A49Z&ske=2024-06-08T12%3A10%3A49Z&sks=b&skv=2019-07-07&st=2024-06-07T04%3A55%3A12Z&se=2024-06-08T05%3A05%3A12Z&sp=rcw
   response:
     body:
       string: ''
