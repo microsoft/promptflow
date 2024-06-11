@@ -15,7 +15,7 @@ from promptflow.client import PFClient
 
 from .._constants import CONTENT_SAFETY_DEFECT_RATE_THRESHOLD_DEFAULT, EvaluationMetrics, Prefixes
 from .._user_agent import USER_AGENT
-from ._code_client import BatchRunContext, CodeClient, ProxyClient
+from ._batch_run_client import BatchRunContext, CodeClient, ProxyClient
 from ._utils import (
     _apply_column_mapping,
     _log_metrics_and_instance_results,

@@ -4,39 +4,15 @@
 import inspect
 import json
 import logging
-import os
 
 import pandas as pd
 
-from promptflow._utils.user_agent_utils import ClientUserAgentUtil
-from promptflow.client import PFClient
 from promptflow.evals.evaluate._utils import _apply_column_mapping, load_jsonl
 from promptflow.tracing import ThreadPoolExecutorWithContext as ThreadPoolExecutor
-from promptflow.tracing._integrations._openai_injector import inject_openai_api, recover_openai_api
 
-from ..._user_agent import USER_AGENT
+from ..._constants import BATCH_RUN_TIMEOUT
 
 LOGGER = logging.getLogger(__name__)
-
-
-class BatchRunContext:
-    def __init__(self, client):
-        self.client = client
-
-    def __enter__(self):
-        if isinstance(self.client, CodeClient):
-            ClientUserAgentUtil.append_user_agent(USER_AGENT)
-            inject_openai_api()
-
-        if isinstance(self.client, PFClient):
-            os.environ["EVAL_BATCH_RUN"] = "true"
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if isinstance(self.client, CodeClient):
-            recover_openai_api()
-
-        if isinstance(self.client, PFClient):
-            os.environ.pop("EVAL_BATCH_RUN", None)
 
 
 class CodeRun:
@@ -44,12 +20,6 @@ class CodeRun:
         self.run = run
         self.evaluator_name = evaluator_name if evaluator_name is not None else ""
         self.input_data = input_data
-
-    def get_result_df(self, exclude_inputs=False):
-        result_df = self.run.result(timeout=60 * 60)
-        if exclude_inputs:
-            result_df = result_df.drop(columns=[col for col in result_df.columns if col.startswith("inputs.")])
-        return result_df
 
 
 class CodeClient:
@@ -106,5 +76,5 @@ class CodeClient:
         return CodeRun(run=eval_future, input_data=data, evaluator_name=evaluator_name)
 
     def get_details(self, run, all_results=False):
-        result_df = run.run.result(timeout=60 * 60)
+        result_df = run.run.result(timeout=BATCH_RUN_TIMEOUT)
         return result_df
