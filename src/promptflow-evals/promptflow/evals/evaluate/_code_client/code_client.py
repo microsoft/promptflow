@@ -4,10 +4,12 @@
 import inspect
 import json
 import logging
+import os
 
 import pandas as pd
 
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
+from promptflow.client import PFClient
 from promptflow.evals.evaluate._utils import _apply_column_mapping, load_jsonl
 from promptflow.tracing import ThreadPoolExecutorWithContext as ThreadPoolExecutor
 from promptflow.tracing._integrations._openai_injector import inject_openai_api, recover_openai_api
@@ -26,9 +28,15 @@ class BatchRunContext:
             ClientUserAgentUtil.append_user_agent(USER_AGENT)
             inject_openai_api()
 
+        if isinstance(self.client, PFClient):
+            os.environ["EVAL_BATCH_RUN"] = "true"
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         if isinstance(self.client, CodeClient):
             recover_openai_api()
+
+        if isinstance(self.client, PFClient):
+            os.environ.pop("EVAL_BATCH_RUN", None)
 
 
 class CodeRun:
@@ -53,8 +61,11 @@ class CodeClient:
         row_metric_results = []
         input_df = _apply_column_mapping(input_df, column_mapping)
         # Ignoring args and kwargs from the signature since they are usually catching extra arguments
-        parameters = {param.name for param in inspect.signature(evaluator).parameters.values()
-                      if param.name not in ['args', 'kwargs']}
+        parameters = {
+            param.name
+            for param in inspect.signature(evaluator).parameters.values()
+            if param.name not in ["args", "kwargs"]
+        }
         for value in input_df.to_dict("records"):
             # Filter out only the parameters that are present in the input data
             # if no parameters then pass data as is
@@ -65,7 +76,7 @@ class CodeClient:
             try:
                 result = row_metric_future.result()
                 if not isinstance(result, dict):
-                    result = {'output': result}
+                    result = {"output": result}
                 row_metric_results.append(result)
             except Exception as ex:  # pylint: disable=broad-except
                 msg_1 = f"Error calculating value for row {row_number} for metric {evaluator_name}, "

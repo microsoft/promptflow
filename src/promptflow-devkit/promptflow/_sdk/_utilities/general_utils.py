@@ -1006,8 +1006,16 @@ def create_temp_flex_flow_yaml_core(entry: Union[str, PathLike, Callable], code:
         logger.warning(f"Found existing {flow_yaml_path.as_posix()}, will not respect it in runtime.")
         with open(flow_yaml_path, "r", encoding=DEFAULT_ENCODING) as f:
             existing_content = f.read()
-    if not is_local_module(entry_string=entry, code=code):
-        logger.debug(f"Entry {entry} is not found in local, it's snapshot will be empty.")
+
+    create_yaml_in_temp_dir = False
+    if is_eval_batch_run():
+        logger.debug("Eval batch run, its snapshot will be empty.")
+        create_yaml_in_temp_dir = True
+    elif not is_local_module(entry_string=entry, code=code):
+        logger.debug(f"Entry {entry} is not found in local, its snapshot will be empty.")
+        create_yaml_in_temp_dir = True
+
+    if create_yaml_in_temp_dir:
         # make sure run name is from entry instead of random folder name
         temp_dir = tempfile.mkdtemp(prefix=_sanitize_python_variable_name(entry) + "_")
         flow_yaml_path = Path(temp_dir) / FLOW_FLEX_YAML
@@ -1081,6 +1089,10 @@ def is_local_module(entry_string: str, code: Path) -> bool:
     except Exception as e:
         logger.debug(f"Failed to check is local module from {entry_string} due to {e}.")
         return False
+
+
+def is_eval_batch_run() -> bool:
+    return os.environ.get("EVAL_BATCH_RUN", None) == "true"
 
 
 def is_flex_run(run: "Run") -> bool:
