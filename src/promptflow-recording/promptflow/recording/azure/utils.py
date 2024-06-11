@@ -200,6 +200,19 @@ def sanitize_pfs_request_body(body: str) -> str:
     # PFS will help handle this field, so client does not need to pass this value
     if "runExperimentName" in body:
         body_dict["runExperimentName"] = ""
+    # Start and end time
+    if "start_time" in body_dict:
+        body_dict["start_time"] = SanitizedValues.START_TIME
+    if "timestamp" in body_dict:
+        body_dict["timestamp"] = SanitizedValues.TIMESTAMP
+    if "end_time" in body_dict:
+        body_dict["end_time"] = SanitizedValues.END_TIME
+    # Promptflow Run ID
+    if "runId" in body_dict:
+        body_dict["runId"] = SanitizedValues.RUN_ID
+    # Sanitize telemetry event
+    if isinstance(body_dict, list) and "Microsoft.ApplicationInsights.Event" in body:
+        body_dict = SanitizedValues.FAKE_APP_INSIGHTS
     return json.dumps(body_dict)
 
 

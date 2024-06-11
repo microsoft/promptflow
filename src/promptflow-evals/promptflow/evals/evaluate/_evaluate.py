@@ -42,10 +42,10 @@ def _aggregate_metrics(df, evaluators) -> Dict[str, float]:
             # Check the namespace of the evaluator
             module = inspect.getmodule(evaluators[evaluator_name])
             if (
-                module
-                and module.__name__.startswith("promptflow.evals.evaluators.")
-                and metric_name.endswith("_score")
-                and metric_name.replace("_score", "") in content_safety_metrics
+                module and
+                module.__name__.startswith("promptflow.evals.evaluators.") and
+                metric_name.endswith("_score") and
+                metric_name.replace("_score", "") in content_safety_metrics
             ):
                 content_safety_cols.append(col)
 
@@ -55,8 +55,8 @@ def _aggregate_metrics(df, evaluators) -> Dict[str, float]:
         defect_rate_name = col.replace("_score", "_defect_rate")
         col_with_numeric_values = pd.to_numeric(content_safety_df[col], errors='coerce')
         defect_rates[defect_rate_name] = round(
-            np.sum(col_with_numeric_values >= CONTENT_SAFETY_DEFECT_RATE_THRESHOLD_DEFAULT)
-            / col_with_numeric_values.count(),
+            np.sum(col_with_numeric_values >= CONTENT_SAFETY_DEFECT_RATE_THRESHOLD_DEFAULT) /
+            col_with_numeric_values.count(),
             2,
         )
 
@@ -115,7 +115,8 @@ def _validate_and_load_data(target, data, evaluators, output_path, azure_ai_proj
     try:
         initial_data_df = pd.read_json(data, lines=True)
     except Exception as e:
-        raise ValueError(f"Failed to load data from {data}. Please validate it is a valid jsonl data. Error: {str(e)}.")
+        raise ValueError(
+            f"Failed to load data from {data}. Please validate it is a valid jsonl data. Error: {str(e)}.")
 
     return initial_data_df
 
@@ -154,9 +155,13 @@ def _validate_columns(
             _validate_input_data_for_evaluator(evaluator, evaluator_name, new_df)
 
 
-def _apply_target_to_data(
-    target: Callable, data: str, pf_client: PFClient, initial_data: pd.DataFrame, evaluation_name: Optional[str] = None
-) -> Tuple[pd.DataFrame, Set[str]]:
+def _apply_target_to_data(target: Callable,
+                          data: str,
+                          pf_client: PFClient,
+                          initial_data: pd.DataFrame,
+                          evaluation_name: Optional[str] = None,
+                          _run_name: Optional[str] = None) -> Tuple[pd.DataFrame,
+                                                                    Set[str]]:
     """
     Apply the target function to the data set and return updated data and generated columns.
 
@@ -168,6 +173,8 @@ def _apply_target_to_data(
     :paramtype pf_client: PFClient
     :keyword initial_data: The data frame with the loaded data.
     :paramtype initial_data: pd.DataFrame
+    :keyword _run_name: The name of target run. Used for testing only.
+    :paramtype _run_name: Optional[str]
     :return: The tuple, containing data frame and the list of added columns.
     :rtype: Tuple[pd.DataFrame, List[str]]
     """
@@ -180,11 +187,12 @@ def _apply_target_to_data(
         data=data,
         properties={"runType": "eval_run", "isEvaluatorRun": "true"},
         stream=True,
+        name=_run_name
     )
     target_output = pf_client.runs.get_details(run, all_results=True)
     # Remove input and output prefix
     generated_columns = {
-        col[len(Prefixes._OUTPUTS) :] for col in target_output.columns if col.startswith(Prefixes._OUTPUTS)
+        col[len(Prefixes._OUTPUTS):] for col in target_output.columns if col.startswith(Prefixes._OUTPUTS)
     }
     # Sort output by line numbers
     target_output.set_index(f"inputs.{LINE_NUMBER}", inplace=True)
@@ -350,7 +358,8 @@ def evaluate(
     target_generated_columns = set()
     if data is not None and target is not None:
         input_data_df, target_generated_columns, target_run = _apply_target_to_data(
-            target, data, pf_client, input_data_df, evaluation_name
+            target, data, pf_client, input_data_df, evaluation_name,
+            _run_name=kwargs.get('_run_name')
         )
 
         # Make sure, the default is always in the configuration.
@@ -431,7 +440,7 @@ def evaluate(
     metrics = _aggregate_metrics(evaluators_result_df, evaluators)
 
     studio_url = _log_metrics_and_instance_results(
-        metrics, result_df, trace_destination, target_run, pf_client, data, evaluation_name
+        metrics, result_df, trace_destination, target_run
     )
 
     result = {"rows": result_df.to_dict("records"), "metrics": metrics, "studio_url": studio_url}
