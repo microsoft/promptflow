@@ -6,7 +6,7 @@ model:
   configuration:
     type: azure_openai
     connection: open_ai_connection
-    azure_deployment: gpt-35-turbo
+    azure_deployment: gpt-35-turbo-1106
   parameters:
     temperature: 0.2
     response_format: { "type": "json_object" }
