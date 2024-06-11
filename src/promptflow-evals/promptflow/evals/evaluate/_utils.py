@@ -252,3 +252,7 @@ def _apply_column_mapping(source_df: pd.DataFrame, mapping_config: dict, inplace
         result_df.rename(columns=column_mapping, inplace=True)
 
     return result_df
+
+
+def _has_aggregator(evaluator):
+    return hasattr(evaluator, "__aggregate__")

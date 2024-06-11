@@ -380,6 +380,53 @@ class TestEvaluate:
         assert remote_run["runMetadata"]["properties"]["_azureml.evaluation_run"] == "azure-ai-generative-parent"
         assert remote_run["runMetadata"]["displayName"] == evaluation_name
 
+    @pytest.mark.parametrize(
+        "return_json, aggregate_return_json",
+        [
+            (True, True),
+            (True, False),
+            (False, True),
+            (False, False),
+        ],
+    )
+    def test_evaluate_aggregation_with_threadpool(self, data_file, return_json, aggregate_return_json):
+        from .custom_evaluators.answer_length_with_aggregation import AnswerLength
+
+        result = evaluate(
+            data=data_file,
+            evaluators={"answer_length": AnswerLength(
+                return_json=return_json, aggregate_return_json=aggregate_return_json)
+            },
+        )
+        assert result is not None
+        assert "metrics" in result
+        if aggregate_return_json:
+            assert "answer_length.median" in result["metrics"].keys()
+
+    @pytest.mark.parametrize(
+        "return_json, aggregate_return_json",
+        [
+            (True, True),
+            (True, False),
+            (False, True),
+            (False, False),
+        ],
+    )
+    def test_evaluate_aggregation(self, data_file, return_json, aggregate_return_json):
+        from .custom_evaluators.answer_length_with_aggregation import AnswerLength
+
+        result = evaluate(
+            data=data_file,
+            evaluators={"answer_length": AnswerLength(
+                return_json=return_json, aggregate_return_json=aggregate_return_json)
+            },
+            _use_thread_pool=False,
+        )
+        assert result is not None
+        assert "metrics" in result
+        if aggregate_return_json:
+            assert "answer_length.median" in result["metrics"].keys()
+
     @pytest.mark.skip(reason="TODO: Add test back")
     def test_prompty_with_threadpool_implementation(self):
         pass
