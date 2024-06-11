@@ -1,5 +1,5 @@
 # Release History
-## v1.12.0 (Upcoming)
+## v1.12.0 (2024/06/11)
 
 ### Bugs fixed
 - [promptflow-core] Fix ChatUI can't work in docker container when running image build with `pf flow build`.
