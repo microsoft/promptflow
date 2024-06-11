@@ -241,6 +241,11 @@ def try_parse_tool_call_id_and_content(role_prompt):
 def try_parse_tool_calls(role_prompt):
     # customer can add ## in front of tool_calls for markdown highlight.
     # and we still support tool_calls without ## prefix for backward compatibility.
+
+    # Previously used pattern (commented) cannot parse tool_calls with internal square brackets
+    # common with function call arguments. Updated pattern matches content before tool_calls array
+    # and removes it before parsing the array.
+    # pattern = r"\n*#{0,2}\s*tool_calls\s*:\s*\n+\s*(\[.*?\])"
     pattern = r"(\n*#{0,2}\s*tool_calls\s*:\s*\n+\s*)\["
     match = re.search(pattern, role_prompt, re.DOTALL)
     if match:
