@@ -394,8 +394,10 @@ class TestEvaluate:
 
         result = evaluate(
             data=data_file,
-            evaluators={"answer_length": AnswerLength(
-                return_json=return_json, aggregate_return_json=aggregate_return_json)
+            evaluators={
+                "answer_length": AnswerLength(
+                    return_json=return_json, aggregate_return_json=aggregate_return_json),
+                "f1_score": F1ScoreEvaluator(),
             },
         )
         assert result is not None
@@ -417,8 +419,10 @@ class TestEvaluate:
 
         result = evaluate(
             data=data_file,
-            evaluators={"answer_length": AnswerLength(
-                return_json=return_json, aggregate_return_json=aggregate_return_json)
+            evaluators={
+                "answer_length": AnswerLength(
+                    return_json=return_json, aggregate_return_json=aggregate_return_json),
+                "f1_score": F1ScoreEvaluator(),
             },
             _use_thread_pool=False,
         )
