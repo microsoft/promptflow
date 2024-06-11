@@ -2,6 +2,7 @@ from typing import List
 
 import numpy as np
 
+
 class AnswerLength:
 
     def __init__(self, *, return_json: bool = False, aggregate_return_json: bool = False):
