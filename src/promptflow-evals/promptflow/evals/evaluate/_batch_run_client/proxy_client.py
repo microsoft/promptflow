@@ -34,3 +34,7 @@ class ProxyClient:
         result_df = self._pf_client.get_details(run, all_results=all_results)
         result_df.replace("(Failed)", np.nan, inplace=True)
         return result_df
+
+    def get_metrics(self, proxy_run):
+        run = proxy_run.run.result(timeout=BATCH_RUN_TIMEOUT)
+        return self._pf_client.get_metrics(run)
