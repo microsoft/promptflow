@@ -71,7 +71,7 @@ def _get_run_from_run_history(flow_run_id, runs_operation):
         raise Exception(f"Failed to get run from service. Code: {response.status_code}, text: {response.text}")
 
 
-@pytest.mark.usefixtures("model_config", "recording_injection", "data_file", "project_scope")
+@pytest.mark.usefixtures("recording_injection", "vcr_recording")
 @pytest.mark.e2etest
 class TestEvaluate:
     def test_evaluate_with_groundedness_evaluator(self, model_config, data_file):
@@ -111,10 +111,10 @@ class TestEvaluate:
         assert result["studio_url"] is None
 
     @pytest.mark.skip(reason="Failed in CI pipeline. Pending for investigation.")
-    def test_evaluate_with_content_safety_evaluator(self, project_scope, data_file):
+    def test_evaluate_with_content_safety_evaluator(self, project_scope, data_file, azure_cred):
         input_data = pd.read_json(data_file, lines=True)
 
-        content_safety_eval = ContentSafetyEvaluator(project_scope)
+        content_safety_eval = ContentSafetyEvaluator(project_scope, credential=azure_cred)
 
         # run the evaluation
         result = evaluate(
@@ -152,18 +152,14 @@ class TestEvaluate:
         (False, answer_evaluator_int, 'output'),
         (True, answer_evaluator_int_dict, "42"),
         (False, answer_evaluator_int_dict, "42"),
-        ])
+    ])
     def test_evaluate_python_function(self, data_file, use_thread_pool,
                                       function, column):
         # data
         input_data = pd.read_json(data_file, lines=True)
 
         # run the evaluation
-        result = evaluate(
-            data=data_file,
-            evaluators={"answer": function},
-            _use_thread_pool=use_thread_pool
-        )
+        result = evaluate(data=data_file, evaluators={"answer": function}, _use_thread_pool=use_thread_pool)
 
         row_result_df = pd.DataFrame(result["rows"])
         metrics = result["metrics"]
@@ -301,7 +297,6 @@ class TestEvaluate:
         questions_file,
         azure_pf_client,
         mock_trace_destination_to_cloud,
-        configure_default_azure_credential,
         project_scope,
     ):
         """Test evaluation with target function."""
@@ -316,7 +311,7 @@ class TestEvaluate:
         evaluation_name = "test_evaluate_track_in_cloud"
         # run the evaluation with targets
         result = evaluate(
-            project_scope=project_scope,
+            azure_ai_project=project_scope,
             evaluation_name=evaluation_name,
             data=questions_file,
             target=target_fn,
@@ -340,13 +335,12 @@ class TestEvaluate:
         assert remote_run.properties["runType"] == "eval_run"
         assert remote_run.display_name == evaluation_name
 
-    @pytest.mark.skip(reason="az login in fixture is not working on ubuntu and mac.Works on windows")
+    @pytest.mark.skip(reason="az login in fixture is not working on ubuntu and mac. Works on windows")
     def test_evaluate_track_in_cloud_no_target(
         self,
         data_file,
         azure_pf_client,
         mock_trace_destination_to_cloud,
-        configure_default_azure_credential,
         project_scope,
     ):
         # data
@@ -357,7 +351,7 @@ class TestEvaluate:
 
         # run the evaluation
         result = evaluate(
-            project_scope=project_scope,
+            azure_ai_project=project_scope,
             evaluation_name=evaluation_name,
             data=data_file,
             evaluators={"f1_score": f1_score_eval},
@@ -383,6 +377,57 @@ class TestEvaluate:
         assert remote_run is not None
         assert remote_run["runMetadata"]["properties"]["_azureml.evaluation_run"] == "azure-ai-generative-parent"
         assert remote_run["runMetadata"]["displayName"] == evaluation_name
+
+    @pytest.mark.parametrize(
+        "return_json, aggregate_return_json",
+        [
+            (True, True),
+            (True, False),
+            (False, True),
+            (False, False),
+        ],
+    )
+    def test_evaluate_aggregation_with_threadpool(self, data_file, return_json, aggregate_return_json):
+        from .custom_evaluators.answer_length_with_aggregation import AnswerLength
+
+        result = evaluate(
+            data=data_file,
+            evaluators={
+                "answer_length": AnswerLength(
+                    return_json=return_json, aggregate_return_json=aggregate_return_json),
+                "f1_score": F1ScoreEvaluator(),
+            },
+        )
+        assert result is not None
+        assert "metrics" in result
+        if aggregate_return_json:
+            assert "answer_length.median" in result["metrics"].keys()
+
+    @pytest.mark.parametrize(
+        "return_json, aggregate_return_json",
+        [
+            (True, True),
+            (True, False),
+            (False, True),
+            (False, False),
+        ],
+    )
+    def test_evaluate_aggregation(self, data_file, return_json, aggregate_return_json):
+        from .custom_evaluators.answer_length_with_aggregation import AnswerLength
+
+        result = evaluate(
+            data=data_file,
+            evaluators={
+                "answer_length": AnswerLength(
+                    return_json=return_json, aggregate_return_json=aggregate_return_json),
+                "f1_score": F1ScoreEvaluator(),
+            },
+            _use_thread_pool=False,
+        )
+        assert result is not None
+        assert "metrics" in result
+        if aggregate_return_json:
+            assert "answer_length.median" in result["metrics"].keys()
 
     @pytest.mark.skip(reason="TODO: Add test back")
     def test_prompty_with_threadpool_implementation(self):

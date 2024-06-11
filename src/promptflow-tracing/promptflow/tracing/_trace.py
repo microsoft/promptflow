@@ -462,6 +462,11 @@ def _traced_async(
 
     @functools.wraps(func)
     async def wrapped(*args, **kwargs):
+        from ._utils import is_tracing_disabled
+
+        if is_tracing_disabled():
+            return await func(*args, **kwargs)
+
         trace = create_trace(func, args, kwargs)
         # For node span we set the span name to node name, otherwise we use the function name.
         span_name = get_node_name_from_context(used_for_span_name=True) or trace.name
@@ -526,6 +531,11 @@ def _traced_sync(
 
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
+        from ._utils import is_tracing_disabled
+
+        if is_tracing_disabled():
+            return func(*args, **kwargs)
+
         trace = create_trace(func, args, kwargs)
         # For node span we set the span name to node name, otherwise we use the function name.
         span_name = get_node_name_from_context(used_for_span_name=True) or trace.name
