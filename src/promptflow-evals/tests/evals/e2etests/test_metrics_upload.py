@@ -2,13 +2,14 @@ import json
 import logging
 import os
 import pathlib
+from unittest.mock import MagicMock, patch
+
 import pytest
 
-from unittest.mock import patch, MagicMock
 from promptflow.evals.evaluate import _utils as ev_utils
 from promptflow.evals.evaluate._eval_run import EvalRun
-from promptflow.evals.evaluators._f1_score._f1_score import F1ScoreEvaluator
 from promptflow.evals.evaluate._evaluate import evaluate
+from promptflow.evals.evaluators._f1_score._f1_score import F1ScoreEvaluator
 from promptflow.recording.record_mode import is_live
 
 
@@ -33,17 +34,18 @@ def questions_file():
 @pytest.fixture
 def setup_data(azure_pf_client, project_scope):
     run = EvalRun(
-        run_name='test',
+        run_name="test",
         tracking_uri=(
-            'https://eastus2.api.azureml.ms/mlflow/v2.0'
+            "https://eastus2.api.azureml.ms/mlflow/v2.0"
             f'/subscriptions{project_scope["subscription_id"]}'
             f'/resourceGroups/{project_scope["resource_group_name"]}'
-            '/providers/Microsoft.MachineLearningServices'
-            f'/workspaces/{project_scope["project_name"]}'),
+            "/providers/Microsoft.MachineLearningServices"
+            f'/workspaces/{project_scope["project_name"]}'
+        ),
         subscription_id=project_scope["subscription_id"],
         group_name=project_scope["resource_group_name"],
         workspace_name=project_scope["project_name"],
-        ml_client=azure_pf_client._ml_client
+        ml_client=azure_pf_client._ml_client,
     )
     yield
     run.end_run("FINISHED")
@@ -59,9 +61,11 @@ class TestMetricsUpload(object):
         error_messages = []
         if records:
             error_messages = [
-                lg_rec.message for lg_rec in records if lg_rec.levelno == logging.ERROR and (
-                    lg_rec.name in module_names)]
-            assert not error_messages, '\n'.join(error_messages)
+                lg_rec.message
+                for lg_rec in records
+                if lg_rec.levelno == logging.ERROR and (lg_rec.name in module_names)
+            ]
+            assert not error_messages, "\n".join(error_messages)
 
     @pytest.mark.usefixtures("vcr_recording")
     def test_writing_to_run_history(self, setup_data, caplog):
@@ -74,11 +78,11 @@ class TestMetricsUpload(object):
         # Just for sanity check let us make sure that the logging actually works
         mock_response = MagicMock()
         mock_response.status_code = 418
-        with patch('promptflow.evals.evaluate._eval_run.EvalRun.request_with_retry', return_value=mock_response):
-            ev_utils._write_properties_to_run_history({'test': 42})
-            assert any(lg_rec.levelno == logging.ERROR for lg_rec in caplog.records), 'The error log was not captured!'
+        with patch("promptflow.evals.evaluate._eval_run.EvalRun.request_with_retry", return_value=mock_response):
+            ev_utils._write_properties_to_run_history({"test": 42})
+            assert any(lg_rec.levelno == logging.ERROR for lg_rec in caplog.records), "The error log was not captured!"
         caplog.clear()
-        ev_utils._write_properties_to_run_history({'test': 42})
+        ev_utils._write_properties_to_run_history({"test": 42})
         self._assert_no_errors_for_module(caplog.records, [ev_utils.__name__])
 
     @pytest.mark.usefixtures("vcr_recording")
@@ -92,11 +96,11 @@ class TestMetricsUpload(object):
         ev_run = EvalRun.get_instance()
         mock_response = MagicMock()
         mock_response.status_code = 418
-        with patch('promptflow.evals.evaluate._eval_run.EvalRun.request_with_retry', return_value=mock_response):
-            ev_run.log_metric('f1', 0.54)
-            assert any(lg_rec.levelno == logging.ERROR for lg_rec in caplog.records), 'The error log was not captured!'
+        with patch("promptflow.evals.evaluate._eval_run.EvalRun.request_with_retry", return_value=mock_response):
+            ev_run.log_metric("f1", 0.54)
+            assert any(lg_rec.levelno == logging.ERROR for lg_rec in caplog.records), "The error log was not captured!"
         caplog.clear()
-        ev_run.log_metric('f1', 0.54)
+        ev_run.log_metric("f1", 0.54)
         self._assert_no_errors_for_module(caplog.records, EvalRun.__module__)
 
     @pytest.mark.usefixtures("vcr_recording")
@@ -110,20 +114,21 @@ class TestMetricsUpload(object):
         ev_run = EvalRun.get_instance()
         mock_response = MagicMock()
         mock_response.status_code = 418
-        with open(os.path.join(tmp_path, 'test.json'), 'w') as fp:
-            json.dump({'f1': 0.5}, fp)
-        os.makedirs(os.path.join(tmp_path, 'internal_dir'), exist_ok=True)
-        with open(os.path.join(tmp_path, 'internal_dir', 'test.json'), 'w') as fp:
-            json.dump({'internal_f1': 0.6}, fp)
-        with patch('promptflow.evals.evaluate._eval_run.EvalRun.request_with_retry', return_value=mock_response):
+        with open(os.path.join(tmp_path, "test.json"), "w") as fp:
+            json.dump({"f1": 0.5}, fp)
+        os.makedirs(os.path.join(tmp_path, "internal_dir"), exist_ok=True)
+        with open(os.path.join(tmp_path, "internal_dir", "test.json"), "w") as fp:
+            json.dump({"internal_f1": 0.6}, fp)
+        with patch("promptflow.evals.evaluate._eval_run.EvalRun.request_with_retry", return_value=mock_response):
             ev_run.log_artifact(tmp_path)
-            assert any(lg_rec.levelno == logging.ERROR for lg_rec in caplog.records), 'The error log was not captured!'
+            assert any(lg_rec.levelno == logging.ERROR for lg_rec in caplog.records), "The error log was not captured!"
         caplog.clear()
         ev_run.log_artifact(tmp_path)
         self._assert_no_errors_for_module(caplog.records, EvalRun.__module__)
 
-    @pytest.mark.skipif(condition=not is_live(),
-                        reason="promptflow run create files with random names, which cannot be recorded.")
+    @pytest.mark.skipif(
+        condition=not is_live(), reason="promptflow run create files with random names, which cannot be recorded."
+    )
     @pytest.mark.usefixtures("vcr_recording")
     def test_e2e_run_target_fn(self, caplog, project_scope, questions_answers_file):
         """Test evaluation run logging."""
@@ -145,11 +150,10 @@ class TestMetricsUpload(object):
             target=target_fn,
             evaluators={"f1": f1_score_eval},
             azure_ai_project=project_scope,
-            _run_name='eval_test_run2'
+            _run_name="eval_test_run2",
         )
         self._assert_no_errors_for_module(caplog.records, (ev_utils.__name__, EvalRun.__module__))
 
-    @pytest.mark.usefixtures("vcr_recording")
     def test_e2e_run(self, caplog, project_scope, questions_answers_file):
         """Test evaluation run logging."""
         # Make sure that the URL ending in TraceSessions is in the recording, it is not always being recorded.
@@ -162,9 +166,5 @@ class TestMetricsUpload(object):
         # resourceGroups/00000000-0000-0000-0000-000000000000/providers/Microsoft.MachineLearningServices/
         # workspaces/00000
         f1_score_eval = F1ScoreEvaluator()
-        evaluate(
-            data=questions_answers_file,
-            evaluators={"f1": f1_score_eval},
-            azure_ai_project=project_scope
-        )
+        evaluate(data=questions_answers_file, evaluators={"f1": f1_score_eval}, azure_ai_project=project_scope)
         self._assert_no_errors_for_module(caplog.records, (ev_utils.__name__, EvalRun.__module__))
