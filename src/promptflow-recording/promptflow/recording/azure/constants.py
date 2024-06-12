@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 ENVIRON_TEST_MODE = "PROMPT_FLOW_TEST_MODE"
+ENVIRON_TEST_PACKAGE = "PROMPT_FLOW_TEST_PACKAGE"
 
 
 FILTER_HEADERS = [
@@ -64,6 +65,23 @@ class SanitizedValues:
     USERNAME = "unknown_user"
     # MISC
     EMAIL_USERNAME = "username"
+    # run start and end time
+    START_TIME = "1717563256142"
+    TIMESTAMP = "1717563256242"
+    END_TIME = "1717563261483"
+    # Promptflow RunID
+    RUN_ID = "evals_e2etests_target_fn_wqo0_peh_20240606_102622_386974"
+    # Fake Application insights event
+    FAKE_APP_INSIGHTS = [
+        {
+            "ver": 1,
+            "name": "Microsoft.ApplicationInsights.Event",
+            "time": "2024-06-06T23:20:59.838896Z",
+            "sampleRate": 100.0,
+            "iKey": UUID,
+            "tags": {"foo": "bar"},
+        }
+    ]
 
 
 class AzureMLResourceTypes:
@@ -79,4 +97,5 @@ TEST_CLASSES_FOR_RUN_INTEGRATION_TEST_RECORDING = [
     "TestTelemetry",
     "TestAzureCliPerf",
     "TestCSharpSdk",
+    "TestMetricsUpload",
 ]
