@@ -31,7 +31,7 @@ def questions_file():
 
 
 @pytest.fixture
-def setup_data(azure_pf_client, project_scope):
+def setup_data(azure_ml_client, project_scope):
     run = EvalRun(
         run_name='test',
         tracking_uri=(
@@ -43,7 +43,7 @@ def setup_data(azure_pf_client, project_scope):
         subscription_id=project_scope["subscription_id"],
         group_name=project_scope["resource_group_name"],
         workspace_name=project_scope["project_name"],
-        ml_client=azure_pf_client._ml_client
+        ml_client=azure_ml_client
     )
     yield
     run.end_run("FINISHED")

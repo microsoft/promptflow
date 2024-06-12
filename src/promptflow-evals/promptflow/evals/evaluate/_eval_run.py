@@ -103,7 +103,7 @@ class EvalRun(metaclass=Singleton):
         self._workspace_name: str = workspace_name
         self._ml_client: MLClient = ml_client
         self._url_base = urlparse(self._tracking_uri).netloc
-        self._is_broken = self._start_run()
+        self._is_broken = self._start_run(run_name)
         self._is_terminated = False
         self.name: str = run_name if run_name else self.info.run_id
 
@@ -126,11 +126,13 @@ class EvalRun(metaclass=Singleton):
             self._workspace_name,
         )
 
-    def _start_run(self) -> bool:
+    def _start_run(self, run_name: Optional[str]) -> bool:
         """
         Make a request to start the mlflow run. If the run will not start, it will be
 
         marked as broken and the logging will be switched off.
+        :param run_name: The display name for the run.
+        :type run_name: Optional[str]
         :returns: True if the run has started and False otherwise.
         """
         url = (
@@ -147,6 +149,8 @@ class EvalRun(metaclass=Singleton):
                 }
             ]
         }
+        if run_name:
+            body["run_name"] = run_name
         response = self.request_with_retry(
             url=url,
             method='POST',

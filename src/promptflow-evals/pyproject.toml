@@ -45,7 +45,7 @@ aiohttp_retry = ">=2.8.3"
 websocket-client = ">=1.2.0"
 jsonpath_ng = ">=1.5.0"
 urllib3 = ">1.26.17"
-promptflow-azure = "<2.0.0" # Needed for remote tracking
+azure-ai-ml = ">=1.14.0,<2.0.0" # Needed for remote tracking
 numpy = ">=1.22"
 
 [tool.poetry.group.dev.dependencies]

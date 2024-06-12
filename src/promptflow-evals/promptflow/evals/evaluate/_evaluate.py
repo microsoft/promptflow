@@ -440,7 +440,7 @@ def evaluate(
     metrics = _aggregate_metrics(evaluators_result_df, evaluators)
 
     studio_url = _log_metrics_and_instance_results(
-        metrics, result_df, trace_destination, target_run
+        metrics, result_df, trace_destination, target_run, evaluation_name
     )
 
     result = {"rows": result_df.to_dict("records"), "metrics": metrics, "studio_url": studio_url}
