@@ -18,6 +18,7 @@ on:
 env:
   IS_IN_CI_PIPELINE: "true"
   PROMPT_FLOW_TEST_MODE: "replay"
+  PROMPT_FLOW_TEST_PACKAGE: "promptflow-azure"
   TRACING_DIRECTORY: ${{ github.workspace }}/src/promptflow-tracing
   WORKING_DIRECTORY: ${{ github.workspace }}/src/promptflow-azure
   CORE_DIRECTORY: ${{ github.workspace }}/src/promptflow-core

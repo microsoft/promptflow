@@ -27,6 +27,7 @@ env:
   IS_IN_CI_PIPELINE: "true"
   PROMPT_FLOW_TEST_MODE: "live"
   PROMPT_FLOW_WORKSPACE_NAME: "promptflow-eastus"
+  PROMPT_FLOW_TEST_PACKAGE: "promptflow-azure"
   TRACING_DIRECTORY: ${{ github.workspace }}/src/promptflow-tracing
   CORE_DIRECTORY: ${{ github.workspace }}/src/promptflow-core
   DEVKIT_DIRECTORY: ${{ github.workspace }}/src/promptflow-devkit
