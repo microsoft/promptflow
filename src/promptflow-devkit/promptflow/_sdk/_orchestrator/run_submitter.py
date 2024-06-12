@@ -168,7 +168,7 @@ class RunSubmitter:
         exception = None
         # create run to db when fully prepared to run in executor, otherwise won't create it
         run._status = Status.Running.value
-        run._start_time = datetime.datetime.now()
+        run._start_time = datetime.datetime.now().astimezone()
         run._dump()  # pylint: disable=protected-access
 
         resume_from_run_storage = (
@@ -245,7 +245,7 @@ class RunSubmitter:
             run = self.run_operations.update(
                 name=run.name,
                 status=status,
-                end_time=datetime.datetime.now(),
+                end_time=datetime.datetime.now().astimezone(),
                 system_metrics=system_metrics,
             )
 

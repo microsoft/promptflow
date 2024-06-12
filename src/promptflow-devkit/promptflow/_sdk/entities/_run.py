@@ -155,7 +155,7 @@ class Run(YAMLTranslatableMixin):
         self.variant = variant
         self.run = run
         self._resume_from = kwargs.get("resume_from", None)
-        self._created_on = created_on or datetime.datetime.now()
+        self._created_on = created_on or datetime.datetime.now().astimezone()
         self._status = status or RunStatus.NOT_STARTED
         self.environment_variables = environment_variables or {}
         self.connections = connections or {}
@@ -756,8 +756,8 @@ class Run(YAMLTranslatableMixin):
         # when sending the request to the server.
         # e.g. WARNING:msrest.serialization:Datetime with no tzinfo will be considered UTC.
         # for start_time, switch to "_start_time" once the bug item is fixed: BUG - 3085432.
-        start_time = self._created_on.isoformat() + "Z" if self._created_on else None
-        end_time = self._end_time.isoformat() + "Z" if self._end_time else None
+        start_time = self._created_on.isoformat() if self._created_on else None
+        end_time = self._end_time.isoformat() if self._end_time else None
 
         # extract properties that needs to be passed to the request
         properties = {
