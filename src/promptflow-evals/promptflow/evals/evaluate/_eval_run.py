@@ -126,7 +126,6 @@ class EvalRun(metaclass=Singleton):
             self._workspace_name,
         )
 
-
     def _start_run(self, run_name: Optional[str]) -> bool:
         """
         Make a request to start the mlflow run. If the run will not start, it will be
