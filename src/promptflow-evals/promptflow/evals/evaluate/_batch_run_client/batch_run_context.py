@@ -1,5 +1,9 @@
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
 import os
 
+from promptflow._sdk._constants import PF_EVAL_BATCH_RUN
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 from promptflow.tracing._integrations._openai_injector import inject_openai_api, recover_openai_api
 
@@ -18,11 +22,11 @@ class BatchRunContext:
             inject_openai_api()
 
         if isinstance(self.client, ProxyClient):
-            os.environ["EVAL_BATCH_RUN"] = "true"
+            os.environ[PF_EVAL_BATCH_RUN] = "true"
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if isinstance(self.client, CodeClient):
             recover_openai_api()
 
         if isinstance(self.client, ProxyClient):
-            os.environ.pop("EVAL_BATCH_RUN", None)
+            os.environ.pop(PF_EVAL_BATCH_RUN, None)

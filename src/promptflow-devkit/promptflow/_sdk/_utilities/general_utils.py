@@ -53,6 +53,7 @@ from promptflow._sdk._constants import (
     NODE,
     NODE_VARIANTS,
     NODES,
+    PF_EVAL_BATCH_RUN,
     PROMPT_FLOW_DIR_NAME,
     REFRESH_CONNECTIONS_DIR_LOCK_PATH,
     REGISTRY_URI_PREFIX,
@@ -1092,7 +1093,7 @@ def is_local_module(entry_string: str, code: Path) -> bool:
 
 
 def is_eval_batch_run() -> bool:
-    return os.environ.get("EVAL_BATCH_RUN", None) == "true"
+    return os.environ.get(PF_EVAL_BATCH_RUN, None) == "true"
 
 
 def is_flex_run(run: "Run") -> bool:
