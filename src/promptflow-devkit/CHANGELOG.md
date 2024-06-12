@@ -1,6 +1,6 @@
 # promptflow-devkit package
 
-## v1.12.0 (2024/06/11)
+## v1.12.0 (2024.06.11)
 
 ### Improvements
 - Add retry logic when uploading run details to cloud.
