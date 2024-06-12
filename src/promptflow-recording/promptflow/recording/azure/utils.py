@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import json
+import os
 import re
 from dataclasses import dataclass
 from typing import Dict
@@ -11,7 +12,7 @@ import jwt
 from azure.core.credentials import AccessToken
 from vcr.request import Request
 
-from .constants import SanitizedValues
+from .constants import ENVIRON_TEST_PACKAGE, SanitizedValues
 
 
 class FakeTokenCredential:
@@ -200,6 +201,11 @@ def sanitize_pfs_request_body(body: str) -> str:
     # PFS will help handle this field, so client does not need to pass this value
     if "runExperimentName" in body:
         body_dict["runExperimentName"] = ""
+
+    # promptflow-azure replay test does not require below sanitizations
+    if os.getenv(ENVIRON_TEST_PACKAGE) == "promptflow-azure":
+        return json.dumps(body_dict)
+
     # Start and end time
     if "start_time" in body_dict:
         body_dict["start_time"] = SanitizedValues.START_TIME

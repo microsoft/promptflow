@@ -19,6 +19,11 @@ load_dotenv()
 _connection_setup = False
 
 
+@pytest.fixture(autouse=True)
+def declare_test_package(monkeypatch: MonkeyPatch):
+    monkeypatch.setenv("PROMPT_FLOW_TEST_PACKAGE", "promptflow-azure")
+
+
 @pytest.fixture
 def local_client() -> LocalClient:
     yield LocalClient()

@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 ENVIRON_TEST_MODE = "PROMPT_FLOW_TEST_MODE"
+ENVIRON_TEST_PACKAGE = "PROMPT_FLOW_TEST_PACKAGE"
 
 
 FILTER_HEADERS = [
@@ -72,9 +73,15 @@ class SanitizedValues:
     RUN_ID = "evals_e2etests_target_fn_wqo0_peh_20240606_102622_386974"
     # Fake Application insights event
     FAKE_APP_INSIGHTS = [
-        {"ver": 1, "name": "Microsoft.ApplicationInsights.Event",
-         "time": "2024-06-06T23:20:59.838896Z", "sampleRate": 100.0,
-         "iKey": UUID, "tags": {"foo": "bar"}}]
+        {
+            "ver": 1,
+            "name": "Microsoft.ApplicationInsights.Event",
+            "time": "2024-06-06T23:20:59.838896Z",
+            "sampleRate": 100.0,
+            "iKey": UUID,
+            "tags": {"foo": "bar"},
+        }
+    ]
 
 
 class AzureMLResourceTypes:
