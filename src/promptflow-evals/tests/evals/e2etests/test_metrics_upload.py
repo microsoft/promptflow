@@ -102,6 +102,9 @@ class TestMetricsUpload(object):
     @pytest.mark.usefixtures("vcr_recording")
     def test_log_artifact(self, setup_data, caplog, tmp_path):
         """Test uploading artifact to the service."""
+        # After re recording this test please replace sktid by
+        # 00000000-0000-0000-0000-000000000000 in the request
+        # with body: '{"f1": 0.5}' and body: '{"internal_f1": 0.6}'
         logger = logging.getLogger(EvalRun.__module__)
         # All loggers, having promptflow. prefix will have "promptflow" logger
         # as a parent. This logger does not propagate the logs and cannot be
