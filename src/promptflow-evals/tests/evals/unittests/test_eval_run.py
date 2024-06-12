@@ -453,6 +453,8 @@ class TestEvalRun:
             metrics=None,
             instance_results=None,
             trace_destination=None,
-            run=None)
+            run=None,
+            evaluation_name=None,
+            )
         assert len(caplog.records) == 1
         assert "Unable to log traces as trace destination was not defined." in caplog.records[0].message
