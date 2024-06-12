@@ -7,8 +7,6 @@ import logging
 from concurrent.futures import as_completed
 from typing import Dict, List
 
-import numpy as np
-
 from promptflow.core import AzureOpenAIModelConfiguration
 from promptflow.tracing import ThreadPoolExecutorWithContext as ThreadPoolExecutor
 
@@ -17,6 +15,9 @@ from .._fluency import FluencyEvaluator
 from .._groundedness import GroundednessEvaluator
 from .._relevance import RelevanceEvaluator
 from .retrieval import RetrievalChatEvaluator
+from ...evaluate._lazy_load import LazyLoader
+
+np = LazyLoader("numpy", globals(), "numpy")
 
 logger = logging.getLogger(__name__)
 

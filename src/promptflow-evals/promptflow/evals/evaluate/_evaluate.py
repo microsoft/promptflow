@@ -5,8 +5,9 @@ import inspect
 import re
 from typing import Any, Callable, Dict, Optional, Set, Tuple
 
-import numpy as np
-import pandas as pd
+import promptflow.evals
+from ._lazy_load import LazyLoader
+
 
 from promptflow._sdk._constants import LINE_NUMBER
 from promptflow.client import PFClient
@@ -22,6 +23,9 @@ from ._utils import (
 )
 from promptflow._sdk._telemetry import ActivityType, log_activity
 from promptflow._sdk._telemetry.telemetry import get_telemetry_logger
+
+pd = LazyLoader("pandas", globals(), "pandas")
+np = LazyLoader("numpy", globals(), "numpy")
 
 
 def _aggregate_metrics(df, evaluators) -> Dict[str, float]:
@@ -121,7 +125,7 @@ def _validate_and_load_data(target, data, evaluators, output_path, azure_ai_proj
 
 
 def _validate_columns(
-    df: pd.DataFrame,
+    df,
     evaluators: Dict[str, Any],
     target: Optional[Callable],
     evaluator_config: Dict[str, Dict[str, str]],
@@ -155,8 +159,8 @@ def _validate_columns(
 
 
 def _apply_target_to_data(
-    target: Callable, data: str, pf_client: PFClient, initial_data: pd.DataFrame, evaluation_name: Optional[str] = None
-) -> Tuple[pd.DataFrame, Set[str]]:
+    target: Callable, data: str, pf_client: PFClient, initial_data, evaluation_name: Optional[str] = None
+):
     """
     Apply the target function to the data set and return updated data and generated columns.
 
@@ -229,7 +233,7 @@ def _process_evaluator_config(evaluator_config: Dict[str, Dict[str, str]]):
     return processed_config
 
 
-def _rename_columns_conditionally(df: pd.DataFrame):
+def _rename_columns_conditionally(df):
     """
     Change the column names for data frame. The change happens inplace.
 

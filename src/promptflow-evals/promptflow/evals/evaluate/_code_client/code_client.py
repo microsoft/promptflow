@@ -4,8 +4,7 @@
 import inspect
 import json
 import logging
-
-import pandas as pd
+from .._lazy_load import LazyLoader
 
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 from promptflow.evals.evaluate._utils import _apply_column_mapping, load_jsonl, _has_aggregator
@@ -14,6 +13,8 @@ from promptflow.tracing._integrations._openai_injector import inject_openai_api,
 from promptflow.contracts.types import AttrDict
 
 from ..._user_agent import USER_AGENT
+
+pd = LazyLoader("pandas", globals(), "pandas")
 
 LOGGER = logging.getLogger(__name__)
 
