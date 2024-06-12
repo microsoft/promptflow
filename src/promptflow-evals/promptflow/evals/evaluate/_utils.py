@@ -15,9 +15,11 @@ import pandas as pd
 from azure.ai.ml import MLClient
 from azure.ai.ml.identity import AzureMLOnBehalfOfCredential
 from azure.core.credentials import TokenCredential
+from azure.core.exceptions import ResourceNotFoundError
 from azure.identity import AzureCliCredential, DefaultAzureCredential, ManagedIdentityCredential
 from promptflow.evals._constants import DEFAULT_EVALUATION_RESULTS_FILE_NAME, Prefixes
 from promptflow.evals.evaluate._eval_run import EvalRun
+from promptflow.exceptions import UserErrorException, ErrorTarget
 
 
 LOGGER = logging.getLogger(__name__)
@@ -110,6 +112,22 @@ def _get_ml_client(trace_destination: str, **kwargs) -> Tuple[MLClient, AzureMLW
         **kwargs
     )
     return ws_triad, ml_client
+
+
+def _validate_tracing_uri(trace_destination: str) -> None:
+    """
+    Validate if the workspace exisit.
+
+    :param trace_destination: The workspace to check.
+    :type trace_destination: str
+    :raises: UserErrorException
+    """
+
+    ws_triad, ml_client = _get_ml_client(trace_destination)
+    try:
+        ml_client.workspaces.get(ws_triad.workspace_name)
+    except ResourceNotFoundError as e:
+        raise UserErrorException(message=str(e), target=ErrorTarget.CONTROL_PLANE_SDK)
 
 
 def _log_metrics_and_instance_results(

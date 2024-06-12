@@ -19,6 +19,7 @@ from ._utils import (
     _log_metrics_and_instance_results,
     _trace_destination_from_project_scope,
     _write_output,
+    _validate_tracing_uri,
 )
 from promptflow._sdk._telemetry import ActivityType, log_activity
 from promptflow._sdk._telemetry.telemetry import get_telemetry_logger
@@ -348,6 +349,8 @@ def evaluate(
     evaluator_config = _process_evaluator_config(evaluator_config)
     _validate_columns(input_data_df, evaluators, target, evaluator_config)
 
+    # We are checking that the workspace exisis as it was done in promtflow-azure.
+    _validate_tracing_uri(trace_destination)
     # Target Run
     pf_client = PFClient(
         config={"trace.destination": trace_destination} if trace_destination else None,

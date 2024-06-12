@@ -6,9 +6,11 @@ Created on Jun 11, 2024
 import os
 import pytest
 
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
+from azure.core.exceptions import ResourceNotFoundError
 from promptflow.evals.evaluate import _utils
+from promptflow.exceptions import UserErrorException, ErrorTarget
 
 
 @pytest.fixture
@@ -57,3 +59,24 @@ class TestUtilities:
                 _utils._get_credential(force_cli=True)
         default_cli.assert_not_called()
         mock_cli.assert_called_once()
+
+    def test_tracking_validate_ok(self):
+        """Test validation of a workspace"""
+        with patch('promptflow.evals.evaluate._utils.MLClient'):
+            _utils._validate_tracing_uri(
+                "azureml://subscriptions/00000000-0000-0000-0000-000000000000/"
+                "resourceGroups/test_group/providers/Microsoft.MachineLearningServices/"
+                "workspaces/test_workspace")
+
+    def test_tracking_validate_fail(self):
+        """Test the exception when the workspace is nor present."""
+        mock_cli = MagicMock()
+        mock_cli.workspaces.get.side_effect = ResourceNotFoundError("Mock error")
+        with patch('promptflow.evals.evaluate._utils.MLClient', return_value=mock_cli):
+            with pytest.raises(UserErrorException) as cm:
+                _utils._validate_tracing_uri(
+                    "azureml://subscriptions/00000000-0000-0000-0000-000000000000/"
+                    "resourceGroups/test_group/providers/Microsoft.MachineLearningServices/"
+                    "workspaces/test_workspace")
+            assert "Mock error" in cm.value.args[0]
+            assert cm.value.target == ErrorTarget.CONTROL_PLANE_SDK

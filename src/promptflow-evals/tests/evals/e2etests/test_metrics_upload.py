@@ -99,6 +99,8 @@ class TestMetricsUpload(object):
         ev_run.log_metric('f1', 0.54)
         self._assert_no_errors_for_module(caplog.records, EvalRun.__module__)
 
+    @pytest.mark.skipif(condition=not is_live(),
+                        reason="Disabling the recording, because the recording must be changed manually.")
     @pytest.mark.usefixtures("vcr_recording")
     def test_log_artifact(self, setup_data, caplog, tmp_path):
         """Test uploading artifact to the service."""
