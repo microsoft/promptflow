@@ -1,7 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from typing import Tuple
+from typing import Optional, Tuple
 import json
 import logging
 import os
@@ -114,15 +114,16 @@ def _get_ml_client(trace_destination: str, **kwargs) -> Tuple[MLClient, AzureMLW
     return ws_triad, ml_client
 
 
-def _validate_tracing_uri(trace_destination: str) -> None:
+def _validate_tracing_uri(trace_destination: Optional[str]) -> None:
     """
-    Validate if the workspace exisit.
+    Validate if the workspace exist.
 
     :param trace_destination: The workspace to check.
-    :type trace_destination: str
+    :type trace_destination: Optional[str]
     :raises: UserErrorException
     """
-
+    if trace_destination is None:
+        return
     ws_triad, ml_client = _get_ml_client(trace_destination)
     try:
         ml_client.workspaces.get(ws_triad.workspace_name)

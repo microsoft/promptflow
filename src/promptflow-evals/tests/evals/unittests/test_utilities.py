@@ -60,13 +60,17 @@ class TestUtilities:
         default_cli.assert_not_called()
         mock_cli.assert_called_once()
 
-    def test_tracking_validate_ok(self):
+    @pytest.mark.parametrize('uri',
+                             [
+                                 ("azureml://subscriptions/00000000-0000-0000-0000-000000000000/"
+                                  "resourceGroups/test_group/providers/Microsoft.MachineLearningServices/"
+                                  "workspaces/test_workspace"),
+                                 None
+                             ])
+    def test_tracking_validate_ok(self, uri):
         """Test validation of a workspace"""
         with patch('promptflow.evals.evaluate._utils.MLClient'):
-            _utils._validate_tracing_uri(
-                "azureml://subscriptions/00000000-0000-0000-0000-000000000000/"
-                "resourceGroups/test_group/providers/Microsoft.MachineLearningServices/"
-                "workspaces/test_workspace")
+            _utils._validate_tracing_uri(uri)
 
     def test_tracking_validate_fail(self):
         """Test the exception when the workspace is nor present."""

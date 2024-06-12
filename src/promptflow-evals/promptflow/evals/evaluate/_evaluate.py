@@ -349,7 +349,7 @@ def evaluate(
     evaluator_config = _process_evaluator_config(evaluator_config)
     _validate_columns(input_data_df, evaluators, target, evaluator_config)
 
-    # We are checking that the workspace exisis as it was done in promtflow-azure.
+    # We are checking that the workspace exist as it was done in promptflow-azure.
     _validate_tracing_uri(trace_destination)
     # Target Run
     pf_client = PFClient(
