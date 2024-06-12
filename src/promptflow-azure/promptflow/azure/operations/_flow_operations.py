@@ -113,7 +113,7 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         :param display_name: The display name of the flow to create. Default to be flow folder name + timestamp
             if not specified. e.g. "web-classification-10-27-2023-14-19-10"
         :type display_name: str
-        :param type: The type of the flow to create. One of ["standard", evaluation", "chat"].
+        :param type: The type of the flow to create. One of ["standard", "evaluation", "chat"].
             Default to be "standard" if not specified.
         :type type: str
         :param description: The description of the flow to create. Default to be the description in flow yaml file.
