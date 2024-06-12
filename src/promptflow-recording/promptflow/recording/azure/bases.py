@@ -6,11 +6,12 @@ import copy
 import inspect
 import json
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import vcr
 from vcr import matchers
 from vcr.request import Request
+from vcr.util import read_body
 
 from ..record_mode import is_live, is_record, is_replay
 from .constants import FILTER_HEADERS, TEST_CLASSES_FOR_RUN_INTEGRATION_TEST_RECORDING, SanitizedValues
@@ -47,11 +48,13 @@ class PFAzureIntegrationTestRecording:
         user_object_id: str,
         tenant_id: str,
         variable_recorder: VariableRecorder,
+        recording_dir: str = None,
     ):
         self.test_class = test_class
         self.test_func_name = test_func_name
         self.user_object_id = user_object_id
         self.tenant_id = tenant_id
+        self.recording_dir = recording_dir
         self.recording_file = self._get_recording_file()
         self.recording_processors = self._get_recording_processors()
         self.vcr = self._init_vcr()
@@ -69,6 +72,7 @@ class PFAzureIntegrationTestRecording:
                 user_object_id=kwargs["user_object_id"],
                 tenant_id=kwargs["tenant_id"],
                 variable_recorder=kwargs["variable_recorder"],
+                recording_dir=kwargs.get("recording_dir"),
             )
         else:
             return PFAzureIntegrationTestRecording(
@@ -77,11 +81,16 @@ class PFAzureIntegrationTestRecording:
                 user_object_id=kwargs["user_object_id"],
                 tenant_id=kwargs["tenant_id"],
                 variable_recorder=kwargs["variable_recorder"],
+                recording_dir=kwargs.get("recording_dir"),
             )
 
     def _get_recording_file(self) -> Path:
         test_file_path = Path(inspect.getfile(self.test_class)).resolve()
-        recording_dir = (Path(__file__).parent / "../../../recordings/azure").resolve()
+        if self.recording_dir is not None:
+            recording_dir = Path(self.recording_dir).resolve()
+        else:
+            recording_dir = (Path(__file__).parent / "../../../recordings/azure").resolve()
+
         # when promptflow-recording is installed as a package (not editable mode)
         # __file__ will direct to the installed package path (with "site-packages" in it)
         # where the recording is not there, so we need to leverage test class to find the recording in repo
@@ -280,8 +289,8 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
         if "https://" in r1.path:
             _path = str(r1.path)
             endpoint = ".blob.core.windows.net/"
-            duplicate_path = _path[_path.index(endpoint) + len(endpoint) :]
-            path_for_compare = _path[: _path.index("https://")] + duplicate_path[duplicate_path.index("/") + 1 :]
+            duplicate_path = _path[_path.index(endpoint) + len(endpoint):]
+            path_for_compare = _path[: _path.index("https://")] + duplicate_path[duplicate_path.index("/") + 1:]
             return path_for_compare == r2.path
         # for blob storage request, sanitize the upload hash in path
         if r1.host == r2.host and r1.host == SanitizedValues.BLOB_STORAGE_REQUEST_HOST:
@@ -326,7 +335,7 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
                         body2_dict = json.loads(r2.body.decode("utf-8"))
                         body_dict["startTimeUtc"] = body2_dict["startTimeUtc"]
                         body_dict["endTimeUtc"] = body2_dict["endTimeUtc"]
-                    except (AttributeError, json.JSONDecodeError, KeyError):
+                    except (AttributeError, json.JSONDecodeError, KeyError, TypeError):
                         return False
                     body1 = json.dumps(body_dict)
                     _r1.body = body1.encode("utf-8")
@@ -339,6 +348,39 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
             # so simple return True for such requests
             # corresponding test: `test_upload_run`
             if r1.method == "PUT":
-                if "PromptFlowArtifacts/batch_run_name" in r1.path or "ExperimentRun/dcid.batch_run_name" in r1.path:
+                if ("PromptFlowArtifacts/batch_run_name" in r1.path or
+                        "ExperimentRun/dcid.batch_run_name" in r1.path or
+                        'executionlogs.txt' in r1.path or
+                        ("PromptFlowArtifacts" in r1.path and "flow_artifacts" in r1.path)):
                     return True
-            return matchers.body(r1, r2)
+            return self._body(r1, r2)
+
+    def _transform_bytes_may_be(self, byte_obj: Optional[bytes]) -> Optional[bytes]:
+        """
+        Try to fix line ending.
+
+        :param byte_obj: The original bytes object.
+        :type byte_obj: Optional[bytes]
+        :return: byte_obj with fixed end lines.
+        """
+        if byte_obj is None:
+            return byte_obj
+        return byte_obj.replace(b'\r\n', b'\n')
+
+    def _body(self, r1: Request, r2: Request) -> None:
+        """
+        Implementation of body matcher.
+
+        If recordigs are generated on one system and it is replayed on another one,
+        line ending may not match. For this purpose we replace \r\n by \n.
+        :param r1: The request.
+        :type r1: Request
+        :param r2: Another request.
+        :type r2: Request
+        :raises AssertionError: if bodies does not match.
+        """
+        b1 = self._transform_bytes_may_be(read_body(r1))
+        b2 = self._transform_bytes_may_be(read_body(r2))
+
+        if b1 != b2:
+            raise AssertionError

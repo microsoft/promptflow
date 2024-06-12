@@ -4,8 +4,8 @@
 This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
 :::
 
-Because Prompty can be called as a function, user can use prompty in a `flow` which is can be a python function or class.
-This allows user to do more customization logic with prompty.
+Since Prompty can be called as a function, a user can use prompty in a `flow` which can be a python function or class.
+This allows the user to do more customization logic with prompty.
 
 
 ## Consume prompty in code
