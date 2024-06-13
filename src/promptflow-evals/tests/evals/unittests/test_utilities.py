@@ -69,14 +69,14 @@ class TestUtilities:
                              ])
     def test_tracking_validate_ok(self, uri):
         """Test validation of a workspace"""
-        with patch('promptflow.evals.evaluate._utils.MLClient'):
+        with patch('azure.ai.ml.MLClient'):
             _utils._validate_tracing_uri(uri)
 
     def test_tracking_validate_fail(self):
         """Test the exception when the workspace is nor present."""
         mock_cli = MagicMock()
         mock_cli.workspaces.get.side_effect = ResourceNotFoundError("Mock error")
-        with patch('promptflow.evals.evaluate._utils.MLClient', return_value=mock_cli):
+        with patch('azure.ai.ml.MLClient', return_value=mock_cli):
             with pytest.raises(UserErrorException) as cm:
                 _utils._validate_tracing_uri(
                     "azureml://subscriptions/00000000-0000-0000-0000-000000000000/"

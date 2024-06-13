@@ -1,7 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple
 import json
 import logging
 import os
@@ -12,7 +12,6 @@ from pathlib import Path
 
 import pandas as pd
 
-from azure.ai.ml import MLClient
 from azure.ai.ml.identity import AzureMLOnBehalfOfCredential
 from azure.core.credentials import TokenCredential
 from azure.core.exceptions import ResourceNotFoundError
@@ -94,7 +93,7 @@ def _get_credential(force_cli: bool = False) -> TokenCredential:
         return AzureCliCredential()
 
 
-def _get_ml_client(trace_destination: str, **kwargs) -> Tuple[MLClient, AzureMLWorkspaceTriad]:
+def _get_ml_client(trace_destination: str, **kwargs) -> Tuple[Any, AzureMLWorkspaceTriad]:
     """
     Return the MLclient and workspace triad.
 
@@ -103,6 +102,8 @@ def _get_ml_client(trace_destination: str, **kwargs) -> Tuple[MLClient, AzureMLW
     :type trace_destination: str
     :return: The tuple with the ML client and workspace triad.
     """
+    from azure.ai.ml import MLClient
+
     ws_triad = extract_workspace_triad_from_trace_provider(trace_destination)
     ml_client = MLClient(
         credential=_get_credential(),

@@ -11,7 +11,6 @@ import posixpath
 import requests
 import uuid
 
-from azure.ai.ml import MLClient
 from azure.storage.blob import BlobClient
 from requests.adapters import HTTPAdapter
 from urllib.parse import urlparse
@@ -91,7 +90,7 @@ class EvalRun(metaclass=Singleton):
                  subscription_id: str,
                  group_name: str,
                  workspace_name: str,
-                 ml_client: MLClient
+                 ml_client: Any
                  ):
         """
         Constructor
@@ -101,7 +100,7 @@ class EvalRun(metaclass=Singleton):
         self._subscription_id: str = subscription_id
         self._resource_group_name: str = group_name
         self._workspace_name: str = workspace_name
-        self._ml_client: MLClient = ml_client
+        self._ml_client: Any = ml_client
         self._url_base = urlparse(self._tracking_uri).netloc
         self._is_broken = self._start_run(run_name)
         self._is_terminated = False
