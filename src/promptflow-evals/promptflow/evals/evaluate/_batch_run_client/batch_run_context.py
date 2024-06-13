@@ -3,7 +3,7 @@
 # ---------------------------------------------------------
 import os
 
-from promptflow._sdk._constants import PF_FLOW_ENTRY_IN_TMP
+from promptflow._sdk._constants import PF_FLOW_ENTRY_IN_TMP, PF_FLOW_META_LOAD_IN_SUBPROCESS
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 from promptflow.tracing._integrations._openai_injector import inject_openai_api, recover_openai_api
 
@@ -23,6 +23,7 @@ class BatchRunContext:
 
         if isinstance(self.client, ProxyClient):
             os.environ[PF_FLOW_ENTRY_IN_TMP] = "true"
+            os.environ[PF_FLOW_META_LOAD_IN_SUBPROCESS] = "false"
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if isinstance(self.client, CodeClient):
@@ -30,3 +31,4 @@ class BatchRunContext:
 
         if isinstance(self.client, ProxyClient):
             os.environ.pop(PF_FLOW_ENTRY_IN_TMP, None)
+            os.environ.pop(PF_FLOW_META_LOAD_IN_SUBPROCESS, None)
