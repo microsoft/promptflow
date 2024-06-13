@@ -15,7 +15,6 @@ from promptflow.evals._constants import DEFAULT_EVALUATION_RESULTS_FILE_NAME, Pr
 
 mlflow = LazyLoader("mlflow", globals(), "mlflow")
 pd = LazyLoader("pandas", globals(), "pandas")
-pf_azure = LazyLoader("promptflow.azure", globals(), "promptflow.azure")
 
 LOGGER = logging.getLogger(__name__)
 
@@ -78,7 +77,7 @@ def _write_properties_to_run_history(properties: dict) -> None:
 
 
 def _azure_pf_client(trace_destination):
-    _get_azure_pf_client = pf_azure._cli._utils._get_azure_pf_client
+    from promptflow.azure._cli._utils import _get_azure_pf_client
 
     ws_triad = extract_workspace_triad_from_trace_provider(trace_destination)
     azure_pf_client = _get_azure_pf_client(
@@ -114,7 +113,7 @@ def _get_trace_destination_config(tracking_uri):
 def _log_metrics_and_instance_results(
     metrics, instance_results, tracking_uri, run, pf_client, data, evaluation_name=None
 ) -> str:
-    AsyncRunUploader = pf_azure._dependencies._pf_evals.AsyncRunUploader
+    from promptflow.azure._dependencies._pf_evals import AsyncRunUploader
 
     run_id = None
     trace_destination = _get_trace_destination_config(tracking_uri=tracking_uri)
