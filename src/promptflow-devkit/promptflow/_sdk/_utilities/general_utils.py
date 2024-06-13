@@ -53,7 +53,7 @@ from promptflow._sdk._constants import (
     NODE,
     NODE_VARIANTS,
     NODES,
-    PF_EVAL_BATCH_RUN,
+    PF_FLOW_ENTRY_IN_TMP,
     PROMPT_FLOW_DIR_NAME,
     REFRESH_CONNECTIONS_DIR_LOCK_PATH,
     REGISTRY_URI_PREFIX,
@@ -1008,15 +1008,15 @@ def create_temp_flex_flow_yaml_core(entry: Union[str, PathLike, Callable], code:
         with open(flow_yaml_path, "r", encoding=DEFAULT_ENCODING) as f:
             existing_content = f.read()
 
-    create_yaml_in_temp_dir = False
-    if is_eval_batch_run():
-        logger.debug("Eval batch run, its snapshot will be empty.")
-        create_yaml_in_temp_dir = True
+    create_yaml_in_tmp = False
+    if os.environ.get(PF_FLOW_ENTRY_IN_TMP, "False").lower() == "true":
+        logger.debug("PF_FLOW_ENTRY_IN_TMP is set to true, its snapshot will be empty.")
+        create_yaml_in_tmp = True
     elif not is_local_module(entry_string=entry, code=code):
         logger.debug(f"Entry {entry} is not found in local, its snapshot will be empty.")
-        create_yaml_in_temp_dir = True
+        create_yaml_in_tmp = True
 
-    if create_yaml_in_temp_dir:
+    if create_yaml_in_tmp:
         # make sure run name is from entry instead of random folder name
         temp_dir = tempfile.mkdtemp(prefix=_sanitize_python_variable_name(entry) + "_")
         flow_yaml_path = Path(temp_dir) / FLOW_FLEX_YAML
@@ -1090,10 +1090,6 @@ def is_local_module(entry_string: str, code: Path) -> bool:
     except Exception as e:
         logger.debug(f"Failed to check is local module from {entry_string} due to {e}.")
         return False
-
-
-def is_eval_batch_run() -> bool:
-    return os.environ.get(PF_EVAL_BATCH_RUN, None) == "true"
 
 
 def is_flex_run(run: "Run") -> bool:
