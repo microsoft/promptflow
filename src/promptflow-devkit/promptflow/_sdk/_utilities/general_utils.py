@@ -23,7 +23,7 @@ from importlib.util import find_spec
 from inspect import isfunction
 from os import PathLike
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union, TypedDict
 from urllib.parse import urlparse
 
 import keyring
@@ -535,11 +535,18 @@ def _generate_tool_meta(
     return res
 
 
-def _retrieve_tool_func_result(func_call_scenario: str, function_config: Dict):
+FunctionConfig = TypedDict("FunctionConfig", {
+    "func_path": str,
+    "func_kwargs": Dict,
+    "azureml_workspace": Optional[AzureMLWorkspaceTriad],
+}, total=False)
+
+
+def _retrieve_tool_func_result(func_call_scenario: str, function_config: FunctionConfig):
     """Retrieve tool func result according to func_call_scenario.
 
     :param func_call_scenario: function call scenario
-    :param function_config: function config in tool meta. Should contain'func_path' and 'func_kwargs'.
+    :param function_config: function config in tool meta. Should contain 'func_path' and 'func_kwargs'.
     :return: func call result according to func_call_scenario.
     """
     from promptflow._core.tools_manager import retrieve_tool_func_result
@@ -551,7 +558,13 @@ def _retrieve_tool_func_result(func_call_scenario: str, function_config: Dict):
     # TODO: move this method to a common place.
     from promptflow._cli._utils import get_workspace_triad_from_local
 
-    workspace_triad = get_workspace_triad_from_local()
+    azureml_workspace = function_config.get("azureml_workspace", None)
+    workspace_triad = AzureMLWorkspaceTriad(
+        subscription_id=azureml_workspace["subscription_id"],
+        resource_group_name=azureml_workspace["resource_group_name"],
+        workspace_name=azureml_workspace["workspace_name"]
+    ) if azureml_workspace is not None else get_workspace_triad_from_local()
+
     if workspace_triad.subscription_id and workspace_triad.resource_group_name and workspace_triad.workspace_name:
         result = retrieve_tool_func_result(func_call_scenario, func_path, func_kwargs, workspace_triad._asdict())
     # if no workspace triple available, just skip.
