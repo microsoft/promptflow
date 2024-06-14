@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import abc
+import inspect
 import re
 from os import PathLike
 from pathlib import Path
@@ -82,6 +83,8 @@ class FlowBase(AbstractFlowBase):
         flow_dir, flow_filename = resolve_flow_path(source)
         flow_path = flow_dir / flow_filename
         if is_prompty_flow(flow_path):
+            if getattr(cls, "__call__", None) and inspect.iscoroutinefunction(AsyncFlow.__call__):
+                return AsyncPrompty.load(source=flow_path, **kwargs)
             return Prompty.load(source=flow_path, **kwargs)
 
         with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
