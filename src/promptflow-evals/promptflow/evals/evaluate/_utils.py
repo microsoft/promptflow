@@ -1,7 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from typing import Any, Optional, Tuple
+from typing import Any, Tuple
 import json
 import logging
 import os
@@ -14,11 +14,9 @@ import pandas as pd
 
 from azure.ai.ml.identity import AzureMLOnBehalfOfCredential
 from azure.core.credentials import TokenCredential
-from azure.core.exceptions import ResourceNotFoundError
 from azure.identity import AzureCliCredential, DefaultAzureCredential, ManagedIdentityCredential
 from promptflow.evals._constants import DEFAULT_EVALUATION_RESULTS_FILE_NAME, Prefixes
 from promptflow.evals.evaluate._eval_run import EvalRun
-from promptflow.exceptions import UserErrorException, ErrorTarget
 
 
 LOGGER = logging.getLogger(__name__)
@@ -30,6 +28,7 @@ AZURE_WORKSPACE_REGEX_FORMAT = (
 # Authentication constants
 AZUREML_OBO_ENABLED = "AZUREML_OBO_ENABLED"
 DEFAULT_IDENTITY_CLIENT_ID = "DEFAULT_IDENTITY_CLIENT_ID"
+EVALUATION_ARTIFACT = 'instance_results.jsonl'
 AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])
 
 
@@ -115,23 +114,6 @@ def _get_ml_client(trace_destination: str, **kwargs) -> Tuple[Any, AzureMLWorksp
     return ws_triad, ml_client
 
 
-def _validate_tracing_uri(trace_destination: Optional[str]) -> None:
-    """
-    Validate if the workspace exist.
-
-    :param trace_destination: The workspace to check.
-    :type trace_destination: Optional[str]
-    :raises: UserErrorException
-    """
-    if trace_destination is None:
-        return
-    ws_triad, ml_client = _get_ml_client(trace_destination)
-    try:
-        ml_client.workspaces.get(ws_triad.workspace_name)
-    except ResourceNotFoundError as e:
-        raise UserErrorException(message=str(e), target=ErrorTarget.CONTROL_PLANE_SDK)
-
-
 def _log_metrics_and_instance_results(
     metrics, instance_results, trace_destination, run, evaluation_name
 ) -> str:
@@ -151,34 +133,35 @@ def _log_metrics_and_instance_results(
         subscription_id=ws_triad.subscription_id,
         group_name=ws_triad.resource_group_name,
         workspace_name=ws_triad.workspace_name,
-        ml_client=ml_client
+        ml_client=ml_client,
+        promptflow_run = run,
     )
     with tempfile.TemporaryDirectory() as tmpdir:
-        eval_path = os.path.join(tmpdir, "evaluation_results")
-        os.makedirs(eval_path, exist_ok=True)
-        tmp_path = os.path.join(eval_path, "eval_results.jsonl")
+        tmp_path = os.path.join(tmpdir, EvalRun.EVALUATION_ARTIFACT)
 
         with open(tmp_path, "w", encoding="utf-8") as f:
             f.write(instance_results.to_json(orient="records", lines=True))
 
-        ev_run.log_artifact(eval_path)
+        ev_run.log_artifact(tmpdir)
 
         # Using mlflow to create a dummy run since once created via PF show traces of dummy run in UI.
         # Those traces can be confusing.
-        # adding these properties to avoid showing traces if a dummy run is created
-        _write_properties_to_run_history(
-            properties={
-                "_azureml.evaluation_run": "azure-ai-generative-parent",
-                "_azureml.evaluate_artifacts": json.dumps([{"path": "eval_results.jsonl", "type": "table"}]),
-                "isEvaluatorRun": "true",
-            }
-        )
+        # adding these properties to avoid showing traces if a dummy run is created.
+        # We are doing that only for the pure evaluation runs.
+        if run is None:
+            _write_properties_to_run_history(
+                properties={
+                    "_azureml.evaluation_run": "azure-ai-generative-parent",
+                    "_azureml.evaluate_artifacts": json.dumps([{"path": EvalRun.EVALUATION_ARTIFACT, "type": "table"}]),
+                    "isEvaluatorRun": "true",
+                }
+            )
 
     for metric_name, metric_value in metrics.items():
         ev_run.log_metric(metric_name, metric_value)
 
     ev_run.end_run("FINISHED")
-    evaluation_id = ev_run.name if run is not None else ev_run.info.run_id
+    evaluation_id = ev_run.info.run_name if run is not None else ev_run.info.run_id
     return _get_ai_studio_url(trace_destination=trace_destination, evaluation_id=evaluation_id)
 
 

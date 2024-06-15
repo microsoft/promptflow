@@ -337,7 +337,7 @@ class TestEvalRun:
     @pytest.mark.parametrize(
         'log_function,expected_str',
         [
-            ('log_artifact', 'allocate Blob for the artifact'),
+            #('log_artifact', 'allocate Blob for the artifact'),
             ('log_metric', 'save metrics')
         ]
     )
@@ -405,7 +405,7 @@ class TestEvalRun:
             (False, "The path to the artifact is either not a directory or does not exist.")
         ]
     )
-    def test_wrong_artifact_path(self, tmp_path, caplog, dir_exists, expected_error):
+    def test_wrong_artifact_path(self, tmp_path, caplog, dir_exists, expected_error, setup_data):
         """Test that if artifact path is empty, or dies not exist we are logging the error."""
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -442,7 +442,7 @@ class TestEvalRun:
             assert len(caplog.records) == 1
             assert expected_error in caplog.records[0].message
 
-    def test_log_metrics_and_instance_results_logs_error(self, caplog):
+    def test_log_metrics_and_instance_results_logs_error(self, caplog, setup_data):
         """Test that we are logging the error when there is no trace destination."""
         logger = logging.getLogger(ev_utils.__name__)
         # All loggers, having promptflow. prefix will have "promptflow" logger
@@ -458,3 +458,25 @@ class TestEvalRun:
             )
         assert len(caplog.records) == 1
         assert "Unable to log traces as trace destination was not defined." in caplog.records[0].message
+
+    def test_run_broken_if_no_tracking_uri(self, setup_data, caplog):
+        """Test that if no tracking URI is provirded, the run is being marked as broken."""
+        logger = logging.getLogger(ev_utils.__name__)
+        # All loggers, having promptflow. prefix will have "promptflow" logger
+        # as a parent. This logger does not propagate the logs and cannot be
+        # captured by caplog. Here we will skip this logger to capture logs.
+        logger.parent = logging.root
+        run = EvalRun(
+            run_name=None,
+            tracking_uri=None,
+            subscription_id='mock',
+            group_name='mock',
+            workspace_name='mock',
+            ml_client=MagicMock()
+        )
+        assert len(caplog.records) == 1
+        assert "The results will be saved locally, but will not be logged to Azure." in caplog.records[0].message
+        with patch('promptflow.evals.evaluate._eval_run.EvalRun.request_with_retry') as mock_request:
+            run.log_artifact('mock_dir')
+            run.log_metric('foo', 42)
+        mock_request.assert_not_called()

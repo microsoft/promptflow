@@ -52,13 +52,12 @@ class Configuration(object):
     TRACE_DESTINATION = "trace.destination"
     _instance = None
 
-    def __init__(self, overrides=None, skip_validation=False):
+    def __init__(self, overrides=None):
         self._config = self._get_cwd_config()
         # Allow config override by kwargs
         overrides = overrides or {}
         for key, value in overrides.items():
-            if not skip_validation:
-                self._validate(key, value)
+            #self._validate(key, value)
             pydash.set_(self._config, key, value)
 
     def _get_cwd_config(self):

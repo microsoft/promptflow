@@ -137,6 +137,11 @@ class TestMetricsUpload(object):
         # module named test_evaluate and it will be a different module in unit test
         # folder. By keeping function in separate file we guarantee, it will be loaded
         # from there.
+        logger = logging.getLogger(EvalRun.__module__)
+        # All loggers, having promptflow. prefix will have "promptflow" logger
+        # as a parent. This logger does not propagate the logs and cannot be
+        # captured by caplog. Here we will skip this logger to capture logs.
+        logger.parent = logging.root
         from .target_fn import target_fn
 
         f1_score_eval = F1ScoreEvaluator()
@@ -150,7 +155,7 @@ class TestMetricsUpload(object):
             target=target_fn,
             evaluators={"f1": f1_score_eval},
             azure_ai_project=project_scope,
-            _run_name='eval_test_run2'
+            #_run_name='eval_test_run8'
         )
         self._assert_no_errors_for_module(caplog.records, (ev_utils.__name__, EvalRun.__module__))
 
@@ -166,6 +171,11 @@ class TestMetricsUpload(object):
         # azureml://eastus2.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/
         # resourceGroups/00000000-0000-0000-0000-000000000000/providers/Microsoft.MachineLearningServices/
         # workspaces/00000
+        logger = logging.getLogger(EvalRun.__module__)
+        # All loggers, having promptflow. prefix will have "promptflow" logger
+        # as a parent. This logger does not propagate the logs and cannot be
+        # captured by caplog. Here we will skip this logger to capture logs.
+        logger.parent = logging.root
         f1_score_eval = F1ScoreEvaluator()
         evaluate(
             data=questions_answers_file,

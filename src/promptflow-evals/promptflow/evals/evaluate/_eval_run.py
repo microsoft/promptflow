@@ -11,13 +11,16 @@ import posixpath
 import requests
 import uuid
 
-from azure.storage.blob import BlobClient
+from azure.storage.blob import BlobServiceClient
 from requests.adapters import HTTPAdapter
 from urllib.parse import urlparse
 from urllib3.util.retry import Retry
 
 from promptflow.evals._version import VERSION
+from promptflow._sdk.entities import Run
 import time
+from azure.ai.ml.entities._credentials import AccountKeyConfiguration
+from azure.ai.ml.entities._datastore.datastore import Datastore
 
 LOGGER = logging.getLogger(__name__)
 
@@ -29,15 +32,21 @@ class RunInfo():
     """
     run_id: str
     experiment_id: str
+    run_name: str
 
     @staticmethod
-    def generate() -> 'RunInfo':
+    def generate(run_name: Optional[str]) -> 'RunInfo':
         """
         Generate the new RunInfo instance with the RunID and Experiment ID.
+
+        **Note:** This code is used when we are in failed state and cannot get a run. 
+        :param run_name: The name of a run.
+        :type run_name: str 
         """
         return RunInfo(
             str(uuid.uuid4()),
             str(uuid.uuid4()),
+            run_name or ""
         )
 
 
@@ -77,12 +86,15 @@ class EvalRun(metaclass=Singleton):
     :type workspace_name: str
     :param ml_client: The ml client used for authentication into Azure.
     :type ml_client: MLClient
+    :param promptflow_run: The promptflow run used by the 
     '''
 
     _MAX_RETRIES = 5
     _BACKOFF_FACTOR = 2
     _TIMEOUT = 5
     _SCOPE = "https://management.azure.com/.default"
+    
+    EVALUATION_ARTIFACT = 'instance_results.jsonl'
 
     def __init__(self,
                  run_name: Optional[str],
@@ -90,7 +102,8 @@ class EvalRun(metaclass=Singleton):
                  subscription_id: str,
                  group_name: str,
                  workspace_name: str,
-                 ml_client: Any
+                 ml_client: Any,
+                 promptflow_run: Optional[Run] = None,
                  ):
         """
         Constructor
@@ -101,12 +114,28 @@ class EvalRun(metaclass=Singleton):
         self._resource_group_name: str = group_name
         self._workspace_name: str = workspace_name
         self._ml_client: Any = ml_client
-        self._url_base = urlparse(self._tracking_uri).netloc
-        self._is_broken = self._start_run(run_name)
+        self._is_promptflow_run: bool = promptflow_run is not None
+        self._is_broken = False
+        if self._tracking_uri is None:
+            LOGGER.error("tracking_uri was nt provided, "
+                         "The results will be saved locally, but will not be logged to Azure.")
+            self._url_base = None
+            self._is_broken = True
+            self.info = RunInfo.generate(run_name)
+        else:
+            self._url_base = urlparse(self._tracking_uri).netloc
+            if promptflow_run is not None:
+                self.info = RunInfo(
+                    promptflow_run.name,
+                    promptflow_run._experiment_name,
+                    promptflow_run.name
+                )
+            else:
+                self._is_broken = self._start_run(run_name)
+        
         self._is_terminated = False
-        self.name: str = run_name if run_name else self.info.run_id
 
-    def _get_scope(self):
+    def _get_scope(self) -> str:
         """
         Return the scope information for the workspace.
 
@@ -156,7 +185,7 @@ class EvalRun(metaclass=Singleton):
             json_dict=body
         )
         if response.status_code != 200:
-            self.info = RunInfo.generate()
+            self.info = RunInfo.generate(run_name)
             LOGGER.error(f"The run failed to start: {response.status_code}: {response.text}."
                          "The results will be saved locally, but will not be logged to Azure.")
             return True
@@ -164,6 +193,7 @@ class EvalRun(metaclass=Singleton):
         self.info = RunInfo(
             run_id=parsed_response['run']['info']['run_id'],
             experiment_id=parsed_response['run']['info']['experiment_id'],
+            run_name=parsed_response['run']['info']['run_name']
         )
         return False
 
@@ -175,6 +205,9 @@ class EvalRun(metaclass=Singleton):
         :type status: str
         :raises: ValueError if the run is not in ("FINISHED", "FAILED", "KILLED")
         """
+        if self._is_promptflow_run:
+            # This run is already finished, we just add artifacts/metrics to it.
+            return
         if status not in ("FINISHED", "FAILED", "KILLED"):
             raise ValueError(
                 f"Incorrect terminal status {status}. "
@@ -320,44 +353,71 @@ class EvalRun(metaclass=Singleton):
             LOGGER.error("The path to the artifact is empty.")
             return
         # First we will list the files and the appropriate remote paths for them.
-        upload_path = os.path.basename(os.path.normpath(artifact_folder))
-        remote_paths = {'paths': []}
-        local_paths = []
-
-        for (root, _, filenames) in os.walk(artifact_folder):
-            if root != artifact_folder:
-                rel_path = os.path.relpath(root, artifact_folder)
-                if rel_path != '.':
-                    upload_path = posixpath.join(upload_path, rel_path)
-            for f in filenames:
-                remote_file_path = posixpath.join(upload_path, f)
-                remote_paths['paths'].append({'path': remote_file_path})
-                local_file_path = os.path.join(root, f)
-                local_paths.append(local_file_path)
+        # upload_path = os.path.basename(os.path.normpath(artifact_folder))
+        # remote_paths = {'paths': []}
+        # local_paths = []
+        #
+        # for (root, _, filenames) in os.walk(artifact_folder):
+        #     if root != artifact_folder:
+        #         rel_path = os.path.relpath(root, artifact_folder)
+        #         if rel_path != '.':
+        #             upload_path = posixpath.join(upload_path, rel_path)
+        #     for f in filenames:
+        #         remote_file_path = posixpath.join(upload_path, f)
+        #         remote_paths['paths'].append({'path': remote_file_path})
+        #         local_file_path = os.path.join(root, f)
+        #         local_paths.append(local_file_path)
+        
+        local_paths = [os.path.join(artifact_folder, EvalRun.EVALUATION_ARTIFACT)]
+        remote_paths = {
+            'paths': [{
+                'path': posixpath.join("promptflow", 'PromptFlowArtifacts', self.info.run_name, EvalRun.EVALUATION_ARTIFACT)}]}
+        #if self._ml_client
+        datastore = self._ml_client.datastores.get_default(include_secrets=True)
+        account_url = f"{datastore.account_name}.blob.{datastore.endpoint}"
+        svc_client = BlobServiceClient(
+            account_url=account_url, credential=self._get_datastore_credential(datastore))
+        blob_client = svc_client.get_blob_client(
+            container=datastore.container_name,
+            blob=remote_paths['paths'][0]['path'])
+        with open(local_paths[0], 'rb') as fp:
+            blob_client.upload_blob(fp, overwrite=True)
+        
         # Now we need to reserve the space for files in the artifact store.
-        headers = {
-            'Content-Type': "application/json",
-            'Accept': "application/json",
-            'Content-Length': str(len(json.dumps(remote_paths))),
-            'x-ms-client-request-id': str(uuid.uuid1()),
-        }
-        response = self.request_with_retry(
-            url=self.get_artifacts_uri(),
-            method='POST',
-            json_dict=remote_paths,
-            headers=headers
-        )
-        if response.status_code != 200:
-            self._log_error("allocate Blob for the artifact", response)
-            return
-        empty_artifacts = response.json()['artifactContentInformation']
-        # The response from Azure contains the URL with SAS, that allows to upload file to the
-        # artifact store.
-        for local, remote in zip(local_paths, remote_paths['paths']):
-            artifact_loc = empty_artifacts[remote['path']]
-            blob_client = BlobClient.from_blob_url(artifact_loc['contentUri'], max_single_put_size=32 * 1024 * 1024)
-            with open(local, 'rb') as fp:
-                blob_client.upload_blob(fp)
+        # headers = {
+        #     'Content-Type': "application/json",
+        #     'Accept': "application/json",
+        #     'Content-Length': str(len(json.dumps(remote_paths))),
+        #     'x-ms-client-request-id': str(uuid.uuid1()),
+        # }
+        # response = self.request_with_retry(
+        #     url=self.get_artifacts_uri(),
+        #     method='POST',
+        #     json_dict=remote_paths,
+        #     headers=headers
+        # )
+        # if response.status_code != 200:
+        #     self._log_error("allocate Blob for the artifact", response)
+        #     return
+        # empty_artifacts = response.json()['artifactContentInformation']
+        # # The response from Azure contains the URL with SAS, that allows to upload file to the
+        # # artifact store.
+        # for local, remote in zip(local_paths, remote_paths['paths']):
+        #     artifact_loc = empty_artifacts[remote['path']]
+        #     blob_client = BlobClient.from_blob_url(artifact_loc['contentUri'], max_single_put_size=32 * 1024 * 1024)
+        #     with open(local, 'rb') as fp:
+        #         blob_client.upload_blob(fp)
+
+    def _get_datastore_credential(self, datastore: Datastore):
+        # Reference the logic in azure.ai.ml._artifact._artifact_utilities
+        # https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/ml/azure-ai-ml/azure/ai/ml/_artifacts/_artifact_utilities.py#L103
+        credential = datastore.credentials
+        if isinstance(credential, AccountKeyConfiguration):
+            return credential.account_key
+        elif hasattr(credential, "sas_token"):
+            return credential.sas_token
+        else:
+            return self._ml_client.datastore_operations._credential
 
     def log_metric(self, key: str, value: float) -> None:
         """

@@ -44,8 +44,7 @@ class PFClient:
         # when this is set, telemetry from this client will use this user agent and ignore the one from OperationContext
         self._user_agent_override = kwargs.pop(USER_AGENT_OVERRIDE_KEY, None)
         self._connection_provider = kwargs.pop("connection_provider", None)
-        self._config = Configuration(overrides=kwargs.get("config", None) or {},
-                                     skip_validation=kwargs.pop('skip_config_validation', False))
+        self._config = Configuration(overrides=kwargs.get("config", None) or {})
         # The credential is used as an option to override
         # DefaultAzureCredential when using workspace connection provider
         self._credential = kwargs.get("credential", None)
