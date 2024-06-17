@@ -341,6 +341,7 @@ class TestTraceTelemetry:
             extra: dict = kwargs.get("extra")
             custom_dimensions: dict = extra.get("custom_dimensions")
             assert "user_agent" in custom_dimensions.keys()
+            assert "promptflow-sdk/" in custom_dimensions["user_agent"]
 
         telemetry_helper = TraceTelemetryHelper()
         telemetry_helper._telemetry_logger.info = mock_info
