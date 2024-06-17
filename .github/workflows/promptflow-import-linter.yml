@@ -35,7 +35,7 @@ jobs:
         poetry install --with dev -C ${{ env.WORKING_DIRECTORY }}/src/promptflow-azure
         touch src/promptflow-evals/promptflow/__init__.py
         poetry install --with dev -C ${{ env.WORKING_DIRECTORY }}/src/promptflow-evals
-        poetry install "tenacity<8.4.0"
+        poetry run pip install "tenacity<8.4.0"
       working-directory: ${{ env.WORKING_DIRECTORY }}
     - name: import lint
       run: |
