@@ -339,14 +339,14 @@ class TestEvaluate:
         df_actuals = _rename_columns_conditionally(df)
         assert_frame_equal(df_actuals.sort_index(axis=1), df_expected.sort_index(axis=1))
 
-    @pytest.mark.parametrize("use_thread_pool", [True, False])
-    def test_evaluate_output_path(self, evaluate_test_data_jsonl_file, tmpdir, use_thread_pool):
+    @pytest.mark.parametrize("use_pf_client", [True, False])
+    def test_evaluate_output_path(self, evaluate_test_data_jsonl_file, tmpdir, use_pf_client):
         output_path = os.path.join(tmpdir, "eval_test_results.jsonl")
         result = evaluate(
             data=evaluate_test_data_jsonl_file,
             evaluators={"g": F1ScoreEvaluator()},
             output_path=output_path,
-            _use_thread_pool=use_thread_pool,
+            _use_pf_client=use_pf_client,
         )
 
         assert result is not None

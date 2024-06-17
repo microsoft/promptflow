@@ -338,7 +338,7 @@ def evaluate(
 
     """
     try:
-        _evaluate(
+        return _evaluate(
             evaluation_name=evaluation_name,
             target=target,
             data=data,
