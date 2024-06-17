@@ -16,7 +16,7 @@ from promptflow.exceptions import ErrorTarget, PromptflowException
 
 from .._constants import CONTENT_SAFETY_DEFECT_RATE_THRESHOLD_DEFAULT, EvaluationMetrics, Prefixes
 from .._user_agent import USER_AGENT
-from ._code_client import BatchRunContext, CodeClient
+from ._batch_run_client import BatchRunContext, CodeClient, ProxyClient
 from ._utils import (
     _apply_column_mapping,
     _log_metrics_and_instance_results,
@@ -425,8 +425,8 @@ def _evaluate(
 
     # Batch Run
     evaluators_info = {}
-    use_thread_pool = kwargs.get("_use_thread_pool", True)
-    batch_run_client = CodeClient() if use_thread_pool else pf_client
+    use_pf_client = kwargs.get("_use_pf_client", True)
+    batch_run_client = ProxyClient(pf_client) if use_pf_client else CodeClient()
 
     with BatchRunContext(batch_run_client):
         for evaluator_name, evaluator in evaluators.items():
@@ -436,7 +436,7 @@ def _evaluate(
                 run=target_run,
                 evaluator_name=evaluator_name,
                 column_mapping=evaluator_config.get(evaluator_name, evaluator_config.get("default", None)),
-                data=input_data_df if use_thread_pool else data,
+                data=input_data_df if isinstance(batch_run_client, CodeClient) else data,
                 stream=True,
             )
 

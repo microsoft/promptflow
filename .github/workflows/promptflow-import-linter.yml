@@ -67,5 +67,5 @@ jobs:
 
         echo "=== promptflow-azure full lints ==="
         poetry run pip install langchain
+        poetry run pip install "tenacity<8.4.0"
         poetry run python ${{ github.workspace }}/scripts/import_linter/import_linter.py
-

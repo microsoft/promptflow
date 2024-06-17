@@ -373,7 +373,7 @@ class TestEvaluate:
     def test_evaluate_with_errors(self):
         """Test evaluate_handle_errors"""
         data = _get_file("yeti_questions.jsonl")
-        result = evaluate(data=data, evaluators={"yeti": _yeti_evaluator}, _use_thread_pool=True)
+        result = evaluate(data=data, evaluators={"yeti": _yeti_evaluator})
         result_df = pd.DataFrame(result["rows"])
         expected = pd.read_json(data, lines=True)
         expected.rename(columns={"question": "inputs.question", "answer": "inputs.answer"}, inplace=True)
