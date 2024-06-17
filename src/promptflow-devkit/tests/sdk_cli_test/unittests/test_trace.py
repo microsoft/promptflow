@@ -9,7 +9,7 @@ import logging
 import os
 import uuid
 from typing import Dict
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from mock import mock
@@ -343,12 +343,13 @@ class TestTraceTelemetry:
             assert "user_agent" in custom_dimensions.keys()
             assert "promptflow-sdk/" in custom_dimensions["user_agent"]
 
-        telemetry_helper = TraceTelemetryHelper()
-        telemetry_helper._telemetry_logger.info = mock_info
-        # mock a trace count summary
-        summary = dict()
-        k = TraceCountKey(None, None, None, "script", "code")
-        summary[k] = 1
-        # append the mock summary and log
-        telemetry_helper.append(summary)
-        telemetry_helper.log_telemetry()
+        mock_telemetry_logger = MagicMock()
+        mock_telemetry_logger.info = mock_info
+        with patch("promptflow._sdk._utilities.tracing_utils.get_telemetry_logger", return_value=mock_telemetry_logger):
+            telemetry_helper = TraceTelemetryHelper()
+            summary = dict()
+            k = TraceCountKey(None, None, None, "script", "code")
+            summary[k] = 1
+            # append the mock summary and log
+            telemetry_helper.append(summary)
+            telemetry_helper.log_telemetry()
