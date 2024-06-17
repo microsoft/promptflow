@@ -5,6 +5,7 @@ import tempfile
 from pathlib import Path
 from typing import Callable
 from unittest.mock import patch
+from datetime import datetime
 
 import pytest
 from _constants import PROMPTFLOW_ROOT
@@ -56,6 +57,7 @@ class Local2CloudTestHelper:
         assert cloud_run.display_name == run.display_name
         assert cloud_run.status == run.status
         assert cloud_run._start_time and cloud_run._end_time
+        assert datetime.fromisoformat(cloud_run.created_on) == datetime.fromisoformat(run.created_on)
         assert cloud_run.properties["azureml.promptflow.local_to_cloud"] == "true"
         assert cloud_run.properties["azureml.promptflow.snapshot_id"]
         assert cloud_run.properties[Local2CloudProperties.EVAL_ARTIFACTS]

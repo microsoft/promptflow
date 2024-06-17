@@ -33,7 +33,7 @@ from promptflow._sdk._constants import (
     TRACE_LIST_DEFAULT_LIMIT,
     ContextAttributeKey,
 )
-from promptflow._sdk._tracing import start_trace_with_devkit
+from promptflow._sdk._tracing import setup_exporter_to_pfs, start_trace_with_devkit
 from promptflow._sdk._utilities.tracing_utils import WorkspaceKindLocalCache, append_conditions, parse_protobuf_span
 from promptflow.client import PFClient
 from promptflow.exceptions import UserErrorException
@@ -195,6 +195,20 @@ class TestStartTrace:
         ), mock.patch("promptflow._sdk._tracing._inject_res_attrs_to_environ") as monitor_func:
             start_trace_with_devkit(collection=str(uuid.uuid4()))
             assert monitor_func.call_count == 0
+
+    @pytest.mark.usefixtures("reset_tracer_provider")
+    def test_no_op_tracer_provider(self, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture):
+        # logger with "promptflow." prefix cannot be captured by caplog, so patch the logger for this test
+        with patch("promptflow._sdk._tracing._logger", logging.getLogger(__name__)):
+            with caplog.at_level(level=logging.WARNING):
+                monkeypatch.setenv(OTEL_EXPORTER_OTLP_ENDPOINT, "http://dummy-endpoint")
+                trace.set_tracer_provider(trace.NoOpTracerProvider())
+                setup_exporter_to_pfs()
+                monkeypatch.delenv(OTEL_EXPORTER_OTLP_ENDPOINT)
+            assert (
+                "tracer provider is set to NoOpTracerProvider, skip setting exporter to prompt flow service."
+                in caplog.text
+            )
 
 
 @pytest.mark.unittest
