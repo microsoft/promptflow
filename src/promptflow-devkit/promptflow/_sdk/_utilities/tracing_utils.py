@@ -20,6 +20,7 @@ from opentelemetry.trace.span import format_span_id as otel_format_span_id
 from opentelemetry.trace.span import format_trace_id as otel_format_trace_id
 
 from promptflow._constants import (
+    USER_AGENT,
     SpanAttributeFieldName,
     SpanContextFieldName,
     SpanEventFieldName,
@@ -33,6 +34,7 @@ from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, AzureMLWorkspaceTri
 from promptflow._sdk._telemetry.telemetry import get_telemetry_logger
 from promptflow._sdk.entities._trace import Span
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 from promptflow.core._errors import MissingRequiredPackage
 
 from .general_utils import convert_time_unix_nano_to_timestamp, json_load
@@ -345,6 +347,7 @@ class TraceTelemetryHelper:
     CUSTOM_DIMENSIONS_TRACE_COUNT = "trace_count"
 
     def __init__(self):
+        self._user_agent = ClientUserAgentUtil.get_user_agent()
         self._telemetry_logger = get_telemetry_logger()
         self._lock = multiprocessing.Lock()
         self._summary: typing.Dict[TraceCountKey, int] = dict()
@@ -369,6 +372,7 @@ class TraceTelemetryHelper:
         for key, count in summary_to_log.items():
             custom_dimensions = key._asdict()
             custom_dimensions[self.CUSTOM_DIMENSIONS_TRACE_COUNT] = count
+            custom_dimensions[USER_AGENT] = self._user_agent
             self._telemetry_logger.info(self.TELEMETRY_ACTIVITY_NAME, extra={"custom_dimensions": custom_dimensions})
 
 
