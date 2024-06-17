@@ -20,7 +20,6 @@ from opentelemetry.trace.span import format_span_id as otel_format_span_id
 from opentelemetry.trace.span import format_trace_id as otel_format_trace_id
 
 from promptflow._constants import (
-    USER_AGENT,
     SpanAttributeFieldName,
     SpanContextFieldName,
     SpanEventFieldName,
@@ -372,7 +371,7 @@ class TraceTelemetryHelper:
         for key, count in summary_to_log.items():
             custom_dimensions = key._asdict()
             custom_dimensions[self.CUSTOM_DIMENSIONS_TRACE_COUNT] = count
-            custom_dimensions[USER_AGENT] = self._user_agent
+            custom_dimensions["user_agent"] = self._user_agent
             self._telemetry_logger.info(self.TELEMETRY_ACTIVITY_NAME, extra={"custom_dimensions": custom_dimensions})
 
 

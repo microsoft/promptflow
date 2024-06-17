@@ -19,7 +19,6 @@ from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_ENDPOINT
 from opentelemetry.sdk.trace import TracerProvider
 
 from promptflow._constants import (
-    USER_AGENT,
     SpanAttributeFieldName,
     SpanResourceAttributesFieldName,
     SpanResourceFieldName,
@@ -341,7 +340,7 @@ class TestTraceTelemetry:
         def mock_info(*args, **kwargs):
             extra: dict = kwargs.get("extra")
             custom_dimensions: dict = extra.get("custom_dimensions")
-            assert USER_AGENT in custom_dimensions.keys()
+            assert "user_agent" in custom_dimensions.keys()
 
         telemetry_helper = TraceTelemetryHelper()
         telemetry_helper._telemetry_logger.info = mock_info
