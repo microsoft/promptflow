@@ -14,7 +14,6 @@ from promptflow.evals.evaluate import evaluate
 from promptflow.evals.evaluate._evaluate import _apply_target_to_data, _rename_columns_conditionally
 from promptflow.evals.evaluate._utils import _apply_column_mapping
 from promptflow.evals.evaluators import F1ScoreEvaluator, GroundednessEvaluator
-from promptflow.exceptions import ErrorTarget, PromptflowException
 
 
 def _get_file(name):
@@ -386,13 +385,11 @@ class TestEvaluate:
 
     @patch("promptflow.evals.evaluate._evaluate._evaluate")
     def test_evaluate_main_entry_guard(self, mock_evaluate, evaluate_test_data_jsonl_file):
-        mock_evaluate.side_effect = PromptflowException(
-            message_format=(
-                "An attempt has been made to start a new process before the\n        "
-                "current process has finished its bootstrapping phase."
-            ),
-            target=ErrorTarget.BATCH,
+        err_msg = (
+            "An attempt has been made to start a new process before the\n        "
+            "current process has finished its bootstrapping phase."
         )
+        mock_evaluate.side_effect = RuntimeError(err_msg)
 
         with pytest.raises(RuntimeError) as exc_info:
             evaluate(

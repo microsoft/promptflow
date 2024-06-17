@@ -12,7 +12,6 @@ from promptflow._sdk._constants import LINE_NUMBER
 from promptflow._sdk._telemetry import ActivityType, log_activity
 from promptflow._sdk._telemetry.telemetry import get_telemetry_logger
 from promptflow.client import PFClient
-from promptflow.exceptions import ErrorTarget, PromptflowException
 
 from .._constants import CONTENT_SAFETY_DEFECT_RATE_THRESHOLD_DEFAULT, EvaluationMetrics, Prefixes
 from .._user_agent import USER_AGENT
@@ -350,19 +349,19 @@ def evaluate(
             **kwargs,
         )
     except Exception as e:
-        if isinstance(e, PromptflowException) and e.target == ErrorTarget.BATCH:
-            bootstrap_error = (
-                "An attempt has been made to start a new process before the\n        "
-                "current process has finished its bootstrapping phase."
+        # Handle multiprocess bootstrap error
+        bootstrap_error = (
+            "An attempt has been made to start a new process before the\n        "
+            "current process has finished its bootstrapping phase."
+        )
+        if bootstrap_error in str(e):
+            error_message = (
+                "The evaluation failed due to an error during multiprocess bootstrapping."
+                "Please ensure the evaluate API is properly guarded with the '__main__' block:\n\n"
+                "    if __name__ == '__main__':\n"
+                "        evaluate(...)"
             )
-            if bootstrap_error in e.message:
-                error_message = (
-                    "Process creation failed during evaluation. Please ensure the "
-                    "evaluate API is properly guarded with the '__main__' block:\n\n"
-                    "    if __name__ == '__main__':\n"
-                    "        evaluate(...)"
-                )
-                raise RuntimeError(error_message)
+            raise RuntimeError(error_message)
 
         raise e
 
