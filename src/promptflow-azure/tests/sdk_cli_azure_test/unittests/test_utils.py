@@ -1,10 +1,12 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import time
 from unittest.mock import MagicMock, patch
 
 import pytest
 
+from promptflow.azure._utils._token_cache import ArmTokenCache
 from promptflow.exceptions import UserErrorException
 
 
@@ -50,3 +52,32 @@ class TestUtils:
         with patch.dict("os.environ", {EnvironmentVariables.PF_USE_AZURE_CLI_CREDENTIAL: "true"}):
             cred = get_credentials_for_cli()
             assert isinstance(cred, AzureCliCredential)
+
+    @patch.object(ArmTokenCache, "_fetch_token")
+    def test_arm_token_cache_get_token(self, mock_fetch_token):
+        mock_fetch_token.return_value = "test_token"
+        credential = "test_credential"
+
+        cache = ArmTokenCache()
+
+        # Test that the token is fetched and cached
+        token1 = cache.get_token(credential)
+        assert token1 == "test_token", f"Expected 'test_token' but got {token1}"
+        assert credential in cache._cache, f"Expected '{credential}' to be in cache"
+        assert cache._cache[credential]["token"] == "test_token", "Expected token in cache to be 'test_token'"
+
+        # Test that the cached token is returned if still valid
+        token2 = cache.get_token(credential)
+        assert token2 == "test_token", f"Expected 'test_token' but got {token2}"
+        assert (
+            mock_fetch_token.call_count == 1
+        ), f"Expected fetch token to be called once, but it was called {mock_fetch_token.call_count} times"
+
+        # Test that a new token is fetched if the old one expires
+        expired_time = time.time() - 10
+        cache._cache[credential]["expires_at"] = expired_time
+
+        mock_fetch_token.return_value = "new_test_token"
+        token3 = cache.get_token(credential)
+        assert token3 == "new_test_token", f"Expected 'new_test_token' but got {token3}"
+        assert mock_fetch_token.call

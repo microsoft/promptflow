@@ -6,6 +6,8 @@ import jwt
 
 from promptflow.core._connection_provider._utils import get_arm_token, get_token
 
+from ._token_cache import ArmTokenCache
+
 
 def is_arm_id(obj) -> bool:
     return isinstance(obj, str) and obj.startswith("azureml://")
@@ -24,7 +26,7 @@ def get_aml_token(credential) -> str:
 
 
 def get_authorization(credential=None) -> str:
-    token = get_arm_token(credential=credential)
+    token = ArmTokenCache().get_token(credential=credential)
     return "Bearer " + token
 
 
