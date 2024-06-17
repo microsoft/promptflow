@@ -99,6 +99,7 @@ promptflow-tracing = {path = "../promptflow-tracing"}
 promptflow = {path = "../promptflow"}
 promptflow-tools = {path = "../promptflow-tools"}
 promptflow-recording =  {path = "../promptflow-recording"}
+pandas = ">=2.2.2,<3.0.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"
