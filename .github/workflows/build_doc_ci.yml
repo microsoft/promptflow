@@ -52,7 +52,7 @@ jobs:
         shell: powershell
         working-directory: scripts/docs/
         run: |-
-          pip install langchain
+          pip install langchain tenacity<8.4.0
           ./doc_generation.ps1 -WithReferenceDoc:$true -WarningAsError:$true 
 
   # Note: We have this job separately because some error may missing when build link check exists.
@@ -85,5 +85,5 @@ jobs:
         shell: powershell
         working-directory: scripts/docs/
         run: |-
-          pip install langchain
+          pip install langchain tenacity<8.4.0
           ./doc_generation.ps1 -WithReferenceDoc:$true -WarningAsError:$true -BuildLinkCheck

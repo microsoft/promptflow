@@ -150,7 +150,7 @@ jobs:
       run: |
         gci env:* | sort-object name
         az account show
-        pip install langchain-community
+        pip install langchain-community tenacity<8.4.0
         python scripts/building/run_coverage_tests.py `
           -p ${{ env.testWorkingDirectory }}/promptflow `
           -t ${{ env.testWorkingDirectory }}/tests/executor/unittests `
