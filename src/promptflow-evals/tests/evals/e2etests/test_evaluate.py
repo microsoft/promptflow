@@ -71,7 +71,7 @@ def _get_run_from_run_history(flow_run_id, runs_operation):
         raise Exception(f"Failed to get run from service. Code: {response.status_code}, text: {response.text}")
 
 
-@pytest.mark.usefixtures("recording_injection", "vcr_recording")
+@pytest.mark.usefixtures("recording_injection")
 @pytest.mark.e2etest
 class TestEvaluate:
     def test_evaluate_with_groundedness_evaluator(self, model_config, data_file):
@@ -145,16 +145,18 @@ class TestEvaluate:
         assert 0 <= metrics.get("content_safety.self_harm_defect_rate") <= 1
         assert 0 <= metrics.get("content_safety.hate_unfairness_defect_rate") <= 1
 
-    @pytest.mark.parametrize('use_thread_pool,function,column', [
-        (True, answer_evaluator, 'length'),
-        (False, answer_evaluator, 'length'),
-        (True, answer_evaluator_int, 'output'),
-        (False, answer_evaluator_int, 'output'),
-        (True, answer_evaluator_int_dict, "42"),
-        (False, answer_evaluator_int_dict, "42"),
-    ])
-    def test_evaluate_python_function(self, data_file, use_thread_pool,
-                                      function, column):
+    @pytest.mark.parametrize(
+        "use_thread_pool,function,column",
+        [
+            (True, answer_evaluator, "length"),
+            (False, answer_evaluator, "length"),
+            (True, answer_evaluator_int, "output"),
+            (False, answer_evaluator_int, "output"),
+            (True, answer_evaluator_int_dict, "42"),
+            (False, answer_evaluator_int_dict, "42"),
+        ],
+    )
+    def test_evaluate_python_function(self, data_file, use_thread_pool, function, column):
         # data
         input_data = pd.read_json(data_file, lines=True)
 
@@ -393,8 +395,7 @@ class TestEvaluate:
         result = evaluate(
             data=data_file,
             evaluators={
-                "answer_length": AnswerLength(
-                    return_json=return_json, aggregate_return_json=aggregate_return_json),
+                "answer_length": AnswerLength(return_json=return_json, aggregate_return_json=aggregate_return_json),
                 "f1_score": F1ScoreEvaluator(),
             },
         )
@@ -418,8 +419,7 @@ class TestEvaluate:
         result = evaluate(
             data=data_file,
             evaluators={
-                "answer_length": AnswerLength(
-                    return_json=return_json, aggregate_return_json=aggregate_return_json),
+                "answer_length": AnswerLength(return_json=return_json, aggregate_return_json=aggregate_return_json),
                 "f1_score": F1ScoreEvaluator(),
             },
             _use_thread_pool=False,
