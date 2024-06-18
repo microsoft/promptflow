@@ -337,7 +337,46 @@ def evaluate(
             )
 
     """
+    try:
+        return _evaluate(
+            evaluation_name=evaluation_name,
+            target=target,
+            data=data,
+            evaluators=evaluators,
+            evaluator_config=evaluator_config,
+            azure_ai_project=azure_ai_project,
+            output_path=output_path,
+            **kwargs,
+        )
+    except Exception as e:
+        # Handle multiprocess bootstrap error
+        bootstrap_error = (
+            "An attempt has been made to start a new process before the\n        "
+            "current process has finished its bootstrapping phase."
+        )
+        if bootstrap_error in str(e):
+            error_message = (
+                "The evaluation failed due to an error during multiprocess bootstrapping."
+                "Please ensure the evaluate API is properly guarded with the '__main__' block:\n\n"
+                "    if __name__ == '__main__':\n"
+                "        evaluate(...)"
+            )
+            raise RuntimeError(error_message)
 
+        raise e
+
+
+def _evaluate(
+    *,
+    evaluation_name: Optional[str] = None,
+    target: Optional[Callable] = None,
+    data: Optional[str] = None,
+    evaluators: Optional[Dict[str, Callable]] = None,
+    evaluator_config: Optional[Dict[str, Dict[str, str]]] = None,
+    azure_ai_project: Optional[Dict] = None,
+    output_path: Optional[str] = None,
+    **kwargs,
+):
     trace_destination = _trace_destination_from_project_scope(azure_ai_project) if azure_ai_project else None
 
     input_data_df = _validate_and_load_data(target, data, evaluators, output_path, azure_ai_project, evaluation_name)
