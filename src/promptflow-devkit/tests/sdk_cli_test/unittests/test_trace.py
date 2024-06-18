@@ -9,7 +9,7 @@ import logging
 import os
 import uuid
 from typing import Dict
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from mock import mock
@@ -34,7 +34,13 @@ from promptflow._sdk._constants import (
     ContextAttributeKey,
 )
 from promptflow._sdk._tracing import setup_exporter_to_pfs, start_trace_with_devkit
-from promptflow._sdk._utilities.tracing_utils import WorkspaceKindLocalCache, append_conditions, parse_protobuf_span
+from promptflow._sdk._utilities.tracing_utils import (
+    TraceCountKey,
+    TraceTelemetryHelper,
+    WorkspaceKindLocalCache,
+    append_conditions,
+    parse_protobuf_span,
+)
 from promptflow.client import PFClient
 from promptflow.exceptions import UserErrorException
 from promptflow.tracing._operation_context import OperationContext
@@ -325,3 +331,25 @@ class TestWorkspaceKindLocalCache:
             mock_get_kind.return_value = kind
             assert ws_local_cache.get_kind() == kind
         assert not ws_local_cache.is_expired
+
+
+@pytest.mark.unittest
+@pytest.mark.sdk_test
+class TestTraceTelemetry:
+    def test_user_agent_in_custom_dimensions(self):
+        def mock_info(*args, **kwargs):
+            extra: dict = kwargs.get("extra")
+            custom_dimensions: dict = extra.get("custom_dimensions")
+            assert "user_agent" in custom_dimensions.keys()
+            assert "promptflow-sdk/" in custom_dimensions["user_agent"]
+
+        mock_telemetry_logger = MagicMock()
+        mock_telemetry_logger.info = mock_info
+        with patch("promptflow._sdk._utilities.tracing_utils.get_telemetry_logger", return_value=mock_telemetry_logger):
+            telemetry_helper = TraceTelemetryHelper()
+            summary = dict()
+            k = TraceCountKey(None, None, None, "script", "code")
+            summary[k] = 1
+            # append the mock summary and log
+            telemetry_helper.append(summary)
+            telemetry_helper.log_telemetry()

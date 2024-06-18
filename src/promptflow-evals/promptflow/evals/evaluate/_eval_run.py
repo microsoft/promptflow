@@ -1,8 +1,6 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from typing import Any, Dict, Optional, Type
-
 import dataclasses
 import logging
 import os
@@ -10,10 +8,11 @@ import posixpath
 import requests
 import time
 import uuid
+from typing import Any, Dict, Optional, Type
+from urllib.parse import urlparse
 
 from azure.storage.blob import BlobServiceClient
 from requests.adapters import HTTPAdapter
-from urllib.parse import urlparse
 from urllib3.util.retry import Retry
 
 from promptflow.evals._version import VERSION
@@ -26,10 +25,11 @@ LOGGER = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
-class RunInfo():
+class RunInfo:
     """
     A holder for run info, needed for logging.
     """
+
     run_id: str
     experiment_id: str
     run_name: str
@@ -52,6 +52,7 @@ class RunInfo():
 
 class Singleton(type):
     """Singleton class, which will be used as a metaclass."""
+
     _instances = {}
 
     def __call__(cls, *args, **kwargs):
@@ -71,7 +72,7 @@ class Singleton(type):
 
 
 class EvalRun(metaclass=Singleton):
-    '''
+    """
     The simple singleton run class, used for accessing artifact store.
 
     :param run_name: The name of the run.
@@ -87,7 +88,7 @@ class EvalRun(metaclass=Singleton):
     :param ml_client: The ml client used for authentication into Azure.
     :type ml_client: MLClient
     :param promptflow_run: The promptflow run used by the
-    '''
+    """
 
     _MAX_RETRIES = 5
     _BACKOFF_FACTOR = 2
@@ -145,9 +146,7 @@ class EvalRun(metaclass=Singleton):
         :rtype: str
         """
         return (
-            "/subscriptions/{}/resourceGroups/{}/providers"
-            "/Microsoft.MachineLearningServices"
-            "/workspaces/{}"
+            "/subscriptions/{}/resourceGroups/{}/providers" "/Microsoft.MachineLearningServices" "/workspaces/{}"
         ).format(
             self._subscription_id,
             self._resource_group_name,
@@ -163,19 +162,12 @@ class EvalRun(metaclass=Singleton):
         :type run_name: Optional[str]
         :returns: True if the run has started and False otherwise.
         """
-        url = (
-            f"https://{self._url_base}/mlflow/v2.0"
-            f"{self._get_scope()}/api/2.0/mlflow/runs/create")
+        url = f"https://{self._url_base}/mlflow/v2.0" f"{self._get_scope()}/api/2.0/mlflow/runs/create"
         body = {
             "experiment_id": "0",
             "user_id": "promptflow-evals",
             "start_time": int(time.time() * 1000),
-            "tags": [
-                {
-                    "key": "mlflow.user",
-                    "value": "promptflow-evals"
-                }
-            ]
+            "tags": [{"key": "mlflow.user", "value": "promptflow-evals"}],
         }
         if run_name:
             body["run_name"] = run_name
@@ -210,28 +202,22 @@ class EvalRun(metaclass=Singleton):
             return
         if status not in ("FINISHED", "FAILED", "KILLED"):
             raise ValueError(
-                f"Incorrect terminal status {status}. "
-                "Valid statuses are \"FINISHED\", \"FAILED\" and \"KILLED\".")
+                f"Incorrect terminal status {status}. " 'Valid statuses are "FINISHED", "FAILED" and "KILLED".'
+            )
         if self._is_terminated:
             LOGGER.warning("Unable to stop run because it was already terminated.")
             return
         if self._is_broken:
             LOGGER.error("Unable to stop run because the run failed to start.")
             return
-        url = (
-            f"https://{self._url_base}/mlflow/v2.0"
-            f"{self._get_scope()}/api/2.0/mlflow/runs/update")
+        url = f"https://{self._url_base}/mlflow/v2.0" f"{self._get_scope()}/api/2.0/mlflow/runs/update"
         body = {
             "run_uuid": self.info.run_id,
             "status": status,
             "end_time": int(time.time() * 1000),
-            "run_id": self.info.run_id
+            "run_id": self.info.run_id,
         }
-        response = self.request_with_retry(
-            url=url,
-            method='POST',
-            json_dict=body
-        )
+        response = self.request_with_retry(url=url, method="POST", json_dict=body)
         if response.status_code != 200:
             LOGGER.error("Unable to terminate the run.")
         Singleton.destroy(EvalRun)
@@ -245,25 +231,20 @@ class EvalRun(metaclass=Singleton):
             f"https://{self._url_base}"
             "/history/v1.0"
             f"{self._get_scope()}"
-            f'/experimentids/{self.info.experiment_id}/runs/{self.info.run_id}'
+            f"/experimentids/{self.info.experiment_id}/runs/{self.info.run_id}"
         )
 
     def get_artifacts_uri(self) -> str:
         """
         Returns the url to upload the artifacts.
         """
-        return self.get_run_history_uri() + '/artifacts/batch/metadata'
+        return self.get_run_history_uri() + "/artifacts/batch/metadata"
 
     def get_metrics_url(self):
         """
         Return the url needed to track the mlflow metrics.
         """
-        return (
-            f"https://{self._url_base}"
-            "/mlflow/v2.0"
-            f"{self._get_scope()}"
-            f'/api/2.0/mlflow/runs/log-metric'
-        )
+        return f"https://{self._url_base}" "/mlflow/v2.0" f"{self._get_scope()}" f"/api/2.0/mlflow/runs/log-metric"
 
     def _get_token(self):
         """The simple method to get token from the MLClient."""
@@ -273,11 +254,7 @@ class EvalRun(metaclass=Singleton):
         return self._ml_client._credential.get_token(EvalRun._SCOPE)
 
     def request_with_retry(
-        self,
-        url: str,
-        method: str,
-        json_dict: Dict[str, Any],
-        headers: Optional[Dict[str, str]] = None
+        self, url: str, method: str, json_dict: Dict[str, Any], headers: Optional[Dict[str, str]] = None
     ) -> requests.Response:
         """
         Send the request with retries.
@@ -294,8 +271,8 @@ class EvalRun(metaclass=Singleton):
         """
         if headers is None:
             headers = {}
-        headers['User-Agent'] = f'promptflow/{VERSION}'
-        headers['Authorization'] = f'Bearer {self._get_token().token}'
+        headers["User-Agent"] = f"promptflow/{VERSION}"
+        headers["Authorization"] = f"Bearer {self._get_token().token}"
         retry = Retry(
             total=EvalRun._MAX_RETRIES,
             connect=EvalRun._MAX_RETRIES,
@@ -304,18 +281,12 @@ class EvalRun(metaclass=Singleton):
             status=EvalRun._MAX_RETRIES,
             status_forcelist=(408, 429, 500, 502, 503, 504),
             backoff_factor=EvalRun._BACKOFF_FACTOR,
-            allowed_methods=None
+            allowed_methods=None,
         )
         adapter = HTTPAdapter(max_retries=retry)
         session = requests.Session()
         session.mount("https://", adapter)
-        return session.request(
-            method,
-            url,
-            headers=headers,
-            json=json_dict,
-            timeout=EvalRun._TIMEOUT
-        )
+        return session.request(method, url, headers=headers, json=json_dict, timeout=EvalRun._TIMEOUT)
 
     def _log_error(self, failed_op: str, response: requests.Response) -> None:
         """
@@ -368,7 +339,7 @@ class EvalRun(metaclass=Singleton):
                     upload_path = posixpath.join(root_upload_path, rel_path)
             for f in filenames:
                 remote_file_path = posixpath.join(upload_path, f)
-                remote_paths['paths'].append({'path': remote_file_path})
+                remote_paths["paths"].append({"path": remote_file_path})
                 local_file_path = os.path.join(root, f)
                 local_paths.append(local_file_path)
 
@@ -439,15 +410,15 @@ class EvalRun(metaclass=Singleton):
             "value": value,
             "timestamp": int(time.time() * 1000),
             "step": 0,
-            "run_id": self.info.run_id
+            "run_id": self.info.run_id,
         }
         response = self.request_with_retry(
             url=self.get_metrics_url(),
-            method='POST',
+            method="POST",
             json_dict=body,
         )
         if response.status_code != 200:
-            self._log_error('save metrics', response)
+            self._log_error("save metrics", response)
 
     @staticmethod
     def get_instance(*args, **kwargs) -> "EvalRun":
