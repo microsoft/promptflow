@@ -36,10 +36,7 @@ class PythonInspectorProxy(AbstractInspectorProxy):
         **kwargs,
     ) -> Dict[str, Any]:
         timeout = kwargs.get("timeout", FLOW_META_JSON_GEN_TIMEOUT)
-        load_in_subprocess = (
-            kwargs.get("load_in_subprocess", True)
-            and os.environ.get(PF_FLOW_META_LOAD_IN_SUBPROCESS, "True").lower() == "true"
-        )
+        load_in_subprocess = os.environ.get(PF_FLOW_META_LOAD_IN_SUBPROCESS, "True").lower() == "true"
 
         flow_dag = {"entry": entry}
         # generate flow.json only for eager flow for now
