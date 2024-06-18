@@ -4,7 +4,7 @@ import pytest
 
 from promptflow.client import PFClient
 from promptflow.evals._user_agent import USER_AGENT
-from promptflow.evals.evaluate._code_client import BatchRunContext, CodeClient
+from promptflow.evals.evaluate._batch_run_client import BatchRunContext, CodeClient
 
 
 @pytest.fixture
