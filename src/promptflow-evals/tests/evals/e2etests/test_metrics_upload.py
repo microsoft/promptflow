@@ -32,14 +32,10 @@ def questions_file():
 
 @pytest.fixture
 def setup_data(azure_ml_client, project_scope):
+    tracking_uri = azure_ml_client.workspaces.get(project_scope["project_name"]).mlflow_tracking_uri
     run = EvalRun(
         run_name='test',
-        tracking_uri=(
-            'https://eastus2.api.azureml.ms/mlflow/v2.0'
-            f'/subscriptions{project_scope["subscription_id"]}'
-            f'/resourceGroups/{project_scope["resource_group_name"]}'
-            '/providers/Microsoft.MachineLearningServices'
-            f'/workspaces/{project_scope["project_name"]}'),
+        tracking_uri=tracking_uri,
         subscription_id=project_scope["subscription_id"],
         group_name=project_scope["resource_group_name"],
         workspace_name=project_scope["project_name"],
@@ -53,6 +49,11 @@ def setup_data(azure_ml_client, project_scope):
 @pytest.mark.e2etest
 class TestMetricsUpload(object):
     """End to end tests to check how the metrics were uploaded to cloud."""
+    # Add the tracking URI to properties dictionary with the key "mlFlowTrackingUri":
+    # azureml://weatua2.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/
+    # resourceGroups/00000000-0000-0000-0000-000000000000/providers/Microsoft.MachineLearningServices/
+    # workspaces/00000
+    # Replace wetus2 to region you are running experiment in.
 
     def _assert_no_errors_for_module(self, records, module_names):
         """Check there are no errors in the log."""
@@ -99,8 +100,6 @@ class TestMetricsUpload(object):
         ev_run.log_metric('f1', 0.54)
         self._assert_no_errors_for_module(caplog.records, EvalRun.__module__)
 
-    @pytest.mark.skipif(condition=not is_live(),
-                        reason="Disabling the recording, because the recording must be changed manually.")
     @pytest.mark.usefixtures("vcr_recording")
     def test_log_artifact(self, setup_data, caplog, tmp_path):
         """Test uploading artifact to the service."""
@@ -115,7 +114,7 @@ class TestMetricsUpload(object):
         ev_run = EvalRun.get_instance()
         mock_response = MagicMock()
         mock_response.status_code = 418
-        with open(os.path.join(tmp_path, 'test.json'), 'w') as fp:
+        with open(os.path.join(tmp_path, EvalRun.EVALUATION_ARTIFACT), 'w') as fp:
             json.dump({'f1': 0.5}, fp)
         os.makedirs(os.path.join(tmp_path, 'internal_dir'), exist_ok=True)
         with open(os.path.join(tmp_path, 'internal_dir', 'test.json'), 'w') as fp:
@@ -166,9 +165,8 @@ class TestMetricsUpload(object):
         # To record this test please modify the YAML file. It is missing "mlFlowTrackingUri" property by default.
         # Search URIs: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups
         # /00000/providers/Microsoft.MachineLearningServices/workspaces/00000
-        # In the BLOB SAS URI change sktid to 00000000-0000-0000-0000-000000000000
         # Add the tracking URI to properties dictionary with the key "mlFlowTrackingUri":
-        # azureml://eastus2.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/
+        # azureml://weatua2.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/
         # resourceGroups/00000000-0000-0000-0000-000000000000/providers/Microsoft.MachineLearningServices/
         # workspaces/00000
         logger = logging.getLogger(EvalRun.__module__)

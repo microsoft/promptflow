@@ -101,7 +101,10 @@ def _get_ml_client(trace_destination: str, **kwargs) -> Tuple[Any, AzureMLWorksp
     :type trace_destination: str
     :return: The tuple with the ML client and workspace triad.
     """
-    from azure.ai.ml import MLClient
+    try:
+        from azure.ai.ml import MLClient
+    except (ImportError, ModuleNotFoundError):
+        return AzureMLWorkspaceTriad("", "", ""), None
 
     ws_triad = extract_workspace_triad_from_trace_provider(trace_destination)
     ml_client = MLClient(
@@ -122,10 +125,13 @@ def _log_metrics_and_instance_results(
         return None
 
     ws_triad, ml_client = _get_ml_client(trace_destination)
-    tracking_uri = ml_client.workspaces.get(ws_triad.workspace_name).mlflow_tracking_uri
+    if ml_client is not None:
+        tracking_uri = ml_client.workspaces.get(ws_triad.workspace_name).mlflow_tracking_uri
+    else:
+        tracking_uri = None
 
     # Adding line_number as index column this is needed by UI to form link to individual instance run
-    instance_results["line_number"] = instance_results.index
+    instance_results["line_number"] = instance_results.index.values
 
     ev_run = EvalRun(
         run_name=run.name if run is not None else evaluation_name,

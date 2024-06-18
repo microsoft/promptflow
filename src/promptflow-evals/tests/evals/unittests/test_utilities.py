@@ -4,13 +4,15 @@ Created on Jun 11, 2024
 @author: nirovins
 '''
 import os
+import pandas as pd
 import pytest
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-from azure.core.exceptions import ResourceNotFoundError
 from promptflow.evals.evaluate import _utils
-from promptflow.exceptions import UserErrorException, ErrorTarget
+import logging
+from promptflow.evals.evaluate._eval_run import EvalRun
+from promptflow.evals.evaluate._utils import AzureMLWorkspaceTriad
 
 
 @pytest.fixture
@@ -60,27 +62,37 @@ class TestUtilities:
         default_cli.assert_not_called()
         mock_cli.assert_called_once()
 
-    @pytest.mark.parametrize('uri',
-                             [
-                                 ("azureml://subscriptions/00000000-0000-0000-0000-000000000000/"
-                                  "resourceGroups/test_group/providers/Microsoft.MachineLearningServices/"
-                                  "workspaces/test_workspace"),
-                                 None
-                             ])
-    def test_tracking_validate_ok(self, uri):
-        """Test validation of a workspace"""
-        with patch('azure.ai.ml.MLClient'):
-            _utils._validate_tracing_uri(uri)
+    @pytest.mark.parametrize('err_type', [ImportError, ModuleNotFoundError])
+    def test_ml_client_not_imported(self, err_type):
+        """Test import of ml_client if it was notimported."""
+        with patch('builtins.__import__', side_effect=err_type('Mock')):
+            ws_triade, ml_client = _utils._get_ml_client("www.microsoft.com")
+        assert ml_client is None
+        assert ws_triade.subscription_id == ""
+        assert ws_triade.resource_group_name == ""
+        assert ws_triade.workspace_name == ""
 
-    def test_tracking_validate_fail(self):
-        """Test the exception when the workspace is nor present."""
-        mock_cli = MagicMock()
-        mock_cli.workspaces.get.side_effect = ResourceNotFoundError("Mock error")
-        with patch('azure.ai.ml.MLClient', return_value=mock_cli):
-            with pytest.raises(UserErrorException) as cm:
-                _utils._validate_tracing_uri(
-                    "azureml://subscriptions/00000000-0000-0000-0000-000000000000/"
-                    "resourceGroups/test_group/providers/Microsoft.MachineLearningServices/"
-                    "workspaces/test_workspace")
-            assert "Mock error" in cm.value.args[0]
-            assert cm.value.target == ErrorTarget.CONTROL_PLANE_SDK
+    def test_log_no_ml_client_import(self, caplog):
+        """Test logging if MLClient cannot be imported."""
+        logger = logging.getLogger(EvalRun.__module__)
+        # All loggers, having promptflow. prefix will have "promptflow" logger
+        # as a parent. This logger does not propagate the logs and cannot be
+        # captured by caplog. Here we will skip this logger to capture logs.
+        logger.parent = logging.root
+        results = pd.DataFrame({
+            'question': ['What is in my pocket?'],
+            'answer': ['I do not know.'],
+            'ground_truth': ['The ring.'],
+            'f1': [0.0]})
+        with patch('promptflow.evals.evaluate._utils._get_ml_client', return_value=(
+              AzureMLWorkspaceTriad("", "", ""), None)):
+            _utils._log_metrics_and_instance_results(
+                {'f1': 0.0},
+                results,
+                (
+                    "azureml://subscriptions/0000-000-000-000/"
+                    "resourceGroups/mock_group/providers/Microsoft.MachineLearningServices/"
+                    "workspaces/mock_workspace"
+                ),
+                None, 'mock_eval')
+        assert len(caplog.records) == 4
