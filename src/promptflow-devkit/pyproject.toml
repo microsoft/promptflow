@@ -100,6 +100,7 @@ promptflow = {path = "../promptflow"}
 promptflow-tools = {path = "../promptflow-tools"}
 promptflow-recording =  {path = "../promptflow-recording"}
 numpy = "<2.0.0"  # avoid pandas incompatibility
+tenacity = "<8.4.0"  # tenacity has breaking in 8.4.0
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"

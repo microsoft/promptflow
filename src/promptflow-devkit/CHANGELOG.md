@@ -4,6 +4,7 @@
 
 ### Bugs Fixed
 - Fix incompatibility with `trace.NoOpTracerProvider` when set exporter to prompt flow service.
+- Add missing user agent in trace usage telemetry.
 
 ## v1.12.0 (2024.06.11)
 
