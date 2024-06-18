@@ -550,6 +550,10 @@ def setup_exporter_to_pfs() -> None:
         tracer_provider: TracerProvider = trace.get_tracer_provider()
         if is_exporter_setup_skipped():
             _logger.debug("exporter setup is skipped according to environment variable.")
+        elif isinstance(tracer_provider, trace.NoOpTracerProvider):
+            _logger.warning(
+                "tracer provider is set to NoOpTracerProvider, skip setting exporter to prompt flow service."
+            )
         else:
             if not getattr(tracer_provider, TRACER_PROVIDER_PFS_EXPORTER_SET_ATTR, False):
                 _logger.info("have not set exporter to prompt flow service, will set it...")

@@ -95,7 +95,7 @@ The LLM (Large Language Model) span captures detailed execution information from
 |---|---|---|---|
 | promptflow.llm.generated_message | Captures the output message from an LLM call. | ```{"content":"ChatGPT is a conversational AI model developed by OpenAI.","role":"assistant","function_call":null,"tool_calls":null}``` | `Required` |
 
->Note: OpenTelemetry currently defines several LLM-related span attributes and events as semantic conventions. We plan to align with these conventions in the future. For more information, visit [LLM Semantic Conventions](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/gen-ai/llm-spans.md).
+>Note: OpenTelemetry currently defines several LLM-related span attributes and events as semantic conventions. We plan to align with these conventions in the future. For more information, visit [Semantic Conventions for GenAI operations](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/gen-ai/gen-ai-spans.md).
 
 #### Function
 

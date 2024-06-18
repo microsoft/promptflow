@@ -1,5 +1,10 @@
 # promptflow-devkit package
 
+## v1.13.0 (Upcoming)
+
+### Bugs Fixed
+- Fix incompatibility with `trace.NoOpTracerProvider` when set exporter to prompt flow service.
+
 ## v1.12.0 (2024.06.11)
 
 ### Improvements

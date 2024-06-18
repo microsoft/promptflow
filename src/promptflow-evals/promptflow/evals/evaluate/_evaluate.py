@@ -9,19 +9,19 @@ import numpy as np
 import pandas as pd
 
 from promptflow._sdk._constants import LINE_NUMBER
+from promptflow._sdk._telemetry import ActivityType, log_activity
+from promptflow._sdk._telemetry.telemetry import get_telemetry_logger
 from promptflow.client import PFClient
 
 from .._constants import CONTENT_SAFETY_DEFECT_RATE_THRESHOLD_DEFAULT, EvaluationMetrics, Prefixes
 from .._user_agent import USER_AGENT
-from ._code_client import BatchRunContext, CodeClient
+from ._batch_run_client import BatchRunContext, CodeClient, ProxyClient
 from ._utils import (
     _apply_column_mapping,
     _log_metrics_and_instance_results,
     _trace_destination_from_project_scope,
     _write_output,
 )
-from promptflow._sdk._telemetry import ActivityType, log_activity
-from promptflow._sdk._telemetry.telemetry import get_telemetry_logger
 
 
 def _aggregate_metrics(df, evaluators) -> Dict[str, float]:
@@ -42,10 +42,10 @@ def _aggregate_metrics(df, evaluators) -> Dict[str, float]:
             # Check the namespace of the evaluator
             module = inspect.getmodule(evaluators[evaluator_name])
             if (
-                module and
-                module.__name__.startswith("promptflow.evals.evaluators.") and
-                metric_name.endswith("_score") and
-                metric_name.replace("_score", "") in content_safety_metrics
+                module
+                and module.__name__.startswith("promptflow.evals.evaluators.")
+                and metric_name.endswith("_score")
+                and metric_name.replace("_score", "") in content_safety_metrics
             ):
                 content_safety_cols.append(col)
 
@@ -53,10 +53,10 @@ def _aggregate_metrics(df, evaluators) -> Dict[str, float]:
     defect_rates = {}
     for col in content_safety_df.columns:
         defect_rate_name = col.replace("_score", "_defect_rate")
-        col_with_numeric_values = pd.to_numeric(content_safety_df[col], errors='coerce')
+        col_with_numeric_values = pd.to_numeric(content_safety_df[col], errors="coerce")
         defect_rates[defect_rate_name] = round(
-            np.sum(col_with_numeric_values >= CONTENT_SAFETY_DEFECT_RATE_THRESHOLD_DEFAULT) /
-            col_with_numeric_values.count(),
+            np.sum(col_with_numeric_values >= CONTENT_SAFETY_DEFECT_RATE_THRESHOLD_DEFAULT)
+            / col_with_numeric_values.count(),
             2,
         )
 
@@ -115,8 +115,7 @@ def _validate_and_load_data(target, data, evaluators, output_path, azure_ai_proj
     try:
         initial_data_df = pd.read_json(data, lines=True)
     except Exception as e:
-        raise ValueError(
-            f"Failed to load data from {data}. Please validate it is a valid jsonl data. Error: {str(e)}.")
+        raise ValueError(f"Failed to load data from {data}. Please validate it is a valid jsonl data. Error: {str(e)}.")
 
     return initial_data_df
 
@@ -155,13 +154,14 @@ def _validate_columns(
             _validate_input_data_for_evaluator(evaluator, evaluator_name, new_df)
 
 
-def _apply_target_to_data(target: Callable,
-                          data: str,
-                          pf_client: PFClient,
-                          initial_data: pd.DataFrame,
-                          evaluation_name: Optional[str] = None,
-                          _run_name: Optional[str] = None) -> Tuple[pd.DataFrame,
-                                                                    Set[str]]:
+def _apply_target_to_data(
+    target: Callable,
+    data: str,
+    pf_client: PFClient,
+    initial_data: pd.DataFrame,
+    evaluation_name: Optional[str] = None,
+    _run_name: Optional[str] = None,
+) -> Tuple[pd.DataFrame, Set[str]]:
     """
     Apply the target function to the data set and return updated data and generated columns.
 
@@ -187,12 +187,12 @@ def _apply_target_to_data(target: Callable,
         data=data,
         properties={"runType": "eval_run", "isEvaluatorRun": "true"},
         stream=True,
-        name=_run_name
+        name=_run_name,
     )
     target_output = pf_client.runs.get_details(run, all_results=True)
     # Remove input and output prefix
     generated_columns = {
-        col[len(Prefixes._OUTPUTS):] for col in target_output.columns if col.startswith(Prefixes._OUTPUTS)
+        col[len(Prefixes._OUTPUTS) :] for col in target_output.columns if col.startswith(Prefixes._OUTPUTS)
     }
     # Sort output by line numbers
     target_output.set_index(f"inputs.{LINE_NUMBER}", inplace=True)
@@ -337,7 +337,46 @@ def evaluate(
             )
 
     """
+    try:
+        return _evaluate(
+            evaluation_name=evaluation_name,
+            target=target,
+            data=data,
+            evaluators=evaluators,
+            evaluator_config=evaluator_config,
+            azure_ai_project=azure_ai_project,
+            output_path=output_path,
+            **kwargs,
+        )
+    except Exception as e:
+        # Handle multiprocess bootstrap error
+        bootstrap_error = (
+            "An attempt has been made to start a new process before the\n        "
+            "current process has finished its bootstrapping phase."
+        )
+        if bootstrap_error in str(e):
+            error_message = (
+                "The evaluation failed due to an error during multiprocess bootstrapping."
+                "Please ensure the evaluate API is properly guarded with the '__main__' block:\n\n"
+                "    if __name__ == '__main__':\n"
+                "        evaluate(...)"
+            )
+            raise RuntimeError(error_message)
 
+        raise e
+
+
+def _evaluate(
+    *,
+    evaluation_name: Optional[str] = None,
+    target: Optional[Callable] = None,
+    data: Optional[str] = None,
+    evaluators: Optional[Dict[str, Callable]] = None,
+    evaluator_config: Optional[Dict[str, Dict[str, str]]] = None,
+    azure_ai_project: Optional[Dict] = None,
+    output_path: Optional[str] = None,
+    **kwargs,
+):
     trace_destination = _trace_destination_from_project_scope(azure_ai_project) if azure_ai_project else None
 
     input_data_df = _validate_and_load_data(target, data, evaluators, output_path, azure_ai_project, evaluation_name)
@@ -358,8 +397,7 @@ def evaluate(
     target_generated_columns = set()
     if data is not None and target is not None:
         input_data_df, target_generated_columns, target_run = _apply_target_to_data(
-            target, data, pf_client, input_data_df, evaluation_name,
-            _run_name=kwargs.get('_run_name')
+            target, data, pf_client, input_data_df, evaluation_name, _run_name=kwargs.get("_run_name")
         )
 
         # Make sure, the default is always in the configuration.
@@ -386,8 +424,8 @@ def evaluate(
 
     # Batch Run
     evaluators_info = {}
-    use_thread_pool = kwargs.get("_use_thread_pool", True)
-    batch_run_client = CodeClient() if use_thread_pool else pf_client
+    use_pf_client = kwargs.get("_use_pf_client", True)
+    batch_run_client = ProxyClient(pf_client) if use_pf_client else CodeClient()
 
     with BatchRunContext(batch_run_client):
         for evaluator_name, evaluator in evaluators.items():
@@ -397,7 +435,7 @@ def evaluate(
                 run=target_run,
                 evaluator_name=evaluator_name,
                 column_mapping=evaluator_config.get(evaluator_name, evaluator_config.get("default", None)),
-                data=input_data_df if use_thread_pool else data,
+                data=input_data_df if isinstance(batch_run_client, CodeClient) else data,
                 stream=True,
             )
 
@@ -444,9 +482,7 @@ def evaluate(
     metrics = _aggregate_metrics(evaluators_result_df, evaluators)
     metrics.update(evaluators_metric)
 
-    studio_url = _log_metrics_and_instance_results(
-        metrics, result_df, trace_destination, target_run
-    )
+    studio_url = _log_metrics_and_instance_results(metrics, result_df, trace_destination, target_run)
 
     result = {"rows": result_df.to_dict("records"), "metrics": metrics, "studio_url": studio_url}
 
