@@ -246,11 +246,30 @@ def try_parse_tool_calls(role_prompt):
     # common with function call arguments. Updated pattern matches content before tool_calls array
     # and removes it before parsing the array.
     # pattern = r"\n*#{0,2}\s*tool_calls\s*:\s*\n+\s*(\[.*?\])"
-    pattern = r"(\n*#{0,2}\s*tool_calls\s*:\s*\n+\s*)\["
+    # match = re.search(pattern, role_prompt, re.DOTALL)
+    pattern = r"(\s*\n*#{0,2}\s*tool_calls\s*:\s*\n+\s*)\["
     match = re.search(pattern, role_prompt, re.DOTALL)
     if match:
         try:
             stripped_prompt = role_prompt.replace(match.group(1), "")
+            # Find outer array brackets starting from [;
+            # Required for incomplete chunk parsing due to role naming errors
+            open_brackets = 1
+            idx = 1
+            last_open = 0
+            last_close = -1
+            # Loop until finding closed outer brackets or no more brackets found
+            while open_brackets != 0 and not (last_close == -1 and last_open == -1):
+                next_open = stripped_prompt.find("[", last_open + 1)
+                next_close = stripped_prompt.find("]", last_close + 1)
+                if next_open == -1 or next_open > next_close:
+                    open_brackets -= 1
+                    last_close = next_close
+                else:
+                    open_brackets += 1
+                    last_open = next_open
+            stripped_prompt = stripped_prompt[:last_close+1]
+
             parsed_array = eval(stripped_prompt)
             return parsed_array
         except Exception:

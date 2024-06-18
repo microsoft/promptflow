@@ -252,6 +252,19 @@ class TestCommon:
          ("tool_calls:\r\n[{'id': 'tool_call_id', 'type': 'function',"
           " 'function': {'name': 'func1', 'arguments': '{\"arg1\": []}'}}]",
           [{'id': 'tool_call_id', 'type': 'function', 'function': {'name': 'func1', 'arguments': '{"arg1": []}'}}]),
+         ("tool_calls:\r\n[{'id': 'tool_call_id', 'type': 'function',"
+          " 'function': {'name': 'func1', 'arguments': '{\"arg1\": [{\"nested\": []}]}'}}]",
+          [{'id': 'tool_call_id', 'type': 'function', 'function':
+              {'name': 'func1', 'arguments': '{"arg1": [{"nested": []}]}'}}]),
+         ("tool_calls:\r\n[{'id': 'tool_call_id', 'type': 'function',"
+          " 'function': {'name': 'func1', 'arguments': '{\"arg1\": [{\"nested\": []}, {\"nested_2\": [[]]}]}'}}]",
+          [{'id': 'tool_call_id', 'type': 'function', 'function':
+              {'name': 'func1', 'arguments': '{"arg1": [{"nested": []}, {"nested_2": [[]]}]}'}}]),
+         ("tool_calls:\r\n[{'id': 'tool_call_id', 'type': 'function',"
+          " 'function': {'name': 'func1', 'arguments': '{\"arg1\": [{\"nested\": []}, {\"nested_2\": [[]]}]}'}}]"
+          "\n   #tool",
+          [{'id': 'tool_call_id', 'type': 'function', 'function':
+              {'name': 'func1', 'arguments': '{"arg1": [{"nested": []}, {"nested_2": [[]]}]}'}}]),
          ("tool_calls:\n[{'id': 'tool_call_id', 'type': 'function', 'function': {'name': 'func1', 'arguments': ''}}]",
           [{'id': 'tool_call_id', 'type': 'function', 'function': {'name': 'func1', 'arguments': ''}}])])
     def test_try_parse_tool_calls(self, role_prompt, expected_result):
