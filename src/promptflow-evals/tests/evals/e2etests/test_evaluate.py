@@ -146,7 +146,7 @@ class TestEvaluate:
         assert 0 <= metrics.get("content_safety.hate_unfairness_defect_rate") <= 1
 
     @pytest.mark.parametrize(
-        "use_thread_pool,function,column",
+        "use_pf_client,function,column",
         [
             (True, answer_evaluator, "length"),
             (False, answer_evaluator, "length"),
@@ -156,12 +156,12 @@ class TestEvaluate:
             (False, answer_evaluator_int_dict, "42"),
         ],
     )
-    def test_evaluate_python_function(self, data_file, use_thread_pool, function, column):
+    def test_evaluate_python_function(self, data_file, use_pf_client, function, column):
         # data
         input_data = pd.read_json(data_file, lines=True)
 
         # run the evaluation
-        result = evaluate(data=data_file, evaluators={"answer": function}, _use_thread_pool=use_thread_pool)
+        result = evaluate(data=data_file, evaluators={"answer": function}, _use_pf_client=use_pf_client)
 
         row_result_df = pd.DataFrame(result["rows"])
         metrics = result["metrics"]
@@ -422,7 +422,6 @@ class TestEvaluate:
                 "answer_length": AnswerLength(return_json=return_json, aggregate_return_json=aggregate_return_json),
                 "f1_score": F1ScoreEvaluator(),
             },
-            _use_thread_pool=False,
         )
         assert result is not None
         assert "metrics" in result
