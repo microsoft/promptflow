@@ -295,16 +295,10 @@ class FlowOperations(TelemetryMixin):
             # Only override sample inputs for prompty, flex flow and prompty has different sample format
             if isinstance(flow, Prompty) and not inputs:
                 inputs = load_inputs_from_sample(submitter.flow.sample)
-            if isinstance(flow, FlexFlow) or isinstance(flow, Prompty):
-                # TODO(2897153): support chat eager flow
-                # set is chat flow to True to allow generator output
-                is_chat_flow, chat_history_input_name = False, None
-                flow_inputs, dependency_nodes_outputs = inputs, None
-            else:
-                is_chat_flow, chat_history_input_name, _ = is_executable_chat_flow(submitter.dataplane_flow)
-                flow_inputs, dependency_nodes_outputs = submitter.resolve_data(
-                    node_name=node, inputs=inputs, chat_history_name=chat_history_input_name
-                )
+            is_chat_flow, chat_history_input_name, _ = is_executable_chat_flow(submitter.dataplane_flow)
+            flow_inputs, dependency_nodes_outputs = submitter.resolve_data(
+                node_name=node, inputs=inputs, chat_history_name=chat_history_input_name
+            )
 
             if node:
                 return submitter.node_test(
