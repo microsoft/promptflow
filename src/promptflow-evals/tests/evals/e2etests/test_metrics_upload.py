@@ -155,7 +155,7 @@ class TestMetricsUpload(object):
             target=target_fn,
             evaluators={"f1": f1_score_eval},
             azure_ai_project=project_scope,
-            _run_name='eval_test_run2'
+            # _run_name='eval_test_run2'
         )
         self._assert_no_errors_for_module(caplog.records, (ev_utils.__name__, EvalRun.__module__))
 

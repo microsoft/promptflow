@@ -4,11 +4,11 @@
 from typing import Any, Dict, Optional, Type
 
 import dataclasses
-import json
 import logging
 import os
 import posixpath
 import requests
+import time
 import uuid
 
 from azure.storage.blob import BlobServiceClient
@@ -18,7 +18,7 @@ from urllib3.util.retry import Retry
 
 from promptflow.evals._version import VERSION
 from promptflow._sdk.entities import Run
-import time
+
 from azure.ai.ml.entities._credentials import AccountKeyConfiguration
 from azure.ai.ml.entities._datastore.datastore import Datastore
 
@@ -39,9 +39,9 @@ class RunInfo():
         """
         Generate the new RunInfo instance with the RunID and Experiment ID.
 
-        **Note:** This code is used when we are in failed state and cannot get a run. 
+        **Note:** This code is used when we are in failed state and cannot get a run.
         :param run_name: The name of a run.
-        :type run_name: str 
+        :type run_name: str
         """
         return RunInfo(
             str(uuid.uuid4()),
@@ -86,14 +86,14 @@ class EvalRun(metaclass=Singleton):
     :type workspace_name: str
     :param ml_client: The ml client used for authentication into Azure.
     :type ml_client: MLClient
-    :param promptflow_run: The promptflow run used by the 
+    :param promptflow_run: The promptflow run used by the
     '''
 
     _MAX_RETRIES = 5
     _BACKOFF_FACTOR = 2
     _TIMEOUT = 5
     _SCOPE = "https://management.azure.com/.default"
-    
+
     EVALUATION_ARTIFACT = 'instance_results.jsonl'
 
     def __init__(self,
@@ -132,7 +132,7 @@ class EvalRun(metaclass=Singleton):
                 )
             else:
                 self._is_broken = self._start_run(run_name)
-        
+
         self._is_terminated = False
 
     def _get_scope(self) -> str:
@@ -352,61 +352,63 @@ class EvalRun(metaclass=Singleton):
         if not os.listdir(artifact_folder):
             LOGGER.error("The path to the artifact is empty.")
             return
+        if not os.path.isfile(os.path.join(artifact_folder, EvalRun.EVALUATION_ARTIFACT)):
+            LOGGER.error("The run results file was not found, skipping artifacts upload.")
+            return
         # First we will list the files and the appropriate remote paths for them.
-        # upload_path = os.path.basename(os.path.normpath(artifact_folder))
-        # remote_paths = {'paths': []}
-        # local_paths = []
-        #
-        # for (root, _, filenames) in os.walk(artifact_folder):
-        #     if root != artifact_folder:
-        #         rel_path = os.path.relpath(root, artifact_folder)
-        #         if rel_path != '.':
-        #             upload_path = posixpath.join(upload_path, rel_path)
-        #     for f in filenames:
-        #         remote_file_path = posixpath.join(upload_path, f)
-        #         remote_paths['paths'].append({'path': remote_file_path})
-        #         local_file_path = os.path.join(root, f)
-        #         local_paths.append(local_file_path)
-        
-        local_paths = [os.path.join(artifact_folder, EvalRun.EVALUATION_ARTIFACT)]
-        remote_paths = {
-            'paths': [{
-                'path': posixpath.join("promptflow", 'PromptFlowArtifacts', self.info.run_name, EvalRun.EVALUATION_ARTIFACT)}]}
-        #if self._ml_client
+        root_upload_path = posixpath.join("promptflow", 'PromptFlowArtifacts', self.info.run_name)
+        remote_paths = {'paths': []}
+        local_paths = []
+        # Go over the artifact folder and upload all artifacts.
+        for (root, _, filenames) in os.walk(artifact_folder):
+            upload_path = root_upload_path
+            if root != artifact_folder:
+                rel_path = os.path.relpath(root, artifact_folder)
+                if rel_path != '.':
+                    upload_path = posixpath.join(root_upload_path, rel_path)
+            for f in filenames:
+                remote_file_path = posixpath.join(upload_path, f)
+                remote_paths['paths'].append({'path': remote_file_path})
+                local_file_path = os.path.join(root, f)
+                local_paths.append(local_file_path)
+
+        # We will write the artifacts to the workspaceblobstore
         datastore = self._ml_client.datastores.get_default(include_secrets=True)
         account_url = f"{datastore.account_name}.blob.{datastore.endpoint}"
         svc_client = BlobServiceClient(
             account_url=account_url, credential=self._get_datastore_credential(datastore))
-        blob_client = svc_client.get_blob_client(
-            container=datastore.container_name,
-            blob=remote_paths['paths'][0]['path'])
-        with open(local_paths[0], 'rb') as fp:
-            blob_client.upload_blob(fp, overwrite=True)
-        
-        # Now we need to reserve the space for files in the artifact store.
-        # headers = {
-        #     'Content-Type': "application/json",
-        #     'Accept': "application/json",
-        #     'Content-Length': str(len(json.dumps(remote_paths))),
-        #     'x-ms-client-request-id': str(uuid.uuid1()),
-        # }
-        # response = self.request_with_retry(
-        #     url=self.get_artifacts_uri(),
-        #     method='POST',
-        #     json_dict=remote_paths,
-        #     headers=headers
-        # )
-        # if response.status_code != 200:
-        #     self._log_error("allocate Blob for the artifact", response)
-        #     return
-        # empty_artifacts = response.json()['artifactContentInformation']
-        # # The response from Azure contains the URL with SAS, that allows to upload file to the
-        # # artifact store.
-        # for local, remote in zip(local_paths, remote_paths['paths']):
-        #     artifact_loc = empty_artifacts[remote['path']]
-        #     blob_client = BlobClient.from_blob_url(artifact_loc['contentUri'], max_single_put_size=32 * 1024 * 1024)
-        #     with open(local, 'rb') as fp:
-        #         blob_client.upload_blob(fp)
+        for local, remote in zip(local_paths, remote_paths['paths']):
+            blob_client = svc_client.get_blob_client(
+                container=datastore.container_name,
+                blob=remote['path'])
+            with open(local, 'rb') as fp:
+                blob_client.upload_blob(fp, overwrite=True)
+
+        # To show artifact in UI we will need to register it. If it is a promptflow run,
+        # we are rewriting already registered artifact and need to skip this step.
+        if self._is_promptflow_run:
+            return
+        url = (
+            f"https://{self._url_base}/artifact/v2.0/subscriptions/{self._subscription_id}"
+            f"/resourceGroups/{self._resource_group_name}/providers/"
+            f"Microsoft.MachineLearningServices/workspaces/{self._workspace_name}/artifacts/register"
+        )
+
+        response = self.request_with_retry(
+            url=url,
+            method="POST",
+            json_dict={
+                "origin": "ExperimentRun",
+                "container": f"dcid.{self.info.run_id}",
+                "path": EvalRun.EVALUATION_ARTIFACT,
+                "dataPath": {
+                    "dataStoreName": datastore.name,
+                    "relativePath": posixpath.join(root_upload_path, EvalRun.EVALUATION_ARTIFACT),
+                },
+            },
+        )
+        if response.status_code != 200:
+            self._log_error('register artifact', response)
 
     def _get_datastore_credential(self, datastore: Datastore):
         # Reference the logic in azure.ai.ml._artifact._artifact_utilities
@@ -417,7 +419,7 @@ class EvalRun(metaclass=Singleton):
         elif hasattr(credential, "sas_token"):
             return credential.sas_token
         else:
-            return self._ml_client.datastore_operations._credential
+            return self._ml_client.datastores._credential
 
     def log_metric(self, key: str, value: float) -> None:
         """

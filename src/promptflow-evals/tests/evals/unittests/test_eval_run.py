@@ -40,6 +40,7 @@ class TestEvalRun:
                 "info": {
                     "run_id": str(uuid4()),
                     "experiment_id": str(uuid4()),
+                    "run_name": str(uuid4())
                 }
             }
         }
@@ -71,6 +72,7 @@ class TestEvalRun:
                 "info": {
                     "run_id": str(uuid4()),
                     "experiment_id": str(uuid4()),
+                    "run_name": str(uuid4())
                 }
             }
         }
@@ -104,6 +106,7 @@ class TestEvalRun:
                 "info": {
                     "run_id": str(uuid4()),
                     "experiment_id": str(uuid4()),
+                    "run_name": str(uuid4())
                 }
             }
         }
@@ -188,6 +191,7 @@ class TestEvalRun:
                     "info": {
                         "run_id": str(uuid4()),
                         "experiment_id": str(uuid4()),
+                        "run_name": str(uuid4())
                     }
                 }
             },
@@ -196,6 +200,7 @@ class TestEvalRun:
                     "info": {
                         "run_id": str(uuid4()),
                         "experiment_id": str(uuid4()),
+                        "run_name": str(uuid4())
                     }
                 }
             },
@@ -236,6 +241,7 @@ class TestEvalRun:
                 "info": {
                     "run_id": str(uuid4()),
                     "experiment_id": str(uuid4()),
+                    "run_name": str(uuid4())
                 }
             }
         }
@@ -253,7 +259,7 @@ class TestEvalRun:
         assert run.info.run_id == mock_response.json.return_value['run']['info']['run_id']
         assert run.info.experiment_id == mock_response.json.return_value[
             'run']['info']['experiment_id']
-        assert run.name == run.info.run_id
+        assert run.info.run_name == mock_response.json.return_value['run']['info']["run_name"]
 
     @patch('promptflow.evals.evaluate._eval_run.requests.Session')
     def test_run_with_name(self, mock_session_cls, setup_data):
@@ -265,6 +271,7 @@ class TestEvalRun:
                 "info": {
                     "run_id": str(uuid4()),
                     "experiment_id": str(uuid4()),
+                    "run_name": 'test'
                 }
             }
         }
@@ -282,8 +289,8 @@ class TestEvalRun:
         assert run.info.run_id == mock_response.json.return_value['run']['info']['run_id']
         assert run.info.experiment_id == mock_response.json.return_value[
             'run']['info']['experiment_id']
-        assert run.name == 'test'
-        assert run.name != run.info.run_id
+        assert run.info.run_name == 'test'
+        assert run.info.run_name != run.info.run_id
 
     @patch('promptflow.evals.evaluate._eval_run.requests.Session')
     def test_get_urls(self, mock_session_cls, setup_data):
@@ -295,6 +302,7 @@ class TestEvalRun:
                 "info": {
                     "run_id": str(uuid4()),
                     "experiment_id": str(uuid4()),
+                    "run_name": str(uuid4())
                 }
             }
         }
@@ -337,7 +345,7 @@ class TestEvalRun:
     @pytest.mark.parametrize(
         'log_function,expected_str',
         [
-            #('log_artifact', 'allocate Blob for the artifact'),
+            ('log_artifact', 'register artifact'),
             ('log_metric', 'save metrics')
         ]
     )
@@ -355,6 +363,7 @@ class TestEvalRun:
                 "info": {
                     "run_id": str(uuid4()),
                     "experiment_id": str(uuid4()),
+                    "run_name": str(uuid4())
                 }
             }
         }
@@ -390,22 +399,26 @@ class TestEvalRun:
             logger.parent = logging.root
             fn = getattr(run, log_function)
             if log_function == 'log_artifact':
+                with open(os.path.join(tmp_path, EvalRun.EVALUATION_ARTIFACT), 'w') as fp:
+                    fp.write('42')
                 kwargs = {'artifact_folder': tmp_path}
             else:
                 kwargs = {'key': 'f1', 'value': 0.5}
-            fn(**kwargs)
+            with patch('promptflow.evals.evaluate._eval_run.BlobServiceClient', return_value=MagicMock()):
+                fn(**kwargs)
         assert len(caplog.records) == 1
         assert mock_response.text in caplog.records[0].message
         assert '404' in caplog.records[0].message
         assert expected_str in caplog.records[0].message
 
     @pytest.mark.parametrize(
-        'dir_exists,expected_error', [
-            (True, "The path to the artifact is empty."),
-            (False, "The path to the artifact is either not a directory or does not exist.")
+        'dir_exists,dir_empty,expected_error', [
+            (True, True, "The path to the artifact is empty."),
+            (False, True, "The path to the artifact is either not a directory or does not exist."),
+            (True, False, "The run results file was not found, skipping artifacts upload.")
         ]
     )
-    def test_wrong_artifact_path(self, tmp_path, caplog, dir_exists, expected_error, setup_data):
+    def test_wrong_artifact_path(self, tmp_path, caplog, dir_exists, dir_empty, expected_error, setup_data):
         """Test that if artifact path is empty, or dies not exist we are logging the error."""
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -414,6 +427,7 @@ class TestEvalRun:
                 "info": {
                     "run_id": str(uuid4()),
                     "experiment_id": str(uuid4()),
+                    "run_name": str(uuid4())
                 }
             }
         }
@@ -438,6 +452,9 @@ class TestEvalRun:
             # captured by caplog. Here we will skip this logger to capture logs.
             logger.parent = logging.root
             artifact_folder = tmp_path if dir_exists else "wrong_path_567"
+            if not dir_empty:
+                with open(os.path.join(tmp_path, "test,txt"), 'w') as fp:
+                    fp.write("42")
             run.log_artifact(artifact_folder)
             assert len(caplog.records) == 1
             assert expected_error in caplog.records[0].message

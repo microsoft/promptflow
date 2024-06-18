@@ -134,7 +134,7 @@ def _log_metrics_and_instance_results(
         group_name=ws_triad.resource_group_name,
         workspace_name=ws_triad.workspace_name,
         ml_client=ml_client,
-        promptflow_run = run,
+        promptflow_run=run,
     )
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp_path = os.path.join(tmpdir, EvalRun.EVALUATION_ARTIFACT)
@@ -151,9 +151,10 @@ def _log_metrics_and_instance_results(
         if run is None:
             _write_properties_to_run_history(
                 properties={
-                    "_azureml.evaluation_run": "azure-ai-generative-parent",
+                    "_azureml.evaluation_run": "promptflow.BatchRun",
                     "_azureml.evaluate_artifacts": json.dumps([{"path": EvalRun.EVALUATION_ARTIFACT, "type": "table"}]),
                     "isEvaluatorRun": "true",
+                    "runType": "eval_run",
                 }
             )
 
