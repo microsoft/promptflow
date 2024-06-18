@@ -255,7 +255,6 @@ def try_parse_tool_calls(role_prompt):
             # Find outer array brackets starting from [;
             # Required for incomplete chunk parsing due to role naming errors
             open_brackets = 1
-            idx = 1
             last_open = 0
             last_close = -1
             # Loop until finding closed outer brackets or no more brackets found
