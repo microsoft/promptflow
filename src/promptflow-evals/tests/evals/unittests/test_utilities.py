@@ -95,4 +95,9 @@ class TestUtilities:
                     "workspaces/mock_workspace"
                 ),
                 None, 'mock_eval')
-        assert len(caplog.records) == 4
+        error_messages = [
+            lg_rec.message
+            for lg_rec in caplog.records
+            if lg_rec.levelno == logging.ERROR and (lg_rec.name in EvalRun.__module__)
+        ]
+        assert len(error_messages) == 4
