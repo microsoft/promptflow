@@ -57,7 +57,7 @@ class Configuration(object):
         # Allow config override by kwargs
         overrides = overrides or {}
         for key, value in overrides.items():
-            #self._validate(key, value)
+            self._validate(key, value)
             pydash.set_(self._config, key, value)
 
     def _get_cwd_config(self):
