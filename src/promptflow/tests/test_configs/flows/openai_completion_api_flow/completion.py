@@ -28,7 +28,7 @@ def completion(connection: AzureOpenAIConnection, prompt: str, stream: bool) -> 
     if IS_LEGACY_OPENAI:
         completion = openai.Completion.create(
             prompt=prompt,
-            engine="text-ada-001",
+            engine="gpt-35-turbo-instruct",
             max_tokens=256,
             temperature=0.8,
             top_p=1.0,
@@ -40,7 +40,7 @@ def completion(connection: AzureOpenAIConnection, prompt: str, stream: bool) -> 
     else:
         completion = get_client(connection).completions.create(
             prompt=prompt,
-            model="text-ada-001",
+            model="gpt-35-turbo-instruct",
             max_tokens=256,
             temperature=0.8,
             top_p=1.0,
