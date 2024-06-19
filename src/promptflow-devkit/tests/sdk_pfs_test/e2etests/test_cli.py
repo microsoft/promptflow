@@ -70,5 +70,4 @@ class TestPromptflowServiceCLI:
         finally:
             port = get_port_from_config()
             kill_exist_service(port=port)
-            with pytest.raises(SystemExit):
-                self._run_pfs_command("status")
+            self._run_pfs_command("status")

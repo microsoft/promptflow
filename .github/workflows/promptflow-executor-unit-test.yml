@@ -18,6 +18,7 @@ on:
       - src/promptflow/promptflow/storage/**
       - src/promptflow/tests/*
       - src/promptflow/tests/executor/**
+      - src/promptflow/tests/test_configs/**
       - src/promptflow-tracing/promptflow/**
       - src/promptflow-core/promptflow/**
       - src/promptflow-devkit/promptflow/**
