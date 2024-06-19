@@ -63,14 +63,26 @@ class TestUtilities:
         mock_cli.assert_called_once()
 
     @pytest.mark.parametrize('err_type', [ImportError, ModuleNotFoundError])
-    def test_ml_client_not_imported(self, err_type):
+    def test_ml_client_not_imported(self, err_type, caplog):
         """Test import of ml_client if it was notimported."""
+        logger = logging.getLogger(_utils.__name__)
+        # All loggers, having promptflow. prefix will have "promptflow" logger
+        # as a parent. This logger does not propagate the logs and cannot be
+        # captured by caplog. Here we will skip this logger to capture logs.
+        logger.parent = logging.root
         with patch('builtins.__import__', side_effect=err_type('Mock')):
             ws_triade, ml_client = _utils._get_ml_client("www.microsoft.com")
         assert ml_client is None
         assert ws_triade.subscription_id == ""
         assert ws_triade.resource_group_name == ""
         assert ws_triade.workspace_name == ""
+        error_messages = [
+            lg_rec.message
+            for lg_rec in caplog.records
+            if lg_rec.levelno == logging.ERROR and (lg_rec.name in _utils.__name__)
+        ]
+        assert len(error_messages) == 1
+        assert "Unable to import azure-ai-ml, the run will not be logged to azure." in error_messages
 
     def test_log_no_ml_client_import(self, caplog):
         """Test logging if MLClient cannot be imported."""

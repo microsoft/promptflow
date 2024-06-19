@@ -28,7 +28,6 @@ AZURE_WORKSPACE_REGEX_FORMAT = (
 # Authentication constants
 AZUREML_OBO_ENABLED = "AZUREML_OBO_ENABLED"
 DEFAULT_IDENTITY_CLIENT_ID = "DEFAULT_IDENTITY_CLIENT_ID"
-EVALUATION_ARTIFACT = 'instance_results.jsonl'
 AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])
 
 
@@ -104,6 +103,7 @@ def _get_ml_client(trace_destination: str, **kwargs) -> Tuple[Any, AzureMLWorksp
     try:
         from azure.ai.ml import MLClient
     except (ImportError, ModuleNotFoundError):
+        LOGGER.error("Unable to import azure-ai-ml, the run will not be logged to azure.")
         return AzureMLWorkspaceTriad("", "", ""), None
 
     ws_triad = extract_workspace_triad_from_trace_provider(trace_destination)
