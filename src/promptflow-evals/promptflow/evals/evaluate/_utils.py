@@ -103,7 +103,7 @@ def _get_ml_client(trace_destination: str, **kwargs) -> Tuple[Any, AzureMLWorksp
     try:
         from azure.ai.ml import MLClient
     except (ImportError, ModuleNotFoundError):
-        LOGGER.error('Unable to import azure-ai-ml, the run will not be logged to azure. '
+        LOGGER.error('Unable to import promptflow-azure, the run will not be logged to azure. '
                      'Please run "pip install promptflow-evals[azure]" to enable the remote tracking.')
         return AzureMLWorkspaceTriad("", "", ""), None
 

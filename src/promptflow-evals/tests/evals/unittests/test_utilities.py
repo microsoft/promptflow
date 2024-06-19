@@ -82,7 +82,7 @@ class TestUtilities:
             if lg_rec.levelno == logging.ERROR and (lg_rec.name in _utils.__name__)
         ]
         assert len(error_messages) == 1
-        assert "Unable to import azure-ai-ml, the run will not be logged to azure." in error_messages
+        assert "Unable to import promptflow-azure, the run will not be logged to azure." in error_messages[0]
 
     def test_log_no_ml_client_import(self, caplog):
         """Test logging if MLClient cannot be imported."""
