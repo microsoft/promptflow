@@ -3,16 +3,24 @@ Created on Jun 11, 2024
 
 @author: nirovins
 '''
+import jwt
+import logging
 import os
 import pandas as pd
+import time
 import pytest
 
 from unittest.mock import patch
 
+from promptflow.azure._utils._token_cache import ArmTokenCache
 from promptflow.evals.evaluate import _utils
-import logging
 from promptflow.evals.evaluate._eval_run import EvalRun
 from promptflow.evals.evaluate._utils import AzureMLWorkspaceTriad
+
+
+def generate_mock_token():
+    expiration_time = time.time() + 3600  # 1 hour in the future
+    return jwt.encode({"exp": expiration_time}, "secret", algorithm="HS256")
 
 
 @pytest.fixture
@@ -77,7 +85,8 @@ class TestUtilities:
         assert ws_triade.resource_group_name == ""
         assert ws_triade.workspace_name == ""
 
-    def test_log_no_ml_client_import(self, caplog):
+    @patch.object(ArmTokenCache, "_fetch_token", return_value=generate_mock_token())
+    def test_log_no_ml_client_import(self, token_mock, caplog):
         """Test logging if MLClient cannot be imported."""
         logger = logging.getLogger(EvalRun.__module__)
         # All loggers, having promptflow. prefix will have "promptflow" logger
