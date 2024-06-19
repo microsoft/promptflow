@@ -45,7 +45,7 @@ def my_llm_tool(prompt: str, deployment_name: str) -> str:
 
 if __name__ == "__main__":
     result = my_llm_tool(
-        prompt="Write a simple Hello, world! program that displays the greeting message.",
-        deployment_name="text-davinci-003",
+        prompt="Write a simple Hello, world! python program that displays the greeting message. Output code only.",
+        deployment_name="gpt-4o",
     )
     print(result)
