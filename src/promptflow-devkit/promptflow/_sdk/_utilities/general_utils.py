@@ -1028,6 +1028,23 @@ def create_temp_flex_flow_yaml_core(entry: Union[str, PathLike, Callable], code:
     elif not is_local_module(entry_string=entry, code=code):
         logger.debug(f"Entry {entry} is not found in local, its snapshot will be empty.")
         create_yaml_in_tmp = True
+    else:
+        # Avoid uploading everything in current folder to remote, only upload the file containing entry definition.
+        logger.debug(f"Entry {entry} is found in local, its snapshot will be file containing the entry.")
+        with inject_sys_path(code):
+            module, _ = entry.split(":")
+            spec = find_spec(module)
+            origin = spec.origin
+            src_file = Path(origin)
+            temp_dir = tempfile.mkdtemp(prefix=_sanitize_python_variable_name(entry) + "_")
+
+            # Create the same directory structure in the temp directory as source directory
+            structure = os.path.join(temp_dir, os.path.relpath(os.path.dirname(src_file)))
+            os.makedirs(structure, exist_ok=True)
+            dest_file = os.path.join(structure, os.path.basename(src_file))
+
+            shutil.copy2(src_file, dest_file)
+            flow_yaml_path = Path(temp_dir) / FLOW_FLEX_YAML
 
     if create_yaml_in_tmp:
         # make sure run name is from entry instead of random folder name
