@@ -16,6 +16,7 @@ from promptflow.evals.evaluate import evaluate
 from promptflow.evals.evaluate._evaluate import _apply_target_to_data, _rename_columns_conditionally
 from promptflow.evals.evaluate._utils import _apply_column_mapping
 from promptflow.evals.evaluators import F1ScoreEvaluator, GroundednessEvaluator
+from promptflow.recording.azure.constants import SanitizedValues
 
 
 def _get_file(name):
@@ -401,7 +402,7 @@ class TestEvaluate:
 
         assert "Please ensure the evaluate API is properly guarded with the '__main__' block" in exc_info.value.args[0]
 
-    def test_evaluate_log_error(self, caplog, evaluate_test_data_jsonl_file, project_scope):
+    def test_evaluate_log_error(self, caplog, evaluate_test_data_jsonl_file):
         """Test that the evaluate method will log the error if promptflow-azure cannot be imported."""
         logger = logging.getLogger(evaluate.__module__)
         # All loggers, having promptflow. prefix will have "promptflow" logger
@@ -414,7 +415,11 @@ class TestEvaluate:
             evaluate(
                 data=evaluate_test_data_jsonl_file,
                 evaluators={"f1_score": F1ScoreEvaluator()},
-                azure_ai_project=project_scope,
+                azure_ai_project={
+                    "subscription_id": SanitizedValues.SUBSCRIPTION_ID,
+                    "resource_group_name": SanitizedValues.RESOURCE_GROUP_NAME,
+                    "project_name": SanitizedValues.WORKSPACE_NAME,
+                },
             )
         error_messages = [
             lg_rec.message

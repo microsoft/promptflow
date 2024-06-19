@@ -15,7 +15,6 @@ from azure.storage.blob import BlobServiceClient
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from promptflow.azure._utils._token_cache import ArmTokenCache
 from promptflow.evals._version import VERSION
 from promptflow._sdk.entities import Run
 
@@ -248,6 +247,9 @@ class EvalRun(metaclass=Singleton):
         return f"https://{self._url_base}" "/mlflow/v2.0" f"{self._get_scope()}" f"/api/2.0/mlflow/runs/log-metric"
 
     def _get_token(self):
+        # We have to use lazy import because promptflow.azure
+        # is an optional dependency.
+        from promptflow.azure._utils._token_cache import ArmTokenCache
         return ArmTokenCache().get_token(self._ml_client._credential)
 
     def request_with_retry(
