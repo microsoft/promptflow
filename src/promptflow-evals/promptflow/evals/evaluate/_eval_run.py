@@ -15,6 +15,7 @@ from azure.storage.blob import BlobServiceClient
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
+from promptflow.azure._utils._token_cache import ArmTokenCache
 from promptflow.evals._version import VERSION
 from promptflow._sdk.entities import Run
 
@@ -247,11 +248,7 @@ class EvalRun(metaclass=Singleton):
         return f"https://{self._url_base}" "/mlflow/v2.0" f"{self._get_scope()}" f"/api/2.0/mlflow/runs/log-metric"
 
     def _get_token(self):
-        """The simple method to get token from the MLClient."""
-        # This behavior mimics how the authority is taken in azureml-mlflow.
-        # Note, that here we are taking authority for public cloud, however,
-        # it will not work for non-public clouds.
-        return self._ml_client._credential.get_token(EvalRun._SCOPE)
+        return ArmTokenCache().get_token(self._ml_client._credential)
 
     def request_with_retry(
         self, url: str, method: str, json_dict: Dict[str, Any], headers: Optional[Dict[str, str]] = None
@@ -272,7 +269,7 @@ class EvalRun(metaclass=Singleton):
         if headers is None:
             headers = {}
         headers["User-Agent"] = f"promptflow/{VERSION}"
-        headers["Authorization"] = f"Bearer {self._get_token().token}"
+        headers["Authorization"] = f"Bearer {self._get_token()}"
         retry = Retry(
             total=EvalRun._MAX_RETRIES,
             connect=EvalRun._MAX_RETRIES,
