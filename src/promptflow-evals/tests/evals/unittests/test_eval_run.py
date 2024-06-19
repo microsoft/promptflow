@@ -4,6 +4,7 @@ import os
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
+import jwt
 import pytest
 
 import promptflow.evals.evaluate._utils as ev_utils
@@ -18,8 +19,13 @@ def setup_data():
     Singleton._instances.clear()
 
 
+def generate_mock_token():
+    expiration_time = time.time() + 3600  # 1 hour in the future
+    return jwt.encode({"exp": expiration_time}, "secret", algorithm="HS256")
+
+
 @pytest.mark.unittest
-@patch.object(ArmTokenCache, "_fetch_token")
+@patch.object(ArmTokenCache, "_fetch_token", return_value=generate_mock_token())
 class TestEvalRun:
     """Unit tests for the eval-run object."""
 

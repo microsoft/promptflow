@@ -4,9 +4,8 @@
 
 import jwt
 
+from promptflow.azure._utils._token_cache import ArmTokenCache
 from promptflow.core._connection_provider._utils import get_arm_token, get_token
-
-from ._token_cache import ArmTokenCache
 
 
 def is_arm_id(obj) -> bool:
