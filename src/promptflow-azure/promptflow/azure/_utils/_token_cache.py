@@ -1,4 +1,9 @@
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
 import time
+
+import jwt
 
 from promptflow.core._connection_provider._utils import get_arm_token
 
@@ -14,14 +19,14 @@ class SingletonMeta(type):
 
 
 class ArmTokenCache(metaclass=SingletonMeta):
-    DEFAULT_TTL_SECS = 1800
+    TOKEN_REFRESH_THRESHOLD_SECS = 300
 
     def __init__(self):
-        self._ttl_secs = self.DEFAULT_TTL_SECS
         self._cache = {}
 
     def _is_token_valid(self, entry):
-        return time.time() < entry["expires_at"]
+        current_time = time.time()
+        return (entry["expires_at"] - current_time) >= self.TOKEN_REFRESH_THRESHOLD_SECS
 
     def get_token(self, credential):
         if credential in self._cache:
@@ -30,7 +35,9 @@ class ArmTokenCache(metaclass=SingletonMeta):
                 return entry["token"]
 
         token = self._fetch_token(credential)
-        self._cache[credential] = {"token": token, "expires_at": time.time() + self._ttl_secs}
+        decoded_token = jwt.decode(token, options={"verify_signature": False, "verify_aud": False})
+        expiration_time = decoded_token.get("exp", time.time())
+        self._cache[credential] = {"token": token, "expires_at": expiration_time}
         return token
 
     def _fetch_token(self, credential):
