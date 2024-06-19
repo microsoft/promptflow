@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import inspect
+import logging
 import re
 from typing import Any, Callable, Dict, Optional, Set, Tuple
 
@@ -9,6 +10,7 @@ import numpy as np
 import pandas as pd
 
 from promptflow._sdk._constants import LINE_NUMBER
+from promptflow._sdk._errors import MissingAzurePackage
 from promptflow._sdk._telemetry import ActivityType, log_activity
 from promptflow._sdk._telemetry.telemetry import get_telemetry_logger
 from promptflow.client import PFClient
@@ -22,6 +24,9 @@ from ._utils import (
     _trace_destination_from_project_scope,
     _write_output,
 )
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 def _aggregate_metrics(df, evaluators) -> Dict[str, float]:
@@ -386,11 +391,24 @@ def _evaluate(
         evaluator_config = {}
     evaluator_config = _process_evaluator_config(evaluator_config)
     _validate_columns(input_data_df, evaluators, target, evaluator_config)
+
     # Target Run
-    pf_client = PFClient(
-        config={"trace.destination": trace_destination} if trace_destination else None,
-        user_agent=USER_AGENT,
-    )
+    if trace_destination:
+        try:
+            pf_client = PFClient(
+                config={"trace.destination": trace_destination} if trace_destination else None,
+                user_agent=USER_AGENT,
+            )
+        except MissingAzurePackage:
+            LOGGER.error('Unable to import promptflow-azure, the run will not be logged to azure. '
+                         'Please run "pip install promptflow-evals[azure]" to enable the remote tracking.')
+            pf_client = PFClient(
+                user_agent=USER_AGENT,
+            )
+    else:
+        pf_client = PFClient(
+            user_agent=USER_AGENT,
+        )
     target_run = None
 
     target_generated_columns = set()

@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import pathlib
 from unittest.mock import patch
@@ -8,6 +9,7 @@ import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
 
+from promptflow._sdk._errors import MissingAzurePackage
 from promptflow.client import PFClient
 from promptflow.evals._constants import DEFAULT_EVALUATION_RESULTS_FILE_NAME
 from promptflow.evals.evaluate import evaluate
@@ -398,3 +400,24 @@ class TestEvaluate:
             )
 
         assert "Please ensure the evaluate API is properly guarded with the '__main__' block" in exc_info.value.args[0]
+
+    def test_evaluate_log_error(self, caplog, evaluate_test_data_jsonl_file, project_scope):
+        """Test that the evaluate method will log the error if promptflow-azure cannot be imported."""
+        logger = logging.getLogger(evaluate.__module__)
+        # All loggers, having promptflow. prefix will have "promptflow" logger
+        # as a parent. This logger does not propagate the logs and cannot be
+        # captured by caplog. Here we will skip this logger to capture logs.
+        logger.parent = logging.root
+        with patch('promptflow._sdk._tracing.TraceDestinationConfig.validate', side_effect=MissingAzurePackage):
+            evaluate(
+                data=evaluate_test_data_jsonl_file,
+                evaluators={"f1_score": F1ScoreEvaluator()},
+                azure_ai_project=project_scope,
+            )
+        error_messages = [
+            lg_rec.message
+            for lg_rec in caplog.records
+            if lg_rec.levelno == logging.ERROR and (lg_rec.name in evaluate.__module__)
+        ]
+        assert len(error_messages) == 1
+        assert 'Unable to import promptflow-azure, the run will not be logged to azure.' in error_messages[0]
