@@ -63,7 +63,7 @@ class TestMetricsUpload(object):
             error_messages = [
                 lg_rec.message
                 for lg_rec in records
-                if lg_rec.levelno == logging.ERROR and (lg_rec.name in module_names)
+                if lg_rec.levelno == logging.WARNING and (lg_rec.name in module_names)
             ]
             assert not error_messages, "\n".join(error_messages)
 
@@ -98,7 +98,8 @@ class TestMetricsUpload(object):
         mock_response.status_code = 418
         with patch("promptflow.evals.evaluate._eval_run.EvalRun.request_with_retry", return_value=mock_response):
             ev_run.log_metric("f1", 0.54)
-            assert any(lg_rec.levelno == logging.ERROR for lg_rec in caplog.records), "The error log was not captured!"
+            assert any(
+                lg_rec.levelno == logging.WARNING for lg_rec in caplog.records), "The error log was not captured!"
         caplog.clear()
         ev_run.log_metric("f1", 0.54)
         self._assert_no_errors_for_module(caplog.records, EvalRun.__module__)
@@ -124,7 +125,8 @@ class TestMetricsUpload(object):
             json.dump({'internal_f1': 0.6}, fp)
         with patch('promptflow.evals.evaluate._eval_run.EvalRun.request_with_retry', return_value=mock_response):
             ev_run.log_artifact(tmp_path)
-            assert any(lg_rec.levelno == logging.ERROR for lg_rec in caplog.records), "The error log was not captured!"
+            assert any(
+                lg_rec.levelno == logging.WARNING for lg_rec in caplog.records), "The error log was not captured!"
         caplog.clear()
         ev_run.log_artifact(tmp_path)
         self._assert_no_errors_for_module(caplog.records, EvalRun.__module__)

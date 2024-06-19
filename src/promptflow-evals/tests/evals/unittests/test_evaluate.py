@@ -408,6 +408,8 @@ class TestEvaluate:
         # as a parent. This logger does not propagate the logs and cannot be
         # captured by caplog. Here we will skip this logger to capture logs.
         logger.parent = logging.root
+        logger = logging.getLogger(_apply_column_mapping.__module__)
+        logger.parent = logging.root
         with patch('promptflow._sdk._tracing.TraceDestinationConfig.validate', side_effect=MissingAzurePackage):
             evaluate(
                 data=evaluate_test_data_jsonl_file,
@@ -421,3 +423,10 @@ class TestEvaluate:
         ]
         assert len(error_messages) == 1
         assert 'Unable to import promptflow-azure, the run will not be logged to azure.' in error_messages[0]
+        error_messages = [
+            lg_rec.message
+            for lg_rec in caplog.records
+            if lg_rec.levelno == logging.ERROR and (lg_rec.name in _apply_column_mapping.__module__)
+        ]
+        assert len(error_messages) == 1
+        assert "Unable to log traces as trace destination was not defined." in error_messages[0]

@@ -76,13 +76,6 @@ class TestUtilities:
         assert ws_triade.subscription_id == ""
         assert ws_triade.resource_group_name == ""
         assert ws_triade.workspace_name == ""
-        error_messages = [
-            lg_rec.message
-            for lg_rec in caplog.records
-            if lg_rec.levelno == logging.ERROR and (lg_rec.name in _utils.__name__)
-        ]
-        assert len(error_messages) == 1
-        assert "Unable to import promptflow-azure, the run will not be logged to azure." in error_messages[0]
 
     def test_log_no_ml_client_import(self, caplog):
         """Test logging if MLClient cannot be imported."""
@@ -110,6 +103,6 @@ class TestUtilities:
         error_messages = [
             lg_rec.message
             for lg_rec in caplog.records
-            if lg_rec.levelno == logging.ERROR and (lg_rec.name in EvalRun.__module__)
+            if lg_rec.levelno == logging.WARNING and (lg_rec.name in EvalRun.__module__)
         ]
         assert len(error_messages) == 4

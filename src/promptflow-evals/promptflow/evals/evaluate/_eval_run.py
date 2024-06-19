@@ -119,8 +119,8 @@ class EvalRun(metaclass=Singleton):
         self._is_promptflow_run: bool = promptflow_run is not None
         self._is_broken = False
         if self._tracking_uri is None:
-            LOGGER.error("tracking_uri was not provided, "
-                         "The results will be saved locally, but will not be logged to Azure.")
+            LOGGER.warning("tracking_uri was not provided, "
+                           "The results will be saved locally, but will not be logged to Azure.")
             self._url_base = None
             self._is_broken = True
             self.info = RunInfo.generate(run_name)
@@ -179,8 +179,8 @@ class EvalRun(metaclass=Singleton):
         )
         if response.status_code != 200:
             self.info = RunInfo.generate(run_name)
-            LOGGER.error(f"The run failed to start: {response.status_code}: {response.text}."
-                         "The results will be saved locally, but will not be logged to Azure.")
+            LOGGER.warning(f"The run failed to start: {response.status_code}: {response.text}."
+                           "The results will be saved locally, but will not be logged to Azure.")
             return True
         parsed_response = response.json()
         self.info = RunInfo(
@@ -209,7 +209,7 @@ class EvalRun(metaclass=Singleton):
             LOGGER.warning("Unable to stop run because it was already terminated.")
             return
         if self._is_broken:
-            LOGGER.error("Unable to stop run because the run failed to start.")
+            LOGGER.warning("Unable to stop run because the run failed to start.")
             return
         url = f"https://{self._url_base}/mlflow/v2.0" f"{self._get_scope()}/api/2.0/mlflow/runs/update"
         body = {
@@ -220,7 +220,7 @@ class EvalRun(metaclass=Singleton):
         }
         response = self.request_with_retry(url=url, method="POST", json_dict=body)
         if response.status_code != 200:
-            LOGGER.error("Unable to terminate the run.")
+            LOGGER.warning("Unable to terminate the run.")
         Singleton.destroy(EvalRun)
         self._is_terminated = True
 
@@ -285,7 +285,7 @@ class EvalRun(metaclass=Singleton):
         session.mount("https://", adapter)
         return session.request(method, url, headers=headers, json=json_dict, timeout=EvalRun._TIMEOUT)
 
-    def _log_error(self, failed_op: str, response: requests.Response) -> None:
+    def _log_warning(self, failed_op: str, response: requests.Response) -> None:
         """
         Log the error if request was not successful.
 
@@ -294,7 +294,7 @@ class EvalRun(metaclass=Singleton):
         :param response: The request.
         :type response: requests.Response
         """
-        LOGGER.error(
+        LOGGER.warning(
             f"Unable to {failed_op}, "
             f"the request failed with status code {response.status_code}, "
             f"{response.text=}."
@@ -311,17 +311,17 @@ class EvalRun(metaclass=Singleton):
         :type artifact_folder: str
         """
         if self._is_broken:
-            LOGGER.error("Unable to log artifact because the run failed to start.")
+            LOGGER.warning("Unable to log artifact because the run failed to start.")
             return
         # Check if artifact dirrectory is empty or does not exist.
         if not os.path.isdir(artifact_folder):
-            LOGGER.error("The path to the artifact is either not a directory or does not exist.")
+            LOGGER.warning("The path to the artifact is either not a directory or does not exist.")
             return
         if not os.listdir(artifact_folder):
-            LOGGER.error("The path to the artifact is empty.")
+            LOGGER.warning("The path to the artifact is empty.")
             return
         if not os.path.isfile(os.path.join(artifact_folder, EvalRun.EVALUATION_ARTIFACT)):
-            LOGGER.error("The run results file was not found, skipping artifacts upload.")
+            LOGGER.warning("The run results file was not found, skipping artifacts upload.")
             return
         # First we will list the files and the appropriate remote paths for them.
         root_upload_path = posixpath.join("promptflow", 'PromptFlowArtifacts', self.info.run_name)
@@ -376,7 +376,7 @@ class EvalRun(metaclass=Singleton):
             },
         )
         if response.status_code != 200:
-            self._log_error('register artifact', response)
+            self._log_warning('register artifact', response)
 
     def _get_datastore_credential(self, datastore: Datastore):
         # Reference the logic in azure.ai.ml._artifact._artifact_utilities
@@ -399,7 +399,7 @@ class EvalRun(metaclass=Singleton):
         :type value: float
         """
         if self._is_broken:
-            LOGGER.error("Unable to log metric because the run failed to start.")
+            LOGGER.warning("Unable to log metric because the run failed to start.")
             return
         body = {
             "run_uuid": self.info.run_id,
@@ -415,7 +415,7 @@ class EvalRun(metaclass=Singleton):
             json_dict=body,
         )
         if response.status_code != 200:
-            self._log_error("save metrics", response)
+            self._log_warning("save metrics", response)
 
     @staticmethod
     def get_instance(*args, **kwargs) -> "EvalRun":

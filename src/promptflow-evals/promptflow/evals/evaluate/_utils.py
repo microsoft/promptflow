@@ -103,8 +103,6 @@ def _get_ml_client(trace_destination: str, **kwargs) -> Tuple[Any, AzureMLWorksp
     try:
         from azure.ai.ml import MLClient
     except (ImportError, ModuleNotFoundError):
-        LOGGER.error('Unable to import promptflow-azure, the run will not be logged to azure. '
-                     'Please run "pip install promptflow-evals[azure]" to enable the remote tracking.')
         return AzureMLWorkspaceTriad("", "", ""), None
 
     ws_triad = extract_workspace_triad_from_trace_provider(trace_destination)
@@ -119,7 +117,7 @@ def _get_ml_client(trace_destination: str, **kwargs) -> Tuple[Any, AzureMLWorksp
 
 
 def _log_metrics_and_instance_results(
-    metrics, instance_results, trace_destination, run, evaluation_name
+    metrics, instance_results, trace_destination, run, evaluation_name,
 ) -> str:
     if trace_destination is None:
         LOGGER.error("Unable to log traces as trace destination was not defined.")

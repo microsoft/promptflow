@@ -402,6 +402,7 @@ def _evaluate(
         except MissingAzurePackage:
             LOGGER.error('Unable to import promptflow-azure, the run will not be logged to azure. '
                          'Please run "pip install promptflow-evals[azure]" to enable the remote tracking.')
+            trace_destination = None
             pf_client = PFClient(
                 user_agent=USER_AGENT,
             )
@@ -500,7 +501,7 @@ def _evaluate(
     metrics.update(evaluators_metric)
 
     studio_url = _log_metrics_and_instance_results(
-        metrics, result_df, trace_destination, target_run, evaluation_name
+        metrics, result_df, trace_destination, target_run, evaluation_name,
     )
 
     result = {"rows": result_df.to_dict("records"), "metrics": metrics, "studio_url": studio_url}
