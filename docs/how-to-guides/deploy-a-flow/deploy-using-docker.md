@@ -85,6 +85,10 @@ api_key: ${env:OPEN_AI_CONNECTION_API_KEY} # env reference
 ```
 You'll need to set up the environment variables in the container to make the connections work.
 
+#### Configuring the run script
+
+Depending on your usecase you made need to make changes to how your application runs. Out of the box, running `pf flow build...` will generate a script located under `runit/promptflow-serve/run`. This script is called when running the container and where you would need to add additional configuration needed by your usecase.
+
 ### Run with `docker run`
 
 #### Run with `flask` serving engine
