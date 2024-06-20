@@ -12,23 +12,25 @@ from promptflow.core import AzureOpenAIModelConfiguration
 
 
 class GroundednessEvaluator:
+    """
+    Initialize an evaluator configured for a specific Azure OpenAI model.
+
+    :param model_config: Configuration for the Azure OpenAI model.
+    :type model_config: AzureOpenAIModelConfiguration
+
+    **Usage**
+
+    .. code-block:: python
+
+        eval_fn = GroundednessEvaluator(model_config)
+        result = eval_fn(
+            answer="The capital of Japan is Tokyo.",
+            context="Tokyo is Japan's capital, known for its blend of traditional culture \
+                and technological advancements.")
+    """
+
     def __init__(self, model_config: AzureOpenAIModelConfiguration):
-        """
-        Initialize an evaluator configured for a specific Azure OpenAI model.
-
-        :param model_config: Configuration for the Azure OpenAI model.
-        :type model_config: AzureOpenAIModelConfiguration
-
-        **Usage**
-
-        .. code-block:: python
-
-            eval_fn = GroundednessEvaluator(model_config)
-            result = eval_fn(
-                answer="The capital of Japan is Tokyo.",
-                context="Tokyo is Japan's capital, known for its blend of traditional culture \
-                    and technological advancements.")
-        """
+        """Constructor."""
         # TODO: Remove this block once the bug is fixed
         # https://msdata.visualstudio.com/Vienna/_workitems/edit/3151324
         if model_config.api_version is None:
@@ -40,7 +42,8 @@ class GroundednessEvaluator:
         self._flow = load_flow(source=prompty_path, model=prompty_model_config)
 
     def __call__(self, *, answer: str, context: str, **kwargs):
-        """Evaluate groundedness of the answer in the context.
+        """
+        Evaluate groundedness of the answer in the context.
 
         :param answer: The answer to be evaluated.
         :type answer: str

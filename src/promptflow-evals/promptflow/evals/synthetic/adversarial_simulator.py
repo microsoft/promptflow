@@ -52,17 +52,19 @@ def monitor_adversarial_scenario(func):
 
 
 class AdversarialSimulator:
-    def __init__(self, *, azure_ai_project: Dict[str, Any]):
-        """
-        Initializes the adversarial simulator with a project scope.
+    """
+    Initializes the adversarial simulator with a project scope.
 
-        :param azure_ai_project: Dictionary defining the scope of the project. It must include the following keys:
-            - "subscription_id": Azure subscription ID.
-            - "resource_group_name": Name of the Azure resource group.
-            - "project_name": Name of the Azure Machine Learning workspace.
-            - "credential": Azure credentials object for authentication.
-        :type azure_ai_project: Dict[str, Any]
-        """
+    :param azure_ai_project: Dictionary defining the scope of the project. It must include the following keys:
+        - "subscription_id": Azure subscription ID.
+        - "resource_group_name": Name of the Azure resource group.
+        - "project_name": Name of the Azure Machine Learning workspace.
+        - "credential": Azure credentials object for authentication.
+    :type azure_ai_project: Dict[str, Any]
+    """
+
+    def __init__(self, *, azure_ai_project: Dict[str, Any]):
+        """Constructor."""
         # check if azure_ai_project has the keys: subscription_id, resource_group_name, project_name, credential
         if not all(
             key in azure_ai_project for key in ["subscription_id", "resource_group_name", "project_name", "credential"]

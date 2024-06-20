@@ -8,20 +8,22 @@ from promptflow.client import load_flow
 
 
 class F1ScoreEvaluator:
+    """
+    Initialize an evaluator for calculating F1 score.
+
+    **Usage**
+
+    .. code-block:: python
+
+        eval_fn = F1ScoreEvaluator()
+        result = eval_fn(
+            answer="The capital of Japan is Tokyo.",
+            ground_truth="Tokyo is Japan's capital, known for its blend of traditional culture \
+                and technological advancements.")
+    """
+
     def __init__(self):
-        """
-        Initialize an evaluator for calculating F1 score.
-
-        **Usage**
-
-        .. code-block:: python
-
-            eval_fn = F1ScoreEvaluator()
-            result = eval_fn(
-                answer="The capital of Japan is Tokyo.",
-                ground_truth="Tokyo is Japan's capital, known for its blend of traditional culture \
-                    and technological advancements.")
-        """
+        """Constructor."""
 
         # Load the flow as function
         current_dir = Path(__file__).resolve().parent
@@ -29,7 +31,8 @@ class F1ScoreEvaluator:
         self._flow = load_flow(source=flow_dir)
 
     def __call__(self, *, answer: str, ground_truth: str, **kwargs):
-        """Evaluate F1 score.
+        """
+        Evaluate F1 score.
 
         :param answer: The answer to be evaluated.
         :type answer: str

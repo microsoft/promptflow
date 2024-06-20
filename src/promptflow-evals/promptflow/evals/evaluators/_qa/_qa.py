@@ -16,27 +16,29 @@ from .._similarity import SimilarityEvaluator
 
 
 class QAEvaluator:
+    """
+    Initialize an evaluator configured for a specific Azure OpenAI model.
+
+    :param model_config: Configuration for the Azure OpenAI model.
+    :type model_config: AzureOpenAIModelConfiguration
+    :return: A function that evaluates and generates metrics for "question-answering" scenario.
+    :rtype: function
+
+    **Usage**
+
+    .. code-block:: python
+
+        eval_fn = QAEvaluator(model_config)
+        result = qa_eval(
+            question="Tokyo is the capital of which country?",
+            answer="Japan",
+            context="Tokyo is the capital of Japan.",
+            ground_truth="Japan"
+        )
+    """
+
     def __init__(self, model_config: AzureOpenAIModelConfiguration, parallel: bool = True):
-        """
-        Initialize an evaluator configured for a specific Azure OpenAI model.
-
-        :param model_config: Configuration for the Azure OpenAI model.
-        :type model_config: AzureOpenAIModelConfiguration
-        :return: A function that evaluates and generates metrics for "question-answering" scenario.
-        :rtype: function
-
-        **Usage**
-
-        .. code-block:: python
-
-            eval_fn = QAEvaluator(model_config)
-            result = qa_eval(
-                question="Tokyo is the capital of which country?",
-                answer="Japan",
-                context="Tokyo is the capital of Japan.",
-                ground_truth="Japan"
-            )
-        """
+        """Constructor."""
         self._parallel = parallel
 
         self._evaluators = [
@@ -49,7 +51,8 @@ class QAEvaluator:
         ]
 
     def __call__(self, *, question: str, answer: str, context: str, ground_truth: str, **kwargs):
-        """Evaluates question-answering scenario.
+        """
+        Evaluates question-answering scenario.
 
         :param question: The question to be evaluated.
         :type question: str
