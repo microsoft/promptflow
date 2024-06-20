@@ -1,7 +1,6 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from typing import Any, Tuple
 import json
 import logging
 import os
@@ -12,9 +11,6 @@ from pathlib import Path
 
 import pandas as pd
 
-from azure.ai.ml.identity import AzureMLOnBehalfOfCredential
-from azure.core.credentials import TokenCredential
-from azure.identity import AzureCliCredential, DefaultAzureCredential, ManagedIdentityCredential
 from promptflow.evals._constants import DEFAULT_EVALUATION_RESULTS_FILE_NAME, Prefixes
 from promptflow.evals.evaluate._eval_run import EvalRun
 
@@ -70,50 +66,16 @@ def _write_properties_to_run_history(properties: dict) -> None:
         LOGGER.error("Fail writing properties '%s' to run history: %s", properties, e)
 
 
-def _get_credential(force_cli: bool = False) -> TokenCredential:
-    """
-    Return the credential found in the system.
-
-    :param force_cli: Force using CLI credentials.
-    :type force_cli: bool
-    :return: The token credential.
-    """
-    if force_cli:
-        return AzureCliCredential()
-    if os.environ.get("AZUREML_OBO_ENABLED"):
-        return AzureMLOnBehalfOfCredential()
-    if os.environ.get("DEFAULT_IDENTITY_CLIENT_ID"):
-        return ManagedIdentityCredential(
-            client_id=os.environ.get("DEFAULT_IDENTITY_CLIENT_ID"))
-    try:
-        return DefaultAzureCredential()
-    except BaseException:
-        return AzureCliCredential()
-
-
-def _get_ml_client(trace_destination: str, **kwargs) -> Tuple[Any, AzureMLWorkspaceTriad]:
-    """
-    Return the MLclient and workspace triad.
-
-    :param trace_destination: The URI, containing subscription ID,
-                              workspace and resource group name.
-    :type trace_destination: str
-    :return: The tuple with the ML client and workspace triad.
-    """
-    try:
-        from azure.ai.ml import MLClient
-    except (ImportError, ModuleNotFoundError):
-        return AzureMLWorkspaceTriad("", "", ""), None
-
+def _azure_pf_client_and_triad(trace_destination):
+    from promptflow.azure._cli._utils import _get_azure_pf_client
     ws_triad = extract_workspace_triad_from_trace_provider(trace_destination)
-    ml_client = MLClient(
-        credential=_get_credential(),
+    azure_pf_client = _get_azure_pf_client(
         subscription_id=ws_triad.subscription_id,
-        resource_group_name=ws_triad.resource_group_name,
+        resource_group=ws_triad.resource_group_name,
         workspace_name=ws_triad.workspace_name,
-        **kwargs
     )
-    return ws_triad, ml_client
+
+    return azure_pf_client, ws_triad
 
 
 def _log_metrics_and_instance_results(
@@ -123,11 +85,8 @@ def _log_metrics_and_instance_results(
         LOGGER.error("Unable to log traces as trace destination was not defined.")
         return None
 
-    ws_triad, ml_client = _get_ml_client(trace_destination)
-    if ml_client is not None:
-        tracking_uri = ml_client.workspaces.get(ws_triad.workspace_name).mlflow_tracking_uri
-    else:
-        tracking_uri = None
+    azure_pf_client, ws_triad = _azure_pf_client_and_triad(trace_destination)
+    tracking_uri = azure_pf_client.ml_client.workspaces.get(ws_triad.workspace_name).mlflow_tracking_uri
 
     # Adding line_number as index column this is needed by UI to form link to individual instance run
     instance_results["line_number"] = instance_results.index.values
@@ -138,7 +97,7 @@ def _log_metrics_and_instance_results(
         subscription_id=ws_triad.subscription_id,
         group_name=ws_triad.resource_group_name,
         workspace_name=ws_triad.workspace_name,
-        ml_client=ml_client,
+        ml_client=azure_pf_client.ml_client,
         promptflow_run=run,
     )
     with tempfile.TemporaryDirectory() as tmpdir:
