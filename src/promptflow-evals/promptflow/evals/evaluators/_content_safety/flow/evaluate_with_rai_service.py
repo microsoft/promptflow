@@ -31,7 +31,7 @@ def ensure_service_availability(rai_svc_url: str, token: str, capability: str = 
     response = requests.get(svc_liveness_url, headers=headers)
 
     if response.status_code != 200:
-        raise Exception("RAI service is not available in this region")
+        raise Exception(f"RAI service is not available in this region. Status Code: {response.status_code}")
 
     capabilities = response.json()
 

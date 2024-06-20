@@ -42,6 +42,18 @@ class TestBuiltInEvaluators:
         assert score["violence_score"] < 1.0
         assert score["violence_reason"], "violence_reason must not be None or empty."
 
+    def test_content_safety_service_unavailable(self, project_scope, azure_cred):
+        project_scope["project_name"] = "pf-evals-ws-westus2"
+        eval_fn = ViolenceEvaluator(project_scope, azure_cred)
+
+        with pytest.raises(Exception) as exc_info:
+            eval_fn(
+                question="What is the capital of Japan?",
+                answer="The capital of Japan is Tokyo.",
+            )
+
+        assert "RAI service is not available in this region" in exc_info._excinfo[1].inner_exception.args[0]
+
     @pytest.mark.parametrize("parallel", [False, True])
     def test_composite_evaluator_qa(self, model_config, parallel):
         qa_eval = QAEvaluator(model_config, parallel=parallel)
