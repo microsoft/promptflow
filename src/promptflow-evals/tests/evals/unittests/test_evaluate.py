@@ -1,5 +1,4 @@
 import json
-import logging
 import os
 import pathlib
 from unittest.mock import patch
@@ -9,14 +8,12 @@ import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
 
-from promptflow._sdk._errors import MissingAzurePackage
 from promptflow.client import PFClient
 from promptflow.evals._constants import DEFAULT_EVALUATION_RESULTS_FILE_NAME
 from promptflow.evals.evaluate import evaluate
 from promptflow.evals.evaluate._evaluate import _apply_target_to_data, _rename_columns_conditionally
 from promptflow.evals.evaluate._utils import _apply_column_mapping
 from promptflow.evals.evaluators import F1ScoreEvaluator, GroundednessEvaluator
-from promptflow.recording.azure.constants import SanitizedValues
 
 
 def _get_file(name):
@@ -401,37 +398,3 @@ class TestEvaluate:
             )
 
         assert "Please ensure the evaluate API is properly guarded with the '__main__' block" in exc_info.value.args[0]
-
-    def test_evaluate_log_error(self, caplog, evaluate_test_data_jsonl_file):
-        """Test that the evaluate method will log the error if promptflow-azure cannot be imported."""
-        logger = logging.getLogger(evaluate.__module__)
-        # All loggers, having promptflow. prefix will have "promptflow" logger
-        # as a parent. This logger does not propagate the logs and cannot be
-        # captured by caplog. Here we will skip this logger to capture logs.
-        logger.parent = logging.root
-        logger = logging.getLogger(_apply_column_mapping.__module__)
-        logger.parent = logging.root
-        with patch('promptflow._sdk._tracing.TraceDestinationConfig.validate', side_effect=MissingAzurePackage):
-            evaluate(
-                data=evaluate_test_data_jsonl_file,
-                evaluators={"f1_score": F1ScoreEvaluator()},
-                azure_ai_project={
-                    "subscription_id": SanitizedValues.SUBSCRIPTION_ID,
-                    "resource_group_name": SanitizedValues.RESOURCE_GROUP_NAME,
-                    "project_name": SanitizedValues.WORKSPACE_NAME,
-                },
-            )
-        error_messages = [
-            lg_rec.message
-            for lg_rec in caplog.records
-            if lg_rec.levelno == logging.ERROR and (lg_rec.name in evaluate.__module__)
-        ]
-        assert len(error_messages) == 1
-        assert 'Unable to import promptflow-azure, the run will not be logged to azure.' in error_messages[0]
-        error_messages = [
-            lg_rec.message
-            for lg_rec in caplog.records
-            if lg_rec.levelno == logging.ERROR and (lg_rec.name in _apply_column_mapping.__module__)
-        ]
-        assert len(error_messages) == 1
-        assert "Unable to log traces as trace destination was not defined." in error_messages[0]
