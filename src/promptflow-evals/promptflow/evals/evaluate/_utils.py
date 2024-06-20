@@ -21,9 +21,7 @@ AZURE_WORKSPACE_REGEX_FORMAT = (
     "^azureml:[/]{1,2}subscriptions/([^/]+)/resource(groups|Groups)/([^/]+)"
     "(/providers/Microsoft.MachineLearningServices)?/workspaces/([^/]+)$"
 )
-# Authentication constants
-AZUREML_OBO_ENABLED = "AZUREML_OBO_ENABLED"
-DEFAULT_IDENTITY_CLIENT_ID = "DEFAULT_IDENTITY_CLIENT_ID"
+
 AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])
 
 
@@ -68,6 +66,7 @@ def _write_properties_to_run_history(properties: dict) -> None:
 
 def _azure_pf_client_and_triad(trace_destination):
     from promptflow.azure._cli._utils import _get_azure_pf_client
+
     ws_triad = extract_workspace_triad_from_trace_provider(trace_destination)
     azure_pf_client = _get_azure_pf_client(
         subscription_id=ws_triad.subscription_id,
