@@ -4,6 +4,7 @@ import time
 from typing import List
 from urllib.parse import urlparse
 
+import jwt
 import numpy as np
 import requests
 from azure.core.credentials import TokenCredential
@@ -61,14 +62,14 @@ def submit_request(question: str, answer: str, metric: str, rai_svc_url: str, to
     return operation_id
 
 
-def fetch_result(operation_id: str, rai_svc_url: str, token: str):
+def fetch_result(operation_id: str, rai_svc_url: str, credential: TokenCredential, token: str):
     start = time.time()
     request_count = 0
 
     url = rai_svc_url + "/operations/" + operation_id
-    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
-
     while True:
+        token = fetch_token(credential, token)
+        headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
             return response.json()
@@ -185,6 +186,27 @@ def get_rai_svc_url(project_scope: dict, token: str):
     return rai_url
 
 
+def fetch_token(credential: TokenCredential, token: str = None):
+    acquire_new_token = True
+    try:
+        if token:
+            # Decode the token to get its expiration time
+            decoded_token = jwt.decode(token, options={"verify_signature": False})
+            exp_time = decoded_token["exp"]
+            current_time = time.time()
+
+            # Check if the token is near expiry
+            if (exp_time - current_time) >= 300:
+                acquire_new_token = False
+    except Exception:
+        pass
+
+    if acquire_new_token:
+        token = credential.get_token("https://management.azure.com/.default").token
+
+    return token
+
+
 @tool
 def evaluate_with_rai_service(
     question: str, answer: str, metric_name: str, project_scope: dict, credential: TokenCredential
@@ -194,15 +216,15 @@ def evaluate_with_rai_service(
     if credential is None or credential == {}:
         credential = DefaultAzureCredential()
 
-    token = credential.get_token("https://management.azure.com/.default").token
+    token = fetch_token(credential)
 
     # Get RAI service URL from discovery service and check service availability
-    rai_svc_url = get_rai_svc_url(project_scope, token)
-    ensure_service_availability(rai_svc_url, token, Tasks.CONTENT_HARM)
+    rai_svc_url = get_rai_svc_url(project_scope, fetch_token(credential, token))
+    ensure_service_availability(rai_svc_url, fetch_token(credential, token), Tasks.CONTENT_HARM)
 
     # Submit annotation request and fetch result
-    operation_id = submit_request(question, answer, metric_name, rai_svc_url, token)
-    annotation_response = fetch_result(operation_id, rai_svc_url, token)
+    operation_id = submit_request(question, answer, metric_name, rai_svc_url, fetch_token(credential, token))
+    annotation_response = fetch_result(operation_id, rai_svc_url, credential, token)
     result = parse_response(annotation_response, metric_name)
 
     return result
