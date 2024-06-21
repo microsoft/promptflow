@@ -121,6 +121,13 @@ def project_scope(request) -> dict:
 
 
 @pytest.fixture
+def project_scope2(request, project_scope) -> dict:
+    if not (is_replay() and "vcr_recording" in request.fixturenames):
+        project_scope["project_name"] = "pf-evals-ws-westus2"
+        return project_scope
+
+
+@pytest.fixture
 def mock_trace_destination_to_cloud(project_scope: dict):
     """Mock trace destination to cloud."""
 

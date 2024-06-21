@@ -42,9 +42,8 @@ class TestBuiltInEvaluators:
         assert score["violence_score"] < 1.0
         assert score["violence_reason"], "violence_reason must not be None or empty."
 
-    def test_content_safety_service_unavailable(self, project_scope, azure_cred):
-        project_scope["project_name"] = "pf-evals-ws-westus2"
-        eval_fn = ViolenceEvaluator(project_scope, azure_cred)
+    def test_content_safety_service_unavailable(self, project_scope2, azure_cred):
+        eval_fn = ViolenceEvaluator(project_scope2, azure_cred)
 
         with pytest.raises(Exception) as exc_info:
             eval_fn(
