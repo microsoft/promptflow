@@ -400,17 +400,18 @@ class TestEvaluate:
 
         assert "Please ensure the evaluate API is properly guarded with the '__main__' block" in exc_info.value.args[0]
 
-    def test_get_trace_destination(self, mock_validate_trace_destination, project_scope):
+    def test_get_trace_destination(self, mock_validate_trace_destination, mock_project_scope):
         pf_client = PFClient()
         trace_destination_without_override = pf_client._config.get_trace_destination()
 
         pf_client = PFClient(
             config={
-                "trace.destination": _trace_destination_from_project_scope(project_scope) if project_scope else None
+                "trace.destination": _trace_destination_from_project_scope(mock_project_scope)
+                if mock_project_scope else None
             }
         )
 
         trace_destination_with_override = pf_client._config.get_trace_destination()
 
         assert trace_destination_with_override != trace_destination_without_override
-        assert trace_destination_with_override == _trace_destination_from_project_scope(project_scope)
+        assert trace_destination_with_override == _trace_destination_from_project_scope(mock_project_scope)
