@@ -113,9 +113,9 @@ class AdversarialSimulator:
         :param scenario: Enum value specifying the adversarial scenario used for generating inputs.
                          example:
 
-                         * AdversarialScenario.ADVERSARIAL_QA
-                         * AdversarialScenario.ADVERSARIAL_CONVERSATION
-        :type scenario: AdversarialScenario
+                         * promptflow.evals.synthetic.adversarial_scenario.AdversarialScenario.ADVERSARIAL_QA
+                         * promptflow.evals.synthetic.adversarial_scenario.AdversarialScenario.ADVERSARIAL_CONVERSATION
+        :type scenario: promptflow.evals.synthetic.adversarial_scenario.AdversarialScenario
         :param target: The target function to simulate adversarial inputs against.
             This function should be asynchronous and accept a dictionary representing the adversarial input.
         :type target: Callable
@@ -141,14 +141,14 @@ class AdversarialSimulator:
             Defaults to False.
         :type jailbreak: bool
         :return: A list of dictionaries, each representing a simulated conversation. Each dictionary contains:
-         
+
          - 'template_parameters': A dictionary with parameters used in the conversation template,
             including 'conversation_starter'.
          - 'messages': A list of dictionaries, each representing a turn in the conversation.
             Each message dictionary includes 'content' (the message text) and
             'role' (indicating whether the message is from the 'user' or the 'assistant').
          - '**$schema**': A string indicating the schema URL for the conversation format.
-         
+
          The 'content' for 'assistant' role messages may includes the messages that your callback returned.
         :rtype: List[Dict[str, Any]]
         """
