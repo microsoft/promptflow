@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 import jwt
 import pytest
+from azure.ai.ml._ml_client import MLClient
 from pytest_mock import MockerFixture
 
 from promptflow.client import PFClient
@@ -13,7 +14,6 @@ from promptflow.core import AzureOpenAIModelConfiguration
 from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
-from azure.ai.ml._ml_client import MLClient
 
 try:
     from promptflow.recording.local import recording_array_reset
@@ -118,13 +118,6 @@ def project_scope(request) -> dict:
         raise ValueError(f"Connection '{conn_name}' not found in dev connections.")
 
     return dev_connections[conn_name]["value"]
-
-
-@pytest.fixture
-def project_scope2(request, project_scope) -> dict:
-    if not (is_replay() and "vcr_recording" in request.fixturenames):
-        project_scope["project_name"] = "pf-evals-ws-westus2"
-        return project_scope
 
 
 @pytest.fixture
