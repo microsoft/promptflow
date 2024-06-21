@@ -78,7 +78,7 @@ def _azure_pf_client_and_triad(trace_destination):
 
 
 def _log_metrics_and_instance_results(
-    metrics, instance_results, trace_destination, run
+    metrics, instance_results, trace_destination, run, evaluation_name,
 ) -> str:
     if trace_destination is None:
         LOGGER.error("Unable to log traces as trace destination was not defined.")
@@ -88,42 +88,45 @@ def _log_metrics_and_instance_results(
     tracking_uri = azure_pf_client.ml_client.workspaces.get(ws_triad.workspace_name).mlflow_tracking_uri
 
     # Adding line_number as index column this is needed by UI to form link to individual instance run
-    instance_results["line_number"] = instance_results.index
+    instance_results["line_number"] = instance_results.index.values
 
     ev_run = EvalRun(
-        run_name=run.name if run is not None else None,
+        run_name=run.name if run is not None else evaluation_name,
         tracking_uri=tracking_uri,
         subscription_id=ws_triad.subscription_id,
         group_name=ws_triad.resource_group_name,
         workspace_name=ws_triad.workspace_name,
-        ml_client=azure_pf_client.ml_client
+        ml_client=azure_pf_client.ml_client,
+        promptflow_run=run,
     )
     with tempfile.TemporaryDirectory() as tmpdir:
-        eval_path = os.path.join(tmpdir, "evaluation_results")
-        os.makedirs(eval_path, exist_ok=True)
-        tmp_path = os.path.join(eval_path, "eval_results.jsonl")
+        tmp_path = os.path.join(tmpdir, EvalRun.EVALUATION_ARTIFACT)
 
         with open(tmp_path, "w", encoding="utf-8") as f:
             f.write(instance_results.to_json(orient="records", lines=True))
 
-        ev_run.log_artifact(eval_path)
+        ev_run.log_artifact(tmpdir)
 
         # Using mlflow to create a dummy run since once created via PF show traces of dummy run in UI.
         # Those traces can be confusing.
-        # adding these properties to avoid showing traces if a dummy run is created
-        _write_properties_to_run_history(
-            properties={
-                "_azureml.evaluation_run": "azure-ai-generative-parent",
-                "_azureml.evaluate_artifacts": json.dumps([{"path": "eval_results.jsonl", "type": "table"}]),
-                "isEvaluatorRun": "true",
-            }
-        )
+        # adding these properties to avoid showing traces if a dummy run is created.
+        # We are doing that only for the pure evaluation runs.
+        if run is None:
+            _write_properties_to_run_history(
+                properties={
+                    "_azureml.evaluation_run": "promptflow.BatchRun",
+                    "_azureml.evaluate_artifacts": json.dumps([{"path": EvalRun.EVALUATION_ARTIFACT, "type": "table"}]),
+                    "isEvaluatorRun": "true",
+                    "runType": "eval_run",
+                }
+            )
 
     for metric_name, metric_value in metrics.items():
         ev_run.log_metric(metric_name, metric_value)
 
     ev_run.end_run("FINISHED")
-    return _get_ai_studio_url(trace_destination=trace_destination, evaluation_id=ev_run.name)
+    evaluation_id = ev_run.info.run_name if run is not None else ev_run.info.run_id
+    return _get_ai_studio_url(trace_destination=trace_destination, evaluation_id=evaluation_id)
 
 
 def _get_ai_studio_url(trace_destination: str, evaluation_id: str) -> str:

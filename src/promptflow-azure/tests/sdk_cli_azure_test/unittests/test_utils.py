@@ -1,10 +1,13 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import time
 from unittest.mock import MagicMock, patch
 
+import jwt
 import pytest
 
+from promptflow.azure._utils._token_cache import ArmTokenCache
 from promptflow.exceptions import UserErrorException
 
 
@@ -50,3 +53,38 @@ class TestUtils:
         with patch.dict("os.environ", {EnvironmentVariables.PF_USE_AZURE_CLI_CREDENTIAL: "true"}):
             cred = get_credentials_for_cli()
             assert isinstance(cred, AzureCliCredential)
+
+    @patch.object(ArmTokenCache, "_fetch_token")
+    def test_arm_token_cache_get_token(self, mock_fetch_token):
+        expiration_time = time.time() + 3600  # 1 hour in the future
+        mock_token = jwt.encode({"exp": expiration_time}, "secret", algorithm="HS256")
+        mock_fetch_token.return_value = mock_token
+        credential = "test_credential"
+
+        cache = ArmTokenCache()
+
+        # Test that the token is fetched and cached
+        token1 = cache.get_token(credential)
+        assert token1 == mock_token, f"Expected '{mock_token}' but got {token1}"
+        assert credential in cache._cache, f"Expected '{credential}' to be in cache"
+        assert cache._cache[credential]["token"] == mock_token, "Expected token in cache to be the mock token"
+
+        # Test that the cached token is returned if still valid
+        token2 = cache.get_token(credential)
+        assert token2 == mock_token, f"Expected '{mock_token}' but got {token2}"
+        assert (
+            mock_fetch_token.call_count == 1
+        ), f"Expected fetch token to be called once, but it was called {mock_fetch_token.call_count} times"
+
+        # Test that a new token is fetched if the old one expires
+        expired_time = time.time() - 10  # Set the token as expired
+        cache._cache[credential]["expires_at"] = expired_time
+
+        new_expiration_time = time.time() + 3600
+        new_mock_token = jwt.encode({"exp": new_expiration_time}, "secret", algorithm="HS256")
+        mock_fetch_token.return_value = new_mock_token
+        token3 = cache.get_token(credential)
+        assert token3 == new_mock_token, f"Expected '{new_mock_token}' but got {token3}"
+        assert (
+            mock_fetch_token.call_count == 2
+        ), f"Expected fetch token to be called twice, but it was called {mock_fetch_token.call_count} times"
