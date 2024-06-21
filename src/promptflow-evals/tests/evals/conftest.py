@@ -153,7 +153,7 @@ def mock_trace_destination_to_cloud_for_unit_tests(mock_project_scope: dict):
 
 
 @pytest.fixture
-def mock_validate_trace_destination(project_scope: dict):
+def mock_validate_trace_destination():
     """Mock validate trace destination config to use in unit tests."""
 
     with patch("promptflow._sdk._tracing.TraceDestinationConfig.validate", return_value=None):
