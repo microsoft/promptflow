@@ -400,7 +400,7 @@ class TestEvaluate:
 
         assert "Please ensure the evaluate API is properly guarded with the '__main__' block" in exc_info.value.args[0]
 
-    def test_get_trace_destination(self, mock_trace_destination_to_cloud, mock_project_scope):
+    def test_get_trace_destination(self, mock_trace_destination_to_cloud_for_unit_tests, mock_project_scope):
         trace_destination = _get_trace_destination_config(project_scope=None)
         trace_destination_from_project_scope = _trace_destination_from_project_scope(mock_project_scope)
         assert trace_destination

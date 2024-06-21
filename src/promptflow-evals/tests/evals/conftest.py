@@ -137,6 +137,22 @@ def mock_trace_destination_to_cloud(project_scope: dict):
 
 
 @pytest.fixture
+def mock_trace_destination_to_cloud_for_unit_tests(mock_project_scope: dict):
+    """Mock trace destination to cloud."""
+
+    subscription_id = mock_project_scope["subscription_id"]
+    resource_group_name = mock_project_scope["resource_group_name"]
+    workspace_name = mock_project_scope["project_name"]
+
+    trace_destination = (
+        f"azureml://subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/"
+        f"providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}"
+    )
+    with patch("promptflow._sdk._configuration.Configuration.get_trace_destination", return_value=trace_destination):
+        yield
+
+
+@pytest.fixture
 def mock_validate_trace_destination(project_scope: dict):
     """Mock validate trace destination config to use in unit tests."""
 
