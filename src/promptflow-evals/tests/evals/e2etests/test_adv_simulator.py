@@ -214,7 +214,7 @@ class TestAdvSimulator:
 
         simulator = AdversarialSimulator(azure_ai_project=azure_ai_project)
 
-        outputs = asyncio.run(
+        jailbreak_outputs, regular_outputs = asyncio.run(
             simulator(
                 scenario=AdversarialScenario.ADVERSARIAL_SUMMARIZATION,
                 max_conversation_turns=1,
@@ -227,6 +227,5 @@ class TestAdvSimulator:
                 jailbreak=True,
             )
         )
-        print(outputs.to_json_lines())
-        print("*****************************")
-        assert len(outputs) == 1
+        assert len(jailbreak_outputs) == 1
+        assert len(regular_outputs) == 1

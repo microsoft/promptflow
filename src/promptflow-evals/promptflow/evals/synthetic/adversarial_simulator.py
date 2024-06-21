@@ -142,7 +142,7 @@ class AdversarialSimulator:
             'role' (indicating whether the message is from the 'user' or the 'assistant').
          - '$schema': A string indicating the schema URL for the conversation format.
          The 'content' for 'assistant' role messages may includes the messages that your callback returned.
-        :rtype: List[Dict[str, Any]]
+        :rtype: List[Dict[str, Any]] if jailbreak is False, otherwise List[List[Dict[str, Any]]] with two elements
         """
         # validate the inputs
         if scenario != AdversarialScenario.ADVERSARIAL_CONVERSATION:
@@ -166,19 +166,38 @@ class AdversarialSimulator:
                 total_tasks,
                 total_tasks,
             )
-        total_tasks = min(total_tasks, max_simulation_results)
+        if jailbreak:
+            jailbreak_dataset = await self.rai_client.get_jailbreaks_dataset()
+            total_tasks = min(total_tasks, max_simulation_results) * 2
+        else:
+            total_tasks = min(total_tasks, max_simulation_results)
         progress_bar = tqdm(
             total=total_tasks,
             desc="generating simulations",
             ncols=100,
             unit="simulations",
         )
+        tasks = {"jb": [], "regular": []}
+
         for template in templates:
             for parameter in template.template_parameters:
                 if jailbreak:
-                    jailbreak_dataset = await self.rai_client.get_jailbreaks_dataset()
                     parameter = self._join_conversation_starter(parameter, random.choice(jailbreak_dataset))
-                tasks.append(
+                    tasks["jb"].append(
+                        asyncio.create_task(
+                            self._simulate_async(
+                                target=target,
+                                template=template,
+                                parameters=parameter,
+                                max_conversation_turns=max_conversation_turns,
+                                api_call_retry_limit=api_call_retry_limit,
+                                api_call_retry_sleep_sec=api_call_retry_sleep_sec,
+                                api_call_delay_sec=api_call_delay_sec,
+                                semaphore=semaphore,
+                            )
+                        )
+                    )
+                tasks["regular"].append(
                     asyncio.create_task(
                         self._simulate_async(
                             target=target,
@@ -192,20 +211,24 @@ class AdversarialSimulator:
                         )
                     )
                 )
-                if len(tasks) >= max_simulation_results:
+                if len(tasks["jb"]) + len(tasks["regular"]) >= max_simulation_results:
                     break
-            if len(tasks) >= max_simulation_results:
+            if len(tasks["jb"]) + len(tasks["regular"]) >= max_simulation_results:
                 break
-        for task in asyncio.as_completed(tasks):
-            sim_results.append(await task)
-            progress_bar.update(1)
-        progress_bar.close()
 
-        return JsonLineList(sim_results)
+        sim_results = {"jb": [], "regular": []}
+        for task_type, task_list in tasks.items():
+            for task in asyncio.as_completed(task_list):
+                sim_results[task_type].append(await task)
+                progress_bar.update(1)
+
+        if jailbreak:
+            return JsonLineList(sim_results["jb"]), JsonLineList(sim_results["regular"])
+        return JsonLineList(sim_results["regular"])
 
     def _to_chat_protocol(self, *, conversation_history, template_parameters):
         messages = []
-        for i, m in enumerate(conversation_history):
+        for i, m in enumerate(conversation_history):  # noqa: F841
             message = {"content": m.message, "role": m.role.value}
             if "context" in m.full_response:
                 message["context"] = m.full_response["context"]
