@@ -219,10 +219,10 @@ def evaluate_with_rai_service(
     # Get RAI service URL from discovery service and check service availability
     token = fetch_or_reuse_token(credential)
     rai_svc_url = get_rai_svc_url(project_scope, token)
-    ensure_service_availability(rai_svc_url, fetch_or_reuse_token(credential, token), Tasks.CONTENT_HARM)
+    ensure_service_availability(rai_svc_url, token, Tasks.CONTENT_HARM)
 
     # Submit annotation request and fetch result
-    operation_id = submit_request(question, answer, metric_name, rai_svc_url, fetch_or_reuse_token(credential, token))
+    operation_id = submit_request(question, answer, metric_name, rai_svc_url, token)
     annotation_response = fetch_result(operation_id, rai_svc_url, credential, token)
     result = parse_response(annotation_response, metric_name)
 
