@@ -14,6 +14,7 @@ from promptflow.evals.evaluate import evaluate
 from promptflow.evals.evaluate._evaluate import _apply_target_to_data, _rename_columns_conditionally
 from promptflow.evals.evaluate._utils import _apply_column_mapping
 from promptflow.evals.evaluators import F1ScoreEvaluator, GroundednessEvaluator
+from promptflow.evals.evaluate._utils import _get_trace_destination_config, _trace_destination_from_project_scope
 
 
 def _get_file(name):
@@ -398,3 +399,21 @@ class TestEvaluate:
             )
 
         assert "Please ensure the evaluate API is properly guarded with the '__main__' block" in exc_info.value.args[0]
+
+    def test_get_trace_destination(self, mock_trace_destination_to_cloud, project_scope):
+        trace_destination = _get_trace_destination_config(project_scope=None)
+        trace_destination_from_project_scope = _trace_destination_from_project_scope(project_scope)
+        assert trace_destination
+        assert trace_destination == trace_destination_from_project_scope
+
+    def test_get_trace_destination_with_project_scope(self, mock_validate_trace_destination):
+        project_scope = {
+            "subscription_id": "blah",
+            "resource_group_name": "blah",
+            "project_name": "blah",
+        }
+        trace_destination_with_override = _get_trace_destination_config(project_scope)
+
+        trace_destination_without_override = _get_trace_destination_config()
+        assert trace_destination_with_override != trace_destination_without_override
+        assert trace_destination_with_override == _trace_destination_from_project_scope(project_scope)

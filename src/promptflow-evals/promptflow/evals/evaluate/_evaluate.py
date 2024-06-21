@@ -19,8 +19,8 @@ from ._batch_run_client import BatchRunContext, CodeClient, ProxyClient
 from ._utils import (
     _apply_column_mapping,
     _log_metrics_and_instance_results,
-    _trace_destination_from_project_scope,
     _write_output,
+    _get_trace_destination_config,
 )
 
 
@@ -377,7 +377,7 @@ def _evaluate(
     output_path: Optional[str] = None,
     **kwargs,
 ):
-    trace_destination = _trace_destination_from_project_scope(azure_ai_project) if azure_ai_project else None
+    trace_destination = _get_trace_destination_config(azure_ai_project)
 
     input_data_df = _validate_and_load_data(target, data, evaluators, output_path, azure_ai_project, evaluation_name)
 
