@@ -13,35 +13,37 @@ logger = logging.getLogger(__name__)
 
 
 class ContentSafetyChatEvaluator:
+    """
+    Initialize an evaluator configured to evaluate content safetry metrics for chat scenario.
+
+    :param project_scope: The scope of the Azure AI project.
+        It contains subscription id, resource group, and project name.
+    :type project_scope: dict
+    :param eval_last_turn: Set to True to evaluate only the most recent exchange in the dialogue,
+        focusing on the latest user inquiry and the assistant's corresponding response. Defaults to False
+    :type eval_last_turn: bool
+    :param parallel: If True, use parallel execution for evaluators. Else, use sequential execution.
+        Default is True.
+    :type parallel: bool
+    :param credential: The credential for connecting to Azure AI project.
+    :type credential: TokenCredential
+    :return: A function that evaluates and generates metrics for "chat" scenario.
+    :rtype: function
+
+    **Usage**
+
+    .. code-block:: python
+
+        eval_fn = ContentSafetyChatEvaluator(model_config)
+        conversation = [
+            {"role": "user", "content": "What is the value of 2 + 2?"},
+            {"role": "assistant", "content": "2 + 2 = 4"}
+        ]
+        result = ContentSafetyChatEvaluator(conversation=conversation)
+    """
+
     def __init__(self, project_scope: dict, eval_last_turn: bool = False, parallel: bool = True, credential=None):
-        """
-        Initialize an evaluator configured to evaluate content safetry metrics for chat scenario.
-
-        :param project_scope: The scope of the Azure AI project.
-            It contains subscription id, resource group, and project name.
-        :type project_scope: dict
-        :param eval_last_turn: Set to True to evaluate only the most recent exchange in the dialogue,
-            focusing on the latest user inquiry and the assistant's corresponding response. Defaults to False
-        :type eval_last_turn: bool
-        :param parallel: If True, use parallel execution for evaluators. Else, use sequential execution.
-            Default is True.
-        :type parallel: bool
-        :param credential: The credential for connecting to Azure AI project.
-        :type credential: TokenCredential
-        :return: A function that evaluates and generates metrics for "chat" scenario.
-        :rtype: function
-
-        **Usage**
-
-        .. code-block:: python
-
-            eval_fn = ContentSafetyChatEvaluator(model_config)
-            conversation = [
-                {"role": "user", "content": "What is the value of 2 + 2?"},
-                {"role": "assistant", "content": "2 + 2 = 4"}
-            ]
-            result = ContentSafetyChatEvaluator(conversation=conversation)
-        """
+        """Constructor."""
         self._eval_last_turn = eval_last_turn
         self._parallel = parallel
         self._evaluators = [
@@ -52,7 +54,8 @@ class ContentSafetyChatEvaluator:
         ]
 
     def __call__(self, *, conversation, **kwargs):
-        """Evaluates content-safety metrics for "chat" scenario.
+        """
+        Evaluates content-safety metrics for "chat" scenario.
 
         :param conversation: The conversation to be evaluated. Each turn should have "role" and "content" keys.
         :type conversation: List[Dict]

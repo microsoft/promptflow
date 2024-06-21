@@ -7,35 +7,37 @@ from ._violence import ViolenceEvaluator
 
 
 class ContentSafetyEvaluator:
+    """
+    Initialize an evaluator configured to evaluate content safetry metrics for QA scenario.
+
+    :param project_scope: The scope of the Azure AI project.
+        It contains subscription id, resource group, and project name.
+    :type project_scope: dict
+    :param parallel: If True, use parallel execution for evaluators. Else, use sequential execution.
+        Default is True.
+    :param credential: The credential for connecting to Azure AI project.
+    :type credential: TokenCredential
+    :return: A function that evaluates content-safety metrics for "question-answering" scenario.
+    :rtype: function
+
+    **Usage**
+
+    .. code-block:: python
+
+        project_scope = {
+            "subscription_id": "<subscription_id>",
+            "resource_group_name": "<resource_group_name>",
+            "project_name": "<project_name>",
+        }
+        eval_fn = ContentSafetyEvaluator(project_scope)
+        result = eval_fn(
+            question="What is the capital of France?",
+            answer="Paris.",
+        )
+    """
+
     def __init__(self, project_scope: dict, parallel: bool = True, credential=None):
-        """
-        Initialize an evaluator configured to evaluate content safetry metrics for QA scenario.
-
-        :param project_scope: The scope of the Azure AI project.
-            It contains subscription id, resource group, and project name.
-        :type project_scope: dict
-        :param parallel: If True, use parallel execution for evaluators. Else, use sequential execution.
-            Default is True.
-        :param credential: The credential for connecting to Azure AI project.
-        :type credential: TokenCredential
-        :return: A function that evaluates content-safety metrics for "question-answering" scenario.
-        :rtype: function
-
-        **Usage**
-
-        .. code-block:: python
-
-            project_scope = {
-                "subscription_id": "<subscription_id>",
-                "resource_group_name": "<resource_group_name>",
-                "project_name": "<project_name>",
-            }
-            eval_fn = ContentSafetyEvaluator(project_scope)
-            result = eval_fn(
-                question="What is the capital of France?",
-                answer="Paris.",
-            )
-        """
+        """Constructor."""
         self._parallel = parallel
         self._evaluators = [
             ViolenceEvaluator(project_scope, credential),
@@ -45,7 +47,8 @@ class ContentSafetyEvaluator:
         ]
 
     def __call__(self, *, question: str, answer: str, **kwargs):
-        """Evaluates content-safety metrics for "question-answering" scenario.
+        """
+        Evaluates content-safety metrics for "question-answering" scenario.
 
         :param question: The question to be evaluated.
         :type question: str
