@@ -164,6 +164,7 @@ class TestMetricsUpload(object):
         )
         self._assert_no_errors_for_module(caplog.records, (ev_utils.__name__, EvalRun.__module__))
 
+    @pytest.mark.usefixtures("vcr_recording")
     def test_e2e_run(self, caplog, project_scope, questions_answers_file):
         """Test evaluation run logging."""
         # Make sure that the URL ending in TraceSessions is in the recording, it is not always being recorded.
