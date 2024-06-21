@@ -7,7 +7,7 @@ from .flow.constants import EvaluationMetrics
 
 class SexualEvaluator:
     """
-    Initialize an evaluator for sexual score.
+    Initialize a sexual evaluator for sexual score.
 
     :param project_scope: The scope of the Azure AI project.
         It contains subscription id, resource group, and project name.
@@ -29,8 +29,6 @@ class SexualEvaluator:
     """
 
     def __init__(self, project_scope: dict, credential=None):
-        """Constructor."""
-
         self._project_scope = project_scope
         self._credential = credential
 

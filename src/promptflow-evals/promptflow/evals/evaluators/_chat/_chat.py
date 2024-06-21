@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 class ChatEvaluator:
     """
-    Initialize an evaluator configured for a specific Azure OpenAI model.
+    Initialize a chat evaluator configured for a specific Azure OpenAI model.
 
     :param model_config: Configuration for the Azure OpenAI model.
     :type model_config: AzureOpenAIModelConfiguration
@@ -56,7 +56,6 @@ class ChatEvaluator:
     def __init__(
         self, model_config: AzureOpenAIModelConfiguration, eval_last_turn: bool = False, parallel: bool = True
     ):
-        """Constructor."""
         self._eval_last_turn = eval_last_turn
         self._parallel = parallel
 

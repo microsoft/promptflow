@@ -8,7 +8,7 @@ from ._violence import ViolenceEvaluator
 
 class ContentSafetyEvaluator:
     """
-    Initialize an evaluator configured to evaluate content safetry metrics for QA scenario.
+    Initialize a content safety evaluator configured to evaluate content safetry metrics for QA scenario.
 
     :param project_scope: The scope of the Azure AI project.
         It contains subscription id, resource group, and project name.
@@ -37,7 +37,6 @@ class ContentSafetyEvaluator:
     """
 
     def __init__(self, project_scope: dict, parallel: bool = True, credential=None):
-        """Constructor."""
         self._parallel = parallel
         self._evaluators = [
             ViolenceEvaluator(project_scope, credential),

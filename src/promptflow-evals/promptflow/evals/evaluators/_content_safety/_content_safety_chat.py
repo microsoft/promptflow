@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 class ContentSafetyChatEvaluator:
     """
-    Initialize an evaluator configured to evaluate content safetry metrics for chat scenario.
+    Initialize a content safety chat evaluator configured to evaluate content safetry metrics for chat scenario.
 
     :param project_scope: The scope of the Azure AI project.
         It contains subscription id, resource group, and project name.
@@ -43,7 +43,6 @@ class ContentSafetyChatEvaluator:
     """
 
     def __init__(self, project_scope: dict, eval_last_turn: bool = False, parallel: bool = True, credential=None):
-        """Constructor."""
         self._eval_last_turn = eval_last_turn
         self._parallel = parallel
         self._evaluators = [

@@ -13,7 +13,7 @@ from promptflow.core import AzureOpenAIModelConfiguration
 
 class RelevanceEvaluator:
     """
-    Initialize an evaluator configured for a specific Azure OpenAI model.
+    Initialize a relevance evaluator configured for a specific Azure OpenAI model.
 
     :param model_config: Configuration for the Azure OpenAI model.
     :type model_config: AzureOpenAIModelConfiguration
@@ -30,7 +30,6 @@ class RelevanceEvaluator:
                 and technological advancements.")
     """
     def __init__(self, model_config: AzureOpenAIModelConfiguration):
-        """Constructor."""
         # TODO: Remove this block once the bug is fixed
         # https://msdata.visualstudio.com/Vienna/_workitems/edit/3151324
         if model_config.api_version is None:

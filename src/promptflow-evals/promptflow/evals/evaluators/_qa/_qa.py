@@ -17,7 +17,7 @@ from .._similarity import SimilarityEvaluator
 
 class QAEvaluator:
     """
-    Initialize an evaluator configured for a specific Azure OpenAI model.
+    Initialize a question-answer evaluator configured for a specific Azure OpenAI model.
 
     :param model_config: Configuration for the Azure OpenAI model.
     :type model_config: AzureOpenAIModelConfiguration
@@ -38,7 +38,6 @@ class QAEvaluator:
     """
 
     def __init__(self, model_config: AzureOpenAIModelConfiguration, parallel: bool = True):
-        """Constructor."""
         self._parallel = parallel
 
         self._evaluators = [

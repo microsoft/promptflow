@@ -9,7 +9,7 @@ from promptflow.client import load_flow
 
 class F1ScoreEvaluator:
     """
-    Initialize an evaluator for calculating F1 score.
+    Initialize a f1 score evaluator for calculating F1 score.
 
     **Usage**
 
@@ -23,7 +23,6 @@ class F1ScoreEvaluator:
     """
 
     def __init__(self):
-        """Constructor."""
 
         # Load the flow as function
         current_dir = Path(__file__).resolve().parent
