@@ -440,6 +440,7 @@ def _evaluate(
                 column_mapping=evaluator_config.get(evaluator_name, evaluator_config.get("default", None)),
                 data=input_data_df if isinstance(batch_run_client, CodeClient) else data,
                 stream=True,
+                name=kwargs.get("_run_name"),
             )
 
         # get_details needs to be called within BatchRunContext scope in order to have user agent populated
