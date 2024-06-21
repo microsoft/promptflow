@@ -20,7 +20,7 @@ from ._utils import (
     _apply_column_mapping,
     _log_metrics_and_instance_results,
     _write_output,
-    _get_trace_destination_config,
+    _trace_destination_from_project_scope,
 )
 
 
@@ -377,7 +377,6 @@ def _evaluate(
     output_path: Optional[str] = None,
     **kwargs,
 ):
-    trace_destination = _get_trace_destination_config(azure_ai_project)
 
     input_data_df = _validate_and_load_data(target, data, evaluators, output_path, azure_ai_project, evaluation_name)
 
@@ -389,9 +388,13 @@ def _evaluate(
 
     # Target Run
     pf_client = PFClient(
-        config={"trace.destination": trace_destination} if trace_destination else None,
+        config={
+            "trace.destination": _trace_destination_from_project_scope(azure_ai_project)} if azure_ai_project else None,
         user_agent=USER_AGENT,
     )
+
+    trace_destination = pf_client._config.get_trace_destination()
+
     target_run = None
 
     target_generated_columns = set()

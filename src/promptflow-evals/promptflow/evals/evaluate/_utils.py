@@ -215,21 +215,3 @@ def _apply_column_mapping(source_df: pd.DataFrame, mapping_config: dict, inplace
 def _has_aggregator(evaluator):
     return hasattr(evaluator, "__aggregate__")
 
-
-def _get_trace_destination_config(project_scope: str = None):
-    from promptflow._sdk._configuration import Configuration
-
-    trace_destination = None
-
-    if project_scope is not None:
-        trace_destination = _trace_destination_from_project_scope(project_scope)
-
-    pf_config = Configuration(overrides={
-        "trace.destination": trace_destination} if trace_destination is not None else None)
-
-    trace_destination = pf_config.get_trace_destination()
-
-    if is_none(trace_destination):
-        return None
-
-    return trace_destination
