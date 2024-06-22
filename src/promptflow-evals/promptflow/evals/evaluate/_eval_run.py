@@ -249,8 +249,7 @@ class EvalRun(metaclass=Singleton):
     def _get_token(self):
         # We have to use lazy import because promptflow.azure
         # is an optional dependency.
-        from promptflow.azure._utils._token_cache import ArmTokenCache
-        return ArmTokenCache().get_token(self._ml_client._credential)
+        return self._ml_client._credential.get_token(EvalRun._SCOPE)
 
     def request_with_retry(
         self, url: str, method: str, json_dict: Dict[str, Any], headers: Optional[Dict[str, str]] = None
@@ -271,7 +270,7 @@ class EvalRun(metaclass=Singleton):
         if headers is None:
             headers = {}
         headers["User-Agent"] = f"promptflow/{VERSION}"
-        headers["Authorization"] = f"Bearer {self._get_token()}"
+        headers["Authorization"] = f"Bearer {self._get_token().token}"
         retry = Retry(
             total=EvalRun._MAX_RETRIES,
             connect=EvalRun._MAX_RETRIES,

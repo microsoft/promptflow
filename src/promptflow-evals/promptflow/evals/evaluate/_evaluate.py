@@ -19,8 +19,8 @@ from ._batch_run_client import BatchRunContext, CodeClient, ProxyClient
 from ._utils import (
     _apply_column_mapping,
     _log_metrics_and_instance_results,
-    _trace_destination_from_project_scope,
     _write_output,
+    _trace_destination_from_project_scope,
 )
 
 
@@ -377,7 +377,6 @@ def _evaluate(
     output_path: Optional[str] = None,
     **kwargs,
 ):
-    trace_destination = _trace_destination_from_project_scope(azure_ai_project) if azure_ai_project else None
 
     input_data_df = _validate_and_load_data(target, data, evaluators, output_path, azure_ai_project, evaluation_name)
 
@@ -389,9 +388,13 @@ def _evaluate(
 
     # Target Run
     pf_client = PFClient(
-        config={"trace.destination": trace_destination} if trace_destination else None,
+        config={
+            "trace.destination": _trace_destination_from_project_scope(azure_ai_project)} if azure_ai_project else None,
         user_agent=USER_AGENT,
     )
+
+    trace_destination = pf_client._config.get_trace_destination()
+
     target_run = None
 
     target_generated_columns = set()
@@ -437,6 +440,7 @@ def _evaluate(
                 column_mapping=evaluator_config.get(evaluator_name, evaluator_config.get("default", None)),
                 data=input_data_df if isinstance(batch_run_client, CodeClient) else data,
                 stream=True,
+                name=kwargs.get("_run_name"),
             )
 
         # get_details needs to be called within BatchRunContext scope in order to have user agent populated
