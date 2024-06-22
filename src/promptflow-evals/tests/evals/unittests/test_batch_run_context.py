@@ -1,10 +1,12 @@
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from promptflow.client import PFClient
 from promptflow.evals._user_agent import USER_AGENT
 from promptflow.evals.evaluate._batch_run_client import BatchRunContext, CodeClient
+from promptflow.evals.evaluate._batch_run_client.code_client import CodeRun
+from promptflow.evals._constants import BATCH_RUN_TIMEOUT
 
 
 @pytest.fixture
@@ -15,6 +17,10 @@ def code_client_mock():
 @pytest.fixture
 def pf_client_mock():
     return MagicMock(spec=PFClient)
+
+@pytest.fixture
+def code_run_mock():
+    return MagicMock()
 
 
 @pytest.mark.unittest
@@ -50,3 +56,13 @@ class TestBatchRunContext:
             pass
 
         mock_recover_openai_api.assert_not_called()
+
+    def test_get_result_timeout(self, code_run_mock):
+        code_run_instance = CodeRun(run=code_run_mock, input_data={})
+        code_run_instance.get_result_df()
+
+        code_run_mock.result.assert_called_once_with(timeout=BATCH_RUN_TIMEOUT)
+
+        custom_timeout = 100000
+        code_run_instance.get_result_df(batch_run_timeout=custom_timeout)
+        code_run_mock.result.assert_called_with(timeout=custom_timeout)
