@@ -8,6 +8,7 @@ from promptflow.tracing._integrations._openai_injector import inject_openai_api,
 
 from ..._user_agent import USER_AGENT
 from .code_client import CodeClient
+from .proxy_client import ProxyClient
 
 
 class BatchRunContext:
@@ -19,6 +20,14 @@ class BatchRunContext:
             ClientUserAgentUtil.append_user_agent(USER_AGENT)
             inject_openai_api()
 
+        if isinstance(self.client, ProxyClient):
+            os.environ["PF_FLOW_ENTRY_IN_TMP"] = "true"
+            os.environ["PF_FLOW_META_LOAD_IN_SUBPROCESS"] = "false"
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         if isinstance(self.client, CodeClient):
             recover_openai_api()
+
+        if isinstance(self.client, ProxyClient):
+            os.environ.pop("PF_FLOW_ENTRY_IN_TMP", None)
+            os.environ.pop("PF_FLOW_META_LOAD_IN_SUBPROCESS", None)
