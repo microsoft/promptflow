@@ -80,7 +80,7 @@ def chat(question: str = "What's the capital of France?") -> str:
     return output
 ```
 
-Flow can be a python function or class or a yaml file describe a DAG which encapsulate your LLM application logic.
+Flow can be a python function or class or a yaml file describing a DAG which encapsulates your LLM application logic.
 Learn more on the [flow concept](../concepts/concept-flows.md) and how to [Develop a flow](./develop-a-flex-flow/index.md).
 
 See the full example of this python file in: [Minimal Chat](https://github.com/microsoft/promptflow/tree/main/examples/flex-flows/chat-minimal).
@@ -94,13 +94,13 @@ Test the flow with your favorite experience: CLI, SDK or UI.
 :::{tab-item} CLI
 :sync: CLI
 
-`pf` is the CLI command you get when install `promptflow` package. Learn more on features of `pf` CLI in[reference doc](https://microsoft.github.io/promptflow/reference/pf-command-reference.html).
+`pf` is the CLI command you get when you install the `promptflow` package. Learn more about features of the `pf` CLI in the [reference doc](https://microsoft.github.io/promptflow/reference/pf-command-reference.html).
 
 ```sh
 pf flow test --flow flow:chat --inputs question="What's the capital of France?"
 ```
 
-You will get some output like below in terminal.
+You will get some output like the following in your terminal.
 ```text
 Prompt flow service has started...
 You can view the trace detail from the following URL:
@@ -110,7 +110,7 @@ The capital of France is Paris
 
 ```
 
-Click the trace url printed, you will see a trace UI which help you understand what's the actual llm call heppend behind the scenes.
+If you click the trace URL printed, you will see a trace UI which helps you understand the actual LLM call that happened behind the scenes.
 ![trace_ui](../media/how-to-guides/quick-start/flow_test_trace_ui.png)
 
 
@@ -119,7 +119,7 @@ Click the trace url printed, you will see a trace UI which help you understand w
 :::{tab-item} SDK
 :sync: SDK
 
-Call the chat function with your question. Assume you have a `flow.py` file with below content.
+Call the chat function with your question. Assume you have a `flow.py` file with the following content.
 ```python
 if __name__ == "__main__":
     from promptflow.tracing import start_trace
@@ -130,7 +130,7 @@ if __name__ == "__main__":
     print(result)
 ```
 
-Run you script with `python flow.py`, and you will get some outputs like below:
+Run the script with `python flow.py`, and you will get some output like below:
 ```text
 Prompt flow service has started...
 You can view the trace detail from the following URL:
@@ -140,7 +140,7 @@ The capital of France is Paris
 
 ```
 
-Click the trace url printed, you will see a trace UI which help you understand what's the actual llm call heppend behind the scenes.
+If you click the trace URL printed, you will see a trace UI which helps you understand the actual LLM call that happened behind the scenes.
 ![trace_ui](../media/how-to-guides/quick-start/flow_test_trace_ui.png)
 :::
 
@@ -159,7 +159,7 @@ The command will open a browser page like below:
 See more details of this topic in [Chat with a flow](./chat-with-a-flow/index.md).
 
 
-Click the "View trace" button, you will see a trace UI which help you understand what's the actual llm call heppend behind the scenes.
+Click the "View trace" button to see a trace UI which helps you understand the actual LLM call that happened behind the scenes.
 ![trace_ui](../media/how-to-guides/quick-start/flow_test_trace_ui.png)
 
 
