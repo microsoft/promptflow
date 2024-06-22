@@ -23,16 +23,16 @@ class CodeRun:
         self.input_data = input_data
         self.aggregated_metrics = aggregated_metrics
 
-    def get_result_df(self, exclude_inputs=False):
-        result_df = self.run.result(timeout=BATCH_RUN_TIMEOUT)
+    def get_result_df(self, exclude_inputs=False, batch_run_timeout=BATCH_RUN_TIMEOUT):
+        result_df = self.run.result(timeout=batch_run_timeout)
         if exclude_inputs:
             result_df = result_df.drop(columns=[col for col in result_df.columns if col.startswith("inputs.")])
         return result_df
 
-    def get_aggregated_metrics(self):
+    def get_aggregated_metrics(self, batch_run_timeout=BATCH_RUN_TIMEOUT):
         try:
             aggregated_metrics = (
-                self.aggregated_metrics.result(timeout=BATCH_RUN_TIMEOUT)
+                self.aggregated_metrics.result(timeout=batch_run_timeout)
                 if self.aggregated_metrics is not None
                 else None
             )
