@@ -8,6 +8,7 @@ import logging
 import random
 from typing import Any, Callable, Dict, List
 
+from azure.identity import DefaultAzureCredential
 from tqdm import tqdm
 
 from promptflow._sdk._telemetry import ActivityType, monitor_operation
@@ -70,7 +71,9 @@ class AdversarialSimulator:
         # check the value of the keys in azure_ai_project is not none
         if not all(azure_ai_project[key] for key in ["subscription_id", "resource_group_name", "project_name"]):
             raise ValueError("subscription_id, resource_group_name and project_name must not be None")
-        if "credential" in azure_ai_project and not credential:
+        if "credential" not in azure_ai_project and not credential:
+            credential = DefaultAzureCredential()
+        elif "credential" in azure_ai_project:
             credential = azure_ai_project["credential"]
         self.azure_ai_project = azure_ai_project
         self.token_manager = ManagedIdentityAPITokenManager(
