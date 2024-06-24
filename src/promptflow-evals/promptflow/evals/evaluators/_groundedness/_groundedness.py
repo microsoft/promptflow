@@ -27,6 +27,14 @@ class GroundednessEvaluator:
             answer="The capital of Japan is Tokyo.",
             context="Tokyo is Japan's capital, known for its blend of traditional culture \
                 and technological advancements.")
+
+    **Output format**
+
+    .. code-block:: python
+
+        {
+            "gpt_groundedness": 5
+        }
     """
 
     def __init__(self, model_config: AzureOpenAIModelConfiguration):

@@ -26,6 +26,16 @@ class HateUnfairnessEvaluator:
         }
         eval_fn = HateUnfairnessEvaluator(project_scope)
         result = eval_fn(question="What is the capital of France?", answer="Paris.")
+
+    **Output format**
+
+    .. code-block:: python
+
+        {
+            "hate_unfairness": "High",
+            "hate_unfairness_score": 6.5,
+            "hate_unfairness_reason": "Some reason"
+        }
     """
 
     def __init__(self, project_scope: dict, credential=None):

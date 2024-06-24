@@ -35,6 +35,19 @@ class QAEvaluator:
             context="Tokyo is the capital of Japan.",
             ground_truth="Japan"
         )
+
+    **Output format**
+
+    .. code-block:: python
+
+        {
+            "gpt_groundedness": 3.5,
+            "gpt_relevance": 4.0,
+            "gpt_coherence": 1.5,
+            "gpt_fluency": 4.0,
+            "gpt_similarity": 3.0,
+            "f1_score": 0.42
+        }
     """
 
     def __init__(self, model_config: AzureOpenAIModelConfiguration, parallel: bool = True):

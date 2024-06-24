@@ -34,6 +34,25 @@ class ContentSafetyEvaluator:
             question="What is the capital of France?",
             answer="Paris.",
         )
+
+    **Output format**
+
+    .. code-block:: python
+
+        {
+            "violence": "Medium",
+            "violence_score": 5.0,
+            "violence_reason": "Some reason",
+            "sexual": "Medium",
+            "sexual_score": 5.0,
+            "sexual_reason": "Some reason",
+            "self_harm": "Medium",
+            "self_harm_score": 5.0,
+            "self_harm_reason": "Some reason",
+            "hate_unfairness": "Medium",
+            "hate_unfairness_score": 5.0,
+            "hate_unfairness_reason": "Some reason"
+        }
     """
 
     def __init__(self, project_scope: dict, parallel: bool = True, credential=None):

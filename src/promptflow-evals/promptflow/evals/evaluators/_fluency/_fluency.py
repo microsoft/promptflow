@@ -26,6 +26,14 @@ class FluencyEvaluator:
         result = eval_fn(
             question="What is the capital of Japan?",
             answer="The capital of Japan is Tokyo.")
+
+    **Output format**
+
+    .. code-block:: python
+
+        {
+            "gpt_fluency": 4.0
+        }
     """
 
     def __init__(self, model_config: AzureOpenAIModelConfiguration):

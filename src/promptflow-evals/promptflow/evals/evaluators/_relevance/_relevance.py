@@ -28,7 +28,16 @@ class RelevanceEvaluator:
             answer="The capital of Japan is Tokyo.",
             context="Tokyo is Japan's capital, known for its blend of traditional culture \
                 and technological advancements.")
+
+    **Output format**
+
+    .. code-block:: python
+
+        {
+            "gpt_relevance": 3.0
+        }
     """
+
     def __init__(self, model_config: AzureOpenAIModelConfiguration):
         # TODO: Remove this block once the bug is fixed
         # https://msdata.visualstudio.com/Vienna/_workitems/edit/3151324

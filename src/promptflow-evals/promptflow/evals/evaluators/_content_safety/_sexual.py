@@ -26,6 +26,16 @@ class SexualEvaluator:
         }
         eval_fn = SexualEvaluator(project_scope)
         result = eval_fn(question="What is the capital of France?", answer="Paris.")
+
+    **Output format**
+
+    .. code-block:: python
+
+        {
+            "sexual": "High",
+            "sexual_score": 6.5,
+            "sexual_reason": "Some reason"
+        }
     """
 
     def __init__(self, project_scope: dict, credential=None):

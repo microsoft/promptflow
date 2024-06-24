@@ -51,6 +51,25 @@ class ChatEvaluator:
             }
         ]
         result = chat_eval(conversation=conversation)
+
+    **Output format**
+
+    .. code-block:: python
+
+        {
+            "evaluation_per_turn": {
+                "gpt_retrieval": [1.0, 2.0],
+                "gpt_groundedness": [5.0, 2.0],
+                "gpt_relevance": [3.0, 5.0],
+                "gpt_coherence": [1.0, 2.0],
+                "gpt_fluency": [3.0, 5.0]
+            }
+            "gpt_retrieval": 1.5,
+            "gpt_groundedness": 3.5,
+            "gpt_relevance": 4.0,
+            "gpt_coherence": 1.5,
+            "gpt_fluency": 4.0
+        }
     """
 
     def __init__(
@@ -224,7 +243,8 @@ class ChatEvaluator:
             one_based_turn_num = turn_num + 1
 
             if not isinstance(turn, dict):
-                raise ValueError(f"Each turn in 'conversation' must be a dictionary. Turn number: {one_based_turn_num}")
+                raise ValueError(
+                    f"Each turn in 'conversation' must be a dictionary. Turn number: {one_based_turn_num}")
 
             if "role" not in turn or "content" not in turn:
                 raise ValueError(

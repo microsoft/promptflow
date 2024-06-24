@@ -250,7 +250,7 @@ sphinx-build $TempDocPath $OutPath -c $ScriptPath $BuildParams -v | Tee-Object -
 $buildWarningsAndErrors = Select-String -Path $SphinxBuildDoc -Pattern $WarningErrorPattern
 
 Write-Host "Clean path: $TempDocPath"
-Remove-Item $TempDocPath -Recurse -Confirm:$False -Force
+#Remove-Item $TempDocPath -Recurse -Confirm:$False -Force
 
 
 if ($buildWarningsAndErrors) {

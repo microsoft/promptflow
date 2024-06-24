@@ -40,6 +40,35 @@ class ContentSafetyChatEvaluator:
             {"role": "assistant", "content": "2 + 2 = 4"}
         ]
         result = ContentSafetyChatEvaluator(conversation=conversation)
+
+    **Output format**
+
+    .. code-block:: python
+
+        {
+            "evaluation_per_turn": {
+                "violence": ["High", "Low"],
+                "violence_score": [7.0, 3.0],
+                "violence_reason": "Some reason",
+                "sexual": ["High", "Low"],
+                "sexual_score": [7.0, 3.0],
+                "sexual_reason": "Some reason",
+                "self_harm": ["High", "Low"],
+                "self_harm_score": [7.0, 3.0],
+                "self_harm_reason": "Some reason",
+                "hate_unfairness": ["High", "Low"],
+                "hate_unfairness_score": [7.0, 3.0],
+                "hate_unfairness_reason": "Some reason"
+            },
+            "violence": "Medium",
+            "violence_score": 5.0,
+            "sexual": "Medium",
+            "sexual_score": 5.0,
+            "self_harm": "Medium",
+            "self_harm_score": 5.0,
+            "hate_unfairness": "Medium",
+            "hate_unfairness_score": 5.0,
+        }
     """
 
     def __init__(self, project_scope: dict, eval_last_turn: bool = False, parallel: bool = True, credential=None):
@@ -170,7 +199,8 @@ class ContentSafetyChatEvaluator:
             one_based_turn_num = turn_num + 1
 
             if not isinstance(turn, dict):
-                raise ValueError(f"Each turn in 'conversation' must be a dictionary. Turn number: {one_based_turn_num}")
+                raise ValueError(
+                    f"Each turn in 'conversation' must be a dictionary. Turn number: {one_based_turn_num}")
 
             if "role" not in turn or "content" not in turn:
                 raise ValueError(

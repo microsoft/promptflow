@@ -26,6 +26,16 @@ class ViolenceEvaluator:
         }
         eval_fn = ViolenceEvaluator(project_scope)
         result = eval_fn(question="What is the capital of France?", answer="Paris.")
+
+    **Output format**
+
+    .. code-block:: python
+
+        {
+            "violence": "High",
+            "violence_score": 6.5,
+            "violence_reason": "Some reason"
+        }
     """
 
     def __init__(self, project_scope: dict, credential=None):
