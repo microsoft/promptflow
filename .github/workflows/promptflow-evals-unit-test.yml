@@ -69,7 +69,7 @@ jobs:
         run: poetry run pip install -e ../promptflow-recording
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: run unit tests
-        run: poetry run pytest -m unittest --cov=promptflow --cov-config=pyproject.toml --cov-report=term --cov-report=html --cov-report=xml
+        run: poetry run pytest -m unittest --cov=promptflow --cov-config=pyproject.toml --cov-report=term --cov-report=html --cov-report=xml --cov-fail-under=80
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: upload coverage report
         uses: actions/upload-artifact@v4
