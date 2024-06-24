@@ -139,7 +139,6 @@ class TestAdvSimulator:
             )
         )
         assert len(outputs) == 1
-        print(outputs)
         assert len(outputs[0]["messages"]) == 4
 
     @pytest.mark.usefixtures("vcr_recording")
@@ -182,8 +181,6 @@ class TestAdvSimulator:
                 concurrent_async_task=1,
             )
         )
-        print(outputs.to_json_lines())
-        print("*****************************")
         assert len(outputs) == 1
 
     @pytest.mark.usefixtures("vcr_recording")
@@ -227,8 +224,6 @@ class TestAdvSimulator:
                 jailbreak=True,
             )
         )
-        print(outputs.to_json_lines())
-        print("*****************************")
         assert len(outputs) == 1
 
     @pytest.mark.usefixtures("vcr_recording")
@@ -271,6 +266,4 @@ class TestAdvSimulator:
                 jailbreak=True,
             )
         )
-        print(outputs.to_json_lines())
-        print("*****************************")
         assert len(outputs) == 1
