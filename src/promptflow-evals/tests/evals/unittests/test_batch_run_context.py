@@ -1,12 +1,13 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
+import os
 
 from promptflow.client import PFClient
 from promptflow.evals._user_agent import USER_AGENT
 from promptflow.evals.evaluate._batch_run_client import BatchRunContext, CodeClient
 from promptflow.evals.evaluate._batch_run_client.code_client import CodeRun
-from promptflow.evals._constants import BATCH_RUN_TIMEOUT
+from promptflow.evals._constants import BATCH_RUN_TIMEOUT_DEFAULT, BATCH_RUN_TIMEOUT_ENV_VAR
 
 
 @pytest.fixture
@@ -61,8 +62,9 @@ class TestBatchRunContext:
         code_run_instance = CodeRun(run=code_run_mock, input_data={})
         code_run_instance.get_result_df()
 
-        code_run_mock.result.assert_called_once_with(timeout=BATCH_RUN_TIMEOUT)
+        code_run_mock.result.assert_called_once_with(timeout=BATCH_RUN_TIMEOUT_DEFAULT)
 
-        custom_timeout = 100000
-        code_run_instance.get_result_df(batch_run_timeout=custom_timeout)
-        code_run_mock.result.assert_called_with(timeout=custom_timeout)
+        custom_timeout = "100000"
+        os.environ[BATCH_RUN_TIMEOUT_ENV_VAR] = custom_timeout
+        code_run_instance.get_result_df()
+        code_run_mock.result.assert_called_with(timeout=int(custom_timeout))
