@@ -75,7 +75,7 @@ if __name__ == "__main__":
     }
 
     config = AzureOpenAIModelConfiguration(
-        connection="open_ai_connection", azure_deployment="gpt-35-turbo"
+        connection="open_ai_connection", azure_deployment="gpt-4o"
     )
     flow = EvalFlow(config)
 
