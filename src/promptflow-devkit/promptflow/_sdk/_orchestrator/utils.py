@@ -17,7 +17,7 @@ from os import PathLike
 from pathlib import Path
 from time import sleep
 from types import GeneratorType
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 import psutil
 import pydash
@@ -52,6 +52,7 @@ from promptflow._utils.logger_utils import FileHandler, get_cli_sdk_logger
 from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.core._utils import get_used_connection_names_from_dict, update_dict_value_with_connections
 from promptflow.exceptions import UserErrorException
+from promptflow.tracing.contracts.iterator_proxy import IteratorProxy
 
 logger = get_cli_sdk_logger()
 
@@ -433,7 +434,7 @@ def show_node_log_and_output(node_run_infos, show_node_output, generator_record)
 
 
 def print_chat_output(output, generator_record, *, generator_key: str):
-    if isinstance(output, GeneratorType):
+    if isinstance(output, (IteratorProxy, GeneratorType)):
         for event in resolve_generator_output_with_cache(output, generator_record, generator_key=generator_key):
             print(event, end="")
             # For better animation effects
@@ -445,7 +446,7 @@ def print_chat_output(output, generator_record, *, generator_key: str):
 
 
 def resolve_generator_output_with_cache(
-    output: GeneratorType, generator_record: Dict[str, Any], *, generator_key: str
+    output: Union[GeneratorType, IteratorProxy], generator_record: Dict[str, Any], *, generator_key: str
 ) -> List[str]:
     """Get the output of a generator. If the generator has been recorded, return the recorded result. Otherwise, record
     the result and return it.
@@ -453,7 +454,7 @@ def resolve_generator_output_with_cache(
     is not a valid dict key in some cases.
 
     :param output: The generator to get the output from.
-    :type output: GeneratorType
+    :type output: Union[GeneratorType, IteratorProxy]
     :param generator_record: The record of the generator.
     :type generator_record: dict
     :param generator_key: The key of the generator in the record, need to be unique.
@@ -461,18 +462,15 @@ def resolve_generator_output_with_cache(
     :return: The output of the generator.
     :rtype: str
     """
-    if isinstance(output, GeneratorType):
+    if isinstance(output, (GeneratorType, IteratorProxy)):
         if generator_key in generator_record:
             if hasattr(generator_record[generator_key], "items"):
                 output = iter(generator_record[generator_key].items)
             else:
                 output = iter(generator_record[generator_key])
         else:
-            if hasattr(output.gi_frame.f_locals, "proxy"):
-                generator_record[generator_key] = output.gi_frame.f_locals["proxy"]
-            else:
-                generator_record[generator_key] = list(output)
-                output = generator_record[generator_key]
+            generator_record[generator_key] = list(output)
+            output = generator_record[generator_key]
     return output
 
 

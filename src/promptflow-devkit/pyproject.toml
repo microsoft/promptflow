@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "promptflow-devkit"
-version = "1.12.0.dev0"
+version = "1.13.0.dev0"
 description = "Prompt flow devkit"
 include = [
   "promptflow/_sdk/_service/static/*",
@@ -99,6 +99,8 @@ promptflow-tracing = {path = "../promptflow-tracing"}
 promptflow = {path = "../promptflow"}
 promptflow-tools = {path = "../promptflow-tools"}
 promptflow-recording =  {path = "../promptflow-recording"}
+numpy = "<2.0.0"  # avoid pandas incompatibility
+tenacity = "<8.4.0"  # tenacity has breaking in 8.4.0
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"

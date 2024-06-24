@@ -44,14 +44,22 @@ def question_evaluator(question):
     return {"length": len(question)}
 
 
-def _get_run_from_run_history(flow_run_id, runs_operation):
+def _get_run_from_run_history(flow_run_id, ml_client, project_scope):
     """Get run info from run history"""
     token = "Bearer " + DefaultAzureCredential().get_token("https://management.azure.com/.default").token
     headers = {
         "Authorization": token,
         "Content-Type": "application/json",
     }
-    url = runs_operation._run_history_endpoint_url + "/rundata"
+    workspace = ml_client.workspaces.get(project_scope["project_name"])
+    endpoint = workspace.discovery_url.split("discovery")[0]
+    pattern = (
+        f"/subscriptions/{project_scope['subscription_id']}"
+        f"/resourceGroups/{project_scope['resource_group_name']}"
+        f"/providers/Microsoft.MachineLearningServices"
+        f"/workspaces/{project_scope['project_name']}"
+    )
+    url = endpoint + "history/v1.0" + pattern + "/rundata"
 
     payload = {
         "runId": flow_run_id,
@@ -71,7 +79,7 @@ def _get_run_from_run_history(flow_run_id, runs_operation):
         raise Exception(f"Failed to get run from service. Code: {response.status_code}, text: {response.text}")
 
 
-@pytest.mark.usefixtures("recording_injection", "vcr_recording")
+@pytest.mark.usefixtures("recording_injection")
 @pytest.mark.e2etest
 class TestEvaluate:
     def test_evaluate_with_groundedness_evaluator(self, model_config, data_file):
@@ -146,7 +154,7 @@ class TestEvaluate:
         assert 0 <= metrics.get("content_safety.hate_unfairness_defect_rate") <= 1
 
     @pytest.mark.parametrize(
-        "use_thread_pool,function,column",
+        "use_pf_client,function,column",
         [
             (True, answer_evaluator, "length"),
             (False, answer_evaluator, "length"),
@@ -156,12 +164,12 @@ class TestEvaluate:
             (False, answer_evaluator_int_dict, "42"),
         ],
     )
-    def test_evaluate_python_function(self, data_file, use_thread_pool, function, column):
+    def test_evaluate_python_function(self, data_file, use_pf_client, function, column):
         # data
         input_data = pd.read_json(data_file, lines=True)
 
         # run the evaluation
-        result = evaluate(data=data_file, evaluators={"answer": function}, _use_thread_pool=use_thread_pool)
+        result = evaluate(data=data_file, evaluators={"answer": function}, _use_pf_client=use_pf_client)
 
         row_result_df = pd.DataFrame(result["rows"])
         metrics = result["metrics"]
@@ -297,7 +305,7 @@ class TestEvaluate:
     def test_evaluate_track_in_cloud(
         self,
         questions_file,
-        azure_pf_client,
+        azure_ml_client,
         mock_trace_destination_to_cloud,
         project_scope,
     ):
@@ -330,18 +338,18 @@ class TestEvaluate:
 
         # get remote run and validate if it exists
         run_id = result["studio_url"].split("?")[0].split("/")[5]
-        remote_run = azure_pf_client.runs.get(run_id)
+        remote_run = _get_run_from_run_history(run_id, azure_ml_client, project_scope)
 
         assert remote_run is not None
-        assert remote_run.properties["azureml.promptflow.local_to_cloud"] == "true"
-        assert remote_run.properties["runType"] == "eval_run"
-        assert remote_run.display_name == evaluation_name
+        assert remote_run["runMetadata"]["properties"]["azureml.promptflow.local_to_cloud"] == "true"
+        assert remote_run["runMetadata"]["properties"]["runType"] == "eval_run"
+        assert remote_run["runMetadata"]["displayName"] == evaluation_name
 
-    @pytest.mark.skip(reason="az login in fixture is not working on ubuntu and mac.Works on windows")
+    @pytest.mark.skip(reason="az login in fixture is not working on ubuntu and mac. Works on windows")
     def test_evaluate_track_in_cloud_no_target(
         self,
         data_file,
-        azure_pf_client,
+        azure_ml_client,
         mock_trace_destination_to_cloud,
         project_scope,
     ):
@@ -374,11 +382,59 @@ class TestEvaluate:
 
         # get remote run and validate if it exists
         run_id = result["studio_url"].split("?")[0].split("/")[5]
-        remote_run = _get_run_from_run_history(run_id, azure_pf_client.runs)
+        remote_run = _get_run_from_run_history(run_id, azure_ml_client, project_scope)
 
         assert remote_run is not None
         assert remote_run["runMetadata"]["properties"]["_azureml.evaluation_run"] == "azure-ai-generative-parent"
         assert remote_run["runMetadata"]["displayName"] == evaluation_name
+
+    @pytest.mark.parametrize(
+        "return_json, aggregate_return_json",
+        [
+            (True, True),
+            (True, False),
+            (False, True),
+            (False, False),
+        ],
+    )
+    def test_evaluate_aggregation_with_threadpool(self, data_file, return_json, aggregate_return_json):
+        from .custom_evaluators.answer_length_with_aggregation import AnswerLength
+
+        result = evaluate(
+            data=data_file,
+            evaluators={
+                "answer_length": AnswerLength(return_json=return_json, aggregate_return_json=aggregate_return_json),
+                "f1_score": F1ScoreEvaluator(),
+            },
+        )
+        assert result is not None
+        assert "metrics" in result
+        if aggregate_return_json:
+            assert "answer_length.median" in result["metrics"].keys()
+
+    @pytest.mark.parametrize(
+        "return_json, aggregate_return_json",
+        [
+            (True, True),
+            (True, False),
+            (False, True),
+            (False, False),
+        ],
+    )
+    def test_evaluate_aggregation(self, data_file, return_json, aggregate_return_json):
+        from .custom_evaluators.answer_length_with_aggregation import AnswerLength
+
+        result = evaluate(
+            data=data_file,
+            evaluators={
+                "answer_length": AnswerLength(return_json=return_json, aggregate_return_json=aggregate_return_json),
+                "f1_score": F1ScoreEvaluator(),
+            },
+        )
+        assert result is not None
+        assert "metrics" in result
+        if aggregate_return_json:
+            assert "answer_length.median" in result["metrics"].keys()
 
     @pytest.mark.skip(reason="TODO: Add test back")
     def test_prompty_with_threadpool_implementation(self):

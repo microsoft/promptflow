@@ -1,6 +1,7 @@
 import json
 import os
 import pathlib
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -13,6 +14,7 @@ from promptflow.evals.evaluate import evaluate
 from promptflow.evals.evaluate._evaluate import _apply_target_to_data, _rename_columns_conditionally
 from promptflow.evals.evaluate._utils import _apply_column_mapping
 from promptflow.evals.evaluators import F1ScoreEvaluator, GroundednessEvaluator
+from promptflow.evals.evaluate._utils import _trace_destination_from_project_scope
 
 
 def _get_file(name):
@@ -338,14 +340,14 @@ class TestEvaluate:
         df_actuals = _rename_columns_conditionally(df)
         assert_frame_equal(df_actuals.sort_index(axis=1), df_expected.sort_index(axis=1))
 
-    @pytest.mark.parametrize("use_thread_pool", [True, False])
-    def test_evaluate_output_path(self, evaluate_test_data_jsonl_file, tmpdir, use_thread_pool):
+    @pytest.mark.parametrize("use_pf_client", [True, False])
+    def test_evaluate_output_path(self, evaluate_test_data_jsonl_file, tmpdir, use_pf_client):
         output_path = os.path.join(tmpdir, "eval_test_results.jsonl")
         result = evaluate(
             data=evaluate_test_data_jsonl_file,
             evaluators={"g": F1ScoreEvaluator()},
             output_path=output_path,
-            _use_thread_pool=use_thread_pool,
+            _use_pf_client=use_pf_client,
         )
 
         assert result is not None
@@ -371,7 +373,7 @@ class TestEvaluate:
     def test_evaluate_with_errors(self):
         """Test evaluate_handle_errors"""
         data = _get_file("yeti_questions.jsonl")
-        result = evaluate(data=data, evaluators={"yeti": _yeti_evaluator}, _use_thread_pool=True)
+        result = evaluate(data=data, evaluators={"yeti": _yeti_evaluator})
         result_df = pd.DataFrame(result["rows"])
         expected = pd.read_json(data, lines=True)
         expected.rename(columns={"question": "inputs.question", "answer": "inputs.answer"}, inplace=True)
@@ -381,3 +383,35 @@ class TestEvaluate:
         expected.at[2, "outputs.yeti.result"] = np.nan
         expected.at[3, "outputs.yeti.result"] = np.nan
         assert_frame_equal(expected, result_df)
+
+    @patch("promptflow.evals.evaluate._evaluate._evaluate")
+    def test_evaluate_main_entry_guard(self, mock_evaluate, evaluate_test_data_jsonl_file):
+        err_msg = (
+            "An attempt has been made to start a new process before the\n        "
+            "current process has finished its bootstrapping phase."
+        )
+        mock_evaluate.side_effect = RuntimeError(err_msg)
+
+        with pytest.raises(RuntimeError) as exc_info:
+            evaluate(
+                data=evaluate_test_data_jsonl_file,
+                evaluators={"f1_score": F1ScoreEvaluator()},
+            )
+
+        assert "Please ensure the evaluate API is properly guarded with the '__main__' block" in exc_info.value.args[0]
+
+    def test_get_trace_destination(self, mock_validate_trace_destination, mock_project_scope):
+        pf_client = PFClient()
+        trace_destination_without_override = pf_client._config.get_trace_destination()
+
+        pf_client = PFClient(
+            config={
+                "trace.destination": _trace_destination_from_project_scope(mock_project_scope)
+                if mock_project_scope else None
+            }
+        )
+
+        trace_destination_with_override = pf_client._config.get_trace_destination()
+
+        assert trace_destination_with_override != trace_destination_without_override
+        assert trace_destination_with_override == _trace_destination_from_project_scope(mock_project_scope)

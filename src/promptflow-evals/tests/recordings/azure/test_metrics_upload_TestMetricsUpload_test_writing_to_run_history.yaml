@@ -1,0 +1,211 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - azure-ai-ml/1.16.1 azsdk-python-mgmt-machinelearningservices/0.1.0 Python/3.11.5
+        (Windows-10-10.0.22631-SP0)
+    method: GET
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000
+  response:
+    body:
+      string: '{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000",
+        "name": "00000", "type": "Microsoft.MachineLearningServices/workspaces", "location":
+        "westus2", "tags": {}, "etag": null, "kind": "Project", "sku": {"name": "Basic",
+        "tier": "Basic"}, "properties": {"discoveryUrl": "https://westus2.api.azureml.ms/discovery", "mlFlowTrackingUri": "azureml://westus2.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000000-0000-0000-0000-000000000000/providers/Microsoft.MachineLearningServices/workspaces/00000"}}'
+    headers:
+      cache-control:
+      - no-cache
+      content-length:
+      - '3064'
+      content-type:
+      - application/json; charset=utf-8
+      expires:
+      - '-1'
+      pragma:
+      - no-cache
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      vary:
+      - Accept-Encoding
+      x-cache:
+      - CONFIG_NOCACHE
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.030'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"experiment_id": "0", "user_id": "promptflow-evals", "start_time": "1717563256142",
+      "tags": [{"key": "mlflow.user", "value": "promptflow-evals"}], "run_name": "test"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '165'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - promptflow/0.0.1.dev0
+    method: POST
+    uri: https://westus2.api.azureml.ms/mlflow/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/api/2.0/mlflow/runs/create
+  response:
+    body:
+      string: '{"run": {"info": {"run_uuid": "4240b4f7-e31f-41a0-a97a-9e772de72563",
+        "experiment_id": "b60f577b-0828-4e01-880a-d8a682dddcc2", "run_name": "test",
+        "user_id": "00000000-0000-0000-0000-000000000000", "status": "RUNNING", "start_time":
+        "1718734860126", "artifact_uri": "azureml://westus2.api.azureml.ms/mlflow/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/experiments/0/runs/4240b4f7-e31f-41a0-a97a-9e772de72563/artifacts",
+        "lifecycle_stage": "active", "run_id": "4240b4f7-e31f-41a0-a97a-9e772de72563"},
+        "data": {"tags": [{"key": "mlflow.user", "value": "promptflow-evals"}, {"key":
+        "mlflow.rootRunId", "value": "4240b4f7-e31f-41a0-a97a-9e772de72563"}, {"key":
+        "mlflow.runName", "value": "test"}, {"key": "mlflow.user", "value": "Nikolay
+        Rovinskiy"}]}, "inputs": {}}}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '902'
+      content-type:
+      - application/json; charset=utf-8
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.887'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"runId": "evals_e2etests_target_fn_wqo0_peh_20240606_102622_386974", "properties":
+      {"test": 42}}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '77'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - promptflow/0.0.1.dev0
+    method: PATCH
+    uri: https://westus2.api.azureml.ms/history/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/experimentids/b60f577b-0828-4e01-880a-d8a682dddcc2/runs/4240b4f7-e31f-41a0-a97a-9e772de72563
+  response:
+    body:
+      string: '{"runNumber": 1718734864, "rootRunId": "4240b4f7-e31f-41a0-a97a-9e772de72563",
+        "createdUtc": "2024-06-18T18:21:00.126+00:00", "createdBy": {"userObjectId":
+        "00000000-0000-0000-0000-000000000000", "userPuId": "1003BFFDA8A4D0E7", "userIdp":
+        null, "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
+        "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "Nikolay
+        Rovinskiy", "upn": "username@microsoft.com"}, "userId": "00000000-0000-0000-0000-000000000000",
+        "token": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjY0NDBENzEwMkY3OEJENkVDNDMyRURBNjk4QTQyRjM1MjU0RDc2NDgiLCJ0eXAiOiJKV1QifQ.eyJyb2xlIjoiQ29udHJpYnV0b3IiLCJzY29wZSI6Ii9zdWJzY3JpcHRpb25zL2IxNzI1M2ZhLWYzMjctNDJkNi05Njg2LWYzZTU1M2UyNDc2My9yZXNvdXJjZUdyb3Vwcy9uaXJvdmlucy1yZy1lYXN0dXMvcHJvdmlkZXJzL01pY3Jvc29mdC5NYWNoaW5lTGVhcm5pbmdTZXJ2aWNlcy93b3Jrc3BhY2VzL25pcm92aW5zLWFpLXByb2plY3QiLCJhY2NvdW50aWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDAiLCJ3b3Jrc3BhY2VJZCI6ImJkY2QxYTg3LWUwODAtNDc2Yi04NjE3LTQ3NDkxNjU4NDNiYSIsInByb2plY3RpZCI6IjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMCIsImRpc2NvdmVyeSI6InVyaTovL2Rpc2NvdmVyeXVyaS8iLCJ0aWQiOiI3MmY5ODhiZi04NmYxLTQxYWYtOTFhYi0yZDdjZDAxMWRiNDciLCJvaWQiOiI3ODc1YmFhNi0wMjhkLTQ5YzgtYmQ0ZC1hNzcyYWE0ZGMwMTMiLCJwdWlkIjoiMTAwM0JGRkRBOEE0RDBFNyIsImlzcyI6ImF6dXJlbWwiLCJhcHBpZCI6Ik5pa29sYXkgUm92aW5za2l5IiwiZXhwIjoxNzIwNTQ5MjcyLCJhdWQiOiJhenVyZW1sIn0.Q1vf5F-TYKx8pzdaSXXtdMqiyc2SpGh24aRTxh8V4-LeGIlcWrUrTd3lJhcyuU0aj5Rxt_rx_bCKqS_tCx8_LO0Ss_N8WTLIKR2LYMWfnPVr08JSWBr7Xbq-SHamiL_Czf-lsNGfxnUPUYOH7VM9AOPst4hlAEE-P5TpftHFZDQSOWQx5VD9LV_e6NN_3Td0d8BR-iUrBVhKcU0LyeYsKCc-aYf6c2UdBvdwl16tf8yU_QD2OOurX6TWRMTTt5nS6ebL8u-BDiJlD4cu9pXKjc6gydY7JsYF0xRzFqDaet3gPhnrnSDwLRWx7XdUmTDpiNI9cJ4A9Eet_csSJlFbLg",
+        "tokenExpiryTimeUtc": "2024-07-09T18:21:12.362991+00:00", "error": null, "warnings":
+        null, "revision": 2, "statusRevision": 0, "runUuid": "a5390638-bc06-4129-b24f-2a96292f0df3",
+        "parentRunUuid": null, "rootRunUuid": "a5390638-bc06-4129-b24f-2a96292f0df3",
+        "lastStartTimeUtc": "2024-06-18T18:21:00.126+00:00", "currentComputeTime":
+        "00:00:00", "computeDuration": null, "effectiveStartTimeUtc": "2024-06-18T18:21:00.126+00:00",
+        "lastModifiedBy": {"userObjectId": "00000000-0000-0000-0000-000000000000",
+        "userPuId": "1003BFFDA8A4D0E7", "userIdp": null, "userAltSecId": null, "userIss":
+        "https://sts.windows.net/00000000-0000-0000-0000-000000000000/", "userTenantId":
+        "00000000-0000-0000-0000-000000000000", "userName": "Nikolay Rovinskiy", "upn":
+        "username@microsoft.com"}, "lastModifiedUtc": "2024-06-18T18:21:08.0858192+00:00",
+        "duration": null, "cancelationReason": null, "currentAttemptId": 1, "runId":
+        "4240b4f7-e31f-41a0-a97a-9e772de72563", "parentRunId": null, "experimentId":
+        "00000000-0000-0000-0000-000000000000", "status": "Running", "startTimeUtc":
+        "2024-06-18T18:21:00.126+00:00", "endTimeUtc": null, "scheduleId": null, "displayName":
+        "test", "name": null, "dataContainerId": "dcid.4240b4f7-e31f-41a0-a97a-9e772de72563",
+        "description": null, "hidden": false, "runType": null, "runTypeV2": {"orchestrator":
+        null, "traits": ["mlflow"], "attribution": null, "computeType": null}, "properties":
+        {"mlflow.artifactUri": "azureml://westus2.api.azureml.ms/mlflow/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/experiments/0/runs/4240b4f7-e31f-41a0-a97a-9e772de72563/artifacts",
+        "test": "42"}, "parameters": {}, "actionUris": {}, "scriptName": null, "target":
+        null, "uniqueChildRunComputeTargets": [], "tags": {"mlflow.user": "promptflow-evals"},
+        "settings": {}, "services": {}, "inputDatasets": [], "outputDatasets": [],
+        "runDefinition": null, "jobSpecification": null, "primaryMetricName": null,
+        "createdFrom": null, "cancelUri": null, "completeUri": null, "diagnosticsUri":
+        null, "computeRequest": null, "compute": null, "retainForLifetimeOfWorkspace":
+        false, "queueingInfo": null, "inputs": null, "outputs": null}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '4227'
+      content-type:
+      - application/json; charset=utf-8
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.044'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"run_uuid": "4240b4f7-e31f-41a0-a97a-9e772de72563", "status": "FINISHED",
+      "end_time": "1717563261483", "run_id": "4240b4f7-e31f-41a0-a97a-9e772de72563"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '151'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - promptflow/0.0.1.dev0
+    method: POST
+    uri: https://westus2.api.azureml.ms/mlflow/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/api/2.0/mlflow/runs/update
+  response:
+    body:
+      string: '{"run_info": {"run_uuid": "4240b4f7-e31f-41a0-a97a-9e772de72563", "experiment_id":
+        "b60f577b-0828-4e01-880a-d8a682dddcc2", "run_name": "test", "user_id": "00000000-0000-0000-0000-000000000000",
+        "status": "FINISHED", "start_time": "1718734860126", "end_time": "1718734871636",
+        "lifecycle_stage": "active", "run_id": "4240b4f7-e31f-41a0-a97a-9e772de72563"}}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '359'
+      content-type:
+      - application/json; charset=utf-8
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.569'
+    status:
+      code: 200
+      message: OK
+version: 1

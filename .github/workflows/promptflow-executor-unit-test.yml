@@ -18,6 +18,7 @@ on:
       - src/promptflow/promptflow/storage/**
       - src/promptflow/tests/*
       - src/promptflow/tests/executor/**
+      - src/promptflow/tests/test_configs/**
       - src/promptflow-tracing/promptflow/**
       - src/promptflow-core/promptflow/**
       - src/promptflow-devkit/promptflow/**
@@ -150,7 +151,7 @@ jobs:
       run: |
         gci env:* | sort-object name
         az account show
-        pip install langchain-community
+        pip install langchain-community tenacity<8.4.0
         python scripts/building/run_coverage_tests.py `
           -p ${{ env.testWorkingDirectory }}/promptflow `
           -t ${{ env.testWorkingDirectory }}/tests/executor/unittests `

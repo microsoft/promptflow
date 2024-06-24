@@ -78,7 +78,6 @@ jobs:
           subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
           tenant-id: ${{secrets.AZURE_TENANT_ID}}
           client-id: ${{secrets.AZURE_CLIENT_ID}}
-          enable-AzPSSession: true
       - name: Extract Steps examples/flex-flows/eval-code-quality/README.md
         working-directory: ${{ github.workspace }}
         run: |

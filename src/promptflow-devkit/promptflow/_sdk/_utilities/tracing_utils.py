@@ -2,9 +2,13 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import copy
 import datetime
 import json
 import logging
+import multiprocessing
+import threading
+import time
 import typing
 from collections import namedtuple
 from dataclasses import dataclass
@@ -26,8 +30,11 @@ from promptflow._constants import (
     SpanStatusFieldName,
 )
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, AzureMLWorkspaceTriad
+from promptflow._sdk._telemetry.telemetry import get_telemetry_logger
+from promptflow._sdk._user_agent import USER_AGENT
 from promptflow._sdk.entities._trace import Span
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow._utils.user_agent_utils import setup_user_agent_to_operation_context
 from promptflow.core._errors import MissingRequiredPackage
 
 from .general_utils import convert_time_unix_nano_to_timestamp, json_load
@@ -330,3 +337,44 @@ def aggregate_trace_count(all_spans: typing.List[Span]) -> typing.Dict[TraceCoun
             trace_count_summary[key] = trace_count_summary.get(key, 0) + 1
 
     return trace_count_summary
+
+
+class TraceTelemetryHelper:
+    """Helper class for trace telemetry in prompt flow service."""
+
+    LOG_INTERVAL_SECONDS = 60
+    TELEMETRY_ACTIVITY_NAME = "pf.telemetry.trace_count"
+    CUSTOM_DIMENSIONS_TRACE_COUNT = "trace_count"
+
+    def __init__(self):
+        # `setup_user_agent_to_operation_context` will get user agent and return
+        self._user_agent = setup_user_agent_to_operation_context(USER_AGENT)
+        self._telemetry_logger = get_telemetry_logger()
+        self._lock = multiprocessing.Lock()
+        self._summary: typing.Dict[TraceCountKey, int] = dict()
+        self._thread = threading.Thread(target=self._schedule_flush, daemon=True)
+        self._thread.start()
+
+    def _schedule_flush(self) -> None:
+        while True:
+            time.sleep(self.LOG_INTERVAL_SECONDS)
+            self.log_telemetry()
+
+    def append(self, summary: typing.Dict[TraceCountKey, int]) -> None:
+        with self._lock:
+            for key, count in summary.items():
+                self._summary[key] = self._summary.get(key, 0) + count
+
+    def log_telemetry(self) -> None:
+        # only lock the process to operate the summary
+        with self._lock:
+            summary_to_log = copy.deepcopy(self._summary)
+            self._summary = dict()
+        for key, count in summary_to_log.items():
+            custom_dimensions = key._asdict()
+            custom_dimensions[self.CUSTOM_DIMENSIONS_TRACE_COUNT] = count
+            custom_dimensions["user_agent"] = self._user_agent
+            self._telemetry_logger.info(self.TELEMETRY_ACTIVITY_NAME, extra={"custom_dimensions": custom_dimensions})
+
+
+_telemetry_helper = TraceTelemetryHelper()

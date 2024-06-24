@@ -1,5 +1,11 @@
 # promptflow-core package
-## v1.12.0 (Upcoming)
+
+## v1.13.0 (Upcoming)
+
+### Bug fixed
+- Fix `AsyncFlow.load(source="path/to/prompty")` does not return a AsyncPrompty object.
+
+## v1.12.0 (2024.06.11)
 
 ### Bugs fixed
 - Fix ChatUI can't work in docker container when running image build with `pf flow build`.

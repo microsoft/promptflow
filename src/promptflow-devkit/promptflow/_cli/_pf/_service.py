@@ -342,4 +342,3 @@ def show_service():
             f"Prompt flow service is not started. The prompt flow service log is located at {log_file.as_posix()} "
             f"and prompt flow version is {get_pfs_version()}."
         )
-        sys.exit(1)

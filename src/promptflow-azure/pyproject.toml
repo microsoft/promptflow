@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "promptflow-azure"
-version = "1.12.0.dev0"
+version = "1.13.0.dev0"
 description = "Prompt flow azure"
 include = [
   "promptflow/azure/resources/*"
@@ -65,6 +65,7 @@ promptflow-tracing = {path = "../promptflow-tracing"}
 promptflow = {path = "../promptflow"}
 promptflow-tools = {path = "../promptflow-tools"}
 promptflow-recording =  {path = "../promptflow-recording"}
+numpy = "<2.0.0"  # avoid pandas incompatibility
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"

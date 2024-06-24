@@ -1,5 +1,12 @@
 # Release History
-## v1.12.0 (Upcoming)
+
+## v1.13.0 (Upcoming)
+
+### Bugs Fixed
+- Fix incompatibility with `trace.NoOpTracerProvider` when set exporter to prompt flow service.
+- Add missing user agent in trace usage telemetry.
+
+## v1.12.0 (2024.06.11)
 
 ### Bugs fixed
 - [promptflow-core] Fix ChatUI can't work in docker container when running image build with `pf flow build`.
@@ -7,6 +14,7 @@
 
 ### Improvements
 - [promptflow-devkit] Add retry logic when uploading run details to cloud.
+- [promptflow-devkit] Add trace usage telemetry.
 
 ## v1.11.0 (2024.05.17)
 
