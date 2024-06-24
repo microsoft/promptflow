@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 import jwt
 import pytest
+from azure.ai.ml._ml_client import MLClient
 from pytest_mock import MockerFixture
 
 from promptflow.client import PFClient
@@ -13,7 +14,6 @@ from promptflow.core import AzureOpenAIModelConfiguration
 from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
-from azure.ai.ml._ml_client import MLClient
 
 try:
     from promptflow.recording.local import recording_array_reset
@@ -133,6 +133,14 @@ def mock_trace_destination_to_cloud(project_scope: dict):
         f"providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}"
     )
     with patch("promptflow._sdk._configuration.Configuration.get_trace_destination", return_value=trace_destination):
+        yield
+
+
+@pytest.fixture
+def mock_validate_trace_destination():
+    """Mock validate trace destination config to use in unit tests."""
+
+    with patch("promptflow._sdk._tracing.TraceDestinationConfig.validate", return_value=None):
         yield
 
 
