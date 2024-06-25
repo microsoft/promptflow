@@ -54,7 +54,7 @@ jobs:
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: install promptflow packages in editable mode
         run: |
-          export TIME_LIMIT=0
+          export TIME_LIMIT=5
           export start_tm=`date +%s`
           poetry run pip install -e ../promptflow
           poetry run pip install -e ../promptflow-core
