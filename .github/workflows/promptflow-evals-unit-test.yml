@@ -66,12 +66,8 @@ jobs:
           export install_time=$(((`date +%s` - ${start_tm})/60))
           echo "The installation took ${install_time} minutes."
           echo "The time limit for installation is ${TIME_LIMIT}"
-          test ${install_time} -le $TIME_LIMIT || echo "::warning The installation took ${install_time}, the limit is ${TIME_LIMIT}"
+          test ${install_time} -le $TIME_LIMIT || echo "::warning file=pyproject.toml,line=40,col=0 ::The installation took ${install_time}, the limit is ${TIME_LIMIT}"
         working-directory: ${{ env.WORKING_DIRECTORY }}
-      #- name: install promptflow-evals from wheel
-        # wildcard expansion (*) does not work in Windows, so leverage python to find and install
-      #  run: poetry run pip install --pre $(python -c "import glob; print(glob.glob('promptflow_evals-*.whl')[0])")
-      #  working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: install recording
         run: poetry run pip install -e ../promptflow-recording
         working-directory: ${{ env.WORKING_DIRECTORY }}
