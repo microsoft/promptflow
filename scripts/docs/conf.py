@@ -152,6 +152,12 @@ todo_include_todos = True
 myst_heading_anchors = 5
 
 
+# allow annotation for __call__ methods
+autodoc_default_options = {
+    'special-members': '__call__',
+}
+
+
 def setup(app):
     # Add the gallery directive
     app.add_directive("gallery-grid", GalleryDirective)
