@@ -54,7 +54,7 @@ jobs:
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: install promptflow packages in editable mode
         run: |
-          export TIME_LIMIT=0
+          export TIME_LIMIT=5
           export start_tm=`date +%s`
           poetry run pip install -e ../promptflow
           poetry run pip install -e ../promptflow-core
@@ -66,7 +66,7 @@ jobs:
           export install_time=$(((`date +%s` - ${start_tm})/60))
           echo "The installation took ${install_time} minutes."
           echo "The time limit for installation is ${TIME_LIMIT}"
-          test ${install_time} -le $TIME_LIMIT || echo "::warning file=pyproject.toml,line=40,col=0 ::The installation took ${install_time}, the limit is ${TIME_LIMIT}"
+          test ${install_time} -le $TIME_LIMIT || echo "::warning file=pyproject.toml,line=40,col=0::The installation took ${install_time} minutes, the limit is ${TIME_LIMIT}."
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: install recording
         run: poetry run pip install -e ../promptflow-recording
