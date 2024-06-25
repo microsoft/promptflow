@@ -16,30 +16,44 @@ logger = logging.getLogger(__name__)
 
 
 class RetrievalChatEvaluator:
-    def __init__(self, model_config: AzureOpenAIModelConfiguration):
-        """
-        Initialize an evaluator configured for a specific Azure OpenAI model.
+    """
+    Initialize an evaluator configured for a specific Azure OpenAI model.
 
-        :param model_config: Configuration for the Azure OpenAI model.
-        :type model_config: AzureOpenAIModelConfiguration
-        :return: A function that evaluates and generates metrics for "chat" scenario.
-        :rtype: function
-        **Usage**
+    :param model_config: Configuration for the Azure OpenAI model.
+    :type model_config: AzureOpenAIModelConfiguration
+    :return: A function that evaluates and generates metrics for "chat" scenario.
+    :rtype: function
+    **Usage**
 
-        .. code-block:: python
+    .. code-block:: python
 
-            chat_eval = RetrievalChatEvaluator(model_config)
-            conversation = [
-                {"role": "user", "content": "What is the value of 2 + 2?"},
-                {"role": "assistant", "content": "2 + 2 = 4", "context": {
-                    "citations": [
-                            {"id": "math_doc.md", "content": "Information about additions: 1 + 2 = 3, 2 + 2 = 4"}
-                            ]
-                    }
+        chat_eval = RetrievalChatEvaluator(model_config)
+        conversation = [
+            {"role": "user", "content": "What is the value of 2 + 2?"},
+            {"role": "assistant", "content": "2 + 2 = 4", "context": {
+                "citations": [
+                        {"id": "math_doc.md", "content": "Information about additions: 1 + 2 = 3, 2 + 2 = 4"}
+                        ]
                 }
-            ]
-            result = chat_eval(conversation=conversation)
-        """
+            }
+        ]
+        result = chat_eval(conversation=conversation)
+
+    **Output format**
+
+    .. code-block:: python
+
+    {
+        "gpt_retrieval": 3.0
+        "evaluation_per_turn": {
+            "gpt_retrieval": {
+                "score": [1.0, 2.0, 3.0]
+            }
+        }
+    }
+    """
+
+    def __init__(self, model_config: AzureOpenAIModelConfiguration):
         # TODO: Remove this block once the bug is fixed
         # https://msdata.visualstudio.com/Vienna/_workitems/edit/3151324
         if model_config.api_version is None:
