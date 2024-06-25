@@ -10,6 +10,7 @@ from promptflow.evals.synthetic._conversation import (
     LLMBase,
     OpenAIChatCompletionsModel,
 )
+from promptflow.evals.synthetic._model_tools import AsyncHTTPClientWithRetry
 
 
 # Mock classes for dependencies
@@ -45,6 +46,16 @@ def bot_assistant_params():
     }
 
 
+@pytest.fixture
+def bot_invalid_jinja_params():
+    return {
+        "role": ConversationRole.USER,
+        "model": MockOpenAIChatCompletionsModel(),
+        "conversation_template": "Hello, {{ name }}!!!!",
+        "instantiation_parameters": {"name": "TestUser", "conversation_starter": "Hello, world! {{world }"},
+    }
+
+
 @pytest.mark.unittest
 class TestConversationBot:
     @pytest.mark.asyncio
@@ -53,6 +64,30 @@ class TestConversationBot:
         assert bot.role == ConversationRole.USER
         assert bot.name == "TestUser"
         assert isinstance(bot.conversation_template, jinja2.Template)
+
+    @pytest.mark.asyncio
+    async def test_conversation_bot_initialization_user_invalid_jinja(self, bot_invalid_jinja_params):
+        bot = ConversationBot(**bot_invalid_jinja_params)
+
+        assert bot.role == ConversationRole.USER
+        assert bot.name == "TestUser"
+        assert isinstance(bot.conversation_template, jinja2.Template)
+        assert isinstance(bot.conversation_starter, str)
+        assert bot.conversation_starter is not None
+        asyncHttpClient = AsyncHTTPClientWithRetry(
+            n_retry=1,
+            retry_timeout=0,
+            logger=None,
+        )
+        client = asyncHttpClient.client
+        parsed_response, req, time_taken, full_response = await bot.generate_response(
+            session=client, conversation_history=[], max_history=0, turn_number=0
+        )
+        assert (
+            parsed_response["samples"][0]
+            == bot_invalid_jinja_params["instantiation_parameters"]["conversation_starter"]
+        )
+        client.close()
 
     @pytest.mark.asyncio
     async def test_conversation_bot_initialization_assistant(self, bot_assistant_params):

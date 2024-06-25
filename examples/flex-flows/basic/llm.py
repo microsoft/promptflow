@@ -59,6 +59,6 @@ def my_llm_tool(
 if __name__ == "__main__":
     result = my_llm_tool(
         prompt="Write a simple Hello, world! program that displays the greeting message.",
-        deployment_name="gpt-35-turbo",
+        deployment_name="gpt-4o",
     )
     print(result)

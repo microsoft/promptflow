@@ -22,7 +22,7 @@ nodes:
     path: hello.py
   inputs:
     connection: basic_custom_connection
-    deployment_name: text-davinci-003
+    deployment_name: gpt-35-turbo-instruct
     max_tokens: "120"
     prompt: ${hello_prompt.output}
 environment:
