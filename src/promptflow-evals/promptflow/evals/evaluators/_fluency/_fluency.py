@@ -12,22 +12,31 @@ from promptflow.core import AzureOpenAIModelConfiguration
 
 
 class FluencyEvaluator:
+    """
+    Initialize a fluency evaluator configured for a specific Azure OpenAI model.
+
+    :param model_config: Configuration for the Azure OpenAI model.
+    :type model_config: AzureOpenAIModelConfiguration
+
+    **Usage**
+
+    .. code-block:: python
+
+        eval_fn = FluencyEvaluator(model_config)
+        result = eval_fn(
+            question="What is the capital of Japan?",
+            answer="The capital of Japan is Tokyo.")
+
+    **Output format**
+
+    .. code-block:: python
+
+        {
+            "gpt_fluency": 4.0
+        }
+    """
+
     def __init__(self, model_config: AzureOpenAIModelConfiguration):
-        """
-        Initialize an evaluator configured for a specific Azure OpenAI model.
-
-        :param model_config: Configuration for the Azure OpenAI model.
-        :type model_config: AzureOpenAIModelConfiguration
-
-        **Usage**
-
-        .. code-block:: python
-
-            eval_fn = FluencyEvaluator(model_config)
-            result = eval_fn(
-                question="What is the capital of Japan?",
-                answer="The capital of Japan is Tokyo.")
-        """
         # TODO: Remove this block once the bug is fixed
         # https://msdata.visualstudio.com/Vienna/_workitems/edit/3151324
         if model_config.api_version is None:
@@ -39,7 +48,9 @@ class FluencyEvaluator:
         self._flow = load_flow(source=prompty_path, model=prompty_model_config)
 
     def __call__(self, *, question: str, answer: str, **kwargs):
-        """Evaluate fluency.
+        """
+        Evaluate fluency.
+
         :param question: The question to be evaluated.
         :type question: str
         :param answer: The answer to be evaluated.
