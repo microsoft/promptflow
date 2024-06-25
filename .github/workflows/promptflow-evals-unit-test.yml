@@ -54,6 +54,7 @@ jobs:
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: install promptflow packages in editable mode
         run: |
+          export TIME_LIMIT=0
           export start_tm=`date +%s`
           poetry run pip install -e ../promptflow
           poetry run pip install -e ../promptflow-core
@@ -63,6 +64,8 @@ jobs:
           poetry run pip install -e ../promptflow-azure
           poetry run pip install -e ../promptflow-evals
           echo "The installation took $(((`date +%s` - ${start_tm})/60)) minutes."
+          echo "The time limit for installation is ${TIME_LIMIT}"
+          test $(((`date +%s` - ${start_tm})/60)) -le $TIME_LIMIT
         working-directory: ${{ env.WORKING_DIRECTORY }}
       #- name: install promptflow-evals from wheel
         # wildcard expansion (*) does not work in Windows, so leverage python to find and install
