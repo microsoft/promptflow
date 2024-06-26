@@ -49,6 +49,7 @@ from promptflow.batch._result import BatchResult
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.types import AttrDict
+from promptflow.evals._constants import PF_BATCH_TIMEOUT_SEC
 from promptflow.exceptions import ErrorTarget, PromptflowException
 from promptflow.executor._line_execution_process_pool import signal_handler
 from promptflow.executor._result import AggregationResult, LineResult
