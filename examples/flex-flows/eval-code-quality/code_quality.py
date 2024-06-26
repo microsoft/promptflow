@@ -60,7 +60,7 @@ if __name__ == "__main__":
     start_trace()
     model_config = AzureOpenAIModelConfiguration(
         connection="open_ai_connection",
-        azure_deployment="gpt-35-turbo",
+        azure_deployment="gpt-4o",
     )
     evaluator = CodeEvaluator(model_config)
     result = evaluator('print("Hello, world!")')

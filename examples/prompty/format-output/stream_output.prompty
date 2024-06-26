@@ -6,7 +6,7 @@ model:
     configuration:
       type: azure_openai
       connection: open_ai_connection
-      azure_deployment: gpt-35-turbo-0125
+      azure_deployment: gpt-4o
     parameters:
       max_tokens: 512
       temperature: 0.2
