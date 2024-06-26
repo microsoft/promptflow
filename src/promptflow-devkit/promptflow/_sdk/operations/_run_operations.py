@@ -416,12 +416,12 @@ class RunOperations(TelemetryMixin):
 
     def _visualize_with_trace_ui(self, runs: List[Run], html_path: Optional[str] = None) -> None:
         # ensure prompt flow service is running
-        pfs_port = _invoke_pf_svc()
-        if not is_pfs_service_healthy(pfs_port):
+        pfs_port, service_host = _invoke_pf_svc()
+        if not is_pfs_service_healthy(pfs_port, service_host):
             raise PromptFlowServiceInvocationError()
         # concat run names
         runs_query = ",".join([run.name for run in runs])
-        trace_ui_url = f"http://localhost:{pfs_port}/v1.0/ui/traces/?#run={runs_query}"
+        trace_ui_url = f"http://{service_host}:{pfs_port}/v1.0/ui/traces/?#run={runs_query}"
         html_string = generate_trace_ui_html_string(trace_ui_url)
         dump_html(html_string, html_path=html_path, open_html=html_path is None)
 

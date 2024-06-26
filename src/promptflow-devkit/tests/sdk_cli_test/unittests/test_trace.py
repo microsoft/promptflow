@@ -26,7 +26,6 @@ from promptflow._constants import (
 )
 from promptflow._sdk._constants import (
     HOME_PROMPT_FLOW_DIR,
-    PF_SERVICE_HOST,
     PF_TRACE_CONTEXT,
     PF_TRACE_CONTEXT_ATTR,
     TRACE_DEFAULT_COLLECTION,
@@ -99,13 +98,15 @@ class TestImports:
 class TestStartTrace:
     @pytest.mark.usefixtures("reset_tracer_provider")
     def test_setup_exporter_from_environ(self) -> None:
+        from promptflow._sdk._service.utils.utils import get_pfs_host
+
         def is_tracer_provider_set() -> bool:
             return isinstance(trace.get_tracer_provider(), TracerProvider)
 
         assert not is_tracer_provider_set()
-
+        service_host = get_pfs_host()
         # set some required environment variables
-        endpoint = f"http://{PF_SERVICE_HOST}:23333/v1/traces"
+        endpoint = f"http://{service_host}:23333/v1/traces"
         collection = str(uuid.uuid4())
         experiment = "test_experiment"
         with patch.dict(

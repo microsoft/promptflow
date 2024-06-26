@@ -36,7 +36,6 @@ from promptflow._constants import (
     TraceEnvironmentVariableName,
 )
 from promptflow._sdk._constants import (
-    PF_SERVICE_HOST,
     PF_TRACE_CONTEXT,
     PF_TRACE_CONTEXT_ATTR,
     PF_TRACING_SKIP_EXPORTER_SETUP_ENVIRON,
@@ -46,6 +45,7 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import MissingAzurePackage
 from promptflow._sdk._service.utils.utils import (
+    get_pfs_host,
     get_port_from_config,
     hint_stop_before_upgrade,
     hint_stop_message,
@@ -157,8 +157,9 @@ def _inject_attrs_to_op_ctx(attrs: typing.Dict[str, str]) -> None:
         op_ctx._add_otel_attributes(attr_key, attr_value)
 
 
-def _invoke_pf_svc() -> str:
-    port = get_port_from_config(create_if_not_exists=True)
+def _invoke_pf_svc():
+    service_host = get_pfs_host()
+    port = get_port_from_config(service_host, create_if_not_exists=True)
     port = str(port)
     if is_run_from_built_binary():
         interpreter_path = os.path.abspath(sys.executable)
@@ -167,13 +168,13 @@ def _invoke_pf_svc() -> str:
     else:
         cmd_args = ["pf", "service", "start", "--port", port]
 
-    if is_port_in_use(int(port)):
-        if not is_pfs_service_healthy(port):
+    if is_port_in_use(int(port), service_host):
+        if not is_pfs_service_healthy(port, service_host):
             cmd_args.append("--force")
             _logger.debug("Prompt flow service is not healthy, force to start...")
         else:
             print("Prompt flow service has started...")
-            return port
+            return port, service_host
 
     add_executable_script_to_env_path()
     print("Starting prompt flow service...")
@@ -194,13 +195,13 @@ def _invoke_pf_svc() -> str:
         error_message = start_pfs.stderr.read().decode()
         message = f"The starting prompt flow process returned an error: {error_message}. "
         _logger.warning(message)
-    elif not is_pfs_service_healthy(port):
+    elif not is_pfs_service_healthy(port, service_host):
         # this branch is to check if the service is healthy for msi installer
         _logger.warning(f"Prompt flow service is not healthy. {hint_stop_before_upgrade}")
     else:
         _logger.debug("Prompt flow service is serving on port %s", port)
         print(hint_stop_message)
-    return port
+    return port, service_host
 
 
 def _get_ws_triad_from_pf_config(path: typing.Optional[Path], config=None) -> typing.Optional[AzureMLWorkspaceTriad]:
@@ -220,20 +221,24 @@ def _get_ws_triad_from_pf_config(path: typing.Optional[Path], config=None) -> ty
 def _print_tracing_url_from_local(
     pfs_port: str,
     collection: str,
+    service_host: str,
     exp: typing.Optional[str] = None,
     run: typing.Optional[str] = None,
 ) -> None:
-    url = _get_tracing_url_from_local(pfs_port=pfs_port, collection=collection, exp=exp, run=run)
+    url = _get_tracing_url_from_local(
+        pfs_port=pfs_port, collection=collection, service_host=service_host, exp=exp, run=run
+    )
     print(f"You can view the traces in local from {url}")
 
 
 def _get_tracing_url_from_local(
     pfs_port: str,
     collection: str,
+    service_host: str,
     exp: typing.Optional[str] = None,  # pylint: disable=unused-argument
     run: typing.Optional[str] = None,
 ) -> str:
-    url = f"http://{PF_SERVICE_HOST}:{pfs_port}/v1.0/ui/traces/"
+    url = f"http://{service_host}:{pfs_port}/v1.0/ui/traces/"
     if run is not None:
         url += f"?#run={run}"
     else:
@@ -245,10 +250,13 @@ def _get_tracing_url_from_local(
 def _get_tracing_detail_url_template_from_local(
     pfs_port: str,
     collection: str,
+    service_host: str,
     exp: typing.Optional[str] = None,  # pylint: disable=unused-argument
     run: typing.Optional[str] = None,
 ) -> str:
-    base_url = _get_tracing_url_from_local(pfs_port=pfs_port, collection=collection, exp=exp, run=run)
+    base_url = _get_tracing_url_from_local(
+        pfs_port=pfs_port, collection=collection, service_host=service_host, exp=exp, run=run
+    )
     return base_url + "&uiTraceId={trace_id}"
 
 
@@ -323,6 +331,7 @@ def _print_tracing_url_from_azure_portal(
 def _inject_res_attrs_to_environ(
     pfs_port: str,
     collection: str,
+    service_host: str,
     exp: typing.Optional[str] = None,
     ws_triad: typing.Optional[AzureMLWorkspaceTriad] = None,
 ) -> None:
@@ -343,7 +352,7 @@ def _inject_res_attrs_to_environ(
         os.environ[TraceEnvironmentVariableName.WORKSPACE_NAME] = ws_triad.workspace_name
     # we will not overwrite the value if it is already set
     if OTEL_EXPORTER_OTLP_TRACES_ENDPOINT not in os.environ:
-        otlp_traces_endpoint = f"http://{PF_SERVICE_HOST}:{pfs_port}/v1/traces"
+        otlp_traces_endpoint = f"http://{service_host}:{pfs_port}/v1/traces"
         _logger.debug("set OTLP traces endpoint to environ: %s", otlp_traces_endpoint)
         os.environ[OTEL_EXPORTER_OTLP_TRACES_ENDPOINT] = otlp_traces_endpoint
 
@@ -436,8 +445,8 @@ def start_trace_with_devkit(collection: str, **kwargs: typing.Any) -> None:
         ws_triad = None
 
     # invoke prompt flow service
-    pfs_port = _invoke_pf_svc()
-    is_pfs_healthy = is_pfs_service_healthy(pfs_port)
+    pfs_port, service_host = _invoke_pf_svc()
+    is_pfs_healthy = is_pfs_service_healthy(pfs_port, service_host)
     if not is_pfs_healthy:
         warning_msg = (
             "Prompt flow service is not healthy, please check the logs for more details; "
@@ -446,12 +455,15 @@ def start_trace_with_devkit(collection: str, **kwargs: typing.Any) -> None:
         _logger.warning(warning_msg)
         return
 
-    _inject_res_attrs_to_environ(pfs_port=pfs_port, collection=collection, exp=exp, ws_triad=ws_triad)
+    _inject_res_attrs_to_environ(
+        pfs_port=pfs_port, collection=collection, service_host=service_host, exp=exp, ws_triad=ws_triad
+    )
     # instrument openai and setup exporter to pfs here for flex mode
     inject_openai_api()
     _setup_url_templates(
         pfs_port=pfs_port,
         collection=collection,
+        service_host=service_host,
         exp=exp,
         run=run,
         ws_triad=ws_triad,
@@ -461,7 +473,7 @@ def start_trace_with_devkit(collection: str, **kwargs: typing.Any) -> None:
     if not run:
         return
     # print tracing url(s) when run is specified
-    _print_tracing_url_from_local(pfs_port=pfs_port, collection=collection, exp=exp, run=run)
+    _print_tracing_url_from_local(pfs_port=pfs_port, collection=collection, service_host=service_host, exp=exp, run=run)
 
     if run is not None and ws_triad is not None:
         trace_destination = run_config.get_trace_destination(path=flow_path)
@@ -477,6 +489,7 @@ def start_trace_with_devkit(collection: str, **kwargs: typing.Any) -> None:
 def _setup_url_templates(
     pfs_port: str,
     collection: str,
+    service_host: str,
     exp: typing.Optional[str] = None,  # pylint: disable=unused-argument
     run: typing.Optional[str] = None,
     ws_triad: typing.Optional[AzureMLWorkspaceTriad] = None,
@@ -485,7 +498,9 @@ def _setup_url_templates(
     if run is not None:
         return  # do not set tracing detail url template for run
     url_templates = [
-        _get_tracing_detail_url_template_from_local(pfs_port=pfs_port, collection=collection, exp=exp, run=run)
+        _get_tracing_detail_url_template_from_local(
+            pfs_port=pfs_port, collection=collection, service_host=service_host, exp=exp, run=run
+        )
     ]
     if ws_triad is not None and is_azure_ext_installed:
         remote_url_template = _get_tracing_detail_url_template_from_azure_portal(ws_triad=ws_triad)
