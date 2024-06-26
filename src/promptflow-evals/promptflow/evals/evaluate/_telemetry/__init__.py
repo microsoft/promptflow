@@ -78,6 +78,7 @@ def _get_evaluator_properties(evaluator, evaluator_name):
     }
 
 
+# cspell:ignore isna
 def log_evaluate_activity(func):
     """Decorator to log evaluate activity"""
 
