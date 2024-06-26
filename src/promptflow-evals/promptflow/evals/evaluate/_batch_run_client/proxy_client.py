@@ -2,10 +2,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import logging
-import os
 
 import numpy as np
 
+from promptflow._utils.utils import get_int_env_var
 from promptflow.client import PFClient
 from promptflow.tracing import ThreadPoolExecutorWithContext as ThreadPoolExecutor
 
@@ -31,13 +31,13 @@ class ProxyClient:
         return ProxyRun(run=eval_future)
 
     def get_details(self, proxy_run, all_results=False):
-        batch_run_timeout = int(os.getenv(BATCH_RUN_TIMEOUT_ENV_VAR, BATCH_RUN_TIMEOUT_DEFAULT))
+        batch_run_timeout = get_int_env_var(BATCH_RUN_TIMEOUT_ENV_VAR, BATCH_RUN_TIMEOUT_DEFAULT)
         run = proxy_run.run.result(timeout=batch_run_timeout)
         result_df = self._pf_client.get_details(run, all_results=all_results)
         result_df.replace("(Failed)", np.nan, inplace=True)
         return result_df
 
     def get_metrics(self, proxy_run):
-        batch_run_timeout = int(os.getenv(BATCH_RUN_TIMEOUT_ENV_VAR, BATCH_RUN_TIMEOUT_DEFAULT))
+        batch_run_timeout = get_int_env_var(BATCH_RUN_TIMEOUT_ENV_VAR, BATCH_RUN_TIMEOUT_DEFAULT)
         run = proxy_run.run.result(timeout=batch_run_timeout)
         return self._pf_client.get_metrics(run)

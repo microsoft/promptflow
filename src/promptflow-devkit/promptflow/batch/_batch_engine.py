@@ -151,7 +151,7 @@ class BatchEngine:
         self._storage = storage if storage else DefaultRunStorage(base_dir=self._working_dir)
         self._kwargs = kwargs
 
-        self._batch_timeout_sec = batch_timeout_sec or get_int_env_var("PF_BATCH_TIMEOUT_SEC")
+        self._batch_timeout_sec = batch_timeout_sec or get_int_env_var(BATCH_RUN_TIMEOUT_ENV_VAR)
         self._line_timeout_sec = line_timeout_sec or get_int_env_var("PF_LINE_TIMEOUT_SEC", LINE_TIMEOUT_SEC)
         self._worker_count = worker_count or get_int_env_var("PF_WORKER_COUNT")
         # update kwargs with worker_count and line_timeout_sec
