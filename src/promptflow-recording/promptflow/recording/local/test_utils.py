@@ -24,4 +24,4 @@ def invoke_prompt_flow_service() -> str:
     time.sleep(20)  # we need some seconds to start the service
     response = requests.get(f"http://{service_host}:{port}/heartbeat")
     assert response.status_code == 200, "prompt flow service is not healthy via /heartbeat"
-    return port
+    return port, service_host

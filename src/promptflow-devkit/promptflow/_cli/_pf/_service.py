@@ -196,7 +196,7 @@ def start_service(args):
                 _start_background_service_on_unix(port, service_host)
             is_healthy = check_pfs_service_status(port, service_host)
             if is_healthy:
-                message = f"Start prompt flow service on port {port}, version: {get_pfs_version()}."
+                message = f"Start prompt flow service on {service_host}:{port}, version: {get_pfs_version()}."
                 print(message)
                 logger.info(message)
             else:
@@ -256,7 +256,7 @@ def _prepare_app_for_foreground_service(port, force_start, service_host):
         app.logger.setLevel(logging.DEBUG)
     else:
         app.logger.setLevel(logging.INFO)
-    message = f"Starting prompt flow Service on port {port}, version: {get_pfs_version()}."
+    message = f"Starting prompt flow Service on {service_host}:{port}, version: {get_pfs_version()}."
     app.logger.info(message)
     print(message)
     return port
@@ -318,7 +318,7 @@ def stop_service():
     port = get_port_from_config(service_host)
     if port is not None and is_port_in_use(port, service_host):
         kill_exist_service(port)
-        message = f"Prompt flow service stop in {port}."
+        message = f"Prompt flow service stop on {service_host}:{port}."
     else:
         message = "Prompt flow service is not started."
     logger.debug(message)
@@ -334,7 +334,7 @@ def show_service():
     else:
         log_file = get_current_env_pfs_file(PF_SERVICE_LOG_FILE)
     if status:
-        extra_info = {"log_file": log_file.as_posix(), "version": get_pfs_version()}
+        extra_info = {"service_host": service_host, "log_file": log_file.as_posix(), "version": get_pfs_version()}
         status.update(extra_info)
         dumped_status = json.dumps(status, ensure_ascii=False, indent=2, sort_keys=True, separators=(",", ": ")) + "\n"
         print(dumped_status)
