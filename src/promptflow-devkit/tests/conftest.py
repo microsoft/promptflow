@@ -327,8 +327,7 @@ def otlp_collector():
     """A session scope fixture, a separate standby prompt flow service serves as OTLP collector."""
     port, service_host = invoke_prompt_flow_service()
     # mock invoke prompt flow service as it has been invoked already
-    with (
-        mock.patch("promptflow._sdk._tracing._invoke_pf_svc", return_value=(port, service_host)),
-        mock.patch("promptflow._sdk._tracing.is_pfs_service_healthy", return_value=True),
+    with mock.patch("promptflow._sdk._tracing._invoke_pf_svc", return_value=(port, service_host)), mock.patch(
+        "promptflow._sdk._tracing.is_pfs_service_healthy", return_value=True
     ):
         yield
