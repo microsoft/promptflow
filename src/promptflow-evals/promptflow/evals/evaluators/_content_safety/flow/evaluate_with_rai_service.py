@@ -4,6 +4,7 @@ import time
 from typing import List
 from urllib.parse import urlparse
 
+import jwt
 import numpy as np
 import requests
 from azure.core.credentials import TokenCredential
@@ -20,22 +21,33 @@ except importlib.metadata.PackageNotFoundError:
 USER_AGENT = "{}/{}".format("promptflow-evals", version)
 
 
-def ensure_service_availability(rai_svc_url: str):
-    svc_liveness_url = rai_svc_url.split("/subscriptions")[0] + "/meta/version"
-    response = requests.get(svc_liveness_url)
+def ensure_service_availability(rai_svc_url: str, token: str, capability: str = None):
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+        "User-Agent": USER_AGENT,
+    }
+
+    svc_liveness_url = rai_svc_url + "/checkannotation"
+    response = requests.get(svc_liveness_url, headers=headers)
+
     if response.status_code != 200:
-        raise Exception("RAI service is not available in this region")
+        raise Exception(f"RAI service is not available in this region. Status Code: {response.status_code}")
+
+    capabilities = response.json()
+
+    if capability and capability not in capabilities:
+        raise Exception(f"Capability '{capability}' is not available in this region")
 
 
-def submit_request(question: str, answer: str, metric: str, rai_svc_url: str, credential: TokenCredential):
+def submit_request(question: str, answer: str, metric: str, rai_svc_url: str, token: str):
     user_text = f"<Human>{question}</><System>{answer}</>"
     normalized_user_text = user_text.replace("'", '\\"')
     payload = {"UserTextList": [normalized_user_text], "AnnotationTask": Tasks.CONTENT_HARM, "MetricList": [metric]}
 
     url = rai_svc_url + "/submitannotation"
-    bearer_token = credential.get_token("https://management.azure.com/.default").token
     headers = {
-        "Authorization": f"Bearer {bearer_token}",
+        "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
         "User-Agent": USER_AGENT,
     }
@@ -50,15 +62,14 @@ def submit_request(question: str, answer: str, metric: str, rai_svc_url: str, cr
     return operation_id
 
 
-def fetch_result(operation_id: str, rai_svc_url: str, credential: TokenCredential):
+def fetch_result(operation_id: str, rai_svc_url: str, credential: TokenCredential, token: str):
     start = time.time()
     request_count = 0
 
     url = rai_svc_url + "/operations/" + operation_id
-    bearer_token = credential.get_token("https://management.azure.com/.default").token
-    headers = {"Authorization": f"Bearer {bearer_token}", "Content-Type": "application/json"}
-
     while True:
+        token = fetch_or_reuse_token(credential, token)
+        headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
             return response.json()
@@ -144,9 +155,8 @@ def parse_response(batch_response: List[dict], metric_name: str) -> List[List[di
     return result
 
 
-def _get_service_discovery_url(azure_ai_project, credential):
-    bearer_token = credential.get_token("https://management.azure.com/.default").token
-    headers = {"Authorization": f"Bearer {bearer_token}", "Content-Type": "application/json"}
+def _get_service_discovery_url(azure_ai_project, token):
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
     response = requests.get(
         f"https://management.azure.com/subscriptions/{azure_ai_project['subscription_id']}/"
         f"resourceGroups/{azure_ai_project['resource_group_name']}/"
@@ -161,8 +171,8 @@ def _get_service_discovery_url(azure_ai_project, credential):
     return f"{base_url.scheme}://{base_url.netloc}"
 
 
-def get_rai_svc_url(project_scope: dict, credential: TokenCredential):
-    discovery_url = _get_service_discovery_url(azure_ai_project=project_scope, credential=credential)
+def get_rai_svc_url(project_scope: dict, token: str):
+    discovery_url = _get_service_discovery_url(azure_ai_project=project_scope, token=token)
     subscription_id = project_scope["subscription_id"]
     resource_group_name = project_scope["resource_group_name"]
     project_name = project_scope["project_name"]
@@ -176,6 +186,27 @@ def get_rai_svc_url(project_scope: dict, credential: TokenCredential):
     return rai_url
 
 
+def fetch_or_reuse_token(credential: TokenCredential, token: str = None):
+    acquire_new_token = True
+    try:
+        if token:
+            # Decode the token to get its expiration time
+            decoded_token = jwt.decode(token, options={"verify_signature": False})
+            exp_time = decoded_token["exp"]
+            current_time = time.time()
+
+            # Check if the token is near expiry
+            if (exp_time - current_time) >= 300:
+                acquire_new_token = False
+    except Exception:
+        pass
+
+    if acquire_new_token:
+        token = credential.get_token("https://management.azure.com/.default").token
+
+    return token
+
+
 @tool
 def evaluate_with_rai_service(
     question: str, answer: str, metric_name: str, project_scope: dict, credential: TokenCredential
@@ -186,12 +217,13 @@ def evaluate_with_rai_service(
         credential = DefaultAzureCredential()
 
     # Get RAI service URL from discovery service and check service availability
-    rai_svc_url = get_rai_svc_url(project_scope, credential)
-    ensure_service_availability(rai_svc_url)
+    token = fetch_or_reuse_token(credential)
+    rai_svc_url = get_rai_svc_url(project_scope, token)
+    ensure_service_availability(rai_svc_url, token, Tasks.CONTENT_HARM)
 
     # Submit annotation request and fetch result
-    operation_id = submit_request(question, answer, metric_name, rai_svc_url, credential)
-    annotation_response = fetch_result(operation_id, rai_svc_url, credential)
+    operation_id = submit_request(question, answer, metric_name, rai_svc_url, token)
+    annotation_response = fetch_result(operation_id, rai_svc_url, credential, token)
     result = parse_response(annotation_response, metric_name)
 
     return result

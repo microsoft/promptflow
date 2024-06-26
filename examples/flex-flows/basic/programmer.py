@@ -25,7 +25,7 @@ def load_prompt(jinja2_template: str, text: str) -> str:
 
 @trace
 def write_simple_program(
-    text: str = "Hello World!", deployment_name="gpt-35-turbo"
+    text: str = "Hello World!", deployment_name="gpt-4o"
 ) -> Result:
     """Ask LLM to write a simple program."""
     prompt = load_prompt("hello.jinja2", text)
@@ -37,5 +37,5 @@ if __name__ == "__main__":
     from promptflow.tracing import start_trace
 
     start_trace()
-    result = write_simple_program("Hello, world!", "gpt-35-turbo")
+    result = write_simple_program("Hello, world!", "gpt-4o")
     print(result)
