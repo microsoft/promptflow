@@ -22,39 +22,59 @@ logger = logging.getLogger(__name__)
 
 
 class ChatEvaluator:
+    """
+    Initialize a chat evaluator configured for a specific Azure OpenAI model.
+
+    :param model_config: Configuration for the Azure OpenAI model.
+    :type model_config: AzureOpenAIModelConfiguration
+    :param eval_last_turn: Set to True to evaluate only the most recent exchange in the dialogue,
+        focusing on the latest user inquiry and the assistant's corresponding response. Defaults to False
+    :type eval_last_turn: bool
+    :param parallel: If True, use parallel execution for evaluators. Else, use sequential execution.
+        Default is True.
+    :type parallel: bool
+    :return: A function that evaluates and generates metrics for "chat" scenario.
+    :rtype: function
+
+    **Usage**
+
+    .. code-block:: python
+
+        chat_eval = ChatEvaluator(model_config)
+        conversation = [
+            {"role": "user", "content": "What is the value of 2 + 2?"},
+            {"role": "assistant", "content": "2 + 2 = 4", "context": {
+                "citations": [
+                        {"id": "math_doc.md", "content": "Information about additions: 1 + 2 = 3, 2 + 2 = 4"}
+                        ]
+                }
+            }
+        ]
+        result = chat_eval(conversation=conversation)
+
+    **Output format**
+
+    .. code-block:: python
+
+        {
+            "evaluation_per_turn": {
+                "gpt_retrieval": [1.0, 2.0],
+                "gpt_groundedness": [5.0, 2.0],
+                "gpt_relevance": [3.0, 5.0],
+                "gpt_coherence": [1.0, 2.0],
+                "gpt_fluency": [3.0, 5.0]
+            }
+            "gpt_retrieval": 1.5,
+            "gpt_groundedness": 3.5,
+            "gpt_relevance": 4.0,
+            "gpt_coherence": 1.5,
+            "gpt_fluency": 4.0
+        }
+    """
+
     def __init__(
         self, model_config: AzureOpenAIModelConfiguration, eval_last_turn: bool = False, parallel: bool = True
     ):
-        """
-        Initialize an evaluator configured for a specific Azure OpenAI model.
-
-        :param model_config: Configuration for the Azure OpenAI model.
-        :type model_config: AzureOpenAIModelConfiguration
-        :param eval_last_turn: Set to True to evaluate only the most recent exchange in the dialogue,
-            focusing on the latest user inquiry and the assistant's corresponding response. Defaults to False
-        :type eval_last_turn: bool
-        :param parallel: If True, use parallel execution for evaluators. Else, use sequential execution.
-            Default is True.
-        :type parallel: bool
-        :return: A function that evaluates and generates metrics for "chat" scenario.
-        :rtype: function
-
-        **Usage**
-
-        .. code-block:: python
-
-            chat_eval = ChatEvaluator(model_config)
-            conversation = [
-                {"role": "user", "content": "What is the value of 2 + 2?"},
-                {"role": "assistant", "content": "2 + 2 = 4", "context": {
-                    "citations": [
-                            {"id": "math_doc.md", "content": "Information about additions: 1 + 2 = 3, 2 + 2 = 4"}
-                            ]
-                    }
-                }
-            ]
-            result = chat_eval(conversation=conversation)
-        """
         self._eval_last_turn = eval_last_turn
         self._parallel = parallel
 
@@ -73,7 +93,8 @@ class ChatEvaluator:
         self._retrieval_chat_evaluator = RetrievalChatEvaluator(model_config)
 
     def __call__(self, *, conversation, **kwargs):
-        """Evaluates chat scenario.
+        """
+        Evaluates chat scenario.
 
         :param conversation: The conversation to be evaluated. Each turn should have "role" and "content" keys.
             "context" key is optional for assistant's turn and should have "citations" key with list of citations.
@@ -222,7 +243,8 @@ class ChatEvaluator:
             one_based_turn_num = turn_num + 1
 
             if not isinstance(turn, dict):
-                raise ValueError(f"Each turn in 'conversation' must be a dictionary. Turn number: {one_based_turn_num}")
+                raise ValueError(
+                    f"Each turn in 'conversation' must be a dictionary. Turn number: {one_based_turn_num}")
 
             if "role" not in turn or "content" not in turn:
                 raise ValueError(

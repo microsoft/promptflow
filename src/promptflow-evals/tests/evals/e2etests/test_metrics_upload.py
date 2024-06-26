@@ -132,7 +132,8 @@ class TestMetricsUpload(object):
         self._assert_no_errors_for_module(caplog.records, EvalRun.__module__)
 
     @pytest.mark.skipif(
-        condition=not is_live(), reason="promptflow run create files with random names, which cannot be recorded."
+        condition=not is_live(),
+        reason="promptflow run create files with random names, which cannot be recorded. See work item 3305909."
     )
     @pytest.mark.usefixtures("vcr_recording")
     def test_e2e_run_target_fn(self, caplog, project_scope, questions_answers_file):
@@ -160,10 +161,15 @@ class TestMetricsUpload(object):
             target=target_fn,
             evaluators={"f1": f1_score_eval},
             azure_ai_project=project_scope,
-            _run_name="eval_test_run2",
+            # _run_name="eval_test_run2",
         )
         self._assert_no_errors_for_module(caplog.records, (ev_utils.__name__, EvalRun.__module__))
 
+    @pytest.mark.skipif(
+        condition=not is_live(),
+        reason="promptflow run create files with random names, which cannot be recorded. See work item 3305909."
+    )
+    @pytest.mark.usefixtures("vcr_recording")
     def test_e2e_run(self, caplog, project_scope, questions_answers_file):
         """Test evaluation run logging."""
         # Make sure that the URL ending in TraceSessions is in the recording, it is not always being recorded.
@@ -180,5 +186,11 @@ class TestMetricsUpload(object):
         # captured by caplog. Here we will skip this logger to capture logs.
         logger.parent = logging.root
         f1_score_eval = F1ScoreEvaluator()
-        evaluate(data=questions_answers_file, evaluators={"f1": f1_score_eval}, azure_ai_project=project_scope)
+        # We need the deterministic name of a run, however it cannot be recorded
+        # into database more then once or the database may be non writable.
+        # By this reason we will cancel writing to database by mocking it.
+        # Please uncomment this line for the local tests
+        # with patch('promptflow._sdk.entities._run.Run._dump'):
+        evaluate(data=questions_answers_file, evaluators={"f1": f1_score_eval}, azure_ai_project=project_scope,
+                 _run_name="eval_test_run4",)
         self._assert_no_errors_for_module(caplog.records, (ev_utils.__name__, EvalRun.__module__))
