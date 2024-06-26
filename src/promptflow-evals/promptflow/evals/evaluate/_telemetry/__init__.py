@@ -25,7 +25,6 @@ def _get_evaluator_type(evaluator):
     """
     Get evaluator type for telemetry. Possible values are "built-in", "custom" and "content-safety"
     """
-    custom = True
     built_in = False
     content_safety = False
 
@@ -106,8 +105,8 @@ def log_evaluate_activity(func):
             "evaluator_config": evaluator_config,
         }
 
-        with log_activity(get_telemetry_logger(), "pf.evals.evaluate", activity_type=ActivityType.PUBLICAPI,
-                          user_agent=USER_AGENT, custom_dimensions=custom_dimensions):
+        with ((log_activity(get_telemetry_logger(), "pf.evals.evaluate", activity_type=ActivityType.PUBLICAPI,
+                          user_agent=USER_AGENT, custom_dimensions=custom_dimensions))):
             result = func(*args, **kwargs)
 
             try:
@@ -118,7 +117,8 @@ def log_evaluate_activity(func):
                         evaluator_df = pd.DataFrame(result.get("rows", [])).filter(like=f"outputs.{evaluator_name}",
                                                                                    axis=1)
 
-                        failed_rows = evaluator_df.shape[0] if evaluator_df.empty else int(evaluator_df.isna().any(axis=1).sum())
+                        failed_rows = evaluator_df.shape[0] if evaluator_df.empty else int(
+                                                                    evaluator_df.isna().any(axis=1).sum())
                         total_rows = evaluator_df.shape[0]
 
                         evaluator_info["failed_rows"] = failed_rows

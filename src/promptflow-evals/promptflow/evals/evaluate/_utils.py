@@ -214,6 +214,3 @@ def _apply_column_mapping(source_df: pd.DataFrame, mapping_config: dict, inplace
 
 def _has_aggregator(evaluator):
     return hasattr(evaluator, "__aggregate__")
-
-
-

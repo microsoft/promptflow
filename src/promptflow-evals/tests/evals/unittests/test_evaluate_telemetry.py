@@ -130,7 +130,8 @@ class TestEvaluateTelemetry:
 
             assert entry["failed_rows"] == 1
 
-    def test_evaluator_start_telemetry(self, mock_app_insight_logger, mock_project_scope, mock_trace_destination_to_cloud, mock_validate_trace_destination):
+    def test_evaluator_start_telemetry(self, mock_app_insight_logger, mock_project_scope,
+                                       mock_trace_destination_to_cloud, mock_validate_trace_destination):
         hate_unfairness = HateUnfairnessEvaluator(project_scope=None)
 
         data = _get_file("evaluate_test_data.jsonl")
@@ -156,5 +157,3 @@ class TestEvaluateTelemetry:
         assert evaluate_start_call_cd["track_in_cloud"] is True
         assert evaluate_start_call_cd["evaluate_target"] is True
         assert evaluate_start_call_cd["evaluator_config"] is True
-
-
