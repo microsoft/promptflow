@@ -13,7 +13,7 @@ from promptflow._sdk._pf_client import PFClient
 from promptflow._utils.multimedia_utils import ImageProcessor
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.client import load_flow
-from promptflow.core import AsyncPrompty, Flow, Prompty
+from promptflow.core import AsyncFlow, AsyncPrompty, Flow, Prompty
 from promptflow.core._errors import (
     ChatAPIInvalidTools,
     InvalidConnectionError,
@@ -69,6 +69,19 @@ class TestPrompty:
         prompty = Prompty(path=f"{PROMPTY_DIR}/prompty_example.prompty")
         assert prompty._data == expect_data
         assert isinstance(prompty, Prompty)
+
+        # Test load prompty
+        prompty = Flow.load(source=f"{PROMPTY_DIR}/prompty_example.prompty")
+        isinstance(prompty, Prompty)
+
+        prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty")
+        isinstance(prompty, Prompty)
+
+        prompty = AsyncFlow.load(source=f"{PROMPTY_DIR}/prompty_example.prompty")
+        isinstance(prompty, AsyncPrompty)
+
+        prompty = AsyncPrompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty")
+        isinstance(prompty, AsyncPrompty)
 
     def test_overwrite_prompty(self):
         expect_data = {

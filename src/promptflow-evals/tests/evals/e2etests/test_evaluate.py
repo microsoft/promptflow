@@ -44,14 +44,22 @@ def question_evaluator(question):
     return {"length": len(question)}
 
 
-def _get_run_from_run_history(flow_run_id, runs_operation):
+def _get_run_from_run_history(flow_run_id, ml_client, project_scope):
     """Get run info from run history"""
     token = "Bearer " + DefaultAzureCredential().get_token("https://management.azure.com/.default").token
     headers = {
         "Authorization": token,
         "Content-Type": "application/json",
     }
-    url = runs_operation._run_history_endpoint_url + "/rundata"
+    workspace = ml_client.workspaces.get(project_scope["project_name"])
+    endpoint = workspace.discovery_url.split("discovery")[0]
+    pattern = (
+        f"/subscriptions/{project_scope['subscription_id']}"
+        f"/resourceGroups/{project_scope['resource_group_name']}"
+        f"/providers/Microsoft.MachineLearningServices"
+        f"/workspaces/{project_scope['project_name']}"
+    )
+    url = endpoint + "history/v1.0" + pattern + "/rundata"
 
     payload = {
         "runId": flow_run_id,
@@ -297,7 +305,7 @@ class TestEvaluate:
     def test_evaluate_track_in_cloud(
         self,
         questions_file,
-        azure_pf_client,
+        azure_ml_client,
         mock_trace_destination_to_cloud,
         project_scope,
     ):
@@ -330,18 +338,18 @@ class TestEvaluate:
 
         # get remote run and validate if it exists
         run_id = result["studio_url"].split("?")[0].split("/")[5]
-        remote_run = azure_pf_client.runs.get(run_id)
+        remote_run = _get_run_from_run_history(run_id, azure_ml_client, project_scope)
 
         assert remote_run is not None
-        assert remote_run.properties["azureml.promptflow.local_to_cloud"] == "true"
-        assert remote_run.properties["runType"] == "eval_run"
-        assert remote_run.display_name == evaluation_name
+        assert remote_run["runMetadata"]["properties"]["azureml.promptflow.local_to_cloud"] == "true"
+        assert remote_run["runMetadata"]["properties"]["runType"] == "eval_run"
+        assert remote_run["runMetadata"]["displayName"] == evaluation_name
 
     @pytest.mark.skip(reason="az login in fixture is not working on ubuntu and mac. Works on windows")
     def test_evaluate_track_in_cloud_no_target(
         self,
         data_file,
-        azure_pf_client,
+        azure_ml_client,
         mock_trace_destination_to_cloud,
         project_scope,
     ):
@@ -374,7 +382,7 @@ class TestEvaluate:
 
         # get remote run and validate if it exists
         run_id = result["studio_url"].split("?")[0].split("/")[5]
-        remote_run = _get_run_from_run_history(run_id, azure_pf_client.runs)
+        remote_run = _get_run_from_run_history(run_id, azure_ml_client, project_scope)
 
         assert remote_run is not None
         assert remote_run["runMetadata"]["properties"]["_azureml.evaluation_run"] == "azure-ai-generative-parent"

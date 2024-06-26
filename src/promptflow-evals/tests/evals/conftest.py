@@ -6,9 +6,9 @@ from unittest.mock import patch
 
 import jwt
 import pytest
+from azure.ai.ml._ml_client import MLClient
 from pytest_mock import MockerFixture
 
-from promptflow.azure import PFClient as AzurePFClient
 from promptflow.client import PFClient
 from promptflow.core import AzureOpenAIModelConfiguration
 from promptflow.executor._line_execution_process_pool import _process_wrapper
@@ -137,9 +137,17 @@ def mock_trace_destination_to_cloud(project_scope: dict):
 
 
 @pytest.fixture
-def azure_pf_client(project_scope: Dict):
-    """The fixture, returning AzurePFClient"""
-    return AzurePFClient(
+def mock_validate_trace_destination():
+    """Mock validate trace destination config to use in unit tests."""
+
+    with patch("promptflow._sdk._tracing.TraceDestinationConfig.validate", return_value=None):
+        yield
+
+
+@pytest.fixture
+def azure_ml_client(project_scope: Dict):
+    """The fixture, returning MLClient"""
+    return MLClient(
         subscription_id=project_scope["subscription_id"],
         resource_group_name=project_scope["resource_group_name"],
         workspace_name=project_scope["project_name"],
