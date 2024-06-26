@@ -296,9 +296,12 @@ class FlowOperations(TelemetryMixin):
             if isinstance(flow, Prompty) and not inputs:
                 inputs = load_inputs_from_sample(submitter.flow.sample)
             is_chat_flow, chat_history_input_name, _ = is_executable_chat_flow(submitter.dataplane_flow)
-            flow_inputs, dependency_nodes_outputs = submitter.resolve_data(
-                node_name=node, inputs=inputs, chat_history_name=chat_history_input_name
-            )
+            if isinstance(flow, FlexFlow) or isinstance(flow, Prompty):
+                flow_inputs, dependency_nodes_outputs = inputs, None
+            else:
+                flow_inputs, dependency_nodes_outputs = submitter.resolve_data(
+                    node_name=node, inputs=inputs, chat_history_name=chat_history_input_name
+                )
 
             if node:
                 return submitter.node_test(
