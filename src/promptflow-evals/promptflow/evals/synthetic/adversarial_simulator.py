@@ -8,6 +8,7 @@ import logging
 import random
 from typing import Any, Callable, Dict, List
 
+from azure.identity import DefaultAzureCredential
 from tqdm import tqdm
 
 from promptflow._sdk._telemetry import ActivityType, monitor_operation
@@ -56,33 +57,31 @@ class AdversarialSimulator:
     Initializes the adversarial simulator with a project scope.
 
     :param azure_ai_project: Dictionary defining the scope of the project. It must include the following keys:
-
-        * "subscription_id": Azure subscription ID.
-        * "resource_group_name": Name of the Azure resource group.
-        * "project_name": Name of the Azure Machine Learning workspace.
-        * "credential": Azure credentials object for authentication.
+        - "subscription_id": Azure subscription ID.
+        - "resource_group_name": Name of the Azure resource group.
+        - "project_name": Name of the Azure Machine Learning workspace.
+    :param credential: The credential for connecting to Azure AI project.
+    :type credential: TokenCredential
     :type azure_ai_project: Dict[str, Any]
     """
 
-    def __init__(self, *, azure_ai_project: Dict[str, Any]):
+    def __init__(self, *, azure_ai_project: Dict[str, Any], credential=None):
         """Constructor."""
-        # check if azure_ai_project has the keys: subscription_id, resource_group_name, project_name, credential
-        if not all(
-            key in azure_ai_project for key in ["subscription_id", "resource_group_name", "project_name", "credential"]
-        ):
-            raise ValueError(
-                "azure_ai_project must contain keys: subscription_id, resource_group_name, project_name, credential"
-            )
+        # check if azure_ai_project has the keys: subscription_id, resource_group_name and project_name
+        if not all(key in azure_ai_project for key in ["subscription_id", "resource_group_name", "project_name"]):
+            raise ValueError("azure_ai_project must contain keys: subscription_id, resource_group_name, project_name")
         # check the value of the keys in azure_ai_project is not none
-        if not all(
-            azure_ai_project[key] for key in ["subscription_id", "resource_group_name", "project_name", "credential"]
-        ):
-            raise ValueError("subscription_id, resource_group_name, project_name, and credential must not be None")
+        if not all(azure_ai_project[key] for key in ["subscription_id", "resource_group_name", "project_name"]):
+            raise ValueError("subscription_id, resource_group_name and project_name must not be None")
+        if "credential" not in azure_ai_project and not credential:
+            credential = DefaultAzureCredential()
+        elif "credential" in azure_ai_project:
+            credential = azure_ai_project["credential"]
         self.azure_ai_project = azure_ai_project
         self.token_manager = ManagedIdentityAPITokenManager(
             token_scope=TokenScope.DEFAULT_AZURE_MANAGEMENT,
             logger=logging.getLogger("AdversarialSimulator"),
-            credential=self.azure_ai_project["credential"],
+            credential=credential,
         )
         self.rai_client = RAIClient(azure_ai_project=azure_ai_project, token_manager=self.token_manager)
         self.adversarial_template_handler = AdversarialTemplateHandler(
@@ -150,7 +149,7 @@ class AdversarialSimulator:
          - '**$schema**': A string indicating the schema URL for the conversation format.
 
          The 'content' for 'assistant' role messages may includes the messages that your callback returned.
-        :rtype: List[Dict[str, Any]] if jailbreak is False, otherwise List[List[Dict[str, Any]]] with two elements
+        :rtype: List[Dict[str, Any]]
         """
         # validate the inputs
         if scenario != AdversarialScenario.ADVERSARIAL_CONVERSATION:
@@ -174,38 +173,24 @@ class AdversarialSimulator:
                 total_tasks,
                 total_tasks,
             )
+        total_tasks = min(total_tasks, max_simulation_results)
         if jailbreak:
+            logger.warning(
+                "Jailbreak simulator is available as a separate simulator. \n"
+                "Use JailbreakAdversarialSimulator to simulate jailbreak scenarios."
+            )
             jailbreak_dataset = await self.rai_client.get_jailbreaks_dataset()
-            total_tasks = min(total_tasks, max_simulation_results) * 2
-        else:
-            total_tasks = min(total_tasks, max_simulation_results)
         progress_bar = tqdm(
             total=total_tasks,
             desc="generating simulations",
             ncols=100,
             unit="simulations",
         )
-        tasks = {"jb": [], "regular": []}
-
         for template in templates:
             for parameter in template.template_parameters:
                 if jailbreak:
                     parameter = self._join_conversation_starter(parameter, random.choice(jailbreak_dataset))
-                    tasks["jb"].append(
-                        asyncio.create_task(
-                            self._simulate_async(
-                                target=target,
-                                template=template,
-                                parameters=parameter,
-                                max_conversation_turns=max_conversation_turns,
-                                api_call_retry_limit=api_call_retry_limit,
-                                api_call_retry_sleep_sec=api_call_retry_sleep_sec,
-                                api_call_delay_sec=api_call_delay_sec,
-                                semaphore=semaphore,
-                            )
-                        )
-                    )
-                tasks["regular"].append(
+                tasks.append(
                     asyncio.create_task(
                         self._simulate_async(
                             target=target,
@@ -219,24 +204,20 @@ class AdversarialSimulator:
                         )
                     )
                 )
-                if len(tasks["jb"]) + len(tasks["regular"]) >= max_simulation_results:
+                if len(tasks) >= max_simulation_results:
                     break
-            if len(tasks["jb"]) + len(tasks["regular"]) >= max_simulation_results:
+            if len(tasks) >= max_simulation_results:
                 break
+        for task in asyncio.as_completed(tasks):
+            sim_results.append(await task)
+            progress_bar.update(1)
+        progress_bar.close()
 
-        sim_results = {"jb": [], "regular": []}
-        for task_type, task_list in tasks.items():
-            for task in asyncio.as_completed(task_list):
-                sim_results[task_type].append(await task)
-                progress_bar.update(1)
-
-        if jailbreak:
-            return JsonLineList(sim_results["jb"]), JsonLineList(sim_results["regular"])
-        return JsonLineList(sim_results["regular"])
+        return JsonLineList(sim_results)
 
     def _to_chat_protocol(self, *, conversation_history, template_parameters):
         messages = []
-        for i, m in enumerate(conversation_history):  # noqa: F841
+        for i, m in enumerate(conversation_history):
             message = {"content": m.message, "role": m.role.value}
             if "context" in m.full_response:
                 message["context"] = m.full_response["context"]
