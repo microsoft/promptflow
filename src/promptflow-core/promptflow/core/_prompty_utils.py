@@ -146,7 +146,7 @@ def convert_prompt_template(template, inputs, api):
 def prepare_open_ai_request_params(model_config, template, connection):
     params = copy.copy(model_config.parameters)
     if isinstance(connection, AzureOpenAIConnection):
-        params["extra_headers"] = {"ms-azure-ai-promptflow-called-from": "promptflow-core"}
+        params.setdefault("extra_headers", {}).update({"ms-azure-ai-promptflow-called-from": "promptflow-core"})
     params["model"] = model_config._model
 
     if model_config.api == "completion":
