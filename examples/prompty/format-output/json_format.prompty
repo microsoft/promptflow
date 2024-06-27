@@ -5,7 +5,7 @@ model:
     api: chat
     configuration:
       type: azure_openai
-      azure_deployment: gpt-35-turbo-0125
+      azure_deployment: gpt-4o
       connection: open_ai_connection
     parameters:
       max_tokens: 128

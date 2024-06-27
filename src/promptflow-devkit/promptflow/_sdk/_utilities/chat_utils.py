@@ -32,11 +32,11 @@ def construct_flow_absolute_path(flow: str) -> str:
 
 
 # Todo: use base64 encode for now, will consider whether need use encryption or use db to store flow path info
-def construct_chat_page_url(flow_path, port, url_params):
+def construct_chat_page_url(flow_path, port, service_host, url_params):
     encrypted_flow_path = encrypt_flow_path(flow_path)
     query_dict = {"flow": encrypted_flow_path, **url_params}
     query_params = urlencode(query_dict)
-    return urlunparse(("http", f"127.0.0.1:{port}", "/v1.0/ui/chat", "", query_params, ""))
+    return urlunparse(("http", f"{service_host}:{port}", "/v1.0/ui/chat", "", query_params, ""))
 
 
 def _try_restart_service(
@@ -136,6 +136,7 @@ def start_chat_ui_service_monitor(
     *,
     serve_app_port: str,
     pfs_port: str,
+    service_host: str,
     url_params: Dict[str, str],
     init: Dict[str, Any],
     enable_internal_features: bool = False,
@@ -175,6 +176,7 @@ def start_chat_ui_service_monitor(
         # Chat UI now doesn't support as_posix in windows
         str(flow_file_path),
         pfs_port,
+        service_host,
         url_params=url_params,
     )
 
