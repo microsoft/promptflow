@@ -5,7 +5,6 @@ import logging
 import os
 import threading
 import time
-from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
 from pathlib import PurePath
 
@@ -13,12 +12,7 @@ from flask import Blueprint, Flask, current_app, g, jsonify, redirect, request, 
 from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
 
-from promptflow._sdk._constants import (
-    PF_SERVICE_DEBUG,
-    PF_SERVICE_HOUR_TIMEOUT,
-    PF_SERVICE_MONITOR_SECOND,
-    CreatedByFieldName,
-)
+from promptflow._sdk._constants import PF_SERVICE_DEBUG, CreatedByFieldName
 from promptflow._sdk._errors import MissingAzurePackage
 from promptflow._sdk._service import Api
 from promptflow._sdk._service.apis.collector import trace_collector
@@ -31,16 +25,8 @@ from promptflow._sdk._service.apis.span import api as span_api
 from promptflow._sdk._service.apis.telemetry import api as telemetry_api
 from promptflow._sdk._service.apis.ui import api as ui_api
 from promptflow._sdk._service.apis.ui import serve_chat_ui, serve_trace_ui
-from promptflow._sdk._service.utils.utils import (
-    FormattedException,
-    get_log_file_location,
-    get_pfs_version,
-    get_port_from_config,
-    is_run_from_built_binary,
-    kill_exist_service,
-)
+from promptflow._sdk._service.utils.utils import FormattedException, get_log_file_location, get_pfs_version
 from promptflow._sdk._utilities.general_utils import overwrite_null_std_logger
-from promptflow._utils.thread_utils import ThreadWithContextVars
 
 overwrite_null_std_logger()
 
@@ -138,7 +124,6 @@ def create_app():
 
         @app.before_request
         def log_before_request_info():
-            app.config["last_request_time"] = datetime.now()
             g.start = time.perf_counter()
             if "/v1.0/Connections" in request.url:
                 request_body = "Request body not recorded for Connections API"
@@ -160,32 +145,6 @@ def create_app():
             )
             return response
 
-        # Start a monitor process using detach mode. It will stop pfs service if no request to pfs service in 1h in
-        # python scenario. For C# scenario, pfs will live until the process is killed manually.
-        def monitor_request():
-            with app.app_context():
-                while True:
-                    time.sleep(PF_SERVICE_MONITOR_SECOND)
-                    if "last_request_time" in app.config and datetime.now() - app.config[
-                        "last_request_time"
-                    ] > timedelta(hours=PF_SERVICE_HOUR_TIMEOUT):
-                        # Todo: check if we have any not complete work? like persist all traces.
-                        app.logger.warning(
-                            f"Last http request time: {app.config['last_request_time']} was made "
-                            f"{PF_SERVICE_HOUR_TIMEOUT}h ago"
-                        )
-                        port = get_port_from_config()
-                        if port:
-                            app.logger.info(
-                                f"Try auto stop promptflow service in port {port} since no request to app within "
-                                f"{PF_SERVICE_HOUR_TIMEOUT}h."
-                            )
-                            kill_exist_service(port)
-                        break
-
-        if not is_run_from_built_binary():
-            monitor_thread = ThreadWithContextVars(target=monitor_request, daemon=True)
-            monitor_thread.start()
     return app, api
 
 
