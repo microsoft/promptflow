@@ -139,7 +139,6 @@ class TestAdvSimulator:
             )
         )
         assert len(outputs) == 1
-        print(outputs)
         assert len(outputs[0]["messages"]) == 4
 
     @pytest.mark.usefixtures("vcr_recording")
@@ -182,8 +181,6 @@ class TestAdvSimulator:
                 concurrent_async_task=1,
             )
         )
-        print(outputs.to_json_lines())
-        print("*****************************")
         assert len(outputs) == 1
 
     @pytest.mark.usefixtures("vcr_recording")
@@ -214,7 +211,7 @@ class TestAdvSimulator:
 
         simulator = AdversarialSimulator(azure_ai_project=azure_ai_project)
 
-        jailbreak_outputs, regular_outputs = asyncio.run(
+        outputs = asyncio.run(
             simulator(
                 scenario=AdversarialScenario.ADVERSARIAL_SUMMARIZATION,
                 max_conversation_turns=1,
@@ -227,5 +224,46 @@ class TestAdvSimulator:
                 jailbreak=True,
             )
         )
-        assert len(jailbreak_outputs) == 1
-        assert len(regular_outputs) == 1
+        assert len(outputs) == 1
+
+    @pytest.mark.usefixtures("vcr_recording")
+    def test_adv_rewrite_sim_responds_with_responses(self, azure_cred, project_scope):
+        os.environ.pop("RAI_SVC_URL", None)
+        from promptflow.evals.synthetic import AdversarialScenario, AdversarialSimulator
+
+        azure_ai_project = {
+            "subscription_id": project_scope["subscription_id"],
+            "resource_group_name": project_scope["resource_group_name"],
+            "project_name": project_scope["project_name"],
+        }
+
+        async def callback(
+            messages: List[Dict], stream: bool = False, session_state: Any = None, context: Dict[str, Any] = None
+        ) -> dict:
+            question = messages["messages"][0]["content"]
+
+            formatted_response = {"content": question, "role": "assistant"}
+            messages["messages"].append(formatted_response)
+            return {
+                "messages": messages["messages"],
+                "stream": stream,
+                "session_state": session_state,
+                "context": context,
+            }
+
+        simulator = AdversarialSimulator(azure_ai_project=azure_ai_project, credential=azure_cred)
+
+        outputs = asyncio.run(
+            simulator(
+                scenario=AdversarialScenario.ADVERSARIAL_REWRITE,
+                max_conversation_turns=1,
+                max_simulation_results=1,
+                target=callback,
+                api_call_retry_limit=3,
+                api_call_retry_sleep_sec=1,
+                api_call_delay_sec=30,
+                concurrent_async_task=1,
+                jailbreak=True,
+            )
+        )
+        assert len(outputs) == 1
