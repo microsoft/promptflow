@@ -107,7 +107,7 @@ def log_evaluate_activity(func):
         }
 
         with ((log_activity(get_telemetry_logger(), "pf.evals.evaluate", activity_type=ActivityType.PUBLICAPI,
-                          user_agent=USER_AGENT, custom_dimensions=custom_dimensions))):
+                            user_agent=USER_AGENT, custom_dimensions=custom_dimensions))):
             result = func(*args, **kwargs)
 
             try:
