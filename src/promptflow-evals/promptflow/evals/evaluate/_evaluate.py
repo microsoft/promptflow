@@ -9,9 +9,8 @@ import numpy as np
 import pandas as pd
 
 from promptflow._sdk._constants import LINE_NUMBER
-from promptflow._sdk._telemetry import ActivityType, log_activity
-from promptflow._sdk._telemetry.telemetry import get_telemetry_logger
 from promptflow.client import PFClient
+from ._telemetry import log_evaluate_activity
 
 from .._constants import CONTENT_SAFETY_DEFECT_RATE_THRESHOLD_DEFAULT, EvaluationMetrics, Prefixes
 from .._user_agent import USER_AGENT
@@ -258,7 +257,7 @@ def _rename_columns_conditionally(df: pd.DataFrame):
     return df
 
 
-@log_activity(get_telemetry_logger(), "pf.evals.evaluate", activity_type=ActivityType.PUBLICAPI, user_agent=USER_AGENT)
+@log_evaluate_activity
 def evaluate(
     *,
     evaluation_name: Optional[str] = None,
