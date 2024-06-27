@@ -81,7 +81,7 @@ def _log_metrics_and_instance_results(
     metrics, instance_results, trace_destination, run, evaluation_name,
 ) -> str:
     if trace_destination is None:
-        LOGGER.debug("Unable to log traces as trace destination was not defined.")
+        LOGGER.error("Unable to log traces as trace destination was not defined.")
         return None
 
     azure_pf_client, ws_triad = _azure_pf_client_and_triad(trace_destination)
