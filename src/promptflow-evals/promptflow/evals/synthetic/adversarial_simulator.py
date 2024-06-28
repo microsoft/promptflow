@@ -150,6 +150,23 @@ class AdversarialSimulator:
 
          The 'content' for 'assistant' role messages may includes the messages that your callback returned.
         :rtype: List[Dict[str, Any]]
+        Example:
+        return_value = [
+            {
+                'template_parameters': {},
+                'messages': [
+                    {
+                        'content': '<jailbreak prompt> <adversarial question>',
+                        'role': 'user'
+                    },
+                    {
+                        'content': "<user's endpoint response>",
+                        'role': 'assistant',
+                        'context': None
+                    }
+                ],
+                '$schema': 'http://azureml/sdk-2-0/ChatConversation.json'
+            }]
         """
         # validate the inputs
         if scenario != AdversarialScenario.ADVERSARIAL_CONVERSATION:
