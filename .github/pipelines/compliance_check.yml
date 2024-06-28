@@ -34,6 +34,19 @@ steps:
 
 - task: PowerShell@2
   inputs:
+    targetType: inline
+    script: |
+      if (-Not (Test-Path "$(sourceLocation)/scripts/compliance-check/result.tsv")) {
+        Write-Host "PoliCheck@2 (previous step) is not supported for forked GitHub repository, which will break the following step."
+        Write-Host "So as a workaround, this step will create an empty result.tsv file."
+        New-Item -ItemType Directory -Force -Path "$(sourceLocation)/scripts/compliance-check"
+        Set-Location "$(sourceLocation)/scripts/compliance-check"
+        New-Item -ItemType File -Name "result.tsv"
+      }
+  displayName: 'Workaround for fork repository'
+
+- task: PowerShell@2
+  inputs:
     targetType: 'filePath'
     filePath: '$(sourceLocation)\scripts\compliance-check\Check-PolicheckScan.ps1'
     arguments: >
