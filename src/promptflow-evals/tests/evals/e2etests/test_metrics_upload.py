@@ -10,7 +10,6 @@ from promptflow.evals.evaluate import _utils as ev_utils
 from promptflow.evals.evaluate._eval_run import EvalRun
 from promptflow.evals.evaluate._evaluate import evaluate
 from promptflow.evals.evaluators._f1_score._f1_score import F1ScoreEvaluator
-from promptflow.recording.record_mode import is_live
 
 
 @pytest.fixture
@@ -50,11 +49,6 @@ def setup_data(azure_ml_client, project_scope):
 @pytest.mark.e2etest
 class TestMetricsUpload(object):
     """End to end tests to check how the metrics were uploaded to cloud."""
-    # Add the tracking URI to properties dictionary with the key "mlFlowTrackingUri":
-    # azureml://weatua2.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/
-    # resourceGroups/00000000-0000-0000-0000-000000000000/providers/Microsoft.MachineLearningServices/
-    # workspaces/00000
-    # Replace wetus2 to region you are running experiment in.
 
     def _assert_no_errors_for_module(self, records, module_names):
         """Check there are no errors in the log."""
@@ -107,9 +101,6 @@ class TestMetricsUpload(object):
     @pytest.mark.usefixtures("vcr_recording")
     def test_log_artifact(self, setup_data, caplog, tmp_path):
         """Test uploading artifact to the service."""
-        # After re recording this test please replace sktid by
-        # 00000000-0000-0000-0000-000000000000 in the request
-        # with body: '{"f1": 0.5}' and body: '{"internal_f1": 0.6}'
         logger = logging.getLogger(EvalRun.__module__)
         # All loggers, having promptflow. prefix will have "promptflow" logger
         # as a parent. This logger does not propagate the logs and cannot be
@@ -131,13 +122,12 @@ class TestMetricsUpload(object):
         ev_run.log_artifact(tmp_path)
         self._assert_no_errors_for_module(caplog.records, EvalRun.__module__)
 
-    @pytest.mark.skipif(
-        condition=not is_live(),
-        reason="promptflow run create files with random names, which cannot be recorded. See work item 3305909."
-    )
     @pytest.mark.usefixtures("vcr_recording")
     def test_e2e_run_target_fn(self, caplog, project_scope, questions_answers_file):
         """Test evaluation run logging."""
+        # Afer re-recording this test, please make sure, that the cassette contains the POST
+        # request ending by 00000/rundata and it has status 200.
+
         # We cannot define target in this file as pytest will load
         # all modules in test folder and target_fn will be imported from the first
         # module named test_evaluate and it will be a different module in unit test
@@ -151,46 +141,24 @@ class TestMetricsUpload(object):
         from .target_fn import target_fn
 
         f1_score_eval = F1ScoreEvaluator()
-        # We need the deterministic name of a run, however it cannot be recorded
-        # into database more then once or the database may be non writable.
-        # By this reason we will cancel writing to database by mocking it.
-        # Please uncomment this line for the local tests
-        # with patch('promptflow._sdk.entities._run.Run._dump'):
         evaluate(
             data=questions_answers_file,
             target=target_fn,
             evaluators={"f1": f1_score_eval},
             azure_ai_project=project_scope,
-            # _run_name="eval_test_run2",
         )
         self._assert_no_errors_for_module(caplog.records, (ev_utils.__name__, EvalRun.__module__))
 
-    @pytest.mark.skipif(
-        condition=not is_live(),
-        reason="promptflow run create files with random names, which cannot be recorded. See work item 3305909."
-    )
     @pytest.mark.usefixtures("vcr_recording")
     def test_e2e_run(self, caplog, project_scope, questions_answers_file):
         """Test evaluation run logging."""
-        # Make sure that the URL ending in TraceSessions is in the recording, it is not always being recorded.
-        # To record this test please modify the YAML file. It is missing "mlFlowTrackingUri" property by default.
-        # Search URIs: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups
-        # /00000/providers/Microsoft.MachineLearningServices/workspaces/00000
-        # Add the tracking URI to properties dictionary with the key "mlFlowTrackingUri":
-        # azureml://weatua2.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/
-        # resourceGroups/00000000-0000-0000-0000-000000000000/providers/Microsoft.MachineLearningServices/
-        # workspaces/00000
+        # Afer re-recording this test, please make sure, that the cassette contains the POST
+        # request ending by /BulkRuns/create.
         logger = logging.getLogger(EvalRun.__module__)
         # All loggers, having promptflow. prefix will have "promptflow" logger
         # as a parent. This logger does not propagate the logs and cannot be
         # captured by caplog. Here we will skip this logger to capture logs.
         logger.parent = logging.root
         f1_score_eval = F1ScoreEvaluator()
-        # We need the deterministic name of a run, however it cannot be recorded
-        # into database more then once or the database may be non writable.
-        # By this reason we will cancel writing to database by mocking it.
-        # Please uncomment this line for the local tests
-        # with patch('promptflow._sdk.entities._run.Run._dump'):
-        evaluate(data=questions_answers_file, evaluators={"f1": f1_score_eval}, azure_ai_project=project_scope,
-                 _run_name="eval_test_run4",)
+        evaluate(data=questions_answers_file, evaluators={"f1": f1_score_eval}, azure_ai_project=project_scope,)
         self._assert_no_errors_for_module(caplog.records, (ev_utils.__name__, EvalRun.__module__))

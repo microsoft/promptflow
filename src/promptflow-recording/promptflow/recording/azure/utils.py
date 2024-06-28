@@ -15,6 +15,29 @@ from vcr.request import Request
 from .constants import ENVIRON_TEST_PACKAGE, SanitizedValues
 
 
+PF_REQUEST_REPLACEMENTS = {
+    "start_time": SanitizedValues.START_TIME,
+    "timestamp": SanitizedValues.TIMESTAMP,
+    "startTimeUtc": SanitizedValues.START_UTC,
+    "endTimeUtc": SanitizedValues.END_UTC,
+    "end_time": SanitizedValues.END_TIME,
+    "runId": SanitizedValues.RUN_ID,
+    "RunId": SanitizedValues.RUN_ID,
+    # runDisplayName may be the same as RunID
+    "runDisplayName": SanitizedValues.RUN_ID,
+    "container": SanitizedValues.CONTAINER,
+    "flowDefinitionBlobPath": SanitizedValues.FLOW_DEF,
+    "flowArtifactsRootPath": SanitizedValues.ROOT_PF_PATH,
+    "logFileRelativePath": SanitizedValues.EXEC_LOGS,
+    "dataPath": SanitizedValues.DATA_PATH,
+    "Outputs": SanitizedValues.OUTPUTS,
+    "run_id": SanitizedValues.RUN_UUID,
+    "run_uuid": SanitizedValues.RUN_UUID,
+    "exp_id": SanitizedValues.EXP_UUID,
+    "variantRunId": SanitizedValues.RUN_ID,
+}
+
+
 class FakeTokenCredential:
     """Refer from Azure SDK for Python repository.
 
@@ -140,6 +163,49 @@ def sanitize_upload_hash(value: str) -> str:
         value,
         flags=re.IGNORECASE,
     )
+    value = sanitize_pf_run_ids(value)
+    return value
+
+
+def sanitize_pf_run_ids(value: str) -> str:
+    """
+    Replace Run ID on artifacts
+
+    :param value: The value to be modified.
+    :type value: str
+    :returns: The modified string.
+    """
+    re_pf_exp_id = '.+?_\\w{8}'
+    re_pf_run_id = '.+?_\\w{8}_\\d{8}_\\d{6}_\\d{6}'
+    # Samnutize promptflow-like Run IDs.
+    for left, right, eol in [
+        ("ExperimentRun/dcid[.]", '', ''),
+        ('promptflow/PromptFlowArtifacts/', '', ''),
+        ('runs/', '/flow.flex.yaml', ''),
+        ('runs/', '', '$'),
+        ('BulkRuns/', '', '$'),
+            ('runs/', '/batchsync', '')]:
+        value = re.sub(
+            f"{left}{re_pf_run_id}{eol}{right}",
+            f"{left.replace('[.]', '.')}{SanitizedValues.RUN_ID}{right}",
+            value,
+            flags=re.IGNORECASE,
+        )
+    # Sanitize the UUID-like Run IDs.
+    re_uid = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+    value = re.sub(
+        f"experimentids/{re_uid}/runs/{re_uid}",
+        f"experimentids/{SanitizedValues.EXP_UUID}/runs/{SanitizedValues.RUN_UUID}",
+        value,
+        flags=re.IGNORECASE,
+    )
+    # And the same for Promptflow experimentids
+    value = re.sub(
+        f"experimentids/{re_pf_exp_id}/runs/{re_pf_run_id}",
+        f"experimentids/{SanitizedValues.EXP_UUID}/runs/{SanitizedValues.RUN_UUID}",
+        value,
+        flags=re.IGNORECASE,
+    )
     return value
 
 
@@ -206,19 +272,16 @@ def sanitize_pfs_request_body(body: str) -> str:
     if os.getenv(ENVIRON_TEST_PACKAGE) == "promptflow-azure":
         return json.dumps(body_dict)
 
-    # Start and end time
-    if "start_time" in body_dict:
-        body_dict["start_time"] = SanitizedValues.START_TIME
-    if "timestamp" in body_dict:
-        body_dict["timestamp"] = SanitizedValues.TIMESTAMP
-    if "end_time" in body_dict:
-        body_dict["end_time"] = SanitizedValues.END_TIME
-    # Promptflow Run ID
-    if "runId" in body_dict:
-        body_dict["runId"] = SanitizedValues.RUN_ID
+    # Go over the promptflow replacements
+    for k, v in PF_REQUEST_REPLACEMENTS.items():
+        if k in body_dict:
+            body_dict[k] = v
+
     # Sanitize telemetry event
     if isinstance(body_dict, list) and "Microsoft.ApplicationInsights.Event" in body:
         body_dict = SanitizedValues.FAKE_APP_INSIGHTS
+    # Sanitize the artifact paths
+
     return json.dumps(body_dict)
 
 
@@ -245,7 +308,7 @@ def sanitize_file_share_flow_path(value: str) -> str:
         return value
     start_index = value.index(flow_folder_name)
     flow_name_length = 38  # len("simple_hello_world-01-01-2024-00-00-00")
-    flow_name = value[start_index : start_index + flow_name_length]
+    flow_name = value[start_index: start_index + flow_name_length]
     return value.replace(flow_name, "flow_name")
 
 
@@ -307,4 +370,4 @@ def get_created_flow_name_from_flow_path(flow_path: str) -> str:
     # pytest fixture "created_flow" will create flow on file share with timestamp as suffix
     # we need to extract the flow name from the path
     # flow name is expected to start with "simple_hello_world" and follow with "/flow.dag.yaml"
-    return flow_path[flow_path.index("simple_hello_world") : flow_path.index("/flow.dag.yaml")]
+    return flow_path[flow_path.index("simple_hello_world"): flow_path.index("/flow.dag.yaml")]
