@@ -32,6 +32,16 @@ steps:
     result: '$(sourceLocation)\scripts\compliance-check\result.tsv'
     optionsXCLASS: 'Geopolitical'
 
+- task: Bash@3
+  inputs:
+    targetType: inline
+    script: |
+      if [ ! -f $(sourceLocation)/scripts/compliance-check/result.tsv ]; then
+        echo "Creating empty result file, as this might be a fork repository."
+        touch $(sourceLocation)/scripts/compliance-check/result.tsv
+      fi
+  displayName: 'Workaround for fork repository'
+
 - task: PowerShell@2
   inputs:
     targetType: 'filePath'
