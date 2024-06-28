@@ -175,14 +175,10 @@ class AdversarialSimulator:
             )
         total_tasks = min(total_tasks, max_simulation_results)
         if jailbreak:
-            logger.warning(
-                "Jailbreak simulator is available as a separate simulator. \n"
-                "Use JailbreakAdversarialSimulator to simulate jailbreak scenarios."
-            )
             jailbreak_dataset = await self.rai_client.get_jailbreaks_dataset()
         progress_bar = tqdm(
             total=total_tasks,
-            desc="generating simulations",
+            desc="generating jailbreak simulations" if jailbreak else "generating simulations",
             ncols=100,
             unit="simulations",
         )
