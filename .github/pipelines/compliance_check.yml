@@ -44,7 +44,7 @@ steps:
         Get-Location
         Get-ChildItem -Name
         Get-Content "result.tsv"
-    }
+      }
   displayName: 'Workaround for fork repository'
 
 - task: PowerShell@2
