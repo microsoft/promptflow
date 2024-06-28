@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from promptflow.azure._utils import _tracing
 from promptflow.evals.evaluate import _utils as ev_utils
 from promptflow.evals.evaluate._eval_run import EvalRun
 from promptflow.evals.evaluate._evaluate import evaluate
@@ -123,7 +124,7 @@ class TestMetricsUpload(object):
         self._assert_no_errors_for_module(caplog.records, EvalRun.__module__)
 
     @pytest.mark.usefixtures("vcr_recording")
-    def test_e2e_run_target_fn(self, caplog, project_scope, questions_answers_file):
+    def test_e2e_run_target_fn(self, caplog, project_scope, questions_answers_file, monkeypatch):
         """Test evaluation run logging."""
         # Afer re-recording this test, please make sure, that the cassette contains the POST
         # request ending by 00000/rundata and it has status 200.
@@ -140,6 +141,7 @@ class TestMetricsUpload(object):
         logger.parent = logging.root
         from .target_fn import target_fn
 
+        monkeypatch.setattr(_tracing, 'validate_trace_destination', lambda x: None)
         f1_score_eval = F1ScoreEvaluator()
         evaluate(
             data=questions_answers_file,
@@ -150,7 +152,7 @@ class TestMetricsUpload(object):
         self._assert_no_errors_for_module(caplog.records, (ev_utils.__name__, EvalRun.__module__))
 
     @pytest.mark.usefixtures("vcr_recording")
-    def test_e2e_run(self, caplog, project_scope, questions_answers_file):
+    def test_e2e_run(self, caplog, project_scope, questions_answers_file, monkeypatch):
         """Test evaluation run logging."""
         # Afer re-recording this test, please make sure, that the cassette contains the POST
         # request ending by /BulkRuns/create.
@@ -159,6 +161,7 @@ class TestMetricsUpload(object):
         # as a parent. This logger does not propagate the logs and cannot be
         # captured by caplog. Here we will skip this logger to capture logs.
         logger.parent = logging.root
+        monkeypatch.setattr(_tracing, 'validate_trace_destination', lambda x: None)
         f1_score_eval = F1ScoreEvaluator()
         evaluate(data=questions_answers_file, evaluators={"f1": f1_score_eval}, azure_ai_project=project_scope,)
         self._assert_no_errors_for_module(caplog.records, (ev_utils.__name__, EvalRun.__module__))
