@@ -41,9 +41,6 @@ steps:
         New-Item -ItemType Directory -Force -Path "$(sourceLocation)/scripts/compliance-check"
         Set-Location "$(sourceLocation)/scripts/compliance-check"
         New-Item -ItemType File -Name "result.tsv" -Value "<PoliCheckExclusions>`r`n</PoliCheckExclusions>"
-        Get-Location
-        Get-ChildItem -Name
-        Get-Content "result.tsv"
       }
   displayName: 'Workaround for fork repository'
 
