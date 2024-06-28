@@ -32,7 +32,7 @@ steps:
     result: '$(sourceLocation)\scripts\compliance-check\result.tsv'
     optionsXCLASS: 'Geopolitical'
 
-- task: Bash@3
+- task: PowerShell@2
   inputs:
     targetType: inline
     script: |
@@ -41,8 +41,11 @@ steps:
         mkdir -p $(sourceLocation)/scripts/compliance-check
         cd $(sourceLocation)/scripts/compliance-check
         touch result.tsv
+        echo "<PoliCheckExclusions>" > result.tsv
+        echo "</PoliCheckExclusions>" >> result.tsv
         pwd
         ls -l
+        cat result.tsv
       fi
   displayName: 'Workaround for fork repository'
 
