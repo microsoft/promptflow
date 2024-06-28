@@ -8,6 +8,7 @@ import logging
 import random
 from typing import Any, Callable, Dict, List
 
+from azure.identity import DefaultAzureCredential
 from tqdm import tqdm
 
 from promptflow._sdk._telemetry import ActivityType, monitor_operation
@@ -56,33 +57,31 @@ class AdversarialSimulator:
     Initializes the adversarial simulator with a project scope.
 
     :param azure_ai_project: Dictionary defining the scope of the project. It must include the following keys:
-
-        * "subscription_id": Azure subscription ID.
-        * "resource_group_name": Name of the Azure resource group.
-        * "project_name": Name of the Azure Machine Learning workspace.
-        * "credential": Azure credentials object for authentication.
+        - "subscription_id": Azure subscription ID.
+        - "resource_group_name": Name of the Azure resource group.
+        - "project_name": Name of the Azure Machine Learning workspace.
+    :param credential: The credential for connecting to Azure AI project.
+    :type credential: TokenCredential
     :type azure_ai_project: Dict[str, Any]
     """
 
-    def __init__(self, *, azure_ai_project: Dict[str, Any]):
+    def __init__(self, *, azure_ai_project: Dict[str, Any], credential=None):
         """Constructor."""
-        # check if azure_ai_project has the keys: subscription_id, resource_group_name, project_name, credential
-        if not all(
-            key in azure_ai_project for key in ["subscription_id", "resource_group_name", "project_name", "credential"]
-        ):
-            raise ValueError(
-                "azure_ai_project must contain keys: subscription_id, resource_group_name, project_name, credential"
-            )
+        # check if azure_ai_project has the keys: subscription_id, resource_group_name and project_name
+        if not all(key in azure_ai_project for key in ["subscription_id", "resource_group_name", "project_name"]):
+            raise ValueError("azure_ai_project must contain keys: subscription_id, resource_group_name, project_name")
         # check the value of the keys in azure_ai_project is not none
-        if not all(
-            azure_ai_project[key] for key in ["subscription_id", "resource_group_name", "project_name", "credential"]
-        ):
-            raise ValueError("subscription_id, resource_group_name, project_name, and credential must not be None")
+        if not all(azure_ai_project[key] for key in ["subscription_id", "resource_group_name", "project_name"]):
+            raise ValueError("subscription_id, resource_group_name and project_name must not be None")
+        if "credential" not in azure_ai_project and not credential:
+            credential = DefaultAzureCredential()
+        elif "credential" in azure_ai_project:
+            credential = azure_ai_project["credential"]
         self.azure_ai_project = azure_ai_project
         self.token_manager = ManagedIdentityAPITokenManager(
             token_scope=TokenScope.DEFAULT_AZURE_MANAGEMENT,
             logger=logging.getLogger("AdversarialSimulator"),
-            credential=self.azure_ai_project["credential"],
+            credential=credential,
         )
         self.rai_client = RAIClient(azure_ai_project=azure_ai_project, token_manager=self.token_manager)
         self.adversarial_template_handler = AdversarialTemplateHandler(

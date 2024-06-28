@@ -25,8 +25,7 @@ import asyncio
 azure_ai_project = {
     "subscription_id": <subscription_id>,
     "resource_group_name": <resource_group_name>,
-    "project_name": <project_name>,
-    "credential": DefaultAzureCredential(),
+    "project_name": <project_name>
 }
 
 async def callback(
@@ -90,7 +89,7 @@ Make sure you change the snippets below to remove the `asyncio.run` wrapper and 
 ### Adversarial QA:
 ```python
 scenario = AdversarialScenario.ADVERSARIAL_QA
-simulator = AdversarialSimulator(azure_ai_project=azure_ai_project)
+simulator = AdversarialSimulator(azure_ai_project=azure_ai_project, credential=DefaultAzureCredential())
 
 outputs = asyncio.run(
     simulator(
