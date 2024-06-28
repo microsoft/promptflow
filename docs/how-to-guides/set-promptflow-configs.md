@@ -77,6 +77,8 @@ The expected format of the config file is as follows:
 }
 
 ```
+### service.host
+The promptflow service host, default to "127.0.0.1". You can set the service host with `service.host=<your-host>`.
 
 > 💡 Tips
 > In addition to the CLI command line setting approach, we also support setting this connection provider through the VS Code extension UI. [Click here to learn more](../cloud/azureai/consume-connections-from-azure-ai.md).
