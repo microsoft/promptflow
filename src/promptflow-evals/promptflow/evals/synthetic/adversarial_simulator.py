@@ -111,66 +111,58 @@ class AdversarialSimulator:
         Executes the adversarial simulation against a specified target function asynchronously.
 
         :param scenario: Enum value specifying the adversarial scenario used for generating inputs.
-         example:
-
-         - :py:const:`promptflow.evals.synthetic.adversarial_scenario.AdversarialScenario.ADVERSARIAL_QA`
-         - :py:const:`promptflow.evals.synthetic.adversarial_scenario.AdversarialScenario.ADVERSARIAL_CONVERSATION`
-        :type scenario: promptflow.evals.synthetic.adversarial_scenario.AdversarialScenario
-        :param target: The target function to simulate adversarial inputs against.
-            This function should be asynchronous and accept a dictionary representing the adversarial input.
+        :type scenario: AdversarialScenario
+        :param target: The target function to simulate adversarial inputs against. This function should be asynchronous
+        and accept a dictionary representing the adversarial input.
         :type target: Callable
-        :param max_conversation_turns: The maximum number of conversation turns to simulate.
-            Defaults to 1.
+        :param max_conversation_turns: The maximum number of conversation turns to simulate. Defaults to 1.
         :type max_conversation_turns: int
-        :param max_simulation_results: The maximum number of simulation results to return.
-            Defaults to 3.
+        :param max_simulation_results: The maximum number of simulation results to return. Defaults to 3.
         :type max_simulation_results: int
         :param api_call_retry_limit: The maximum number of retries for each API call within the simulation.
-            Defaults to 3.
+        Defaults to 3.
         :type api_call_retry_limit: int
         :param api_call_retry_sleep_sec: The sleep duration (in seconds) between retries for API calls.
-            Defaults to 1 second.
+        Defaults to 1 second.
         :type api_call_retry_sleep_sec: int
         :param api_call_delay_sec: The delay (in seconds) before making an API call.
-            This can be used to avoid hitting rate limits. Defaults to 0 seconds.
+        This can be used to avoid hitting rate limits. Defaults to 0 seconds.
         :type api_call_delay_sec: int
         :param concurrent_async_task: The number of asynchronous tasks to run concurrently during the simulation.
-            Defaults to 3.
+        Defaults to 3.
         :type concurrent_async_task: int
         :param jailbreak: If set to True, allows breaking out of the conversation flow defined by the scenario.
-            Defaults to False.
+        Defaults to False.
         :type jailbreak: bool
 
         :return: A list of dictionaries, each representing a simulated conversation. Each dictionary contains:
-
-         - 'template_parameters': A dictionary with parameters used in the conversation template,
+            - 'template_parameters': A dictionary with parameters used in the conversation template,
             including 'conversation_starter'.
-         - 'messages': A list of dictionaries, each representing a turn in the conversation.
-            Each message dictionary includes 'content' (the message text) and
-            'role' (indicating whether the message is from the 'user' or the 'assistant').
-         - '**$schema**': A string indicating the schema URL for the conversation format.
+            - 'messages': A list of dictionaries, each representing a turn in the conversation.
+            Each message dictionary includes 'content' (the message text) and 'role'
+            (indicating whether the message is from the 'user' or the 'assistant').
+            - '**$schema**': A string indicating the schema URL for the conversation format.
 
-         The 'content' for 'assistant' role messages may includes the messages that your callback returned.
         :rtype: List[Dict[str, Any]]
 
         Example:
-        return_value = [
-            {
-                'template_parameters': {},
-                'messages': [
-                    {
-                        'content': '<jailbreak prompt> <adversarial question>',
-                        'role': 'user'
-                    },
-                    {
-                        'content': "<user's endpoint response>",
-                        'role': 'assistant',
-                        'context': None
-                    }
-                ],
-                '$schema': 'http://azureml/sdk-2-0/ChatConversation.json'
-            }]
-
+            return_value = [
+                {
+                    'template_parameters': {},
+                    'messages': [
+                        {
+                            'content': '<jailbreak prompt> <adversarial question>',
+                            'role': 'user'
+                        },
+                        {
+                            'content': "<user's endpoint response>",
+                            'role': 'assistant',
+                            'context': None
+                        }
+                    ],
+                    '$schema': 'http://azureml/sdk-2-0/ChatConversation.json'
+                }
+            ]
         """
         # validate the inputs
         if scenario != AdversarialScenario.ADVERSARIAL_CONVERSATION:
