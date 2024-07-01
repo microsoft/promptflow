@@ -139,6 +139,18 @@ class TestBatchInputsProcessor:
                     "deployment_name": "text-davinci-003",
                 },
             ),
+            (
+                {
+                    # If input mapping is empty dict, return the original data.
+                    "data": {"question": "Shorter input key has higher priority."},
+                    "line_number": 0,
+                },
+                {},
+                {
+                    "question": "Shorter input key has higher priority.",
+                    "line_number": 0
+                },
+            ),
         ],
     )
     def test_apply_inputs_mapping(self, inputs, inputs_mapping, expected):
