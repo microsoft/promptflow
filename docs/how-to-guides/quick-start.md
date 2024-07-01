@@ -1,11 +1,11 @@
 # Quick start
 
-This guide will walk you through the fist step using of prompt flow code-first experience.
+This guide will walk you through the first steps of the prompt flow code-first experience.
 
 **Prerequisite** - To make the most of this tutorial, you'll need:
-- Know how to program with Python :)
+- Python programming knowledge
 
-**Learning Objectives** - Upon completing this tutorial, you should learn how to:
+**Learning Objectives** - Upon completing this tutorial, you should know how to:
 - Setup your python environment to run prompt flow
 - Create a flow using a prompt and python function
 - Test the flow using your favorite experience: CLI, SDK or UI.
@@ -17,7 +17,7 @@ Install promptflow package to start.
 pip install promptflow
 ```
 
-Learn more on ways of [installation](./installation/index.md).
+Learn more about [installation](./installation/index.md).
 
 ## Create your first flow
 
