@@ -111,6 +111,7 @@ class AdversarialSimulator:
         Executes the adversarial simulation against a specified target function asynchronously.
 
         :param scenario: Enum value specifying the adversarial scenario used for generating inputs.
+        Must be an instance of :class:`promptflow.evals.synthetic.adversarial_scenario.AdversarialScenario`.
         :type scenario: AdversarialScenario
         :param target: The target function to simulate adversarial inputs against. This function should be asynchronous
         and accept a dictionary representing the adversarial input.
