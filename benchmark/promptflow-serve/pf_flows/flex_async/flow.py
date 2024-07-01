@@ -47,7 +47,6 @@ class ChatFlow:
                 else:
                     raise RuntimeError(f"Failed call to {url}: {response.status}")
 
-
     async def call_node(self, node_instance: any):
         await node_instance()
 
