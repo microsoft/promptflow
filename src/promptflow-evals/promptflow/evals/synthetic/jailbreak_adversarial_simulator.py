@@ -123,7 +123,6 @@ class JailbreakAdversarialSimulator:
         :param concurrent_async_task: The number of asynchronous tasks to run concurrently during the simulation.
             Defaults to 3.
         :type concurrent_async_task: int
-
         :return: A list of dictionaries, each representing a simulated conversation. Each dictionary contains:
 
          - 'template_parameters': A dictionary with parameters used in the conversation template,
@@ -140,39 +139,39 @@ class JailbreakAdversarialSimulator:
 
         .. code-block:: python
 
-        return_value = {
-            "jailbreak": [
-            {
-                'template_parameters': {},
-                'messages': [
+            return_value = {
+                "jailbreak": [
+                {
+                    'template_parameters': {},
+                    'messages': [
+                        {
+                            'content': '<jailbreak prompt> <adversarial question>',
+                            'role': 'user'
+                        },
+                        {
+                            'content': "<response from endpoint>",
+                            'role': 'assistant',
+                            'context': None
+                        }
+                    ],
+                    '$schema': 'http://azureml/sdk-2-0/ChatConversation.json'
+                }],
+                "regular": [
+                {
+                    'template_parameters': {},
+                    'messages': [
                     {
-                        'content': '<jailbreak prompt> <adversarial question>',
+                        'content': '<adversaril question>',
                         'role': 'user'
                     },
                     {
-                        'content': "<user's endpoint response>",
+                        'content': "<response from endpoint>",
                         'role': 'assistant',
                         'context': None
-                    }
-                ],
-                '$schema': 'http://azureml/sdk-2-0/ChatConversation.json'
-            }],
-            "regular": [
-            {
-                'template_parameters': {},
-                'messages': [
-                {
-                    'content': '<adversaril question>',
-                    'role': 'user'
-                },
-                {
-                    'content': "<user's endpoint response>",
-                    'role': 'assistant',
-                    'context': None
-                }],
-                '$schema': 'http://azureml/sdk-2-0/ChatConversation.json'
-            }]
-        }
+                    }],
+                    '$schema': 'http://azureml/sdk-2-0/ChatConversation.json'
+                }]
+            }
         """
         if scenario not in AdversarialScenario.__members__.values():
             raise ValueError("Invalid adversarial scenario")
