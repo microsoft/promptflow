@@ -241,7 +241,8 @@
     "Machinal",
     "azureopenaimodelconfiguration",
     "openaimodelconfiguration",
-    "usecwd"
+    "usecwd",
+    "locustio"
   ],
   "flagWords": [
     "Prompt Flow"
