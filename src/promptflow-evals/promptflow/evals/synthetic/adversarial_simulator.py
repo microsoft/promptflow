@@ -63,6 +63,7 @@ class AdversarialSimulator:
     :param credential: The credential for connecting to Azure AI project.
     :type credential: TokenCredential
     :type azure_ai_project: Dict[str, Any]
+
     """
 
     def __init__(self, *, azure_ai_project: Dict[str, Any], credential=None):
@@ -139,6 +140,7 @@ class AdversarialSimulator:
         :param jailbreak: If set to True, allows breaking out of the conversation flow defined by the scenario.
             Defaults to False.
         :type jailbreak: bool
+
         :return: A list of dictionaries, each representing a simulated conversation. Each dictionary contains:
 
          - 'template_parameters': A dictionary with parameters used in the conversation template,
@@ -150,6 +152,7 @@ class AdversarialSimulator:
 
          The 'content' for 'assistant' role messages may includes the messages that your callback returned.
         :rtype: List[Dict[str, Any]]
+
         Example:
         return_value = [
             {
@@ -167,6 +170,7 @@ class AdversarialSimulator:
                 ],
                 '$schema': 'http://azureml/sdk-2-0/ChatConversation.json'
             }]
+
         """
         # validate the inputs
         if scenario != AdversarialScenario.ADVERSARIAL_CONVERSATION:
