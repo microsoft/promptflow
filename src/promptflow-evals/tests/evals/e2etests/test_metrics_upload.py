@@ -6,7 +6,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from promptflow.azure._utils import _tracing
 from promptflow.evals.evaluate import _utils as ev_utils
 from promptflow.evals.evaluate._eval_run import EvalRun
 from promptflow.evals.evaluate._evaluate import evaluate
@@ -124,10 +123,12 @@ class TestMetricsUpload(object):
         self._assert_no_errors_for_module(caplog.records, EvalRun.__module__)
 
     @pytest.mark.usefixtures("vcr_recording")
-    def test_e2e_run_target_fn(self, caplog, project_scope, questions_answers_file, monkeypatch):
+    def test_e2e_run_target_fn(self, caplog, project_scope, questions_answers_file):
         """Test evaluation run logging."""
         # Afer re-recording this test, please make sure, that the cassette contains the POST
         # request ending by 00000/rundata and it has status 200.
+        # Also make sure that the cosmos request ending by workspaces/00000/TraceSessions
+        # is also present.
 
         # We cannot define target in this file as pytest will load
         # all modules in test folder and target_fn will be imported from the first
@@ -141,7 +142,6 @@ class TestMetricsUpload(object):
         logger.parent = logging.root
         from .target_fn import target_fn
 
-        monkeypatch.setattr(_tracing, 'validate_trace_destination', lambda x: None)
         f1_score_eval = F1ScoreEvaluator()
         evaluate(
             data=questions_answers_file,
@@ -152,16 +152,17 @@ class TestMetricsUpload(object):
         self._assert_no_errors_for_module(caplog.records, (ev_utils.__name__, EvalRun.__module__))
 
     @pytest.mark.usefixtures("vcr_recording")
-    def test_e2e_run(self, caplog, project_scope, questions_answers_file, monkeypatch):
+    def test_e2e_run(self, caplog, project_scope, questions_answers_file):
         """Test evaluation run logging."""
         # Afer re-recording this test, please make sure, that the cassette contains the POST
         # request ending by /BulkRuns/create.
+        # Also make sure that the cosmos request ending by workspaces/00000/TraceSessions
+        # is also present.
         logger = logging.getLogger(EvalRun.__module__)
         # All loggers, having promptflow. prefix will have "promptflow" logger
         # as a parent. This logger does not propagate the logs and cannot be
         # captured by caplog. Here we will skip this logger to capture logs.
         logger.parent = logging.root
-        monkeypatch.setattr(_tracing, 'validate_trace_destination', lambda x: None)
         f1_score_eval = F1ScoreEvaluator()
         evaluate(data=questions_answers_file, evaluators={"f1": f1_score_eval}, azure_ai_project=project_scope,)
         self._assert_no_errors_for_module(caplog.records, (ev_utils.__name__, EvalRun.__module__))
