@@ -6,6 +6,9 @@
 - Fix incompatibility with `trace.NoOpTracerProvider` when set exporter to prompt flow service.
 - Add missing user agent in trace usage telemetry.
 
+### Improvements
+- [promptflow-devkit] Support setting config of local prompt flow service host
+
 ## v1.12.0 (2024.06.11)
 
 ### Bugs fixed

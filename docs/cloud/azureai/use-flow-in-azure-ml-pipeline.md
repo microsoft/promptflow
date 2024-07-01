@@ -13,7 +13,7 @@ To enable this feature, customer need to:
     2. `run.yaml`: `$schema`: `https://azuremlschemas.azureedge.net/promptflow/latest/Run.schema.json`
 3. ensure that metadata has been generated and is up-to-date:
     1. `<my-flow-directory>/.promptflow/flow.tools.json` should exist;
-    2. customer may update the file via `pf flow validate --file <my-flow-directory>`.
+    2. customer may update the file via `pf flow validate --source <my-flow-directory>`.
 
 :::
 

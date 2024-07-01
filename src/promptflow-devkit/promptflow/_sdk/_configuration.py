@@ -16,6 +16,7 @@ from promptflow._sdk._constants import (
     DEFAULT_ENCODING,
     FLOW_DIRECTORY_MACRO_IN_CONFIG,
     HOME_PROMPT_FLOW_DIR,
+    PF_SERVICE_HOST,
     REMOTE_URI_PREFIX,
     SERVICE_CONFIG_FILE,
 )
@@ -50,6 +51,7 @@ class Configuration(object):
     USER_AGENT = "user_agent"
     ENABLE_INTERNAL_FEATURES = "enable_internal_features"
     TRACE_DESTINATION = "trace.destination"
+    PFS_HOST = "service.host"
     _instance = None
 
     def __init__(self, overrides=None):
@@ -303,3 +305,7 @@ class Configuration(object):
         cls.CONFIG_PATH = temp_path / file_name
         yield
         cls.CONFIG_PATH = original_path
+
+    def get_pfs_host(self) -> Optional[str]:
+        """Get the prompt flow service host."""
+        return self.get_config(key=self.PFS_HOST) or PF_SERVICE_HOST

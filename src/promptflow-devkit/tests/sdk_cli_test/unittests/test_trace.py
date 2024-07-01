@@ -47,6 +47,7 @@ from promptflow.tracing._operation_context import OperationContext
 from promptflow.tracing._start_trace import setup_exporter_from_environ
 
 MOCK_PROMPTFLOW_SERVICE_PORT = "23333"
+MOCK_PROMPTFLOW_SERVICE_HOST = PF_SERVICE_HOST
 
 
 @pytest.fixture
@@ -73,7 +74,10 @@ def mock_resource() -> Dict:
 @pytest.fixture
 def mock_promptflow_service_invocation():
     """Mock `_invoke_pf_svc` as we don't expect to invoke PFS during unit test."""
-    with mock.patch("promptflow._sdk._tracing._invoke_pf_svc", return_value=MOCK_PROMPTFLOW_SERVICE_PORT):
+    with mock.patch(
+        "promptflow._sdk._tracing._invoke_pf_svc",
+        return_value=(MOCK_PROMPTFLOW_SERVICE_PORT, MOCK_PROMPTFLOW_SERVICE_HOST),
+    ):
         yield
 
 
@@ -99,13 +103,15 @@ class TestImports:
 class TestStartTrace:
     @pytest.mark.usefixtures("reset_tracer_provider")
     def test_setup_exporter_from_environ(self) -> None:
+        from promptflow._sdk._service.utils.utils import get_pfs_host
+
         def is_tracer_provider_set() -> bool:
             return isinstance(trace.get_tracer_provider(), TracerProvider)
 
         assert not is_tracer_provider_set()
-
+        service_host = get_pfs_host()
         # set some required environment variables
-        endpoint = f"http://{PF_SERVICE_HOST}:23333/v1/traces"
+        endpoint = f"http://{service_host}:23333/v1/traces"
         collection = str(uuid.uuid4())
         experiment = "test_experiment"
         with patch.dict(
@@ -196,9 +202,12 @@ class TestStartTrace:
             assert original_proivder == new_provider
 
     def test_pfs_invocation_failed_in_start_trace(self):
-        with mock.patch("promptflow._sdk._tracing._invoke_pf_svc"), mock.patch(
-            "promptflow._sdk._tracing.is_pfs_service_healthy", return_value=False
-        ), mock.patch("promptflow._sdk._tracing._inject_res_attrs_to_environ") as monitor_func:
+        with mock.patch(
+            "promptflow._sdk._tracing._invoke_pf_svc",
+            return_value=(MOCK_PROMPTFLOW_SERVICE_PORT, MOCK_PROMPTFLOW_SERVICE_HOST),
+        ), mock.patch("promptflow._sdk._tracing.is_pfs_service_healthy", return_value=False), mock.patch(
+            "promptflow._sdk._tracing._inject_res_attrs_to_environ"
+        ) as monitor_func:
             start_trace_with_devkit(collection=str(uuid.uuid4()))
             assert monitor_func.call_count == 0
 
