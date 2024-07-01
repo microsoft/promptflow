@@ -153,7 +153,9 @@ class AdversarialSimulator:
         :rtype: List[Dict[str, Any]]
 
         **Output format**
+
         .. code-block:: python
+
             return_value = [
                 {
                     'template_parameters': {},
@@ -163,7 +165,7 @@ class AdversarialSimulator:
                             'role': 'user'
                         },
                         {
-                            'content': "<user's endpoint response>",
+                            'content': "<response from endpoint>",
                             'role': 'assistant',
                             'context': None
                         }

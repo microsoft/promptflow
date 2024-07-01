@@ -135,7 +135,11 @@ class JailbreakAdversarialSimulator:
 
          The 'content' for 'assistant' role messages may includes the messages that your callback returned.
         :rtype: Dict[str, [List[Dict[str, Any]]]] with two elements
-        Example:
+
+        **Output format**
+
+        .. code-block:: python
+
         return_value = {
             "jailbreak": [
             {
