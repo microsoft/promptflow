@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "promptflow-devkit"
-version = "1.13.0.dev0"
+version = "1.13.0.dev131711197"
 description = "Prompt flow devkit"
 include = [
   "promptflow/_sdk/_service/static/*",
@@ -42,7 +42,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = ">=3.8,<3.9.7 || >3.9.7,<3.13"
-promptflow-core = "<2.0.0"
+promptflow-core = ">=1.13.0.dev131711197,<2.0.0"
 httpx = ">=0.25.1"  # used to send http requests asynchronously
 sqlalchemy = ">=1.4.48,<3.0.0"  # sqlite requirements
 pandas = ">=1.5.3,<3.0.0"  # load data requirements
