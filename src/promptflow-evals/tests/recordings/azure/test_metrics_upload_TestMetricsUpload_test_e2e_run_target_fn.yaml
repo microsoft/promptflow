@@ -40,7 +40,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.047'
+      - '0.027'
     status:
       code: 200
       message: OK
@@ -85,7 +85,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.030'
+      - '0.028'
     status:
       code: 200
       message: OK
@@ -124,7 +124,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.213'
+      - '0.674'
     status:
       code: 200
       message: OK
@@ -169,7 +169,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.033'
+      - '0.042'
     status:
       code: 200
       message: OK
@@ -214,7 +214,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.034'
+      - '0.028'
     status:
       code: 200
       message: OK
@@ -253,85 +253,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.274'
-    status:
-      code: 200
-      message: OK
-- request:
-    body: '[{"ver": 1, "name": "Microsoft.ApplicationInsights.Event", "time": "2024-06-06T23:20:59.838896Z",
-      "sampleRate": 100.0, "iKey": "00000000-0000-0000-0000-000000000000", "tags":
-      {"foo": "bar"}}]'
-    headers:
-      Accept:
-      - application/json
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '1006'
-      Content-Type:
-      - application/json
-      User-Agent:
-      - azsdk-python-azuremonitorclient/unknown Python/3.11.7 (Windows-10-10.0.22631-SP0)
-    method: POST
-    uri: https://dc.services.visualstudio.com/v2.1/track
-  response:
-    body:
-      string: '{"itemsReceived": 1, "itemsAccepted": 0, "appId": null, "errors": [{"index":
-        0, "statusCode": 307, "message": "Ingestion is allowed only from stamp specific
-        endpoint - Location: https://eastus-8.in.applicationinsights.azure.com/v2.1/track"}]}'
-    headers:
-      cache-control:
-      - max-age=604800
-      content-type:
-      - application/json; charset=utf-8
-      location:
-      - https://eastus-8.in.applicationinsights.azure.com/v2.1/track
-      server:
-      - Microsoft-HTTPAPI/2.0
-      strict-transport-security:
-      - max-age=31536000
-      transfer-encoding:
-      - chunked
-      x-content-type-options:
-      - nosniff
-    status:
-      code: 307
-      message: Temporary Redirect
-- request:
-    body: '[{"ver": 1, "name": "Microsoft.ApplicationInsights.Event", "time": "2024-06-06T23:20:59.838896Z",
-      "sampleRate": 100.0, "iKey": "00000000-0000-0000-0000-000000000000", "tags":
-      {"foo": "bar"}}]'
-    headers:
-      Accept:
-      - application/json
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '1006'
-      Content-Type:
-      - application/json
-      User-Agent:
-      - azsdk-python-azuremonitorclient/unknown Python/3.11.7 (Windows-10-10.0.22631-SP0)
-    method: POST
-    uri: https://eastus-8.in.applicationinsights.azure.com/v2.1/track
-  response:
-    body:
-      string: '{"itemsReceived": 1, "itemsAccepted": 1, "appId": null, "errors": []}'
-    headers:
-      content-type:
-      - application/json; charset=utf-8
-      server:
-      - Microsoft-HTTPAPI/2.0
-      strict-transport-security:
-      - max-age=31536000
-      transfer-encoding:
-      - chunked
-      x-content-type-options:
-      - nosniff
+      - '0.299'
     status:
       code: 200
       message: OK
@@ -376,43 +298,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.029'
-    status:
-      code: 200
-      message: OK
-- request:
-    body: '[{"ver": 1, "name": "Microsoft.ApplicationInsights.Event", "time": "2024-06-06T23:20:59.838896Z",
-      "sampleRate": 100.0, "iKey": "00000000-0000-0000-0000-000000000000", "tags":
-      {"foo": "bar"}}]'
-    headers:
-      Accept:
-      - application/json
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '1018'
-      Content-Type:
-      - application/json
-      User-Agent:
-      - azsdk-python-azuremonitorclient/unknown Python/3.11.7 (Windows-10-10.0.22631-SP0)
-    method: POST
-    uri: https://eastus-8.in.applicationinsights.azure.com/v2.1/track
-  response:
-    body:
-      string: '{"itemsReceived": 1, "itemsAccepted": 1, "appId": null, "errors": []}'
-    headers:
-      content-type:
-      - application/json; charset=utf-8
-      server:
-      - Microsoft-HTTPAPI/2.0
-      strict-transport-security:
-      - max-age=31536000
-      transfer-encoding:
-      - chunked
-      x-content-type-options:
-      - nosniff
+      - '0.044'
     status:
       code: 200
       message: OK
@@ -451,7 +337,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.232'
+      - '0.231'
     status:
       code: 200
       message: OK
