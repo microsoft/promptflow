@@ -249,6 +249,8 @@ class EvalRun(metaclass=Singleton):
     def _get_token(self):
         # We have to use lazy import because promptflow.azure
         # is an optional dependency.
+        from promptflow.azure._utils._token_cache import ArmTokenCache
+        return ArmTokenCache().get_token(self._ml_client._credential)
         return self._ml_client._credential.get_token(EvalRun._SCOPE)
 
     def request_with_retry(
