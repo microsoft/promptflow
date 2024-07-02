@@ -3,3 +3,4 @@ promptflow-tools
 python-dotenv
 langchain<0.2.0
 jinja2
+urllib3>=2.2.2 # not directly required, pinned by Snyk to avoid a vulnerability
