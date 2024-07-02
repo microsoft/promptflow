@@ -10,6 +10,7 @@ from promptflow.evals.evaluate import _utils as ev_utils
 from promptflow.evals.evaluate._eval_run import EvalRun
 from promptflow.evals.evaluate._evaluate import evaluate
 from promptflow.evals.evaluators._f1_score._f1_score import F1ScoreEvaluator
+from promptflow.tracing import _start_trace
 
 
 @pytest.fixture
@@ -123,7 +124,7 @@ class TestMetricsUpload(object):
         self._assert_no_errors_for_module(caplog.records, EvalRun.__module__)
 
     @pytest.mark.usefixtures("vcr_recording")
-    def test_e2e_run_target_fn(self, caplog, project_scope, questions_answers_file):
+    def test_e2e_run_target_fn(self, caplog, project_scope, questions_answers_file, monkeypatch):
         """Test evaluation run logging."""
         # Afer re-recording this test, please make sure, that the cassette contains the POST
         # request ending by 00000/rundata and it has status 200.
@@ -139,6 +140,9 @@ class TestMetricsUpload(object):
         # folder. By keeping function in separate file we guarantee, it will be loaded
         # from there.
         logger = logging.getLogger(EvalRun.__module__)
+        # Switch off tracing as it is running in the second thread, wile
+        # thread pool executor is not compatible with VCR.py.
+        monkeypatch.setattr(_start_trace, '_is_devkit_installed', lambda: False)
         # All loggers, having promptflow. prefix will have "promptflow" logger
         # as a parent. This logger does not propagate the logs and cannot be
         # captured by caplog. Here we will skip this logger to capture logs.
@@ -155,7 +159,7 @@ class TestMetricsUpload(object):
         self._assert_no_errors_for_module(caplog.records, (ev_utils.__name__, EvalRun.__module__))
 
     @pytest.mark.usefixtures("vcr_recording")
-    def test_e2e_run(self, caplog, project_scope, questions_answers_file):
+    def test_e2e_run(self, caplog, project_scope, questions_answers_file, monkeypatch):
         """Test evaluation run logging."""
         # Afer re-recording this test, please make sure, that the cassette contains the POST
         # request ending by /BulkRuns/create.
@@ -169,6 +173,9 @@ class TestMetricsUpload(object):
         # as a parent. This logger does not propagate the logs and cannot be
         # captured by caplog. Here we will skip this logger to capture logs.
         logger.parent = logging.root
+        # Switch off tracing as it is running in the second thread, wile
+        # thread pool executor is not compatible with VCR.py.
+        monkeypatch.setattr(_start_trace, '_is_devkit_installed', lambda: False)
         f1_score_eval = F1ScoreEvaluator()
         evaluate(data=questions_answers_file, evaluators={"f1": f1_score_eval}, azure_ai_project=project_scope,)
         self._assert_no_errors_for_module(caplog.records, (ev_utils.__name__, EvalRun.__module__))
