@@ -17,13 +17,14 @@ interactions:
     body:
       string: '{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000",
         "name": "00000", "type": "Microsoft.MachineLearningServices/workspaces", "location":
-        "westus2", "tags": {}, "etag": null, "kind": "Project", "sku": {"name": "Basic",
-        "tier": "Basic"}, "properties": {"discoveryUrl": "https://westus2.api.azureml.ms/discovery", "mlFlowTrackingUri": "azureml://westus2.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000000-0000-0000-0000-000000000000/providers/Microsoft.MachineLearningServices/workspaces/00000"}}'
+        "westus3", "tags": {}, "etag": null, "kind": "Project", "sku": {"name": "Basic",
+        "tier": "Basic"}, "properties": {"discoveryUrl": "https://westus3.api.azureml.ms/discovery",
+        "mlFlowTrackingUri": "azureml://westus3.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}}'
     headers:
       cache-control:
       - no-cache
       content-length:
-      - '3064'
+      - '3099'
       content-type:
       - application/json; charset=utf-8
       expires:
@@ -39,7 +40,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.093'
+      - '0.030'
     status:
       code: 200
       message: OK
@@ -60,16 +61,16 @@ interactions:
       User-Agent:
       - promptflow/0.0.1.dev0
     method: POST
-    uri: https://westus2.api.azureml.ms/mlflow/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/api/2.0/mlflow/runs/create
+    uri: https://westus3.api.azureml.ms/mlflow/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/api/2.0/mlflow/runs/create
   response:
     body:
-      string: '{"run": {"info": {"run_uuid": "df70814d-51c4-4fed-887f-767612ae7c2a",
-        "experiment_id": "b60f577b-0828-4e01-880a-d8a682dddcc2", "run_name": "test",
+      string: '{"run": {"info": {"run_uuid": "090e3a60-8bf9-4eed-90be-69edf2f6a424",
+        "experiment_id": "94f824a7-ebd1-40a5-a8d5-6a2c8f3ae594", "run_name": "test",
         "user_id": "00000000-0000-0000-0000-000000000000", "status": "RUNNING", "start_time":
-        "1718742055698", "artifact_uri": "azureml://westus2.api.azureml.ms/mlflow/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/experiments/0/runs/df70814d-51c4-4fed-887f-767612ae7c2a/artifacts",
-        "lifecycle_stage": "active", "run_id": "df70814d-51c4-4fed-887f-767612ae7c2a"},
+        "1719531705104", "artifact_uri": "azureml://westus3.api.azureml.ms/mlflow/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/experiments/0/runs/090e3a60-8bf9-4eed-90be-69edf2f6a424/artifacts",
+        "lifecycle_stage": "active", "run_id": "090e3a60-8bf9-4eed-90be-69edf2f6a424"},
         "data": {"tags": [{"key": "mlflow.user", "value": "promptflow-evals"}, {"key":
-        "mlflow.rootRunId", "value": "df70814d-51c4-4fed-887f-767612ae7c2a"}, {"key":
+        "mlflow.rootRunId", "value": "090e3a60-8bf9-4eed-90be-69edf2f6a424"}, {"key":
         "mlflow.runName", "value": "test"}, {"key": "mlflow.user", "value": "Nikolay
         Rovinskiy"}]}, "inputs": {}}}'
     headers:
@@ -88,7 +89,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.776'
+      - '0.103'
     status:
       code: 200
       message: OK
@@ -116,15 +117,15 @@ interactions:
         "00000", "datastoreType": "AzureBlob", "accountName": "fake_account_name",
         "containerName": "fake-container-name", "endpoint": "core.windows.net", "protocol":
         "https", "serviceDataAccessAuthIdentity": "WorkspaceSystemAssignedIdentity"},
-        "systemData": {"createdAt": "2024-06-17T16:54:00.8222424+00:00", "createdBy":
+        "systemData": {"createdAt": "2024-06-25T20:11:17.0377282+00:00", "createdBy":
         "779301c0-18b2-4cdc-801b-a0a3368fee0a", "createdByType": "Application", "lastModifiedAt":
-        "2024-06-17T16:54:01.0291527+00:00", "lastModifiedBy": "779301c0-18b2-4cdc-801b-a0a3368fee0a",
+        "2024-06-25T20:11:23.5405868+00:00", "lastModifiedBy": "779301c0-18b2-4cdc-801b-a0a3368fee0a",
         "lastModifiedByType": "Application"}}]}'
     headers:
       cache-control:
       - no-cache
       content-length:
-      - '1384'
+      - '1383'
       content-type:
       - application/json; charset=utf-8
       expires:
@@ -140,7 +141,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.367'
+      - '0.467'
     status:
       code: 200
       message: OK
@@ -162,7 +163,7 @@ interactions:
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore/listSecrets
   response:
     body:
-      string: '{"secretsType": "Sas", "sasToken": "sv=2021-10-04&si=azureml-system-datastore-policy&sr=c&sig=p0q4i5BOK3aGoM437QNpSn%2FqBqOg49l2v74e4l0kCGg%3D"}'
+      string: '{"secretsType": "Sas", "sasToken": "sv=2021-10-04&si=azureml-system-datastore-policy&sr=c&sig=nMPOrJzwhlMdkecoS8RsGcCRKxfYZsSts3m8C%2FzMnqg%3D"}'
     headers:
       cache-control:
       - no-cache
@@ -181,7 +182,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.198'
+      - '0.765'
     status:
       code: 200
       message: OK
@@ -203,11 +204,11 @@ interactions:
       x-ms-blob-type:
       - BlockBlob
       x-ms-date:
-      - Tue, 18 Jun 2024 20:21:05 GMT
+      - Thu, 27 Jun 2024 23:41:51 GMT
       x-ms-version:
       - '2024-05-04'
     method: PUT
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/promptflow/PromptFlowArtifacts/test/instance_results.jsonl?si=azureml-system-datastore-policy&sig=p0q4i5BOK3aGoM437QNpSn%2FqBqOg49l2v74e4l0kCGg%3D&sr=c&sv=2021-10-04
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/promptflow/PromptFlowArtifacts/test/instance_results.jsonl?si=azureml-system-datastore-policy&sig=nMPOrJzwhlMdkecoS8RsGcCRKxfYZsSts3m8C%2FzMnqg%3D&sr=c&sv=2021-10-04
   response:
     body:
       string: ''
@@ -217,7 +218,7 @@ interactions:
       content-md5:
       - diUhBBdPqiF5HmMm8IgKdw==
       last-modified:
-      - Tue, 18 Jun 2024 20:21:06 GMT
+      - Thu, 27 Jun 2024 23:41:52 GMT
       server:
       - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
       x-ms-content-crc64:
@@ -247,11 +248,11 @@ interactions:
       x-ms-blob-type:
       - BlockBlob
       x-ms-date:
-      - Tue, 18 Jun 2024 20:21:06 GMT
+      - Thu, 27 Jun 2024 23:41:52 GMT
       x-ms-version:
       - '2024-05-04'
     method: PUT
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/promptflow/PromptFlowArtifacts/test/internal_dir/test.json?si=azureml-system-datastore-policy&sig=p0q4i5BOK3aGoM437QNpSn%2FqBqOg49l2v74e4l0kCGg%3D&sr=c&sv=2021-10-04
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/promptflow/PromptFlowArtifacts/test/internal_dir/test.json?si=azureml-system-datastore-policy&sig=nMPOrJzwhlMdkecoS8RsGcCRKxfYZsSts3m8C%2FzMnqg%3D&sr=c&sv=2021-10-04
   response:
     body:
       string: ''
@@ -261,7 +262,7 @@ interactions:
       content-md5:
       - ajrc77H5/pKmiiAzHB+q7A==
       last-modified:
-      - Tue, 18 Jun 2024 20:21:06 GMT
+      - Thu, 27 Jun 2024 23:41:52 GMT
       server:
       - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
       x-ms-content-crc64:
@@ -297,15 +298,15 @@ interactions:
         "00000", "datastoreType": "AzureBlob", "accountName": "fake_account_name",
         "containerName": "fake-container-name", "endpoint": "core.windows.net", "protocol":
         "https", "serviceDataAccessAuthIdentity": "WorkspaceSystemAssignedIdentity"},
-        "systemData": {"createdAt": "2024-06-17T16:54:00.8222424+00:00", "createdBy":
+        "systemData": {"createdAt": "2024-06-25T20:11:17.0377282+00:00", "createdBy":
         "779301c0-18b2-4cdc-801b-a0a3368fee0a", "createdByType": "Application", "lastModifiedAt":
-        "2024-06-17T16:54:01.0291527+00:00", "lastModifiedBy": "779301c0-18b2-4cdc-801b-a0a3368fee0a",
+        "2024-06-25T20:11:23.5405868+00:00", "lastModifiedBy": "779301c0-18b2-4cdc-801b-a0a3368fee0a",
         "lastModifiedByType": "Application"}}]}'
     headers:
       cache-control:
       - no-cache
       content-length:
-      - '1384'
+      - '1383'
       content-type:
       - application/json; charset=utf-8
       expires:
@@ -321,7 +322,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.468'
+      - '0.425'
     status:
       code: 200
       message: OK
@@ -343,7 +344,7 @@ interactions:
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore/listSecrets
   response:
     body:
-      string: '{"secretsType": "Sas", "sasToken": "sv=2021-10-04&si=azureml-system-datastore-policy&sr=c&sig=p0q4i5BOK3aGoM437QNpSn%2FqBqOg49l2v74e4l0kCGg%3D"}'
+      string: '{"secretsType": "Sas", "sasToken": "sv=2021-10-04&si=azureml-system-datastore-policy&sr=c&sig=nMPOrJzwhlMdkecoS8RsGcCRKxfYZsSts3m8C%2FzMnqg%3D"}'
     headers:
       cache-control:
       - no-cache
@@ -362,7 +363,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.116'
+      - '0.839'
     status:
       code: 200
       message: OK
@@ -384,11 +385,11 @@ interactions:
       x-ms-blob-type:
       - BlockBlob
       x-ms-date:
-      - Tue, 18 Jun 2024 20:21:07 GMT
+      - Thu, 27 Jun 2024 23:41:54 GMT
       x-ms-version:
       - '2024-05-04'
     method: PUT
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/promptflow/PromptFlowArtifacts/test/instance_results.jsonl?si=azureml-system-datastore-policy&sig=p0q4i5BOK3aGoM437QNpSn%2FqBqOg49l2v74e4l0kCGg%3D&sr=c&sv=2021-10-04
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/promptflow/PromptFlowArtifacts/test/instance_results.jsonl?si=azureml-system-datastore-policy&sig=nMPOrJzwhlMdkecoS8RsGcCRKxfYZsSts3m8C%2FzMnqg%3D&sr=c&sv=2021-10-04
   response:
     body:
       string: ''
@@ -398,7 +399,7 @@ interactions:
       content-md5:
       - diUhBBdPqiF5HmMm8IgKdw==
       last-modified:
-      - Tue, 18 Jun 2024 20:21:08 GMT
+      - Thu, 27 Jun 2024 23:41:55 GMT
       server:
       - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
       x-ms-content-crc64:
@@ -428,11 +429,11 @@ interactions:
       x-ms-blob-type:
       - BlockBlob
       x-ms-date:
-      - Tue, 18 Jun 2024 20:21:08 GMT
+      - Thu, 27 Jun 2024 23:41:55 GMT
       x-ms-version:
       - '2024-05-04'
     method: PUT
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/promptflow/PromptFlowArtifacts/test/internal_dir/test.json?si=azureml-system-datastore-policy&sig=p0q4i5BOK3aGoM437QNpSn%2FqBqOg49l2v74e4l0kCGg%3D&sr=c&sv=2021-10-04
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/promptflow/PromptFlowArtifacts/test/internal_dir/test.json?si=azureml-system-datastore-policy&sig=nMPOrJzwhlMdkecoS8RsGcCRKxfYZsSts3m8C%2FzMnqg%3D&sr=c&sv=2021-10-04
   response:
     body:
       string: ''
@@ -442,7 +443,7 @@ interactions:
       content-md5:
       - ajrc77H5/pKmiiAzHB+q7A==
       last-modified:
-      - Tue, 18 Jun 2024 20:21:08 GMT
+      - Thu, 27 Jun 2024 23:41:55 GMT
       server:
       - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
       x-ms-content-crc64:
@@ -455,9 +456,9 @@ interactions:
       code: 201
       message: Created
 - request:
-    body: '{"origin": "ExperimentRun", "container": "dcid.df70814d-51c4-4fed-887f-767612ae7c2a",
+    body: '{"origin": "ExperimentRun", "container": "dcid.evals_e2etests_run_id_xxx0_xxx_00000000_000000_000000",
       "path": "instance_results.jsonl", "dataPath": {"dataStoreName": "workspaceblobstore",
-      "relativePath": "promptflow/PromptFlowArtifacts/test/instance_results.jsonl"}}'
+      "relativePath": "promptflow/PromptFlowArtifacts/evals_e2etests_run_id_xxx0_xxx_00000000_000000_000000/instance_results.jsonl"}}'
     headers:
       Accept:
       - '*/*'
@@ -472,20 +473,20 @@ interactions:
       User-Agent:
       - promptflow/0.0.1.dev0
     method: POST
-    uri: https://westus2.api.azureml.ms/artifact/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/artifacts/register
+    uri: https://westus3.api.azureml.ms/artifact/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/artifacts/register
   response:
     body:
-      string: '{"artifactId": "ExperimentRun/dcid.df70814d-51c4-4fed-887f-767612ae7c2a/instance_results.jsonl",
-        "origin": "ExperimentRun", "container": "dcid.df70814d-51c4-4fed-887f-767612ae7c2a",
-        "path": "instance_results.jsonl", "etag": "\"0300c960-0000-0800-0000-6671ec380000\"",
-        "createdTime": "2024-06-18T20:21:12.9206615+00:00", "dataPath": {"dataStoreName":
+      string: '{"artifactId": "ExperimentRun/dcid.090e3a60-8bf9-4eed-90be-69edf2f6a424/instance_results.jsonl",
+        "origin": "ExperimentRun", "container": "dcid.090e3a60-8bf9-4eed-90be-69edf2f6a424",
+        "path": "instance_results.jsonl", "etag": "\"170037eb-0000-4d00-0000-667df8c60000\"",
+        "createdTime": "2024-06-27T23:41:58.408481+00:00", "dataPath": {"dataStoreName":
         "workspaceblobstore", "relativePath": "promptflow/PromptFlowArtifacts/test/instance_results.jsonl"},
         "tags": {}}'
     headers:
       connection:
       - keep-alive
       content-length:
-      - '492'
+      - '491'
       content-type:
       - application/json; charset=utf-8
       strict-transport-security:
@@ -497,13 +498,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.199'
+      - '0.499'
     status:
       code: 200
       message: OK
 - request:
-    body: '{"run_uuid": "df70814d-51c4-4fed-887f-767612ae7c2a", "status": "FINISHED",
-      "end_time": "1717563261483", "run_id": "df70814d-51c4-4fed-887f-767612ae7c2a"}'
+    body: '{"run_uuid": "00000000-0000-0000-0000-000000000000", "status": "FINISHED",
+      "end_time": "1717563261483", "run_id": "00000000-0000-0000-0000-000000000000"}'
     headers:
       Accept:
       - '*/*'
@@ -518,13 +519,13 @@ interactions:
       User-Agent:
       - promptflow/0.0.1.dev0
     method: POST
-    uri: https://westus2.api.azureml.ms/mlflow/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/api/2.0/mlflow/runs/update
+    uri: https://westus3.api.azureml.ms/mlflow/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/api/2.0/mlflow/runs/update
   response:
     body:
-      string: '{"run_info": {"run_uuid": "df70814d-51c4-4fed-887f-767612ae7c2a", "experiment_id":
-        "b60f577b-0828-4e01-880a-d8a682dddcc2", "run_name": "test", "user_id": "00000000-0000-0000-0000-000000000000",
-        "status": "FINISHED", "start_time": "1718742055698", "end_time": "1718742077452",
-        "lifecycle_stage": "active", "run_id": "df70814d-51c4-4fed-887f-767612ae7c2a"}}'
+      string: '{"run_info": {"run_uuid": "090e3a60-8bf9-4eed-90be-69edf2f6a424", "experiment_id":
+        "94f824a7-ebd1-40a5-a8d5-6a2c8f3ae594", "run_name": "test", "user_id": "00000000-0000-0000-0000-000000000000",
+        "status": "FINISHED", "start_time": "1719531705104", "end_time": "1719531720894",
+        "lifecycle_stage": "active", "run_id": "090e3a60-8bf9-4eed-90be-69edf2f6a424"}}'
     headers:
       connection:
       - keep-alive
@@ -541,7 +542,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.531'
+      - '0.521'
     status:
       code: 200
       message: OK

@@ -34,6 +34,7 @@ from .utils import (
     sanitize_automatic_runtime_request_path,
     sanitize_azure_workspace_triad,
     sanitize_file_share_flow_path,
+    sanitize_pf_run_ids,
     sanitize_pfs_request_body,
     sanitize_upload_hash,
 )
@@ -265,7 +266,9 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
                 body = req.body.decode("utf-8")
                 body_dict = json.loads(body)
                 name = body_dict["runId"]
-                run_data_requests[name] = (req, resp)
+                # Overwrite cassette only if the new request did not returned the error.
+                if name not in run_data_requests or run_data_requests[name][1]['status']['code'] >= 400:
+                    run_data_requests[name] = (req, resp)
                 continue
             if str(req.path).endswith("/logContent"):
                 log_content_requests[req.uri] = (req, resp)
@@ -303,7 +306,7 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
             path1 = sanitize_automatic_runtime_request_path(r1.path)
             path2 = sanitize_automatic_runtime_request_path(r2.path)
             return sanitize_azure_workspace_triad(path1) == path2
-        return r1.path == r2.path
+        return sanitize_pf_run_ids(r1.path) == r2.path
 
     def _custom_request_body_matcher(self, r1: Request, r2: Request) -> bool:
         if is_json_payload_request(r1) and r1.body is not None:
@@ -335,7 +338,7 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
                         body2_dict = json.loads(r2.body.decode("utf-8"))
                         body_dict["startTimeUtc"] = body2_dict["startTimeUtc"]
                         body_dict["endTimeUtc"] = body2_dict["endTimeUtc"]
-                    except (AttributeError, json.JSONDecodeError, KeyError, TypeError):
+                    except (AttributeError, json.JSONDecodeError, KeyError, TypeError, UnicodeDecodeError):
                         return False
                     body1 = json.dumps(body_dict)
                     _r1.body = body1.encode("utf-8")
@@ -351,6 +354,9 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
                 if ("PromptFlowArtifacts/batch_run_name" in r1.path or
                         "ExperimentRun/dcid.batch_run_name" in r1.path or
                         'executionlogs.txt' in r1.path or
+                        'instance_results.jsonl' in r1.path or
+                        'flow_logs/000000000.log' in r1.path or
+                        '.coverage.' in r1.path or
                         ("PromptFlowArtifacts" in r1.path and "flow_artifacts" in r1.path)):
                     return True
             return self._body(r1, r2)
