@@ -433,7 +433,7 @@ class AsyncRunUploader:
         if not data_path.is_file():
             UploadInternalError(f"Data path {data_path.resolve().as_posix()!r} does not exist or it's not a file.")
         ## Remove this code
-        if '.coverage' in data_path:
+        if '.coverage' in str(data_path):
             with open(data_path, "r") as f:
                 for ln in f:
                     print(ln.strip())
