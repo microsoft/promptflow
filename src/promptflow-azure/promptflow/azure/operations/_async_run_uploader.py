@@ -432,12 +432,6 @@ class AsyncRunUploader:
         data_path = Path(data_path)
         if not data_path.is_file():
             UploadInternalError(f"Data path {data_path.resolve().as_posix()!r} does not exist or it's not a file.")
-        ## Remove this code
-        if '.coverage' in str(data_path):
-            print("++++++++++++++++++++++++++++++++++++++++++++++")
-            print(str(data_path))
-            print("++++++++++++++++++++++++++++++++++++++++++++++")
-        ##########################
 
         async with blob_client:
             with open(data_path, "rb") as f:
