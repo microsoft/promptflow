@@ -129,6 +129,9 @@ class TestMetricsUpload(object):
         # request ending by 00000/rundata and it has status 200.
         # Also make sure that the cosmos request ending by workspaces/00000/TraceSessions
         # is also present.
+        # pytest-cov generates coverage files, which are being uploaded. When recording tests,
+        # make sure to enable coverage, check that .coverage.sanitized-suffix is present
+        # in the cassette.
 
         # We cannot define target in this file as pytest will load
         # all modules in test folder and target_fn will be imported from the first
@@ -158,6 +161,9 @@ class TestMetricsUpload(object):
         # request ending by /BulkRuns/create.
         # Also make sure that the cosmos request ending by workspaces/00000/TraceSessions
         # is also present.
+        # pytest-cov generates coverage files, which are being uploaded. When recording tests,
+        # make sure to enable coverage, check that .coverage.sanitized-suffix is present
+        # in the cassette.
         logger = logging.getLogger(EvalRun.__module__)
         # All loggers, having promptflow. prefix will have "promptflow" logger
         # as a parent. This logger does not propagate the logs and cannot be

@@ -338,7 +338,7 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
                         body2_dict = json.loads(r2.body.decode("utf-8"))
                         body_dict["startTimeUtc"] = body2_dict["startTimeUtc"]
                         body_dict["endTimeUtc"] = body2_dict["endTimeUtc"]
-                    except (AttributeError, json.JSONDecodeError, KeyError, TypeError):
+                    except (AttributeError, json.JSONDecodeError, KeyError, TypeError, UnicodeDecodeError):
                         return False
                     body1 = json.dumps(body_dict)
                     _r1.body = body1.encode("utf-8")
@@ -356,6 +356,7 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
                         'executionlogs.txt' in r1.path or
                         'instance_results.jsonl' in r1.path or
                         'flow_logs/000000000.log' in r1.path or
+                        '.coverage.' in r1.path or
                         ("PromptFlowArtifacts" in r1.path and "flow_artifacts" in r1.path)):
                     return True
             return self._body(r1, r2)

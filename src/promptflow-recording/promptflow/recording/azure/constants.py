@@ -81,6 +81,8 @@ class SanitizedValues:
     FLOW_DEF = f"{ROOT_PF_PATH}/flow.flex.yaml"
     CONTAINER = f"dcid.{RUN_ID}"
     ARTIFACT_ID = f"ExperimentRun/dcid.{CONTAINER}/instance_results.jsonl"
+    # Coverage file is only created during pytest run with coverage enabled.
+    COVERAGE = ".coverage.sanitized-suffix.00000.xxxxxxxx"
     DATA_PATH = {
         "dataStoreName": "workspaceblobstore",
         "relativePath": f"{ROOT_PF_PATH}/instance_results.jsonl",

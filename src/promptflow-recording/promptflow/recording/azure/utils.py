@@ -175,14 +175,15 @@ def sanitize_pf_run_ids(value: str) -> str:
     :type value: str
     :returns: The modified string.
     """
-    re_pf_exp_id = '.+?_\\w{8}'
-    re_pf_run_id = '.+?_\\w{8}_\\d{8}_\\d{6}_\\d{6}'
+    re_pf_exp_id = '.+?_\\w{6,8}'
+    re_pf_run_id = '.+?_\\w{6,8}_\\d{8}_\\d{6}_\\d{6}'
     # Samnutize promptflow-like Run IDs.
     for left, right, eol in [
         ("ExperimentRun/dcid[.]", '', ''),
         ('promptflow/PromptFlowArtifacts/', '', ''),
         ('runs/', '/flow.flex.yaml', ''),
         ('runs/', '', '$'),
+        ('runs/', '/.coverage.', ''),
         ('BulkRuns/', '', '$'),
             ('runs/', '/batchsync', '')]:
         value = re.sub(
@@ -203,6 +204,13 @@ def sanitize_pf_run_ids(value: str) -> str:
     value = re.sub(
         f"experimentids/{re_pf_exp_id}/runs/{re_pf_run_id}",
         f"experimentids/{SanitizedValues.EXP_UUID}/runs/{SanitizedValues.RUN_UUID}",
+        value,
+        flags=re.IGNORECASE,
+    )
+    # Sanitize the name of a coverage file
+    value = re.sub(
+        f"runs/{SanitizedValues.RUN_ID}/[.]coverage[^?]+",
+        f"runs/{SanitizedValues.RUN_ID}/{SanitizedValues.COVERAGE}",
         value,
         flags=re.IGNORECASE,
     )
