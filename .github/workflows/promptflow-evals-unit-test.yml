@@ -67,7 +67,7 @@ jobs:
           echo "The installation took ${install_time} minutes."
           echo "The time limit for installation is ${TIME_LIMIT}"
           test ${install_time} -le $TIME_LIMIT || echo "::warning file=pyproject.toml,line=40,col=0::The installation took ${install_time} minutes, the limit is ${TIME_LIMIT}."
-          echo "Run ID: ${{ github.run_id }} Workflow: $ {{ github.workflow }}"
+          echo "Run ID: ${{ github.run_id }} Workflow: ${{ github.workflow }}"
           python -c "import os; print(os.environ['github.run_id'])"
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: install recording
