@@ -271,7 +271,7 @@ class EvalRun(metaclass=Singleton):
         if headers is None:
             headers = {}
         headers["User-Agent"] = f"promptflow/{VERSION}"
-        headers["Authorization"] = f"Bearer {self._get_token().token}"
+        headers["Authorization"] = f"Bearer {self._get_token()}"
         retry = Retry(
             total=EvalRun._MAX_RETRIES,
             connect=EvalRun._MAX_RETRIES,
