@@ -1,0 +1,5 @@
+promptflow==1.12.0
+promptflow[azure]==1.12.0
+promptflow-tools==1.4.0
+fastapi==0.111.0
+uvicorn==0.30.1

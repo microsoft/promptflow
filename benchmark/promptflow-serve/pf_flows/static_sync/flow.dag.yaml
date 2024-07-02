@@ -1,0 +1,50 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+inputs:
+  chat_history:
+    type: list
+    default: []
+  question:
+    type: string
+    is_chat_input: true
+    default: What is ChatGPT?
+outputs:
+  answer:
+    type: string
+    reference: ${chat.output}
+    is_chat_output: true
+nodes:
+- name: node1
+  type: python
+  inputs:
+    chat_history: ${inputs.chat_history}
+    question: ${inputs.question}
+  source:
+    type: code
+    path: node1.py
+- name: node2
+  type: python
+  inputs:
+    chat_history: ${inputs.chat_history}
+    question: ${inputs.question}
+  source:
+    type: code
+    path: node2.py
+- name: node3
+  type: python
+  inputs:
+    chat_history: ${inputs.chat_history}
+    question: ${inputs.question}
+  source:
+    type: code
+    path: node3.py
+- name: chat
+  type: python
+  inputs:
+    node1: ${node1.output}
+    node2: ${node2.output}
+    node3: ${node3.output}
+  source:
+    type: code
+    path: chat.py
+environment:
+    python_requirements_txt: requirements.txt
