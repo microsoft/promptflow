@@ -197,3 +197,6 @@ src/promptflow-*/promptflow/__init__.py
 # Eclipse project files
 **/.project
 **/.pydevproject
+
+# benchmark results
+benchmark/promptflow-serve/test_runner/locust-results/
