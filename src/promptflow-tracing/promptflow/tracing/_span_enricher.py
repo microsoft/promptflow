@@ -7,7 +7,7 @@ class SpanEnricher:
     def __init__(self):
         pass
 
-    def enrich(self, span, inputs, output):
+    def enrich(self, span, inputs, output, _function, *_args, **_kwargs):
         """This method is used to enrich the span with the inputs and output of the traced function.
         Note that this method is called after the function is called, so some inputs related logic is not here.
         """
@@ -35,15 +35,15 @@ class SpanEnricherManager:
         cls.get_instance()._register(trace_type, enricher)
 
     @classmethod
-    def enrich(cls, span, inputs, output, trace_type):
-        cls.get_instance()._enrich(span, inputs, output, trace_type)
+    def enrich(cls, span, inputs, output, trace_type, function, *args, **kwargs):
+        cls.get_instance()._enrich(span, inputs, output, trace_type, function, *args, **kwargs)
 
     def _register(self, trace_type, enricher: SpanEnricher):
         self._type2enricher[trace_type] = enricher
 
-    def _enrich(self, span, inputs, output, trace_type):
+    def _enrich(self, span, inputs, output, trace_type, function, *args, **kwargs):
         enricher = self._type2enricher.get(trace_type, self._base_enricher)
-        enricher.enrich(span, inputs, output)
+        enricher.enrich(span, inputs, output, function, *args, **kwargs)
 
 
 SpanEnricherManager.register(TraceType.FUNCTION, SpanEnricher())

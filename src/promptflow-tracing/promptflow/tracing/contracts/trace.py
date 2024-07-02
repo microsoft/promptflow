@@ -16,6 +16,10 @@ class TraceType(str, Enum):
     FLOW = "Flow"
     EMBEDDING = "Embedding"
     RETRIEVAL = "Retrieval"
+    ASSISTANT = "Assistant"
+    THREAD = "Thread"
+    MESSAGE = "Message"
+    RUN = "Run"
 
 
 @dataclass
