@@ -40,7 +40,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.049'
+      - '0.047'
     status:
       code: 200
       message: OK
@@ -85,7 +85,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.031'
+      - '0.030'
     status:
       code: 200
       message: OK
@@ -124,7 +124,136 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.371'
+      - '0.213'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - azure-ai-ml/1.17.0 azsdk-python-mgmt-machinelearningservices/0.1.0 Python/3.11.7
+        (Windows-10-10.0.22631-SP0)
+    method: GET
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000
+  response:
+    body:
+      string: '{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000",
+        "name": "00000", "type": "Microsoft.MachineLearningServices/workspaces", "location":
+        "eastus", "tags": {}, "etag": null, "kind": "Project", "sku": {"name": "Basic",
+        "tier": "Basic"}, "properties": {"discoveryUrl": "https://eastus.api.azureml.ms/discovery",
+        "mlFlowTrackingUri": "azureml://eastus.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}}'
+    headers:
+      cache-control:
+      - no-cache
+      content-length:
+      - '3088'
+      content-type:
+      - application/json; charset=utf-8
+      expires:
+      - '-1'
+      pragma:
+      - no-cache
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      vary:
+      - Accept-Encoding
+      x-cache:
+      - CONFIG_NOCACHE
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.033'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - azure-ai-ml/1.17.0 azsdk-python-mgmt-machinelearningservices/0.1.0 Python/3.11.7
+        (Windows-10-10.0.22631-SP0)
+    method: GET
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000
+  response:
+    body:
+      string: '{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000",
+        "name": "00000", "type": "Microsoft.MachineLearningServices/workspaces", "location":
+        "eastus", "tags": {}, "etag": null, "kind": "Project", "sku": {"name": "Basic",
+        "tier": "Basic"}, "properties": {"discoveryUrl": "https://eastus.api.azureml.ms/discovery",
+        "mlFlowTrackingUri": "azureml://eastus.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}}'
+    headers:
+      cache-control:
+      - no-cache
+      content-length:
+      - '3088'
+      content-type:
+      - application/json; charset=utf-8
+      expires:
+      - '-1'
+      pragma:
+      - no-cache
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      vary:
+      - Accept-Encoding
+      x-cache:
+      - CONFIG_NOCACHE
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.034'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - promptflow-sdk/1.9.0.dev0 promptflow-azure-sdk/1.9.0.dev0 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
+        Python/3.11.7 (Windows-10-10.0.22631-SP0)
+    method: GET
+    uri: https://eastus.api.azureml.ms/flow/api/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/TraceSessions
+  response:
+    body:
+      string: '{"entityId": "abe87513-5815-4b40-9407-c2dd48d74bac", "traceCosmosConfiguration":
+        "None", "traceCosmosStatus": "Initialized", "accountEndpoint": "", "databaseName":
+        "PromptFlowTraceSession", "resourceArmId": "", "resourceType": 1}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '486'
+      content-type:
+      - application/json; charset=utf-8
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.274'
     status:
       code: 200
       message: OK
@@ -216,122 +345,38 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - azure-ai-ml/1.17.0 azsdk-python-mgmt-machinelearningservices/0.1.0 Python/3.11.7
-        (Windows-10-10.0.22631-SP0)
-    method: GET
-    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000
-  response:
-    body:
-      string: '{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000",
-        "name": "00000", "type": "Microsoft.MachineLearningServices/workspaces", "location":
-        "eastus", "tags": {}, "etag": null, "kind": "Project", "sku": {"name": "Basic",
-        "tier": "Basic"}, "properties": {"discoveryUrl": "https://eastus.api.azureml.ms/discovery",
-        "mlFlowTrackingUri": "azureml://eastus.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}}'
-    headers:
-      cache-control:
-      - no-cache
-      content-length:
-      - '3088'
-      content-type:
-      - application/json; charset=utf-8
-      expires:
-      - '-1'
-      pragma:
-      - no-cache
-      strict-transport-security:
-      - max-age=31536000; includeSubDomains
-      vary:
-      - Accept-Encoding
-      x-cache:
-      - CONFIG_NOCACHE
-      x-content-type-options:
-      - nosniff
-      x-request-time:
-      - '0.027'
-    status:
-      code: 200
-      message: OK
-- request:
-    body: null
-    headers:
-      Accept:
-      - application/json
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      User-Agent:
-      - azure-ai-ml/1.17.0 azsdk-python-mgmt-machinelearningservices/0.1.0 Python/3.11.7
-        (Windows-10-10.0.22631-SP0)
-    method: GET
-    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000
-  response:
-    body:
-      string: '{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000",
-        "name": "00000", "type": "Microsoft.MachineLearningServices/workspaces", "location":
-        "eastus", "tags": {}, "etag": null, "kind": "Project", "sku": {"name": "Basic",
-        "tier": "Basic"}, "properties": {"discoveryUrl": "https://eastus.api.azureml.ms/discovery",
-        "mlFlowTrackingUri": "azureml://eastus.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}}'
-    headers:
-      cache-control:
-      - no-cache
-      content-length:
-      - '3088'
-      content-type:
-      - application/json; charset=utf-8
-      expires:
-      - '-1'
-      pragma:
-      - no-cache
-      strict-transport-security:
-      - max-age=31536000; includeSubDomains
-      vary:
-      - Accept-Encoding
-      x-cache:
-      - CONFIG_NOCACHE
-      x-content-type-options:
-      - nosniff
-      x-request-time:
-      - '0.030'
-    status:
-      code: 200
-      message: OK
-- request:
-    body: null
-    headers:
-      Accept:
-      - application/json
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      User-Agent:
-      - promptflow-sdk/1.9.0.dev0 promptflow-azure-sdk/1.9.0.dev0 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
+      - promptflow-azure-sdk/1.9.0.dev0 azure-ai-ml/1.17.0 azsdk-python-mgmt-machinelearningservices/0.1.0
         Python/3.11.7 (Windows-10-10.0.22631-SP0)
     method: GET
-    uri: https://eastus.api.azureml.ms/flow/api/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/TraceSessions
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000
   response:
     body:
-      string: '{"entityId": "abe87513-5815-4b40-9407-c2dd48d74bac", "traceCosmosConfiguration":
-        "None", "traceCosmosStatus": "Initialized", "accountEndpoint": "", "databaseName":
-        "PromptFlowTraceSession", "resourceArmId": "", "resourceType": 1}'
+      string: '{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000",
+        "name": "00000", "type": "Microsoft.MachineLearningServices/workspaces", "location":
+        "eastus", "tags": {}, "etag": null, "kind": "Project", "sku": {"name": "Basic",
+        "tier": "Basic"}, "properties": {"discoveryUrl": "https://eastus.api.azureml.ms/discovery",
+        "mlFlowTrackingUri": "azureml://eastus.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}}'
     headers:
-      connection:
-      - keep-alive
+      cache-control:
+      - no-cache
       content-length:
-      - '486'
+      - '3088'
       content-type:
       - application/json; charset=utf-8
+      expires:
+      - '-1'
+      pragma:
+      - no-cache
       strict-transport-security:
-      - max-age=31536000; includeSubDomains; preload
-      transfer-encoding:
-      - chunked
+      - max-age=31536000; includeSubDomains
       vary:
       - Accept-Encoding
+      x-cache:
+      - CONFIG_NOCACHE
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.239'
+      - '0.029'
     status:
       code: 200
       message: OK
@@ -381,51 +426,6 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-azure-sdk/1.9.0.dev0 azure-ai-ml/1.17.0 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.11.7 (Windows-10-10.0.22631-SP0)
-    method: GET
-    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000
-  response:
-    body:
-      string: '{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000",
-        "name": "00000", "type": "Microsoft.MachineLearningServices/workspaces", "location":
-        "eastus", "tags": {}, "etag": null, "kind": "Project", "sku": {"name": "Basic",
-        "tier": "Basic"}, "properties": {"discoveryUrl": "https://eastus.api.azureml.ms/discovery",
-        "mlFlowTrackingUri": "azureml://eastus.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}}'
-    headers:
-      cache-control:
-      - no-cache
-      content-length:
-      - '3088'
-      content-type:
-      - application/json; charset=utf-8
-      expires:
-      - '-1'
-      pragma:
-      - no-cache
-      strict-transport-security:
-      - max-age=31536000; includeSubDomains
-      vary:
-      - Accept-Encoding
-      x-cache:
-      - CONFIG_NOCACHE
-      x-content-type-options:
-      - nosniff
-      x-request-time:
-      - '0.037'
-    status:
-      code: 200
-      message: OK
-- request:
-    body: null
-    headers:
-      Accept:
-      - application/json
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      User-Agent:
       - promptflow-sdk/1.9.0.dev0 promptflow-azure-sdk/1.9.0.dev0 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
         Python/3.11.7 (Windows-10-10.0.22631-SP0)
     method: GET
@@ -451,7 +451,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.253'
+      - '0.232'
     status:
       code: 200
       message: OK
@@ -508,42 +508,6 @@ interactions:
       - application/json
       server:
       - waitress
-    status:
-      code: 200
-      message: OK
-- request:
-    body: '[{"ver": 1, "name": "Microsoft.ApplicationInsights.Event", "time": "2024-06-06T23:20:59.838896Z",
-      "sampleRate": 100.0, "iKey": "00000000-0000-0000-0000-000000000000", "tags":
-      {"foo": "bar"}}]'
-    headers:
-      Accept:
-      - application/json
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '3913'
-      Content-Type:
-      - application/json
-      User-Agent:
-      - azsdk-python-azuremonitorclient/unknown Python/3.11.7 (Windows-10-10.0.22631-SP0)
-    method: POST
-    uri: https://eastus-8.in.applicationinsights.azure.com/v2.1/track
-  response:
-    body:
-      string: '{"itemsReceived": 4, "itemsAccepted": 4, "appId": null, "errors": []}'
-    headers:
-      content-type:
-      - application/json; charset=utf-8
-      server:
-      - Microsoft-HTTPAPI/2.0
-      strict-transport-security:
-      - max-age=31536000
-      transfer-encoding:
-      - chunked
-      x-content-type-options:
-      - nosniff
     status:
       code: 200
       message: OK
