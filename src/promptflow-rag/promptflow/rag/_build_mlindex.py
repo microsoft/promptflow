@@ -152,7 +152,7 @@ def build_index(
             api_key = "OPENAI_API_KEY"
             api_base = "OPENAI_API_BASE"
             if version.parse(openai.version.VERSION) >= version.parse("1.0.0"):
-                api_key = "AZURE_OPENAI_KEY"
+                api_key = "AZURE_OPENAI_API_KEY"
                 api_base = "AZURE_OPENAI_ENDPOINT"
             connection_args = {
                 "connection_type": "environment",
@@ -189,13 +189,13 @@ def build_index(
             ai_search_args = {
                 **ai_search_args,
                 **{
-                    "endpoint": os.getenv("AZURE_AI_SEARCH_ENDPOINT")
-                    if "AZURE_AI_SEARCH_ENDPOINT" in os.environ
+                    "endpoint": os.getenv("AZURE_SEARCH_ENDPOINT")
+                    if "AZURE_SEARCH_ENDPOINT" in os.environ
                     else os.getenv("AZURE_COGNITIVE_SEARCH_TARGET"),
                     "api_version": AZURE_AI_SEARCH_API_VERSION,
                 },
             }
-            connection_args = {"connection_type": "environment", "connection": {"key": "AZURE_AI_SEARCH_KEY"}}
+            connection_args = {"connection_type": "environment", "connection": {"key": "AZURE_SEARCH_KEY"}}
         else:
             ai_search_connection = get_connection_by_id_v2(ai_search_connection_id)
             if isinstance(ai_search_connection, dict):
@@ -261,11 +261,11 @@ def _create_mlindex_from_existing_ai_search(
         import os
 
         connection_info = {
-            "endpoint": os.getenv("AZURE_AI_SEARCH_ENDPOINT")
-            if "AZURE_AI_SEARCH_ENDPOINT" in os.environ
+            "endpoint": os.getenv("AZURE_SEARCH_ENDPOINT")
+            if "AZURE_SEARCH_ENDPOINT" in os.environ
             else os.getenv("AZURE_COGNITIVE_SEARCH_TARGET"),
             "connection_type": "environment",
-            "connection": {"key": "AZURE_AI_SEARCH_KEY"},
+            "connection": {"key": "AZURE_SEARCH_KEY"},
         }
     else:
         ai_search_connection = get_connection_by_id_v2(ai_search_config.ai_search_connection_id)
