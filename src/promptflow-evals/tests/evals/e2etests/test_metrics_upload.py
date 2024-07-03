@@ -130,7 +130,7 @@ class TestMetricsUpload(object):
         # Afer re-recording this test, please make sure, that the cassette contains the POST
         # request ending by 00000/rundata and it has status 200.
         # Also make sure that the cosmos request ending by workspaces/00000/TraceSessions
-        # is also present.
+        # and log metric call anding on /mlflow/runs/log-metric are also present.
         # pytest-cov generates coverage files, which are being uploaded. When recording tests,
         # make sure to enable coverage, check that .coverage.sanitized-suffix is present
         # in the cassette.

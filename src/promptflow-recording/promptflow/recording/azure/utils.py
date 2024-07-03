@@ -4,9 +4,10 @@
 
 import json
 import os
+import queue
 import re
 from dataclasses import dataclass
-from typing import Dict
+from typing import Any, Dict
 
 import jwt
 from azure.core.credentials import AccessToken
@@ -288,7 +289,6 @@ def sanitize_pfs_request_body(body: str) -> str:
     # Sanitize telemetry event
     if isinstance(body_dict, list) and "Microsoft.ApplicationInsights.Event" in body:
         body_dict = SanitizedValues.FAKE_APP_INSIGHTS
-    # Sanitize the artifact paths
 
     return json.dumps(body_dict)
 
@@ -298,12 +298,53 @@ def sanitize_pfs_response_body(body: str) -> str:
     # BulkRuns/{flowRunId}
     if "studioPortalEndpoint" in body:
         body_dict["studioPortalEndpoint"] = sanitize_azure_workspace_triad(body_dict["studioPortalEndpoint"])
+    if "studioPortalTraceEndpoint" in body:
+        body_dict["studioPortalTraceEndpoint"] = sanitize_azure_workspace_triad(body_dict["studioPortalTraceEndpoint"])
     # TraceSessions
     if "accountEndpoint" in body:
         body_dict["accountEndpoint"] = ""
     if "resourceArmId" in body:
         body_dict["resourceArmId"] = ""
+    # Remove token from the response.
+    if "token" in body_dict and body_dict["token"]:
+        body_dict["token"] = "sanitized_token_value"
+    body_dict = sanitize_name(body_dict)
+    # if "createdBy" in body_dict and "userName" in body_dict["createdBy"]:
+    #     body_dict["createdBy"]["userName"] = "First Last"
+    # if "lastModifiedBy" in body_dict and "userName" in body_dict["lastModifiedBy"]:
+    #     body_dict["lastModifiedBy"]["userName"] = "First Last"
+    if isinstance(body_dict, dict) and isinstance(
+        body_dict.get("run"), dict) and isinstance(body_dict["run"].get("data"), dict) and isinstance(
+            body_dict["run"]["data"].get("tags"), list):
+        for dt_list in body_dict["run"]["data"]["tags"]:
+            if isinstance(dt_list, dict) and dt_list.get("key") == "mlflow.user" and not dt_list.get(
+                    "value", "").startswith("promptflow"):
+                dt_list["value"] = "First Last"
     return json.dumps(body_dict)
+
+
+def sanitize_name(dt_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Sanitize the developer first and last name.
+
+    **Note:** The change happens inline. The dictionary is retured
+    for convenience only.
+    :param dt_data: The dictionary to be modified.
+    :type dt_data: dict.
+    :returns: The modified dictionary.
+    """
+    dict_que = queue.Queue()
+    if isinstance(dt_data, dict):
+        dict_que.put(dt_data)
+    while not dict_que.empty():
+        dt_curr = dict_que.get()
+        for k in dt_curr.keys():
+            if isinstance(dt_curr[k], dict):
+                if k == "createdBy" or k == "lastModifiedBy" and "userName" in dt_curr[k]:
+                    dt_curr[k]["userName"] = "First Last"
+                else:
+                    dict_que.put(dt_curr[k])
+    return dt_data
 
 
 def sanitize_email(value: str) -> str:
