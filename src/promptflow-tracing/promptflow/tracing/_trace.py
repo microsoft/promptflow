@@ -632,17 +632,17 @@ class AssistantSpanEnricher(SpanEnricher):
                 instructions = output.instructions
                 tools = output.tools
             try:
-                span.set_attribute("llm.assistant_model", model)
-                span.set_attribute("llm.assistant_id", id)
-                span.set_attribute("llm.assistant_name", name)
-                span.set_attribute("llm.assistant_instructions", instructions)
-                span.set_attribute("llm.assistant_tools", serialize_attribute(tools))
-                if function == Assistant.create:
-                    span.add_event("promptflow.llm.created_assistant", {"payload": serialize_attribute(id)})
-                elif function == Assistant.update:
-                    span.add_event("promptflow.llm.updated_assistant", {"payload": serialize_attribute(id)})
-                elif function == Assistant.delete:
-                    span.add_event("promptflow.llm.deleted_assistant", {"payload": serialize_attribute(id)})
+                span.set_attribute("llm.assistant_id", id) if id is not None else None
+                span.set_attribute("llm.assistant_model", model) if model is not None else None
+                span.set_attribute("llm.assistant_name", name) if name is not None else None
+                span.set_attribute("llm.assistant_instructions", instructions) if instructions is not None else None
+                span.set_attribute("llm.assistant_tools", serialize_attribute(tools)) if tools is not None else None
+                if function.__name__ == "create":
+                    span.add_event("promptflow.llm.created_assistant", {"llm.assistant_id": id})
+                elif function.__name__ == "update":
+                    span.add_event("promptflow.llm.updated_assistant", {"llm.assistant_id": id})
+                elif function.__name__ == "delete":
+                    span.add_event("promptflow.llm.deleted_assistant", {"llm.assistant_id": id})
             except Exception as e:
                 logging.warning(f"Failed to enrich span with assistant: {e}")
         super().enrich(span, inputs, output, function, args, kwargs)
@@ -656,24 +656,28 @@ class ThreadSpanEnricher(SpanEnricher):
 
             if isinstance(output, (Thread)):
                 id = output.id
-            try:
-                span.set_attribute("llm.thread_id", id)
-                tool_resources = ""
-                if len(args[0]) > 0:
-                    if len(args[0][0]) > 1:
-                        if isinstance(args[0][0][1], dict):
-                            dictionary = args[0][0][1]
-                    if "tool_resources" in dictionary:
-                        tool_resources = dictionary.get("tool_resources")
-                span.set_attribute("llm.thread_tool_resources", serialize_attribute(tool_resources))
-                if function.__name__ == "create":
-                    span.add_event("promptflow.llm.created_thread", {"payload": serialize_attribute(id)})
-                elif function.__name__ == "update":
-                    span.add_event("promptflow.llm.updated_thread", {"payload": serialize_attribute(id)})
-                elif function.__name__ == "delete":
-                    span.add_event("promptflow.llm.deleted_thread", {"payload": serialize_attribute(id)})
-            except Exception as e:
-                logging.warning(f"Failed to enrich span with thread: {e}")
+                created_at = output.created_at
+                try:
+                    span.set_attribute("llm.thread_id", id) if id is not None else None
+                    span.set_attribute("llm.thread_created_at", created_at) if created_at is not None else None
+                    tool_resources = ""
+                    if len(args[0]) > 0:
+                        if len(args[0][0]) > 1:
+                            if isinstance(args[0][0][1], dict):
+                                dictionary = args[0][0][1]
+                                if "tool_resources" in dictionary:
+                                    tool_resources = dictionary.get("tool_resources")
+                    span.set_attribute(
+                        "llm.thread_tool_resources", serialize_attribute(tool_resources)
+                    ) if tool_resources is not None else None
+                    if function.__name__ == "create":
+                        span.add_event("promptflow.llm.created_thread", {"llm.thread_id": id})
+                    elif function.__name__ == "update":
+                        span.add_event("promptflow.llm.updated_thread", {"llm.thread_id": id})
+                    elif function.__name__ == "delete":
+                        span.add_event("promptflow.llm.deleted_thread", {"llm.thread_id": id})
+                except Exception as e:
+                    logging.warning(f"Failed to enrich span with thread: {e}")
         super().enrich(span, inputs, output, function, args, kwargs)
 
 
@@ -692,19 +696,19 @@ class MessageSpanEnricher(SpanEnricher):
                 created_at = output.created_at
                 completed_at = output.completed_at
             try:
-                span.set_attribute("llm.message_id", id)
-                span.set_attribute("llm.message_thread_id", thread_id)
-                span.set_attribute("llm.message_role", role)
-                span.set_attribute("llm.message_assistant_id", assistant_id)
-                span.set_attribute("llm.message_run_id", run_id)
-                span.set_attribute("llm.message_created_at", created_at)
-                span.set_attribute("llm.message_completed_at", completed_at)
+                span.set_attribute("llm.message_id", id) if id is not None else None
+                span.set_attribute("llm.message_thread_id", thread_id) if thread_id is not None else None
+                span.set_attribute("llm.message_role", role) if role is not None else None
+                span.set_attribute("llm.message_assistant_id", assistant_id) if assistant_id is not None else None
+                span.set_attribute("llm.message_run_id", run_id) if run_id is not None else None
+                span.set_attribute("llm.message_created_at", created_at) if created_at is not None else None
+                span.set_attribute("llm.message_completed_at", completed_at) if completed_at is not None else None
                 if function.__name__ == "create":
-                    span.add_event("promptflow.llm.created_message", {"payload": serialize_attribute(id)})
+                    span.add_event("promptflow.llm.created_message", {"llm.message_id": id})
                 elif function.__name__ == "update":
-                    span.add_event("promptflow.llm.updated_message", {"payload": serialize_attribute(id)})
+                    span.add_event("promptflow.llm.updated_message", {"llm.message_id": id})
                 elif function.__name__ == "delete":
-                    span.add_event("promptflow.llm.deleted_message", {"payload": serialize_attribute(id)})
+                    span.add_event("promptflow.llm.deleted_message", {"llm.message_id": id})
             except Exception as e:
                 logging.warning(f"Failed to enrich span with message: {e}")
         super().enrich(span, inputs, output, function, args, kwargs)
@@ -742,30 +746,36 @@ class RunSpanEnricher(SpanEnricher):
                     total_tokens = 0
 
             try:
-                span.set_attribute("llm.run_id", id)
-                span.set_attribute("llm.run_thread_id", thread_id)
-                span.set_attribute("llm.run_assistant_id", assistant_id)
-                span.set_attribute("llm.run_instructions", instructions)
-                span.set_attribute("llm.run_max_completion_tokens", max_completion_tokens)
-                span.set_attribute("llm.run_max_prompt_tokens", max_prompt_tokens)
-                span.set_attribute("llm.run_model", model)
-                span.set_attribute("llm.run_created_at", created_at)
-                span.set_attribute("llm.run_started_at", started_at)
-                span.set_attribute("llm.run_cancelled_at", cancelled_at)
-                span.set_attribute("llm.run_expires_at", expires_at)
-                span.set_attribute("llm.run_failed_at", failed_at)
-                span.set_attribute("llm.run_message_completed_at", completed_at)
-                span.set_attribute("llm.run_last_error", last_error)
-                span.set_attribute("llm.run_status", status)
-                span.set_attribute("llm.run_completion_tokens", completion_tokens)
-                span.set_attribute("llm.run_prompt_tokens", prompt_tokens)
-                span.set_attribute("llm.run_total_tokens", total_tokens)
+                span.set_attribute("llm.run_id", id) if id is not None else None
+                span.set_attribute("llm.run_thread_id", thread_id) if thread_id is not None else None
+                span.set_attribute("llm.run_assistant_id", assistant_id) if assistant_id is not None else None
+                span.set_attribute("llm.run_instructions", instructions) if instructions is not None else None
+                span.set_attribute(
+                    "llm.run_max_completion_tokens", max_completion_tokens
+                ) if max_completion_tokens is not None else None
+                span.set_attribute(
+                    "llm.run_max_prompt_tokens", max_prompt_tokens
+                ) if max_prompt_tokens is not None else None
+                span.set_attribute("llm.run_model", model) if model is not None else None
+                span.set_attribute("llm.run_created_at", created_at) if created_at is not None else None
+                span.set_attribute("llm.run_started_at", started_at) if started_at is not None else None
+                span.set_attribute("llm.run_cancelled_at", cancelled_at) if cancelled_at is not None else None
+                span.set_attribute("llm.run_expires_at", expires_at) if expires_at is not None else None
+                span.set_attribute("llm.run_failed_at", failed_at) if failed_at is not None else None
+                span.set_attribute("llm.run_message_completed_at", completed_at) if completed_at is not None else None
+                span.set_attribute("llm.run_last_error", last_error) if last_error is not None else None
+                span.set_attribute("llm.run_status", status) if status is not None else None
+                span.set_attribute(
+                    "llm.run_completion_tokens", completion_tokens
+                ) if completion_tokens is not None else None
+                span.set_attribute("llm.run_prompt_tokens", prompt_tokens) if prompt_tokens is not None else None
+                span.set_attribute("llm.run_total_tokens", total_tokens) if total_tokens is not None else None
                 if function.__name__ == "create":
-                    span.add_event("promptflow.llm.created_run", {"payload": serialize_attribute(id)})
+                    span.add_event("promptflow.llm.created_run", {"llm.run_id": id})
                 elif function.__name__ == "update":
-                    span.add_event("promptflow.llm.updated_run", {"payload": serialize_attribute(id)})
+                    span.add_event("promptflow.llm.updated_run", {"llm.run_id": id})
                 elif function.__name__ == "retrieve":
-                    span.add_event("promptflow.llm.retrieved_run", {"payload": serialize_attribute(id)})
+                    span.add_event("promptflow.llm.retrieved_run", {"llm.run_id": id})
             except Exception as e:
                 logging.warning(f"Failed to enrich span with message: {e}")
         super().enrich(span, inputs, output, function, args, kwargs)
