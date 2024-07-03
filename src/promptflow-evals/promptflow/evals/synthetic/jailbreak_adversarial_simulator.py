@@ -40,7 +40,7 @@ def monitor_adversarial_scenario(func):
 
 class JailbreakAdversarialSimulator:
     """
-    Initializes the adversarial simulator with a project scope.
+    Initializes the jailbreak adversarial simulator with a project scope.
 
     :param azure_ai_project: Dictionary defining the scope of the project. It must include the following keys:
 
@@ -94,7 +94,8 @@ class JailbreakAdversarialSimulator:
         concurrent_async_task: int = 3,
     ):
         """
-        Executes the adversarial simulation against a specified target function asynchronously.
+        Executes the adversarial simulation and jailbreak adversarial simulation
+        against a specified target function asynchronously.
 
         :param scenario: Enum value specifying the adversarial scenario used for generating inputs.
          example:
