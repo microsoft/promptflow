@@ -4,5 +4,5 @@
   <Exclusion Type="FileName">SRC\PROMPTFLOW-CORE\PROMPTFLOW\CORE\_SERVING\STATIC\INDEX.JS</Exclusion>
   <Exclusion Type="FileType">.MIN.JS</Exclusion>
   <Exclusion Type="FolderPathFull">SRC\PROMPTFLOW-DEVKIT\PROMPTFLOW\_SDK\_SERVICE\STATIC\</Exclusion>
-  <Exclusion Type="FolderPathFull">BENCHMARK\PROMPTFLOW-SERVE\RESULT-ARCHIVE\V1.12.0\</Exclusion>
+  <Exclusion Type="FileName">PF_FLEX_ASYNC_REPORT_U500_H50.HTML|PF_STATIC_SYNC_REPORT_U500_H50.HTML</Exclusion>
 </PoliCheckExclusions>
