@@ -301,7 +301,6 @@ class TestEvaluate:
         assert "answer.length" in metrics.keys()
         assert "f1_score.f1_score" in metrics.keys()
 
-    @pytest.mark.skip(reason="az login in fixture is not working on ubuntu and mac.Works on windows")
     def test_evaluate_track_in_cloud(
         self,
         questions_file,
@@ -345,7 +344,6 @@ class TestEvaluate:
         assert remote_run["runMetadata"]["properties"]["runType"] == "eval_run"
         assert remote_run["runMetadata"]["displayName"] == evaluation_name
 
-    # @pytest.mark.skip(reason="az login in fixture is not working on ubuntu and mac. Works on windows")
     def test_evaluate_track_in_cloud_no_target(
         self,
         data_file,
