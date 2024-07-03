@@ -18,7 +18,7 @@ def main(activity_name: str, value: float, run_id: str, workflow: str, action: s
     :param workflow: The name of a workflow or path to a workflow file.
     :type workflow: str
     :param action: The name of running action or a step.
-    :type acion: str
+    :type action: str
     """
     # Enable telemetry
     config = Configuration.get_instance()
