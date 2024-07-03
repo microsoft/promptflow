@@ -6,6 +6,8 @@ from pathlib import Path
 
 from promptflow.client import load_flow
 
+from .flow.f1_score import compute_f1_score
+from .flow.validate_inputs import validate_inputs
 
 class F1ScoreEvaluator:
     """
@@ -31,10 +33,7 @@ class F1ScoreEvaluator:
     """
 
     def __init__(self):
-        # Load the flow as function
-        current_dir = Path(__file__).resolve().parent
-        flow_dir = current_dir / "flow"
-        self._flow = load_flow(source=flow_dir)
+        pass
 
     def __call__(self, *, answer: str, ground_truth: str, **kwargs):
         """
@@ -48,5 +47,11 @@ class F1ScoreEvaluator:
         :rtype: dict
         """
 
-        # Run the evaluation flow
-        return self._flow(answer=answer, ground_truth=ground_truth)
+        # Validate inputs
+        # Raises value error if failed, so execution alone signifies success.
+        _ = validate_inputs(answer=answer, ground_truth=ground_truth)
+
+        # Run f1 score computation.
+        f1_result = compute_f1_score(answer=answer, ground_truth=ground_truth)
+
+        return {"f1_score": f1_result}

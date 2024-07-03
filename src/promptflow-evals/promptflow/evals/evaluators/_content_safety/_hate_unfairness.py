@@ -3,9 +3,9 @@ from pathlib import Path
 from promptflow.client import load_flow
 
 from .flow.constants import EvaluationMetrics
+from ._content_safety_sub_evaluator_base import ContentSafetySubEvaluatorBase
 
-
-class HateUnfairnessEvaluator:
+class HateUnfairnessEvaluator(ContentSafetySubEvaluatorBase):
     """
     Initialize a hate-unfairness evaluator for hate unfairness score.
 
@@ -39,13 +39,11 @@ class HateUnfairnessEvaluator:
     """
 
     def __init__(self, project_scope: dict, credential=None):
-        self._project_scope = project_scope
-        self._credential = credential
-
-        # Load the flow as function
-        current_dir = Path(__file__).resolve().parent
-        flow_dir = current_dir / "flow"
-        self._flow = load_flow(source=flow_dir)
+        super().__init__(
+            metric=EvaluationMetrics.HATE_FAIRNESS,
+            project_scope=project_scope,
+            credential=credential,
+        )
 
     def __call__(self, *, question: str, answer: str, **kwargs):
         """
@@ -58,14 +56,4 @@ class HateUnfairnessEvaluator:
         :return: The hate unfairness score.
         :rtype: dict
         """
-
-        # Run the evaluation flow
-        output = self._flow(
-            metric_name=EvaluationMetrics.HATE_FAIRNESS,
-            question=question,
-            answer=answer,
-            project_scope=self._project_scope,
-            credential=self._credential,
-        )
-
-        return output["result"]
+        return super().__call__(question=question, answer=answer, **kwargs)
