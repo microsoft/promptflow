@@ -82,7 +82,8 @@ pf run create --flow "path.to.module:function_name" --data "./data.jsonl"
 ```python
 
 from path.to.module import my_flow
-pf.run(flow=my_flow, data="./data.json;")
+# Note directly run function in `pf.run` is only supported in local PFClient for now 
+pf.run(flow=my_flow, data="./data.jsonl")
 
 # user can also directly use entry in `flow` param for batch run
 pf.run(flow="path.to.module:function_name", data="./data.jsonl")

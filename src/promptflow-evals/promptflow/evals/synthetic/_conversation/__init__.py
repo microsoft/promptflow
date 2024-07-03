@@ -85,9 +85,12 @@ class ConversationBot:
                 if isinstance(conversation_starter_content, dict):
                     self.conversation_starter = conversation_starter_content
                 else:
-                    self.conversation_starter = jinja2.Template(
-                        conversation_starter_content, undefined=jinja2.StrictUndefined
-                    )
+                    try:
+                        self.conversation_starter = jinja2.Template(
+                            conversation_starter_content, undefined=jinja2.StrictUndefined
+                        )
+                    except jinja2.exceptions.TemplateSyntaxError as e:  # noqa: F841
+                        self.conversation_starter = conversation_starter_content
             else:
                 self.logger.info(
                     "This simulated bot will generate the first turn as no conversation starter is provided"
@@ -121,8 +124,10 @@ class ConversationBot:
             # if conversation_starter is a dictionary, pass it into samples as is
             if isinstance(self.conversation_starter, dict):
                 samples = [self.conversation_starter]
+            if isinstance(self.conversation_starter, jinja2.Template):
+                samples = [self.conversation_starter.render(**self.persona_template_args)]
             else:
-                samples = [self.conversation_starter.render(**self.persona_template_args)]  # type: ignore[attr-defined]
+                samples = [self.conversation_starter]  # type: ignore[attr-defined]
             time_taken = 0
 
             finish_reason = ["stop"]
