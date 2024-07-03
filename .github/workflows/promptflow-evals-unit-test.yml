@@ -53,6 +53,7 @@ jobs:
         run: poetry install --only test
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: install promptflow packages in editable mode
+        id: install_promptflow
         run: |
           export TIME_LIMIT=5
           export start_tm=`date +%s`
@@ -73,9 +74,10 @@ jobs:
         run: poetry run pip install -e ../promptflow-recording
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: run unit tests
+        id: run_unit_tests
         run: |
             poetry run pytest -m unittest --cov=promptflow --cov-config=pyproject.toml --cov-report=term --cov-report=html --cov-report=xml --cov-fail-under=63
-            export cov_pct=grep "data-ratio" htmlcov/index.html | tail -n1 | sed -r 's/.*>([0-9]+%)<.*/\1/g'
+            export cov_pct=`grep "data-ratio" htmlcov/index.html | tail -n1 | sed -r 's/.*>([0-9]+%)<.*/\1/g'`
             poetry run python ../../scripts/code_qa/report_to_app_insights.py --activity test_coverage --value $cov_pct --git-hub-action-run-id ${{ github.run_id }} --git-hub-workflow ${{ github.workflow }} --git-hub-action ${{ github.action }}
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: upload coverage report
