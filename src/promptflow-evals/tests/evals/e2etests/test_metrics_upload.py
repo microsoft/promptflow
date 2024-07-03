@@ -131,6 +131,7 @@ class TestMetricsUpload(object):
         ev_run.log_artifact(tmp_path)
         self._assert_no_errors_for_module(caplog.records, EvalRun.__module__)
 
+    @pytest.mark.performance_target_test
     @pytest.mark.skipif(
         condition=not is_live(),
         reason="promptflow run create files with random names, which cannot be recorded. See work item 3305909."
@@ -165,6 +166,7 @@ class TestMetricsUpload(object):
         )
         self._assert_no_errors_for_module(caplog.records, (ev_utils.__name__, EvalRun.__module__))
 
+    @pytest.mark.performance_evaluator_test
     @pytest.mark.skipif(
         condition=not is_live(),
         reason="promptflow run create files with random names, which cannot be recorded. See work item 3305909."
