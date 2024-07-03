@@ -303,7 +303,7 @@ class EvalRun(metaclass=Singleton):
             f"{response.text=}."
         )
 
-    def log_artifact(self, artifact_folder: str, artifact_name: str) -> None:
+    def log_artifact(self, artifact_folder: str, artifact_name: str= EVALUATION_ARTIFACT) -> None:
         """
         The local implementation of mlflow-like artifact logging.
 
