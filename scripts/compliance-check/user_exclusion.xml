@@ -4,5 +4,4 @@
   <Exclusion Type="FileName">SRC\PROMPTFLOW-CORE\PROMPTFLOW\CORE\_SERVING\STATIC\INDEX.JS</Exclusion>
   <Exclusion Type="FileType">.MIN.JS</Exclusion>
   <Exclusion Type="FolderPathFull">SRC\PROMPTFLOW-DEVKIT\PROMPTFLOW\_SDK\_SERVICE\STATIC\</Exclusion>
-  <Exclusion Type="FileType">.HTML</Exclusion>
 </PoliCheckExclusions>
