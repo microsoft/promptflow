@@ -1,0 +1,13 @@
+Count,Message,Traceback,Nodes
+1,Expecting value: line 1 column 1 (char 0),"  File ""/opt/venv/lib/python3.11/site-packages/locust/user/task.py"", line 340, in run
+    self.execute_next_task()
+  File ""/opt/venv/lib/python3.11/site-packages/locust/user/task.py"", line 373, in execute_next_task
+    self.execute_task(self._task_queue.popleft())
+  File ""/opt/venv/lib/python3.11/site-packages/locust/user/task.py"", line 385, in execute_task
+    task(self)
+  File ""/mnt/locust/pf_locustfile.py"", line 8, in test_endpoint
+    print(response.status_code, response.elapsed.total_seconds(), response.json())
+                                                                  ^^^^^^^^^^^^^^^
+  File ""/opt/venv/lib/python3.11/site-packages/requests/models.py"", line 978, in json
+    raise RequestsJSONDecodeError(e.msg, e.doc, e.pos)
+",local

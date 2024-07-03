@@ -4,6 +4,9 @@
   "context": ".",
   "dockerFile": "Dockerfile",
   "runArgs": ["-v", "/var/run/docker.sock:/var/run/docker.sock"],
+  "remoteEnv": {
+    "HOST_PROJECT_PATH": "${localWorkspaceFolder}"
+  },
   "customizations": {
     "codespaces": {
       "openFiles": ["README.md", "examples/README.md"]
