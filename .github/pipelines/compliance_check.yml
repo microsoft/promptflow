@@ -22,6 +22,13 @@ pool:
 steps:
 - checkout: self
 
+- task: PowerShell@2
+  inputs:
+    targetType: inline
+    script: |
+      Remove-Item -Recurse -Force $(sourceLocation)/benchmark/promptflow-serve/result-archive
+  displayName: 'Delete benchmark HTML files'
+
 # https://eng.ms/docs/microsoft-security/cloud-ecosystem-security/azure-security/cloudai-security-fundamentals-engineering/security-integration/guardian-wiki/sdl-azdo-extension/PoliCheck-build-task
 - task: PoliCheck@2
   inputs:
