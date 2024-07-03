@@ -1,7 +1,6 @@
-from pathlib import Path
-
-from promptflow.client import load_flow
-
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
 from .flow.constants import EvaluationMetrics
 from ._content_safety_sub_evaluator_base import ContentSafetySubEvaluatorBase
 
@@ -39,10 +38,13 @@ class HateUnfairnessEvaluator(ContentSafetySubEvaluatorBase):
     """
 
     def __init__(self, project_scope: dict, credential=None):
+        # Hate_fairness is the actual backend metric name. Which, uh, doesn't sound great.
+        # so invert the name.
         super().__init__(
             metric=EvaluationMetrics.HATE_FAIRNESS,
             project_scope=project_scope,
             credential=credential,
+            output_name=EvaluationMetrics.HATE_UNFAIRNESS,
         )
 
     def __call__(self, *, question: str, answer: str, **kwargs):

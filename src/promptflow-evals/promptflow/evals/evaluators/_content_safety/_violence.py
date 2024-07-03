@@ -1,7 +1,6 @@
-from pathlib import Path
-
-from promptflow.client import load_flow
-
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
 from .flow.constants import EvaluationMetrics
 from ._content_safety_sub_evaluator_base import ContentSafetySubEvaluatorBase
 

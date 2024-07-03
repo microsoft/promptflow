@@ -1,11 +1,6 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
-from pathlib import Path
-
-from promptflow.client import load_flow
-
 from .flow.f1_score import compute_f1_score
 from .flow.validate_inputs import validate_inputs
 

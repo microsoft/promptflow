@@ -1,3 +1,6 @@
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, List

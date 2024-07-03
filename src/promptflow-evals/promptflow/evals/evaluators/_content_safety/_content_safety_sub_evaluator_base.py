@@ -1,12 +1,13 @@
-from pathlib import Path
-
-from promptflow.client import load_flow
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
+from abc import ABC
 
 from .flow.constants import EvaluationMetrics
 from .flow.evaluate_with_rai_service import evaluate_with_rai_service
 from .flow.validate_inputs import validate_inputs
 
-class ContentSafetySubEvaluatorBase:
+class ContentSafetySubEvaluatorBase(ABC):
     """
     Initialize a evaluator for a specified Evaluation Metric. Base class that is not
     meant to be instantiated by users.
@@ -19,17 +20,15 @@ class ContentSafetySubEvaluatorBase:
     :type project_scope: dict
     :param credential: The credential for connecting to Azure AI project.
     :type credential: TokenCredential
+    :param output_name: The name that the outputs should be saved under. Defaults to the metric name if not provided.
+    :type output_name: Optional[str]=None
     """
 
-    def __init__(self,  metric: EvaluationMetrics, project_scope: dict, credential=None):
+    def __init__(self,  metric: EvaluationMetrics, project_scope: dict, credential=None, output_name=None):
         self._metric = metric
         self._project_scope = project_scope
         self._credential = credential
-
-        # Load the flow as function
-        current_dir = Path(__file__).resolve().parent
-        flow_dir = current_dir / "flow"
-        self._flow = load_flow(source=flow_dir)
+        self._output_name = output_name if output_name else metric
 
     def __call__(self, *, question: str, answer: str, **kwargs):
         """
@@ -42,8 +41,6 @@ class ContentSafetySubEvaluatorBase:
         :return: The evaluation score.
         :rtype: dict
         """
-
-
         # Validate inputs
         # Raises value error if failed, so execution alone signifies success.
         _ = validate_inputs(question=question, answer=answer)
@@ -57,4 +54,4 @@ class ContentSafetySubEvaluatorBase:
             project_scope=self._project_scope,
             credential=self._credential,
         )
-        return {"result": result}
+        return {self._output_name: result, self._output_name + "_defect_rate": result}

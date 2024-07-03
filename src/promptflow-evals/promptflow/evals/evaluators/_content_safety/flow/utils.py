@@ -1,4 +1,7 @@
-import constants
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
+from . import constants
 import numpy as np
 
 

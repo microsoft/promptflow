@@ -118,7 +118,6 @@ class TestEvaluate:
         assert row_result_df["outputs.f1_score.f1_score"][2] == 1
         assert result["studio_url"] is None
 
-    @pytest.mark.skip(reason="Failed in CI pipeline. Pending for investigation.")
     def test_evaluate_with_content_safety_evaluator(self, project_scope, data_file, azure_cred):
         input_data = pd.read_json(data_file, lines=True)
 

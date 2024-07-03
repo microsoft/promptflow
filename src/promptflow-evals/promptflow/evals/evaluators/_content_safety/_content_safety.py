@@ -1,3 +1,6 @@
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from ._hate_unfairness import HateUnfairnessEvaluator
