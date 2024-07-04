@@ -88,7 +88,7 @@ jobs:
       - name: run performance tests
         id: performance_tests
         run: |
-          export PROMPT_FLOW_TEST_MODE=replay
+          export PROMPT_FLOW_TEST_MODE=live
           # Estimate the run time for evaluator.
           export start_tm=`date +%s`
           poetry run pytest -m performance_evaluator_test
