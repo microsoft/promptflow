@@ -103,13 +103,14 @@ class TestImports:
 class TestStartTrace:
     @pytest.mark.usefixtures("reset_tracer_provider")
     def test_setup_exporter_from_environ(self) -> None:
-        from promptflow._sdk._service.utils.utils import get_pfs_host
+        from promptflow._sdk._service.utils.utils import get_pfs_host, get_pfs_host_after_check_wildcard
 
         def is_tracer_provider_set() -> bool:
             return isinstance(trace.get_tracer_provider(), TracerProvider)
 
         assert not is_tracer_provider_set()
         service_host = get_pfs_host()
+        service_host = get_pfs_host_after_check_wildcard(service_host)
         # set some required environment variables
         endpoint = f"http://{service_host}:23333/v1/traces"
         collection = str(uuid.uuid4())

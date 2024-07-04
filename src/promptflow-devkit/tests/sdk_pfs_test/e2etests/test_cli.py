@@ -12,6 +12,7 @@ import pytest
 from promptflow._cli._pf.entry import main
 from promptflow._sdk._service.utils.utils import (
     get_pfs_host,
+    get_pfs_host_after_check_wildcard,
     get_port_from_config,
     is_pfs_service_healthy,
     kill_exist_service,
@@ -42,6 +43,7 @@ class TestPromptflowServiceCLI:
         stop_pfs.wait()
 
     def _is_service_healthy(self, service_host, port=None, time_limit=0.1):
+        service_host = get_pfs_host_after_check_wildcard(service_host)
         port = port or get_port_from_config(service_host)
         st = timeit.default_timer()
         is_healthy = is_pfs_service_healthy(port, service_host)
