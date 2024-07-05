@@ -67,7 +67,6 @@ jobs:
           export install_time=$(((`date +%s` - ${start_tm})/60))
           echo "The installation took ${install_time} minutes."
           echo "The time limit for installation is ${TIME_LIMIT}"
-          poetry run python ../../scripts/code_qa/report_to_app_insights.py --activity install_time_s --value $((`date +%s` - ${start_tm})) --git-hub-action-run-id ${{ github.run_id }} --git-hub-workflow ${{ github.workflow }} --git-hub-action ${{ github.action }}
           test ${install_time} -le $TIME_LIMIT || echo "::warning file=pyproject.toml,line=40,col=0::The installation took ${install_time} minutes, the limit is ${TIME_LIMIT}."
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: install recording

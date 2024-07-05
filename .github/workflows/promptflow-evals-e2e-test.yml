@@ -1,4 +1,4 @@
-name: promptflow-evals-regression-test
+name: promptflow-evals-e2e-test
 
 on:
   schedule:
@@ -84,21 +84,6 @@ jobs:
           enable-AzPSSession: true
       - name: run e2e tests
         run: poetry run pytest -m e2etest --cov=promptflow --cov-config=pyproject.toml --cov-report=term --cov-report=html --cov-report=xml
-        working-directory: ${{ env.WORKING_DIRECTORY }}
-      - name: run performance tests
-        id: performance_tests
-        run: |
-          export PROMPT_FLOW_TEST_MODE=live
-          # Estimate the run time for evaluator.
-          export start_tm=`date +%s`
-          poetry run pytest -m performance_evaluator_test
-          export run_time=$((`date +%s` - ${start_tm}))
-          poetry run python ../../scripts/code_qa/report_to_app_insights.py --activity evaluator_run_time_s --value $run_time --git-hub-action-run-id ${{ github.run_id }} --git-hub-workflow ${{ github.workflow }} --git-hub-action ${{ github.action }}
-          # Estimate the run time for evaluator with target function.
-          start_tm=`date +%s`
-          poetry run pytest -m performance_target_test
-          run_time=$((`date +%s` - ${start_tm}))
-          poetry run python ../../scripts/code_qa/report_to_app_insights.py --activity evaluator_target_run_time_s --value $run_time --git-hub-action-run-id ${{ github.run_id }} --git-hub-workflow ${{ github.workflow }} --git-hub-action ${{ github.action }}
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: upload coverage report
         uses: actions/upload-artifact@v4

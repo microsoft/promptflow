@@ -1,4 +1,4 @@
-name: promptflow-evals-e2e-test
+name: promptflow-evals-regression-test
 
 on:
   schedule:
@@ -69,6 +69,7 @@ jobs:
           poetry run pip install --pre $(python -c "import glob; print(glob.glob('promptflow_evals-*.whl')[0])")
           export install_time=$((`date +%s` - ${start_tm}))
           poetry run python ../../scripts/code_qa/report_to_app_insights.py --activity install_time_s --value $install_time --git-hub-action-run-id ${{ github.run_id }} --git-hub-workflow ${{ github.workflow }} --git-hub-action ${{ github.action }}
+          test ${install_time} -le $TIME_LIMIT || echo "::warning file=pyproject.toml,line=40,col=0::The installation took ${install_time} minutes, the limit is ${TIME_LIMIT}."
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: install recording
         run: poetry run pip install -e ../promptflow-recording
