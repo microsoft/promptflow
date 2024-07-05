@@ -114,7 +114,7 @@ jobs:
       run: echo '${{ secrets.PF_TRACING_E2E_TEST_CONFIG }}' >> connections.json
       working-directory: ${{ env.WORKING_DIRECTORY }}
     - name: run e2e tests
-      run: poetry run pytest -m e2etest
+      run: poetry run pytest -m e2etest --tb=short
       working-directory: ${{ env.WORKING_DIRECTORY }}
     - name: upload coverage report
       uses: actions/upload-artifact@v4
@@ -174,7 +174,7 @@ jobs:
         run: poetry install --only test
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: run core tests
-        run: poetry run pytest ./tests/core
+        run: poetry run pytest ./tests/core --tb=short
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: upload coverage report
         uses: actions/upload-artifact@v4
@@ -221,7 +221,7 @@ jobs:
         run: poetry install --only test
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: run azureml-serving tests
-        run: poetry run pytest ./tests/azureml-serving
+        run: poetry run pytest ./tests/azureml-serving --tb=short
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: upload report
         uses: actions/upload-artifact@v4
@@ -283,7 +283,7 @@ jobs:
         run: poetry install --only test
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: run devkit tests
-        run: poetry run pytest ./tests/sdk_cli_test ./tests/sdk_pfs_test -n auto -m "unittest or e2etest"
+        run: poetry run pytest ./tests/sdk_cli_test ./tests/sdk_pfs_test -n auto -m "unittest or e2etest" --tb=short
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: upload coverage report
         uses: actions/upload-artifact@v4
@@ -347,7 +347,7 @@ jobs:
         run: poetry install --only test
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: run azure tests
-        run: poetry run pytest ./tests/sdk_cli_azure_test -n auto -m "unittest or e2etest"
+        run: poetry run pytest ./tests/sdk_cli_azure_test -n auto -m "unittest or e2etest" --tb=short
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: upload coverage report
         uses: actions/upload-artifact@v4

@@ -579,6 +579,7 @@ class TestBatch:
         assert batch_result.system_metrics.duration > 0
 
         outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
+        print(outputs)
         assert len(outputs) == nlines
         for i, output in enumerate(outputs):
             assert isinstance(output, dict)
@@ -587,9 +588,11 @@ class TestBatch:
             assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
             # "line_number is the first pair in the dict, conversation_history is the last pair in the dict"
             assert len(output) == max_turn + 2
-            for j, line in enumerate(output):
-                if "line_number" not in output:
-                    assert "role" in line, f"role is not in {i}th output {j}th line {line}"
+            conversation_history = output["conversation_history"]
+            # generate output value set to dedup output
+            # only check user role since assistant role output is generate by LLM, we cannot control the output value
+            output_values = {item["output"] for item in conversation_history if item["role"] == "user"}
+            assert len(output_values) == 3
 
         assert len(mem_run_storage._flow_runs) == nlines
         assert all(flow_run_info.status == Status.Completed for flow_run_info in mem_run_storage._flow_runs.values())

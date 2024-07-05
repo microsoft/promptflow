@@ -72,7 +72,7 @@ jobs:
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: |
           poetry run pytest ./tests/sdk_cli_azure_test --cov=promptflow --cov-config=pyproject.toml `
-          --cov-report=term --cov-report=html --cov-report=xml -n auto -m "(unittest or e2etest) and not csharp"
+          --cov-report=term --cov-report=html --cov-report=xml -n auto -m "(unittest or e2etest) and not csharp" --tb=short
 
       - name: Upload Test Results
         if: always()
