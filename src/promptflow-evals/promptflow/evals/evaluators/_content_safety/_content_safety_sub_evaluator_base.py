@@ -7,12 +7,13 @@ from .flow.constants import EvaluationMetrics
 from .flow.evaluate_with_rai_service import evaluate_with_rai_service
 from .flow.validate_inputs import validate_inputs
 
+
 class ContentSafetySubEvaluatorBase(ABC):
     """
     Initialize a evaluator for a specified Evaluation Metric. Base class that is not
     meant to be instantiated by users.
 
-    
+
     :param metric: The metric to be evaluated.
     :type metric: ~promptflow.evals.evaluators._content_safety.flow.constants.EvaluationMetrics
     :param project_scope: The scope of the Azure AI project.
@@ -42,7 +43,7 @@ class ContentSafetySubEvaluatorBase(ABC):
         # Raises value error if failed, so execution alone signifies success.
         _ = validate_inputs(question=question, answer=answer)
 
-        #question: str, answer: str, metric_name: str, project_scope: dict, credential: TokenCredential
+        # question: str, answer: str, metric_name: str, project_scope: dict, credential: TokenCredential
         # Run f1 score computation.
         result = evaluate_with_rai_service(
             metric_name=self._metric,

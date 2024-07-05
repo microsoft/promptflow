@@ -4,6 +4,7 @@
 from .flow.constants import EvaluationMetrics
 from ._content_safety_sub_evaluator_base import ContentSafetySubEvaluatorBase
 
+
 class SexualEvaluator(ContentSafetySubEvaluatorBase):
     """
     Initialize a sexual evaluator for sexual score.

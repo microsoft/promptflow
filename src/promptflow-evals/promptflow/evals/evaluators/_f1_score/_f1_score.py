@@ -4,6 +4,7 @@
 from .flow.f1_score import compute_f1_score
 from .flow.validate_inputs import validate_inputs
 
+
 class F1ScoreEvaluator:
     """
     Initialize a f1 score evaluator for calculating F1 score.
@@ -28,7 +29,7 @@ class F1ScoreEvaluator:
     """
 
     def __init__(self):
-        pass # no init work needed.
+        pass
 
     def __call__(self, *, answer: str, ground_truth: str, **kwargs):
         """
