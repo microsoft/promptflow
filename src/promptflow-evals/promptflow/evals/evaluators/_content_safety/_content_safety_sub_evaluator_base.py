@@ -20,15 +20,12 @@ class ContentSafetySubEvaluatorBase(ABC):
     :type project_scope: dict
     :param credential: The credential for connecting to Azure AI project.
     :type credential: TokenCredential
-    :param output_name: The name that the outputs should be saved under. Defaults to the metric name if not provided.
-    :type output_name: Optional[str]=None
     """
 
-    def __init__(self,  metric: EvaluationMetrics, project_scope: dict, credential=None, output_name=None):
+    def __init__(self,  metric: EvaluationMetrics, project_scope: dict, credential=None):
         self._metric = metric
         self._project_scope = project_scope
         self._credential = credential
-        self._output_name = output_name if output_name else metric
 
     def __call__(self, *, question: str, answer: str, **kwargs):
         """
@@ -54,4 +51,4 @@ class ContentSafetySubEvaluatorBase(ABC):
             project_scope=self._project_scope,
             credential=self._credential,
         )
-        return {self._output_name: result, self._output_name + "_defect_rate": result}
+        return result

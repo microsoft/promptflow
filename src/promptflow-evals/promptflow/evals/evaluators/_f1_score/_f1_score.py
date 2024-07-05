@@ -28,7 +28,7 @@ class F1ScoreEvaluator:
     """
 
     def __init__(self):
-        pass
+        pass # no init work needed.
 
     def __call__(self, *, answer: str, ground_truth: str, **kwargs):
         """

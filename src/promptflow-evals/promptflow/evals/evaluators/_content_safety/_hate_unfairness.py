@@ -44,7 +44,6 @@ class HateUnfairnessEvaluator(ContentSafetySubEvaluatorBase):
             metric=EvaluationMetrics.HATE_FAIRNESS,
             project_scope=project_scope,
             credential=credential,
-            output_name=EvaluationMetrics.HATE_UNFAIRNESS,
         )
 
     def __call__(self, *, question: str, answer: str, **kwargs):

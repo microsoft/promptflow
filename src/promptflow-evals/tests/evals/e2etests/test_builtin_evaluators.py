@@ -1,4 +1,5 @@
 import pytest
+from promptflow.recording.record_mode import is_replay
 
 from promptflow.evals.evaluators import (
     ChatEvaluator,
@@ -42,10 +43,13 @@ class TestBuiltInEvaluators:
         assert score["violence_score"] < 1.0
         assert score["violence_reason"], "violence_reason must not be None or empty."
 
-    @pytest.mark.skip(reason="Not working in ci pipeline. For local run.")
     def test_content_safety_service_unavailable(self, project_scope, azure_cred):
         eval_fn = ViolenceEvaluator(project_scope, azure_cred)
-        project_scope["project_name"] = "pf-evals-ws-westus2"
+        # Doing this is replay mode breaks causes mismatch between scrubbed recordings
+        # and the actual request made.
+        # Using not is_replay() because is_live doesn't apply to recording mode?
+        if not is_replay():
+            project_scope["project_name"] = "pf-evals-ws-westus2"
 
         with pytest.raises(Exception) as exc_info:
             eval_fn(
@@ -53,7 +57,7 @@ class TestBuiltInEvaluators:
                 answer="The capital of Japan is Tokyo.",
             )
 
-        assert "RAI service is not available in this region" in exc_info._excinfo[1].inner_exception.args[0]
+        assert "RAI service is not available in this region" in exc_info._excinfo[1].args[0]
 
     @pytest.mark.parametrize("parallel", [False, True])
     def test_composite_evaluator_qa(self, model_config, parallel):
