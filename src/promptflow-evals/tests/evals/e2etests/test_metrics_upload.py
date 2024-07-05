@@ -124,7 +124,7 @@ class TestMetricsUpload(object):
         ev_run.log_artifact(tmp_path)
         self._assert_no_errors_for_module(caplog.records, EvalRun.__module__)
 
-    @pytest.mark.performance_target_test
+    @pytest.mark.performance_test
     @pytest.mark.usefixtures("vcr_recording")
     def test_e2e_run_target_fn(self, caplog, project_scope, questions_answers_file, monkeypatch):
         """Test evaluation run logging."""
@@ -161,7 +161,7 @@ class TestMetricsUpload(object):
         )
         self._assert_no_errors_for_module(caplog.records, (ev_utils.__name__, EvalRun.__module__))
 
-    @pytest.mark.performance_evaluator_test
+    @pytest.mark.performance_test
     @pytest.mark.usefixtures("vcr_recording")
     def test_e2e_run(self, caplog, project_scope, questions_answers_file, monkeypatch):
         """Test evaluation run logging."""
