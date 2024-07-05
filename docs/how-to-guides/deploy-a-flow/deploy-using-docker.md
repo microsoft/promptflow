@@ -89,7 +89,7 @@ You'll need to set up the environment variables in the container to make the con
 
 Depending on your use case you made need to make changes to how your application runs. Out of the box, running `pf flow build...` will generate two scripts located under `runit/promptflow-serve/`, a `run` script used to initialise the flow, and a `finish` script used to gracefully shutdown the flow. These two scripts are where you can initialise and shutdown additional applications that run alongside your flow.
 
-For example, lets assume you want to add you need to run OpenTelemetry Collector within the same container.
+For example, lets assume you want to add you need to run [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) within the same container.
 
 1. After running `pf flow build --format docker...` navigate to the output folder.
 
