@@ -5,7 +5,7 @@ from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._telemetry.telemetry import get_telemetry_logger
 
 
-def main(activity_name: str, value: float, run_id: str, workflow: str, action: str) -> None:
+def main(activity_name: str, value: float, run_id: str, workflow: str, action: str, branch: str) -> None:
     """
     Log the CI-CD event.
 
@@ -19,6 +19,8 @@ def main(activity_name: str, value: float, run_id: str, workflow: str, action: s
     :type workflow: str
     :param action: The name of running action or a step.
     :type action: str
+    :param branch: The branch from which the CI-CD was triggered.
+    :type branch: str
     """
     # Enable telemetry
     config = Configuration.get_instance()
@@ -30,6 +32,7 @@ def main(activity_name: str, value: float, run_id: str, workflow: str, action: s
         "OS": platform.system(),
         "OS_release": platform.release(),
         "value": value,
+        "branch": branch,
         "git_hub_action_run_id": run_id,
         "git_hub_workflow": workflow
     }
@@ -50,5 +53,7 @@ if __name__ == '__main__':
                         help='The name of a workflow or a path to workflow file.', required=True)
     parser.add_argument('--git-hub-action', type=ascii, dest='action',
                         help='Git hub action or step.', required=True)
+    parser.add_argument('--git-branch', type=ascii, dest='branch',
+                        help='Git hub Branch.', required=True)
     args = parser.parse_args()
-    main(args.activity, args.value, args.run_id, args.workflow, args.action)
+    main(args.activity, args.value, args.run_id, args.workflow, args.action, args.branch)
