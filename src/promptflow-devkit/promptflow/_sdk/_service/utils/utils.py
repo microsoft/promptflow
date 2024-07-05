@@ -27,10 +27,10 @@ from promptflow._sdk._constants import (
     HOME_PROMPT_FLOW_DIR,
     PF_SERVICE_DEFAULT_PORT,
     PF_SERVICE_HOST,
-    PF_SERVICE_HOUR_TIMEOUT,
     PF_SERVICE_LOG_FILE,
     PF_SERVICE_PORT_DIT_NAME,
     PF_SERVICE_PORT_FILE,
+    PF_SERVICE_WILDCARD_ADDRESS,
 )
 from promptflow._sdk._errors import ConnectionNotFoundError, RunNotFoundError
 from promptflow._sdk._utilities.general_utils import (
@@ -45,11 +45,7 @@ from promptflow.exceptions import PromptflowException, UserErrorException
 
 logger = get_cli_sdk_logger()
 
-hint_stop_message = (
-    f"You can stop the prompt flow service with the following command:'\033[1mpf service stop\033[0m'.\n"
-    f"Alternatively, if no requests are made within {PF_SERVICE_HOUR_TIMEOUT} "
-    f"hours, it will automatically stop."
-)
+hint_stop_message = "You can stop the prompt flow service with the following command:'\033[1mpf service stop\033[0m'.\n"
 hint_stop_before_upgrade = (
     "Kindly reminder: If you have previously upgraded the prompt flow package , please "
     "double-confirm that you have run '\033[1mpf service stop\033[0m' to stop the prompt flow"
@@ -87,13 +83,13 @@ def get_current_env_pfs_file(file_name):
     return port_file_path
 
 
-def get_port_from_config(create_if_not_exists=False):
+def get_port_from_config(service_host, create_if_not_exists=False):
     port_file_path = get_port_file_location()
     with open(port_file_path, "r+", encoding=DEFAULT_ENCODING) as f:
         service_config = load_yaml(f) or {}
         port = service_config.get("service", {}).get("port", None)
         if not port and create_if_not_exists:
-            port = get_pfs_port()
+            port = get_pfs_port(service_host)
             service_config["service"] = service_config.get("service", {})
             service_config["service"]["port"] = port
             logger.debug(f"Set port {port} to file {port_file_path}")
@@ -126,20 +122,20 @@ def dump_port_to_config(port):
             f.truncate()  # Remove any remaining content
 
 
-def is_port_in_use(port: int):
+def is_port_in_use(port: int, service_host: str):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         # OS will wait for timeout when connecting to an unused port, so it will take about 2s. Set timeout here to
         # avoid long waiting time
         s.settimeout(0.1)
-        return s.connect_ex((PF_SERVICE_HOST, port)) == 0
+        return s.connect_ex((service_host, port)) == 0
 
 
-def get_pfs_port():
+def get_pfs_port(service_host):
     port = PF_SERVICE_DEFAULT_PORT
     while True:
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.bind((PF_SERVICE_HOST, port))
+                s.bind((service_host, port))
                 return s.getsockname()[1]
         except OSError:
             port += 1
@@ -209,12 +205,12 @@ def get_pfs_version():
         return version_devkit
 
 
-def is_pfs_service_healthy(pfs_port) -> bool:
+def is_pfs_service_healthy(pfs_port, service_host) -> bool:
     """Check if pfs service is running and pfs version matches pf version."""
     try:
-        response = requests.get(f"http://{PF_SERVICE_HOST}:{pfs_port}/heartbeat")
+        response = requests.get(f"http://{service_host}:{pfs_port}/heartbeat")
         if response.status_code == 200:
-            logger.debug(f"Prompt flow service is already running on port {pfs_port}, {response.text}")
+            logger.debug(f"Prompt flow service is already running on {service_host}:{pfs_port}, {response.text}")
             match = re.search(r'"promptflow":"(.*?)"', response.text)
             if match:
                 version = match.group(1)
@@ -222,8 +218,8 @@ def is_pfs_service_healthy(pfs_port) -> bool:
                 is_healthy = version == local_version
                 if not is_healthy:
                     logger.warning(
-                        f"Prompt flow service is running on port {pfs_port}, but the version is not the same as "
-                        f"local sdk version {local_version}. The service version is {version}."
+                        f"Prompt flow service is running on {service_host}:{pfs_port}, but the version is not the "
+                        f"same as local sdk version {local_version}. The service version is {version}."
                     )
             else:
                 is_healthy = False
@@ -231,14 +227,14 @@ def is_pfs_service_healthy(pfs_port) -> bool:
             return is_healthy
     except Exception:  # pylint: disable=broad-except
         pass
-    logger.debug(f"Failed to call prompt flow service api /heartbeat on port {pfs_port}.")
+    logger.debug(f"Failed to call prompt flow service api /heartbeat on {service_host}:{pfs_port}.")
     return False
 
 
-def check_pfs_service_status(pfs_port, time_delay=1, count_threshold=10) -> bool:
+def check_pfs_service_status(pfs_port, service_host, time_delay=1, count_threshold=10) -> bool:
     cnt = 1
     time.sleep(time_delay)
-    is_healthy = is_pfs_service_healthy(pfs_port)
+    is_healthy = is_pfs_service_healthy(pfs_port, service_host)
     while is_healthy is False and count_threshold > cnt:
         message = (
             f"Waiting for the prompt flow service status to become healthy... It has been tried for {cnt} times, will "
@@ -250,8 +246,23 @@ def check_pfs_service_status(pfs_port, time_delay=1, count_threshold=10) -> bool
             logger.info(message)
         cnt += 1
         time.sleep(time_delay)
-        is_healthy = is_pfs_service_healthy(pfs_port)
+        is_healthy = is_pfs_service_healthy(pfs_port, service_host)
     return is_healthy
+
+
+def get_pfs_host():
+    """Get the host of prompt flow service."""
+    from promptflow._sdk._configuration import Configuration
+
+    config = Configuration.get_instance()
+    pfs_host = config.get_pfs_host()
+    logger.debug("resolved service.host: %s", pfs_host)
+    return pfs_host
+
+
+def get_pfs_host_after_check_wildcard(service_host):
+    """When the address is 0.0.0.0, return the default host."""
+    return PF_SERVICE_HOST if service_host == PF_SERVICE_WILDCARD_ADDRESS else service_host
 
 
 @dataclass

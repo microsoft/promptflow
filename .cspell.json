@@ -50,7 +50,8 @@
     ".github/actions/**",
     ".github/pipelines/**",
     ".github/CODEOWNERS",
-    "src/promptflow-evals/tests/**"
+    "src/promptflow-evals/tests/**",
+    "benchmark/promptflow-serve/result-archive/**"
   ],
   "words": [
     "aoai",
@@ -240,7 +241,9 @@
     "Machinal",
     "azureopenaimodelconfiguration",
     "openaimodelconfiguration",
-    "usecwd"
+    "usecwd",
+    "locustio",
+    "euap"
   ],
   "flagWords": [
     "Prompt Flow"

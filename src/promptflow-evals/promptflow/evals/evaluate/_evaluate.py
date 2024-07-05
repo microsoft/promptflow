@@ -9,9 +9,8 @@ import numpy as np
 import pandas as pd
 
 from promptflow._sdk._constants import LINE_NUMBER
-from promptflow._sdk._telemetry import ActivityType, log_activity
-from promptflow._sdk._telemetry.telemetry import get_telemetry_logger
 from promptflow.client import PFClient
+from ._telemetry import log_evaluate_activity
 
 from .._constants import CONTENT_SAFETY_DEFECT_RATE_THRESHOLD_DEFAULT, EvaluationMetrics, Prefixes
 from .._user_agent import USER_AGENT
@@ -19,8 +18,8 @@ from ._batch_run_client import BatchRunContext, CodeClient, ProxyClient
 from ._utils import (
     _apply_column_mapping,
     _log_metrics_and_instance_results,
-    _trace_destination_from_project_scope,
     _write_output,
+    _trace_destination_from_project_scope,
 )
 
 
@@ -258,7 +257,7 @@ def _rename_columns_conditionally(df: pd.DataFrame):
     return df
 
 
-@log_activity(get_telemetry_logger(), "pf.evals.evaluate", activity_type=ActivityType.PUBLICAPI, user_agent=USER_AGENT)
+@log_evaluate_activity
 def evaluate(
     *,
     evaluation_name: Optional[str] = None,
@@ -377,7 +376,6 @@ def _evaluate(
     output_path: Optional[str] = None,
     **kwargs,
 ):
-    trace_destination = _trace_destination_from_project_scope(azure_ai_project) if azure_ai_project else None
 
     input_data_df = _validate_and_load_data(target, data, evaluators, output_path, azure_ai_project, evaluation_name)
 
@@ -389,9 +387,13 @@ def _evaluate(
 
     # Target Run
     pf_client = PFClient(
-        config={"trace.destination": trace_destination} if trace_destination else None,
+        config={
+            "trace.destination": _trace_destination_from_project_scope(azure_ai_project)} if azure_ai_project else None,
         user_agent=USER_AGENT,
     )
+
+    trace_destination = pf_client._config.get_trace_destination()
+
     target_run = None
 
     target_generated_columns = set()
@@ -437,6 +439,7 @@ def _evaluate(
                 column_mapping=evaluator_config.get(evaluator_name, evaluator_config.get("default", None)),
                 data=input_data_df if isinstance(batch_run_client, CodeClient) else data,
                 stream=True,
+                name=kwargs.get("_run_name"),
             )
 
         # get_details needs to be called within BatchRunContext scope in order to have user agent populated
@@ -482,7 +485,9 @@ def _evaluate(
     metrics = _aggregate_metrics(evaluators_result_df, evaluators)
     metrics.update(evaluators_metric)
 
-    studio_url = _log_metrics_and_instance_results(metrics, result_df, trace_destination, target_run)
+    studio_url = _log_metrics_and_instance_results(
+        metrics, result_df, trace_destination, target_run, evaluation_name,
+    )
 
     result = {"rows": result_df.to_dict("records"), "metrics": metrics, "studio_url": studio_url}
 

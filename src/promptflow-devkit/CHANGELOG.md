@@ -1,10 +1,16 @@
 # promptflow-devkit package
 
-## v1.13.0 (Upcoming)
+## v1.14.0 (Upcoming)
+TODO
+
+## v1.13.0 (2024.06.28)
 
 ### Bugs Fixed
 - Fix incompatibility with `trace.NoOpTracerProvider` when set exporter to prompt flow service.
 - Add missing user agent in trace usage telemetry.
+
+### Improvements
+- Support setting config of local prompt flow service host
 
 ## v1.12.0 (2024.06.11)
 

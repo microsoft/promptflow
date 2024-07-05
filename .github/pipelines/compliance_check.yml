@@ -22,6 +22,13 @@ pool:
 steps:
 - checkout: self
 
+- task: PowerShell@2
+  inputs:
+    targetType: inline
+    script: |
+      Remove-Item -Recurse -Force $(sourceLocation)/benchmark/promptflow-serve/result-archive
+  displayName: 'Delete benchmark HTML files'
+
 # https://eng.ms/docs/microsoft-security/cloud-ecosystem-security/azure-security/cloudai-security-fundamentals-engineering/security-integration/guardian-wiki/sdl-azdo-extension/PoliCheck-build-task
 - task: PoliCheck@2
   inputs:
@@ -31,6 +38,19 @@ steps:
     optionsUEPATH: '$(sourceLocation)\scripts\compliance-check\user_exclusion.xml'
     result: '$(sourceLocation)\scripts\compliance-check\result.tsv'
     optionsXCLASS: 'Geopolitical'
+
+- task: PowerShell@2
+  inputs:
+    targetType: inline
+    script: |
+      if (-Not (Test-Path "$(sourceLocation)/scripts/compliance-check/result.tsv")) {
+        Write-Host "PoliCheck@2 (previous step) is not supported for forked GitHub repository, which will break the following step."
+        Write-Host "So as a workaround, this step will create an empty result.tsv file."
+        New-Item -ItemType Directory -Force -Path "$(sourceLocation)/scripts/compliance-check"
+        Set-Location "$(sourceLocation)/scripts/compliance-check"
+        New-Item -ItemType File -Name "result.tsv"
+      }
+  displayName: 'Workaround for fork repository'
 
 - task: PowerShell@2
   inputs:

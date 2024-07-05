@@ -19,7 +19,6 @@ from promptflow._constants import PF_NO_INTERACTIVE_LOGIN
 from promptflow._sdk._constants import (
     HOME_PROMPT_FLOW_DIR,
     PF_SERVICE_DEBUG,
-    PF_SERVICE_HOST,
     PF_SERVICE_LOG_FILE,
     PF_SERVICE_WORKER_NUM,
 )
@@ -28,6 +27,8 @@ from promptflow._sdk._service.utils.utils import (
     check_pfs_service_status,
     dump_port_to_config,
     get_current_env_pfs_file,
+    get_pfs_host,
+    get_pfs_host_after_check_wildcard,
     get_pfs_version,
     get_port_from_config,
     get_started_service_info,
@@ -169,12 +170,13 @@ def start_service(args):
     # User Agent will be set based on header in request, so not set globally here.
     os.environ[PF_NO_INTERACTIVE_LOGIN] = "true"
     port = args.port
+    service_host = get_pfs_host()
     if args.debug:
         os.environ[PF_SERVICE_DEBUG] = "true"
         if not is_run_from_built_binary():
             add_executable_script_to_env_path()
-        port = _prepare_app_for_foreground_service(port, args.force)
-        waitress.serve(app, host=PF_SERVICE_HOST, port=port, threads=PF_SERVICE_WORKER_NUM)
+        port = _prepare_app_for_foreground_service(port, args.force, service_host)
+        waitress.serve(app, host=service_host, port=port, threads=PF_SERVICE_WORKER_NUM)
     else:
         if is_run_from_built_binary():
             # For msi installer/executable, use sdk api to start pfs since it's not supported to invoke waitress by cli
@@ -182,51 +184,54 @@ def start_service(args):
             parent_dir = os.path.dirname(sys.executable)
             output_path = os.path.join(parent_dir, "output.txt")
             with redirect_stdout_to_file(output_path):
-                port = _prepare_app_for_foreground_service(port, args.force)
-            waitress.serve(app, host=PF_SERVICE_HOST, port=port, threads=PF_SERVICE_WORKER_NUM)
+                port = _prepare_app_for_foreground_service(port, args.force, service_host)
+            waitress.serve(app, host=service_host, port=port, threads=PF_SERVICE_WORKER_NUM)
         else:
-            port = validate_port(port, args.force)
+            port = validate_port(port, args.force, service_host)
             add_executable_script_to_env_path()
             # Start a pfs process using detach mode. It will start a new process and create a new app. So we use
             # environment variable to pass the debug mode, since it will inherit parent process environment variable.
             if platform.system() == "Windows":
-                _start_background_service_on_windows(port)
+                _start_background_service_on_windows(port, service_host)
             else:
-                _start_background_service_on_unix(port)
-            is_healthy = check_pfs_service_status(port)
+                _start_background_service_on_unix(port, service_host)
+            host = get_pfs_host_after_check_wildcard(service_host)
+            is_healthy = check_pfs_service_status(port, host)
             if is_healthy:
-                message = f"Start prompt flow service on port {port}, version: {get_pfs_version()}."
+                message = f"Start prompt flow service on {service_host}:{port}, version: {get_pfs_version()}."
                 print(message)
                 logger.info(message)
             else:
                 logger.warning(f"Prompt flow service start failed in {port}. {hint_stop_before_upgrade}")
 
 
-def validate_port(port, force_start):
+def validate_port(port, force_start, service_host):
     if port:
-        _validate_port(port, force_start)
+        _validate_port(port, force_start, service_host)
         # dump port to config file only when port is valid or force_start is True.
         dump_port_to_config(port)
     else:
-        port = get_port_from_config(create_if_not_exists=True)
-        _validate_port(port, force_start)
+        host = get_pfs_host_after_check_wildcard(service_host)
+        port = get_port_from_config(host, create_if_not_exists=True)
+        _validate_port(port, force_start, service_host)
     return port
 
 
-def _validate_port(port, force_start):
-    if is_port_in_use(port):
+def _validate_port(port, force_start, service_host):
+    host = get_pfs_host_after_check_wildcard(service_host)
+    if is_port_in_use(port, host):
         if force_start:
-            message = f"Force restart the service on the port {port}."
+            message = f"Force restart the service on the {service_host}:{port}."
             if is_run_from_built_binary():
                 print(message)
             logger.warning(message)
             kill_exist_service(port)
         else:
-            message = f"Service port {port} is used."
+            message = f"Service {service_host}:{port} is used."
             if is_run_from_built_binary():
                 print(message)
             logger.warning(message)
-            raise UserErrorException(f"Service port {port} is used.")
+            raise UserErrorException(f"Service {service_host}:{port} is used.")
 
 
 @contextlib.contextmanager
@@ -246,8 +251,8 @@ def redirect_stdout_to_file(path):
         sys.stderr = old_stderr
 
 
-def _prepare_app_for_foreground_service(port, force_start):
-    port = validate_port(port, force_start)
+def _prepare_app_for_foreground_service(port, force_start, service_host):
+    port = validate_port(port, force_start, service_host)
     global app
     if app is None:
         app, _ = create_app()
@@ -255,13 +260,13 @@ def _prepare_app_for_foreground_service(port, force_start):
         app.logger.setLevel(logging.DEBUG)
     else:
         app.logger.setLevel(logging.INFO)
-    message = f"Starting prompt flow Service on port {port}, version: {get_pfs_version()}."
+    message = f"Starting prompt flow Service on {service_host}:{port}, version: {get_pfs_version()}."
     app.logger.info(message)
     print(message)
     return port
 
 
-def _start_background_service_on_windows(port):
+def _start_background_service_on_windows(port, service_host):
     try:
         import win32api
         import win32con
@@ -272,7 +277,7 @@ def _start_background_service_on_windows(port):
             f"service start depends on pywin32.. {ex}"
         )
     command = (
-        f"waitress-serve --listen={PF_SERVICE_HOST}:{port} --threads={PF_SERVICE_WORKER_NUM} "
+        f"waitress-serve --listen={service_host}:{port} --threads={PF_SERVICE_WORKER_NUM} "
         "promptflow._cli._pf._service:get_app"
     )
     logger.debug(f"Start prompt flow service in Windows: {command}")
@@ -301,11 +306,10 @@ def _start_background_service_on_windows(port):
     win32api.CloseHandle(thread_handle)
 
 
-def _start_background_service_on_unix(port):
-    # Set host to PF_SERVICE_HOST, only allow request from PF_SERVICE_HOST.
+def _start_background_service_on_unix(port, service_host):
     cmd = [
         "waitress-serve",
-        f"--listen={PF_SERVICE_HOST}:{port}",
+        f"--listen={service_host}:{port}",
         f"--threads={PF_SERVICE_WORKER_NUM}",
         "promptflow._cli._pf._service:get_app",
     ]
@@ -314,10 +318,12 @@ def _start_background_service_on_unix(port):
 
 
 def stop_service():
-    port = get_port_from_config()
-    if port is not None and is_port_in_use(port):
+    service_host = get_pfs_host()
+    port = get_port_from_config(service_host)
+    host = get_pfs_host_after_check_wildcard(service_host)
+    if port is not None and is_port_in_use(port, host):
         kill_exist_service(port)
-        message = f"Prompt flow service stop in {port}."
+        message = f"Prompt flow service stop on {service_host}:{port}."
     else:
         message = "Prompt flow service is not started."
     logger.debug(message)
@@ -325,14 +331,15 @@ def stop_service():
 
 
 def show_service():
-    port = get_port_from_config()
+    service_host = get_pfs_host()
+    port = get_port_from_config(service_host)
     status = get_started_service_info(port)
     if is_run_from_built_binary():
         log_file = HOME_PROMPT_FLOW_DIR / PF_SERVICE_LOG_FILE
     else:
         log_file = get_current_env_pfs_file(PF_SERVICE_LOG_FILE)
     if status:
-        extra_info = {"log_file": log_file.as_posix(), "version": get_pfs_version()}
+        extra_info = {"service_host": service_host, "log_file": log_file.as_posix(), "version": get_pfs_version()}
         status.update(extra_info)
         dumped_status = json.dumps(status, ensure_ascii=False, indent=2, sort_keys=True, separators=(",", ": ")) + "\n"
         print(dumped_status)

@@ -522,13 +522,14 @@ def _test_flow_multi_modal(args, pf_client, environment_variables):
     else:
         from promptflow._sdk._tracing import _invoke_pf_svc
 
-        pfs_port = _invoke_pf_svc()
+        pfs_port, service_host = _invoke_pf_svc()
         serve_app_port = args.port or find_available_port()
         enable_internal_features = Configuration.get_instance().is_internal_features_enabled()
         start_chat_ui_service_monitor(
             flow=args.flow,
             serve_app_port=serve_app_port,
             pfs_port=pfs_port,
+            service_host=service_host,
             url_params=list_of_dict_to_dict(args.url_params),
             init=list_of_dict_to_dict(args.init),
             enable_internal_features=enable_internal_features,

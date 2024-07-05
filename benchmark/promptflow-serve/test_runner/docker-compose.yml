@@ -1,0 +1,62 @@
+version: '3.8'
+
+# See this on how to configure the worker and thread count:
+# https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/how-to-deploy-to-code?view=azureml-api-2&tabs=managed#configure-concurrency-for-deployment
+
+services:
+  fastapi-wait-service:
+    image: fastapi-wait-service
+    container_name: fastapi-wait-service
+    ports:
+      - "50001:50001"
+    environment:
+      - MIN_WAIT_TIME_SEC=1
+      - MAX_WAIT_TIME_SEC=1
+    networks:
+      - my_network
+
+  # flexflow async
+  pf-flex-async-service:
+    image: pf-flex-async-service
+    container_name: pf-flex-async-service
+    ports:
+      - "8083:8080"
+    environment:
+      - PROMPTFLOW_WORKER_NUM=${PROMPTFLOW_WORKER_NUM}
+      - PROMPTFLOW_WORKER_THREADS=${PROMPTFLOW_WORKER_NUM}
+      - PROMPTFLOW_SERVING_ENGINE=fastapi
+      - MOCK_API_ENDPOINT=http://fastapi-wait-service:50001
+    networks:
+      - my_network
+
+  # static dag async
+  pf-static-async-service:
+    image: pf-static-async-service
+    container_name: pf-static-async-service
+    ports:
+      - "8081:8080"
+    environment:
+      - PROMPTFLOW_WORKER_NUM=${PROMPTFLOW_WORKER_NUM}
+      - PROMPTFLOW_WORKER_THREADS=${PROMPTFLOW_WORKER_NUM}
+      - PROMPTFLOW_SERVING_ENGINE=fastapi
+      - MOCK_API_ENDPOINT=http://fastapi-wait-service:50001
+    networks:
+      - my_network
+
+  # static dag sync
+  pf-static-sync-service:
+    image: pf-static-sync-service
+    container_name: pf-static-sync-service
+    ports:
+      - "8082:8080"
+    environment:
+      - PROMPTFLOW_WORKER_NUM=${PROMPTFLOW_WORKER_NUM}
+      - PROMPTFLOW_WORKER_THREADS=${PROMPTFLOW_WORKER_NUM}
+      - PROMPTFLOW_SERVING_ENGINE=flask
+      - MOCK_API_ENDPOINT=http://fastapi-wait-service:50001
+    networks:
+      - my_network
+
+networks:
+  my_network:
+    driver: bridge

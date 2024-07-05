@@ -11,7 +11,7 @@ interactions:
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.32.3
+      - python-requests/2.31.0
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000?api-version=2023-08-01-preview
   response:
@@ -24,7 +24,7 @@ interactions:
       cache-control:
       - no-cache
       content-length:
-      - '2816'
+      - '2853'
       content-type:
       - application/json; charset=utf-8
       expires:
@@ -40,7 +40,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.025'
+      - '0.028'
     status:
       code: 200
       message: OK
