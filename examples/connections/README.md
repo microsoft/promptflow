@@ -34,7 +34,7 @@ pf connection show --name custom_connection
 - To update a connection that in workspace, execute following command. Currently only a few fields(description, display_name) support update:
 ```bash
 # Update an existing connection with --set to override values
-# Update an azure open ai connection with a new api base
+# Update an azure OpenAI connection with a new api base
 pf connection update -n open_ai_connection --set api_base='<your_api_base>'
 # Update a custom connection
 pf connection update -n custom_connection --set configs.key1='<your_new_key>' secrets.key2='<your_another_key>'
