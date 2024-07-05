@@ -6,7 +6,7 @@ on:
   pull_request:
     paths:
       - src/promptflow-evals/**
-      - .github/workflows/promptflow-evals-e2e-test.yml
+      - .github/workflows/promptflow-evals-regression-test.yml
   workflow_dispatch:
 
 env:
@@ -44,6 +44,7 @@ jobs:
         shell: bash
     runs-on: ${{ matrix.os }}
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
