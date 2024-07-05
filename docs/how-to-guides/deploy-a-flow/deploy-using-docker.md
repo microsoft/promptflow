@@ -59,10 +59,6 @@ pf flow build --source ../../flows/standard/web-classification --output dist --f
 
 Note that all dependent connections must be created before exporting as docker.
 
-************
-Add detail about structure of what's generated
-************
-
 ### Build Docker image
 
 Like other Dockerfile, you need to build the image first. You can tag the image with any name you want. In this example, we use `web-classification-serve`.
