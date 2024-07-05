@@ -1,4 +1,4 @@
-name: promptflow-evals-e2e-test
+name: promptflow-evals-regression-test
 
 on:
   schedule:
