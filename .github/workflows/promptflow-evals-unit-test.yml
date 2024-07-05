@@ -53,7 +53,6 @@ jobs:
         run: poetry install --only test
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: install promptflow packages in editable mode
-        id: install_promptflow
         run: |
           export TIME_LIMIT=5
           export start_tm=`date +%s`

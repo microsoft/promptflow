@@ -57,6 +57,7 @@ jobs:
         run: poetry install --only test
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: install promptflow-evals from wheel
+        id: install_promptflow
         run: |
           # Estimate the installation time.
           export start_tm=`date +%s`
