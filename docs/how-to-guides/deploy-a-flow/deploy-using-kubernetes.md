@@ -163,7 +163,7 @@ name: open_ai_connection
 module: promptflow.connections
 api_key: ${env:OPEN_AI_CONNECTION_API_KEY} # env reference
 ```
-You'll need to set up the environment variables in the container to make the connections work.
+You'll need to set up the environment variables in the container to make the connections work. For a full list of environment variables see [Load from environment variables](https://microsoft.github.io/promptflow/how-to-guides/manage-connections.html#load-from-environment-variables).
 
 ### Test the endpoint
 - Option1:
