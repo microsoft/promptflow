@@ -76,7 +76,7 @@ jobs:
         run: |
             poetry run pytest -m unittest --cov=promptflow --cov-config=pyproject.toml --cov-report=term --cov-report=html --cov-report=xml --cov-fail-under=63
             export cov_pct=`grep "data-ratio" htmlcov/index.html | tail -n1 | sed -r 's/.*>([0-9]+)%.*/\1/g'`
-            poetry run python ../../scripts/code_qa/report_to_app_insights.py --activity test_coverage_pct --value $cov_pct --git-hub-action-run-id ${{ github.run_id }} --git-hub-workflow ${{ github.workflow }} --git-hub-action ${{ github.action }} --git-branch ${{ github.ref_name }}
+            poetry run python ../../scripts/code_qa/report_to_app_insights.py --activity test_coverage_pct --value $cov_pct --git-hub-action-run-id ${{ github.run_id }} --git-hub-workflow ${{ github.workflow }} --git-hub-action ${{ github.action }} --git-branch ${{ github.ref }}
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: upload coverage report
         uses: actions/upload-artifact@v4
