@@ -243,7 +243,8 @@
     "openaimodelconfiguration",
     "usecwd",
     "locustio",
-    "euap"
+    "euap",
+    "otelcol"
   ],
   "flagWords": [
     "Prompt Flow"
