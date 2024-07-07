@@ -63,7 +63,6 @@ class AdversarialSimulator:
     :param credential: The credential for connecting to Azure AI project.
     :type credential: TokenCredential
     :type azure_ai_project: Dict[str, Any]
-
     """
 
     def __init__(self, *, azure_ai_project: Dict[str, Any], credential=None):
