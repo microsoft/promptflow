@@ -80,7 +80,7 @@ jobs:
       run: |
         poetry run pytest ${{ env.FILE_PATHS }} --cov=promptflow --cov-config=pyproject.toml \
         --cov-report=term --cov-report=html --cov-report=xml -n auto -m "(unittest or e2etest) and not csharp" \
-        --ignore-glob ./tests/sdk_cli_test/e2etests/test_executable.py
+        --ignore-glob ./tests/sdk_cli_test/e2etests/test_executable.py --tb=short
       working-directory: ${{ env.WORKING_DIRECTORY }}
     - name: Upload Test Results
       if: always()
@@ -95,7 +95,7 @@ jobs:
       working-directory: ${{ env.WORKING_DIRECTORY }}
     - name: run devkit executable tests
       run: |
-        poetry run pytest -n auto -m "unittest or e2etest" ./tests/sdk_cli_test/e2etests/test_executable.py
+        poetry run pytest -n auto -m "unittest or e2etest" ./tests/sdk_cli_test/e2etests/test_executable.py --tb=short
       working-directory: ${{ env.WORKING_DIRECTORY }}
 
 

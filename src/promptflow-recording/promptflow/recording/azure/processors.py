@@ -5,6 +5,7 @@
 import base64
 import json
 from typing import Dict
+from urllib.parse import urlparse
 
 from vcr.request import Request
 
@@ -119,8 +120,17 @@ class AzureResourceProcessor(RecordingProcessor):
         for k in filter_keys:
             if k in body:
                 body.pop(k)
+        # Need to track the promptflow run.
+        ml_flow_tracking_uri = (
+            f"azureml://{urlparse(discovery_url).netloc}"
+            f"/mlflow/v1.0/subscriptions/{SanitizedValues.SUBSCRIPTION_ID}"
+            f"/resourceGroups/{SanitizedValues.RESOURCE_GROUP_NAME}"
+            f"/providers/Microsoft.MachineLearningServices/workspaces/00000"
+        )
         # need during the constructor of FlowServiceCaller (for vNet case)
-        body["properties"] = {"discoveryUrl": discovery_url}
+        body["properties"] = {
+            "discoveryUrl": discovery_url,
+            "mlFlowTrackingUri": ml_flow_tracking_uri}
         name = body["name"]
         body["name"] = SanitizedValues.WORKSPACE_NAME
         body["id"] = body["id"].replace(name, SanitizedValues.WORKSPACE_NAME)

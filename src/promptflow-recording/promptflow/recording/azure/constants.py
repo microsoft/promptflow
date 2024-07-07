@@ -69,8 +69,31 @@ class SanitizedValues:
     START_TIME = "1717563256142"
     TIMESTAMP = "1717563256242"
     END_TIME = "1717563261483"
+    START_UTC = "2000-01-01T00:00:00.000000Z"
+    END_UTC = "2000-01-02T00:00:00.000000Z"
     # Promptflow RunID
-    RUN_ID = "evals_e2etests_target_fn_wqo0_peh_20240606_102622_386974"
+    RUN_ID = "evals_e2etests_run_id_xxx0_xxx_00000000_000000_000000"
+    RUN_UUID = "00000000-0000-0000-0000-000000000000"
+    EXP_UUID = "11111111-1111-1111-1111-111111111111"
+    # Files, created by the promptflow
+    ROOT_PF_PATH = f"promptflow/PromptFlowArtifacts/{RUN_ID}"
+    EXEC_LOGS = f"{ROOT_PF_PATH}/logs/azureml/executionlogs.txt"
+    FLOW_DEF = f"{ROOT_PF_PATH}/flow.flex.yaml"
+    CONTAINER = f"dcid.{RUN_ID}"
+    ARTIFACT_ID = f"ExperimentRun/dcid.{CONTAINER}/instance_results.jsonl"
+    # Coverage file is only created during pytest run with coverage enabled.
+    COVERAGE = ".coverage.sanitized-suffix.00000.xxxxxxxx"
+    DATA_PATH = {
+        "dataStoreName": "workspaceblobstore",
+        "relativePath": f"{ROOT_PF_PATH}/instance_results.jsonl",
+    }
+    OUTPUTS = {
+        "debug_info": {"assetId": f"azureml://locations/{RUN_ID}_output_data_debug_info/versions/1",
+                       "type": "UriFolder"},
+        "flow_outputs": {"assetId": f"azureml://locations/{RUN_ID}_output_data_flow_outputs/versions/1",
+                         "type": "UriFolder"}
+    }
+
     # Fake Application insights event
     FAKE_APP_INSIGHTS = [
         {
