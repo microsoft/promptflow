@@ -9,7 +9,7 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - azure-ai-ml/1.16.1 azsdk-python-mgmt-machinelearningservices/0.1.0 Python/3.11.5
+      - azure-ai-ml/1.17.0 azsdk-python-mgmt-machinelearningservices/0.1.0 Python/3.11.5
         (Windows-10-10.0.22631-SP0)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000
@@ -17,13 +17,14 @@ interactions:
     body:
       string: '{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000",
         "name": "00000", "type": "Microsoft.MachineLearningServices/workspaces", "location":
-        "westus2", "tags": {}, "etag": null, "kind": "Project", "sku": {"name": "Basic",
-        "tier": "Basic"}, "properties": {"discoveryUrl": "https://westus2.api.azureml.ms/discovery", "mlFlowTrackingUri": "azureml://westus2.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000000-0000-0000-0000-000000000000/providers/Microsoft.MachineLearningServices/workspaces/00000"}}'
+        "eastus", "tags": {}, "etag": null, "kind": "Project", "sku": {"name": "Basic",
+        "tier": "Basic"}, "properties": {"discoveryUrl": "https://eastus.api.azureml.ms/discovery",
+        "mlFlowTrackingUri": "azureml://eastus.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}}'
     headers:
       cache-control:
       - no-cache
       content-length:
-      - '3064'
+      - '3088'
       content-type:
       - application/json; charset=utf-8
       expires:
@@ -39,7 +40,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.025'
+      - '0.037'
     status:
       code: 200
       message: OK
@@ -60,23 +61,23 @@ interactions:
       User-Agent:
       - promptflow/0.0.1.dev0
     method: POST
-    uri: https://westus2.api.azureml.ms/mlflow/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/api/2.0/mlflow/runs/create
+    uri: https://eastus.api.azureml.ms/mlflow/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/api/2.0/mlflow/runs/create
   response:
     body:
-      string: '{"run": {"info": {"run_uuid": "5c6182e3-8d94-4c2e-b910-f119a8f5ce34",
-        "experiment_id": "b60f577b-0828-4e01-880a-d8a682dddcc2", "run_name": "test",
+      string: '{"run": {"info": {"run_uuid": "75d5c438-89c4-42d7-8e72-3b6c789f1073",
+        "experiment_id": "0c88b838-490b-4107-aa85-97ed5b243270", "run_name": "test",
         "user_id": "00000000-0000-0000-0000-000000000000", "status": "RUNNING", "start_time":
-        "1718734888783", "artifact_uri": "azureml://westus2.api.azureml.ms/mlflow/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/experiments/0/runs/5c6182e3-8d94-4c2e-b910-f119a8f5ce34/artifacts",
-        "lifecycle_stage": "active", "run_id": "5c6182e3-8d94-4c2e-b910-f119a8f5ce34"},
+        "1720028459423", "artifact_uri": "azureml://eastus.api.azureml.ms/mlflow/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/experiments/0/runs/75d5c438-89c4-42d7-8e72-3b6c789f1073/artifacts",
+        "lifecycle_stage": "active", "run_id": "75d5c438-89c4-42d7-8e72-3b6c789f1073"},
         "data": {"tags": [{"key": "mlflow.user", "value": "promptflow-evals"}, {"key":
-        "mlflow.rootRunId", "value": "5c6182e3-8d94-4c2e-b910-f119a8f5ce34"}, {"key":
-        "mlflow.runName", "value": "test"}, {"key": "mlflow.user", "value": "Nikolay
-        Rovinskiy"}]}, "inputs": {}}}'
+        "mlflow.rootRunId", "value": "75d5c438-89c4-42d7-8e72-3b6c789f1073"}, {"key":
+        "mlflow.runName", "value": "test"}, {"key": "mlflow.user", "value": "First
+        Last"}]}, "inputs": {}}}'
     headers:
       connection:
       - keep-alive
       content-length:
-      - '902'
+      - '901'
       content-type:
       - application/json; charset=utf-8
       strict-transport-security:
@@ -88,13 +89,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.127'
+      - '0.134'
     status:
       code: 200
       message: OK
 - request:
-    body: '{"run_uuid": "5c6182e3-8d94-4c2e-b910-f119a8f5ce34", "key": "f1", "value":
-      0.54, "timestamp": "1717563256242", "step": 0, "run_id": "5c6182e3-8d94-4c2e-b910-f119a8f5ce34"}'
+    body: '{"run_uuid": "00000000-0000-0000-0000-000000000000", "key": "f1", "value":
+      0.54, "timestamp": "1717563256242", "step": 0, "run_id": "00000000-0000-0000-0000-000000000000"}'
     headers:
       Accept:
       - '*/*'
@@ -109,7 +110,7 @@ interactions:
       User-Agent:
       - promptflow/0.0.1.dev0
     method: POST
-    uri: https://westus2.api.azureml.ms/mlflow/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/api/2.0/mlflow/runs/log-metric
+    uri: https://eastus.api.azureml.ms/mlflow/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/api/2.0/mlflow/runs/log-metric
   response:
     body:
       string: '{}'
@@ -125,13 +126,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '1.920'
+      - '0.719'
     status:
       code: 200
       message: OK
 - request:
-    body: '{"run_uuid": "5c6182e3-8d94-4c2e-b910-f119a8f5ce34", "status": "FINISHED",
-      "end_time": "1717563261483", "run_id": "5c6182e3-8d94-4c2e-b910-f119a8f5ce34"}'
+    body: '{"run_uuid": "00000000-0000-0000-0000-000000000000", "status": "FINISHED",
+      "end_time": "1717563261483", "run_id": "00000000-0000-0000-0000-000000000000"}'
     headers:
       Accept:
       - '*/*'
@@ -146,13 +147,13 @@ interactions:
       User-Agent:
       - promptflow/0.0.1.dev0
     method: POST
-    uri: https://westus2.api.azureml.ms/mlflow/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/api/2.0/mlflow/runs/update
+    uri: https://eastus.api.azureml.ms/mlflow/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/api/2.0/mlflow/runs/update
   response:
     body:
-      string: '{"run_info": {"run_uuid": "5c6182e3-8d94-4c2e-b910-f119a8f5ce34", "experiment_id":
-        "b60f577b-0828-4e01-880a-d8a682dddcc2", "run_name": "test", "user_id": "00000000-0000-0000-0000-000000000000",
-        "status": "FINISHED", "start_time": "1718734888783", "end_time": "1718734901095",
-        "lifecycle_stage": "active", "run_id": "5c6182e3-8d94-4c2e-b910-f119a8f5ce34"}}'
+      string: '{"run_info": {"run_uuid": "75d5c438-89c4-42d7-8e72-3b6c789f1073", "experiment_id":
+        "0c88b838-490b-4107-aa85-97ed5b243270", "run_name": "test", "user_id": "00000000-0000-0000-0000-000000000000",
+        "status": "FINISHED", "start_time": "1720028459423", "end_time": "1720028465277",
+        "lifecycle_stage": "active", "run_id": "75d5c438-89c4-42d7-8e72-3b6c789f1073"}}'
     headers:
       connection:
       - keep-alive
@@ -169,7 +170,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.513'
+      - '0.367'
     status:
       code: 200
       message: OK

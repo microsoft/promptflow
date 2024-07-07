@@ -46,6 +46,7 @@ from promptflow._sdk._constants import (
 from promptflow._sdk._errors import MissingAzurePackage
 from promptflow._sdk._service.utils.utils import (
     get_pfs_host,
+    get_pfs_host_after_check_wildcard,
     get_port_from_config,
     hint_stop_before_upgrade,
     hint_stop_message,
@@ -159,6 +160,7 @@ def _inject_attrs_to_op_ctx(attrs: typing.Dict[str, str]) -> None:
 
 def _invoke_pf_svc():
     service_host = get_pfs_host()
+    service_host = get_pfs_host_after_check_wildcard(service_host)
     port = get_port_from_config(service_host, create_if_not_exists=True)
     port = str(port)
     if is_run_from_built_binary():
