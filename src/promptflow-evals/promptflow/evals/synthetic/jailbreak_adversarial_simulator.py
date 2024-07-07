@@ -63,14 +63,14 @@ class JailbreakAdversarialSimulator:
         if not all(azure_ai_project[key] for key in ["subscription_id", "resource_group_name", "project_name"]):
             raise ValueError("subscription_id, resource_group_name and project_name must not be None")
         if "credential" not in azure_ai_project and not credential:
-            self.credential = DefaultAzureCredential()
+            credential = DefaultAzureCredential()
         elif "credential" in azure_ai_project:
-            self.credential = azure_ai_project["credential"]
+            credential = azure_ai_project["credential"]
         self.azure_ai_project = azure_ai_project
         self.token_manager = ManagedIdentityAPITokenManager(
             token_scope=TokenScope.DEFAULT_AZURE_MANAGEMENT,
             logger=logging.getLogger("AdversarialSimulator"),
-            credential=self.credential,
+            credential=credential,
         )
         self.rai_client = RAIClient(azure_ai_project=azure_ai_project, token_manager=self.token_manager)
         self.adversarial_template_handler = AdversarialTemplateHandler(
