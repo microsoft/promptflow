@@ -78,6 +78,7 @@ def _get_run_from_run_history(flow_run_id, ml_client, project_scope):
     else:
         raise Exception(f"Failed to get run from service. Code: {response.status_code}, text: {response.text}")
 
+
 @pytest.mark.e2etest
 class TestEvaluate:
     @pytest.mark.usefixtures("recording_injection")
