@@ -950,6 +950,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         logger.info(f"Successfully downloaded run {run!r} to {result_path!r}.")
         return result_path
 
+    @monitor_operation(activity_name="pfazure.runs.upload", activity_type=ActivityType.PUBLICAPI)
     def _upload(self, run: Optional[Union[str, Run]], run_uploader=None) -> str:
         from promptflow.azure.operations._async_run_uploader import AsyncRunUploader
 

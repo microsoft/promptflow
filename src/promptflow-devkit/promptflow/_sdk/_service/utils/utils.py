@@ -26,9 +26,11 @@ from promptflow._sdk._constants import (
     DEFAULT_ENCODING,
     HOME_PROMPT_FLOW_DIR,
     PF_SERVICE_DEFAULT_PORT,
+    PF_SERVICE_HOST,
     PF_SERVICE_LOG_FILE,
     PF_SERVICE_PORT_DIT_NAME,
     PF_SERVICE_PORT_FILE,
+    PF_SERVICE_WILDCARD_ADDRESS,
 )
 from promptflow._sdk._errors import ConnectionNotFoundError, RunNotFoundError
 from promptflow._sdk._utilities.general_utils import (
@@ -208,7 +210,7 @@ def is_pfs_service_healthy(pfs_port, service_host) -> bool:
     try:
         response = requests.get(f"http://{service_host}:{pfs_port}/heartbeat")
         if response.status_code == 200:
-            logger.debug(f"Prompt flow service is already running on port {service_host}:{pfs_port}, {response.text}")
+            logger.debug(f"Prompt flow service is already running on {service_host}:{pfs_port}, {response.text}")
             match = re.search(r'"promptflow":"(.*?)"', response.text)
             if match:
                 version = match.group(1)
@@ -256,6 +258,11 @@ def get_pfs_host():
     pfs_host = config.get_pfs_host()
     logger.debug("resolved service.host: %s", pfs_host)
     return pfs_host
+
+
+def get_pfs_host_after_check_wildcard(service_host):
+    """When the address is 0.0.0.0, return the default host."""
+    return PF_SERVICE_HOST if service_host == PF_SERVICE_WILDCARD_ADDRESS else service_host
 
 
 @dataclass
