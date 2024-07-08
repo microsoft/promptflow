@@ -200,6 +200,7 @@ class EvalRun(metaclass=Singleton):
         """
         if self._is_promptflow_run:
             # This run is already finished, we just add artifacts/metrics to it.
+            Singleton.destroy(EvalRun)
             return
         if status not in ("FINISHED", "FAILED", "KILLED"):
             raise ValueError(

@@ -344,7 +344,6 @@ class TestEvaluate:
         assert remote_run["runMetadata"]["properties"]["runType"] == "eval_run"
         assert remote_run["runMetadata"]["displayName"] == evaluation_name
 
-    @pytest.mark.skip(reason="Recording results in error. Pending for investigation.")
     def test_evaluate_track_in_cloud_no_target(
         self,
         data_file,
