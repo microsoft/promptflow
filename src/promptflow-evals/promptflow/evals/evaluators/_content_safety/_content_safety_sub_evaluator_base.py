@@ -12,6 +12,7 @@ except ImportError:
     from flow.evaluate_with_rai_service import evaluate_with_rai_service
     from flow.validate_inputs import validate_inputs
 
+
 class ContentSafetySubEvaluatorBase(ABC):
     """
     Initialize a evaluator for a specified Evaluation Metric. Base class that is not

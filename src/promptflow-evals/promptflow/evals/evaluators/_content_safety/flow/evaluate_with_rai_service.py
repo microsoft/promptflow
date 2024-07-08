@@ -9,7 +9,7 @@ import numpy as np
 import requests
 from azure.core.credentials import TokenCredential
 from azure.identity import DefaultAzureCredential
-try: 
+try:
     from .constants import EvaluationMetrics, RAIService, Tasks
     from .utils import get_harm_severity_level
 except ImportError:
