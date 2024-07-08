@@ -141,7 +141,7 @@ interactions:
         false, "input_type": "default"}, "model": {"type": ["string"], "enum": ["text-embedding-ada-002",
         "text-search-ada-doc-001", "text-search-ada-query-001"], "enabled_by": "connection",
         "enabled_by_type": ["OpenAIConnection"], "allow_manual_entry": true, "is_multi_select":
-        false, "input_type": "default"}}, "description": "Use Open AI''s embedding
+        false, "input_type": "default"}}, "description": "Use OpenAI''s embedding
         model to create an embedding vector representing the input text.", "module":
         "promptflow.tools.embedding", "function": "embedding", "is_builtin": true,
         "package": "promptflow-tools", "package_version": "1.4.0rc3", "enable_kwargs":
@@ -535,7 +535,7 @@ interactions:
         false, "input_type": "default"}, "model": {"type": ["string"], "enum": ["text-embedding-ada-002",
         "text-search-ada-doc-001", "text-search-ada-query-001"], "enabled_by": "connection",
         "enabled_by_type": ["OpenAIConnection"], "allow_manual_entry": true, "is_multi_select":
-        false, "input_type": "default"}}, "description": "Use Open AI''s embedding
+        false, "input_type": "default"}}, "description": "Use OpenAI''s embedding
         model to create an embedding vector representing the input text.", "module":
         "promptflow.tools.embedding", "function": "embedding", "is_builtin": true,
         "package": "promptflow-tools", "package_version": "1.4.0rc3", "enable_kwargs":
@@ -929,7 +929,7 @@ interactions:
         false, "input_type": "default"}, "model": {"type": ["string"], "enum": ["text-embedding-ada-002",
         "text-search-ada-doc-001", "text-search-ada-query-001"], "enabled_by": "connection",
         "enabled_by_type": ["OpenAIConnection"], "allow_manual_entry": true, "is_multi_select":
-        false, "input_type": "default"}}, "description": "Use Open AI''s embedding
+        false, "input_type": "default"}}, "description": "Use OpenAI''s embedding
         model to create an embedding vector representing the input text.", "module":
         "promptflow.tools.embedding", "function": "embedding", "is_builtin": true,
         "package": "promptflow-tools", "package_version": "1.4.0rc3", "enable_kwargs":
@@ -1323,7 +1323,7 @@ interactions:
         false, "input_type": "default"}, "model": {"type": ["string"], "enum": ["text-embedding-ada-002",
         "text-search-ada-doc-001", "text-search-ada-query-001"], "enabled_by": "connection",
         "enabled_by_type": ["OpenAIConnection"], "allow_manual_entry": true, "is_multi_select":
-        false, "input_type": "default"}}, "description": "Use Open AI''s embedding
+        false, "input_type": "default"}}, "description": "Use OpenAI''s embedding
         model to create an embedding vector representing the input text.", "module":
         "promptflow.tools.embedding", "function": "embedding", "is_builtin": true,
         "package": "promptflow-tools", "package_version": "1.4.0rc3", "enable_kwargs":
@@ -4836,7 +4836,7 @@ interactions:
         false, "input_type": "default"}, "model": {"type": ["string"], "enum": ["text-embedding-ada-002",
         "text-search-ada-doc-001", "text-search-ada-query-001"], "enabled_by": "connection",
         "enabled_by_type": ["OpenAIConnection"], "allow_manual_entry": true, "is_multi_select":
-        false, "input_type": "default"}}, "description": "Use Open AI''s embedding
+        false, "input_type": "default"}}, "description": "Use OpenAI''s embedding
         model to create an embedding vector representing the input text.", "module":
         "promptflow.tools.embedding", "function": "embedding", "is_builtin": true,
         "package": "promptflow-tools", "package_version": "1.4.0rc3", "enable_kwargs":
@@ -5229,7 +5229,7 @@ interactions:
         false, "input_type": "default"}, "model": {"type": ["string"], "enum": ["text-embedding-ada-002",
         "text-search-ada-doc-001", "text-search-ada-query-001"], "enabled_by": "connection",
         "enabled_by_type": ["OpenAIConnection"], "allow_manual_entry": true, "is_multi_select":
-        false, "input_type": "default"}}, "description": "Use Open AI''s embedding
+        false, "input_type": "default"}}, "description": "Use OpenAI''s embedding
         model to create an embedding vector representing the input text.", "module":
         "promptflow.tools.embedding", "function": "embedding", "is_builtin": true,
         "package": "promptflow-tools", "package_version": "1.4.0rc3", "enable_kwargs":
@@ -5622,7 +5622,7 @@ interactions:
         false, "input_type": "default"}, "model": {"type": ["string"], "enum": ["text-embedding-ada-002",
         "text-search-ada-doc-001", "text-search-ada-query-001"], "enabled_by": "connection",
         "enabled_by_type": ["OpenAIConnection"], "allow_manual_entry": true, "is_multi_select":
-        false, "input_type": "default"}}, "description": "Use Open AI''s embedding
+        false, "input_type": "default"}}, "description": "Use OpenAI''s embedding
         model to create an embedding vector representing the input text.", "module":
         "promptflow.tools.embedding", "function": "embedding", "is_builtin": true,
         "package": "promptflow-tools", "package_version": "1.4.0rc3", "enable_kwargs":
@@ -6015,7 +6015,7 @@ interactions:
         false, "input_type": "default"}, "model": {"type": ["string"], "enum": ["text-embedding-ada-002",
         "text-search-ada-doc-001", "text-search-ada-query-001"], "enabled_by": "connection",
         "enabled_by_type": ["OpenAIConnection"], "allow_manual_entry": true, "is_multi_select":
-        false, "input_type": "default"}}, "description": "Use Open AI''s embedding
+        false, "input_type": "default"}}, "description": "Use OpenAI''s embedding
         model to create an embedding vector representing the input text.", "module":
         "promptflow.tools.embedding", "function": "embedding", "is_builtin": true,
         "package": "promptflow-tools", "package_version": "1.4.0rc3", "enable_kwargs":
@@ -6408,7 +6408,7 @@ interactions:
         false, "input_type": "default"}, "model": {"type": ["string"], "enum": ["text-embedding-ada-002",
         "text-search-ada-doc-001", "text-search-ada-query-001"], "enabled_by": "connection",
         "enabled_by_type": ["OpenAIConnection"], "allow_manual_entry": true, "is_multi_select":
-        false, "input_type": "default"}}, "description": "Use Open AI''s embedding
+        false, "input_type": "default"}}, "description": "Use OpenAI''s embedding
         model to create an embedding vector representing the input text.", "module":
         "promptflow.tools.embedding", "function": "embedding", "is_builtin": true,
         "package": "promptflow-tools", "package_version": "1.4.0rc3", "enable_kwargs":
@@ -6801,7 +6801,7 @@ interactions:
         false, "input_type": "default"}, "model": {"type": ["string"], "enum": ["text-embedding-ada-002",
         "text-search-ada-doc-001", "text-search-ada-query-001"], "enabled_by": "connection",
         "enabled_by_type": ["OpenAIConnection"], "allow_manual_entry": true, "is_multi_select":
-        false, "input_type": "default"}}, "description": "Use Open AI''s embedding
+        false, "input_type": "default"}}, "description": "Use OpenAI''s embedding
         model to create an embedding vector representing the input text.", "module":
         "promptflow.tools.embedding", "function": "embedding", "is_builtin": true,
         "package": "promptflow-tools", "package_version": "1.4.0rc3", "enable_kwargs":
@@ -7194,7 +7194,7 @@ interactions:
         false, "input_type": "default"}, "model": {"type": ["string"], "enum": ["text-embedding-ada-002",
         "text-search-ada-doc-001", "text-search-ada-query-001"], "enabled_by": "connection",
         "enabled_by_type": ["OpenAIConnection"], "allow_manual_entry": true, "is_multi_select":
-        false, "input_type": "default"}}, "description": "Use Open AI''s embedding
+        false, "input_type": "default"}}, "description": "Use OpenAI''s embedding
         model to create an embedding vector representing the input text.", "module":
         "promptflow.tools.embedding", "function": "embedding", "is_builtin": true,
         "package": "promptflow-tools", "package_version": "1.4.0rc3", "enable_kwargs":
@@ -7587,7 +7587,7 @@ interactions:
         false, "input_type": "default"}, "model": {"type": ["string"], "enum": ["text-embedding-ada-002",
         "text-search-ada-doc-001", "text-search-ada-query-001"], "enabled_by": "connection",
         "enabled_by_type": ["OpenAIConnection"], "allow_manual_entry": true, "is_multi_select":
-        false, "input_type": "default"}}, "description": "Use Open AI''s embedding
+        false, "input_type": "default"}}, "description": "Use OpenAI''s embedding
         model to create an embedding vector representing the input text.", "module":
         "promptflow.tools.embedding", "function": "embedding", "is_builtin": true,
         "package": "promptflow-tools", "package_version": "1.4.0rc3", "enable_kwargs":
@@ -7980,7 +7980,7 @@ interactions:
         false, "input_type": "default"}, "model": {"type": ["string"], "enum": ["text-embedding-ada-002",
         "text-search-ada-doc-001", "text-search-ada-query-001"], "enabled_by": "connection",
         "enabled_by_type": ["OpenAIConnection"], "allow_manual_entry": true, "is_multi_select":
-        false, "input_type": "default"}}, "description": "Use Open AI''s embedding
+        false, "input_type": "default"}}, "description": "Use OpenAI''s embedding
         model to create an embedding vector representing the input text.", "module":
         "promptflow.tools.embedding", "function": "embedding", "is_builtin": true,
         "package": "promptflow-tools", "package_version": "1.4.0rc3", "enable_kwargs":
@@ -8373,7 +8373,7 @@ interactions:
         false, "input_type": "default"}, "model": {"type": ["string"], "enum": ["text-embedding-ada-002",
         "text-search-ada-doc-001", "text-search-ada-query-001"], "enabled_by": "connection",
         "enabled_by_type": ["OpenAIConnection"], "allow_manual_entry": true, "is_multi_select":
-        false, "input_type": "default"}}, "description": "Use Open AI''s embedding
+        false, "input_type": "default"}}, "description": "Use OpenAI''s embedding
         model to create an embedding vector representing the input text.", "module":
         "promptflow.tools.embedding", "function": "embedding", "is_builtin": true,
         "package": "promptflow-tools", "package_version": "1.4.0rc3", "enable_kwargs":
@@ -8766,7 +8766,7 @@ interactions:
         false, "input_type": "default"}, "model": {"type": ["string"], "enum": ["text-embedding-ada-002",
         "text-search-ada-doc-001", "text-search-ada-query-001"], "enabled_by": "connection",
         "enabled_by_type": ["OpenAIConnection"], "allow_manual_entry": true, "is_multi_select":
-        false, "input_type": "default"}}, "description": "Use Open AI''s embedding
+        false, "input_type": "default"}}, "description": "Use OpenAI''s embedding
         model to create an embedding vector representing the input text.", "module":
         "promptflow.tools.embedding", "function": "embedding", "is_builtin": true,
         "package": "promptflow-tools", "package_version": "1.4.0rc3", "enable_kwargs":
@@ -9159,7 +9159,7 @@ interactions:
         false, "input_type": "default"}, "model": {"type": ["string"], "enum": ["text-embedding-ada-002",
         "text-search-ada-doc-001", "text-search-ada-query-001"], "enabled_by": "connection",
         "enabled_by_type": ["OpenAIConnection"], "allow_manual_entry": true, "is_multi_select":
-        false, "input_type": "default"}}, "description": "Use Open AI''s embedding
+        false, "input_type": "default"}}, "description": "Use OpenAI''s embedding
         model to create an embedding vector representing the input text.", "module":
         "promptflow.tools.embedding", "function": "embedding", "is_builtin": true,
         "package": "promptflow-tools", "package_version": "1.4.0rc3", "enable_kwargs":
@@ -9552,7 +9552,7 @@ interactions:
         false, "input_type": "default"}, "model": {"type": ["string"], "enum": ["text-embedding-ada-002",
         "text-search-ada-doc-001", "text-search-ada-query-001"], "enabled_by": "connection",
         "enabled_by_type": ["OpenAIConnection"], "allow_manual_entry": true, "is_multi_select":
-        false, "input_type": "default"}}, "description": "Use Open AI''s embedding
+        false, "input_type": "default"}}, "description": "Use OpenAI''s embedding
         model to create an embedding vector representing the input text.", "module":
         "promptflow.tools.embedding", "function": "embedding", "is_builtin": true,
         "package": "promptflow-tools", "package_version": "1.4.0rc3", "enable_kwargs":
@@ -9945,7 +9945,7 @@ interactions:
         false, "input_type": "default"}, "model": {"type": ["string"], "enum": ["text-embedding-ada-002",
         "text-search-ada-doc-001", "text-search-ada-query-001"], "enabled_by": "connection",
         "enabled_by_type": ["OpenAIConnection"], "allow_manual_entry": true, "is_multi_select":
-        false, "input_type": "default"}}, "description": "Use Open AI''s embedding
+        false, "input_type": "default"}}, "description": "Use OpenAI''s embedding
         model to create an embedding vector representing the input text.", "module":
         "promptflow.tools.embedding", "function": "embedding", "is_builtin": true,
         "package": "promptflow-tools", "package_version": "1.4.0rc3", "enable_kwargs":
@@ -10338,7 +10338,7 @@ interactions:
         false, "input_type": "default"}, "model": {"type": ["string"], "enum": ["text-embedding-ada-002",
         "text-search-ada-doc-001", "text-search-ada-query-001"], "enabled_by": "connection",
         "enabled_by_type": ["OpenAIConnection"], "allow_manual_entry": true, "is_multi_select":
-        false, "input_type": "default"}}, "description": "Use Open AI''s embedding
+        false, "input_type": "default"}}, "description": "Use OpenAI''s embedding
         model to create an embedding vector representing the input text.", "module":
         "promptflow.tools.embedding", "function": "embedding", "is_builtin": true,
         "package": "promptflow-tools", "package_version": "1.4.0rc3", "enable_kwargs":
@@ -10731,7 +10731,7 @@ interactions:
         false, "input_type": "default"}, "model": {"type": ["string"], "enum": ["text-embedding-ada-002",
         "text-search-ada-doc-001", "text-search-ada-query-001"], "enabled_by": "connection",
         "enabled_by_type": ["OpenAIConnection"], "allow_manual_entry": true, "is_multi_select":
-        false, "input_type": "default"}}, "description": "Use Open AI''s embedding
+        false, "input_type": "default"}}, "description": "Use OpenAI''s embedding
         model to create an embedding vector representing the input text.", "module":
         "promptflow.tools.embedding", "function": "embedding", "is_builtin": true,
         "package": "promptflow-tools", "package_version": "1.4.0rc3", "enable_kwargs":
@@ -11434,7 +11434,7 @@ interactions:
         null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry": true,
         "is_multi_select": false, "generated_by": null, "input_type": "default", "advanced":
         null, "ui_hints": null, "filter_by": null}}, "Outputs": null, "Description":
-        "Use Open AI''s embedding model to create an embedding vector representing
+        "Use OpenAI''s embedding model to create an embedding vector representing
         the input text.", "connection_type": null, "Module": "promptflow.tools.embedding",
         "class_name": null, "Source": null, "LkgCode": null, "Code": null, "Function":
         "embedding", "action_type": null, "provider_config": null, "function_config":
