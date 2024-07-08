@@ -85,7 +85,7 @@ jobs:
       - name: run e2e tests
         run: | 
           poetry run pytest -m e2etest --cov=promptflow --cov-config=pyproject.toml --cov-report=term --cov-report=html --cov-report=xml
-          poetry run python ../../scripts/code_qa/report_to_app_insights.py --activity install_time_s --junit-xml test-results.xml --git-hub-action-run-id ${{ github.run_id }} --git-hub-workflow ${{ github.workflow }} --git-hub-action ${{ github.action }} --git-branch ${{ github.ref }}
+          poetry run python ../../scripts/code_qa/report_to_app_insights.py --activity install_time_s --junit-xml ${{ env.WORKING_DIRECTORY }}/test-results.xml --git-hub-action-run-id ${{ github.run_id }} --git-hub-workflow ${{ github.workflow }} --git-hub-action ${{ github.action }} --git-branch ${{ github.ref }}
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: upload coverage report
         uses: actions/upload-artifact@v4
