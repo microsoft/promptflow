@@ -41,19 +41,20 @@ except ImportError:
     import time
 
     from promptflow._cli._pf._service import _start_background_service_on_unix, _start_background_service_on_windows
-    from promptflow._sdk._service.utils.utils import get_pfs_host, get_pfs_port
+    from promptflow._sdk._service.utils.utils import get_pfs_host, get_pfs_host_after_check_wildcard, get_pfs_port
 
     def invoke_prompt_flow_service():
         service_host = get_pfs_host()
-        port = str(get_pfs_port(service_host))
+        host = get_pfs_host_after_check_wildcard(service_host)
+        port = str(get_pfs_port(host))
         if platform.system() == "Windows":
             _start_background_service_on_windows(port, service_host)
         else:
             _start_background_service_on_unix(port, service_host)
         time.sleep(20)
-        response = requests.get(f"http://{service_host}:{port}/heartbeat")
+        response = requests.get(f"http://{host}:{port}/heartbeat")
         assert response.status_code == 200, "prompt flow service is not healthy via /heartbeat"
-        return port, service_host
+        return port, host
 
 
 load_dotenv()

@@ -28,6 +28,7 @@ from promptflow._sdk._service.utils.utils import (
     dump_port_to_config,
     get_current_env_pfs_file,
     get_pfs_host,
+    get_pfs_host_after_check_wildcard,
     get_pfs_version,
     get_port_from_config,
     get_started_service_info,
@@ -194,7 +195,8 @@ def start_service(args):
                 _start_background_service_on_windows(port, service_host)
             else:
                 _start_background_service_on_unix(port, service_host)
-            is_healthy = check_pfs_service_status(port, service_host)
+            host = get_pfs_host_after_check_wildcard(service_host)
+            is_healthy = check_pfs_service_status(port, host)
             if is_healthy:
                 message = f"Start prompt flow service on {service_host}:{port}, version: {get_pfs_version()}."
                 print(message)
@@ -209,13 +211,15 @@ def validate_port(port, force_start, service_host):
         # dump port to config file only when port is valid or force_start is True.
         dump_port_to_config(port)
     else:
-        port = get_port_from_config(service_host, create_if_not_exists=True)
+        host = get_pfs_host_after_check_wildcard(service_host)
+        port = get_port_from_config(host, create_if_not_exists=True)
         _validate_port(port, force_start, service_host)
     return port
 
 
 def _validate_port(port, force_start, service_host):
-    if is_port_in_use(port, service_host):
+    host = get_pfs_host_after_check_wildcard(service_host)
+    if is_port_in_use(port, host):
         if force_start:
             message = f"Force restart the service on the {service_host}:{port}."
             if is_run_from_built_binary():
@@ -223,11 +227,11 @@ def _validate_port(port, force_start, service_host):
             logger.warning(message)
             kill_exist_service(port)
         else:
-            message = f"Service port {service_host}:{port} is used."
+            message = f"Service {service_host}:{port} is used."
             if is_run_from_built_binary():
                 print(message)
             logger.warning(message)
-            raise UserErrorException(f"Service port {service_host}:{port} is used.")
+            raise UserErrorException(f"Service {service_host}:{port} is used.")
 
 
 @contextlib.contextmanager
@@ -316,7 +320,8 @@ def _start_background_service_on_unix(port, service_host):
 def stop_service():
     service_host = get_pfs_host()
     port = get_port_from_config(service_host)
-    if port is not None and is_port_in_use(port, service_host):
+    host = get_pfs_host_after_check_wildcard(service_host)
+    if port is not None and is_port_in_use(port, host):
         kill_exist_service(port)
         message = f"Prompt flow service stop on {service_host}:{port}."
     else:

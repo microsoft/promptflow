@@ -168,7 +168,7 @@ class _StrongTypeAADSupportedConnection(_StrongTypeConnection):
 
 
 class AzureOpenAIConnection(_StrongTypeAADSupportedConnection):
-    """Azure Open AI connection.
+    """Azure OpenAI connection.
 
     :param api_key: The api key.
     :type api_key: str
@@ -278,13 +278,13 @@ class AzureOpenAIConnection(_StrongTypeAADSupportedConnection):
 
 
 class OpenAIConnection(_StrongTypeConnection):
-    """Open AI connection.
+    """OpenAI connection.
 
     :param api_key: The api key.
     :type api_key: str
     :param organization: Optional. The unique identifier for your organization which can be used in API requests.
     :type organization: str
-    :param base_url: Optional. Specify when use customized api base, leave None to use open ai default api base.
+    :param base_url: Optional. Specify when use customized api base, leave None to use OpenAI default api base.
     :type base_url: str
     :param name: Connection name.
     :type name: str
