@@ -8,10 +8,10 @@ Currently, there are two connection types supported by LLM tool: "AzureOpenAI" a
 
 ```bash
 # Override keys with --set to avoid yaml file changes
-# Create open ai connection
+# Create OpenAI connection
 pf connection create --file openai.yaml --set api_key=<your_api_key> --name open_ai_connection
 
-# Create azure open ai connection
+# Create azure OpenAI connection
 # pf connection create --file azure_openai.yaml --set api_key=<your_api_key> api_base=<your_api_base> --name open_ai_connection
 ```
 

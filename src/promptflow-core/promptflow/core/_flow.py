@@ -454,7 +454,7 @@ class Prompty(FlowBase):
         # 3. prepare params
         params = prepare_open_ai_request_params(self._model, template, connection)
 
-        # 4. send request to open ai
+        # 4. send request to OpenAI
         api_client = get_open_ai_client_by_connection(connection=connection)
 
         response = send_request_to_llm(api_client, self._model.api, params)
@@ -553,7 +553,7 @@ class AsyncPrompty(Prompty):
         # 3. prepare params
         params = prepare_open_ai_request_params(self._model, template, connection)
 
-        # 4. send request to open ai
+        # 4. send request to OpenAI
         api_client = get_open_ai_client_by_connection(connection=connection, is_async=True)
 
         response = await send_request_to_llm(api_client, self._model.api, params)

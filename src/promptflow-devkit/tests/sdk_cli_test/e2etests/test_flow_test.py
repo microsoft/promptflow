@@ -533,7 +533,7 @@ class TestFlowTest:
     def test_model_config_wrong_connection_type(self, pf):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_model_config")
         config1 = AzureOpenAIModelConfiguration(azure_deployment="my_deployment", azure_endpoint="fake_endpoint")
-        # using azure open ai connection to initialize open ai model config
+        # using azure OpenAI connection to initialize OpenAI model config
         config2 = OpenAIModelConfiguration(model="my_model", connection="azure_open_ai_connection")
         with pytest.raises(FlowEntryInitializationError) as e:
             pf.test(
