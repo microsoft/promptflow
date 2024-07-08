@@ -2,10 +2,10 @@ from typing import Dict, Optional, Union
 
 import argparse
 import platform
-import xml
 
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._telemetry.telemetry import get_telemetry_logger
+from xml.dom import minidom
 
 
 def parse_junit_xml(fle: str) -> Dict[str, Dict[str, Union[float, str]]]:
@@ -17,7 +17,7 @@ def parse_junit_xml(fle: str) -> Dict[str, Dict[str, Union[float, str]]]:
     :return: The dictionary with tests, their run times and pass/fail status.
     """
     test_results = {}
-    dom = xml.dom.minidom.parse(fle)
+    dom = minidom.parse(fle)
     # Take node list Document/testsuites/testsuite/
     for test in dom.firstChild.firstChild.childNodes:
         test_name = f"{test.attributes['classname'].value}::{test.attributes['name'].value}"
