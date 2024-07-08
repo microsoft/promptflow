@@ -78,10 +78,9 @@ def _get_run_from_run_history(flow_run_id, ml_client, project_scope):
     else:
         raise Exception(f"Failed to get run from service. Code: {response.status_code}, text: {response.text}")
 
-
-@pytest.mark.usefixtures("recording_injection")
 @pytest.mark.e2etest
 class TestEvaluate:
+    @pytest.mark.usefixtures("recording_injection")
     def test_evaluate_with_groundedness_evaluator(self, model_config, data_file):
         # data
         input_data = pd.read_json(data_file, lines=True)
@@ -118,6 +117,7 @@ class TestEvaluate:
         assert row_result_df["outputs.f1_score.f1_score"][2] == 1
         assert result["studio_url"] is None
 
+    @pytest.mark.usefixtures("recording_injection")
     @pytest.mark.skip(reason="Failed in CI pipeline. Pending for investigation.")
     def test_evaluate_with_content_safety_evaluator(self, project_scope, data_file, azure_cred):
         input_data = pd.read_json(data_file, lines=True)
@@ -153,6 +153,7 @@ class TestEvaluate:
         assert 0 <= metrics.get("content_safety.self_harm_defect_rate") <= 1
         assert 0 <= metrics.get("content_safety.hate_unfairness_defect_rate") <= 1
 
+    @pytest.mark.usefixtures("recording_injection")
     @pytest.mark.parametrize(
         "use_pf_client,function,column",
         [
@@ -186,6 +187,7 @@ class TestEvaluate:
         assert metrics.get(metric) == np.nanmean(row_result_df[out_column])
         assert row_result_df[out_column][2] == 31
 
+    @pytest.mark.usefixtures("recording_injection")
     def test_evaluate_with_target(self, questions_file):
         """Test evaluation with target function."""
         # We cannot define target in this file as pytest will load
@@ -209,6 +211,7 @@ class TestEvaluate:
         assert "outputs.f1.f1_score" in row_result_df.columns
         assert not any(np.isnan(f1) for f1 in row_result_df["outputs.f1.f1_score"])
 
+    @pytest.mark.usefixtures("recording_injection")
     @pytest.mark.parametrize(
         "evaluation_config",
         [
@@ -251,6 +254,7 @@ class TestEvaluate:
         expected = list(row_result_df[question].str.len())
         assert expected == list(row_result_df["outputs.question_ev.length"])
 
+    @pytest.mark.usefixtures("recording_injection")
     @pytest.mark.parametrize(
         "evaluate_config",
         [
@@ -301,6 +305,7 @@ class TestEvaluate:
         assert "answer.length" in metrics.keys()
         assert "f1_score.f1_score" in metrics.keys()
 
+    @pytest.mark.usefixtures("recording_injection")
     def test_evaluate_track_in_cloud(
         self,
         questions_file,
@@ -386,6 +391,7 @@ class TestEvaluate:
         assert remote_run["runMetadata"]["properties"]["_azureml.evaluation_run"] == "azure-ai-generative-parent"
         assert remote_run["runMetadata"]["displayName"] == evaluation_name
 
+    @pytest.mark.usefixtures("recording_injection")
     @pytest.mark.parametrize(
         "return_json, aggregate_return_json",
         [
@@ -410,6 +416,7 @@ class TestEvaluate:
         if aggregate_return_json:
             assert "answer_length.median" in result["metrics"].keys()
 
+    @pytest.mark.usefixtures("recording_injection")
     @pytest.mark.parametrize(
         "return_json, aggregate_return_json",
         [
