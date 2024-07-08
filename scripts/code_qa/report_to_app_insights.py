@@ -23,9 +23,9 @@ def parse_junit_xml(fle: str) -> Dict[str, Dict[str, Union[float, str]]]:
         test_name = f"{test.attributes['classname'].value}::{test.attributes['name'].value}"
         test_results[test_name] = {'fail_message': '', 'time': float(test.attributes['time'].value)}
 
-        for chld in test.childNodes:
-            if chld.nodeName == 'failure':
-                test_results['fail_message'] = chld.attributes["message"].value
+        for child in test.childNodes:
+            if child.nodeName == 'failure':
+                test_results['fail_message'] = child.attributes["message"].value
     return test_results
 
 
@@ -51,7 +51,7 @@ def main(activity_name: str,
     :type action: str
     :param branch: The branch from which the CI-CD was triggered.
     :type branch: str
-    :param junit_file: The path tojunit test file results.
+    :param junit_file: The path to junit test file results.
     :type junit_file: str
     """
     # Enable telemetry
@@ -79,7 +79,7 @@ if __name__ == '__main__':
                         required=True)
     parser.add_argument('--value', type=float, help='The value for activity.',
                         required=False, default=-1)
-    parser.add_argument('--junit-xml', type=float, help='The path to junit-xml file.',
+    parser.add_argument('--junit-xml', type=ascii, help='The path to junit-xml file.',
                         dest="junit_xml", required=False, default=None)
     parser.add_argument('--git-hub-action-run-id', type=ascii, dest='run_id',
                         help='The run ID of GitHub action run.', required=True)
