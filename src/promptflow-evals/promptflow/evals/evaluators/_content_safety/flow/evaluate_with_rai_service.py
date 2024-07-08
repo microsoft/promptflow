@@ -9,8 +9,12 @@ import numpy as np
 import requests
 from azure.core.credentials import TokenCredential
 from azure.identity import DefaultAzureCredential
-from .constants import EvaluationMetrics, RAIService, Tasks
-from .utils import get_harm_severity_level
+try: 
+    from .constants import EvaluationMetrics, RAIService, Tasks
+    from .utils import get_harm_severity_level
+except ImportError:
+    from constants import EvaluationMetrics, RAIService, Tasks
+    from utils import get_harm_severity_level
 
 from promptflow.core import tool
 

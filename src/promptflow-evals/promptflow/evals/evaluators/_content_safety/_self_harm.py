@@ -1,8 +1,12 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from .flow.constants import EvaluationMetrics
-from ._content_safety_sub_evaluator_base import ContentSafetySubEvaluatorBase
+try:
+    from .flow.constants import EvaluationMetrics
+    from ._content_safety_sub_evaluator_base import ContentSafetySubEvaluatorBase
+except ImportError:
+    from flow.constants import EvaluationMetrics
+    from _content_safety_sub_evaluator_base import ContentSafetySubEvaluatorBase
 
 
 class SelfHarmEvaluator(ContentSafetySubEvaluatorBase):
