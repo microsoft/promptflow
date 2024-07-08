@@ -1,11 +1,41 @@
+from typing import Dict, Optional, Union
+
 import argparse
 import platform
+import xml
 
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._telemetry.telemetry import get_telemetry_logger
 
 
-def main(activity_name: str, value: float, run_id: str, workflow: str, action: str, branch: str) -> None:
+def parse_junit_xml(fle: str) -> Dict[str, Dict[str, Union[float, str]]]:
+    """
+    Parse the xml in Junit xml format.
+
+    :param fle: The file in JUnit xml format.
+    :type fle: str
+    :return: The dictionary with tests, their run times and pass/fail status.
+    """
+    test_results = {}
+    dom = xml.dom.minidom.parse(fle)
+    # Take node list Document/testsuites/testsuite/
+    for test in dom.firstChild.firstChild.childNodes:
+        test_name = f"{test.attributes['classname'].value}::{test.attributes['name'].value}"
+        test_results[test_name] = {'fail_message': '', 'time': float(test.attributes['time'].value)}
+
+        for chld in test.childNodes:
+            if chld.nodeName == 'failure':
+                test_results['fail_message'] = chld.attributes["message"].value
+    return test_results
+
+
+def main(activity_name: str,
+         value: float,
+         run_id: str,
+         workflow: str,
+         action: str,
+         branch: str,
+         junit_file: Optional[str]) -> None:
     """
     Log the CI-CD event.
 
@@ -21,6 +51,8 @@ def main(activity_name: str, value: float, run_id: str, workflow: str, action: s
     :type action: str
     :param branch: The branch from which the CI-CD was triggered.
     :type branch: str
+    :param junit_file: The path tojunit test file results.
+    :type junit_file: str
     """
     # Enable telemetry
     config = Configuration.get_instance()
@@ -31,7 +63,7 @@ def main(activity_name: str, value: float, run_id: str, workflow: str, action: s
         "activity_type": "ci_cd_analytics",
         "OS": platform.system(),
         "OS_release": platform.release(),
-        "value": value,
+        "value": parse_junit_xml(junit_file) if junit_file else value,
         "branch": branch,
         "git_hub_action_run_id": run_id,
         "git_hub_workflow": workflow
@@ -46,7 +78,9 @@ if __name__ == '__main__':
     parser.add_argument('--activity', type=ascii, help='The activity to be logged.',
                         required=True)
     parser.add_argument('--value', type=float, help='The value for activity.',
-                        required=True)
+                        required=False, default=-1)
+    parser.add_argument('--junit-xml', type=float, help='The path to junit-xml file.',
+                        dest="junit_xml", required=False, default=None)
     parser.add_argument('--git-hub-action-run-id', type=ascii, dest='run_id',
                         help='The run ID of GitHub action run.', required=True)
     parser.add_argument('--git-hub-workflow', type=ascii, dest='workflow',
@@ -56,4 +90,4 @@ if __name__ == '__main__':
     parser.add_argument('--git-branch', type=ascii, dest='branch',
                         help='Git hub Branch.', required=True)
     args = parser.parse_args()
-    main(args.activity, args.value, args.run_id, args.workflow, args.action, args.branch)
+    main(args.activity, args.value, args.run_id, args.workflow, args.action, args.branch, args.junit_xml)
