@@ -26,7 +26,7 @@ In this flow, you will understand how assistant tools within PromptFlow are trig
 ### 1. Create assistant connection (openai)
 Go to "Prompt flow" "Connections" tab. Click on "Create" button, select one of assistant tool supported connection types and fill in the configurations.
 
-Currently, only "Open AI" connection type are supported for assistant tool. Please refer to [OpenAI](https://platform.openai.com/) for more details.
+Currently, only "OpenAI" connection type are supported for assistant tool. Please refer to [OpenAI](https://platform.openai.com/) for more details.
 
 ```bash
 # Override keys with --set to avoid yaml file changes
