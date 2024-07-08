@@ -1,10 +1,13 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from .flow.f1_score import compute_f1_score
-from .flow.validate_inputs import validate_inputs
-
-
+try:
+    from .flow.f1_score import compute_f1_score
+    from .flow.validate_inputs import validate_inputs
+except ImportError:
+    # Relative imports fail when using a loaded eval. Use absolute instead.
+    from flow.f1_score import compute_f1_score
+    from flow.validate_inputs import validate_inputs
 class F1ScoreEvaluator:
     """
     Initialize a f1 score evaluator for calculating F1 score.
