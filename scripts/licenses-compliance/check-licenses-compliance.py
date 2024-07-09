@@ -11,7 +11,7 @@ allowed_licenses = [
     "ISC License (ISCL)",
     "Public Domain",
     "Python Software Foundation License",
-    "Mozilla Public License 2.0 (MPL 2.0)",
+    # "Mozilla Public License 2.0 (MPL 2.0)",
     "MIT License",
     "The Unlicense (Unlicense)",
 ]
