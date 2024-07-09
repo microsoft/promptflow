@@ -15,6 +15,7 @@ jobs:
     - name: check licenses
       run: |
         pip install .[executor-service,azureml-serving]
+        pip list
         pip-licenses --from=mixed --format=csv --output-file=LICENSES.csv
         cat LICENSES.csv
         python ../../scripts/licenses-compliance/check-licenses-compliance.py LICENSES.csv

@@ -12,6 +12,7 @@ allowed_licenses = [
     "Public Domain",
     "Python Software Foundation License",
     "Mozilla Public License 2.0 (MPL 2.0)",
+    "3-Clause BSD License",
     "MIT License",
     "The Unlicense (Unlicense)",
 ]
