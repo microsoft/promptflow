@@ -14,6 +14,8 @@ jobs:
       run: pip install pip-licenses
     - name: check licenses
       run: |
+        pip install .
         pip-licenses --from=mixed --format=csv --output-file=LICENSES.csv
+        cat LICENSES.csv
         python ../../scripts/licenses-compliance/check-licenses-compliance.py LICENSES.csv
       working-directory: ${{ github.workspace }}/src/promptflow-core
