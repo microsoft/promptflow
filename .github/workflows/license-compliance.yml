@@ -1,0 +1,27 @@
+name: "License Compliance"
+on:
+- pull_request_target
+
+jobs:
+  promptflow-tracing:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.ref }}
+        fetch-depth: 0
+    - name: merge main to current branch
+      uses: "./.github/actions/step_merge_main"
+    - uses: snok/install-poetry@v1
+    - name: install dependencies
+      run: |
+        poetry install
+        poetry run pip show promptflow-tracing
+        poetry run pip list
+      working-directory: ${{ github.workspace }}/src/promptflow-tracing
+    - name: install pip-licenses
+      run: pip install pip-licenses
+    - name: check licenses
+      run: |
+        pip-licenses --from=mixed --format=csv --output-file=LICENSES.csv
+        cat LICENSES.csv
