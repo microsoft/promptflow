@@ -2,10 +2,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 try:
-    from .flow.constants import EvaluationMetrics
+    from .common.constants import EvaluationMetrics
     from ._content_safety_sub_evaluator_base import ContentSafetySubEvaluatorBase
 except ImportError:
-    from flow.constants import EvaluationMetrics
+    from common.constants import EvaluationMetrics
     from _content_safety_sub_evaluator_base import ContentSafetySubEvaluatorBase
 
 

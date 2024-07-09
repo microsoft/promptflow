@@ -4,13 +4,13 @@
 from abc import ABC
 
 try:
-    from .flow.constants import EvaluationMetrics
-    from .flow.evaluate_with_rai_service import evaluate_with_rai_service
-    from .flow.validate_inputs import validate_inputs
+    from .common.constants import EvaluationMetrics
+    from .common.evaluate_with_rai_service import evaluate_with_rai_service
+    from .common.validate_inputs import validate_inputs
 except ImportError:
-    from flow.constants import EvaluationMetrics
-    from flow.evaluate_with_rai_service import evaluate_with_rai_service
-    from flow.validate_inputs import validate_inputs
+    from common.constants import EvaluationMetrics
+    from common.evaluate_with_rai_service import evaluate_with_rai_service
+    from common.validate_inputs import validate_inputs
 
 
 class ContentSafetySubEvaluatorBase(ABC):
