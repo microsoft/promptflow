@@ -9,12 +9,12 @@ jobs:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
       with:
-        python-version: '3.11'
+        python-version: '3.12'
     - name: install pip-licenses
       run: pip install pip-licenses
     - name: check licenses
       run: |
-        pip install .
+        pip install .[executor-service,azureml-serving]
         pip-licenses --from=mixed --format=csv --output-file=LICENSES.csv
         cat LICENSES.csv
         python ../../scripts/licenses-compliance/check-licenses-compliance.py LICENSES.csv
