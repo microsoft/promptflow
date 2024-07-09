@@ -112,10 +112,11 @@ html_theme_options = {
     "show_toc_level": 1,
     "navbar_align": "left",  # [left, content, right] For testing that the navbar items align properly
     "navbar_center": ["navbar-nav"],
-    "announcement": "<b>[IMPORTANT]</b> Please uninstall existing promptflow and sub packages before you "
-    "upgrade from promptflow<=1.7.0 to newer version. Reach "
-    "<a href='https://microsoft.github.io/promptflow/how-to-guides/faq.html#promptflow-1-8-0-upgrade-guide'>"
-    "here</a> for more details.",
+    "announcement": "🚀<b style='color:black;'>"
+    "Promptflow 1.13.0 has released! Try new feature: "
+    "<a href='https://microsoft.github.io/promptflow/how-to-guides/tracing/index.html' style='color:black;'>"
+    "<u>tracing interaction with LLMs</u></a>."
+    "</b>",
     "show_nav_level": 1,
 }
 
