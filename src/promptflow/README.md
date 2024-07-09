@@ -24,7 +24,7 @@ With prompt flow, you will be able to:
 
 - **Create and iteratively develop flow**
     - Create executable [flows](https://microsoft.github.io/promptflow/concepts/concept-flows.html) that link LLMs, prompts, Python code and other [tools](https://microsoft.github.io/promptflow/concepts/concept-tools.html) together.
-    - Debug and iterate your flows, especially the [interaction with LLMs](https://microsoft.github.io/promptflow/concepts/concept-connections.html) with ease.
+    - Debug and iterate your flows, especially [tracing interaction with LLMs](https://microsoft.github.io/promptflow/how-to-guides/tracing/index.html) with ease.
 - **Evaluate flow quality and performance**
     - Evaluate your flow's quality and performance with larger datasets.
     - Integrate the testing and evaluation into your CI/CD system to ensure quality of your flow.
