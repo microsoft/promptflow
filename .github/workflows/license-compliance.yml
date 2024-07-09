@@ -14,9 +14,28 @@ jobs:
     - name: install dependencies
       run: |
         poetry install
-        poetry run pip show promptflow-tracing
         poetry run pip list
       working-directory: ${{ github.workspace }}/src/promptflow-tracing
+    - name: install pip-licenses
+      run: pip install pip-licenses
+    - name: check licenses
+      run: |
+        pip-licenses --from=mixed --format=csv --output-file=LICENSES.csv
+        cat LICENSES.csv
+
+  promptflow-core:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    - uses: snok/install-poetry@v1
+    - name: install dependencies
+      run: |
+        poetry install
+        poetry run pip list
+      working-directory: ${{ github.workspace }}/src/promptflow-core
     - name: install pip-licenses
       run: pip install pip-licenses
     - name: check licenses
