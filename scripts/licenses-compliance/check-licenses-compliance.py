@@ -11,7 +11,7 @@ allowed_licenses = [
     "ISC License (ISCL)",
     "Public Domain",
     "Python Software Foundation License",
-    # "Mozilla Public License 2.0 (MPL 2.0)",
+    "Mozilla Public License 2.0 (MPL 2.0)",
     "MIT License",
     "The Unlicense (Unlicense)",
 ]
@@ -29,6 +29,10 @@ def check_license_compliance(
             # note that "License" can be a comma separated list of licenses
             licenses = row["License"]
             for license in licenses.split(";"):
+                # edge case(s) like `tiktoken`
+                if "\n" in license:
+                    license = license.split("\n")[0]
+
                 license = license.strip()
                 if license not in allowed_licenses:
                     incompliance_items.append((name, licenses))
