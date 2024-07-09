@@ -96,6 +96,7 @@ class EvalRun(metaclass=Singleton):
     _SCOPE = "https://management.azure.com/.default"
 
     EVALUATION_ARTIFACT = 'instance_results.jsonl'
+    EVALUATION_ARTIFACT_DUMMY_RUN = 'eval_results.jsonl'
 
     def __init__(self,
                  run_name: Optional[str],
@@ -199,6 +200,7 @@ class EvalRun(metaclass=Singleton):
         """
         if self._is_promptflow_run:
             # This run is already finished, we just add artifacts/metrics to it.
+            Singleton.destroy(EvalRun)
             return
         if status not in ("FINISHED", "FAILED", "KILLED"):
             raise ValueError(
@@ -302,7 +304,7 @@ class EvalRun(metaclass=Singleton):
             f"{response.text=}."
         )
 
-    def log_artifact(self, artifact_folder: str) -> None:
+    def log_artifact(self, artifact_folder: str, artifact_name: str = EVALUATION_ARTIFACT) -> None:
         """
         The local implementation of mlflow-like artifact logging.
 
@@ -322,7 +324,7 @@ class EvalRun(metaclass=Singleton):
         if not os.listdir(artifact_folder):
             LOGGER.warning("The path to the artifact is empty.")
             return
-        if not os.path.isfile(os.path.join(artifact_folder, EvalRun.EVALUATION_ARTIFACT)):
+        if not os.path.isfile(os.path.join(artifact_folder, artifact_name)):
             LOGGER.warning("The run results file was not found, skipping artifacts upload.")
             return
         # First we will list the files and the appropriate remote paths for them.
@@ -370,10 +372,10 @@ class EvalRun(metaclass=Singleton):
             json_dict={
                 "origin": "ExperimentRun",
                 "container": f"dcid.{self.info.run_id}",
-                "path": EvalRun.EVALUATION_ARTIFACT,
+                "path": artifact_name,
                 "dataPath": {
                     "dataStoreName": datastore.name,
-                    "relativePath": posixpath.join(root_upload_path, EvalRun.EVALUATION_ARTIFACT),
+                    "relativePath": posixpath.join(root_upload_path, artifact_name),
                 },
             },
         )

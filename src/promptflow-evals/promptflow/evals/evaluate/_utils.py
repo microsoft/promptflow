@@ -99,13 +99,16 @@ def _log_metrics_and_instance_results(
         ml_client=azure_pf_client.ml_client,
         promptflow_run=run,
     )
+
+    artifact_name = EvalRun.EVALUATION_ARTIFACT if run else EvalRun.EVALUATION_ARTIFACT_DUMMY_RUN
+
     with tempfile.TemporaryDirectory() as tmpdir:
-        tmp_path = os.path.join(tmpdir, EvalRun.EVALUATION_ARTIFACT)
+        tmp_path = os.path.join(tmpdir, artifact_name)
 
         with open(tmp_path, "w", encoding="utf-8") as f:
             f.write(instance_results.to_json(orient="records", lines=True))
 
-        ev_run.log_artifact(tmpdir)
+        ev_run.log_artifact(tmpdir, artifact_name)
 
         # Using mlflow to create a dummy run since once created via PF show traces of dummy run in UI.
         # Those traces can be confusing.
@@ -114,10 +117,9 @@ def _log_metrics_and_instance_results(
         if run is None:
             _write_properties_to_run_history(
                 properties={
-                    "_azureml.evaluation_run": "promptflow.BatchRun",
-                    "_azureml.evaluate_artifacts": json.dumps([{"path": EvalRun.EVALUATION_ARTIFACT, "type": "table"}]),
+                    "_azureml.evaluation_run": "azure-ai-generative-parent",
+                    "_azureml.evaluate_artifacts": json.dumps([{"path": artifact_name, "type": "table"}]),
                     "isEvaluatorRun": "true",
-                    "runType": "eval_run",
                 }
             )
 
