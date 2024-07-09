@@ -1,7 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-# import contextlib
+import contextlib
 import dataclasses
 import enum
 import logging
@@ -10,7 +10,7 @@ import posixpath
 import requests
 import time
 import uuid
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Optional
 from urllib.parse import urlparse
 
 from azure.storage.blob import BlobServiceClient
@@ -61,28 +61,7 @@ class RunStatus(enum.Enum):
     TERMINATED = 3
 
 
-class Singleton(type):
-    """Singleton class, which will be used as a metaclass."""
-
-    _instances = {}
-
-    def __call__(cls, *args, **kwargs):
-        """Redefinition of call to return one instance per type."""
-        if cls not in Singleton._instances:
-            Singleton._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
-        return Singleton._instances[cls]
-
-    @staticmethod
-    def destroy(cls: Type) -> None:
-        """
-        Destroy the singleton instance.
-
-        :param cls: The class to be destroyed.
-        """
-        Singleton._instances.pop(cls, None)
-
-
-class EvalRun(metaclass=Singleton):
+class EvalRun(contextlib.AbstractContextManager):
     """
     The simple singleton run class, used for accessing artifact store.
 
@@ -162,6 +141,8 @@ class EvalRun(metaclass=Singleton):
         """
         Start the run, or, if it is not applicable (for example, if tracking is not enabled), mark it as started.
         """
+        if self._status != RunStatus.NOT_STARTED:
+            raise ValueError("The run has already started. Please end this run and to start another one.")
         self._status = RunStatus.STARTED
         if self._tracking_uri is None:
             LOGGER.warning("tracking_uri was not provided, "
@@ -228,7 +209,6 @@ class EvalRun(metaclass=Singleton):
         if self._is_promptflow_run:
             # This run is already finished, we just add artifacts/metrics to it.
             self._status = RunStatus.TERMINATED
-            Singleton.destroy(EvalRun)
             return
         if reason not in ("FINISHED", "FAILED", "KILLED"):
             raise ValueError(
@@ -250,7 +230,6 @@ class EvalRun(metaclass=Singleton):
         response = self.request_with_retry(url=url, method="POST", json_dict=body)
         if response.status_code != 200:
             LOGGER.warning("Unable to terminate the run.")
-        Singleton.destroy(EvalRun)
         self._status = RunStatus.TERMINATED
 
     def __enter__(self):
@@ -260,7 +239,7 @@ class EvalRun(metaclass=Singleton):
 
     def __exit__(self, exc_type, exc_value, exc_tb):
         """The context manager exit call."""
-        self.start_run()
+        self.end_run("FINISHED")
 
     def get_run_history_uri(self) -> str:
         """
@@ -490,12 +469,3 @@ class EvalRun(metaclass=Singleton):
         )
         if response.status_code != 200:
             LOGGER.error("Fail writing properties '%s' to run history: %s", properties, response.text)
-
-    @staticmethod
-    def get_instance(*args, **kwargs) -> "EvalRun":
-        """
-        The convenience method to the the EvalRun instance.
-
-        :return: The EvalRun instance.
-        """
-        return EvalRun(*args, **kwargs)

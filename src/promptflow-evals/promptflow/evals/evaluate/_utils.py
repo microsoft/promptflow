@@ -74,7 +74,7 @@ def _log_metrics_and_instance_results(
     # Adding line_number as index column this is needed by UI to form link to individual instance run
     instance_results["line_number"] = instance_results.index.values
 
-    ev_run = EvalRun(
+    with EvalRun(
         run_name=run.name if run is not None else evaluation_name,
         tracking_uri=tracking_uri,
         subscription_id=ws_triad.subscription_id,
@@ -82,35 +82,34 @@ def _log_metrics_and_instance_results(
         workspace_name=ws_triad.workspace_name,
         ml_client=azure_pf_client.ml_client,
         promptflow_run=run,
-    )
+    ) as ev_run:
 
-    artifact_name = EvalRun.EVALUATION_ARTIFACT if run else EvalRun.EVALUATION_ARTIFACT_DUMMY_RUN
+        artifact_name = EvalRun.EVALUATION_ARTIFACT if run else EvalRun.EVALUATION_ARTIFACT_DUMMY_RUN
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        tmp_path = os.path.join(tmpdir, artifact_name)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = os.path.join(tmpdir, artifact_name)
 
-        with open(tmp_path, "w", encoding="utf-8") as f:
-            f.write(instance_results.to_json(orient="records", lines=True))
+            with open(tmp_path, "w", encoding="utf-8") as f:
+                f.write(instance_results.to_json(orient="records", lines=True))
 
-        ev_run.log_artifact(tmpdir, artifact_name)
+            ev_run.log_artifact(tmpdir, artifact_name)
 
-        # Using mlflow to create a dummy run since once created via PF show traces of dummy run in UI.
-        # Those traces can be confusing.
-        # adding these properties to avoid showing traces if a dummy run is created.
-        # We are doing that only for the pure evaluation runs.
-        if run is None:
-            ev_run.write_properties_to_run_history(
-                properties={
-                    "_azureml.evaluation_run": "azure-ai-generative-parent",
-                    "_azureml.evaluate_artifacts": json.dumps([{"path": artifact_name, "type": "table"}]),
-                    "isEvaluatorRun": "true",
-                }
-            )
+            # Using mlflow to create a dummy run since once created via PF show traces of dummy run in UI.
+            # Those traces can be confusing.
+            # adding these properties to avoid showing traces if a dummy run is created.
+            # We are doing that only for the pure evaluation runs.
+            if run is None:
+                ev_run.write_properties_to_run_history(
+                    properties={
+                        "_azureml.evaluation_run": "azure-ai-generative-parent",
+                        "_azureml.evaluate_artifacts": json.dumps([{"path": artifact_name, "type": "table"}]),
+                        "isEvaluatorRun": "true",
+                    }
+                )
 
-    for metric_name, metric_value in metrics.items():
-        ev_run.log_metric(metric_name, metric_value)
+        for metric_name, metric_value in metrics.items():
+            ev_run.log_metric(metric_name, metric_value)
 
-    ev_run.end_run("FINISHED")
     evaluation_id = ev_run.info.run_name if run is not None else ev_run.info.run_id
     return _get_ai_studio_url(trace_destination=trace_destination, evaluation_id=evaluation_id)
 
