@@ -4,6 +4,7 @@
 
 from collections import Counter
 
+
 class F1ScoreEvaluator:
     """
     Initialize a f1 score evaluator for calculating F1 score.
@@ -59,7 +60,6 @@ class F1ScoreEvaluator:
             raise ValueError("Both 'answer' and 'ground_truth' must be non-empty strings.")
 
         return True
-
 
     @classmethod
     def _compute_f1_score(cls, answer: str, ground_truth: str) -> str:
