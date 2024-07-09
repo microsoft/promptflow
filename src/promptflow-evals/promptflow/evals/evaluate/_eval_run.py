@@ -314,6 +314,7 @@ class EvalRun(metaclass=Singleton):
         :param artifact_folder: The folder with artifacts to be uploaded.
         :type artifact_folder: str
         """
+        from azure.storage.blob import BlobServiceClient
         if self._is_broken:
             LOGGER.warning("Unable to log artifact because the run failed to start.")
             return
