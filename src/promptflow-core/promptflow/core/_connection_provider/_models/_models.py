@@ -4130,7 +4130,7 @@ class AzureOpenAiFineTuning(FineTuningVertical):
     :vartype training_data: ~azure.mgmt.machinelearningservices.models.JobInput
     :ivar validation_data: Validation data for fine tuning.
     :vartype validation_data: ~azure.mgmt.machinelearningservices.models.JobInput
-    :ivar hyper_parameters: HyperParameters for fine tuning Azure Open AI model.
+    :ivar hyper_parameters: HyperParameters for fine tuning Azure OpenAI model.
     :vartype hyper_parameters:
      ~azure.mgmt.machinelearningservices.models.AzureOpenAiHyperParameters
     """
@@ -4167,7 +4167,7 @@ class AzureOpenAiFineTuning(FineTuningVertical):
         :paramtype training_data: ~azure.mgmt.machinelearningservices.models.JobInput
         :keyword validation_data: Validation data for fine tuning.
         :paramtype validation_data: ~azure.mgmt.machinelearningservices.models.JobInput
-        :keyword hyper_parameters: HyperParameters for fine tuning Azure Open AI model.
+        :keyword hyper_parameters: HyperParameters for fine tuning Azure OpenAI model.
         :paramtype hyper_parameters:
          ~azure.mgmt.machinelearningservices.models.AzureOpenAiHyperParameters
         """
@@ -4177,7 +4177,7 @@ class AzureOpenAiFineTuning(FineTuningVertical):
 
 
 class AzureOpenAiHyperParameters(msrest.serialization.Model):
-    """Azure Open AI hyperparameters for fine tuning.
+    """Azure OpenAI hyperparameters for fine tuning.
 
     :ivar batch_size: Number of examples in each batch. A larger batch size means that model
      parameters are updated less frequently, but with lower variance.

@@ -43,7 +43,7 @@ The f1-score evaluation flow allows you to determine the f1-score metric using n
 - `Embedding` tool
 
 ## 0. Setup connection
-Prepare your Azure Open AI resource follow this [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal) and get your `api_key` if you don't have one.
+Prepare your Azure OpenAI resource follow this [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal) and get your `api_key` if you don't have one.
 
 ```bash
 # Override keys with --set to avoid yaml file changes

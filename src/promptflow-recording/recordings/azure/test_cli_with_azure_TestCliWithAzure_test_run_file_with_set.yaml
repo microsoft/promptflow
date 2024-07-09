@@ -629,7 +629,7 @@ interactions:
         ["string"], "enum": ["text-embedding-ada-002", "text-search-ada-doc-001",
         "text-search-ada-query-001"], "enabled_by": "connection", "enabled_by_type":
         ["OpenAIConnection"], "allow_manual_entry": true, "is_multi_select": false,
-        "input_type": "default"}}, "description": "Use Open AI''s embedding model
+        "input_type": "default"}}, "description": "Use OpenAI''s embedding model
         to create an embedding vector representing the input text.", "module": "promptflow.tools.embedding",
         "function": "embedding", "is_builtin": true, "package": "promptflow-tools",
         "package_version": "1.5.0rc8", "enable_kwargs": false, "tool_state": "stable"},
@@ -1161,7 +1161,7 @@ interactions:
         ["string"], "enum": ["text-embedding-ada-002", "text-search-ada-doc-001",
         "text-search-ada-query-001"], "enabled_by": "connection", "enabled_by_type":
         ["OpenAIConnection"], "allow_manual_entry": true, "is_multi_select": false,
-        "input_type": "default"}}, "description": "Use Open AI''s embedding model
+        "input_type": "default"}}, "description": "Use OpenAI''s embedding model
         to create an embedding vector representing the input text.", "module": "promptflow.tools.embedding",
         "function": "embedding", "is_builtin": true, "package": "promptflow-tools",
         "package_version": "1.5.0rc8", "enable_kwargs": false, "tool_state": "stable"},
