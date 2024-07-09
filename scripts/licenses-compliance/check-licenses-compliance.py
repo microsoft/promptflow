@@ -5,10 +5,15 @@ from pathlib import Path
 
 # list of licenses compatible with MIT
 allowed_licenses = [
-    "MIT",
-    "Apache-2.0",
-    "BSD",
-    "ISC",
+    "Apache Software License",
+    "BSD License",
+    "GNU General Public License (GPL)",
+    "ISC License (ISCL)",
+    "Public Domain",
+    "Python Software Foundation License",
+    "Mozilla Public License 2.0 (MPL 2.0)",
+    "MIT License",
+    "The Unlicense (Unlicense)",
 ]
 
 
@@ -20,8 +25,13 @@ def check_license_compliance(
     with open(licenses_file, mode="r") as file:
         csv_reader = csv.DictReader(file)
         for row in csv_reader:
-            if row["License"] not in allowed_licenses:
-                incompliance_items.append((row["Name"], row["License"]))
+            name = row["Name"]
+            # note that "License" can be a comma separated list of licenses
+            licenses = row["License"]
+            for license in licenses.split(";"):
+                license = license.strip()
+                if license not in allowed_licenses:
+                    incompliance_items.append((name, licenses))
         return incompliance_items
 
 
@@ -31,6 +41,7 @@ def main(licenses_file: Path):
         print("found dependencies with licenses incompliance with MIT license:")
         for name, license in incompliance_items:
             print(f"- {name}: {license}")
+        raise Exception("found dependencies with licenses incompliance with MIT license.")
     else:
         print("all dependencies are compliance with MIT license.")
 
