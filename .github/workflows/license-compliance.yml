@@ -21,4 +21,5 @@ jobs:
     - name: check licenses
       run: |
         poetry run pip-licenses --from=mixed --format=csv --output-file=LICENSES.csv
-        cat LICENSES.csv
+        poetry run python ./scripts/licenses-compliance/check-licenses-compliance.py LICENSES.csv
+      working-directory: ${{ github.workspace }}
