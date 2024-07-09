@@ -10,7 +10,7 @@ import pytest
 
 import promptflow.evals.evaluate._utils as ev_utils
 from promptflow.azure._utils._token_cache import ArmTokenCache
-from promptflow.evals.evaluate._eval_run import EvalRun, Singleton
+from promptflow.evals.evaluate._eval_run import EvalRun, Singleton, RunStatus
 
 
 @pytest.fixture
@@ -57,6 +57,7 @@ class TestEvalRun:
                 workspace_name="mock",
                 ml_client=MagicMock(),
             )
+            run.start_run()
             if should_raise:
                 with pytest.raises(ValueError) as cm:
                     run.end_run(status)
@@ -94,6 +95,7 @@ class TestEvalRun:
                 workspace_name="mock",
                 ml_client=MagicMock(),
             )
+            run.start_run()
             run.end_run("KILLED")
             run.end_run("KILLED")
             assert len(caplog.records) == 1
@@ -130,6 +132,7 @@ class TestEvalRun:
                 workspace_name="mock",
                 ml_client=MagicMock(),
             )
+            run.start_run()
             run.end_run("FINISHED")
             assert len(caplog.records) == 1
             assert "Unable to terminate the run." in caplog.records[0].message
@@ -155,6 +158,7 @@ class TestEvalRun:
                 workspace_name="mock",
                 ml_client=MagicMock(),
             )
+            run.start_run()
             assert len(caplog.records) == 1
             assert "500" in caplog.records[0].message
             assert mock_response_start.text in caplog.records[0].message
@@ -214,6 +218,7 @@ class TestEvalRun:
             ml_client=MagicMock(),
         )
         id1 = id(run)
+        run.start_run()
         if destroy_run:
             run.end_run("FINISHED")
         id2 = id(
@@ -253,6 +258,7 @@ class TestEvalRun:
             workspace_name="mock",
             ml_client=MagicMock(),
         )
+        run.start_run()
         assert run.info.run_id == mock_response.json.return_value['run']['info']['run_id']
         assert run.info.experiment_id == mock_response.json.return_value[
             'run']['info']['experiment_id']
@@ -283,6 +289,7 @@ class TestEvalRun:
             workspace_name="mock",
             ml_client=MagicMock(),
         )
+        run.start_run()
         assert run.info.run_id == mock_response.json.return_value['run']['info']['run_id']
         assert run.info.experiment_id == mock_response.json.return_value[
             'run']['info']['experiment_id']
@@ -319,6 +326,7 @@ class TestEvalRun:
             workspace_name="mock-ws-region",
             ml_client=MagicMock(),
         )
+        run.start_run()
         assert run.get_run_history_uri() == (
             "https://region.api.azureml.ms/history/v1.0/subscriptions"
             "/000000-0000-0000-0000-0000000/resourceGroups/mock-rg-region"
@@ -384,6 +392,7 @@ class TestEvalRun:
                 workspace_name="mock-ws-region",
                 ml_client=MagicMock(),
             )
+            run.start_run()
 
             logger = logging.getLogger(EvalRun.__module__)
             # All loggers, having promptflow. prefix will have "promptflow" logger
@@ -411,7 +420,15 @@ class TestEvalRun:
             (True, False, "The run results file was not found, skipping artifacts upload.")
         ]
     )
-    def test_wrong_artifact_path(self, token_mock, tmp_path, caplog, dir_exists, dir_empty, expected_error, setup_data):
+    def test_wrong_artifact_path(
+            self,
+            token_mock,
+            tmp_path,
+            caplog,
+            dir_exists,
+            dir_empty,
+            expected_error,
+            setup_data):
         """Test that if artifact path is empty, or dies not exist we are logging the error."""
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -440,6 +457,7 @@ class TestEvalRun:
                 workspace_name="mock-ws-region",
                 ml_client=MagicMock(),
             )
+            run.start_run()
             logger = logging.getLogger(EvalRun.__module__)
             # All loggers, having promptflow. prefix will have "promptflow" logger
             # as a parent. This logger does not propagate the logs and cannot be
@@ -470,7 +488,7 @@ class TestEvalRun:
         assert len(caplog.records) == 1
         assert "Unable to log traces as trace destination was not defined." in caplog.records[0].message
 
-    def test_run_broken_if_no_tracking_uri(self, setup_data, caplog):
+    def test_run_broken_if_no_tracking_uri(self, token_mock, setup_data, caplog):
         """Test that if no tracking URI is provirded, the run is being marked as broken."""
         logger = logging.getLogger(ev_utils.__name__)
         # All loggers, having promptflow. prefix will have "promptflow" logger
@@ -485,9 +503,165 @@ class TestEvalRun:
             workspace_name='mock',
             ml_client=MagicMock()
         )
+        run.start_run()
         assert len(caplog.records) == 1
         assert "The results will be saved locally, but will not be logged to Azure." in caplog.records[0].message
         with patch('promptflow.evals.evaluate._eval_run.EvalRun.request_with_retry') as mock_request:
             run.log_artifact('mock_dir')
             run.log_metric('foo', 42)
+            run.write_properties_to_run_history({'foo': 'bar'})
         mock_request.assert_not_called()
+
+    @pytest.mark.parametrize('status_code,pf_run', [
+        (401, False),
+        (200, False),
+        (401, True),
+        (200, True),
+    ])
+    def test_lifecycle(self, token_mock, status_code, pf_run, setup_data):
+        """Test the run statuses throughout its life cycle."""
+        pf_run_mock = None
+        if pf_run:
+            pf_run_mock = MagicMock()
+            pf_run_mock.name = 'mock_pf_run'
+            pf_run_mock._experiment_name = 'mock_pf_experiment'
+        mock_response = MagicMock()
+        mock_response.status_code = status_code
+        mock_response.json.return_value = {
+            "run": {
+                "info": {
+                    "run_id": str(uuid4()),
+                    "experiment_id": str(uuid4()),
+                    "run_name": str(uuid4())
+                }
+            }
+        }
+        mock_session = MagicMock()
+        mock_session.request.return_value = mock_response
+        with patch("promptflow.evals.evaluate._eval_run.requests.Session", return_value=mock_session):
+            run = EvalRun(
+                run_name="test",
+                tracking_uri=(
+                    "https://region.api.azureml.ms/mlflow/v2.0/subscriptions"
+                    "/000000-0000-0000-0000-0000000/resourceGroups/mock-rg-region"
+                    "/providers/Microsoft.MachineLearningServices"
+                    "/workspaces/mock-ws-region"
+                ),
+                subscription_id="000000-0000-0000-0000-0000000",
+                group_name="mock-rg-region",
+                workspace_name="mock-ws-region",
+                ml_client=MagicMock(),
+                promptflow_run=pf_run_mock
+            )
+            assert run.status == RunStatus.NOT_STARTED, f'Get {run.status}, expected {RunStatus.NOT_STARTED}'
+            run.start_run()
+            if status_code == 200 or pf_run:
+                assert run.status == RunStatus.STARTED, f'Get {run.status}, expected {RunStatus.STARTED}'
+            else:
+                assert run.status == RunStatus.BROKEN, f'Get {run.status}, expected {RunStatus.BROKEN}'
+            run.end_run("FINISHED")
+            if status_code == 200 or pf_run:
+                assert run.status == RunStatus.TERMINATED, f'Get {run.status}, expected {RunStatus.TERMINATED}'
+            else:
+                assert run.status == RunStatus.BROKEN, f'Get {run.status}, expected {RunStatus.BROKEN}'
+
+    def test_local_lifecycle(self, token_mock, setup_data):
+        """Test that the local run have correct statuses."""
+        run = EvalRun(
+            run_name=None,
+            tracking_uri=None,
+            subscription_id='mock',
+            group_name='mock',
+            workspace_name='mock',
+            ml_client=MagicMock()
+        )
+        assert run.status == RunStatus.NOT_STARTED, f'Get {run.status}, expected {RunStatus.NOT_STARTED}'
+        run.start_run()
+        assert run.status == RunStatus.BROKEN, f'Get {run.status}, expected {RunStatus.BROKEN}'
+        run.end_run("FINISHED")
+        assert run.status == RunStatus.BROKEN, f'Get {run.status}, expected {RunStatus.BROKEN}'
+
+    @pytest.mark.parametrize('status_code', [200, 401])
+    def test_write_properties(self, token_mock, setup_data, caplog, status_code):
+        """Test writing properties to the evaluate run."""
+        mock_start = MagicMock()
+        mock_start.status_code = 200
+        mock_start.text = 'Mock error'
+        mock_start.json.return_value = {
+            "run": {
+                "info": {
+                    "run_id": str(uuid4()),
+                    "experiment_id": str(uuid4()),
+                    "run_name": str(uuid4())
+                }
+            }
+        }
+        mock_write = MagicMock()
+        mock_write.status_code = status_code
+        mock_write.text = 'Mock error'
+        mock_session = MagicMock()
+        mock_session.request.side_effect = [mock_start, mock_write]
+        with patch("promptflow.evals.evaluate._eval_run.requests.Session", return_value=mock_session):
+            run = EvalRun(
+                run_name="test",
+                tracking_uri=(
+                    "https://region.api.azureml.ms/mlflow/v2.0/subscriptions"
+                    "/000000-0000-0000-0000-0000000/resourceGroups/mock-rg-region"
+                    "/providers/Microsoft.MachineLearningServices"
+                    "/workspaces/mock-ws-region"
+                ),
+                subscription_id="000000-0000-0000-0000-0000000",
+                group_name="mock-rg-region",
+                workspace_name="mock-ws-region",
+                ml_client=MagicMock(),
+            )
+            run.start_run()
+            run.write_properties_to_run_history({'foo': 'bar'})
+        if status_code != 200:
+            assert len(caplog.records) == 1
+            assert 'Fail writing properties' in caplog.records[0].message
+            assert mock_write.text in caplog.records[0].message
+        else:
+            assert len(caplog.records) == 0
+
+    def test_write_properties_to_run_history_logs_error(self, token_mock, caplog, setup_data):
+        """Test that we are logging the error when there is no trace destination."""
+        logger = logging.getLogger(EvalRun.__module__)
+        # All loggers, having promptflow. prefix will have "promptflow" logger
+        # as a parent. This logger does not propagate the logs and cannot be
+        # captured by caplog. Here we will skip this logger to capture logs.
+        logger.parent = logging.root
+        run = EvalRun(
+            run_name=None,
+            tracking_uri=None,
+            subscription_id='mock',
+            group_name='mock',
+            workspace_name='mock',
+            ml_client=MagicMock()
+        )
+        run.start_run()
+        run.write_properties_to_run_history({'foo': 'bar'})
+        assert len(caplog.records) == 2
+        assert "Unable to write properties because the run failed to start." in caplog.records[1].message
+
+    @pytest.mark.parametrize(
+        'function_literal,args',
+        [
+            ('write_properties_to_run_history', ({'foo': 'bar'})),
+            ('log_metric', ('foo', 42)),
+            ('log_artifact', ('mock_folder',))
+        ]
+    )
+    def test_raises_if_not_started(self, token_mock, setup_data, function_literal, args):
+        """Test that all public functions are raising exception if run is not started."""
+        run = EvalRun(
+            run_name=None,
+            tracking_uri=None,
+            subscription_id='mock',
+            group_name='mock',
+            workspace_name='mock',
+            ml_client=MagicMock()
+        )
+        with pytest.raises(ValueError) as cm:
+            getattr(run, function_literal)(*args)
+        assert "The run did not started." in cm.value.args[0]

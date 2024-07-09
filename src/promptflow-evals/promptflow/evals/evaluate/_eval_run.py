@@ -1,7 +1,9 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+# import contextlib
 import dataclasses
+import enum
 import logging
 import os
 import posixpath
@@ -20,6 +22,7 @@ from promptflow._sdk.entities import Run
 
 from azure.ai.ml.entities._credentials import AccountKeyConfiguration
 from azure.ai.ml.entities._datastore.datastore import Datastore
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -48,6 +51,14 @@ class RunInfo:
             str(uuid.uuid4()),
             run_name or ""
         )
+
+
+class RunStatus(enum.Enum):
+    """Run states."""
+    NOT_STARTED = 0
+    STARTED = 1
+    BROKEN = 2
+    TERMINATED = 3
 
 
 class Singleton(type):
@@ -117,25 +128,18 @@ class EvalRun(metaclass=Singleton):
         self._workspace_name: str = workspace_name
         self._ml_client: Any = ml_client
         self._is_promptflow_run: bool = promptflow_run is not None
-        self._is_broken = False
-        if self._tracking_uri is None:
-            LOGGER.warning("tracking_uri was not provided, "
-                           "The results will be saved locally, but will not be logged to Azure.")
-            self._url_base = None
-            self._is_broken = True
-            self.info = RunInfo.generate(run_name)
-        else:
-            self._url_base = urlparse(self._tracking_uri).netloc
-            if promptflow_run is not None:
-                self.info = RunInfo(
-                    promptflow_run.name,
-                    promptflow_run._experiment_name,
-                    promptflow_run.name
-                )
-            else:
-                self._is_broken = self._start_run(run_name)
+        self._run_name = run_name
+        self._promptflow_run = promptflow_run
+        self._status = RunStatus.NOT_STARTED
 
-        self._is_terminated = False
+    @property
+    def status(self) -> RunStatus:
+        """
+        Return the run status.
+
+        :return: The status of the run.
+        """
+        return self._status
 
     def _get_scope(self) -> str:
         """
@@ -154,7 +158,29 @@ class EvalRun(metaclass=Singleton):
             self._workspace_name,
         )
 
-    def _start_run(self, run_name: Optional[str]) -> bool:
+    def start_run(self) -> None:
+        """
+        Start the run, or, if it is not applicable (for example, if tracking is not enabled), mark it as started.
+        """
+        self._status = RunStatus.STARTED
+        if self._tracking_uri is None:
+            LOGGER.warning("tracking_uri was not provided, "
+                           "The results will be saved locally, but will not be logged to Azure.")
+            self._url_base = None
+            self._status = RunStatus.BROKEN
+            self.info = RunInfo.generate(self._run_name)
+        else:
+            self._url_base = urlparse(self._tracking_uri).netloc
+            if self._promptflow_run is not None:
+                self.info = RunInfo(
+                    self._promptflow_run.name,
+                    self._promptflow_run._experiment_name,
+                    self._promptflow_run.name
+                )
+            else:
+                self._status = self._start_run(self._run_name)
+
+    def _start_run(self, run_name: Optional[str]) -> 'RunStatus':
         """
         Make a request to start the mlflow run. If the run will not start, it will be
 
@@ -181,41 +207,43 @@ class EvalRun(metaclass=Singleton):
             self.info = RunInfo.generate(run_name)
             LOGGER.warning(f"The run failed to start: {response.status_code}: {response.text}."
                            "The results will be saved locally, but will not be logged to Azure.")
-            return True
+            return RunStatus.BROKEN
         parsed_response = response.json()
         self.info = RunInfo(
             run_id=parsed_response['run']['info']['run_id'],
             experiment_id=parsed_response['run']['info']['experiment_id'],
             run_name=parsed_response['run']['info']['run_name']
         )
-        return False
+        return RunStatus.STARTED
 
-    def end_run(self, status: str) -> None:
+    def end_run(self, reason: str) -> None:
         """
         Tetminate the run.
 
-        :param status: One of "FINISHED" "FAILED" and "KILLED"
-        :type status: str
+        :param reason: One of "FINISHED" "FAILED" and "KILLED"
+        :type reason: str
         :raises: ValueError if the run is not in ("FINISHED", "FAILED", "KILLED")
         """
+        self._raise_not_started_nay_be()
         if self._is_promptflow_run:
             # This run is already finished, we just add artifacts/metrics to it.
+            self._status = RunStatus.TERMINATED
             Singleton.destroy(EvalRun)
             return
-        if status not in ("FINISHED", "FAILED", "KILLED"):
+        if reason not in ("FINISHED", "FAILED", "KILLED"):
             raise ValueError(
-                f"Incorrect terminal status {status}. " 'Valid statuses are "FINISHED", "FAILED" and "KILLED".'
+                f"Incorrect terminal status {reason}. " 'Valid statuses are "FINISHED", "FAILED" and "KILLED".'
             )
-        if self._is_terminated:
+        if self._status == RunStatus.TERMINATED:
             LOGGER.warning("Unable to stop run because it was already terminated.")
             return
-        if self._is_broken:
+        if self._status == RunStatus.BROKEN:
             LOGGER.warning("Unable to stop run because the run failed to start.")
             return
         url = f"https://{self._url_base}/mlflow/v2.0" f"{self._get_scope()}/api/2.0/mlflow/runs/update"
         body = {
             "run_uuid": self.info.run_id,
-            "status": status,
+            "status": reason,
             "end_time": int(time.time() * 1000),
             "run_id": self.info.run_id,
         }
@@ -223,7 +251,16 @@ class EvalRun(metaclass=Singleton):
         if response.status_code != 200:
             LOGGER.warning("Unable to terminate the run.")
         Singleton.destroy(EvalRun)
-        self._is_terminated = True
+        self._status = RunStatus.TERMINATED
+
+    def __enter__(self):
+        """The Context Manager enter call."""
+        self.start_run()
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        """The context manager exit call."""
+        self.start_run()
 
     def get_run_history_uri(self) -> str:
         """
@@ -304,6 +341,17 @@ class EvalRun(metaclass=Singleton):
             f"{response.text=}."
         )
 
+    def _raise_not_started_nay_be(self) -> None:
+        """
+        Raise value error if the run was not started.
+
+        :raises: ValueError
+        """
+        if self._status == RunStatus.NOT_STARTED:
+            raise ValueError(
+                "The run did not started. "
+                "Please start the run by calling start_run method.")
+
     def log_artifact(self, artifact_folder: str, artifact_name: str = EVALUATION_ARTIFACT) -> None:
         """
         The local implementation of mlflow-like artifact logging.
@@ -314,7 +362,8 @@ class EvalRun(metaclass=Singleton):
         :param artifact_folder: The folder with artifacts to be uploaded.
         :type artifact_folder: str
         """
-        if self._is_broken:
+        self._raise_not_started_nay_be()
+        if self._status == RunStatus.BROKEN:
             LOGGER.warning("Unable to log artifact because the run failed to start.")
             return
         # Check if artifact dirrectory is empty or does not exist.
@@ -402,7 +451,8 @@ class EvalRun(metaclass=Singleton):
         :param value: The valure to be logged.
         :type value: float
         """
-        if self._is_broken:
+        self._raise_not_started_nay_be()
+        if self._status == RunStatus.BROKEN:
             LOGGER.warning("Unable to log metric because the run failed to start.")
             return
         body = {
@@ -420,6 +470,26 @@ class EvalRun(metaclass=Singleton):
         )
         if response.status_code != 200:
             self._log_warning("save metrics", response)
+
+    def write_properties_to_run_history(self, properties: Dict[str, Any]) -> None:
+        """
+        Write properties to the RunHistory service.
+
+        :param properties: The properties to be written to run history.
+        :type properties: dict
+        """
+        self._raise_not_started_nay_be()
+        if self._status == RunStatus.BROKEN:
+            LOGGER.warning("Unable to write properties because the run failed to start.")
+            return
+        # update host to run history and request PATCH API
+        response = self.request_with_retry(
+            url=self.get_run_history_uri(),
+            method="PATCH",
+            json_dict={"runId": self.info.run_id, "properties": properties},
+        )
+        if response.status_code != 200:
+            LOGGER.error("Fail writing properties '%s' to run history: %s", properties, response.text)
 
     @staticmethod
     def get_instance(*args, **kwargs) -> "EvalRun":

@@ -48,22 +48,6 @@ def load_jsonl(path):
         return [json.loads(line) for line in f.readlines()]
 
 
-def _write_properties_to_run_history(properties: dict) -> None:
-    run = EvalRun.get_instance()
-    try:
-        # update host to run history and request PATCH API
-        response = run.request_with_retry(
-            url=run.get_run_history_uri(),
-            method="PATCH",
-            json_dict={"runId": run.info.run_id, "properties": properties},
-        )
-        if response.status_code != 200:
-            LOGGER.error("Fail writing properties '%s' to run history: %s", properties, response.text)
-            response.raise_for_status()
-    except AttributeError as e:
-        LOGGER.error("Fail writing properties '%s' to run history: %s", properties, e)
-
-
 def _azure_pf_client_and_triad(trace_destination):
     from promptflow.azure._cli._utils import _get_azure_pf_client
 
@@ -115,7 +99,7 @@ def _log_metrics_and_instance_results(
         # adding these properties to avoid showing traces if a dummy run is created.
         # We are doing that only for the pure evaluation runs.
         if run is None:
-            _write_properties_to_run_history(
+            ev_run.write_properties_to_run_history(
                 properties={
                     "_azureml.evaluation_run": "azure-ai-generative-parent",
                     "_azureml.evaluate_artifacts": json.dumps([{"path": artifact_name, "type": "table"}]),

@@ -66,7 +66,7 @@ class TestMetricsUpload(object):
     @pytest.mark.usefixtures("vcr_recording")
     def test_writing_to_run_history(self, setup_data, caplog):
         """Test logging data to RunHistory service."""
-        logger = logging.getLogger(ev_utils.__name__)
+        logger = logging.getLogger(EvalRun.__module__)
         # All loggers, having promptflow. prefix will have "promptflow" logger
         # as a parent. This logger does not propagate the logs and cannot be
         # captured by caplog. Here we will skip this logger to capture logs.
@@ -74,12 +74,13 @@ class TestMetricsUpload(object):
         # Just for sanity check let us make sure that the logging actually works
         mock_response = MagicMock()
         mock_response.status_code = 418
+        ev_run = EvalRun.get_instance()
         with patch("promptflow.evals.evaluate._eval_run.EvalRun.request_with_retry", return_value=mock_response):
-            ev_utils._write_properties_to_run_history({"test": 42})
+            ev_run.write_properties_to_run_history({"test": 42})
             assert any(lg_rec.levelno == logging.ERROR for lg_rec in caplog.records), "The error log was not captured!"
         caplog.clear()
-        ev_utils._write_properties_to_run_history({"test": 42})
-        self._assert_no_errors_for_module(caplog.records, [ev_utils.__name__])
+        ev_run.write_properties_to_run_history({"test": 42})
+        self._assert_no_errors_for_module(caplog.records, [EvalRun.__module__])
 
     @pytest.mark.usefixtures("vcr_recording")
     def test_logging_metrics(self, setup_data, caplog):
@@ -159,7 +160,7 @@ class TestMetricsUpload(object):
             evaluators={"f1": f1_score_eval},
             azure_ai_project=project_scope,
         )
-        self._assert_no_errors_for_module(caplog.records, (ev_utils.__name__, EvalRun.__module__))
+        self._assert_no_errors_for_module(caplog.records, (EvalRun.__name__, EvalRun.__module__))
 
     @pytest.mark.skip(reason="Test runs individually but not when run with entire suite.")
     @pytest.mark.usefixtures("vcr_recording")
