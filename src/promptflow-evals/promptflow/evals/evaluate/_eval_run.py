@@ -17,9 +17,6 @@ from urllib3.util.retry import Retry
 from promptflow.evals._version import VERSION
 from promptflow._sdk.entities import Run
 
-from azure.ai.ml.entities._credentials import AccountKeyConfiguration
-from azure.ai.ml.entities._datastore.datastore import Datastore
-
 LOGGER = logging.getLogger(__name__)
 
 
@@ -382,7 +379,8 @@ class EvalRun(metaclass=Singleton):
         if response.status_code != 200:
             self._log_warning('register artifact', response)
 
-    def _get_datastore_credential(self, datastore: Datastore):
+    def _get_datastore_credential(self, datastore: 'Datastore'):
+        from azure.ai.ml.entities._credentials import AccountKeyConfiguration
         # Reference the logic in azure.ai.ml._artifact._artifact_utilities
         # https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/ml/azure-ai-ml/azure/ai/ml/_artifacts/_artifact_utilities.py#L103
         credential = datastore.credentials
