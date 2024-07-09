@@ -63,11 +63,17 @@ def main(activity_name: str,
         "activity_type": "ci_cd_analytics",
         "OS": platform.system(),
         "OS_release": platform.release(),
-        "value": parse_junit_xml(junit_file) if junit_file else value,
         "branch": branch,
         "git_hub_action_run_id": run_id,
         "git_hub_workflow": workflow
     }
+    if junit_file:
+        junit_dict = parse_junit_xml(junit_file)
+        for k, v in junit_dict.items():
+            activity_info[k] = -1 if v["fail_message"] else v['time']
+    else:
+        activity_info["value"] = value
+
     # write information to the application insights.
     logger.info(action, extra={"custom_dimensions": activity_info})
 
@@ -75,19 +81,19 @@ def main(activity_name: str,
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="Log the value to application insights along with platform characteristics and run ID.")
-    parser.add_argument('--activity', type=ascii, help='The activity to be logged.',
+    parser.add_argument('--activity', help='The activity to be logged.',
                         required=True)
     parser.add_argument('--value', type=float, help='The value for activity.',
                         required=False, default=-1)
-    parser.add_argument('--junit-xml', type=ascii, help='The path to junit-xml file.',
+    parser.add_argument('--junit-xml', help='The path to junit-xml file.',
                         dest="junit_xml", required=False, default=None)
-    parser.add_argument('--git-hub-action-run-id', type=ascii, dest='run_id',
+    parser.add_argument('--git-hub-action-run-id', dest='run_id',
                         help='The run ID of GitHub action run.', required=True)
-    parser.add_argument('--git-hub-workflow', type=ascii, dest='workflow',
+    parser.add_argument('--git-hub-workflow', dest='workflow',
                         help='The name of a workflow or a path to workflow file.', required=True)
-    parser.add_argument('--git-hub-action', type=ascii, dest='action',
+    parser.add_argument('--git-hub-action', dest='action',
                         help='Git hub action or step.', required=True)
-    parser.add_argument('--git-branch', type=ascii, dest='branch',
+    parser.add_argument('--git-branch', dest='branch',
                         help='Git hub Branch.', required=True)
     args = parser.parse_args()
     main(args.activity, args.value, args.run_id, args.workflow, args.action, args.branch, args.junit_xml)
