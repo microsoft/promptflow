@@ -1,17 +1,15 @@
 name: "License Compliance"
 on:
-- pull_request_target
+- pull_request
 
 jobs:
   promptflow-tracing:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
       with:
-        ref: ${{ github.event.pull_request.head.sha || github.ref }}
-        fetch-depth: 0
-    - name: merge main to current branch
-      uses: "./.github/actions/step_merge_main"
+        python-version: '3.11'
     - uses: snok/install-poetry@v1
     - name: install dependencies
       run: |
