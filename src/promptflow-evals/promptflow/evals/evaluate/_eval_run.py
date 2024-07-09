@@ -11,7 +11,6 @@ import uuid
 from typing import Any, Dict, Optional, Type
 from urllib.parse import urlparse
 
-from azure.storage.blob import BlobServiceClient
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
