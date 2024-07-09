@@ -8,7 +8,7 @@ name = "promptflow-evals"
 # This version does not need to be changed, because it is set by the release pipeline.
 # See build-publish-local-wheel-evals.yaml pipeline definition
 # in Vienna PromptFlow repository for reference.
-version = "0.3.1.7820241"
+version = "0.3.1.7820242"
 description = "Prompt flow evals"
 license = "MIT"
 authors = [
