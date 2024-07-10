@@ -31,26 +31,53 @@ class TaskSimulator:
         self.azure_ai_project["api_version"] = "2024-02-15-preview"
         self.credential = credential
 
-    def build_query(self, user_persona, query: str):
+    async def build_query(self, *, user_persona, conversation_history, user_simulator_prompty):
         # make a call to llm with user_persona and query
         # return the response
-        return ""
+        try:
+            if not user_simulator_prompty:
+                current_dir = os.path.dirname(__file__)
+                prompty_path = os.path.join(current_dir, "_prompty", "task_simulate_with_persona.prompty")
+            else:
+                raise NotImplementedError("Custom prompty not supported yet")
+            _flow = load_flow(source=prompty_path, model={"configuration": self.azure_ai_project})
+            response = _flow(user_persona=user_persona, conversation_history=conversation_history)
+            ## TODO: Fix the way the response is formatted
+            fixed_response = response.replace("'", '"')
+        except Exception as e:
+            print("Something went wrong running the prompty")
+            raise e
+        # print(f"Response from user simulator prompty: {fixed_response}")
+        # print(f"Type of sim prompty response: {type(fixed_response)}")
+        # import pdb; pdb.set_trace()
+        try:
+            user_simulator_prompty_response = json.loads(fixed_response)
+        except Exception as e:
+            print("Something went wrong parsing the user_simulator_prompty_response output")
+            raise e
+        print(f"User simulator prompty response: {user_simulator_prompty_response}")
+        return user_simulator_prompty_response
 
-    def __call__(
+    async def __call__(
         self,
         target: callable,
         max_conversation_turns: int = 5,
         user_persona: List[Dict] = [],
         text: str = "",
         num_queries: int = 5,
+        query_response_generating_prompty: str = None,
+        user_simulator_prompty: str = None,
     ):
         if num_queries != len(user_persona):
             num_queries = len(user_persona)
         # if not text or not user_persona:
         #     raise ValueError("Text and persona cannot be empty")
         prompty_model_config = {"configuration": self.azure_ai_project}
-        current_dir = os.path.dirname(__file__)
-        prompty_path = os.path.join(current_dir, "_prompty", "task_query_response.prompty")
+        if not query_response_generating_prompty:
+            current_dir = os.path.dirname(__file__)
+            prompty_path = os.path.join(current_dir, "_prompty", "task_query_response.prompty")
+        else:
+            raise NotImplementedError("Custom prompty not supported yet")
         try:
             _flow = load_flow(source=prompty_path, model=prompty_model_config)
             query_responses = _flow(
@@ -66,20 +93,58 @@ class TaskSimulator:
             print("Something went wrong parsing the prompty output")
             raise e
         i = 0
+        all_conversations = []
         for query_response_pair in query_response_list:
             query = query_response_pair["q"]
             response = query_response_pair["r"]
+            print(f"Query: {query} Expected Response: {response}")
             user_persona_item = user_persona[i]
             i += 1
-            # build query from user persona and query
-            conversation_starter = self.build_query(user_persona_item, query)
-            # call target with larger_query
-            self.complete_conversation(conversation_starter, max_conversation_turns, target)
+            conversation = await self.complete_conversation(
+                conversation_starter=query,
+                max_conversation_turns=max_conversation_turns,
+                user_persona=user_persona_item,
+                user_simulator_prompty=user_simulator_prompty,
+                target=target,
+            )
+            all_conversations.append(
+                {
+                    "messsages": conversation,
+                    "finish_reason": ["stop"],
+                    "context": f"User persona: {user_persona_item} Expected response: {response}",
+                    "$schema": "http://azureml/sdk-2-0/ChatConversation.json",
+                }
+            )
+        return all_conversations
 
-    async def complete_conversation(self, conversation_starter, max_conversation_turns, target):
-        # call target with conversation_starter
-        # get response
-        # call llm to process response and come up with follow up query
-        # call target with response
-        # repeat until max_conversation_turns
-        pass
+    async def complete_conversation(
+        self, *, conversation_starter, max_conversation_turns, user_persona, user_simulator_prompty, target
+    ):
+        conversation_history = [
+            {
+                "role": "user",
+                "content": conversation_starter,
+            }
+        ]
+        while len(conversation_history) < max_conversation_turns:
+            response = await target(
+                messages={"messages": conversation_history}, stream=False, session_state=None, context=None
+            )
+            messages_list = response["messages"]
+            latest_message = messages_list[-1]
+            response_from_target = latest_message["content"]
+            conversation_history.append(
+                {
+                    "role": "assistant",
+                    "content": response_from_target,
+                }
+            )
+            if len(conversation_history) == max_conversation_turns:
+                break
+            response_from_user_simulating_prompty = await self.build_query(
+                user_persona=user_persona,
+                conversation_history=conversation_history,
+                user_simulator_prompty=user_simulator_prompty,
+            )
+            conversation_history.append(response_from_user_simulating_prompty)
+        return conversation_history

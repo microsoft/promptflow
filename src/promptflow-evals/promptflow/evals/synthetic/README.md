@@ -300,3 +300,127 @@ for output in outputs_in_json:
 
 print(eval_result)
 ```
+## Task simulator
+
+Sample application prompty
+
+```yaml
+---
+name: ApplicationPrompty
+description: Simulates an application
+model:
+  api: chat
+  configuration:
+    type: azure_openai
+    azure_deployment: ${env:AZURE_DEPLOYMENT}
+    api_key: ${env:AZURE_OPENAI_API_KEY}
+    azure_endpoint: ${env:AZURE_OPENAI_ENDPOINT}
+  parameters:
+    temperature: 0.0
+    top_p: 1.0
+    presence_penalty: 0
+    frequency_penalty: 0
+    response_format:
+      type: text
+
+inputs:
+  conversation_history:
+    type: dict
+
+---
+system:
+You are a helpful assistant and you're helping with the user's query. Keep the conversation engaging and interesting.
+
+Output with a string that continues the conversation, responding to the latest message from the user, given the conversation history:
+{{ conversation_history }}
+
+```
+Application code:
+
+```python
+import json
+import asyncio
+from typing import Any, Dict, List, Optional
+from promptflow.evals.synthetic import TaskSimulator
+from promptflow.client import load_flow
+from azure.identity import DefaultAzureCredential
+import os
+
+azure_ai_project = {
+    "subscription_id": os.environ.get("AZURE_SUBSCRIPTION_ID"),
+    "resource_group_name": os.environ.get("RESOURCE_GROUP"),
+    "project_name": os.environ.get("PROJECT_NAME"),
+    "credential": DefaultAzureCredential(),
+}
+
+import wikipedia
+wiki_search_term = "Leonardo da vinci"
+wiki_title = wikipedia.search(wiki_search_term)[0]
+wiki_page = wikipedia.page(wiki_title)
+text = wiki_page.summary[:1000]
+
+async def callback(
+    messages: List[Dict],
+    stream: bool = False,
+    session_state: Any = None,  # noqa: ANN401
+    context: Optional[Dict[str, Any]] = None,
+) -> dict:
+    messages_list = messages["messages"]
+    # get last message
+    latest_message = messages_list[-1]
+    query = latest_message["content"]
+    context = None
+    # call your endpoint or ai application here
+    current_dir = os.path.dirname(__file__)
+    prompty_path = os.path.join(current_dir, "application.prompty")
+    _flow = load_flow(source=prompty_path, model={
+        "configuration": azure_ai_project
+    })
+    response = _flow(
+        query=query,
+        context=context,
+        conversation_history=messages_list
+    )
+    print(f"Response from application prompty: {response}")
+    # we are formatting the response to follow the openAI chat protocol format
+    formatted_response = {
+        "content": response,
+        "role": "assistant",
+        "context": {
+            "citations": None,
+        },
+    }
+    messages["messages"].append(formatted_response)
+    return {"messages": messages["messages"], "stream": stream, "session_state": session_state, "context": context}
+
+
+
+async def main():
+    simulator = TaskSimulator(azure_ai_project=azure_ai_project, credential=DefaultAzureCredential())
+    outputs = await simulator(
+        target=callback,
+        text=text,
+        num_queries=2,
+        max_conversation_turns=4,
+        user_persona=[
+            f"I am a student and I want to learn more about {wiki_search_term}",
+            f"I am a teacher and I want to teach my students about {wiki_search_term}"
+        ],
+    )
+    print(json.dumps(outputs))
+
+if __name__ == "__main__":
+    os.environ["AZURE_SUBSCRIPTION_ID"] = ""
+    os.environ["RESOURCE_GROUP"] = ""
+    os.environ["PROJECT_NAME"] = ""
+    os.environ["AZURE_OPENAI_API_KEY"] = ""
+    os.environ["AZURE_OPENAI_ENDPOINT"] = ""
+    os.environ["AZURE_DEPLOYMENT"] = ""
+    asyncio.run(main())
+    print("done!")
+```
+
+Expected output:
+```json
+[{"messsages": [{"role": "user", "content": "When was Leonardo di ser Piero da Vinci, the Italian polymath of the High Renaissance, born and when did he die?"}, {"content": "Leonardo da Vinci was born on April 15, 1452, in Vinci, Italy. He passed away on May 2, 1519, in Amboise, France. His life spanned 67 years, during which he made significant contributions to various fields such as art, science, music, mathematics, and more. His most famous works include the Mona Lisa and The Last Supper. Is there anything else you would like to know about this remarkable individual?", "role": "assistant", "context": {"citations": null}}, {"role": "assistant", "content": "Leonardo da Vinci was born on April 15, 1452, in Vinci, Italy. He passed away on May 2, 1519, in Amboise, France. His life spanned 67 years, during which he made significant contributions to various fields such as art, science, music, mathematics, and more. His most famous works include the Mona Lisa and The Last Supper. Is there anything else you would like to know about this remarkable individual?"}, {"role": "user", "content": "Yes, I would like to know more about his contributions to science. Can you tell me about that?"}], "finish_reason": ["stop"], "context": "User persona: I am a student and I want to learn more about Leonardo da vinci Expected response: 15 April 1452 \\u2013 2 May 1519", "$schema": "http://azureml/sdk-2-0/ChatConversation.json"}, {"messsages": [{"role": "user", "content": "Who educated Leonardo di ser Piero da Vinci, the Italian polymath of the High Renaissance, in Florence?"}, {"content": "Leonardo da Vinci, one of the greatest minds of the Renaissance, was largely self-educated. He had access to academic texts in the studio of his master, Andrea del Verrocchio, who was a leading artist in Florence. Verrocchio\'s studio was a meeting place for many young artists, engineers, poets, and scholars. Leonardo also had a keen interest in nature, which played a significant role in his self-education. He was known for his insatiable curiosity and relentless quest for learning.", "role": "assistant", "context": {"citations": null}}, {"role": "assistant", "content": "Leonardo da Vinci, one of the greatest minds of the Renaissance, was largely self-educated. He had access to academic texts in the studio of his master, Andrea del Verrocchio, who was a leading artist in Florence. Verrocchio\'s studio was a meeting place for many young artists, engineers, poets, and scholars. Leonardo also had a keen interest in nature, which played a significant role in his self-education. He was known for his insatiable curiosity and relentless quest for learning."}, {"role": "user", "content": "What are some of the most famous works of Leonardo da Vinci?"}], "finish_reason": ["stop"], "context": "User persona: I am a teacher and I want to teach my students about Leonardo da vinci Expected response: Andrea del Verrocchio", "$schema": "http://azureml/sdk-2-0/ChatConversation.json"}]
+```

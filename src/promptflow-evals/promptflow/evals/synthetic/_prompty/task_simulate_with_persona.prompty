@@ -1,6 +1,6 @@
 ---
-name: TaskSimulatorQueryResponse
-description: Gets queries and responses from a blob of text
+name: TaskSimulatorWithPersona
+description: Simulates a user to complete a conversation
 model:
   api: chat
   configuration:
@@ -19,16 +19,13 @@ model:
 inputs:
   user_persona:
     type: string
-  context:
-    type: string
   conversation_history:
     type: dict
 
 ---
 system:
 You should behave as if you are the {{ user_persona }} and you continue to interact with a system that responds to your queries.
-Make sure your conversation is engaging and interactive. keep your conversation grounded with the context:
-{{ context }}
+Make sure your conversation is engaging and interactive.
 
 
 Output with a string that continues the conversation, given the conversation history:
