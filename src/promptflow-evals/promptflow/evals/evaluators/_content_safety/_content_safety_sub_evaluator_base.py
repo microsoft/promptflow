@@ -49,7 +49,7 @@ class ContentSafetySubEvaluatorBase(ABC):
         _ = validate_inputs(question=question, answer=answer)
 
         # question: str, answer: str, metric_name: str, project_scope: dict, credential: TokenCredential
-        # Run f1 score computation.
+        # Run score computation based on supplied metric.
         result = evaluate_with_rai_service(
             metric_name=self._metric,
             question=question,
