@@ -6,7 +6,7 @@ on:
   pull_request:
     paths:
       - src/promptflow-evals/**
-      - .github/workflows/promptflow-evals-e2e-test.yml
+      - .github/workflows/promptflow-evals-local-e2e-test.yml
   workflow_dispatch:
 
 env:
