@@ -1,4 +1,4 @@
-name: promptflow-evals_local-e2e-test
+name: promptflow-evals-local-e2e-test
 
 on:
   schedule:
@@ -15,7 +15,6 @@ env:
 
 jobs:
   test:
-    needs: build
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-13]
