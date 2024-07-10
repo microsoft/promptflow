@@ -16,8 +16,6 @@ except ImportError:
     from constants import EvaluationMetrics, RAIService, Tasks
     from utils import get_harm_severity_level
 
-from promptflow.core import tool
-
 try:
     version = importlib.metadata.version("promptflow-evals")
 except importlib.metadata.PackageNotFoundError:
@@ -211,7 +209,6 @@ def fetch_or_reuse_token(credential: TokenCredential, token: str = None):
     return token
 
 
-@tool
 def evaluate_with_rai_service(
     question: str, answer: str, metric_name: str, project_scope: dict, credential: TokenCredential
 ):
