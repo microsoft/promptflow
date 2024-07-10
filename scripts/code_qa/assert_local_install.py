@@ -14,4 +14,8 @@ class TestPackagesNotInstalles():
     ])
     def test_promptflow_azure(self, package):
         """Test promptflow. azure is not installed."""
-        assert importlib.util.find_spec(package) is None, f'Package {package} must be uninstalled for local test.'
+        try:
+            importlib.import_module(package)
+            assert False, f'Package {package} must be uninstalled for local test.'
+        except (ModuleNotFoundError, ImportError):
+            pass
