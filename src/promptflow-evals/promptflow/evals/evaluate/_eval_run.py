@@ -137,7 +137,7 @@ class EvalRun(contextlib.AbstractContextManager):
             self._workspace_name,
         )
 
-    def start_run(self) -> None:
+    def _start_run(self) -> None:
         """
         Start the run, or, if it is not applicable (for example, if tracking is not enabled), mark it as started.
         """
@@ -159,45 +159,35 @@ class EvalRun(contextlib.AbstractContextManager):
                     self._promptflow_run.name
                 )
             else:
-                self._status = self._start_run(self._run_name)
+                url = f"https://{self._url_base}/mlflow/v2.0" f"{self._get_scope()}/api/2.0/mlflow/runs/create"
+                body = {
+                    "experiment_id": "0",
+                    "user_id": "promptflow-evals",
+                    "start_time": int(time.time() * 1000),
+                    "tags": [{"key": "mlflow.user", "value": "promptflow-evals"}],
+                }
+                if self._run_name:
+                    body["run_name"] = self._run_name
+                response = self.request_with_retry(
+                    url=url,
+                    method='POST',
+                    json_dict=body
+                )
+                if response.status_code != 200:
+                    self.info = RunInfo.generate(self._run_name)
+                    LOGGER.warning(f"The run failed to start: {response.status_code}: {response.text}."
+                                   "The results will be saved locally, but will not be logged to Azure.")
+                    self._status = RunStatus.BROKEN
+                else:
+                    parsed_response = response.json()
+                    self.info = RunInfo(
+                        run_id=parsed_response['run']['info']['run_id'],
+                        experiment_id=parsed_response['run']['info']['experiment_id'],
+                        run_name=parsed_response['run']['info']['run_name']
+                    )
+                    self._status = RunStatus.STARTED
 
-    def _start_run(self, run_name: Optional[str]) -> 'RunStatus':
-        """
-        Make a request to start the mlflow run. If the run will not start, it will be
-
-        marked as broken and the logging will be switched off.
-        :param run_name: The display name for the run.
-        :type run_name: Optional[str]
-        :returns: True if the run has started and False otherwise.
-        """
-        url = f"https://{self._url_base}/mlflow/v2.0" f"{self._get_scope()}/api/2.0/mlflow/runs/create"
-        body = {
-            "experiment_id": "0",
-            "user_id": "promptflow-evals",
-            "start_time": int(time.time() * 1000),
-            "tags": [{"key": "mlflow.user", "value": "promptflow-evals"}],
-        }
-        if run_name:
-            body["run_name"] = run_name
-        response = self.request_with_retry(
-            url=url,
-            method='POST',
-            json_dict=body
-        )
-        if response.status_code != 200:
-            self.info = RunInfo.generate(run_name)
-            LOGGER.warning(f"The run failed to start: {response.status_code}: {response.text}."
-                           "The results will be saved locally, but will not be logged to Azure.")
-            return RunStatus.BROKEN
-        parsed_response = response.json()
-        self.info = RunInfo(
-            run_id=parsed_response['run']['info']['run_id'],
-            experiment_id=parsed_response['run']['info']['experiment_id'],
-            run_name=parsed_response['run']['info']['run_name']
-        )
-        return RunStatus.STARTED
-
-    def end_run(self, reason: str) -> None:
+    def _end_run(self, reason: str) -> None:
         """
         Tetminate the run.
 
@@ -234,12 +224,12 @@ class EvalRun(contextlib.AbstractContextManager):
 
     def __enter__(self):
         """The Context Manager enter call."""
-        self.start_run()
+        self._start_run()
         return self
 
     def __exit__(self, exc_type, exc_value, exc_tb):
         """The context manager exit call."""
-        self.end_run("FINISHED")
+        self._end_run("FINISHED")
 
     def get_run_history_uri(self) -> str:
         """

@@ -66,10 +66,10 @@ class TestEvalRun:
             ) as run:
                 if should_raise:
                     with pytest.raises(ValueError) as cm:
-                        run.end_run(status)
+                        run._end_run(status)
                     assert status in cm.value.args[0]
                 else:
-                    run.end_run(status)
+                    run._end_run(status)
                     assert len(caplog.records) == 0
 
     def test_run_logs_if_terminated(self, token_mock, caplog):
@@ -90,9 +90,9 @@ class TestEvalRun:
                 workspace_name="mock",
                 ml_client=MagicMock(),
             )
-            run.start_run()
-            run.end_run("KILLED")
-            run.end_run("KILLED")
+            run._start_run()
+            run._end_run("KILLED")
+            run._end_run("KILLED")
             assert len(caplog.records) == 1
             assert "Unable to stop run because it was already terminated." in caplog.records[0].message
 
@@ -140,7 +140,7 @@ class TestEvalRun:
                 workspace_name="mock",
                 ml_client=MagicMock(),
             )
-            run.start_run()
+            run._start_run()
             assert len(caplog.records) == 1
             assert "500" in caplog.records[0].message
             assert mock_response_start.text in caplog.records[0].message
@@ -157,7 +157,7 @@ class TestEvalRun:
             assert "Unable to log metric because the run failed to start." in caplog.records[0].message
             caplog.clear()
             # End run
-            run.end_run("FINISHED")
+            run._end_run("FINISHED")
             assert len(caplog.records) == 1
             assert "Unable to stop run because the run failed to start." in caplog.records[0].message
             caplog.clear()
@@ -420,12 +420,12 @@ class TestEvalRun:
                 promptflow_run=pf_run_mock
             )
             assert run.status == RunStatus.NOT_STARTED, f'Get {run.status}, expected {RunStatus.NOT_STARTED}'
-            run.start_run()
+            run._start_run()
             if status_code == 200 or pf_run:
                 assert run.status == RunStatus.STARTED, f'Get {run.status}, expected {RunStatus.STARTED}'
             else:
                 assert run.status == RunStatus.BROKEN, f'Get {run.status}, expected {RunStatus.BROKEN}'
-            run.end_run("FINISHED")
+            run._end_run("FINISHED")
             if status_code == 200 or pf_run:
                 assert run.status == RunStatus.TERMINATED, f'Get {run.status}, expected {RunStatus.TERMINATED}'
             else:
@@ -442,9 +442,9 @@ class TestEvalRun:
             ml_client=MagicMock()
         )
         assert run.status == RunStatus.NOT_STARTED, f'Get {run.status}, expected {RunStatus.NOT_STARTED}'
-        run.start_run()
+        run._start_run()
         assert run.status == RunStatus.BROKEN, f'Get {run.status}, expected {RunStatus.BROKEN}'
-        run.end_run("FINISHED")
+        run._end_run("FINISHED")
         assert run.status == RunStatus.BROKEN, f'Get {run.status}, expected {RunStatus.BROKEN}'
 
     @pytest.mark.parametrize('status_code', [200, 401])
@@ -510,7 +510,7 @@ class TestEvalRun:
             ('log_artifact', ('mock_folder',))
         ]
     )
-    def test_raises_if_not_started(self, token_mock, function_literal, args):
+    def test_raises_if_not_started(self, token_mock, caplog, function_literal, args):
         """Test that all public functions are raising exception if run is not started."""
         run = EvalRun(
             run_name=None,
